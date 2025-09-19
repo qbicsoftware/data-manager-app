@@ -14,19 +14,21 @@ import java.io.Serial;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.Set;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.AppRoutes.ProjectRoutes;
 import life.qbic.datamanager.views.UserMainLayout;
 import life.qbic.datamanager.views.general.Main;
+import life.qbic.datamanager.views.general.contact.Contact;
+import life.qbic.datamanager.views.general.funding.FundingEntry;
 import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.projects.create.AddProjectDialog;
 import life.qbic.datamanager.views.projects.create.AddProjectDialog.ConfirmEvent;
 import life.qbic.datamanager.views.projects.create.AddProjectDialog.ProjectCreationInformation;
-import life.qbic.datamanager.views.projects.create.CollaboratorsLayout.ProjectCollaborators;
 import life.qbic.datamanager.views.projects.create.ExperimentalInformationLayout.ExperimentalInformation;
 import life.qbic.datamanager.views.projects.create.ProjectDesignLayout.ProjectDesign;
 import life.qbic.datamanager.views.projects.overview.components.ProjectCollectionComponent;
@@ -37,11 +39,12 @@ import life.qbic.projectmanagement.application.AddExperimentToProjectService;
 import life.qbic.projectmanagement.application.AuthenticationToUserIdTranslationService;
 import life.qbic.projectmanagement.application.ProjectCreationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.FundingInformation;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectContact;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectContacts;
 import life.qbic.projectmanagement.application.contact.PersonLookupService;
 import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
-import life.qbic.projectmanagement.domain.model.project.Contact;
-import life.qbic.projectmanagement.domain.model.project.Funding;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -169,29 +172,38 @@ public class ProjectOverviewMain extends Main {
         .anyMatch(r -> allowedRoles.contains(r.getAuthority()));
   }
 
+  Optional<ProjectContact> mapToServiceApi(Contact contact) {
+    if (contact.hasMinimalInformation()) {
+      return Optional.of(new ProjectContact(contact.fullName(), contact.email(), contact.oidc(),
+          contact.oidcIssuer()));
+    }
+    return Optional.empty();
+  }
+
   private void createProject(ConfirmEvent confirmEvent) {
-    Funding funding = null;
     ProjectCreationInformation projectCreationInformation = confirmEvent.projectCreationInformation();
-    if (projectCreationInformation.fundingEntry() != null
-        && !projectCreationInformation.fundingEntry().isEmpty()) {
-      funding = Funding.of(projectCreationInformation.fundingEntry().getLabel(),
-          projectCreationInformation.fundingEntry().getReferenceId());
-    }
+    FundingEntry fundingEntry = projectCreationInformation.fundingEntry();
     ProjectDesign projectDesign = projectCreationInformation.projectDesign();
-    ProjectCollaborators projectCollaborators = projectCreationInformation.projectCollaborators();
-    Contact responsiblePerson = null;
-    if (projectCollaborators.responsiblePerson().hasMinimalInformation()) {
-      responsiblePerson = projectCollaborators.responsiblePerson().toDomainContact();
+
+    var principalInvestigator = mapToServiceApi(projectCreationInformation.projectCollaborators()
+        .principalInvestigator()).orElseThrow();
+    var projectManager = mapToServiceApi(projectCreationInformation.projectCollaborators()
+        .projectManager()).orElseThrow();
+    var responsiblePerson = mapToServiceApi(projectCreationInformation.projectCollaborators()
+        .responsiblePerson());
+
+    var projectContacts = responsiblePerson
+        .map(responsible -> new ProjectContacts(principalInvestigator, projectManager, responsible))
+        .orElse(new ProjectContacts(principalInvestigator, projectManager));
+    FundingInformation fundingInformation = null;
+    if (fundingEntry != null && !fundingEntry.isEmpty()) {
+      fundingInformation = new FundingInformation(fundingEntry.getLabel(),
+          fundingEntry.getReferenceId());
     }
+
     Result<Project, ApplicationException> project = projectCreationService.createProject(
-        projectDesign.getOfferId(),
-        projectDesign.getProjectCode(),
-        projectDesign.getProjectTitle(),
-        projectDesign.getProjectObjective(),
-        projectCollaborators.principalInvestigator().toDomainContact(),
-        responsiblePerson,
-        projectCollaborators.projectManager().toDomainContact(),
-        funding);
+        projectDesign.getOfferId(), projectDesign.getProjectCode(), projectDesign.getProjectTitle(),
+        projectDesign.getProjectObjective(), projectContacts, fundingInformation);
     handleResultProject(project, confirmEvent);
     ExperimentalInformation experimentalInformation = confirmEvent.experimentalInformation();
     var experiment = addExperimentToProjectService.addExperimentToProject(
@@ -199,9 +211,7 @@ public class ProjectOverviewMain extends Main {
         experimentalInformation.getExperimentName(),
         experimentalInformation.getSpecies(),
         experimentalInformation.getSpecimens(),
-        experimentalInformation.getAnalytes(),
-        experimentalInformation.getSpeciesIcon().getLabel(),
-        experimentalInformation.getSpecimenIcon().getLabel());
+        experimentalInformation.getAnalytes());
     handleResultExperiment(experiment, confirmEvent);
     projectCollectionComponent.refresh();
     projectCollectionComponent.resetSearch();

@@ -77,6 +77,7 @@ import life.qbic.projectmanagement.infrastructure.sample.openbis.OpenbisSession.
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 /**
@@ -85,6 +86,7 @@ import org.springframework.stereotype.Component;
  * @since 1.0.0
  */
 @Component
+@Profile("production")
 public class OpenbisConnector implements QbicProjectDataRepo, SampleDataRepository,
     MeasurementDataRepo, RawDataLookup, DataRepoConnectionTester, DisposableBean {
 

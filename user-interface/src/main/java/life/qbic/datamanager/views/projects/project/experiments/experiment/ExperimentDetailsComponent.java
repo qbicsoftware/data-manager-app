@@ -25,6 +25,7 @@ import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -68,7 +69,6 @@ import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.DeletionService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalGroupCreationRequest;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalGroupCreationResponse;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalGroupDeletionRequest;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalGroupDeletionResponse;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalGroupUpdateRequest;
@@ -94,6 +94,8 @@ import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import org.springframework.beans.factory.annotation.Autowired;
+import reactor.core.Disposable;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
@@ -291,10 +293,6 @@ public class ExperimentDetailsComponent extends PageArea {
       experimentDraft.setSpecies(experiment.getSpecies());
       experimentDraft.setSpecimens(experiment.getSpecimens());
       experimentDraft.setAnalytes(experiment.getAnalytes());
-      experimentDraft.setSpeciesIcon(BioIcon.getTypeWithNameOrDefault(SampleSourceType.SPECIES,
-          experiment.getSpeciesIconName()));
-      experimentDraft.setSpecimenIcon(BioIcon.getTypeWithNameOrDefault(SampleSourceType.SPECIMEN,
-          experiment.getSpecimenIconName()));
 
       editExperimentDialog.setExperiment(experimentDraft, usedTerms);
       editExperimentDialog.setConfirmButtonLabel("Save");
@@ -349,9 +347,7 @@ public class ExperimentDetailsComponent extends PageArea {
         experimentDraft.getExperimentName(),
         experimentDraft.getSpecies(),
         experimentDraft.getSpecimens(),
-        experimentDraft.getAnalytes(),
-        experimentDraft.getSpeciesIcon().getLabel(),
-        experimentDraft.getSpecimenIcon().getLabel());
+        experimentDraft.getAnalytes());
     reloadExperimentInfo(projectId, experimentId);
     event.getSource().close();
   }
@@ -665,13 +661,12 @@ public class ExperimentDetailsComponent extends PageArea {
     content.add(sampleSourceComponent);
   }
 
-  private Div createSampleSourceList(String titleText, AbstractIcon<?> icon,
+  private Div createSampleSourceList(String titleText,
       List<OntologyTerm> ontologyClasses) {
-    icon.addClassName("primary");
     Div sampleSource = new Div();
     sampleSource.addClassName("sample-source");
     Span title = new Span(titleText);
-    Span header = new Span(icon, title);
+    Span header = new Span(title);
     header.addClassName("header");
     Div ontologies = new Div();
     ontologies.addClassName("ontologies");
@@ -687,22 +682,12 @@ public class ExperimentDetailsComponent extends PageArea {
     List<OntologyTerm> specimenTags = new ArrayList<>(experiment.getSpecimens());
     List<OntologyTerm> analyteTags = new ArrayList<>(experiment.getAnalytes());
 
-    BioIcon speciesIcon = BioIcon.getOptionsForType(SampleSourceType.SPECIES).stream()
-        .filter(icon -> icon.label.equals(experiment.getSpeciesIconName())).findFirst()
-        .orElse(BioIcon.DEFAULT_SPECIES);
-    BioIcon specimenIcon = BioIcon.getOptionsForType(SampleSourceType.SPECIMEN).stream()
-        .filter(icon -> icon.label.equals(experiment.getSpecimenIconName())).findFirst()
-        .orElse(BioIcon.DEFAULT_SPECIMEN);
-    BioIcon analyteIcon = BioIcon.getOptionsForType(SampleSourceType.ANALYTE).stream()
-        .filter(icon -> icon.label.equals(experiment.getAnalyteIconName())).findFirst()
-        .orElse(BioIcon.DEFAULT_ANALYTE);
-
     sampleSourceComponent.add(
-        createSampleSourceList("Species", speciesIcon.iconResource.createIcon(), speciesTags));
+        createSampleSourceList("Species", speciesTags));
     sampleSourceComponent.add(
-        createSampleSourceList("Specimen", specimenIcon.iconResource.createIcon(), specimenTags));
+        createSampleSourceList("Specimen", specimenTags));
     sampleSourceComponent.add(
-        createSampleSourceList("Analytes", analyteIcon.iconResource.createIcon(), analyteTags));
+        createSampleSourceList("Analytes", analyteTags));
   }
 
   private void layoutTabSheet() {
@@ -898,24 +883,19 @@ public class ExperimentDetailsComponent extends PageArea {
     ExperimentId experimentId = context.experimentId().orElseThrow();
     var projectId = context.projectId().orElseThrow();
 
-    var serviceCalls = new ArrayList<Mono<ExperimentalGroupCreationResponse>>();
-
-    experimentalGroups.forEach(experimentalGroup -> {
-      serviceCalls.add(
-          asyncProjectService.create(new ExperimentalGroupCreationRequest(projectId.value(),
-              experimentId.value(), experimentalGroup)));
-    });
-
-    Mono.when(serviceCalls).doOnSuccess(s -> {
+    Flux.fromIterable(experimentalGroups)
+        .map(experimentalGroup -> new ExperimentalGroupCreationRequest(projectId.value(),
+            experimentId.value(), experimentalGroup))
+        .concatMap(asyncProjectService::create)
+        .timeout(Duration.ofSeconds(15))
+        .collectList()
+        .subscribe(ignored -> {
           displaySuccessfulExperimentalGroupCreation();
           reloadExperimentalGroups();
           showSampleRegistrationPossibleNotification();
-        }).doOnError(e -> {
-          log.error("Error while creating experimental group", e);
+        }, err -> {
+          log.error("Error while creating experimental group", err);
           displayFailedExperimentalGroupCreation();
-        })
-        .subscribe(it -> {
-          log.debug("Added experimental groups for project" + projectId);
         });
   }
 

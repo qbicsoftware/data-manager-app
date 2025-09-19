@@ -2,14 +2,26 @@ package life.qbic.projectmanagement.application.api.template;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.UnsupportedMimeTypeException;
 import life.qbic.projectmanagement.application.api.fair.DigitalObject;
+import life.qbic.projectmanagement.application.api.template.TemplateProvider.MeasurementInformationCollectionNGS;
+import life.qbic.projectmanagement.application.api.template.TemplateProvider.MeasurementInformationCollectionPxP;
+import life.qbic.projectmanagement.application.api.template.TemplateProvider.MeasurementInformationNGS;
+import life.qbic.projectmanagement.application.api.template.TemplateProvider.MeasurementInformationPxP;
+import life.qbic.projectmanagement.application.api.template.TemplateProvider.MeasurementSpecificNGS;
+import life.qbic.projectmanagement.application.api.template.TemplateProvider.MeasurementSpecificPxP;
 import life.qbic.projectmanagement.application.api.template.TemplateProvider.SampleInformation;
 import life.qbic.projectmanagement.application.api.template.TemplateProvider.SampleRegistration;
 import life.qbic.projectmanagement.application.api.template.TemplateProvider.SampleUpdate;
@@ -18,14 +30,21 @@ import life.qbic.projectmanagement.application.confounding.ConfoundingVariableSe
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableLevel;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ExperimentReference;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
+import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.sample.PropertyConversion;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
+import life.qbic.projectmanagement.domain.model.measurement.NGSIndex;
+import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
+import life.qbic.projectmanagement.domain.model.measurement.NGSSpecificMeasurementMetadata;
+import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
+import life.qbic.projectmanagement.domain.model.measurement.ProteomicsSpecificMeasurementMetadata;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.AnalysisMethod;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
+import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
@@ -47,15 +66,20 @@ public class TemplateService {
   private final SampleInformationService sampleService;
   private final ConfoundingVariableService confVariableService;
   private final TemplateProvider templateProvider;
+  private final MeasurementService measurementService;
 
   @Autowired
-  public TemplateService(ExperimentInformationService experimentService,
+  public TemplateService(
+      ExperimentInformationService experimentService,
       SampleInformationService sampleService,
-      ConfoundingVariableService confVariableService, TemplateProvider templateProvider) {
+      ConfoundingVariableService confVariableService,
+      TemplateProvider templateProvider,
+      MeasurementService measurementService) {
     this.experimentService = Objects.requireNonNull(experimentService);
     this.sampleService = Objects.requireNonNull(sampleService);
     this.confVariableService = confVariableService;
     this.templateProvider = Objects.requireNonNull(templateProvider);
+    this.measurementService = Objects.requireNonNull(measurementService);
   }
 
   private static Predicate<Sample> isInBatch(String targetBatchId) {
@@ -151,6 +175,152 @@ public class TemplateService {
         batchId);
   }
 
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
+  public DigitalObject measurementUpdateTemplatePxP(String projectId, List<String> measurementIds, MimeType type) {
+    if (!isSupportedMimeType(type)) {
+      throw new UnsupportedMimeTypeException(UNSUPPORTED_MIME_TYPE + type);
+    }
+    return generateMeasurementUpdateTemplatePxP(projectId, measurementIds);
+  }
+
+  private DigitalObject generateMeasurementUpdateTemplatePxP(String projectId,
+      List<String> measurementIds) {
+    var measurements = new ArrayList<MeasurementInformationPxP>();
+    for (String measurementId : measurementIds) {
+      var measurementQuery = measurementService.findProteomicsMeasurementById(projectId, measurementId);
+      if (measurementQuery.isEmpty()) {
+        throw new MeasurementNotFound("Cannot find measurement with id: " + measurementId);
+      }
+      var sampleIdsForSpecificMetadata = measurementQuery.get().specificMetadata().stream()
+          .map(ProteomicsSpecificMeasurementMetadata::measuredSample)
+          .map(SampleId::value)
+          .toList();
+      var measuredSamples = fetchSamplesForIds(projectId, sampleIdsForSpecificMetadata);
+      var convertedEntry = convertFromDomain(measurementQuery.get(), measuredSamples);
+      measurements.add(convertedEntry);
+    }
+    return templateProvider.getTemplate(new MeasurementInformationCollectionPxP(measurements));
+  }
+
+  private MeasurementInformationPxP convertFromDomain(ProteomicsMeasurement measurement,
+      List<Sample> measuredSamples) {
+    // Create a lookup table for faster sample name queries
+    var sampleNameById = measuredSamples.stream()
+        .collect(Collectors.toMap(s -> s.sampleId().value(), Function.identity()));
+    return new MeasurementInformationPxP(
+        measurement.measurementCode().value(),
+        measurement.technicalReplicateName().orElse(""),
+        measurement.organisation().IRI(),
+        measurement.organisation().label(),
+        measurement.msDevice().oboId().toString(),
+        measurement.msDevice().getLabel(),
+        measurement.samplePoolGroup().orElse(""),
+        measurement.facility(),
+        measurement.digestionEnzyme(),
+        measurement.digestionMethod(),
+        measurement.enrichmentMethod(),
+        String.valueOf(measurement.injectionVolume()),
+        measurement.lcColumn(),
+        measurement.lcmsMethod(),
+        measurement.labelType(),
+        convertSpecificMetadataPxP(measurement.specificMetadata().stream().toList(),
+            sampleNameById),
+        measurement.measurementName()
+    );
+  }
+
+
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
+  public DigitalObject measurementUpdateTemplateNGS(String projectId,
+      List<String> measurementIds, MimeType type) {
+    if (!isSupportedMimeType(type)) {
+      throw new UnsupportedMimeTypeException(UNSUPPORTED_MIME_TYPE + type);
+    }
+    return generateMeasurementUpdateTemplateNGS(projectId, measurementIds);
+  }
+
+  private DigitalObject generateMeasurementUpdateTemplateNGS(String projectId,
+      List<String> measurementIds) {
+    var measurements = new ArrayList<MeasurementInformationNGS>();
+    for (String measurementId : measurementIds) {
+      var measurementQuery = measurementService.findNGSMeasurementById(projectId, measurementId);
+      if (measurementQuery.isEmpty()) {
+        throw new MeasurementNotFound("Cannot find measurement with id: " + measurementId);
+      }
+      var sampleIdsForSpecificMetadata = measurementQuery.get().specificMeasurementMetadata().stream()
+          .map(NGSSpecificMeasurementMetadata::measuredSample)
+          .map(SampleId::value)
+          .toList();
+      var measuredSamples = fetchSamplesForIds(projectId, sampleIdsForSpecificMetadata);
+      var convertedEntry = convertFromDomain(measurementQuery.get(), measuredSamples);
+      measurements.add(convertedEntry);
+    }
+    return templateProvider.getTemplate(new MeasurementInformationCollectionNGS(measurements));
+  }
+
+  private MeasurementInformationNGS convertFromDomain(
+      NGSMeasurement measurement, List<Sample> measuredSamples) {
+    // Create a lookup table for faster sample name queries
+    var sampleNameById = measuredSamples.stream()
+        .collect(Collectors.toMap(s -> s.sampleId().value(), Function.identity()));
+    return new MeasurementInformationNGS(
+        measurement.measurementCode().value(),
+        measurement.organisation().IRI(),
+        measurement.organisation().label(),
+        measurement.instrument().oboId().toString(),
+        measurement.instrument().getLabel(),
+        measurement.facility(),
+        measurement.sequencingReadType(),
+        measurement.libraryKit().orElse(""),
+        measurement.flowCell().orElse(""),
+        measurement.sequencingRunProtocol().orElse(""),
+        measurement.samplePoolGroup().orElse(""),
+        convertSpecificMetadataNGS(measurement.specificMeasurementMetadata().stream().toList(),
+            sampleNameById),
+        measurement.measurementName()
+    );
+  }
+
+  private Map<String, MeasurementSpecificPxP> convertSpecificMetadataPxP(
+      List<ProteomicsSpecificMeasurementMetadata> metadata, Map<String, Sample> sampleNameById) {
+    var convertedMap = new HashMap<String, MeasurementSpecificPxP>();
+    for (var specificMetadata : metadata) {
+      convertedMap.put(specificMetadata.measuredSample().value(), new MeasurementSpecificPxP(
+          sampleNameById.get(specificMetadata.measuredSample().value()).sampleCode().code(),
+          sampleNameById.get(specificMetadata.measuredSample().value()).label(),
+          specificMetadata.label(),
+          specificMetadata.fractionName(),
+          specificMetadata.comment().orElse("")));
+    }
+    return convertedMap;
+  }
+
+  private Map<String, MeasurementSpecificNGS> convertSpecificMetadataNGS(
+      List<NGSSpecificMeasurementMetadata> metadata, Map<String, Sample> sampleNameById) {
+    var convertedMap = new HashMap<String, MeasurementSpecificNGS>();
+    for (var specificMetadata : metadata) {
+      convertedMap.put(specificMetadata.measuredSample().value(), new MeasurementSpecificNGS(
+          sampleNameById.get(specificMetadata.measuredSample().value()).sampleCode().code(),
+          sampleNameById.get(specificMetadata.measuredSample().value()).label(),
+          specificMetadata.index().map(
+              NGSIndex::indexI7).orElse(""),
+          specificMetadata.index().map(NGSIndex::indexI5).orElse(""),
+          specificMetadata.comment().orElse("")));
+    }
+    return convertedMap;
+  }
+
+  private List<Sample> fetchSamplesForIds(String projectId, List<String> sampleIds) {
+    var projectIdParsed = ProjectId.parse(projectId);
+    return sampleIds.stream()
+        .map(id -> sampleService.findSample(projectIdParsed, SampleId.parse(id)))
+        .filter(Optional::isPresent)
+        .map(Optional::get)
+        .toList();
+  }
+
   private Supplier<Experiment> experimentSupplier(String projectId, String experimentId) {
     return () -> experimentService.find(projectId, ExperimentId.parse(experimentId))
         .orElseThrow(NoSuchExperimentException::new);
@@ -203,7 +373,6 @@ public class TemplateService {
         confoundingVariableLevels
     );
   }
-
 
   private SampleBasic querySampleBasicInfo(Experiment experiment, String projectId,
       String experimentId) {
@@ -287,6 +456,17 @@ public class TemplateService {
 
     public NoSuchExperimentException() {
       super();
+    }
+  }
+
+  static class MeasurementNotFound extends RuntimeException {
+
+    public MeasurementNotFound() {
+      super();
+    }
+
+    public MeasurementNotFound(String message) {
+      super(message);
     }
   }
 }

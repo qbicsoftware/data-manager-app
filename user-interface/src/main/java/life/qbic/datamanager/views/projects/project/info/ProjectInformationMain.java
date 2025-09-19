@@ -371,9 +371,7 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
         experimentDraft.getExperimentName(),
         experimentDraft.getSpecies(),
         experimentDraft.getSpecimens(),
-        experimentDraft.getAnalytes(),
-        experimentDraft.getSpeciesIcon().getLabel(),
-        experimentDraft.getSpecimenIcon().getLabel());
+        experimentDraft.getAnalytes());
     if (result.isValue()) {
       return result.getValue();
     } else {

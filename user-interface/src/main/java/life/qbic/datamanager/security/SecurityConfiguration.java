@@ -7,6 +7,7 @@ import com.vaadin.flow.spring.security.VaadinDefaultRequestCache;
 import com.vaadin.flow.spring.security.VaadinWebSecurity;
 import life.qbic.datamanager.views.login.LoginLayout;
 import life.qbic.identity.application.security.QBiCPasswordEncoder;
+import life.qbic.identity.application.user.IdentityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -24,6 +25,7 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 public class SecurityConfiguration extends VaadinWebSecurity {
 
   final VaadinDefaultRequestCache defaultRequestCache;
+  private final IdentityService identityService;
 
   @Value("${routing.registration.oidc.orcid.endpoint}")
   String registrationOrcidEndpoint;
@@ -35,9 +37,11 @@ public class SecurityConfiguration extends VaadinWebSecurity {
   String contextPath;
 
   public SecurityConfiguration(
-      @Autowired VaadinDefaultRequestCache defaultRequestCache) {
+      @Autowired VaadinDefaultRequestCache defaultRequestCache,
+      @Autowired IdentityService identityService) {
     this.defaultRequestCache = requireNonNull(defaultRequestCache,
         "defaultRequestCache must not be null");
+    this.identityService = requireNonNull(identityService);
   }
 
   @Bean
@@ -47,18 +51,27 @@ public class SecurityConfiguration extends VaadinWebSecurity {
 
   private AuthenticationSuccessHandler authenticationSuccessHandler() {
     requireNonNull(registrationOrcidEndpoint, "openIdRegistrationEndpoint must not be null");
-    StoredRequestAwareOidcAuthenticationSuccessHandler storedRequestAwareOidcAuthenticationSuccessHandler = new StoredRequestAwareOidcAuthenticationSuccessHandler(
-        registrationOrcidEndpoint, emailConfirmationEndpoint);
+    var storedRequestAwareOidcAuthenticationSuccessHandler = new StoredRequestAwareOidcAuthenticationSuccessHandler(
+        registrationOrcidEndpoint, emailConfirmationEndpoint, identityService);
     storedRequestAwareOidcAuthenticationSuccessHandler.setRequestCache(defaultRequestCache);
     return storedRequestAwareOidcAuthenticationSuccessHandler;
   }
 
   @Override
   protected void configure(HttpSecurity http) throws Exception {
-    http.authorizeHttpRequests(v -> v.requestMatchers(
+    // Use Vaadin’s request cache (so redirects back to the original Flow route work)
+    http.requestCache(c -> c.requestCache(defaultRequestCache));
+
+    http.authorizeHttpRequests(v -> v
+        .requestMatchers(VaadinWebSecurity.getDefaultWebSecurityIgnoreMatcher()).permitAll()
+        .requestMatchers(
             new AntPathRequestMatcher("/oauth2/authorization/orcid"),
-            new AntPathRequestMatcher("/oauth2/code/**"), new AntPathRequestMatcher("images/*.png"))
-        .permitAll());
+            new AntPathRequestMatcher("/oauth2/code/**"),
+            new AntPathRequestMatcher("/link/**"),
+            new AntPathRequestMatcher("/images/*.png"))
+        .permitAll()
+    );
+
     http.oauth2Login(oAuth2Login -> {
       oAuth2Login.loginPage("/login").permitAll();
       oAuth2Login.defaultSuccessUrl("/");
@@ -66,7 +79,11 @@ public class SecurityConfiguration extends VaadinWebSecurity {
           authenticationSuccessHandler());
       oAuth2Login.failureUrl("/login?errorOauth2=true&error");
     });
+
+    // Let Vaadin register its filters/matchers
     super.configure(http);
+
+    // Set the login view
     setLoginView(http, LoginLayout.class, contextPath + "/login?logout=true");
   }
 }

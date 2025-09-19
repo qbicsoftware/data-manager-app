@@ -40,8 +40,6 @@ import org.springframework.beans.factory.annotation.Autowired;
  * life.qbic.datamanager.views.projects.project.samples.registration.batch.RegisterSampleBatchDialog}.
  */
 
-@SpringComponent
-@UIScope
 public class SampleDetailsComponent extends PageArea implements Serializable {
 
   @Serial
@@ -52,7 +50,6 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   private final MessageSourceNotificationFactory messageFactory;
   private Context context;
 
-  @Autowired
   public SampleDetailsComponent(AsyncProjectService asyncProjectService,
       MessageSourceNotificationFactory messageFactory) {
     this.messageFactory = Objects.requireNonNull(messageFactory);

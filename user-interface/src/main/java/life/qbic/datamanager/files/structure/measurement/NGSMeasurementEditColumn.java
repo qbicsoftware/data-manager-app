@@ -31,7 +31,8 @@ public enum NGSMeasurementEditColumn implements Column {
   SEQUENCING_RUN_PROTOCOL("Sequencing Run Protocol", 12, false, false),
   INDEX_I7("Index i7", 13, false, false),
   INDEX_I5("Index i5", 14, false, false),
-  COMMENT("Comment", 15, false, false),
+  MEASUREMENT_NAME("Measurement Name", 15, false, false),
+  COMMENT("Comment", 16, false, false),
   ;
 
 
@@ -74,6 +75,7 @@ public enum NGSMeasurementEditColumn implements Column {
             "Index used for multiplexing.");
         case INDEX_I5 -> new Helper("Free text, e.g. NEBNext UDI UMI Set 1 B12 S579",
             "Index used for multiplexing.");
+        case MEASUREMENT_NAME -> new Helper("Free text, e.g. your local identifier for the measurement", "Name given for the measurement.");
         case COMMENT ->
             new Helper("Free text", "Notes about the measurement. (Max 500 characters)");
       };

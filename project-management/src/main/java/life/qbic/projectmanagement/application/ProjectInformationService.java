@@ -25,12 +25,14 @@ import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.model.project.ProjectTitle;
 import life.qbic.projectmanagement.domain.repository.ProjectRepository;
-import org.hibernate.dialect.lock.OptimisticEntityLockException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Service that provides an API to search basic project information
@@ -207,24 +209,35 @@ public class ProjectInformationService {
     projectRepository.update(project);
   }
 
-  public void updateModifiedDate(ProjectId projectID, Instant modifiedOn) throws ProjectNotFoundException {
+  @Transactional(propagation = Propagation.REQUIRED, timeout = 15)
+  public void updateModifiedDate(ProjectId projectID, Instant modifiedOn)
+      throws ProjectNotFoundException {
     // The update might fail due to an optimistic locking exception (concurrent access of other processes)
     // To address this, the update is tried until it will eventually not throw the locking exception anymore.
     // This approach naively assumes, that the locked resource will be released eventually again by the other process.
     var attempt = 1;
-    var project = projectRepository.find(projectID).orElseThrow(() -> new ProjectNotFoundException("Project with not found: %s".formatted(projectID)));
-    while(true) {
+    var maxAttempts = 5;
+    Project project;
+    while (attempt <= maxAttempts) {
       try {
+        project = projectRepository.findByIdForUpdate(projectID).orElseThrow(
+            () -> new ProjectNotFoundException("Project with not found: %s".formatted(projectID)));
         tryToUpdateModifiedDate(project, modifiedOn);
         return;
-      } catch (OptimisticEntityLockException e) {
-        log.debug("Optimistic lock exception occurred while updating modified date for project " + projectID);
+      } catch (ObjectOptimisticLockingFailureException e) {
+        log.debug("Optimistic lock exception occurred while updating modified date for project "
+            + projectID);
+      } catch (Exception e) {
+        log.error("Error while updating modified date for project " + projectID, e);
+        throw e;
       }
       try {
         Thread.sleep(calcBase2Duration(attempt));
       } catch (InterruptedException e) {
         log.error("Interrupted while updating modified date for project " + projectID);
         // We try one last time
+        project = projectRepository.find(projectID).orElseThrow(
+            () -> new ProjectNotFoundException("Project not found: %s".formatted(projectID)));
         tryToUpdateModifiedDate(project, modifiedOn);
         Thread.currentThread().interrupt();
       }
@@ -235,7 +248,7 @@ public class ProjectInformationService {
   Will only update the last modified date in case the passed instant is newer then the
   the already stored one in the project.
    */
-  private void tryToUpdateModifiedDate(Project project, Instant modifiedOn) throws OptimisticEntityLockException {
+  private void tryToUpdateModifiedDate(Project project, Instant modifiedOn) throws ObjectOptimisticLockingFailureException {
     if (project.getLastModified() == null) {
       project.setLastModified(modifiedOn);
     }

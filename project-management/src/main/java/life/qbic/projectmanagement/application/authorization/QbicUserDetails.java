@@ -1,6 +1,7 @@
 package life.qbic.projectmanagement.application.authorization;
 
 import java.io.Serial;
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -18,10 +19,10 @@ import org.springframework.security.core.userdetails.UserDetails;
  *
  * @since 1.0.0
  */
-public class QbicUserDetails implements UserDetails {
+public class QbicUserDetails implements UserDetails, Serializable {
   @Serial
   private static final long serialVersionUID = 5812210012669790933L;
-  private final transient User user;
+  private final User user;
   private final List<GrantedAuthority> grantedAuthorities;
 
   /**

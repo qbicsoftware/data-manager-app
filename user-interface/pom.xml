@@ -330,7 +330,9 @@
         </plugins>
       </build>
     </profile>
-
+    <profile>
+      <id>development</id>
+    </profile>
     <profile>
       <id>it</id>
       <build>

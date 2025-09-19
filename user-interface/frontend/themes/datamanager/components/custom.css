@@ -29,7 +29,7 @@ vaadin-avatar-group vaadin-avatar,
 
 .avatar-with-name {
   display: inline-flex;
-  justify-content: center;
+  justify-content: start;
   align-items: center;
   flex-direction: row;
   column-gap: var(--lumo-space-s);

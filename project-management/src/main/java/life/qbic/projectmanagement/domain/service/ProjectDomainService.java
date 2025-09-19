@@ -1,5 +1,6 @@
 package life.qbic.projectmanagement.domain.service;
 
+import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.ApplicationException.ErrorParameters;
@@ -14,6 +15,7 @@ import life.qbic.projectmanagement.domain.model.project.event.ProjectRegisteredE
 import life.qbic.projectmanagement.domain.repository.ProjectRepository;
 import life.qbic.projectmanagement.domain.repository.ProjectRepository.ProjectExistsException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 
 /**
@@ -50,11 +52,11 @@ public class ProjectDomainService {
   public Project registerProject(
       ProjectIntent projectIntent, ProjectCode projectCode,
       Contact projectManager, Contact principalInvestigator,
-      Contact responsiblePerson, Funding funding) {
+      @Nullable Contact responsiblePerson, @Nullable Funding funding) {
     var project = Project.create(projectIntent, projectCode,
         projectManager, principalInvestigator,
         responsiblePerson);
-    project.setFunding(funding);
+    Optional.ofNullable(funding).ifPresent(project::setFunding);
     try {
       projectRepository.add(project);
     } catch (ProjectExistsException projectExistsException) {

@@ -274,6 +274,22 @@ public final class IdentityService {
     }
   }
 
+  public void setOidc(String userId, String oidcId, String oidcIssuer) throws IssueOidcException {
+    var alreadyConnectedUser = userRepository.findByOidc(oidcId, oidcIssuer);
+    if (alreadyConnectedUser.isPresent()) {
+      throw new IssueOidcException("OpenID already in use.");
+    }
+    var user = userRepository.findById(UserId.from(userId)).orElseThrow(() -> new IssueOidcException("User not found"));
+    user.setOidcEntry(oidcIssuer, oidcId);
+    userRepository.updateUser(user);
+  }
+
+  public static class IssueOidcException extends RuntimeException {
+    public IssueOidcException(String message) {
+      super(message);
+    }
+  }
+
   public static class EmptyUserNameException extends ApplicationException {
 
     @Serial

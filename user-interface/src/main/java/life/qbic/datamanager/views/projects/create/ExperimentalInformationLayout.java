@@ -3,7 +3,6 @@ package life.qbic.datamanager.views.projects.create;
 import static java.util.Objects.requireNonNull;
 
 import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
@@ -18,8 +17,6 @@ import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.general.HasBinderValidation;
 import life.qbic.datamanager.views.projects.create.ExperimentalInformationLayout.ExperimentalInformation;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentDetailsComponent.BioIcon;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentDetailsComponent.SampleSourceType;
 import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
@@ -43,7 +40,6 @@ public class ExperimentalInformationLayout extends Div implements
     requireNonNull(terminologyService);
     OntologyComboboxFactory ontologyComboboxFactory = new OntologyComboboxFactory(
         ontologyTermInformationService, terminologyService);
-    final BioIconComboboxFactory bioIconComboboxFactory = new BioIconComboboxFactory();
 
     MultiSelectComboBox<OntologyTerm> speciesBox = ontologyComboboxFactory.speciesBox();
     speciesBox.addClassName("box-flexgrow");
@@ -53,18 +49,6 @@ public class ExperimentalInformationLayout extends Div implements
     TextField nameField = nameField();
 
     experimentalInformationBinder = new Binder<>(ExperimentalInformation.class);
-
-    ComboBox<BioIcon> speciesIconBox = bioIconComboboxFactory.iconBox(SampleSourceType.SPECIES,
-        "Species icon");
-    experimentalInformationBinder.forField(speciesIconBox)
-        .bind(ExperimentalInformation::getSpeciesIcon,
-            ExperimentalInformation::setSpeciesIcon);
-
-    ComboBox<BioIcon> specimenIconBox = bioIconComboboxFactory.iconBox(SampleSourceType.SPECIMEN,
-        "Specimen icon");
-    experimentalInformationBinder.forField(specimenIconBox)
-        .bind(ExperimentalInformation::getSpecimenIcon,
-            ExperimentalInformation::setSpecimenIcon);
 
     experimentalInformationBinder.forField(speciesBox)
         .asRequired("Please select at least one species")
@@ -83,9 +67,9 @@ public class ExperimentalInformationLayout extends Div implements
         .bind(ExperimentalInformation::getExperimentName,
             ExperimentalInformation::setExperimentName);
 
-    Div speciesRow = new Div(speciesIconBox, speciesBox);
+    Div speciesRow = new Div(speciesBox);
     speciesRow.addClassName("input-with-icon-selection");
-    Div specimenRow = new Div(specimenIconBox, specimenBox);
+    Div specimenRow = new Div(specimenBox);
     specimenRow.addClassName("input-with-icon-selection");
 
     add(title(),
@@ -143,8 +127,6 @@ public class ExperimentalInformationLayout extends Div implements
     private final List<OntologyTerm> species;
     private final List<OntologyTerm> specimen;
     private final List<OntologyTerm> analytes;
-    private String speciesIconName;
-    private String specimenIconName;
 
     public ExperimentalInformation() {
       species = new ArrayList<>();
@@ -207,12 +189,6 @@ public class ExperimentalInformationLayout extends Div implements
       if (!specimen.equals(that.specimen)) {
         return false;
       }
-      if (!speciesIconName.equals(that.speciesIconName)) {
-        return false;
-      }
-      if (!specimenIconName.equals(that.specimenIconName)) {
-        return false;
-      }
       return analytes.equals(that.analytes);
     }
 
@@ -222,8 +198,6 @@ public class ExperimentalInformationLayout extends Div implements
       result = 31 * result + species.hashCode();
       result = 31 * result + specimen.hashCode();
       result = 31 * result + analytes.hashCode();
-      result = 31 * result + specimenIconName.hashCode();
-      result = 31 * result + speciesIconName.hashCode();
       return result;
     }
 
@@ -235,22 +209,6 @@ public class ExperimentalInformationLayout extends Div implements
           ", specimen=" + specimen +
           ", analytes=" + analytes +
           '}';
-    }
-
-    public BioIcon getSpeciesIcon() {
-      return BioIcon.getTypeWithNameOrDefault(SampleSourceType.SPECIES, speciesIconName);
-    }
-
-    public void setSpeciesIcon(BioIcon bioIcon) {
-      this.speciesIconName = bioIcon.getLabel();
-    }
-
-    public BioIcon getSpecimenIcon() {
-      return BioIcon.getTypeWithNameOrDefault(SampleSourceType.SPECIMEN, specimenIconName);
-    }
-
-    public void setSpecimenIcon(BioIcon bioIcon) {
-      this.specimenIconName = bioIcon.getLabel();
     }
   }
 

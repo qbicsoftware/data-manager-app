@@ -9,12 +9,14 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.RouterLayout;
 import java.io.Serial;
+import java.time.Duration;
 import java.util.Objects;
 import life.qbic.datamanager.announcements.AnnouncementService;
 import life.qbic.datamanager.views.DataManagerLayout;
 import life.qbic.datamanager.views.LandingPageTitleAndLogo;
 import life.qbic.datamanager.views.general.footer.FooterComponentFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 
 /**
  * <b> The landing page that allows logging in for the user. </b>
@@ -32,8 +34,11 @@ public class LandingPageLayout extends DataManagerLayout implements RouterLayout
   private Button register;
 
   public LandingPageLayout(@Autowired LandingPageHandlerInterface handlerInterface, @Autowired
-  FooterComponentFactory footerComponentFactory, AnnouncementService announcementService) {
-    super(Objects.requireNonNull(footerComponentFactory), announcementService);
+      FooterComponentFactory footerComponentFactory, AnnouncementService announcementService,
+      @Value(value = "${announcement.initial-delay}") Duration initialDelay,
+      @Value(value = "${announcement.refresh-interval}") Duration refreshInterval) {
+    super(Objects.requireNonNull(footerComponentFactory), announcementService, initialDelay,
+        refreshInterval);
     Objects.requireNonNull(handlerInterface);
     addClassName("landing-page-layout");
     //CSS class hosting the background image for all our landing pages

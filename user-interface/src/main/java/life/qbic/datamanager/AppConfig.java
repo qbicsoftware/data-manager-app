@@ -28,7 +28,8 @@ import life.qbic.infrastructure.email.project.ProjectManagementEmailServiceProvi
 import life.qbic.projectmanagement.application.AppContextProvider;
 import life.qbic.projectmanagement.application.OrganisationRepository;
 import life.qbic.projectmanagement.application.ProjectInformationService;
-import life.qbic.projectmanagement.application.VirtualThreadScheduler;
+import life.qbic.projectmanagement.application.concurrent.ElasticScheduler;
+import life.qbic.projectmanagement.application.concurrent.VirtualThreadScheduler;
 import life.qbic.projectmanagement.application.api.SampleCodeService;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
 import life.qbic.projectmanagement.application.authorization.authorities.AuthorityService;
@@ -69,8 +70,9 @@ import life.qbic.projectmanagement.application.purchase.ProjectPurchaseService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.application.sample.qualitycontrol.QualityControlService;
 import life.qbic.projectmanagement.domain.repository.ProjectRepository;
-import life.qbic.projectmanagement.infrastructure.CachedOrganisationRepository;
+import life.qbic.projectmanagement.infrastructure.organisations.CachedOrganisationRepository;
 import org.jobrunr.scheduling.JobScheduler;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -96,6 +98,12 @@ public class AppConfig {
   @Bean
   public Scheduler reactiveScheduler() {
     return VirtualThreadScheduler.getScheduler();
+  }
+
+  @Bean
+  @Qualifier("elasticScheduler")
+  public Scheduler elasticScheduler() {
+    return ElasticScheduler.elasticScheduler();
   }
 
 

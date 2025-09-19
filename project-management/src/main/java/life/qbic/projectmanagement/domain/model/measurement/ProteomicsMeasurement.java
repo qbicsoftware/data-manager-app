@@ -90,6 +90,9 @@ public class ProteomicsMeasurement {
   @Column(name = "lcColumn")
   private String lcColumn = "";
 
+  @Column(name = "measurementName", nullable = false)
+  private String measurementName;
+
   @ElementCollection(targetClass = ProteomicsSpecificMeasurementMetadata.class, fetch = FetchType.EAGER)
   @CollectionTable(name = "specific_measurement_metadata_pxp", joinColumns = @JoinColumn(name = "measurement_id"))
   private Set<ProteomicsSpecificMeasurementMetadata> specificMetadata;
@@ -100,6 +103,7 @@ public class ProteomicsMeasurement {
 
   private ProteomicsMeasurement(ProjectId projectId, MeasurementId id,
       MeasurementCode measurementCode,
+      String measurementName,
       Organisation organisation, ProteomicsMethodMetadata method, Instant registration,
       Collection<ProteomicsSpecificMeasurementMetadata> proteomicsMeasurementMetadata) {
     this.projectId = requireNonNull(projectId, "projectId must not be null");
@@ -108,6 +112,7 @@ public class ProteomicsMeasurement {
     evaluateMandatorySpecificMetadata(
         proteomicsMeasurementMetadata); // throws IllegalArgumentException if required properties are missing
     this.measurementId = id;
+    this.measurementName = Optional.ofNullable(measurementName).orElse("");
     this.organisation = organisation;
     this.measurementCode = measurementCode;
     this.registration = registration;
@@ -157,7 +162,8 @@ public class ProteomicsMeasurement {
    * @since 1.0.0
    */
   public static ProteomicsMeasurement create(ProjectId projectId,
-      MeasurementCode measurementCode, Organisation organisation, ProteomicsMethodMetadata method,
+      MeasurementCode measurementCode, String measurementName, Organisation organisation,
+      ProteomicsMethodMetadata method,
       Collection<ProteomicsSpecificMeasurementMetadata> proteomicsSpecificMeasurementMetadata)
       throws IllegalArgumentException {
     requireNonNull(method.msDevice());
@@ -173,7 +179,7 @@ public class ProteomicsMeasurement {
       );
     }
     var measurementId = MeasurementId.create();
-    return new ProteomicsMeasurement(projectId, measurementId, measurementCode,
+    return new ProteomicsMeasurement(projectId, measurementId, measurementCode, measurementName,
         organisation,
         method, Instant.now(), proteomicsSpecificMeasurementMetadata);
   }
@@ -302,6 +308,14 @@ public class ProteomicsMeasurement {
   public void setOrganisation(Organisation organisation) {
     this.organisation = organisation;
     emitUpdatedEvent();
+  }
+
+  public String measurementName() {
+    return Optional.ofNullable(measurementName).orElse("");
+  }
+
+  public void setMeasurementName(String measurementName) {
+    this.measurementName = Objects.requireNonNull(measurementName);
   }
 
   @Override

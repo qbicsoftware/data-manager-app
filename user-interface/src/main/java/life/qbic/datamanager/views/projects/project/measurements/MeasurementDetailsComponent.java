@@ -54,6 +54,7 @@ import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.Organisation;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
+import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.domain.model.measurement.NGSIndex;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.NGSSpecificMeasurementMetadata;
@@ -80,12 +81,12 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   private final TabSheet registeredMeasurementsTabSheet = new TabSheet();
   private final MultiSelectLazyLoadingGrid<NGSMeasurement> ngsMeasurementGrid = new MultiSelectLazyLoadingGrid<>();
   private final MultiSelectLazyLoadingGrid<ProteomicsMeasurement> proteomicsMeasurementGrid = new MultiSelectLazyLoadingGrid<>();
-  private final MeasurementTechnologyTab proteomicsTab;
-  private final MeasurementTechnologyTab genomicsTab;
+  private final MeasurementDomainTab proteomicsTab;
+  private final MeasurementDomainTab genomicsTab;
   private final Collection<GridLazyDataView<?>> measurementsGridDataViews = new ArrayList<>();
   private final transient MeasurementService measurementService;
   private final transient SampleInformationService sampleInformationService;
-  private final List<MeasurementTechnologyTab> tabsInTabSheet = new ArrayList<>();
+  private final List<MeasurementDomainTab> tabsInTabSheet = new ArrayList<>();
   private final StreamResource rorIconResource = new StreamResource("ROR_logo.svg",
       () -> getClass().getClassLoader().getResourceAsStream("icons/ROR_logo.svg"));
   private final transient ClientDetailsProvider clientDetailsProvider;
@@ -94,6 +95,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   private final transient MessageSourceNotificationFactory notificationFactory;
   private transient Context context;
   private String searchTerm = "";
+  private transient Tab selectedTab = null;
 
   public MeasurementDetailsComponent(@Autowired MeasurementService measurementService,
       @Autowired SampleInformationService sampleInformationService,
@@ -105,14 +107,17 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     this.measurementService = Objects.requireNonNull(measurementService);
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
     this.clientDetailsProvider = clientDetailsProvider;
-    proteomicsTab = new MeasurementTechnologyTab("Proteomics", 0);
-    genomicsTab = new MeasurementTechnologyTab("Genomics", 0);
+    proteomicsTab = new MeasurementDomainTab(Domain.PROTEOMICS, 0);
+    genomicsTab = new MeasurementDomainTab(Domain.GENOMICS, 0);
     createProteomicsGrid();
     createNGSMeasurementGrid();
     add(registeredMeasurementsTabSheet);
     registeredMeasurementsTabSheet.addClassName("measurement-tabsheet");
     addClassName("measurement-details-component");
-    registeredMeasurementsTabSheet.addSelectedChangeListener(event -> resetSelectedMeasurements());
+    registeredMeasurementsTabSheet.addSelectedChangeListener(event -> {
+      resetSelectedMeasurements();
+      selectedTab = event.getSelectedTab();
+    });
   }
 
   /**
@@ -210,6 +215,10 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
           }
         })
         .setHeader("Samples")
+        .setAutoWidth(true);
+    ngsMeasurementGrid.addColumn(NGSMeasurement::measurementName)
+        .setHeader("Measurement Name")
+        .setTooltipGenerator(NGSMeasurement::measurementName)
         .setAutoWidth(true);
     ngsMeasurementGrid.addColumn(NGSMeasurement::facility)
         .setHeader("Facility")
@@ -323,6 +332,10 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
           }
           return "";
         })
+        .setAutoWidth(true);
+    proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::measurementName)
+        .setHeader("Measurement Name")
+        .setTooltipGenerator(ProteomicsMeasurement::measurementName)
         .setAutoWidth(true);
     proteomicsMeasurementGrid.addComponentColumn(
             proteomicsMeasurement -> renderOrganisation(proteomicsMeasurement.organisation()))
@@ -503,8 +516,84 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     return new HashSet<>(ngsMeasurementGrid.getSelectedItems());
   }
 
+  private List<String> selectedMeasurementsNGS() {
+    return ngsMeasurementGrid.getSelectedItems()
+        .stream()
+        .map(NGSMeasurement::measurementId)
+        .map(MeasurementId::value).toList();
+  }
+
+  private List<String> selectedMeasurementsPxP() {
+    return proteomicsMeasurementGrid.getSelectedItems()
+        .stream()
+        .map(ProteomicsMeasurement::measurementId)
+        .map(MeasurementId::value).toList();
+  }
+
   public Set<ProteomicsMeasurement> getSelectedProteomicsMeasurements() {
     return new HashSet<>(proteomicsMeasurementGrid.getSelectedItems());
+  }
+
+  public enum Domain {
+    GENOMICS("Genomics"), PROTEOMICS("Proteomics");
+
+    private final String value;
+
+    Domain(String value) {
+      this.value = value;
+    }
+
+    public String value() {
+      return value;
+    }
+
+    @Override
+    public String toString() {
+      return value;
+    }
+  }
+
+  public record SelectedMeasurements(Domain domain, List<String> measurementIds) {
+
+    public SelectedMeasurements {
+      Objects.requireNonNull(domain);
+      Objects.requireNonNull(measurementIds);
+      measurementIds = List.copyOf(measurementIds);
+    }
+  }
+
+  public Optional<SelectedMeasurements> getSelectedMeasurements() {
+    if (selectedTab == null) {
+      return Optional.empty();
+    }
+    if (selectedTab instanceof MeasurementDomainTab tab) {
+      return Optional.ofNullable(measurementsForTab(tab));
+    }
+    return Optional.empty();
+  }
+
+  private SelectedMeasurements measurementsForTab(MeasurementDomainTab tab) {
+    Objects.requireNonNull(tab);
+    return switch (tab.domain) {
+      case Domain.GENOMICS -> selectionNGS();
+      case Domain.PROTEOMICS -> selectionPxP();
+    };
+  }
+
+  private SelectedMeasurements selectionNGS() {
+    var selections = selectedMeasurementsNGS();
+    if (selections.isEmpty()) {
+      return null;
+    }
+    return new SelectedMeasurements(Domain.GENOMICS, selections);
+  }
+
+  private SelectedMeasurements selectionPxP() {
+    var selections = selectedMeasurementsPxP();
+    if (selections.isEmpty()) {
+      return null;
+    }
+    return new SelectedMeasurements(Domain.PROTEOMICS, selections);
   }
 
   public void refreshGrids() {
@@ -527,7 +616,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
       return Optional.empty();
     }
     return Optional.ofNullable(registeredMeasurementsTabSheet.getSelectedTab())
-        .map(tab -> ((MeasurementTechnologyTab) tab).getTabLabel());
+        .map(tab -> ((MeasurementDomainTab) tab).getTabLabel());
   }
 
   /**
@@ -550,20 +639,20 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     }
   }
 
-  public static class MeasurementTechnologyTab extends Tab {
+  public static class MeasurementDomainTab extends Tab {
 
     private final Span countBadge;
-    private final Span technologyNameComponent;
-    private final String technology;
+    private final Span measurementDomainComponent;
+    private final Domain domain;
 
-    public MeasurementTechnologyTab(String technology, int measurementCount) {
-      this.technology = technology;
-      technologyNameComponent = new Span();
+    public MeasurementDomainTab(Domain domain, int measurementCount) {
+      this.domain = domain;
+      measurementDomainComponent = new Span();
       this.countBadge = createBadge();
       Span sampleCountComponent = new Span();
       sampleCountComponent.add(countBadge);
-      this.add(technologyNameComponent, sampleCountComponent);
-      setTechnologyName(technology);
+      this.add(measurementDomainComponent, sampleCountComponent);
+      setMeasurementDomain(domain);
       setMeasurementCount(measurementCount);
       addClassName("tab-with-count");
     }
@@ -578,7 +667,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     }
 
     public String getTabLabel() {
-      return technology;
+      return domain.toString();
     }
 
     /**
@@ -592,8 +681,12 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
       countBadge.setText(String.valueOf(measurementCount));
     }
 
-    public void setTechnologyName(String technologyName) {
-      this.technologyNameComponent.setText(technologyName);
+    public void setMeasurementDomain(Domain domain) {
+      this.measurementDomainComponent.setText(domain.toString());
+    }
+
+    public Domain getDomain() {
+      return domain;
     }
 
   }
@@ -721,7 +814,9 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     }
 
     private void handleRequestException(RequestFailedException e) {
-      getUI().ifPresent(ui -> ui.access(() -> notificationFactory.toast("sample.query.failed", new Object[]{}, getLocale()).open()));
+      getUI().ifPresent(ui -> ui.access(
+          () -> notificationFactory.toast("sample.query.failed", new Object[]{}, getLocale())
+              .open()));
     }
 
     private void setDialogHeader() {
