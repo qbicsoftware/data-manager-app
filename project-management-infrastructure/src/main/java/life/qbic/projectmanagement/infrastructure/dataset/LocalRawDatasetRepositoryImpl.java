@@ -67,20 +67,20 @@ public class LocalRawDatasetRepositoryImpl implements LocalRawDatasetRepository 
         existingEntry.setDeleted(false);
         existingEntry.setFileCount(dataset.numberOfFiles());
         existingEntry.setFileTypes(dataset.fileTypes());
-        existingEntry.setRegistrationDate(Date.from(dataset.registrationDate()));
+        existingEntry.setRegistrationDate(dataset.registrationDate());
         existingEntry.setTotalFileSizeBytes(dataset.totalSizeBytes());
-        existingEntry.setLastSyncAt(Date.from(Instant.now()));
-        existingEntry.setUpdatedAt(Date.from(Instant.now()));
+        existingEntry.setLastSyncAt(Instant.now());
+        existingEntry.setUpdatedAt(Instant.now());
         entriesToSave.add(existingEntry);
       }, () -> {
         var newEntry = new LocalRawDatasetEntry();
         newEntry.setMeasurementId(dataset.measurementId());
         newEntry.setFileCount(dataset.numberOfFiles());
         newEntry.setFileTypes(dataset.fileTypes());
-        newEntry.setRegistrationDate(Date.from(dataset.registrationDate()));
+        newEntry.setRegistrationDate(dataset.registrationDate());
         newEntry.setTotalFileSizeBytes(dataset.totalSizeBytes());
-        newEntry.setLastSyncAt(Date.from(Instant.now()));
-        newEntry.setUpdatedAt(Date.from(Instant.now()));
+        newEntry.setLastSyncAt(Instant.now());
+        newEntry.setUpdatedAt(Instant.now());
         newEntry.setDeleted(false);
         entriesToSave.add(newEntry);
       });

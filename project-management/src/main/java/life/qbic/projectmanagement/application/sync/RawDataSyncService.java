@@ -18,7 +18,7 @@ import org.springframework.stereotype.Service;
  *
  * <p>Service that synchronises the application state with external resources of raw datasets.</p>
  *
- * @since 1.11.0
+ * @since 1.12.0
  */
 @Service
 public class RawDataSyncService {
@@ -44,21 +44,21 @@ public class RawDataSyncService {
   }
 
   // run every 2 minutes; add jitter to red@uce thundering herd on restart
-  @Scheduled(fixedDelayString = "#{10 + T(java.util.concurrent.ThreadLocalRandom).current().nextInt(0,2)}")
-  @SchedulerLock(name = "rawDataSyncJob", lockAtLeastFor = "PT10S",  // prevents instant re-acquire by another node
-      lockAtMostFor = "PT30S")  // > worst-case runtime; forces unlock if node dies
+  @Scheduled(fixedDelayString = "#{120 + T(java.util.concurrent.ThreadLocalRandom).current().nextInt(0,50)}")
+  @SchedulerLock(name = "rawDataSyncJob", lockAtLeastFor = "PT20S",  // prevents instant re-acquire by another node
+      lockAtMostFor = "PT40S")  // > worst-case runtime; forces unlock if node dies
   public void sync() {
-    long start = System.currentTimeMillis();
-    long passedMillis = System.currentTimeMillis() - start;
+    long jobStartTimeStamp = System.currentTimeMillis();
+    long jobDuration = System.currentTimeMillis() - jobStartTimeStamp;
     // time box the job duration the guarantee job_duration < max_lock_duration
     // due to the stored offset in the control table, the next scheduled job will pick up there
-    while (passedMillis < MAX_DURATION_JOB_MILLIS) {
+    while (jobDuration < MAX_DURATION_JOB_MILLIS) {
       // only stay continue the job, if there are still available results to query
       if (runSync()) {
         // update milliseconds passed since start of the job
-        passedMillis = System.currentTimeMillis() - start;
+        jobDuration = System.currentTimeMillis() - jobStartTimeStamp;
       } else {
-        log.info("No more datasets available, stopping sync.");
+        log.debug("No more datasets available, stopping sync.");
         break;
       }
     }
@@ -80,15 +80,8 @@ public class RawDataSyncService {
     var result = remoteRawDataService.registeredSince(currentWatermark.updatedSince(),
         currentWatermark.syncOffset(), MAX_QUERY_SIZE);
 
-    log.info("Found %s new raw datasets in external resource. Syncing them now...".formatted(
+    log.debug("Found %s new raw datasets in external resource. Syncing them now...".formatted(
         result.size()));
-    // There are only two meaningful updates for the newOffset:
-    // 1. the result contained fewer entries then the max query size, then we are finished. So the offset can be set to 0
-    // and the next job will start with a zero offset and the saved date
-    // 2. the result contained as many entries as the max query size, which means that there are still more datasets to be excepted
-    // or zero, if the number of datasets % query size = 0. This will lead to the first condition in the next iteration.
-    int newOffset =
-        result.size() < MAX_QUERY_SIZE ? 0 : currentWatermark.syncOffset() + MAX_QUERY_SIZE;
 
     // 3) persist the raw dataset information if available
     if (!result.isEmpty()) {
@@ -99,14 +92,45 @@ public class RawDataSyncService {
       log.info("%d raw datasets synced.".formatted(result.size()));
     }
 
-    // 4) persist the new watermark state
-    watermarkRepo.save(new Watermark(JOB_NAME, newOffset, Instant.now(), Instant.now()));
+    // 4) Create a new watermark for the next job to pick up at
+    var nextWatermark = createNextWatermark(currentWatermark, result.size());
 
-    // 5) signal job state
+    // 5) persist the new watermark state
+    watermarkRepo.save(nextWatermark);
+
+    // 6) signal job state
     // if there were fewer results than the max query size for the search, this means
     // there are no more datasets available.
-    // We can signal the job is done (== true), else return false to continue
+    // We can signal there are more datasets available (== true), else return false if finished
     return result.size() == MAX_QUERY_SIZE;
   }
 
+  /**
+   * There are only two meaningful updates for the newOffset:
+   * <ol>
+   *   <li>the result contained fewer entries then the max query size, then we are finished. So the offset can be set to 0
+   * and the next job will start with a zero offset and the saved date</li>
+   *  <li> the result contained as many entries as the max query size, which means that there are still more datasets to be excepted
+   * or zero, if the number of datasets % query size = 0. This will lead to the first condition in the next iteration.</li>
+   * </ol>
+   *
+   * @param currentWatermark the currently set watermark
+   * @param lastResultSize   the result size seen from the last query
+   * @return a new {@link Watermark} to continue at for the next job execution
+   * @since 1.12.0
+   */
+  private static Watermark createNextWatermark(Watermark currentWatermark, int lastResultSize) {
+    int newOffset =
+        moreDatasetsToSync(lastResultSize, MAX_QUERY_SIZE) ? currentWatermark.syncOffset() + MAX_QUERY_SIZE : 0;
+    return new Watermark(JOB_NAME, newOffset, Instant.now(), Instant.now());
+  }
+
+  private static boolean moreDatasetsToSync(int lastResultSize, int maxQuerySize) {
+    // if the last query returned less items than could have been based on the max query
+    // size, the remote source has no more datasets to be fetched.
+    // In case the results were as many as the query size, we don't know if there are more to fetch.
+    // We could have accidentally hit exactly the amount of remaining datasets == max query size, or there
+    // are indeed more to fetch.
+    return lastResultSize == maxQuerySize;
+  }
 }

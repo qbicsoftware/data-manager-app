@@ -145,7 +145,7 @@ public class RemoteRawDataService {
         datasetInformation.fileSizeBytes,
         datasetInformation.numberOfFiles,
         Set.copyOf(datasetInformation.fileEndings),
-        datasetInformation.registrationDate.toInstant());
+        datasetInformation.registrationDate);
   }
 
 
@@ -199,7 +199,7 @@ public class RemoteRawDataService {
    */
   public record RawDataDatasetInformation(MeasurementCode measurementCode, String fileSize,
                                           int numberOfFiles, Set<String> fileEndings,
-                                          Date registrationDate, long fileSizeBytes) {
+                                          Instant registrationDate, long fileSizeBytes) {
 
   }
 }

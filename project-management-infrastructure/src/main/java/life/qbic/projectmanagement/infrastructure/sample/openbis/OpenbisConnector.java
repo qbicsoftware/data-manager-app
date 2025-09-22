@@ -630,7 +630,7 @@ public class OpenbisConnector implements QbicProjectDataRepo, SampleDataReposito
       }
       result.add(
           new RawDataDatasetInformation(MeasurementCode.parse(dataset.getSample().getCode()),
-              getStringSizeLengthFile(dataSetSize), numOfFiles, suffixes, registrationDate,
+              getStringSizeLengthFile(dataSetSize), numOfFiles, suffixes, registrationDate.toInstant(),
               dataSetSize));
     }
 

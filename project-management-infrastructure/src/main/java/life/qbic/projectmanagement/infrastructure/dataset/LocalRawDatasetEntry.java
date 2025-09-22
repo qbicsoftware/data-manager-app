@@ -5,6 +5,7 @@ import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.Instant;
 import java.util.Date;
 import java.util.Objects;
 import java.util.Set;
@@ -32,16 +33,16 @@ public class LocalRawDatasetEntry {
   private Set<String> fileTypes;
 
   @Column(name = "registration_at")
-  private Date registrationDate;
+  private Instant registrationDate;
 
   @Column(name = "total_filesize_bytes")
   private long totalFileSizeBytes;
 
   @Column(name = "updated_at")
-  private Date updatedAt;
+  private Instant updatedAt;
 
   @Column(name = "last_sync_at")
-  private Date lastSyncAt;
+  private Instant lastSyncAt;
 
   @Column(name = "deleted")
   private boolean deleted;
@@ -70,11 +71,11 @@ public class LocalRawDatasetEntry {
     this.fileTypes = fileTypes;
   }
 
-  public Date getRegistrationDate() {
+  public Instant getRegistrationDate() {
     return registrationDate;
   }
 
-  public void setRegistrationDate(Date registrationDate) {
+  public void setRegistrationDate(Instant registrationDate) {
     this.registrationDate = registrationDate;
   }
 
@@ -86,19 +87,19 @@ public class LocalRawDatasetEntry {
     this.totalFileSizeBytes = totalFileSizeBytes;
   }
 
-  public Date getUpdatedAt() {
+  public Instant getUpdatedAt() {
     return updatedAt;
   }
 
-  public void setUpdatedAt(Date updatedAt) {
+  public void setUpdatedAt(Instant updatedAt) {
     this.updatedAt = updatedAt;
   }
 
-  public Date getLastSyncAt() {
+  public Instant getLastSyncAt() {
     return lastSyncAt;
   }
 
-  public void setLastSyncAt(Date lastSyncAt) {
+  public void setLastSyncAt(Instant lastSyncAt) {
     this.lastSyncAt = lastSyncAt;
   }
 
