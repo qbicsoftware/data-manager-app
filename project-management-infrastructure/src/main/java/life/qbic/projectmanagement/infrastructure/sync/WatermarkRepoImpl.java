@@ -25,7 +25,7 @@ public class WatermarkRepoImpl implements WatermarkRepo {
   @Override
   public Optional<Watermark> fetch(String jobName) {
     return findById(jobName).map(entry -> new Watermark(entry.jobName, entry.syncOffset,
-        entry.updatedSince.toInstant(), entry.lastSuccessAt.toInstant()));
+        entry.updatedSince, entry.lastSuccessAt));
   }
 
   private Optional<WatermarkEntry> findById(String id) {
@@ -36,10 +36,10 @@ public class WatermarkRepoImpl implements WatermarkRepo {
   public void save(Watermark latestWatermark) {
     WatermarkEntry entryForUpdate = findById(latestWatermark.jobName()).orElse(
         WatermarkEntry.create(latestWatermark.jobName(), latestWatermark.syncOffset(),
-            Date.from(latestWatermark.updatedSince()), Date.from(latestWatermark.lastSuccessAt())));
+            latestWatermark.updatedSince(), latestWatermark.lastSuccessAt()));
     entryForUpdate.syncOffset = latestWatermark.syncOffset();
-    entryForUpdate.updatedSince = Date.from(latestWatermark.updatedSince());
-    entryForUpdate.lastSuccessAt = Date.from(latestWatermark.lastSuccessAt());
+    entryForUpdate.updatedSince = latestWatermark.updatedSince();
+    entryForUpdate.lastSuccessAt = latestWatermark.lastSuccessAt();
 
     jpaRepository.save(entryForUpdate);
   }

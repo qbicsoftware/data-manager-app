@@ -5,6 +5,7 @@ import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -35,7 +36,7 @@ public class LocalRawDatasetNgsEntry {
   private String measurementCode;
 
   @Column(name = "registration_at")
-  private Date registrationDate;
+  private Instant registrationDate;
 
   @Column(name = "file_count")
   private int numberOfFiles;
@@ -67,7 +68,7 @@ public class LocalRawDatasetNgsEntry {
     return measurementCode;
   }
 
-  public Date getRegistrationDate() {
+  public Instant getRegistrationDate() {
     return registrationDate;
   }
 

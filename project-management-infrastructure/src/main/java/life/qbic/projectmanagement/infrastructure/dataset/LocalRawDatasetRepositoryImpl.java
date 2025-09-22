@@ -133,7 +133,7 @@ public class LocalRawDatasetRepositoryImpl implements LocalRawDatasetRepository 
             entry.getTotalFileSizeBytes(),
             entry.getNumberOfFiles(),
             entry.getFileTypes(),
-            entry.getRegistrationDate().toInstant()),
+            entry.getRegistrationDate()),
         entry.getMeasuredSamples().stream().map(LocalRawDatasetRepositoryImpl::convert).toList());
   }
 

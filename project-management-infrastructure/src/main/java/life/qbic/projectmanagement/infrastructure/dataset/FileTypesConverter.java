@@ -14,7 +14,7 @@ import life.qbic.logging.api.Logger;
 
 
 @Converter(autoApply = false)
-public class FileTypesConverter implements AttributeConverter<Set<String>, String> {
+class FileTypesConverter implements AttributeConverter<Set<String>, String> {
 
   private static final Logger log = logger(FileTypesConverter.class);
   private final ObjectMapper objectMapper = new ObjectMapper();
