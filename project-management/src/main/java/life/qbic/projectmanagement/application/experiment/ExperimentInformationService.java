@@ -408,7 +408,8 @@ public class ExperimentInformationService {
     Experiment experiment = loadExperimentById(experimentId);
     List<ExperimentalValue> experimentalValues = new ArrayList<>();
     for (String level : levels) {
-      ExperimentalValue experimentalValue = (unit.isBlank()) ? ExperimentalValue.create(level)
+      ExperimentalValue experimentalValue =
+          (unit == null || unit.isBlank()) ? ExperimentalValue.create(level)
           : ExperimentalValue.create(level, unit);
       experimentalValues.add(experimentalValue);
     }
@@ -556,6 +557,42 @@ public class ExperimentInformationService {
         .stream()
         .map(it -> convertFromDomain(experimentId.value(), it))
         .toList();
+  }
+
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
+  public void setVariableUnit(String projectId, ExperimentId experimentId, String variableName,
+      String unit) {
+    Experiment experiment = loadExperimentById(experimentId);
+    experiment.setVariableUnit(variableName, unit);
+    experimentRepository.update(experiment);
+  }
+
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
+  public List<UsedVariableLevel> getUsedVariableLevels(String projectId,
+      ExperimentId experimentId) {
+    Experiment experiment = loadExperimentById(experimentId);
+    return experiment.getExperimentalGroups().stream()
+        .map(life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup::condition)
+        .flatMap(condition ->
+            condition.getVariableLevels().stream()
+                .map(ExperimentInformationService::convertDomainToUsedLevel))
+        .toList();
+  }
+
+
+  private static UsedVariableLevel convertDomainToUsedLevel(
+      life.qbic.projectmanagement.domain.model.experiment.VariableLevel level) {
+    return new UsedVariableLevel(level.variableName().value(),
+        level.experimentalValue().unit()
+            .orElse(null), level.experimentalValue().value());
+  }
+
+
+  public record UsedVariableLevel(String variableName, @Nullable String unit, String value) {
+
+
   }
 
   /**

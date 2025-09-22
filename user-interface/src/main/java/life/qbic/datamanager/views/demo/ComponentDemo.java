@@ -38,7 +38,7 @@ import life.qbic.datamanager.views.general.dialog.stepper.StepperDialogFooter;
 import life.qbic.datamanager.views.general.dialog.stepper.StepperDisplay;
 import life.qbic.datamanager.views.general.icon.IconFactory;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalVariablesInput;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.ExperimentalVariablesInput;
 import life.qbic.datamanager.views.projects.project.info.SimpleParagraph;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;

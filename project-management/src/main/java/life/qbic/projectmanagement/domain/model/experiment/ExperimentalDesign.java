@@ -249,6 +249,7 @@ public class ExperimentalDesign {
     for (ExperimentalVariable experimentalVariable : variables) {
       if (experimentalVariable.name().value().equals(from)) {
         experimentalVariable.renameTo(to);
+        return;
       }
     }
     throw new ExperimentalVariableNotDefinedException("No variable with name " + from + " exists");
@@ -342,6 +343,28 @@ public class ExperimentalDesign {
     return variables.stream()
         .filter(it -> it.name().value().equals(name))
         .findAny();
+  }
+
+  /**
+   * Change the unit of all experimental values.
+   *
+   * @param variableName the name of the variable
+   * @param unit         the unit to use from now on
+   */
+  void changeUnit(String variableName, String unit) {
+    ExperimentalVariable experimentalVariable = getVariable(variableName).orElseThrow(() ->
+        new IllegalArgumentException("Variable " + variableName + " does not exist."));
+    if (experimentalVariable.usedUnit().map(usedUnit -> usedUnit.equals(unit)).orElse(false)) {
+      return;
+    }
+    if (experimentalVariable.levels().stream().anyMatch(this::isLevelUsed)) {
+      throw new IllegalStateException("Levels are in use. Unit change not possible");
+    }
+    List<VariableLevel> newLevels = experimentalVariable.levels().stream()
+        .map(level -> new VariableLevel(level.variableName(),
+            new ExperimentalValue(level.experimentalValue().value(), unit)))
+        .toList();
+    experimentalVariable.replaceLevels(newLevels);
   }
 
   /**

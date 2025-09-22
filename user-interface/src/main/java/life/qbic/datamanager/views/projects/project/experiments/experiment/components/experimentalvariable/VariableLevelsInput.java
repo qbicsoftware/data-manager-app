@@ -30,6 +30,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import life.qbic.application.commons.CanSnapshot;
 import life.qbic.application.commons.Snapshot;
 import life.qbic.datamanager.views.general.ButtonFactory;
@@ -67,7 +68,7 @@ class VariableLevelsInput extends Div implements UserInput, CanSnapshot,
 
   }
 
-  public record LevelDeleted(int position) implements LevelChange {
+  public record LevelDeleted(int position, String value) implements LevelChange {
 
   }
 
@@ -190,6 +191,9 @@ class VariableLevelsInput extends Div implements UserInput, CanSnapshot,
       if (nonNull(focusedLevelField) && focusedLevelField.isEmpty()) {
         //fill the first item in the focused field
         focusedLevelField.setValue(pastedLines.getFirst());
+      } else if (nonNull(focusedLevelField)) {
+        focusedLevelField.setValue(
+            focusedLevelField.getValue().orElseThrow() + pastedLines.getFirst());
       } else {
         startIndex++;
         //fill the first item in a new field after the focused field
@@ -217,13 +221,6 @@ class VariableLevelsInput extends Div implements UserInput, CanSnapshot,
     if (!invalid) {
       levelsContainer.stream().forEach(f -> f.setErrorMessage(null));
       levelsContainer.stream().forEach(f -> f.setInvalid(false));
-    } else {
-      levelsContainer.stream()
-          .findFirst()
-          .ifPresent(levelField -> {
-            levelField.setErrorMessage(getErrorMessage());
-            levelField.setInvalid(true);
-          });
     }
   }
 
@@ -258,8 +255,33 @@ class VariableLevelsInput extends Div implements UserInput, CanSnapshot,
     InputValidation validation =
         isEmpty() ? InputValidation.failed() : InputValidation.passed();
     if (!validation.hasPassed()) {
-      setErrorMessage("Please provide at least one level.");
+      levelsContainer.stream()
+          .findFirst()
+          .ifPresentOrElse(
+              levelField -> {
+                levelField.setErrorMessage("Please provide at least one level.");
+                levelField.setInvalid(true);
+              },
+              () -> {
+                LevelField levelField = addEmptyLevel();
+                levelField.setErrorMessage("Please provide at least one level.");
+                levelField.setInvalid(true);
+              });
+      setInvalid(true);
+      return validation;
     }
+    //duplicate levels are not allowed
+    var levelCounts = getLevels().stream().collect(
+        Collectors.groupingBy(Function.identity(), Collectors.counting()));
+    var fieldsWithDuplicateLevels = levelsContainer.stream()
+        .filter(it -> it.getValue().isPresent())
+        .filter(field -> levelCounts.getOrDefault(field.getValue().orElseThrow(), 0L) > 1)
+        .toList();
+    for (LevelField fieldsWithDuplicateLevel : fieldsWithDuplicateLevels) {
+      fieldsWithDuplicateLevel.setInvalid(true);
+      fieldsWithDuplicateLevel.setErrorMessage("This level already exists.");
+    }
+    validation = fieldsWithDuplicateLevels.isEmpty() ? validation : InputValidation.failed();
     setInvalid(!validation.hasPassed());
     return validation;
   }
@@ -277,7 +299,7 @@ class VariableLevelsInput extends Div implements UserInput, CanSnapshot,
       //find all the deletions
       List<LevelDeleted> levelDeletions = previousLevels.stream()
           .filter(previousLevel -> !currentLevels.contains(previousLevel))
-          .map(removedLevel -> new LevelDeleted(previousLevels.indexOf(removedLevel)))
+          .map(removedLevel -> new LevelDeleted(previousLevels.indexOf(removedLevel), removedLevel))
           .toList();
       // find all additions
       List<LevelAdded> levelAdditions = currentLevels.stream()

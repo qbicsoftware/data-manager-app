@@ -91,7 +91,8 @@ public class Experiment {
     int analyteCount = analytes.size();
     int specimenCount = specimens.size();
     int speciesCount = species.size();
-    if (experimentalDesign.experimentalGroups.stream().filter(group -> group.groupNumber() == null).findAny().isPresent()) {
+    if (experimentalDesign.experimentalGroups.stream().anyMatch(
+        group -> group.groupNumber() == null)) {
       assignExperimentalGroupNumbers();
     }
   }
@@ -230,6 +231,10 @@ public class Experiment {
     experimentalDesign.renameExperimentalVariable(currentName, futureName);
   }
 
+  public void setVariableUnit(String variableName, String unit) {
+    experimentalDesign.changeUnit(variableName, unit);
+  }
+
   public static class GroupPreventingVariableDeletionException extends RuntimeException {
 
     public GroupPreventingVariableDeletionException(String message) {
@@ -320,6 +325,7 @@ public class Experiment {
 
 
   public void removeExperimentalVariables(List<String> addedNames) {
+    //TODO
     throw new RuntimeException("Not implemented");
 
   }

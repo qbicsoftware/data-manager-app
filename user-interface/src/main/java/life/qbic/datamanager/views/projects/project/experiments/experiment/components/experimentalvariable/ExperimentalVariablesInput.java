@@ -38,34 +38,23 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
     addVariableButton.addClickListener(
         e -> addVariable());
     markInitialized();
-
-
-/*    //TEST CONTROLS FIXME REMOVE BEFORE MERGE
-    getContent().add(new Button("Add all deleted variables", e -> {
-      var copy = List.copyOf(deletedVariables);
-      copy.reversed() //FIFO
-          .forEach(deletedVariable -> {
-            addRow(toRestoredVariableRow(deletedVariable));
-            deletedVariables.remove(deletedVariable);
-          });
-    }));
-    TextArea inputField = new TextArea();
-    getContent().add(inputField);
-    getContent().add(new Button("Lock Levels", e -> {
-      inputField.getOptionalValue()
-          .map(it -> it.lines().collect(Collectors.toSet()))
-          .ifPresent(lines -> getVariableRows().forEach(row -> row.lockLevels(lines)));
-    }));
-    getContent().add(new Button("Avoid Deletion", e -> {
-      inputField.getOptionalValue()
-          .map(it -> it.lines().collect(Collectors.toSet()))
-          .ifPresent(lines -> getVariableRows()
-              .forEach(row -> row.setDeletable(!lines.contains(row.getVariableName()))));
-    }));*/
   }
 
   public record ExperimentalVariableInformation(String name, String unit, List<String> levels) {
 
+  }
+
+  /**
+   * Adds back all deleted variables to the state before deletion. Conserving modifications made by
+   * the user before deleting the variable from the input.
+   */
+  public void restoreDeletedVariables() {
+    var copy = List.copyOf(deletedVariables);
+    copy.reversed() //FIFO
+        .forEach(deletedVariable -> {
+          addRow(toRestoredVariableRow(deletedVariable));
+          deletedVariables.remove(deletedVariable);
+        });
   }
 
   public void setUsedLevels(String variableName, Set<String> levels) {
@@ -73,6 +62,11 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
         .filter(it -> it.getVariableName().equals(variableName))
         .findFirst()
         .ifPresent(row -> row.lockLevels(levels));
+  }
+
+  public void setAddVariablesEnabled(boolean enabled) {
+    addVariableButton.setEnabled(enabled);
+    addVariableButton.setVisible(enabled);
   }
 
   public List<VariableChange> getChanges() {
@@ -132,7 +126,7 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
   private void addRow(VariableRow variableRow) {
     variableRow.addDeleteVariableListener(it -> removeVariable(it.getSource()));
     variablesInput.addComponentAtIndex(
-        Math.max(0, (int) (variablesInput.getChildren().count())),
+        Math.max(0, (int) (variablesInput.getChildren().count()) - 1),
         variableRow);
     variableRow.focus();
   }

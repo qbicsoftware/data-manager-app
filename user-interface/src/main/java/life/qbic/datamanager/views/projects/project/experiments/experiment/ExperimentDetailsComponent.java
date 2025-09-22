@@ -29,9 +29,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.EnumMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -58,6 +58,11 @@ import life.qbic.datamanager.views.projects.project.experiments.experiment.compo
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalGroupsDialog;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalGroupsDialog.ExperimentalGroupContent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.ExperimentalVariablesInput;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.VariableRow.VariableAdded;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.VariableRow.VariableChange;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.VariableRow.VariableDeleted;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.VariableRow.VariableRenamed;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.VariableRow.VariableUnitChanged;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.update.EditExperimentDialog;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.update.EditExperimentDialog.ExperimentDraft;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.update.EditExperimentDialog.ExperimentUpdateEvent;
@@ -78,6 +83,7 @@ import life.qbic.projectmanagement.application.confounding.ConfoundingVariableSe
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService.ExperimentalGroupDTO;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService.ExperimentalVariableInformation;
+import life.qbic.projectmanagement.application.experiment.ExperimentInformationService.UsedVariableLevel;
 import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
@@ -188,7 +194,7 @@ public class ExperimentDetailsComponent extends PageArea {
   private static AppDialog createConfoundingVarsDeleteConfirmDialog(
       List<ConfoundingVariable> deletedVars, DialogAction onConfirmAction) {
     var confirmDialog = AppDialog.small();
-    life.qbic.datamanager.views.general.dialog.DialogHeader.withIcon(confirmDialog,
+    DialogHeader.withIcon(confirmDialog,
         "Delete confounding variables?",
         IconFactory.warningIcon());
     String deletedVariableNames = deletedVars.stream().map(ConfoundingVariable::name)
@@ -197,7 +203,7 @@ public class ExperimentDetailsComponent extends PageArea {
         "Deleting a confounding variable will delete all levels of the confounding variable from annotated samples. "
             + "Do you want to delete the following confounding variables: " + deletedVariableNames
             + " ?"));
-    life.qbic.datamanager.views.general.dialog.DialogFooter.with(confirmDialog, "Continue editing",
+    DialogFooter.with(confirmDialog, "Continue editing",
         "Delete " + deletedVars.size() + " confounding variables");
     confirmDialog.registerConfirmAction(onConfirmAction);
     confirmDialog.registerCancelAction(confirmDialog::close);
@@ -508,10 +514,11 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private void openExperimentalVariablesEditDialog() {
-    if (editVariablesNotAllowed()) {
-      return;
-    }
     ExperimentId experimentId = context.experimentId().orElseThrow();
+    var usedLevelsByVariable = experimentInformationService.getUsedVariableLevels(
+            context.projectId().orElseThrow().value(), experimentId).stream()
+        .collect(Collectors.groupingBy(UsedVariableLevel::variableName));
+
     List<ExperimentalVariableInformation> variablesOfExperiment = experimentInformationService.getVariablesOfExperiment(
         context.projectId().orElseThrow().value(), experimentId);
     var variables = variablesOfExperiment.stream()
@@ -521,66 +528,101 @@ public class ExperimentDetailsComponent extends PageArea {
             it.levels()
         ))
         .toList();
-
     ExperimentalVariablesInput variablesInput = new ExperimentalVariablesInput();
     variables.forEach(variablesInput::addVariable);
+
+    for (Entry<String, List<UsedVariableLevel>> entry : usedLevelsByVariable.entrySet()) {
+      Set<String> usedValues = entry
+          .getValue().stream().map(UsedVariableLevel::value).collect(
+              Collectors.toSet());
+      String variableName = entry.getKey();
+      variablesInput.setUsedLevels(variableName, usedValues);
+    }
+    if (!usedLevelsByVariable.isEmpty()) {
+      variablesInput.setAddVariablesEnabled(false);
+    }
     variablesInput.markInitialized();
     AppDialog dialog = AppDialog.medium();
-    DialogHeader.with(dialog, "Define Experiment Variable");
+    DialogHeader.with(dialog, "Define Experiment Variables");
     DialogFooter.with(dialog, "Cancel", "Save");
     DialogBody.with(dialog, variablesInput, variablesInput);
-    dialog.registerConfirmAction(() -> handleVariableEdit(variablesInput));
+    dialog.registerConfirmAction(() -> {
+      handleVariableEdit(variablesInput);
+      dialog.close();
+    });
     dialog.registerCancelAction(dialog::close);
     dialog.open();
   }
 
   private void openExperimentalVariablesAddDialog() {
-    ExperimentId experimentId = context.experimentId().orElseThrow();
-    List<ExperimentalVariableInformation> variablesOfExperiment = experimentInformationService.getVariablesOfExperiment(
-        context.projectId().orElseThrow().value(), experimentId);
-    var variables = variablesOfExperiment.stream()
-        .map(it -> new ExperimentalVariablesInput.ExperimentalVariableInformation(
-            it.name(),
-            it.unit(),
-            it.levels()
-        ))
-        .toList();
+    openExperimentalVariablesEditDialog();
+  }
 
-    ExperimentalVariablesInput variablesInput = new ExperimentalVariablesInput();
-    for (ExperimentalVariablesInput.ExperimentalVariableInformation variable : variables) {
-      variablesInput.addVariable(variable);
-      variablesInput.setUsedLevels(variable.name(), new HashSet<>(variable.levels()));
-    }
-    variablesInput.addVariable();
-    variablesInput.markInitialized();
-    AppDialog dialog = AppDialog.medium();
-    DialogHeader.with(dialog, "Define Experiment Variable");
-    DialogFooter.with(dialog, "Cancel", "Save");
-    DialogBody.with(dialog, variablesInput, variablesInput);
-    dialog.registerConfirmAction(() -> handleVariableEdit(variablesInput));
-    dialog.registerCancelAction(dialog::close);
-    dialog.open();
+  private void applyChangesToVariable(String variable, List<VariableChange> changes) {
+    //change unit
+    Optional<VariableUnitChanged> unitChange = changes.stream()
+        .filter(VariableUnitChanged.class::isInstance)
+        .map(VariableUnitChanged.class::cast)
+        .findAny();
+    var projectId = context.projectId().orElseThrow();
+    ExperimentId experimentId = context.experimentId().orElseThrow();
+    unitChange.ifPresent(
+        change -> experimentInformationService.setVariableUnit(projectId.value(), experimentId,
+            variable, change.newUnit()));
+
+    //TODO change levels
+
+    //add variable
+    changes.stream()
+        .filter(VariableAdded.class::isInstance)
+        .map(VariableAdded.class::cast)
+        .findAny().ifPresent(change ->
+            experimentInformationService.addVariableToExperiment(projectId.value(),
+                experimentId,
+                change.name(),
+                change.unit(),
+                change.levels()));
+
+    //delete variable
+    changes.stream()
+        .filter(VariableDeleted.class::isInstance)
+        .map(VariableDeleted.class::cast)
+        .findAny()
+        .ifPresent(
+            change -> experimentInformationService.deleteExperimentalVariable(projectId,
+                experimentId,
+                change.name()));
+
+    changes.stream()
+        .filter(VariableRenamed.class::isInstance)
+        .map(VariableRenamed.class::cast)
+        .findAny().ifPresent(change -> {
+          experimentInformationService.renameExperimentalVariable(projectId.value(),
+              experimentId,
+              change.oldName(),
+              change.newName());
+        });
   }
 
   private void handleVariableEdit(ExperimentalVariablesInput variablesInputs) {
-    //TODO implement
-  }
+    List<VariableChange> changes = variablesInputs.getChanges();
+    List<String> deletedVariables = changes.stream()
+        .filter(VariableDeleted.class::isInstance)
+        .map(VariableChange::affectedVariable)
+        .toList();
+    if (!deletedVariables.isEmpty()) {
+      var addBack = false;
+      //TODO open dialog and ask for answer
+      if (addBack) {
+        variablesInputs.restoreDeletedVariables();
+        return;
+      }
+    }
 
-  private boolean editVariablesNotAllowed() {
-    int numberOfRegisteredSamples = sampleInformationService.countPreviews(
-        context.experimentId().orElseThrow(), "");
-    if (numberOfRegisteredSamples > 0) {
-      showExistingSamplesPreventVariableEdit(numberOfRegisteredSamples);
-      return true;
-    }
-    int numOfExperimentalGroups = experimentInformationService.getExperimentalGroups(
-        context.projectId().orElseThrow().value(),
-        context.experimentId().orElseThrow()).size();
-    if (numOfExperimentalGroups > 0) {
-      showExistingGroupsPreventVariableEdit(numOfExperimentalGroups);
-      return true;
-    }
-    return false;
+    //aggregate by variable
+    Map<String, List<VariableChange>> changesByVariable = changes.stream()
+        .collect(Collectors.groupingBy(VariableChange::affectedVariable));
+    changesByVariable.forEach(this::applyChangesToVariable);
   }
 
   private boolean editGroupsNotAllowed() {
@@ -678,29 +720,30 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private void openExperimentalGroupAddDialog() {
-    this.editDialog();
-//
-//    ExperimentId experimentId = context.experimentId().orElseThrow();
-//    List<ExperimentalVariableInformation> variables = experimentInformationService.getVariablesOfExperiment(
-//        context.projectId().orElseThrow().value(),
-//        experimentId);
-//    List<VariableLevel> levels = variables.stream()
-//        .flatMap(variable -> variable.levels().stream())
-//        .toList();
-//    var groups = experimentInformationService.experimentalGroupsFor(
-//            context.projectId().orElseThrow()
-//                .value(), experimentId)
-//        .stream().map(this::toContent).toList();
-//
-//    ExperimentalGroupsDialog dialog;
-//    if (groups.isEmpty()) {
-//      dialog = ExperimentalGroupsDialog.empty(levels);
-//    } else {
-//      dialog = ExperimentalGroupsDialog.nonEditable(levels, groups);
-//    }
-//    dialog.addCancelEventListener(cancelEvent -> cancelEvent.getSource().close());
-//    dialog.addConfirmEventListener(this::onExperimentalGroupAddConfirmed);
-//    dialog.open();
+    ExperimentId experimentId = context.experimentId().orElseThrow();
+    List<ExperimentalVariableInformation> variables = experimentInformationService.getVariablesOfExperiment(
+        context.projectId().orElseThrow().value(),
+        experimentId);
+    List<ExperimentalGroupInput.VariableLevel> levels = variables.stream()
+        .flatMap(variable ->
+            variable.levels().stream()
+                .map(it -> new ExperimentalGroupInput.VariableLevel(variable.name(), it,
+                    variable.unit())))
+        .toList();
+    var groups = experimentInformationService.experimentalGroupsFor(
+            context.projectId().orElseThrow()
+                .value(), experimentId)
+        .stream().map(this::toContent).toList();
+
+    ExperimentalGroupsDialog dialog;
+    if (groups.isEmpty()) {
+      dialog = ExperimentalGroupsDialog.empty(levels);
+    } else {
+      dialog = ExperimentalGroupsDialog.nonEditable(levels, groups);
+    }
+    dialog.addCancelEventListener(cancelEvent -> cancelEvent.getSource().close());
+    dialog.addConfirmEventListener(this::onExperimentalGroupAddConfirmed);
+    dialog.open();
   }
 
   private void onExperimentalGroupAddConfirmed(

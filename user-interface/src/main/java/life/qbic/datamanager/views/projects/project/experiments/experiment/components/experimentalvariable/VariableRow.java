@@ -30,7 +30,7 @@ import org.springframework.lang.Nullable;
 /**
  * A row for variable information manipulation.
  */
-class VariableRow extends Composite<Div> implements UserInput, CanSnapshot {
+public class VariableRow extends Composite<Div> implements UserInput, CanSnapshot {
 
   private final TextField name = new TextField();
   private final TextField unit = new TextField();
@@ -62,7 +62,7 @@ class VariableRow extends Composite<Div> implements UserInput, CanSnapshot {
 
   void setValue(ExperimentalVariableInformation variableInformation) {
     name.setValue(variableInformation.name());
-    unit.setValue(variableInformation.unit());
+    Optional.ofNullable(variableInformation.unit()).ifPresent(unit::setValue);
     variableInformation.levels().forEach(variableLevels::addFilledLevel);
   }
 
@@ -295,31 +295,53 @@ class VariableRow extends Composite<Div> implements UserInput, CanSnapshot {
     name.focus();
   }
 
-  public interface VariableChange {
+  public sealed interface VariableChange permits VariableAdded, VariableRenamed,
+      VariableLevelsChanged, VariableDeleted, VariableUnitChanged {
 
+    String affectedVariable();
   }
 
   public record VariableAdded(String name, String unit, List<String> levels) implements
       VariableChange {
 
+    @Override
+    public String affectedVariable() {
+      return name;
+    }
   }
 
   public record VariableRenamed(String oldName, String newName) implements VariableChange {
 
+    @Override
+    public String affectedVariable() {
+      return oldName;
+    }
   }
 
-  public record VariableLevelsChanged(String name,
-                                      List<LevelChange> levelChanges) implements VariableChange {
+  public record VariableLevelsChanged(String name, List<LevelChange> levelChanges) implements
+      VariableChange {
 
+    @Override
+    public String affectedVariable() {
+      return name;
+    }
   }
 
   public record VariableUnitChanged(String name, String oldUnit, String newUnit) implements
       VariableChange {
 
+    @Override
+    public String affectedVariable() {
+      return name;
+    }
   }
 
   public record VariableDeleted(String name) implements VariableChange {
 
+    @Override
+    public String affectedVariable() {
+      return name;
+    }
   }
 
   static class DeleteVariableEvent extends ComponentEvent<VariableRow> {
