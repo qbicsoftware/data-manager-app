@@ -131,12 +131,7 @@ public class AppConfig {
   }
 
   @Bean
-  public UserInformationService userInformationService(UserRepository userRepository) {
-    return new BasicUserInformationService(userRepository);
-  }
-
-  @Bean
-  public UserPasswordService userPasswordService(UserRepository userRepository) {
+  public BasicUserInformationService userInformationService(UserRepository userRepository) {
     return new BasicUserInformationService(userRepository);
   }
 
