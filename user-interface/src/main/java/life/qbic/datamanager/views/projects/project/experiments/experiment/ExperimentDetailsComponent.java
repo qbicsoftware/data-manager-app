@@ -577,6 +577,11 @@ public class ExperimentDetailsComponent extends PageArea {
           variablesInput.restoreDeletedVariables();
         });
         confirmDialog.open();
+      } else {
+        Map<String, List<VariableChange>> changesByVariable = changes.stream()
+            .collect(Collectors.groupingBy(VariableChange::affectedVariable));
+        changesByVariable.forEach(this::applyChangesToVariable);
+        dialog.close();
       }
     };
   }
@@ -599,29 +604,8 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private void applyChangesToVariable(String variable, List<VariableChange> changes) {
-    //change unit
-    Optional<VariableUnitChanged> unitChange = changes.stream()
-        .filter(VariableUnitChanged.class::isInstance)
-        .map(VariableUnitChanged.class::cast)
-        .findAny();
     var projectId = context.projectId().orElseThrow();
     ExperimentId experimentId = context.experimentId().orElseThrow();
-    unitChange.ifPresent(
-        change -> experimentInformationService.setVariableUnit(projectId.value(), experimentId,
-            variable, change.newUnit()));
-
-    //TODO change levels
-
-    //add variable
-    changes.stream()
-        .filter(VariableAdded.class::isInstance)
-        .map(VariableAdded.class::cast)
-        .findAny().ifPresent(change ->
-            experimentInformationService.addVariableToExperiment(projectId.value(),
-                experimentId,
-                change.name(),
-                change.unit(),
-                change.levels()));
 
     //delete variable
     changes.stream()
@@ -633,15 +617,38 @@ public class ExperimentDetailsComponent extends PageArea {
                 experimentId,
                 change.name()));
 
+    //change unit
+    changes.stream()
+        .filter(VariableUnitChanged.class::isInstance)
+        .map(VariableUnitChanged.class::cast)
+        .findAny()
+        .ifPresent(
+        change -> experimentInformationService.setVariableUnit(projectId.value(), experimentId,
+            variable, change.newUnit()));
+
+    //TODO change levels
+
+    //add variable
+    changes.stream()
+        .filter(VariableAdded.class::isInstance)
+        .map(VariableAdded.class::cast)
+        .findAny()
+        .ifPresent(change ->
+            experimentInformationService.addVariableToExperiment(projectId.value(),
+                experimentId,
+                change.name(),
+                change.unit(),
+                change.levels()));
+
     changes.stream()
         .filter(VariableRenamed.class::isInstance)
         .map(VariableRenamed.class::cast)
-        .findAny().ifPresent(change -> {
-          experimentInformationService.renameExperimentalVariable(projectId.value(),
-              experimentId,
-              change.oldName(),
-              change.newName());
-        });
+        .findAny()
+        .ifPresent(change ->
+            experimentInformationService.renameExperimentalVariable(projectId.value(),
+                experimentId,
+                change.oldName(),
+                change.newName()));
   }
 
   private boolean editGroupsNotAllowed() {

@@ -17,6 +17,7 @@ import com.vaadin.flow.component.Tag;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.NativeLabel;
+import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.shared.HasValidationProperties;
 import com.vaadin.flow.component.textfield.TextField;
@@ -496,7 +497,9 @@ class VariableLevelsInput extends Div implements UserInput, CanSnapshot,
     public void lock() {
       deleteLevelButton.setEnabled(false);
       deleteLevelButton.setVisible(false);
-      levelValue.setSuffixComponent(VaadinIcon.LOCK.create());
+      Icon lockIcon = VaadinIcon.LOCK.create();
+      lockIcon.setTooltipText("This level is already used in a group. Editing is not possible.");
+      levelValue.setSuffixComponent(lockIcon);
       levelValue.setReadOnly(true);
     }
 
