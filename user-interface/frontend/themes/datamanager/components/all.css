@@ -62,6 +62,10 @@ Heading
   font-weight: var(--font-weight-regular);
 }
 
+.bold {
+  font-weight: var(--font-weight-bold);
+}
+
 /*endregion*/
 
 .field-label-text {
