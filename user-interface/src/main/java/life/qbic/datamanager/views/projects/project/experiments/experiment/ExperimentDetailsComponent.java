@@ -530,6 +530,9 @@ public class ExperimentDetailsComponent extends PageArea {
         .toList();
     ExperimentalVariablesInput variablesInput = new ExperimentalVariablesInput();
     variables.forEach(variablesInput::addVariable);
+    if (variables.isEmpty()) {
+      variablesInput.addVariable();
+    }
 
     for (Entry<String, List<UsedVariableLevel>> entry : usedLevelsByVariable.entrySet()) {
       Set<String> usedValues = entry
