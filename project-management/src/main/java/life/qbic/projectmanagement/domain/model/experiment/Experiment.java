@@ -324,12 +324,6 @@ public class Experiment {
   }
 
 
-  public void removeExperimentalVariables(List<String> addedNames) {
-    //TODO
-    throw new RuntimeException("Not implemented");
-
-  }
-
   /**
    * Creates an experimental group consisting of one or more levels of distinct variables and the
    * sample size and adds it to the experimental design.
