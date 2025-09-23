@@ -515,6 +515,7 @@ public class ExperimentDetailsComponent extends PageArea {
 
   private void openExperimentalVariablesEditDialog() {
     ExperimentId experimentId = context.experimentId().orElseThrow();
+    ExperimentalVariablesInput variablesInput = new ExperimentalVariablesInput();
     var usedLevelsByVariable = experimentInformationService.getUsedVariableLevels(
             context.projectId().orElseThrow().value(), experimentId).stream()
         .collect(Collectors.groupingBy(UsedVariableLevel::variableName));
@@ -528,7 +529,6 @@ public class ExperimentDetailsComponent extends PageArea {
             it.levels()
         ))
         .toList();
-    ExperimentalVariablesInput variablesInput = new ExperimentalVariablesInput();
     variables.forEach(variablesInput::addVariable);
     if (variables.isEmpty()) {
       variablesInput.addVariable();
@@ -549,12 +549,49 @@ public class ExperimentDetailsComponent extends PageArea {
     DialogHeader.with(dialog, "Define Experiment Variables");
     DialogFooter.with(dialog, "Cancel", "Save");
     DialogBody.with(dialog, variablesInput, variablesInput);
-    dialog.registerConfirmAction(() -> {
-      handleVariableEdit(variablesInput);
-      dialog.close();
-    });
+    dialog.registerConfirmAction(onVariableEditDialogConfirmed(variablesInput, dialog));
     dialog.registerCancelAction(dialog::close);
     dialog.open();
+  }
+
+  private DialogAction onVariableEditDialogConfirmed(ExperimentalVariablesInput variablesInput,
+      AppDialog dialog) {
+    return () -> {
+      List<VariableChange> changes = variablesInput.getChanges();
+      List<String> deletedVariables = changes.stream()
+          .filter(VariableDeleted.class::isInstance)
+          .map(VariableChange::affectedVariable)
+          .toList();
+      if (!deletedVariables.isEmpty()) {
+        var confirmDialog = confirmVariableDeletion(deletedVariables);
+        confirmDialog.registerConfirmAction(() -> {
+          confirmDialog.close();
+          //aggregate by variable
+          Map<String, List<VariableChange>> changesByVariable = changes.stream()
+              .collect(Collectors.groupingBy(VariableChange::affectedVariable));
+          changesByVariable.forEach(this::applyChangesToVariable);
+          dialog.close();
+        });
+        confirmDialog.registerCancelAction(() -> {
+          confirmDialog.close();
+          variablesInput.restoreDeletedVariables();
+        });
+        confirmDialog.open();
+      }
+    };
+  }
+
+  private AppDialog confirmVariableDeletion(List<String> deletedVariables) {
+    var confirmDialog = AppDialog.small();
+    DialogHeader.withIcon(confirmDialog,
+        "Delete experimental variables?",
+        IconFactory.warningIcon());
+    var variableNames = new Span(String.join(", ", deletedVariables));
+    variableNames.addClassNames("padding-horizontal-02 bold");
+    DialogBody.withoutUserInput(confirmDialog,
+        new Div(new Span("The variables "), variableNames, new Span(" will be deleted")));
+    DialogFooter.with(confirmDialog, "Cancel", "Delete Variables");
+    return confirmDialog;
   }
 
   private void openExperimentalVariablesAddDialog() {
@@ -605,27 +642,6 @@ public class ExperimentDetailsComponent extends PageArea {
               change.oldName(),
               change.newName());
         });
-  }
-
-  private void handleVariableEdit(ExperimentalVariablesInput variablesInputs) {
-    List<VariableChange> changes = variablesInputs.getChanges();
-    List<String> deletedVariables = changes.stream()
-        .filter(VariableDeleted.class::isInstance)
-        .map(VariableChange::affectedVariable)
-        .toList();
-    if (!deletedVariables.isEmpty()) {
-      var addBack = false;
-      //TODO open dialog and ask for answer
-      if (addBack) {
-        variablesInputs.restoreDeletedVariables();
-        return;
-      }
-    }
-
-    //aggregate by variable
-    Map<String, List<VariableChange>> changesByVariable = changes.stream()
-        .collect(Collectors.groupingBy(VariableChange::affectedVariable));
-    changesByVariable.forEach(this::applyChangesToVariable);
   }
 
   private boolean editGroupsNotAllowed() {
