@@ -764,7 +764,7 @@ Older stuff -
   width: 100%;
 }
 
-.dynamic-growing-flex-item {
+.flex-grow-1 {
   flex-grow: 1;
 }
 
