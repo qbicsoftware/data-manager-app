@@ -42,7 +42,7 @@ public class AccountContentBox extends Div {
     publicRecord.add(new Anchor(record.toString(), "View public record", AnchorTarget.BLANK));
 
     var spacer = new Div();
-    spacer.setWidthFull();
+    spacer.addClassNames("dynamic-growing-flex-item");
 
     add(iconContainer, accountInfo, spacer, publicRecord);
   }
