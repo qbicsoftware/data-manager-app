@@ -32,8 +32,7 @@ import org.springframework.stereotype.Component;
  * </p>
  */
 @Component
-public class MeasurementProteomicsValidator implements
-    MeasurementValidator<ProteomicsMeasurementMetadata> {
+public class MeasurementProteomicsValidator {
 
   private static final Logger log = logger(MeasurementProteomicsValidator.class);
 
@@ -90,81 +89,44 @@ public class MeasurementProteomicsValidator implements
     return Arrays.stream(PROTEOMICS_PROPERTY.values()).map(PROTEOMICS_PROPERTY::label).toList();
   }
 
-  @Override
-  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
-  public ValidationResult validate(ProteomicsMeasurementMetadata measurementMetadata,
-      ProjectId projectId) {
-    var validationPolicy = new ValidationPolicy();
-    //We want to fail early so we check first if all the mandatory fields were filled
-    ValidationResult mandatoryValidationResult = validationPolicy.validateMandatoryDataProvided(
-        measurementMetadata);
-    if (mandatoryValidationResult.containsFailures()) {
-      return mandatoryValidationResult;
-    }
-    //If all fields were filled then we can validate the entries individually
-    return validationPolicy.validateSampleId(measurementMetadata.sampleCode())
-        .combine(validationPolicy.validateMandatoryDataProvided(measurementMetadata))
-        .combine(validationPolicy.validateOrganisation(measurementMetadata.organisationId())
-            .combine(validationPolicy.validateMsDevice(measurementMetadata.msDeviceCURIE())));
-  }
-
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public ValidationResult validateRegistration(MeasurementRegistrationInformationPxP metadata,
+      String experimentId,
       ProjectId projectId) {
     var validationPolicy = new ValidationPolicy();
-    ValidationResult mandatoryValidationResult = validationPolicy.validateMandatoryDataProvided(
-        metadata);
-    if (mandatoryValidationResult.containsFailures()) {
-      return mandatoryValidationResult;
+    var result = ValidationResult.successful();
+
+    for (String sampleId : metadata.measuredSamples()) {
+      result = result.combine(validationPolicy.validationProjectRelation(sampleId, projectId))
+          .combine(
+              validationPolicy.validationExperimentRelation(sampleId, experimentId, projectId));
     }
-
-    var validation = validationPolicy.validateSampleIdsAsString(metadata.measuredSamples(),
-            projectId)
-        .combine(validationPolicy.validateMandatoryDataProvided(metadata))
-        .combine(validationPolicy.validateOrganisation(metadata.organisationId())
-            .combine(validationPolicy.validateMsDevice(metadata.msDeviceCURIE())));
-
     // For the sample-specific metadata
     var missingLabelsValidation = new MissingLabel(() -> metadata).execute();
     var distinctLabelsValidation = new HasDistinctLabels(() -> metadata).execute();
 
-    return validation.combine(missingLabelsValidation)
+    return result.combine(
+            validationPolicy.validateSampleIdsAsString(metadata.measuredSamples(), projectId))
+        .combine(validationPolicy.validateMandatoryDataProvided(metadata))
+        .combine(validationPolicy.validateOrganisation(metadata.organisationId()))
+        .combine(validationPolicy.validateMsDevice(metadata.msDeviceCURIE()))
+        .combine(missingLabelsValidation)
         .combine(distinctLabelsValidation);
-  }
-
-  /**
-   * Ignores sample ids but validates measurement ids.
-   *
-   * @param metadata
-   * @return
-   * @since
-   */
-  @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','READ')")
-  public ValidationResult validateUpdate(ProteomicsMeasurementMetadata metadata,
-      ProjectId projectId) {
-    var validationPolicy = new ValidationPolicy();
-    return validationPolicy.validateSampleId(metadata.associatedSample())
-        .combine(validationPolicy.validationProjectRelation(metadata.associatedSample(), projectId))
-        .combine(
-            validationPolicy.validateMeasurementCode(metadata.measurementIdentifier().orElse(""))
-                .combine(validationPolicy.validateMandatoryDataForUpdate(metadata))
-                .combine(validationPolicy.validateOrganisation(metadata.organisationId())
-                    .combine(validationPolicy.validateMsDevice(metadata.msDeviceCURIE())
-                        .combine(
-                            validationPolicy.validateDigestionMethod(
-                                metadata.digestionMethod())))));
   }
 
   @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','WRITE')")
   public ValidationResult validateUpdate(MeasurementUpdateInformationPxP metadata,
+      String experimentId,
       ProjectId projectId) {
     var validationPolicy = new ValidationPolicy();
     var result = ValidationResult.successful();
     for (String sampleId : metadata.measuredSamples()) {
-        result = result.combine(
-            validationPolicy.validationProjectRelation(sampleId, projectId));
+      result = result.combine(validationPolicy.validationProjectRelation(sampleId, projectId))
+          .combine(
+              validationPolicy.validationExperimentRelation(sampleId, experimentId, projectId));
     }
-    return result.combine(validationPolicy.validateSampleIdsAsString(metadata.measuredSamples(), projectId))
+    return result.combine(validationPolicy.validateMeasurementCode(metadata.measurementId()))
+        .combine(validationPolicy.validateSampleIdsAsString(metadata.measuredSamples(), projectId))
         .combine(validationPolicy.validateMandatoryMetadataDataForUpdate(metadata))
         .combine(validationPolicy.validateOrganisation(metadata.organisationId()))
         .combine(validationPolicy.validateMsDevice(metadata.msDeviceCURIE()))
@@ -247,7 +209,11 @@ public class MeasurementProteomicsValidator implements
     private static final String ROR_ID_REGEX = "^https://ror.org/0[a-z|0-9]{6}[0-9]{2}$";
 
     @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','READ')")
-    ValidationResult validationProjectRelation(SampleCode sampleCode, ProjectId projectId) {
+    ValidationResult validationProjectRelation(String sampleId, ProjectId projectId) {
+      if (sampleId.isBlank()) {
+        return ValidationResult.withFailures(List.of("Missing Sample ID: Cannot match sample to project"));
+      }
+      SampleCode sampleCode = SampleCode.create(sampleId);
       var projectQuery = projectInformationService.find(projectId);
       if (projectQuery.isEmpty()) {
         log.error("No project information found for projectId: " + projectId);
@@ -269,33 +235,19 @@ public class MeasurementProteomicsValidator implements
     }
 
     @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','READ')")
-    ValidationResult validationProjectRelation(String sampleId, ProjectId projectId) {
+    ValidationResult validationExperimentRelation(String sampleId, String experimentId,
+        ProjectId projectId) {
       if (sampleId.isBlank()) {
-        return ValidationResult.withFailures(List.of("Missing Sample ID: Cannot match sample to project"));
+        return ValidationResult.withFailures(
+            List.of("Missing Sample ID: Cannot match sample to project"));
       }
-      return validationProjectRelation(SampleCode.create(sampleId), projectId);
-    }
-
-    ValidationResult validateSampleId(SampleCode sampleCode) {
-      var queriedSampleEntry = sampleInformationService.findSampleId(sampleCode);
-      if (queriedSampleEntry.isPresent()) {
+      SampleCode sampleCode = SampleCode.create(sampleId);
+      if (sampleInformationService.retrieveSamplesForExperiment(projectId, experimentId).stream()
+          .anyMatch(sample -> sample.sampleCode().equals(sampleCode))) {
         return ValidationResult.successful();
       }
       return ValidationResult.withFailures(
-          List.of(UNKNOWN_SAMPLE_MESSAGE.formatted(sampleCode.code())));
-    }
-
-    ValidationResult validateSampleIds(Collection<SampleCode> sampleCodes) {
-      if (sampleCodes.isEmpty()) {
-        return ValidationResult.withFailures(
-            List.of("A measurement must contain at least one sample reference. Provided: none"));
-      }
-      ValidationResult validationResult = ValidationResult.successful(
-      );
-      for (SampleCode sample : sampleCodes) {
-        validationResult = validationResult.combine(validateSampleId(sample));
-      }
-      return validationResult;
+          List.of("Sample ID does not belong to this experiment: %s".formatted(sampleCode.code())));
     }
 
     @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','READ')")
@@ -307,21 +259,22 @@ public class MeasurementProteomicsValidator implements
       ValidationResult validationResult = ValidationResult.successful(
       );
       for (var sampleId : sampleIds) {
-        validationResult = validationResult.combine(validateSampleIdAsString(sampleId, projectId));
+        ValidationResult result;
+        if (sampleId.isBlank()) {
+          result = ValidationResult.withFailures(
+              List.of("Missing Sample id: No sample identifier was provided."));
+        } else {
+          var queriedSampleEntry = sampleInformationService.findSample(projectId, sampleId);
+          if (queriedSampleEntry.isPresent()) {
+            result = ValidationResult.successful();
+          } else {
+            result = ValidationResult.withFailures(
+                List.of(UNKNOWN_SAMPLE_MESSAGE.formatted(sampleId)));
+          }
+        }
+        validationResult = validationResult.combine(result);
       }
       return validationResult;
-    }
-
-    private ValidationResult validateSampleIdAsString(String sampleId, ProjectId projectId) {
-      if (sampleId.isBlank()) {
-        return  ValidationResult.withFailures(List.of("Missing Sample ID: Cannot lookup sample"));
-      }
-      var queriedSampleEntry = sampleInformationService.findSample(projectId, sampleId);
-      if (queriedSampleEntry.isPresent()) {
-        return ValidationResult.successful();
-      }
-      return ValidationResult.withFailures(
-          List.of(UNKNOWN_SAMPLE_MESSAGE.formatted(sampleId)));
     }
 
     ValidationResult validateOrganisation(String organisationId) {

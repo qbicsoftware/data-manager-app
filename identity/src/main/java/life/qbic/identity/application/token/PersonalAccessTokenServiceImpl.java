@@ -12,6 +12,7 @@ import life.qbic.identity.api.UserInformationService;
 import life.qbic.identity.domain.model.token.TokenEncoder;
 import life.qbic.identity.domain.model.token.TokenGenerator;
 import life.qbic.identity.domain.model.token.TokenRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**

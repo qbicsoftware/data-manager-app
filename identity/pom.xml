@@ -5,7 +5,7 @@
   <parent>
     <artifactId>datamanager</artifactId>
     <groupId>life.qbic</groupId>
-    <version>1.10.14</version>
+    <version>1.11.0</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
@@ -28,6 +28,13 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-data-jpa</artifactId>
+      <!-- No <version>: use Spring Boot’s managed version -->
+      <exclusions>
+        <exclusion>
+          <groupId>io.smallrye</groupId>
+          <artifactId>jandex</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.spockframework</groupId>
@@ -45,25 +52,25 @@
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>broadcasting</artifactId>
-      <version>1.10.14</version>
+      <version>1.11.0</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>application-commons</artifactId>
-      <version>1.10.14</version>
+      <version>1.11.0</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>logging</artifactId>
-      <version>1.10.14</version>
+      <version>1.11.0</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>domain-concept</artifactId>
-      <version>1.10.14</version>
+      <version>1.11.0</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -86,7 +93,7 @@
     <dependency>
       <groupId>life.qbic.datamanager</groupId>
       <artifactId>identity-api</artifactId>
-      <version>1.10.14</version>
+      <version>1.11.0</version>
       <scope>compile</scope>
     </dependency>
   </dependencies>
