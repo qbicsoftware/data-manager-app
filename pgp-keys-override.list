@@ -94,7 +94,7 @@ org.hibernate.orm:*:* = 0x1452F35849B50750F6A3BBB4B54011358B352F85
 
 # --- Apache ActiveMQ Artemis (many modules in your log) ---
 # One key signs all the 2.40.x/2.41.x artifacts you hit
-org.apache.activemq:*:*       = 0x28417C95E8906D108392822354A43F3254868410
+org.apache.activemq:*:2.4       = 0x28417C95E8906D108392822354A43F3254868410
 
 
 # --- JGroups (unsigned in Maven Central) ---
