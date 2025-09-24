@@ -649,7 +649,7 @@ public class OpenbisConnector implements QbicProjectDataRepo, SampleDataReposito
         fetchOptions).getObjects().size();
   }
 
-  private static Instant instantWithinBoundaries(Instant instant) {
+  private static Instant moveBetweenEpochStartAndNow(Instant instant) {
     if (instant.isBefore(DATE_MIN)) {
       return DATE_MIN;
     }
@@ -664,7 +664,7 @@ public class OpenbisConnector implements QbicProjectDataRepo, SampleDataReposito
       int limit) {
     var datasetSearchCriteria = new DataSetSearchCriteria();
     datasetSearchCriteria.withRegistrationDate()
-        .thatIsLaterThanOrEqualTo(Date.from(instantWithinBoundaries(registeredSince)));
+        .thatIsLaterThanOrEqualTo(Date.from(moveBetweenEpochStartAndNow(registeredSince)));
 
     var datasetFetchOptions = new DataSetFetchOptions();
     datasetFetchOptions.from(offset);
