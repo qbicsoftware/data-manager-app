@@ -16,7 +16,8 @@ import life.qbic.projectmanagement.domain.model.project.ProjectId;
 public interface ProjectRepository {
 
   /**
-   * Adds a {@link Project} entity permanently and sets access rights according to the logged in user.
+   * Adds a {@link Project} entity permanently and sets access rights according to the logged in
+   * user.
    *
    * @param project the project to store
    * @since 1.0.0
@@ -33,6 +34,7 @@ public interface ProjectRepository {
 
   /**
    * Saves a project to the repository
+   *
    * @param project the project to save
    * @since 1.11.1
    */
@@ -48,6 +50,15 @@ public interface ProjectRepository {
   boolean existsProjectByProjectCode(ProjectCode projectCode);
 
   Optional<Project> find(ProjectId projectId);
+
+  /**
+   * Will create a pessimistic lock on the project row for the given id.
+   *
+   * @param projectId the project to find the id for
+   * @return the project if found
+   * @since 1.11.0
+   */
+  Optional<Project> findByIdForUpdate(ProjectId projectId);
 
   /**
    * Is thrown if a project that should be created already exists, as denoted by the project id

@@ -41,10 +41,13 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @Configuration
 @EnableTransactionManagement
 @EnableJpaRepositories(
-    basePackages = {"life.qbic.projectmanagement", "life.qbic.identity",
-        "life.qbic.datamanager.announcements"},
+    basePackages = {
+        "life.qbic.projectmanagement.infrastructure", // repos here
+        "life.qbic.identity",                                  // only if this package really has repos for this EMF
+        "life.qbic.datamanager.announcements"                  // same note
+    },
     entityManagerFactoryRef = "dataManagementEntityManagerFactory",
-    transactionManagerRef = "dataManagementTransactionManager")
+    transactionManagerRef   = "dataManagementTransactionManager")
 public class DataManagementDatasourceConfig {
 
   @Value("${qbic.data-management.datasource.ddl-auto}")
@@ -57,11 +60,21 @@ public class DataManagementDatasourceConfig {
     return new DataSourceProperties();
   }
 
+  /**
+   * Loads the Hikari options defaults or from application.properties if set.
+   * <p>
+   * Do not change unless you know what you are doing.
+   *
+   * @param props the properties
+   * @return {@link HikariDataSource}
+   * @since 1.11.0
+   */
   @Primary
   @Bean(name = "dataManagementDataSource")
-  public DataSource dataSource() {
-    return dataSourceProperties()
-        .initializeDataSourceBuilder()
+  @ConfigurationProperties("qbic.data-management.datasource.hikari") // <-- bind Hikari options here
+  public HikariDataSource dataSource(
+      @Qualifier("dataManagementDataSourceProperties") DataSourceProperties props) {
+    return props.initializeDataSourceBuilder()
         .type(HikariDataSource.class)
         .build();
   }
