@@ -30,6 +30,8 @@ import life.qbic.projectmanagement.application.api.fair.DigitalObject;
 import life.qbic.projectmanagement.application.api.fair.DigitalObjectFactory;
 import life.qbic.projectmanagement.application.api.fair.ResearchProject;
 import life.qbic.projectmanagement.application.api.template.TemplateService;
+import life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils;
+import life.qbic.projectmanagement.application.dataset.LocalRawDatasetLookupService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
@@ -87,6 +89,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   private final SpeciesLookupService taxaService;
   private final ProjectCreationService projectCreationService;
   private final MeasurementService measurementService;
+  private final LocalRawDatasetLookupService rawDatasetLookupService;
 
   public AsyncProjectServiceImpl(
       @Autowired ProjectInformationService projectService,
@@ -100,7 +103,9 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
       @Autowired TerminologyService termService,
       @Autowired SpeciesLookupService taxaService,
       @Autowired ProjectCreationService projectCreationService,
-      @Autowired MeasurementService measurementService) {
+      @Autowired MeasurementService measurementService,
+      @Autowired LocalRawDatasetLookupService rawDatasetLookupService
+      ) {
     this.projectService = Objects.requireNonNull(projectService);
     this.sampleInfoService = Objects.requireNonNull(sampleInfoService);
     this.scheduler = Objects.requireNonNull(scheduler);
@@ -113,6 +118,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     this.taxaService = Objects.requireNonNull(taxaService);
     this.projectCreationService = requireNonNull(projectCreationService);
     this.measurementService = Objects.requireNonNull(measurementService);
+    this.rawDatasetLookupService = requireNonNull(rawDatasetLookupService);
   }
 
   private static Retry defaultRetryStrategy() {
@@ -712,6 +718,37 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
             mimeType)))
         .subscribeOn(scheduler)
         .contextWrite(reactiveSecurity(securityContext));
+  }
+
+  @Override
+  public Flux<RawDatasetInformationPxP> getRawDatasetInformationPxP(String projectId,
+      String experimentId, int offset,
+      int limit, SortRawData sorting, String filter) {
+
+    SecurityContext securityContext = SecurityContextHolder.getContext();
+    return applySecurityContextMany(
+        Flux.fromIterable(
+            rawDatasetLookupService.findAllPxP(projectId, experimentId, offset, limit, sorting, filter)
+        )).subscribeOn(scheduler)
+        .contextWrite(reactiveSecurity(securityContext))
+        .doOnError( error -> log.error("Error searching for raw dataset " + projectId, error))
+        .onErrorMap(e -> new RequestFailedException("Error searching for raw dataset " + projectId, e))
+        .retryWhen(defaultRetryStrategy());
+  }
+
+  @Override
+  public Flux<RawDatasetInformationNgs> getRawDatasetInformationNgs(String projectId,
+      String experimentId, int offset,
+      int limit, SortRawData sorting, String filter) {
+    SecurityContext securityContext = SecurityContextHolder.getContext();
+    return applySecurityContextMany(
+        Flux.fromIterable(
+            rawDatasetLookupService.findAllNgs(projectId, experimentId, offset, limit, sorting, filter)
+        )).subscribeOn(scheduler)
+        .contextWrite(reactiveSecurity(securityContext))
+        .doOnError( error -> log.error("Error searching for raw dataset " + projectId, error))
+        .onErrorMap(e -> new RequestFailedException("Error searching for raw dataset " + projectId, e))
+        .retryWhen(defaultRetryStrategy());
   }
 
   @Override
