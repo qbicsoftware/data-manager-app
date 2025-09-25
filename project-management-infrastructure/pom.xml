@@ -147,5 +147,14 @@
       <artifactId>spring-boot-autoconfigure</artifactId>
     </dependency>
   </dependencies>
-
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>com.apicatalog</groupId>
+        <artifactId>titanium-json-ld</artifactId>
+<!-- Use specific version to avoid revoked outdated version-->
+        <version>1.6.0</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 </project>
