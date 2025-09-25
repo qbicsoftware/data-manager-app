@@ -51,7 +51,7 @@ jobs:
         run: VAADIN_OFFLINE_KEY=${{ secrets.VAADIN_SERVER_23_2 }} mvn -B package -Pproduction -Dvaadin.force.production.build=true --file pom.xml
 
       - name: Publish artefact to QBiC Nexus Repository
-        run: VAADIN_OFFLINE_KEY=${{ secrets.VAADIN_SERVER_23_2 }} mvn --quiet --settings $GITHUB_WORKSPACE/.github.settings.xml -Pproduction -Dvaadin.force.production.build=true deploy
+        run: VAADIN_OFFLINE_KEY=${{ secrets.VAADIN_SERVER_23_2 }} mvn --quiet --settings $GITHUB_WORKSPACE/.github.settings.xml -Pproduction -Dvaadin.force.production.build=true -DskipTests deploy
         env:
           MAVEN_REPO_USERNAME: ${{ secrets.NEXUS_USERNAME }}
           MAVEN_REPO_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
