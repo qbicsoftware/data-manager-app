@@ -647,6 +647,21 @@ Colors
   cursor: pointer;
 }
 
+.scroll-vertical {
+  overflow-y: scroll;
+  scrollbar-color: var(--shade-color-30pct) transparent;
+}
+
+.scroll-horizontal {
+  overflow-x: scroll;
+  scrollbar-color: var(--shade-color-30pct) transparent;
+}
+
+.scroll-both {
+  overflow: scroll;
+  scrollbar-color: var(--shade-color-30pct) transparent;
+}
+
 .draggable {
   cursor: grab;
 }
@@ -965,6 +980,10 @@ Icons
 
 .height-50-pct {
   height: 50%;
+}
+
+.max-height-x10 {
+  max-height: 10em;
 }
 
 .height-max-content {
