@@ -1267,7 +1267,7 @@ Older stuff -
 .input-label:has(~ .input-with-label:hover) /*the label is before the input*/,
 .input-with-label:hover ~ .input-label /*the label is after the input*/
 {
-  color: var(--lumo-contrast);
+  color: var(--shade-color);
 }
 
 .input-label:has(~ .input-with-label:focus-within) /*the label is before the input*/,
