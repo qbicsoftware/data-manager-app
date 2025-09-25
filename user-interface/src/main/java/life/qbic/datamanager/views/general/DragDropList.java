@@ -288,6 +288,20 @@ public class DragDropList<T extends Component> extends Composite<Div> {
       this.remove(item);
     }
   }
+
+  /**
+   * Enable the drag-drop behaviour of the list
+   */
+  public void enableDragDrop() {
+    setDraggable(true);
+  }
+
+  /**
+   * Disable the drag-drop behaviour of the list
+   */
+  public void disableDragDrop() {
+    setDraggable(false);
+  }
   //endregion
 
   //region Information API
@@ -356,6 +370,15 @@ public class DragDropList<T extends Component> extends Composite<Div> {
     return itemClazz;
   }
   //endregion
+
+  private void setDraggable(boolean draggable) {
+    items.stream().forEach(item -> item.setDraggable(draggable));
+    if (draggable) {
+      updateDropTargets();
+    } else {
+      items.stream().forEach(item -> item.setDropActive(false));
+    }
+  }
 
   private void remove(DragDropItem<T> dragDropItem) {
     items.remove(dragDropItem);
