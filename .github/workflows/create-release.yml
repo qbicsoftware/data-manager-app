@@ -9,6 +9,7 @@ on:
 permissions:
   id-token: write # This is required for requesting the JWT
   contents: read # This is required for actions/checkout
+  attestations: write   # required for provenance
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -69,6 +70,12 @@ jobs:
               generate_release_notes: true,
               prerelease: true
             });
+
+      # Generate provenance (SLSA attestation) for all JARs
+      - name: Generate SLSA build provenance
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: "target/**/*.jar"
 
       - name: Publish artefact to QBiC Nexus Repository
         run: VAADIN_OFFLINE_KEY=${{ secrets.VAADIN_SERVER_23_2 }} mvn --quiet --settings $GITHUB_WORKSPACE/.github.settings.xml -Pproduction -DskipTests -Dvaadin.force.production.build=true deploy
