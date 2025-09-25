@@ -39,6 +39,9 @@ import life.qbic.datamanager.views.general.DragDropList;
 import life.qbic.datamanager.views.general.dialog.InputValidation;
 import life.qbic.datamanager.views.general.dialog.UserInput;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.ExperimentalVariablesInput.PasteEvent;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.LevelChange.LevelAdded;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.LevelChange.LevelDeleted;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.LevelChange.LevelMoved;
 import org.springframework.lang.NonNull;
 
 @Tag("variable-levels-input")
@@ -60,22 +63,6 @@ class VariableLevelsInput extends Div implements UserInput, CanSnapshot,
         .forEach(LevelField::lock);
   }
 
-
-  public interface LevelChange {
-
-  }
-
-  public record LevelAdded(int position, String value) implements LevelChange {
-
-  }
-
-  public record LevelDeleted(int position, String value) implements LevelChange {
-
-  }
-
-  public record LevelMoved(int oldPosition, int newPosition) implements LevelChange {
-
-  }
 
   @NonNull
   LevelField addEmptyLevel() {
@@ -150,7 +137,7 @@ class VariableLevelsInput extends Div implements UserInput, CanSnapshot,
     var body = new Div();
     body.addClassNames(bodyClassNames);
 
-    final String levelsContainerCss = "flex-horizontal gap-03 column-gap-03 width-full";
+    final String levelsContainerCss = "flex-horizontal gap-03 column-gap-03 width-full max-height-x10 scroll-vertical";
     levelsContainer.setId("levels-container"); //needed for labelling
     levelsContainer.addClassNames(levelsContainerCss);
     ButtonFactory buttonFactory = new ButtonFactory();

@@ -21,9 +21,8 @@ import life.qbic.application.commons.CanSnapshot;
 import life.qbic.application.commons.Snapshot;
 import life.qbic.datamanager.views.general.dialog.InputValidation;
 import life.qbic.datamanager.views.general.dialog.UserInput;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.VariableChange.VariableDeleted;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.VariableRow.InvalidChangesException;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.VariableRow.VariableChange;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.VariableRow.VariableDeleted;
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 

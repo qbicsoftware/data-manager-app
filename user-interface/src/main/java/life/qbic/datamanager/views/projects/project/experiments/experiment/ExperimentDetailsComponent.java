@@ -58,11 +58,16 @@ import life.qbic.datamanager.views.projects.project.experiments.experiment.compo
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalGroupsDialog;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalGroupsDialog.ExperimentalGroupContent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.ExperimentalVariablesInput;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.VariableRow.VariableAdded;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.VariableRow.VariableChange;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.VariableRow.VariableDeleted;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.VariableRow.VariableRenamed;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.VariableRow.VariableUnitChanged;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.LevelChange;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.LevelChange.LevelAdded;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.LevelChange.LevelDeleted;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.LevelChange.LevelMoved;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.VariableChange;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.VariableChange.VariableAdded;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.VariableChange.VariableDeleted;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.VariableChange.VariableLevelsChanged;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.VariableChange.VariableRenamed;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.VariableChange.VariableUnitChanged;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.update.EditExperimentDialog;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.update.EditExperimentDialog.ExperimentDraft;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.update.EditExperimentDialog.ExperimentUpdateEvent;
@@ -627,6 +632,28 @@ public class ExperimentDetailsComponent extends PageArea {
             variable, change.newUnit()));
 
     //TODO change levels
+    changes.stream()
+        .filter(VariableLevelsChanged.class::isInstance)
+        .map(VariableLevelsChanged.class::cast)
+        .findAny()
+        .ifPresent(
+            change -> {
+              for (LevelChange levelChange : change.levelChanges()) {
+                switch (levelChange) {
+                  case LevelAdded levelAdded -> {
+                    System.out.println(levelAdded);
+                  }
+                  case LevelDeleted levelDeleted -> {
+                    System.out.println(levelDeleted);
+                  }
+                  case LevelMoved levelMoved -> {
+                    System.out.println(levelMoved);
+                  }
+                }
+              }
+            }
+        );
+
 
     //add variable
     changes.stream()
