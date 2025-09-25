@@ -10,11 +10,12 @@ import java.util.List;
 import life.qbic.logging.api.Logger;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Measured Samples Converter</b>
+ * <p>
+ * Converter that enables database JSON array and {@link List} of {@link MeasuredSample}
+ * conversion.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.12.0
  */
 public class MeasuredSamplesConverter implements
     AttributeConverter<List<MeasuredSample>, String> {
