@@ -2,6 +2,12 @@
 # groupId:artifactId:version =  *,any,badSig,noKey,noSig
 # wildcards * are allowed in artifactId/version
 
+com.github.package-url:packageurl-java:1.4.1 = 0x5D283C23D9D9DC2D9C2130E6AADF2C18DCF95764
+
+# Cyclone DX for SBOMs
+org.cyclonedx:cyclonedx-core-java:8.0.3 = 0x5D283C23D9D9DC2D9C2130E6AADF2C18DCF95764
+org.cyclonedx:cyclonedx-maven-plugin:2.8.0 = 0xFA77DCFEF2EE6EB2DEBEDD2C012579464D01C06A
+
 # H2 database
 com.h2database:h2:2.4.240 = 0xCF6FCDD747FD9C32304B180B58BD11D32974088F
 
