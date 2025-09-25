@@ -31,6 +31,14 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
+      - name: Debug OIDC (get a token)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const token = await core.getIDToken('sigstore'); // audience example
+            core.setSecret(token);
+            console.log('OIDC token acquired. Length:', token.length);
+
       - name: Set up git
         run: |
           git config --global user.email "support@qbic.zendesk.com"
