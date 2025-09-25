@@ -176,7 +176,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
         .setHeader("Sample Name");
     ngsRawDataGrid.addColumn(
             rawData -> convertToLocalDate(Date.from(rawData.dataset().registrationDate())))
-        .setKey("uploaddate")
+        .setKey("uploadDate")
         .setHeader("Upload Date");
     ngsRawDataGrid.setItemDetailsRenderer(renderRawDataNgs());
   }
