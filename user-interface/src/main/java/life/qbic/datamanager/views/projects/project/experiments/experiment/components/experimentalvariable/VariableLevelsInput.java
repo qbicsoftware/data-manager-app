@@ -371,7 +371,7 @@ class VariableLevelsInput extends Div implements UserInput, CanSnapshot,
 
     static final String LEVEL_CLASS = "level";
     static final String LEVEL_FIELD_CSS = "flex-horizontal gap-03 width-full no-flex-wrap no-wrap input-with-label";
-    static final String LEVEL_VALUE_CSS = "dynamic-growing-flex-item";
+    static final String LEVEL_VALUE_CSS = "flex-grow-1";
 
     private final TextField levelValue = new TextField();
     private final Button deleteLevelButton;
