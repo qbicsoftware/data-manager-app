@@ -2,6 +2,9 @@
 # groupId:artifactId:version =  *,any,badSig,noKey,noSig
 # wildcards * are allowed in artifactId/version
 
+# H2 database
+com.h2database:h2:2.4.240 = 0xCF6FCDD747FD9C32304B180B58BD11D32974088F
+
 # Distributed locking with shedlock
 net.javacrumbs.shedlock:*:* = 0x0E519FB002B9DE71010C6BA9BBF5AC5A3CDBFD37
 
