@@ -62,6 +62,7 @@ Heading
   font-weight: var(--font-weight-regular);
 }
 
+.text-bold,
 .bold {
   font-weight: var(--font-weight-bold);
 }
@@ -108,6 +109,29 @@ Heading
 
 .font-size-large {
   font-size: var(--lumo-font-size-xxl); /*1.75rem*/
+}
+
+/*fixme*/
+.text-size-s {
+  font-size: var(--lumo-font-size-s);
+}
+
+.text-size-m {
+  font-size: var(--lumo-font-size-m);
+}
+
+.text-contrast-70pct {
+  color: var(--lumo-contrast-70pct)
+}
+
+.text-contrast-90pct {
+  color: var(--lumo-contrast-90pct)
+}
+.text-line-height-s {
+  line-height: var(--lumo-line-height-s);
+}
+.text-line-height-m {
+  line-height: var(--lumo-line-height-m);
 }
 
 /*endregion*/
@@ -183,6 +207,13 @@ Heading
   padding-bottom: var(--spacing-07);
 }
 
+/*FIXME*/
+.padding-top-bottom-10,
+.padding-vertical-10 {
+  padding-top: var(--spacing-10);
+  padding-bottom: var(--spacing-10);
+}
+
 /*endregion*/
 /*region padding left right*/
 .padding-horizontal-01 {
@@ -218,6 +249,13 @@ Heading
 .padding-horizontal-07 {
   padding-left: var(--spacing-07);
   padding-right: var(--spacing-07);
+}
+
+.padding-left-right-10,
+/*FIXME*/
+.padding-horizontal-10 {
+  padding-left: var(--spacing-10);
+  padding-right: var(--spacing-10);
 }
 
 /*endregion*/
@@ -1118,6 +1156,29 @@ Icons
 Older stuff -
 ****************************/
 
+.flex-01 {
+  flex: 1;
+}
+
+.flex-03 {
+  flex: 3;
+}
+
+.fixed-width-1000px{
+  width: 1000px;
+  min-width: 1000px;
+}
+
+.white-space-nowrap{
+  white-space: nowrap;
+}
+
+.account-box {
+  border-width: 1px;
+  border-color: var(--lumo-contrast-20pct);
+  border-radius: var(--spacing-02);
+  border-style: solid;
+}
 
 .heading-with-icon {
   color: #878787;
@@ -1277,7 +1338,7 @@ Older stuff -
 }
 
 
-.dynamic-growing-flex-item {
+.flex-grow-1 {
   flex-grow: 1;
 }
 

@@ -36,7 +36,7 @@ import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLa
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ProjectInformationService;
-import life.qbic.projectmanagement.application.dataset.RawDataService;
+import life.qbic.projectmanagement.application.dataset.RemoteRawDataService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
@@ -74,7 +74,7 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
   private final Div content = new Div();
   private final transient ExperimentInformationService experimentInformationService;
   private final transient MeasurementService measurementService;
-  private final transient RawDataService rawDataService;
+  private final transient RemoteRawDataService remoteRawDataService;
   private final Disclaimer registerMeasurementsDisclaimer;
   private final Disclaimer noRawDataRegisteredDisclaimer;
   private final String rawDataSourceURL;
@@ -86,7 +86,7 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
       @Autowired RawDataDownloadInformationComponent rawDataDownloadInformationComponent,
       @Autowired ExperimentInformationService experimentInformationService,
       @Autowired MeasurementService measurementService,
-      @Autowired RawDataService rawDataService,
+      @Autowired RemoteRawDataService remoteRawDataService,
       @Value("${server.download.api.measurement.url}") String dataSourceURL,
       @Value("${qbic.communication.documentation.url}") String documentationUrl,
       @Autowired ProjectInformationService projectInformationService) {
@@ -96,7 +96,7 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
         rawDataDownloadInformationComponent);
     this.experimentInformationService = Objects.requireNonNull(experimentInformationService);
     this.measurementService = Objects.requireNonNull(measurementService);
-    this.rawDataService = Objects.requireNonNull(rawDataService);
+    this.remoteRawDataService = Objects.requireNonNull(remoteRawDataService);
     this.rawDataSourceURL = Objects.requireNonNull(dataSourceURL);
     this.documentationUrl = Objects.requireNonNull(documentationUrl);
     registerMeasurementsDisclaimer = createNoMeasurementsRegisteredDisclaimer();
@@ -228,7 +228,7 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
       showRegisterMeasurementDisclaimer();
       return;
     }
-    if (!rawDataService.hasRawData(currentExperimentId)) {
+    if (!remoteRawDataService.hasRawData(currentExperimentId)) {
       showNoRawDataRegisteredDisclaimer();
     } else {
       showRawDataForRegisteredMeasurements();

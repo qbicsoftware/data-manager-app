@@ -1,0 +1,234 @@
+# syntax:
+# groupId:artifactId:version =  *,any,badSig,noKey,noSig
+# wildcards * are allowed in artifactId/version
+
+# H2 database
+com.h2database:h2:2.4.240 = 0xCF6FCDD747FD9C32304B180B58BD11D32974088F
+
+# Distributed locking with shedlock
+net.javacrumbs.shedlock:*:* = 0x0E519FB002B9DE71010C6BA9BBF5AC5A3CDBFD37
+
+# We have not yet figured out from where this is pulled :(
+io.smallrye:jandex:3.2.0 = badSig
+io.smallrye:jandex:3.2.0:pom  = badSig
+
+# Allow your reactor modules (produced in this build)
+life.qbic:*:* = noSig
+life.qbic.logging:*:* = noSig
+life.qbic.datamanager:*:* = noSig
+
+# Unsigned runtime dep you must keep for now
+org.jboss.logging:jboss-logging:3.6.1.Final = noSig
+net.rootdev:java-rdfa:0.4.2 = noSig
+javax.inject:javax.inject:1 = noSig
+org.codehaus.plexus:plexus-i18n:1.0-beta-10 = noSig
+
+# accept unsigned (documented exceptions)
+org.jboss.logging:jboss-logging:* = noSig
+net.rootdev:java-rdfa:*          = noSig
+
+# Square / OkHttp / Okio (Square’s signing key)
+com.squareup.okhttp3:*:* = 0x1D217F8475EEE9F19AB8DD6B793FD5751A0F0780  # e.g. okhttp-urlconnection/logging-interceptor.  [oai_citation:0‡Untitled.txt](file-service://file-1UbSKN5j1vX3Pe1FvyAMhb)
+com.squareup.okio:*:*    = 0x1D217F8475EEE9F19AB8DD6B793FD5751A0F0780  # okio-jvm.  [oai_citation:1‡Untitled.txt](file-service://file-1UbSKN5j1vX3Pe1FvyAMhb)
+
+# gRPC (Google)
+io.grpc:*:*                          = 0xB02335AA54CCF21E52BBF9ABD9C565AA72BA2FDD  # grpc-api/core/stub/util/netty-shaded.  [oai_citation:2‡Untitled.txt](file-service://file-1UbSKN5j1vX3Pe1FvyAMhb)
+
+# Google HTTP / OAuth clients
+com.google.http-client:*:*           = 0x47504B76CF89C15C0512D9AFE16AB52D79FD224F  # google-http-client / -gson.  [oai_citation:3‡Untitled.txt](file-service://file-1UbSKN5j1vX3Pe1FvyAMhb)
+com.google.oauth-client:*:*          = 0x47504B76CF89C15C0512D9AFE16AB52D79FD224F  # google-oauth-client-java6.  [oai_citation:4‡Untitled.txt](file-service://file-1UbSKN5j1vX3Pe1FvyAMhb)
+
+# SonarSource scanner libs + plugin
+org.sonarsource.scanner.lib:*:*      = 0x679F1EE92B19609DE816FDE81DB198F93525EC1A  # download-cache, java-library, etc.  [oai_citation:5‡Untitled.txt](file-service://file-1UbSKN5j1vX3Pe1FvyAMhb)
+org.sonarsource.scanner.maven:*:*    = 0x679F1EE92B19609DE816FDE81DB198F93525EC1A  # sonar-maven-plugin.  [oai_citation:6‡Untitled.txt](file-service://file-1UbSKN5j1vX3Pe1FvyAMhb)
+
+# Apache Jena
+org.apache.jena:*:*                  = 0xD99038A1731B8B31B71549EF04C95136D236A58F  # jena-base/core/iri/shaded-guava.  [oai_citation:7‡Untitled.txt](file-service://file-1UbSKN5j1vX3Pe1FvyAMhb)
+
+# io.perfmark
+io.perfmark:perfmark-api:*           = 0xC6F7D1C804C821F49AF3BFC13AD93C3C677A106E  # perfmark-api.  [oai_citation:8‡Untitled.txt](file-service://file-1UbSKN5j1vX3Pe1FvyAMhb)
+
+# Jansi
+org.fusesource.jansi:jansi:*         = 0xEA23DB1360D9029481E7F2EFECDFEA3CB4493B94  # jansi.  [oai_citation:9‡Untitled.txt](file-service://file-1UbSKN5j1vX3Pe1FvyAMhb)
+
+# JetBrains annotations
+org.jetbrains:annotations:*          = 0x2E3A1AFFE42B5F53AF19F780BCF4173966770193  # annotations.  [oai_citation:10‡Untitled.txt](file-service://file-1UbSKN5j1vX3Pe1FvyAMhb)
+
+# Opencensus
+io.opencensus:*:*                    = 0x600EA202B1EC682F4A788E5AAC7A514BC9F9BB70  # opencensus-api/contrib-http-util.  [oai_citation:11‡Untitled.txt](file-service://file-1UbSKN5j1vX3Pe1FvyAMhb)
+
+# Xerces
+xerces:xercesImpl:*                  = 0x6CB87B18A453990EAC9453F87D713008CC07E9AD  # xercesImpl.  [oai_citation:12‡Untitled.txt](file-service://file-1UbSKN5j1vX3Pe1FvyAMhb)
+
+# Sigstore (your own plugin/libs)
+dev.sigstore:*:*                     = 0x2C02310024BAAE4B34976FFEAC74A3385D0E3252  # sigstore-maven-plugin / sigstore-java.  [oai_citation:13‡Untitled.txt](file-service://file-1UbSKN5j1vX3Pe1FvyAMhb)
+
+# Misc seen in log
+io.github.hakky54:sslcontext-kickstart:* = 0xE5138A8E9F2E7E42D38B14D99AEE152CDCCEBFCB  # sslcontext-kickstart.  [oai_citation:14‡Untitled.txt](file-service://file-1UbSKN5j1vX3Pe1FvyAMhb)
+io.github.erdtman:java-json-canonicalization:* = 0x4556208EBE484FBA3984DC3D3D4FA1A9DB2FB4F4  # JJCS.  [oai_citation:15‡Untitled.txt](file-service://file-1UbSKN5j1vX3Pe1FvyAMhb)
+
+# Dexx Collections
+com.github.andrewoma.dexx:*:* = 0x08D55F3D1993D63BF24FE3F008C9559A006FD974
+
+# GMavenPlus plugin (you use 4.0.1)
+org.codehaus.gmavenplus:*:* = 0x0867FACD3788F7B0BB24CD1FD90C38195BEDB15F
+
+# ODF Toolkit (odfdom-java)
+org.odftoolkit:*:* = 0x05BE82F3F005BA84597D7F25EAFBA1450EFFB0A1
+
+# Nuiton processor
+org.nuiton.processor:*:* = 0x8C91FA79AE8556710867A977E9056E22014A6ED2
+
+# Google API gRPC protos (Google libraries)
+com.google.api.grpc:*:* = 0x47504B76CF89C15C0512D9AFE16AB52D79FD224F
+
+# Google Android annotations
+com.google.android:*:* = 0x0F07D1201BDDAB67CFB84EB479752DB6C966F0B8
+
+# JobRunr
+org.jobrunr:*:* = 0x841496C7067739E5EEAE6626031C0B38EEB33EF8
+
+# HikariCP
+com.zaxxer:HikariCP:* = 0xF3A90E6B10E809F851AB4FC54CC08E7F47C3EC76
+
+# AspectJ
+org.aspectj:*:* = 0xDB5D8331654BFCC24475252F30C4AFF0AF1DADE1
+
+# Hibernate ORM
+org.hibernate.orm:*:* = 0x1452F35849B50750F6A3BBB4B54011358B352F85
+
+# --- Apache ActiveMQ Artemis (many modules in your log) ---
+org.apache.activemq:*:*      = 0x28417C95E8906D108392822354A43F3254868410
+
+
+# --- JGroups (unsigned in Maven Central) ---
+org.jgroups:jgroups:*         = noSig
+org.jgroups:jgroups:*:pom     = noSig
+
+# --- de.dentrassi crypto / pem-keystore ---
+de.dentrassi.crypto:*:*       = 0xCAFE8E040FD28E7873171932BBE1070F76B97956
+
+# --- JCTools ---
+org.jctools:*:*               = 0x9B5D41D28D8231A341B6713BC8C127A0EC7665D6
+
+# --- ASN.1 (hierynomus) ---
+com.hierynomus:*:*            = 0xB200B4AA914DE0340741F598EBE906E1F4ACA3B7
+
+org.xmlunit:xmlunit-core:2.10.4 = 0xBC26C53AF531F8B4B3F5930AAFBD3AF8EAFA72DA
+
+# fslev / json-compare
+com.github.fslev:*:*           = 0xDE81641E4B259D19CA96A45EC876E72938D88080
+
+# net.engio / mbassador
+net.engio:*:*                  = 0x5EAF6E9410A71E27B18EB3B90AC90C378C525192
+
+# docx4j + shaded apache components (same key)
+org.docx4j:*:*                 = 0x4F12076DB0F61138303CC361C641C2A9AFA87A3B
+org.docx4j.org.apache:*:*      = 0x4F12076DB0F61138303CC361C641C2A9AFA87A3B
+org.plutext:*:*                = 0x4F12076DB0F61138303CC361C641C2A9AFA87A3B
+
+# Nimbus JOSE + OIDC stack (same signer across modules)
+com.nimbusds:*:*               = 0x82F0964816AD7319CB0CCCF93EFD9D223D715E9A
+
+# networknt json-schema-validator
+com.networknt:*:*              = 0xAEB1E1AEC035C66FA39589D13EFC46EE83C40224
+
+# ethlo / itu
+com.ethlo.time:*:*             = 0xB286846C341BB72D1E5F85CAB460E7C4ED66826D
+
+# zip4j
+net.lingala.zip4j:*:*          = 0x36F4C680FC3E50E14C90FCBFA0B475EFD9448513
+
+
+# TEMP: accept revoked sig for this exact coord only (jar + pom)
+com.apicatalog:titanium-json-ld:1.3.3       = badSig
+com.apicatalog:titanium-json-ld:1.3.3:pom   = badSig
+
+ com.apicatalog:titanium-json-ld:1.6.0 = 0x6C3AE02ABF8203EEAC80DC215ACE4C100AABD0E8
+
+# apicatalog / titanium-* family (JCS, RDF-API, RDF-N-Quads, JSON-LD >= 1.6.0)
+com.apicatalog:*:*           = 0x6C3AE02ABF8203EEAC80DC215ACE4C100AABD0E8
+
+edu.kit.datamanager:ro-crate-java:1.1.1 = 0x7F4A46364B8A81FB341BEAA99FA30EAD50347761
+
+org.seleniumhq.selenium:*:* = 0x81BE0C38ACE8AEDC7735A05F4C2AFF633F3A7223
+
+io.netty.incubator:netty-incubator-codec-native-quic:0.0.74.Final = 0x0D35D3F60078655126908E8AF3D1600878E85A3D
+
+com.google.gwt:gwt-elemental:2.9.0 = 0xD914EDBEC01F64D70F6F3BB5CDCA6161318BBAD4
+
+com.github.oshi:oshi-core:6.4.10 = 0x4103C1C3F8E51C6925B5CD346A1E81B00431AB9D
+
+# Vaadin
+com.vaadin:*:* = 0xED4D232CC28A17F20CD25CA1C63D0B42CDFB97DA
+
+javax.cache:cache-api:1.1.1     = 0xBE6B997EB563F4898C3C406B8DB9FA0B0718BBF9
+
+# Swagger 2.2.22
+io.swagger.core.v3:swagger-core:2.2.22          = 0x3E61D8C230332482009D7F0EDB901B24CAD38BC4
+io.swagger.core.v3:swagger-core:2.2.22:pom      = 0x3E61D8C230332482009D7F0EDB901B24CAD38BC4
+io.swagger.core.v3:swagger-models:2.2.22        = 0x3E61D8C230332482009D7F0EDB901B24CAD38BC4
+io.swagger.core.v3:swagger-models:2.2.22:pom    = 0x3E61D8C230332482009D7F0EDB901B24CAD38BC4
+io.swagger.core.v3:swagger-annotations:2.2.22   = 0x3E61D8C230332482009D7F0EDB901B24CAD38BC4
+io.swagger.core.v3:swagger-annotations:2.2.22:pom = 0x3E61D8C230332482009D7F0EDB901B24CAD38BC4
+
+# OpenTelemetry 1.49.0 (+ semconv 1.25.0-alpha)
+io.opentelemetry:opentelemetry-context:1.49.0                        = 0x3F05DDA9F317301E927136D417A27CE7A60FF5F0
+io.opentelemetry:opentelemetry-context:1.49.0:pom                    = 0x3F05DDA9F317301E927136D417A27CE7A60FF5F0
+io.opentelemetry:opentelemetry-api:1.49.0                            = 0x3F05DDA9F317301E927136D417A27CE7A60FF5F0
+io.opentelemetry:opentelemetry-api:1.49.0:pom                        = 0x3F05DDA9F317301E927136D417A27CE7A60FF5F0
+io.opentelemetry:opentelemetry-sdk:1.49.0                            = 0x3F05DDA9F317301E927136D417A27CE7A60FF5F0
+io.opentelemetry:opentelemetry-sdk:1.49.0:pom                        = 0x3F05DDA9F317301E927136D417A27CE7A60FF5F0
+io.opentelemetry:opentelemetry-sdk-common:1.49.0                     = 0x3F05DDA9F317301E927136D417A27CE7A60FF5F0
+io.opentelemetry:opentelemetry-sdk-common:1.49.0:pom                 = 0x3F05DDA9F317301E927136D417A27CE7A60FF5F0
+io.opentelemetry:opentelemetry-sdk-logs:1.49.0                       = 0x3F05DDA9F317301E927136D417A27CE7A60FF5F0
+io.opentelemetry:opentelemetry-sdk-logs:1.49.0:pom                   = 0x3F05DDA9F317301E927136D417A27CE7A60FF5F0
+io.opentelemetry:opentelemetry-sdk-metrics:1.49.0                    = 0x3F05DDA9F317301E927136D417A27CE7A60FF5F0
+io.opentelemetry:opentelemetry-sdk-metrics:1.49.0:pom                = 0x3F05DDA9F317301E927136D417A27CE7A60FF5F0
+io.opentelemetry:opentelemetry-sdk-trace:1.49.0                      = 0x3F05DDA9F317301E927136D417A27CE7A60FF5F0
+io.opentelemetry:opentelemetry-sdk-trace:1.49.0:pom                  = 0x3F05DDA9F317301E927136D417A27CE7A60FF5F0
+io.opentelemetry:opentelemetry-exporter-logging:1.49.0               = 0x3F05DDA9F317301E927136D417A27CE7A60FF5F0
+io.opentelemetry:opentelemetry-exporter-logging:1.49.0:pom           = 0x3F05DDA9F317301E927136D417A27CE7A60FF5F0
+io.opentelemetry:opentelemetry-sdk-extension-autoconfigure:1.49.0    = 0x3F05DDA9F317301E927136D417A27CE7A60FF5F0
+io.opentelemetry:opentelemetry-sdk-extension-autoconfigure:1.49.0:pom= 0x3F05DDA9F317301E927136D417A27CE7A60FF5F0
+io.opentelemetry:opentelemetry-sdk-extension-autoconfigure-spi:1.49.0 = 0x3F05DDA9F317301E927136D417A27CE7A60FF5F0
+io.opentelemetry:opentelemetry-sdk-extension-autoconfigure-spi:1.49.0:pom = 0x3F05DDA9F317301E927136D417A27CE7A60FF5F0
+io.opentelemetry.semconv:opentelemetry-semconv:1.25.0-alpha          = 0x3F05DDA9F317301E927136D417A27CE7A60FF5F0
+io.opentelemetry.semconv:opentelemetry-semconv:1.25.0-alpha:pom      = 0x3F05DDA9F317301E927136D417A27CE7A60FF5F0
+
+# Vaadin repackaged
+com.vaadin.external.atmosphere:atmosphere-runtime:3.0.5.slf4jvaadin1     = 0xED4D232CC28A17F20CD25CA1C63D0B42CDFB97DA
+com.vaadin.external.atmosphere:atmosphere-runtime:3.0.5.slf4jvaadin1:pom = 0xED4D232CC28A17F20CD25CA1C63D0B42CDFB97DA
+com.vaadin.external.gwt:gwt-elemental:2.8.2.vaadin2                      = 0xED4D232CC28A17F20CD25CA1C63D0B42CDFB97DA
+com.vaadin.external.gwt:gwt-elemental:2.8.2.vaadin2:pom                  = 0xED4D232CC28A17F20CD25CA1C63D0B42CDFB97DA
+com.vaadin.external:gentyref:1.2.0.vaadin1                               = 0xCC57399D74CD7E4768ED6FA4CA62973FBF0451C0
+com.vaadin.external:gentyref:1.2.0.vaadin1:pom                           = 0xCC57399D74CD7E4768ED6FA4CA62973FBF0451C0
+com.vaadin.servletdetector:throw-if-servlet3:1.0.2                        = 0xED4D232CC28A17F20CD25CA1C63D0B42CDFB97DA
+com.vaadin.servletdetector:throw-if-servlet3:1.0.2:pom                    = 0xED4D232CC28A17F20CD25CA1C63D0B42CDFB97DA
+
+# Netty incubator QUIC
+io.netty.incubator:netty-incubator-codec-classes-quic:0.0.74.Final       = 0x0D35D3F60078655126908E8AF3D1600878E85A3D
+io.netty.incubator:netty-incubator-codec-classes-quic:0.0.74.Final:pom   = 0x0D35D3F60078655126908E8AF3D1600878E85A3D
+
+# Roaster
+org.jboss.forge.roaster:roaster-api:2.29.0.Final  = 0x001A438334F162E6AFB27F3BA9F900C1C0FE3ED9
+org.jboss.forge.roaster:roaster-api:2.29.0.Final:pom = 0x001A438334F162E6AFB27F3BA9F900C1C0FE3ED9
+org.jboss.forge.roaster:roaster-jdt:2.29.0.Final  = 0x001A438334F162E6AFB27F3BA9F900C1C0FE3ED9
+org.jboss.forge.roaster:roaster-jdt:2.29.0.Final:pom = 0x001A438334F162E6AFB27F3BA9F900C1C0FE3ED9
+
+# Misc seen in the log
+io.methvin:directory-watcher:0.18.0                = 0xAEE8A343247713A5A198640D4D1670765EF90EAB
+io.methvin:directory-watcher:0.18.0:pom            = 0xAEE8A343247713A5A198640D4D1670765EF90EAB
+org.mariadb.jdbc:mariadb-java-client:3.5.6         = 0x4C470FFFEFC4D3DC59778655CE1A3DD5E3C94F49
+org.mariadb.jdbc:mariadb-java-client:3.5.6:pom     = 0x4C470FFFEFC4D3DC59778655CE1A3DD5E3C94F49
+com.helger.commons:ph-commons:11.1.5               = 0x670BE7D076A0C89F5F07625AE57428DA9E879E7D
+com.helger.commons:ph-commons:11.1.5:pom           = 0x670BE7D076A0C89F5F07625AE57428DA9E879E7D
+org.tomlj:tomlj:1.0.0                              = 0x80F6D6B0D90C6747753344CAB5A9E81B565E89E0
+org.tomlj:tomlj:1.0.0:pom                          = 0x80F6D6B0D90C6747753344CAB5A9E81B565E89E0
+org.zeroturnaround:zt-exec:1.12                    = 0x021CBA3549EEF2025397B7F0E8AC268AC97D570F
+org.zeroturnaround:zt-exec:1.12:pom                = 0x021CBA3549EEF2025397B7F0E8AC268AC97D570F
+org.ehcache:ehcache:3.10.9                         = 0x7FCE178313EAC3BDFC4A75A95E1D8523FE7EAC7B
+org.ehcache:ehcache:3.10.9:pom                     = 0x7FCE178313EAC3BDFC4A75A95E1D8523FE7EAC7B
+
+ com.google.auto.service:auto-service-annotations:1.1.1 = 0xC7BE5BCC9FEC15518CFDA882B0F3710FA64900E7
+ org.lucee:jcip-annotations:1.0.0 = 0x26BA3E8B6A185070F538B1C15C3F925A060D5930

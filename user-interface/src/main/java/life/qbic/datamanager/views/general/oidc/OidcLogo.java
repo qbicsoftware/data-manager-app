@@ -14,7 +14,6 @@ public class OidcLogo extends Image {
 
   public OidcLogo(OidcType oidcType) {
     this.oidcType = oidcType;
-    addClassName("oidc-logo");
     setSrc(getLogoResource());
   }
 

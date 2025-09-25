@@ -11,6 +11,7 @@ import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.spring.security.AuthenticationContext;
+import java.time.Duration;
 import life.qbic.datamanager.announcements.AnnouncementService;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
@@ -30,6 +31,7 @@ import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 
 /**
  * <b> The ProjectMainLayout functions as a layout which contains all views related to managing a
@@ -62,8 +64,11 @@ public class ProjectMainLayout extends DataManagerLayout implements BeforeEnterO
       @Autowired TerminologyService terminologyService,
       CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
       MessageSourceNotificationFactory messageSourceNotificationFactory,
-      AnnouncementService announcementService) {
-    super(requireNonNull(footerComponentFactory), announcementService);
+      AnnouncementService announcementService,
+      @Value(value = "${announcement.initial-delay}") Duration initialDelay,
+      @Value(value = "${announcement.refresh-interval}") Duration refreshInterval) {
+    super(requireNonNull(footerComponentFactory), announcementService, initialDelay,
+        refreshInterval);
     requireNonNull(authenticationContext);
     requireNonNull(userInformationService);
     requireNonNull(projectInformationService);

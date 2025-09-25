@@ -6,6 +6,7 @@ import jakarta.persistence.FetchType;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -108,8 +109,8 @@ public class Condition {
     }
 
     Condition condition = (Condition) o;
-
-    return this.variableLevels.equals(condition.variableLevels);
+    //we do not care about the order when comparing
+    return new HashSet<>(variableLevels).equals(new HashSet<>(condition.variableLevels));
   }
 
   @Override

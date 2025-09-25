@@ -15,6 +15,7 @@ import com.vaadin.flow.component.upload.SucceededEvent;
 import com.vaadin.flow.component.upload.Upload;
 import java.io.InputStream;
 import java.io.Serial;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -257,15 +258,17 @@ public class MeasurementUpload extends Div implements UserInput {
     AtomicInteger counter = new AtomicInteger();
     counter.set(1);
 
-    List<ValidationResponse> responses = new ArrayList<>();
     service.validate(Flux.fromIterable(requests))
-        .doFirst(() -> validationStarted())
+        .doFirst(this::validationStarted)
+        .doOnNext(ignored -> counter.incrementAndGet())
+        .bufferTimeout(20, Duration.ofMillis(200))
         .doOnNext(item -> setValidationProgressText(
-            "Processed " + counter.getAndIncrement() + " requests from " + itemsToValidate))
-        .doOnNext(responses::add)
-        .doOnComplete(() -> displayValidationResults(responses, itemsToValidate, fileName))
+            "Processed " + counter.get() + " requests from " + itemsToValidate))
+        .flatMap(Flux::fromIterable)
+        .collectList()
         .doFinally(it -> validationFinished())
-        .subscribe();
+        .subscribe(responses -> displayValidationResults(
+            responses, itemsToValidate, fileName));
   }
 
   private void validationStarted() {

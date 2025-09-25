@@ -1,4 +1,4 @@
-package life.qbic.projectmanagement.application;
+package life.qbic.projectmanagement.application.concurrent;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -26,7 +26,5 @@ public class VirtualThreadScheduler {
   public static Scheduler scheduler() {
     return scheduler;
   }
-
-
 
 }
