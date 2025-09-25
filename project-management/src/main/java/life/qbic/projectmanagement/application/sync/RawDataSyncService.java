@@ -132,10 +132,8 @@ public class RawDataSyncService {
 
   }
 
-  private static Watermark createNextFreshWatermark(Watermark currentWatermark, int lastResultSize) {}
-
   private static boolean moreDatasetsToSync(int lastResultSize, int maxQuerySize) {
-    // if the last query returned less items than could have been based on the max query
+    // if the last query returned fewer items than could have been based on the max query
     // size, the remote source has no more datasets to be fetched.
     // In case the results were as many as the query size, we don't know if there are more to fetch.
     // We could have accidentally hit exactly the amount of remaining datasets == max query size, or there
