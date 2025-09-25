@@ -122,8 +122,17 @@ public class RawDataSyncService {
   private static Watermark createNextWatermark(Watermark currentWatermark, int lastResultSize) {
     int newOffset =
         moreDatasetsToSync(lastResultSize, MAX_QUERY_SIZE) ? currentWatermark.syncOffset() + MAX_QUERY_SIZE : 0;
-    return new Watermark(JOB_NAME, newOffset, Instant.now(), Instant.now());
+    // If the offset has been reset to 0, we can set the new watermark update since to now
+    if (newOffset == 0) {
+      return new Watermark(JOB_NAME, newOffset, Instant.now(), Instant.now());
+    }
+    // The query was not finished, so we need to query next time again from the currents watermark
+    // time point BUT with the new offset to continue the paginated request
+    return new Watermark(JOB_NAME, newOffset, currentWatermark.updatedSince(), Instant.now());
+
   }
+
+  private static Watermark createNextFreshWatermark(Watermark currentWatermark, int lastResultSize) {}
 
   private static boolean moreDatasetsToSync(int lastResultSize, int maxQuerySize) {
     // if the last query returned less items than could have been based on the max query
