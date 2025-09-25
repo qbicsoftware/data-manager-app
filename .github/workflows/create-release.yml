@@ -83,7 +83,7 @@ jobs:
       - name: Generate SLSA build provenance
         uses: actions/attest-build-provenance@v1
         with:
-          subject-path: "target/**/*.jar"
+          subject-path: "**/target/*.jar"
 
       - name: Publish artefact to QBiC Nexus Repository
         run: VAADIN_OFFLINE_KEY=${{ secrets.VAADIN_SERVER_23_2 }} mvn --quiet --settings $GITHUB_WORKSPACE/.github.settings.xml -Pproduction -DskipTests -Dvaadin.force.production.build=true deploy
