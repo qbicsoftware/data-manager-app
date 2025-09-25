@@ -62,7 +62,6 @@ Heading
   font-weight: var(--font-weight-regular);
 }
 
-.text-bold,
 .bold {
   font-weight: var(--font-weight-bold);
 }
@@ -111,7 +110,7 @@ Heading
   font-size: var(--lumo-font-size-xxl); /*1.75rem*/
 }
 
-/*fixme*/
+/*fixme clarify with shraddha what sizes to take*/
 .text-size-s {
   font-size: var(--lumo-font-size-s);
 }
@@ -170,6 +169,10 @@ Heading
   padding: var(--spacing-07);
 }
 
+.padding-10 {
+  padding: var(--spacing-10);
+}
+
 /*endregion*/
 /*region padding top bottom*/
 .padding-vertical-01 {
@@ -207,13 +210,6 @@ Heading
   padding-bottom: var(--spacing-07);
 }
 
-/*FIXME*/
-.padding-top-bottom-10,
-.padding-vertical-10 {
-  padding-top: var(--spacing-10);
-  padding-bottom: var(--spacing-10);
-}
-
 /*endregion*/
 /*region padding left right*/
 .padding-horizontal-01 {
@@ -249,13 +245,6 @@ Heading
 .padding-horizontal-07 {
   padding-left: var(--spacing-07);
   padding-right: var(--spacing-07);
-}
-
-.padding-left-right-10,
-/*FIXME*/
-.padding-horizontal-10 {
-  padding-left: var(--spacing-10);
-  padding-right: var(--spacing-10);
 }
 
 /*endregion*/
