@@ -8,6 +8,13 @@
   <artifactId>datamanager</artifactId>
   <name>Data Manager</name>
   <version>1.11.0</version>
+  <licenses>
+    <license>
+      <name>AGPL-3.0-or-later</name>
+      <url>https://spdx.org/licenses/AGPL-3.0-or-later.html</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
   <modules>
     <module>user-interface</module>
     <module>identity</module>
@@ -176,12 +183,12 @@
         <artifactId>jackson-annotations</artifactId>
         <version>${jackson.version}</version>
       </dependency>
-          <dependency>
-            <groupId>com.apicatalog</groupId>
-            <artifactId>titanium-json-ld</artifactId>
-<!-- Use specific version to avoid revoked outdated version-->
-            <version>1.6.0</version>
-          </dependency>
+      <dependency>
+        <groupId>com.apicatalog</groupId>
+        <artifactId>titanium-json-ld</artifactId>
+        <!-- Use specific version to avoid revoked outdated version-->
+        <version>1.6.0</version>
+      </dependency>
     </dependencies>
 
   </dependencyManagement>
@@ -261,11 +268,11 @@
           <target>${maven.compiler.target}</target>
         </configuration>
       </plugin>
-        <plugin>
-          <groupId>org.sonarsource.scanner.maven</groupId>
-          <artifactId>sonar-maven-plugin</artifactId>
-          <version>5.2.0.4988</version>
-        </plugin>
+      <plugin>
+        <groupId>org.sonarsource.scanner.maven</groupId>
+        <artifactId>sonar-maven-plugin</artifactId>
+        <version>5.2.0.4988</version>
+      </plugin>
       <plugin>
         <groupId>dev.sigstore</groupId>
         <artifactId>sigstore-maven-plugin</artifactId>
@@ -274,7 +281,9 @@
           <execution>
             <id>sigstore-sign</id>
             <phase>verify</phase>
-            <goals><goal>sign</goal></goals>
+            <goals>
+              <goal>sign</goal>
+            </goals>
           </execution>
         </executions>
       </plugin>
@@ -283,7 +292,11 @@
   <profiles>
     <profile>
       <id>sigcheck</id>
-      <activation><file><exists>src/main</exists></file></activation>
+      <activation>
+        <file>
+          <exists>src/main</exists>
+        </file>
+      </activation>
       <build>
         <pluginManagement>
           <plugins>
@@ -314,7 +327,9 @@
               <!-- bind early so you fail fast -->
               <execution>
                 <id>pgp-verify</id>
-                <goals><goal>check</goal></goals>
+                <goals>
+                  <goal>check</goal>
+                </goals>
                 <phase>validate</phase>
               </execution>
             </executions>
@@ -330,12 +345,48 @@
               <keysMapLocations>
                 <!-- our overrides / allow-list -->
                 <keysMapLocation>/pgp-keys-map.list</keysMapLocation>
-               <keysMapLocation>${maven.multiModuleProjectDirectory}/pgp-keys-override.list</keysMapLocation>
+                <keysMapLocation>${maven.multiModuleProjectDirectory}/pgp-keys-override.list
+                </keysMapLocation>
               </keysMapLocations>
               <suppressSignatureOkLogging>true</suppressSignatureOkLogging>
               <!-- write a JSON report (optional) -->
               <reportWrite>true</reportWrite>
             </configuration>
+          </plugin>
+          <plugin>
+            <groupId>org.cyclonedx</groupId>
+            <artifactId>cyclonedx-maven-plugin</artifactId>
+            <version>2.8.0</version>
+            <executions>
+              <!-- Top-level aggregate SBOM covering all modules -->
+              <execution>
+                <id>aggregate-bom</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>makeAggregateBom</goal>
+                </goals>
+                <configuration>
+                  <schemaVersion>1.5</schemaVersion>
+                  <outputFormat>json</outputFormat>   <!-- produces .json -->
+                  <outputName>${project.artifactId}-${project.version}-sbom</outputName>
+                  <includeBomSerialNumber>true</includeBomSerialNumber>
+                  <includeLicenseText>true</includeLicenseText>
+                </configuration>
+              </execution>
+
+              <!-- (Optional) Per-module SBOMs; keep if you also want one per JAR -->
+              <execution>
+                <id>module-bom</id>
+                <phase>package</phase>
+                <goals><goal>makeAggregateBom</goal></goals>
+                <configuration>
+                  <schemaVersion>1.5</schemaVersion>
+                  <outputFormat>json</outputFormat>
+                  <includeBomSerialNumber>true</includeBomSerialNumber>
+                  <includeLicenseText>true</includeLicenseText>
+                </configuration>
+              </execution>
+            </executions>
           </plugin>
         </plugins>
       </build>
