@@ -16,6 +16,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
+import life.qbic.projectmanagement.domain.model.experiment.Experiment.GroupPreventingVariableDeletionException;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalDesign.AddExperimentalGroupResponse.ResponseCode;
 import life.qbic.projectmanagement.domain.model.experiment.exception.ConditionExistsException;
 import life.qbic.projectmanagement.domain.model.experiment.exception.ExperimentalVariableExistsException;
@@ -183,10 +184,13 @@ public class ExperimentalDesign {
     if (!isVariableDefined(variableName)) {
       return false;
     }
-    variables.removeIf(it -> it.name().value().equals(variableName));
-    for (ExperimentalGroup experimentalGroup : experimentalGroups) {
-      experimentalGroup.condition().removeVariable(variableName);
+
+    if (getExperimentalGroups().isEmpty()) {
+      throw new GroupPreventingVariableDeletionException(
+          "There are experimental groups in the experimental design. Cannot remove experimental variable "
+              + variableName);
     }
+    variables.removeIf(it -> it.name().value().equals(variableName));
     return true;
   }
 
@@ -314,15 +318,6 @@ public class ExperimentalDesign {
         .toList();
     experimentalVariable.replaceLevels(
         newLevels.stream().map(VariableLevel::experimentalValue).toList());
-  }
-
-  /**
-   * removes an experimental variable from the design
-   *
-   * @param variable the variable to be removed
-   */
-  boolean removeExperimentalVariable(ExperimentalVariable variable) {
-    return variables.remove(variable);
   }
 
   /**

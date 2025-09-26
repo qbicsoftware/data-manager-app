@@ -10,7 +10,6 @@ import jakarta.persistence.Version;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.ApplicationException.ErrorParameters;
@@ -198,19 +197,7 @@ public class Experiment {
    * @return true if the variable was removed, falso if there was no need to remove it.
    */
   public boolean removeExperimentalVariable(String name) {
-
-    Optional<ExperimentalVariable> variableOptional = experimentalDesign.getVariable(name);
-    if (variableOptional.isEmpty()) {
-      return false;
-    }
-    ExperimentalVariable variable = variableOptional.get();
-    //check if any group contains this variable
-    if (!experimentalDesign.getExperimentalGroups().isEmpty()) {
-      throw new GroupPreventingVariableDeletionException(
-          "There are experimental groups in the experimental design. Cannot remove experimental variable "
-              + name);
-    }
-    var changed = experimentalDesign.removeExperimentalVariable(variable);
+    var changed = experimentalDesign.removeExperimentalVariable(name);
     if (changed) {
       emitExperimentUpdatedEvent();
     }

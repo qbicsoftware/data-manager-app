@@ -135,7 +135,8 @@ class ExperimentalDesignSpec extends Specification {
         given:
         def design = new ExperimentalDesign()
         def variableName = VariableName.create("environment")
-        design.addVariable(variableName.value(), [ExperimentalValue.create("normal",), ExperimentalValue.create("altered")])
+        var variable = ExperimentalVariable.create(variableName.value(), ExperimentalValue.create("normal",), ExperimentalValue.create("altered"))
+        design.addExperimentalVariable(variable)
         design.addExperimentalGroup("name", Arrays.asList(VariableLevel.create(variableName, ExperimentalValue.create("normal"))), 5)
         when: "an experimental group is defined with identical variable levels"
         var response = design.addExperimentalGroup("other name",
@@ -148,7 +149,8 @@ class ExperimentalDesignSpec extends Specification {
         given:
         def design = new ExperimentalDesign()
         def variableName = VariableName.create("environment")
-        design.addVariable(variableName.value(), [ExperimentalValue.create("normal",), ExperimentalValue.create("altered")])
+        var variable = ExperimentalVariable.create(variableName.value(), ExperimentalValue.create("normal",), ExperimentalValue.create("altered"))
+        design.addExperimentalVariable(variable)
         design.addExperimentalGroup("name", Arrays.asList(VariableLevel.create(variableName, ExperimentalValue.create("normal"))), 5)
 
         when: "a new experimental group is defined"
