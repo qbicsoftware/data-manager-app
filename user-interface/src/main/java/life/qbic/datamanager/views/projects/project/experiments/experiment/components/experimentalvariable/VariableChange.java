@@ -29,7 +29,7 @@ public sealed interface VariableChange permits VariableAdded, VariableRenamed,
     }
   }
 
-  record VariableLevelsChanged(String name, List<LevelChange> levelChanges) implements
+  record VariableLevelsChanged(String name, List<String> levels) implements
       VariableChange {
 
     @Override

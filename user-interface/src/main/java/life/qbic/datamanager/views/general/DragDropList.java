@@ -54,8 +54,6 @@ public class DragDropList<T extends Component> extends Composite<Div> {
       this.item = Objects.requireNonNull(item);
       this.dropBefore = new DropPosition<>();
       this.dropAfter = new DropPosition<>();
-//      dropBefore.setDropTargetComponent(this);
-//      dropAfter.setDropTargetComponent(this);
       this.add(dropBefore, item, dropAfter);
 
       this.dragSource = new DragSource<>() {
@@ -197,8 +195,6 @@ public class DragDropList<T extends Component> extends Composite<Div> {
     }
     updateDraggable();
 
-    //add drop targets
-    updateDropTargets();
     constructedItem.addDropBeforeListener(dropEvent -> {
       if (dropEvent.getDragSourceComponent().isEmpty()) {
         return;
@@ -384,7 +380,6 @@ public class DragDropList<T extends Component> extends Composite<Div> {
     items.remove(dragDropItem);
     getContent().remove(dragDropItem);
     updateDraggable();
-    updateDropTargets();
   }
 
   private void move(int to, DragDropItem<T> dragDropItem) {
@@ -406,14 +401,7 @@ public class DragDropList<T extends Component> extends Composite<Div> {
   }
 
   private void updateDraggable() {
-    if (isEmpty()) {
-      return;
-    }
-    if (items.size() == 1) {
-      items.getFirst().setDraggable(false);
-    } else {
-      items.forEach(item -> item.setDraggable(true));
-    }
+    setDraggable(isEmpty() || items.size() == 1);
   }
 
   private void updateDropTargets() {

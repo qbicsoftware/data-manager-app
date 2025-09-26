@@ -24,7 +24,6 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.function.SerializablePredicate;
 import com.vaadin.flow.shared.Registration;
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -39,9 +38,6 @@ import life.qbic.datamanager.views.general.DragDropList;
 import life.qbic.datamanager.views.general.dialog.InputValidation;
 import life.qbic.datamanager.views.general.dialog.UserInput;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.ExperimentalVariablesInput.PasteEvent;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.LevelChange.LevelAdded;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.LevelChange.LevelDeleted;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.LevelChange.LevelMoved;
 import org.springframework.lang.NonNull;
 
 @Tag("variable-levels-input")
@@ -237,6 +233,7 @@ class VariableLevelsInput extends Div implements UserInput, CanSnapshot,
 
   }
 
+  @NonNull
   @Override
   public InputValidation validate() {
     //valid if at least one level is present
@@ -274,7 +271,11 @@ class VariableLevelsInput extends Div implements UserInput, CanSnapshot,
     return validation;
   }
 
-  List<LevelChange> getChanges() {
+  List<String> getValue() {
+    return extractFilledLevels().apply(levelsContainer.stream().toList());
+  }
+
+  private boolean levelsChanged() {
     if (initialState instanceof LevelsSnapshot(List<Snapshot> levels)) {
 
       var previousLevels = extractFilledLevels().apply(
@@ -284,29 +285,7 @@ class VariableLevelsInput extends Div implements UserInput, CanSnapshot,
               .toList()
       );
       var currentLevels = extractFilledLevels().apply(levelsContainer.stream().toList());
-      //find all the deletions
-      List<LevelDeleted> levelDeletions = previousLevels.stream()
-          .filter(previousLevel -> !currentLevels.contains(previousLevel))
-          .map(removedLevel -> new LevelDeleted(previousLevels.indexOf(removedLevel), removedLevel))
-          .toList();
-      // find all additions
-      List<LevelAdded> levelAdditions = currentLevels.stream()
-          .filter(currentLevel -> !previousLevels.contains(currentLevel))
-          .map(addedLevel -> new LevelAdded(currentLevels.indexOf(addedLevel), addedLevel))
-          .toList();
-      //find all moved levels
-      List<LevelMoved> levelMoves = previousLevels.stream()
-          .filter(currentLevels::contains)
-          .filter(previousLevel -> previousLevels.indexOf(previousLevel) != currentLevels.indexOf(
-              previousLevel))
-          .map(movedLevel -> new LevelMoved(previousLevels.indexOf(movedLevel),
-              currentLevels.indexOf(movedLevel)))
-          .toList();
-      var changes = new ArrayList<LevelChange>();
-      changes.addAll(levelDeletions);
-      changes.addAll(levelAdditions);
-      changes.addAll(levelMoves);
-      return changes;
+      return !previousLevels.equals(currentLevels);
     }
 
     throw new IllegalStateException();
@@ -325,7 +304,7 @@ class VariableLevelsInput extends Div implements UserInput, CanSnapshot,
   @Override
   public boolean hasChanges() {
     return levelsContainer.stream().anyMatch(LevelField::hasChanges)
-        || !getChanges().isEmpty();
+        || levelsChanged();
   }
 
 

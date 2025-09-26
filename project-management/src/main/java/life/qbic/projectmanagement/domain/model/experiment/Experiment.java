@@ -229,6 +229,13 @@ public class Experiment {
     experimentalDesign.changeUnit(variableName, unit);
   }
 
+  public void setVariableLevels(String variable, List<String> levels) {
+    String unit = experimentalDesign.unitForVariable(variable).orElse(null);
+    List<ExperimentalValue> mappedLevels = levels.stream().map(l -> new ExperimentalValue(l, unit))
+        .toList();
+    experimentalDesign.setVariableLevels(variable, mappedLevels);
+  }
+
   public static class GroupPreventingVariableDeletionException extends RuntimeException {
 
     public GroupPreventingVariableDeletionException(String message) {

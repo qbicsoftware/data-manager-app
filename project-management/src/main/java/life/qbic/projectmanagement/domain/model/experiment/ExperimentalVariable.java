@@ -109,9 +109,13 @@ public class ExperimentalVariable {
     return levels.removeIf(it -> variableLevel.experimentalValue().equals(it));
   }
 
-  void replaceLevels(List<VariableLevel> levels) {
+  boolean replaceLevels(List<ExperimentalValue> levels) {
+    if (levels.equals(this.levels)) {
+      return false;
+    }
     this.levels.clear();
-    this.levels.addAll(levels.stream().map(VariableLevel::experimentalValue).toList());
+    this.levels.addAll(levels);
+    return true;
   }
 
 

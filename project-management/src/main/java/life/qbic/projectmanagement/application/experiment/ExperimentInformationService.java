@@ -35,6 +35,7 @@ import life.qbic.projectmanagement.domain.model.experiment.event.ExperimentUpdat
 import life.qbic.projectmanagement.domain.model.experiment.repository.ExperimentRepository;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.Nullable;
@@ -181,18 +182,6 @@ public class ExperimentInformationService {
                 experimentalGroup.toString(), responseCode));
       }
     }
-  }
-
-  private life.qbic.projectmanagement.domain.model.experiment.VariableLevel convertToDomainVariableLevel(
-      VariableLevel level) {
-    ExperimentalValue value;
-    if (level.unit() == null) {
-      value = ExperimentalValue.create(level.levelValue());
-    } else {
-      value = ExperimentalValue.create(level.levelValue(), level.unit());
-    }
-    return new life.qbic.projectmanagement.domain.model.experiment.VariableLevel(
-        new VariableName(level.variableName()), value);
   }
 
   /**
@@ -589,6 +578,16 @@ public class ExperimentInformationService {
             .orElse(null), level.experimentalValue().value());
   }
 
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
+  public void setVariableLevels(String projectId, ExperimentId experimentId, String variable,
+      List<String> levels) {
+    Experiment experiment = loadExperimentById(experimentId);
+
+    experiment.setVariableLevels(variable, levels);
+    experimentRepository.update(experiment);
+  }
+
 
   public record UsedVariableLevel(String variableName, @Nullable String unit, String value) {
 
@@ -663,14 +662,17 @@ public class ExperimentInformationService {
     localDomainEventDispatcher.subscribe(
         new ExperimentUpdatedDomainEventSubscriber(domainEventsCache));
 
-    var queryResult = sampleInformationService.retrieveSamplesForExperiment(id);
-    if (queryResult.isError()) {
+    Collection<Sample> queryResult = null;
+    try {
+      queryResult = sampleInformationService.retrieveSamplesForExperiment(
+          ProjectId.parse(projectId), id.value());
+    } catch (IllegalArgumentException e) {
       throw new ApplicationException("experiment (%s) converting %s to %s".formatted(id,
-          queryResult.getError(), DeletionService.ResponseCode.QUERY_FAILED),
+          e, DeletionService.ResponseCode.QUERY_FAILED),
           ErrorCode.GENERAL,
           ErrorParameters.empty());
     }
-    if (queryResult.isValue() && !queryResult.getValue().isEmpty()) {
+    if (!queryResult.isEmpty()) {
       throw new ApplicationException(
           "Could not edit experimental groups because samples are already registered.",
           ErrorCode.SAMPLES_ATTACHED_TO_EXPERIMENT,

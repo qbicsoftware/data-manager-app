@@ -199,10 +199,6 @@ public class VariableRow extends Composite<Div> implements UserInput, CanSnapsho
     return unit.getOptionalValue();
   }
 
-  private List<LevelChange> getLevelChanges() {
-    return variableLevels.getChanges();
-  }
-
   public static class InvalidChangesException extends RuntimeException {
 
   }
@@ -240,8 +236,8 @@ public class VariableRow extends Composite<Div> implements UserInput, CanSnapsho
             previousRepresentation.getUnit().orElse(null),
             this.getUnit().orElse(null)));
       }
-      if (!this.getLevelChanges().isEmpty()) {
-        changes.add(new VariableLevelsChanged(getVariableName(), this.getLevelChanges()));
+      if (this.variableLevels.hasChanges()) {
+        changes.add(new VariableLevelsChanged(getVariableName(), variableLevels.getValue()));
       }
       return changes;
     }

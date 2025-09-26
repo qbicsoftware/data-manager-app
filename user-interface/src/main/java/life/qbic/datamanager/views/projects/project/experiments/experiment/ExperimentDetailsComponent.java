@@ -12,21 +12,16 @@ import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.AbstractIcon;
-import com.vaadin.flow.component.icon.SvgIcon;
-import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.router.RouteParam;
 import com.vaadin.flow.router.RouteParameters;
-import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.EnumMap;
@@ -54,15 +49,9 @@ import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.CardCollection;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExistingGroupsPreventVariableEdit;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExistingSamplesPreventVariableEdit;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalGroupsDialog;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalGroupsDialog.ExperimentalGroupContent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.ExperimentalVariablesInput;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.LevelChange;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.LevelChange.LevelAdded;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.LevelChange.LevelDeleted;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.LevelChange.LevelMoved;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.VariableChange;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.VariableChange.VariableAdded;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.VariableChange.VariableDeleted;
@@ -75,7 +64,6 @@ import life.qbic.datamanager.views.projects.project.experiments.experiment.updat
 import life.qbic.datamanager.views.projects.project.samples.SampleInformationMain;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
-import life.qbic.projectmanagement.application.DeletionService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalGroupCreationRequest;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalGroupDeletionRequest;
@@ -86,7 +74,6 @@ import life.qbic.projectmanagement.application.confounding.ConfoundingVariableSe
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableInformation;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ExperimentReference;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
-import life.qbic.projectmanagement.application.experiment.ExperimentInformationService.ExperimentalGroupDTO;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService.ExperimentalVariableInformation;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService.UsedVariableLevel;
 import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
@@ -102,7 +89,6 @@ import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import org.springframework.beans.factory.annotation.Autowired;
-import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -141,12 +127,11 @@ public class ExperimentDetailsComponent extends PageArea {
   private final Disclaimer noExperimentalVariablesDefined;
   private final Disclaimer noExperimentalGroupsDefined;
   private final Disclaimer noConfoundingVariablesDefined;
-  private final transient DeletionService deletionService;
   private final transient TerminologyService terminologyService;
   private final transient MessageSourceNotificationFactory messageSourceNotificationFactory;
   private final transient CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
   private final transient ConfoundingVariableService confoundingVariableService;
-  private final AsyncProjectService asyncProjectService;
+  private final transient AsyncProjectService asyncProjectService;
   private Context context;
   private int experimentalGroupCount;
 
@@ -154,7 +139,6 @@ public class ExperimentDetailsComponent extends PageArea {
   public ExperimentDetailsComponent(
       ExperimentInformationService experimentInformationService,
       SampleInformationService sampleInformationService,
-      DeletionService deletionService,
       SpeciesLookupService ontologyTermInformationService,
       TerminologyService terminologyService,
       MessageSourceNotificationFactory messageSourceNotificationFactory,
@@ -166,7 +150,6 @@ public class ExperimentDetailsComponent extends PageArea {
         "messageSourceNotificationFactory must not be null");
     this.experimentInformationService = requireNonNull(experimentInformationService);
     this.sampleInformationService = sampleInformationService;
-    this.deletionService = requireNonNull(deletionService);
     this.ontologyTermInformationService = requireNonNull(ontologyTermInformationService);
     this.noExperimentalVariablesDefined = createNoVariableDisclaimer();
     this.noExperimentalGroupsDefined = createNoGroupsDisclaimer();
@@ -324,8 +307,15 @@ public class ExperimentDetailsComponent extends PageArea {
   private Map<SampleOriginType, Set<OntologyTerm>> getOntologyTermsUsedInSamples(
       ExperimentId experimentId) {
     Map<SampleOriginType, Set<OntologyTerm>> result = new EnumMap<>(SampleOriginType.class);
-    Collection<Sample> samples = sampleInformationService.retrieveSamplesForExperiment(experimentId)
-        .valueOrElse(new ArrayList<>());
+    var projectId = context.projectId().orElseThrow();
+    Collection<Sample> samples = null;
+    try {
+      samples = sampleInformationService.retrieveSamplesForExperiment(projectId,
+          experimentId.value());
+    } catch (RuntimeException e) {
+      log.debug("Could not load sample ontology terms", e);
+      samples = new ArrayList<>();
+    }
 
     Set<OntologyTerm> speciesSet = samples.stream()
         .map(sample -> sample.sampleOrigin().getSpecies())
@@ -507,19 +497,6 @@ public class ExperimentDetailsComponent extends PageArea {
     loadExperimentInformation(projectId, experimentId);
   }
 
-  private void editDialog() {
-    AppDialog variablesEditDialog = AppDialog.medium();
-    var component = new ExperimentalVariablesInput();
-
-    DialogBody dialogBody = DialogBody.with(variablesEditDialog, component, component);
-    variablesEditDialog.registerCancelAction(variablesEditDialog::close);
-    variablesEditDialog.registerConfirmAction(() -> {
-      System.out.println(
-          "component.getChanges() = " + component.getChanges());
-    });
-    variablesEditDialog.open();
-  }
-
   private void openExperimentalVariablesEditDialog() {
     ExperimentId experimentId = context.experimentId().orElseThrow();
     ExperimentalVariablesInput variablesInput = new ExperimentalVariablesInput();
@@ -633,28 +610,13 @@ public class ExperimentDetailsComponent extends PageArea {
         change -> experimentInformationService.setVariableUnit(projectId.value(), experimentId,
             variable, change.newUnit()));
 
-    //TODO change levels
+    //change levels
     changes.stream()
         .filter(VariableLevelsChanged.class::isInstance)
         .map(VariableLevelsChanged.class::cast)
         .findAny()
-        .ifPresent(
-            change -> {
-              for (LevelChange levelChange : change.levelChanges()) {
-                switch (levelChange) {
-                  case LevelAdded levelAdded -> {
-                    System.out.println(levelAdded);
-                  }
-                  case LevelDeleted levelDeleted -> {
-                    System.out.println(levelDeleted);
-                  }
-                  case LevelMoved levelMoved -> {
-                    System.out.println(levelMoved);
-                  }
-                }
-              }
-            }
-        );
+        .ifPresent(change -> experimentInformationService.setVariableLevels(projectId.value(),
+            experimentId, variable, change.levels()));
 
 
     //add variable
@@ -669,6 +631,7 @@ public class ExperimentDetailsComponent extends PageArea {
                 change.unit(),
                 change.levels()));
 
+    //rename variable
     changes.stream()
         .filter(VariableRenamed.class::isInstance)
         .map(VariableRenamed.class::cast)
@@ -694,25 +657,6 @@ public class ExperimentDetailsComponent extends PageArea {
     ExistingSamplesPreventGroupEdit existingSamplesPreventGroupEdit = new ExistingSamplesPreventGroupEdit(
         numberOfRegisteredSamples);
     existingSamplesPreventGroupEdit.open();
-  }
-
-  private void showExistingSamplesPreventVariableEdit(int sampleCount) {
-    ExistingSamplesPreventVariableEdit existingSamplesPreventVariableEdit = new ExistingSamplesPreventVariableEdit(
-        sampleCount);
-    existingSamplesPreventVariableEdit.open();
-  }
-
-  private void showExistingGroupsPreventVariableEdit(int numOfExperimentalGroups) {
-    ExistingGroupsPreventVariableEdit existingGroupsPreventVariableEdit = new ExistingGroupsPreventVariableEdit(
-        numOfExperimentalGroups);
-    existingGroupsPreventVariableEdit.addConfirmListener(
-        confirmEvent -> {
-          experimentSheet.setSelectedIndex(1);
-          confirmEvent.getSource().close();
-        });
-    existingGroupsPreventVariableEdit.addRejectListener(
-        rejectEvent -> rejectEvent.getSource().close());
-    existingGroupsPreventVariableEdit.open();
   }
 
   private void addSampleSourceInformationComponent() {
@@ -763,15 +707,6 @@ public class ExperimentDetailsComponent extends PageArea {
   private void listenForExperimentCollectionComponentEvents() {
     experimentalGroupsCollection.addAddListener(listener -> openExperimentalGroupAddDialog());
     experimentalGroupsCollection.addEditListener(editEvent -> openExperimentalGroupEditDialog());
-  }
-
-  private record VariableLevel(String variableName, String levelValue, String unit) {
-
-
-  }
-
-  private static VariableLevel convertFromApi(AsyncProjectService.VariableLevel level) {
-    return new VariableLevel(level.variableName(), level.levelValue(), level.unit());
   }
 
   private void openExperimentalGroupAddDialog() {
@@ -883,17 +818,17 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private void displayFailedExperimentalGroupDeletion() {
-    getUI().ifPresent(ui -> ui.access(() -> {
-      messageSourceNotificationFactory.toast("experimental.groups.deleted.failed", new Object[]{},
-          getLocale()).open();
-    }));
+    getUI().ifPresent(ui -> ui.access(
+        () -> messageSourceNotificationFactory.toast("experimental.groups.deleted.failed",
+            new Object[]{},
+            getLocale()).open()));
   }
 
   private void displaySuccessfulDeletionNotification() {
-    getUI().ifPresent(ui -> ui.access(() -> {
-      messageSourceNotificationFactory.toast("experimental.groups.deleted.success", new Object[]{},
-          getLocale()).open();
-    }));
+    getUI().ifPresent(ui -> ui.access(
+        () -> messageSourceNotificationFactory.toast("experimental.groups.deleted.success",
+            new Object[]{},
+            getLocale()).open()));
   }
 
   private void updateExperimentalGroups(List<ExperimentalGroupContent> groupsToUpdate) {
@@ -906,11 +841,9 @@ public class ExperimentDetailsComponent extends PageArea {
 
     var serviceCalls = new ArrayList<Mono<ExperimentalGroupUpdateResponse>>();
 
-    experimentalGroups.forEach(experimentalGroup -> {
-      serviceCalls.add(
-          asyncProjectService.update(new ExperimentalGroupUpdateRequest(projectId.value(),
-              experimentId.value(), experimentalGroup)));
-    });
+    experimentalGroups.forEach(experimentalGroup -> serviceCalls.add(
+        asyncProjectService.update(new ExperimentalGroupUpdateRequest(projectId.value(),
+            experimentId.value(), experimentalGroup))));
 
     Mono.when(serviceCalls).doOnSuccess(s -> {
           displaySuccessfulExperimentalGroupUpdate();
@@ -919,28 +852,22 @@ public class ExperimentDetailsComponent extends PageArea {
           log.error("Error while updating experimental group", e);
           displayFailedExperimentalGroupUpdate();
         })
-        .subscribe(it -> {
-          log.debug("Updated experimental groups for project" + projectId);
-        });
+        .doOnSuccess(it -> log.debug("Updated experimental groups for project" + projectId))
+        .subscribe();
   }
 
   private void displayFailedExperimentalGroupUpdate() {
-    getUI().ifPresent(ui -> ui.access(() -> {
-      messageSourceNotificationFactory.toast("experimental.groups.updated.failed", new Object[]{},
-          getLocale()).open();
-    }));
+    getUI().ifPresent(ui -> ui.access(
+        () -> messageSourceNotificationFactory.toast("experimental.groups.updated.failed",
+            new Object[]{},
+            getLocale()).open()));
   }
 
   private void displaySuccessfulExperimentalGroupUpdate() {
-    getUI().ifPresent(ui -> ui.access(() -> {
-      messageSourceNotificationFactory.toast("experimental.groups.updated.success", new Object[]{},
-          getLocale()).open();
-    }));
-  }
-
-  private AsyncProjectService.VariableLevel toApi(VariableLevel level) {
-    return new AsyncProjectService.VariableLevel(level.variableName(), level.levelValue(),
-        level.unit());
+    getUI().ifPresent(ui -> ui.access(
+        () -> messageSourceNotificationFactory.toast("experimental.groups.updated.success",
+            new Object[]{},
+            getLocale()).open()));
   }
 
   private AsyncProjectService.ExperimentalGroup toApi(ExperimentalGroupContent experimentalGroup) {
@@ -950,7 +877,7 @@ public class ExperimentDetailsComponent extends PageArea {
         experimentalGroup.variableLevels().stream()
             .map(it -> new AsyncProjectService.VariableLevel(it.variableName(), it.value(),
                 it.unit()))
-            .collect(Collectors.toList()));
+            .toList());
   }
 
   private void addExperimentalGroups(
@@ -979,17 +906,17 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private void displayFailedExperimentalGroupCreation() {
-    getUI().ifPresent(ui -> ui.access(() -> {
-      messageSourceNotificationFactory.toast("experimental.groups.created.failed", new Object[]{},
-          getLocale()).open();
-    }));
+    getUI().ifPresent(ui -> ui.access(
+        () -> messageSourceNotificationFactory.toast("experimental.groups.created.failed",
+            new Object[]{},
+            getLocale()).open()));
   }
 
   private void displaySuccessfulExperimentalGroupCreation() {
-    getUI().ifPresent(ui -> ui.access(() -> {
-      messageSourceNotificationFactory.toast("experimental.groups.created.success", new Object[]{},
-          getLocale()).open();
-    }));
+    getUI().ifPresent(ui -> ui.access(
+        () -> messageSourceNotificationFactory.toast("experimental.groups.created.success",
+            new Object[]{},
+            getLocale()).open()));
   }
 
   private ExperimentalGroupContent toContent(ExperimentalGroup experimentalGroup) {
@@ -999,12 +926,6 @@ public class ExperimentDetailsComponent extends PageArea {
             .getVariableLevels().stream()
             .map(this::fromDomain)
             .toList());
-  }
-
-  private ExperimentalGroupContent toContent(ExperimentalGroupDTO experimentalGroupDTO) {
-    return new ExperimentalGroupContent(experimentalGroupDTO.id(), -1, experimentalGroupDTO.name(),
-        experimentalGroupDTO.replicateCount(),
-        experimentalGroupDTO.levels().stream().map(this::fromDomain).toList());
   }
 
   private ExperimentalGroupInput.VariableLevel fromDomain(
@@ -1151,123 +1072,4 @@ public class ExperimentDetailsComponent extends PageArea {
     confoundingVariablesContainer.add(confoundingVariableCollection);
   }
 
-  /**
-   * Describes a species, specimen or analyte icon with label, type and source. Note that the icon
-   * source is stored instead of the icon itself, because mixing enums and Components causes trouble
-   * at runtime.
-   */
-  public enum BioIcon {
-    DEFAULT_SPECIES(Constants.DEFAULT_LABEL, SampleSourceType.SPECIES, VaadinIcon.BUG),
-    HUMAN("Human", SampleSourceType.SPECIES, VaadinIcon.MALE),
-    //Mouse by Graphic Mall
-    MOUSE("Mouse", SampleSourceType.SPECIES, new StreamResource("mouse.svg",
-        () -> BioIcon.class.getResourceAsStream("/icons/mouse.svg"))),
-    PLANT("Plant", SampleSourceType.SPECIES, new StreamResource("plant.svg",
-        () -> BioIcon.class.getResourceAsStream("/icons/plant.svg"))),
-    //Mushroom by Jemis Mali on IconScout
-    FUNGI("Fungi", SampleSourceType.SPECIES, new StreamResource("mushroom.svg",
-        () -> BioIcon.class.getResourceAsStream("/icons/mushroom.svg"))),
-    BACTERIA("Bacteria", SampleSourceType.SPECIES, new StreamResource("bacteria.svg",
-        () -> BioIcon.class.getResourceAsStream("/icons/bacteria.svg"))),
-    DEFAULT_SPECIMEN(Constants.DEFAULT_LABEL, SampleSourceType.SPECIMEN, VaadinIcon.DROP),
-    //Kidneys by Daniel Burka on IconScout
-    KIDNEY("Kidney", SampleSourceType.SPECIMEN, new StreamResource("kidneys.svg",
-        () -> BioIcon.class.getResourceAsStream("/icons/kidneys.svg"))),
-    //Liver by Daniel Burka on IconScout
-    LIVER("Liver", SampleSourceType.SPECIMEN, new StreamResource("liver.svg",
-        () -> BioIcon.class.getResourceAsStream("/icons/liver.svg"))),
-    //Heart by Vector Stall on IconScout
-    HEART("Heart", SampleSourceType.SPECIMEN, new StreamResource("heart.svg",
-        () -> BioIcon.class.getResourceAsStream("/icons/heart.svg"))),
-    //Leaf by Phosphor Icons on IconScout
-    LEAF("Leaf", SampleSourceType.SPECIMEN, new StreamResource("leaf.svg",
-        () -> BioIcon.class.getResourceAsStream("/icons/leaf.svg"))),
-    EYE("Eye", SampleSourceType.SPECIMEN, VaadinIcon.EYE),
-    DEFAULT_ANALYTE(Constants.DEFAULT_LABEL, SampleSourceType.ANALYTE, VaadinIcon.CLUSTER);
-    private final String label;
-    private final SampleSourceType type;
-    private final IconResource iconResource;
-
-    BioIcon(String label, SampleSourceType type, VaadinIcon icon) {
-      this.label = label;
-      this.type = type;
-      this.iconResource = new IconResource(icon);
-    }
-
-    BioIcon(String label, SampleSourceType type, StreamResource svgResource) {
-      this.label = label;
-      this.type = type;
-      this.iconResource = new IconResource(svgResource);
-    }
-
-    public static BioIcon getTypeWithNameOrDefault(SampleSourceType sampleSourceType,
-        String iconName) {
-      Optional<BioIcon> searchResult = getOptionsForType(sampleSourceType).stream()
-          .filter(icon -> icon.label.equals(iconName)).findFirst();
-      return searchResult.orElseGet(() -> getDefaultBioIcon(sampleSourceType));
-    }
-
-    public static BioIcon getDefaultBioIcon(SampleSourceType sampleSourceType) {
-      return switch (sampleSourceType) {
-        case SPECIES -> DEFAULT_SPECIES;
-        case SPECIMEN -> DEFAULT_SPECIMEN;
-        case ANALYTE -> DEFAULT_ANALYTE;
-      };
-    }
-
-    public static List<BioIcon> getOptionsForType(SampleSourceType type) {
-      return Arrays.stream(BioIcon.values()).filter(o ->
-          o.getType().equals(type)).toList();
-    }
-
-    public String getLabel() {
-      return label;
-    }
-
-    public SampleSourceType getType() {
-      return type;
-    }
-
-    public IconResource getIconResource() {
-      return iconResource;
-    }
-
-    private static class Constants {
-
-      public static final String DEFAULT_LABEL = "default";
-    }
-  }
-
-  /**
-   * Describes the source level of a sample: species, specimen or analyte
-   */
-  public enum SampleSourceType {
-    SPECIES, SPECIMEN, ANALYTE
-  }
-
-  /**
-   * Wrapper class for different icon resources, e.g. VaadinIcons or custom SVGs. Provides a method
-   * to create the respective Icon component.
-   */
-  public static class IconResource {
-
-    private StreamResource streamResource = null;
-    private VaadinIcon vaadinIconResource = null;
-
-    public IconResource(VaadinIcon vaadinIconResource) {
-      this.vaadinIconResource = vaadinIconResource;
-    }
-
-    public IconResource(StreamResource streamResource) {
-      this.streamResource = streamResource;
-    }
-
-    public AbstractIcon createIcon() {
-      if (streamResource != null) {
-        return new SvgIcon(streamResource);
-      } else {
-        return vaadinIconResource.create();
-      }
-    }
-  }
 }
