@@ -185,7 +185,7 @@ public class ExperimentalDesign {
       return false;
     }
 
-    if (getExperimentalGroups().isEmpty()) {
+    if (!getExperimentalGroups().isEmpty()) {
       throw new GroupPreventingVariableDeletionException(
           "There are experimental groups in the experimental design. Cannot remove experimental variable "
               + variableName);
