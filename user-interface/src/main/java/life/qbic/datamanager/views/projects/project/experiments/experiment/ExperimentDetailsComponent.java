@@ -536,8 +536,9 @@ public class ExperimentDetailsComponent extends PageArea {
 
     for (Entry<String, List<UsedVariableLevel>> entry : usedLevelsByVariable.entrySet()) {
       Set<String> usedValues = entry
-          .getValue().stream().map(UsedVariableLevel::value).collect(
-              Collectors.toSet());
+          .getValue().stream()
+          .map(UsedVariableLevel::value)
+          .collect(Collectors.toSet());
       String variableName = entry.getKey();
       variablesInput.setUsedLevels(variableName, usedValues);
     }
@@ -545,7 +546,7 @@ public class ExperimentDetailsComponent extends PageArea {
       variablesInput.setAddVariablesEnabled(false);
     }
     variablesInput.markInitialized();
-    AppDialog dialog = AppDialog.medium();
+    AppDialog dialog = AppDialog.large();
     DialogHeader.with(dialog, "Define Experiment Variables");
     DialogFooter.with(dialog, "Cancel", "Save");
     DialogBody.with(dialog, variablesInput, variablesInput);
