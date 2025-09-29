@@ -209,8 +209,7 @@ public class ExperimentDetailsComponent extends PageArea {
   @Override
   protected void onAttach(AttachEvent attachEvent) {
     super.onAttach(attachEvent);
-    reloadExperimentalVariables();
-    reloadExperimentalGroups();
+    reloadExperimentInfo(context.projectId().orElseThrow(), context.experimentId().orElseThrow());
   }
 
   private Notification createSampleRegistrationPossibleNotification() {
@@ -508,6 +507,8 @@ public class ExperimentDetailsComponent extends PageArea {
 
   private void reloadExperimentInfo(ProjectId projectId, ExperimentId experimentId) {
     loadExperimentInformation(projectId, experimentId);
+    reloadExperimentalVariables();
+    reloadExperimentalGroups();
   }
 
   private void openExperimentalVariablesEditDialog() {
@@ -998,16 +999,6 @@ public class ExperimentDetailsComponent extends PageArea {
         .orElseThrow();
     title.setText(experiment.getName());
     loadSampleSources(experiment);
-    reloadExperimentalVariables();
-
-    var experimentalGroups = loadExperimentalGroups();
-    fillExperimentalGroupCollection(experimentalGroups);
-    if (experiment.getExperimentalGroups().isEmpty()) {
-      onNoGroupsDefined();
-    } else {
-      onGroupsDefined();
-    }
-
     var confoundingVariables = loadConfoundingVariables(projectId.value(), experimentId);
     fillConfoundingVariablesCollection(confoundingVariables);
     if (confoundingVariables.isEmpty()) {
