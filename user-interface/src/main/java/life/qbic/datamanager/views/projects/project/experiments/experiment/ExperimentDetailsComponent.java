@@ -6,6 +6,7 @@ import static life.qbic.datamanager.views.projects.project.experiments.experimen
 import static life.qbic.datamanager.views.projects.project.experiments.experiment.SampleOriginType.SPECIES;
 import static life.qbic.datamanager.views.projects.project.experiments.experiment.SampleOriginType.SPECIMEN;
 
+import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Anchor;
@@ -13,6 +14,7 @@ import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.router.RouteParam;
@@ -70,6 +72,7 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.Experimen
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalGroupDeletionResponse;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalGroupUpdateRequest;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalGroupUpdateResponse;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalVariable;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableInformation;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ExperimentReference;
@@ -84,7 +87,6 @@ import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalDesign;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
-import life.qbic.projectmanagement.domain.model.experiment.ExperimentalVariable;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
@@ -159,6 +161,10 @@ public class ExperimentDetailsComponent extends PageArea {
     this.addClassName("experiment-details-component");
     confoundingVariablesContainer = new Div();
     confoundingVariablesContainer.addClassNames("width-full", "height-full");
+    // we use `edit` for both
+    experimentalVariableCollection.setEditEnabled(true);
+    experimentalVariableCollection.setAddEnabled(false);
+
     layoutComponent();
     configureComponent();
     this.asyncProjectService = asyncProjectService;
@@ -198,6 +204,13 @@ public class ExperimentDetailsComponent extends PageArea {
     confirmDialog.registerConfirmAction(onConfirmAction);
     confirmDialog.registerCancelAction(confirmDialog::close);
     return confirmDialog;
+  }
+
+  @Override
+  protected void onAttach(AttachEvent attachEvent) {
+    super.onAttach(attachEvent);
+    reloadExperimentalVariables();
+    reloadExperimentalGroups();
   }
 
   private Notification createSampleRegistrationPossibleNotification() {
@@ -512,6 +525,8 @@ public class ExperimentDetailsComponent extends PageArea {
             it.unit(),
             it.levels()
         ))
+        .sorted(
+            Comparator.comparing(ExperimentalVariablesInput.ExperimentalVariableInformation::name))
         .toList();
     variables.forEach(variablesInput::addVariable);
     if (variables.isEmpty()) {
@@ -551,10 +566,7 @@ public class ExperimentDetailsComponent extends PageArea {
         confirmDialog.registerConfirmAction(() -> {
           confirmDialog.close();
           //aggregate by variable
-          Map<String, List<VariableChange>> changesByVariable = changes.stream()
-              .collect(Collectors.groupingBy(VariableChange::affectedVariable));
-          changesByVariable.forEach(this::applyChangesToVariable);
-          dialog.close();
+          performEdit(dialog, changes);
         });
         confirmDialog.registerCancelAction(() -> {
           confirmDialog.close();
@@ -562,12 +574,19 @@ public class ExperimentDetailsComponent extends PageArea {
         });
         confirmDialog.open();
       } else {
-        Map<String, List<VariableChange>> changesByVariable = changes.stream()
-            .collect(Collectors.groupingBy(VariableChange::affectedVariable));
-        changesByVariable.forEach(this::applyChangesToVariable);
-        dialog.close();
+        performEdit(dialog, changes);
       }
     };
+  }
+
+  private void performEdit(AppDialog dialog, List<VariableChange> changes) {
+    Map<String, List<VariableChange>> changesByVariable = changes.stream()
+        .collect(Collectors.groupingBy(VariableChange::affectedVariable));
+    changesByVariable.forEach(this::applyChangesToVariable);
+    if (!changesByVariable.isEmpty()) {
+      reloadExperimentalVariables();
+    }
+    dialog.close();
   }
 
   private AppDialog confirmVariableDeletion(List<String> deletedVariables) {
@@ -616,7 +635,7 @@ public class ExperimentDetailsComponent extends PageArea {
         .map(VariableLevelsChanged.class::cast)
         .findAny()
         .ifPresent(change -> experimentInformationService.setVariableLevels(projectId.value(),
-            experimentId, variable, change.levels()));
+            experimentId, change.name(), change.levels()));
 
 
     //add variable
@@ -979,14 +998,7 @@ public class ExperimentDetailsComponent extends PageArea {
         .orElseThrow();
     title.setText(experiment.getName());
     loadSampleSources(experiment);
-    // We load the experimental variables of the experiment and render them as cards
-    var experimentalVariables = experiment.variables();
-    fillExperimentalVariablesCollection(experimentalVariables);
-    if (experiment.variables().isEmpty()) {
-      onNoVariablesDefined();
-    } else {
-      onVariablesDefined();
-    }
+    reloadExperimentalVariables();
 
     var experimentalGroups = loadExperimentalGroups();
     fillExperimentalGroupCollection(experimentalGroups);
@@ -1005,6 +1017,37 @@ public class ExperimentDetailsComponent extends PageArea {
     }
   }
 
+  private void reloadExperimentalVariables() {
+    String projectId = context.projectId().orElseThrow().value();
+    var experimentId = context.experimentId().orElseThrow().value();
+    getUI().ifPresentOrElse(
+        ui -> {
+          asyncProjectService.getExperimentalVariables(projectId, experimentId)
+              .doOnSubscribe(ignored -> ui.access(this::onVariablesLoading))
+              .doOnSubscribe(ignored -> ui.access(experimentalVariableCollection::clear))
+              .doOnSubscribe(ignored -> log.debug("Loading experimental variables.."))
+              .doOnNext(ignored -> ui.access(this::onVariablesDefined))
+              .doOnNext(it -> ui.access(() -> addExperimentalVariablesDisplay(it)))
+              .switchIfEmpty(Mono.just(new ExperimentalVariable("", List.of()))
+                  .doOnSubscribe(ignored -> log.debug("No experimental variables found."))
+                  .doOnNext(ignored -> ui.access(this::onNoVariablesDefined)))
+              .subscribe();
+        },
+        () -> {
+          log.warn(
+              "No ui present when reloading experimental variables. Element %s is attached = %s".formatted(
+                  this, isAttached()));
+          onNoVariablesDefined();
+        }
+    );
+  }
+
+  private void addExperimentalVariablesDisplay(
+      AsyncProjectService.ExperimentalVariable experimentalVariable) {
+    var card = new ExperimentalVariableCard(experimentalVariable);
+    experimentalVariableCollection.add(card);
+  }
+
   private void onVariablesDefined() {
     experimentalVariablesContainer.removeAll();
     experimentalVariablesContainer.add(experimentalVariableCollection);
@@ -1018,15 +1061,6 @@ public class ExperimentDetailsComponent extends PageArea {
         .toList();
     experimentalGroupsCollection.setContent(experimentalGroupsCards);
     this.experimentalGroupCount = experimentalGroupsCards.size();
-  }
-
-  private void fillExperimentalVariablesCollection(List<ExperimentalVariable> variables) {
-    Comparator<String> natOrder = Comparator.naturalOrder();
-    List<ExperimentalVariableCard> experimentalVariableCards = variables.stream()
-        .sorted((var1, var2) -> natOrder.compare(var1.name().value(), var2.name().value()))
-        .map(ExperimentalVariableCard::new).toList();
-
-    experimentalVariableCollection.setContent(experimentalVariableCards);
   }
 
   private void fillConfoundingVariablesCollection(
@@ -1050,6 +1084,17 @@ public class ExperimentDetailsComponent extends PageArea {
   private void onNoVariablesDefined() {
     experimentalVariablesContainer.removeAll();
     experimentalVariablesContainer.add(noExperimentalVariablesDefined);
+  }
+
+  private void onVariablesLoading() {
+    experimentalVariablesContainer.removeAll();
+    var progress = new ProgressBar();
+    progress.setIndeterminate(true);
+    experimentalVariablesContainer.add(
+        new Span("Loading information"),
+        progress
+    );
+
   }
 
   private void onNoGroupsDefined() {
