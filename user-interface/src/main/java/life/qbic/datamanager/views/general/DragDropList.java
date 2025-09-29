@@ -25,6 +25,8 @@ import java.util.stream.Stream;
  */
 public class DragDropList<T extends Component> extends Composite<Div> {
 
+  private static final String DRAG_DROP_ENABLED_PROPERTY = "dragDropEnabled";
+
   protected static class DropPosition<S extends Component> extends Composite<Div> implements
       DropTarget<S> {
 
@@ -150,6 +152,7 @@ public class DragDropList<T extends Component> extends Composite<Div> {
 
   public DragDropList(Class<T> itemClazz) {
     this.itemClazz = itemClazz;
+    enableDragDrop();
   }
 
   //region Manipulation API
@@ -289,6 +292,7 @@ public class DragDropList<T extends Component> extends Composite<Div> {
    * Enable the drag-drop behaviour of the list
    */
   public void enableDragDrop() {
+    getElement().setProperty(DRAG_DROP_ENABLED_PROPERTY, true);
     setDraggable(true);
   }
 
@@ -296,6 +300,7 @@ public class DragDropList<T extends Component> extends Composite<Div> {
    * Disable the drag-drop behaviour of the list
    */
   public void disableDragDrop() {
+    getElement().setProperty(DRAG_DROP_ENABLED_PROPERTY, false);
     setDraggable(false);
   }
   //endregion
@@ -401,7 +406,8 @@ public class DragDropList<T extends Component> extends Composite<Div> {
   }
 
   private void updateDraggable() {
-    setDraggable(isEmpty() || items.size() == 1);
+    boolean draggable = getElement().getProperty(DRAG_DROP_ENABLED_PROPERTY, false);
+    setDraggable(draggable && items.size() > 1);
   }
 
   private void updateDropTargets() {
