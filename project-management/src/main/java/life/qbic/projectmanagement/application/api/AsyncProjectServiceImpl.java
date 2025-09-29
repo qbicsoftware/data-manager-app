@@ -12,6 +12,7 @@ import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -994,7 +995,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
         () -> experimentInformationService.getVariablesOfExperiment(projectId,
                 ExperimentId.parse(experimentId))
             .stream()
-            .map(this::convertToApi));
+            .map(this::convertToApi)
+            .sorted(Comparator.comparing(ExperimentalVariable::name)));
 
     return applySecurityContextMany(call)
         .subscribeOn(scheduler)
