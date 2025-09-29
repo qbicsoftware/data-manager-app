@@ -233,9 +233,7 @@ public class DragDropList<T extends Component> extends Composite<Div> {
 
     //specify behaviour
     constructedItem.addDragStartListener(dragStartEvent -> {
-      items.forEach(it -> {
-        it.setDropActive(true);
-      });
+      items.forEach(it -> it.setDropActive(true));
       int draggedIdx = items.indexOf(dragStartEvent.getComponent());
       if (draggedIdx > 0) {
         DragDropItem<T> previous = items.get(draggedIdx - 1);
@@ -251,9 +249,7 @@ public class DragDropList<T extends Component> extends Composite<Div> {
       dragStartEvent.getComponent().setClassName(INVISIBLE_CSS, true);
     });
     constructedItem.addDragEndListener(dragEndEvent -> {
-      items.forEach(it -> {
-        it.setDropActive(false);
-      });
+      items.forEach(it -> it.setDropActive(false));
       dragEndEvent.getComponent().setClassName(INVISIBLE_CSS, false);
       //clear changes made during dragstarted
       updateDropTargets();
@@ -379,11 +375,11 @@ public class DragDropList<T extends Component> extends Composite<Div> {
   //endregion
 
   private void setDraggable(boolean draggable) {
-    items.stream().forEach(item -> item.setDraggable(draggable));
+    items.forEach(item -> item.setDraggable(draggable));
     if (draggable) {
       updateDropTargets();
     } else {
-      items.stream().forEach(item -> item.setDropActive(false));
+      items.forEach(item -> item.setDropActive(false));
     }
   }
 
@@ -398,15 +394,16 @@ public class DragDropList<T extends Component> extends Composite<Div> {
     if (from == to) {
       return;
     }
-    if (from < to) {
-      //first remove then move as remove has no impact on to index
+    if (to <= from) {
+      // move to a previous index
+      items.add(to, dragDropItem);
+      getContent().addComponentAtIndex(to, dragDropItem);
+      items.remove(from + 1); //+1 because we added one before
+    } else {
+      // move to a later index
       items.add(to, dragDropItem);
       getContent().addComponentAtIndex(to, dragDropItem);
       items.remove(from);
-    } else if (from > to) {
-      items.add(to, dragDropItem);
-      getContent().addComponentAtIndex(to, dragDropItem);
-      items.remove(from + 1); //because we added one before
     }
     updateDropTargets();
   }
