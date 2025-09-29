@@ -1042,21 +1042,6 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   @Override
   public Mono<ExperimentalVariableUpdateResponse> update(
       ExperimentalVariableUpdateRequest request) {
-//    var call = Mono.fromCallable(() -> {
-//      experimentInformationService.updateExperimentalVariable(request.projectId(),
-//          request.experimentId(),
-//          convertFromApi(request.experimentalVariable()));
-//
-//      return new ExperimentalVariableUpdateResponse(request.projectId(),
-//          request.experimentalVariable(), request.requestId());
-//    });
-//    return applySecurityContext(call)
-//        .subscribeOn(VirtualThreadScheduler.getScheduler())
-//        .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
-//        .doOnError(e -> log.error("Could not update experimental group", e))
-//        .retryWhen(defaultRetryStrategy())
-//        .onErrorMap(e1 -> mapToAPIException(e1,
-//            "Error updating experimental variable " + request.experimentalVariable().name()));
     //TODO implement
     throw new RuntimeException("Not implemented");
   }
