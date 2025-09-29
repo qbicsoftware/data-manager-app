@@ -674,6 +674,12 @@ Colors
   cursor: pointer;
 }
 
+.invisible {
+  opacity: 0;
+  max-height: 0;
+  max-width: 0;
+}
+
 .scroll-vertical {
   overflow-y: scroll;
   scrollbar-color: var(--shade-color-30pct) transparent;

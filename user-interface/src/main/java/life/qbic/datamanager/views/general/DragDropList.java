@@ -26,6 +26,8 @@ import java.util.stream.Stream;
 public class DragDropList<T extends Component> extends Composite<Div> {
 
   private static final String DRAG_DROP_ENABLED_PROPERTY = "dragDropEnabled";
+  private static final String INVISIBLE_CSS = "invisible";
+
 
   protected static class DropPosition<S extends Component> extends Composite<Div> implements
       DropTarget<S> {
@@ -244,11 +246,15 @@ public class DragDropList<T extends Component> extends Composite<Div> {
         nextItem.setDropBeforeEnabled(false);
       }
       dragStartEvent.getComponent().setDropActive(false);
+      //we cannot use Component#setVisible as we need the client dropend event to be propagated.
+      //with setVisible(false) client events are no longer forwarded https://vaadin.com/docs/latest/flow/create-ui/basic-features#visibility.
+      dragStartEvent.getComponent().setClassName(INVISIBLE_CSS, true);
     });
     constructedItem.addDragEndListener(dragEndEvent -> {
       items.forEach(it -> {
         it.setDropActive(false);
       });
+      dragEndEvent.getComponent().setClassName(INVISIBLE_CSS, false);
       //clear changes made during dragstarted
       updateDropTargets();
     });
