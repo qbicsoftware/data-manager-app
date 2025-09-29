@@ -321,7 +321,7 @@ public class ExperimentDetailsComponent extends PageArea {
       ExperimentId experimentId) {
     Map<SampleOriginType, Set<OntologyTerm>> result = new EnumMap<>(SampleOriginType.class);
     var projectId = context.projectId().orElseThrow();
-    Collection<Sample> samples = null;
+    Collection<Sample> samples;
     try {
       samples = sampleInformationService.retrieveSamplesForExperiment(projectId,
           experimentId.value());
@@ -1021,18 +1021,16 @@ public class ExperimentDetailsComponent extends PageArea {
     String projectId = context.projectId().orElseThrow().value();
     var experimentId = context.experimentId().orElseThrow().value();
     getUI().ifPresentOrElse(
-        ui -> {
-          asyncProjectService.getExperimentalVariables(projectId, experimentId)
-              .doOnSubscribe(ignored -> ui.access(this::onVariablesLoading))
-              .doOnSubscribe(ignored -> ui.access(experimentalVariableCollection::clear))
-              .doOnSubscribe(ignored -> log.debug("Loading experimental variables.."))
-              .doOnNext(ignored -> ui.access(this::onVariablesDefined))
-              .doOnNext(it -> ui.access(() -> addExperimentalVariablesDisplay(it)))
-              .switchIfEmpty(Mono.just(new ExperimentalVariable("", List.of()))
-                  .doOnSubscribe(ignored -> log.debug("No experimental variables found."))
-                  .doOnNext(ignored -> ui.access(this::onNoVariablesDefined)))
-              .subscribe();
-        },
+        ui -> asyncProjectService.getExperimentalVariables(projectId, experimentId)
+            .doOnSubscribe(ignored -> ui.access(this::onVariablesLoading))
+            .doOnSubscribe(ignored -> ui.access(experimentalVariableCollection::clear))
+            .doOnSubscribe(ignored -> log.debug("Loading experimental variables.."))
+            .doOnNext(ignored -> ui.access(this::onVariablesDefined))
+            .doOnNext(it -> ui.access(() -> addExperimentalVariablesDisplay(it)))
+            .switchIfEmpty(Mono.just(new ExperimentalVariable("", List.of()))
+                .doOnSubscribe(ignored -> log.debug("No experimental variables found."))
+                .doOnNext(ignored -> ui.access(this::onNoVariablesDefined)))
+            .subscribe(),
         () -> {
           log.warn(
               "No ui present when reloading experimental variables. Element %s is attached = %s".formatted(

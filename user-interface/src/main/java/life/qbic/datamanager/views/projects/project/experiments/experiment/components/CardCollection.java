@@ -90,7 +90,7 @@ public class CardCollection extends Composite<Div> {
 
   /**
    * Register a {@link ComponentEventListener} that will get informed with an
-   * {@link AddEvent< CardCollection >}, as soon as a user wants to add new experimental
+   * {@link AddEvent}, as soon as a user wants to add new experimental
    * variables.
    *
    * @param listener a listener for adding variables events
@@ -103,7 +103,7 @@ public class CardCollection extends Composite<Div> {
 
   /**
    * Register a {@link ComponentEventListener} that will get informed with an
-   * {@link EditEvent< CardCollection >}, as soon as a user wants to edit experimental
+   * {@link EditEvent}, as soon as a user wants to edit experimental
    * variables.
    *
    * @param listener a listener for adding variables events
@@ -141,6 +141,7 @@ public class CardCollection extends Composite<Div> {
    */
   public static class AddEvent extends ComponentEvent<CardCollection> {
 
+    @Serial
     private static final long serialVersionUID = -1156260489115426107L;
 
     public AddEvent(CardCollection source, boolean fromClient) {
