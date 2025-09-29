@@ -221,23 +221,24 @@ public class VariableRow extends Composite<Div> implements UserInput, CanSnapsho
       var previousRepresentation = new VariableRow();
       previousRepresentation.restore(experimentalVariableSnapshot);
       var changes = new ArrayList<VariableChange>();
-      if (previousRepresentation.getVariableName().isBlank() && !this.getVariableName()
+      String originalVariableName = previousRepresentation.getVariableName();
+      if (originalVariableName.isBlank() && !this.getVariableName()
           .isBlank()) {
         return Collections.singletonList(
             new VariableAdded(getVariableName(), getUnit().orElse(null),
                 variableLevels.getLevels()));
       }
-      if (!previousRepresentation.getVariableName().equals(this.getVariableName())) {
-        changes.add(new VariableRenamed(previousRepresentation.getVariableName(),
+      if (!originalVariableName.equals(this.getVariableName())) {
+        changes.add(new VariableRenamed(originalVariableName,
             this.getVariableName()));
       }
       if (!previousRepresentation.getUnit().equals(this.getUnit())) {
-        changes.add(new VariableUnitChanged(this.getVariableName(),
+        changes.add(new VariableUnitChanged(originalVariableName,
             previousRepresentation.getUnit().orElse(null),
             this.getUnit().orElse(null)));
       }
       if (this.variableLevels.hasChanges()) {
-        changes.add(new VariableLevelsChanged(getVariableName(), variableLevels.getValue()));
+        changes.add(new VariableLevelsChanged(originalVariableName, variableLevels.getValue()));
       }
       return changes;
     }
