@@ -442,14 +442,29 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   }
 
   private void downloadNGSMetadata(List<String> selectedMeasurementIds) {
+    UI ui = getUI().orElse(null);
+    if (ui == null) {
+      return; // UI has been detached
+    }
     ProjectId projectId = context.projectId().orElseThrow();
     var inProgressToast = messageFactory.pendingTaskToast("measurement.preparing-download",
         MessageSourceNotificationFactory.EMPTY_PARAMETERS, getLocale());
+
+    if (ui.getSession() != null && ui.getSession().hasLock()) {
+      inProgressToast.open();
+    } else {
+      ui.access(inProgressToast::open);
+    }
+
     asyncService.measurementUpdateNGS(projectId.value(), selectedMeasurementIds, OPEN_XML)
-        .doOnSubscribe(ignore -> executeInUi(inProgressToast::open, 1))
-        .doOnSuccess(result -> triggerDownload(result, getUI().orElse(null)))
-        .doFinally(it -> executeInUi(inProgressToast::close, 2))
-        .subscribe();
+        .subscribe(result -> ui.access(() -> {
+          inProgressToast.close();
+          ui.push();
+          triggerDownload(result, ui);
+        }), error -> {
+          ui.access(inProgressToast::close);
+          log.error(error.getMessage(), error);
+        }, () -> ui.access(inProgressToast::close));
   }
 
   private void triggerDownload(DigitalObject digitalObject, UI ui) {
