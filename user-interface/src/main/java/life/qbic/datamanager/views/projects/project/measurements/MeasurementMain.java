@@ -1,6 +1,7 @@
 package life.qbic.datamanager.views.projects.project.measurements;
 
 import com.vaadin.flow.component.ComponentEvent;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
@@ -13,8 +14,7 @@ import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.Command;
-import com.vaadin.flow.spring.annotation.SpringComponent;
-import com.vaadin.flow.spring.annotation.UIScope;
+import com.vaadin.flow.server.VaadinSession;
 import jakarta.annotation.security.PermitAll;
 import java.io.InputStream;
 import java.io.Serial;
@@ -86,7 +86,6 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.MimeType;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 
 /**
@@ -97,8 +96,6 @@ import reactor.core.publisher.Mono;
  * {@link ExperimentId} and {@link ProjectId} in the URL
  */
 
-@SpringComponent
-@UIScope
 @Route(value = "projects/:projectId?/experiments/:experimentId?/measurements", layout = ExperimentMainLayout.class)
 @PermitAll
 public class MeasurementMain extends Main implements BeforeEnterObserver {
@@ -109,11 +106,10 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   @Serial
   private static final long serialVersionUID = 3778218989387044758L;
   private static final Logger log = LoggerFactory.logger(MeasurementMain.class);
-  private static Disclaimer registerSamplesDisclaimer;
+  private Disclaimer registerSamplesDisclaimer;
   private final DownloadComponent measurementTemplateDownload;
   private final Span measurementsSelectedInfoBox = new Span();
   private final MeasurementDetailsComponent measurementDetailsComponent;
-  private final transient MeasurementPresenter measurementPresenter;
   private final TextField measurementSearchField = new TextField();
   private final transient SampleInformationService sampleInformationService;
   private final transient MeasurementService measurementService;
@@ -121,15 +117,12 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private final InfoBox rawDataAvailableInfo = new InfoBox();
   private final Div noMeasurementDisclaimer;
   private final DownloadComponent downloadComponent;
-  private final transient ProjectInformationService projectInformationService;
   private final transient MessageSourceNotificationFactory messageFactory;
-  private final ExperimentInformationService experimentInformationService;
   private final AsyncProjectService asyncService;
   private final MessageSourceNotificationFactory messageSourceNotificationFactory;
   private transient Context context;
   private AppDialog measurementDialog;
   private final ProjectContext projectContext;
-  private Mono<DigitalObject> metadataDownloadMono;
 
   static class ProjectContext {
 
@@ -163,6 +156,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
       MessageSourceNotificationFactory messageFactory,
       ExperimentInformationService experimentInformationService,
       MessageSourceNotificationFactory messageSourceNotificationFactory) {
+    log.info("Created project measurement main for " + VaadinSession.getCurrent().getSession().getId());
     Objects.requireNonNull(measurementDetailsComponent);
     Objects.requireNonNull(measurementService);
     Objects.requireNonNull(measurementValidationService);
@@ -170,9 +164,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     this.messageFactory = Objects.requireNonNull(messageFactory);
     this.measurementDetailsComponent = measurementDetailsComponent;
     this.measurementService = measurementService;
-    this.measurementPresenter = measurementPresenter;
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
-    this.projectInformationService = projectInformationService;
     this.asyncService = asyncProjectService;
     this.projectContext = new ProjectContext();
 
@@ -192,7 +184,6 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
 
     add(downloadComponent);
     addClassName("measurement");
-    this.experimentInformationService = experimentInformationService;
     this.messageSourceNotificationFactory = messageSourceNotificationFactory;
   }
 
@@ -247,8 +238,6 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
               "Unknown tab: " + measurementDetailsComponent.getSelectedTabName());
       }
     });
-
-
 
     Button registerMeasurementButton = new Button("Register Measurements");
     registerMeasurementButton.addClassName("primary");
@@ -418,19 +407,38 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     result.onValue(v -> measurementDetailsComponent.refreshGrids());
   }
 
-  private void executeInUi(Command command) {
-    getUI().ifPresent(ui -> ui.access(command));
+  private void executeInUi(Command command, int n) {
+    log.info(
+        "[%d]Execute in UI. Current thread: %s".formatted(n, Thread.currentThread().getName()));
+    getUI().ifPresentOrElse(ui -> ui.access(command), () -> {
+      throw new ApplicationException("Damn, was empty");
+    });
   }
 
   private void downloadProteomicsMetadata(List<String> selectedMeasurementIds) {
+    UI ui = getUI().orElse(null);
+    if (ui == null) {
+      return; // UI has been detached
+    }
     ProjectId projectId = context.projectId().orElseThrow();
     var inProgressToast = messageFactory.pendingTaskToast("measurement.preparing-download",
         MessageSourceNotificationFactory.EMPTY_PARAMETERS, getLocale());
+
+    if (ui.getSession() != null && ui.getSession().hasLock()) {
+      inProgressToast.open();
+    } else {
+      ui.access(inProgressToast::open);
+    }
+
     asyncService.measurementUpdatePxP(projectId.value(), selectedMeasurementIds, OPEN_XML)
-        .doOnSubscribe(ignore -> executeInUi(inProgressToast::open))
-        .doOnSuccess(this::triggerDownload)
-        .doFinally(it -> executeInUi(inProgressToast::close))
-        .subscribe();
+        .subscribe(result -> ui.access(() -> {
+          inProgressToast.close();
+          ui.push();
+          triggerDownload(result, ui);
+        }), error -> {
+          ui.access(inProgressToast::close);
+          log.error(error.getMessage(), error);
+        }, () -> ui.access(inProgressToast::close));
   }
 
   private void downloadNGSMetadata(List<String> selectedMeasurementIds) {
@@ -438,13 +446,16 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     var inProgressToast = messageFactory.pendingTaskToast("measurement.preparing-download",
         MessageSourceNotificationFactory.EMPTY_PARAMETERS, getLocale());
     asyncService.measurementUpdateNGS(projectId.value(), selectedMeasurementIds, OPEN_XML)
-        .doOnSubscribe(ignore -> executeInUi(inProgressToast::open))
-        .doOnSuccess(this::triggerDownload)
-        .doFinally(it -> executeInUi(inProgressToast::close))
+        .doOnSubscribe(ignore -> executeInUi(inProgressToast::open, 1))
+        .doOnSuccess(result -> triggerDownload(result, getUI().orElse(null)))
+        .doFinally(it -> executeInUi(inProgressToast::close, 2))
         .subscribe();
   }
 
-  private void triggerDownload(DigitalObject digitalObject) {
+  private void triggerDownload(DigitalObject digitalObject, UI ui) {
+    if (ui == null) {
+      return;
+    }
     DownloadStreamProvider downloadStreamProvider = new DownloadStreamProvider() {
       @Override
       public String getFilename() {
@@ -458,8 +469,12 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
         return digitalObject.content();
       }
     };
-
-    getUI().ifPresent(ui -> ui.access(() -> downloadComponent.trigger(downloadStreamProvider)));
+    if (ui.getSession() != null && ui.getSession().hasLock()) {
+      downloadComponent.trigger(downloadStreamProvider);
+    } else {
+      ui.access(() -> downloadComponent.trigger(downloadStreamProvider));
+    }
+    log.info("Trigger Download. Current thread: " + Thread.currentThread().getName());
   }
 
   private Disclaimer createNoSamplesRegisteredDisclaimer() {
@@ -703,7 +718,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
 
   private void reloadMeasurements() {
     getUI().ifPresent(ui -> ui.access(() -> {
-        measurementDetailsComponent.setContext(context);
+      measurementDetailsComponent.setContext(context);
       setMeasurementInformation();
     }));
   }
