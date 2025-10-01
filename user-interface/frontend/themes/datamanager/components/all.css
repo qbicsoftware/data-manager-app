@@ -719,23 +719,6 @@ Colors
   background-color: var(--primary-color-10pct);
 }
 
-/*the class .v-drag-over-target is assigned by vaadin if a drop event is active and the dragged element hovers over the drag target*/
-.drop-above.v-drag-over-target {
-  border-top: solid var(--primary-color) var(--spacing-02);
-}
-
-.drop-below.v-drag-over-target {
-  border-bottom: solid var(--primary-color) var(--spacing-02);
-}
-
-.drop-left.v-drag-over-target {
-  border-left: solid var(--primary-color) var(--spacing-02);
-}
-
-.drop-right.v-drag-over-target {
-  border-right: solid var(--primary-color) var(--spacing-02);
-}
-
 /*endregion*/
 
 /*region Dialogs*/
