@@ -192,7 +192,7 @@ public class VariableRow extends Composite<Div> implements UserInput, CanSnapsho
   }
 
   String getVariableName() {
-    return name.getValue();
+    return name.getValue().trim();
   }
 
   Optional<String> getUnit() {
