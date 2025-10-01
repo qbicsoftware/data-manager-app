@@ -546,7 +546,7 @@ public class ExperimentDetailsComponent extends PageArea {
       variablesInput.setAddVariablesEnabled(false);
     }
     variablesInput.markInitialized();
-    AppDialog dialog = AppDialog.large();
+    AppDialog dialog = AppDialog.medium();
     DialogHeader.with(dialog, "Define Experiment Variables");
     DialogFooter.with(dialog, "Cancel", "Save");
     DialogBody.with(dialog, variablesInput, variablesInput);
