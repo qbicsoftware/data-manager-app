@@ -56,7 +56,6 @@ import life.qbic.datamanager.views.projects.project.measurements.processor.Proce
 import life.qbic.datamanager.views.projects.project.measurements.registration.MeasurementUpload;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
-import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationNGS;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationPxP;
@@ -68,7 +67,6 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.Measureme
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateRequestBody;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequestBody;
 import life.qbic.projectmanagement.application.api.fair.DigitalObject;
-import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.measurement.MeasurementService.MeasurementDeletionException;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
@@ -149,12 +147,9 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
       @Autowired MeasurementDetailsComponent measurementDetailsComponent,
       @Autowired SampleInformationService sampleInformationService,
       @Autowired MeasurementService measurementService,
-      @Autowired MeasurementPresenter measurementPresenter,
       @Autowired MeasurementValidationService measurementValidationService,
       @Autowired AsyncProjectService asyncProjectService,
-      ProjectInformationService projectInformationService,
       MessageSourceNotificationFactory messageFactory,
-      ExperimentInformationService experimentInformationService,
       MessageSourceNotificationFactory messageSourceNotificationFactory) {
     log.info("Created project measurement main for " + VaadinSession.getCurrent().getSession().getId());
     Objects.requireNonNull(measurementDetailsComponent);
@@ -208,7 +203,6 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
         event -> measurementDetailsComponent.setSearchedMeasurementValue((event.getValue())));
     Button downloadButton = new Button("Download Metadata");
 
-    //TODO if download metadata is in progress
     downloadButton.addClickListener(event -> {
       Optional<String> tabLabel = measurementDetailsComponent.getSelectedTabName();
       if (tabLabel.isEmpty()) {
