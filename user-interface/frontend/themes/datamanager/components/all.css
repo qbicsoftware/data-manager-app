@@ -722,12 +722,20 @@ Colors
 /*endregion*/
 
 /*region Dialogs*/
+
+/*region Custom Stylings*/
+/*This region contains custom styling that should be applied to components when they appear in a dialog*/
+
+.dialog-app .border {
+  border-color: var(--border-color-dialog);
+}
+
+/*endregion*/
 /*region Sections*/
 .dialog-section {
   display: flex;
   flex-direction: column;
 }
-
 /*endregion*/
 /*region Dialog Flavors*/
 
@@ -1079,6 +1087,14 @@ Icons
 
 .border-color-default {
   border-color: var(--border-color-default);
+}
+
+.border-color-light {
+  border-color: var(--border-color-light);
+}
+
+.border-color-none {
+  border-color: transparent;
 }
 
 .border-color-dialog {

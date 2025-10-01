@@ -26,7 +26,8 @@ First some general property definitions
   --font-weight-semi-bold: 600;
   --font-weight-bold: 700;
   --border-color-default: hsla(214, 50%, 22%, 0.26);
-  --border-color-dialog: rgba(26, 56, 96, 0.1);
+  --border-color-light: rgba(26, 56, 96, 0.1);
+  --border-color-dialog: var(--border-color-light);
   --primary-color: hsl(214, 100%, 48%);
   --primary-color-10pct: hsla(214, 100%, 48%, 0.2);
   --primary-color-20pct: hsla(214, 100%, 48%, 0.2);

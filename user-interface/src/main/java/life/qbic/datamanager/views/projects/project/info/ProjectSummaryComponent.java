@@ -635,7 +635,7 @@ public class ProjectSummaryComponent extends PageArea {
     var collapsibleDetails = new CollapsibleDetails(details);
     collapsibleDetails.collapse();
     collapsibleDetails.addClassNames("background-color-grey", "padding-left-05", "padding-right-05",
-        "line-height-01", "max-width-55rem", "text-justify", "border",
+        "line-height-01", "max-width-55rem", "text-justify", "border", "border-color-none",
         "rounded-03");
 
     content.add(
