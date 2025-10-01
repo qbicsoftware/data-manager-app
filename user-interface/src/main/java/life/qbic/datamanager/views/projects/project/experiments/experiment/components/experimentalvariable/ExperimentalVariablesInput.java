@@ -190,7 +190,7 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
         .toList();
     rowsWithDuplicateName.forEach(row -> {
       // be careful not to overwrite previously set invalid state as marking as valid is done on an individual level only.
-      row.setNameInvalid("This variable name already exists.");
+      row.setNameInvalid("Please provide unique variable names.");
     });
     return !rowsWithDuplicateName.isEmpty() ? InputValidation.failed() : InputValidation.passed();
   }
