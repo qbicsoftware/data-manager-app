@@ -1377,7 +1377,6 @@ Older stuff -
 }
 
 .choice-box {
-  border-color: var(--border-color-default);
   border-style: solid;
   border-width: 1px;
   border-radius: var(--spacing-02);
