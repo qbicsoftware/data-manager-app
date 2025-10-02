@@ -1,6 +1,6 @@
 package life.qbic.datamanager.views.projects.project.measurements.processor;
 
-import static org.reflections.Reflections.log;
+import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
+import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationNGS;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementSpecificNGS;
 
@@ -22,6 +23,8 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.Measureme
  */
 class MeasurementRegistrationProcessorNGS implements
     MeasurementProcessor<MeasurementRegistrationInformationNGS> {
+
+  private static final Logger log = logger(MeasurementRegistrationProcessorNGS.class);
 
   @Override
   public List<MeasurementRegistrationInformationNGS> process(
