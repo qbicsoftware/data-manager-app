@@ -152,7 +152,6 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
       @Autowired AsyncProjectService asyncProjectService,
       MessageSourceNotificationFactory messageFactory,
       MessageSourceNotificationFactory messageSourceNotificationFactory) {
-    log.info("Created project measurement main for " + VaadinSession.getCurrent().getSession().getId());
     Objects.requireNonNull(measurementDetailsComponent);
     Objects.requireNonNull(measurementService);
     Objects.requireNonNull(measurementValidationService);
@@ -164,11 +163,11 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     this.asyncService = asyncProjectService;
     this.projectContext = new ProjectContext();
 
-    downloadComponent = new DownloadComponent();
-    measurementTemplateDownload = new DownloadComponent();
-    registerSamplesDisclaimer = createNoSamplesRegisteredDisclaimer();
+    this.downloadComponent = new DownloadComponent();
+    this.measurementTemplateDownload = new DownloadComponent();
+    this.registerSamplesDisclaimer = createNoSamplesRegisteredDisclaimer();
     add(registerSamplesDisclaimer);
-    noMeasurementDisclaimer = createNoMeasurementDisclaimer();
+    this.noMeasurementDisclaimer = createNoMeasurementDisclaimer();
     add(noMeasurementDisclaimer);
     initContent();
     add(measurementTemplateDownload);
@@ -181,6 +180,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     add(downloadComponent);
     addClassName("measurement");
     this.messageSourceNotificationFactory = messageSourceNotificationFactory;
+
+    log.debug("Created project measurement main for " + VaadinSession.getCurrent().getSession().getId());
   }
 
   private void initContent() {
