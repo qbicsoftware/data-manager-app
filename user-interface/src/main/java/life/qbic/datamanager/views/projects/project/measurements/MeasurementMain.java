@@ -1,7 +1,6 @@
 package life.qbic.datamanager.views.projects.project.measurements;
 
 import com.vaadin.flow.component.ComponentEvent;
-import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
@@ -36,7 +35,7 @@ import life.qbic.datamanager.files.export.download.WorkbookDownloadStreamProvide
 import life.qbic.datamanager.files.parsing.converters.ConverterRegistry;
 import life.qbic.datamanager.views.AppRoutes.ProjectRoutes;
 import life.qbic.datamanager.views.Context;
-import life.qbic.datamanager.views.UiUtil;
+import life.qbic.datamanager.views.UiHandle;
 import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.InfoBox;
 import life.qbic.datamanager.views.general.Main;
@@ -123,7 +122,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private AppDialog measurementDialog;
   private final ProjectContext projectContext;
 
-  private final UI ui = UI.getCurrent();
+  private final UiHandle uiHandle = new UiHandle();
 
   static class ProjectContext {
 
@@ -182,6 +181,9 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     add(downloadComponent);
     addClassName("measurement");
     this.messageSourceNotificationFactory = messageSourceNotificationFactory;
+
+    addAttachListener(event -> uiHandle.bind(event.getUI()));
+    addDetachListener(ignored -> uiHandle.unbind());
 
     log.debug(
         "Created project measurement main for " + VaadinSession.getCurrent().getSession().getId());
@@ -414,14 +416,13 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     inProgressToast.open();
 
     asyncService.measurementUpdatePxP(projectId.value(), selectedMeasurementIds, OPEN_XML)
-        .subscribe(result -> UiUtil.onUI(ui, () -> {
-          inProgressToast.close();
-          ui.push();
-          triggerDownload(result);
-        }), error -> {
-          UiUtil.onUI(ui, inProgressToast::close);
+        .subscribe(result -> {
+          uiHandle.onUiAndPush(inProgressToast::close);
+          uiHandle.onUi(() -> triggerDownload(result));
+        }, error -> {
+          uiHandle.onUi(inProgressToast::close);
           log.error(error.getMessage(), error);
-        }, () -> UiUtil.onUI(ui, inProgressToast::close));
+        }, () -> uiHandle.onUi(inProgressToast::close));
   }
 
   private void downloadNGSMetadata(List<String> selectedMeasurementIds) {
@@ -432,14 +433,13 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     inProgressToast.open();
 
     asyncService.measurementUpdateNGS(projectId.value(), selectedMeasurementIds, OPEN_XML)
-        .subscribe(result -> UiUtil.onUI(ui, () -> {
-          inProgressToast.close();
-          ui.push();
-          triggerDownload(result);
-        }), error -> {
-          UiUtil.onUI(ui, inProgressToast::close);
+        .subscribe(result -> {
+          uiHandle.onUiAndPush(inProgressToast::close);
+          uiHandle.onUi(() -> triggerDownload(result));
+        }, error -> {
+          uiHandle.onUi(inProgressToast::close);
           log.error(error.getMessage(), error);
-        }, () -> UiUtil.onUI(ui, inProgressToast::close));
+        }, () -> uiHandle.onUi(inProgressToast::close));
   }
 
   private void triggerDownload(DigitalObject digitalObject) {
@@ -663,13 +663,14 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
             successfulCompletions.incrementAndGet();
           }
         })
-        .doOnTerminate(() -> UiUtil.onUI(ui, () -> {
-          registrationToast.close();
-          processResults(successfulCompletions.get(), requests.size(),
-              this::displayRegistrationSuccess, this::displayRegistrationFailure);
-          ui.push(); // Ensures that the success toast is shown immediately
-          reloadMeasurements();
-        }))
+        .doOnTerminate(() -> {
+          uiHandle.onUiAndPush(() -> {
+            registrationToast.close();
+            processResults(successfulCompletions.get(), requests.size(),
+                this::displayRegistrationSuccess, this::displayRegistrationFailure);
+          });
+          uiHandle.onUi(this::reloadMeasurements);
+        })
         .subscribe();
   }
 
@@ -690,13 +691,14 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
             successfulCompletions.incrementAndGet();
           }
         })
-        .doOnTerminate(() -> UiUtil.onUI(ui, () -> {
-          registrationToast.close();
-          processResults(successfulCompletions.get(), requests.size(),
-              this::displayUpdateSuccess, this::displayUpdateFailure);
-          ui.push(); // Ensures that the success toast is shown immediately
-          reloadMeasurements();
-        }))
+        .doOnTerminate(() -> {
+          uiHandle.onUiAndPush(() -> {
+            registrationToast.close();
+            processResults(successfulCompletions.get(), requests.size(),
+                this::displayUpdateSuccess, this::displayUpdateFailure);
+          });
+          uiHandle.onUi(this::reloadMeasurements);
+        })
         .subscribe();
   }
 

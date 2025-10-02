@@ -2,10 +2,10 @@ package life.qbic.datamanager.views.projects.project.measurements.registration;
 
 import static java.util.Objects.requireNonNull;
 
+import com.vaadin.flow.component.AttachNotifier;
 import com.vaadin.flow.component.Focusable;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.UI;
-import com.vaadin.flow.component.UIDetachedException;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
@@ -35,7 +35,7 @@ import life.qbic.datamanager.files.parsing.converters.MetadataConverterV2;
 import life.qbic.datamanager.files.parsing.tsv.TSVParser;
 import life.qbic.datamanager.files.parsing.xlsx.XLSXParser;
 import life.qbic.datamanager.views.Context;
-import life.qbic.datamanager.views.UiUtil;
+import life.qbic.datamanager.views.UiHandle;
 import life.qbic.datamanager.views.general.InfoBox;
 import life.qbic.datamanager.views.general.dialog.DialogSection;
 import life.qbic.datamanager.views.general.dialog.InputValidation;
@@ -77,7 +77,7 @@ public class MeasurementUpload extends Div implements UserInput {
 
   private final Map<String, List<? extends ValidationRequestBody>> validationRequestsPerFile = new HashMap<>();
   private final MessageSourceNotificationFactory notificationFactory;
-  private final UI ui = UI.getCurrent();  // keeps a reference to the current UI
+  private final UiHandle uiHandle = new UiHandle();  // keeps a reference to the current UI
 
   private final EditableMultiFileMemoryBuffer uploadBuffer;
   private final List<MeasurementFileItem> measurementFileItems;
@@ -143,6 +143,9 @@ public class MeasurementUpload extends Div implements UserInput {
     // Trigger display refresh, to ensure the upload item display is only shown
     // if uploaded measurement files are present
     refresh();
+
+    addAttachListener(event -> uiHandle.bind(event.getUI()));
+    addDetachListener(ignored -> uiHandle.unbind());
   }
 
   public List<? extends ValidationRequestBody> getValidationRequestContent() {
@@ -262,19 +265,17 @@ public class MeasurementUpload extends Div implements UserInput {
     service.validate(Flux.fromIterable(requests))
         .doOnNext(ignored -> counter.incrementAndGet())
         .bufferTimeout(20, Duration.ofMillis(200))
-        .doOnNext(item -> UiUtil.onUI(ui, () -> {
+        .doOnNext(item -> uiHandle.onUiAndPush(() -> {
           setValidationProgressText(
               "Processed " + counter.get() + " requests from " + itemsToValidate);
-          ui.push(); // Ensure client is informed
         }))
         .flatMap(Flux::fromIterable)
         .collectList()
-        .doOnSuccess(it -> UiUtil.onUI(ui, this::validationFinished))
-        .subscribe(responses -> UiUtil.onUI(ui, () -> {
-          validationFinished();
-          displayValidationResults(responses, itemsToValidate, fileName);
-          ui.push(); // Enforce server push
-        }));
+        .doOnSuccess(it -> uiHandle.onUi(this::validationFinished))
+        .subscribe(responses -> {
+          uiHandle.onUi(this::validationFinished);
+          uiHandle.onUiAndPush(() -> displayValidationResults(responses, itemsToValidate, fileName));
+        });
   }
 
   private void validationStarted() {

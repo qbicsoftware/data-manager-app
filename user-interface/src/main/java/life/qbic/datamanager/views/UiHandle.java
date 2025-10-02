@@ -4,6 +4,8 @@ import static java.util.Objects.requireNonNull;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.UIDetachedException;
+import java.lang.ref.WeakReference;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * <b>Small UI utility class</b>
@@ -13,7 +15,18 @@ import com.vaadin.flow.component.UIDetachedException;
  *
  * @since 1.12.0
  */
-public class UiUtil {
+public final class UiHandle {
+
+  private final AtomicReference<WeakReference<UI>> uiReference = new AtomicReference<>(new WeakReference<>(null));
+
+  public void bind(UI ui) {
+    requireNonNull(ui);
+    uiReference.set(new WeakReference<>(ui));
+  }
+
+  public void unbind() {
+    uiReference.set(new WeakReference<>(null));
+  }
 
   /**
    * Always wrap any runnable task that manipulates the ui with this wrapper.
@@ -26,7 +39,8 @@ public class UiUtil {
    * @param task the task to run
    * @since 1.12.0
    */
-  public static void onUI(UI ui, Runnable task) {
+  private void push(Runnable task, boolean pushAfter) {
+    var ui = get();
     if (ui == null || isDetached(ui)) {
       return;
     }
@@ -41,15 +55,37 @@ public class UiUtil {
         ui.access(() -> {
           if (ui.isAttached()) {
             task.run();
+            if (pushAfter) {
+              safePush(ui);
+            }
           }
         });
       } catch (UIDetachedException ignore) { /* drop task if UI is gone */ }
     }
   }
 
+  private static void safePush(UI ui) {
+    if (ui.getPushConfiguration().getPushMode().isEnabled()) {
+      ui.push();
+    }
+  }
+
+  public void onUi(Runnable task) {
+    push(task, false);
+  }
+
+  public void onUiAndPush(Runnable task) {
+    push(task, true);
+  }
+
   private static boolean isDetached(UI ui) {
     requireNonNull(ui);
     return !ui.isAttached();
+  }
+
+  private UI get() {
+    var ui =  uiReference.get();
+    return ui != null ? ui.get() : null;
   }
 
 }
