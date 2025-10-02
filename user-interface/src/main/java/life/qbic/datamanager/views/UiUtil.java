@@ -2,14 +2,13 @@ package life.qbic.datamanager.views;
 
 import static java.util.Objects.requireNonNull;
 
-import com.google.common.util.concurrent.Runnables;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.UIDetachedException;
 
 /**
  * <b>Small UI utility class</b>
  *
- * <p>Provides safe wrapper for {@link Runnables} that access the UI and are executed from outside
+ * <p>Provides safe wrapper for {@link Runnable} that access the UI and are executed from outside
  * the UI thread.</p>
  *
  * @since 1.12.0
