@@ -28,10 +28,20 @@ First some general property definitions
   --border-color-default: hsla(214, 50%, 22%, 0.26);
   --border-color-light: rgba(26, 56, 96, 0.1);
   --border-color-dialog: var(--border-color-light);
+  /*error color for non-textual elements*/
+  --error-color: hsla(3, 85%, 48%, 1);
+  /*error color used as background for invalid inputs*/
+  --error-color-10pct: hsla(3, 85%, 48%, 0.1);
+  /*error text on normal background*/
+  --error-text-color: hsl(3, 89%, 42%);
+  /*text on error-color background*/
+  --error-text-contrast-color: rgb(255, 255, 255);
+
+  --success-color: rgba(21, 193, 93, 1);
   --primary-color: hsl(214, 100%, 48%);
   --primary-color-10pct: hsla(214, 100%, 48%, 0.2);
   --primary-color-20pct: hsla(214, 100%, 48%, 0.2);
-  --primary-contrast-color: #fff;
+  --primary-contrast-color: rgb(255, 255, 255);
   --primary-text-color: hsl(214, 100%, 43%);
   --shade-color-5pct: hsla(214, 61%, 25%, 0.05);
   --shade-color-10pct: hsla(214, 57%, 24%, 0.1);
@@ -46,19 +56,12 @@ First some general property definitions
   --shade-color: hsl(214, 35%, 15%);
   --background-contrast-color-5pct: var(--shade-color-5pct);
   --background-contrast-color-10pct: var(--shade-color-10pct);
-
-
   --secondary-text-color: hsla(214, 42%, 18%, 0.69);
   --tertiary-text-color: hsla(214, 45%, 20%, 0.52);
-  --error-text-color: hsl(3, 89%, 42%);
-  --error-background-color: var(--error-color-10pct);
-  --error-color-50pct: hsla(3, 85%, 49%, 0.5);
-  --error-color-10pct: hsla(3, 85%, 49%, 0.1);
-
   --primary-icon-color: var(--primary-color);
   --info-icon-color: rgba(22, 118, 243, 1);
-  --error-icon-color: rgba(255, 66, 56, 1);
-  --success-icon-color: rgba(21, 193, 93, 1);
+  --error-icon-color: var(--error-color);
+  --success-icon-color: var(--success-color);
   --warning-icon-color: rgba(254, 201, 1, 1);
   --icon-color: var(--shade-color-60pct);
   --label-font-size: 0.875rem;
