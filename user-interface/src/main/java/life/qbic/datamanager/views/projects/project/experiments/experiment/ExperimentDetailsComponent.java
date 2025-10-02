@@ -559,25 +559,7 @@ public class ExperimentDetailsComponent extends PageArea {
       AppDialog dialog) {
     return () -> {
       List<VariableChange> changes = variablesInput.getChanges();
-      List<String> deletedVariables = changes.stream()
-          .filter(VariableDeleted.class::isInstance)
-          .map(VariableChange::affectedVariable)
-          .toList();
-      if (!deletedVariables.isEmpty()) {
-        var confirmDialog = confirmVariableDeletion(deletedVariables);
-        confirmDialog.registerConfirmAction(() -> {
-          confirmDialog.close();
-          //aggregate by variable
-          performEdit(dialog, changes);
-        });
-        confirmDialog.registerCancelAction(() -> {
-          confirmDialog.close();
-          variablesInput.restoreDeletedVariables();
-        });
-        confirmDialog.open();
-      } else {
-        performEdit(dialog, changes);
-      }
+      performEdit(dialog, changes);
     };
   }
 
@@ -589,19 +571,6 @@ public class ExperimentDetailsComponent extends PageArea {
       reloadExperimentalVariables();
     }
     dialog.close();
-  }
-
-  private AppDialog confirmVariableDeletion(List<String> deletedVariables) {
-    var confirmDialog = AppDialog.small();
-    DialogHeader.withIcon(confirmDialog,
-        "Delete experimental variables?",
-        IconFactory.warningIcon());
-    var variableNames = new Span(String.join(", ", deletedVariables));
-    variableNames.addClassNames("padding-horizontal-02 bold");
-    DialogBody.withoutUserInput(confirmDialog,
-        new Div(new Span("The variables "), variableNames, new Span(" will be deleted")));
-    DialogFooter.with(confirmDialog, "Cancel", "Delete Variables");
-    return confirmDialog;
   }
 
   private void openExperimentalVariablesAddDialog() {

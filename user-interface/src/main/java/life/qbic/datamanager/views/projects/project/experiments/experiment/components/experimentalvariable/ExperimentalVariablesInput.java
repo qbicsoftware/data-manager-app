@@ -9,6 +9,7 @@ import com.vaadin.flow.component.DomEvent;
 import com.vaadin.flow.component.EventData;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.dom.DisabledUpdateMode;
 import java.util.ArrayList;
@@ -19,8 +20,13 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import life.qbic.application.commons.CanSnapshot;
 import life.qbic.application.commons.Snapshot;
+import life.qbic.datamanager.views.general.dialog.AppDialog;
+import life.qbic.datamanager.views.general.dialog.DialogBody;
+import life.qbic.datamanager.views.general.dialog.DialogFooter;
+import life.qbic.datamanager.views.general.dialog.DialogHeader;
 import life.qbic.datamanager.views.general.dialog.InputValidation;
 import life.qbic.datamanager.views.general.dialog.UserInput;
+import life.qbic.datamanager.views.general.icon.IconFactory;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.VariableChange.VariableDeleted;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.VariableRow.InvalidChangesException;
 import org.springframework.lang.NonNull;
@@ -41,19 +47,6 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
 
   public record ExperimentalVariableInformation(String name, String unit, List<String> levels) {
 
-  }
-
-  /**
-   * Adds back all deleted variables to the state before deletion. Conserving modifications made by
-   * the user before deleting the variable from the input.
-   */
-  public void restoreDeletedVariables() {
-    var copy = List.copyOf(deletedVariables);
-    copy.reversed() //FIFO
-        .forEach(deletedVariable -> {
-          addRow(toRestoredVariableRow(deletedVariable));
-          deletedVariables.remove(deletedVariable);
-        });
   }
 
   public void setUsedLevels(String variableName, Set<String> levels) {
@@ -123,11 +116,37 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
   }
 
   private void addRow(VariableRow variableRow) {
-    variableRow.addDeleteVariableListener(it -> removeVariable(it.getSource()));
+    variableRow.addDeleteVariableListener(it -> {
+      if (it.getSource().isEmpty()) {
+        removeVariable(it.getSource());
+        return;
+      }
+      AppDialog confirmDialog = confirmVariableDeletionDialog(it.getSource().getVariableName());
+      confirmDialog.registerConfirmAction(() -> {
+        removeVariable(it.getSource());
+        confirmDialog.close();
+      });
+      confirmDialog.registerCancelAction(confirmDialog::close);
+      confirmDialog.open();
+    });
     variablesInput.addComponentAtIndex(
         Math.max(0, (int) (variablesInput.getChildren().count()) - 1),
         variableRow);
     variableRow.focus();
+  }
+
+  private static AppDialog confirmVariableDeletionDialog(String variableName) {
+    AppDialog confirmDialog = AppDialog.small();
+    DialogHeader.withIcon(confirmDialog, "Delete experimental variable?",
+        IconFactory.warningIcon());
+    Span variableNameText = new Span(variableName);
+    variableNameText.addClassNames("bold padding-horizontal-02");
+    DialogBody.withoutUserInput(confirmDialog,
+        new Div(new Span("The variable"), variableNameText,
+            new Span("will be deleted.")));
+    DialogFooter.withDangerousConfirm(confirmDialog, "Cancel",
+        "Delete Variable \"%s\"".formatted(variableName));
+    return confirmDialog;
   }
 
   private void removeVariable(@NonNull VariableRow variableRow) {
