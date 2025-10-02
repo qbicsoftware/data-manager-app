@@ -20,6 +20,7 @@ import life.qbic.projectmanagement.application.batch.SampleUpdateRequest.SampleI
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableInformation;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
+import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 import org.springframework.util.MimeType;
 import reactor.core.publisher.Flux;
@@ -695,20 +696,24 @@ public interface AsyncProjectService {
    * Contains information on one experimental variables
    *
    * @param name   the name of the variable
-   * @param levels possible levels of the variable
+   * @param levels possible levels of the variable, elements must be unique
    * @param unit   the unit of the experimental variable. Can be null if no unit is set
    * @since 1.9.0
    */
-  record ExperimentalVariable(String name, List<String> levels, @Nullable String unit) {
+  record ExperimentalVariable(@NonNull String name, @NonNull List<String> levels,
+                              @Nullable String unit) {
 
     public ExperimentalVariable(String name, List<String> levels) {
       this(name, levels, null);
     }
 
     public ExperimentalVariable {
-      levels = levels.stream()
-          .distinct()
-          .toList();
+      requireNonNull(name);
+      requireNonNull(levels);
+      if (levels.stream().distinct().count() != levels.size()) {
+        throw new IllegalArgumentException("Level values must be unique");
+      }
+      levels = List.copyOf(levels);
     }
 
     @Override
