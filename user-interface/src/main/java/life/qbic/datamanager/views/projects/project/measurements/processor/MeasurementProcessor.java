@@ -26,8 +26,14 @@ public interface MeasurementProcessor<T> {
    *
    * @param request the elements to process
    * @return the processed elements
+   * @throws ProcessingException in case the processing fails
    * @since 1.11.0
    */
-  List<T> process(List<T> request);
+  List<T> process(List<T> request) throws ProcessingException;
 
+  class ProcessingException extends RuntimeException {
+    public ProcessingException(String message, Throwable cause) {
+      super(message, cause);
+    }
+  }
 }
