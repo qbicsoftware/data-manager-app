@@ -74,7 +74,6 @@ class MeasurementUpdateProcessorPxP implements
             .flatMap(m -> m.specificMetadata().entrySet().stream())
             .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
       } catch (IllegalStateException e){
-        log.error("Preparation of specific measurement data failed.", e);
         throw new ProcessingException("Preparation of specific measurement data failed.", e);
       }
       var commonMetadata = pooledEntry.getValue().getFirst();
