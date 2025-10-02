@@ -1,0 +1,8 @@
+@import "variables.css";
+
+.grid-experimental-variable-input {
+  display: grid;
+  grid-template: "a b" "c b";
+  grid-template-columns: 2fr 1fr;
+  grid-template-rows: 1fr minmax(min-content, max-content);
+}

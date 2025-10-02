@@ -27,8 +27,8 @@ import life.qbic.projectmanagement.application.VariableValueFormatter;
 import life.qbic.projectmanagement.domain.model.experiment.Condition;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
-import life.qbic.projectmanagement.domain.model.experiment.VariableLevel;
 import life.qbic.projectmanagement.domain.model.experiment.VariableName;
+import org.springframework.lang.Nullable;
 
 /**
  * <b>ExperimentalGroupInput Field</b>
@@ -40,11 +40,11 @@ import life.qbic.projectmanagement.domain.model.experiment.VariableName;
 public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
 
   private static final Comparator<VariableLevel> VARIABLE_LEVEL_COMPARATOR = Comparator
-      .<VariableLevel, String>comparing(level -> level.variableName().value())
-      .thenComparing(level -> level.experimentalValue().value());
+      .comparing(VariableLevel::variableName)
+      .thenComparing(VariableLevel::value);
   private static final ItemLabelGenerator<VariableLevel> VARIABLE_LEVEL_ITEM_LABEL_GENERATOR = it -> String.format(
-      "%s: %s", it.variableName().value(),
-      VariableValueFormatter.format(it.experimentalValue()));
+      "%s: %s", it.variableName(),
+      VariableValueFormatter.format(it.value(), it.unit()));
 
   private final List<ComponentEventListener<RemoveEvent>> removeEventListeners;
   private final TextField nameField;
@@ -112,11 +112,12 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
       Set<VariableName> variableNamesInAddedSelection = event
           .getAddedSelection().stream()
           .map(VariableLevel::variableName)
+          .map(VariableName::new)
           .collect(Collectors.toSet());
       List<VariableLevel> previousSelectionOfSelectedVariable = event
           .getOldSelection().stream()
           .filter(previouslySelected -> variableNamesInAddedSelection.contains(
-              previouslySelected.variableName()))
+              new VariableName(previouslySelected.variableName())))
           .toList();
       selectComboBox.deselect(previousSelectionOfSelectedVariable);
     });
@@ -238,10 +239,10 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
   }
 
   private boolean filterLevel(VariableLevel level, String filterString) {
-    boolean levelValueContainsFilterString = VariableValueFormatter.format(
-            level.experimentalValue()).toLowerCase()
+    boolean levelValueContainsFilterString = VariableValueFormatter.format(level.value(),
+            level.unit()).toLowerCase()
         .contains(filterString.toLowerCase());
-    boolean variableNameContainsFilterString = level.variableName().value().toLowerCase()
+    boolean variableNameContainsFilterString = level.variableName().toLowerCase()
         .contains(filterString.toLowerCase());
     return variableNameContainsFilterString || levelValueContainsFilterString;
   }
@@ -291,5 +292,10 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
     public RemoveEvent(ExperimentalGroupInput source, boolean fromClient) {
       super(source, fromClient);
     }
+  }
+
+  public record VariableLevel(String variableName, String value, @Nullable String unit) {
+
+
   }
 }

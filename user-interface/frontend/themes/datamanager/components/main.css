@@ -35,7 +35,7 @@
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  row-gap: var(--lumo-space-s);
+  row-gap: var(--spacing-03);
   margin-bottom: var(--lumo-space-l);
   padding-top: var(--lumo-space-xl);
 }
@@ -60,8 +60,8 @@
   column-gap: var(--lumo-space-l);
   border-top: thin solid var(--lumo-contrast-10pct);
   padding-inline: var(--lumo-space-m);
-  padding-bottom: var(--lumo-space-s);
-  padding-top: var(--lumo-space-s);
+  padding-bottom: var(--spacing-03);
+  padding-top: var(--spacing-03);
   grid-area: data-manager-footer;
 }
 
@@ -109,7 +109,7 @@
 
 .main.email-confirmation .email-confirmation-component .resend-verification {
   display: inline-flex;
-  gap: var(--lumo-space-s);
+  gap: var(--spacing-03);
 }
 
 .main.experiment .experiment-details-component {
@@ -214,13 +214,13 @@
 
 .main.measurement .measurement-main-content .buttonsAndInfo .info {
   border-radius: var(--lumo-border-radius-m);
-  column-gap: var(--lumo-space-s);
+  column-gap: var(--spacing-03);
   background-color: var(--lumo-contrast-5pct);
   align-items: center;
   width: fit-content;
   padding-inline: var(--lumo-space-m);
-  padding-top: var(--lumo-space-s);
-  padding-bottom: var(--lumo-space-s);
+  padding-top: var(--spacing-03);
+  padding-bottom: var(--spacing-03);
 }
 
 .main.measurement .measurement-main-content .buttonsAndInfo .buttonAndField {
@@ -232,7 +232,7 @@
 
 .main.measurement .measurement-main-content .button-bar {
   display: inline-flex;
-  column-gap: var(--lumo-space-s);
+  column-gap: var(--spacing-03);
 }
 
 .main.ontology-lookup-main {
@@ -289,7 +289,7 @@
   padding: var(--lumo-space-m);
   flex-direction: column;
   display: flex;
-  gap: var(--lumo-space-s);
+  gap: var(--spacing-03);
   white-space: pre-line;
 }
 

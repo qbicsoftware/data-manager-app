@@ -1,12 +1,12 @@
 package life.qbic.projectmanagement.domain.model.experiment;
 
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import java.util.Objects;
 import java.util.StringJoiner;
-import org.hibernate.annotations.NaturalId;
 
 /**
  * <b>Experimental Group</b>
@@ -21,6 +21,7 @@ import org.hibernate.annotations.NaturalId;
 public class ExperimentalGroup {
 
   private String name;
+  @Embedded
   private Condition condition;
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -118,6 +119,10 @@ public class ExperimentalGroup {
 
   public Integer groupNumber() {
     return this.groupNumber;
+  }
+
+  void renameVariable(String oldName, String newName) {
+    condition.renameVariable(oldName, newName);
   }
 
   @Override

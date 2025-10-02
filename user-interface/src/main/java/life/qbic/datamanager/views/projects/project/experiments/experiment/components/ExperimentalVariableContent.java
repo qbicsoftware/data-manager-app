@@ -9,11 +9,4 @@ import java.util.List;
  */
 public record ExperimentalVariableContent(String name, String unit, List<String> levels) {
 
-  static ExperimentalVariableContent from(final ExperimentalVariableRowLayout layout) {
-    final String variableName = layout.getVariableName();
-    final String unit = layout.getUnit();
-    final List<String> levels = layout.getLevels();
-    return new ExperimentalVariableContent(variableName, unit, levels);
-  }
-
 }

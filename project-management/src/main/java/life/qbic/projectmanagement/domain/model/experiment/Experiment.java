@@ -10,7 +10,6 @@ import jakarta.persistence.Version;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.ApplicationException.ErrorParameters;
@@ -85,7 +84,8 @@ public class Experiment {
     int analyteCount = analytes.size();
     int specimenCount = specimens.size();
     int speciesCount = species.size();
-    if (experimentalDesign.experimentalGroups.stream().filter(group -> group.groupNumber() == null).findAny().isPresent()) {
+    if (experimentalDesign.experimentalGroups.stream().anyMatch(
+        group -> group.groupNumber() == null)) {
       assignExperimentalGroupNumbers();
     }
   }
@@ -180,7 +180,12 @@ public class Experiment {
    * @since 1.0.0
    */
   public void removeAllExperimentalVariables() {
-    removeAllExperimentalGroups();
+    //check if any group contains this variable
+    if (!experimentalDesign.getExperimentalGroups().isEmpty()) {
+      throw new GroupPreventingVariableDeletionException(
+          "There are experimental groups in the experimental design. Cannot remove experimental variable "
+              + name);
+    }
     experimentalDesign.removeAllExperimentalVariables();
     emitExperimentUpdatedEvent();
   }
@@ -192,25 +197,30 @@ public class Experiment {
    * @return true if the variable was removed, falso if there was no need to remove it.
    */
   public boolean removeExperimentalVariable(String name) {
-
-    Optional<ExperimentalVariable> variableOptional = experimentalDesign.getVariable(name);
-    if (variableOptional.isEmpty()) {
-      return false;
+    var changed = experimentalDesign.removeExperimentalVariable(name);
+    if (changed) {
+      emitExperimentUpdatedEvent();
     }
-    ExperimentalVariable variable = variableOptional.get();
-    //check if any group contains this variable
-    if (!experimentalDesign.getExperimentalGroups().isEmpty()) {
-      throw new GroupPreventingVariableDeletionException(
-          "There are experimental groups in the experimental design. Cannot remove experimental variable "
-              + name);
-    }
-    experimentalDesign.removeExperimentalVariable(variable);
-    emitExperimentUpdatedEvent();
-    return true;
+    return changed;
   }
 
   public void removeExperimentGroupByGroupNumber(int experimentalGroupNumber) {
     experimentalDesign.removeExperimentalGroupByGroupNumber(experimentalGroupNumber);
+  }
+
+  public void renameExperimentalVariable(String currentName, String futureName) {
+    experimentalDesign.renameExperimentalVariable(currentName, futureName);
+  }
+
+  public void setVariableUnit(String variableName, String unit) {
+    experimentalDesign.changeUnit(variableName, unit);
+  }
+
+  public void setVariableLevels(String variable, List<String> levels) {
+    String unit = experimentalDesign.unitForVariable(variable).orElse(null);
+    List<ExperimentalValue> mappedLevels = levels.stream().map(l -> new ExperimentalValue(l, unit))
+        .toList();
+    experimentalDesign.setVariableLevels(variable, mappedLevels);
   }
 
   public static class GroupPreventingVariableDeletionException extends RuntimeException {
@@ -292,16 +302,15 @@ public class Experiment {
    */
   public ExperimentalVariable addVariableToDesign(String variableName,
       List<ExperimentalValue> levels) {
-    return experimentalDesign.addVariable(variableName, levels)
-        .onValue(ignored -> emitExperimentCreatedEvent())
-        .valueOrElseThrow(e -> new RuntimeException(e));
+    ExperimentalVariable experimentalVariable = ExperimentalVariable.create(variableName,
+        levels.toArray(new ExperimentalValue[0]));
+    boolean created = experimentalDesign.addExperimentalVariable(experimentalVariable);
+    if (created) {
+      emitExperimentUpdatedEvent();
+    }
+    return experimentalVariable;
   }
 
-
-  public void removeExperimentalVariables(List<String> addedNames) {
-    throw new RuntimeException("Not implemented");
-
-  }
 
   /**
    * Creates an experimental group consisting of one or more levels of distinct variables and the

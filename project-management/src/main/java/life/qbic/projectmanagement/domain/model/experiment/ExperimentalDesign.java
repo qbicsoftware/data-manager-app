@@ -13,8 +13,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
+import life.qbic.projectmanagement.domain.model.experiment.Experiment.GroupPreventingVariableDeletionException;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalDesign.AddExperimentalGroupResponse.ResponseCode;
 import life.qbic.projectmanagement.domain.model.experiment.exception.ConditionExistsException;
 import life.qbic.projectmanagement.domain.model.experiment.exception.ExperimentalVariableExistsException;
@@ -92,7 +94,7 @@ public class ExperimentalDesign {
     // needed for JPA
   }
 
-  public static ExperimentalDesign create() {
+  static ExperimentalDesign create() {
     return new ExperimentalDesign();
   }
 
@@ -109,52 +111,128 @@ public class ExperimentalDesign {
     int groupCount = experimentalGroups.size();
   }
 
-  /**
-   * Sets the experimental variables for the experiment.
-   *
-   * @param variables a {@link List} of {@link ExperimentalVariable}s} for the current experiment.
-   * @throws IllegalStateException if there are already {@link ExperimentalGroup}s defined for the
-   *                               experiment. They need to be deleted first.
-   * @since 1.10.0
-   */
-  public void setExperimentalVariables(List<ExperimentalVariable> variables)
-      throws IllegalStateException {
-    Objects.requireNonNull(variables);
+  private boolean isLevelUsed(VariableLevel variableLevel) {
+    String variableName = variableLevel.variableName().value();
+    Optional<ExperimentalVariable> optionalExperimentalVariable = variableWithName(variableName);
+    if (optionalExperimentalVariable.isEmpty()) {
+      throw new ExperimentalVariableNotDefinedException(
+          "No variable with name " + variableName + " exists");
+    }
+
+    return definedConditions().anyMatch(it -> it.contains(variableLevel));
+  }
+
+  private Stream<Condition> definedConditions() {
+    return experimentalGroups.parallelStream()
+        .map(ExperimentalGroup::condition)
+        .distinct();
+  }
+
+  Optional<String> unitForVariable(String variableName) {
+    return variableWithName(variableName)
+        .orElseThrow(() -> new ExperimentalVariableNotDefinedException(
+            "No variable with name " + variableName + " exists"))
+        .usedUnit();
+  }
+
+  boolean setVariableLevels(String variableName, List<ExperimentalValue> levels) {
+    var experimentalVariable = variableWithName(variableName)
+        .orElseThrow(() -> new ExperimentalVariableNotDefinedException(
+            "No variable with name " + variableName + " exists"));
+    List<VariableLevel> levelsToRemove = experimentalVariable.levels()
+        .stream()
+        .filter(it -> !levels.contains(it.experimentalValue()))
+        .toList();
+
+    List<VariableLevel> wrongfullyDeletedLevels = levelsToRemove.stream().filter(this::isLevelUsed)
+        .toList();
+
+    if (!wrongfullyDeletedLevels.isEmpty()) {
+      throw new IllegalArgumentException(
+          "Variable levels " + wrongfullyDeletedLevels
+              + " are already in use and cannot be deleted.");
+    }
+
+    //set levels if everything is in order
+    if (levels.size() != levels.stream().distinct().count()) {
+      throw new IllegalArgumentException("Duplicate levels detected. This is not allowed.");
+    }
+    return experimentalVariable.replaceLevels(levels);
+  }
+
+  boolean addExperimentalVariable(ExperimentalVariable experimentalVariable) {
     if (!experimentalGroups.isEmpty()) {
       throw new IllegalStateException("There are already experimental groups defined");
     }
-    this.variables.clear();
-    this.variables.addAll(variables);
+    Optional<ExperimentalVariable> optionalExperimentalVariable = variableWithName(
+        experimentalVariable.name().value());
+    if (optionalExperimentalVariable.isPresent()) {
+      ExperimentalVariable variable = optionalExperimentalVariable.orElseThrow();
+      if (variable.name().equals(experimentalVariable.name()) && variable.levels()
+          .equals(experimentalVariable.levels())) {
+        //we have the same information already, nothing to do.
+        return false;
+      } else {
+        throw new ExperimentalVariableExistsException(
+            "A variable with name " + experimentalVariable.name() + " already exists");
+      }
+    }
+    return variables.add(experimentalVariable);
   }
 
-  /**
-   * Adds a level to an experimental variable with the given name. A successful operation is
-   * indicated in the result, which can be verified via {@link Result#isValue()}.
-   * <p>
-   * <b>Note</b>: If a variable with the provided name is not defined in the design, the creation
-   * will fail with an {@link ExperimentalVariableNotDefinedException}. You can check via
-   * {@link Result#isError()} if this is the case.
-   *
-   * @param variableName a declarative and unique name for the variable
-   * @param level        the value to be added to the levels of that variable
-   * @return a {@link Result} object containing the added level value or declarative exceptions. The
-   * result will contain an {@link ExperimentalVariableNotDefinedException} if no variable with the
-   * provided name is defined in this design.
-   * @since 1.0.0
-   * @deprecated please use {@link #setExperimentalVariables(List)} to update the experimental
-   * variables.
-   */
-  @Deprecated(since = "1.10.0", forRemoval = true)
-  Result<VariableLevel, Exception> addLevelToVariable(String variableName,
-      ExperimentalValue level) {
-    Optional<ExperimentalVariable> experimentalVariableOptional = variableWithName(variableName);
-    if (experimentalVariableOptional.isEmpty()) {
-      return Result.fromError(
-          new ExperimentalVariableNotDefinedException(
-              "There is no variable with name " + variableName));
+  boolean removeExperimentalVariable(String variableName) {
+    if (!isVariableDefined(variableName)) {
+      return false;
     }
-    ExperimentalVariable experimentalVariable = experimentalVariableOptional.get();
-    return experimentalVariable.addLevel(level);
+
+    if (!getExperimentalGroups().isEmpty()) {
+      throw new GroupPreventingVariableDeletionException(
+          "There are experimental groups in the experimental design. Cannot remove experimental variable "
+              + variableName);
+    }
+    variables.removeIf(it -> it.name().value().trim().equals(variableName.trim()));
+    return true;
+  }
+
+  void renameExperimentalVariable(String oldName, String newName) {
+    RuntimeException noVariableException = new ExperimentalVariableNotDefinedException(
+        "No variable with name " + oldName + " exists");
+    if (variableWithName(oldName).isEmpty()) {
+      throw noVariableException;
+    }
+    if (variableWithName(newName).isPresent()) {
+      throw new ExperimentalVariableExistsException(
+          "Variable with the name " + newName + " already exists.");
+    }
+    try {
+      renameVariableInGroups(oldName, newName);
+    } catch (RuntimeException e) {
+      renameVariableInGroups(newName, oldName);
+      throw e;
+    }
+    try {
+      renameVariable(oldName, newName);
+    } catch (RuntimeException e) {
+      renameVariableInGroups(newName, oldName);
+      throw e;
+    }
+  }
+
+
+  private void renameVariable(String from, String to) {
+    for (ExperimentalVariable experimentalVariable : variables) {
+      if (experimentalVariable.name().value().equals(from)) {
+        experimentalVariable.renameTo(to);
+        return;
+      }
+    }
+    throw new ExperimentalVariableNotDefinedException("No variable with name " + from + " exists");
+  }
+
+  private void renameVariableInGroups(String oldName, String newName) {
+    for (ExperimentalGroup experimentalGroup : experimentalGroups) {
+      experimentalGroup.renameVariable(oldName, newName);
+    }
   }
 
   List<ExperimentalVariable> experimentalVariables() {
@@ -165,8 +243,8 @@ public class ExperimentalDesign {
     return variables.stream().filter(it -> it.name().value().equals(variableName)).findAny();
   }
 
-  boolean isVariableDefined(String variableName) {
-    return variables.stream().anyMatch(it -> it.name().value().equals(variableName));
+  private boolean isVariableDefined(String variableName) {
+    return variables.stream().anyMatch(it -> it.name().value().trim().equals(variableName.trim()));
   }
 
   @Override
@@ -194,32 +272,12 @@ public class ExperimentalDesign {
    *
    * @return true if there is a condition with the same levels; false otherwise
    */
-  boolean isConditionDefined(Condition condition) {
+  private boolean isConditionDefined(Condition condition) {
     return experimentalGroups.stream().anyMatch(it -> it.condition().equals(condition));
   }
 
-  Result<ExperimentalVariable, Exception> addVariable(String variableName,
-      List<ExperimentalValue> levels) {
-    if (levels.isEmpty()) {
-      return Result.fromError(new IllegalArgumentException(
-          "No levels were defined for " + variableName));
-    }
 
-    if (isVariableDefined(variableName)) {
-      return Result.fromError(new ExperimentalVariableExistsException(
-          "A variable with the name " + variableName + " already exists."));
-    }
-    try {
-      ExperimentalVariable variable = ExperimentalVariable.create(variableName,
-          levels.toArray(ExperimentalValue[]::new));
-      variables.add(variable);
-      return Result.fromValue(variable);
-    } catch (IllegalArgumentException e) {
-      return Result.fromError(e);
-    }
-  }
-
-  public void removeAllExperimentalVariables() throws IllegalStateException {
+  void removeAllExperimentalVariables() throws IllegalStateException {
     if (!experimentalGroups.isEmpty()) {
       throw new IllegalStateException(
           "Cannot delete experimental variables referenced by an experimental group.");
@@ -233,19 +291,33 @@ public class ExperimentalDesign {
    * @param name the name of the variable
    * @return the optional variable, {@link Optional#empty()} if no variable with that name exists.
    */
-  public Optional<ExperimentalVariable> getVariable(String name) {
+  Optional<ExperimentalVariable> getVariable(String name) {
     return variables.stream()
         .filter(it -> it.name().value().equals(name))
         .findAny();
   }
 
   /**
-   * removes an experimental variable from the design
+   * Change the unit of all experimental values.
    *
-   * @param variable the variable to be removed
+   * @param variableName the name of the variable
+   * @param unit         the unit to use from now on
    */
-  public void removeExperimentalVariable(ExperimentalVariable variable) {
-    variables.remove(variable);
+  void changeUnit(String variableName, String unit) {
+    ExperimentalVariable experimentalVariable = getVariable(variableName).orElseThrow(() ->
+        new IllegalArgumentException("Variable " + variableName + " does not exist."));
+    if (experimentalVariable.usedUnit().map(usedUnit -> usedUnit.equals(unit)).orElse(false)) {
+      return;
+    }
+    if (experimentalVariable.levels().stream().anyMatch(this::isLevelUsed)) {
+      throw new IllegalStateException("Levels are in use. Unit change not possible");
+    }
+    List<VariableLevel> newLevels = experimentalVariable.levels().stream()
+        .map(level -> new VariableLevel(level.variableName(),
+            new ExperimentalValue(level.experimentalValue().value(), unit)))
+        .toList();
+    experimentalVariable.replaceLevels(
+        newLevels.stream().map(VariableLevel::experimentalValue).toList());
   }
 
   /**
@@ -263,7 +335,7 @@ public class ExperimentalDesign {
    *                       experiment
    * @param sampleSize     the number of samples that are expected for this experimental group
    */
-  public Result<ExperimentalGroup, ResponseCode> addExperimentalGroup(String name,
+  Result<ExperimentalGroup, ResponseCode> addExperimentalGroup(String name,
       Collection<VariableLevel> variableLevels,
       int sampleSize) {
     variableLevels.forEach(Objects::requireNonNull);
@@ -309,7 +381,7 @@ public class ExperimentalDesign {
    *                       experiment
    * @param sampleSize     the number of samples that are expected for this experimental group
    */
-  public Result<ExperimentalGroup, ResponseCode> updateExperimentalGroup(long id, String name,
+  Result<ExperimentalGroup, ResponseCode> updateExperimentalGroup(long id, String name,
       Collection<VariableLevel> variableLevels, int sampleSize) {
     variableLevels.forEach(Objects::requireNonNull);
     if (variableLevels.isEmpty()) {
@@ -337,16 +409,17 @@ public class ExperimentalDesign {
     return Result.fromValue(groupToUpdate);
   }
 
-  public List<ExperimentalGroup> getExperimentalGroups() {
+  List<ExperimentalGroup> getExperimentalGroups() {
     return experimentalGroups.stream().toList();
   }
 
-  public void removeExperimentalGroup(long groupId) {
+  void removeExperimentalGroup(long groupId) {
     this.experimentalGroups.removeIf(experimentalGroup -> experimentalGroup.id() == groupId);
   }
 
-  public void removeExperimentalGroupByGroupNumber(int experimentalGroupNumber) {
-    this.experimentalGroups.removeIf(experimentalGroup -> experimentalGroupNumber == experimentalGroup.groupNumber());
+  void removeExperimentalGroupByGroupNumber(int experimentalGroupNumber) {
+    this.experimentalGroups.removeIf(
+        experimentalGroup -> experimentalGroupNumber == experimentalGroup.groupNumber());
   }
 
   public record AddExperimentalGroupResponse(ResponseCode responseCode) {

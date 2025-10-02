@@ -434,12 +434,12 @@ public class MeasurementUpload extends Div implements UserInput {
       fileNameLabel.addClassNames("file-name");
 
       setDisplayBoxContent(measurementFileItem.measurementValidationReport());
-      displayBox.addClassNames("flex-vertical", "padding-top-bottom-02");
+      displayBox.addClassNames("flex-vertical", "padding-vertical-02");
 
       add(fileNameLabel);
       add(displayBox);
-      addClassNames("flex-vertical", "gap-04", "choice-box", "padding-top-bottom-04",
-          "padding-left-right-04");
+      addClassNames("flex-vertical", "gap-04", "choice-box", "padding-vertical-04",
+          "padding-horizontal-04");
     }
 
     public MeasurementFileItem measurementFileItem() {
@@ -510,8 +510,8 @@ public class MeasurementUpload extends Div implements UserInput {
 
     private ValidationReportDisplay(ValidationHeader header) {
       add(header);
-      addClassNames("flex-vertical", "gap-04", "choice-box", "padding-top-bottom-04",
-          "padding-left-right-04", "background-contrast-5pct");
+      addClassNames("flex-vertical", "gap-04", "choice-box", "padding-vertical-04",
+          "padding-horizontal-04", "background-contrast-5pct");
     }
 
     static ValidationReportDisplay empty() {
