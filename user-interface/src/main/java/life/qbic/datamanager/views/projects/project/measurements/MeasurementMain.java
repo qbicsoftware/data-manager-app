@@ -13,7 +13,6 @@ import com.vaadin.flow.dom.Style.Visibility;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.server.Command;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
@@ -37,6 +36,7 @@ import life.qbic.datamanager.files.export.download.WorkbookDownloadStreamProvide
 import life.qbic.datamanager.files.parsing.converters.ConverterRegistry;
 import life.qbic.datamanager.views.AppRoutes.ProjectRoutes;
 import life.qbic.datamanager.views.Context;
+import life.qbic.datamanager.views.UiUtil;
 import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.InfoBox;
 import life.qbic.datamanager.views.general.Main;
@@ -123,6 +123,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private AppDialog measurementDialog;
   private final ProjectContext projectContext;
 
+  private final UI ui = UI.getCurrent();
+
   static class ProjectContext {
 
     private String projectId;
@@ -181,7 +183,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     addClassName("measurement");
     this.messageSourceNotificationFactory = messageSourceNotificationFactory;
 
-    log.debug("Created project measurement main for " + VaadinSession.getCurrent().getSession().getId());
+    log.debug(
+        "Created project measurement main for " + VaadinSession.getCurrent().getSession().getId());
   }
 
   private void initContent() {
@@ -404,61 +407,42 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   }
 
   private void downloadProteomicsMetadata(List<String> selectedMeasurementIds) {
-    UI ui = getUI().orElse(null);
-    if (ui == null) {
-      return; // UI has been detached
-    }
     ProjectId projectId = context.projectId().orElseThrow();
     var inProgressToast = messageFactory.pendingTaskToast("measurement.preparing-download",
         MessageSourceNotificationFactory.EMPTY_PARAMETERS, getLocale());
 
-    if (ui.getSession() != null && ui.getSession().hasLock()) {
-      inProgressToast.open();
-    } else {
-      ui.access(inProgressToast::open);
-    }
+    inProgressToast.open();
 
     asyncService.measurementUpdatePxP(projectId.value(), selectedMeasurementIds, OPEN_XML)
-        .subscribe(result -> ui.access(() -> {
+        .subscribe(result -> UiUtil.onUI(ui, () -> {
           inProgressToast.close();
           ui.push();
-          triggerDownload(result, ui);
+          triggerDownload(result);
         }), error -> {
-          ui.access(inProgressToast::close);
+          UiUtil.onUI(ui, inProgressToast::close);
           log.error(error.getMessage(), error);
-        }, () -> ui.access(inProgressToast::close));
+        }, () -> UiUtil.onUI(ui, inProgressToast::close));
   }
 
   private void downloadNGSMetadata(List<String> selectedMeasurementIds) {
-    UI ui = getUI().orElse(null);
-    if (ui == null) {
-      return; // UI has been detached
-    }
     ProjectId projectId = context.projectId().orElseThrow();
     var inProgressToast = messageFactory.pendingTaskToast("measurement.preparing-download",
         MessageSourceNotificationFactory.EMPTY_PARAMETERS, getLocale());
 
-    if (ui.getSession() != null && ui.getSession().hasLock()) {
-      inProgressToast.open();
-    } else {
-      ui.access(inProgressToast::open);
-    }
+    inProgressToast.open();
 
     asyncService.measurementUpdateNGS(projectId.value(), selectedMeasurementIds, OPEN_XML)
-        .subscribe(result -> ui.access(() -> {
+        .subscribe(result -> UiUtil.onUI(ui, () -> {
           inProgressToast.close();
           ui.push();
-          triggerDownload(result, ui);
+          triggerDownload(result);
         }), error -> {
-          ui.access(inProgressToast::close);
+          UiUtil.onUI(ui, inProgressToast::close);
           log.error(error.getMessage(), error);
-        }, () -> ui.access(inProgressToast::close));
+        }, () -> UiUtil.onUI(ui, inProgressToast::close));
   }
 
-  private void triggerDownload(DigitalObject digitalObject, UI ui) {
-    if (ui == null) {
-      return;
-    }
+  private void triggerDownload(DigitalObject digitalObject) {
     DownloadStreamProvider downloadStreamProvider = new DownloadStreamProvider() {
       @Override
       public String getFilename() {
@@ -472,12 +456,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
         return digitalObject.content();
       }
     };
-    if (ui.getSession() != null && ui.getSession().hasLock()) {
-      downloadComponent.trigger(downloadStreamProvider);
-    } else {
-      ui.access(() -> downloadComponent.trigger(downloadStreamProvider));
-    }
-    log.info("Trigger Download. Current thread: " + Thread.currentThread().getName());
+    downloadComponent.trigger(downloadStreamProvider);
   }
 
   private Disclaimer createNoSamplesRegisteredDisclaimer() {
@@ -684,12 +663,13 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
             successfulCompletions.incrementAndGet();
           }
         })
-        .doOnTerminate(() -> {
-          closeToast(registrationToast);
+        .doOnTerminate(() -> UiUtil.onUI(ui, () -> {
+          registrationToast.close();
           processResults(successfulCompletions.get(), requests.size(),
               this::displayRegistrationSuccess, this::displayRegistrationFailure);
+          ui.push(); // Ensures that the success toast is shown immediately
           reloadMeasurements();
-        })
+        }))
         .subscribe();
   }
 
@@ -710,20 +690,19 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
             successfulCompletions.incrementAndGet();
           }
         })
-        .doOnTerminate(() -> {
-          closeToast(registrationToast);
+        .doOnTerminate(() -> UiUtil.onUI(ui, () -> {
+          registrationToast.close();
           processResults(successfulCompletions.get(), requests.size(),
               this::displayUpdateSuccess, this::displayUpdateFailure);
+          ui.push(); // Ensures that the success toast is shown immediately
           reloadMeasurements();
-        })
+        }))
         .subscribe();
   }
 
   private void reloadMeasurements() {
-    getUI().ifPresent(ui -> ui.access(() -> {
-      measurementDetailsComponent.setContext(context);
-      setMeasurementInformation();
-    }));
+    measurementDetailsComponent.setContext(context);
+    setMeasurementInformation();
   }
 
   private void submitRequestNGS(String projectId,
@@ -759,43 +738,31 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   }
 
   private void displayRegistrationSuccess(int numberOfSuccesses) {
-    getUI().ifPresent(ui -> ui.access(() -> {
-      Toast toast = messageFactory.toast("measurement.registration.successful",
-          new Object[]{numberOfSuccesses},
-          getLocale());
-      toast.open();
-    }));
+    Toast toast = messageFactory.toast("measurement.registration.successful",
+        new Object[]{numberOfSuccesses},
+        getLocale());
+    toast.open();
   }
 
   private void displayUpdateSuccess(int numberOfSuccesses) {
-    getUI().ifPresent(ui -> ui.access(() -> {
-      Toast toast = messageFactory.toast("measurement.update.successful",
-          new Object[]{numberOfSuccesses},
-          getLocale());
-      toast.open();
-    }));
+    Toast toast = messageFactory.toast("measurement.update.successful",
+        new Object[]{numberOfSuccesses},
+        getLocale());
+    toast.open();
   }
 
   private void displayUpdateFailure(int numberOfFailures) {
-    getUI().ifPresent(ui -> ui.access(() -> {
-      var toast = messageFactory.toast("measurement.update.failed",
-          new Object[]{numberOfFailures},
-          getLocale());
-      toast.open();
-    }));
-  }
-
-  private void closeToast(Toast toast) {
-    getUI().ifPresent(ui -> ui.access(() -> toast.close()));
+    var toast = messageFactory.toast("measurement.update.failed",
+        new Object[]{numberOfFailures},
+        getLocale());
+    toast.open();
   }
 
   private void displayRegistrationFailure(int numberOfFailures) {
-    getUI().ifPresent(ui -> ui.access(() -> {
-      var toast = messageFactory.toast("measurement.registration.failed",
-          new Object[]{numberOfFailures},
-          getLocale());
-      toast.open();
-    }));
+    var toast = messageFactory.toast("measurement.registration.failed",
+        new Object[]{numberOfFailures},
+        getLocale());
+    toast.open();
   }
 
   private void routeToSampleCreation(ComponentEvent<?> componentEvent) {
