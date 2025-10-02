@@ -5,6 +5,7 @@ import static java.util.Objects.requireNonNull;
 import com.vaadin.flow.component.Focusable;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.UIDetachedException;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
@@ -34,6 +35,7 @@ import life.qbic.datamanager.files.parsing.converters.MetadataConverterV2;
 import life.qbic.datamanager.files.parsing.tsv.TSVParser;
 import life.qbic.datamanager.files.parsing.xlsx.XLSXParser;
 import life.qbic.datamanager.views.Context;
+import life.qbic.datamanager.views.UiUtil;
 import life.qbic.datamanager.views.general.InfoBox;
 import life.qbic.datamanager.views.general.dialog.DialogSection;
 import life.qbic.datamanager.views.general.dialog.InputValidation;
@@ -50,7 +52,6 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.Measureme
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequest;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequestBody;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationResponse;
-import org.springframework.lang.NonNull;
 import reactor.core.publisher.Flux;
 
 /**
@@ -76,6 +77,10 @@ public class MeasurementUpload extends Div implements UserInput {
 
   private final Map<String, List<? extends ValidationRequestBody>> validationRequestsPerFile = new HashMap<>();
   private final MessageSourceNotificationFactory notificationFactory;
+  private final UI ui = UI.getCurrent();  // keeps a reference to the current UI
+
+  private final EditableMultiFileMemoryBuffer uploadBuffer;
+  private final List<MeasurementFileItem> measurementFileItems;
 
   private enum AcceptedFileType {
     EXCEL("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
@@ -97,9 +102,6 @@ public class MeasurementUpload extends Div implements UserInput {
           .collect(Collectors.toUnmodifiableSet());
     }
   }
-
-  private final EditableMultiFileMemoryBuffer uploadBuffer;
-  private final List<MeasurementFileItem> measurementFileItems;
 
   public MeasurementUpload(
       AsyncProjectService service,
@@ -182,24 +184,20 @@ public class MeasurementUpload extends Div implements UserInput {
   }
 
   private void displayUnsupportedFileType() {
-    getUI().ifPresent(ui -> ui.access(() -> {
-      var toast = notificationFactory.toast("measurement.upload.failed.unsupported-file-type",
-          new Object[]{}, getLocale());
-      toast.open();
-    }));
+    var toast = notificationFactory.toast("measurement.upload.failed.unsupported-file-type",
+        new Object[]{}, getLocale());
+    toast.open();
   }
 
   private void displayError() {
-    getUI().ifPresent(ui -> ui.access(() -> {
-      var toast = notificationFactory.toast("measurement.upload.failed", new Object[]{},
-          getLocale());
-      toast.open();
-    }));
+    var toast = notificationFactory.toast("measurement.upload.failed", new Object[]{},
+        getLocale());
+    toast.open();
   }
 
   private void onUploadSucceeded(SucceededEvent succeededEvent) {
     var fileName = succeededEvent.getFileName();
-    Optional<AcceptedFileType> knownFileType = AcceptedFileType.forMimeType(
+    Optional<MeasurementUpload.AcceptedFileType> knownFileType = AcceptedFileType.forMimeType(
         succeededEvent.getMIMEType());
     if (knownFileType.isEmpty()) {
       displayUnsupportedFileType();
@@ -260,68 +258,67 @@ public class MeasurementUpload extends Div implements UserInput {
     AtomicInteger counter = new AtomicInteger();
     counter.set(1);
 
-    UI ui = UI.getCurrent();
-    validationStarted(ui);
+    validationStarted();
     service.validate(Flux.fromIterable(requests))
         .doOnNext(ignored -> counter.incrementAndGet())
         .bufferTimeout(20, Duration.ofMillis(200))
-        .doOnNext(item -> setValidationProgressText(ui,
-            "Processed " + counter.get() + " requests from " + itemsToValidate))
+        .doOnNext(item -> UiUtil.onUI(ui, () -> {
+          setValidationProgressText(
+              "Processed " + counter.get() + " requests from " + itemsToValidate);
+          ui.push(); // Ensure client is informed
+        }))
         .flatMap(Flux::fromIterable)
         .collectList()
-        .doOnSuccess(it -> validationFinished(ui))
-        .subscribe(responses -> ui.access(() -> {
-          validationFinished(ui);
+        .doOnSuccess(it -> UiUtil.onUI(ui, this::validationFinished))
+        .subscribe(responses -> UiUtil.onUI(ui, () -> {
+          validationFinished();
           displayValidationResults(responses, itemsToValidate, fileName);
           ui.push(); // Enforce server push
         }));
   }
 
-  private void validationStarted(UI ui) {
-    if (ui == null || !ui.isAttached()) {
-      return;
-    }
-    showValidationProgress(ui);
-    setValidationProgressText(ui, "Starting validation ...");
+  private void validationStarted() {
+    showValidationProgress("Starting validation ...");
     isValidationInProgress.set(true);
   }
 
-  private void validationFinished(UI ui) {
-    if (ui == null || !ui.isAttached()) {
-      return;
-    }
-    hideValidationProgress(ui);
+  private void validationFinished() {
+    hideValidationProgress();
     isValidationInProgress.set(false);
   }
 
 
-  private void hideValidationProgress(@NonNull UI ui) {
-    if (ui.isAttached() && ui.getSession().hasLock()) {
-      validationProgress.setVisible(false);
-    } else {
-      ui.access(() -> validationProgress.setVisible(false));
-    }
+  private void hideValidationProgress() {
+    validationProgress.setVisible(false);
   }
 
-  private void showValidationProgress(@NonNull UI ui) {
-    if (ui.isAttached() && ui.getSession().hasLock()) {
-      validationProgress.setVisible(true);
-    } else {
-      ui.access(() -> validationProgress.setVisible(true));
-    }
+  /**
+   * Will show the validation in progress component with the provided message.
+   *
+   * @param message the message to display
+   * @since 1.12.0
+   */
+  private void showValidationProgress(String message) {
+    validationProgress.setVisible(true);
+    validationProgress.setText(message);
   }
 
-  private void setValidationProgressText(@NonNull UI ui, String text) {
-    if (ui.isAttached() && ui.getSession().hasLock()) {
-      validationProgress.setText(text);
-    } else {
-      ui.access(() -> {
-        validationProgress.setText(text);
-        ui.push();
-      });
-    }
+  private void setValidationProgressText(String message) {
+    validationProgress.setText(message);
   }
 
+  /**
+   * Displays the validation results.
+   * <p>
+   *
+   * <strong>Note: </strong> the method does not lock the user session to update the UI, so make
+   * sure you only call this method from within <code>ui.access(() -> ...) </code>
+   *
+   * @param responses        a {@link List} of {@link ValidationResponse} that contain detailed
+   *                         validation results
+   * @param totalValidations the total number of validations performed
+   * @param fileName         the file name of the uploaded sheet
+   */
   private void displayValidationResults(List<ValidationResponse> responses, int totalValidations,
       String fileName) {
     ValidationResult result = ValidationResult.successful();
@@ -332,6 +329,15 @@ public class MeasurementUpload extends Div implements UserInput {
     addAndDisplayFile(measurementFileItem);
   }
 
+  /**
+   * Adds the display file to the local component cache and displays it.
+   * <p>
+   *
+   * <strong>Note: </strong> the method does not lock the user session to update the UI, so make
+   * sure you only call this method from within <code>ui.access(() -> ...) </code>
+   *
+   * @param measurementFileItem the file item to process
+   */
   private void addAndDisplayFile(MeasurementFileItem measurementFileItem) {
     measurementFileItems.add(measurementFileItem);
     MeasurementFileDisplay measurementFileDisplay = new MeasurementFileDisplay(measurementFileItem);
