@@ -20,6 +20,7 @@ public class UiUtil {
    * <p>
    * The wrapper contains safeguards like UI null-checks, attachment checks, session lock checks and
    * runs the task accordingly in a UI thread-safe manner.
+   * The {@link Runnable#run()} will only be invoked, if the UI is attached.
    *
    * @param task the task to run
    * @since 1.12.0
