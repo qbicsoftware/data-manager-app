@@ -15,6 +15,8 @@ import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.Command;
 import com.vaadin.flow.server.VaadinSession;
+import com.vaadin.flow.spring.annotation.SpringComponent;
+import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.InputStream;
 import java.io.Serial;
@@ -50,8 +52,6 @@ import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementTemplateListComponent.DownloadMeasurementTemplateEvent;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementTemplateSelectionComponent.Domain;
-import life.qbic.datamanager.views.projects.project.measurements.processor.MeasurementRegistrationProcessorNGS;
-import life.qbic.datamanager.views.projects.project.measurements.processor.MeasurementRegistrationProcessorPxP;
 import life.qbic.datamanager.views.projects.project.measurements.processor.ProcessorRegistry;
 import life.qbic.datamanager.views.projects.project.measurements.registration.MeasurementUpload;
 import life.qbic.logging.api.Logger;
@@ -93,7 +93,8 @@ import reactor.core.publisher.Flux;
  * associated with an {@link Experiment} within a {@link Project} via the provided
  * {@link ExperimentId} and {@link ProjectId} in the URL
  */
-
+@SpringComponent
+@UIScope
 @Route(value = "projects/:projectId?/experiments/:experimentId?/measurements", layout = ExperimentMainLayout.class)
 @PermitAll
 public class MeasurementMain extends Main implements BeforeEnterObserver {
@@ -401,14 +402,6 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     result.onValue(v -> measurementDetailsComponent.refreshGrids());
   }
 
-  private void executeInUi(Command command, int n) {
-    log.info(
-        "[%d]Execute in UI. Current thread: %s".formatted(n, Thread.currentThread().getName()));
-    getUI().ifPresentOrElse(ui -> ui.access(command), () -> {
-      throw new ApplicationException("Damn, was empty");
-    });
-  }
-
   private void downloadProteomicsMetadata(List<String> selectedMeasurementIds) {
     UI ui = getUI().orElse(null);
     if (ui == null) {
@@ -635,7 +628,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
 
   private List<MeasurementRegistrationInformationPxP> mergeByPoolPxP(
       List<MeasurementRegistrationInformationPxP> requests) {
-    var processor = new MeasurementRegistrationProcessorPxP();
+    var processor = ProcessorRegistry.processorFor(MeasurementRegistrationInformationPxP.class);
     return processor.process(requests);
   }
 
@@ -743,7 +736,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
 
   private static List<MeasurementRegistrationInformationNGS> mergeByPoolNGS(
       List<MeasurementRegistrationInformationNGS> requests) {
-    var processor = new MeasurementRegistrationProcessorNGS();
+    var processor = ProcessorRegistry.processorFor(MeasurementRegistrationInformationNGS.class);
     return processor.process(requests);
   }
 

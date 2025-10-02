@@ -1,11 +1,15 @@
 package life.qbic.datamanager.views.projects.project.measurements.processor;
 
+import static org.reflections.Reflections.log;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationPxP;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementSpecificPxP;
 
 /**
  * <b>Measurement Registration Processor NGS</b>
@@ -16,11 +20,11 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.Measureme
  *
  * @since 1.11.0
  */
-public class MeasurementRegistrationProcessorPxP implements MeasurementProcessor<MeasurementRegistrationInformationPxP> {
+class MeasurementRegistrationProcessorPxP implements MeasurementProcessor<MeasurementRegistrationInformationPxP> {
 
   @Override
   public List<MeasurementRegistrationInformationPxP> process(
-      List<MeasurementRegistrationInformationPxP> requests) {
+      List<MeasurementRegistrationInformationPxP> requests) throws ProcessingException{
     // 1. we want to aggregate measurement registration information that have the same sample pool name (we omit blank pool names)
     var measurementsBySamplePool = new HashMap<String, List<MeasurementRegistrationInformationPxP>>();
     var finalMeasurements = new ArrayList<MeasurementRegistrationInformationPxP>();
@@ -35,9 +39,15 @@ public class MeasurementRegistrationProcessorPxP implements MeasurementProcessor
     // 2. now we need to merge sample-specific metadata of the pooled measurements
     for (var entry : measurementsBySamplePool.entrySet()) {
       // every entry has the same pool name and by definition are only distinct in their specific metadata
-      var specificMetadata = entry.getValue().stream()
-          .flatMap(m -> m.specificMetadata().entrySet().stream())
-          .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+      Map<String, MeasurementSpecificPxP> specificMetadata;
+      try{
+        specificMetadata = entry.getValue().stream()
+            .flatMap(m -> m.specificMetadata().entrySet().stream())
+            .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+      } catch (IllegalStateException e){
+        log.error("Preparation of specific measurement data failed.", e);
+        throw new ProcessingException("Preparation of specific measurement data failed.", e);
+      }
       var commonMetadata = entry.getValue().getFirst();
       var pooledMeasurement = new MeasurementRegistrationInformationPxP(
           commonMetadata.technicalReplicateName(),

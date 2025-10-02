@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNull;
 
 import com.vaadin.flow.component.Focusable;
 import com.vaadin.flow.component.Text;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
@@ -49,6 +50,7 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.Measureme
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequest;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequestBody;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationResponse;
+import org.springframework.lang.NonNull;
 import reactor.core.publisher.Flux;
 
 /**
@@ -258,41 +260,66 @@ public class MeasurementUpload extends Div implements UserInput {
     AtomicInteger counter = new AtomicInteger();
     counter.set(1);
 
+    UI ui = UI.getCurrent();
+    validationStarted(ui);
     service.validate(Flux.fromIterable(requests))
-        .doFirst(this::validationStarted)
         .doOnNext(ignored -> counter.incrementAndGet())
         .bufferTimeout(20, Duration.ofMillis(200))
-        .doOnNext(item -> setValidationProgressText(
+        .doOnNext(item -> setValidationProgressText(ui,
             "Processed " + counter.get() + " requests from " + itemsToValidate))
         .flatMap(Flux::fromIterable)
         .collectList()
-        .doFinally(it -> validationFinished())
-        .subscribe(responses -> displayValidationResults(
-            responses, itemsToValidate, fileName));
+        .doOnSuccess(it -> validationFinished(ui))
+        .subscribe(responses -> ui.access(() -> {
+          validationFinished(ui);
+          displayValidationResults(responses, itemsToValidate, fileName);
+          ui.push(); // Enforce server push
+        }));
   }
 
-  private void validationStarted() {
-    showValidationProgress();
-    setValidationProgressText("Starting validation ...");
+  private void validationStarted(UI ui) {
+    if (ui == null || !ui.isAttached()) {
+      return;
+    }
+    showValidationProgress(ui);
+    setValidationProgressText(ui, "Starting validation ...");
     isValidationInProgress.set(true);
   }
 
-  private void validationFinished() {
-    hideValidationProgress();
+  private void validationFinished(UI ui) {
+    if (ui == null || !ui.isAttached()) {
+      return;
+    }
+    hideValidationProgress(ui);
     isValidationInProgress.set(false);
   }
 
 
-  private void hideValidationProgress() {
-    getUI().ifPresent(ui -> ui.access(() -> validationProgress.setVisible(false)));
+  private void hideValidationProgress(@NonNull UI ui) {
+    if (ui.isAttached() && ui.getSession().hasLock()) {
+      validationProgress.setVisible(false);
+    } else {
+      ui.access(() -> validationProgress.setVisible(false));
+    }
   }
 
-  private void showValidationProgress() {
-    getUI().ifPresent(ui -> ui.access(() -> validationProgress.setVisible(true)));
+  private void showValidationProgress(@NonNull UI ui) {
+    if (ui.isAttached() && ui.getSession().hasLock()) {
+      validationProgress.setVisible(true);
+    } else {
+      ui.access(() -> validationProgress.setVisible(true));
+    }
   }
 
-  private void setValidationProgressText(String text) {
-    getUI().ifPresent(ui -> ui.access(() -> validationProgress.setText(text)));
+  private void setValidationProgressText(@NonNull UI ui, String text) {
+    if (ui.isAttached() && ui.getSession().hasLock()) {
+      validationProgress.setText(text);
+    } else {
+      ui.access(() -> {
+        validationProgress.setText(text);
+        ui.push();
+      });
+    }
   }
 
   private void displayValidationResults(List<ValidationResponse> responses, int totalValidations,
@@ -300,12 +327,9 @@ public class MeasurementUpload extends Div implements UserInput {
     ValidationResult result = ValidationResult.successful();
     var combinedResult = responses.stream().map(ValidationResponse::result)
         .reduce(result, ValidationResult::combine);
-
-    getUI().ifPresent(ui -> ui.access(() -> {
-      var measurementFileItem = new MeasurementFileItem(fileName,
-          new MeasurementValidationReport(totalValidations, combinedResult));
-      addAndDisplayFile(measurementFileItem);
-    }));
+    var measurementFileItem = new MeasurementFileItem(fileName,
+        new MeasurementValidationReport(totalValidations, combinedResult));
+    addAndDisplayFile(measurementFileItem);
   }
 
   private void addAndDisplayFile(MeasurementFileItem measurementFileItem) {

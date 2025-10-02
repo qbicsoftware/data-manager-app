@@ -1,11 +1,15 @@
 package life.qbic.datamanager.views.projects.project.measurements.processor;
 
+import static org.reflections.Reflections.log;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationNGS;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementSpecificNGS;
 
 /**
  * <b>Measurement Registration Processor NGS</b>
@@ -16,7 +20,7 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.Measureme
  *
  * @since 1.11.0
  */
-public class MeasurementRegistrationProcessorNGS implements
+class MeasurementRegistrationProcessorNGS implements
     MeasurementProcessor<MeasurementRegistrationInformationNGS> {
 
   @Override
@@ -36,9 +40,15 @@ public class MeasurementRegistrationProcessorNGS implements
     // 2. now we need to merge sample-specific metadata of the pooled measurements
     for (var entry : measurementsBySamplePool.entrySet()) {
       // every entry has the same pool name and by definition are only distinct in their specific metadata
-      var specificMetadata = entry.getValue().stream()
-          .flatMap(m -> m.specificMetadata().entrySet().stream())
-          .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+      Map<String, MeasurementSpecificNGS> specificMetadata;
+      try{
+        specificMetadata = entry.getValue().stream()
+            .flatMap(m -> m.specificMetadata().entrySet().stream())
+            .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+      } catch (IllegalStateException e){
+        log.error("Preparation of specific measurement data failed.", e);
+        throw new ProcessingException("Preparation of specific measurement data failed.", e);
+      }
       var commonMetadata = entry.getValue().getFirst();
       var pooledMeasurement = new MeasurementRegistrationInformationNGS(
           commonMetadata.organisationId(),
