@@ -48,6 +48,10 @@ public class ButtonFactory {
     return createButton(label, "button-text-primary", "button-color-primary");
   }
 
+  public Button createDangerButton(String label) {
+    return createButton(label, "button-text-primary", "button-danger");
+  }
+
   public Button createCancelButton(String label) {
     return createButton(label, "button-text");
   }

@@ -182,7 +182,7 @@ span.inline {
 
 .tag.error {
   background-color: var(--lumo-error-color-10pct);
-  color: var(--lumo-error-color);
+  color: var(--error-color);
 }
 
 .tag.primary {

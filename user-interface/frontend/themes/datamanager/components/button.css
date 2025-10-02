@@ -28,8 +28,8 @@ vaadin-button.primary {
 }
 
 vaadin-button.danger {
-  background-color: var(--lumo-error-color, var(--lumo-error-color));
-  color: var(--lumo-button-primary-color, var(--lumo-primary-contrast-color));
+  background-color: var(--error-color);
+  color: var(--error-text-contrast-color);
 }
 
 vaadin-button.danger[focus-ring] {
@@ -38,7 +38,7 @@ vaadin-button.danger[focus-ring] {
 
 /* Styles recreated from vaadin lumo theme */
 vaadin-button[disabled] {
-  background-color: var(--lumo-contrast-30pct);
+  background-color: var(--shade-color-30pct);
   color: var(--lumo-base-color);
 }
 

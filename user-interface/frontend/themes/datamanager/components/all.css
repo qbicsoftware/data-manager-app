@@ -666,7 +666,6 @@ Colors
 .color-tertiary {
   color: var(--tertiary-text-color)
 }
-
 /*endregion*/
 
 /*region Behaviour*/
@@ -833,6 +832,15 @@ Colors
   background-color: transparent;
 }
 
+.button-danger {
+  background-color: var(--error-color);
+  color: var(--primary-contrast-color);
+}
+
+.button-danger[focus-ring] {
+  box-shadow: none !important;
+}
+
 /*endregion*/
 
 /*region Icons*/
@@ -852,7 +860,7 @@ Icons
 }
 
 .icon-color-error {
-  color: var(--icon-color-error);
+  color: var(--error-icon-color);
 }
 
 .icon-size-xs {
