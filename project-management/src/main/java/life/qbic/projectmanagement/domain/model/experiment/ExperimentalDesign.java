@@ -190,7 +190,7 @@ public class ExperimentalDesign {
           "There are experimental groups in the experimental design. Cannot remove experimental variable "
               + variableName);
     }
-    variables.removeIf(it -> it.name().value().equals(variableName));
+    variables.removeIf(it -> it.name().value().trim().equals(variableName.trim()));
     return true;
   }
 
@@ -244,7 +244,7 @@ public class ExperimentalDesign {
   }
 
   private boolean isVariableDefined(String variableName) {
-    return variables.stream().anyMatch(it -> it.name().value().equals(variableName));
+    return variables.stream().anyMatch(it -> it.name().value().trim().equals(variableName.trim()));
   }
 
   @Override
