@@ -312,7 +312,7 @@ class VariableLevelsInput extends Div implements UserInput, CanSnapshot,
         .toList();
     for (LevelField fieldWithDuplicateLevel : fieldsWithDuplicateLevels) {
       fieldWithDuplicateLevel.setInvalid(true);
-      fieldWithDuplicateLevel.setErrorMessage("This level already exists.");
+      fieldWithDuplicateLevel.setErrorMessage("Please provide unique levels.");
       fieldWithDuplicateLevel.addValueChangeListener(valueChanged -> {
         fieldsWithDuplicateLevels.stream()
             .filter(field -> field.getValue().isPresent())
