@@ -17,13 +17,10 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ontology.LookupException;
 import life.qbic.projectmanagement.application.ontology.OntologyClass;
@@ -243,7 +240,8 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
                 searchTerm,
                 StandardCharsets.UTF_8)
                 + "&rows=" + limit + "&start=" + offset
-                + "&ontology=" + createOntologyFilterQueryParameter()))
+                + "&ontology=" + createOntologyFilterQueryParameter()
+                + "&type=class"))
         .header("Content-Type", "application/json").GET().build();
     var response = HTTP_CLIENT.send(termSelectQuery, BodyHandlers.ofString());
     return parseResponse(response).stream().toList();
@@ -273,7 +271,8 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
             selectEndpointAbsoluteUrl.toString() +
                 "?q=" + URLEncoder.encode(searchTerm, StandardCharsets.UTF_8) + "&rows="
                 + limit + "&start=" + offset + "&ontology="
-                + createOntologyFilterQueryParameter()))
+                + createOntologyFilterQueryParameter()
+                + "&type=class"))
         .header("Content-Type", "application/json").GET().build();
     var response = HTTP_CLIENT.send(termSelectQuery, BodyHandlers.ofString());
     return parseResponse(response).stream().toList();
@@ -304,7 +303,8 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
                 oboId.replace("_", ":"), StandardCharsets.UTF_8)
                 + "&queryFields=obo_id"
                 + "&rows=" + limit + "&start=" + offset
-                + "&ontology=" + createOntologyFilterQueryParameter()))
+                + "&ontology=" + createOntologyFilterQueryParameter()
+                + "&type=class"))
         .header("Content-Type", "application/json").GET().build();
     var response = HTTP_CLIENT.send(termSelectQuery, BodyHandlers.ofString());
     return parseResponse(response);
@@ -333,7 +333,8 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
                 oboId.replace("_", ":"), StandardCharsets.UTF_8)
                 + "&queryFields=obo_id"
                 + "&exact=true"
-                + "&ontology=" + createOntologyFilterQueryParameter()))
+                + "&ontology=" + createOntologyFilterQueryParameter()
+                + "&type=class"))
         .header("Content-Type", "application/json").GET().build();
     var response = HTTP_CLIENT.send(termSelectQuery, BodyHandlers.ofString());
     log.debug("Received response code '%d' for term query %s".formatted(response.statusCode(), oboId));
