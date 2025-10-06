@@ -2,14 +2,17 @@ package life.qbic.datamanager.views.projects.project.experiments.experiment.comp
 
 import static java.util.Objects.nonNull;
 
+import com.vaadin.flow.component.AbstractField.ComponentValueChangeEvent;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Composite;
+import com.vaadin.flow.component.HasValue.ValueChangeListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.shared.HasValidationProperties;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.shared.Registration;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -60,6 +63,7 @@ public class VariableRow extends Composite<Div> implements UserInput, CanSnapsho
     deleteVariable.addClickListener(
         e -> fireEvent(new DeleteVariableEvent(this, e.isFromClient())));
     markInitialized();
+    name.setValueChangeMode(ValueChangeMode.EAGER);
   }
 
 
@@ -176,14 +180,27 @@ public class VariableRow extends Composite<Div> implements UserInput, CanSnapsho
    */
   void setNameInvalid(@NonNull String errorMessage) {
     this.setInvalid(true);
-    if (Optional.ofNullable(name.getErrorMessage()).map(it -> !it.contains(errorMessage)).orElse(
-        true)) {
+    if (Optional.ofNullable(name.getErrorMessage())
+        .map(it -> !it.contains(errorMessage))
+        .orElse(true)) {
       String composedErrorMessage = Optional.ofNullable(name.getErrorMessage())
           .map(m -> m + "\n" + errorMessage)
           .orElse(errorMessage);
       name.setErrorMessage(composedErrorMessage);
     }
     name.setInvalid(true);
+  }
+
+  /**
+   * Sets the name to be valid
+   */
+  void setNameValid() {
+    name.setInvalid(false);
+  }
+
+  Registration addNameChangeListener(
+      ValueChangeListener<? super ComponentValueChangeEvent<TextField, String>> listener) {
+    return name.addValueChangeListener(listener);
   }
 
   /**

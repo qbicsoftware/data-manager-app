@@ -210,6 +210,13 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
     rowsWithDuplicateName.forEach(row -> {
       // be careful not to overwrite previously set invalid state as marking as valid is done on an individual level only.
       row.setNameInvalid("Please provide unique variable names.");
+      row.addNameChangeListener(event -> {
+        rowsWithDuplicateName.stream()
+            .filter(it -> !row.equals(it))
+            .filter(field -> event.getOldValue().equals(field.getVariableName()))
+            .forEach(VariableRow::setNameValid);
+        event.unregisterListener();
+      });
     });
     return !rowsWithDuplicateName.isEmpty() ? InputValidation.failed() : InputValidation.passed();
   }
