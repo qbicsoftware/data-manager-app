@@ -121,6 +121,12 @@ public class ExperimentalGroup {
     return this.groupNumber;
   }
 
+  /**
+   * Renames the variable
+   *
+   * @param oldName the variable name now
+   * @param newName the variable name after renaming
+   */
   void renameVariable(String oldName, String newName) {
     condition.renameVariable(oldName, newName);
   }

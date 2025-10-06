@@ -1133,6 +1133,7 @@ public interface AsyncProjectService {
 
   /**
    * Queries all available experimental variables for a given experiment.
+   * Returns existing experimental variables in lexigraphical order of the variable name.
    * <p>
    * <b>Exceptions</b>
    * <p>
@@ -1142,7 +1143,7 @@ public interface AsyncProjectService {
    * @param projectId    the project identifier of the project to get the variables from
    * @param experimentId the experiment identifier of the experiment to get the variables from
    * @return a {@link Flux<ExperimentalVariable>} emitting {@link ExperimentalVariable}s for the
-   * experiment.
+   * experiment in lexigraphical order of variable name.
    * @throws UnknownRequestException if an unknown request has been used in the service call
    * @throws RequestFailedException  if the request was not successfully executed
    * @throws AccessDeniedException   if the user has insufficient rights
@@ -1171,7 +1172,7 @@ public interface AsyncProjectService {
 
   /**
    * Submits an experimental variable update request and returns a reactive
-   * {@link Mono<ExperimentalVariableUpdateResponse>.}
+   * {@link Mono}
    * <p>
    * <b>Exceptions</b>
    * <p>
@@ -1190,7 +1191,7 @@ public interface AsyncProjectService {
 
   /**
    * Submits an experimental variable update request and returns a reactive
-   * {@link Mono<ExperimentalVariableUpdateResponse>.}
+   * {@link Mono}
    * <p>
    * <b>Exceptions</b>
    * <p>

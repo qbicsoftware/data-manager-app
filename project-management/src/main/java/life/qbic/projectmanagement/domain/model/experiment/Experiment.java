@@ -191,7 +191,7 @@ public class Experiment {
   }
 
   /**
-   * Removes an experimental variable if possible.
+   * Removes an experimental variable if possible. Emits an experiment update domain event.
    *
    * @param name the name of the variable
    * @return true if the variable was removed, falso if there was no need to remove it.
@@ -208,6 +208,12 @@ public class Experiment {
     experimentalDesign.removeExperimentalGroupByGroupNumber(experimentalGroupNumber);
   }
 
+  /**
+   * Renames an experimental variable
+   *
+   * @param currentName the name of the variable now
+   * @param futureName  the name of the variable after renaming
+   */
   public void renameExperimentalVariable(String currentName, String futureName) {
     experimentalDesign.renameExperimentalVariable(currentName, futureName);
   }
@@ -216,6 +222,11 @@ public class Experiment {
     experimentalDesign.changeUnit(variableName, unit);
   }
 
+  /**
+   * Overwrites the levels of a variable by the provided levels values. The unit is unchanged.
+   * @param variable the variable for which to set the level values
+   * @param levels the values of the experimental variable levels
+   */
   public void setVariableLevels(String variable, List<String> levels) {
     String unit = experimentalDesign.unitForVariable(variable).orElse(null);
     List<ExperimentalValue> mappedLevels = levels.stream().map(l -> new ExperimentalValue(l, unit))

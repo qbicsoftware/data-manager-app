@@ -167,8 +167,8 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
   }
 
   private ExperimentalVariablesInput toRestoredVariablesInput(Snapshot snapshot) {
-    var dummy = new ExperimentalVariablesInput();
     try {
+      var dummy = new ExperimentalVariablesInput();
       dummy.restore(snapshot);
       return dummy;
     } catch (SnapshotRestorationException e) {

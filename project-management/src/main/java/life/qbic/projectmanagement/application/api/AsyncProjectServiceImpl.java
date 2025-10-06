@@ -1009,19 +1009,6 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
         .retryWhen(defaultRetryStrategy());
   }
 
-  @Deprecated
-  private ExperimentalVariable convertToApi(
-      life.qbic.projectmanagement.domain.model.experiment.ExperimentalVariable experimentalVariable) {
-    return new ExperimentalVariable(experimentalVariable.name().value(),
-        experimentalVariable.levels()
-            .stream()
-            .map(level -> level.variableName().value())
-            .toList(),
-        experimentalVariable.levels()
-            .getFirst()
-            .experimentalValue().unit().orElse(null));
-  }
-
   @Override
   public Mono<ExperimentalVariablesCreationResponse> create(
       ExperimentalVariablesCreationRequest request) {
@@ -1074,14 +1061,6 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
       ExperimentInformationService.ExperimentalVariableInformation experimentalVariable) {
     return new ExperimentalVariable(experimentalVariable.name(), experimentalVariable.levels(),
         experimentalVariable.unit());
-  }
-
-  private ExperimentInformationService.ExperimentalVariableInformation convertFromApi(
-      String experimentId, ExperimentalVariable experimentalVariable) {
-    return new ExperimentInformationService.ExperimentalVariableInformation(experimentId,
-        experimentalVariable.name(),
-        experimentalVariable.unit(),
-        experimentalVariable.levels());
   }
 
   @Override

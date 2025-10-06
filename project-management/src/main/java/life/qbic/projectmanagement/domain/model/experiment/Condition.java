@@ -95,6 +95,12 @@ public class Condition {
         .map(VariableLevel::experimentalValue).findAny();
   }
 
+  /**
+   * Checks if the variable level is contained in this condition
+   *
+   * @param level the level to check for
+   * @return true if the condition contains the variable level, false otherwise
+   */
   public boolean contains(VariableLevel level) {
     return variableLevels.contains(level);
   }
@@ -147,7 +153,4 @@ public class Condition {
         });
   }
 
-  public void removeVariable(String variableName) {
-    variableLevels.removeIf(it -> it.variableName().value().equals(variableName));
-  }
 }

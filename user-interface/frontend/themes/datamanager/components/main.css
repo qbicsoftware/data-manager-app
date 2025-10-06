@@ -7,16 +7,9 @@
 }
 
 #main-layout {
-  display: grid;
-  grid-template-columns: 1fr;
-  grid-template-rows: auto minmax(max-content, 0.95fr) minmax(min-content, 0.05fr);
   height: 100%;
   /*Default design of components is too big for smaller screens*/
   zoom: 90%;
-  grid-template-areas:
-    "announcements"
-    "content-area"
-    "data-manager-footer";
 }
 
 .landing-page-layout .landing-page-content {
@@ -77,12 +70,6 @@
   margin-bottom: 0.5rem;
 }
 
-.main.experiment {
-  grid-template-columns: 1fr;
-  grid-template-rows: 1fr;
-  grid-template-areas:
-    "experimentdetails";
-}
 
 .main.email-confirmation {
   grid-template-columns: auto;
@@ -130,14 +117,6 @@
   width: clamp(700px, 50vw, 100%);
   display: flex;
   margin: auto;
-}
-
-.main.measurement {
-  grid-template-columns: minmax(max-content, 70%) minmax(max-content, 30%);
-  grid-template-rows: minmax(max-content, 25%) minmax(max-content, 70%);
-  grid-template-areas:
-    ". measurementtemplatelist"
-    "measurementdetails measurementdetails";
 }
 
 .main.measurement .page-area {
@@ -235,24 +214,8 @@
   column-gap: var(--spacing-03);
 }
 
-.main.ontology-lookup-main {
-  grid-template-columns: auto;
-  grid-template-rows: auto;
-  grid-template-areas:
-    "ontologylookupcomponent"
-}
-
 .main.ontology-lookup-component {
   grid-area: ontologylookupcomponent;
-}
-
-.main.project {
-  grid-template-columns: minmax(min-content, 80%) minmax(min-content, 25%);
-  grid-template-rows: auto;
-  grid-template-areas:
-    "projectdetails experimentlist"
-    "projectdetails offerlist"
-    "projectdetails qualitycontrollist";
 }
 
 .main.project .page-area {
@@ -277,14 +240,6 @@
   grid-area: qualitycontrollist;
 }
 
-.main.project-overview {
-  grid-template-columns: 1fr;
-  grid-template-rows: 0.1fr 0.9fr;
-  grid-template-areas:
-    "."
-    "projectcollection";
-}
-
 .main.project-overview .title-and-description {
   padding: var(--lumo-space-m);
   flex-direction: column;
@@ -304,13 +259,6 @@
   grid-area: projectcollection;
 }
 
-.main.raw-data {
-  grid-template-columns: minmax(min-content, 80%) minmax(min-content, 20%);
-  grid-template-rows: minmax(min-content, 20%) minmax(min-content, 80%);
-  grid-template-areas:
-    ". rawdatadownloadinformation"
-    "rawdatadetails rawdatadownloadinformation";
-}
 
 .main.raw-data .page-area {
   border: 1px solid;
@@ -369,14 +317,6 @@
   justify-content: center;
   /*Should be moved to the parent layout once Login and forgot password components are overhauled*/
   padding-bottom: var(--lumo-space-m);
-}
-
-.main.sample {
-  grid-template-columns: minmax(min-content, 50%) minmax(min-content, 50%);
-  grid-template-rows: minmax(min-content, 25%) minmax(min-content, 70%);
-  grid-template-areas:
-    ". batchdetails"
-    "sampledetails sampledetails";
 }
 
 .main.sample .page-area {
@@ -446,12 +386,6 @@
   padding-bottom: var(--lumo-space-m);
 }
 
-.main.user-profile {
-  grid-template-columns: minmax(min-content, auto);
-  grid-template-rows: minmax(min-content, auto);
-  grid-template-areas:
-    "user-profile-component"
-}
 
 .main.user-registration {
   grid-template-columns: auto;
@@ -463,49 +397,5 @@
 
 /*Large devices (large desktops, 1200px and up)*/
 @media only screen and (max-width: 1200px) {
-  .main.experiment {
-    grid-template-columns: minmax(min-content, 1fr);
-    grid-template-areas:
-    "experimentdetails";
-    grid-template-rows: minmax(min-content, 1fr);
-  }
-
-  .main.measurement {
-    grid-template-columns: minmax(min-content, 1fr);
-    grid-template-areas:
-    "."
-    "measurementtemplatelist"
-    "measurementdetails";
-    grid-template-rows: minmax(min-content, 20%) minmax(min-content, 20%) minmax(min-content, 60%);
-  }
-
-  .main.project {
-    grid-template-columns: minmax(min-content, 1fr);
-    grid-template-areas:
-    "projectdetails"
-    "experimentlist"
-    "offerlist"
-    "qualitycontrollist";
-    grid-template-rows: minmax(min-content, 60%) minmax(min-content, 20%) minmax(min-content, 20%);
-  }
-
-  .main.raw-data {
-    grid-template-columns: minmax(min-content, 1fr);
-    grid-template-areas:
-    "."
-    "rawdatadownloadinformation"
-    "rawdatadetails";
-    grid-template-rows: minmax(min-content, 20%) minmax(min-content, 20%) minmax(min-content, 60%);
-  }
-
-  .main.sample {
-    grid-template-columns: minmax(min-content, 1fr);
-    grid-template-areas:
-    "."
-    "batchdetails"
-    "sampledetails";
-    grid-template-rows: minmax(min-content, 20%) minmax(min-content, 20%) minmax(min-content, 60%);
-  }
-
 
 }

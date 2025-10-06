@@ -50,14 +50,24 @@ public class CardCollection extends Composite<Div> {
     editButton.addClickListener(this::fireEditEvent);
   }
 
-  public void setAddEnabled(boolean enabled) {
-    addButton.setEnabled(enabled);
-    addButton.setVisible(enabled);
+  public void enableAdd() {
+    addButton.setEnabled(true);
+    addButton.setVisible(true);
   }
 
-  public void setEditEnabled(boolean enabled) {
-    editButton.setEnabled(enabled);
-    editButton.setVisible(enabled);
+  public void disableAdd() {
+    addButton.setEnabled(false);
+    addButton.setVisible(false);
+  }
+
+  public void enableEdit() {
+    editButton.setEnabled(true);
+    editButton.setVisible(true);
+  }
+
+  public void disableEdit() {
+    editButton.setEnabled(false);
+    editButton.setVisible(false);
   }
 
   private void fireEditEvent(ClickEvent<Button> buttonClickEvent) {

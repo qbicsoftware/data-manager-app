@@ -86,7 +86,7 @@ public class VariableRow extends Composite<Div> implements UserInput, CanSnapsho
     root.addClassNames(
         "border rounded-02 padding-04 gap-04 column-gap-05 grid-experimental-variable-input");
     var fields = new Div();
-    fields.getStyle().set("grid-area", "a");
+    fields.getStyle().set("grid-area", "nameunit");
     fields.addClassNames("flex-horizontal gap-05");
     name.addClassNames("flex-grow-1");
     name.setLabel("Variable Name");
@@ -94,8 +94,8 @@ public class VariableRow extends Composite<Div> implements UserInput, CanSnapsho
     unit.addClassNames("flex-grow-1");
     unit.setLabel("Unit (optional)");
     unit.setRequired(false);
-    variableLevels.getStyle().set("grid-area", "b");
-    deleteVariable.getStyle().set("grid-area", "c");
+    variableLevels.getStyle().set("grid-area", "levels");
+    deleteVariable.getStyle().set("grid-area", "delete");
     deleteVariable.addClassNames("width-max-content");
     fields.add(name, unit);
     root.add(fields, variableLevels, deleteVariable);

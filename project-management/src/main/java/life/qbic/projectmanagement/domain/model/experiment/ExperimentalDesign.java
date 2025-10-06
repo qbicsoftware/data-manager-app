@@ -20,7 +20,7 @@ import life.qbic.projectmanagement.domain.model.experiment.Experiment.GroupPreve
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalDesign.AddExperimentalGroupResponse.ResponseCode;
 import life.qbic.projectmanagement.domain.model.experiment.exception.ConditionExistsException;
 import life.qbic.projectmanagement.domain.model.experiment.exception.ExperimentalVariableExistsException;
-import life.qbic.projectmanagement.domain.model.experiment.exception.ExperimentalVariableNotDefinedException;
+import life.qbic.projectmanagement.domain.model.experiment.exception.UnknownExperimentalVariableException;
 
 /**
  * <b>Experimental Design</b>
@@ -111,11 +111,12 @@ public class ExperimentalDesign {
     int groupCount = experimentalGroups.size();
   }
 
-  private boolean isLevelUsed(VariableLevel variableLevel) {
+  private boolean isLevelUsed(VariableLevel variableLevel)
+      throws UnknownExperimentalVariableException {
     String variableName = variableLevel.variableName().value();
     Optional<ExperimentalVariable> optionalExperimentalVariable = variableWithName(variableName);
     if (optionalExperimentalVariable.isEmpty()) {
-      throw new ExperimentalVariableNotDefinedException(
+      throw new UnknownExperimentalVariableException(
           "No variable with name " + variableName + " exists");
     }
 
@@ -128,16 +129,36 @@ public class ExperimentalDesign {
         .distinct();
   }
 
-  Optional<String> unitForVariable(String variableName) {
+  /**
+   * Returns the unit for the given variable if set.
+   *
+   * @param variableName the name of the variable
+   * @return {@link Optional#empty()} if no unit is set for the variable, a set Optional otherwise.
+   * @throws UnknownExperimentalVariableException in case the variable is not part of this design
+   */
+  Optional<String> unitForVariable(String variableName)
+      throws UnknownExperimentalVariableException {
     return variableWithName(variableName)
-        .orElseThrow(() -> new ExperimentalVariableNotDefinedException(
+        .orElseThrow(() -> new UnknownExperimentalVariableException(
             "No variable with name " + variableName + " exists"))
         .usedUnit();
   }
 
-  boolean setVariableLevels(String variableName, List<ExperimentalValue> levels) {
+  /**
+   * Overwrites the levels of the variable with the provided experimental variable levels
+   *
+   * @param variableName the name of the variable
+   * @param levels       the levels to set, must be distinct
+   * @return true if the variable was changes as a result of calling this method, false otherwise
+   * @throws UnknownExperimentalVariableException in case the experimental variable is not part of
+   *                                              this design.
+   * @throws IllegalArgumentException             in case the provided levels are not distinct or
+   *                                              are used {@link this#isLevelUsed(VariableLevel)}
+   */
+  boolean setVariableLevels(String variableName, List<ExperimentalValue> levels)
+      throws UnknownExperimentalVariableException, IllegalArgumentException {
     var experimentalVariable = variableWithName(variableName)
-        .orElseThrow(() -> new ExperimentalVariableNotDefinedException(
+        .orElseThrow(() -> new UnknownExperimentalVariableException(
             "No variable with name " + variableName + " exists"));
     List<VariableLevel> levelsToRemove = experimentalVariable.levels()
         .stream()
@@ -160,6 +181,13 @@ public class ExperimentalDesign {
     return experimentalVariable.replaceLevels(levels);
   }
 
+  /**
+   * Adds an experimental variable to the design
+   * @param experimentalVariable the experimental variable to add
+   * @return true if the experimental design was modified, false if the variable already existed.
+   * @throws IllegalStateException in case experimental groups are defined, preventing the addition of experimental variables.
+   * @throws ExperimentalVariableExistsException in case the variable already exists but differs from the provided variable.
+   */
   boolean addExperimentalVariable(ExperimentalVariable experimentalVariable) {
     if (!experimentalGroups.isEmpty()) {
       throw new IllegalStateException("There are already experimental groups defined");
@@ -195,10 +223,9 @@ public class ExperimentalDesign {
   }
 
   void renameExperimentalVariable(String oldName, String newName) {
-    RuntimeException noVariableException = new ExperimentalVariableNotDefinedException(
-        "No variable with name " + oldName + " exists");
     if (variableWithName(oldName).isEmpty()) {
-      throw noVariableException;
+      throw new UnknownExperimentalVariableException(
+          "No variable with name " + oldName + " exists");
     }
     if (variableWithName(newName).isPresent()) {
       throw new ExperimentalVariableExistsException(
@@ -207,12 +234,15 @@ public class ExperimentalDesign {
     try {
       renameVariableInGroups(oldName, newName);
     } catch (RuntimeException e) {
+      //rename back to the original name
       renameVariableInGroups(newName, oldName);
       throw e;
     }
+    //only when the variable was renamed in all groups successfully
     try {
       renameVariable(oldName, newName);
     } catch (RuntimeException e) {
+      //rename back to the original name in groups if renaming failed
       renameVariableInGroups(newName, oldName);
       throw e;
     }
@@ -226,7 +256,7 @@ public class ExperimentalDesign {
         return;
       }
     }
-    throw new ExperimentalVariableNotDefinedException("No variable with name " + from + " exists");
+    throw new UnknownExperimentalVariableException("No variable with name " + from + " exists");
   }
 
   private void renameVariableInGroups(String oldName, String newName) {
@@ -302,15 +332,13 @@ public class ExperimentalDesign {
    *
    * @param variableName the name of the variable
    * @param unit         the unit to use from now on
+   * @throws UnknownExperimentalVariableException in case the variable is not know to this design
    */
-  void changeUnit(String variableName, String unit) {
+  void changeUnit(String variableName, String unit) throws UnknownExperimentalVariableException {
     ExperimentalVariable experimentalVariable = getVariable(variableName).orElseThrow(() ->
-        new IllegalArgumentException("Variable " + variableName + " does not exist."));
+        new UnknownExperimentalVariableException("Variable " + variableName + " does not exist."));
     if (experimentalVariable.usedUnit().map(usedUnit -> usedUnit.equals(unit)).orElse(false)) {
       return;
-    }
-    if (experimentalVariable.levels().stream().anyMatch(this::isLevelUsed)) {
-      throw new IllegalStateException("Levels are in use. Unit change not possible");
     }
     List<VariableLevel> newLevels = experimentalVariable.levels().stream()
         .map(level -> new VariableLevel(level.variableName(),

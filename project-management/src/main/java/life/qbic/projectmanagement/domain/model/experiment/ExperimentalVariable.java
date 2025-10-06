@@ -109,12 +109,22 @@ public class ExperimentalVariable {
     return levels.removeIf(it -> variableLevel.experimentalValue().equals(it));
   }
 
+  /**
+   * Replaces the current levels with the list of provided levels. The provided list will not be
+   * modified.
+   *
+   * @param levels the new levels for this variable. The provided list is copied and modifications
+   *               to it are not reflected in the experimental variable.
+   * @return true if the variable was changed as a result of this call, false otherwise.
+   */
   boolean replaceLevels(List<ExperimentalValue> levels) {
-    if (levels.equals(this.levels)) {
+    var workingCopy = levels.stream().map(
+        it -> new ExperimentalValue(it.value(), it.unit().orElse(null))).toList();
+    if (workingCopy.equals(this.levels)) {
       return false;
     }
     this.levels.clear();
-    this.levels.addAll(levels);
+    this.levels.addAll(workingCopy);
     return true;
   }
 

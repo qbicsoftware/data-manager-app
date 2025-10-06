@@ -13,7 +13,6 @@ import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.KeyModifier;
 import com.vaadin.flow.component.ShortcutRegistration;
 import com.vaadin.flow.component.Shortcuts;
-import com.vaadin.flow.component.Tag;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.NativeLabel;
@@ -40,7 +39,7 @@ import life.qbic.datamanager.views.general.dialog.UserInput;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.ExperimentalVariablesInput.PasteEvent;
 import org.springframework.lang.NonNull;
 
-@Tag("variable-levels-input")
+
 class VariableLevelsInput extends Div implements UserInput, CanSnapshot,
     HasValidationProperties {
 
@@ -48,10 +47,19 @@ class VariableLevelsInput extends Div implements UserInput, CanSnapshot,
   private Snapshot initialState;
   private LevelField focusedLevelField = null;
 
+  /**
+   * Present level values
+   *
+   * @return an unmodifiable list of level values
+   */
   List<String> getLevels() {
     return filledLevels();
   }
 
+  /**
+   * Lock all of the provided levels. Locked levels cannot be changed or removed by the user.
+   * @param levels the levels to lock
+   */
   void lockLevels(Set<String> levels) {
     levelsContainer.stream()
         .filter(field -> !field.isEmpty())
@@ -60,6 +68,10 @@ class VariableLevelsInput extends Div implements UserInput, CanSnapshot,
   }
 
 
+  /**
+   * Adds an empty level field. Moves the focus to the added field.
+   * @return the added field
+   */
   @NonNull
   LevelField addEmptyLevel() {
     LevelField levelField = new LevelField();
@@ -68,6 +80,11 @@ class VariableLevelsInput extends Div implements UserInput, CanSnapshot,
     return levelField;
   }
 
+  /**
+   * Adds a filled field. Moves the focus to the added field.
+   * @param value the value to put into the added field
+   * @return the added field
+   */
   @NonNull
   LevelField addFilledLevel(@NonNull String value) {
     LevelField levelField = new LevelField();
@@ -77,6 +94,12 @@ class VariableLevelsInput extends Div implements UserInput, CanSnapshot,
     return levelField;
   }
 
+  /**
+   * Adds a filled field at a specific index. Focuses the field after adding it.
+   * @param index the index to add the field. Shifts existing fields after the added field.
+   * @param value the value of the field
+   * @return the added field
+   */
   @NonNull
   private LevelField addFilledLevel(int index, @NonNull String value) {
     LevelField levelField = new LevelField();
@@ -89,7 +112,10 @@ class VariableLevelsInput extends Div implements UserInput, CanSnapshot,
 
   private void addLevel(LevelField levelField) {
     addLevel(levelsContainer.size(), levelField);
-    afterAdd(levelField);
+    registerLevelFieldListeners(levelField);
+    // when an empty field is added, the validation is outdated and removed.
+    setInvalid(false);
+    levelField.focus();
   }
 
   /**
@@ -102,18 +128,18 @@ class VariableLevelsInput extends Div implements UserInput, CanSnapshot,
    */
   private void addLevel(int index, LevelField levelField) {
     levelsContainer.add(index, levelField);
-    afterAdd(levelField);
+    registerLevelFieldListeners(levelField);
+    // when a field is added, the validation is outdated and removed.
+    setInvalid(false);
+    levelField.focus();
   }
 
-  private void afterAdd(LevelField levelField) {
+  private void registerLevelFieldListeners(LevelField levelField) {
     levelField.addDeleteListener(event -> removeLevelField(event.getSource()));
     // when the value changes, the validation is outdated and removed.
     levelField.addValueChangeListener(valueChangeEvent -> setInvalid(false));
-    // when an empty field is added, the validation is outdated and removed.
-    setInvalid(false);
     levelField.addFocusListener(event -> this.focusedLevelField = levelField);
     levelField.addBlurListener(event -> this.focusedLevelField = null);
-    levelField.focus();
   }
 
   private void removeLevelField(LevelField levelField) {
@@ -125,9 +151,9 @@ class VariableLevelsInput extends Div implements UserInput, CanSnapshot,
 
 
   VariableLevelsInput() {
-    final String rootCssClasses = "border rounded-02 flex-vertical gap-none padding-04 padding-top-04";
+    final String rootCssClasses = "variable-levels-input border rounded-02 flex-vertical gap-none padding-04 padding-top-04";
     final String bodyClassNames = "flex-vertical justify-start gap-04 input-with-label";
-    this.getStyle().set("grid-area", "b");
+    this.getStyle().set("grid-area", "levels");
     this.addClassNames(rootCssClasses);
 
     var body = new Div();
@@ -152,18 +178,12 @@ class VariableLevelsInput extends Div implements UserInput, CanSnapshot,
     this.add(label, body);
 
     markInitialized();
+    selectNextLevelOnKeyENTER();
+    addPasteListener();
+  }
 
-    Shortcuts.addShortcutListener(this, it -> {
-      var focusIndex = focusedLevelIndex();
-      int nextFocus = focusIndex + 1;
-      if (levelsContainer.size() > nextFocus) {
-        levelsContainer.getAt(nextFocus).focus();
-      } else {
-        addEmptyLevel();
-      }
-    }, Key.ENTER).listenOn(this);
-
-    addListener(PasteEvent.class, pasteEvent -> {
+  private Registration addPasteListener() {
+    return addListener(PasteEvent.class, pasteEvent -> {
       List<String> pastedLines = pasteEvent.getClipboardText().lines()
           .filter(Objects::nonNull)
           .filter(line -> !line.isBlank())
@@ -175,9 +195,6 @@ class VariableLevelsInput extends Div implements UserInput, CanSnapshot,
       if (nonNull(focusedLevelField) && focusedLevelField.isEmpty()) {
         //fill the first item in the focused field
         focusedLevelField.setValue(pastedLines.getFirst());
-      } else if (nonNull(focusedLevelField)) {
-        focusedLevelField.setValue(
-            focusedLevelField.getValue().orElseThrow() + pastedLines.getFirst());
       } else {
         startIndex++;
         //fill the first item in a new field after the focused field
@@ -189,6 +206,18 @@ class VariableLevelsInput extends Div implements UserInput, CanSnapshot,
         addFilledLevel(insertIndex, line);
       }
     });
+  }
+
+  private void selectNextLevelOnKeyENTER() {
+    Shortcuts.addShortcutListener(this, it -> {
+      var focusIndex = focusedLevelIndex();
+      int nextFocus = focusIndex + 1;
+      if (levelsContainer.size() > nextFocus) {
+        levelsContainer.getAt(nextFocus).focus();
+      } else {
+        addEmptyLevel();
+      }
+    }, Key.ENTER).listenOn(this);
   }
 
   private int focusedLevelIndex() {
@@ -208,6 +237,10 @@ class VariableLevelsInput extends Div implements UserInput, CanSnapshot,
     }
   }
 
+  /**
+   * Maps a list of level fields to a list of string values. Ignores empty fields and preserves order.
+   * @return a function extracting level values from a list of level fields. The returned list of applying the function is unmodifieable.
+   */
   private Function<List<LevelField>, List<String>> extractFilledLevels() {
     return fields -> fields.stream()
         .map(LevelField::getValue)
@@ -217,6 +250,11 @@ class VariableLevelsInput extends Div implements UserInput, CanSnapshot,
         .toList();
   }
 
+  /**
+   * Aggregates displayed information. Ignores empty fields and collects values of filled level fields as a list of string.
+   * @return an unmodifiable list of levels
+   * @see #extractFilledLevels()
+   */
   private List<String> filledLevels() {
     return extractFilledLevels().apply(levelsContainer.stream().toList());
   }

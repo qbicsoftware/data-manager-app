@@ -162,8 +162,8 @@ public class ExperimentDetailsComponent extends PageArea {
     confoundingVariablesContainer = new Div();
     confoundingVariablesContainer.addClassNames("width-full", "height-full");
     // we use `edit` for both
-    experimentalVariableCollection.setEditEnabled(true);
-    experimentalVariableCollection.setAddEnabled(false);
+    experimentalVariableCollection.enableEdit();
+    experimentalVariableCollection.disableAdd();
 
     layoutComponent();
     configureComponent();
