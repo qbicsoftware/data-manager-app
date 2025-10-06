@@ -153,7 +153,7 @@ public class ExperimentalDesign {
    * @throws UnknownExperimentalVariableException in case the experimental variable is not part of
    *                                              this design.
    * @throws IllegalArgumentException             in case the provided levels are not distinct or
-   *                                              are used {@link this#isLevelUsed(VariableLevel)}
+   *                                              are used {@link #isLevelUsed(VariableLevel)}
    */
   boolean setVariableLevels(String variableName, List<ExperimentalValue> levels)
       throws UnknownExperimentalVariableException, IllegalArgumentException {

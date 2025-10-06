@@ -498,6 +498,9 @@ class VariableLevelsInput extends Div implements UserInput, CanSnapshot,
       return addListener(DeleteLevelEvent.class, listener);
     }
 
+    /**
+     * Lock this input field. Locked fields cannot be edited or removed by the user.
+     */
     public void lock() {
       deleteLevelButton.setEnabled(false);
       deleteLevelButton.setVisible(false);

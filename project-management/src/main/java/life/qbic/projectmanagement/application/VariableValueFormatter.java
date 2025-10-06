@@ -20,6 +20,13 @@ public class VariableValueFormatter {
     return format(experimentalValue.value(), experimentalValue.unit().orElse(null));
   }
 
+  /**
+   * Formats the value and unit strings according to a standard format for experimental values.
+   *
+   * @param value the value
+   * @param unit  the unit
+   * @return a String representation
+   */
   public static String format(String value, String unit) {
     return value + (nonNull(unit) ? " " + unit : "");
   }

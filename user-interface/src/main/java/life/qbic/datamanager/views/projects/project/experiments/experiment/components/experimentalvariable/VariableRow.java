@@ -169,6 +169,11 @@ public class VariableRow extends Composite<Div> implements UserInput, CanSnapsho
     name.setInvalid(false);
   }
 
+  /**
+   * Sets the variable name to be invalid and shows a given error message.
+   *
+   * @param errorMessage
+   */
   void setNameInvalid(@NonNull String errorMessage) {
     this.setInvalid(true);
     if (Optional.ofNullable(name.getErrorMessage()).map(it -> !it.contains(errorMessage)).orElse(
@@ -181,6 +186,10 @@ public class VariableRow extends Composite<Div> implements UserInput, CanSnapsho
     name.setInvalid(true);
   }
 
+  /**
+   * Sets the unit to be invalid and shows a given error message
+   * @param errorMessage
+   */
   void setUnitInvalid(@NonNull String errorMessage) {
     this.setInvalid(true);
     unit.setErrorMessage(errorMessage);
@@ -207,7 +216,7 @@ public class VariableRow extends Composite<Div> implements UserInput, CanSnapsho
    * Validates the component and returns all changes. Throws InvalidChangesException in case of
    * invalid input.
    *
-   * @return a list of variable changes
+   * @return an unmodifiable list of variable changes
    * @throws InvalidChangesException in case of invalid user input
    */
   List<VariableChange> getChanges() throws InvalidChangesException {
@@ -240,7 +249,7 @@ public class VariableRow extends Composite<Div> implements UserInput, CanSnapsho
       if (this.variableLevels.hasChanges()) {
         changes.add(new VariableLevelsChanged(originalVariableName, variableLevels.getValue()));
       }
-      return changes;
+      return Collections.unmodifiableList(changes);
     }
     throw new IllegalStateException();
   }
