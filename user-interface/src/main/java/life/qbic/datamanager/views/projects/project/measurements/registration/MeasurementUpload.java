@@ -2,10 +2,8 @@ package life.qbic.datamanager.views.projects.project.measurements.registration;
 
 import static java.util.Objects.requireNonNull;
 
-import com.vaadin.flow.component.AttachNotifier;
 import com.vaadin.flow.component.Focusable;
 import com.vaadin.flow.component.Text;
-import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
@@ -469,7 +467,7 @@ public class MeasurementUpload extends Div implements UserInput {
 
       add(fileNameLabel);
       add(displayBox);
-      addClassNames("flex-vertical", "gap-04", "choice-box", "padding-vertical-04",
+      addClassNames("flex-vertical", "gap-04", "border", "rounded-02", "padding-vertical-04",
           "padding-horizontal-04");
     }
 
@@ -541,7 +539,7 @@ public class MeasurementUpload extends Div implements UserInput {
 
     private ValidationReportDisplay(ValidationHeader header) {
       add(header);
-      addClassNames("flex-vertical", "gap-04", "choice-box", "padding-vertical-04",
+      addClassNames("flex-vertical", "gap-04", "border", "rounded-02", "padding-vertical-04",
           "padding-horizontal-04", "background-contrast-5pct");
     }
 
