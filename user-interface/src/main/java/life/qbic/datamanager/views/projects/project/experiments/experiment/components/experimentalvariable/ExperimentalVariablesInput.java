@@ -145,7 +145,7 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
         new Div(new Span("The variable"), variableNameText,
             new Span("will be deleted.")));
     DialogFooter.withDangerousConfirm(confirmDialog, "Cancel",
-        "Delete Variable \"%s\"".formatted(variableName));
+        "Delete Experimental Variable");
     return confirmDialog;
   }
 
