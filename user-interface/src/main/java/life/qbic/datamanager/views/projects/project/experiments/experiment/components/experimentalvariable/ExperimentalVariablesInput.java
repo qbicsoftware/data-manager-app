@@ -40,9 +40,20 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
   private Snapshot initialState;
 
   public ExperimentalVariablesInput() {
-    addVariableButton.addClickListener(
-        e -> addVariable());
+    addVariableButton.addClickListener(e -> addVariable());
     markInitialized();
+  }
+
+  @Override
+  protected Div initContent() {
+    var body = new Div();
+    body.addClassNames("dialog-section");
+    variablesInput.addClassNames("flex-vertical gap-04");
+    addVariableButton.addClassNames(
+        "margin-bottom-04 flex-vertical width-max-content justify-self-start button-color-primary");
+    variablesInput.add(addVariableButton);
+    body.add(variablesInput);
+    return body;
   }
 
   public record ExperimentalVariableInformation(String name, String unit, List<String> levels) {
@@ -92,19 +103,6 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
         .toList();
   }
 
-  @Override
-  @NonNull
-  protected Div initContent() {
-    var body = new Div();
-    body.addClassNames("dialog-section");
-    variablesInput.addClassNames("flex-vertical gap-04");
-    addVariableButton.addClassNames(
-        "margin-bottom-04 flex-vertical width-max-content justify-self-start button-color-primary");
-    variablesInput.add(addVariableButton);
-    body.add(variablesInput);
-    return body;
-  }
-
   public void addVariable() {
     VariableRow variableRow = VariableRow.empty();
     addRow(variableRow);
@@ -129,9 +127,11 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
       confirmDialog.registerCancelAction(confirmDialog::close);
       confirmDialog.open();
     });
-    variablesInput.addComponentAtIndex(
-        Math.max(0, (int) (variablesInput.getChildren().count()) - 1),
-        variableRow);
+    var maxRowIndex = variablesInput.getChildren()
+        .filter(VariableRow.class::isInstance)
+        .mapToInt(variablesInput::indexOf)
+        .max().orElse(-1);
+    variablesInput.addComponentAtIndex(Math.max(0, maxRowIndex + 1), variableRow);
     variableRow.focus();
   }
 
