@@ -1378,6 +1378,20 @@ public interface AsyncProjectService {
       int limit, List<SortOrder> sortOrders, String filter);
 
   /**
+   * Returns the total number of samples for an experiment in a given project.
+   *
+   * @param projectId    the project id of the project of interest
+   * @param experimentId the experiment id of the experiment to search the samples for
+   * @return a {@link Mono} with the number of samples that exist in the given experiment. Is
+   * {@link Mono#empty()} if no samples exist.
+   * @throws RequestFailedException if the request could not be executed
+   * @throws AccessDeniedException  if the client has insufficient access rights
+   * @since 1.12.0
+   */
+  Mono<Integer> countSamples(String projectId, String experimentId)
+      throws RequestFailedException, AccessDeniedException;
+
+  /**
    * Requests all {@link Sample} for a given experiment.
    * <p>
    * <b>Exceptions</b>

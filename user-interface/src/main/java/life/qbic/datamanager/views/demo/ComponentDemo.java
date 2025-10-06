@@ -1,5 +1,7 @@
 package life.qbic.datamanager.views.demo;
 
+import static life.qbic.logging.service.LoggerFactory.logger;
+
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
@@ -39,6 +41,7 @@ import life.qbic.datamanager.views.general.grid.FilterGrid;
 import life.qbic.datamanager.views.general.icon.IconFactory;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.projects.project.info.SimpleParagraph;
+import life.qbic.logging.api.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.lang.NonNull;
@@ -57,6 +60,8 @@ import org.springframework.stereotype.Component;
 @AnonymousAllowed
 @Component
 public class ComponentDemo extends Div {
+
+  private static final Logger log = logger(ComponentDemo.class);
 
   public static final String HEADING_2 = "heading-2";
   public static final String HEADING_3 = "heading-3";
@@ -105,6 +110,10 @@ public class ComponentDemo extends Div {
         });
 
     var filterGrid = new FilterGrid<Person>(grid, filterDataProvider, new ExampleFilter(""), (filter, term) -> new ExampleFilter(term));
+
+    filterGrid.addSelectListener(listener -> {
+      log.info(listener.selectedItems().size() + " selected items selected");
+    });
 
     return new Div(filterGrid);
   }

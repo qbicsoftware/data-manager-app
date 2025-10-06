@@ -3,20 +3,26 @@ package life.qbic.datamanager.views.projects.project.samples;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.data.provider.CallbackDataProvider;
 import com.vaadin.flow.data.provider.SortDirection;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.datamanager.views.Context;
+import life.qbic.datamanager.views.general.MultiSelectLazyLoadingGrid;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
+import life.qbic.datamanager.views.general.grid.Filter;
+import life.qbic.datamanager.views.general.grid.FilterGrid;
+import life.qbic.datamanager.views.general.grid.FilterUpdater;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.RequestFailedException;
@@ -64,7 +70,9 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     countSpan = new Span();
     countSpan.addClassName("sample-count");
     setSampleCount(0);
-    content.add(countSpan, sampleGrid);
+
+
+    //content.add(countSpan, sampleGrid);
     add(content);
   }
 
@@ -205,6 +213,38 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     this.context = context;
     updateSampleGridDataProvider(context.projectId().orElseThrow(),
         this.context.experimentId().orElseThrow(), "");
+
+    // FIXME remove before merge
+    var projectId = context.projectId().orElseThrow().value();
+    var experimentId = context.experimentId().orElseThrow().value();
+    var measurementGrid = new MultiSelectLazyLoadingGrid<SamplePreview>();
+    var grid = new FilterGrid<SamplePreview>(measurementGrid, new CallbackDataProvider<>(
+        query -> asyncProjectService.getSamplePreviews(projectId,
+            experimentId, query.getOffset(), query.getLimit(),
+            new ArrayList<>(), "").toStream(),
+        query -> asyncProjectService.countSamples(projectId, experimentId).block()),
+        new Filter<SamplePreview>() {
+
+          private String filter;
+
+          @Override
+          public void setSearchTerm(String searchTerm) {
+            filter = searchTerm;
+          }
+
+          @Override
+          public boolean test(SamplePreview data) {
+            return true;
+          }
+        }, new FilterUpdater<SamplePreview>() {
+      @Override
+      public Filter<SamplePreview> withSearchTerm(Filter<SamplePreview> oldFilter, String term) {
+        return oldFilter;
+      }
+    });
+    removeAll();
+    add(grid);
+
   }
 
   private void setSampleCount(int i) {

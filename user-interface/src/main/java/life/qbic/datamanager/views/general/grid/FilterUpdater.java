@@ -1,7 +1,4 @@
 package life.qbic.datamanager.views.general.grid;
-
-import org.apache.poi.ss.formula.functions.T;
-
 /**
  * <b><class short description - 1 Line!></b>
  *

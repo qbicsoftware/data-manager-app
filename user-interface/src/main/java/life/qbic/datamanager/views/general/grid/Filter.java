@@ -1,5 +1,6 @@
 package life.qbic.datamanager.views.general.grid;
 
+
 /**
  * <b><interface short description - 1 Line!></b>
  *

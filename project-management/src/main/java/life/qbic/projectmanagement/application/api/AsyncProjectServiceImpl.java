@@ -51,6 +51,7 @@ import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import life.qbic.projectmanagement.domain.repository.ProjectRepository.ProjectNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.NonNull;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -340,9 +341,9 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   @Override
   public Flux<ExperimentalGroup> getExperimentalGroups(String projectId, String experimentId) {
     var call = Flux.fromStream(() ->
-      experimentInformationService.fetchGroups(projectId, ExperimentId.parse(experimentId))
-          .stream()
-          .map(AsyncProjectServiceImpl::convertToApi));
+        experimentInformationService.fetchGroups(projectId, ExperimentId.parse(experimentId))
+            .stream()
+            .map(AsyncProjectServiceImpl::convertToApi));
     String errorMessage = "Error getting experimental group";
     return applySecurityContextMany(call)
         .subscribeOn(VirtualThreadScheduler.getScheduler())
@@ -555,6 +556,24 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
         .subscribeOn(scheduler)
         .contextWrite(reactiveSecurity(securityContext))
         .retryWhen(defaultRetryStrategy());
+  }
+
+  @Override
+  public Mono<Integer> countSamples(String projectId, String experimentId)
+      throws RequestFailedException, AccessDeniedException {
+    SecurityContext securityContext = SecurityContextHolder.getContext();
+
+    return applySecurityContext(Mono.defer(() -> {
+          var count = sampleInfoService.countSamplesForExperiment(projectId, experimentId);
+          if (count > 0) {
+            return Mono.just(count);
+          }
+          return Mono.empty();
+        }
+    )).subscribeOn(scheduler)
+        .contextWrite(reactiveSecurity(securityContext))
+        .retryWhen(defaultRetryStrategy())
+        .onErrorMap(t -> mapToAPIException(t, "Error counting samples for experiment " + experimentId));
   }
 
   private Flux<SamplePreview> fetchSamplePreviews(String projectId, String experimentId, int offset,
