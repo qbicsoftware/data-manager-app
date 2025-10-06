@@ -20,6 +20,7 @@ import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.shared.HasValidationProperties;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.function.SerializablePredicate;
 import com.vaadin.flow.shared.Registration;
 import java.io.Serializable;
@@ -58,6 +59,7 @@ class VariableLevelsInput extends Div implements UserInput, CanSnapshot,
 
   /**
    * Lock all of the provided levels. Locked levels cannot be changed or removed by the user.
+   *
    * @param levels the levels to lock
    */
   void lockLevels(Set<String> levels) {
@@ -70,6 +72,7 @@ class VariableLevelsInput extends Div implements UserInput, CanSnapshot,
 
   /**
    * Adds an empty level field. Moves the focus to the added field.
+   *
    * @return the added field
    */
   @NonNull
@@ -82,6 +85,7 @@ class VariableLevelsInput extends Div implements UserInput, CanSnapshot,
 
   /**
    * Adds a filled field. Moves the focus to the added field.
+   *
    * @param value the value to put into the added field
    * @return the added field
    */
@@ -96,6 +100,7 @@ class VariableLevelsInput extends Div implements UserInput, CanSnapshot,
 
   /**
    * Adds a filled field at a specific index. Focuses the field after adding it.
+   *
    * @param index the index to add the field. Shifts existing fields after the added field.
    * @param value the value of the field
    * @return the added field
@@ -238,8 +243,11 @@ class VariableLevelsInput extends Div implements UserInput, CanSnapshot,
   }
 
   /**
-   * Maps a list of level fields to a list of string values. Ignores empty fields and preserves order.
-   * @return a function extracting level values from a list of level fields. The returned list of applying the function is unmodifieable.
+   * Maps a list of level fields to a list of string values. Ignores empty fields and preserves
+   * order.
+   *
+   * @return a function extracting level values from a list of level fields. The returned list of
+   * applying the function is unmodifieable.
    */
   private Function<List<LevelField>, List<String>> extractFilledLevels() {
     return fields -> fields.stream()
@@ -251,7 +259,9 @@ class VariableLevelsInput extends Div implements UserInput, CanSnapshot,
   }
 
   /**
-   * Aggregates displayed information. Ignores empty fields and collects values of filled level fields as a list of string.
+   * Aggregates displayed information. Ignores empty fields and collects values of filled level
+   * fields as a list of string.
+   *
    * @return an unmodifiable list of levels
    * @see #extractFilledLevels()
    */
@@ -300,9 +310,17 @@ class VariableLevelsInput extends Div implements UserInput, CanSnapshot,
         .filter(it -> it.getValue().isPresent())
         .filter(field -> levelCounts.getOrDefault(field.getValue().orElseThrow(), 0L) > 1)
         .toList();
-    for (LevelField fieldsWithDuplicateLevel : fieldsWithDuplicateLevels) {
-      fieldsWithDuplicateLevel.setInvalid(true);
-      fieldsWithDuplicateLevel.setErrorMessage("This level already exists.");
+    for (LevelField fieldWithDuplicateLevel : fieldsWithDuplicateLevels) {
+      fieldWithDuplicateLevel.setInvalid(true);
+      fieldWithDuplicateLevel.setErrorMessage("This level already exists.");
+      fieldWithDuplicateLevel.addValueChangeListener(valueChanged -> {
+        fieldsWithDuplicateLevels.stream()
+            .filter(field -> field.getValue().isPresent())
+            .filter(field -> field.getValue().orElseThrow().equals(valueChanged.getOldValue()))
+            .filter(field -> !fieldWithDuplicateLevel.equals(field))
+            .forEach(field -> field.setInvalid(false));
+        valueChanged.unregisterListener(); //clean up this listener as it is no longer relevant
+      });
     }
     validation = fieldsWithDuplicateLevels.isEmpty() ? validation : InputValidation.failed();
     setInvalid(!validation.hasPassed());
@@ -401,6 +419,7 @@ class VariableLevelsInput extends Div implements UserInput, CanSnapshot,
       deleteLevelButton.addClickListener(
           clickEvent -> fireEvent(new DeleteLevelEvent(this, clickEvent.isFromClient())));
       initialState = (LevelSnapshot) this.snapshot();
+      levelValue.setValueChangeMode(ValueChangeMode.EAGER);
     }
 
     @Override
@@ -428,9 +447,9 @@ class VariableLevelsInput extends Div implements UserInput, CanSnapshot,
       return levelValue.addValueChangeListener(listener);
     }
 
-
     @Override
     protected Div initContent() {
+
       var levelField = new Div();
       levelField.addClassNames(LEVEL_FIELD_CSS);
       levelValue.addClassNames(LEVEL_VALUE_CSS);
@@ -473,7 +492,8 @@ class VariableLevelsInput extends Div implements UserInput, CanSnapshot,
     }
 
     @Override
-    public Registration addFocusListener(ComponentEventListener<FocusEvent<Component>> listener) {
+    public Registration addFocusListener
+        (ComponentEventListener<FocusEvent<Component>> listener) {
       return levelValue.addFocusListener(
           it -> listener.onComponentEvent(new FocusEvent<>(it.getSource(), it.isFromClient())));
     }
