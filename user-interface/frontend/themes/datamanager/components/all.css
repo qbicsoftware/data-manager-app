@@ -856,7 +856,7 @@ Icons
 }
 
 .icon-color-success {
-  color: var(--icon-color-success);
+  color: var(--success-icon-color);
 }
 
 .icon-color-error {
