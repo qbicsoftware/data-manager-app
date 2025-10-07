@@ -191,7 +191,7 @@ public class Experiment {
   }
 
   /**
-   * Removes an experimental variable if possible. Emits an experiment update domain event.
+* Removes an experimental variable if possible. Emits an {@link ExperimentUpdatedEvent}.
    *
    * @param name the name of the variable
    * @return true if the variable was removed, falso if there was no need to remove it.
