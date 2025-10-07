@@ -194,7 +194,7 @@ public class Experiment {
 * Removes an experimental variable if possible. Emits an {@link ExperimentUpdatedEvent}.
    *
    * @param name the name of the variable
-   * @return true if the variable was removed, falso if there was no need to remove it.
+ * @return true if the variable was removed, false if no variable was removed (no variable with the given name exists in the experiment).
    */
   public boolean removeExperimentalVariable(String name) {
     var changed = experimentalDesign.removeExperimentalVariable(name);
