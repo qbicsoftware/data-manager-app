@@ -42,6 +42,14 @@ public class ExperimentalGroup {
     // Please use the create method. This is needed for JPA
   }
 
+  public ExperimentalGroup deepCopy() {
+    var copiedCondition = condition.deepCopy();
+    ExperimentalGroup copiedGroup = new ExperimentalGroup(name, copiedCondition, sampleSize,
+        groupNumber);
+    copiedGroup.experimentalGroupId = this.experimentalGroupId;
+    return copiedGroup;
+  }
+
   /**
    * Creates a new instance of an experimental group object.
    * <p>

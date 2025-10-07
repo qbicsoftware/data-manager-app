@@ -21,6 +21,7 @@ import life.qbic.projectmanagement.domain.model.experiment.ExperimentalDesign.Ad
 import life.qbic.projectmanagement.domain.model.experiment.exception.ConditionExistsException;
 import life.qbic.projectmanagement.domain.model.experiment.exception.ExperimentalVariableExistsException;
 import life.qbic.projectmanagement.domain.model.experiment.exception.UnknownExperimentalVariableException;
+import org.springframework.lang.Nullable;
 
 /**
  * <b>Experimental Design</b>
@@ -222,19 +223,24 @@ public class ExperimentalDesign {
     return true;
   }
 
+
   /**
    * Renames an existing experimental variable. The new name must not be present as an existing
    * variable. This method undoes any incomplete work in case of an exception.
    *
    * @param oldName the current name of the variable to be changed
-   * @param newName the new name after renaming
+   * @param newName the new name after renaming, must not be blank or null
    * @throws UnknownExperimentalVariableException in case no variable with the name `oldName`
    *                                              exists.
    * @throws ExperimentalVariableExistsException  in case a variable with the name `newName` already
    *                                              exists.
+   * @throws IllegalArgumentException if an illegal argument was supplied
    */
   void renameExperimentalVariable(String oldName, String newName)
-      throws UnknownExperimentalVariableException, ExperimentalVariableExistsException {
+      throws UnknownExperimentalVariableException, ExperimentalVariableExistsException, IllegalArgumentException {
+    if (newName == null || newName.isBlank()) {
+      throw new IllegalArgumentException("New name cannot be null or blank");
+    }
     if (variableWithName(oldName).isEmpty()) {
       throw new UnknownExperimentalVariableException(
           "No variable with name " + oldName + " exists");
@@ -243,54 +249,29 @@ public class ExperimentalDesign {
       throw new ExperimentalVariableExistsException(
           "Variable with the name " + newName + " already exists.");
     }
-    try {
-      renameVariableInGroups(oldName, newName);
-    } catch (RuntimeException e) {
-      //rename back to the original name
-      renameVariableInGroups(newName, oldName);
-      throw e;
-    }
-    //only when the variable was renamed in all groups successfully
-    try {
-      renameVariable(oldName, newName);
-    } catch (RuntimeException e) {
-      //rename back to the original name in groups if renaming failed
-      renameVariableInGroups(newName, oldName);
-      throw e;
-    }
-  }
 
-
-  private void renameVariable(String from, String to) {
-    for (ExperimentalVariable experimentalVariable : variables) {
-      if (experimentalVariable.name().value().equals(from)) {
-        experimentalVariable.renameTo(to);
-        return;
-      }
-    }
-    throw new UnknownExperimentalVariableException("No variable with name " + from + " exists");
-  }
-
-  /**
-   * Renames a variable in the condition of this group. If the variable is not defined, does nothing.
-   * @see Condition#renameVariable(String, String)
-   * @param oldName the old name of the variable
-   * @param newName the new name of the variable after rename. Must not be null or blank.
-   */
-  private void renameVariableInGroups(String oldName, String newName) {
-    if (newName == null || newName.isBlank()) {
-      throw new IllegalArgumentException("New name cannot be null or blank");
-    }
-    for (ExperimentalGroup experimentalGroup : experimentalGroups) {
-      experimentalGroup.renameVariable(oldName, newName);
-    }
+    var currentVariable = variableWithName(oldName).orElseThrow();
+    List<ExperimentalGroup> deepCopyOfGroups = experimentalGroups.stream()
+        .map(ExperimentalGroup::deepCopy)
+        .toList();
+    deepCopyOfGroups.forEach(group -> group.renameVariable(oldName, newName));
+    this.experimentalGroups.clear();
+    this.experimentalGroups.addAll(deepCopyOfGroups);
+    currentVariable.renameTo(newName);
   }
 
   List<ExperimentalVariable> experimentalVariables() {
     return Collections.unmodifiableList(variables);
   }
 
-  private Optional<ExperimentalVariable> variableWithName(String variableName) {
+  /**
+   * Returns the experimental variable with this name. If no variable with the given name exists,
+   * returns {@link Optional#empty()}
+   *
+   * @param variableName the name to search for, can be null
+   * @return an optional containing the existing variable or {@link Optional#empty()} otherwise
+   */
+  private Optional<ExperimentalVariable> variableWithName(@Nullable String variableName) {
     return variables.stream().filter(it -> it.name().value().equals(variableName)).findAny();
   }
 

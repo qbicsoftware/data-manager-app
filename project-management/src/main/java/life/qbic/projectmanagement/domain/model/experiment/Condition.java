@@ -155,4 +155,14 @@ public class Condition {
         });
   }
 
+  public Condition deepCopy() {
+    List<VariableLevel> copiedLevels = variableLevels.stream().map(
+        it -> {
+          ExperimentalValue experimentalValue = ExperimentalValue.create(
+              it.experimentalValue().value(), it.experimentalValue().unit().orElse(null));
+          return VariableLevel.create(VariableName.create(it.variableName().value()),
+              experimentalValue);
+        }).toList();
+    return new Condition(copiedLevels);
+  }
 }
