@@ -154,12 +154,12 @@ public class MultiSelectLazyLoadingGrid<T> extends Grid<T> {
 
   public static class SelectedEvent extends ComponentEvent<MultiSelectLazyLoadingGrid<?>> {
 
-    private final Set<?> selectedItems;
+    private final transient Set<?> selectedItems;
 
     public SelectedEvent(MultiSelectLazyLoadingGrid<?> source, Set<?> selectedItems,
         boolean fromClient) {
       super(source, fromClient);
-      this.selectedItems = Set.copyOf(Objects.requireNonNull(selectedItems));
+      this.selectedItems = java.util.Set.copyOf(Objects.requireNonNull(selectedItems));
     }
 
     @SuppressWarnings("unchecked")
