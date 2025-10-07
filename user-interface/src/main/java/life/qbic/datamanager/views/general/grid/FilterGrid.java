@@ -2,6 +2,7 @@ package life.qbic.datamanager.views.general.grid;
 
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
+import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.provider.CallbackDataProvider;
@@ -21,6 +22,8 @@ import life.qbic.datamanager.views.general.MultiSelectLazyLoadingGrid;
 public class FilterGrid<T> extends Div {
 
   private final MultiSelectLazyLoadingGrid<T> grid;
+  private final Div selectionDisplay;
+  private final Div secondaryActionGroup;
 
   private Filter<T> currentFilter;
 
@@ -44,9 +47,27 @@ public class FilterGrid<T> extends Div {
     });
     textfield.setValueChangeMode(ValueChangeMode.EAGER);
 
-    add(textfield);
-    add(grid);
+    this.selectionDisplay = new Div();
+
+    this.secondaryActionGroup = new Div();
+    secondaryActionGroup.addClassNames("flex-horizontal", "gap-02");
+
+    var primaryGridControls = new Div();
+    primaryGridControls.add(textfield,  selectionDisplay, secondaryActionGroup);
+    primaryGridControls.addClassNames("flex-horizontal", "gap-02", "justify-content-space-between");
+
+    add(primaryGridControls, grid);
     fireOnSelectedItems();
+  }
+
+  public void setSecondaryActionGroup(Button firstButton, Button... buttons) {
+    Objects.requireNonNull(firstButton);
+    Objects.requireNonNull(buttons);
+    this.secondaryActionGroup.removeAll();
+    this.secondaryActionGroup.add(firstButton);
+    for (Button button : buttons) {
+      this.secondaryActionGroup.add(button);
+    }
   }
 
   public Set<T> selectedElements() {
@@ -61,7 +82,7 @@ public class FilterGrid<T> extends Div {
   private void fireOnSelectedItems() {
     grid.addSelectedListener(
         event -> {
-          Objects.requireNonNull(event);
+          Objects.requireNonNull(event); // fail early on NP
           fireEvent(new FilterGridSelectionEvent(this, event.getSelectedItems(), true));
         });
   }

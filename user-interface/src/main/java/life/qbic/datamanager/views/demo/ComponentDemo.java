@@ -89,7 +89,6 @@ public class ComponentDemo extends Div {
   }
 
   private Div filterGridShowCase() {
-
     var grid = new MultiSelectLazyLoadingGrid<Person>();
     grid.addColumn(Person::firstName).setHeader("First Name").setKey("firstName");
     grid.addColumn(Person::lastName).setHeader("Last Name").setKey("lastName");
@@ -109,16 +108,19 @@ public class ComponentDemo extends Div {
           return examples.stream().filter(filter::test).toList().size();
         });
 
-    var filterGrid = new FilterGrid<Person>(grid, filterDataProvider, new ExampleFilter(""), (filter, term) -> new ExampleFilter(term));
+    var filterGrid = new FilterGrid<Person>(grid, filterDataProvider,
+        new ExampleFilter(""), (filter, term) -> new ExampleFilter(term));
 
     filterGrid.addSelectListener(listener -> {
       log.info(listener.selectedItems().size() + " selected items selected");
     });
 
+    filterGrid.setSecondaryActionGroup(new Button("Edit"), new Button("Delete"));
+
     return new Div(filterGrid);
   }
 
-  class ExampleFilter implements Filter<Person> {
+  static class ExampleFilter implements Filter<Person> {
 
     private String term;
 
@@ -133,16 +135,35 @@ public class ComponentDemo extends Div {
 
     @Override
     public boolean test(Person data) {
-      return data.firstName.contains(term) || data.lastName.contains(term);
+      var fullName = String.join(" ", data.firstName, data.lastName, Integer.toString(data.age));
+      return fullName.contains(term);
     }
   }
 
   static List<Person> examples = new ArrayList<>();
 
+
   static {
     examples.add(new Person("John", "Doe", 18));
-    examples.add(new Person("John", "Wane", 22));
-    examples.add(new Person("Jae", "Doe", 44));
+    examples.add(new Person("Jane", "Doe", 21));
+    examples.add(new Person("Lars", "Müller", 27));
+    examples.add(new Person("Alicia", "Mendez", 31));
+    examples.add(new Person("Noah", "Thompson", 19));
+    examples.add(new Person("Fatima", "Al-Sayed", 35));
+    examples.add(new Person("Sakura", "Tanaka", 29));
+    examples.add(new Person("Elena", "Petrova", 42));
+    examples.add(new Person("Marcus", "Nguyen", 25));
+    examples.add(new Person("Oliver", "Smith", 33));
+    examples.add(new Person("Isabella", "Rossi", 24));
+    examples.add(new Person("Ethan", "Johnson", 38));
+    examples.add(new Person("Sofia", "Kowalski", 28));
+    examples.add(new Person("Mateo", "Garcia", 40));
+    examples.add(new Person("Hannah", "Schneider", 22));
+    examples.add(new Person("Amir", "Rahman", 30));
+    examples.add(new Person("Chloe", "Dubois", 26));
+    examples.add(new Person("Leo", "Andersen", 34));
+    examples.add(new Person("Priya", "Patel", 37));
+    examples.add(new Person("William", "O'Connor", 45));
   }
 
   record Person(String firstName, String lastName, int age) {
@@ -202,6 +223,7 @@ public class ComponentDemo extends Div {
     container.add(heading, headingPrimary, headingSecondary, headingTertiary);
     return container;
   }
+
   private static Div fontsShowCase() {
     Div container = new Div();
     Div header = new Div("Body Font Styles");
@@ -377,8 +399,10 @@ public class ComponentDemo extends Div {
     {
       var progressBar = new ProgressBar();
       progressBar.setIndeterminate(true);
-      var toast = messageFactory.pendingTaskToast("task.in-progress", new Object[]{"Doing something really heavy here"}, getLocale());
-      var succeededToast = messageFactory.toast("task.finished", new Object[]{"Heavy Task #1"},  getLocale());
+      var toast = messageFactory.pendingTaskToast("task.in-progress",
+          new Object[]{"Doing something really heavy here"}, getLocale());
+      var succeededToast = messageFactory.toast("task.finished", new Object[]{"Heavy Task #1"},
+          getLocale());
       toast.open();
       var ui = UI.getCurrent();
       CompletableFuture.runAsync(() -> {
