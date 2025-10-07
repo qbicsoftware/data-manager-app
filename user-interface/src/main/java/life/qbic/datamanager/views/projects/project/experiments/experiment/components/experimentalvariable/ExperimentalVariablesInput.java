@@ -254,14 +254,16 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
         initialState);
   }
 
-  private VariableRow toRestoredVariableRow(Snapshot snapshot) {
+  /**
+   *
+   * @param snapshot the snapshot containing the state
+   * @return a variable row with the restored state
+   * @throws SnapshotRestorationException in case the snapshot could not be restored
+   */
+  private VariableRow toRestoredVariableRow(Snapshot snapshot) throws SnapshotRestorationException {
     var dummy = VariableRow.empty();
-    try {
-      dummy.restore(snapshot);
-      return dummy;
-    } catch (SnapshotRestorationException e) {
-      throw new IllegalStateException("Initial state not correctly set.", e);
-    }
+    dummy.restore(snapshot);
+    return dummy;
   }
 
   @Override
