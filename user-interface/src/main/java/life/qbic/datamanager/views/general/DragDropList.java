@@ -60,20 +60,8 @@ public class DragDropList<T extends Component> extends Composite<Div> {
       this.dropAfter = new DropPosition<>();
       this.add(dropBefore, item, dropAfter);
 
-      this.dragSource = new DragSource<>() {
-        @Override
-        public DragDropItem<T> getDragSourceComponent() {
-          return DragDropItem.this;
-        }
+      this.dragSource = DragSource.create(this);
 
-//    Setting only the item as draggable element does not work
-//    https://github.com/vaadin/flow/issues/19039
-//    https://github.com/vaadin/flow/issues/19040
-//        @Override
-//        public Element getDraggableElement() {
-//          return item.getElement();
-//        }
-      };
       dragSource.setEffectAllowed(EffectAllowed.MOVE);
       dragSource.setDraggable(true);
       dragSource.setDragData(item);
