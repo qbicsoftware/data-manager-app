@@ -166,14 +166,18 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
     }
   }
 
-  private ExperimentalVariablesInput toRestoredVariablesInput(Snapshot snapshot) {
-    try {
-      var dummy = new ExperimentalVariablesInput();
-      dummy.restore(snapshot);
-      return dummy;
-    } catch (SnapshotRestorationException e) {
-      throw new IllegalStateException("Initial state not correctly set.", e);
-    }
+  /**
+   * Provides a {@link ExperimentalVariablesInput} with the state of the snapshot restored.
+   *
+   * @param snapshot the state to restore
+   * @return a new {@link ExperimentalVariablesInput} with the state from the snapshot
+   * @throws SnapshotRestorationException in case the snapshot state could not be restored.
+   */
+  private ExperimentalVariablesInput toRestoredVariablesInput(Snapshot snapshot)
+      throws SnapshotRestorationException {
+    var dummy = new ExperimentalVariablesInput();
+    dummy.restore(snapshot);
+    return dummy;
   }
 
 
