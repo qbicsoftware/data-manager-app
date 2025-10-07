@@ -347,14 +347,17 @@ class VariableLevelsInput extends Div implements UserInput, CanSnapshot,
     throw new IllegalStateException();
   }
 
-  private LevelField mapToRestoredLevelField(Snapshot snapshot) {
+  /**
+   *
+   * @param snapshot a snapshot of a level field
+   * @return a level field holding the state of the snapshot
+   * @throws SnapshotRestorationException if snapshot cannot be restored
+   */
+  private LevelField mapToRestoredLevelField(Snapshot snapshot)
+      throws SnapshotRestorationException {
     var dummy = new LevelField();
-    try {
-      dummy.restore(snapshot);
-      return dummy;
-    } catch (SnapshotRestorationException it) {
-      throw new IllegalStateException("Initial state not correctly set", it);
-    }
+    dummy.restore(snapshot);
+    return dummy;
   }
 
   @Override

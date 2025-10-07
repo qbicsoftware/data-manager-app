@@ -131,12 +131,14 @@ public class Condition {
         .toString();
   }
 
+  /**
+   * Renames a variable defined in this condition. If the variable is not found, does nothing.
+   *
+   * @param oldName the old name of the variable
+   * @param newName the name of the variable after renaming, must not be null or blank
+   */
   void renameVariable(String oldName, String newName) {
     Objects.requireNonNull(newName, "New variable name cannot be null.");
-    Objects.requireNonNull(oldName, "Old variable name cannot be null.");
-    if (oldName.isBlank()) {
-      throw new IllegalArgumentException("Old variable name cannot be blank.");
-    }
     if (newName.isBlank()) {
       throw new IllegalArgumentException("New variable name cannot be blank.");
     }

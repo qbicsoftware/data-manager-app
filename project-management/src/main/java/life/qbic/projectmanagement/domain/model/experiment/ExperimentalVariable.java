@@ -85,31 +85,6 @@ public class ExperimentalVariable {
   }
 
   /**
-   * Calling this method ensures that the experimental value is set as a level on the variable.
-   *
-   * @param variableLevel the variable level to remove
-   * @return true if the experimental variable was modified, false otherwise.
-   * @throws IllegalArgumentException indicating that the variable level does not belong to this
-   *                                  variable.
-   */
-  boolean removeLevel(VariableLevel variableLevel) {
-    if (!variableLevel.variableName().equals(name)) {
-      throw new IllegalArgumentException(
-          "Level is of different variable. Cannot remove it from variable "
-              + variableLevel.variableName().value() + ". Try removing it from  "
-              + variableLevel.variableName().value() + " instead.");
-    }
-    var usedUnit = usedUnit().orElse(null);
-
-    if (hasDifferentUnitAsExistingLevels(variableLevel.experimentalValue())) {
-      throw new IllegalArgumentException(
-          "Level has different unit as other levels in this variable. Expected " + usedUnit
-              + " but got " + variableLevel.experimentalValue().unit().orElse(null));
-    }
-    return levels.removeIf(it -> variableLevel.experimentalValue().equals(it));
-  }
-
-  /**
    * Replaces the current levels with the list of provided levels. The provided list will not be
    * modified.
    *

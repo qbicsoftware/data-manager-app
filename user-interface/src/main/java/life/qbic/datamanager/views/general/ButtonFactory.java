@@ -4,7 +4,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.icon.Icon;
 
 /**
- * <b><Button Factory</b>
+ * <b>Button Factory</b>
  * <p>
  * Centralises the styling for buttons in the dialog context.
  *

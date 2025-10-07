@@ -125,9 +125,12 @@ public class ExperimentalGroup {
    * Renames the variable
    *
    * @param oldName the variable name now
-   * @param newName the variable name after renaming
+   * @param newName the variable name after renaming, must not be blank or null
    */
-  void renameVariable(String oldName, String newName) {
+  void renameVariable(String oldName, String newName) throws IllegalArgumentException {
+    if (newName == null || newName.isBlank()) {
+      throw new IllegalArgumentException("New name cannot be null or blank");
+    }
     condition.renameVariable(oldName, newName);
   }
 

@@ -133,7 +133,7 @@ public class VariableRow extends Composite<Div> implements UserInput, CanSnapsho
   @NonNull
   public InputValidation validate() {
     if (this.isEmpty()) {
-      setInvalid(false);
+      setValid();
       return InputValidation.passed();
     }
 
@@ -154,12 +154,16 @@ public class VariableRow extends Composite<Div> implements UserInput, CanSnapsho
         .and(variableLevelsValidation);
   }
 
-  void setInvalid(boolean invalid) {
-    getElement().setProperty("invalid", invalid);
-    getElement().setAttribute("invalid", invalid);
-    if (!invalid) {
-      setChildrenValid();
-    }
+  private void setInvalid() {
+    getElement().setProperty("invalid", true);
+    getElement().setAttribute("invalid", true);
+  }
+
+
+  private void setValid() {
+    getElement().setProperty("invalid", false);
+    getElement().setAttribute("invalid", false);
+    setChildrenValid();
   }
 
   private void setChildrenValid() {
@@ -174,15 +178,13 @@ public class VariableRow extends Composite<Div> implements UserInput, CanSnapsho
   }
 
   /**
-   * Sets the variable name to be invalid and shows a given error message.
+   * Sets the variable name to be invalid and shows a given error message. If the error message is not shown yet, it is appended to existing error messages.
    *
-   * @param errorMessage
+   * @param errorMessage the error message to show.
    */
   void setNameInvalid(@NonNull String errorMessage) {
-    this.setInvalid(true);
-    if (Optional.ofNullable(name.getErrorMessage())
-        .map(it -> !it.contains(errorMessage))
-        .orElse(true)) {
+    this.setInvalid();
+    if (errorMessageNotShownYet(errorMessage)) {
       String composedErrorMessage = Optional.ofNullable(name.getErrorMessage())
           .map(m -> m + "\n" + errorMessage)
           .orElse(errorMessage);
@@ -191,11 +193,18 @@ public class VariableRow extends Composite<Div> implements UserInput, CanSnapsho
     name.setInvalid(true);
   }
 
+  private boolean errorMessageNotShownYet(String errorMessage) {
+    return Optional.ofNullable(name.getErrorMessage())
+        .map(it -> !it.contains(errorMessage))
+        .orElse(true);
+  }
+
   /**
    * Sets the name to be valid
    */
   void setNameValid() {
     name.setInvalid(false);
+    name.setErrorMessage(null);
   }
 
   Registration addNameChangeListener(
@@ -208,7 +217,7 @@ public class VariableRow extends Composite<Div> implements UserInput, CanSnapsho
    * @param errorMessage
    */
   void setUnitInvalid(@NonNull String errorMessage) {
-    this.setInvalid(true);
+    this.setInvalid();
     unit.setErrorMessage(errorMessage);
     unit.setInvalid(true);
   }

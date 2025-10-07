@@ -381,7 +381,7 @@ public class ExperimentInformationService {
         .map(level -> (unit == null || unit.isBlank())
             ? ExperimentalValue.create(level)
             : ExperimentalValue.create(level, unit))
-        .collect(Collectors.toList());
+        .toList();
     experiment.addVariableToDesign(variableName, experimentalValues);
     experimentRepository.update(experiment);
     dispatchLocalEvents(domainEventsCache);

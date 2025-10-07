@@ -21,6 +21,7 @@ import life.qbic.projectmanagement.domain.model.experiment.event.ExperimentCreat
 import life.qbic.projectmanagement.domain.model.experiment.event.ExperimentUpdatedEvent;
 import life.qbic.projectmanagement.domain.model.experiment.exception.ConditionExistsException;
 import life.qbic.projectmanagement.domain.model.experiment.exception.ExperimentalVariableExistsException;
+import life.qbic.projectmanagement.domain.model.experiment.exception.UnknownExperimentalVariableException;
 
 
 /**
@@ -213,8 +214,11 @@ public class Experiment {
    *
    * @param currentName the name of the variable now
    * @param futureName  the name of the variable after renaming
+   * @throws UnknownExperimentalVariableException in case no variable with the name `currentName` exists.
+   * @throws ExperimentalVariableExistsException in case a variable with the name `futureName` already exists.
    */
-  public void renameExperimentalVariable(String currentName, String futureName) {
+  public void renameExperimentalVariable(String currentName, String futureName)
+      throws UnknownExperimentalVariableException, ExperimentalVariableExistsException {
     experimentalDesign.renameExperimentalVariable(currentName, futureName);
   }
 
@@ -226,8 +230,12 @@ public class Experiment {
    * Overwrites the levels of a variable by the provided levels values. The unit is unchanged.
    * @param variable the variable for which to set the level values
    * @param levels the values of the experimental variable levels
-   */
-  public void setVariableLevels(String variable, List<String> levels) {
+   * @throws UnknownExperimentalVariableException in case the experimental variable is not part of
+   *                                              this design.
+   * @throws IllegalArgumentException             in case the provided levels are not distinct or
+   *                                              are used}   */
+  public void setVariableLevels(String variable, List<String> levels)
+      throws UnknownExperimentalVariableException, IllegalArgumentException {
     String unit = experimentalDesign.unitForVariable(variable).orElse(null);
     List<ExperimentalValue> mappedLevels = levels.stream().map(l -> new ExperimentalValue(l, unit))
         .toList();

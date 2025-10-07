@@ -189,10 +189,10 @@ public class ExperimentalDesign {
    * @throws ExperimentalVariableExistsException in case the variable already exists but differs from the provided variable.
    */
   boolean addExperimentalVariable(ExperimentalVariable experimentalVariable) {
-    if (!experimentalGroups.isEmpty()) {
+    if (experimentalGroups.size() > 0) {
       throw new IllegalStateException("There are already experimental groups defined");
     }
-    Optional<ExperimentalVariable> optionalExperimentalVariable = variableWithName(
+    var optionalExperimentalVariable = variableWithName(
         experimentalVariable.name().value());
     if (optionalExperimentalVariable.isPresent()) {
       ExperimentalVariable variable = optionalExperimentalVariable.orElseThrow();
@@ -222,7 +222,19 @@ public class ExperimentalDesign {
     return true;
   }
 
-  void renameExperimentalVariable(String oldName, String newName) {
+  /**
+   * Renames an existing experimental variable. The new name must not be present as an existing
+   * variable. This method undoes any incomplete work in case of an exception.
+   *
+   * @param oldName the current name of the variable to be changed
+   * @param newName the new name after renaming
+   * @throws UnknownExperimentalVariableException in case no variable with the name `oldName`
+   *                                              exists.
+   * @throws ExperimentalVariableExistsException  in case a variable with the name `newName` already
+   *                                              exists.
+   */
+  void renameExperimentalVariable(String oldName, String newName)
+      throws UnknownExperimentalVariableException, ExperimentalVariableExistsException {
     if (variableWithName(oldName).isEmpty()) {
       throw new UnknownExperimentalVariableException(
           "No variable with name " + oldName + " exists");
@@ -259,7 +271,16 @@ public class ExperimentalDesign {
     throw new UnknownExperimentalVariableException("No variable with name " + from + " exists");
   }
 
+  /**
+   * Renames a variable in the condition of this group. If the variable is not defined, does nothing.
+   * @see Condition#renameVariable(String, String)
+   * @param oldName the old name of the variable
+   * @param newName the new name of the variable after rename. Must not be null or blank.
+   */
   private void renameVariableInGroups(String oldName, String newName) {
+    if (newName == null || newName.isBlank()) {
+      throw new IllegalArgumentException("New name cannot be null or blank");
+    }
     for (ExperimentalGroup experimentalGroup : experimentalGroups) {
       experimentalGroup.renameVariable(oldName, newName);
     }
