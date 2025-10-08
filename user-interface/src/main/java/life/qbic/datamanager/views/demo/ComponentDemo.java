@@ -117,6 +117,7 @@ public class ComponentDemo extends Div {
 
     filterGrid.setSecondaryActionGroup(new Button("Edit"), new Button("Delete"));
 
+    filterGrid.itemDisplayLabel("person");
     return new Div(filterGrid);
   }
 

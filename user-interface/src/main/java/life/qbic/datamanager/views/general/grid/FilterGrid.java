@@ -25,6 +25,10 @@ public class FilterGrid<T> extends Div {
   private final Div selectionDisplay;
   private final Div secondaryActionGroup;
 
+  private static final String DEFAULT_ITEM_DISPLAY_LABEL = "item";
+
+  private String currentItemDisplayLabel = DEFAULT_ITEM_DISPLAY_LABEL;
+
   private Filter<T> currentFilter;
 
   public FilterGrid(MultiSelectLazyLoadingGrid<T> grid,
@@ -57,8 +61,42 @@ public class FilterGrid<T> extends Div {
     primaryGridControls.addClassNames("flex-horizontal", "gap-02", "justify-content-space-between");
 
     add(primaryGridControls, grid);
+
     fireOnSelectedItems();
+    registerToSelectedEvent(grid, this);
   }
+
+  private void updateSelectionDisplay(Set<T> selectedItems) {
+    selectionDisplay.removeAll();
+    if (selectedItems == null || selectedItems.isEmpty()) {
+      selectionDisplay.setVisible(false);
+    } else {
+      selectionDisplay.add(createSelectionDisplayLabel("test", selectedItems.size()));
+      selectionDisplay.setVisible(true);
+    }
+  }
+
+  private static String formatSelectionDisplayText(String itemLabel, int selectedItemsCount) {
+    if (selectedItemsCount <= 1) {
+      return "Currently %d %s are selected.".formatted(selectedItemsCount, itemLabel);
+    }
+    return "Currently %d %ss are selected.".formatted(selectedItemsCount, itemLabel);
+  }
+
+  private static Div createSelectionDisplayLabel(String itemLabel, int selectedItemsCount) {
+    Div container = new Div();
+    Objects.requireNonNull(itemLabel);
+    container.setText(formatSelectionDisplayText(itemLabel, selectedItemsCount));
+    return container;
+  }
+
+
+  private static void registerToSelectedEvent(MultiSelectLazyLoadingGrid<?> grid, FilterGrid<?> filterGrid) {
+    Objects.requireNonNull(grid);
+    Objects.requireNonNull(filterGrid);
+    grid.addSelectedListener(e -> filterGrid.updateSelectionDisplay(e.getSelectedItems()));
+  }
+
 
   public void setSecondaryActionGroup(Button firstButton, Button... buttons) {
     Objects.requireNonNull(firstButton);
@@ -72,6 +110,11 @@ public class FilterGrid<T> extends Div {
 
   public Set<T> selectedElements() {
     return grid.getSelectedItems();
+  }
+
+  public void itemDisplayLabel(String label) {
+    Objects.requireNonNull(label);
+    currentItemDisplayLabel = label;
   }
 
   public Registration addSelectListener(ComponentEventListener<FilterGridSelectionEvent> listener) {
