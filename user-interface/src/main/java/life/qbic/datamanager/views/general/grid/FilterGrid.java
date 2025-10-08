@@ -1,9 +1,13 @@
 package life.qbic.datamanager.views.general.grid;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.menubar.MenuBar;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.provider.CallbackDataProvider;
 import com.vaadin.flow.data.value.ValueChangeMode;
@@ -11,6 +15,7 @@ import com.vaadin.flow.shared.Registration;
 import java.util.Objects;
 import java.util.Set;
 import life.qbic.datamanager.views.general.MultiSelectLazyLoadingGrid;
+import org.checkerframework.checker.units.qual.C;
 
 /**
  * <b><class short description - 1 Line!></b>
@@ -30,6 +35,8 @@ public class FilterGrid<T> extends Div {
   private String currentItemDisplayLabel = DEFAULT_ITEM_DISPLAY_LABEL;
 
   private Filter<T> currentFilter;
+
+  private MenuBar showShideMenu;
 
   public FilterGrid(MultiSelectLazyLoadingGrid<T> grid,
       CallbackDataProvider<T, Filter<T>> callbackDataProvider,
@@ -64,6 +71,62 @@ public class FilterGrid<T> extends Div {
 
     fireOnSelectedItems();
     registerToSelectedEvent(grid, this);
+    registerToColumnVisibilityChanged(this);
+
+    showShideMenu = new MenuBar();
+    var showHideItem = showShideMenu.addItem("Show/Hide Columns");
+    var subMenu = showHideItem.getSubMenu();
+    var checkbox = new Checkbox("Test");
+    checkbox.addClickListener(e -> fireEvent(new ColumnVisibilityChanged(this, new ColumnVisibilitySetting(checkbox.getLabel(), checkbox.getValue()), true)));
+    var layout = new VerticalLayout(checkbox);
+    keepMenuOpenOnClick(layout);
+    subMenu.addItem(layout);
+    showShideMenu.addClassNames("flex-horizontal");
+
+    primaryGridControls.add(showShideMenu);
+  }
+
+  private Registration addColumnVisibilityChangedListener(ComponentEventListener<ColumnVisibilityChanged> listener) {
+    return addListener(ColumnVisibilityChanged.class, listener);
+  }
+
+  private static void registerToColumnVisibilityChanged(FilterGrid<?> grid) {
+    grid.addColumnVisibilityChangedListener(event -> {
+      grid.onColumnVisibilityChanged(event.setting);
+    });
+  }
+
+  private record ColumnVisibilitySetting(String column, boolean visible) {
+
+  }
+
+  private static class ColumnVisibilityChanged extends ComponentEvent<FilterGrid<?>> {
+
+    private final ColumnVisibilitySetting setting;
+
+    public ColumnVisibilityChanged(FilterGrid<?> source, ColumnVisibilitySetting setting, boolean fromClient) {
+      super(source, fromClient);
+      this.setting = setting;
+    }
+
+    public ColumnVisibilitySetting setting() {
+      return setting;
+    }
+  }
+
+
+
+  private void onColumnVisibilityChanged(ColumnVisibilitySetting setting) {
+    grid.getColumns().stream()
+        .filter(column -> column.getKey().equals(setting.column))
+        .forEach(tColumn ->  tColumn.setVisible(setting.visible()));
+  }
+
+  // helper
+  private static void keepMenuOpenOnClick(Component c) {
+    // prevent the menu-bar from handling the click (which would close the submenu)
+    c.getElement().executeJs(
+        "this.addEventListener('click', e => e.stopPropagation());");
   }
 
   private void updateSelectionDisplay(Set<T> selectedItems) {
