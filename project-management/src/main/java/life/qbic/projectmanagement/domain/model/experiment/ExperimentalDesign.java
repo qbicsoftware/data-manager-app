@@ -241,16 +241,12 @@ public class ExperimentalDesign {
     if (newName == null || newName.isBlank()) {
       throw new IllegalArgumentException("New name cannot be null or blank");
     }
-    if (variableWithName(oldName).isEmpty()) {
-      throw new UnknownExperimentalVariableException(
-          "No variable with name " + oldName + " exists");
-    }
     if (variableWithName(newName).isPresent()) {
       throw new ExperimentalVariableExistsException(
           "Variable with the name " + newName + " already exists.");
     }
 
-    var currentVariable = variableWithName(oldName).orElseThrow();
+    var currentVariable = variableWithName(oldName).orElseThrow(() -> new UnknownExperimentalVariableException("No variable with name " + oldName + " exists"));
     List<ExperimentalGroup> deepCopyOfGroups = experimentalGroups.stream()
         .map(ExperimentalGroup::deepCopy)
         .toList();
