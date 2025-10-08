@@ -8,6 +8,7 @@ import static life.qbic.datamanager.views.projects.project.experiments.experimen
 
 import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.DetachEvent;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.AnchorTarget;
@@ -35,6 +36,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.Context;
+import life.qbic.datamanager.views.UiHandle;
 import life.qbic.datamanager.views.general.Card;
 import life.qbic.datamanager.views.general.ConfirmEvent;
 import life.qbic.datamanager.views.general.Disclaimer;
@@ -91,6 +93,7 @@ import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import org.springframework.beans.factory.annotation.Autowired;
+import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -136,6 +139,7 @@ public class ExperimentDetailsComponent extends PageArea {
   private final transient AsyncProjectService asyncProjectService;
   private Context context;
   private int experimentalGroupCount;
+  private final UiHandle uiHandle = new UiHandle();
 
   @Autowired
   public ExperimentDetailsComponent(
@@ -209,7 +213,14 @@ public class ExperimentDetailsComponent extends PageArea {
   @Override
   protected void onAttach(AttachEvent attachEvent) {
     super.onAttach(attachEvent);
+    uiHandle.bind(attachEvent.getUI());
     reloadExperimentInfo(context.projectId().orElseThrow(), context.experimentId().orElseThrow());
+  }
+
+  @Override
+  protected void onDetach(DetachEvent detachEvent) {
+    super.onDetach(detachEvent);
+    uiHandle.unbind();
   }
 
   private Notification createSampleRegistrationPossibleNotification() {
@@ -981,24 +992,26 @@ public class ExperimentDetailsComponent extends PageArea {
   private void reloadExperimentalVariables() {
     String projectId = context.projectId().orElseThrow().value();
     var experimentId = context.experimentId().orElseThrow().value();
-    getUI().ifPresentOrElse(
-        ui -> asyncProjectService.getExperimentalVariables(projectId, experimentId)
-            .doOnSubscribe(ignored -> ui.access(this::onVariablesLoading))
-            .doOnSubscribe(ignored -> ui.access(experimentalVariableCollection::clear))
-            .doOnSubscribe(ignored -> log.debug("Loading experimental variables.."))
-            .doOnNext(ignored -> ui.access(this::onVariablesDefined))
-            .doOnNext(it -> ui.access(() -> addExperimentalVariablesDisplay(it)))
-            .switchIfEmpty(Mono.just(new ExperimentalVariable("", List.of()))
-                .doOnSubscribe(ignored -> log.debug("No experimental variables found."))
-                .doOnNext(ignored -> ui.access(this::onNoVariablesDefined)))
-            .subscribe(),
-        () -> {
-          log.warn(
-              "No ui present when reloading experimental variables. Element %s is attached = %s".formatted(
-                  this, isAttached()));
-          onNoVariablesDefined();
-        }
-    );
+    if (isAttached()) { //need to check to ensure the actions are executed
+      Disposable disposable = asyncProjectService.getExperimentalVariables(projectId, experimentId)
+          .doOnSubscribe(ignored -> uiHandle.onUi(this::onVariablesLoading))
+          .doOnSubscribe(ignored -> experimentalVariableCollection.clear())
+          .doOnNext(ignored -> uiHandle.onUi(this::onVariablesDefined))
+          .doOnNext(it -> uiHandle.onUi(() -> addExperimentalVariablesDisplay(it)))
+          .switchIfEmpty(Mono.just(new ExperimentalVariable("", List.of()))
+              .doOnNext(ignored -> uiHandle.onUiAndPush(this::onNoVariablesDefined)))
+          .subscribe();
+      addDetachListener(detached -> {
+        //abort if detached during loading
+        disposable.dispose();
+        detached.unregisterListener();
+      });
+    } else {
+      log.warn(
+          "Not attached when reloading experimental variables. Element %s not attached".formatted(
+              this));
+      onNoVariablesDefined();
+    }
   }
 
   private void addExperimentalVariablesDisplay(
