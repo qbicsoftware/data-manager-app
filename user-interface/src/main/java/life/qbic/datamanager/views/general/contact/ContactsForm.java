@@ -21,7 +21,7 @@ public class ContactsForm extends Div {
     Objects.requireNonNull(personResponsible);
     Objects.requireNonNull(projectManager);
 
-    addClassNames("vertical-list", "gap-m");
+    addClassNames("flex-vertical", "width-full", "gap-m");
 
     add(principalInvestigator, personResponsible, projectManager);
   }

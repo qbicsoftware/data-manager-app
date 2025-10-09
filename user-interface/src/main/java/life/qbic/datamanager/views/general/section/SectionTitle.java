@@ -75,9 +75,9 @@ public class SectionTitle extends Div {
   }
 
   public enum Size {
-    SMALL("font-size-small"),
-    MEDIUM("font-size-medium"),
-    LARGE("font-size-large");
+    SMALL("title-size-small"),
+    MEDIUM("title-size-medium"),
+    LARGE("title-size-large");
 
     private final String value;
 

@@ -6,38 +6,37 @@ import static life.qbic.datamanager.views.projects.project.experiments.experimen
 import static life.qbic.datamanager.views.projects.project.experiments.experiment.SampleOriginType.SPECIES;
 import static life.qbic.datamanager.views.projects.project.experiments.experiment.SampleOriginType.SPECIMEN;
 
+import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.DetachEvent;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.AbstractIcon;
-import com.vaadin.flow.component.icon.SvgIcon;
-import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.router.RouteParam;
 import com.vaadin.flow.router.RouteParameters;
-import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.Context;
+import life.qbic.datamanager.views.UiHandle;
 import life.qbic.datamanager.views.general.Card;
 import life.qbic.datamanager.views.general.ConfirmEvent;
 import life.qbic.datamanager.views.general.Disclaimer;
@@ -54,32 +53,34 @@ import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.CardCollection;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExistingGroupsPreventVariableEdit;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExistingSamplesPreventVariableEdit;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalGroupsDialog;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalGroupsDialog.ExperimentalGroupContent;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalVariableContent;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalVariablesDialog;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.ExperimentalVariablesInput;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.VariableChange;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.VariableChange.VariableAdded;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.VariableChange.VariableDeleted;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.VariableChange.VariableLevelsChanged;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.VariableChange.VariableRenamed;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.VariableChange.VariableUnitChanged;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.update.EditExperimentDialog;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.update.EditExperimentDialog.ExperimentDraft;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.update.EditExperimentDialog.ExperimentUpdateEvent;
 import life.qbic.datamanager.views.projects.project.samples.SampleInformationMain;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
-import life.qbic.projectmanagement.application.DeletionService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalGroupCreationRequest;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalGroupDeletionRequest;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalGroupDeletionResponse;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalGroupUpdateRequest;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalGroupUpdateResponse;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalVariablesCreationRequest;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalVariablesDeletionRequest;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalVariable;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableInformation;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ExperimentReference;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
-import life.qbic.projectmanagement.application.experiment.ExperimentInformationService.ExperimentalGroupDTO;
+import life.qbic.projectmanagement.application.experiment.ExperimentInformationService.ExperimentalVariableInformation;
+import life.qbic.projectmanagement.application.experiment.ExperimentInformationService.UsedVariableLevel;
 import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
@@ -88,8 +89,6 @@ import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalDesign;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
-import life.qbic.projectmanagement.domain.model.experiment.ExperimentalVariable;
-import life.qbic.projectmanagement.domain.model.experiment.VariableLevel;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
@@ -133,20 +132,19 @@ public class ExperimentDetailsComponent extends PageArea {
   private final Disclaimer noExperimentalVariablesDefined;
   private final Disclaimer noExperimentalGroupsDefined;
   private final Disclaimer noConfoundingVariablesDefined;
-  private final transient DeletionService deletionService;
   private final transient TerminologyService terminologyService;
   private final transient MessageSourceNotificationFactory messageSourceNotificationFactory;
   private final transient CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
   private final transient ConfoundingVariableService confoundingVariableService;
-  private final AsyncProjectService asyncProjectService;
+  private final transient AsyncProjectService asyncProjectService;
   private Context context;
   private int experimentalGroupCount;
+  private final UiHandle uiHandle = new UiHandle();
 
   @Autowired
   public ExperimentDetailsComponent(
       ExperimentInformationService experimentInformationService,
       SampleInformationService sampleInformationService,
-      DeletionService deletionService,
       SpeciesLookupService ontologyTermInformationService,
       TerminologyService terminologyService,
       MessageSourceNotificationFactory messageSourceNotificationFactory,
@@ -158,7 +156,6 @@ public class ExperimentDetailsComponent extends PageArea {
         "messageSourceNotificationFactory must not be null");
     this.experimentInformationService = requireNonNull(experimentInformationService);
     this.sampleInformationService = sampleInformationService;
-    this.deletionService = requireNonNull(deletionService);
     this.ontologyTermInformationService = requireNonNull(ontologyTermInformationService);
     this.noExperimentalVariablesDefined = createNoVariableDisclaimer();
     this.noExperimentalGroupsDefined = createNoGroupsDisclaimer();
@@ -167,7 +164,11 @@ public class ExperimentDetailsComponent extends PageArea {
     this.cancelConfirmationDialogFactory = requireNonNull(cancelConfirmationDialogFactory);
     this.addClassName("experiment-details-component");
     confoundingVariablesContainer = new Div();
-    confoundingVariablesContainer.addClassNames("full-width", "full-height");
+    confoundingVariablesContainer.addClassNames("width-full", "height-full");
+    // we use `edit` for both
+    experimentalVariableCollection.enableEdit();
+    experimentalVariableCollection.disableAdd();
+
     layoutComponent();
     configureComponent();
     this.asyncProjectService = asyncProjectService;
@@ -179,7 +180,7 @@ public class ExperimentDetailsComponent extends PageArea {
       Span ontology = new Span();
       Span ontologyLabel = new Span(ontologyClassDTO.getLabel());
       /*Ontology terms are delimited by a column, the underscore is only used in the web environment*/
-      String ontologyLinkName = ontologyClassDTO.getOboId().replace("_", ":");
+      String ontologyLinkName = ontologyClassDTO.oboId().toString();
       Span ontologyLink = new Span(ontologyLinkName);
       ontologyLink.addClassName("ontology-link");
       Anchor ontologyClassIri = new Anchor(ontologyClassDTO.getClassIri(), ontologyLink);
@@ -193,7 +194,7 @@ public class ExperimentDetailsComponent extends PageArea {
   private static AppDialog createConfoundingVarsDeleteConfirmDialog(
       List<ConfoundingVariable> deletedVars, DialogAction onConfirmAction) {
     var confirmDialog = AppDialog.small();
-    life.qbic.datamanager.views.general.dialog.DialogHeader.withIcon(confirmDialog,
+    DialogHeader.withIcon(confirmDialog,
         "Delete confounding variables?",
         IconFactory.warningIcon());
     String deletedVariableNames = deletedVars.stream().map(ConfoundingVariable::name)
@@ -202,11 +203,24 @@ public class ExperimentDetailsComponent extends PageArea {
         "Deleting a confounding variable will delete all levels of the confounding variable from annotated samples. "
             + "Do you want to delete the following confounding variables: " + deletedVariableNames
             + " ?"));
-    life.qbic.datamanager.views.general.dialog.DialogFooter.with(confirmDialog, "Continue editing",
+    DialogFooter.with(confirmDialog, "Continue editing",
         "Delete " + deletedVars.size() + " confounding variables");
     confirmDialog.registerConfirmAction(onConfirmAction);
     confirmDialog.registerCancelAction(confirmDialog::close);
     return confirmDialog;
+  }
+
+  @Override
+  protected void onAttach(AttachEvent attachEvent) {
+    super.onAttach(attachEvent);
+    uiHandle.bind(attachEvent.getUI());
+    reloadExperimentInfo(context.projectId().orElseThrow(), context.experimentId().orElseThrow());
+  }
+
+  @Override
+  protected void onDetach(DetachEvent detachEvent) {
+    super.onDetach(detachEvent);
+    uiHandle.unbind();
   }
 
   private Notification createSampleRegistrationPossibleNotification() {
@@ -316,8 +330,15 @@ public class ExperimentDetailsComponent extends PageArea {
   private Map<SampleOriginType, Set<OntologyTerm>> getOntologyTermsUsedInSamples(
       ExperimentId experimentId) {
     Map<SampleOriginType, Set<OntologyTerm>> result = new EnumMap<>(SampleOriginType.class);
-    Collection<Sample> samples = sampleInformationService.retrieveSamplesForExperiment(experimentId)
-        .valueOrElse(new ArrayList<>());
+    var projectId = context.projectId().orElseThrow();
+    Collection<Sample> samples;
+    try {
+      samples = sampleInformationService.retrieveSamplesForExperiment(projectId,
+          experimentId.value());
+    } catch (RuntimeException e) {
+      log.debug("Could not load sample ontology terms", e);
+      samples = new ArrayList<>();
+    }
 
     Set<OntologyTerm> speciesSet = samples.stream()
         .map(sample -> sample.sampleOrigin().getSpecies())
@@ -353,7 +374,8 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private void listenForExperimentalVariablesComponentEvents() {
-    experimentalVariableCollection.addAddListener(addEvent -> openExperimentalVariablesAddDialog());
+    experimentalVariableCollection.addAddListener(
+        addEvent -> openExperimentalVariablesAddDialog());
     experimentalVariableCollection.addEditListener(
         editEvent -> openExperimentalVariablesEditDialog());
   }
@@ -496,129 +518,130 @@ public class ExperimentDetailsComponent extends PageArea {
 
   private void reloadExperimentInfo(ProjectId projectId, ExperimentId experimentId) {
     loadExperimentInformation(projectId, experimentId);
-  }
-
-  private void openExperimentalVariablesAddDialog() {
-    if (editVariablesNotAllowed()) {
-      return;
-    }
-    var addDialog = new ExperimentalVariablesDialog();
-    addDialog.addCancelEventListener(cancelEvent -> showCancelConfirmationDialog(addDialog, true));
-    addDialog.setEscAction(() -> showCancelConfirmationDialog(addDialog, true));
-    addDialog.addConfirmEventListener(this::onExperimentalVariablesAddConfirmed);
-    addDialog.open();
-  }
-
-  private void onExperimentalVariablesAddConfirmed(
-      ExperimentalVariablesDialog.ConfirmEvent confirmEvent) {
-
-    List<ExperimentalVariableContent> variableContents = confirmEvent.getSource()
-        .definedVariables();
-    List<AsyncProjectService.ExperimentalVariable> variables = variableContents.stream()
-        .map(this::convertToApi)
-        .toList();
-
-    ProjectId projectId = context.projectId().orElseThrow();
-    ExperimentId experimentId = context.experimentId().orElseThrow();
-    var ui = UI.getCurrent();
-
-    ExperimentalVariablesCreationRequest request = new ExperimentalVariablesCreationRequest(
-        projectId.value(), experimentId.value(), variables);
-
-    asyncProjectService.create(request)
-        .doOnNext(it -> ui.access(() -> {
-          confirmEvent.getSource().close();
-          reloadExperimentInfo(projectId,
-              experimentId);
-          if (hasExperimentalGroups()) {
-            showSampleRegistrationPossibleNotification();
-          }
-        }))
-        .subscribe();
-  }
-
-  private AsyncProjectService.ExperimentalVariable convertToApi(
-      ExperimentalVariableContent experimentalVariable) {
-    return new AsyncProjectService.ExperimentalVariable(experimentalVariable.name(),
-        new ArrayList<>(experimentalVariable.levels()), experimentalVariable.unit());
+    reloadExperimentalVariables();
+    reloadExperimentalGroups();
   }
 
   private void openExperimentalVariablesEditDialog() {
-    if (editVariablesNotAllowed()) {
-      return;
-    }
     ExperimentId experimentId = context.experimentId().orElseThrow();
-    var editDialog = ExperimentalVariablesDialog.prefilled(
-        experimentInformationService.getVariablesOfExperiment(
-            context.projectId().orElseThrow().value(), experimentId));
-    editDialog.addCancelEventListener(
-        cancelEvent -> showCancelConfirmationDialog(editDialog, false));
-    editDialog.setEscAction(() -> showCancelConfirmationDialog(editDialog, false));
-    editDialog.addConfirmEventListener(this::onExperimentalVariablesEditConfirmed);
-    editDialog.open();
-  }
+    ExperimentalVariablesInput variablesInput = new ExperimentalVariablesInput();
+    var usedLevelsByVariable = experimentInformationService.getUsedVariableLevels(
+            context.projectId().orElseThrow().value(), experimentId).stream()
+        .collect(Collectors.groupingBy(UsedVariableLevel::variableName));
 
-  private void showCancelConfirmationDialog(ExperimentalVariablesDialog editDialog,
-      boolean isCreate) {
-    var key = isCreate ? "experiment.variables.create" : "experiment.variables.edit";
-    cancelConfirmationDialogFactory.cancelConfirmationDialog(it -> editDialog.close(),
-            key, getLocale())
-        .open();
-  }
-
-  private void onExperimentalVariablesEditConfirmed(
-      ExperimentalVariablesDialog.ConfirmEvent confirmEvent) {
-
-    List<ExperimentalVariableContent> variableContents = confirmEvent.getSource()
-        .definedVariables();
-    List<AsyncProjectService.ExperimentalVariable> variables = variableContents.stream()
-        .map(this::convertToApi)
+    List<ExperimentalVariableInformation> variablesOfExperiment = experimentInformationService.getVariablesOfExperiment(
+        context.projectId().orElseThrow().value(), experimentId);
+    var variables = variablesOfExperiment.stream()
+        .map(it -> new ExperimentalVariablesInput.ExperimentalVariableInformation(
+            it.name(),
+            it.unit(),
+            it.levels()
+        ))
+        .sorted(
+            Comparator.comparing(ExperimentalVariablesInput.ExperimentalVariableInformation::name))
         .toList();
+    variables.forEach(variablesInput::addVariable);
+    if (variables.isEmpty()) {
+      variablesInput.addVariable();
+    }
 
-    ProjectId projectId = context.projectId().orElseThrow();
-    ExperimentId experimentId = context.experimentId().orElseThrow();
-    var ui = UI.getCurrent();
-
-    ExperimentalVariablesDeletionRequest deletionRequest = new ExperimentalVariablesDeletionRequest(
-        projectId.value(),
-        experimentId.value());
-
-    ExperimentalVariablesCreationRequest creationRequest = new ExperimentalVariablesCreationRequest(
-        projectId.value(),
-        experimentId.value(), variables);
-
-    asyncProjectService.delete(deletionRequest)
-        .doOnNext(it -> log.debug(
-            "Removed variables for project" + projectId))
-        .flatMap(it ->
-            asyncProjectService.create(creationRequest))
-        .doOnNext(it -> ui.access(() -> {
-          confirmEvent.getSource().close();
-          reloadExperimentInfo(projectId,
-              experimentId);
-          if (hasExperimentalGroups()) {
-            showSampleRegistrationPossibleNotification();
-          }
-        }))
-        .subscribe();
-
+    for (Entry<String, List<UsedVariableLevel>> entry : usedLevelsByVariable.entrySet()) {
+      Set<String> usedValues = entry
+          .getValue().stream()
+          .map(UsedVariableLevel::value)
+          .collect(Collectors.toSet());
+      String variableName = entry.getKey();
+      variablesInput.setUsedLevels(variableName, usedValues);
+    }
+    if (!usedLevelsByVariable.isEmpty()) {
+      variablesInput.setAddVariablesEnabled(false);
+    }
+    variablesInput.markInitialized();
+    AppDialog dialog = AppDialog.medium();
+    DialogHeader.with(dialog, "Define Experiment Variables");
+    DialogFooter.with(dialog, "Cancel", "Save");
+    DialogBody.with(dialog, variablesInput, variablesInput);
+    dialog.registerConfirmAction(onVariableEditDialogConfirmed(variablesInput, dialog));
+    dialog.registerCancelAction(dialog::close);
+    dialog.open();
   }
 
-  private boolean editVariablesNotAllowed() {
-    int numberOfRegisteredSamples = sampleInformationService.countPreviews(
-        context.experimentId().orElseThrow(), "");
-    if (numberOfRegisteredSamples > 0) {
-      showExistingSamplesPreventVariableEdit(numberOfRegisteredSamples);
-      return true;
+  private DialogAction onVariableEditDialogConfirmed(ExperimentalVariablesInput variablesInput,
+      AppDialog dialog) {
+    return () -> {
+      List<VariableChange> changes = variablesInput.getChanges();
+      performEdit(dialog, changes);
+    };
+  }
+
+  private void performEdit(AppDialog dialog, List<VariableChange> changes) {
+    Map<String, List<VariableChange>> changesByVariable = changes.stream()
+        .collect(Collectors.groupingBy(VariableChange::affectedVariable));
+    changesByVariable.forEach(this::applyChangesToVariable);
+    if (!changesByVariable.isEmpty()) {
+      reloadExperimentalVariables();
     }
-    int numOfExperimentalGroups = experimentInformationService.getExperimentalGroups(
-        context.projectId().orElseThrow().value(),
-        context.experimentId().orElseThrow()).size();
-    if (numOfExperimentalGroups > 0) {
-      showExistingGroupsPreventVariableEdit(numOfExperimentalGroups);
-      return true;
-    }
-    return false;
+    dialog.close();
+  }
+
+  private void openExperimentalVariablesAddDialog() {
+    openExperimentalVariablesEditDialog();
+  }
+
+  private void applyChangesToVariable(String variable, List<VariableChange> changes) {
+    var projectId = context.projectId().orElseThrow();
+    ExperimentId experimentId = context.experimentId().orElseThrow();
+
+    //delete variable
+    changes.stream()
+        .filter(VariableDeleted.class::isInstance)
+        .map(VariableDeleted.class::cast)
+        .findAny()
+        .ifPresent(
+            change -> experimentInformationService.deleteExperimentalVariable(projectId,
+                experimentId,
+                change.name()));
+
+    //change unit
+    changes.stream()
+        .filter(VariableUnitChanged.class::isInstance)
+        .map(VariableUnitChanged.class::cast)
+        .findAny()
+        .ifPresent(
+        change -> experimentInformationService.setVariableUnit(projectId.value(), experimentId,
+            variable, change.newUnit()));
+
+    //change levels
+    changes.stream()
+        .filter(VariableLevelsChanged.class::isInstance)
+        .map(VariableLevelsChanged.class::cast)
+        .findAny()
+        .ifPresent(change -> experimentInformationService.setVariableLevels(projectId.value(),
+            experimentId, change.name(), change.levels()));
+
+
+    //add variable
+    changes.stream()
+        .filter(VariableAdded.class::isInstance)
+        .map(VariableAdded.class::cast)
+        .findAny()
+        .ifPresent(change ->
+            experimentInformationService.addVariableToExperiment(projectId.value(),
+                experimentId,
+                change.name(),
+                change.unit(),
+                change.levels()));
+
+    //rename variable
+    changes.stream()
+        .filter(VariableRenamed.class::isInstance)
+        .map(VariableRenamed.class::cast)
+        .findAny()
+        .ifPresent(change ->
+            experimentInformationService.renameExperimentalVariable(projectId.value(),
+                experimentId,
+                change.oldName(),
+                change.newName()));
   }
 
   private boolean editGroupsNotAllowed() {
@@ -635,25 +658,6 @@ public class ExperimentDetailsComponent extends PageArea {
     ExistingSamplesPreventGroupEdit existingSamplesPreventGroupEdit = new ExistingSamplesPreventGroupEdit(
         numberOfRegisteredSamples);
     existingSamplesPreventGroupEdit.open();
-  }
-
-  private void showExistingSamplesPreventVariableEdit(int sampleCount) {
-    ExistingSamplesPreventVariableEdit existingSamplesPreventVariableEdit = new ExistingSamplesPreventVariableEdit(
-        sampleCount);
-    existingSamplesPreventVariableEdit.open();
-  }
-
-  private void showExistingGroupsPreventVariableEdit(int numOfExperimentalGroups) {
-    ExistingGroupsPreventVariableEdit existingGroupsPreventVariableEdit = new ExistingGroupsPreventVariableEdit(
-        numOfExperimentalGroups);
-    existingGroupsPreventVariableEdit.addConfirmListener(
-        confirmEvent -> {
-          experimentSheet.setSelectedIndex(1);
-          confirmEvent.getSource().close();
-        });
-    existingGroupsPreventVariableEdit.addRejectListener(
-        rejectEvent -> rejectEvent.getSource().close());
-    existingGroupsPreventVariableEdit.open();
   }
 
   private void addSampleSourceInformationComponent() {
@@ -708,11 +712,14 @@ public class ExperimentDetailsComponent extends PageArea {
 
   private void openExperimentalGroupAddDialog() {
     ExperimentId experimentId = context.experimentId().orElseThrow();
-    List<ExperimentalVariable> variables = experimentInformationService.getVariablesOfExperiment(
+    List<ExperimentalVariableInformation> variables = experimentInformationService.getVariablesOfExperiment(
         context.projectId().orElseThrow().value(),
         experimentId);
-    List<VariableLevel> levels = variables.stream()
-        .flatMap(variable -> variable.levels().stream())
+    List<ExperimentalGroupInput.VariableLevel> levels = variables.stream()
+        .flatMap(variable ->
+            variable.levels().stream()
+                .map(it -> new ExperimentalGroupInput.VariableLevel(variable.name(), it,
+                    variable.unit())))
         .toList();
     var groups = experimentInformationService.experimentalGroupsFor(
             context.projectId().orElseThrow()
@@ -751,11 +758,16 @@ public class ExperimentDetailsComponent extends PageArea {
       return;
     }
     ExperimentId experimentId = context.experimentId().orElseThrow();
-    List<ExperimentalVariable> variables = experimentInformationService.getVariablesOfExperiment(
+    List<ExperimentalVariableInformation> variables = experimentInformationService.getVariablesOfExperiment(
         context.projectId().orElseThrow().value(),
         experimentId);
-    List<VariableLevel> levels = variables.stream()
-        .flatMap(variable -> variable.levels().stream()).toList();
+    List<ExperimentalGroupInput.VariableLevel> levels = variables.stream()
+        .flatMap(variable ->
+            variable.levels().stream()
+                .map(it -> new ExperimentalGroupInput.VariableLevel(variable.name(), it,
+                    variable.unit())))
+        .toList();
+
     var groups = experimentInformationService.experimentalGroupsFor(
             context.projectId().orElseThrow().value(), experimentId)
         .stream().map(this::toContent).toList();
@@ -807,17 +819,17 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private void displayFailedExperimentalGroupDeletion() {
-    getUI().ifPresent(ui -> ui.access(() -> {
-      messageSourceNotificationFactory.toast("experimental.groups.deleted.failed", new Object[]{},
-          getLocale()).open();
-    }));
+    getUI().ifPresent(ui -> ui.access(
+        () -> messageSourceNotificationFactory.toast("experimental.groups.deleted.failed",
+            new Object[]{},
+            getLocale()).open()));
   }
 
   private void displaySuccessfulDeletionNotification() {
-    getUI().ifPresent(ui -> ui.access(() -> {
-      messageSourceNotificationFactory.toast("experimental.groups.deleted.success", new Object[]{},
-          getLocale()).open();
-    }));
+    getUI().ifPresent(ui -> ui.access(
+        () -> messageSourceNotificationFactory.toast("experimental.groups.deleted.success",
+            new Object[]{},
+            getLocale()).open()));
   }
 
   private void updateExperimentalGroups(List<ExperimentalGroupContent> groupsToUpdate) {
@@ -830,11 +842,9 @@ public class ExperimentDetailsComponent extends PageArea {
 
     var serviceCalls = new ArrayList<Mono<ExperimentalGroupUpdateResponse>>();
 
-    experimentalGroups.forEach(experimentalGroup -> {
-      serviceCalls.add(
-          asyncProjectService.update(new ExperimentalGroupUpdateRequest(projectId.value(),
-              experimentId.value(), experimentalGroup)));
-    });
+    experimentalGroups.forEach(experimentalGroup -> serviceCalls.add(
+        asyncProjectService.update(new ExperimentalGroupUpdateRequest(projectId.value(),
+            experimentId.value(), experimentalGroup))));
 
     Mono.when(serviceCalls).doOnSuccess(s -> {
           displaySuccessfulExperimentalGroupUpdate();
@@ -843,35 +853,32 @@ public class ExperimentDetailsComponent extends PageArea {
           log.error("Error while updating experimental group", e);
           displayFailedExperimentalGroupUpdate();
         })
-        .subscribe(it -> {
-          log.debug("Updated experimental groups for project" + projectId);
-        });
+        .doOnSuccess(it -> log.debug("Updated experimental groups for project" + projectId))
+        .subscribe();
   }
 
   private void displayFailedExperimentalGroupUpdate() {
-    getUI().ifPresent(ui -> ui.access(() -> {
-      messageSourceNotificationFactory.toast("experimental.groups.updated.failed", new Object[]{},
-          getLocale()).open();
-    }));
+    getUI().ifPresent(ui -> ui.access(
+        () -> messageSourceNotificationFactory.toast("experimental.groups.updated.failed",
+            new Object[]{},
+            getLocale()).open()));
   }
 
   private void displaySuccessfulExperimentalGroupUpdate() {
-    getUI().ifPresent(ui -> ui.access(() -> {
-      messageSourceNotificationFactory.toast("experimental.groups.updated.success", new Object[]{},
-          getLocale()).open();
-    }));
-  }
-
-  private AsyncProjectService.VariableLevel toApi(VariableLevel level) {
-    return new AsyncProjectService.VariableLevel(level.variableName().value(),
-        level.experimentalValue().value(), level.experimentalValue().unit().orElse(null));
+    getUI().ifPresent(ui -> ui.access(
+        () -> messageSourceNotificationFactory.toast("experimental.groups.updated.success",
+            new Object[]{},
+            getLocale()).open()));
   }
 
   private AsyncProjectService.ExperimentalGroup toApi(ExperimentalGroupContent experimentalGroup) {
     return new AsyncProjectService.ExperimentalGroup(experimentalGroup.id(),
         experimentalGroup.groupNumber(),
         experimentalGroup.name(), experimentalGroup.size(),
-        experimentalGroup.variableLevels().stream().map(this::toApi).toList());
+        experimentalGroup.variableLevels().stream()
+            .map(it -> new AsyncProjectService.VariableLevel(it.variableName(), it.value(),
+                it.unit()))
+            .toList());
   }
 
   private void addExperimentalGroups(
@@ -900,28 +907,33 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private void displayFailedExperimentalGroupCreation() {
-    getUI().ifPresent(ui -> ui.access(() -> {
-      messageSourceNotificationFactory.toast("experimental.groups.created.failed", new Object[]{},
-          getLocale()).open();
-    }));
+    getUI().ifPresent(ui -> ui.access(
+        () -> messageSourceNotificationFactory.toast("experimental.groups.created.failed",
+            new Object[]{},
+            getLocale()).open()));
   }
 
   private void displaySuccessfulExperimentalGroupCreation() {
-    getUI().ifPresent(ui -> ui.access(() -> {
-      messageSourceNotificationFactory.toast("experimental.groups.created.success", new Object[]{},
-          getLocale()).open();
-    }));
+    getUI().ifPresent(ui -> ui.access(
+        () -> messageSourceNotificationFactory.toast("experimental.groups.created.success",
+            new Object[]{},
+            getLocale()).open()));
   }
 
   private ExperimentalGroupContent toContent(ExperimentalGroup experimentalGroup) {
     return new ExperimentalGroupContent(experimentalGroup.id(), experimentalGroup.groupNumber(),
         experimentalGroup.name(), experimentalGroup.sampleSize(),
-        experimentalGroup.condition().getVariableLevels());
+        experimentalGroup.condition()
+            .getVariableLevels().stream()
+            .map(this::fromDomain)
+            .toList());
   }
 
-  private ExperimentalGroupContent toContent(ExperimentalGroupDTO experimentalGroupDTO) {
-    return new ExperimentalGroupContent(experimentalGroupDTO.id(), -1, experimentalGroupDTO.name(),
-        experimentalGroupDTO.replicateCount(), experimentalGroupDTO.levels());
+  private ExperimentalGroupInput.VariableLevel fromDomain(
+      life.qbic.projectmanagement.domain.model.experiment.VariableLevel variableLevel) {
+    return new ExperimentalGroupInput.VariableLevel(variableLevel.variableName().value(),
+        variableLevel.experimentalValue().value(),
+        variableLevel.experimentalValue().unit().orElse(null));
   }
 
   private void showSampleRegistrationPossibleNotification() {
@@ -954,16 +966,6 @@ public class ExperimentDetailsComponent extends PageArea {
         context.experimentId().orElseThrow());
   }
 
-  private void addExperimentalVariables(
-      List<ExperimentalVariableContent> experimentalVariableContents) {
-    experimentalVariableContents.forEach(
-        experimentalVariableContent -> experimentInformationService.addVariableToExperiment(
-            context.projectId().orElseThrow().value(),
-            context.experimentId().orElseThrow(),
-            experimentalVariableContent.name(), experimentalVariableContent.unit(),
-            experimentalVariableContent.levels()));
-  }
-
   public void setContext(Context context) {
     this.context = requireNonNull(context);
     var projectId = context.projectId()
@@ -978,23 +980,6 @@ public class ExperimentDetailsComponent extends PageArea {
         .orElseThrow();
     title.setText(experiment.getName());
     loadSampleSources(experiment);
-    // We load the experimental variables of the experiment and render them as cards
-    var experimentalVariables = experiment.variables();
-    fillExperimentalVariablesCollection(experimentalVariables);
-    if (experiment.variables().isEmpty()) {
-      onNoVariablesDefined();
-    } else {
-      onVariablesDefined();
-    }
-
-    var experimentalGroups = loadExperimentalGroups();
-    fillExperimentalGroupCollection(experimentalGroups);
-    if (experiment.getExperimentalGroups().isEmpty()) {
-      onNoGroupsDefined();
-    } else {
-      onGroupsDefined();
-    }
-
     var confoundingVariables = loadConfoundingVariables(projectId.value(), experimentId);
     fillConfoundingVariablesCollection(confoundingVariables);
     if (confoundingVariables.isEmpty()) {
@@ -1002,6 +987,37 @@ public class ExperimentDetailsComponent extends PageArea {
     } else {
       onConfoundingDefined();
     }
+  }
+
+  private void reloadExperimentalVariables() {
+    String projectId = context.projectId().orElseThrow().value();
+    var experimentId = context.experimentId().orElseThrow().value();
+    if (isAttached()) { //need to check to ensure the actions are executed
+      Disposable disposable = asyncProjectService.getExperimentalVariables(projectId, experimentId)
+          .doOnSubscribe(ignored -> uiHandle.onUi(this::onVariablesLoading))
+          .doOnSubscribe(ignored -> experimentalVariableCollection.clear())
+          .doOnNext(ignored -> uiHandle.onUi(this::onVariablesDefined))
+          .doOnNext(it -> uiHandle.onUi(() -> addExperimentalVariablesDisplay(it)))
+          .switchIfEmpty(Mono.just(new ExperimentalVariable("", List.of()))
+              .doOnNext(ignored -> uiHandle.onUiAndPush(this::onNoVariablesDefined)))
+          .subscribe();
+      addDetachListener(detached -> {
+        //abort if detached during loading
+        disposable.dispose();
+        detached.unregisterListener();
+      });
+    } else {
+      log.warn(
+          "Not attached when reloading experimental variables. Element %s not attached".formatted(
+              this));
+      onNoVariablesDefined();
+    }
+  }
+
+  private void addExperimentalVariablesDisplay(
+      AsyncProjectService.ExperimentalVariable experimentalVariable) {
+    var card = new ExperimentalVariableCard(experimentalVariable);
+    experimentalVariableCollection.add(card);
   }
 
   private void onVariablesDefined() {
@@ -1019,21 +1035,12 @@ public class ExperimentDetailsComponent extends PageArea {
     this.experimentalGroupCount = experimentalGroupsCards.size();
   }
 
-  private void fillExperimentalVariablesCollection(List<ExperimentalVariable> variables) {
-    Comparator<String> natOrder = Comparator.naturalOrder();
-    List<ExperimentalVariableCard> experimentalVariableCards = variables.stream()
-        .sorted((var1, var2) -> natOrder.compare(var1.name().value(), var2.name().value()))
-        .map(ExperimentalVariableCard::new).toList();
-
-    experimentalVariableCollection.setContent(experimentalVariableCards);
-  }
-
   private void fillConfoundingVariablesCollection(
       List<ConfoundingVariableInformation> confoundingVariables) {
     var cards = new ArrayList<Component>();
     for (ConfoundingVariableInformation confoundingVariable : confoundingVariables) {
       Card card = new Card();
-      card.addClassNames("padding-left-right-05", "padding-top-bottom-05");
+      card.addClassNames("padding-horizontal-05", "padding-vertical-05");
       card.add(new Div(confoundingVariable.variableName()));
       cards.add(card);
     }
@@ -1049,6 +1056,17 @@ public class ExperimentDetailsComponent extends PageArea {
   private void onNoVariablesDefined() {
     experimentalVariablesContainer.removeAll();
     experimentalVariablesContainer.add(noExperimentalVariablesDefined);
+  }
+
+  private void onVariablesLoading() {
+    experimentalVariablesContainer.removeAll();
+    var progress = new ProgressBar();
+    progress.setIndeterminate(true);
+    experimentalVariablesContainer.add(
+        new Span("Loading information"),
+        progress
+    );
+
   }
 
   private void onNoGroupsDefined() {
@@ -1071,123 +1089,4 @@ public class ExperimentDetailsComponent extends PageArea {
     confoundingVariablesContainer.add(confoundingVariableCollection);
   }
 
-  /**
-   * Describes a species, specimen or analyte icon with label, type and source. Note that the icon
-   * source is stored instead of the icon itself, because mixing enums and Components causes trouble
-   * at runtime.
-   */
-  public enum BioIcon {
-    DEFAULT_SPECIES(Constants.DEFAULT_LABEL, SampleSourceType.SPECIES, VaadinIcon.BUG),
-    HUMAN("Human", SampleSourceType.SPECIES, VaadinIcon.MALE),
-    //Mouse by Graphic Mall
-    MOUSE("Mouse", SampleSourceType.SPECIES, new StreamResource("mouse.svg",
-        () -> BioIcon.class.getResourceAsStream("/icons/mouse.svg"))),
-    PLANT("Plant", SampleSourceType.SPECIES, new StreamResource("plant.svg",
-        () -> BioIcon.class.getResourceAsStream("/icons/plant.svg"))),
-    //Mushroom by Jemis Mali on IconScout
-    FUNGI("Fungi", SampleSourceType.SPECIES, new StreamResource("mushroom.svg",
-        () -> BioIcon.class.getResourceAsStream("/icons/mushroom.svg"))),
-    BACTERIA("Bacteria", SampleSourceType.SPECIES, new StreamResource("bacteria.svg",
-        () -> BioIcon.class.getResourceAsStream("/icons/bacteria.svg"))),
-    DEFAULT_SPECIMEN(Constants.DEFAULT_LABEL, SampleSourceType.SPECIMEN, VaadinIcon.DROP),
-    //Kidneys by Daniel Burka on IconScout
-    KIDNEY("Kidney", SampleSourceType.SPECIMEN, new StreamResource("kidneys.svg",
-        () -> BioIcon.class.getResourceAsStream("/icons/kidneys.svg"))),
-    //Liver by Daniel Burka on IconScout
-    LIVER("Liver", SampleSourceType.SPECIMEN, new StreamResource("liver.svg",
-        () -> BioIcon.class.getResourceAsStream("/icons/liver.svg"))),
-    //Heart by Vector Stall on IconScout
-    HEART("Heart", SampleSourceType.SPECIMEN, new StreamResource("heart.svg",
-        () -> BioIcon.class.getResourceAsStream("/icons/heart.svg"))),
-    //Leaf by Phosphor Icons on IconScout
-    LEAF("Leaf", SampleSourceType.SPECIMEN, new StreamResource("leaf.svg",
-        () -> BioIcon.class.getResourceAsStream("/icons/leaf.svg"))),
-    EYE("Eye", SampleSourceType.SPECIMEN, VaadinIcon.EYE),
-    DEFAULT_ANALYTE(Constants.DEFAULT_LABEL, SampleSourceType.ANALYTE, VaadinIcon.CLUSTER);
-    private final String label;
-    private final SampleSourceType type;
-    private final IconResource iconResource;
-
-    BioIcon(String label, SampleSourceType type, VaadinIcon icon) {
-      this.label = label;
-      this.type = type;
-      this.iconResource = new IconResource(icon);
-    }
-
-    BioIcon(String label, SampleSourceType type, StreamResource svgResource) {
-      this.label = label;
-      this.type = type;
-      this.iconResource = new IconResource(svgResource);
-    }
-
-    public static BioIcon getTypeWithNameOrDefault(SampleSourceType sampleSourceType,
-        String iconName) {
-      Optional<BioIcon> searchResult = getOptionsForType(sampleSourceType).stream()
-          .filter(icon -> icon.label.equals(iconName)).findFirst();
-      return searchResult.orElseGet(() -> getDefaultBioIcon(sampleSourceType));
-    }
-
-    public static BioIcon getDefaultBioIcon(SampleSourceType sampleSourceType) {
-      return switch (sampleSourceType) {
-        case SPECIES -> DEFAULT_SPECIES;
-        case SPECIMEN -> DEFAULT_SPECIMEN;
-        case ANALYTE -> DEFAULT_ANALYTE;
-      };
-    }
-
-    public static List<BioIcon> getOptionsForType(SampleSourceType type) {
-      return Arrays.stream(BioIcon.values()).filter(o ->
-          o.getType().equals(type)).toList();
-    }
-
-    public String getLabel() {
-      return label;
-    }
-
-    public SampleSourceType getType() {
-      return type;
-    }
-
-    public IconResource getIconResource() {
-      return iconResource;
-    }
-
-    private static class Constants {
-
-      public static final String DEFAULT_LABEL = "default";
-    }
-  }
-
-  /**
-   * Describes the source level of a sample: species, specimen or analyte
-   */
-  public enum SampleSourceType {
-    SPECIES, SPECIMEN, ANALYTE
-  }
-
-  /**
-   * Wrapper class for different icon resources, e.g. VaadinIcons or custom SVGs. Provides a method
-   * to create the respective Icon component.
-   */
-  public static class IconResource {
-
-    private StreamResource streamResource = null;
-    private VaadinIcon vaadinIconResource = null;
-
-    public IconResource(VaadinIcon vaadinIconResource) {
-      this.vaadinIconResource = vaadinIconResource;
-    }
-
-    public IconResource(StreamResource streamResource) {
-      this.streamResource = streamResource;
-    }
-
-    public AbstractIcon createIcon() {
-      if (streamResource != null) {
-        return new SvgIcon(streamResource);
-      } else {
-        return vaadinIconResource.create();
-      }
-    }
-  }
 }

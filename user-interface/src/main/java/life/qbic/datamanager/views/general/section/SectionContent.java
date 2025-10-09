@@ -13,7 +13,7 @@ import com.vaadin.flow.component.html.Div;
 public class SectionContent extends Div {
 
   public SectionContent() {
-    addClassName("section-content");
+    addClassNames("flex-vertical", "width-full", "gap-04");
   }
 
   public SectionContent(Component... components) {
