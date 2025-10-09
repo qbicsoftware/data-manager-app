@@ -12,7 +12,7 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.shared.HasValidationProperties;
 import com.vaadin.flow.component.textfield.TextField;
-import com.vaadin.flow.data.value.ValueChangeMode;
+import com.vaadin.flow.data.binder.Validator;
 import com.vaadin.flow.shared.Registration;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -30,6 +30,8 @@ import life.qbic.datamanager.views.projects.project.experiments.experiment.compo
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.VariableChange.VariableLevelsChanged;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.VariableChange.VariableRenamed;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.VariableChange.VariableUnitChanged;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.validators.NonEmptyStringValidator;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.validators.ValidatableTextField;
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 
@@ -38,7 +40,7 @@ import org.springframework.lang.Nullable;
  */
 public class VariableRow extends Composite<Div> implements UserInput, CanSnapshot {
 
-  private final TextField name = new TextField();
+  private final ValidatableTextField name = new ValidatableTextField();
   private final TextField unit = new TextField();
   private final VariableLevelsInput variableLevels = new VariableLevelsInput();
   private final Button deleteVariable = new ButtonFactory()
@@ -63,7 +65,11 @@ public class VariableRow extends Composite<Div> implements UserInput, CanSnapsho
     deleteVariable.addClickListener(
         e -> fireEvent(new DeleteVariableEvent(this, e.isFromClient())));
     markInitialized();
-    name.setValueChangeMode(ValueChangeMode.EAGER);
+    name.addValidator(new NonEmptyStringValidator("Please provide a variable name."));
+  }
+
+  public void addNameValidator(Validator<String> nameValidator) {
+    name.addValidator(nameValidator);
   }
 
 
@@ -103,6 +109,7 @@ public class VariableRow extends Composite<Div> implements UserInput, CanSnapsho
     deleteVariable.addClassNames("width-max-content");
     fields.add(name, unit);
     root.add(fields, variableLevels, deleteVariable);
+
     return root;
   }
 
@@ -136,22 +143,14 @@ public class VariableRow extends Composite<Div> implements UserInput, CanSnapsho
       setValid();
       return InputValidation.passed();
     }
-
-    InputValidation nameValidation;
-    if (name.getOptionalValue().map(String::isBlank).orElse(true)) {
-      setChildValid(name);
-      setNameInvalid("Please provide a variable name.");
-      nameValidation = InputValidation.failed();
-    } else {
-      setChildValid(name);
-      nameValidation = InputValidation.passed();
+    name.refreshValidation();
+    if (name.isInvalid()) {
+      setInvalid();
+      return InputValidation.failed();
     }
 
-    InputValidation unitValidation = InputValidation.passed();
     InputValidation variableLevelsValidation = variableLevels.validate();
-    return nameValidation
-        .and(unitValidation)
-        .and(variableLevelsValidation);
+    return variableLevelsValidation;
   }
 
   private void setInvalid() {

@@ -11,6 +11,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.data.binder.ValidationResult;
 import com.vaadin.flow.dom.DisabledUpdateMode;
 import java.util.ArrayList;
 import java.util.List;
@@ -127,12 +128,24 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
       confirmDialog.registerCancelAction(confirmDialog::close);
       confirmDialog.open();
     });
+    variableRow.addNameValidator((name, ignored) -> nonNull(name)
+        && !name.isBlank()
+        && moreThanOneVariablesWithName(name)
+        ? ValidationResult.error(
+        "%s occurs multiple times. Please use unique names.".formatted(name))
+        : ValidationResult.ok());
     var maxRowIndex = variablesInput.getChildren()
         .filter(VariableRow.class::isInstance)
         .mapToInt(variablesInput::indexOf)
         .max().orElse(-1);
     variablesInput.addComponentAtIndex(Math.max(0, maxRowIndex + 1), variableRow);
     variableRow.focus();
+  }
+
+  private boolean moreThanOneVariablesWithName(String name) {
+    return getVariableRows().stream().map(VariableRow::getVariableName).filter(
+            it -> it.equals(name))
+        .count() > 1;
   }
 
   private static AppDialog confirmVariableDeletionDialog(String variableName) {
@@ -198,7 +211,7 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
    * @return the resulting validation
    */
   private InputValidation validateOverallRules() {
-    return checkUniqueVariableNames();
+    return InputValidation.passed();//checkUniqueVariableNames();
   }
 
   private InputValidation checkUniqueVariableNames() {

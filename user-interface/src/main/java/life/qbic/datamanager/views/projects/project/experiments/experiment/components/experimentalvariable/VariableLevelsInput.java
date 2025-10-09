@@ -8,6 +8,7 @@ import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.Focusable;
+import com.vaadin.flow.component.HasValue;
 import com.vaadin.flow.component.HasValue.ValueChangeListener;
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.KeyModifier;
@@ -579,6 +580,22 @@ class VariableLevelsInput extends Div implements UserInput, CanSnapshot,
           .add("levelValue=" + levelValue.getValue())
           .add("hashCode=" + hashCode())
           .toString();
+    }
+
+    static class LevelChangeEvent extends ComponentValueChangeEvent<LevelField, String> {
+
+      /**
+       * Creates a new component value change event.
+       *
+       * @param source     the source component
+       * @param hasValue   the HasValue from which the value originates
+       * @param oldValue   the old value
+       * @param fromClient whether the value change originated from the client
+       */
+      public LevelChangeEvent(LevelField source, HasValue<?, String> hasValue, String oldValue,
+          boolean fromClient) {
+        super(source, hasValue, oldValue, fromClient);
+      }
     }
 
     static class DeleteLevelEvent extends ComponentEvent<LevelField> {
