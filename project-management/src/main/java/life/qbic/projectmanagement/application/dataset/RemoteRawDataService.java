@@ -1,13 +1,14 @@
 package life.qbic.projectmanagement.application.dataset;
 
+import java.time.Instant;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import life.qbic.application.commons.SortOrder;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.RawDataset;
 import life.qbic.projectmanagement.application.measurement.MeasurementLookupService;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
@@ -30,19 +31,21 @@ import org.springframework.stereotype.Service;
  * Service that provides an API to manage and query raw Data information
  */
 @Service
-public class RawDataService {
+public class RemoteRawDataService {
 
   private final SampleInformationService sampleInformationService;
   private final MeasurementLookupService measurementLookupService;
-  private final RawDataLookupService rawDataLookupService;
+  private final RemoteRawDataLookupService remoteRawDataLookupService;
+  private final RemoteRawDataLookup remoteRawDataLookup;
 
   @Autowired
-  public RawDataService(SampleInformationService sampleInformationService,
+  public RemoteRawDataService(SampleInformationService sampleInformationService,
       MeasurementLookupService measurementLookupService,
-      RawDataLookupService rawDataLookupService) {
+      RemoteRawDataLookupService remoteRawDataLookupService, RemoteRawDataLookup remoteRawDataLookup) {
     this.measurementLookupService = Objects.requireNonNull(measurementLookupService);
-    this.rawDataLookupService = Objects.requireNonNull(rawDataLookupService);
+    this.remoteRawDataLookupService = Objects.requireNonNull(remoteRawDataLookupService);
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
+    this.remoteRawDataLookup = Objects.requireNonNull(remoteRawDataLookup);
   }
 
   /**
@@ -68,7 +71,7 @@ public class RawDataService {
         samplesInExperiment).stream().map(ProteomicsMeasurement::measurementCode);
     var codes = Stream.concat(ngsMeasurementCodes, pxpMeasurementCodes)
         .collect(Collectors.toList());
-    return rawDataLookupService.countRawDataByMeasurementCodes(codes) > 0;
+    return remoteRawDataLookupService.countRawDataByMeasurementCodes(codes) > 0;
   }
 
   @PostAuthorize(
@@ -81,7 +84,7 @@ public class RawDataService {
     var measurements = retrieveProteomicsMeasurementsForExperiment(experimentId);
     var measurementCodes = measurements.stream().map(ProteomicsMeasurement::measurementCode)
         .toList();
-    var rawDataDatasetInformation = rawDataLookupService.queryRawDataByMeasurementCodes(filter,
+    var rawDataDatasetInformation = remoteRawDataLookupService.queryRawDataByMeasurementCodes(filter,
         measurementCodes,
         offset, limit, sortOrder);
     return rawDataDatasetInformation.stream()
@@ -109,7 +112,7 @@ public class RawDataService {
       List<SortOrder> sortOrder, ProjectId projectId) {
     var measurements = retrieveNGSMeasurementsForExperiment(experimentId);
     var measurementCodes = measurements.stream().map(NGSMeasurement::measurementCode).toList();
-    var rawDataDatasetInformation = rawDataLookupService.queryRawDataByMeasurementCodes(filter,
+    var rawDataDatasetInformation = remoteRawDataLookupService.queryRawDataByMeasurementCodes(filter,
         measurementCodes,
         offset, limit, sortOrder);
     return rawDataDatasetInformation.stream()
@@ -129,6 +132,21 @@ public class RawDataService {
         }).toList();
   }
 
+  public List<RawDataset> registeredSince(Instant registeredSince, int offset, int limit) {
+    var result = remoteRawDataLookup.queryRawDataSince(registeredSince, offset, limit);
+    return result.stream().map(RemoteRawDataService::convert).toList();
+  }
+
+
+  private static RawDataset convert(RawDataDatasetInformation datasetInformation) {
+    return new RawDataset(
+        datasetInformation.measurementCode.value(),
+        datasetInformation.fileSizeBytes,
+        datasetInformation.numberOfFiles,
+        Set.copyOf(datasetInformation.fileEndings),
+        datasetInformation.registrationDate);
+  }
+
 
   private List<NGSMeasurement> retrieveNGSMeasurementsForExperiment(ExperimentId experimentId) {
     var result = sampleInformationService.retrieveSamplesForExperiment(experimentId);
@@ -146,13 +164,14 @@ public class RawDataService {
   public int countNGSDatasets(ExperimentId experimentId) {
     var measurements = retrieveNGSMeasurementsForExperiment(experimentId);
     var measurementCodes = measurements.stream().map(NGSMeasurement::measurementCode).toList();
-    return rawDataLookupService.countRawDataByMeasurementCodes(measurementCodes);
+    return remoteRawDataLookupService.countRawDataByMeasurementCodes(measurementCodes);
   }
 
   public int countProteomicsDatasets(ExperimentId experimentId) {
     var measurements = retrieveProteomicsMeasurementsForExperiment(experimentId);
-    var measurementCodes = measurements.stream().map(ProteomicsMeasurement::measurementCode).toList();
-    return rawDataLookupService.countRawDataByMeasurementCodes(measurementCodes);
+    var measurementCodes = measurements.stream().map(ProteomicsMeasurement::measurementCode)
+        .toList();
+    return remoteRawDataLookupService.countRawDataByMeasurementCodes(measurementCodes);
   }
 
   /**
@@ -179,7 +198,7 @@ public class RawDataService {
    */
   public record RawDataDatasetInformation(MeasurementCode measurementCode, String fileSize,
                                           int numberOfFiles, Set<String> fileEndings,
-                                          Date registrationDate) {
+                                          Instant registrationDate, long fileSizeBytes) {
 
   }
 }

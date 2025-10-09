@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentalGroupInput;
-import life.qbic.projectmanagement.domain.model.experiment.VariableLevel;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentalGroupInput.VariableLevel;
 
 /**
  * <b>Experimental Groups Dialog</b>

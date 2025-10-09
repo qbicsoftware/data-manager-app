@@ -52,7 +52,9 @@ public class MeasurementTemplateSelectionComponent extends Div implements
    */
   public MeasurementTemplateSelectionComponent(
       Map<Domain, DownloadStreamProvider> downloadProviders) {
-    addClassNames("padding-left-right-05", "padding-top-bottom-05", "choice-box", "flex-vertical", "gap-03");
+    addClassNames("padding-horizontal-05", "padding-vertical-05", "border", "rounded-02",
+        "flex-vertical",
+        "gap-03");
 
     Objects.requireNonNull(downloadProviders);
     if (hasMissingDomains(downloadProviders.keySet())) {

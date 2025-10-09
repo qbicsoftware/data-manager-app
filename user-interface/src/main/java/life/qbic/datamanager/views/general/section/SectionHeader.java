@@ -26,7 +26,8 @@ import com.vaadin.flow.component.html.Div;
  * The relevant CSS classes for this component are:
  *  <ul>
  *  <li><code>section-header</code></li>
- *  <li><code>trailing-margin-normal</code></li>
+ *  <li><code>margin-bottom-03</code></li>
+ *  <li><code>margin-bottom-05</code></li>
  *  <li><code>section-header-row</code></li>
  * </ul>
  *
@@ -34,8 +35,8 @@ import com.vaadin.flow.component.html.Div;
  */
 public class SectionHeader extends Div implements Controllable {
 
-  public static final String TRAILING_MARGIN_NORMAL_CSS = "trailing-margin-normal";
-  public static final String TRAILING_MARGIN_SMALL_CSS = "trailing-margin-small";
+  public static final String TRAILING_MARGIN_NORMAL_CSS = "margin-bottom-05";
+  public static final String TRAILING_MARGIN_SMALL_CSS = "margin-bottom-03";
   private SectionTitle sectionTitle;
 
   private ActionBar actionBar;

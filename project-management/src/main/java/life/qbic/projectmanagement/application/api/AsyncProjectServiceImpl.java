@@ -12,6 +12,7 @@ import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -30,6 +31,8 @@ import life.qbic.projectmanagement.application.api.fair.DigitalObject;
 import life.qbic.projectmanagement.application.api.fair.DigitalObjectFactory;
 import life.qbic.projectmanagement.application.api.fair.ResearchProject;
 import life.qbic.projectmanagement.application.api.template.TemplateService;
+import life.qbic.projectmanagement.application.concurrent.VirtualThreadScheduler;
+import life.qbic.projectmanagement.application.dataset.LocalRawDatasetLookupService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
@@ -87,6 +90,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   private final SpeciesLookupService taxaService;
   private final ProjectCreationService projectCreationService;
   private final MeasurementService measurementService;
+  private final LocalRawDatasetLookupService rawDatasetLookupService;
 
   public AsyncProjectServiceImpl(
       @Autowired ProjectInformationService projectService,
@@ -100,7 +104,9 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
       @Autowired TerminologyService termService,
       @Autowired SpeciesLookupService taxaService,
       @Autowired ProjectCreationService projectCreationService,
-      @Autowired MeasurementService measurementService) {
+      @Autowired MeasurementService measurementService,
+      @Autowired LocalRawDatasetLookupService rawDatasetLookupService
+      ) {
     this.projectService = Objects.requireNonNull(projectService);
     this.sampleInfoService = Objects.requireNonNull(sampleInfoService);
     this.scheduler = Objects.requireNonNull(scheduler);
@@ -113,6 +119,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     this.taxaService = Objects.requireNonNull(taxaService);
     this.projectCreationService = requireNonNull(projectCreationService);
     this.measurementService = Objects.requireNonNull(measurementService);
+    this.rawDatasetLookupService = requireNonNull(rawDatasetLookupService);
   }
 
   private static Retry defaultRetryStrategy() {
@@ -715,6 +722,37 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   @Override
+  public Flux<RawDatasetInformationPxP> getRawDatasetInformationPxP(String projectId,
+      String experimentId, int offset,
+      int limit, SortRawData sorting, String filter) {
+
+    SecurityContext securityContext = SecurityContextHolder.getContext();
+    return applySecurityContextMany(
+        Flux.fromIterable(
+            rawDatasetLookupService.findAllPxP(projectId, experimentId, offset, limit, sorting, filter)
+        )).subscribeOn(scheduler)
+        .contextWrite(reactiveSecurity(securityContext))
+        .doOnError( error -> log.error("Error searching for raw dataset " + projectId, error))
+        .onErrorMap(e -> new RequestFailedException("Error searching for raw dataset " + projectId, e))
+        .retryWhen(defaultRetryStrategy());
+  }
+
+  @Override
+  public Flux<RawDatasetInformationNgs> getRawDatasetInformationNgs(String projectId,
+      String experimentId, int offset,
+      int limit, SortRawData sorting, String filter) {
+    SecurityContext securityContext = SecurityContextHolder.getContext();
+    return applySecurityContextMany(
+        Flux.fromIterable(
+            rawDatasetLookupService.findAllNgs(projectId, experimentId, offset, limit, sorting, filter)
+        )).subscribeOn(scheduler)
+        .contextWrite(reactiveSecurity(securityContext))
+        .doOnError( error -> log.error("Error searching for raw dataset " + projectId, error))
+        .onErrorMap(e -> new RequestFailedException("Error searching for raw dataset " + projectId, e))
+        .retryWhen(defaultRetryStrategy());
+  }
+
+  @Override
   public Flux<ValidationResponse> validate(Flux<ValidationRequest> requests)
       throws RequestFailedException {
     // We do not want
@@ -957,7 +995,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
         () -> experimentInformationService.getVariablesOfExperiment(projectId,
                 ExperimentId.parse(experimentId))
             .stream()
-            .map(this::convertToApi));
+            .map(this::convertToApi)
+            .sorted(Comparator.comparing(ExperimentalVariable::name)));
 
     return applySecurityContextMany(call)
         .subscribeOn(scheduler)
@@ -968,18 +1007,6 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
         .onErrorMap(ProjectNotFoundException.class,
             e -> new RequestFailedException("Project was not found"))
         .retryWhen(defaultRetryStrategy());
-  }
-
-  private ExperimentalVariable convertToApi(
-      life.qbic.projectmanagement.domain.model.experiment.ExperimentalVariable experimentalVariable) {
-    return new ExperimentalVariable(experimentalVariable.name().value(),
-        experimentalVariable.levels()
-            .stream()
-            .map(level -> level.variableName().value())
-            .toList(),
-        experimentalVariable.levels()
-            .getFirst()
-            .experimentalValue().unit().orElse(null));
   }
 
   @Override
@@ -1002,10 +1029,38 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   @Override
-  public Mono<ExperimentalVariablesUpdateResponse> update(
-      ExperimentalVariablesUpdateRequest request) {
-    // TODO implement
-    throw new RuntimeException("Not yet implemented");
+  public Mono<ExperimentalVariableUpdateResponse> update(
+      ExperimentalVariableUpdateRequest request) {
+    //TODO implement
+    throw new RuntimeException("Not implemented");
+  }
+
+  @Override
+  public Mono<ExperimentalVariableRenameResponse> update(
+      ExperimentalVariableRenameRequest request) {
+    var call = Mono.fromCallable(() -> {
+      ExperimentId experimentId = ExperimentId.parse(request.experimentId());
+      experimentInformationService.renameExperimentalVariable(request.projectId(),
+          experimentId, request.currentVariableName(), request.futureVariableName());
+
+      return new ExperimentalVariableRenameResponse(request.projectId(),
+          experimentId.value(), request.currentVariableName(), request.futureVariableName(),
+          request.requestId());
+    });
+    return applySecurityContext(call)
+        .subscribeOn(VirtualThreadScheduler.getScheduler())
+        .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
+        .doOnError(e -> log.error("Could not update experimental group", e))
+        .retryWhen(defaultRetryStrategy())
+        .onErrorMap(e -> mapToAPIException(e,
+            "Error renaming experimental variable " + request.currentVariableName() + " to "
+                + request.futureVariableName()));
+  }
+
+  private ExperimentalVariable convertToApi(
+      ExperimentInformationService.ExperimentalVariableInformation experimentalVariable) {
+    return new ExperimentalVariable(experimentalVariable.name(), experimentalVariable.levels(),
+        experimentalVariable.unit());
   }
 
   @Override

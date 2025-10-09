@@ -1,6 +1,7 @@
 package life.qbic.datamanager.views.general.dialog;
 
 import java.util.Objects;
+import java.util.StringJoiner;
 import org.springframework.lang.NonNull;
 
 /**
@@ -44,6 +45,21 @@ public class InputValidation {
 
   enum ValidationStatus {
     PASSED, FAILED
+  }
+
+  @Override
+  public String toString() {
+    return new StringJoiner(", ", InputValidation.class.getSimpleName() + "[", "]")
+        .add("status=" + status)
+        .toString();
+  }
+
+  public InputValidation and(InputValidation other) {
+    return other.hasPassed() && hasPassed() ? passed() : failed();
+  }
+
+  public InputValidation or(InputValidation other) {
+    return other.hasPassed() || hasPassed() ? passed() : failed();
   }
 
   public void ifPassed(@NonNull DialogAction dialogAction) {

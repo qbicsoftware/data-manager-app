@@ -1,10 +1,15 @@
 package life.qbic.datamanager.views.projects.project.measurements.processor;
 
+import static life.qbic.logging.service.LoggerFactory.logger;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
+import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementSpecificPxP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationPxP;
 
 /**
@@ -15,8 +20,10 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.Measureme
  *
  * @since 1.11.0
  */
-public class MeasurementUpdateProcessorPxP implements
+class MeasurementUpdateProcessorPxP implements
     MeasurementProcessor<MeasurementUpdateInformationPxP> {
+
+  private static final Logger log = logger(MeasurementUpdateProcessorPxP.class);
 
   @Override
   public List<MeasurementUpdateInformationPxP> process(
@@ -61,9 +68,14 @@ public class MeasurementUpdateProcessorPxP implements
     // We need to merge sample-specific metadata of the pooled measurements
     for (var pooledEntry : measurementsBySamplePool.entrySet()) {
       // Every entry has the same pool name and by definition are only distinct in their specific metadata
-      var specificMetadata = pooledEntry.getValue().stream()
-          .flatMap(m -> m.specificMetadata().entrySet().stream())
-          .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+      Map<String, MeasurementSpecificPxP> specificMetadata;
+      try{
+        specificMetadata = pooledEntry.getValue().stream()
+            .flatMap(m -> m.specificMetadata().entrySet().stream())
+            .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+      } catch (IllegalStateException e){
+        throw new ProcessingException("Preparation of specific measurement data failed.", e);
+      }
       var commonMetadata = pooledEntry.getValue().getFirst();
       var pooledMeasurement = new MeasurementUpdateInformationPxP(
           commonMetadata.measurementId(),

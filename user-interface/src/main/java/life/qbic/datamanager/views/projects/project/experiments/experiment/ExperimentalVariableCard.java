@@ -4,12 +4,11 @@ package life.qbic.datamanager.views.projects.project.experiments.experiment;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import java.io.Serial;
-import java.util.Comparator;
 import java.util.List;
 import life.qbic.datamanager.views.general.Card;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.projectmanagement.application.VariableValueFormatter;
-import life.qbic.projectmanagement.domain.model.experiment.ExperimentalVariable;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalVariable;
 
 /**
  * <b>Experimental Variable Card</b>
@@ -37,7 +36,7 @@ public class ExperimentalVariableCard extends Card {
     Div cardHeader = new Div();
     cardHeader.addClassName("header");
 
-    cardHeader.add(title(experimentalVariable.name().value()));
+    cardHeader.add(title(experimentalVariable.name()));
     this.add(cardHeader);
 
     Div cardContent = new Div();
@@ -59,18 +58,14 @@ public class ExperimentalVariableCard extends Card {
     Div tagLayout = new Div();
     tagLayout.addClassName("tag-collection");
     List<Tag> tags = variableLevels.stream()
-        .sorted(Comparator.comparing(variable -> variable.variableName().value()))
-        .map(variableLevel -> new Tag(VariableValueFormatter.format(variableLevel.experimentalValue()))).toList();
+        .map(level -> VariableValueFormatter.format(level, experimentalVariable.unit()))
+        .map(Tag::new)
+        .toList();
     tags.forEach(tagLayout::add);
     return tagLayout;
   }
 
   public String variableName() {
-    return this.experimentalVariable.name().value();
+    return this.experimentalVariable.name();
   }
-
-  public ExperimentalVariable experimentalVariable() {
-    return this.experimentalVariable;
-  }
-
 }

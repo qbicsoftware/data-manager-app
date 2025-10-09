@@ -29,13 +29,13 @@ import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalDesign.AddExperimentalGroupResponse.ResponseCode;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalValue;
-import life.qbic.projectmanagement.domain.model.experiment.ExperimentalVariable;
 import life.qbic.projectmanagement.domain.model.experiment.VariableName;
 import life.qbic.projectmanagement.domain.model.experiment.event.ExperimentCreatedEvent;
 import life.qbic.projectmanagement.domain.model.experiment.event.ExperimentUpdatedEvent;
 import life.qbic.projectmanagement.domain.model.experiment.repository.ExperimentRepository;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.Nullable;
@@ -95,6 +95,20 @@ public class ExperimentInformationService {
     return new VariableLevel(domainLevel.variableName().value(),
         domainLevel.experimentalValue().value(),
         domainLevel.experimentalValue().unit().orElse(null));
+  }
+
+  private static ExperimentalVariableInformation convertFromDomain(String experimentId,
+      life.qbic.projectmanagement.domain.model.experiment.ExperimentalVariable experimentalVariable) {
+    List<String> levels = experimentalVariable.levels().stream()
+        .map(life.qbic.projectmanagement.domain.model.experiment.VariableLevel::experimentalValue)
+        .map(ExperimentalValue::value)
+        .toList();
+
+    return new ExperimentalVariableInformation(
+        experimentId,
+        experimentalVariable.name().value(),
+        experimentalVariable.usedUnit().orElse(null),
+        levels);
   }
 
   @PreAuthorize(
@@ -168,36 +182,6 @@ public class ExperimentInformationService {
                 experimentalGroup.toString(), responseCode));
       }
     }
-  }
-
-  private life.qbic.projectmanagement.domain.model.experiment.VariableLevel convertToDomainVariableLevel(
-      VariableLevel level) {
-    ExperimentalValue value;
-    if (level.unit() == null) {
-      value = ExperimentalValue.create(level.levelValue());
-    } else {
-      value = ExperimentalValue.create(level.levelValue(), level.unit());
-    }
-    return new life.qbic.projectmanagement.domain.model.experiment.VariableLevel(
-        new VariableName(level.variableName()), value);
-  }
-
-  /**
-   * Retrieve all analytes of an experiment.
-   *
-   * @param experimentId the Id of the experiment for which the experimental groups should be
-   *                     retrieved
-   * @return the list of experimental groups in the active experiment.
-   */
-  @PreAuthorize(
-      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
-  public List<ExperimentalGroupDTO> getExperimentalGroups(String projectId,
-      ExperimentId experimentId) {
-    Experiment experiment = loadExperimentById(experimentId);
-    return experiment.getExperimentalGroups().stream()
-        .map(it -> new ExperimentalGroupDTO(it.id(), it.name(), it.condition().getVariableLevels(),
-            it.sampleSize()))
-        .toList();
   }
 
   @PreAuthorize(
@@ -393,12 +377,11 @@ public class ExperimentInformationService {
         new ExperimentUpdatedDomainEventSubscriber(domainEventsCache));
 
     Experiment experiment = loadExperimentById(experimentId);
-    List<ExperimentalValue> experimentalValues = new ArrayList<>();
-    for (String level : levels) {
-      ExperimentalValue experimentalValue = (unit.isBlank()) ? ExperimentalValue.create(level)
-          : ExperimentalValue.create(level, unit);
-      experimentalValues.add(experimentalValue);
-    }
+    List<ExperimentalValue> experimentalValues = levels.stream()
+        .map(level -> (unit == null || unit.isBlank())
+            ? ExperimentalValue.create(level)
+            : ExperimentalValue.create(level, unit))
+        .toList();
     experiment.addVariableToDesign(variableName, experimentalValues);
     experimentRepository.update(experiment);
     dispatchLocalEvents(domainEventsCache);
@@ -527,19 +510,99 @@ public class ExperimentInformationService {
   }
 
   /**
-   * Retrieve all {@link ExperimentalVariable} defined for an experiment.
+   * Retrieve all {@link ExperimentalVariableInformation} defined for an experiment.
    *
    * @param experimentId the {@link ExperimentId} of the {@link Experiment} for which the
-   *                     {@link ExperimentalVariable} should be retrieved
-   * @return a list of {@link ExperimentalVariable} associated with the {@link Experiment} with the
+   *                     {@link ExperimentalVariableInformation} should be retrieved
+   * @return a list of {@link ExperimentalVariableInformation} associated with the {@link Experiment} with the
    * {@link ExperimentId}
    */
   @PreAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
-  public List<ExperimentalVariable> getVariablesOfExperiment(String projectId,
+  public List<ExperimentalVariableInformation> getVariablesOfExperiment(String projectId,
       ExperimentId experimentId) {
     Experiment experiment = loadExperimentById(experimentId);
-    return experiment.variables();
+    return experiment.variables()
+        .stream()
+        .map(it -> convertFromDomain(experimentId.value(), it))
+        .toList();
+  }
+
+  /**
+   * Sets the unit of a specific variable to the provided unit value. Overwrites the existing unit.
+   *
+   * @param projectId    the project in which the variable unit is edited
+   * @param experimentId the experiment containing the variable
+   * @param variableName the variable for which to set the unit
+   * @param unit         the unit to set
+   */
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
+  public void setVariableUnit(String projectId, ExperimentId experimentId, String variableName,
+      String unit) {
+    Experiment experiment = loadExperimentById(experimentId);
+    experiment.setVariableUnit(variableName, unit);
+    experimentRepository.update(experiment);
+  }
+
+  /**
+   * List all variable levels used. A used variable level is a level contained in at least one
+   * condition for which an experimental group is defined.
+   *
+   * @param projectId    the project with the variables
+   * @param experimentId the experiment containing the variables
+   * @return a list of used variable levels
+   */
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
+  public List<UsedVariableLevel> getUsedVariableLevels(String projectId,
+      ExperimentId experimentId) {
+    Experiment experiment = loadExperimentById(experimentId);
+    return experiment.getExperimentalGroups().stream()
+        .map(life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup::condition)
+        .flatMap(condition ->
+            condition.getVariableLevels().stream()
+                .map(ExperimentInformationService::convertDomainToUsedLevel))
+        .toList();
+  }
+
+
+  private static UsedVariableLevel convertDomainToUsedLevel(
+      life.qbic.projectmanagement.domain.model.experiment.VariableLevel level) {
+    return new UsedVariableLevel(level.variableName().value(),
+        level.experimentalValue().unit()
+            .orElse(null), level.experimentalValue().value());
+  }
+
+
+  /**
+   * Sets the levels of a variable to the provided list. Existing levels will be removed, if their value is not contained in the provided list.
+   * The unit is assumed to be the current unit of the variable and will not be changed by this method.
+   * @param projectId the project identifier
+   * @param experimentId the experiment containing the variable
+   * @param variable the name of the variable
+   * @param levels the levels the variable will have after executing this method
+   */
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
+  public void setVariableLevels(String projectId, ExperimentId experimentId, String variable,
+      List<String> levels) {
+    Experiment experiment = loadExperimentById(experimentId);
+
+    experiment.setVariableLevels(variable, levels);
+    experimentRepository.update(experiment);
+  }
+
+
+  /**
+   * A used variable level is a level contained in at least one condition for which an experimental group is defined.
+   * @param variableName the name of the variable
+   * @param unit the unit of the variable
+   * @param value the value of the level used
+   */
+  public record UsedVariableLevel(String variableName, @Nullable String unit, String value) {
+
+
   }
 
   /**
@@ -610,14 +673,17 @@ public class ExperimentInformationService {
     localDomainEventDispatcher.subscribe(
         new ExperimentUpdatedDomainEventSubscriber(domainEventsCache));
 
-    var queryResult = sampleInformationService.retrieveSamplesForExperiment(id);
-    if (queryResult.isError()) {
+    Collection<Sample> queryResult;
+    try {
+      queryResult = sampleInformationService.retrieveSamplesForExperiment(
+          ProjectId.parse(projectId), id.value());
+    } catch (RuntimeException e) {
       throw new ApplicationException("experiment (%s) converting %s to %s".formatted(id,
-          queryResult.getError(), DeletionService.ResponseCode.QUERY_FAILED),
+          e, DeletionService.ResponseCode.QUERY_FAILED),
           ErrorCode.GENERAL,
           ErrorParameters.empty());
     }
-    if (queryResult.isValue() && !queryResult.getValue().isEmpty()) {
+    if (hasContent(queryResult)) {
       throw new ApplicationException(
           "Could not edit experimental groups because samples are already registered.",
           ErrorCode.SAMPLES_ATTACHED_TO_EXPERIMENT,
@@ -627,6 +693,11 @@ public class ExperimentInformationService {
     experiment.removeExperimentalGroups(groupIds);
     experimentRepository.update(experiment);
     dispatchLocalEvents(domainEventsCache);
+  }
+
+  private boolean hasContent(Collection<?> collection) {
+    Objects.requireNonNull(collection);
+    return !collection.isEmpty();
   }
 
   private void setUpDomainEventDispatcher(List<DomainEvent> domainEventsCache) {
@@ -786,6 +857,31 @@ public class ExperimentInformationService {
         .map(Experiment::getExperimentalGroups).orElse(Collections.emptyList())
         .stream().map(ExperimentInformationService::convertFromDomain)
         .toList();
+  }
+
+  /**
+   * Renames an experimental variable and fires an experiment updated domain event.
+   * @param projectId the project identifer
+   * @param experimentId the experiment containing the variable
+   * @param currentName the variable name used now
+   * @param futureName the desired variable name after renaming
+   */
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
+  public void renameExperimentalVariable(String projectId, ExperimentId experimentId,
+      String currentName, String futureName) {
+    List<DomainEvent> domainEventsCache = new ArrayList<>();
+    var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
+    localDomainEventDispatcher.reset();
+    localDomainEventDispatcher.subscribe(
+        new ExperimentUpdatedDomainEventSubscriber(domainEventsCache));
+
+    Experiment experiment = experimentRepository.find(experimentId).
+        orElseThrow();
+    experiment.renameExperimentalVariable(currentName, futureName);
+
+    experimentRepository.update(experiment);
+    dispatchLocalEvents(domainEventsCache);
+
   }
 
   public static class GroupPreventingVariableDeletionException extends RuntimeException {

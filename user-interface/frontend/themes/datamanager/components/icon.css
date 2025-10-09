@@ -1,13 +1,13 @@
 vaadin-icon.primary {
-  color: var(--lumo-primary-color);
+  color: var(--primary-color);
 }
 
 vaadin-icon.error {
-  color: var(--lumo-error-color);
+  color: var(--error-color);
 }
 
 vaadin-icon.success {
-  color: var(--lumo-success-color);
+  color: var(--success-icon-color);
 }
 
 vaadin-icon.clickable {

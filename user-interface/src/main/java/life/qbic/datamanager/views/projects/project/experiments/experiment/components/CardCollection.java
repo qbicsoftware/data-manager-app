@@ -4,6 +4,7 @@ import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
+import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
@@ -19,15 +20,17 @@ import life.qbic.datamanager.views.general.Card;
  * @since 1.0.0
  */
 
-public class CardCollection extends Div {
+public class CardCollection extends Composite<Div> {
 
   @Serial
   private static final long serialVersionUID = -9123769128332512326L;
 
   private final Div content = new Div();
+  private final Button addButton;
+  private final Button editButton;
 
   public CardCollection(String title) {
-    addClassName("card-collection");
+    getContent().addClassName("card-collection");
     Span titleSpan = new Span(title);
     titleSpan.addClassName("collection-title");
     Div header = new Div();
@@ -36,15 +39,35 @@ public class CardCollection extends Div {
     controlItems.addClassName("collection-controls");
     content.addClassName("collection-content");
     header.add(titleSpan, controlItems);
-    Button addButton = new Button("Add");
-    Button editButton = new Button("Edit");
+    addButton = new Button("Add");
+    editButton = new Button("Edit");
     controlItems.add(editButton, addButton);
 
     addButton.addClassName("primary");
-    add(header, content);
+    getContent().add(header, content);
 
     addButton.addClickListener(this::fireAddEvent);
     editButton.addClickListener(this::fireEditEvent);
+  }
+
+  public void enableAdd() {
+    addButton.setEnabled(true);
+    addButton.setVisible(true);
+  }
+
+  public void disableAdd() {
+    addButton.setEnabled(false);
+    addButton.setVisible(false);
+  }
+
+  public void enableEdit() {
+    editButton.setEnabled(true);
+    editButton.setVisible(true);
+  }
+
+  public void disableEdit() {
+    editButton.setEnabled(false);
+    editButton.setVisible(false);
   }
 
   private void fireEditEvent(ClickEvent<Button> buttonClickEvent) {
@@ -67,9 +90,17 @@ public class CardCollection extends Div {
     components.forEach(content::add);
   }
 
+  public void clear() {
+    content.removeAll();
+  }
+
+  public void add(Component component) {
+    content.add(component);
+  }
+
   /**
    * Register a {@link ComponentEventListener} that will get informed with an
-   * {@link AddEvent< CardCollection >}, as soon as a user wants to add new experimental
+   * {@link AddEvent}, as soon as a user wants to add new experimental
    * variables.
    *
    * @param listener a listener for adding variables events
@@ -82,7 +113,7 @@ public class CardCollection extends Div {
 
   /**
    * Register a {@link ComponentEventListener} that will get informed with an
-   * {@link EditEvent< CardCollection >}, as soon as a user wants to edit experimental
+   * {@link EditEvent}, as soon as a user wants to edit experimental
    * variables.
    *
    * @param listener a listener for adding variables events
@@ -120,6 +151,7 @@ public class CardCollection extends Div {
    */
   public static class AddEvent extends ComponentEvent<CardCollection> {
 
+    @Serial
     private static final long serialVersionUID = -1156260489115426107L;
 
     public AddEvent(CardCollection source, boolean fromClient) {

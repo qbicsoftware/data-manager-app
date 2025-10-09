@@ -41,7 +41,7 @@ public class EditFundingInformationDialog extends DialogWindow {
 
     addClassName("dialog-small");
     var content = new Div();
-    content.addClassName("horizontal-list");
+    content.addClassNames("flex-horizontal", "width-full");
     setConfirmButtonLabel("Save");
     setCancelButtonLabel("Cancel");
     setHeaderTitle("Edit Funding Information");

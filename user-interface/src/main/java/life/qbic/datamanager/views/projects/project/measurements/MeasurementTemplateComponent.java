@@ -56,8 +56,8 @@ public class MeasurementTemplateComponent extends Div {
     this.downloadComponent = new DownloadComponent();
     this.projectIdSupplier = projectIdSupplier;
 
-    addClassNames("padding-left-right-05", "padding-top-bottom-05", "choice-box", "flex-vertical",
-        "gap-03");
+    addClassNames("padding-horizontal-05", "padding-vertical-05", "border", "rounded-02",
+        "flex-vertical", "gap-03");
     var descriptionElement = new Div(description);
     descriptionElement.addClassNames("normal-body-text");
     var failureToast = messageFactory.toast("task.failed", new Object[]{"Template generation"}, getLocale());

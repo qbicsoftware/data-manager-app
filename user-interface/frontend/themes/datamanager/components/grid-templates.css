@@ -1,0 +1,129 @@
+@import "variables.css";
+
+#main-layout {
+  display: grid;
+  grid-template-areas:
+    "announcements"
+    "content-area"
+    "data-manager-footer";
+  grid-template-columns: 1fr;
+  grid-template-rows: auto minmax(max-content, 0.95fr) minmax(min-content, 0.05fr);
+}
+
+.main.project-overview {
+  grid-template-columns: 1fr;
+  grid-template-rows: 0.1fr 0.9fr;
+  grid-template-areas:
+    "."
+    "projectcollection";
+}
+
+.main.raw-data {
+  grid-template-columns: minmax(min-content, 80%) minmax(min-content, 20%);
+  grid-template-rows: minmax(min-content, 20%) minmax(min-content, 80%);
+  grid-template-areas:
+    ". rawdatadownloadinformation"
+    "rawdatadetails rawdatadownloadinformation";
+}
+
+.main.sample {
+  grid-template-columns: minmax(min-content, 50%) minmax(min-content, 50%);
+  grid-template-rows: minmax(min-content, 25%) minmax(min-content, 70%);
+  grid-template-areas:
+    ". batchdetails"
+    "sampledetails sampledetails";
+}
+
+.main.experiment {
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+  grid-template-areas:
+    "experimentdetails";
+}
+
+.main.measurement {
+  grid-template-columns: minmax(max-content, 70%) minmax(max-content, 30%);
+  grid-template-rows: minmax(max-content, 25%) minmax(max-content, 70%);
+  grid-template-areas:
+    ". measurementtemplatelist"
+    "measurementdetails measurementdetails";
+}
+
+.main.project {
+  grid-template-columns: minmax(min-content, 80%) minmax(min-content, 25%);
+  grid-template-rows: auto;
+  grid-template-areas:
+    "projectdetails experimentlist"
+    "projectdetails offerlist"
+    "projectdetails qualitycontrollist";
+}
+
+.main.ontology-lookup-main {
+  grid-template-columns: auto;
+  grid-template-rows: auto;
+  grid-template-areas:
+    "ontologylookupcomponent"
+}
+
+.main.user-profile {
+  grid-template-columns: minmax(min-content, auto);
+  grid-template-rows: minmax(min-content, auto);
+  grid-template-areas:
+    "user-profile-component"
+}
+
+
+.grid-experimental-variable-input {
+  display: grid;
+  grid-template-areas: "nameunit levels" "delete levels";
+  grid-template-columns: 2fr 1fr;
+  grid-template-rows: 1fr minmax(min-content, max-content);
+}
+
+
+/*Large devices (large desktops, 1200px and up)*/
+@media only screen and (max-width: 1200px) {
+  .main.experiment {
+    grid-template-columns: minmax(min-content, 1fr);
+    grid-template-areas:
+    "experimentdetails";
+    grid-template-rows: minmax(min-content, 1fr);
+  }
+
+  .main.measurement {
+    grid-template-columns: minmax(min-content, 1fr);
+    grid-template-areas:
+    "."
+    "measurementtemplatelist"
+    "measurementdetails";
+    grid-template-rows: minmax(min-content, 20%) minmax(min-content, 20%) minmax(min-content, 60%);
+  }
+
+  .main.project {
+    grid-template-columns: minmax(min-content, 1fr);
+    grid-template-areas:
+    "projectdetails"
+    "experimentlist"
+    "offerlist"
+    "qualitycontrollist";
+    grid-template-rows: minmax(min-content, 60%) minmax(min-content, 20%) minmax(min-content, 20%);
+  }
+
+  .main.raw-data {
+    grid-template-columns: minmax(min-content, 1fr);
+    grid-template-areas:
+    "."
+    "rawdatadownloadinformation"
+    "rawdatadetails";
+    grid-template-rows: minmax(min-content, 20%) minmax(min-content, 20%) minmax(min-content, 60%);
+  }
+
+  .main.sample {
+    grid-template-columns: minmax(min-content, 1fr);
+    grid-template-areas:
+    "."
+    "batchdetails"
+    "sampledetails";
+    grid-template-rows: minmax(min-content, 20%) minmax(min-content, 20%) minmax(min-content, 60%);
+  }
+}

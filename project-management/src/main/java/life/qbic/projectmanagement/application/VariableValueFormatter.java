@@ -1,5 +1,7 @@
 package life.qbic.projectmanagement.application;
 
+import static java.util.Objects.nonNull;
+
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalValue;
 
 public class VariableValueFormatter {
@@ -15,7 +17,17 @@ public class VariableValueFormatter {
    * present
    */
   public static String format(ExperimentalValue experimentalValue) {
-    String optionalUnit = experimentalValue.unit().map(unit -> " " + unit).orElse("");
-    return experimentalValue.value() + optionalUnit;
+    return format(experimentalValue.value(), experimentalValue.unit().orElse(null));
+  }
+
+  /**
+   * Formats the value and unit strings according to a standard format for experimental values.
+   *
+   * @param value the value
+   * @param unit  the unit
+   * @return a String representation
+   */
+  public static String format(String value, String unit) {
+    return value + (nonNull(unit) ? " " + unit : "");
   }
 }

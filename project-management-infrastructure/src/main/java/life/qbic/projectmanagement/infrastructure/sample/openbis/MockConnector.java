@@ -2,14 +2,15 @@ package life.qbic.projectmanagement.infrastructure.sample.openbis;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.DataRepoConnectionTester;
-import life.qbic.projectmanagement.application.dataset.RawDataLookup;
-import life.qbic.projectmanagement.application.dataset.RawDataService.RawDataDatasetInformation;
+import life.qbic.projectmanagement.application.dataset.RemoteRawDataLookup;
+import life.qbic.projectmanagement.application.dataset.RemoteRawDataService;
 import life.qbic.projectmanagement.application.sample.SampleIdCodeEntry;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
@@ -28,7 +29,7 @@ import org.springframework.stereotype.Component;
 @Component
 @Profile("development")
 public class MockConnector implements QbicProjectDataRepo, SampleDataRepository,
-    MeasurementDataRepo, RawDataLookup, DataRepoConnectionTester, DisposableBean {
+    MeasurementDataRepo, RemoteRawDataLookup, DataRepoConnectionTester, DisposableBean {
 
   private static final Logger log = logger(MockConnector.class);
 
@@ -46,9 +47,10 @@ public class MockConnector implements QbicProjectDataRepo, SampleDataRepository,
     logWarning();
   }
 
+
   @Override
-  public List<RawDataDatasetInformation> queryRawDataByMeasurementCodes(String filter,
-      Collection<MeasurementCode> measurementCodes, int offset, int limit,
+  public List<RemoteRawDataService.RawDataDatasetInformation> queryRawDataByMeasurementCodes(
+      String filter, Collection<MeasurementCode> measurementCodes, int offset, int limit,
       List<SortOrder> sortOrders) {
     logWarning();
     return List.of();
@@ -58,6 +60,12 @@ public class MockConnector implements QbicProjectDataRepo, SampleDataRepository,
   public int countRawDataByMeasurementIds(Collection<MeasurementCode> measurementCodes) {
     logWarning();
     return 0;
+  }
+
+  @Override
+  public List<RemoteRawDataService.RawDataDatasetInformation> queryRawDataSince(Instant instant,
+      int offset, int limit) {
+    return List.of();
   }
 
   @Override

@@ -2,7 +2,7 @@ package life.qbic.datamanager.views.general.dialog.stepper;
 
 import com.vaadin.flow.component.html.Div;
 import java.util.Objects;
-import life.qbic.datamanager.views.general.dialog.ButtonFactory;
+import life.qbic.datamanager.views.general.ButtonFactory;
 
 /**
  * <b>Stepper Dialog Footer</b>

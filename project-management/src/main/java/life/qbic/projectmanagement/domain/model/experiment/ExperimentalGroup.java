@@ -1,12 +1,12 @@
 package life.qbic.projectmanagement.domain.model.experiment;
 
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import java.util.Objects;
 import java.util.StringJoiner;
-import org.hibernate.annotations.NaturalId;
 
 /**
  * <b>Experimental Group</b>
@@ -21,6 +21,7 @@ import org.hibernate.annotations.NaturalId;
 public class ExperimentalGroup {
 
   private String name;
+  @Embedded
   private Condition condition;
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -39,6 +40,14 @@ public class ExperimentalGroup {
 
   protected ExperimentalGroup() {
     // Please use the create method. This is needed for JPA
+  }
+
+  public ExperimentalGroup deepCopy() {
+    var copiedCondition = condition.deepCopy();
+    ExperimentalGroup copiedGroup = new ExperimentalGroup(name, copiedCondition, sampleSize,
+        groupNumber);
+    copiedGroup.experimentalGroupId = this.experimentalGroupId;
+    return copiedGroup;
   }
 
   /**
@@ -118,6 +127,19 @@ public class ExperimentalGroup {
 
   public Integer groupNumber() {
     return this.groupNumber;
+  }
+
+  /**
+   * Renames the variable
+   *
+   * @param oldName the variable name now
+   * @param newName the variable name after renaming, must not be blank or null
+   */
+  void renameVariable(String oldName, String newName) throws IllegalArgumentException {
+    if (newName == null || newName.isBlank()) {
+      throw new IllegalArgumentException("New name cannot be null or blank");
+    }
+    condition.renameVariable(oldName, newName);
   }
 
   @Override
