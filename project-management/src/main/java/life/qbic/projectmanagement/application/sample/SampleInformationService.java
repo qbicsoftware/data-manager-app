@@ -129,6 +129,13 @@ public class SampleInformationService {
     return new ArrayList<>(previewList);
   }
 
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
+  public Integer countSamplesForExperiment(String projectId, String experimentId) {
+    Objects.requireNonNull(projectId);
+    Objects.requireNonNull(experimentId);
+    return samplePreviewLookup.queryCountByExperimentId(ExperimentId.parse(experimentId), "");
+  }
+
   /**
    * Queries {@link SamplePreview}s with a provided offset and limit that supports pagination.
    * Applies the Spring Security context as well.

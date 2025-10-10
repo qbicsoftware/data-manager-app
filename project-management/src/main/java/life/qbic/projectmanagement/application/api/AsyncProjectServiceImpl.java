@@ -53,6 +53,7 @@ import life.qbic.projectmanagement.domain.repository.ProjectRepository.ProjectNo
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.lang.NonNull;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -554,8 +555,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   @Override
-  public Flux<SamplePreview> getSamplePreviews(String projectId, String experimentId, int offset,
-      int limit, List<SortOrder> sortOrders, String filter) {
+  public Flux<SamplePreview> getSamplePreviewsOld(String projectId, String experimentId, int offset,
+      int limit, List<life.qbic.application.commons.SortOrder> sortOrders, String filter) {
     SecurityContext securityContext = SecurityContextHolder.getContext();
     return applySecurityContextMany(Flux.defer(() ->
         fetchSamplePreviews(projectId, experimentId, offset, limit, sortOrders, filter)))
@@ -564,8 +565,33 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
         .retryWhen(defaultRetryStrategy());
   }
 
+  @Override
+  public Flux<SamplePreview> getSamplePreviews(String projectId, String experimentId, int offset,
+      int limit, List<SortOrder<SamplePreviewSortKey>> sortOrders, String filter) {
+    // TODO implement
+    throw new RuntimeException("Not yet implemented");
+  }
+
+  @Override
+  public Mono<Integer> countSamples(String projectId, String experimentId)
+      throws RequestFailedException, AccessDeniedException {
+    SecurityContext securityContext = SecurityContextHolder.getContext();
+
+    return applySecurityContext(Mono.defer(() -> {
+          var count = sampleInfoService.countSamplesForExperiment(projectId, experimentId);
+          if (count > 0) {
+            return Mono.just(count);
+          }
+          return Mono.empty();
+        }
+    )).subscribeOn(scheduler)
+        .contextWrite(reactiveSecurity(securityContext))
+        .retryWhen(defaultRetryStrategy())
+        .onErrorMap(t -> mapToAPIException(t, "Error counting samples for experiment " + experimentId));
+  }
+
   private Flux<SamplePreview> fetchSamplePreviews(String projectId, String experimentId, int offset,
-      int limit, List<SortOrder> sortOrders, String filter) {
+      int limit, List<life.qbic.application.commons.SortOrder> sortOrders, String filter) {
     try {
       return Flux.fromIterable(
           sampleInfoService.queryPreview(ProjectId.parse(projectId),
@@ -647,7 +673,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   @Override
-  public Flux<OntologyTerm> getTaxa(String value, int offset, int limit, List<SortOrder> sorting) {
+  public Flux<OntologyTerm> getTaxa(String value, int offset, int limit, List<life.qbic.application.commons.SortOrder> sorting) {
     String errorMessage = "Error searching for taxa " + value;
     return Flux.defer(
             () -> Flux.fromIterable(taxaService.queryOntologyTerm(value, offset, limit, sorting)))

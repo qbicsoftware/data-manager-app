@@ -13,7 +13,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import life.qbic.application.commons.SortOrder;
 import life.qbic.projectmanagement.application.ValidationResult;
 import life.qbic.projectmanagement.application.api.fair.DigitalObject;
 import life.qbic.projectmanagement.application.batch.SampleUpdateRequest.SampleInformation;
@@ -1431,8 +1430,65 @@ public interface AsyncProjectService {
    * @throws RequestFailedException if the request could not be executed
    * @since 1.10.0
    */
+  // FIXME replace with {@link #getSamplePreviews}
+  Flux<SamplePreview> getSamplePreviewsOld(String projectId, String experimentId, int offset,
+      int limit, List<life.qbic.application.commons.SortOrder> sortOrders, String filter);
+
+
+  /**
+   * Requests {@link SamplePreview} for a given experiment with pagination support.
+   * <p>
+   * <b>Exceptions</b>
+   * <p>
+   * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
+   * the throw section below.
+   *
+   * @param projectId    the project ID for the project to get the samples for
+   * @param experimentId the experiment ID for which the sample preview shall be retrieved
+   * @param offset       the offset from 0 of all available previews the returned previews should
+   *                     start
+   * @param limit        the maximum number of previews that should be returned
+   * @param sortOrders   the sort orders to apply
+   * @param filter       the filter to apply
+   * @return a reactive stream of {@link SamplePreview} objects in the experiment. Exceptions are
+   * provided as {@link Mono#error(Throwable)}.
+   * @throws RequestFailedException if the request could not be executed
+   * @since 1.12.0
+   */
   Flux<SamplePreview> getSamplePreviews(String projectId, String experimentId, int offset,
-      int limit, List<SortOrder> sortOrders, String filter);
+      int limit, List<SortOrder<SamplePreviewSortKey>> sortOrders, String filter);
+  class SortOrder<T> {
+   public SortOrder(T key, SortDirection direction) {
+     requireNonNull(key);
+     requireNonNull(direction);
+   }
+  }
+
+  enum SortDirection {
+    ASC, DESC;
+  }
+
+  /**
+   * Property sorting keys
+   * @since
+   */
+  enum SamplePreviewSortKey {
+    SAMPLE_ID, SAMPLE_NAME, ANALYSIS_METHOD
+  }
+
+  /**
+   * Returns the total number of samples for an experiment in a given project.
+   *
+   * @param projectId    the project id of the project of interest
+   * @param experimentId the experiment id of the experiment to search the samples for
+   * @return a {@link Mono} with the number of samples that exist in the given experiment. Is
+   * {@link Mono#empty()} if no samples exist.
+   * @throws RequestFailedException if the request could not be executed
+   * @throws AccessDeniedException  if the client has insufficient access rights
+   * @since 1.12.0
+   */
+  Mono<Integer> countSamples(String projectId, String experimentId)
+      throws RequestFailedException, AccessDeniedException;
 
   /**
    * Requests all {@link Sample} for a given experiment.
@@ -1553,7 +1609,7 @@ public interface AsyncProjectService {
    * @throws RequestFailedException if the request was not successfully executed
    * @since 1.10.0
    */
-  Flux<OntologyTerm> getTaxa(String value, int offset, int limit, List<SortOrder> sorting);
+  Flux<OntologyTerm> getTaxa(String value, int offset, int limit, List<life.qbic.application.commons.SortOrder> sorting);
 
   /**
    * Tries to find the exact matching {@link OntologyTerm} for a given {@link Curie}.
@@ -2335,9 +2391,6 @@ public interface AsyncProjectService {
     REGISTRATION_DATE
   }
 
-  enum SortDirection {
-    ASC, DESC
-  }
 
   record SortRawData(SortFieldRawData sortField, SortDirection sortDirection) {
 
@@ -2365,7 +2418,7 @@ public interface AsyncProjectService {
 
   /**
    * Basic sample information that can be used to enrich other information containers, e.g.
-   * {@link RawDatasetInformation}.
+   * {@link RawDatasetInformationNgs}.
    *
    * @param sampleId   unique identifier for a sample
    * @param sampleName the assigned sample name
