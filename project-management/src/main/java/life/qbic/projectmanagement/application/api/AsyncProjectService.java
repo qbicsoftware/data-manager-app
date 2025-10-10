@@ -1374,8 +1374,51 @@ public interface AsyncProjectService {
    * @throws RequestFailedException if the request could not be executed
    * @since 1.10.0
    */
+  // FIXME replace with {@link #getSamplePreviews}
+  Flux<SamplePreview> getSamplePreviewsOld(String projectId, String experimentId, int offset,
+      int limit, List<life.qbic.application.commons.SortOrder> sortOrders, String filter);
+
+
+  /**
+   * Requests {@link SamplePreview} for a given experiment with pagination support.
+   * <p>
+   * <b>Exceptions</b>
+   * <p>
+   * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
+   * the throw section below.
+   *
+   * @param projectId    the project ID for the project to get the samples for
+   * @param experimentId the experiment ID for which the sample preview shall be retrieved
+   * @param offset       the offset from 0 of all available previews the returned previews should
+   *                     start
+   * @param limit        the maximum number of previews that should be returned
+   * @param sortOrders   the sort orders to apply
+   * @param filter       the filter to apply
+   * @return a reactive stream of {@link SamplePreview} objects in the experiment. Exceptions are
+   * provided as {@link Mono#error(Throwable)}.
+   * @throws RequestFailedException if the request could not be executed
+   * @since 1.12.0
+   */
   Flux<SamplePreview> getSamplePreviews(String projectId, String experimentId, int offset,
-      int limit, List<SortOrder> sortOrders, String filter);
+      int limit, List<SortOrder<SamplePreviewSortKey>> sortOrders, String filter);
+  class SortOrder<T> {
+   public SortOrder(T key, SortDirection direction) {
+     requireNonNull(key);
+     requireNonNull(direction);
+   }
+  }
+
+  enum SortDirection {
+    ASC, DESC;
+  }
+
+  /**
+   * Property sorting keys
+   * @since
+   */
+  enum SamplePreviewSortKey {
+    SAMPLE_ID, SAMPLE_NAME, ANALYSIS_METHOD
+  }
 
   /**
    * Returns the total number of samples for an experiment in a given project.
@@ -1510,7 +1553,7 @@ public interface AsyncProjectService {
    * @throws RequestFailedException if the request was not successfully executed
    * @since 1.10.0
    */
-  Flux<OntologyTerm> getTaxa(String value, int offset, int limit, List<SortOrder> sorting);
+  Flux<OntologyTerm> getTaxa(String value, int offset, int limit, List<life.qbic.application.commons.SortOrder> sorting);
 
   /**
    * Tries to find the exact matching {@link OntologyTerm} for a given {@link Curie}.

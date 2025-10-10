@@ -96,6 +96,7 @@ public class ComponentDemo extends Div {
 
     var filterDataProvider = DataProvider.<Person, Filter<Person>>fromFilteringCallbacks(query ->
         {
+          var sorting = query.getSortOrders();
           var offsetIgnored = query.getOffset();
           var limitIgnored = query.getLimit();
           var filter = query.getFilter().orElse(new ExampleFilter(""));
@@ -110,10 +111,6 @@ public class ComponentDemo extends Div {
 
     var filterGrid = new FilterGrid<Person>(grid, filterDataProvider,
         new ExampleFilter(""), (filter, term) -> new ExampleFilter(term));
-
-    filterGrid.addSelectListener(listener -> {
-      log.info(listener.selectedItems().size() + " selected items selected");
-    });
 
     filterGrid.setSecondaryActionGroup(new Button("Edit"), new Button("Delete"));
 

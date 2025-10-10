@@ -263,6 +263,21 @@ Colors
 }
 
 /***************************
+Background-Styles
+***************************/
+
+.background-color-contrast-5pct {
+  background: var(--lumo-contrast-5pct);
+}
+
+/***************************
+Border-Styles
+***************************/
+
+.border
+
+
+/***************************
 Behaviour
 ***************************/
 

@@ -183,7 +183,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
           .collect(Collectors.toList());
       // if no order is provided by the grid order by last modified (least priority)
       sortOrders.add(SortOrder.of("sampleCode").ascending());
-      return asyncProjectService.getSamplePreviews(projectId.value(), experimentId.value(),
+      return asyncProjectService.getSamplePreviewsOld(projectId.value(), experimentId.value(),
               query.getOffset(), query.getLimit(), List.copyOf(sortOrders), filter)
           .doOnError(RequestFailedException.class, this::handleRequestFailed).toStream();
 

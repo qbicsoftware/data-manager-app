@@ -548,14 +548,21 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   @Override
-  public Flux<SamplePreview> getSamplePreviews(String projectId, String experimentId, int offset,
-      int limit, List<SortOrder> sortOrders, String filter) {
+  public Flux<SamplePreview> getSamplePreviewsOld(String projectId, String experimentId, int offset,
+      int limit, List<life.qbic.application.commons.SortOrder> sortOrders, String filter) {
     SecurityContext securityContext = SecurityContextHolder.getContext();
     return applySecurityContextMany(Flux.defer(() ->
         fetchSamplePreviews(projectId, experimentId, offset, limit, sortOrders, filter)))
         .subscribeOn(scheduler)
         .contextWrite(reactiveSecurity(securityContext))
         .retryWhen(defaultRetryStrategy());
+  }
+
+  @Override
+  public Flux<SamplePreview> getSamplePreviews(String projectId, String experimentId, int offset,
+      int limit, List<SortOrder<SamplePreviewSortKey>> sortOrders, String filter) {
+    // TODO implement
+    throw new RuntimeException("Not yet implemented");
   }
 
   @Override
@@ -577,7 +584,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   private Flux<SamplePreview> fetchSamplePreviews(String projectId, String experimentId, int offset,
-      int limit, List<SortOrder> sortOrders, String filter) {
+      int limit, List<life.qbic.application.commons.SortOrder> sortOrders, String filter) {
     try {
       return Flux.fromIterable(
           sampleInfoService.queryPreview(ProjectId.parse(projectId),
@@ -659,7 +666,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   @Override
-  public Flux<OntologyTerm> getTaxa(String value, int offset, int limit, List<SortOrder> sorting) {
+  public Flux<OntologyTerm> getTaxa(String value, int offset, int limit, List<life.qbic.application.commons.SortOrder> sorting) {
     String errorMessage = "Error searching for taxa " + value;
     return Flux.defer(
             () -> Flux.fromIterable(taxaService.queryOntologyTerm(value, offset, limit, sorting)))

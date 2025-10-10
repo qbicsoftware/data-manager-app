@@ -5,17 +5,21 @@ import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.Checkbox;
+import com.vaadin.flow.component.grid.Grid.Column;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.provider.CallbackDataProvider;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.shared.Registration;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import life.qbic.datamanager.views.general.MultiSelectLazyLoadingGrid;
-import org.checkerframework.checker.units.qual.C;
+import life.qbic.datamanager.views.general.grid.component.SelectionNotification;
+import org.springframework.lang.NonNull;
 
 /**
  * <b><class short description - 1 Line!></b>
@@ -26,6 +30,8 @@ import org.checkerframework.checker.units.qual.C;
  */
 public class FilterGrid<T> extends Div {
 
+  public static final String FLEX_HORIZONTAL_CSS = "flex-horizontal";
+  public static final String GAP_02_CSS = "gap-02";
   private final MultiSelectLazyLoadingGrid<T> grid;
   private final Div selectionDisplay;
   private final Div secondaryActionGroup;
@@ -49,6 +55,7 @@ public class FilterGrid<T> extends Div {
     dataProvider.setFilter(currentFilter);
 
     var textfield = new TextField();
+    textfield.setSuffixComponent(VaadinIcon.SEARCH.create());
     textfield.setPlaceholder("Filter");
     textfield.addValueChangeListener(e ->
     {
@@ -58,14 +65,15 @@ public class FilterGrid<T> extends Div {
     });
     textfield.setValueChangeMode(ValueChangeMode.EAGER);
 
-    this.selectionDisplay = new Div();
+    this.selectionDisplay = new SelectionNotification();
 
     this.secondaryActionGroup = new Div();
-    secondaryActionGroup.addClassNames("flex-horizontal", "gap-02");
+    secondaryActionGroup.addClassNames(FLEX_HORIZONTAL_CSS, GAP_02_CSS);
 
     var primaryGridControls = new Div();
-    primaryGridControls.add(textfield,  selectionDisplay, secondaryActionGroup);
-    primaryGridControls.addClassNames("flex-horizontal", "gap-02", "justify-content-space-between");
+    primaryGridControls.add(textfield, selectionDisplay, secondaryActionGroup);
+    primaryGridControls.addClassNames(FLEX_HORIZONTAL_CSS, GAP_02_CSS,
+        "justify-content-space-between");
 
     add(primaryGridControls, grid);
 
@@ -76,17 +84,55 @@ public class FilterGrid<T> extends Div {
     showShideMenu = new MenuBar();
     var showHideItem = showShideMenu.addItem("Show/Hide Columns");
     var subMenu = showHideItem.getSubMenu();
-    var checkbox = new Checkbox("Test");
-    checkbox.addClickListener(e -> fireEvent(new ColumnVisibilityChanged(this, new ColumnVisibilitySetting(checkbox.getLabel(), checkbox.getValue()), true)));
-    var layout = new VerticalLayout(checkbox);
+
+    var layout = new VerticalLayout(
+        createCheckboxesFromColumns(grid.getColumns(), this).toArray(new Component[0]));
     keepMenuOpenOnClick(layout);
     subMenu.addItem(layout);
-    showShideMenu.addClassNames("flex-horizontal");
+    showShideMenu.addClassNames(FLEX_HORIZONTAL_CSS);
 
     primaryGridControls.add(showShideMenu);
+    makeColumnsSortable(grid.getColumns());
   }
 
-  private Registration addColumnVisibilityChangedListener(ComponentEventListener<ColumnVisibilityChanged> listener) {
+  private static <X> List<Column<X>> makeColumnsSortable(List<Column<X>> columns) {
+    columns.stream()
+        .filter(c -> hasContent(c.getHeaderText()))
+        .forEach(c -> c.setSortable(true));
+    return columns;
+  }
+
+  private static <X> List<Checkbox> createCheckboxesFromColumns(@NonNull List<Column<X>> columns,
+      FilterGrid<?> eventSource) {
+    Objects.requireNonNull(columns);
+    return columns.stream()
+        .map(Column::getHeaderText)
+        .filter(FilterGrid::hasContent)
+        .map(columnHeader -> setupColumnVisibilityBox(columnHeader, eventSource))
+        .map(FilterGrid::applyDefaultCheckboxSetting)
+        .toList();
+  }
+
+  private static boolean hasContent(String text) {
+    return text != null && !text.isBlank();
+  }
+
+  private static Checkbox setupColumnVisibilityBox(String name, FilterGrid<?> eventSource) {
+    var checkbox = new Checkbox(name);
+    checkbox.addValueChangeListener(
+        e -> eventSource.fireEvent(new ColumnVisibilityChanged(eventSource,
+            new ColumnVisibilitySetting(e.getSource().getLabel(), e.getSource().getValue()),
+            true)));
+    return checkbox;
+  }
+
+  private static Checkbox applyDefaultCheckboxSetting(Checkbox checkbox) {
+    checkbox.setValue(true);
+    return checkbox;
+  }
+
+  private Registration addColumnVisibilityChangedListener(
+      ComponentEventListener<ColumnVisibilityChanged> listener) {
     return addListener(ColumnVisibilityChanged.class, listener);
   }
 
@@ -104,7 +150,8 @@ public class FilterGrid<T> extends Div {
 
     private final ColumnVisibilitySetting setting;
 
-    public ColumnVisibilityChanged(FilterGrid<?> source, ColumnVisibilitySetting setting, boolean fromClient) {
+    public ColumnVisibilityChanged(FilterGrid<?> source, ColumnVisibilitySetting setting,
+        boolean fromClient) {
       super(source, fromClient);
       this.setting = setting;
     }
@@ -115,11 +162,11 @@ public class FilterGrid<T> extends Div {
   }
 
 
-
   private void onColumnVisibilityChanged(ColumnVisibilitySetting setting) {
     grid.getColumns().stream()
-        .filter(column -> column.getKey().equals(setting.column))
-        .forEach(tColumn ->  tColumn.setVisible(setting.visible()));
+        .filter(column -> column.getHeaderText() != null)
+        .filter(column -> column.getHeaderText().equals(setting.column))
+        .forEach(tColumn -> tColumn.setVisible(setting.visible()));
   }
 
   // helper
@@ -154,7 +201,8 @@ public class FilterGrid<T> extends Div {
   }
 
 
-  private static void registerToSelectedEvent(MultiSelectLazyLoadingGrid<?> grid, FilterGrid<?> filterGrid) {
+  private static void registerToSelectedEvent(MultiSelectLazyLoadingGrid<?> grid,
+      FilterGrid<?> filterGrid) {
     Objects.requireNonNull(grid);
     Objects.requireNonNull(filterGrid);
     grid.addSelectedListener(e -> filterGrid.updateSelectionDisplay(e.getSelectedItems()));
@@ -207,7 +255,8 @@ public class FilterGrid<T> extends Div {
 
     @Override
     public void onComponentEvent(MultiSelectLazyLoadingGrid.SelectedEvent event) {
-      var translatedEvent = new FilterGridSelectionEvent(filterGrid, Set.copyOf(event.getSelectedItems()),
+      var translatedEvent = new FilterGridSelectionEvent(filterGrid,
+          Set.copyOf(event.getSelectedItems()),
           event.isFromClient());
       target.onComponentEvent(translatedEvent);
     }
