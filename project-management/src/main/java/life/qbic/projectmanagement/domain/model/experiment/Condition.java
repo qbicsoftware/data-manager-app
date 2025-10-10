@@ -6,6 +6,7 @@ import jakarta.persistence.FetchType;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -94,6 +95,16 @@ public class Condition {
         .map(VariableLevel::experimentalValue).findAny();
   }
 
+  /**
+   * Checks if the variable level is contained in this condition
+   *
+   * @param level the level to check for
+   * @return true if the condition contains the variable level, false otherwise
+   */
+  public boolean contains(VariableLevel level) {
+    return variableLevels.contains(level);
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -104,8 +115,8 @@ public class Condition {
     }
 
     Condition condition = (Condition) o;
-
-    return this.variableLevels.equals(condition.variableLevels);
+    //we do not care about the order when comparing
+    return new HashSet<>(variableLevels).equals(new HashSet<>(condition.variableLevels));
   }
 
   @Override
@@ -118,5 +129,40 @@ public class Condition {
     return new StringJoiner(", ", Condition.class.getSimpleName() + "[", "]")
         .add("variableLevels=" + variableLevels)
         .toString();
+  }
+
+  /**
+   * Renames a variable defined in this condition. If the variable is not found, does nothing.
+   *
+   * @param oldName the old name of the variable
+   * @param newName the name of the variable after renaming, must not be null or blank
+   */
+  void renameVariable(String oldName, String newName) {
+    Objects.requireNonNull(newName, "New variable name cannot be null.");
+    if (newName.isBlank()) {
+      throw new IllegalArgumentException("New variable name cannot be blank.");
+    }
+    variableLevels.stream()
+        .filter(it -> it.variableName().value().equals(oldName))
+        .findAny()
+        .ifPresent(variableLevel -> {
+          VariableLevel replacement = new VariableLevel(VariableName.create(newName),
+              variableLevel.experimentalValue());
+
+          int index = variableLevels.indexOf(variableLevel);
+          variableLevels.remove(variableLevel);
+          variableLevels.add(index, replacement);
+        });
+  }
+
+  public Condition deepCopy() {
+    List<VariableLevel> copiedLevels = variableLevels.stream().map(
+        it -> {
+          ExperimentalValue experimentalValue = ExperimentalValue.create(
+              it.experimentalValue().value(), it.experimentalValue().unit().orElse(null));
+          return VariableLevel.create(VariableName.create(it.variableName().value()),
+              experimentalValue);
+        }).toList();
+    return new Condition(copiedLevels);
   }
 }

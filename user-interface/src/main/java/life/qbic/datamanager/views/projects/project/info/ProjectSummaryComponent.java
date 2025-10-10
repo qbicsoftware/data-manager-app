@@ -480,13 +480,13 @@ public class ProjectSummaryComponent extends PageArea {
       projectContactsSection.content().add(prBox);
     }
 
-    projectContactsSection.content().addClassNames("horizontal-list", "gap-medium",
-        "wrapping-flex-container");
+    projectContactsSection.content().removeClassName("flex-vertical");
+    projectContactsSection.content().addClassNames("flex-horizontal");
   }
 
   private Div renderContactInfo(Contact contact) {
     var contactInfo = new Div();
-    contactInfo.addClassName("vertical-list");
+    contactInfo.addClassNames("flex-vertical", "width-full");
     var name = new Span(contact.fullName());
     var email = new Anchor("mailto:" + contact.emailAddress(), contact.emailAddress());
     contactInfo.add(name, email);
@@ -504,6 +504,7 @@ public class ProjectSummaryComponent extends PageArea {
       Anchor oidcLink = new Anchor(oidcUrl, oidcInformation.oidcId());
       oidcLink.setTarget(AnchorTarget.BLANK);
       OidcLogo oidcLogo = new OidcLogo(oidcType);
+      oidcLogo.addClassName("icon-size-m");
       Span oidcSpan = new Span(oidcLogo, oidcLink);
       oidcSpan.addClassNames("gap-02", "flex-align-items-center", "flex-horizontal");
       contactInfo.add(oidcSpan);
@@ -587,14 +588,15 @@ public class ProjectSummaryComponent extends PageArea {
     sectionContent.add(speciesDetailBox);
     sectionContent.add(specimenDetailBox);
     sectionContent.add(analyteDetailBox);
-    sectionContent.addClassNames("horizontal-list", "gap-medium", "wrapping-flex-container");
+    sectionContent.removeClassName("flex-vertical");
+    sectionContent.addClassName("flex-horizontal");
     experimentInformationSection.setContent(sectionContent);
   }
 
   private Div buildOntologyInfo(Set<OntologyTerm> terms) {
     var container = new Div();
     terms.stream().map(this::convert).forEach(container::add);
-    container.addClassNames("vertical-list", "gap-small");
+    container.addClassNames("flex-vertical", "width-full", "gap-03");
     return container;
   }
 
@@ -632,8 +634,9 @@ public class ProjectSummaryComponent extends PageArea {
     details.add(objective);
     var collapsibleDetails = new CollapsibleDetails(details);
     collapsibleDetails.collapse();
-    collapsibleDetails.addClassNames("background-color-grey", "padding-left-01", "padding-right-01",
-        "line-height-01", "max-width-55rem", "text-justify", "box-corner-radius-small");
+    collapsibleDetails.addClassNames("background-color-grey", "padding-left-05", "padding-right-05",
+        "line-height-01", "max-width-55rem", "text-justify", "border", "border-color-none",
+        "rounded-03");
 
     content.add(
         Heading.withIconAndText(VaadinIcon.NOTEBOOK.create(), "Project ID and Title"));
@@ -940,7 +943,7 @@ public class ProjectSummaryComponent extends PageArea {
 
   private Div createTags(ProjectOverview projectOverview) {
     var tags = new Div();
-    tags.addClassNames("tag-list", "gap-small");
+    tags.addClassNames("tag-list", "gap-03");
     buildTags(projectOverview).forEach(tags::add);
     return tags;
   }
@@ -967,7 +970,7 @@ public class ProjectSummaryComponent extends PageArea {
   private static class EmptyContent extends Div {
 
     EmptyContent() {
-      addClassNames("vertical-list", "gap-small");
+      addClassNames("flex-vertical", "width-full", "gap-03");
       add("No information available");
     }
   }

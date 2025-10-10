@@ -400,7 +400,7 @@ public class ProjectAccessComponent extends PageArea {
       oidcLink.setTarget(AnchorTarget.BLANK);
       OidcLogo oidcLogo = new OidcLogo(oidcType);
       Span oidcSpan = new Span(oidcLogo, oidcLink);
-      oidcSpan.addClassName("oidc");
+      oidcSpan.addClassNames("icon-size-m oidc");
       userInfoContent.add(oidcSpan);
     }
   }

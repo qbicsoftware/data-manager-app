@@ -48,6 +48,25 @@ that enables FAIR-compliant data access.
 Please find the [styleguide](https://github.com/qbicsoftware/data-manager-app-design-system) in its
 own repository.
 
+## Verify build signature
+
+To mitigate the risk for supply chain attacks, we include signature bundles for every artifact (stable and snapshot) generated with [sigstore](https://www.sigstore.dev/). 
+
+We also run PGP verification during our CI builds for transitive dependencies to raise red flags for unexpected signature changes.
+
+You can use [cosign](https://github.com/sigstore/cosign) to verify the signature for our artifacts, e.g. for development build: 
+
+```bash
+cosign verify-blob \
+  --bundle user-interface-1.11.0-20250924.124400-2.jar.sigstore.json \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  --certificate-identity 'https://github.com/qbicsoftware/data-manager-app/.github/workflows/nexus-publish-snapshots.yml@refs/heads/development' \
+  user-interface-1.11.0-20250924.124400-2.jar
+```
+
+In case you for some reason cannot verify the signature, please create an issue on GitHub.
+
+
 ## How to Run
 
 This application is based on maven and can be run after setting the

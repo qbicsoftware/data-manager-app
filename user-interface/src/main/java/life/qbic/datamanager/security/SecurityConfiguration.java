@@ -59,13 +59,19 @@ public class SecurityConfiguration extends VaadinWebSecurity {
 
   @Override
   protected void configure(HttpSecurity http) throws Exception {
-    http.authorizeHttpRequests(v -> v.requestMatchers(
+    // Use Vaadin’s request cache (so redirects back to the original Flow route work)
+    http.requestCache(c -> c.requestCache(defaultRequestCache));
+
+    http.authorizeHttpRequests(v -> v
+        .requestMatchers(VaadinWebSecurity.getDefaultWebSecurityIgnoreMatcher()).permitAll()
+        .requestMatchers(
             new AntPathRequestMatcher("/oauth2/authorization/orcid"),
             new AntPathRequestMatcher("/oauth2/code/**"),
             new AntPathRequestMatcher("/link/**"),
-            new AntPathRequestMatcher("images/*.png"))
-        .permitAll());
-    //
+            new AntPathRequestMatcher("/images/*.png"))
+        .permitAll()
+    );
+
     http.oauth2Login(oAuth2Login -> {
       oAuth2Login.loginPage("/login").permitAll();
       oAuth2Login.defaultSuccessUrl("/");
@@ -73,7 +79,11 @@ public class SecurityConfiguration extends VaadinWebSecurity {
           authenticationSuccessHandler());
       oAuth2Login.failureUrl("/login?errorOauth2=true&error");
     });
+
+    // Let Vaadin register its filters/matchers
     super.configure(http);
+
+    // Set the login view
     setLoginView(http, LoginLayout.class, contextPath + "/login?logout=true");
   }
 }

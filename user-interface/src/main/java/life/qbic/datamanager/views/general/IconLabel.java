@@ -28,7 +28,7 @@ public class IconLabel extends Div {
 
   private IconLabel() {
     addClassName("icon-label");
-    addClassName("horizontal-list");
+    addClassNames("flex-horizontal", "width-full");
     this.showTooltip = false;
   }
 

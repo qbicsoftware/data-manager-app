@@ -5,7 +5,7 @@
   <parent>
     <artifactId>datamanager</artifactId>
     <groupId>life.qbic</groupId>
-    <version>1.10.13</version>
+    <version>1.11.0</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>finances</artifactId>
@@ -22,6 +22,12 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-data-jpa</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>io.smallrye</groupId>
+          <artifactId>jandex</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.springframework.data</groupId>
@@ -38,7 +44,7 @@
     <dependency>
       <groupId>life.qbic.finances</groupId>
       <artifactId>finances-api</artifactId>
-      <version>1.10.13</version>
+      <version>1.11.0</version>
       <scope>compile</scope>
     </dependency>
   </dependencies>

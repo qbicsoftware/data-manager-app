@@ -10,7 +10,6 @@ import jakarta.persistence.Version;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.ApplicationException.ErrorParameters;
@@ -22,6 +21,7 @@ import life.qbic.projectmanagement.domain.model.experiment.event.ExperimentCreat
 import life.qbic.projectmanagement.domain.model.experiment.event.ExperimentUpdatedEvent;
 import life.qbic.projectmanagement.domain.model.experiment.exception.ConditionExistsException;
 import life.qbic.projectmanagement.domain.model.experiment.exception.ExperimentalVariableExistsException;
+import life.qbic.projectmanagement.domain.model.experiment.exception.UnknownExperimentalVariableException;
 
 
 /**
@@ -43,12 +43,6 @@ public class Experiment {
   private String name;
   @Embedded
   private ExperimentalDesign experimentalDesign;
-  @Column(name = "speciesIconName", nullable = true, columnDefinition = "varchar(31) default 'default'")
-  private String speciesIconName;
-  @Column(name = "specimenIconName", nullable = true, columnDefinition = "varchar(31) default 'default'")
-  private String specimenIconName;
-  @Column(name = "analyteIconName", nullable = true, columnDefinition = "varchar(31) default 'default'")
-  private String analyteIconName;
 
   @Version
   private int version;
@@ -91,7 +85,8 @@ public class Experiment {
     int analyteCount = analytes.size();
     int specimenCount = specimens.size();
     int speciesCount = species.size();
-    if (experimentalDesign.experimentalGroups.stream().filter(group -> group.groupNumber() == null).findAny().isPresent()) {
+    if (experimentalDesign.experimentalGroups.stream().anyMatch(
+        group -> group.groupNumber() == null)) {
       assignExperimentalGroupNumbers();
     }
   }
@@ -186,37 +181,65 @@ public class Experiment {
    * @since 1.0.0
    */
   public void removeAllExperimentalVariables() {
-    removeAllExperimentalGroups();
-    experimentalDesign.removeAllExperimentalVariables();
-    emitExperimentUpdatedEvent();
-  }
-
-  /**
-   * Removes an experimental variable if possible.
-   *
-   * @param name the name of the variable
-   * @return true if the variable was removed, falso if there was no need to remove it.
-   */
-  public boolean removeExperimentalVariable(String name) {
-
-    Optional<ExperimentalVariable> variableOptional = experimentalDesign.getVariable(name);
-    if (variableOptional.isEmpty()) {
-      return false;
-    }
-    ExperimentalVariable variable = variableOptional.get();
     //check if any group contains this variable
     if (!experimentalDesign.getExperimentalGroups().isEmpty()) {
       throw new GroupPreventingVariableDeletionException(
           "There are experimental groups in the experimental design. Cannot remove experimental variable "
               + name);
     }
-    experimentalDesign.removeExperimentalVariable(variable);
+    experimentalDesign.removeAllExperimentalVariables();
     emitExperimentUpdatedEvent();
-    return true;
+  }
+
+  /**
+* Removes an experimental variable if possible. Emits an {@link ExperimentUpdatedEvent}.
+   *
+   * @param name the name of the variable
+ * @return true if the variable was removed, false if no variable was removed (no variable with the given name exists in the experiment).
+   */
+  public boolean removeExperimentalVariable(String name) {
+    var changed = experimentalDesign.removeExperimentalVariable(name);
+    if (changed) {
+      emitExperimentUpdatedEvent();
+    }
+    return changed;
   }
 
   public void removeExperimentGroupByGroupNumber(int experimentalGroupNumber) {
     experimentalDesign.removeExperimentalGroupByGroupNumber(experimentalGroupNumber);
+  }
+
+  /**
+   * Renames an experimental variable
+   *
+   * @param currentName the name of the variable now
+   * @param futureName  the name of the variable after renaming
+   * @throws UnknownExperimentalVariableException in case no variable with the name `currentName` exists.
+   * @throws ExperimentalVariableExistsException in case a variable with the name `futureName` already exists.
+   */
+  public void renameExperimentalVariable(String currentName, String futureName)
+      throws UnknownExperimentalVariableException, ExperimentalVariableExistsException {
+    experimentalDesign.renameExperimentalVariable(currentName, futureName);
+  }
+
+  public void setVariableUnit(String variableName, String unit) {
+    experimentalDesign.changeUnit(variableName, unit);
+  }
+
+  /**
+   * Overwrites the levels of a variable by the provided levels values. The unit is unchanged.
+   * @param variable the variable for which to set the level values
+   * @param levels the values of the experimental variable levels
+   * @throws UnknownExperimentalVariableException in case the experimental variable is not part of
+   *                                              this design.
+   * @throws IllegalArgumentException             in case the provided levels are not distinct or
+   *                                              are used}   */
+  public void setVariableLevels(String variable, List<String> levels)
+      throws UnknownExperimentalVariableException, IllegalArgumentException {
+    String unit = experimentalDesign.unitForVariable(variable).orElse(null);
+    List<ExperimentalValue> mappedLevels = levels.stream().map(l -> new ExperimentalValue(l, unit))
+        .toList();
+    experimentalDesign.setVariableLevels(variable, mappedLevels);
   }
 
   public static class GroupPreventingVariableDeletionException extends RuntimeException {
@@ -298,16 +321,15 @@ public class Experiment {
    */
   public ExperimentalVariable addVariableToDesign(String variableName,
       List<ExperimentalValue> levels) {
-    return experimentalDesign.addVariable(variableName, levels)
-        .onValue(ignored -> emitExperimentCreatedEvent())
-        .valueOrElseThrow(e -> new RuntimeException(e));
+    ExperimentalVariable experimentalVariable = ExperimentalVariable.create(variableName,
+        levels.toArray(new ExperimentalValue[0]));
+    boolean created = experimentalDesign.addExperimentalVariable(experimentalVariable);
+    if (created) {
+      emitExperimentUpdatedEvent();
+    }
+    return experimentalVariable;
   }
 
-
-  public void removeExperimentalVariables(List<String> addedNames) {
-    throw new RuntimeException("Not implemented");
-
-  }
 
   /**
    * Creates an experimental group consisting of one or more levels of distinct variables and the

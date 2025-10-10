@@ -34,7 +34,7 @@ public class EditProjectDesignDialog extends DialogWindow {
     super();
     addClassName("dialog-small");
     var content = new Div();
-    content.addClassName("vertical-list");
+    content.addClassNames("flex-vertical", "width-full");
     setConfirmButtonLabel("Save");
     setCancelButtonLabel("Cancel");
     setHeaderTitle("Edit Project Design");
