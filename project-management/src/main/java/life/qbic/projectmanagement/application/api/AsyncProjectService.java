@@ -13,7 +13,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import life.qbic.application.commons.SortOrder;
 import life.qbic.projectmanagement.application.ValidationResult;
 import life.qbic.projectmanagement.application.api.fair.DigitalObject;
 import life.qbic.projectmanagement.application.batch.SampleUpdateRequest.SampleInformation;
@@ -2392,9 +2391,6 @@ public interface AsyncProjectService {
     REGISTRATION_DATE
   }
 
-  enum SortDirection {
-    ASC, DESC
-  }
 
   record SortRawData(SortFieldRawData sortField, SortDirection sortDirection) {
 
@@ -2422,7 +2418,7 @@ public interface AsyncProjectService {
 
   /**
    * Basic sample information that can be used to enrich other information containers, e.g.
-   * {@link RawDatasetInformation}.
+   * {@link RawDatasetInformationNgs}.
    *
    * @param sampleId   unique identifier for a sample
    * @param sampleName the assigned sample name

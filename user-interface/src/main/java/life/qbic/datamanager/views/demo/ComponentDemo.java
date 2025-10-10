@@ -42,6 +42,8 @@ import life.qbic.datamanager.views.general.dialog.stepper.StepperDialogFooter;
 import life.qbic.datamanager.views.general.dialog.stepper.StepperDisplay;
 import life.qbic.datamanager.views.general.grid.Filter;
 import life.qbic.datamanager.views.general.grid.FilterGrid;
+import life.qbic.datamanager.views.general.grid.component.FilterGridTab;
+import life.qbic.datamanager.views.general.grid.component.FilterGridTabSheet;
 import life.qbic.datamanager.views.general.icon.IconFactory;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.ExperimentalVariablesInput;
@@ -102,6 +104,11 @@ public class ComponentDemo extends Div {
     grid.addColumn(Person::lastName).setHeader("Last Name").setKey("lastName");
     grid.addColumn(Person::age).setHeader("Age").setKey("age");
 
+    var gridPersons = new MultiSelectLazyLoadingGrid<Person>();
+    gridPersons.addColumn(Person::firstName).setHeader("First Name").setKey("firstName");
+    gridPersons.addColumn(Person::lastName).setHeader("Last Name").setKey("lastName");
+    gridPersons.addColumn(Person::age).setHeader("Age").setKey("age");
+
     var filterDataProvider = DataProvider.<Person, Filter<Person>>fromFilteringCallbacks(query ->
         {
           var sorting = query.getSortOrders();
@@ -117,13 +124,41 @@ public class ComponentDemo extends Div {
           return examples.stream().filter(filter::test).toList().size();
         });
 
+    var filterDataProviderContacts = DataProvider.<Person, Filter<Person>>fromFilteringCallbacks(
+        query ->
+        {
+          var sorting = query.getSortOrders();
+          var offsetIgnored = query.getOffset();
+          var limitIgnored = query.getLimit();
+          var filter = query.getFilter().orElse(new ExampleFilter(""));
+          return examples.stream().filter(filter::test);
+        }
+        , count -> {
+          var offsetIgnored = count.getOffset();
+          var limitIgnored = count.getLimit();
+          var filter = count.getFilter().orElse(new ExampleFilter(""));
+          return examples.stream().filter(filter::test).toList().size();
+        });
+
+    var filterGridContacts = new FilterGrid<>(gridPersons, filterDataProviderContacts,
+        new ExampleFilter(""), (filter, term) -> new ExampleFilter(term));
+
     var filterGrid = new FilterGrid<Person>(grid, filterDataProvider,
         new ExampleFilter(""), (filter, term) -> new ExampleFilter(term));
 
     filterGrid.setSecondaryActionGroup(new Button("Edit"), new Button("Delete"));
 
     filterGrid.itemDisplayLabel("person");
-    return new Div(filterGrid);
+
+    var filterTab = new FilterGridTab("Persons", filterGrid);
+    filterTab.setItemCount(examples.size());
+
+    var filterTabContacts = new FilterGridTab("Contacts", filterGridContacts);
+    filterTabContacts.setItemCount(examples.size());
+
+    var tabSheet = new FilterGridTabSheet(filterTab, filterTabContacts);
+
+    return new Div(tabSheet);
   }
 
   static class ExampleFilter implements Filter<Person> {
@@ -335,6 +370,7 @@ public class ComponentDemo extends Div {
 
     return container;
   }
+
   private static Div stepperDialogShowCase(List<Step> steps, String dialogTitle) {
     Div content = new Div();
     Div title = new Div("Stepper Dialog");

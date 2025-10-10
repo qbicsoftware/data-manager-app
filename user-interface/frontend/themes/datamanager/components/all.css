@@ -647,6 +647,26 @@ Heading
 
 /*endregion*/
 
+/*region Background-Styles*/
+/***************************
+Background-Styles
+***************************/
+
+.background-color-grey {
+  background-color: #F9F9F9;
+}
+
+.background-contrast-5pct {
+  background-color: var(--shade-color-5pct);
+}
+
+.background-contrast-10pct {
+  background-color: var(--background-contrast-color-10pct);
+}
+
+
+/*endregion*/
+
 /*region Colors*/
 /***************************
 Colors
@@ -1370,18 +1390,6 @@ Older stuff -
 .simple-paragraph {
   font-size: var(--spacing-04);
   margin-bottom: var(--spacing-04);
-}
-
-.background-color-grey {
-  background-color: #F9F9F9;
-}
-
-.background-contrast-5pct {
-  background-color: var(--background-contrast-color-5pct);
-}
-
-.background-contrast-10pct {
-  background-color: var(--background-contrast-color-10pct);
 }
 
 .text-justify {

@@ -93,6 +93,12 @@ public class FilterGrid<T> extends Div {
 
     primaryGridControls.add(showShideMenu);
     makeColumnsSortable(grid.getColumns());
+
+    optimizeGrid(grid);
+  }
+
+  private static void optimizeGrid(MultiSelectLazyLoadingGrid<?> grid) {
+    grid.setPageSize(25);
   }
 
   private static <X> List<Column<X>> makeColumnsSortable(List<Column<X>> columns) {
@@ -165,7 +171,7 @@ public class FilterGrid<T> extends Div {
   private void onColumnVisibilityChanged(ColumnVisibilitySetting setting) {
     grid.getColumns().stream()
         .filter(column -> column.getHeaderText() != null)
-        .filter(column -> column.getHeaderText().equals(setting.column))
+        .filter(column -> column.getHeaderText().equals(setting.column()))
         .forEach(tColumn -> tColumn.setVisible(setting.visible()));
   }
 
@@ -181,14 +187,14 @@ public class FilterGrid<T> extends Div {
     if (selectedItems == null || selectedItems.isEmpty()) {
       selectionDisplay.setVisible(false);
     } else {
-      selectionDisplay.add(createSelectionDisplayLabel("test", selectedItems.size()));
+      selectionDisplay.add(createSelectionDisplayLabel(currentItemDisplayLabel, selectedItems.size()));
       selectionDisplay.setVisible(true);
     }
   }
 
   private static String formatSelectionDisplayText(String itemLabel, int selectedItemsCount) {
     if (selectedItemsCount <= 1) {
-      return "Currently %d %s are selected.".formatted(selectedItemsCount, itemLabel);
+      return "Currently %d %s is selected.".formatted(selectedItemsCount, itemLabel);
     }
     return "Currently %d %ss are selected.".formatted(selectedItemsCount, itemLabel);
   }
