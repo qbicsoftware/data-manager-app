@@ -24,7 +24,7 @@ public final class FilterGridTabSheet extends TabSheet {
 
   private final PrimaryActionButtonGroup primaryActionGroup;
 
-  public FilterGridTabSheet(FilterGridTab... tabs) {
+  public FilterGridTabSheet(FilterGridTab<?>... tabs) {
     super();
     Arrays.stream(tabs).forEach(tab -> {
       add(tab, tab.filterGrid());
@@ -72,17 +72,17 @@ public final class FilterGridTabSheet extends TabSheet {
         : java.util.Optional.empty();
   }
 
-  public <T> java.util.Optional<FilterGrid<T>> getSelectedFilterGrid(Class<T> expectedType) {
+  public <T> Optional<FilterGrid<T>> getSelectedFilterGrid(Class<T> expectedType) {
     return getSelectedFilterGrid()
-        .filter(g -> expectedType.isAssignableFrom(g.type()))
+        .filter(filterGrid -> expectedType.isAssignableFrom(filterGrid.type()))
         .map(g -> g.as(expectedType));
   }
 
   /** Convenience: run action if the selected grid matches the type. Returns true if executed. */
   public <T> boolean whenSelectedGrid(Class<T> type,
-      java.util.function.Consumer<FilterGrid<T>> action) {
+      Consumer<FilterGrid<T>> action) {
     return getSelectedFilterGrid(type)
-        .map(g -> { action.accept(g); return true; })
+        .map(filterGrid -> { action.accept(filterGrid); return true; })
         .orElse(false);
   }
 

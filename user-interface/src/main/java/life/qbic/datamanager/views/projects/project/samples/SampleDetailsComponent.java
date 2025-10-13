@@ -12,7 +12,9 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Executor;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.SortOrder;
@@ -29,6 +31,7 @@ import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactor
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.RequestFailedException;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.SamplePreviewFilter;
+import life.qbic.projectmanagement.application.api.fair.DigitalObject;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.domain.model.batch.Batch;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
@@ -37,6 +40,7 @@ import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import org.springframework.lang.NonNull;
+import org.springframework.util.MimeType;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
@@ -252,18 +256,16 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
       return filter;
     });
 
-    var filterTab = new FilterGridTab("Samples", filterGrid);
+    var filterTab = new FilterGridTab<>("Samples", filterGrid);
     var filterTabSheet = new FilterGridTabSheet(filterTab);
 
     filterTabSheet.setCaptionPrimaryAction("Register Samples");
     filterTabSheet.setCaptionFeatureAction("Export");
     filterTabSheet.hidePrimaryActionButton();
 
-    filterTabSheet.addPrimaryFeatureButtonListener(ignored -> {
-      filterTabSheet.whenSelectedGrid(SamplePreview.class, grid -> {
-        grid.selectedElements().forEach(element -> System.out.println(element.sampleId()));
-      });
-    });
+    filterTabSheet.addPrimaryFeatureButtonListener(
+        ignored -> filterTabSheet.whenSelectedGrid(SamplePreview.class,
+            grid -> grid.selectedElements()));
 
 
     removeAll();
@@ -276,7 +278,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   }
 
 
-  private class SampleNameFilter implements Filter<SamplePreview> {
+  private static class SampleNameFilter implements Filter<SamplePreview> {
 
     private String filter;
 

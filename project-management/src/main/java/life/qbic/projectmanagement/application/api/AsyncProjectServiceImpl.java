@@ -752,6 +752,17 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   @Override
+  public Mono<DigitalObject> sampleInformationTemplate(String projectId, String experimentId,
+      Set<String> sampleIds, MimeType mimeType) {
+    SecurityContext securityContext = SecurityContextHolder.getContext();
+    return applySecurityContext(Mono.fromCallable(
+        () -> templateService.sampleInformationTemplate(projectId, experimentId, sampleIds,
+            mimeType)))
+        .subscribeOn(scheduler)
+        .contextWrite(reactiveSecurity(securityContext));
+  }
+
+  @Override
   public Mono<DigitalObject> measurementUpdateNGS(String projectId, List<String> measurementIds,
       MimeType mimeType) {
     SecurityContext securityContext = SecurityContextHolder.getContext();
