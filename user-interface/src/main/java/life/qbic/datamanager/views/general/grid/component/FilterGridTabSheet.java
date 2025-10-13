@@ -8,6 +8,9 @@ import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.shared.Registration;
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Consumer;
+import life.qbic.datamanager.views.general.grid.FilterGrid;
 import org.springframework.lang.NonNull;
 
 /**
@@ -24,7 +27,7 @@ public final class FilterGridTabSheet extends TabSheet {
   public FilterGridTabSheet(FilterGridTab... tabs) {
     super();
     Arrays.stream(tabs).forEach(tab -> {
-      add(tab, tab.getComponent());
+      add(tab, tab.filterGrid());
     });
     this.primaryActionGroup = new PrimaryActionButtonGroup(
         mainActionButton("Primary Action"),
@@ -45,6 +48,43 @@ public final class FilterGridTabSheet extends TabSheet {
     return primaryActionGroup.addClickListenerFeature(listener);
   }
 
+  public void setCaptionPrimaryAction(String caption) {
+    primaryActionGroup.actionButton.setText(caption);
+  }
+
+  public void setCaptionFeatureAction(String caption) {
+    primaryActionGroup.featureButton.setText(caption);
+  }
+
+  public void hidePrimaryActionButton() {
+    primaryActionGroup.actionButton.setVisible(false);
+  }
+
+  public void showPrimaryActionButton() {
+    primaryActionGroup.actionButton.setVisible(true);
+  }
+
+  /** Untyped getter: returns the grid of the currently selected tab, if any. */
+  private Optional<FilterGrid<?>> getSelectedFilterGrid() {
+    var sel = getSelectedTab();
+    return (sel instanceof FilterGridTab<?> ft)
+        ? java.util.Optional.of(ft.filterGrid())
+        : java.util.Optional.empty();
+  }
+
+  public <T> java.util.Optional<FilterGrid<T>> getSelectedFilterGrid(Class<T> expectedType) {
+    return getSelectedFilterGrid()
+        .filter(g -> expectedType.isAssignableFrom(g.type()))
+        .map(g -> g.as(expectedType));
+  }
+
+  /** Convenience: run action if the selected grid matches the type. Returns true if executed. */
+  public <T> boolean whenSelectedGrid(Class<T> type,
+      java.util.function.Consumer<FilterGrid<T>> action) {
+    return getSelectedFilterGrid(type)
+        .map(g -> { action.accept(g); return true; })
+        .orElse(false);
+  }
 
   private static Button mainActionButton(String caption) {
     var button = new Button(caption);

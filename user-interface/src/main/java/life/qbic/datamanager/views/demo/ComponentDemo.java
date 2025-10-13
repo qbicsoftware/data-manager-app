@@ -140,10 +140,10 @@ public class ComponentDemo extends Div {
           return examples.stream().filter(filter::test).toList().size();
         });
 
-    var filterGridContacts = new FilterGrid<>(gridPersons, filterDataProviderContacts,
+    var filterGridContacts = new FilterGrid<>(Person.class, gridPersons, filterDataProviderContacts,
         new ExampleFilter(""), (filter, term) -> new ExampleFilter(term));
 
-    var filterGrid = new FilterGrid<Person>(grid, filterDataProvider,
+    var filterGrid = new FilterGrid<Person>(Person.class, grid, filterDataProvider,
         new ExampleFilter(""), (filter, term) -> new ExampleFilter(term));
 
     filterGrid.setSecondaryActionGroup(new Button("Edit"), new Button("Delete"));
@@ -180,6 +180,11 @@ public class ComponentDemo extends Div {
     @Override
     public void setSearchTerm(String searchTerm) {
       this.term = searchTerm;
+    }
+
+    @Override
+    public String searchTerm() {
+      return this.term;
     }
 
     @Override

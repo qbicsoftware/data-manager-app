@@ -1,6 +1,5 @@
 package life.qbic.datamanager.views.general.grid.component;
 
-import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.tabs.Tab;
 import java.util.Objects;
@@ -15,13 +14,13 @@ import life.qbic.datamanager.views.general.grid.FilterGrid;
  *
  * @since <version tag>
  */
-public final class FilterGridTab extends Tab {
+public final class FilterGridTab<T> extends Tab {
 
-  private final FilterGrid<?> grid;
+  private final FilterGrid<T> grid;
 
   private final Tag badge;
 
-  public FilterGridTab(String label, FilterGrid<?> filterGrid) {
+  public FilterGridTab(String label, FilterGrid<T> filterGrid) {
     super(new Span(label));
     this.badge = new Tag("");
     badge.setTagColor(TagColor.CONTRAST);
@@ -33,8 +32,12 @@ public final class FilterGridTab extends Tab {
     this.badge.setText(String.valueOf(itemCount));
   }
 
-  public Component getComponent() {
+  public FilterGrid<T> filterGrid() {
     return grid;
+  }
+
+  public Class<T> modelType() {
+    return grid.type();
   }
 
 }

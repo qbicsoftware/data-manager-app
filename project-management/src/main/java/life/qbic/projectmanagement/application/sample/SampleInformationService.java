@@ -130,10 +130,10 @@ public class SampleInformationService {
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
-  public Integer countSamplesForExperiment(String projectId, String experimentId) {
+  public Integer countSamplesForExperiment(String projectId, String experimentId, String filter) {
     Objects.requireNonNull(projectId);
     Objects.requireNonNull(experimentId);
-    return samplePreviewLookup.queryCountByExperimentId(ExperimentId.parse(experimentId), "");
+    return samplePreviewLookup.queryCountByExperimentId(ExperimentId.parse(experimentId), filter);
   }
 
   /**

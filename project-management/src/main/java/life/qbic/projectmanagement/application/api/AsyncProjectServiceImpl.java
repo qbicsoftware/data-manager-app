@@ -20,7 +20,6 @@ import java.util.concurrent.Callable;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
-import life.qbic.application.commons.SortOrder;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ProjectCreationService;
@@ -53,7 +52,6 @@ import life.qbic.projectmanagement.domain.repository.ProjectRepository.ProjectNo
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.lang.NonNull;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -107,7 +105,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
       @Autowired ProjectCreationService projectCreationService,
       @Autowired MeasurementService measurementService,
       @Autowired LocalRawDatasetLookupService rawDatasetLookupService
-      ) {
+  ) {
     this.projectService = Objects.requireNonNull(projectService);
     this.sampleInfoService = Objects.requireNonNull(sampleInfoService);
     this.scheduler = Objects.requireNonNull(scheduler);
@@ -567,18 +565,19 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
 
   @Override
   public Flux<SamplePreview> getSamplePreviews(String projectId, String experimentId, int offset,
-      int limit, List<SortOrder<SamplePreviewSortKey>> sortOrders, String filter) {
-    // TODO implement
-    throw new RuntimeException("Not yet implemented");
+      int limit, SamplePreviewFilter filter) {
+    return fetchSamplePreviews(projectId, experimentId, offset, limit,
+        filter.sortOrders().stream().map(AsyncProjectServiceImpl::toSortOrderFromSamplePreview)
+            .toList(), filter.sampleName());
   }
 
   @Override
-  public Mono<Integer> countSamples(String projectId, String experimentId)
-      throws RequestFailedException, AccessDeniedException {
+  public Mono<Integer> countSamples(String projectId, String experimentId) {
     SecurityContext securityContext = SecurityContextHolder.getContext();
 
     return applySecurityContext(Mono.defer(() -> {
-          var count = sampleInfoService.countSamplesForExperiment(projectId, experimentId);
+          var count = sampleInfoService.countSamplesForExperiment(projectId, experimentId,
+              "");
           if (count > 0) {
             return Mono.just(count);
           }
@@ -587,7 +586,35 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     )).subscribeOn(scheduler)
         .contextWrite(reactiveSecurity(securityContext))
         .retryWhen(defaultRetryStrategy())
-        .onErrorMap(t -> mapToAPIException(t, "Error counting samples for experiment " + experimentId));
+        .onErrorMap(
+            t -> mapToAPIException(t, "Error counting samples for experiment " + experimentId));
+  }
+
+  private static life.qbic.application.commons.SortOrder toSortOrderFromSamplePreview(
+      SortOrder<SamplePreviewSortKey> sortOrder) {
+    return new life.qbic.application.commons.SortOrder(sortOrder.key().name(),
+        sortOrder.direction().equals(SortDirection.ASC));
+  }
+
+  @Override
+  public Mono<Integer> countSamples(String projectId, String experimentId,
+      SamplePreviewFilter filter)
+      throws RequestFailedException, AccessDeniedException {
+    SecurityContext securityContext = SecurityContextHolder.getContext();
+
+    return applySecurityContext(Mono.defer(() -> {
+          var count = sampleInfoService.countSamplesForExperiment(projectId, experimentId,
+              filter.sampleName());
+          if (count > 0) {
+            return Mono.just(count);
+          }
+          return Mono.empty();
+        }
+    )).subscribeOn(scheduler)
+        .contextWrite(reactiveSecurity(securityContext))
+        .retryWhen(defaultRetryStrategy())
+        .onErrorMap(
+            t -> mapToAPIException(t, "Error counting samples for experiment " + experimentId));
   }
 
   private Flux<SamplePreview> fetchSamplePreviews(String projectId, String experimentId, int offset,
@@ -673,7 +700,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   @Override
-  public Flux<OntologyTerm> getTaxa(String value, int offset, int limit, List<life.qbic.application.commons.SortOrder> sorting) {
+  public Flux<OntologyTerm> getTaxa(String value, int offset, int limit,
+      List<life.qbic.application.commons.SortOrder> sorting) {
     String errorMessage = "Error searching for taxa " + value;
     return Flux.defer(
             () -> Flux.fromIterable(taxaService.queryOntologyTerm(value, offset, limit, sorting)))
@@ -755,11 +783,13 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     SecurityContext securityContext = SecurityContextHolder.getContext();
     return applySecurityContextMany(
         Flux.fromIterable(
-            rawDatasetLookupService.findAllPxP(projectId, experimentId, offset, limit, sorting, filter)
+            rawDatasetLookupService.findAllPxP(projectId, experimentId, offset, limit, sorting,
+                filter)
         )).subscribeOn(scheduler)
         .contextWrite(reactiveSecurity(securityContext))
-        .doOnError( error -> log.error("Error searching for raw dataset " + projectId, error))
-        .onErrorMap(e -> new RequestFailedException("Error searching for raw dataset " + projectId, e))
+        .doOnError(error -> log.error("Error searching for raw dataset " + projectId, error))
+        .onErrorMap(
+            e -> new RequestFailedException("Error searching for raw dataset " + projectId, e))
         .retryWhen(defaultRetryStrategy());
   }
 
@@ -770,11 +800,13 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     SecurityContext securityContext = SecurityContextHolder.getContext();
     return applySecurityContextMany(
         Flux.fromIterable(
-            rawDatasetLookupService.findAllNgs(projectId, experimentId, offset, limit, sorting, filter)
+            rawDatasetLookupService.findAllNgs(projectId, experimentId, offset, limit, sorting,
+                filter)
         )).subscribeOn(scheduler)
         .contextWrite(reactiveSecurity(securityContext))
-        .doOnError( error -> log.error("Error searching for raw dataset " + projectId, error))
-        .onErrorMap(e -> new RequestFailedException("Error searching for raw dataset " + projectId, e))
+        .doOnError(error -> log.error("Error searching for raw dataset " + projectId, error))
+        .onErrorMap(
+            e -> new RequestFailedException("Error searching for raw dataset " + projectId, e))
         .retryWhen(defaultRetryStrategy());
   }
 
@@ -899,8 +931,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     var securityContext = SecurityContextHolder.getContext();
 
     var call = Mono.fromCallable(() ->
-            sampleValidationService.validateNewSample(registration, ProjectId.parse(projectId),
-                experimentId).validationResult());
+        sampleValidationService.validateNewSample(registration, ProjectId.parse(projectId),
+            experimentId).validationResult());
 
     return applySecurityContext(call)
         .map(result -> new ValidationResponse(requestId, result))

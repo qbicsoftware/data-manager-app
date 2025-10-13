@@ -17,6 +17,7 @@ import com.vaadin.flow.shared.Registration;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Consumer;
 import life.qbic.datamanager.views.general.MultiSelectLazyLoadingGrid;
 import life.qbic.datamanager.views.general.grid.component.SelectionNotification;
 import org.springframework.lang.NonNull;
@@ -44,9 +45,15 @@ public class FilterGrid<T> extends Div {
 
   private MenuBar showShideMenu;
 
-  public FilterGrid(MultiSelectLazyLoadingGrid<T> grid,
+  private Class<T> type;
+
+  public FilterGrid(
+      Class<T> type,
+      MultiSelectLazyLoadingGrid<T> grid,
       CallbackDataProvider<T, Filter<T>> callbackDataProvider,
-      Filter<T> initialFilter, FilterUpdater<T> filterUpdater) {
+      Filter<T> initialFilter,
+      FilterUpdater<T> filterUpdater) {
+    this.type = Objects.requireNonNull(type);
     this.grid = Objects.requireNonNull(grid);
     this.currentFilter = Objects.requireNonNull(initialFilter);
 
@@ -94,11 +101,11 @@ public class FilterGrid<T> extends Div {
     primaryGridControls.add(showShideMenu);
     makeColumnsSortable(grid.getColumns());
 
-    optimizeGrid(grid);
+    optimizeGrid(grid, 25);
   }
 
-  private static void optimizeGrid(MultiSelectLazyLoadingGrid<?> grid) {
-    grid.setPageSize(25);
+  private static void optimizeGrid(MultiSelectLazyLoadingGrid<?> grid, int pageSize) {
+    grid.setPageSize(pageSize);
   }
 
   private static <X> List<Column<X>> makeColumnsSortable(List<Column<X>> columns) {
@@ -148,6 +155,38 @@ public class FilterGrid<T> extends Div {
     });
   }
 
+  /** Safe downcast after runtime check. */
+  @SuppressWarnings("unchecked")
+  public <X> FilterGrid<X> as(Class<X> wanted) {
+    if (wanted.isAssignableFrom(type)) {
+      return (FilterGrid<X>) this;
+    }
+    throw new IllegalArgumentException(
+        "Grid type %s is not assignable to %s".formatted(type.getName(), wanted.getName()));
+  }
+
+  @SuppressWarnings("unchecked")
+  public <X> boolean withType(Class<X> wanted, Consumer<? super FilterGrid<X>> action) {
+    Objects.requireNonNull(wanted);
+    Objects.requireNonNull(action);
+    if (wanted.isAssignableFrom(type)) {
+      action.accept((FilterGrid<X>) this);
+      return true;
+    }
+    return false;
+  }
+
+  @SuppressWarnings("unchecked")
+  public <X, R> java.util.Optional<R> mapType(Class<X> wanted,
+      java.util.function.Function<? super FilterGrid<X>, ? extends R> fn) {
+    java.util.Objects.requireNonNull(wanted);
+    java.util.Objects.requireNonNull(fn);
+    if (wanted.isAssignableFrom(type)) {
+      return java.util.Optional.ofNullable(fn.apply((FilterGrid<X>) this));
+    }
+    return java.util.Optional.empty();
+  }
+
   private record ColumnVisibilitySetting(String column, boolean visible) {
 
   }
@@ -165,6 +204,10 @@ public class FilterGrid<T> extends Div {
     public ColumnVisibilitySetting setting() {
       return setting;
     }
+  }
+
+  public SelectionSummary<T> selectionSummary() {
+    return new SelectionSummary<>(type, grid.getSelectedItems());
   }
 
 
@@ -187,7 +230,8 @@ public class FilterGrid<T> extends Div {
     if (selectedItems == null || selectedItems.isEmpty()) {
       selectionDisplay.setVisible(false);
     } else {
-      selectionDisplay.add(createSelectionDisplayLabel(currentItemDisplayLabel, selectedItems.size()));
+      selectionDisplay.add(
+          createSelectionDisplayLabel(currentItemDisplayLabel, selectedItems.size()));
       selectionDisplay.setVisible(true);
     }
   }
@@ -206,14 +250,12 @@ public class FilterGrid<T> extends Div {
     return container;
   }
 
-
   private static void registerToSelectedEvent(MultiSelectLazyLoadingGrid<?> grid,
       FilterGrid<?> filterGrid) {
     Objects.requireNonNull(grid);
     Objects.requireNonNull(filterGrid);
     grid.addSelectedListener(e -> filterGrid.updateSelectionDisplay(e.getSelectedItems()));
   }
-
 
   public void setSecondaryActionGroup(Button firstButton, Button... buttons) {
     Objects.requireNonNull(firstButton);
@@ -227,6 +269,10 @@ public class FilterGrid<T> extends Div {
 
   public Set<T> selectedElements() {
     return grid.getSelectedItems();
+  }
+
+  public Class<T> type() {
+    return type;
   }
 
   public void itemDisplayLabel(String label) {
@@ -266,6 +312,13 @@ public class FilterGrid<T> extends Div {
           event.isFromClient());
       target.onComponentEvent(translatedEvent);
     }
+  }
+
+  public record SelectionSummary<T>(Class<T> type, Set<T> selectedSummary) {
+   public SelectionSummary {
+     Objects.requireNonNull(type);
+     Objects.requireNonNull(selectedSummary);
+   }
   }
 
   /**

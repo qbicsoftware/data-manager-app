@@ -12,6 +12,8 @@ public interface Filter<T> {
 
   void setSearchTerm(String searchTerm);
 
+  String searchTerm();
+
   boolean test(T data);
 
 }

@@ -1,31 +1,34 @@
 package life.qbic.datamanager.views.projects.project.samples;
 
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.data.provider.CallbackDataProvider;
+import com.vaadin.flow.data.provider.DataProvider;
 import com.vaadin.flow.data.provider.SortDirection;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
-import com.vaadin.flow.spring.annotation.SpringComponent;
-import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.datamanager.views.Context;
+import life.qbic.datamanager.views.UiHandle;
 import life.qbic.datamanager.views.general.MultiSelectLazyLoadingGrid;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.grid.Filter;
 import life.qbic.datamanager.views.general.grid.FilterGrid;
-import life.qbic.datamanager.views.general.grid.FilterUpdater;
+import life.qbic.datamanager.views.general.grid.component.FilterGridTab;
+import life.qbic.datamanager.views.general.grid.component.FilterGridTabSheet;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.RequestFailedException;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.SamplePreviewFilter;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.domain.model.batch.Batch;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
@@ -33,7 +36,10 @@ import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.lang.NonNull;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Scheduler;
+import reactor.core.scheduler.Schedulers;
 
 /**
  * Sample Details Component
@@ -56,21 +62,31 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   private final MessageSourceNotificationFactory messageFactory;
   private Context context;
 
+  private final UiHandle uiHandle = new UiHandle();
+
   public SampleDetailsComponent(AsyncProjectService asyncProjectService,
       MessageSourceNotificationFactory messageFactory) {
     this.messageFactory = Objects.requireNonNull(messageFactory);
     this.asyncProjectService = Objects.requireNonNull(asyncProjectService);
     addClassName("sample-details-component");
-    sampleGrid = createSampleGrid();
+    //sampleGrid = createSampleGrid();
+    sampleGrid = new Grid<>();
     Div content = new Div();
     content.addClassName("sample-details-content");
     countSpan = new Span();
     countSpan.addClassName("sample-count");
     setSampleCount(0);
 
-
     //content.add(countSpan, sampleGrid);
     add(content);
+
+    addAttachListener(event -> {
+      uiHandle.bind(event.getUI());
+    });
+
+    addDetachListener(ignored -> {
+      uiHandle.unbind();
+    });
   }
 
   private static ComponentRenderer<Div, SamplePreview> createConditionRenderer() {
@@ -101,8 +117,8 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     return tagCollection;
   }
 
-  private static Grid<SamplePreview> createSampleGrid() {
-    Grid<SamplePreview> sampleGrid = new Grid<>(SamplePreview.class);
+  private static MultiSelectLazyLoadingGrid<SamplePreview> createSampleGrid() {
+    MultiSelectLazyLoadingGrid<SamplePreview> sampleGrid = new MultiSelectLazyLoadingGrid<>();
     sampleGrid.addColumn(SamplePreview::sampleCode)
         .setHeader("Sample ID")
         .setSortProperty("sampleCode")
@@ -208,40 +224,84 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
       throw new ApplicationException("no project id in context " + context);
     }
     this.context = context;
-    updateSampleGridDataProvider(context.projectId().orElseThrow(),
-        this.context.experimentId().orElseThrow(), "");
 
     // FIXME remove before merge
     var projectId = context.projectId().orElseThrow().value();
     var experimentId = context.experimentId().orElseThrow().value();
-    var measurementGrid = new MultiSelectLazyLoadingGrid<SamplePreview>();
-    var grid = new FilterGrid<SamplePreview>(measurementGrid, new CallbackDataProvider<>(
-        query -> asyncProjectService.getSamplePreviews(projectId,
-            experimentId, query.getOffset(), query.getLimit(),
-            new ArrayList<>(), "").toStream(),
-        query -> asyncProjectService.countSamples(projectId, experimentId).block()),
-        new Filter<SamplePreview>() {
 
-          private String filter;
+    var multiSelectGrid = createSampleGrid();
 
-          @Override
-          public void setSearchTerm(String searchTerm) {
-            filter = searchTerm;
-          }
+    var filterGrid = new FilterGrid<>(SamplePreview.class, multiSelectGrid,
+        DataProvider.fromFilteringCallbacks(query -> {
+          var filter = query.getFilter().orElse(new SampleNameFilter(""));
+          var offset = query.getOffset();
+          var limit = query.getLimit();
 
-          @Override
-          public boolean test(SamplePreview data) {
-            return true;
-          }
-        }, new FilterUpdater<SamplePreview>() {
-      @Override
-      public Filter<SamplePreview> withSearchTerm(Filter<SamplePreview> oldFilter, String term) {
-        return oldFilter;
-      }
+          var sampleFilter = createSamplePreviewFilter(filter);
+
+          return asyncProjectService.getSamplePreviews(projectId,
+                  experimentId, offset, limit, sampleFilter)
+              .collectList().blockOptional().orElse(List.of()).stream();
+        }, query -> {
+          var sampleFilter = createSamplePreviewFilter(query.getFilter().orElseThrow());
+
+          return asyncProjectService.countSamples(projectId,
+              experimentId, sampleFilter).blockOptional().orElse(0);
+        }), new SampleNameFilter(""), (filter, term) -> {
+      filter.setSearchTerm(term);
+      return filter;
     });
-    removeAll();
-    add(grid);
 
+    var filterTab = new FilterGridTab("Samples", filterGrid);
+    var filterTabSheet = new FilterGridTabSheet(filterTab);
+
+    filterTabSheet.setCaptionPrimaryAction("Register Samples");
+    filterTabSheet.setCaptionFeatureAction("Export");
+    filterTabSheet.hidePrimaryActionButton();
+
+    filterTabSheet.addPrimaryFeatureButtonListener(ignored -> {
+      filterTabSheet.whenSelectedGrid(SamplePreview.class, grid -> {
+        grid.selectedElements().forEach(element -> System.out.println(element.sampleId()));
+      });
+    });
+
+
+    removeAll();
+    add(filterTabSheet);
+
+    // Update sample counter badge
+    asyncProjectService.countSamples(projectId, experimentId)
+        .onErrorResume(error -> Mono.just(0))
+        .subscribe(count -> uiHandle.onUiAndPush(() -> filterTab.setItemCount(count)));
+  }
+
+
+  private class SampleNameFilter implements Filter<SamplePreview> {
+
+    private String filter;
+
+    public SampleNameFilter(@NonNull String filter) {
+      this.filter = Objects.requireNonNull(filter);
+    }
+
+    @Override
+    public void setSearchTerm(String searchTerm) {
+      filter = Optional.ofNullable(searchTerm).orElse("");
+    }
+
+    @Override
+    public String searchTerm() {
+      return filter;
+    }
+
+    @Override
+    public boolean test(SamplePreview data) {
+      return data.sampleName().toLowerCase().contains(filter.toLowerCase());
+    }
+  }
+
+  private static SamplePreviewFilter createSamplePreviewFilter(Filter<SamplePreview> filterUI) {
+    return new SamplePreviewFilter(filterUI.searchTerm(), List.of());
   }
 
   private void setSampleCount(int i) {

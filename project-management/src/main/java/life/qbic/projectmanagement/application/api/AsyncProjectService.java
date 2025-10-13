@@ -539,8 +539,7 @@ public interface AsyncProjectService {
    * the throw section below.
    *
    * @param projectId the project ID of the project the get the information for.
-   * @return a {@link Mono} publishing a {@link ProjectInformation} object on
-   * success.
+   * @return a {@link Mono} publishing a {@link ProjectInformation} object on success.
    * @throws UnknownRequestException if an unknown request has been used in the service call
    * @throws RequestFailedException  if the request was not successfully executed
    * @throws AccessDeniedException   if the user has insufficient rights
@@ -575,8 +574,7 @@ public interface AsyncProjectService {
   }
 
   /**
-   * Submits a project creation request and returns a {@link Mono}
-   * immediately.
+   * Submits a project creation request and returns a {@link Mono} immediately.
    * <p>
    * This implementation must be non-blocking.
    * <p>
@@ -586,9 +584,8 @@ public interface AsyncProjectService {
    * the throw section below.
    *
    * @param request the request with information required for project creation.
-   * @return {@link Mono} object publishing an
-   * {@link ProjectCreationResponse} on success. Exceptions are provided as
-   * {@link Mono#error(Throwable)}.
+   * @return {@link Mono} object publishing an {@link ProjectCreationResponse} on success.
+   * Exceptions are provided as {@link Mono#error(Throwable)}.
    * @throws UnknownRequestException if an unknown request has been used in the service call
    * @throws RequestFailedException  if the request was not successfully executed
    * @throws AccessDeniedException   if the user has insufficient rights
@@ -598,8 +595,7 @@ public interface AsyncProjectService {
       throws UnknownRequestException, RequestFailedException, AccessDeniedException;
 
   /**
-   * Submits a project update request and returns a reactive {@link Mono}
-   * object immediately.
+   * Submits a project update request and returns a reactive {@link Mono} object immediately.
    * <p>
    * The method implementation must be non-blocking.
    * <p>
@@ -615,9 +611,8 @@ public interface AsyncProjectService {
    * the throw section below.
    *
    * @param request the request to update a project
-   * @return a {@link Mono} object publishing an
-   * {@link ProjectUpdateResponse} on success. Exceptions are provided as
-   * {@link Mono#error(Throwable)}.
+   * @return a {@link Mono} object publishing an {@link ProjectUpdateResponse} on success.
+   * Exceptions are provided as {@link Mono#error(Throwable)}.
    * @throws UnknownRequestException if an unknown request has been used in the service call
    * @throws RequestFailedException  if the request was not successfully executed
    * @throws AccessDeniedException   if the user has insufficient rights
@@ -634,9 +629,8 @@ public interface AsyncProjectService {
    * the throw section below.
    *
    * @param request the actual {@link ProjectDeletionRequest}
-   * @return a {@link Mono} object publishing an
-   * {@link ProjectDeletionResponse} on success. Exceptions are provided as
-   * {@link Mono#error(Throwable)}
+   * @return a {@link Mono} object publishing an {@link ProjectDeletionResponse} on success.
+   * Exceptions are provided as {@link Mono#error(Throwable)}
    * @throws UnknownRequestException if an unknown request has been used in the service call
    * @throws RequestFailedException  if the request was not successfully executed
    * @throws AccessDeniedException   if the user has insufficient rights
@@ -648,42 +642,35 @@ public interface AsyncProjectService {
    * A service request to create funding information for a project.
    *
    * @param request the request with information required for funding information creation.
-   * @return a {@link Mono} object publishing an
-   * {@link FundingInformationCreationResponse}
+   * @return a {@link Mono} object publishing an {@link FundingInformationCreationResponse}
    * @since
    */
   Mono<FundingInformationCreationResponse> create(FundingInformationCreationRequest request);
 
   /**
-   * Submits a funding information deletion request and returns a reactive
-   * {@link Mono} publishing a
+   * Submits a funding information deletion request and returns a reactive {@link Mono} publishing a
    * {@link FundingInformationDeletionResponse}.
    *
    * @param request the request with information required for funding information deletion.
-   * @return a {@link Mono} object publishing a
-   * {@link FundingInformationDeletionResponse}.
+   * @return a {@link Mono} object publishing a {@link FundingInformationDeletionResponse}.
    * @since 1.10.0
    */
   Mono<FundingInformationDeletionResponse> delete(FundingInformationDeletionRequest request);
 
   /**
-   * Submits a project-responsible person creation request and returns a reactive
-   * {@link Mono}.>}.
+   * Submits a project-responsible person creation request and returns a reactive {@link Mono}.>}.
    *
    * @param request the request with information required for the responsible person creation.
-   * @return a {@link Mono} object publishing a
-   * {@link ProjectResponsibleCreationResponse}.
+   * @return a {@link Mono} object publishing a {@link ProjectResponsibleCreationResponse}.
    * @since 1.10.0
    */
   Mono<ProjectResponsibleCreationResponse> create(ProjectResponsibleCreationRequest request);
 
   /**
-   * Submits a project-responsible person deletion request and returns a reactive
-   * {@link Mono}.
+   * Submits a project-responsible person deletion request and returns a reactive {@link Mono}.
    *
    * @param request the request with information required for the responsible person deletion.
-   * @return a {@link Mono} object publishing a
-   * {@link ProjectResponsibleDeletionResponse}.
+   * @return a {@link Mono} object publishing a {@link ProjectResponsibleDeletionResponse}.
    * @since 1.10.0
    */
   Mono<ProjectResponsibleDeletionResponse> delete(ProjectResponsibleDeletionRequest request);
@@ -1065,8 +1052,7 @@ public interface AsyncProjectService {
   Flux<ExperimentDescription> getExperiments(String projectId);
 
   /**
-   * Requests the creation of an experiment and returns a reactive
-   * {@link Mono}.
+   * Requests the creation of an experiment and returns a reactive {@link Mono}.
    * <p>
    * <b>Exceptions</b>
    * <p>
@@ -1074,8 +1060,7 @@ public interface AsyncProjectService {
    * the throw section below.
    *
    * @param request the request containing information to create the experiment
-   * @return a {@link Mono} object publishing a
-   * {@link ExperimentCreationResponse} on success.
+   * @return a {@link Mono} object publishing a {@link ExperimentCreationResponse} on success.
    * @throws UnknownRequestException if an unknown request has been used in the service call
    * @throws RequestFailedException  if the request was not successfully executed
    * @throws AccessDeniedException   if the user has insufficient rights
@@ -1084,8 +1069,7 @@ public interface AsyncProjectService {
   Mono<ExperimentCreationResponse> create(ExperimentCreationRequest request);
 
   /**
-   * Submits an experiment update request and returns a reactive
-   * {@link Mono} object immediately.
+   * Submits an experiment update request and returns a reactive {@link Mono} object immediately.
    * <p>
    * The method is non-blocking.
    * <p>
@@ -1101,9 +1085,8 @@ public interface AsyncProjectService {
    * the throw section below.
    *
    * @param request the request to update a project
-   * @return a {@link Mono} object publishing an
-   * {@link ProjectUpdateResponse} on success. Exceptions are provided as
-   * {@link Mono#error(Throwable)}.
+   * @return a {@link Mono} object publishing an {@link ProjectUpdateResponse} on success.
+   * Exceptions are provided as {@link Mono#error(Throwable)}.
    * @throws UnknownRequestException if an unknown request has been used in the service call
    * @throws RequestFailedException  if the request was not successfully executed
    * @throws AccessDeniedException   if the user has insufficient rights
@@ -1112,8 +1095,7 @@ public interface AsyncProjectService {
   Mono<ExperimentUpdateResponse> update(ExperimentUpdateRequest request);
 
   /**
-   * Submits an experiment deletion request and returns a reactive
-   * {@link Mono}.
+   * Submits an experiment deletion request and returns a reactive {@link Mono}.
    * <p>
    * <b>Exceptions</b>
    * <p>
@@ -1121,8 +1103,7 @@ public interface AsyncProjectService {
    * the throw section below.
    *
    * @param request the request to delete an experiment for a project.
-   * @return a {@link Mono} object publishing a
-   * {@link ExperimentDeletionResponse}
+   * @return a {@link Mono} object publishing a {@link ExperimentDeletionResponse}
    * @throws UnknownRequestException if an unknown request has been used in the service call
    * @throws RequestFailedException  if the request was not successfully executed
    * @throws AccessDeniedException   if the user has insufficient rights
@@ -1131,8 +1112,8 @@ public interface AsyncProjectService {
   Mono<ExperimentDeletionResponse> delete(ExperimentDeletionRequest request);
 
   /**
-   * Queries all available experimental variables for a given experiment.
-   * Returns existing experimental variables in lexicographical order of the variable name.
+   * Queries all available experimental variables for a given experiment. Returns existing
+   * experimental variables in lexicographical order of the variable name.
    * <p>
    * <b>Exceptions</b>
    * <p>
@@ -1151,8 +1132,7 @@ public interface AsyncProjectService {
   Flux<ExperimentalVariable> getExperimentalVariables(String projectId, String experimentId);
 
   /**
-   * Submits an experimental variable creation request and returns a reactive
-   * {@link Mono}.
+   * Submits an experimental variable creation request and returns a reactive {@link Mono}.
    * <p>
    * <b>Exceptions</b>
    * <p>
@@ -1160,8 +1140,8 @@ public interface AsyncProjectService {
    * the throw section below.
    *
    * @param request the request with information required for the experimental variable creation.
-   * @return a {@link Mono} object publishing a
-   * {@link ExperimentalVariablesCreationResponse} on success.
+   * @return a {@link Mono} object publishing a {@link ExperimentalVariablesCreationResponse} on
+   * success.
    * @throws UnknownRequestException if an unknown request has been used in the service call
    * @throws RequestFailedException  if the request was not successfully executed
    * @throws AccessDeniedException   if the user has insufficient rights
@@ -1170,8 +1150,7 @@ public interface AsyncProjectService {
   Mono<ExperimentalVariablesCreationResponse> create(ExperimentalVariablesCreationRequest request);
 
   /**
-   * Submits an experimental variable update request and returns a reactive
-   * {@link Mono}
+   * Submits an experimental variable update request and returns a reactive {@link Mono}
    * <p>
    * <b>Exceptions</b>
    * <p>
@@ -1179,8 +1158,8 @@ public interface AsyncProjectService {
    * the throw section below.
    *
    * @param request the request with information required for the experimental variable update
-   * @return a {@link Mono} object publishing a
-   * {@link ExperimentalVariableUpdateResponse} on success.
+   * @return a {@link Mono} object publishing a {@link ExperimentalVariableUpdateResponse} on
+   * success.
    * @throws UnknownRequestException if an unknown request has been used in the service call
    * @throws RequestFailedException  if the request was not successfully executed
    * @throws AccessDeniedException   if the user has insufficient rights
@@ -1189,8 +1168,7 @@ public interface AsyncProjectService {
   Mono<ExperimentalVariableUpdateResponse> update(ExperimentalVariableUpdateRequest request);
 
   /**
-   * Submits an experimental variable update request and returns a reactive
-   * {@link Mono}
+   * Submits an experimental variable update request and returns a reactive {@link Mono}
    * <p>
    * <b>Exceptions</b>
    * <p>
@@ -1198,8 +1176,8 @@ public interface AsyncProjectService {
    * the throw section below.
    *
    * @param request the request with information required for the experimental variable update
-   * @return a {@link Mono} object publishing a
-   * {@link ExperimentalVariableUpdateResponse} on success.
+   * @return a {@link Mono} object publishing a {@link ExperimentalVariableUpdateResponse} on
+   * success.
    * @throws UnknownRequestException if an unknown request has been used in the service call
    * @throws RequestFailedException  if the request was not successfully executed
    * @throws AccessDeniedException   if the user has insufficient rights
@@ -1208,8 +1186,7 @@ public interface AsyncProjectService {
   Mono<ExperimentalVariableRenameResponse> update(ExperimentalVariableRenameRequest request);
 
   /**
-   * Submits an experimental variable deletion request and returns a reactive
-   * {@link Mono}.
+   * Submits an experimental variable deletion request and returns a reactive {@link Mono}.
    * <p>
    * <b>Exceptions</b>
    * <p>
@@ -1217,8 +1194,8 @@ public interface AsyncProjectService {
    * the throw section below.
    *
    * @param request the request with information required for the experimental variable deletion
-   * @return a {@link Mono} object publishing a
-   * {@link ExperimentalVariablesDeletionResponse} on success.
+   * @return a {@link Mono} object publishing a {@link ExperimentalVariablesDeletionResponse} on
+   * success.
    * @throws UnknownRequestException if an unknown request has been used in the service call
    * @throws RequestFailedException  if the request was not successfully executed
    * @throws AccessDeniedException   if the user has insufficient rights
@@ -1248,8 +1225,7 @@ public interface AsyncProjectService {
   Flux<ExperimentalGroup> getExperimentalGroups(String projectId, String experimentId);
 
   /**
-   * Submits an experimental group creation request and returns a reactive
-   * {@link Mono}.
+   * Submits an experimental group creation request and returns a reactive {@link Mono}.
    * <p>
    * <b>Exceptions</b>
    * <p>
@@ -1257,8 +1233,8 @@ public interface AsyncProjectService {
    * the throw section below.
    *
    * @param request the request to create an experimental group for a project
-   * @return a {@link Mono} object publishing a
-   * {@link ExperimentalGroupCreationResponse} on success.
+   * @return a {@link Mono} object publishing a {@link ExperimentalGroupCreationResponse} on
+   * success.
    * @throws UnknownRequestException if an unknown request has been used in the service call
    * @throws RequestFailedException  if the request was not successfully executed
    * @throws AccessDeniedException   if the user has insufficient rights
@@ -1267,8 +1243,7 @@ public interface AsyncProjectService {
   Mono<ExperimentalGroupCreationResponse> create(ExperimentalGroupCreationRequest request);
 
   /**
-   * Submits an experimental group update request and returns a reactive
-   * {@link Mono}.
+   * Submits an experimental group update request and returns a reactive {@link Mono}.
    * <p>
    * <b>Exceptions</b>
    * <p>
@@ -1276,8 +1251,7 @@ public interface AsyncProjectService {
    * the throw section below.
    *
    * @param request the request to update an experimental group for a project
-   * @return a {@link Mono} object publishing a
-   * {@link ExperimentalGroupUpdateResponse} on success.
+   * @return a {@link Mono} object publishing a {@link ExperimentalGroupUpdateResponse} on success.
    * @throws UnknownRequestException if an unknown request has been used in the service call
    * @throws RequestFailedException  if the request was not successfully executed
    * @throws AccessDeniedException   if the user has insufficient rights
@@ -1304,8 +1278,7 @@ public interface AsyncProjectService {
   }
 
   /**
-   * Submits an experimental group deletion request and returns a reactive
-   * {@link Mono}.
+   * Submits an experimental group deletion request and returns a reactive {@link Mono}.
    * <p>
    * <b>Exceptions</b>
    * <p>
@@ -1313,8 +1286,8 @@ public interface AsyncProjectService {
    * the throw section below.
    *
    * @param request the request to delete an experimental group for a project
-   * @return a {@link Mono} object publishing a
-   * {@link ExperimentalGroupDeletionResponse} on success.
+   * @return a {@link Mono} object publishing a {@link ExperimentalGroupDeletionResponse} on
+   * success.
    * @throws UnknownRequestException if an unknown request has been used in the service call
    * @throws RequestFailedException  if the request was not successfully executed
    * @throws AccessDeniedException   if the user has insufficient rights
@@ -1448,7 +1421,6 @@ public interface AsyncProjectService {
    * @param offset       the offset from 0 of all available previews the returned previews should
    *                     start
    * @param limit        the maximum number of previews that should be returned
-   * @param sortOrders   the sort orders to apply
    * @param filter       the filter to apply
    * @return a reactive stream of {@link SamplePreview} objects in the experiment. Exceptions are
    * provided as {@link Mono#error(Throwable)}.
@@ -1456,12 +1428,21 @@ public interface AsyncProjectService {
    * @since 1.12.0
    */
   Flux<SamplePreview> getSamplePreviews(String projectId, String experimentId, int offset,
-      int limit, List<SortOrder<SamplePreviewSortKey>> sortOrders, String filter);
-  class SortOrder<T> {
-   public SortOrder(T key, SortDirection direction) {
-     requireNonNull(key);
-     requireNonNull(direction);
-   }
+      int limit, SamplePreviewFilter filter);
+
+  Mono<Integer> countSamples(String projectId, String experimentId);
+
+
+  record SamplePreviewFilter(String sampleName, List<SortOrder<SamplePreviewSortKey>> sortOrders) {
+
+  }
+
+  record SortOrder<T>(T key, SortDirection direction) {
+
+    public SortOrder {
+      requireNonNull(key);
+      requireNonNull(direction);
+    }
   }
 
   enum SortDirection {
@@ -1470,11 +1451,13 @@ public interface AsyncProjectService {
 
   /**
    * Property sorting keys
+   *
    * @since
    */
   enum SamplePreviewSortKey {
     SAMPLE_ID, SAMPLE_NAME, ANALYSIS_METHOD
   }
+
 
   /**
    * Returns the total number of samples for an experiment in a given project.
@@ -1487,7 +1470,7 @@ public interface AsyncProjectService {
    * @throws AccessDeniedException  if the client has insufficient access rights
    * @since 1.12.0
    */
-  Mono<Integer> countSamples(String projectId, String experimentId)
+  Mono<Integer> countSamples(String projectId, String experimentId, SamplePreviewFilter filter)
       throws RequestFailedException, AccessDeniedException;
 
   /**
@@ -1609,7 +1592,8 @@ public interface AsyncProjectService {
    * @throws RequestFailedException if the request was not successfully executed
    * @since 1.10.0
    */
-  Flux<OntologyTerm> getTaxa(String value, int offset, int limit, List<life.qbic.application.commons.SortOrder> sorting);
+  Flux<OntologyTerm> getTaxa(String value, int offset, int limit,
+      List<life.qbic.application.commons.SortOrder> sorting);
 
   /**
    * Tries to find the exact matching {@link OntologyTerm} for a given {@link Curie}.
