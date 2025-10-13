@@ -158,6 +158,14 @@ public class ComponentDemo extends Div {
 
     var tabSheet = new FilterGridTabSheet(filterTab, filterTabContacts);
 
+    tabSheet.addPrimaryFeatureButtonListener(event -> {
+      log.info("Clicked on the primary feature button: click-count is " + event.getClickCount());
+    });
+
+    tabSheet.addPrimaryActionButtonListener(event -> {
+      log.info("Clicked on the primary action button: click-count is " + event.getClickCount());
+    });
+
     return new Div(tabSheet);
   }
 
