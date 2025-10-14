@@ -104,7 +104,11 @@ public final class FilterGridTabSheet extends TabSheet {
     public PrimaryActionButtonGroup(@NonNull Button actionButton, @NonNull Button featureButton) {
       this.actionButton = Objects.requireNonNull(actionButton);
       this.featureButton = Objects.requireNonNull(featureButton);
-      add(actionButton, featureButton);
+      var visualSeparator = new Div();
+      visualSeparator.addClassNames("border", "border-color-light");
+
+      add(actionButton, visualSeparator, featureButton);
+      addClassNames("flex-horizontal", "gap-04");
     }
 
     Registration addClickListenerPrimaryAction(

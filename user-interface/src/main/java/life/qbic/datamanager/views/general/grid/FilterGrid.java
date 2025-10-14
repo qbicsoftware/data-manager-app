@@ -16,6 +16,7 @@ import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.shared.Registration;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import life.qbic.datamanager.views.general.MultiSelectLazyLoadingGrid;
@@ -32,7 +33,7 @@ import org.springframework.lang.NonNull;
 public class FilterGrid<T> extends Div {
 
   public static final String FLEX_HORIZONTAL_CSS = "flex-horizontal";
-  public static final String GAP_02_CSS = "gap-02";
+  public static final String GAP_04_CSS = "gap-04";
   private final MultiSelectLazyLoadingGrid<T> grid;
   private final Div selectionDisplay;
   private final Div secondaryActionGroup;
@@ -73,14 +74,22 @@ public class FilterGrid<T> extends Div {
     textfield.setValueChangeMode(ValueChangeMode.EAGER);
 
     this.selectionDisplay = new SelectionNotification();
+    hideSelectionDisplay();
 
     this.secondaryActionGroup = new Div();
-    secondaryActionGroup.addClassNames(FLEX_HORIZONTAL_CSS, GAP_02_CSS);
+    secondaryActionGroup.addClassNames(FLEX_HORIZONTAL_CSS, GAP_04_CSS);
 
     var primaryGridControls = new Div();
-    primaryGridControls.add(textfield, selectionDisplay, secondaryActionGroup);
-    primaryGridControls.addClassNames(FLEX_HORIZONTAL_CSS, GAP_02_CSS,
-        "justify-content-space-between");
+
+    var spacer = new Div();
+    spacer.addClassName("spacer-horizontal-full-width");
+
+    var visualSeparator = new Div();
+    visualSeparator.addClassNames("border", "border-color-light");
+
+    primaryGridControls.add(textfield, selectionDisplay, spacer, secondaryActionGroup);
+    primaryGridControls.addClassNames(FLEX_HORIZONTAL_CSS, GAP_04_CSS);
+
 
     add(primaryGridControls, grid);
 
@@ -98,10 +107,12 @@ public class FilterGrid<T> extends Div {
     subMenu.addItem(layout);
     showShideMenu.addClassNames(FLEX_HORIZONTAL_CSS);
 
-    primaryGridControls.add(showShideMenu);
+    primaryGridControls.add(visualSeparator, showShideMenu);
     makeColumnsSortable(grid.getColumns());
 
     optimizeGrid(grid, 25);
+
+    addClassNames("flex-vertical", "gap-03");
   }
 
   private static void optimizeGrid(MultiSelectLazyLoadingGrid<?> grid, int pageSize) {
@@ -228,12 +239,20 @@ public class FilterGrid<T> extends Div {
   private void updateSelectionDisplay(Set<T> selectedItems) {
     selectionDisplay.removeAll();
     if (selectedItems == null || selectedItems.isEmpty()) {
-      selectionDisplay.setVisible(false);
+      hideSelectionDisplay();
     } else {
       selectionDisplay.add(
           createSelectionDisplayLabel(currentItemDisplayLabel, selectedItems.size()));
-      selectionDisplay.setVisible(true);
+      showSelectionDisplay();
     }
+  }
+
+  private void showSelectionDisplay() {
+    Optional.ofNullable(selectionDisplay).ifPresent(display -> display.setVisible(true));
+  }
+
+  private void hideSelectionDisplay() {
+    Optional.ofNullable(selectionDisplay).ifPresent(display -> display.setVisible(false));
   }
 
   private static String formatSelectionDisplayText(String itemLabel, int selectedItemsCount) {

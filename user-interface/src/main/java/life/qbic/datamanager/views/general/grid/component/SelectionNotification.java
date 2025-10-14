@@ -13,7 +13,14 @@ public class SelectionNotification extends Div {
 
   public SelectionNotification() {
     super();
-    addClassNames("background-color-contrast-5pct", "normal-body-text", "border");
+    addClassNames(
+        "background-color-contrast-5pct",
+        "text-body-color-80pct",
+        "background-contrast-5pct",
+        "normal-body-text",
+        "border",
+        "border-rounded-02"
+    );
   }
 
 

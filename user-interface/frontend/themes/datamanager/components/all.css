@@ -144,8 +144,6 @@ Heading
 .text-list-item-color  { color: var(--list-item-text-color); }
 .text-button-color  { color: var(--button-text-color); }
 
-
-
 /*endregion*/
 
 /*region Padding*/
@@ -678,6 +676,15 @@ Background-Styles
 
 
 /*endregion*/
+
+/***************************
+Spacers
+***************************/
+
+.spacer-horizontal-full-width {
+  flex: 1 1 auto
+}
+
 
 /*region Colors*/
 /***************************
