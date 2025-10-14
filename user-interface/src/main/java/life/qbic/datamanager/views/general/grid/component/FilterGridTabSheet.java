@@ -34,6 +34,8 @@ public final class FilterGridTabSheet extends TabSheet {
         mainFeatureButton("Main Feature"));
 
     setSuffixComponent(primaryActionGroup);
+    setSizeFull();
+    addClassName("filter-grid-tabsheet");
   }
 
   public Registration addPrimaryActionButtonListener(
@@ -66,16 +68,16 @@ public final class FilterGridTabSheet extends TabSheet {
 
   /** Untyped getter: returns the grid of the currently selected tab, if any. */
   private Optional<FilterGrid<?>> getSelectedFilterGrid() {
-    var sel = getSelectedTab();
-    return (sel instanceof FilterGridTab<?> ft)
-        ? java.util.Optional.of(ft.filterGrid())
+    var selectedTab = getSelectedTab();
+    return (selectedTab instanceof FilterGridTab<?> tab)
+        ? java.util.Optional.of(tab.filterGrid())
         : java.util.Optional.empty();
   }
 
   public <T> Optional<FilterGrid<T>> getSelectedFilterGrid(Class<T> expectedType) {
     return getSelectedFilterGrid()
         .filter(filterGrid -> expectedType.isAssignableFrom(filterGrid.type()))
-        .map(g -> g.as(expectedType));
+        .map(grid -> grid.as(expectedType));
   }
 
   /** Convenience: run action if the selected grid matches the type. Returns true if executed. */

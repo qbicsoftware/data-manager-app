@@ -61,7 +61,6 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   @Serial
   private static final long serialVersionUID = 2893730975944372088L;
   private final Span countSpan;
-  private final Grid<SamplePreview> sampleGrid;
   private final transient AsyncProjectService asyncProjectService;
   private final MessageSourceNotificationFactory messageFactory;
   private Context context;
@@ -74,15 +73,12 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     this.asyncProjectService = Objects.requireNonNull(asyncProjectService);
     addClassName("sample-details-component");
     //sampleGrid = createSampleGrid();
-    sampleGrid = new Grid<>();
-    Div content = new Div();
-    content.addClassName("sample-details-content");
+    addClassName("sample-details-content");
     countSpan = new Span();
     countSpan.addClassName("sample-count");
     setSampleCount(0);
 
     //content.add(countSpan, sampleGrid);
-    add(content);
 
     addAttachListener(event -> {
       uiHandle.bind(event.getUI());
@@ -185,34 +181,6 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     sampleGrid.addClassName("sample-grid");
     sampleGrid.setColumnReorderingAllowed(true);
     return sampleGrid;
-  }
-
-  public void onSearchFieldValueChanged(String searchValue) {
-    updateSampleGridDataProvider(context.projectId().orElseThrow(),
-        context.experimentId().orElseThrow(), searchValue);
-  }
-
-  private void updateSampleGridDataProvider(ProjectId projectId, ExperimentId experimentId,
-      String filter) {
-    sampleGrid.setItems(query -> {
-      List<SortOrder> sortOrders = query.getSortOrders().stream().map(
-              it -> new SortOrder(it.getSorted(), it.getDirection().equals(SortDirection.ASCENDING)))
-          .collect(Collectors.toList());
-      // if no order is provided by the grid order by last modified (least priority)
-      sortOrders.add(SortOrder.of("sampleCode").ascending());
-      return asyncProjectService.getSamplePreviewsOld(projectId.value(), experimentId.value(),
-              query.getOffset(), query.getLimit(), List.copyOf(sortOrders), filter)
-          .doOnError(RequestFailedException.class, this::handleRequestFailed).toStream();
-
-    });
-    sampleGrid.getLazyDataView().addItemCountChangeListener(
-        countChangeEvent -> setSampleCount((int) sampleGrid.getLazyDataView().getItems().count()));
-    sampleGrid.recalculateColumnWidths();
-  }
-
-  private void handleRequestFailed(RequestFailedException e) {
-    getUI().ifPresent(ui -> ui.access(
-        () -> messageFactory.toast("sample.query.failed", new Object[]{}, getLocale())));
   }
 
   /**

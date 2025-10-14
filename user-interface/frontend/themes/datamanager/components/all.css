@@ -1239,6 +1239,18 @@ vaadin-menu-bar-overlay vaadin-context-menu-item[theme~="no-prefix"] {
   --_prefix-width: 0px;    /* legacy/private var */
 }
 
+/* Only affect TabSheets with this class */
+vaadin-tab-sheet.filter-grid-tabsheet::part(content) {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+vaadin-tab-sheet.filter-grid-tabsheet::part(content) > * {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
 /*endregion*/
 
 /****************************

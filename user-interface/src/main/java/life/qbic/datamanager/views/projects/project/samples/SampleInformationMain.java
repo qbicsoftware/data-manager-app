@@ -95,7 +95,6 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   private final BatchDetailsComponent batchDetailsComponent;
   private final DownloadComponent downloadComponent;
   private final Div content = new Div();
-  private final TextField searchField = new TextField();
   private final Disclaimer noGroupsDefinedDisclaimer;
   private final Disclaimer noSamplesRegisteredDisclaimer;
   private final transient ProjectInformationService projectInformationService;
@@ -182,26 +181,8 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     titleField.setText("Register sample batch");
     titleField.addClassNames("title");
     content.add(titleField);
-    initSearchFieldAndButtonBar();
     add(content);
     content.addClassName("sample-main-content");
-  }
-
-  private void initSearchFieldAndButtonBar() {
-    searchField.setPlaceholder("Search");
-    searchField.setClearButtonVisible(true);
-    searchField.setSuffixComponent(VaadinIcon.SEARCH.create());
-    searchField.addClassNames("search-field");
-    searchField.setValueChangeMode(ValueChangeMode.LAZY);
-    searchField.addValueChangeListener(
-        event -> sampleDetailsComponent.onSearchFieldValueChanged((event.getValue())));
-    Button metadataDownloadButton = new Button("Download sample metadata",
-        event -> downloadSampleMetadata());
-    Span buttonBar = new Span(metadataDownloadButton);
-    buttonBar.addClassName("button-bar");
-    Span buttonsAndSearch = new Span(searchField, buttonBar);
-    buttonsAndSearch.addClassName("buttonAndField");
-    content.add(buttonsAndSearch);
   }
 
   private void downloadSampleMetadata() {
@@ -595,7 +576,6 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     content.setVisible(true);
     sampleDetailsComponent.setVisible(true);
     batchDetailsComponent.setVisible(true);
-    searchField.setValue("");
   }
 
   private void reloadBatchInformation() {

@@ -5,8 +5,6 @@ import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.Checkbox;
-import com.vaadin.flow.component.contextmenu.MenuItem;
-import com.vaadin.flow.component.contextmenu.SubMenu;
 import com.vaadin.flow.component.grid.Grid.Column;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -103,7 +101,7 @@ public class FilterGrid<T> extends Div {
     // Create checkboxes and fire column visibility changed event on checkbox tick
     var checkboxes = createCheckboxesFromColumns(grid.getColumns(), this);
 
-    // Prevent closing of the submenu on click
+    // Create menu items from checkboxes and keep menu open for multiple selection
     checkboxes.forEach(checkbox -> keepMenuOpenOnClick(subMenu.addItem(checkbox)));
 
     // Make the layout more compact by removing Vaadin's native hidden checkbox
@@ -117,6 +115,7 @@ public class FilterGrid<T> extends Div {
 
     add(primaryGridControls, grid);
     addClassNames("flex-vertical", "gap-03");
+    setSizeFull();
   }
 
   private static void optimizeGrid(MultiSelectLazyLoadingGrid<?> grid, int pageSize) {
@@ -128,16 +127,6 @@ public class FilterGrid<T> extends Div {
         .filter(c -> hasContent(c.getHeaderText()))
         .forEach(c -> c.setSortable(true));
     return columns;
-  }
-
-  private static <X> List<MenuItem> createColumnVisibilityToggles(@NonNull SubMenu menu, @NonNull List<Column<X>> columns) {
-    Objects.requireNonNull(menu);
-    Objects.requireNonNull(columns);
-    return columns.stream()
-        .map(Column::getHeaderText)
-        .filter(FilterGrid::hasContent)
-        .map(menu::addItem)
-        .toList();
   }
 
   private static <X> List<Checkbox> createCheckboxesFromColumns(@NonNull List<Column<X>> columns,
