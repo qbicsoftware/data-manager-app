@@ -134,6 +134,18 @@ Heading
   line-height: var(--lumo-line-height-m);
 }
 
+.text-heading-color { color: var(--heading-text-color); }
+.text-secondary-color { color: var(--secondary-text-color); }
+.text-tertiary-color { color: var(--tertiary-text-color); }
+.text-body-color  { color: var(--body-text-color); }
+.text-body-color-80pct { color: var(--shade-color-80pct); }
+.text-field-label-color  { color: var(--field-label-text-color); }
+.text-input-text-color  { color: var(--input-field-text-color); }
+.text-list-item-color  { color: var(--list-item-text-color); }
+.text-button-color  { color: var(--button-text-color); }
+
+
+
 /*endregion*/
 
 /*region Padding*/
@@ -661,7 +673,7 @@ Background-Styles
 }
 
 .background-contrast-10pct {
-  background-color: var(--background-contrast-color-10pct);
+  background-color: var(--background-color-10pct);
 }
 
 
@@ -730,7 +742,7 @@ Colors
 
 .list-item-drop-position {
   border-color: transparent;
-  background-color: var(--background-contrast-color-5pct);
+  background-color: var(--background-color-5pct);
   height: 2em;
 }
 
@@ -1067,6 +1079,10 @@ Icons
 .border-left-right {
   border: 1px solid var(--border-color-default);
   box-sizing: border-box;
+}
+
+.border.square{
+  border-radius: 0;
 }
 
 .composite-border {
