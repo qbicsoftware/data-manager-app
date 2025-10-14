@@ -1024,6 +1024,10 @@ Icons
   justify-content: flex-end;
 }
 
+.self-align-end {
+  align-self: end;
+}
+
 
 .flex-horizontal {
   display: flex;

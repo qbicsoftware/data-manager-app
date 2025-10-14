@@ -26,7 +26,7 @@ public final class FilterGridTab<T> extends Tab {
     badge.setTagColor(TagColor.CONTRAST);
     this.grid = Objects.requireNonNull(filterGrid);
     add(badge);
-    addClassNames("flex-horizontal", "gap-02");
+    addClassNames("flex-horizontal", "gap-02", "self-align-end");
   }
 
   public void setItemCount(int itemCount) {
