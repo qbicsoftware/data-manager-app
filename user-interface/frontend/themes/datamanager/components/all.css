@@ -707,6 +707,18 @@ Colors
 }
 /*endregion*/
 
+/*region Dimensions*/
+
+.height-06 {
+  height: var(--spacing-06);
+}
+
+.height-07 {
+  height: var(--spacing-07);
+}
+
+/*endregion*/
+
 /*region Behaviour*/
 
 .clickable {
@@ -1199,6 +1211,30 @@ Icons
 }
 
 /*endregion*/
+
+/* Hide the built-in prefix/checkmark gutter on flagged items */
+vaadin-menu-bar-overlay vaadin-menu-bar-item[theme~="no-prefix"]::part(prefix),
+vaadin-menu-bar-overlay vaadin-menu-bar-item[theme~="no-prefix"]::part(checkmark),
+vaadin-menu-bar-overlay vaadin-context-menu-item[theme~="no-prefix"]::part(prefix),
+vaadin-menu-bar-overlay vaadin-context-menu-item[theme~="no-prefix"]::part(checkmark) {
+  display: none;
+  width: 0;
+  margin: 0;
+  padding: 0;
+}
+
+/* Tighten left padding since there's no prefix now */
+vaadin-menu-bar-overlay vaadin-menu-bar-item[theme~="no-prefix"]::part(content),
+vaadin-menu-bar-overlay vaadin-context-menu-item[theme~="no-prefix"]::part(content) {
+  padding-inline-start: var(--lumo-space-s);
+}
+
+/* Extra safety: force the internal width var (some versions use this) */
+vaadin-menu-bar-overlay vaadin-menu-bar-item[theme~="no-prefix"],
+vaadin-menu-bar-overlay vaadin-context-menu-item[theme~="no-prefix"] {
+  --_prefix-width: 0px;    /* legacy/private var */
+}
+
 /*endregion*/
 
 /****************************

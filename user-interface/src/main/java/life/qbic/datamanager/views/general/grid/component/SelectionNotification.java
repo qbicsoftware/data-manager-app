@@ -14,12 +14,18 @@ public class SelectionNotification extends Div {
   public SelectionNotification() {
     super();
     addClassNames(
+        "flex-vertical",
+        "justify-center",
         "background-color-contrast-5pct",
         "text-body-color-80pct",
         "background-contrast-5pct",
         "normal-body-text",
         "border",
-        "border-rounded-02"
+        "border-color-none",
+        "rounded-02",
+        "padding-vertical-03",
+        "padding-horizontal-04",
+        "height-07"
     );
   }
 

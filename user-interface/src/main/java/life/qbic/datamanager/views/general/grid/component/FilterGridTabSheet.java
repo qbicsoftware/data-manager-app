@@ -105,7 +105,7 @@ public final class FilterGridTabSheet extends TabSheet {
       this.actionButton = Objects.requireNonNull(actionButton);
       this.featureButton = Objects.requireNonNull(featureButton);
       var visualSeparator = new Div();
-      visualSeparator.addClassNames("border", "border-color-light");
+      visualSeparator.addClassNames("border", "border-color-light", "height-07");
 
       add(actionButton, visualSeparator, featureButton);
       addClassNames("flex-horizontal", "gap-04");

@@ -5,6 +5,9 @@ import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.Checkbox;
+import com.vaadin.flow.component.contextmenu.ContextMenu;
+import com.vaadin.flow.component.contextmenu.MenuItem;
+import com.vaadin.flow.component.contextmenu.SubMenu;
 import com.vaadin.flow.component.grid.Grid.Column;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -85,10 +88,10 @@ public class FilterGrid<T> extends Div {
     spacer.addClassName("spacer-horizontal-full-width");
 
     var visualSeparator = new Div();
-    visualSeparator.addClassNames("border", "border-color-light");
+    visualSeparator.addClassNames("border", "border-color-light", "height-07");
 
     primaryGridControls.add(textfield, selectionDisplay, spacer, secondaryActionGroup);
-    primaryGridControls.addClassNames(FLEX_HORIZONTAL_CSS, GAP_04_CSS);
+    primaryGridControls.addClassNames(FLEX_HORIZONTAL_CSS, GAP_04_CSS, "flex-align-items-center");
 
 
     add(primaryGridControls, grid);
@@ -101,10 +104,16 @@ public class FilterGrid<T> extends Div {
     var showHideItem = showShideMenu.addItem("Show/Hide Columns");
     var subMenu = showHideItem.getSubMenu();
 
-    var layout = new VerticalLayout(
-        createCheckboxesFromColumns(grid.getColumns(), this).toArray(new Component[0]));
-    keepMenuOpenOnClick(layout);
-    subMenu.addItem(layout);
+    var checkboxes = createCheckboxesFromColumns(grid.getColumns(), this);
+    for (Checkbox checkbox : checkboxes) {
+      keepMenuOpenOnClick(subMenu.addItem(checkbox));
+      //keepMenuOpenOnClick(checkbox);
+    }
+
+    subMenu.getItems().forEach(item -> {
+      item.getElement().getThemeList().add("no-prefix"); //
+    });
+
     showShideMenu.addClassNames(FLEX_HORIZONTAL_CSS);
 
     primaryGridControls.add(visualSeparator, showShideMenu);
@@ -124,6 +133,16 @@ public class FilterGrid<T> extends Div {
         .filter(c -> hasContent(c.getHeaderText()))
         .forEach(c -> c.setSortable(true));
     return columns;
+  }
+
+  private static <X> List<MenuItem> createColumnVisibilityToggles(@NonNull SubMenu menu, @NonNull List<Column<X>> columns) {
+    Objects.requireNonNull(menu);
+    Objects.requireNonNull(columns);
+    return columns.stream()
+        .map(Column::getHeaderText)
+        .filter(FilterGrid::hasContent)
+        .map(menu::addItem)
+        .toList();
   }
 
   private static <X> List<Checkbox> createCheckboxesFromColumns(@NonNull List<Column<X>> columns,
@@ -257,9 +276,9 @@ public class FilterGrid<T> extends Div {
 
   private static String formatSelectionDisplayText(String itemLabel, int selectedItemsCount) {
     if (selectedItemsCount <= 1) {
-      return "Currently %d %s is selected.".formatted(selectedItemsCount, itemLabel);
+      return "Currently %d %s is selected".formatted(selectedItemsCount, itemLabel);
     }
-    return "Currently %d %ss are selected.".formatted(selectedItemsCount, itemLabel);
+    return "Currently %d %ss are selected".formatted(selectedItemsCount, itemLabel);
   }
 
   private static Div createSelectionDisplayLabel(String itemLabel, int selectedItemsCount) {
