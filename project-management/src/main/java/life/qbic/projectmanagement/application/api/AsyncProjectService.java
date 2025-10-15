@@ -1421,6 +1421,7 @@ public interface AsyncProjectService {
    * @param offset       the offset from 0 of all available previews the returned previews should
    *                     start
    * @param limit        the maximum number of previews that should be returned
+
    * @param filter       the filter to apply
    * @return a reactive stream of {@link SamplePreview} objects in the experiment. Exceptions are
    * provided as {@link Mono#error(Throwable)}.
@@ -1455,7 +1456,16 @@ public interface AsyncProjectService {
    * @since
    */
   enum SamplePreviewSortKey {
-    SAMPLE_ID, SAMPLE_NAME, ANALYSIS_METHOD
+    SAMPLE_ID,
+    SAMPLE_NAME,
+    BIOLOGICAL_REPLICATE,
+    BATCH,
+    CONDITION,
+    SPECIES,
+    ANALYTE,
+    COMMENT,
+    SPECIMEN,
+    ANALYSIS_METHOD
   }
 
 

@@ -9,6 +9,7 @@ import life.qbic.application.commons.Result;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.SamplePreviewFilter;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
@@ -17,6 +18,7 @@ import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import life.qbic.projectmanagement.domain.repository.SampleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.lang.NonNull;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
@@ -147,7 +149,11 @@ public class SampleInformationService {
    * @param sortOrders the sort orders to apply
    * @return the results in the provided range
    * @since 1.10.0
+   * @deprecated please use
+   * {@link SampleInformationService#querySamplePreview(String, String, int, int,
+   * SamplePreviewFilter)} to use the typed filter.
    */
+  @Deprecated(since = "1.12.0", forRemoval = true)
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
   public List<SamplePreview> queryPreview(ProjectId projectId, ExperimentId experimentId,
       int offset, int limit,
@@ -159,6 +165,16 @@ public class SampleInformationService {
         sortOrders, filter);
     // the list must be modifiable for spring security to filter it
     return new ArrayList<>(previewList);
+  }
+
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
+  public List<SamplePreview> querySamplePreview(@NonNull String projectId,
+      @NonNull String experimentId, int offset, int limit, @NonNull SamplePreviewFilter filter) {
+    // returned by JPA -> UnmodifiableRandomAccessList
+    return samplePreviewLookup.queryByExperimentId(experimentId,
+        offset,
+        limit,
+        filter);
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")

@@ -52,6 +52,7 @@ import life.qbic.projectmanagement.domain.repository.ProjectRepository.ProjectNo
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.lang.NonNull;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -566,9 +567,14 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   @Override
   public Flux<SamplePreview> getSamplePreviews(String projectId, String experimentId, int offset,
       int limit, SamplePreviewFilter filter) {
-    return fetchSamplePreviews(projectId, experimentId, offset, limit,
-        filter.sortOrders().stream().map(AsyncProjectServiceImpl::toSortOrderFromSamplePreview)
-            .toList(), filter.sampleName());
+
+    SecurityContext securityContext = SecurityContextHolder.getContext();
+    return applySecurityContextMany(Flux.fromIterable(
+        sampleInfoService.querySamplePreview(projectId, experimentId, offset, limit, filter)))
+        .subscribeOn(scheduler)
+        .contextWrite(reactiveSecurity(securityContext))
+        .onErrorMap(cause ->mapToAPIException(cause, "Request for sample previews failed"))
+        .retryWhen(defaultRetryStrategy());
   }
 
   @Override
