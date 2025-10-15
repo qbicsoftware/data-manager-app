@@ -39,6 +39,8 @@ public class FilterGrid<T> extends Div {
 
   private static final int DEFAULT_QUERY_SIZE = 25;
 
+  private static final int MAX_QUERY_SIZE = 200;
+
   private static final String DEFAULT_ITEM_DISPLAY_LABEL = "item";
 
   private String currentItemDisplayLabel = DEFAULT_ITEM_DISPLAY_LABEL;
@@ -121,9 +123,12 @@ public class FilterGrid<T> extends Div {
   }
 
   private static void optimizeGrid(MultiSelectLazyLoadingGrid<?> grid, int pageSize) {
-    grid.setPageSize(pageSize);
-    grid.getLazyDataView().setItemCountEstimate(pageSize * 10);
-    grid.getLazyDataView().setItemCountEstimateIncrease(pageSize * 2);
+    var computedPageSize = Math.clamp(20, pageSize, MAX_QUERY_SIZE);
+    grid.setPageSize(computedPageSize);
+    // A sensitive count estimate provides faster initial rendering of the grid
+    grid.getLazyDataView().setItemCountEstimate(computedPageSize * 10);
+    // A sensitive estimate increase value can increase scrolling speed for the user
+    grid.getLazyDataView().setItemCountEstimateIncrease(computedPageSize * 2);
   }
 
   private static <X> List<Column<X>> makeColumnsSortable(List<Column<X>> columns) {
