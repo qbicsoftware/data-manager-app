@@ -50,6 +50,7 @@ import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectOverview;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.AccessDeniedException;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectCode;
 import life.qbic.projectmanagement.application.api.fair.DigitalObject;
 import life.qbic.projectmanagement.application.batch.BatchInformationService;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ExperimentReference;
@@ -527,6 +528,13 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     }
     ExperimentId parsedExperimentId = ExperimentId.parse(experimentId);
     this.context = context.with(parsedExperimentId);
+
+
+    this.context = context.withProjectCode(asyncProjectService.getProjectCode(projectID)
+        .blockOptional()
+        .map(ProjectCode::value)
+        .orElse(null));
+
     setBatchAndSampleInformation();
   }
 

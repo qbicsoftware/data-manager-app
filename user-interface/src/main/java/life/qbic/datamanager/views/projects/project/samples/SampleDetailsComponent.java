@@ -1,26 +1,30 @@
 package life.qbic.datamanager.views.projects.project.samples;
 
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.data.provider.DataProvider;
 import com.vaadin.flow.data.provider.QuerySortOrder;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
+import java.io.InputStream;
 import java.io.Serial;
 import java.io.Serializable;
+import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import life.qbic.application.commons.ApplicationException;
+import life.qbic.application.commons.FileNameFormatter;
+import life.qbic.datamanager.files.export.download.DownloadStreamProvider;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.UiHandle;
 import life.qbic.datamanager.views.general.MultiSelectLazyLoadingGrid;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
+import life.qbic.datamanager.views.general.download.DownloadComponent;
 import life.qbic.datamanager.views.general.grid.Filter;
 import life.qbic.datamanager.views.general.grid.FilterGrid;
 import life.qbic.datamanager.views.general.grid.component.FilterGridTab;
@@ -36,7 +40,9 @@ import life.qbic.projectmanagement.domain.model.batch.Batch;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
+import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import org.springframework.lang.NonNull;
+import org.springframework.util.MimeType;
 import reactor.core.publisher.Mono;
 
 /**
@@ -54,25 +60,19 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
 
   @Serial
   private static final long serialVersionUID = 2893730975944372088L;
-  private final Span countSpan;
   private final transient AsyncProjectService asyncProjectService;
   private final MessageSourceNotificationFactory messageFactory;
-  private Context context;
 
   private final UiHandle uiHandle = new UiHandle();
+
+  private final DownloadComponent downloadComponent = new DownloadComponent();
 
   public SampleDetailsComponent(AsyncProjectService asyncProjectService,
       MessageSourceNotificationFactory messageFactory) {
     this.messageFactory = Objects.requireNonNull(messageFactory);
     this.asyncProjectService = Objects.requireNonNull(asyncProjectService);
-    addClassName("sample-details-component");
-    //sampleGrid = createSampleGrid();
-    addClassName("sample-details-content");
-    countSpan = new Span();
-    countSpan.addClassName("sample-count");
-    setSampleCount(0);
-
-    //content.add(countSpan, sampleGrid);
+    add(downloadComponent);
+    addClassNames("sample-details-component", "sample-details-content");
 
     addAttachListener(event -> {
       uiHandle.bind(event.getUI());
@@ -111,7 +111,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     return tagCollection;
   }
 
-  private static MultiSelectLazyLoadingGrid<SamplePreview> createSampleGrid() {
+  private static MultiSelectLazyLoadingGrid<SamplePreview> createSamplePreviewGrid() {
     MultiSelectLazyLoadingGrid<SamplePreview> sampleGrid = new MultiSelectLazyLoadingGrid<>();
     sampleGrid.addColumn(SamplePreview::sampleCode)
         .setHeader("Sample ID")
@@ -183,21 +183,85 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
    * @param context the context in which the user is.
    */
   public void setContext(Context context) {
-    if (context.experimentId().isEmpty()) {
-      throw new ApplicationException("no experiment id in context " + context);
-    }
-    if (context.projectId().isEmpty()) {
-      throw new ApplicationException("no project id in context " + context);
-    }
-    this.context = context;
+    Objects.requireNonNull(context);
 
-    // FIXME remove before merge
     var projectId = context.projectId().orElseThrow().value();
     var experimentId = context.experimentId().orElseThrow().value();
+    var projectCode = context.projectCode().orElseThrow();
 
-    var multiSelectGrid = createSampleGrid();
+    var multiSelectGrid = createSamplePreviewGrid();
 
-    var filterGrid = new FilterGrid<>(SamplePreview.class, multiSelectGrid,
+    var filterGrid = createFilterGrid(multiSelectGrid, projectId, experimentId);
+
+    var filterTab = new FilterGridTab<>("Samples", filterGrid);
+    var filterTabSheet = new FilterGridTabSheet(filterTab);
+
+    filterTabSheet.setCaptionPrimaryAction("Register Samples");
+    filterTabSheet.setCaptionFeatureAction("Export");
+    filterTabSheet.hidePrimaryActionButton();
+
+    filterTabSheet.addPrimaryFeatureButtonListener(
+        ignored -> filterTabSheet.whenSelectedGrid(SamplePreview.class,
+            grid -> {
+              if (grid != null) {
+                var selectedSamples = grid.selectedElements();
+                if (selectedSamples.isEmpty()) {
+                  messageFactory.toast("sample.no-sample-selected", new Object[]{}, getLocale())
+                      .open();
+                  return;
+                }
+                triggerSampleMetadataDownload(selectedSamples, projectId, experimentId,
+                    projectCode);
+              }
+            }));
+    add(filterTabSheet);
+
+    // Update sample counter badge
+    asyncProjectService.countSamples(projectId, experimentId)
+        .onErrorResume(error -> Mono.just(0))
+        .subscribe(count -> uiHandle.onUiAndPush(() -> filterTab.setItemCount(count)));
+  }
+
+  private void triggerSampleMetadataDownload(
+      @NonNull Set<SamplePreview> samplePreviews,
+      String projectId,
+      String experimentId,
+      String projectCode) {
+
+    var pendingTaskToast = messageFactory.pendingTaskToast("sample.fetching-metadata",
+        new Object[]{samplePreviews.size()}, getLocale());
+    pendingTaskToast.open();
+    asyncProjectService.sampleInformationTemplate(projectId, experimentId, samplePreviews.stream()
+                .map(SamplePreview::sampleId)
+                .map(SampleId::value).
+                collect(Collectors.toSet()),
+            MimeType.valueOf("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+        .subscribe(digitalObject -> {
+          uiHandle.onUiAndPush(() -> {
+            pendingTaskToast.close();
+            messageFactory.toast("sample.metadata-fetched", new Object[]{samplePreviews.size()},
+                getLocale()).open();
+            downloadComponent.trigger(new DownloadStreamProvider() {
+              @Override
+              public String getFilename() {
+                return FileNameFormatter.formatWithTimestampedSimple(LocalDate.now(), projectCode,
+                    "sample_metadata", "xlsx");
+              }
+
+              @Override
+              public InputStream getStream() {
+                return digitalObject.content();
+              }
+            });
+          });
+        });
+  }
+
+  private FilterGrid<SamplePreview> createFilterGrid(
+      MultiSelectLazyLoadingGrid<SamplePreview> multiSelectGrid,
+      String projectId,
+      String experimentId) {
+    return new FilterGrid<>(SamplePreview.class, multiSelectGrid,
         DataProvider.fromFilteringCallbacks(query -> {
           var filter = query.getFilter().orElse(new SampleNameFilter(""));
           var offset = query.getOffset();
@@ -220,49 +284,36 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
       filter.setSearchTerm(term);
       return filter;
     });
-
-    var filterTab = new FilterGridTab<>("Samples", filterGrid);
-    var filterTabSheet = new FilterGridTabSheet(filterTab);
-
-    filterTabSheet.setCaptionPrimaryAction("Register Samples");
-    filterTabSheet.setCaptionFeatureAction("Export");
-    filterTabSheet.hidePrimaryActionButton();
-
-    filterTabSheet.addPrimaryFeatureButtonListener(
-        ignored -> filterTabSheet.whenSelectedGrid(SamplePreview.class,
-            FilterGrid::selectedElements));
-
-    removeAll();
-    add(filterTabSheet);
-
-    // Update sample counter badge
-    asyncProjectService.countSamples(projectId, experimentId)
-        .onErrorResume(error -> Mono.just(0))
-        .subscribe(count -> uiHandle.onUiAndPush(() -> filterTab.setItemCount(count)));
   }
 
   private static List<SortOrder<SamplePreviewSortKey>> sortOrdersToApi(
-      List<com.vaadin.flow.data.provider.QuerySortOrder> uiSortOrders) throws IllegalArgumentException{
+      List<com.vaadin.flow.data.provider.QuerySortOrder> uiSortOrders)
+      throws IllegalArgumentException {
     return uiSortOrders.stream()
         .map(SampleDetailsComponent::sortOrdersToApi)
         .toList();
   }
 
-  private static SortOrder<SamplePreviewSortKey> sortOrdersToApi(QuerySortOrder uiSortOrder) throws IllegalArgumentException{
+  private static SortOrder<SamplePreviewSortKey> sortOrdersToApi(QuerySortOrder uiSortOrder)
+      throws IllegalArgumentException {
     var uiSortKeyValue = uiSortOrder.getSorted();
-    var uiSortKey = UiSortKey.from(uiSortKeyValue).orElseThrow(() -> new IllegalArgumentException("No ui sort key provided for value: " + uiSortKeyValue));
+    var uiSortKey = UiSortKey.from(uiSortKeyValue).orElseThrow(
+        () -> new IllegalArgumentException("No ui sort key provided for value: " + uiSortKeyValue));
     var apiKey = SORT_KEY_MAP.get(uiSortKey);
-    if  (apiKey == null) {
+    if (apiKey == null) {
       throw new IllegalArgumentException("No api key provided for value: " + uiSortKey);
     }
-    return new SortOrder<>(apiKey,sortDirectionToApi(uiSortOrder.getDirection()));
+    return new SortOrder<>(apiKey, sortDirectionToApi(uiSortOrder.getDirection()));
   }
 
-  private static SortDirection sortDirectionToApi(com.vaadin.flow.data.provider.SortDirection uiSortDirection) {
-    return uiSortDirection == com.vaadin.flow.data.provider.SortDirection.ASCENDING ? SortDirection.ASC : SortDirection.DESC;
+  private static SortDirection sortDirectionToApi(
+      com.vaadin.flow.data.provider.SortDirection uiSortDirection) {
+    return uiSortDirection == com.vaadin.flow.data.provider.SortDirection.ASCENDING
+        ? SortDirection.ASC : SortDirection.DESC;
   }
 
-  private static final Map<UiSortKey, SamplePreviewSortKey> SORT_KEY_MAP = new EnumMap<>(UiSortKey.class);
+  private static final Map<UiSortKey, SamplePreviewSortKey> SORT_KEY_MAP = new EnumMap<>(
+      UiSortKey.class);
 
   static {
     SORT_KEY_MAP.put(UiSortKey.SAMPLE_ID, SamplePreviewSortKey.SAMPLE_ID);
@@ -277,7 +328,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     SORT_KEY_MAP.put(UiSortKey.COMMENT, SamplePreviewSortKey.COMMENT);
   }
 
-  enum UiSortKey {
+  private enum UiSortKey {
     SAMPLE_ID("sampleId"),
     SAMPLE_NAME("sampleName"),
     BIOLOGICAL_REPLICATE("biologicalReplicate"),
@@ -338,9 +389,4 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
       List<SortOrder<SamplePreviewSortKey>> sortOrders) {
     return new SamplePreviewFilter(filterUI.searchTerm(), sortOrders);
   }
-
-  private void setSampleCount(int i) {
-    countSpan.setText(i + " samples");
-  }
-
 }

@@ -289,11 +289,11 @@ public class FilterGrid<T> extends Div {
     }
   }
 
-  public Set<T> selectedElements() {
+  public @NonNull Set<T> selectedElements() {
     return grid.getSelectedItems();
   }
 
-  public Class<T> type() {
+  public @NonNull Class<T> type() {
     return type;
   }
 
