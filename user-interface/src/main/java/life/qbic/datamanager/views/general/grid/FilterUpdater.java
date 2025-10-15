@@ -1,14 +1,21 @@
 package life.qbic.datamanager.views.general.grid;
+
 /**
- * <b><class short description - 1 Line!></b>
+ * Implementations handle the creation of a new filter based on a given one and a search term.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.12.0
  */
 @FunctionalInterface
 public interface FilterUpdater<T> {
 
+  /**
+   * Creates a new filter instance based on the old one and a search term.
+   *
+   * @param oldFilter the previous filter
+   * @param term      the search term
+   * @return a filter of type {@code T}.
+   * @since 1.12.0
+   */
   Filter<T> withSearchTerm(Filter<T> oldFilter, String term);
 
 }

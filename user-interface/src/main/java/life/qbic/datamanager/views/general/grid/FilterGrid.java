@@ -37,6 +37,8 @@ public class FilterGrid<T> extends Div {
   private final Div selectionDisplay;
   private final Div secondaryActionGroup;
 
+  private static final int DEFAULT_QUERY_SIZE = 25;
+
   private static final String DEFAULT_ITEM_DISPLAY_LABEL = "item";
 
   private String currentItemDisplayLabel = DEFAULT_ITEM_DISPLAY_LABEL;
@@ -111,7 +113,7 @@ public class FilterGrid<T> extends Div {
 
     primaryGridControls.add(visualSeparator, showShideMenu);
     makeColumnsSortable(grid.getColumns());
-    optimizeGrid(grid, 25);
+    optimizeGrid(grid, DEFAULT_QUERY_SIZE);
 
     add(primaryGridControls, grid);
     addClassNames("flex-vertical", "gap-03");
@@ -120,6 +122,8 @@ public class FilterGrid<T> extends Div {
 
   private static void optimizeGrid(MultiSelectLazyLoadingGrid<?> grid, int pageSize) {
     grid.setPageSize(pageSize);
+    grid.getLazyDataView().setItemCountEstimate(pageSize * 10);
+    grid.getLazyDataView().setItemCountEstimateIncrease(pageSize * 2);
   }
 
   private static <X> List<Column<X>> makeColumnsSortable(List<Column<X>> columns) {
