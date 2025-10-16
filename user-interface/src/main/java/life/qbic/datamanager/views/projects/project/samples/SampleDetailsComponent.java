@@ -67,8 +67,10 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
 
   private final DownloadComponent downloadComponent = new DownloadComponent();
 
-  public SampleDetailsComponent(AsyncProjectService asyncProjectService,
-      MessageSourceNotificationFactory messageFactory) {
+  public SampleDetailsComponent(
+      @NonNull AsyncProjectService asyncProjectService,
+      @NonNull MessageSourceNotificationFactory messageFactory,
+      @NonNull Context context) {
     this.messageFactory = Objects.requireNonNull(messageFactory);
     this.asyncProjectService = Objects.requireNonNull(asyncProjectService);
     add(downloadComponent);
@@ -81,6 +83,44 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     addDetachListener(ignored -> {
       uiHandle.unbind();
     });
+
+    Objects.requireNonNull(context);
+
+    var projectId = context.projectId().orElseThrow().value();
+    var experimentId = context.experimentId().orElseThrow().value();
+    var projectCode = context.projectCode().orElseThrow();
+
+    var multiSelectGrid = createSamplePreviewGrid();
+
+    var filterGrid = createFilterGrid(multiSelectGrid, projectId, experimentId);
+
+    var filterTab = new FilterGridTab<>("Samples", filterGrid);
+    var filterTabSheet = new FilterGridTabSheet(filterTab);
+
+    filterTabSheet.setCaptionPrimaryAction("Register Samples");
+    filterTabSheet.setCaptionFeatureAction("Export");
+    filterTabSheet.hidePrimaryActionButton();
+
+    filterTabSheet.addPrimaryFeatureButtonListener(
+        ignored -> filterTabSheet.whenSelectedGrid(SamplePreview.class,
+            grid -> {
+              if (grid != null) {
+                var selectedSamples = grid.selectedElements();
+                if (selectedSamples.isEmpty()) {
+                  messageFactory.toast("sample.no-sample-selected", new Object[]{}, getLocale())
+                      .open();
+                  return;
+                }
+                triggerSampleMetadataDownload(selectedSamples, projectId, experimentId,
+                    projectCode);
+              }
+            }));
+    add(filterTabSheet);
+
+    // Update sample counter badge
+    asyncProjectService.countSamples(projectId, experimentId)
+        .onErrorResume(error -> Mono.just(0))
+        .subscribe(count -> uiHandle.onUiAndPush(() -> filterTab.setItemCount(count)));
   }
 
   private static ComponentRenderer<Div, SamplePreview> createConditionRenderer() {
@@ -175,51 +215,6 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     sampleGrid.addClassName("sample-grid");
     sampleGrid.setColumnReorderingAllowed(true);
     return sampleGrid;
-  }
-
-  /**
-   * Propagates the context to internal components.
-   *
-   * @param context the context in which the user is.
-   */
-  public void setContext(Context context) {
-    Objects.requireNonNull(context);
-
-    var projectId = context.projectId().orElseThrow().value();
-    var experimentId = context.experimentId().orElseThrow().value();
-    var projectCode = context.projectCode().orElseThrow();
-
-    var multiSelectGrid = createSamplePreviewGrid();
-
-    var filterGrid = createFilterGrid(multiSelectGrid, projectId, experimentId);
-
-    var filterTab = new FilterGridTab<>("Samples", filterGrid);
-    var filterTabSheet = new FilterGridTabSheet(filterTab);
-
-    filterTabSheet.setCaptionPrimaryAction("Register Samples");
-    filterTabSheet.setCaptionFeatureAction("Export");
-    filterTabSheet.hidePrimaryActionButton();
-
-    filterTabSheet.addPrimaryFeatureButtonListener(
-        ignored -> filterTabSheet.whenSelectedGrid(SamplePreview.class,
-            grid -> {
-              if (grid != null) {
-                var selectedSamples = grid.selectedElements();
-                if (selectedSamples.isEmpty()) {
-                  messageFactory.toast("sample.no-sample-selected", new Object[]{}, getLocale())
-                      .open();
-                  return;
-                }
-                triggerSampleMetadataDownload(selectedSamples, projectId, experimentId,
-                    projectCode);
-              }
-            }));
-    add(filterTabSheet);
-
-    // Update sample counter badge
-    asyncProjectService.countSamples(projectId, experimentId)
-        .onErrorResume(error -> Mono.just(0))
-        .subscribe(count -> uiHandle.onUiAndPush(() -> filterTab.setItemCount(count)));
   }
 
   private void triggerSampleMetadataDownload(

@@ -2,6 +2,7 @@ package life.qbic.datamanager.views.projects.project.samples;
 
 import static java.util.Objects.requireNonNull;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
@@ -92,7 +93,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   private final transient ExperimentInformationService experimentInformationService;
   private final transient SampleInformationService sampleInformationService;
   private final transient DeletionService deletionService;
-  private final transient SampleDetailsComponent sampleDetailsComponent;
+  private transient Component sampleDetailsComponent;
   private final BatchDetailsComponent batchDetailsComponent;
   private final DownloadComponent downloadComponent;
   private final Div content = new Div();
@@ -131,8 +132,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
         "SampleInformationService cannot be null");
     this.deletionService = requireNonNull(deletionService,
         "DeletionService cannot be null");
-    this.sampleDetailsComponent = new SampleDetailsComponent(requireNonNull(asyncProjectService),
-        requireNonNull(messageSourceNotificationFactory));
+    this.sampleDetailsComponent = new Div();
     this.batchDetailsComponent = new BatchDetailsComponent(requireNonNull(batchInformationService),
         requireNonNull(clientDetailsProvider));
     this.projectInformationService = projectInformationService;
@@ -591,7 +591,9 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   }
 
   private void reloadSampleInformation() {
-    sampleDetailsComponent.setContext(context);
+    remove(sampleDetailsComponent);
+    sampleDetailsComponent = new SampleDetailsComponent(asyncProjectService, messageFactory, context);
+    add(sampleDetailsComponent);
   }
 
   private static class HandledException extends RuntimeException {
