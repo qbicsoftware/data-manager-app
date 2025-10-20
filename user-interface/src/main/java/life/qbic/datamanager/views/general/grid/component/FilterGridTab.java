@@ -8,11 +8,9 @@ import life.qbic.datamanager.views.general.Tag.TagColor;
 import life.qbic.datamanager.views.general.grid.FilterGrid;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * A specialized tab with tab label, count badge and a filter grid component.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.12.0
  */
 public final class FilterGridTab<T> extends Tab {
 
@@ -29,14 +27,33 @@ public final class FilterGridTab<T> extends Tab {
     addClassNames("flex-horizontal", "gap-02", "self-align-end");
   }
 
+  /**
+   * Sets the item count that is displayed next to the label as indicator about the total amount of
+   * items available.
+   *
+   * @param itemCount the current item count
+   * @since 1.12.0
+   */
   public void setItemCount(int itemCount) {
     this.badge.setText(String.valueOf(itemCount));
   }
 
+  /**
+   * Returns the contained filter grid.
+   *
+   * @return the filter grid that is assigned to the tab.
+   * @since 1.12.0
+   */
   public FilterGrid<T> filterGrid() {
     return grid;
   }
 
+  /**
+   * Convenience API for the grid's type.
+   *
+   * @return the {@link Class} of the assigned grid's type
+   * @since 1.12.0
+   */
   public Class<T> modelType() {
     return grid.type();
   }

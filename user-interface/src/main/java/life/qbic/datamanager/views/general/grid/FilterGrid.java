@@ -18,18 +18,27 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import life.qbic.datamanager.views.general.MultiSelectLazyLoadingGrid;
 import life.qbic.datamanager.views.general.grid.component.SelectionNotification;
 import org.springframework.lang.NonNull;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * A filter grid comes with some improvements for the user and decorates a plain
+ * {@link MultiSelectLazyLoadingGrid}.
+ * <p>
+ * Some of the improvements are:
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <ul>
+ *   <li>search input field - to look-up for certain terms</li>
+ *   <li>show/hide column - a menu to toggle column visibility</li>
+ *   <li>secondary action group - to set up a contextual actions for the user that are semantically linked to the selected items</li>
+ *   <li>selected items display - a visual indicator about how many items are selected</li>
+ * </ul>
  *
- * @since <version tag>
+ * @since 1.12.0
  */
-public class FilterGrid<T> extends Div {
+public final class FilterGrid<T> extends Div {
 
   public static final String FLEX_HORIZONTAL_CSS = "flex-horizontal";
   public static final String GAP_04_CSS = "gap-04";
@@ -65,16 +74,17 @@ public class FilterGrid<T> extends Div {
     grid.setDataProvider(dataProvider);
     dataProvider.setFilter(currentFilter);
 
-    var textfield = new TextField();
-    textfield.setSuffixComponent(VaadinIcon.SEARCH.create());
-    textfield.setPlaceholder("Filter");
-    textfield.addValueChangeListener(e ->
+    var searchField = new TextField();
+    searchField.setSuffixComponent(VaadinIcon.SEARCH.create());
+    searchField.setPlaceholder("Search items");
+    searchField.addValueChangeListener(e ->
     {
       currentFilter = filterUpdater.withSearchTerm(currentFilter, e.getValue());
       dataProvider.setFilter(currentFilter);
       dataProvider.refreshAll();
     });
-    textfield.setValueChangeMode(ValueChangeMode.EAGER);
+    searchField.setValueChangeMode(ValueChangeMode.EAGER);
+    searchField.setValueChangeTimeout(250); // Prevents refreshAll() burst during typing
 
     this.selectionDisplay = new SelectionNotification();
     hideSelectionDisplay();
@@ -87,10 +97,11 @@ public class FilterGrid<T> extends Div {
     var spacer = new Div();
     spacer.addClassName("spacer-horizontal-full-width");
 
+    // A vertical line the help separate secondary action group and show/hide button
     var visualSeparator = new Div();
     visualSeparator.addClassNames("border", "border-color-light", "height-07");
 
-    primaryGridControls.add(textfield, selectionDisplay, spacer, secondaryActionGroup);
+    primaryGridControls.add(searchField, selectionDisplay, spacer, secondaryActionGroup);
     primaryGridControls.addClassNames(FLEX_HORIZONTAL_CSS, GAP_04_CSS, "flex-align-items-center");
 
     fireOnSelectedItems();
@@ -123,7 +134,7 @@ public class FilterGrid<T> extends Div {
   }
 
   private static void optimizeGrid(MultiSelectLazyLoadingGrid<?> grid, int pageSize) {
-    var computedPageSize = Math.clamp(pageSize, 100 , MAX_QUERY_SIZE);
+    var computedPageSize = Math.clamp(pageSize, 100, MAX_QUERY_SIZE);
     grid.setPageSize(computedPageSize);
     // A sensitive count estimate provides faster initial rendering of the grid
     grid.getLazyDataView().setItemCountEstimate(computedPageSize * 10);
@@ -180,9 +191,19 @@ public class FilterGrid<T> extends Div {
     });
   }
 
-  /** Safe downcast after runtime check. */
+  /**
+   * A safe downcast of the grid to the wanted type, if the wanted type is indeed assignable from
+   * the current {@link FilterGrid} type.
+   *
+   * @param wanted the wanted target class of the type the filter grid shall be
+   * @param <X>    the type of the filter grid
+   * @return a type converted version of the filter grid
+   * @throws IllegalArgumentException in case the wanted class is not assignable from the filter
+   *                                  grid's type.
+   * @since 1.12.0
+   */
   @SuppressWarnings("unchecked")
-  public <X> FilterGrid<X> as(Class<X> wanted) {
+  public <X> FilterGrid<X> as(Class<X> wanted) throws IllegalArgumentException {
     if (wanted.isAssignableFrom(type)) {
       return (FilterGrid<X>) this;
     }
@@ -190,8 +211,20 @@ public class FilterGrid<T> extends Div {
         "Grid type %s is not assignable to %s".formatted(type.getName(), wanted.getName()));
   }
 
+  /**
+   * Takes a consumer and calls {@link Consumer#accept(Object)} if the {@code wanted} class is
+   * assignable from the current filter grid type ({@link FilterGrid#type()}).
+   *
+   * @param wanted the wanted class to assign the filter grid to and pass to the consumer
+   * @param action the consumer action
+   * @param <X>    the class type of the instance of interest
+   * @return {@code true}, if the assignment was successful and the grid has beed passed to the
+   * consumer, else {@code false}
+   * @since 1.12.0
+   */
   @SuppressWarnings("unchecked")
-  public <X> boolean withType(Class<X> wanted, Consumer<? super FilterGrid<X>> action) {
+  public <X> boolean withType(@NonNull Class<X> wanted,
+      @NonNull Consumer<? super FilterGrid<X>> action) {
     Objects.requireNonNull(wanted);
     Objects.requireNonNull(action);
     if (wanted.isAssignableFrom(type)) {
@@ -201,9 +234,24 @@ public class FilterGrid<T> extends Div {
     return false;
   }
 
+  /**
+   * Takes a function that consumes a filter grid of type {@code X} and returns an optional of type
+   * {@code R}.
+   * <p>
+   * The passed function is only applied to the filter grid, if the passed class {@code wanted} is
+   * assignable from the filter grid's type ({@link FilterGrid#type}).
+   *
+   * @param wanted the class of type {@code X} that the filter grid shall be assignable from to
+   *               execute the function
+   * @param fn     the function to apply that takes the filter grid as argument
+   * @param <X>    the type of the filter grid
+   * @param <R>    the type of the returned output
+   * @return an optional of type {@code R}
+   * @since 1.12.0
+   */
   @SuppressWarnings("unchecked")
-  public <X, R> java.util.Optional<R> mapType(Class<X> wanted,
-      java.util.function.Function<? super FilterGrid<X>, ? extends R> fn) {
+  public <X, R> java.util.Optional<R> mapType(@NonNull Class<X> wanted,
+      @NonNull Function<? super FilterGrid<X>, ? extends R> fn) {
     java.util.Objects.requireNonNull(wanted);
     java.util.Objects.requireNonNull(fn);
     if (wanted.isAssignableFrom(type)) {
@@ -231,6 +279,12 @@ public class FilterGrid<T> extends Div {
     }
   }
 
+  /**
+   * Get a summary of the currently selected items and their type.
+   *
+   * @return a {@link SelectionSummary} of the currently selected items
+   * @since 1.12.0
+   */
   public SelectionSummary<T> selectionSummary() {
     return new SelectionSummary<>(type, grid.getSelectedItems());
   }
@@ -290,6 +344,13 @@ public class FilterGrid<T> extends Div {
     grid.addSelectedListener(e -> filterGrid.updateSelectionDisplay(e.getSelectedItems()));
   }
 
+  /**
+   * Configures the available secondary action group of the filter grid.
+   *
+   * @param firstButton the first button from left to right order
+   * @param buttons     additional buttons if required for the action group
+   * @since 1.12.0
+   */
   public void setSecondaryActionGroup(Button firstButton, Button... buttons) {
     Objects.requireNonNull(firstButton);
     Objects.requireNonNull(buttons);
@@ -300,19 +361,53 @@ public class FilterGrid<T> extends Div {
     }
   }
 
+  /**
+   * Returns the currently selected elements in the grid of type {@code T}.
+   *
+   * @return a {@link Set} of with the selected elements in the grid of type {@code T}
+   * @since 1.12.0
+   */
   public @NonNull Set<T> selectedElements() {
     return grid.getSelectedItems();
   }
 
+  /**
+   * Returns the assigned class for the filter grid type, so the type of the elements the grid
+   * contains.
+   *
+   * @return the assigned {@link Class} of the filter grid
+   * @since 1.12.ß
+   */
   public @NonNull Class<T> type() {
     return type;
   }
 
+  /**
+   * Sets the label for the selected items display.
+   * <p>
+   * Default is <i>"item"</i>.
+   * <p>
+   * The plural form is rendered automatically based on the selection count.
+   *
+   * @param label a concise and contextual description of the elements that can be selected in the
+   *              grid
+   * @since 1.12.0
+   */
   public void itemDisplayLabel(String label) {
     Objects.requireNonNull(label);
     currentItemDisplayLabel = label;
   }
 
+  /**
+   * Registers a {@link ComponentEventListener} for {@link FilterGridSelectionEvent} to the
+   * selection event.
+   *
+   * @param listener a listener that is called the filter grid fires a
+   *                 {@link FilterGridSelectionEvent}.
+   * @return a {@link Registration} with the current subscription the client can release again if
+   * not needed anymore
+   * @since 1.12.0
+   */
   public Registration addSelectListener(ComponentEventListener<FilterGridSelectionEvent> listener) {
     var eventAdapter = new EventListenerAdapter(this, listener);
     return grid.addSelectedListener(eventAdapter);
@@ -348,10 +443,11 @@ public class FilterGrid<T> extends Div {
   }
 
   public record SelectionSummary<T>(Class<T> type, Set<T> selectedSummary) {
-   public SelectionSummary {
-     Objects.requireNonNull(type);
-     Objects.requireNonNull(selectedSummary);
-   }
+
+    public SelectionSummary {
+      Objects.requireNonNull(type);
+      Objects.requireNonNull(selectedSummary);
+    }
   }
 
   /**
