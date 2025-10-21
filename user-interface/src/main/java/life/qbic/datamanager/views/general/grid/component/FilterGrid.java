@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.general.grid;
+package life.qbic.datamanager.views.general.grid.component;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
@@ -20,7 +20,8 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import life.qbic.datamanager.views.general.MultiSelectLazyLoadingGrid;
-import life.qbic.datamanager.views.general.grid.component.SelectionNotification;
+import life.qbic.datamanager.views.general.grid.Filter;
+import life.qbic.datamanager.views.general.grid.FilterUpdater;
 import org.springframework.lang.NonNull;
 
 /**
@@ -54,7 +55,7 @@ public final class FilterGrid<T> extends Div {
 
   private String currentItemDisplayLabel = DEFAULT_ITEM_DISPLAY_LABEL;
 
-  private Filter<T> currentFilter;
+  private Filter currentFilter;
 
   private MenuBar showShideMenu;
 
@@ -63,9 +64,9 @@ public final class FilterGrid<T> extends Div {
   public FilterGrid(
       Class<T> type,
       MultiSelectLazyLoadingGrid<T> grid,
-      CallbackDataProvider<T, Filter<T>> callbackDataProvider,
-      Filter<T> initialFilter,
-      FilterUpdater<T> filterUpdater) {
+      CallbackDataProvider<T, Filter> callbackDataProvider,
+      Filter initialFilter,
+      FilterUpdater filterUpdater) {
     this.type = Objects.requireNonNull(type);
     this.grid = Objects.requireNonNull(grid);
     this.currentFilter = Objects.requireNonNull(initialFilter);

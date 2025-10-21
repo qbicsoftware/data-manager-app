@@ -10,7 +10,6 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
-import life.qbic.datamanager.views.general.grid.FilterGrid;
 import org.springframework.lang.NonNull;
 
 /**

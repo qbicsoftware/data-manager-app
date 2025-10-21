@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import life.qbic.datamanager.views.StringBean;
 import life.qbic.datamanager.views.general.Card;
@@ -41,7 +42,8 @@ import life.qbic.datamanager.views.general.dialog.stepper.StepperDialog;
 import life.qbic.datamanager.views.general.dialog.stepper.StepperDialogFooter;
 import life.qbic.datamanager.views.general.dialog.stepper.StepperDisplay;
 import life.qbic.datamanager.views.general.grid.Filter;
-import life.qbic.datamanager.views.general.grid.FilterGrid;
+import life.qbic.datamanager.views.general.grid.component.FilterGrid;
+import life.qbic.datamanager.views.general.grid.PredicateFilter;
 import life.qbic.datamanager.views.general.grid.component.FilterGridTab;
 import life.qbic.datamanager.views.general.grid.component.FilterGridTabSheet;
 import life.qbic.datamanager.views.general.icon.IconFactory;
@@ -98,6 +100,19 @@ public class ComponentDemo extends Div {
     add(filterGridShowCase());
   }
 
+  private record SimplePersonFilter(String term) implements PredicateFilter<Person> {
+
+    @Override
+    public Optional<String> searchTerm() {
+      return Optional.ofNullable(term);
+    }
+
+    public boolean test(Person data) {
+      var fullName = String.join(" ", data.firstName, data.lastName, Integer.toString(data.age));
+      return fullName.contains(term);
+    }
+  }
+
   private Div filterGridShowCase() {
     var grid = new MultiSelectLazyLoadingGrid<Person>();
     grid.addColumn(Person::firstName).setHeader("First Name").setKey("firstName");
@@ -109,42 +124,50 @@ public class ComponentDemo extends Div {
     gridPersons.addColumn(Person::lastName).setHeader("Last Name").setKey("lastName");
     gridPersons.addColumn(Person::age).setHeader("Age").setKey("age");
 
-    var filterDataProvider = DataProvider.<Person, Filter<Person>>fromFilteringCallbacks(query ->
+    var filterDataProvider = DataProvider.<Person, Filter>fromFilteringCallbacks(query ->
         {
           var sorting = query.getSortOrders();
           var offsetIgnored = query.getOffset();
           var limitIgnored = query.getLimit();
-          var filter = query.getFilter().orElse(new ExampleFilter(""));
-          return examples.stream().filter(filter::test);
+          var filter = query.getFilter().orElse(new SimplePersonFilter(""));
+          // you don't need this for remote data providers, the filter must be converted to a service API honoring filter
+          var personFilter = filter instanceof PredicateFilter<?> ? (SimplePersonFilter) filter : new SimplePersonFilter("");
+          return examples.stream().filter(personFilter::test);
         }
         , count -> {
           var offsetIgnored = count.getOffset();
           var limitIgnored = count.getLimit();
-          var filter = count.getFilter().orElse(new ExampleFilter(""));
-          return examples.stream().filter(filter::test).toList().size();
+          var filter = count.getFilter().orElse(new SimplePersonFilter(""));
+          // you don't need this for remote data providers, the filter must be converted to a service API honoring filter
+          var personFilter = filter instanceof PredicateFilter<?> ? (SimplePersonFilter) filter : new SimplePersonFilter("");
+          return examples.stream().filter(personFilter::test).toList().size();
         });
 
-    var filterDataProviderContacts = DataProvider.<Person, Filter<Person>>fromFilteringCallbacks(
+    var filterDataProviderContacts = DataProvider.<Person, Filter>fromFilteringCallbacks(
         query ->
         {
           var sorting = query.getSortOrders();
           var offsetIgnored = query.getOffset();
           var limitIgnored = query.getLimit();
-          var filter = query.getFilter().orElse(new ExampleFilter(""));
-          return examples.stream().filter(filter::test);
+          var filter = query.getFilter().orElse(new SimplePersonFilter(""));
+          // you don't need this for remote data providers, the filter must be converted to a service API honoring filter
+          var personFilter = filter instanceof PredicateFilter<?> ? (SimplePersonFilter) filter : new SimplePersonFilter("");
+          return examples.stream().filter(personFilter::test);
         }
         , count -> {
           var offsetIgnored = count.getOffset();
           var limitIgnored = count.getLimit();
-          var filter = count.getFilter().orElse(new ExampleFilter(""));
-          return examples.stream().filter(filter::test).toList().size();
+          var filter = count.getFilter().orElse(new SimplePersonFilter(""));
+          // you don't need this for remote data providers, the filter must be converted to a service API honoring filter
+          var personFilter = filter instanceof PredicateFilter<?> ? (SimplePersonFilter) filter : new SimplePersonFilter("");
+          return examples.stream().filter(personFilter::test).toList().size();
         });
 
     var filterGridContacts = new FilterGrid<>(Person.class, gridPersons, filterDataProviderContacts,
-        new ExampleFilter(""), (filter, term) -> new ExampleFilter(term));
+        new SimplePersonFilter(""), (filter, term) -> new SimplePersonFilter(term));
 
     var filterGrid = new FilterGrid<Person>(Person.class, grid, filterDataProvider,
-        new ExampleFilter(""), (filter, term) -> new ExampleFilter(term));
+        new SimplePersonFilter(""), (filter, term) -> new SimplePersonFilter(term));
 
     filterGrid.setSecondaryActionGroup(new Button("Edit"), new Button("Delete"));
 
@@ -169,7 +192,7 @@ public class ComponentDemo extends Div {
     return new Div(tabSheet);
   }
 
-  static class ExampleFilter implements Filter<Person> {
+  static class ExampleFilter implements Filter {
 
     private String term;
 
@@ -178,20 +201,10 @@ public class ComponentDemo extends Div {
     }
 
     @Override
-    public void setSearchTerm(String searchTerm) {
-      this.term = searchTerm;
+    public Optional<String> searchTerm() {
+      return Optional.ofNullable(this.term);
     }
 
-    @Override
-    public String searchTerm() {
-      return this.term;
-    }
-
-    @Override
-    public boolean test(Person data) {
-      var fullName = String.join(" ", data.firstName, data.lastName, Integer.toString(data.age));
-      return fullName.contains(term);
-    }
   }
 
   static List<Person> examples = new ArrayList<>();

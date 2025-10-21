@@ -5,7 +5,6 @@ import com.vaadin.flow.component.tabs.Tab;
 import java.util.Objects;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.Tag.TagColor;
-import life.qbic.datamanager.views.general.grid.FilterGrid;
 
 /**
  * A specialized tab with tab label, count badge and a filter grid component.

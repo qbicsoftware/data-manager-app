@@ -26,7 +26,7 @@ import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.download.DownloadComponent;
 import life.qbic.datamanager.views.general.grid.Filter;
-import life.qbic.datamanager.views.general.grid.FilterGrid;
+import life.qbic.datamanager.views.general.grid.component.FilterGrid;
 import life.qbic.datamanager.views.general.grid.component.FilterGridTab;
 import life.qbic.datamanager.views.general.grid.component.FilterGridTabSheet;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
@@ -275,10 +275,8 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
 
           return asyncProjectService.countSamples(projectId,
               experimentId, sampleFilter).blockOptional().orElse(0);
-        }), new SampleNameFilter(""), (filter, term) -> {
-      filter.setSearchTerm(term);
-      return filter;
-    });
+        }), new SampleNameFilter(""),
+        (filter, term) -> new SampleNameFilter(term));
   }
 
   private static List<SortOrder<SamplePreviewSortKey>> sortOrdersToApi(
@@ -355,7 +353,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   }
 
 
-  private static class SampleNameFilter implements Filter<SamplePreview> {
+  private static class SampleNameFilter implements Filter {
 
     private String filter;
 
@@ -364,24 +362,15 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     }
 
     @Override
-    public void setSearchTerm(String searchTerm) {
-      filter = Optional.ofNullable(searchTerm).orElse("");
+    public Optional<String> searchTerm() {
+      return Optional.ofNullable(filter);
     }
 
-    @Override
-    public String searchTerm() {
-      return filter;
-    }
-
-    @Override
-    public boolean test(SamplePreview data) {
-      return data.sampleName().toLowerCase().contains(filter.toLowerCase());
-    }
   }
 
   private static SamplePreviewFilter createSamplePreviewFilter(
-      Filter<SamplePreview> filterUI,
+      Filter filterUI,
       List<SortOrder<SamplePreviewSortKey>> sortOrders) {
-    return new SamplePreviewFilter(filterUI.searchTerm(), sortOrders);
+    return new SamplePreviewFilter(filterUI.searchTerm().orElse(""), sortOrders);
   }
 }

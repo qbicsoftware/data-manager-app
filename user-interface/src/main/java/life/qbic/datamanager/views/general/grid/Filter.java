@@ -1,19 +1,23 @@
 package life.qbic.datamanager.views.general.grid;
 
 
+import java.util.Optional;
+import life.qbic.datamanager.views.general.grid.component.FilterGrid;
+
 /**
- * <b><interface short description - 1 Line!></b>
+ * Defines search filters for the {@link FilterGrid} that can be used to define search terms and
+ * test if a filter condition applies to an object of its type {@code T}.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.12.0
  */
-public interface Filter<T> {
+public interface Filter {
 
-  void setSearchTerm(String searchTerm);
-
-  String searchTerm();
-
-  boolean test(T data);
+  /**
+   * Returns the search term if one exists, or returns {@link Optional#empty}
+   *
+   * @return the search term if it exists, else {@link Optional#empty()}
+   * @since 1.12.0
+   */
+  Optional<String> searchTerm();
 
 }
