@@ -61,6 +61,8 @@ public final class FilterGrid<T> extends Div {
 
   private Class<T> type;
 
+  private final TextField searchField;
+
   public FilterGrid(
       Class<T> type,
       MultiSelectLazyLoadingGrid<T> grid,
@@ -75,7 +77,7 @@ public final class FilterGrid<T> extends Div {
     grid.setDataProvider(dataProvider);
     dataProvider.setFilter(currentFilter);
 
-    var searchField = new TextField();
+    searchField = new TextField();
     searchField.setSuffixComponent(VaadinIcon.SEARCH.create());
     searchField.setPlaceholder("Search items");
     searchField.addValueChangeListener(e ->
@@ -190,6 +192,16 @@ public final class FilterGrid<T> extends Div {
     grid.addColumnVisibilityChangedListener(event -> {
       grid.onColumnVisibilityChanged(event.setting);
     });
+  }
+
+  /**
+   * Defines a custom placeholder for the search field. Default is <i>"Filter"</i>
+   * @param placeholder the text to use as placeholder
+   * @since 1.12.0
+   */
+  public void searchFieldPlaceholder(String placeholder) {
+    Objects.requireNonNull(placeholder);
+    searchField.setPlaceholder(placeholder);
   }
 
   /**

@@ -256,7 +256,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
       MultiSelectLazyLoadingGrid<SamplePreview> multiSelectGrid,
       String projectId,
       String experimentId) {
-    return new FilterGrid<>(SamplePreview.class, multiSelectGrid,
+    var filterGrid = new FilterGrid<>(SamplePreview.class, multiSelectGrid,
         DataProvider.fromFilteringCallbacks(query -> {
           var filter = query.getFilter().orElse(new SampleNameFilter(""));
           var offset = query.getOffset();
@@ -277,6 +277,9 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
               experimentId, sampleFilter).blockOptional().orElse(0);
         }), new SampleNameFilter(""),
         (filter, term) -> new SampleNameFilter(term));
+    filterGrid.searchFieldPlaceholder("Search samples");
+    filterGrid.itemDisplayLabel("sample");
+    return filterGrid;
   }
 
   private static List<SortOrder<SamplePreviewSortKey>> sortOrdersToApi(
