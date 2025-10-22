@@ -7,6 +7,7 @@ import java.util.Optional;
 import java.util.StringJoiner;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import org.springframework.lang.NonNull;
 
 /**
  * The current context information
@@ -20,15 +21,18 @@ public final class Context implements Serializable {
 
   private final ProjectId projectId;
   private final ExperimentId experimentId;
+  private final String projectCode;
 
   public Context() {
     projectId = null;
     experimentId = null;
+    projectCode = null;
   }
 
-  private Context(ProjectId projectId, ExperimentId experimentId) {
+  private Context(ProjectId projectId, ExperimentId experimentId, String projectCode) {
     this.projectId = projectId;
     this.experimentId = experimentId;
+    this.projectCode = projectCode;
   }
 
   /**
@@ -38,7 +42,7 @@ public final class Context implements Serializable {
    * @return The updated context with the new projectId.
    */
   public Context with(ProjectId projectId) {
-    return new Context(projectId, experimentId);
+    return new Context(projectId, experimentId, projectCode);
   }
 
   /**
@@ -48,7 +52,11 @@ public final class Context implements Serializable {
    * @return The updated context with the new experimentId.
    */
   public Context with(ExperimentId experimentId) {
-    return new Context(projectId, experimentId);
+    return new Context(projectId, experimentId, projectCode);
+  }
+
+  public Context withProjectCode(String projectCode) {
+    return new Context(projectId, experimentId, projectCode);
   }
 
   /**
@@ -68,6 +76,17 @@ public final class Context implements Serializable {
    */
   public Optional<ExperimentId> experimentId() {
     return Optional.ofNullable(experimentId);
+  }
+
+  /**
+   * Returns the project code of the context, if available.
+   *
+   * @return an {@link Optional} with the current project code, or {@link Optional#empty()} if not
+   * available.
+   * @since 1.12.0
+   */
+  public Optional<String> projectCode() {
+    return Optional.ofNullable(projectCode);
   }
 
   @Override

@@ -1,5 +1,7 @@
 package life.qbic.datamanager.views.demo;
 
+import static life.qbic.logging.service.LoggerFactory.logger;
+
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.Unit;
@@ -12,6 +14,7 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
+import com.vaadin.flow.data.provider.DataProvider;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
@@ -20,11 +23,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import life.qbic.datamanager.views.StringBean;
 import life.qbic.datamanager.views.general.Card;
 import life.qbic.datamanager.views.general.DetailBox;
 import life.qbic.datamanager.views.general.DetailBox.Header;
+import life.qbic.datamanager.views.general.MultiSelectLazyLoadingGrid;
 import life.qbic.datamanager.views.general.dialog.AppDialog;
 import life.qbic.datamanager.views.general.dialog.DialogBody;
 import life.qbic.datamanager.views.general.dialog.DialogFooter;
@@ -36,10 +41,16 @@ import life.qbic.datamanager.views.general.dialog.stepper.Step;
 import life.qbic.datamanager.views.general.dialog.stepper.StepperDialog;
 import life.qbic.datamanager.views.general.dialog.stepper.StepperDialogFooter;
 import life.qbic.datamanager.views.general.dialog.stepper.StepperDisplay;
+import life.qbic.datamanager.views.general.grid.Filter;
+import life.qbic.datamanager.views.general.grid.component.FilterGrid;
+import life.qbic.datamanager.views.general.grid.PredicateFilter;
+import life.qbic.datamanager.views.general.grid.component.FilterGridTab;
+import life.qbic.datamanager.views.general.grid.component.FilterGridTabSheet;
 import life.qbic.datamanager.views.general.icon.IconFactory;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.ExperimentalVariablesInput;
 import life.qbic.datamanager.views.projects.project.info.SimpleParagraph;
+import life.qbic.logging.api.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.lang.NonNull;
@@ -57,6 +68,8 @@ import org.springframework.lang.NonNull;
 @AnonymousAllowed
 @org.springframework.stereotype.Component
 public class ComponentDemo extends Div {
+
+  private static final Logger log = logger(ComponentDemo.class);
 
   public static final String HEADING_2 = "heading-2";
   public static final String HEADING_3 = "heading-3";
@@ -84,6 +97,144 @@ public class ComponentDemo extends Div {
     add(toastShowCase());
     add(borderShowcase());
     add(createTestComponent());
+    add(filterGridShowCase());
+  }
+
+  private record SimplePersonFilter(String term) implements PredicateFilter<Person> {
+
+    @Override
+    public Optional<String> searchTerm() {
+      return Optional.ofNullable(term);
+    }
+
+    public boolean test(Person data) {
+      var fullName = String.join(" ", data.firstName, data.lastName, Integer.toString(data.age));
+      return fullName.contains(term);
+    }
+  }
+
+  private Div filterGridShowCase() {
+    var grid = new MultiSelectLazyLoadingGrid<Person>();
+    grid.addColumn(Person::firstName).setHeader("First Name").setKey("firstName");
+    grid.addColumn(Person::lastName).setHeader("Last Name").setKey("lastName");
+    grid.addColumn(Person::age).setHeader("Age").setKey("age");
+
+    var gridPersons = new MultiSelectLazyLoadingGrid<Person>();
+    gridPersons.addColumn(Person::firstName).setHeader("First Name").setKey("firstName");
+    gridPersons.addColumn(Person::lastName).setHeader("Last Name").setKey("lastName");
+    gridPersons.addColumn(Person::age).setHeader("Age").setKey("age");
+
+    var filterDataProvider = DataProvider.<Person, Filter>fromFilteringCallbacks(query ->
+        {
+          var sorting = query.getSortOrders();
+          var offsetIgnored = query.getOffset();
+          var limitIgnored = query.getLimit();
+          var filter = query.getFilter().orElse(new SimplePersonFilter(""));
+          // you don't need this for remote data providers, the filter must be converted to a service API honoring filter
+          var personFilter = filter instanceof PredicateFilter<?> ? (SimplePersonFilter) filter : new SimplePersonFilter("");
+          return examples.stream().filter(personFilter::test);
+        }
+        , count -> {
+          var offsetIgnored = count.getOffset();
+          var limitIgnored = count.getLimit();
+          var filter = count.getFilter().orElse(new SimplePersonFilter(""));
+          // you don't need this for remote data providers, the filter must be converted to a service API honoring filter
+          var personFilter = filter instanceof PredicateFilter<?> ? (SimplePersonFilter) filter : new SimplePersonFilter("");
+          return examples.stream().filter(personFilter::test).toList().size();
+        });
+
+    var filterDataProviderContacts = DataProvider.<Person, Filter>fromFilteringCallbacks(
+        query ->
+        {
+          var sorting = query.getSortOrders();
+          var offsetIgnored = query.getOffset();
+          var limitIgnored = query.getLimit();
+          var filter = query.getFilter().orElse(new SimplePersonFilter(""));
+          // you don't need this for remote data providers, the filter must be converted to a service API honoring filter
+          var personFilter = filter instanceof PredicateFilter<?> ? (SimplePersonFilter) filter : new SimplePersonFilter("");
+          return examples.stream().filter(personFilter::test);
+        }
+        , count -> {
+          var offsetIgnored = count.getOffset();
+          var limitIgnored = count.getLimit();
+          var filter = count.getFilter().orElse(new SimplePersonFilter(""));
+          // you don't need this for remote data providers, the filter must be converted to a service API honoring filter
+          var personFilter = filter instanceof PredicateFilter<?> ? (SimplePersonFilter) filter : new SimplePersonFilter("");
+          return examples.stream().filter(personFilter::test).toList().size();
+        });
+
+    var filterGridContacts = new FilterGrid<>(Person.class, gridPersons, filterDataProviderContacts,
+        new SimplePersonFilter(""), (filter, term) -> new SimplePersonFilter(term));
+
+    var filterGrid = new FilterGrid<Person>(Person.class, grid, filterDataProvider,
+        new SimplePersonFilter(""), (filter, term) -> new SimplePersonFilter(term));
+
+    filterGrid.setSecondaryActionGroup(new Button("Edit"), new Button("Delete"));
+
+    filterGrid.itemDisplayLabel("person");
+
+    var filterTab = new FilterGridTab("Persons", filterGrid);
+    filterTab.setItemCount(examples.size());
+
+    var filterTabContacts = new FilterGridTab("Contacts", filterGridContacts);
+    filterTabContacts.setItemCount(examples.size());
+
+    var tabSheet = new FilterGridTabSheet(filterTab, filterTabContacts);
+
+    tabSheet.addPrimaryFeatureButtonListener(event -> {
+      log.info("Clicked on the primary feature button: click-count is " + event.getClickCount());
+    });
+
+    tabSheet.addPrimaryActionButtonListener(event -> {
+      log.info("Clicked on the primary action button: click-count is " + event.getClickCount());
+    });
+
+    return new Div(tabSheet);
+  }
+
+  static class ExampleFilter implements Filter {
+
+    private String term;
+
+    ExampleFilter(String term) {
+      this.term = term;
+    }
+
+    @Override
+    public Optional<String> searchTerm() {
+      return Optional.ofNullable(this.term);
+    }
+
+  }
+
+  static List<Person> examples = new ArrayList<>();
+
+
+  static {
+    examples.add(new Person("John", "Doe", 18));
+    examples.add(new Person("Jane", "Doe", 21));
+    examples.add(new Person("Lars", "Müller", 27));
+    examples.add(new Person("Alicia", "Mendez", 31));
+    examples.add(new Person("Noah", "Thompson", 19));
+    examples.add(new Person("Fatima", "Al-Sayed", 35));
+    examples.add(new Person("Sakura", "Tanaka", 29));
+    examples.add(new Person("Elena", "Petrova", 42));
+    examples.add(new Person("Marcus", "Nguyen", 25));
+    examples.add(new Person("Oliver", "Smith", 33));
+    examples.add(new Person("Isabella", "Rossi", 24));
+    examples.add(new Person("Ethan", "Johnson", 38));
+    examples.add(new Person("Sofia", "Kowalski", 28));
+    examples.add(new Person("Mateo", "Garcia", 40));
+    examples.add(new Person("Hannah", "Schneider", 22));
+    examples.add(new Person("Amir", "Rahman", 30));
+    examples.add(new Person("Chloe", "Dubois", 26));
+    examples.add(new Person("Leo", "Andersen", 34));
+    examples.add(new Person("Priya", "Patel", 37));
+    examples.add(new Person("William", "O'Connor", 45));
+  }
+
+  record Person(String firstName, String lastName, int age) {
+
   }
 
   private Component layoutsShowCase() {
@@ -245,6 +396,7 @@ public class ComponentDemo extends Div {
 
     return container;
   }
+
   private static Div stepperDialogShowCase(List<Step> steps, String dialogTitle) {
     Div content = new Div();
     Div title = new Div("Stepper Dialog");
@@ -394,8 +546,10 @@ public class ComponentDemo extends Div {
     {
       var progressBar = new ProgressBar();
       progressBar.setIndeterminate(true);
-      var toast = messageFactory.pendingTaskToast("task.in-progress", new Object[]{"Doing something really heavy here"}, getLocale());
-      var succeededToast = messageFactory.toast("task.finished", new Object[]{"Heavy Task #1"},  getLocale());
+      var toast = messageFactory.pendingTaskToast("task.in-progress",
+          new Object[]{"Doing something really heavy here"}, getLocale());
+      var succeededToast = messageFactory.toast("task.finished", new Object[]{"Heavy Task #1"},
+          getLocale());
       toast.open();
       var ui = UI.getCurrent();
       CompletableFuture.runAsync(() -> {

@@ -134,6 +134,16 @@ Heading
   line-height: var(--lumo-line-height-m);
 }
 
+.text-heading-color { color: var(--heading-text-color); }
+.text-secondary-color { color: var(--secondary-text-color); }
+.text-tertiary-color { color: var(--tertiary-text-color); }
+.text-body-color  { color: var(--body-text-color); }
+.text-body-color-80pct { color: var(--shade-color-80pct); }
+.text-field-label-color  { color: var(--field-label-text-color); }
+.text-input-text-color  { color: var(--input-field-text-color); }
+.text-list-item-color  { color: var(--list-item-text-color); }
+.text-button-color  { color: var(--button-text-color); }
+
 /*endregion*/
 
 /*region Padding*/
@@ -647,6 +657,35 @@ Heading
 
 /*endregion*/
 
+/*region Background-Styles*/
+/***************************
+Background-Styles
+***************************/
+
+.background-color-grey {
+  background-color: #F9F9F9;
+}
+
+.background-contrast-5pct {
+  background-color: var(--shade-color-5pct);
+}
+
+.background-contrast-10pct {
+  background-color: var(--background-color-10pct);
+}
+
+
+/*endregion*/
+
+/***************************
+Spacers
+***************************/
+
+.spacer-horizontal-full-width {
+  flex: 1 1 auto
+}
+
+
 /*region Colors*/
 /***************************
 Colors
@@ -666,6 +705,18 @@ Colors
 .color-tertiary {
   color: var(--tertiary-text-color)
 }
+/*endregion*/
+
+/*region Dimensions*/
+
+.height-06 {
+  height: var(--spacing-06);
+}
+
+.height-07 {
+  height: var(--spacing-07);
+}
+
 /*endregion*/
 
 /*region Behaviour*/
@@ -710,7 +761,7 @@ Colors
 
 .list-item-drop-position {
   border-color: transparent;
-  background-color: var(--background-contrast-color-5pct);
+  background-color: var(--background-color-5pct);
   height: 2em;
 }
 
@@ -973,6 +1024,10 @@ Icons
   justify-content: flex-end;
 }
 
+.self-align-end {
+  align-self: end;
+}
+
 
 .flex-horizontal {
   display: flex;
@@ -1047,6 +1102,10 @@ Icons
 .border-left-right {
   border: 1px solid var(--border-color-default);
   box-sizing: border-box;
+}
+
+.border.square{
+  border-radius: 0;
 }
 
 .composite-border {
@@ -1156,6 +1215,42 @@ Icons
 }
 
 /*endregion*/
+
+/* Hide the built-in prefix/checkmark gutter on flagged items */
+vaadin-menu-bar-overlay vaadin-menu-bar-item[theme~="no-prefix"]::part(prefix),
+vaadin-menu-bar-overlay vaadin-menu-bar-item[theme~="no-prefix"]::part(checkmark),
+vaadin-menu-bar-overlay vaadin-context-menu-item[theme~="no-prefix"]::part(prefix),
+vaadin-menu-bar-overlay vaadin-context-menu-item[theme~="no-prefix"]::part(checkmark) {
+  display: none;
+  width: 0;
+  margin: 0;
+  padding: 0;
+}
+
+/* Tighten left padding since there's no prefix now */
+vaadin-menu-bar-overlay vaadin-menu-bar-item[theme~="no-prefix"]::part(content),
+vaadin-menu-bar-overlay vaadin-context-menu-item[theme~="no-prefix"]::part(content) {
+  padding-inline-start: var(--lumo-space-s);
+}
+
+/* Extra safety: force the internal width var (some versions use this) */
+vaadin-menu-bar-overlay vaadin-menu-bar-item[theme~="no-prefix"],
+vaadin-menu-bar-overlay vaadin-context-menu-item[theme~="no-prefix"] {
+  --_prefix-width: 0px;    /* legacy/private var */
+}
+
+/* Only affect TabSheets with this class */
+vaadin-tab-sheet.filter-grid-tabsheet::part(content) {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+vaadin-tab-sheet.filter-grid-tabsheet::part(content) > * {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
 /*endregion*/
 
 /****************************
@@ -1370,18 +1465,6 @@ Older stuff -
 .simple-paragraph {
   font-size: var(--spacing-04);
   margin-bottom: var(--spacing-04);
-}
-
-.background-color-grey {
-  background-color: #F9F9F9;
-}
-
-.background-contrast-5pct {
-  background-color: var(--background-contrast-color-5pct);
-}
-
-.background-contrast-10pct {
-  background-color: var(--background-contrast-color-10pct);
 }
 
 .text-justify {

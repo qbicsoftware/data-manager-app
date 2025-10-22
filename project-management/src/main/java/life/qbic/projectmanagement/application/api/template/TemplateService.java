@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -354,6 +355,29 @@ public class TemplateService {
     ));
   }
 
+  private SampleExtension querySampleExtensionById(
+      Experiment experiment,
+      String projectId,
+      String experimentId,
+      Set<String> sampleIds) {
+    var experimentalGroups = experiment.getExperimentalGroups();
+    var samples = sampleService.retrieveSamplesByIds(
+        ProjectId.parse(projectId), sampleIds.stream().map(SampleId::parse).toList());
+    var confoundingVariablesIds = confVariableService.listConfoundingVariablesForExperiment(
+            projectId, new ExperimentReference(experimentId)).stream()
+        .map(it -> new ConfoundingVariableInformation(it.id(), it.variableName()))
+        .map(ConfoundingVariableInformation::id)
+        .toList();
+    var confoundingVariableLevels = confVariableService.listLevelsForVariables(
+        projectId,
+        confoundingVariablesIds);
+    return new SampleExtension(
+        samples,
+        experimentalGroups,
+        confoundingVariableLevels
+    );
+  }
+
   private SampleExtension querySampleExtension(Experiment experiment, String projectId,
       String experimentId) {
     var experimentalGroups = experiment.getExperimentalGroups();
@@ -432,6 +456,38 @@ public class TemplateService {
   private boolean isSupportedMimeType(MimeType mimeType) {
     return mimeType.equalsTypeAndSubtype(templateProvider.providedMimeType());
   }
+
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
+  public DigitalObject sampleInformationTemplate(String projectId, String experimentId,
+      Set<String> sampleIds, MimeType mimeType) {
+    if (!isSupportedMimeType(mimeType)) {
+      throw new UnsupportedMimeTypeException(UNSUPPORTED_MIME_TYPE + mimeType);
+    }
+    return generateSampleInfoTemplate(experimentSupplier(projectId, experimentId), projectId,
+        experimentId, sampleIds);
+  }
+
+  private DigitalObject generateSampleInfoTemplate(Supplier<Experiment> experimentSupplier,
+      String projectId, String experimentId, Set<String> sampleIds) {
+    var experiment = experimentSupplier.get();
+    var sampleBasic = querySampleBasicInfo(experiment, projectId, experimentId);
+    var sampleExtension = querySampleExtensionById(experiment, projectId, experimentId, sampleIds);
+    return templateProvider.getTemplate(
+        new SampleInformation(
+            sampleExtension.samples(),
+            sampleBasic.analysisMethods(),
+            sampleBasic.conditions(),
+            sampleBasic.analytes(),
+            sampleBasic.species(),
+            sampleBasic.specimen(),
+            sampleExtension.experimentalGroups(),
+            sampleBasic.confoundingVariables(),
+            sampleExtension.confoundingVariableLevels()
+        ));
+  }
+
+
 
   private record SampleBasic(
       List<String> analysisMethods,
