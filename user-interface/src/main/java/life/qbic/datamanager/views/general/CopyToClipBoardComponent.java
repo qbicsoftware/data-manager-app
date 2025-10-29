@@ -7,7 +7,6 @@ import com.vaadin.flow.component.dependency.JsModule;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.shared.communication.PushMode;
 import com.vaadin.flow.theme.lumo.LumoUtility.IconSize;
 import java.io.Serial;
 import java.util.concurrent.CompletableFuture;
@@ -64,14 +63,13 @@ public class CopyToClipBoardComponent extends Span {
     copySuccessIcon.setVisible(true);
     // reset copy view after a specific time
     UI ui = UI.getCurrent();
-    ui.getPushConfiguration().setPushMode(PushMode.MANUAL);
     Executor delayedExecutor = CompletableFuture.delayedExecutor(SHOW_SUCCESS_TIME,
         TimeUnit.MILLISECONDS);
-    CompletableFuture.runAsync(() -> ui.access(() -> {
-      copyIcon.setVisible(true);
-      copySuccessIcon.setVisible(false);
-    }), delayedExecutor).thenRun(() ->
-        fireEvent(new SwitchToCopyIconEvent(this, componentEvent.isFromClient())));
+    CompletableFuture.runAsync(() -> ui.accessLater(() -> {
+          copyIcon.setVisible(true);
+          copySuccessIcon.setVisible(false);
+        }, null), delayedExecutor)
+        .thenRun(() -> fireEvent(new SwitchToCopyIconEvent(this, componentEvent.isFromClient())));
   }
 
   /**
