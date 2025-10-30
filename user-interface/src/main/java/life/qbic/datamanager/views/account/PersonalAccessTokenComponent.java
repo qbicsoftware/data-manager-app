@@ -15,7 +15,6 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.virtuallist.VirtualList;
 import com.vaadin.flow.data.provider.Query;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
-import com.vaadin.flow.shared.communication.PushMode;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import com.vaadin.flow.theme.lumo.LumoUtility.IconSize;
@@ -352,7 +351,6 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
     public void setToken(String token) {
       rawToken.setText(token);
       UI ui = UI.getCurrent();
-      ui.getPushConfiguration().setPushMode(PushMode.MANUAL);
       copyToClipBoardComponent.setCopyText(token);
       copyToClipBoardComponent.addSwitchToSuccessfulCopyIconListener(event ->
           ui.access(() -> {
