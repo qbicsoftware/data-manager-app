@@ -2,6 +2,7 @@ package life.qbic.projectmanagement.infrastructure.dataset;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.repository.PagingAndSortingRepository;
 
 /**
@@ -13,7 +14,8 @@ import org.springframework.data.repository.PagingAndSortingRepository;
  * @since 1.11.0
  */
 public interface LocalRawDatasetInformationPxPJpaRepository extends
-    PagingAndSortingRepository<LocalRawDatasetPxpEntry, String> {
+    PagingAndSortingRepository<LocalRawDatasetPxpEntry, String>,
+    JpaSpecificationExecutor<LocalRawDatasetPxpEntry> {
 
   Page<LocalRawDatasetPxpEntry> findAllByExperimentId(String experimentId, Pageable pageable);
 }

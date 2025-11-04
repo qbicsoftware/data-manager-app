@@ -52,7 +52,6 @@ import life.qbic.projectmanagement.domain.repository.ProjectRepository.ProjectNo
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.lang.NonNull;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -573,7 +572,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
         sampleInfoService.querySamplePreview(projectId, experimentId, offset, limit, filter)))
         .subscribeOn(scheduler)
         .contextWrite(reactiveSecurity(securityContext))
-        .onErrorMap(cause ->mapToAPIException(cause, "Request for sample previews failed"))
+        .onErrorMap(cause -> mapToAPIException(cause, "Request for sample previews failed"))
         .retryWhen(defaultRetryStrategy());
   }
 
@@ -811,6 +810,35 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   @Override
+  public Flux<RawDatasetInformationPxP> getRawDatasetInformationPxP(String projectId,
+      String experimentId, int offset, int limit, RawDatasetFilter filter) {
+
+    SecurityContext securityContext = SecurityContextHolder.getContext();
+    return Flux.fromIterable(
+            rawDatasetLookupService.findAllPxP(projectId, experimentId, offset, limit, filter))
+        .subscribeOn(scheduler)
+        .contextWrite(reactiveSecurity(securityContext))
+        .doOnError(
+            error -> log.error("Error for requesting raw datasets in project " + projectId, error))
+        .onErrorMap(e -> mapToAPIException(e, "Raw dataset request failed"))
+        .retryWhen(defaultRetryStrategy());
+  }
+
+  @Override
+  public Flux<RawDatasetInformationNgs> getRawDatasetInformationNgs(String projectId,
+      String experimentId, int offset, int limit, RawDatasetFilter filter) {
+    SecurityContext securityContext = SecurityContextHolder.getContext();
+    return Flux.fromIterable(
+            rawDatasetLookupService.findAllNgs(projectId, experimentId, offset, limit, filter))
+        .subscribeOn(scheduler)
+        .contextWrite(reactiveSecurity(securityContext))
+        .doOnError(
+            error -> log.error("Error for requesting raw datasets in project " + projectId, error))
+        .onErrorMap(e -> mapToAPIException(e, "Raw dataset request failed"))
+        .retryWhen(defaultRetryStrategy());
+  }
+
+  @Override
   public Flux<RawDatasetInformationNgs> getRawDatasetInformationNgs(String projectId,
       String experimentId, int offset,
       int limit, SortRawData sorting, String filter) {
@@ -824,6 +852,37 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
         .doOnError(error -> log.error("Error searching for raw dataset " + projectId, error))
         .onErrorMap(
             e -> new RequestFailedException("Error searching for raw dataset " + projectId, e))
+        .retryWhen(defaultRetryStrategy());
+  }
+
+  @Override
+  public Mono<Integer> countMeasurementsNgs(String projectId, String experimentId,
+      RawDatasetFilter rawDataFilter) {
+    SecurityContext securityContext = SecurityContextHolder.getContext();
+
+    return applySecurityContext(Mono.fromCallable(() ->
+        rawDatasetLookupService.countAllNgs(projectId, experimentId, rawDataFilter)))
+        .subscribeOn(scheduler)
+        .contextWrite(reactiveSecurity(securityContext))
+        .doOnError(
+            error -> log.error("Error counting NGS measurements for project " + projectId, error))
+        .onErrorMap(e -> mapToAPIException(e, "Error counting NGS measurements"))
+        .retryWhen(defaultRetryStrategy());
+  }
+
+  @Override
+  public Mono<Integer> countMeasurementsPxp(String projectId, String experimentId,
+      RawDatasetFilter rawDataFilter) {
+    SecurityContext securityContext = SecurityContextHolder.getContext();
+
+    return applySecurityContext(Mono.fromCallable(() ->
+        rawDatasetLookupService.countAllPxP(projectId, experimentId, rawDataFilter)))
+        .subscribeOn(scheduler)
+        .contextWrite(reactiveSecurity(securityContext))
+        .doOnError(
+            error -> log.error("Error counting proteomics measurements for project " + projectId,
+                error))
+        .onErrorMap(e -> mapToAPIException(e, "Error counting proteomics measurements"))
         .retryWhen(defaultRetryStrategy());
   }
 

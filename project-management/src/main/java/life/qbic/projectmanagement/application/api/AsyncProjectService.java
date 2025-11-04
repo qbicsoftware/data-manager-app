@@ -1421,7 +1421,6 @@ public interface AsyncProjectService {
    * @param offset       the offset from 0 of all available previews the returned previews should
    *                     start
    * @param limit        the maximum number of previews that should be returned
-
    * @param filter       the filter to apply
    * @return a reactive stream of {@link SamplePreview} objects in the experiment. Exceptions are
    * provided as {@link Mono#error(Throwable)}.
@@ -2339,6 +2338,51 @@ public interface AsyncProjectService {
       int limit, SortRawData sorting, String filter);
 
   /**
+   * Requests all available {@link RawDatasetInformationPxP} for a given experiment.
+   * <p>
+   * The request supports pagination.
+   *
+   * @param projectId    the identifier of the project the experiment belongs to
+   * @param experimentId the identifier of the experiment to query the measurements for
+   * @param offset       the offset value for the search to continue (pagination)
+   * @param limit        the maximum number of results to return (pagination)
+   * @param filter       a {@link RawDatasetFilter} for the request
+   * @return a reactive {@link Flux} of {@link RawDatasetInformationPxP}
+   * @since 1.12.0
+   */
+  Flux<RawDatasetInformationPxP> getRawDatasetInformationPxP(String projectId, String experimentId,
+      int offset,
+      int limit,
+      RawDatasetFilter filter);
+
+  /**
+   * Requests all available {@link RawDatasetInformationNgs} for a given experiment.
+   * <p>
+   * The request supports pagination.
+   *
+   * @param projectId    the identifier of the project the experiment belongs to
+   * @param experimentId the identifier of the experiment to query the measurements for
+   * @param offset       the offset value for the search to continue (pagination)
+   * @param limit        the maximum number of results to return (pagination)
+   * @param filter       a {@link RawDatasetFilter} for the request
+   * @return a reactive {@link Flux} of {@link RawDatasetInformationNgs}
+   * @since 1.12.0
+   */
+  Flux<RawDatasetInformationNgs> getRawDatasetInformationNgs(String projectId, String experimentId,
+      int offset,
+      int limit,
+      RawDatasetFilter filter);
+
+  record RawDatasetFilter(String filterTerm, List<SortOrder<RawDataSortingKey>> sortOrders) {
+
+  }
+
+  enum RawDataSortingKey {
+    MEASUREMENT_ID, UPLOAD_DATE, SAMPLE_NAME
+  }
+
+
+  /**
    * Requests all available {@link RawDatasetInformationNgs} for a given experiment.
    * <p>
    * The request supports pagination.
@@ -2376,6 +2420,32 @@ public interface AsyncProjectService {
       requireNonNull(registrationDate);
     }
   }
+
+  /**
+   * Requests the total number of NGS measurements for the given experiment in a project, based on
+   * the provided filter.
+   *
+   * @param projectId     the project to fetch the total number of measurements for
+   * @param experimentId  the experiment to fetch the total number of measurements for
+   * @param rawDataFilter the filter that applies to the count
+   * @return a {@link Mono} emitting the count when available.
+   * @since 1.12.0
+   */
+  Mono<Integer> countMeasurementsNgs(String projectId, String experimentId,
+      RawDatasetFilter rawDataFilter);
+
+  /**
+   * Requests the total number of proteomics measurements for the given experiment in a project, based on
+   * the provided filter.
+   *
+   * @param projectId     the project to fetch the total number of measurements for
+   * @param experimentId  the experiment to fetch the total number of measurements for
+   * @param rawDataFilter the filter that applies to the count
+   * @return a {@link Mono} emitting the count when available.
+   * @since 1.12.0
+   */
+  Mono<Integer> countMeasurementsPxp(String projectId, String experimentId,
+      RawDatasetFilter rawDataFilter);
 
   /**
    * Aggregated information of a raw dataset derived from measurement of the NGS domain. Currently
