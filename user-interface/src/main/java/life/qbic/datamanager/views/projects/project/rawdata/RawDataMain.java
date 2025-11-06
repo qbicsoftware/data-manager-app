@@ -24,6 +24,7 @@ import life.qbic.datamanager.views.account.PersonalAccessTokenMain;
 import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.general.download.DownloadComponent;
+import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
@@ -60,6 +61,7 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
   private static final long serialVersionUID = -4506659645977994192L;
   private static final Logger log = LoggerFactory.logger(RawDataMain.class);
   private final DownloadComponent downloadComponent;
+  private final MessageSourceNotificationFactory messageSourceNotificationFactory;
   private Div rawdataDetailsComponentContainer;
   private final RawDataDownloadInformationComponent rawDataDownloadInformationComponent;
   private final TextField rawDataSearchField = new TextField();
@@ -84,7 +86,8 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
       @Value("${server.download.api.measurement.url}") String dataSourceURL,
       @Value("${qbic.communication.documentation.url}") String documentationUrl,
       @Autowired ProjectInformationService projectInformationService,
-      ClientDetailsProvider clientDetailsProvider, AsyncProjectService asyncProjectService) {
+      ClientDetailsProvider clientDetailsProvider, AsyncProjectService asyncProjectService,
+      MessageSourceNotificationFactory messageSourceNotificationFactory) {
     this.projectInformationService = Objects.requireNonNull(projectInformationService);
     this.rawDataDownloadInformationComponent = Objects.requireNonNull(
         rawDataDownloadInformationComponent);
@@ -110,6 +113,7 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
     addClassName("raw-data");
     this.clientDetailsProvider = clientDetailsProvider;
     this.asyncProjectService = asyncProjectService;
+    this.messageSourceNotificationFactory = messageSourceNotificationFactory;
   }
 
   private void initContent() {
@@ -206,7 +210,8 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
             clientDetailsProvider,
             asyncProjectService,
             context,
-            rawDataSourceURL));
+            rawDataSourceURL,
+            messageSourceNotificationFactory));
     rawDataDownloadInformationComponent.setVisible(true);
     rawdataDetailsComponentContainer.setVisible(true);
   }

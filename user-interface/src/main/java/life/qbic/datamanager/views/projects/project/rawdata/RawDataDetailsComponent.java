@@ -36,6 +36,7 @@ import life.qbic.datamanager.views.general.grid.Filter;
 import life.qbic.datamanager.views.general.grid.component.FilterGrid;
 import life.qbic.datamanager.views.general.grid.component.FilterGridTab;
 import life.qbic.datamanager.views.general.grid.component.FilterGridTabSheet;
+import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.BasicSampleInformation;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.RawDataSortingKey;
@@ -61,15 +62,18 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
   private final DownloadComponent downloadComponent = new DownloadComponent();
   private final UiHandle uiHandle = new UiHandle();
   private final String dataSourceEndpoint;
+  private final MessageSourceNotificationFactory messageFactory;
 
   public RawDataDetailsComponent(
       @NonNull ClientDetailsProvider clientDetailsProvider,
       @NonNull AsyncProjectService asyncProjectService,
       @NonNull Context context,
-      String dataSourceEndpoint) {
+      @NonNull String dataSourceEndpoint,
+      @NonNull MessageSourceNotificationFactory messageFactory) {
     this.clientDetailsProvider = Objects.requireNonNull(clientDetailsProvider);
     this.asyncProjectService = Objects.requireNonNull(asyncProjectService);
     this.dataSourceEndpoint = Objects.requireNonNull(dataSourceEndpoint);
+    this.messageFactory = Objects.requireNonNull(messageFactory);
     addClassName("raw-data-details-component");
 
     // Vaadin requires the download component to be attached to the UI for the download trigger to work
@@ -119,6 +123,11 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
             .map(id -> new RawDataURL(dataSourceEndpoint, id))
             .toList();
 
+        if (ids.isEmpty()) {
+          displaySelectionNote();
+          return;
+        }
+
         var file = RawDataUrlFile.create(ids);
         var streamProvider = createStreamProvider(FileNameFormatter.formatWithTimestampedSimple(
             LocalDate.now(), projectCode, "ngs_measurements_download_links", "txt"), file);
@@ -131,6 +140,11 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
             .map(id -> new RawDataURL(dataSourceEndpoint, id))
             .toList();
 
+        if (ids.isEmpty()) {
+          displaySelectionNote();
+          return;
+        }
+
         var file = RawDataUrlFile.create(ids);
         var streamProvider = createStreamProvider(FileNameFormatter.formatWithTimestampedSimple(
             LocalDate.now(), projectCode, "proteomics_measurements_download_links", "txt"), file);
@@ -140,6 +154,11 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
     });
 
     add(filterTabSheet);
+  }
+
+  private void displaySelectionNote() {
+    messageFactory.toast("rawdata.no-dataset-selected", new Object[]{}, getLocale())
+        .open();
   }
 
   private static DownloadStreamProvider createStreamProvider(String filename, RawDataUrlFile file) {
@@ -287,7 +306,8 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
             rawData -> rawData.linkedSampleInformation().stream().map(
                 BasicSampleInformation::sampleName).collect(Collectors.joining(",")))
         .setKey(UiSortKey.SAMPLE_NAME.value())
-        .setHeader("Sample Name");
+        .setHeader("Sample Name")
+        .setSortable(false);
     grid.addColumn(
             rawData -> convertToLocalDate(Date.from(rawData.dataset().registrationDate())))
         .setKey(UiSortKey.UPLOAD_DATE.value())
