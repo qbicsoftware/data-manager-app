@@ -3,7 +3,6 @@ package life.qbic.datamanager.files.export.rawdata;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
-import life.qbic.datamanager.views.projects.project.rawdata.RawDataMain.RawDataURL;
 
 public class RawDataUrlFile {
 
@@ -24,4 +23,13 @@ public class RawDataUrlFile {
     }
     return stringBuilder.toString().getBytes(charset);
   }
+
+  public record RawDataURL(String serverURL, String measurementCode) {
+
+    @Override
+    public String toString() {
+      return String.format("%s/%s", serverURL(), measurementCode());
+    }
+  }
+
 }

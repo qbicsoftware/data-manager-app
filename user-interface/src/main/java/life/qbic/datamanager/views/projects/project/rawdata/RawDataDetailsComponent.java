@@ -1,18 +1,16 @@
 package life.qbic.datamanager.views.projects.project.rawdata;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
-import com.vaadin.flow.component.grid.dataview.GridLazyDataView;
-import com.vaadin.flow.component.tabs.TabSheet;
-import com.vaadin.flow.data.provider.AbstractDataView;
 import com.vaadin.flow.data.provider.DataProvider;
 import com.vaadin.flow.data.provider.QuerySortOrder;
-import com.vaadin.flow.data.provider.SortDirection;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
@@ -23,9 +21,11 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import life.qbic.application.commons.SortOrder;
+import life.qbic.application.commons.FileNameFormatter;
 import life.qbic.datamanager.ClientDetailsProvider;
+import life.qbic.datamanager.files.export.download.DownloadStreamProvider;
+import life.qbic.datamanager.files.export.rawdata.RawDataUrlFile;
+import life.qbic.datamanager.files.export.rawdata.RawDataUrlFile.RawDataURL;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.GridDetailsItem;
 import life.qbic.datamanager.views.UiHandle;
@@ -36,19 +36,14 @@ import life.qbic.datamanager.views.general.grid.Filter;
 import life.qbic.datamanager.views.general.grid.component.FilterGrid;
 import life.qbic.datamanager.views.general.grid.component.FilterGridTab;
 import life.qbic.datamanager.views.general.grid.component.FilterGridTabSheet;
-import life.qbic.datamanager.views.projects.project.measurements.MeasurementDetailsComponent.MeasurementDomainTab;
-import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.BasicSampleInformation;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.RawDataSortingKey;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.RawDatasetFilter;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.RawDatasetInformationNgs;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.RawDatasetInformationPxP;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.SortFieldRawData;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.SortRawData;
 import life.qbic.projectmanagement.application.dataset.RemoteRawDataService.RawData;
 import life.qbic.projectmanagement.application.dataset.RemoteRawDataService.RawDataSampleInformation;
-import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
 import org.springframework.lang.NonNull;
 import reactor.core.publisher.Mono;
 
@@ -65,13 +60,16 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
   private final AsyncProjectService asyncProjectService;
   private final DownloadComponent downloadComponent = new DownloadComponent();
   private final UiHandle uiHandle = new UiHandle();
+  private final String dataSourceEndpoint;
 
   public RawDataDetailsComponent(
       @NonNull ClientDetailsProvider clientDetailsProvider,
       @NonNull AsyncProjectService asyncProjectService,
-      @NonNull Context context) {
+      @NonNull Context context,
+      String dataSourceEndpoint) {
     this.clientDetailsProvider = Objects.requireNonNull(clientDetailsProvider);
     this.asyncProjectService = Objects.requireNonNull(asyncProjectService);
+    this.dataSourceEndpoint = Objects.requireNonNull(dataSourceEndpoint);
     addClassName("raw-data-details-component");
 
     // Vaadin requires the download component to be attached to the UI for the download trigger to work
@@ -103,8 +101,60 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
         .onErrorResume(ignored -> Mono.just(0))
         .subscribe(count -> uiHandle.onUiAndPush(() -> filterTabPxp.setItemCount(count)));
 
+    filterTabSheet.hidePrimaryActionButton();
+
+    filterTabSheet.setCaptionFeatureAction("Export Download-Links");
+
+    filterTabSheet.whenSelectedGrid(RawDatasetInformationNgs.class, grid -> {
+
+    });
+
+    var projectCode = context.projectCode().orElse("unknown_project_code");
+
+    filterTabSheet.addPrimaryFeatureButtonListener(event -> {
+
+      filterTabSheet.whenSelectedGrid(RawDatasetInformationNgs.class, grid -> {
+        var ids = grid.selectedElements().stream()
+            .map(info -> info.dataset().measurementId())
+            .map(id -> new RawDataURL(dataSourceEndpoint, id))
+            .toList();
+
+        var file = RawDataUrlFile.create(ids);
+        var streamProvider = createStreamProvider(FileNameFormatter.formatWithTimestampedSimple(
+            LocalDate.now(), projectCode, "ngs_measurements_download_links", "txt"), file);
+        downloadComponent.trigger(streamProvider);
+      });
+
+      filterTabSheet.whenSelectedGrid(RawDatasetInformationPxP.class, grid -> {
+        var ids = grid.selectedElements().stream()
+            .map(info -> info.dataset().measurementId())
+            .map(id -> new RawDataURL(dataSourceEndpoint, id))
+            .toList();
+
+        var file = RawDataUrlFile.create(ids);
+        var streamProvider = createStreamProvider(FileNameFormatter.formatWithTimestampedSimple(
+            LocalDate.now(), projectCode, "proteomics_measurements_download_links", "txt"), file);
+        downloadComponent.trigger(streamProvider);
+      });
+
+    });
+
     add(filterTabSheet);
   }
+
+  private static DownloadStreamProvider createStreamProvider(String filename, RawDataUrlFile file) {
+    return new DownloadStreamProvider() {
+      @Override
+      public String getFilename() {
+        return filename;
+      }
+      @Override
+      public InputStream getStream() {
+        return new BufferedInputStream(new ByteArrayInputStream(file.getBytes(StandardCharsets.UTF_8)));
+      }
+    };
+  }
+
 
   private static final Map<RawDataDetailsComponent.UiSortKey, RawDataSortingKey> SORT_KEY_MAP = new EnumMap<>(
       UiSortKey.class);

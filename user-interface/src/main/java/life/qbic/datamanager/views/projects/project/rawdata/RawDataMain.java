@@ -15,24 +15,15 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
-import java.nio.charset.StandardCharsets;
-import java.time.LocalDate;
-import java.util.Collection;
-import java.util.List;
 import java.util.Objects;
 import life.qbic.application.commons.ApplicationException;
-import life.qbic.application.commons.FileNameFormatter;
 import life.qbic.datamanager.ClientDetailsProvider;
-import life.qbic.datamanager.files.export.download.ByteArrayDownloadStreamProvider;
-import life.qbic.datamanager.files.export.rawdata.RawDataUrlFile;
 import life.qbic.datamanager.views.AppRoutes.ProjectRoutes;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.account.PersonalAccessTokenMain;
 import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.general.download.DownloadComponent;
-import life.qbic.datamanager.views.notifications.ErrorMessage;
-import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
@@ -44,7 +35,6 @@ import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
-import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -150,14 +140,6 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
     content.add(buttonAndField);
   }
 
-
-
-  private List<RawDataURL> generateDownloadUrls(
-      Collection<MeasurementCode> measurementCodeCollection) {
-    return measurementCodeCollection.stream().map(measurementCode ->
-        new RawDataURL(rawDataSourceURL, measurementCode.value())).toList();
-  }
-
   /**
    * Callback executed before navigation to attaching Component chain is made.
    *
@@ -179,6 +161,8 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
     }
     ExperimentId parsedExperimentId = ExperimentId.parse(experimentId);
     this.context = context.with(parsedExperimentId);
+    asyncProjectService.getProjectCode(projectID).blockOptional()
+        .ifPresent(projectCode -> context = context.withProjectCode(projectCode.value()));
     setRawDataInformation();
   }
 
@@ -217,7 +201,12 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
     registerMeasurementsDisclaimer.setVisible(false);
     content.setVisible(true);
     rawdataDetailsComponentContainer.removeAll();
-    rawdataDetailsComponentContainer.add(new RawDataDetailsComponent(clientDetailsProvider, asyncProjectService, context));
+    rawdataDetailsComponentContainer.add(
+        new RawDataDetailsComponent(
+            clientDetailsProvider,
+            asyncProjectService,
+            context,
+            rawDataSourceURL));
     rawDataDownloadInformationComponent.setVisible(true);
     rawdataDetailsComponentContainer.setVisible(true);
   }
