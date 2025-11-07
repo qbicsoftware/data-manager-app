@@ -107,7 +107,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
 
     filterTabSheet.hidePrimaryActionButton();
 
-    filterTabSheet.setCaptionFeatureAction("Export Download Locations");
+    filterTabSheet.setCaptionFeatureAction("Export Dataset Locations");
 
     var projectCode = context.projectCode().orElse("unknown_project_code");
 
