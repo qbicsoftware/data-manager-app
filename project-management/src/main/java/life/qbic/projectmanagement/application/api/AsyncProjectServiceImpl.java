@@ -819,7 +819,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
         .subscribeOn(scheduler)
         .contextWrite(reactiveSecurity(securityContext))
         .doOnError(
-            error -> log.error("Error for requesting raw datasets in project " + projectId, error))
+            error -> log.error("Error for requesting raw datasets in project in the proteomics domain" + projectId, error))
         .onErrorMap(e -> mapToAPIException(e, "Raw dataset request failed"))
         .retryWhen(defaultRetryStrategy());
   }
@@ -833,7 +833,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
         .subscribeOn(scheduler)
         .contextWrite(reactiveSecurity(securityContext))
         .doOnError(
-            error -> log.error("Error for requesting raw datasets in project " + projectId, error))
+            error -> log.error("Error for requesting raw datasets in project for the NGS domain" + projectId, error))
         .onErrorMap(e -> mapToAPIException(e, "Raw dataset request failed"))
         .retryWhen(defaultRetryStrategy());
   }
@@ -849,7 +849,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
                 filter)
         )).subscribeOn(scheduler)
         .contextWrite(reactiveSecurity(securityContext))
-        .doOnError(error -> log.error("Error searching for raw dataset " + projectId, error))
+        .doOnError(error -> log.error("Error searching for raw dataset in the NGS domain" + projectId, error))
         .onErrorMap(
             e -> new RequestFailedException("Error searching for raw dataset " + projectId, e))
         .retryWhen(defaultRetryStrategy());
