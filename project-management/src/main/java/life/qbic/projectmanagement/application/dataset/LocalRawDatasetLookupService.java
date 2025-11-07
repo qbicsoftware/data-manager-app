@@ -30,6 +30,7 @@ public class LocalRawDatasetLookupService {
 
   @PreAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
+  @Deprecated(since = "1.12.0",  forRemoval = true)
   public List<RawDatasetInformationPxP> findAllPxP(String projectId, String experimentId,
       int offset,
       int limit, SortRawData sorting, String filter) throws ServiceException {
@@ -38,6 +39,7 @@ public class LocalRawDatasetLookupService {
 
   @PreAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
+  @Deprecated(since = "1.12.0",  forRemoval = true)
   public List<RawDatasetInformationNgs> findAllNgs(String projectId, String experimentId,
       int offset,
       int limit, SortRawData sorting, String filter) throws ServiceException {

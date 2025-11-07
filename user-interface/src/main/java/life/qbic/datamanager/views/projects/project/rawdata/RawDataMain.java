@@ -62,19 +62,17 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
   private static final Logger log = LoggerFactory.logger(RawDataMain.class);
   private final DownloadComponent downloadComponent;
   private final MessageSourceNotificationFactory messageSourceNotificationFactory;
+  private final ClientDetailsProvider clientDetailsProvider;
   private Div rawdataDetailsComponentContainer;
   private final RawDataDownloadInformationComponent rawDataDownloadInformationComponent;
   private final TextField rawDataSearchField = new TextField();
   private final Div content = new Div();
-  private final transient ExperimentInformationService experimentInformationService;
   private final transient MeasurementService measurementService;
   private final transient RemoteRawDataService remoteRawDataService;
   private final Disclaimer registerMeasurementsDisclaimer;
   private final Disclaimer noRawDataRegisteredDisclaimer;
   private final String rawDataSourceURL;
   private final String documentationUrl;
-  private final ProjectInformationService projectInformationService;
-  private final ClientDetailsProvider clientDetailsProvider;
   private final AsyncProjectService asyncProjectService;
   private transient Context context;
 
@@ -85,17 +83,18 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
       @Autowired RemoteRawDataService remoteRawDataService,
       @Value("${server.download.api.measurement.url}") String dataSourceURL,
       @Value("${qbic.communication.documentation.url}") String documentationUrl,
-      @Autowired ProjectInformationService projectInformationService,
-      ClientDetailsProvider clientDetailsProvider, AsyncProjectService asyncProjectService,
+      @Autowired AsyncProjectService asyncProjectService,
+      @Autowired ClientDetailsProvider clientDetailsProvider,
       MessageSourceNotificationFactory messageSourceNotificationFactory) {
-    this.projectInformationService = Objects.requireNonNull(projectInformationService);
     this.rawDataDownloadInformationComponent = Objects.requireNonNull(
         rawDataDownloadInformationComponent);
-    this.experimentInformationService = Objects.requireNonNull(experimentInformationService);
     this.measurementService = Objects.requireNonNull(measurementService);
     this.remoteRawDataService = Objects.requireNonNull(remoteRawDataService);
     this.rawDataSourceURL = Objects.requireNonNull(dataSourceURL);
     this.documentationUrl = Objects.requireNonNull(documentationUrl);
+    this.asyncProjectService = Objects.requireNonNull(asyncProjectService);
+    this.messageSourceNotificationFactory = Objects.requireNonNull(messageSourceNotificationFactory);
+    this.clientDetailsProvider = Objects.requireNonNull(clientDetailsProvider);
     registerMeasurementsDisclaimer = createNoMeasurementsRegisteredDisclaimer();
     registerMeasurementsDisclaimer.addClassName("no-measurements-registered-disclaimer");
     noRawDataRegisteredDisclaimer = createNoRawDataRegisteredDisclaimer();
@@ -111,9 +110,7 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
     add(downloadComponent);
     addListeners();
     addClassName("raw-data");
-    this.clientDetailsProvider = clientDetailsProvider;
-    this.asyncProjectService = asyncProjectService;
-    this.messageSourceNotificationFactory = messageSourceNotificationFactory;
+
   }
 
   private void initContent() {
@@ -129,19 +126,6 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
     rawDataDownloadInformationComponent.addPersonalAccessTokenNavigationListener(
         event -> UI.getCurrent().navigate(
             PersonalAccessTokenMain.class));
-  }
-
-  private void initSearchFieldAndButtonBar() {
-    rawDataSearchField.setPlaceholder("Search");
-    rawDataSearchField.setClearButtonVisible(true);
-    rawDataSearchField.setSuffixComponent(VaadinIcon.SEARCH.create());
-    rawDataSearchField.addClassNames("search-field");
-    rawDataSearchField.setValueChangeMode(ValueChangeMode.LAZY);
-    Button downloadRawDataUrl = new Button("Download URL list");
-    downloadRawDataUrl.addClassName("primary");
-    Span buttonAndField = new Span(rawDataSearchField, downloadRawDataUrl);
-    buttonAndField.addClassName("buttonAndField");
-    content.add(buttonAndField);
   }
 
   /**

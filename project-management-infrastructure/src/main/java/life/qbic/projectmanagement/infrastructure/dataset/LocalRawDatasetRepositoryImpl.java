@@ -28,6 +28,7 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.SortDirec
 import life.qbic.projectmanagement.application.api.AsyncProjectService.SortFieldRawData;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.SortRawData;
 import life.qbic.projectmanagement.application.dataset.LocalRawDatasetRepository;
+import org.apache.poi.ss.formula.functions.T;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -148,12 +149,7 @@ public class LocalRawDatasetRepositoryImpl implements LocalRawDatasetRepository 
       if (filter.filterTerm().isBlank()) {
         return builder.conjunction();
       }
-      Expression<String> function = builder.function("JSON_SEARCH", String.class, root.get("measuredSamples"),
-          builder.literal("one"),
-          builder.literal("%" + filter.filterTerm() + "%"),
-          builder.nullLiteral(String.class),
-          builder.literal("$[*].label")
-      );
+      Expression<String> function = createSampleLabelSearchFilter(filter, root, builder);
 
       return builder.isNotNull(function);
     };
@@ -207,12 +203,7 @@ public class LocalRawDatasetRepositoryImpl implements LocalRawDatasetRepository 
       if (filter.filterTerm().isBlank()) {
         return builder.conjunction();
       }
-      Expression<String> function = builder.function("JSON_SEARCH", String.class, root.get("measuredSamples"),
-          builder.literal("one"),
-          builder.literal("%" + filter.filterTerm() + "%"),
-          builder.nullLiteral(String.class),
-          builder.literal("$[*].label")
-          );
+      Expression<String> function = createSampleLabelSearchFilter(filter, root, builder);
 
       return builder.isNotNull(function);
     };
@@ -239,12 +230,7 @@ public class LocalRawDatasetRepositoryImpl implements LocalRawDatasetRepository 
       if (filter == null) {
         return builder.conjunction();
       }
-      Expression<String> function = builder.function("JSON_SEARCH", String.class, root.get("measuredSamples"),
-          builder.literal("one"),
-          builder.literal("%" + filter.filterTerm() + "%"),
-          builder.nullLiteral(String.class),
-          builder.literal("$[*].label")
-      );
+      Expression<String> function = createSampleLabelSearchFilter(filter, root, builder);
 
       return builder.isNotNull(function);
     };
@@ -263,6 +249,16 @@ public class LocalRawDatasetRepositoryImpl implements LocalRawDatasetRepository 
     return Math.toIntExact(ngsInfoRepository.count(fullSpec));
   }
 
+  private static <T> Expression<String> createSampleLabelSearchFilter(RawDatasetFilter filter,
+      Root<T> root, CriteriaBuilder builder) {
+    return builder.function("JSON_SEARCH", String.class, root.get("measuredSamples"),
+        builder.literal("one"),
+        builder.literal("%" + filter.filterTerm() + "%"),
+        builder.nullLiteral(String.class),
+        builder.literal("$[*].label")
+    );
+  }
+
   @Override
   public Integer countPxP(String experimentId, RawDatasetFilter filter) throws LookupException {
 
@@ -270,12 +266,7 @@ public class LocalRawDatasetRepositoryImpl implements LocalRawDatasetRepository 
       if (filter == null) {
         return builder.conjunction();
       }
-      Expression<String> function = builder.function("JSON_SEARCH", String.class, root.get("measuredSamples"),
-          builder.literal("one"),
-          builder.literal("%" + filter.filterTerm() + "%"),
-          builder.nullLiteral(String.class),
-          builder.literal("$[*].label")
-      );
+      Expression<String> function = createSampleLabelSearchFilter(filter, root, builder);
 
       return builder.isNotNull(function);
     };

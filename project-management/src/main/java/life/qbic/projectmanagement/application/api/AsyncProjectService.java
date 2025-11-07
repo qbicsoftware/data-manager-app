@@ -2377,6 +2377,11 @@ public interface AsyncProjectService {
 
   }
 
+  /**
+   * The raw data sorting key controls the properties that are available for sorting.
+   *
+   * @since 1.12.0
+   */
   enum RawDataSortingKey {
     MEASUREMENT_ID, UPLOAD_DATE, SAMPLE_NAME
   }
@@ -2435,8 +2440,8 @@ public interface AsyncProjectService {
       RawDatasetFilter rawDataFilter);
 
   /**
-   * Requests the total number of proteomics measurements for the given experiment in a project, based on
-   * the provided filter.
+   * Requests the total number of proteomics measurements for the given experiment in a project,
+   * based on the provided filter.
    *
    * @param projectId     the project to fetch the total number of measurements for
    * @param experimentId  the experiment to fetch the total number of measurements for

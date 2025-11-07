@@ -109,10 +109,6 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
 
     filterTabSheet.setCaptionFeatureAction("Export Download-Links");
 
-    filterTabSheet.whenSelectedGrid(RawDatasetInformationNgs.class, grid -> {
-
-    });
-
     var projectCode = context.projectCode().orElse("unknown_project_code");
 
     filterTabSheet.addPrimaryFeatureButtonListener(event -> {
@@ -124,7 +120,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
             .toList();
 
         if (ids.isEmpty()) {
-          displaySelectionNote();
+          displayMissingSelectionNote();
           return;
         }
 
@@ -141,7 +137,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
             .toList();
 
         if (ids.isEmpty()) {
-          displaySelectionNote();
+          displayMissingSelectionNote();
           return;
         }
 
@@ -156,7 +152,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
     add(filterTabSheet);
   }
 
-  private void displaySelectionNote() {
+  private void displayMissingSelectionNote() {
     messageFactory.toast("rawdata.no-dataset-selected", new Object[]{}, getLocale())
         .open();
   }
