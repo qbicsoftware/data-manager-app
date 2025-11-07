@@ -55,9 +55,8 @@ public class RawDataDownloadInformationComponent extends PageArea implements Ser
     Div generateTokenSection = generateSection("Generate Token",
         "Generate a Personal Access Token (PAT)",
         navigateToPatPageButton);
-    Div downloadRawDataSection = generateSection("Download RAW data URLs",
-        "Download the file with a list of URLs corresponding to the measurement you want to download.",
-        generateDownloadUrlsButton);
+    Div downloadRawDataSection = generateSection("Download dataset locations",
+        "Export the file with a list of dataset locations corresponding to the measurements you want to download.");
     TabSheet codeTabSheet = new TabSheet();
     CodeBlock curlCodeBlock = new CodeBlock("curl", "--parallel", "--fail", "-OJ", "-H",
         "\"Authorization: Bearer <ACCESS_TOKEN>\"",
