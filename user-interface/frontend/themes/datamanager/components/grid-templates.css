@@ -20,7 +20,7 @@
 
 .main.raw-data {
   grid-template-columns: minmax(min-content, 80%) minmax(min-content, 20%);
-  grid-template-rows: minmax(min-content, 20%) minmax(min-content, 80%);
+  grid-template-rows: minmax(min-content, 10%) 90%;
   grid-template-areas:
     ". rawdatadownloadinformation"
     "rawdatadetails rawdatadownloadinformation";

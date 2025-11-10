@@ -17,6 +17,8 @@ public final class FilterGridTab<T> extends Tab {
 
   private final Tag badge;
 
+  private int itemCount = 0;
+
   public FilterGridTab(String label, FilterGrid<T> filterGrid) {
     super(new Span(label));
     this.badge = new Tag("");
@@ -35,6 +37,17 @@ public final class FilterGridTab<T> extends Tab {
    */
   public void setItemCount(int itemCount) {
     this.badge.setText(String.valueOf(itemCount));
+    this.itemCount = itemCount;
+  }
+
+  /**
+   * Retrieves the currently set item count value
+   *
+   * @return the item count value
+   * @since 1.12.0
+   */
+  public int getItemCount() {
+    return itemCount;
   }
 
   /**

@@ -717,6 +717,14 @@ Colors
   height: var(--spacing-07);
 }
 
+.width-08 {
+  width: var(--spacing-08);
+}
+
+.width-250px {
+  width: 250px;
+}
+
 /*endregion*/
 
 /*region Behaviour*/

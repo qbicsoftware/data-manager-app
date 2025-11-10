@@ -1,7 +1,10 @@
 package life.qbic.projectmanagement.application.dataset;
 
+import java.util.Collection;
 import java.util.List;
+import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.RawDataset;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.RawDatasetFilter;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.RawDatasetInformationNgs;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.RawDatasetInformationPxP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.SortRawData;
@@ -57,4 +60,25 @@ public interface LocalRawDatasetRepository {
    */
   List<RawDatasetInformationNgs> findAllNgs(String experimentId, int offset, int limit,
       SortRawData sorting, String filter);
+
+  List<RawDatasetInformationNgs> findAllNgs(String experimentId, int offset, int limit,
+      RawDatasetFilter filter) throws LookupException;
+
+  List<RawDatasetInformationPxP> findAllPxP(String experimentId, int offset, int limit,
+      RawDatasetFilter filter) throws LookupException;
+
+  Integer countNGS(String experimentId, RawDatasetFilter filter) throws LookupException;
+
+  Integer countPxP(String experimentId, RawDatasetFilter filter) throws LookupException;
+
+  class LookupException extends RuntimeException {
+
+    public LookupException(String message) {
+      super(message);
+    }
+
+    public LookupException(String message, Throwable cause) {
+      super(message, cause);
+    }
+  }
 }

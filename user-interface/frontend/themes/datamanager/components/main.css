@@ -286,7 +286,7 @@
 
 
 .main.raw-data .raw-data-details-component {
-  grid-area: rawdatadetails
+  grid-area: rawdatadetails;
 }
 
 .main.raw-data .raw-data-main-content {

@@ -80,6 +80,7 @@ public final class FilterGrid<T> extends Div {
     searchField = new TextField();
     searchField.setSuffixComponent(VaadinIcon.SEARCH.create());
     searchField.setPlaceholder("Search items");
+    searchField.addClassName("width-250px");
     searchField.addValueChangeListener(e ->
     {
       currentFilter = filterUpdater.withSearchTerm(currentFilter, e.getValue());
