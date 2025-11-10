@@ -348,7 +348,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
   private ComponentRenderer<GridDetailsItem, RawDatasetInformationNgs> renderRawDataNgs() {
     return new ComponentRenderer<>(rawData -> {
       GridDetailsItem rawDataItem = new GridDetailsItem();
-      rawDataItem.addListEntry("Sample Ids", rawData.linkedSampleInformation().stream().map(
+      rawDataItem.addListEntry("Sample Name(s)", rawData.linkedSampleInformation().stream().map(
           BasicSampleInformation::sampleName).toList());
       rawDataItem.addEntry("Number of Files",
           String.valueOf(rawData.dataset().numberOfFiles()));
@@ -356,27 +356,6 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
       rawDataItem.addListEntry("File Suffixes", rawData.dataset().fileTypes());
       return rawDataItem;
     });
-  }
-
-
-  private ComponentRenderer<GridDetailsItem, RawData> renderRawDataItemDetails() {
-    return new ComponentRenderer<>(rawData -> {
-      GridDetailsItem rawDataItem = new GridDetailsItem();
-      rawDataItem.addListEntry("Sample Ids",
-          groupSampleInfoIntoCodeAndLabel(rawData.sampleInformation()));
-      rawDataItem.addEntry("Number of Files",
-          String.valueOf(rawData.rawDataDatasetInformation().numberOfFiles()));
-      rawDataItem.addEntry("File Size", rawData.rawDataDatasetInformation().fileSize());
-      rawDataItem.addListEntry("File Suffixes", rawData.rawDataDatasetInformation().fileEndings());
-      return rawDataItem;
-    });
-  }
-
-  private Collection<String> groupSampleInfoIntoCodeAndLabel(
-      Collection<RawDataSampleInformation> sampleInformationCollection) {
-    return sampleInformationCollection.stream().map(
-        sampleInformation -> String.format("%s (%s)",
-            sampleInformation.sampleName(), sampleInformation.sampleCode().code())).toList();
   }
 
   private String convertToLocalDate(Date date) {
