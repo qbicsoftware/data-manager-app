@@ -68,7 +68,7 @@ public class RawDataDownloadInformationComponent extends PageArea implements Ser
     codeTabSheet.add("curl", curlCodeBlock);
     codeTabSheet.add("wget", wgetCodeBlock);
     Div runCurlCommandSection = generateSection("Download Data",
-        "Install cURL or wGet on your system, open the command line and enter one of the following command once for each file you want to download",
+        "Install cURL or Wget on your system, open the command line and enter one of the following command once for each file you want to download",
         codeTabSheet);
     Span additionalInfoSection = generateAdditionalInformationSection();
     add(generateTokenSection, downloadRawDataSection, runCurlCommandSection, additionalInfoSection);

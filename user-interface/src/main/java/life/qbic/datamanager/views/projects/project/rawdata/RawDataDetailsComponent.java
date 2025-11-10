@@ -167,9 +167,9 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
     for (var tab : availableTabs) {
       filterTabSheet.remove(tab.filterGrid());
     }
-    availableTabs.stream().filter(tab -> tab.getItemCount() > 0).forEach(tab -> {
-      filterTabSheet.addFilterGridTab(tab);
-    });
+    availableTabs.stream()
+        .filter(tab -> tab.getItemCount() > 0)
+        .forEach(tab -> filterTabSheet.addFilterGridTab(tab));
   }
 
   private void displayMissingSelectionNote() {
