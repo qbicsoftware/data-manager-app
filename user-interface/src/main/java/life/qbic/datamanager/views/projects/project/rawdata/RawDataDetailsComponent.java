@@ -117,13 +117,13 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
             }
         ));
 
-    filterTabSheet.hidePrimaryActionButton();
+    filterTabSheet.hidePrimaryFeatureButton();
 
-    filterTabSheet.setCaptionFeatureAction("Export Dataset Locations");
+    filterTabSheet.setCaptionPrimaryAction("Export Dataset Locations");
 
     var projectCode = context.projectCode().orElse("unknown_project_code");
 
-    filterTabSheet.addPrimaryFeatureButtonListener(event -> {
+    filterTabSheet.addPrimaryActionButtonListener(event -> {
 
       filterTabSheet.whenSelectedGrid(RawDatasetInformationNgs.class, grid -> {
         var ids = grid.selectedElements().stream()
@@ -158,7 +158,6 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
             LocalDate.now(), projectCode, "proteomics_measurement_dataset_locations", "txt"), file);
         downloadComponent.trigger(streamProvider);
       });
-
     });
 
     add(filterTabSheet);
@@ -251,8 +250,8 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
                   rawDataFilter).blockOptional().orElse(0);
             }
         ), new RawDataFilter(""), (filter, term) -> new RawDataFilter(term));
-    filterGrid.searchFieldPlaceholder("Search measurements");
-    filterGrid.itemDisplayLabel("measurement");
+    filterGrid.searchFieldPlaceholder("Search raw datasets");
+    filterGrid.itemDisplayLabel("dataset");
     return filterGrid;
   }
 
@@ -280,8 +279,8 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
                   rawDataFilter).blockOptional().orElse(0);
             }
         ), new RawDataFilter(""), (filter, term) -> new RawDataFilter(term));
-    filterGrid.searchFieldPlaceholder("Search measurements");
-    filterGrid.itemDisplayLabel("measurement");
+    filterGrid.searchFieldPlaceholder("Search raw datasets");
+    filterGrid.itemDisplayLabel("dataset");
     return filterGrid;
   }
 

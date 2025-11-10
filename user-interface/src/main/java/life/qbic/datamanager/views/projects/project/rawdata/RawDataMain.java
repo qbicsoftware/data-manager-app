@@ -65,7 +65,6 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
   private final ClientDetailsProvider clientDetailsProvider;
   private Div rawdataDetailsComponentContainer;
   private final RawDataDownloadInformationComponent rawDataDownloadInformationComponent;
-  private final TextField rawDataSearchField = new TextField();
   private final Div content = new Div();
   private final transient MeasurementService measurementService;
   private final transient RemoteRawDataService remoteRawDataService;

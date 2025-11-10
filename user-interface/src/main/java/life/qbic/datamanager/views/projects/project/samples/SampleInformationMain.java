@@ -529,7 +529,6 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     ExperimentId parsedExperimentId = ExperimentId.parse(experimentId);
     this.context = context.with(parsedExperimentId);
 
-
     this.context = context.withProjectCode(asyncProjectService.getProjectCode(projectID)
         .blockOptional()
         .map(ProjectCode::value)

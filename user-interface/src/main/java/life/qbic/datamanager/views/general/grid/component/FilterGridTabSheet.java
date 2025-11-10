@@ -101,6 +101,10 @@ public final class FilterGridTabSheet extends TabSheet {
     primaryActionGroup.actionButton.setVisible(false);
   }
 
+  public void hidePrimaryFeatureButton() {
+    primaryActionGroup.featureButton.setVisible(false);
+  }
+
   /**
    * Shows the primary action button.
    *
