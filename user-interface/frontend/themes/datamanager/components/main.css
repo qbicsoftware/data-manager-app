@@ -287,6 +287,7 @@
 
 .main.raw-data .raw-data-details-component {
   grid-area: rawdatadetails;
+  box-sizing: border-box;
 }
 
 .main.raw-data .raw-data-main-content {
@@ -302,13 +303,6 @@
   color: var(--lumo-secondary-text-color);
   font-size: var(--lumo-font-size-xxl);
   margin-bottom: 0.5rem;
-}
-
-.main.raw-data .raw-data-main-content .buttonAndField {
-  display: inline-flex;
-  justify-content: space-between;
-  /*Moves this bar to end of container*/
-  margin-top: auto;
 }
 
 .main.user-registration {
