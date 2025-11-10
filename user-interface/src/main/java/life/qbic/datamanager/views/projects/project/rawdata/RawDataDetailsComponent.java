@@ -119,7 +119,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
 
     filterTabSheet.hidePrimaryFeatureButton();
 
-    filterTabSheet.setCaptionPrimaryAction("Export Dataset Locations");
+    filterTabSheet.setCaptionPrimaryAction("Export Dataset URLs");
 
     var projectCode = context.projectCode().orElse("unknown_project_code");
 
