@@ -60,7 +60,7 @@ public class RawDataDownloadInformationComponent extends PageArea implements Ser
     TabSheet codeTabSheet = new TabSheet();
     CodeBlock curlCodeBlock = new CodeBlock("curl", "--parallel", "--fail", "-OJ", "-H",
         "\"Authorization: Bearer <ACCESS_TOKEN>\"",
-        "<DOWNLOAD_URL>");
+        "<DATASET_URL>");
     CodeBlock wgetCodeBlock = new CodeBlock("wget", "--content-disposition", "--trust-server-names",
         "--header",
         "\"Authorization: Bearer <ACCESS_TOKEN>\"",
