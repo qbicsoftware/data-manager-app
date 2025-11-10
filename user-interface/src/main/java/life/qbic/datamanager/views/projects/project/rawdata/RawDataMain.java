@@ -2,12 +2,8 @@ package life.qbic.datamanager.views.projects.project.rawdata;
 
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.UI;
-import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.textfield.TextField;
-import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
@@ -15,34 +11,26 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
-import java.nio.charset.StandardCharsets;
-import java.time.LocalDate;
-import java.util.Collection;
-import java.util.List;
 import java.util.Objects;
 import life.qbic.application.commons.ApplicationException;
-import life.qbic.application.commons.FileNameFormatter;
-import life.qbic.datamanager.files.export.download.ByteArrayDownloadStreamProvider;
-import life.qbic.datamanager.files.export.rawdata.RawDataUrlFile;
+import life.qbic.datamanager.ClientDetailsProvider;
 import life.qbic.datamanager.views.AppRoutes.ProjectRoutes;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.account.PersonalAccessTokenMain;
 import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.general.download.DownloadComponent;
-import life.qbic.datamanager.views.notifications.ErrorMessage;
-import life.qbic.datamanager.views.notifications.StyledNotification;
+import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
-import life.qbic.projectmanagement.application.ProjectInformationService;
-import life.qbic.projectmanagement.application.dataset.RawDataService;
+import life.qbic.projectmanagement.application.api.AsyncProjectService;
+import life.qbic.projectmanagement.application.dataset.RemoteRawDataService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
-import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -68,58 +56,55 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
   private static final long serialVersionUID = -4506659645977994192L;
   private static final Logger log = LoggerFactory.logger(RawDataMain.class);
   private final DownloadComponent downloadComponent;
-  private final RawDataDetailsComponent rawdataDetailsComponent;
+  private final MessageSourceNotificationFactory messageSourceNotificationFactory;
+  private final ClientDetailsProvider clientDetailsProvider;
+  private Div rawdataDetailsComponentContainer;
   private final RawDataDownloadInformationComponent rawDataDownloadInformationComponent;
-  private final TextField rawDataSearchField = new TextField();
   private final Div content = new Div();
-  private final transient ExperimentInformationService experimentInformationService;
   private final transient MeasurementService measurementService;
-  private final transient RawDataService rawDataService;
+  private final transient RemoteRawDataService remoteRawDataService;
   private final Disclaimer registerMeasurementsDisclaimer;
   private final Disclaimer noRawDataRegisteredDisclaimer;
   private final String rawDataSourceURL;
   private final String documentationUrl;
-  private final ProjectInformationService projectInformationService;
+  private final AsyncProjectService asyncProjectService;
   private transient Context context;
 
-  public RawDataMain(@Autowired RawDataDetailsComponent rawDataDetailsComponent,
+  public RawDataMain(
       @Autowired RawDataDownloadInformationComponent rawDataDownloadInformationComponent,
       @Autowired ExperimentInformationService experimentInformationService,
       @Autowired MeasurementService measurementService,
-      @Autowired RawDataService rawDataService,
+      @Autowired RemoteRawDataService remoteRawDataService,
       @Value("${server.download.api.measurement.url}") String dataSourceURL,
       @Value("${qbic.communication.documentation.url}") String documentationUrl,
-      @Autowired ProjectInformationService projectInformationService) {
-    this.projectInformationService = Objects.requireNonNull(projectInformationService);
-    this.rawdataDetailsComponent = Objects.requireNonNull(rawDataDetailsComponent);
+      @Autowired AsyncProjectService asyncProjectService,
+      @Autowired ClientDetailsProvider clientDetailsProvider,
+      MessageSourceNotificationFactory messageSourceNotificationFactory) {
     this.rawDataDownloadInformationComponent = Objects.requireNonNull(
         rawDataDownloadInformationComponent);
-    this.experimentInformationService = Objects.requireNonNull(experimentInformationService);
     this.measurementService = Objects.requireNonNull(measurementService);
-    this.rawDataService = Objects.requireNonNull(rawDataService);
+    this.remoteRawDataService = Objects.requireNonNull(remoteRawDataService);
     this.rawDataSourceURL = Objects.requireNonNull(dataSourceURL);
     this.documentationUrl = Objects.requireNonNull(documentationUrl);
+    this.asyncProjectService = Objects.requireNonNull(asyncProjectService);
+    this.messageSourceNotificationFactory = Objects.requireNonNull(messageSourceNotificationFactory);
+    this.clientDetailsProvider = Objects.requireNonNull(clientDetailsProvider);
     registerMeasurementsDisclaimer = createNoMeasurementsRegisteredDisclaimer();
     registerMeasurementsDisclaimer.addClassName("no-measurements-registered-disclaimer");
     noRawDataRegisteredDisclaimer = createNoRawDataRegisteredDisclaimer();
     noRawDataRegisteredDisclaimer.addClassName("no-raw-data-registered-disclaimer");
     downloadComponent = new DownloadComponent();
+    rawdataDetailsComponentContainer = new Div();
+    rawdataDetailsComponentContainer.addClassNames("display-contents");
 
     initContent();
     add(registerMeasurementsDisclaimer);
     add(noRawDataRegisteredDisclaimer);
-    add(rawDataDetailsComponent);
+    add(rawdataDetailsComponentContainer);
     add(rawDataDownloadInformationComponent);
     add(downloadComponent);
     addListeners();
     addClassName("raw-data");
-    log.debug(String.format(
-        "New instance for %s(#%s) created with %s(#%s) and %s(#%s)",
-        getClass().getSimpleName(), System.identityHashCode(this),
-        rawdataDetailsComponent.getClass().getSimpleName(),
-        System.identityHashCode(rawDataDetailsComponent),
-        rawDataDownloadInformationComponent.getClass().getSimpleName(),
-        System.identityHashCode(rawDataDownloadInformationComponent)));
 
   }
 
@@ -128,73 +113,14 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
     titleField.setText("Download Raw Data");
     titleField.addClassNames("title");
     content.add(titleField);
-    initSearchFieldAndButtonBar();
     add(content);
     content.addClassName("raw-data-main-content");
   }
 
   private void addListeners() {
-    rawDataDownloadInformationComponent.addDownloadUrlListener(this::handleUrlDownload);
     rawDataDownloadInformationComponent.addPersonalAccessTokenNavigationListener(
         event -> UI.getCurrent().navigate(
             PersonalAccessTokenMain.class));
-  }
-
-  private void initSearchFieldAndButtonBar() {
-    rawDataSearchField.setPlaceholder("Search");
-    rawDataSearchField.setClearButtonVisible(true);
-    rawDataSearchField.setSuffixComponent(VaadinIcon.SEARCH.create());
-    rawDataSearchField.addClassNames("search-field");
-    rawDataSearchField.setValueChangeMode(ValueChangeMode.LAZY);
-    rawDataSearchField.addValueChangeListener(
-        event -> rawdataDetailsComponent.setSearchedRawDataValue((event.getValue())));
-    Button downloadRawDataUrl = new Button("Download URL list");
-    downloadRawDataUrl.addClassName("primary");
-    downloadRawDataUrl.addClickListener(this::handleUrlDownload);
-    Span buttonAndField = new Span(rawDataSearchField, downloadRawDataUrl);
-    buttonAndField.addClassName("buttonAndField");
-    content.add(buttonAndField);
-  }
-
-
-  private void handleUrlDownload(ComponentEvent<?> event) {
-    Collection<MeasurementCode> selectedMeasurements = rawdataDetailsComponent.getSelectedMeasurementUrls();
-    if (selectedMeasurements.isEmpty()) {
-      ErrorMessage errorMessage = new ErrorMessage("No Raw Data Item Selected",
-          "Please select at least one measurement to generate an URL from");
-      StyledNotification notification = new StyledNotification(errorMessage);
-      notification.open();
-    }
-    var downloadUrls = generateDownloadUrls(selectedMeasurements);
-    var currentExperiment = experimentInformationService.find(
-            context.projectId().orElseThrow().value(), context.experimentId().orElseThrow())
-        .orElseThrow();
-    var currentProjectCode = projectInformationService.find(context.projectId().orElseThrow())
-        .orElseThrow().getProjectCode().value();
-
-    downloadComponent.trigger(new ByteArrayDownloadStreamProvider() {
-      @Override
-      public byte[] getBytes() {
-        if (downloadUrls.isEmpty()) {
-          return new byte[0];
-        }
-        return RawDataUrlFile
-            .create(downloadUrls)
-            .getBytes(StandardCharsets.UTF_8);
-      }
-
-      @Override
-      public String getFilename() {
-        return FileNameFormatter.formatWithTimestampedContext(LocalDate.now(), currentProjectCode,
-            currentExperiment.getName(), "rawdata urls", "txt");
-      }
-    });
-  }
-
-  private List<RawDataURL> generateDownloadUrls(
-      Collection<MeasurementCode> measurementCodeCollection) {
-    return measurementCodeCollection.stream().map(measurementCode ->
-        new RawDataURL(rawDataSourceURL, measurementCode.value())).toList();
   }
 
   /**
@@ -218,6 +144,8 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
     }
     ExperimentId parsedExperimentId = ExperimentId.parse(experimentId);
     this.context = context.with(parsedExperimentId);
+    asyncProjectService.getProjectCode(projectID).blockOptional()
+        .ifPresent(projectCode -> context = context.withProjectCode(projectCode.value()));
     setRawDataInformation();
   }
 
@@ -228,7 +156,7 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
       showRegisterMeasurementDisclaimer();
       return;
     }
-    if (!rawDataService.hasRawData(currentExperimentId)) {
+    if (!remoteRawDataService.hasRawData(currentExperimentId)) {
       showNoRawDataRegisteredDisclaimer();
     } else {
       showRawDataForRegisteredMeasurements();
@@ -238,7 +166,7 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
   private void showRegisterMeasurementDisclaimer() {
     noRawDataRegisteredDisclaimer.setVisible(false);
     content.setVisible(false);
-    rawdataDetailsComponent.setVisible(false);
+    rawdataDetailsComponentContainer.setVisible(false);
     rawDataDownloadInformationComponent.setVisible(false);
     registerMeasurementsDisclaimer.setVisible(true);
   }
@@ -246,7 +174,7 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
   private void showNoRawDataRegisteredDisclaimer() {
     registerMeasurementsDisclaimer.setVisible(false);
     content.setVisible(false);
-    rawdataDetailsComponent.setVisible(false);
+    rawdataDetailsComponentContainer.setVisible(false);
     rawDataDownloadInformationComponent.setVisible(false);
     noRawDataRegisteredDisclaimer.setVisible(true);
   }
@@ -255,9 +183,16 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
     noRawDataRegisteredDisclaimer.setVisible(false);
     registerMeasurementsDisclaimer.setVisible(false);
     content.setVisible(true);
-    rawdataDetailsComponent.setContext(context);
+    rawdataDetailsComponentContainer.removeAll();
+    rawdataDetailsComponentContainer.add(
+        new RawDataDetailsComponent(
+            clientDetailsProvider,
+            asyncProjectService,
+            context,
+            rawDataSourceURL,
+            messageSourceNotificationFactory));
     rawDataDownloadInformationComponent.setVisible(true);
-    rawdataDetailsComponent.setVisible(true);
+    rawdataDetailsComponentContainer.setVisible(true);
   }
 
   private Disclaimer createNoMeasurementsRegisteredDisclaimer() {

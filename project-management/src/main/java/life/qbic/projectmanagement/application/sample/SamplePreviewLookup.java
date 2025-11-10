@@ -2,6 +2,8 @@ package life.qbic.projectmanagement.application.sample;
 
 import java.util.List;
 import life.qbic.application.commons.SortOrder;
+import life.qbic.projectmanagement.application.api.AsyncProjectService;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.SamplePreviewFilter;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 
 public interface SamplePreviewLookup {
@@ -33,4 +35,16 @@ public interface SamplePreviewLookup {
    */
   int queryCountByExperimentId(ExperimentId experimentId, String filter);
 
+  List<SamplePreview> queryByExperimentId(String experimentId, int offset, int limit, SamplePreviewFilter filter) throws LookupException;
+
+  class LookupException extends RuntimeException {
+
+    public LookupException(String message) {
+      super(message);
+    }
+
+    public LookupException(String message, Throwable cause) {
+      super(message, cause);
+    }
+  }
 }

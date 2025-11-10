@@ -33,6 +33,7 @@ import life.qbic.datamanager.files.parsing.converters.MetadataConverterV2;
 import life.qbic.datamanager.files.parsing.tsv.TSVParser;
 import life.qbic.datamanager.files.parsing.xlsx.XLSXParser;
 import life.qbic.datamanager.views.Context;
+import life.qbic.datamanager.views.UiHandle;
 import life.qbic.datamanager.views.general.InfoBox;
 import life.qbic.datamanager.views.general.dialog.DialogSection;
 import life.qbic.datamanager.views.general.dialog.InputValidation;
@@ -74,6 +75,10 @@ public class MeasurementUpload extends Div implements UserInput {
 
   private final Map<String, List<? extends ValidationRequestBody>> validationRequestsPerFile = new HashMap<>();
   private final MessageSourceNotificationFactory notificationFactory;
+  private final UiHandle uiHandle = new UiHandle();  // keeps a reference to the current UI
+
+  private final EditableMultiFileMemoryBuffer uploadBuffer;
+  private final List<MeasurementFileItem> measurementFileItems;
 
   private enum AcceptedFileType {
     EXCEL("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
@@ -95,9 +100,6 @@ public class MeasurementUpload extends Div implements UserInput {
           .collect(Collectors.toUnmodifiableSet());
     }
   }
-
-  private final EditableMultiFileMemoryBuffer uploadBuffer;
-  private final List<MeasurementFileItem> measurementFileItems;
 
   public MeasurementUpload(
       AsyncProjectService service,
@@ -139,6 +141,9 @@ public class MeasurementUpload extends Div implements UserInput {
     // Trigger display refresh, to ensure the upload item display is only shown
     // if uploaded measurement files are present
     refresh();
+
+    addAttachListener(event -> uiHandle.bind(event.getUI()));
+    addDetachListener(ignored -> uiHandle.unbind());
   }
 
   public List<? extends ValidationRequestBody> getValidationRequestContent() {
@@ -180,24 +185,20 @@ public class MeasurementUpload extends Div implements UserInput {
   }
 
   private void displayUnsupportedFileType() {
-    getUI().ifPresent(ui -> ui.access(() -> {
-      var toast = notificationFactory.toast("measurement.upload.failed.unsupported-file-type",
-          new Object[]{}, getLocale());
-      toast.open();
-    }));
+    var toast = notificationFactory.toast("measurement.upload.failed.unsupported-file-type",
+        new Object[]{}, getLocale());
+    toast.open();
   }
 
   private void displayError() {
-    getUI().ifPresent(ui -> ui.access(() -> {
-      var toast = notificationFactory.toast("measurement.upload.failed", new Object[]{},
-          getLocale());
-      toast.open();
-    }));
+    var toast = notificationFactory.toast("measurement.upload.failed", new Object[]{},
+        getLocale());
+    toast.open();
   }
 
   private void onUploadSucceeded(SucceededEvent succeededEvent) {
     var fileName = succeededEvent.getFileName();
-    Optional<AcceptedFileType> knownFileType = AcceptedFileType.forMimeType(
+    Optional<MeasurementUpload.AcceptedFileType> knownFileType = AcceptedFileType.forMimeType(
         succeededEvent.getMIMEType());
     if (knownFileType.isEmpty()) {
       displayUnsupportedFileType();
@@ -258,22 +259,25 @@ public class MeasurementUpload extends Div implements UserInput {
     AtomicInteger counter = new AtomicInteger();
     counter.set(1);
 
+    validationStarted();
     service.validate(Flux.fromIterable(requests))
-        .doFirst(this::validationStarted)
         .doOnNext(ignored -> counter.incrementAndGet())
         .bufferTimeout(20, Duration.ofMillis(200))
-        .doOnNext(item -> setValidationProgressText(
-            "Processed " + counter.get() + " requests from " + itemsToValidate))
+        .doOnNext(item -> uiHandle.onUiAndPush(() -> {
+          setValidationProgressText(
+              "Processed " + counter.get() + " requests from " + itemsToValidate);
+        }))
         .flatMap(Flux::fromIterable)
         .collectList()
-        .doFinally(it -> validationFinished())
-        .subscribe(responses -> displayValidationResults(
-            responses, itemsToValidate, fileName));
+        .doOnSuccess(it -> uiHandle.onUi(this::validationFinished))
+        .subscribe(responses -> {
+          uiHandle.onUi(this::validationFinished);
+          uiHandle.onUiAndPush(() -> displayValidationResults(responses, itemsToValidate, fileName));
+        });
   }
 
   private void validationStarted() {
-    showValidationProgress();
-    setValidationProgressText("Starting validation ...");
+    showValidationProgress("Starting validation ...");
     isValidationInProgress.set(true);
   }
 
@@ -284,30 +288,55 @@ public class MeasurementUpload extends Div implements UserInput {
 
 
   private void hideValidationProgress() {
-    getUI().ifPresent(ui -> ui.access(() -> validationProgress.setVisible(false)));
+    validationProgress.setVisible(false);
   }
 
-  private void showValidationProgress() {
-    getUI().ifPresent(ui -> ui.access(() -> validationProgress.setVisible(true)));
+  /**
+   * Will show the validation in progress component with the provided message.
+   *
+   * @param message the message to display
+   * @since 1.12.0
+   */
+  private void showValidationProgress(String message) {
+    validationProgress.setVisible(true);
+    validationProgress.setText(message);
   }
 
-  private void setValidationProgressText(String text) {
-    getUI().ifPresent(ui -> ui.access(() -> validationProgress.setText(text)));
+  private void setValidationProgressText(String message) {
+    validationProgress.setText(message);
   }
 
+  /**
+   * Displays the validation results.
+   * <p>
+   *
+   * <strong>Note: </strong> the method does not lock the user session to update the UI, so make
+   * sure you only call this method from within <code>ui.access(() -> ...) </code>
+   *
+   * @param responses        a {@link List} of {@link ValidationResponse} that contain detailed
+   *                         validation results
+   * @param totalValidations the total number of validations performed
+   * @param fileName         the file name of the uploaded sheet
+   */
   private void displayValidationResults(List<ValidationResponse> responses, int totalValidations,
       String fileName) {
     ValidationResult result = ValidationResult.successful();
     var combinedResult = responses.stream().map(ValidationResponse::result)
         .reduce(result, ValidationResult::combine);
-
-    getUI().ifPresent(ui -> ui.access(() -> {
-      var measurementFileItem = new MeasurementFileItem(fileName,
-          new MeasurementValidationReport(totalValidations, combinedResult));
-      addAndDisplayFile(measurementFileItem);
-    }));
+    var measurementFileItem = new MeasurementFileItem(fileName,
+        new MeasurementValidationReport(totalValidations, combinedResult));
+    addAndDisplayFile(measurementFileItem);
   }
 
+  /**
+   * Adds the display file to the local component cache and displays it.
+   * <p>
+   *
+   * <strong>Note: </strong> the method does not lock the user session to update the UI, so make
+   * sure you only call this method from within <code>ui.access(() -> ...) </code>
+   *
+   * @param measurementFileItem the file item to process
+   */
   private void addAndDisplayFile(MeasurementFileItem measurementFileItem) {
     measurementFileItems.add(measurementFileItem);
     MeasurementFileDisplay measurementFileDisplay = new MeasurementFileDisplay(measurementFileItem);
@@ -434,12 +463,12 @@ public class MeasurementUpload extends Div implements UserInput {
       fileNameLabel.addClassNames("file-name");
 
       setDisplayBoxContent(measurementFileItem.measurementValidationReport());
-      displayBox.addClassNames("flex-vertical", "padding-top-bottom-02");
+      displayBox.addClassNames("flex-vertical", "padding-vertical-02");
 
       add(fileNameLabel);
       add(displayBox);
-      addClassNames("flex-vertical", "gap-04", "choice-box", "padding-top-bottom-04",
-          "padding-left-right-04");
+      addClassNames("flex-vertical", "gap-04", "border", "rounded-02", "padding-vertical-04",
+          "padding-horizontal-04");
     }
 
     public MeasurementFileItem measurementFileItem() {
@@ -510,8 +539,8 @@ public class MeasurementUpload extends Div implements UserInput {
 
     private ValidationReportDisplay(ValidationHeader header) {
       add(header);
-      addClassNames("flex-vertical", "gap-04", "choice-box", "padding-top-bottom-04",
-          "padding-left-right-04", "background-contrast-5pct");
+      addClassNames("flex-vertical", "gap-04", "border", "rounded-02", "padding-vertical-04",
+          "padding-horizontal-04", "background-contrast-5pct");
     }
 
     static ValidationReportDisplay empty() {

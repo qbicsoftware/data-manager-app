@@ -4,12 +4,19 @@ import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
 import java.util.Arrays;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.OffsetBasedRequest;
 import life.qbic.application.commons.SortOrder;
+import life.qbic.projectmanagement.application.api.AsyncProjectService;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.SamplePreviewFilter;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.SamplePreviewSortKey;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.SortDirection;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.application.sample.SamplePreviewLookup;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
@@ -67,12 +74,63 @@ public class SamplePreviewJpaRepository implements SamplePreviewLookup {
     return (int) samplePreviewRepository.count(filterSpecification);
   }
 
+  @Override
+  public List<SamplePreview> queryByExperimentId(String experimentId, int offset, int limit,
+      SamplePreviewFilter filter) {
+    List<Order> orders;
+
+    try {
+      orders = filter.sortOrders().stream().map(SamplePreviewJpaRepository::fromAPItoJpaSamplePreview).toList();
+    } catch (IllegalArgumentException e) {
+      throw new LookupException("Query for sample previews failed", e);
+    }
+
+    Specification<SamplePreview> filterSpecification = generateExperimentIdandFilterSpecification(
+        ExperimentId.parse(experimentId), filter.sampleName());
+    return samplePreviewRepository.findAll(filterSpecification,
+        new OffsetBasedRequest(offset, limit, Sort.by(orders))).getContent();
+  }
+
+  private static final Map<SamplePreviewSortKey, String> samplePreviewSortKeys =
+      new EnumMap<>(SamplePreviewSortKey.class);
+
+  static {
+    samplePreviewSortKeys.put(SamplePreviewSortKey.SAMPLE_ID, "sampleCode");
+    samplePreviewSortKeys.put(SamplePreviewSortKey.SAMPLE_NAME, "sampleName");
+    samplePreviewSortKeys.put(SamplePreviewSortKey.BIOLOGICAL_REPLICATE, "biologicalReplicate");
+    samplePreviewSortKeys.put(SamplePreviewSortKey.CONDITION, "experimentalGroup");
+    samplePreviewSortKeys.put(SamplePreviewSortKey.BATCH, "batchLabel");
+    samplePreviewSortKeys.put(SamplePreviewSortKey.SPECIES, "species");
+    samplePreviewSortKeys.put(SamplePreviewSortKey.SPECIMEN, "specimen");
+    samplePreviewSortKeys.put(SamplePreviewSortKey.ANALYTE, "analyte");
+    samplePreviewSortKeys.put(SamplePreviewSortKey.ANALYSIS_METHOD, "analysisMethod");
+    samplePreviewSortKeys.put(SamplePreviewSortKey.COMMENT, "comment");
+  }
+
+  private static Order fromAPItoJpaSamplePreview(
+      AsyncProjectService.SortOrder<SamplePreviewSortKey> sortOrder) {
+    var mappedJpaProperty = propertyFromAPItoJpaSamplePreview(sortOrder.key()).orElseThrow(
+        () -> new IllegalArgumentException(
+            "Cannot map key to JPA samplePreview property: " + sortOrder.key()));
+    if (sortOrder.direction() ==  SortDirection.ASC) {
+      return Order.asc(mappedJpaProperty);
+    } else {
+      return Order.desc(mappedJpaProperty);
+    }
+  }
+
+  private static Optional<String> propertyFromAPItoJpaSamplePreview(
+      SamplePreviewSortKey samplePreview) {
+    return Optional.ofNullable(samplePreviewSortKeys.getOrDefault(samplePreview, null));
+  }
+
   private Specification<SamplePreview> generateExperimentIdandFilterSpecification(
       ExperimentId experimentId, String filter) {
     Specification<SamplePreview> isBlankSpec = SamplePreviewSpecs.isBlank(filter);
     Specification<SamplePreview> experimentIdSpec = SamplePreviewSpecs.experimentIdEquals(
         experimentId);
-    Specification<SamplePreview> biologialReplicateSpec = SamplePreviewSpecs.biologicalReplicateContains(filter);
+    Specification<SamplePreview> biologialReplicateSpec = SamplePreviewSpecs.biologicalReplicateContains(
+        filter);
     Specification<SamplePreview> sampleCodeSpec = SamplePreviewSpecs.sampleCodeContains(filter);
     Specification<SamplePreview> sampleNameSpec = SamplePreviewSpecs.sampleNameContains(filter);
     Specification<SamplePreview> batchLabelSpec = SamplePreviewSpecs.batchLabelContains(filter);

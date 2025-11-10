@@ -2,7 +2,7 @@
   display: inline-flex;
   border-radius: var(--lumo-border-radius-m);
   align-items: center;
-  padding-inline: var(--lumo-space-s);
+  padding-inline: var(--spacing-03);
   justify-content: space-between;
   border: 1px solid var(--lumo-contrast-20pct);
   column-gap: var(--lumo-space-l);
@@ -12,7 +12,7 @@
 
 .experiment-list-item {
   display: flex;
-  gap: var(--lumo-space-s);
+  gap: var(--spacing-03);
   font-size: var(--lumo-font-size-l)
 }
 
@@ -28,13 +28,13 @@
 .info-box {
   display: inline-flex;
   border-radius: var(--lumo-border-radius-m);
-  column-gap: var(--lumo-space-s);
+  column-gap: var(--spacing-03);
   background-color: var(--lumo-contrast-5pct);
   align-items: center;
   width: fit-content;
   padding-inline: var(--lumo-space-m);
-  padding-top: var(--lumo-space-s);
-  padding-bottom: var(--lumo-space-s);
+  padding-top: var(--spacing-03);
+  padding-bottom: var(--spacing-03);
   font-size: small;
 }
 
@@ -52,8 +52,8 @@
   gap: var(--lumo-space-l);
   align-items: center;
   padding-inline: var(--lumo-space-m);
-  padding-top: var(--lumo-space-s);
-  padding-bottom: var(--lumo-space-s);
+  padding-top: var(--spacing-03);
+  padding-bottom: var(--spacing-03);
   box-sizing: border-box;
   background-color: var(--lumo-base-color);
   border-radius: var(--lumo-border-radius-m);
@@ -72,14 +72,14 @@
 .registration-section {
   display: flex;
   flex-direction: column;
-  gap: var(--lumo-space-s);
+  gap: var(--spacing-03);
   align-items: center;
   width: 100%;
 }
 
 .registration-section .link {
   display: inline-flex;
-  gap: var(--lumo-space-s);
+  gap: var(--spacing-03);
   font-weight: 500;
 }
 
@@ -182,7 +182,7 @@ span.inline {
 
 .tag.error {
   background-color: var(--lumo-error-color-10pct);
-  color: var(--lumo-error-color);
+  color: var(--error-color);
 }
 
 .tag.primary {

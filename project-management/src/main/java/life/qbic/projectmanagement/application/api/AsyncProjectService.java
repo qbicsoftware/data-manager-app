@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNull;
 
 import java.net.URI;
 import java.nio.ByteBuffer;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -12,13 +13,13 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import life.qbic.application.commons.SortOrder;
 import life.qbic.projectmanagement.application.ValidationResult;
 import life.qbic.projectmanagement.application.api.fair.DigitalObject;
 import life.qbic.projectmanagement.application.batch.SampleUpdateRequest.SampleInformation;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableInformation;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
+import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 import org.springframework.util.MimeType;
 import reactor.core.publisher.Flux;
@@ -538,8 +539,7 @@ public interface AsyncProjectService {
    * the throw section below.
    *
    * @param projectId the project ID of the project the get the information for.
-   * @return a {@link Mono<ProjectInformation>} publishing a {@link ProjectInformation} object on
-   * success.
+   * @return a {@link Mono} publishing a {@link ProjectInformation} object on success.
    * @throws UnknownRequestException if an unknown request has been used in the service call
    * @throws RequestFailedException  if the request was not successfully executed
    * @throws AccessDeniedException   if the user has insufficient rights
@@ -574,8 +574,7 @@ public interface AsyncProjectService {
   }
 
   /**
-   * Submits a project creation request and returns a {@link Mono<ProjectCreationResponse>}
-   * immediately.
+   * Submits a project creation request and returns a {@link Mono} immediately.
    * <p>
    * This implementation must be non-blocking.
    * <p>
@@ -585,9 +584,8 @@ public interface AsyncProjectService {
    * the throw section below.
    *
    * @param request the request with information required for project creation.
-   * @return {@link Mono<ProjectCreationResponse>} object publishing an
-   * {@link ProjectCreationResponse} on success. Exceptions are provided as
-   * {@link Mono#error(Throwable)}.
+   * @return {@link Mono} object publishing an {@link ProjectCreationResponse} on success.
+   * Exceptions are provided as {@link Mono#error(Throwable)}.
    * @throws UnknownRequestException if an unknown request has been used in the service call
    * @throws RequestFailedException  if the request was not successfully executed
    * @throws AccessDeniedException   if the user has insufficient rights
@@ -597,8 +595,7 @@ public interface AsyncProjectService {
       throws UnknownRequestException, RequestFailedException, AccessDeniedException;
 
   /**
-   * Submits a project update request and returns a reactive {@link Mono<ProjectUpdateResponse>}
-   * object immediately.
+   * Submits a project update request and returns a reactive {@link Mono} object immediately.
    * <p>
    * The method implementation must be non-blocking.
    * <p>
@@ -614,9 +611,8 @@ public interface AsyncProjectService {
    * the throw section below.
    *
    * @param request the request to update a project
-   * @return a {@link Mono<ProjectUpdateResponse>} object publishing an
-   * {@link ProjectUpdateResponse} on success. Exceptions are provided as
-   * {@link Mono#error(Throwable)}.
+   * @return a {@link Mono} object publishing an {@link ProjectUpdateResponse} on success.
+   * Exceptions are provided as {@link Mono#error(Throwable)}.
    * @throws UnknownRequestException if an unknown request has been used in the service call
    * @throws RequestFailedException  if the request was not successfully executed
    * @throws AccessDeniedException   if the user has insufficient rights
@@ -633,9 +629,8 @@ public interface AsyncProjectService {
    * the throw section below.
    *
    * @param request the actual {@link ProjectDeletionRequest}
-   * @return a {@link Mono<ProjectDeletionResponse>} object publishing an
-   * {@link ProjectDeletionResponse} on success. Exceptions are provided as
-   * {@link Mono#error(Throwable)}
+   * @return a {@link Mono} object publishing an {@link ProjectDeletionResponse} on success.
+   * Exceptions are provided as {@link Mono#error(Throwable)}
    * @throws UnknownRequestException if an unknown request has been used in the service call
    * @throws RequestFailedException  if the request was not successfully executed
    * @throws AccessDeniedException   if the user has insufficient rights
@@ -647,42 +642,35 @@ public interface AsyncProjectService {
    * A service request to create funding information for a project.
    *
    * @param request the request with information required for funding information creation.
-   * @return a {@link Mono<FundingInformationCreationResponse>} object publishing an
-   * {@link FundingInformationCreationResponse}
+   * @return a {@link Mono} object publishing an {@link FundingInformationCreationResponse}
    * @since
    */
   Mono<FundingInformationCreationResponse> create(FundingInformationCreationRequest request);
 
   /**
-   * Submits a funding information deletion request and returns a reactive
-   * {@link Mono<FundingInformationDeletionResponse>} publishing a
+   * Submits a funding information deletion request and returns a reactive {@link Mono} publishing a
    * {@link FundingInformationDeletionResponse}.
    *
    * @param request the request with information required for funding information deletion.
-   * @return a {@link Mono<FundingInformationDeletionResponse>} object publishing a
-   * {@link FundingInformationDeletionResponse}.
+   * @return a {@link Mono} object publishing a {@link FundingInformationDeletionResponse}.
    * @since 1.10.0
    */
   Mono<FundingInformationDeletionResponse> delete(FundingInformationDeletionRequest request);
 
   /**
-   * Submits a project-responsible person creation request and returns a reactive
-   * {@link Mono<ProjectResponsibleCreationResponse>}.>}.
+   * Submits a project-responsible person creation request and returns a reactive {@link Mono}.>}.
    *
    * @param request the request with information required for the responsible person creation.
-   * @return a {@link Mono<ProjectResponsibleCreationResponse>} object publishing a
-   * {@link ProjectResponsibleCreationResponse}.
+   * @return a {@link Mono} object publishing a {@link ProjectResponsibleCreationResponse}.
    * @since 1.10.0
    */
   Mono<ProjectResponsibleCreationResponse> create(ProjectResponsibleCreationRequest request);
 
   /**
-   * Submits a project-responsible person deletion request and returns a reactive
-   * {@link Mono<ProjectResponsibleDeletionResponse>}.
+   * Submits a project-responsible person deletion request and returns a reactive {@link Mono}.
    *
    * @param request the request with information required for the responsible person deletion.
-   * @return a {@link Mono<ProjectResponsibleDeletionResponse>} object publishing a
-   * {@link ProjectResponsibleDeletionResponse}.
+   * @return a {@link Mono} object publishing a {@link ProjectResponsibleDeletionResponse}.
    * @since 1.10.0
    */
   Mono<ProjectResponsibleDeletionResponse> delete(ProjectResponsibleDeletionRequest request);
@@ -694,17 +682,23 @@ public interface AsyncProjectService {
    * Contains information on one experimental variables
    *
    * @param name   the name of the variable
-   * @param levels possible levels of the variable
+   * @param levels possible levels of the variable, elements must be unique
    * @param unit   the unit of the experimental variable. Can be null if no unit is set
    * @since 1.9.0
    */
-  record ExperimentalVariable(String name, List<String> levels, @Nullable String unit) {
+  record ExperimentalVariable(@NonNull String name, @NonNull List<String> levels,
+                              @Nullable String unit) {
 
     public ExperimentalVariable(String name, List<String> levels) {
       this(name, levels, null);
     }
 
     public ExperimentalVariable {
+      requireNonNull(name);
+      requireNonNull(levels);
+      if (levels.stream().distinct().count() != levels.size()) {
+        throw new IllegalArgumentException("Level values must be unique");
+      }
       levels = List.copyOf(levels);
     }
 
@@ -957,33 +951,62 @@ public interface AsyncProjectService {
     }
   }
 
-  record ExperimentalVariablesUpdateRequest(String projectId, String experimentId,
-                                            List<ExperimentalVariable> experimentalVariables,
-                                            String requestId) implements CacheableRequest {
+  record ExperimentalVariableUpdateRequest(String projectId, String experimentId,
+                                           ExperimentalVariable experimentalVariable,
+                                           String requestId) implements CacheableRequest {
 
-    public ExperimentalVariablesUpdateRequest {
+    public ExperimentalVariableUpdateRequest {
       requireNonNull(projectId);
       requireNonNull(experimentId);
-      requireNonNull(experimentalVariables);
+      requireNonNull(experimentalVariable);
       requireNonNull(requestId);
-      experimentalVariables = List.copyOf(experimentalVariables);
     }
 
-    public ExperimentalVariablesUpdateRequest(String projectId, String experimentId,
-        List<ExperimentalVariable> experimentalVariables) {
-      this(projectId, experimentId, experimentalVariables, UUID.randomUUID().toString());
+    public ExperimentalVariableUpdateRequest(String projectId, String experimentId,
+        ExperimentalVariable experimentalVariable) {
+      this(projectId, experimentId, experimentalVariable, UUID.randomUUID().toString());
     }
   }
 
-  record ExperimentalVariablesUpdateResponse(String projectId,
-                                             List<ExperimentalVariable> experimentalVariables,
-                                             String requestId) {
+  record ExperimentalVariableUpdateResponse(String projectId,
+                                            ExperimentalVariable experimentalVariable,
+                                            String requestId) {
 
-    public ExperimentalVariablesUpdateResponse {
+    public ExperimentalVariableUpdateResponse {
       requireNonNull(projectId);
       requireNonNull(requestId);
-      requireNonNull(experimentalVariables);
-      experimentalVariables = List.copyOf(experimentalVariables);
+      requireNonNull(experimentalVariable);
+    }
+  }
+
+  record ExperimentalVariableRenameRequest(String projectId, String experimentId,
+                                           String currentVariableName, String futureVariableName,
+                                           String requestId) implements CacheableRequest {
+
+    public ExperimentalVariableRenameRequest {
+      requireNonNull(projectId);
+      requireNonNull(experimentId);
+      requireNonNull(currentVariableName);
+      requireNonNull(futureVariableName);
+      requireNonNull(requestId);
+    }
+
+    public ExperimentalVariableRenameRequest(String newVariableName, String oldVariableName,
+        String experimentId, String projectId) {
+      this(projectId, experimentId, oldVariableName, newVariableName, UUID.randomUUID().toString());
+    }
+  }
+
+  record ExperimentalVariableRenameResponse(String projectId, String experimentId,
+                                            String previousVariableName, String currentVariableName,
+                                            String requestId) {
+
+    public ExperimentalVariableRenameResponse {
+      requireNonNull(projectId);
+      requireNonNull(experimentId);
+      requireNonNull(previousVariableName);
+      requireNonNull(currentVariableName);
+      requireNonNull(requestId);
     }
   }
 
@@ -1029,8 +1052,7 @@ public interface AsyncProjectService {
   Flux<ExperimentDescription> getExperiments(String projectId);
 
   /**
-   * Requests the creation of an experiment and returns a reactive
-   * {@link Mono<ExperimentCreationResponse>}.
+   * Requests the creation of an experiment and returns a reactive {@link Mono}.
    * <p>
    * <b>Exceptions</b>
    * <p>
@@ -1038,8 +1060,7 @@ public interface AsyncProjectService {
    * the throw section below.
    *
    * @param request the request containing information to create the experiment
-   * @return a {@link Mono<ExperimentCreationResponse>} object publishing a
-   * {@link ExperimentCreationResponse} on success.
+   * @return a {@link Mono} object publishing a {@link ExperimentCreationResponse} on success.
    * @throws UnknownRequestException if an unknown request has been used in the service call
    * @throws RequestFailedException  if the request was not successfully executed
    * @throws AccessDeniedException   if the user has insufficient rights
@@ -1048,8 +1069,7 @@ public interface AsyncProjectService {
   Mono<ExperimentCreationResponse> create(ExperimentCreationRequest request);
 
   /**
-   * Submits an experiment update request and returns a reactive
-   * {@link Mono<ExperimentUpdateResponse>} object immediately.
+   * Submits an experiment update request and returns a reactive {@link Mono} object immediately.
    * <p>
    * The method is non-blocking.
    * <p>
@@ -1065,9 +1085,8 @@ public interface AsyncProjectService {
    * the throw section below.
    *
    * @param request the request to update a project
-   * @return a {@link Mono<ProjectUpdateResponse>} object publishing an
-   * {@link ProjectUpdateResponse} on success. Exceptions are provided as
-   * {@link Mono#error(Throwable)}.
+   * @return a {@link Mono} object publishing an {@link ProjectUpdateResponse} on success.
+   * Exceptions are provided as {@link Mono#error(Throwable)}.
    * @throws UnknownRequestException if an unknown request has been used in the service call
    * @throws RequestFailedException  if the request was not successfully executed
    * @throws AccessDeniedException   if the user has insufficient rights
@@ -1076,8 +1095,7 @@ public interface AsyncProjectService {
   Mono<ExperimentUpdateResponse> update(ExperimentUpdateRequest request);
 
   /**
-   * Submits an experiment deletion request and returns a reactive
-   * {@link Mono<ExperimentDeletionResponse>}.
+   * Submits an experiment deletion request and returns a reactive {@link Mono}.
    * <p>
    * <b>Exceptions</b>
    * <p>
@@ -1085,8 +1103,7 @@ public interface AsyncProjectService {
    * the throw section below.
    *
    * @param request the request to delete an experiment for a project.
-   * @return a {@link Mono<ExperimentDeletionResponse>} object publishing a
-   * {@link ExperimentDeletionResponse}
+   * @return a {@link Mono} object publishing a {@link ExperimentDeletionResponse}
    * @throws UnknownRequestException if an unknown request has been used in the service call
    * @throws RequestFailedException  if the request was not successfully executed
    * @throws AccessDeniedException   if the user has insufficient rights
@@ -1095,7 +1112,8 @@ public interface AsyncProjectService {
   Mono<ExperimentDeletionResponse> delete(ExperimentDeletionRequest request);
 
   /**
-   * Queries all available experimental variables for a given experiment.
+   * Queries all available experimental variables for a given experiment. Returns existing
+   * experimental variables in lexicographical order of the variable name.
    * <p>
    * <b>Exceptions</b>
    * <p>
@@ -1105,7 +1123,7 @@ public interface AsyncProjectService {
    * @param projectId    the project identifier of the project to get the variables from
    * @param experimentId the experiment identifier of the experiment to get the variables from
    * @return a {@link Flux<ExperimentalVariable>} emitting {@link ExperimentalVariable}s for the
-   * experiment.
+   * experiment in lexicographical order of variable name.
    * @throws UnknownRequestException if an unknown request has been used in the service call
    * @throws RequestFailedException  if the request was not successfully executed
    * @throws AccessDeniedException   if the user has insufficient rights
@@ -1114,8 +1132,7 @@ public interface AsyncProjectService {
   Flux<ExperimentalVariable> getExperimentalVariables(String projectId, String experimentId);
 
   /**
-   * Submits an experimental variable creation request and returns a reactive
-   * {@link Mono<ExperimentalVariablesCreationResponse>}.
+   * Submits an experimental variable creation request and returns a reactive {@link Mono}.
    * <p>
    * <b>Exceptions</b>
    * <p>
@@ -1123,8 +1140,8 @@ public interface AsyncProjectService {
    * the throw section below.
    *
    * @param request the request with information required for the experimental variable creation.
-   * @return a {@link Mono<ExperimentalVariablesCreationResponse>} object publishing a
-   * {@link ExperimentalVariablesCreationResponse} on success.
+   * @return a {@link Mono} object publishing a {@link ExperimentalVariablesCreationResponse} on
+   * success.
    * @throws UnknownRequestException if an unknown request has been used in the service call
    * @throws RequestFailedException  if the request was not successfully executed
    * @throws AccessDeniedException   if the user has insufficient rights
@@ -1133,8 +1150,7 @@ public interface AsyncProjectService {
   Mono<ExperimentalVariablesCreationResponse> create(ExperimentalVariablesCreationRequest request);
 
   /**
-   * Submits an experimental variable update request and returns a reactive
-   * {@link Mono<ExperimentalVariablesUpdateResponse>.}
+   * Submits an experimental variable update request and returns a reactive {@link Mono}
    * <p>
    * <b>Exceptions</b>
    * <p>
@@ -1142,18 +1158,35 @@ public interface AsyncProjectService {
    * the throw section below.
    *
    * @param request the request with information required for the experimental variable update
-   * @return a {@link Mono<ExperimentalVariablesUpdateResponse>} object publishing a
-   * {@link ExperimentalVariablesUpdateResponse} on success.
+   * @return a {@link Mono} object publishing a {@link ExperimentalVariableUpdateResponse} on
+   * success.
    * @throws UnknownRequestException if an unknown request has been used in the service call
    * @throws RequestFailedException  if the request was not successfully executed
    * @throws AccessDeniedException   if the user has insufficient rights
    * @since 1.10.0
    */
-  Mono<ExperimentalVariablesUpdateResponse> update(ExperimentalVariablesUpdateRequest request);
+  Mono<ExperimentalVariableUpdateResponse> update(ExperimentalVariableUpdateRequest request);
 
   /**
-   * Submits an experimental variable deletion request and returns a reactive
-   * {@link Mono<ExperimentalVariablesDeletionResponse>}.
+   * Submits an experimental variable update request and returns a reactive {@link Mono}
+   * <p>
+   * <b>Exceptions</b>
+   * <p>
+   * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
+   * the throw section below.
+   *
+   * @param request the request with information required for the experimental variable update
+   * @return a {@link Mono} object publishing a {@link ExperimentalVariableUpdateResponse} on
+   * success.
+   * @throws UnknownRequestException if an unknown request has been used in the service call
+   * @throws RequestFailedException  if the request was not successfully executed
+   * @throws AccessDeniedException   if the user has insufficient rights
+   * @since 1.10.0
+   */
+  Mono<ExperimentalVariableRenameResponse> update(ExperimentalVariableRenameRequest request);
+
+  /**
+   * Submits an experimental variable deletion request and returns a reactive {@link Mono}.
    * <p>
    * <b>Exceptions</b>
    * <p>
@@ -1161,8 +1194,8 @@ public interface AsyncProjectService {
    * the throw section below.
    *
    * @param request the request with information required for the experimental variable deletion
-   * @return a {@link Mono<ExperimentalVariablesDeletionResponse>} object publishing a
-   * {@link ExperimentalVariablesDeletionResponse} on success.
+   * @return a {@link Mono} object publishing a {@link ExperimentalVariablesDeletionResponse} on
+   * success.
    * @throws UnknownRequestException if an unknown request has been used in the service call
    * @throws RequestFailedException  if the request was not successfully executed
    * @throws AccessDeniedException   if the user has insufficient rights
@@ -1192,8 +1225,7 @@ public interface AsyncProjectService {
   Flux<ExperimentalGroup> getExperimentalGroups(String projectId, String experimentId);
 
   /**
-   * Submits an experimental group creation request and returns a reactive
-   * {@link Mono<ExperimentalGroupCreationResponse>}.
+   * Submits an experimental group creation request and returns a reactive {@link Mono}.
    * <p>
    * <b>Exceptions</b>
    * <p>
@@ -1201,8 +1233,8 @@ public interface AsyncProjectService {
    * the throw section below.
    *
    * @param request the request to create an experimental group for a project
-   * @return a {@link Mono<ExperimentalGroupCreationResponse>} object publishing a
-   * {@link ExperimentalGroupCreationResponse} on success.
+   * @return a {@link Mono} object publishing a {@link ExperimentalGroupCreationResponse} on
+   * success.
    * @throws UnknownRequestException if an unknown request has been used in the service call
    * @throws RequestFailedException  if the request was not successfully executed
    * @throws AccessDeniedException   if the user has insufficient rights
@@ -1211,8 +1243,7 @@ public interface AsyncProjectService {
   Mono<ExperimentalGroupCreationResponse> create(ExperimentalGroupCreationRequest request);
 
   /**
-   * Submits an experimental group update request and returns a reactive
-   * {@link Mono<ExperimentalGroupUpdateResponse>}.
+   * Submits an experimental group update request and returns a reactive {@link Mono}.
    * <p>
    * <b>Exceptions</b>
    * <p>
@@ -1220,8 +1251,7 @@ public interface AsyncProjectService {
    * the throw section below.
    *
    * @param request the request to update an experimental group for a project
-   * @return a {@link Mono<ExperimentalGroupUpdateResponse>} object publishing a
-   * {@link ExperimentalGroupUpdateResponse} on success.
+   * @return a {@link Mono} object publishing a {@link ExperimentalGroupUpdateResponse} on success.
    * @throws UnknownRequestException if an unknown request has been used in the service call
    * @throws RequestFailedException  if the request was not successfully executed
    * @throws AccessDeniedException   if the user has insufficient rights
@@ -1248,8 +1278,7 @@ public interface AsyncProjectService {
   }
 
   /**
-   * Submits an experimental group deletion request and returns a reactive
-   * {@link Mono<ExperimentalGroupDeletionResponse>}.
+   * Submits an experimental group deletion request and returns a reactive {@link Mono}.
    * <p>
    * <b>Exceptions</b>
    * <p>
@@ -1257,8 +1286,8 @@ public interface AsyncProjectService {
    * the throw section below.
    *
    * @param request the request to delete an experimental group for a project
-   * @return a {@link Mono<ExperimentalGroupDeletionResponse>} object publishing a
-   * {@link ExperimentalGroupDeletionResponse} on success.
+   * @return a {@link Mono} object publishing a {@link ExperimentalGroupDeletionResponse} on
+   * success.
    * @throws UnknownRequestException if an unknown request has been used in the service call
    * @throws RequestFailedException  if the request was not successfully executed
    * @throws AccessDeniedException   if the user has insufficient rights
@@ -1374,8 +1403,84 @@ public interface AsyncProjectService {
    * @throws RequestFailedException if the request could not be executed
    * @since 1.10.0
    */
+  // FIXME replace with {@link #getSamplePreviews}
+  Flux<SamplePreview> getSamplePreviewsOld(String projectId, String experimentId, int offset,
+      int limit, List<life.qbic.application.commons.SortOrder> sortOrders, String filter);
+
+
+  /**
+   * Requests {@link SamplePreview} for a given experiment with pagination support.
+   * <p>
+   * <b>Exceptions</b>
+   * <p>
+   * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
+   * the throw section below.
+   *
+   * @param projectId    the project ID for the project to get the samples for
+   * @param experimentId the experiment ID for which the sample preview shall be retrieved
+   * @param offset       the offset from 0 of all available previews the returned previews should
+   *                     start
+   * @param limit        the maximum number of previews that should be returned
+   * @param filter       the filter to apply
+   * @return a reactive stream of {@link SamplePreview} objects in the experiment. Exceptions are
+   * provided as {@link Mono#error(Throwable)}.
+   * @throws RequestFailedException if the request could not be executed
+   * @since 1.12.0
+   */
   Flux<SamplePreview> getSamplePreviews(String projectId, String experimentId, int offset,
-      int limit, List<SortOrder> sortOrders, String filter);
+      int limit, SamplePreviewFilter filter);
+
+  Mono<Integer> countSamples(String projectId, String experimentId);
+
+
+  record SamplePreviewFilter(String sampleName, List<SortOrder<SamplePreviewSortKey>> sortOrders) {
+
+  }
+
+  record SortOrder<T>(T key, SortDirection direction) {
+
+    public SortOrder {
+      requireNonNull(key);
+      requireNonNull(direction);
+    }
+  }
+
+  enum SortDirection {
+    ASC, DESC;
+  }
+
+  /**
+   * Property sorting keys
+   *
+   * @since
+   */
+  enum SamplePreviewSortKey {
+    SAMPLE_ID,
+    SAMPLE_NAME,
+    BIOLOGICAL_REPLICATE,
+    BATCH,
+    CONDITION,
+    SPECIES,
+    ANALYTE,
+    COMMENT,
+    SPECIMEN,
+    ANALYSIS_METHOD
+  }
+
+
+  /**
+   * Returns the total number of samples for an experiment in a given project.
+   *
+   * @param projectId    the project id of the project of interest
+   * @param experimentId the experiment id of the experiment to search the samples for
+   * @return a {@link Mono} with the number of samples that exist in the given experiment. Is
+   * {@link Mono#empty()} if no samples exist.
+   * @throws RequestFailedException if the request could not be executed
+   * @throws AccessDeniedException  if the client has insufficient access rights
+   * @since 1.12.0
+   */
+  Mono<Integer> countSamples(String projectId, String experimentId, SamplePreviewFilter filter)
+      throws RequestFailedException, AccessDeniedException;
 
   /**
    * Requests all {@link Sample} for a given experiment.
@@ -1496,7 +1601,8 @@ public interface AsyncProjectService {
    * @throws RequestFailedException if the request was not successfully executed
    * @since 1.10.0
    */
-  Flux<OntologyTerm> getTaxa(String value, int offset, int limit, List<SortOrder> sorting);
+  Flux<OntologyTerm> getTaxa(String value, int offset, int limit,
+      List<life.qbic.application.commons.SortOrder> sorting);
 
   /**
    * Tries to find the exact matching {@link OntologyTerm} for a given {@link Curie}.
@@ -1590,6 +1696,26 @@ public interface AsyncProjectService {
   Mono<DigitalObject> sampleInformationTemplate(String projectId, String experimentId,
       MimeType mimeType);
 
+  /**
+   * Requests sample information in a desired {@link MimeType}.
+   * <p>
+   * If the mime type is not supported, a {@link UnsupportedMimeTypeException} will be provided as
+   * {@link Mono#error(Throwable)}.
+   *
+   * @param projectId    the project ID of the project the template should be created for
+   * @param experimentId the experiment ID of the experiment the template should be created for
+   * @param sampleIds    a set of sample ids of the samples that should be contained in the result
+   * @param mimeType     the mime type the digital object should be
+   * @return a {@link Mono} with a {@link DigitalObject} providing the requested template
+   * @throws AccessDeniedException        if the user has insufficient rights
+   * @throws RequestFailedException       if the request cannot be executed
+   * @throws UnsupportedMimeTypeException if the service cannot provide the requested
+   *                                      {@link MimeType}
+   * @since 1.10.0
+   */
+  Mono<DigitalObject> sampleInformationTemplate(String projectId, String experimentId,
+      Set<String> sampleIds, MimeType mimeType);
+
 
   /**
    * Provides information about selected NGS measurements for updating purposes in a requested
@@ -1657,10 +1783,11 @@ public interface AsyncProjectService {
    */
   sealed interface CacheableRequest permits ExperimentCreationRequest, ExperimentDeletionRequest,
       ExperimentUpdateRequest, ExperimentalGroupCreationRequest, ExperimentalGroupDeletionRequest,
-      ExperimentalGroupUpdateRequest, ExperimentalVariablesDeletionRequest,
-      ExperimentalVariablesUpdateRequest, FundingInformationCreationRequest,
-      MeasurementRegistrationRequest, MeasurementUpdateRequest, ProjectResponsibleCreationRequest,
-      ProjectResponsibleDeletionRequest, ProjectUpdateRequest, ValidationRequest {
+      ExperimentalGroupUpdateRequest, ExperimentalVariableRenameRequest,
+      ExperimentalVariableUpdateRequest, ExperimentalVariablesDeletionRequest,
+      FundingInformationCreationRequest, MeasurementRegistrationRequest, MeasurementUpdateRequest,
+      ProjectResponsibleCreationRequest, ProjectResponsibleDeletionRequest, ProjectUpdateRequest,
+      ValidationRequest {
 
     /**
      * Returns an ID that is unique to the request.
@@ -2189,6 +2316,204 @@ public interface AsyncProjectService {
       String fractionName,
       String comment
   ) {
+
+  }
+
+  /**
+   * Requests all available {@link RawDatasetInformationPxP} for a given experiment.
+   * <p>
+   * The request supports pagination.
+   *
+   * @param projectId    the identifier of the project the experiment belongs to
+   * @param experimentId the identifier of the experiment to query the measurements for
+   * @param offset       the offset value for the search to continue (pagination)
+   * @param limit        the maximum number of results to return (pagination)
+   * @param sorting      configuration of the property to sort by
+   * @param filter       a term used for filtering matching datasets containing the term
+   * @return a reactive {@link Flux} of {@link RawDatasetInformationPxP}
+   * @since 1.11.0
+   */
+  Flux<RawDatasetInformationPxP> getRawDatasetInformationPxP(String projectId, String experimentId,
+      int offset,
+      int limit, SortRawData sorting, String filter);
+
+  /**
+   * Requests all available {@link RawDatasetInformationPxP} for a given experiment.
+   * <p>
+   * The request supports pagination.
+   *
+   * @param projectId    the identifier of the project the experiment belongs to
+   * @param experimentId the identifier of the experiment to query the measurements for
+   * @param offset       the offset value for the search to continue (pagination)
+   * @param limit        the maximum number of results to return (pagination)
+   * @param filter       a {@link RawDatasetFilter} for the request
+   * @return a reactive {@link Flux} of {@link RawDatasetInformationPxP}
+   * @since 1.12.0
+   */
+  Flux<RawDatasetInformationPxP> getRawDatasetInformationPxP(String projectId, String experimentId,
+      int offset,
+      int limit,
+      RawDatasetFilter filter);
+
+  /**
+   * Requests all available {@link RawDatasetInformationNgs} for a given experiment.
+   * <p>
+   * The request supports pagination.
+   *
+   * @param projectId    the identifier of the project the experiment belongs to
+   * @param experimentId the identifier of the experiment to query the measurements for
+   * @param offset       the offset value for the search to continue (pagination)
+   * @param limit        the maximum number of results to return (pagination)
+   * @param filter       a {@link RawDatasetFilter} for the request
+   * @return a reactive {@link Flux} of {@link RawDatasetInformationNgs}
+   * @since 1.12.0
+   */
+  Flux<RawDatasetInformationNgs> getRawDatasetInformationNgs(String projectId, String experimentId,
+      int offset,
+      int limit,
+      RawDatasetFilter filter);
+
+  record RawDatasetFilter(String filterTerm, List<SortOrder<RawDataSortingKey>> sortOrders) {
+
+  }
+
+  /**
+   * The raw data sorting key controls the properties that are available for sorting.
+   *
+   * @since 1.12.0
+   */
+  enum RawDataSortingKey {
+    MEASUREMENT_ID, UPLOAD_DATE, SAMPLE_NAME
+  }
+
+
+  /**
+   * Requests all available {@link RawDatasetInformationNgs} for a given experiment.
+   * <p>
+   * The request supports pagination.
+   *
+   * @param projectId    the identifier of the project the experiment belongs to
+   * @param experimentId the identifier of the experiment to query the measurements for
+   * @param offset       the offset value for the search to continue (pagination)
+   * @param limit        the maximum number of results to return (pagination)
+   * @param sorting      configuration of the property to sort by
+   * @param filter       a term used for filtering matching datasets containing the term
+   * @return a reactive {@link Flux} of {@link RawDatasetInformationNgs}
+   * @since 1.11.0
+   */
+  Flux<RawDatasetInformationNgs> getRawDatasetInformationNgs(String projectId, String experimentId,
+      int offset,
+      int limit, SortRawData sorting, String filter);
+
+  /**
+   * A simple information container for raw data stored for a given measurement.
+   *
+   * @param measurementId    the measurement identifier for which the raw data is described
+   * @param totalSizeBytes   the total size of the raw dataset for a given measurement. The unit is
+   *                         in bytes.
+   * @param numberOfFiles    the number of files contained in the raw dataset
+   * @param fileTypes        the file types contained in the raw dataset
+   * @param registrationDate the date of registration
+   * @since 1.11.0
+   */
+  record RawDataset(String measurementId, long totalSizeBytes, int numberOfFiles,
+                    Set<String> fileTypes, Instant registrationDate) {
+
+    public RawDataset {
+      requireNonNull(measurementId);
+      requireNonNull(fileTypes);
+      requireNonNull(registrationDate);
+    }
+  }
+
+  /**
+   * Requests the total number of NGS measurements for the given experiment in a project, based on
+   * the provided filter.
+   *
+   * @param projectId     the project to fetch the total number of measurements for
+   * @param experimentId  the experiment to fetch the total number of measurements for
+   * @param rawDataFilter the filter that applies to the count
+   * @return a {@link Mono} emitting the count when available.
+   * @since 1.12.0
+   */
+  Mono<Integer> countMeasurementsNgs(String projectId, String experimentId,
+      RawDatasetFilter rawDataFilter);
+
+  /**
+   * Requests the total number of proteomics measurements for the given experiment in a project,
+   * based on the provided filter.
+   *
+   * @param projectId     the project to fetch the total number of measurements for
+   * @param experimentId  the experiment to fetch the total number of measurements for
+   * @param rawDataFilter the filter that applies to the count
+   * @return a {@link Mono} emitting the count when available.
+   * @since 1.12.0
+   */
+  Mono<Integer> countMeasurementsPxp(String projectId, String experimentId,
+      RawDatasetFilter rawDataFilter);
+
+  /**
+   * Aggregated information of a raw dataset derived from measurement of the NGS domain. Currently
+   * consists of the core {@link RawDataset} and all {@link BasicSampleInformation}.
+   *
+   * @param dataset                 the actual {@link RawDataset}
+   * @param linkedSampleInformation further information about the linked samples as
+   *                                {@link BasicSampleInformation}.
+   * @since 1.11.0
+   */
+  record RawDatasetInformationNgs(RawDataset dataset,
+                                  List<BasicSampleInformation> linkedSampleInformation) {
+
+    public RawDatasetInformationNgs {
+      requireNonNull(dataset);
+      requireNonNull(linkedSampleInformation);
+      linkedSampleInformation = List.copyOf(linkedSampleInformation);
+    }
+  }
+
+  /**
+   * Available properties to sort raw data queries.
+   *
+   * @since 1.11.0
+   */
+  enum SortFieldRawData {
+    REGISTRATION_DATE
+  }
+
+
+  record SortRawData(SortFieldRawData sortField, SortDirection sortDirection) {
+
+  }
+
+
+  /**
+   * Aggregated information of a raw dataset derived from measurement of the proteomics domain.
+   * Currently consists of the core {@link RawDataset} and all {@link BasicSampleInformation}.
+   *
+   * @param dataset                 the actual {@link RawDataset}
+   * @param linkedSampleInformation further information about the linked samples as
+   *                                {@link BasicSampleInformation}.
+   * @since 1.11.0
+   */
+  record RawDatasetInformationPxP(RawDataset dataset,
+                                  List<BasicSampleInformation> linkedSampleInformation) {
+
+    public RawDatasetInformationPxP {
+      requireNonNull(dataset);
+      requireNonNull(linkedSampleInformation);
+      linkedSampleInformation = List.copyOf(linkedSampleInformation);
+    }
+  }
+
+  /**
+   * Basic sample information that can be used to enrich other information containers, e.g.
+   * {@link RawDatasetInformationNgs}.
+   *
+   * @param sampleId   unique identifier for a sample
+   * @param sampleName the assigned sample name
+   * @since 1.11.0
+   */
+  record BasicSampleInformation(String sampleId, String sampleName) {
 
   }
 

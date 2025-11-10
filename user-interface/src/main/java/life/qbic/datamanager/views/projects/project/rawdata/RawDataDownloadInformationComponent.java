@@ -55,21 +55,20 @@ public class RawDataDownloadInformationComponent extends PageArea implements Ser
     Div generateTokenSection = generateSection("Generate Token",
         "Generate a Personal Access Token (PAT)",
         navigateToPatPageButton);
-    Div downloadRawDataSection = generateSection("Download RAW data URLs",
-        "Download the file with a list of URLs corresponding to the measurement you want to download.",
-        generateDownloadUrlsButton);
+    Div downloadRawDataSection = generateSection("Export Dataset URLs",
+        "Export the file with a list of dataset URLs corresponding to the measurements you want to download.");
     TabSheet codeTabSheet = new TabSheet();
     CodeBlock curlCodeBlock = new CodeBlock("curl", "--parallel", "--fail", "-OJ", "-H",
         "\"Authorization: Bearer <ACCESS_TOKEN>\"",
-        "<DOWNLOAD_URL>");
+        "<DATASET_URL>");
     CodeBlock wgetCodeBlock = new CodeBlock("wget", "--content-disposition", "--trust-server-names",
         "--header",
         "\"Authorization: Bearer <ACCESS_TOKEN>\"",
-        "<DOWNLOAD_URL>");
+        "<DATASET_URL>");
     codeTabSheet.add("curl", curlCodeBlock);
     codeTabSheet.add("wget", wgetCodeBlock);
     Div runCurlCommandSection = generateSection("Download Data",
-        "Install cURL or wGet on your system, open the command line and enter one of the following command once for each file you want to download",
+        "Install cURL or Wget on your system, open the command line and enter one of the following commands once for each file you want to download",
         codeTabSheet);
     Span additionalInfoSection = generateAdditionalInformationSection();
     add(generateTokenSection, downloadRawDataSection, runCurlCommandSection, additionalInfoSection);

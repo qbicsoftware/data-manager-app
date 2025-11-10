@@ -15,13 +15,13 @@
 .data-manager-menu {
   display: inline-flex;
   justify-content: space-between;
-  column-gap: var(--lumo-space-s);
+  column-gap: var(--spacing-03);
 }
 
 /*Increase gap between menu items*/
 .data-manager-menu .menubar::part(container) {
   display: inline-flex;
-  column-gap: var(--lumo-space-s);
+  column-gap: var(--spacing-03);
 }
 
 .data-manager-menu .user-avatar {
@@ -42,8 +42,8 @@
 
 .experiment-navigation-component {
   width: 100%;
-  padding-top: var(--lumo-space-s);
-  padding-bottom: var(--lumo-space-s);
+  padding-top: var(--spacing-03);
+  padding-bottom: var(--spacing-03);
   background-color: var(--lumo-base-color);
 }
 
@@ -65,8 +65,8 @@
 }
 
 .experiment-main-layout .experiment-main-layout-navbar {
-  padding-top: var(--lumo-space-s);
-  padding-bottom: var(--lumo-space-s);
+  padding-top: var(--spacing-03);
+  padding-bottom: var(--spacing-03);
   display: inline-flex;
   justify-content: space-between;
   padding-right: var(--lumo-space-m);
@@ -78,7 +78,7 @@
   font-size: var(--lumo-font-size-l);
   display: inline-flex;
   align-items: inherit;
-  column-gap: var(--lumo-space-s);
+  column-gap: var(--spacing-03);
 }
 
 .experiment-main-layout .experiment-main-layout-navbar-container {
@@ -99,5 +99,5 @@
   font-weight: bold;
   display: inline-flex;
   align-items: inherit;
-  column-gap: var(--lumo-space-s);
+  column-gap: var(--spacing-03);
 }

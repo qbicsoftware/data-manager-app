@@ -13,7 +13,6 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.provider.SortDirection;
 import com.vaadin.flow.data.value.ValueChangeMode;
-import com.vaadin.flow.shared.communication.PushMode;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
@@ -192,7 +191,6 @@ public class OntologyLookupComponent extends PageArea {
       CopyToClipBoardComponent copyToClipBoardComponent = new CopyToClipBoardComponent(curieText);
       Span header = new Span(title, curie, copyToClipBoardComponent);
       UI ui = UI.getCurrent();
-      ui.getPushConfiguration().setPushMode(PushMode.MANUAL);
       copyToClipBoardComponent.addSwitchToSuccessfulCopyIconListener(event -> ui.access(() -> {
         addClassName("success-background-hue");
       }));

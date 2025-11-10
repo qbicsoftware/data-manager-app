@@ -1,0 +1,102 @@
+/****************************************
+
+Data Manager custom CSS layout definition
+
+*****************************************/
+
+/*
+First some general property definitions
+*/
+:root {
+  --dialog-height-small: clamp(min-content, 50vh, 75vh);
+  --dialog-height-medium: clamp(min-content, 75vh, 100vh);
+  --dialog-height-large: 100vh;
+  --dialog-height-max-small: 500px;
+  --dialog-height-max-medium: 800px;
+  --dialog-height-max-large: 100vh;
+  --dialog-width-small: 50vw;
+  --dialog-width-medium: 75vw;
+  --dialog-width-large: 80vw;
+  --dialog-width-max-small: 600px;
+  --dialog-width-max-medium: 1000px;
+  --dialog-width-max-large: 1200px;
+  --font-weight-light: 300;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semi-bold: 600;
+  --font-weight-bold: 700;
+  --border-color-default: var(--shade-color-30pct);
+  --border-color-light: var(--shade-color-10pct);
+  --border-color-dialog: var(--border-color-light);
+  /*error color for non-textual elements*/
+  --error-color: hsla(3, 85%, 48%, 1);
+  /*error color used as background for invalid inputs*/
+  --error-color-10pct: hsla(3, 85%, 48%, 0.1);
+  /*error text on normal background*/
+  --error-text-color: hsl(3, 89%, 42%);
+  /*text on error-color background*/
+  --error-text-contrast-color: rgb(255, 255, 255);
+
+  --shade-color-5pct: hsla(214, 61%, 25%, 0.05);
+  --shade-color-10pct: hsla(214, 57%, 24%, 0.1);
+  --shade-color-20pct: hsla(214, 53%, 23%, 0.16);
+  --shade-color-30pct: hsla(214, 50%, 22%, 0.26);
+  --shade-color-40pct: hsla(214, 47%, 21%, 0.38);
+  --shade-color-50pct: hsla(214, 45%, 20%, 0.52);
+  --shade-color-60pct: hsla(214, 43%, 19%, 0.6);
+  --shade-color-70pct: hsla(214, 42%, 18%, 0.69);
+  --shade-color-80pct: hsla(214, 41%, 17%, 0.83);
+  --shade-color-90pct: hsla(214, 40%, 16%, 0.94);
+  --shade-color: hsl(214, 35%, 15%);
+
+  --success-color: rgba(21, 193, 93, 1);
+  /*Base text-color variables */
+  --success-text-color: hsla(145, 85%, 25%, 1);
+  --warning-text-color: hsla(36, 100%, 30%, 1);
+  --warning-color: hsla(36, 100%, 50%, 1);
+  --primary-color: hsl(214, 100%, 48%);
+  --primary-color-10pct: hsla(214, 100%, 48%, 0.2);
+  --primary-color-20pct: hsla(214, 100%, 48%, 0.2);
+  --primary-contrast-color: rgb(255, 255, 255);
+  --primary-text-color: hsl(214, 100%, 43%);
+  --secondary-text-color: hsla(214, 42%, 18%, 0.69);
+  --tertiary-text-color: hsla(214, 45%, 20%, 0.52);
+
+  /*Semantic text-color variables */
+  --heading-text-color: var(--shade-color);
+  --body-text-color: var(--shade-color-90pct);
+  --field-label-text-color: var(--shade-color-90pct);
+  --input-field-text-color: var(--shade-color-90pct);
+  --list-item-text-color: var(--shade-color-90pct);
+  --button-text-color: var(--primary-text-color); /*text color on secondary and tertiary buttons*/
+  --button-text-color-primary: var(--primary-contrast-color); /*text color on primary button */
+  --button-text-color-error: var(--error-text-color);
+
+  /* Background style variables */
+  --background-color-5pct: var(--shade-color-5pct);
+  --background-color-10pct: var(--shade-color-10pct);
+
+  --primary-icon-color: var(--primary-color);
+  --info-icon-color: rgba(22, 118, 243, 1);
+  --error-icon-color: var(--error-color);
+  --success-icon-color: var(--success-color);
+  --warning-icon-color: rgba(254, 201, 1, 1);
+  --icon-color: var(--shade-color-60pct);
+  --label-font-size: 0.875rem;
+  --icon-size-xs: 1rem;
+  --icon-size-s: 1.25rem; /*--lumo-icon-size-s*/
+  --icon-size-m: 1.5rem; /*--lumo-icon-size-m*/
+  --icon-size-l: 2rem;
+  --spacing-01: 0.125rem;
+  --spacing-02: 0.25rem; /*lumo-space-xs*/
+  --spacing-03: 0.5rem; /*lumo-space-s*/
+  --spacing-04: 1rem; /*lumo-space-m*/
+  --spacing-05: 1.5rem; /*lumo-space-l*/
+  --spacing-06: 2rem;
+  --spacing-07: 2.5rem; /*lumo-space-xl*/
+  --spacing-08: 3rem;
+  --spacing-09: 3.5rem; /*--lumo-size-xl*/
+  --spacing-10: 4rem;
+  --spacing-11: 5rem;
+  --spacing-12: 6rem;
+}

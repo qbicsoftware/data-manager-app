@@ -18,7 +18,7 @@ public class AccountContentBox extends Div {
 
   public AccountContentBox(String orcidId, URI record) {
     addClassNames("flex-horizontal", "flex-align-items-center", "account-box", "gap-04",
-        "padding-left-right-04", "padding-top-bottom-04");
+        "padding-04");
     var iconContainer = new Div();
     iconContainer.addClassNames("flex-vertical", "flex-align-items-center");
     var orcidLogo = new OidcLogo(OidcType.ORCID);

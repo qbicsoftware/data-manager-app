@@ -9,6 +9,7 @@ import com.vaadin.flow.shared.Registration;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -35,7 +36,7 @@ public class MultiSelectLazyLoadingGrid<T> extends Grid<T> {
   public MultiSelectLazyLoadingGrid() {
     selectionColumn = addComponentColumn(this::renderCheckbox).setHeader(selectAllCheckBox);
     selectionColumn.setFlexGrow(0);
-    addSelectAllItemsListener();
+    addSelectedListener();
   }
 
   private boolean areAllSelected() {
@@ -48,15 +49,15 @@ public class MultiSelectLazyLoadingGrid<T> extends Grid<T> {
       var checkBoxSelectEvent = new CheckBoxSelectedEvent(box, bean, event.isFromClient());
       updateSelectedItem(event.getValue(), bean);
       listeners.forEach(listener -> listener.onComponentEvent(checkBoxSelectEvent));
-
       // if a user selected/deselected one box, we check if the select all checkbox needs to change
       if (event.isFromClient()) {
+        fireEvent(new SelectedEvent(this, getSelectedItems(), event.isFromClient()));
         updateAllCheckBox(event.getValue());
       }
     });
     /*Necessary to propagate selection of select all checkbox to individual checkbox*/
     Registration allSelectBoxListener = selectAllCheckBox.addValueChangeListener(event -> {
-      if(event.isFromClient()) {
+      if (event.isFromClient()) {
         box.setValue(event.getValue());
       }
     });
@@ -92,14 +93,15 @@ public class MultiSelectLazyLoadingGrid<T> extends Grid<T> {
     }
   }
 
-  private void addSelectAllItemsListener() {
+  private void addSelectedListener() {
     selectAllCheckBox.addValueChangeListener(event -> {
-      if(event.isFromClient()) {
+      if (event.isFromClient()) {
         if (Boolean.TRUE.equals(event.getValue())) {
           selectedItems.addAll(getLazyDataView().getItems().toList());
         } else {
           selectedItems.clear();
         }
+        fireEvent(new SelectedEvent(this, getSelectedItems(), event.isFromClient()));
       }
       var checkBoxSelectEvent = new CheckBoxSelectedEvent(selectAllCheckBox, null,
           event.isFromClient());
@@ -128,6 +130,42 @@ public class MultiSelectLazyLoadingGrid<T> extends Grid<T> {
 
   public void addSelectListener(ComponentEventListener<CheckBoxSelectedEvent> listener) {
     listeners.add(listener);
+  }
+
+  /**
+   * Adds a listener to the event {@link SelectedEvent}.
+   *
+   * <p>The {@link ComponentEventListener#onComponentEvent} is invoked in the following and only
+   * following
+   * cases:
+   *
+   * <ul>
+   *   <li>the client selected the {@code select all} checkbox</li>
+   *   <li>the client selected an individual checkbox</li>
+   * </ul>
+   *
+   * @param listener a listener that gets informed in case an {@link SelectedEvent} is fired
+   * @return a registration handle to cancel the registration again
+   * @since 1.12.0
+   */
+  public Registration addSelectedListener(ComponentEventListener<SelectedEvent> listener) {
+    return addListener(SelectedEvent.class, listener);
+  }
+
+  public static class SelectedEvent extends ComponentEvent<MultiSelectLazyLoadingGrid<?>> {
+
+    private final transient Set<?> selectedItems;
+
+    public SelectedEvent(MultiSelectLazyLoadingGrid<?> source, Set<?> selectedItems,
+        boolean fromClient) {
+      super(source, fromClient);
+      this.selectedItems = java.util.Set.copyOf(Objects.requireNonNull(selectedItems));
+    }
+
+    @SuppressWarnings("unchecked")
+    public <X> Set<X> getSelectedItems() {
+      return (Set<X>) selectedItems;
+    }
   }
 
   public class CheckBoxSelectedEvent extends ComponentEvent<Checkbox> {

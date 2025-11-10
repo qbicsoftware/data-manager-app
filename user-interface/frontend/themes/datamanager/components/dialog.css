@@ -36,7 +36,7 @@ vaadin-dialog-overlay::part(title) {
   display: flex;
   align-items: center;
   justify-items: flex-start;
-  gap: var(--lumo-space-s);
+  gap: var(--spacing-03);
 }
 
 .notification-dialog .title {
@@ -116,13 +116,13 @@ Since we want to remove the spacing between the cancel and confirm button we rep
 .add-user-to-project-dialog .person-selection-section {
   display: flex;
   flex-direction: column;
-  gap: var(--lumo-space-s);
+  gap: var(--spacing-03);
 }
 
 .add-user-to-project-dialog .role-selection-section {
   display: flex;
   flex-direction: column;
-  gap: var(--lumo-space-s);
+  gap: var(--spacing-03);
 }
 
 .add-user-to-project-dialog .section-title {
@@ -406,7 +406,7 @@ Since we want to remove the spacing between the cancel and confirm button we rep
 
 .add-project-dialog .project-design-layout .code-and-title {
   width: 100%;
-  gap: var(--lumo-space-s);
+  gap: var(--spacing-03);
   display: inline-flex;
   align-items: baseline;
 }
@@ -439,7 +439,7 @@ Since we want to remove the spacing between the cancel and confirm button we rep
 }
 
 .measurement-pooled-samples-dialog .pooled-measurement-details .pooled-detail {
-  gap: var(--lumo-space-s);
+  gap: var(--spacing-03);
   display: inline-flex;
 }
 
@@ -468,7 +468,7 @@ Since we want to remove the spacing between the cancel and confirm button we rep
 .measurement-upload-dialog::part(content) {
   display: flex;
   flex-direction: column;
-  gap: var(--lumo-space-s);
+  gap: var(--spacing-03);
 }
 
 .measurement-upload-dialog .upload-items-display {

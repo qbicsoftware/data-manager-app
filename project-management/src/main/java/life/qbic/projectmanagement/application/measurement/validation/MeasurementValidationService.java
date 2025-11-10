@@ -63,6 +63,4 @@ public class MeasurementValidationService {
   public enum Domain {
     NGS, PROTEOMICS
   }
-
-
 }

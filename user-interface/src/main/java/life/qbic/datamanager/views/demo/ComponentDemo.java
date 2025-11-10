@@ -1,13 +1,20 @@
 package life.qbic.datamanager.views.demo;
 
+import static life.qbic.logging.service.LoggerFactory.logger;
+
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.ListItem;
+import com.vaadin.flow.component.html.OrderedList;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
+import com.vaadin.flow.data.provider.DataProvider;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
@@ -16,11 +23,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import life.qbic.datamanager.views.StringBean;
 import life.qbic.datamanager.views.general.Card;
 import life.qbic.datamanager.views.general.DetailBox;
 import life.qbic.datamanager.views.general.DetailBox.Header;
+import life.qbic.datamanager.views.general.MultiSelectLazyLoadingGrid;
 import life.qbic.datamanager.views.general.dialog.AppDialog;
 import life.qbic.datamanager.views.general.dialog.DialogBody;
 import life.qbic.datamanager.views.general.dialog.DialogFooter;
@@ -32,13 +41,19 @@ import life.qbic.datamanager.views.general.dialog.stepper.Step;
 import life.qbic.datamanager.views.general.dialog.stepper.StepperDialog;
 import life.qbic.datamanager.views.general.dialog.stepper.StepperDialogFooter;
 import life.qbic.datamanager.views.general.dialog.stepper.StepperDisplay;
+import life.qbic.datamanager.views.general.grid.Filter;
+import life.qbic.datamanager.views.general.grid.component.FilterGrid;
+import life.qbic.datamanager.views.general.grid.PredicateFilter;
+import life.qbic.datamanager.views.general.grid.component.FilterGridTab;
+import life.qbic.datamanager.views.general.grid.component.FilterGridTabSheet;
 import life.qbic.datamanager.views.general.icon.IconFactory;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.ExperimentalVariablesInput;
 import life.qbic.datamanager.views.projects.project.info.SimpleParagraph;
+import life.qbic.logging.api.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.lang.NonNull;
-import org.springframework.stereotype.Component;
 
 /**
  * <b>Component Demo</b>
@@ -51,11 +66,14 @@ import org.springframework.stereotype.Component;
 @Route("test-view")
 @UIScope
 @AnonymousAllowed
-@Component
+@org.springframework.stereotype.Component
 public class ComponentDemo extends Div {
+
+  private static final Logger log = logger(ComponentDemo.class);
 
   public static final String HEADING_2 = "heading-2";
   public static final String HEADING_3 = "heading-3";
+  public static final String HEADING_4 = "heading-4";
   public static final String GAP_04 = "gap-04";
   public static final String FLEX_VERTICAL = "flex-vertical";
   public static final String NORMAL_BODY_TEXT = "normal-body-text";
@@ -66,17 +84,238 @@ public class ComponentDemo extends Div {
   public ComponentDemo(MessageSourceNotificationFactory messageSourceNotificationFactory) {
     this.messageFactory = Objects.requireNonNull(messageSourceNotificationFactory);
     title.addClassName("heading-1");
-    addClassNames("padding-left-right-07", "padding-top-bottom-04");
+    addClassNames("padding-horizontal-07", "padding-vertical-04");
     add(title);
     add(headingShowcase());
     add(colorShowCase());
     add(clickableShowCase());
     add(fontsShowCase());
+    add(layoutsShowCase());
     add(detailBoxShowCase());
     add(dialogShowCase());
     add(cardShowCase());
     add(toastShowCase());
+    add(borderShowcase());
+    add(createTestComponent());
+    add(filterGridShowCase());
   }
+
+  private record SimplePersonFilter(String term) implements PredicateFilter<Person> {
+
+    @Override
+    public Optional<String> searchTerm() {
+      return Optional.ofNullable(term);
+    }
+
+    public boolean test(Person data) {
+      var fullName = String.join(" ", data.firstName, data.lastName, Integer.toString(data.age));
+      return fullName.contains(term);
+    }
+  }
+
+  private Div filterGridShowCase() {
+    var grid = new MultiSelectLazyLoadingGrid<Person>();
+    grid.addColumn(Person::firstName).setHeader("First Name").setKey("firstName");
+    grid.addColumn(Person::lastName).setHeader("Last Name").setKey("lastName");
+    grid.addColumn(Person::age).setHeader("Age").setKey("age");
+
+    var gridPersons = new MultiSelectLazyLoadingGrid<Person>();
+    gridPersons.addColumn(Person::firstName).setHeader("First Name").setKey("firstName");
+    gridPersons.addColumn(Person::lastName).setHeader("Last Name").setKey("lastName");
+    gridPersons.addColumn(Person::age).setHeader("Age").setKey("age");
+
+    var filterDataProvider = DataProvider.<Person, Filter>fromFilteringCallbacks(query ->
+        {
+          var sorting = query.getSortOrders();
+          var offsetIgnored = query.getOffset();
+          var limitIgnored = query.getLimit();
+          var filter = query.getFilter().orElse(new SimplePersonFilter(""));
+          // you don't need this for remote data providers, the filter must be converted to a service API honoring filter
+          var personFilter = filter instanceof PredicateFilter<?> ? (SimplePersonFilter) filter : new SimplePersonFilter("");
+          return examples.stream().filter(personFilter::test);
+        }
+        , count -> {
+          var offsetIgnored = count.getOffset();
+          var limitIgnored = count.getLimit();
+          var filter = count.getFilter().orElse(new SimplePersonFilter(""));
+          // you don't need this for remote data providers, the filter must be converted to a service API honoring filter
+          var personFilter = filter instanceof PredicateFilter<?> ? (SimplePersonFilter) filter : new SimplePersonFilter("");
+          return examples.stream().filter(personFilter::test).toList().size();
+        });
+
+    var filterDataProviderContacts = DataProvider.<Person, Filter>fromFilteringCallbacks(
+        query ->
+        {
+          var sorting = query.getSortOrders();
+          var offsetIgnored = query.getOffset();
+          var limitIgnored = query.getLimit();
+          var filter = query.getFilter().orElse(new SimplePersonFilter(""));
+          // you don't need this for remote data providers, the filter must be converted to a service API honoring filter
+          var personFilter = filter instanceof PredicateFilter<?> ? (SimplePersonFilter) filter : new SimplePersonFilter("");
+          return examples.stream().filter(personFilter::test);
+        }
+        , count -> {
+          var offsetIgnored = count.getOffset();
+          var limitIgnored = count.getLimit();
+          var filter = count.getFilter().orElse(new SimplePersonFilter(""));
+          // you don't need this for remote data providers, the filter must be converted to a service API honoring filter
+          var personFilter = filter instanceof PredicateFilter<?> ? (SimplePersonFilter) filter : new SimplePersonFilter("");
+          return examples.stream().filter(personFilter::test).toList().size();
+        });
+
+    var filterGridContacts = new FilterGrid<>(Person.class, gridPersons, filterDataProviderContacts,
+        new SimplePersonFilter(""), (filter, term) -> new SimplePersonFilter(term));
+
+    var filterGrid = new FilterGrid<Person>(Person.class, grid, filterDataProvider,
+        new SimplePersonFilter(""), (filter, term) -> new SimplePersonFilter(term));
+
+    filterGrid.setSecondaryActionGroup(new Button("Edit"), new Button("Delete"));
+
+    filterGrid.itemDisplayLabel("person");
+
+    var filterTab = new FilterGridTab("Persons", filterGrid);
+    filterTab.setItemCount(examples.size());
+
+    var filterTabContacts = new FilterGridTab("Contacts", filterGridContacts);
+    filterTabContacts.setItemCount(examples.size());
+
+    var tabSheet = new FilterGridTabSheet(filterTab, filterTabContacts);
+
+    tabSheet.addPrimaryFeatureButtonListener(event -> {
+      log.info("Clicked on the primary feature button: click-count is " + event.getClickCount());
+    });
+
+    tabSheet.addPrimaryActionButtonListener(event -> {
+      log.info("Clicked on the primary action button: click-count is " + event.getClickCount());
+    });
+
+    return new Div(tabSheet);
+  }
+
+  static class ExampleFilter implements Filter {
+
+    private String term;
+
+    ExampleFilter(String term) {
+      this.term = term;
+    }
+
+    @Override
+    public Optional<String> searchTerm() {
+      return Optional.ofNullable(this.term);
+    }
+
+  }
+
+  static List<Person> examples = new ArrayList<>();
+
+
+  static {
+    examples.add(new Person("John", "Doe", 18));
+    examples.add(new Person("Jane", "Doe", 21));
+    examples.add(new Person("Lars", "Müller", 27));
+    examples.add(new Person("Alicia", "Mendez", 31));
+    examples.add(new Person("Noah", "Thompson", 19));
+    examples.add(new Person("Fatima", "Al-Sayed", 35));
+    examples.add(new Person("Sakura", "Tanaka", 29));
+    examples.add(new Person("Elena", "Petrova", 42));
+    examples.add(new Person("Marcus", "Nguyen", 25));
+    examples.add(new Person("Oliver", "Smith", 33));
+    examples.add(new Person("Isabella", "Rossi", 24));
+    examples.add(new Person("Ethan", "Johnson", 38));
+    examples.add(new Person("Sofia", "Kowalski", 28));
+    examples.add(new Person("Mateo", "Garcia", 40));
+    examples.add(new Person("Hannah", "Schneider", 22));
+    examples.add(new Person("Amir", "Rahman", 30));
+    examples.add(new Person("Chloe", "Dubois", 26));
+    examples.add(new Person("Leo", "Andersen", 34));
+    examples.add(new Person("Priya", "Patel", 37));
+    examples.add(new Person("William", "O'Connor", 45));
+  }
+
+  record Person(String firstName, String lastName, int age) {
+
+  }
+
+  private Component layoutsShowCase() {
+    var gaps = new String[]{
+        "gap-none",
+        "gap-01",
+        "gap-02",
+        "gap-03",
+        "gap-04",
+        "gap-05",
+        "gap-06",
+        "gap-07"
+    };
+    var root = new Div();
+    root.add(createHeading2("Layouts"));
+
+    var verticalShowcaseBody = new Div();
+    verticalShowcaseBody.addClassNames("flex-horizontal");
+    for (String gap : gaps) {
+      var vertLayout = new Div();
+      vertLayout.addClassNames("flex-vertical margin-03 height-min-content border " + gap);
+      for (int i = 0; i < 10; i++) {
+        Div placeholder = createPlaceholder("padding-03", "border");
+        placeholder.setText("placeholder " + (i + 1));
+        vertLayout.add(placeholder);
+      }
+      verticalShowcaseBody.add(createHeading4(gap), vertLayout);
+
+    }
+
+    var horizontalShowcaseBody = new Div();
+    horizontalShowcaseBody.addClassNames("flex-vertical");
+    for (String gap : gaps) {
+      var horizontalLayout = new Div();
+      horizontalLayout.addClassNames("flex-horizontal margin-03 border width-50-pct " + gap);
+      for (int i = 0; i < 10; i++) {
+        Div placeholder = createPlaceholder("padding-03", "border padding-02");
+        placeholder.setText("placeholder " + (i + 1));
+        horizontalLayout.add(placeholder);
+      }
+      horizontalShowcaseBody.add(createHeading4(gap), horizontalLayout);
+    }
+
+    var columnGapDescriptor = new Span(
+        "Sometimes it might be useful to differentiate between gap and column-gap. For this you can combine the gap classes with the column-gap classes.");
+    var columnGapExample1 = new Div();
+    columnGapExample1.addClassNames("border flex-horizontal width-50-pct gap-04 column-gap-none");
+    for (int i = 0; i < 10; i++) {
+      Div placeholder = createPlaceholder("padding-02", "background-color-grey", "border");
+      placeholder.setText("placeholder " + (i + 1));
+      columnGapExample1.add(placeholder);
+    }
+
+    var columnGapExample2 = new Div();
+    columnGapExample2.addClassNames("border flex-horizontal width-50-pct gap-none column-gap-04");
+    for (int i = 0; i < 10; i++) {
+      Div placeholder = createPlaceholder("padding-02", "background-color-grey", "border");
+      placeholder.setText("placeholder " + (i + 1));
+      columnGapExample2.add(placeholder);
+    }
+
+    root.add(createHeading3("flex-vertical"), verticalShowcaseBody,
+        createHeading3("flex-horizontal"), horizontalShowcaseBody,
+        columnGapDescriptor,
+        createHeading3("gap-04 column-gap-none"), columnGapExample1,
+        createHeading3("gap-none column-gap-04"), columnGapExample2);
+    return root;
+  }
+
+  private static Div createPlaceholder(String classNames, String... hiddenClassNames) {
+    var comp = new Div();
+    comp.addClassNames(classNames);
+    comp.addClassNames(hiddenClassNames);
+    comp.setText(classNames);
+    return comp;
+  }
+
+  private Component createTestComponent() {
+    return new ExperimentalVariablesInput();
+  }
+
 
   private static Div clickableShowCase() {
     Div container = new Div();
@@ -122,15 +361,18 @@ public class ComponentDemo extends Div {
   private static Div colorShowCase() {
     Div container = new Div();
     Div heading = createHeading2("Color Classes");
+    Div headingPrimaryText = createHeading3("color-primary-text");
+    headingPrimaryText.addClassNames("color-primary-text");
     Div headingPrimary = createHeading3("color-primary");
     headingPrimary.addClassName("color-primary");
     Div headingSecondary = createHeading3("color-secondary");
     headingSecondary.addClassName("color-secondary");
     Div headingTertiary = createHeading3("color-tertiary");
     headingTertiary.addClassName("color-tertiary");
-    container.add(heading, headingPrimary, headingSecondary, headingTertiary);
+    container.add(heading, headingPrimaryText, headingPrimary, headingSecondary, headingTertiary);
     return container;
   }
+
   private static Div fontsShowCase() {
     Div container = new Div();
     Div header = new Div("Body Font Styles");
@@ -139,9 +381,7 @@ public class ComponentDemo extends Div {
     container.addClassNames(FLEX_VERTICAL, GAP_04);
 
     Arrays.stream(BodyFontStyles.fontStyles).forEach(fontStyle -> {
-      Div styleHeader = new Div();
-      styleHeader.addClassName("heading-4");
-      styleHeader.setText(fontStyle);
+      Div styleHeader = createHeading4(fontStyle);
       container.add(styleHeader);
       Div style = new Div();
       style.addClassName(fontStyle);
@@ -207,7 +447,7 @@ public class ComponentDemo extends Div {
         }
 
         @Override
-        public com.vaadin.flow.component.Component component() {
+        public Component component() {
           return userInput;
         }
 
@@ -306,8 +546,10 @@ public class ComponentDemo extends Div {
     {
       var progressBar = new ProgressBar();
       progressBar.setIndeterminate(true);
-      var toast = messageFactory.pendingTaskToast("task.in-progress", new Object[]{"Doing something really heavy here"}, getLocale());
-      var succeededToast = messageFactory.toast("task.finished", new Object[]{"Heavy Task #1"},  getLocale());
+      var toast = messageFactory.pendingTaskToast("task.in-progress",
+          new Object[]{"Doing something really heavy here"}, getLocale());
+      var succeededToast = messageFactory.toast("task.finished", new Object[]{"Heavy Task #1"},
+          getLocale());
       toast.open();
       var ui = UI.getCurrent();
       CompletableFuture.runAsync(() -> {
@@ -338,7 +580,7 @@ public class ComponentDemo extends Div {
     container.add(emptyBox);
 
     DetailBox withHeader = new DetailBox();
-    withHeader.setHeader(new DetailBox.Header("What the details are about"));
+    withHeader.setHeader(new Header("What the details are about"));
     container.add(createHeading3("Empty Detail Box with Heading"));
     container.add(withHeader);
 
@@ -387,6 +629,13 @@ public class ComponentDemo extends Div {
     return heading;
   }
 
+  private static Div createHeading4(String text) {
+    var heading = new Div();
+    heading.setText(text);
+    heading.addClassName(HEADING_4);
+    return heading;
+  }
+
   private static Div dialogShowCase() {
     Div container = new Div();
     container.add(createHeading2("Dialogs"));
@@ -403,8 +652,44 @@ public class ComponentDemo extends Div {
     container.add(stepperDialogShowCase(threeSteps(), "Three steps example"));
     container.add(createHeading3("Dialog with one button"));
     container.add(dialogWithOneButton(AppDialog.small(), "Dialog with one button"));
+    container.add(createHeading3("Dialog with dangerous confirm action"));
+    container.add(dialogWithDangerButton(AppDialog.small(), "Dialog with danger button"));
 
     return container;
+  }
+
+  private static Div dialogWithDangerButton(AppDialog dialog, String dialogType) {
+
+    Div content = new Div();
+    Button showDialog = new Button("Show Dialog");
+    // Dialog set-up
+    DialogHeader.withIcon(dialog, dialogType, IconFactory.warningIcon());
+    DialogFooter.withDangerousConfirm(dialog, "Cancel", "Save");
+    ExampleUserInput userInput = new ExampleUserInput("Expelliarmus");
+    DialogBody.with(dialog, userInput, userInput);
+
+    Div confirmBox = new Div("Click the button and press 'Cancel' or 'Save'");
+    showDialog.addClickListener(e -> {
+      dialog.open();
+      confirmBox.setText("Cancelled the dialog.");
+    });
+
+    dialog.registerCancelAction(() -> {
+      dialog.close();
+      if (dialog.hasChanges()) {
+        confirmBox.setText("Cancelled the dialog although there where changes made!");
+      } else {
+        confirmBox.setText("Cancelled the dialog. No changes.");
+      }
+    });
+    dialog.registerConfirmAction(() -> {
+      dialog.close();
+      confirmBox.setText("Confirmed the dialog.");
+    });
+
+    content.add(showDialog, confirmBox);
+    content.addClassNames(FLEX_VERTICAL, GAP_04);
+    return content;
   }
 
   private static Div cardShowCase() {
@@ -412,13 +697,103 @@ public class ComponentDemo extends Div {
     Div header = new Div();
     header.addClassName(HEADING_2);
     header.setText("Cards");
+    container.add(header);
 
     Card card = new Card();
+    card.addClassNames("padding-04");
     card.add(VaadinIcon.USER.create());
-    card.add(new SimpleParagraph("Some simple paragraph"));
+    card.add(new SimpleParagraph(
+        "Some simple paragraph. The card has the `.padding-04` class assigned."));
     container.add(card);
 
+    return container;
+  }
+
+  private Component borderShowcase() {
+    var container = new Div();
+    var header = new Div();
+    header.addClassName(HEADING_2);
+    header.setText("Border styles");
     container.add(header);
+    container.addClassNames(FLEX_VERTICAL, GAP_04, "width-50-pct");
+    var headerBorderVisibility = new Div();
+    headerBorderVisibility.setText("Border Visibility");
+    headerBorderVisibility.addClassNames(HEADING_3);
+    var borderVisibilityDescription = new Div(
+        "Border visibility is determined by the classes. You can choose to compose the border yourself using the .composite-border class."
+            + " This class changes the behaviour of the other border classes. When assigning .composite-border, instead of being mutually exclusive, the border classes combine to achieve the desired visibility.");
+    var borderPrecedence = new Div(
+        "When no .composite-border class is present the following borders will take precedence (top beats bottom)");
+    var borderPrecedenceList = new OrderedList();
+    borderPrecedenceList.add(new ListItem(".border-left"));
+    borderPrecedenceList.add(new ListItem(".border-bottom"));
+    borderPrecedenceList.add(new ListItem(".border-right"));
+    borderPrecedenceList.add(new ListItem(".border-top"));
+    borderPrecedenceList.add(new ListItem(".border-top-bottom"));
+    borderPrecedenceList.add(new ListItem(".border-left-right"));
+    borderPrecedenceList.add(new ListItem(".border"));
+    var border = new Div(".border");
+    border.addClassNames("border");
+    var borderClrDialog = new Div(".border .border-color-dialog");
+    borderClrDialog.addClassNames("border", "border-color-dialog");
+    var borderLeftRight = new Div(".border-left-right");
+    borderLeftRight.addClassNames("border-left-right");
+    var borderTopBottom = new Div(".border-top-bottom");
+    borderTopBottom.addClassNames("border-top-bottom");
+    var borderTop = new Div(".border-top");
+    borderTop.addClassNames("border-top");
+    var borderRight = new Div(".border-right");
+    borderRight.addClassNames("border-right");
+    var borderBottom = new Div(".border-bottom");
+    borderBottom.addClassNames("border-bottom");
+    var borderLeft = new Div(".border-left");
+    borderLeft.addClassNames("border-left");
+
+    var borderComposite = new Div(".composite-border");
+    borderComposite.addClassNames("composite-border");
+    var cbTop = new Div(".composite-border .border-top");
+    cbTop.addClassNames("composite-border", "border-top");
+    var cbTopRight = new Div(".composite-border .border-top .border-right");
+    cbTopRight.addClassNames("composite-border", "border-top", "border-right");
+    var cbTopRightBottom = new Div(".composite-border .border-top .border-right .border-bottom");
+    cbTopRightBottom.addClassNames("composite-border", "border-top", "border-right",
+        "border-bottom");
+
+    var headerBorderStyles = new Div();
+    headerBorderStyles.setText("Border Styles");
+    headerBorderStyles.addClassNames(HEADING_3);
+    var borderDashed = new Div(".border .dashed");
+    borderDashed.addClassNames("border", "dashed");
+    var borderRound = new Div(".border .round");
+    borderRound.addClassNames("border", "round");
+    var borderRounded02 = new Div(".border .rounded-02");
+    borderRounded02.addClassNames("border", "rounded-02");
+    var borderRounded03 = new Div(".border .rounded-03");
+    borderRounded03.addClassNames("border", "rounded-03");
+
+    container.add(
+        border,
+        borderClrDialog,
+        headerBorderVisibility,
+        borderLeftRight,
+        borderTopBottom,
+        borderTop,
+        borderRight,
+        borderBottom,
+        borderLeft,
+        borderVisibilityDescription,
+        borderPrecedence,
+        borderPrecedenceList,
+        borderComposite,
+        cbTop,
+        cbTopRight,
+        cbTopRightBottom,
+        headerBorderStyles,
+        borderDashed,
+        borderRound,
+        borderRounded02,
+        borderRounded03
+    );
     return container;
   }
 
