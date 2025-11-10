@@ -2,12 +2,8 @@ package life.qbic.datamanager.views.projects.project.rawdata;
 
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.UI;
-import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.textfield.TextField;
-import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
@@ -28,7 +24,6 @@ import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactor
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
-import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.dataset.RemoteRawDataService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
@@ -100,6 +95,7 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
     noRawDataRegisteredDisclaimer.addClassName("no-raw-data-registered-disclaimer");
     downloadComponent = new DownloadComponent();
     rawdataDetailsComponentContainer = new Div();
+    rawdataDetailsComponentContainer.addClassNames("display-contents");
 
     initContent();
     add(registerMeasurementsDisclaimer);

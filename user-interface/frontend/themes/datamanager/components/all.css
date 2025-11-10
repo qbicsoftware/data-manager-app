@@ -1061,6 +1061,13 @@ Icons
   text-wrap: nowrap;
 }
 
+.width-50-pct,
+.width-full,
+.height-50-pct,
+.height-full {
+  box-sizing: border-box;
+}
+
 .width-full {
   width: 100%;
 }
