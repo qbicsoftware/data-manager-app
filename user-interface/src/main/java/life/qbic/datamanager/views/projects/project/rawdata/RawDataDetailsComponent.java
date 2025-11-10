@@ -361,7 +361,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
   private ComponentRenderer<GridDetailsItem, RawDatasetInformationPxP> renderRawDataPxp() {
     return new ComponentRenderer<>(rawData -> {
       GridDetailsItem rawDataItem = new GridDetailsItem();
-      rawDataItem.addListEntry("Sample Ids", rawData.linkedSampleInformation().stream().map(
+      rawDataItem.addListEntry("Sample Name(s)", rawData.linkedSampleInformation().stream().map(
           BasicSampleInformation::sampleName).toList());
       rawDataItem.addEntry("Number of Files",
           String.valueOf(rawData.dataset().numberOfFiles()));
