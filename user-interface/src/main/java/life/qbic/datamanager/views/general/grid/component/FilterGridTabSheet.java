@@ -36,6 +36,10 @@ public final class FilterGridTabSheet extends TabSheet {
     addClassName("filter-grid-tabsheet");
   }
 
+  public void addFilterGridTab(@NonNull FilterGridTab<?> filterTabs) {
+    add (filterTabs, filterTabs.filterGrid());
+  }
+
   /**
    * Registers a
    * {@link ComponentEventListener that listens to {@link ClickEvent} of the primary action
