@@ -20,8 +20,6 @@
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>application-commons</artifactId>
-      <version>1.11.0</version>
-      <scope>compile</scope>
     </dependency>
   </dependencies>
 

@@ -52,6 +52,11 @@
       </dependency>
       <dependency>
         <groupId>life.qbic</groupId>
+        <artifactId>finances-api</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>life.qbic</groupId>
         <artifactId>finances-infrastructure</artifactId>
         <version>${project.version}</version>
       </dependency>
@@ -104,6 +109,13 @@
 
       <!-- Third-party pins (or import their BOMs instead) -->
       <dependency>
+        <groupId>com.vaadin</groupId>
+        <artifactId>vaadin-bom</artifactId>
+        <version>${vaadin.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
         <groupId>com.sun.mail</groupId>
         <artifactId>jakarta.mail</artifactId>
         <version>2.0.1</version>
@@ -146,15 +158,82 @@
         <version>${jackson.version}</version>
       </dependency>
       <dependency>
-        <groupId>com.fasterxml.jackson.core</groupId>
-        <artifactId>jackson-annotations</artifactId>
-        <version>${jackson.version}</version>
-      </dependency>
-      <dependency>
         <groupId>com.apicatalog</groupId>
         <artifactId>titanium-json-ld</artifactId>
         <!-- Use specific version to avoid revoked outdated version-->
         <version>1.6.0</version>
+      </dependency>
+      <dependency>
+        <groupId>javax.cache</groupId>
+        <artifactId>cache-api</artifactId>
+        <version>1.1.1</version>
+      </dependency>
+      <dependency>
+        <groupId>com.h2database</groupId>
+        <artifactId>h2</artifactId>
+        <version>[2.2.224,)</version>
+      </dependency>
+      <dependency>
+        <groupId>commons-io</groupId>
+        <artifactId>commons-io</artifactId>
+        <version>2.19.0</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.poi</groupId>
+        <artifactId>poi</artifactId>
+        <version>5.4.0</version>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-annotations</artifactId>
+        <version>2.18.3</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.poi</groupId>
+        <artifactId>poi-ooxml</artifactId>
+        <version>5.4.0</version>
+      </dependency>
+      <dependency>
+        <groupId>net.javacrumbs.shedlock</groupId>
+        <artifactId>shedlock-spring</artifactId>
+        <version>6.10.0</version>
+      </dependency>
+      <dependency>
+        <groupId>net.javacrumbs.shedlock</groupId>
+        <artifactId>shedlock-provider-jdbc-template</artifactId>
+        <version>6.10.0</version>
+      </dependency>
+      <dependency>
+        <groupId>life.qbic</groupId>
+        <artifactId>openbis-api</artifactId>
+        <version>20.10.7.3</version>
+        <classifier>r1700646105</classifier>
+        <scope>compile</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.docx4j</groupId>
+        <artifactId>docx4j-JAXB-ReferenceImpl</artifactId>
+        <version>11.5.3</version>
+      </dependency>
+      <dependency>
+        <groupId>edu.kit.datamanager</groupId>
+        <artifactId>ro-crate-java</artifactId>
+        <version>1.1.1</version>
+      </dependency>
+      <dependency>
+        <groupId>org.docx4j</groupId>
+        <artifactId>docx4j-core</artifactId>
+        <version>11.5.0</version>
+      </dependency>
+      <dependency>
+        <groupId>org.glassfish.jaxb</groupId>
+        <artifactId>jaxb-runtime</artifactId>
+        <version>4.0.5</version>
+      </dependency>
+      <dependency>
+        <groupId>jakarta.xml.bind</groupId>
+        <artifactId>jakarta.xml.bind-api</artifactId>
+        <version>4.0.2</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
