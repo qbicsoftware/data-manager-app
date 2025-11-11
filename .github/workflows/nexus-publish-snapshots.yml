@@ -8,6 +8,9 @@ on:
   push:
     branches:
       - development
+  pull_request:
+    branches:
+      - main
 permissions:
   id-token: write # This is required for requesting the JWT
   contents: read # This is required for actions/checkout
@@ -46,10 +49,10 @@ jobs:
         run: mvn versions:set -DremoveSnapshot
       # Set the SNAPSHOT for this build and deployment
       - name: Set version in Maven project
-        run: mvn versions:set -DnewVersion='${project.version}-SNAPSHOT'
+        run: mvn versions:set -DnewVersion='${project.version}-SNAPSHOT' -DprocessAllModules
 
       - name: Build with Maven
-        run: VAADIN_OFFLINE_KEY=${{ secrets.VAADIN_SERVER_23_2 }} mvn -B package -Pproduction -Dvaadin.force.production.build=true --file pom.xml
+        run: mvn -B package -Pproduction -Dvaadin.force.production.build=true --file pom.xml
 
       # Generate provenance (SLSA attestation) for all JARs
       - name: Generate SLSA build provenance
@@ -58,7 +61,7 @@ jobs:
           subject-path: "**/target/*.jar"
 
       - name: Publish artefact to QBiC Nexus Repository
-        run: VAADIN_OFFLINE_KEY=${{ secrets.VAADIN_SERVER_23_2 }} mvn --quiet --settings $GITHUB_WORKSPACE/.github.settings.xml -Pproduction -Dvaadin.force.production.build=true -DskipTests deploy
+        run: mvn --quiet --settings $GITHUB_WORKSPACE/.github.settings.xml -Pproduction -Dvaadin.force.production.build=true -DskipTests deploy
         env:
           MAVEN_REPO_USERNAME: ${{ secrets.NEXUS_USERNAME }}
           MAVEN_REPO_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
