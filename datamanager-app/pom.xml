@@ -4,7 +4,7 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <!-- Project from https://start.vaadin.com/project/25bb864a-5cfc-4bcc-8a0c-1abc5ff20bd8 -->
-  <artifactId>user-interface</artifactId>
+  <artifactId>datamanager-app</artifactId>
   <name>Vaadin frontend</name>
   <packaging>jar</packaging>
 

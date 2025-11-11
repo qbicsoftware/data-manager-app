@@ -102,7 +102,7 @@
       </dependency>
       <dependency>
         <groupId>life.qbic.datamanager</groupId>
-        <artifactId>user-interface</artifactId>
+        <artifactId>datamanager-app</artifactId>
         <version>${project.version}</version>
       </dependency>
 
