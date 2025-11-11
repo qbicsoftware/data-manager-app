@@ -4,12 +4,12 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <!-- Project from https://start.vaadin.com/project/25bb864a-5cfc-4bcc-8a0c-1abc5ff20bd8 -->
-  <artifactId>user-interface</artifactId>
+  <artifactId>datamanager-app</artifactId>
   <name>Vaadin frontend</name>
   <packaging>jar</packaging>
 
   <parent>
-    <groupId>life.qbic</groupId>
+    <groupId>life.qbic.datamanager</groupId>
     <artifactId>datamanager</artifactId>
     <version>1.11.0</version>
   </parent>
@@ -58,19 +58,27 @@
     </pluginRepository>
   </pluginRepositories>
 
-  <dependencyManagement>
-    <dependencies>
-      <dependency>
-        <groupId>com.vaadin</groupId>
-        <artifactId>vaadin-bom</artifactId>
-        <version>${vaadin.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
-    </dependencies>
-  </dependencyManagement>
-
   <dependencies>
+    <!-- Needed because we have Groovy in src/main/** -->
+    <dependency>
+      <groupId>org.apache.groovy</groupId>
+      <artifactId>groovy-all</artifactId>
+      <type>pom</type>
+      <!-- no version, no scope => compile by default -->
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.ivy</groupId>
+          <artifactId>ivy</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
+    <!-- tests stay test-scoped -->
+    <dependency>
+      <groupId>org.spockframework</groupId>
+      <artifactId>spock-spring</artifactId>
+      <scope>test</scope>
+    </dependency>
     <dependency>
       <groupId>com.vaadin</groupId>
       <!-- Replace artifactId with vaadin-core to use only free components -->
@@ -131,7 +139,6 @@
     <dependency>
       <groupId>javax.cache</groupId>
       <artifactId>cache-api</artifactId>
-      <version>1.1.1</version>
     </dependency>
     <dependency>
       <groupId>com.mysql</groupId>
@@ -140,12 +147,10 @@
     <dependency>
       <groupId>com.h2database</groupId>
       <artifactId>h2</artifactId>
-      <version>[2.2.224,)</version>
     </dependency>
     <dependency>
       <groupId>commons-io</groupId>
       <artifactId>commons-io</artifactId>
-      <version>2.19.0</version>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
@@ -190,85 +195,62 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>life.qbic</groupId>
+      <groupId>life.qbic.datamanager</groupId>
       <artifactId>identity</artifactId>
-      <version>1.11.0</version>
-      <scope>compile</scope>
     </dependency>
     <dependency>
-      <groupId>life.qbic</groupId>
+      <groupId>life.qbic.datamanager</groupId>
       <artifactId>identity-infrastructure</artifactId>
-      <version>1.11.0</version>
-      <scope>compile</scope>
     </dependency>
     <dependency>
-      <groupId>life.qbic</groupId>
+      <groupId>life.qbic.datamanager</groupId>
       <artifactId>broadcasting</artifactId>
-      <version>1.11.0</version>
-      <scope>compile</scope>
     </dependency>
     <dependency>
-      <groupId>life.qbic</groupId>
+      <groupId>life.qbic.datamanager</groupId>
       <artifactId>application-commons</artifactId>
-      <version>1.11.0</version>
-      <scope>compile</scope>
     </dependency>
     <dependency>
-      <groupId>life.qbic</groupId>
+      <groupId>life.qbic.datamanager</groupId>
       <artifactId>logging</artifactId>
-      <version>1.11.0</version>
-      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
     </dependency>
     <dependency>
-      <groupId>life.qbic</groupId>
+      <groupId>life.qbic.datamanager</groupId>
       <artifactId>project-management</artifactId>
-      <version>1.11.0</version>
-      <scope>compile</scope>
     </dependency>
     <dependency>
-      <groupId>life.qbic.logging</groupId>
+      <groupId>life.qbic.datamanager</groupId>
       <artifactId>subscription-provider</artifactId>
-      <version>1.11.0</version>
     </dependency>
     <dependency>
-      <groupId>life.qbic</groupId>
+      <groupId>life.qbic.datamanager</groupId>
       <artifactId>domain-concept</artifactId>
-      <version>1.11.0</version>
-      <scope>compile</scope>
     </dependency>
     <dependency>
-      <groupId>life.qbic</groupId>
+      <groupId>life.qbic.datamanager</groupId>
       <artifactId>finances-infrastructure</artifactId>
-      <version>1.11.0</version>
-      <scope>compile</scope>
     </dependency>
     <!-- https://mvnrepository.com/artifact/org.apache.poi/poi -->
     <dependency>
       <groupId>org.apache.poi</groupId>
       <artifactId>poi</artifactId>
-      <version>5.4.0</version>
     </dependency>
     <!-- https://mvnrepository.com/artifact/org.apache.poi/poi-ooxml -->
     <dependency>
       <groupId>org.apache.poi</groupId>
       <artifactId>poi-ooxml</artifactId>
-      <version>5.4.0</version>
     </dependency>
     <dependency>
-      <groupId>life.qbic.identity</groupId>
+      <groupId>life.qbic.datamanager</groupId>
       <artifactId>project-management-infrastructure</artifactId>
-      <version>1.11.0</version>
-      <scope>compile</scope>
     </dependency>
     <dependency>
-      <groupId>life.qbic.infrastructure</groupId>
+      <groupId>life.qbic.datamanager</groupId>
       <artifactId>email-service-provider</artifactId>
-      <version>1.11.0</version>
-      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.springframework.security</groupId>

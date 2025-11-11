@@ -4,7 +4,7 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <!-- Project from https://start.vaadin.com/project/25bb864a-5cfc-4bcc-8a0c-1abc5ff20bd8 -->
-  <groupId>life.qbic</groupId>
+  <groupId>life.qbic.datamanager</groupId>
   <artifactId>datamanager</artifactId>
   <name>Data Manager</name>
   <version>1.11.0</version>
@@ -16,7 +16,8 @@
     </license>
   </licenses>
   <modules>
-    <module>user-interface</module>
+    <module>datamanager-bom</module>
+    <module>datamanager-app</module>
     <module>identity</module>
     <module>broadcasting</module>
     <module>application-commons</module>
@@ -136,62 +137,19 @@
       <url>https://qbic-repo.qbic.uni-tuebingen.de/repository/maven-snapshots</url>
     </snapshotRepository>
   </distributionManagement>
+
   <dependencyManagement>
     <dependencies>
       <dependency>
-        <groupId>org.spockframework</groupId>
-        <artifactId>spock-core</artifactId>
-        <version>2.4-M4-groovy-4.0</version>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.spockframework</groupId>
-        <artifactId>spock-spring</artifactId>
-        <version>2.4-M4-groovy-4.0</version>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.groovy</groupId>
-        <artifactId>groovy-all</artifactId>
-        <version>4.0.24</version>
+        <groupId>life.qbic.datamanager</groupId>
+        <artifactId>datamanager-bom</artifactId>
+        <version>1.11.0</version>
         <type>pom</type>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.jobrunr</groupId>
-        <artifactId>jobrunr-spring-boot-3-starter</artifactId>
-        <version>7.3.2</version>
-      </dependency>
-      <dependency>
-        <groupId>com.fasterxml.jackson.core</groupId>
-        <artifactId>jackson-core</artifactId>
-        <version>${jackson.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.fasterxml.jackson.core</groupId>
-        <artifactId>jackson-databind</artifactId>
-        <version>${jackson.version}</version>
-      </dependency>
-      <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.datatype/jackson-datatype-jsr310 -->
-      <dependency>
-        <groupId>com.fasterxml.jackson.datatype</groupId>
-        <artifactId>jackson-datatype-jsr310</artifactId>
-        <version>${jackson.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.fasterxml.jackson.core</groupId>
-        <artifactId>jackson-annotations</artifactId>
-        <version>${jackson.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.apicatalog</groupId>
-        <artifactId>titanium-json-ld</artifactId>
-        <!-- Use specific version to avoid revoked outdated version-->
-        <version>1.6.0</version>
+        <scope>import</scope>
       </dependency>
     </dependencies>
-
   </dependencyManagement>
+
   <build>
     <plugins>
       <plugin>
@@ -247,6 +205,21 @@
           </groovyDocOutputDirectory>
           <testGroovyDocOutputDirectory>${project.build.directory}/site/testgapidocs
           </testGroovyDocOutputDirectory>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-install-plugin</artifactId>
+        <version>3.1.1</version>
+        <configuration>
+          <skip>true</skip>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <artifactId>maven-deploy-plugin</artifactId>
+        <version>3.1.2</version>
+        <configuration>
+          <skip>true</skip>
         </configuration>
       </plugin>
       <plugin>

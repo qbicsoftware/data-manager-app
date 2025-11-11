@@ -4,23 +4,19 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <parent>
     <artifactId>datamanager</artifactId>
-    <groupId>life.qbic</groupId>
+    <groupId>life.qbic.datamanager</groupId>
     <version>1.11.0</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
-  <groupId>life.qbic.logging</groupId>
   <artifactId>subscription-provider</artifactId>
   <dependencies>
     <dependency>
-      <groupId>life.qbic.logging</groupId>
+      <groupId>life.qbic.datamanager</groupId>
       <artifactId>subscription-api</artifactId>
-      <version>1.11.0</version>
-      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>com.sun.mail</groupId>
       <artifactId>jakarta.mail</artifactId>
-      <version>2.0.1</version>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
@@ -32,10 +28,8 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>life.qbic</groupId>
+      <groupId>life.qbic.datamanager</groupId>
       <artifactId>logging</artifactId>
-      <version>1.1.5</version>
-      <scope>compile</scope>
     </dependency>
   </dependencies>
 </project>

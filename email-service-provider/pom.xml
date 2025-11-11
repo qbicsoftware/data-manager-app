@@ -4,12 +4,11 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>life.qbic</groupId>
+    <groupId>life.qbic.datamanager</groupId>
     <artifactId>datamanager</artifactId>
     <version>1.11.0</version>
   </parent>
 
-  <groupId>life.qbic.infrastructure</groupId>
   <artifactId>email-service-provider</artifactId>
 
   <properties>
@@ -19,22 +18,16 @@
   </properties>
   <dependencies>
     <dependency>
-      <groupId>life.qbic</groupId>
+      <groupId>life.qbic.datamanager</groupId>
       <artifactId>identity</artifactId>
-      <version>1.11.0</version>
-      <scope>compile</scope>
     </dependency>
     <dependency>
-      <groupId>life.qbic</groupId>
+      <groupId>life.qbic.datamanager</groupId>
       <artifactId>project-management</artifactId>
-      <version>1.11.0</version>
-      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>com.sun.mail</groupId>
       <artifactId>jakarta.mail</artifactId>
-      <version>2.0.1</version>
-      <scope>compile</scope>
     </dependency>
   </dependencies>
 
