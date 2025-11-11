@@ -9,7 +9,6 @@
     <version>1.11.0</version>
   </parent>
 
-  <groupId>life.qbic.infrastructure</groupId>
   <artifactId>email-service-provider</artifactId>
 
   <properties>
@@ -21,14 +20,10 @@
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>identity</artifactId>
-      <version>1.11.0</version>
-      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>project-management</artifactId>
-      <version>1.11.0</version>
-      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>com.sun.mail</groupId>
