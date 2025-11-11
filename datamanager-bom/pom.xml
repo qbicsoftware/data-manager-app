@@ -3,7 +3,7 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>life.qbic</groupId>
+  <groupId>life.qbic.datamanager</groupId>
   <artifactId>datamanager-bom</artifactId>
   <version>1.11.0</version>
   <packaging>pom</packaging>
@@ -26,82 +26,82 @@
     <dependencies>
       <!-- Internal artifacts all align to the BOM’s version -->
       <dependency>
-        <groupId>life.qbic</groupId>
+        <groupId>life.qbic.datamanager</groupId>
         <artifactId>application-commons</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <groupId>life.qbic</groupId>
+        <groupId>life.qbic.datamanager</groupId>
         <artifactId>broadcasting</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <groupId>life.qbic</groupId>
+        <groupId>life.qbic.datamanager</groupId>
         <artifactId>domain-concept</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <groupId>life.qbic</groupId>
+        <groupId>life.qbic.datamanager</groupId>
         <artifactId>email-service-provider</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <groupId>life.qbic</groupId>
+        <groupId>life.qbic.datamanager</groupId>
         <artifactId>finances</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <groupId>life.qbic</groupId>
+        <groupId>life.qbic.datamanager</groupId>
         <artifactId>finances-api</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <groupId>life.qbic</groupId>
+        <groupId>life.qbic.datamanager</groupId>
         <artifactId>finances-infrastructure</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <groupId>life.qbic</groupId>
+        <groupId>life.qbic.datamanager</groupId>
         <artifactId>identity</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <groupId>life.qbic</groupId>
+        <groupId>life.qbic.datamanager</groupId>
         <artifactId>identity-api</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <groupId>life.qbic</groupId>
+        <groupId>life.qbic.datamanager</groupId>
         <artifactId>identity-infrastructure</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <groupId>life.qbic</groupId>
+        <groupId>life.qbic.datamanager</groupId>
         <artifactId>logging</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <groupId>life.qbic</groupId>
+        <groupId>life.qbic.datamanager</groupId>
         <artifactId>project-management</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <groupId>life.qbic</groupId>
+        <groupId>life.qbic.datamanager</groupId>
         <artifactId>project-management-infrastructure</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <groupId>life.qbic</groupId>
+        <groupId>life.qbic.datamanager</groupId>
         <artifactId>subscription-api</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <groupId>life.qbic</groupId>
+        <groupId>life.qbic.datamanager</groupId>
         <artifactId>subscription-provider</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <groupId>life.qbic</groupId>
+        <groupId>life.qbic.datamanager</groupId>
         <artifactId>user-interface</artifactId>
         <version>${project.version}</version>
       </dependency>

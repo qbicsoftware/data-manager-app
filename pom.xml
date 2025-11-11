@@ -4,7 +4,7 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <!-- Project from https://start.vaadin.com/project/25bb864a-5cfc-4bcc-8a0c-1abc5ff20bd8 -->
-  <groupId>life.qbic</groupId>
+  <groupId>life.qbic.datamanager</groupId>
   <artifactId>datamanager</artifactId>
   <name>Data Manager</name>
   <version>1.11.0</version>
@@ -141,7 +141,7 @@
   <dependencyManagement>
     <dependencies>
       <dependency>
-        <groupId>life.qbic</groupId>
+        <groupId>life.qbic.datamanager</groupId>
         <artifactId>datamanager-bom</artifactId>
         <version>1.11.0</version>
         <type>pom</type>

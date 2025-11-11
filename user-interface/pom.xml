@@ -9,7 +9,7 @@
   <packaging>jar</packaging>
 
   <parent>
-    <groupId>life.qbic</groupId>
+    <groupId>life.qbic.datamanager</groupId>
     <artifactId>datamanager</artifactId>
     <version>1.11.0</version>
   </parent>
@@ -195,23 +195,23 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>life.qbic</groupId>
+      <groupId>life.qbic.datamanager</groupId>
       <artifactId>identity</artifactId>
     </dependency>
     <dependency>
-      <groupId>life.qbic</groupId>
+      <groupId>life.qbic.datamanager</groupId>
       <artifactId>identity-infrastructure</artifactId>
     </dependency>
     <dependency>
-      <groupId>life.qbic</groupId>
+      <groupId>life.qbic.datamanager</groupId>
       <artifactId>broadcasting</artifactId>
     </dependency>
     <dependency>
-      <groupId>life.qbic</groupId>
+      <groupId>life.qbic.datamanager</groupId>
       <artifactId>application-commons</artifactId>
     </dependency>
     <dependency>
-      <groupId>life.qbic</groupId>
+      <groupId>life.qbic.datamanager</groupId>
       <artifactId>logging</artifactId>
     </dependency>
     <dependency>
@@ -219,19 +219,19 @@
       <artifactId>logback-classic</artifactId>
     </dependency>
     <dependency>
-      <groupId>life.qbic</groupId>
+      <groupId>life.qbic.datamanager</groupId>
       <artifactId>project-management</artifactId>
     </dependency>
     <dependency>
-      <groupId>life.qbic</groupId>
+      <groupId>life.qbic.datamanager</groupId>
       <artifactId>subscription-provider</artifactId>
     </dependency>
     <dependency>
-      <groupId>life.qbic</groupId>
+      <groupId>life.qbic.datamanager</groupId>
       <artifactId>domain-concept</artifactId>
     </dependency>
     <dependency>
-      <groupId>life.qbic</groupId>
+      <groupId>life.qbic.datamanager</groupId>
       <artifactId>finances-infrastructure</artifactId>
     </dependency>
     <!-- https://mvnrepository.com/artifact/org.apache.poi/poi -->
@@ -245,11 +245,11 @@
       <artifactId>poi-ooxml</artifactId>
     </dependency>
     <dependency>
-      <groupId>life.qbic</groupId>
+      <groupId>life.qbic.datamanager</groupId>
       <artifactId>project-management-infrastructure</artifactId>
     </dependency>
     <dependency>
-      <groupId>life.qbic</groupId>
+      <groupId>life.qbic.datamanager</groupId>
       <artifactId>email-service-provider</artifactId>
     </dependency>
     <dependency>

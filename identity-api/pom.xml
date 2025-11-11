@@ -4,7 +4,7 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>life.qbic</groupId>
+    <groupId>life.qbic.datamanager</groupId>
     <artifactId>datamanager</artifactId>
     <version>1.11.0</version>
   </parent>
@@ -18,7 +18,7 @@
   </properties>
   <dependencies>
     <dependency>
-      <groupId>life.qbic</groupId>
+      <groupId>life.qbic.datamanager</groupId>
       <artifactId>application-commons</artifactId>
     </dependency>
   </dependencies>
