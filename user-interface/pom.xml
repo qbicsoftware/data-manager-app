@@ -77,6 +77,12 @@
       <artifactId>groovy-all</artifactId>
       <type>pom</type>
       <!-- no version, no scope => compile by default -->
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.ivy</groupId>
+          <artifactId>ivy</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <!-- tests stay test-scoped -->
