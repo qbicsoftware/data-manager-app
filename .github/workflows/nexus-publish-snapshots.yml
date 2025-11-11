@@ -46,7 +46,7 @@ jobs:
         run: mvn versions:set -DremoveSnapshot
       # Set the SNAPSHOT for this build and deployment
       - name: Set version in Maven project
-        run: mvn versions:set -DnewVersion='${project.version}-SNAPSHOT'
+        run: mvn versions:set -DnewVersion='${project.version}-SNAPSHOT' -DprocessAllModules
 
       - name: Build with Maven
         run: VAADIN_OFFLINE_KEY=${{ secrets.VAADIN_SERVER_23_2 }} mvn -B package -Pproduction -Dvaadin.force.production.build=true --file pom.xml
