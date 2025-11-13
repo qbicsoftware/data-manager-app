@@ -6,7 +6,11 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.server.VaadinService;
 import jakarta.annotation.security.PermitAll;
+import java.util.Objects;
+import life.qbic.datamanager.views.UiHandle;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -22,24 +26,33 @@ import org.springframework.security.core.context.SecurityContextHolder;
 @PermitAll
 public class InvenioIntegrationDemo extends Div implements BeforeEnterObserver {
 
+  private final InvenioDemoService service;
+
+  private final UiHandle uiHandle =  new UiHandle();
+
+  @Autowired
+  public InvenioIntegrationDemo(InvenioDemoService invenioDemoService) {
+    this.service = Objects.requireNonNull(invenioDemoService);
+    var button = new Button("Integrate Invenio");
+    button.addClickListener(e -> {
+      String ctx = VaadinService.getCurrentRequest().getContextPath(); // e.g. "" or "/dev"
+      UI.getCurrent().getPage().setLocation(ctx + "/oauth2/authorization/invenio");
+      button.setEnabled(false); // guard against double-click (can cause code reuse -> invalid_grant)
+    });
+    add(button);
+    uiHandle.bind(UI.getCurrent());
+  }
+
   @Override
   public void beforeEnter(BeforeEnterEvent event) {
     var auth = SecurityContextHolder.getContext().getAuthentication();
     if (auth.isAuthenticated()) {
       var principal = auth.getPrincipal();
       System.out.println(principal);
-      return;
+      service.listDepositions()
+          .subscribe(depositions ->
+                  uiHandle.onUiAndPush(() -> add(new Div(depositions.toString()))),
+              Throwable::printStackTrace);
     }
-    Div div = new Div("Not authenticated yet!");
-    add(div);
   }
-
-  public InvenioIntegrationDemo() {
-    var button = new Button("Integrate Invenio");
-    button.addClickListener(e -> {
-      UI.getCurrent().getPage().setLocation("/dev/oauth2/authorization/invenio");
-    });
-    add(button);
-  }
-
 }

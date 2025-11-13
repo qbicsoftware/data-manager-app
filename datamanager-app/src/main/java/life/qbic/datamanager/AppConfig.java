@@ -77,6 +77,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.oauth2.client.InMemoryOAuth2AuthorizedClientService;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import reactor.core.scheduler.Scheduler;
 
 /**
@@ -90,6 +93,20 @@ import reactor.core.scheduler.Scheduler;
 @Configuration
 @ComponentScan({"life.qbic.identity.infrastructure", "life.qbic.datamanager.announcements"})
 public class AppConfig {
+
+  /**
+   * Stores authorized clients (tokens) per user. We start with in-memory and can swap to JDBC for
+   * production if needed.
+   */
+  @Bean
+  public OAuth2AuthorizedClientService authorizedClientService(
+      ClientRegistrationRepository registrations) {
+    // It is fine for now to use an in memory client service, since the actual tasks to query
+    // a remote resource are UI-based only and short term.
+    // If this assumption changes, a persistent client service needs to be provided.
+    return new InMemoryOAuth2AuthorizedClientService(registrations);
+  }
+
   /*
   Wiring up identity application core and policies
 
