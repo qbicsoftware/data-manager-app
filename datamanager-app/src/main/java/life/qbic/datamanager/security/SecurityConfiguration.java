@@ -102,11 +102,10 @@ public class SecurityConfiguration extends VaadinWebSecurity {
 
     http.oauth2Login(oAuth2Login -> {
       oAuth2Login.loginPage("/login").permitAll();
-      oAuth2Login.authorizationEndpoint(ae -> ae.baseUri("/oauth2/authorization"));
-      oAuth2Login.redirectionEndpoint(re -> re.baseUri("/oauth2/callback/*"));
+     // oAuth2Login.authorizationEndpoint(ae -> ae.baseUri("/oauth2/authorization"));
+     // oAuth2Login.redirectionEndpoint(re -> re.baseUri("/oauth2/callback/*"));
       oAuth2Login.defaultSuccessUrl("/");
-      // ✅ keep your current OIDC success handler for real logins
-      // but bypass principal replacement for the 'invenio' client
+      // bypass principal replacement for the 'invenio' client
       oAuth2Login.successHandler((req, res, auth) -> {
         if (auth instanceof org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken token
             && "invenio".equals(token.getAuthorizedClientRegistrationId())) {
@@ -160,8 +159,6 @@ public class SecurityConfiguration extends VaadinWebSecurity {
     // Set the login view
     setLoginView(http, LoginLayout.class, contextPath + "/login?logout=true");
   }
-
-
 
   /**
    * Stash current auth before you kick off the Zenodo flow so we can restore it later.
