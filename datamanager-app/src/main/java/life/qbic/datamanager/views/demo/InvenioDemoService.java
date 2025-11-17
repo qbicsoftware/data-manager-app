@@ -25,7 +25,7 @@ public class InvenioDemoService {
   private final WebClient webClient;
 
   @Autowired
-  public InvenioDemoService(@Qualifier("invenioWebClient") WebClient webClient) {
+  public InvenioDemoService(@Qualifier("invenioZenodoWebClient") WebClient webClient) {
     this.webClient = Objects.requireNonNull(webClient);
   }
 

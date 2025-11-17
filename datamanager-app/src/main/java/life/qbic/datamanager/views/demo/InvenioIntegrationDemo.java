@@ -28,19 +28,28 @@ public class InvenioIntegrationDemo extends Div implements BeforeEnterObserver {
 
   private final InvenioDemoService service;
 
-  private final UiHandle uiHandle =  new UiHandle();
+  private final UiHandle uiHandle = new UiHandle();
+  private final RemoteDatasetResourceService datasetResourceService;
 
   @Autowired
-  public InvenioIntegrationDemo(InvenioDemoService invenioDemoService) {
+  public InvenioIntegrationDemo(InvenioDemoService invenioDemoService,
+      RemoteDatasetResourceService datasetResourceService) {
+    this.datasetResourceService = Objects.requireNonNull(datasetResourceService);
     this.service = Objects.requireNonNull(invenioDemoService);
     var button = new Button("Integrate Invenio");
     button.addClickListener(e -> {
       String ctx = VaadinService.getCurrentRequest().getContextPath(); // e.g. "" or "/dev"
-      UI.getCurrent().getPage().setLocation(ctx + "/oauth2/authorization/invenio");
-      button.setEnabled(false); // guard against double-click (can cause code reuse -> invalid_grant)
+
+      UI.getCurrent().getPage().setLocation(ctx + "/oauth2/authorization/invenio-zenodo");
+      button.setEnabled(
+          false); // guard against double-click (can cause code reuse -> invalid_grant)
     });
     add(button);
     uiHandle.bind(UI.getCurrent());
+
+    datasetResourceService.availableResources().forEach(resource -> {
+      add(new Div(resource.toString()));
+    });
   }
 
   @Override

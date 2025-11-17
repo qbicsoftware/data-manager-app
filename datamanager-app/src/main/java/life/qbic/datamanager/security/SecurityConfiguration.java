@@ -25,11 +25,11 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.client.AuthorizedClientServiceOAuth2AuthorizedClientManager;
-import org.springframework.security.oauth2.client.InMemoryOAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientProviderBuilder;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestRedirectFilter;
 import org.springframework.security.oauth2.client.web.reactive.function.client.ServletOAuth2AuthorizedClientExchangeFilterFunction;
@@ -43,6 +43,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 @Import(VaadinAwareSecurityContextHolderStrategyConfiguration.class)
 public class SecurityConfiguration extends VaadinWebSecurity {
 
+  private static final String ORIGINAL_AUTH_KEY = "origAuth";
   final VaadinDefaultRequestCache defaultRequestCache;
   private final IdentityService identityService;
 
@@ -90,8 +91,7 @@ public class SecurityConfiguration extends VaadinWebSecurity {
     http.authorizeHttpRequests(v -> v
         .requestMatchers(VaadinWebSecurity.getDefaultWebSecurityIgnoreMatcher()).permitAll()
         .requestMatchers(
-            new AntPathRequestMatcher("/oauth2/authorization/invenio"),
-            new AntPathRequestMatcher("/oauth2/callback/invenio/**")
+            new AntPathRequestMatcher("/oauth2/authorization/invenio-*")
         ).permitAll()  // u
         .requestMatchers(
             new AntPathRequestMatcher("/oauth2/authorization/orcid"),
@@ -102,24 +102,21 @@ public class SecurityConfiguration extends VaadinWebSecurity {
 
     http.oauth2Login(oAuth2Login -> {
       oAuth2Login.loginPage("/login").permitAll();
-     // oAuth2Login.authorizationEndpoint(ae -> ae.baseUri("/oauth2/authorization"));
-     // oAuth2Login.redirectionEndpoint(re -> re.baseUri("/oauth2/callback/*"));
       oAuth2Login.defaultSuccessUrl("/");
-      // bypass principal replacement for the 'invenio' client
+      // bypass principal replacement for the 'invenio' clients
       oAuth2Login.successHandler((req, res, auth) -> {
-        if (auth instanceof org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken token
-            && "invenio".equals(token.getAuthorizedClientRegistrationId())) {
+        if (auth instanceof OAuth2AuthenticationToken token
+            && token.getAuthorizedClientRegistrationId().startsWith("invenio")) {
 
           var oauthClient = authorizedClientService.loadAuthorizedClient(
               token.getAuthorizedClientRegistrationId(),
               token.getName());
 
           // Restore the original application user (we saved it just before starting the flow)
-          var orig = (org.springframework.security.core.Authentication)
-              req.getSession().getAttribute("origAuth");
+          var orig = (Authentication)
+              req.getSession().getAttribute(ORIGINAL_AUTH_KEY);
           if (orig != null) {
-            org.springframework.security.core.context.SecurityContextHolder.getContext()
-                .setAuthentication(orig);
+            SecurityContextHolder.getContext().setAuthentication(orig);
 
             if (oauthClient != null) {
               var bridgedClient = new OAuth2AuthorizedClient(
@@ -165,7 +162,7 @@ public class SecurityConfiguration extends VaadinWebSecurity {
    */
   @Bean
   public OncePerRequestFilter stashOrigAuthForInvenio() {
-    final var matcher = new AntPathRequestMatcher("/oauth2/authorization/invenio");
+    final var matcher = new AntPathRequestMatcher("/oauth2/authorization/{registrationId}");
     return new OncePerRequestFilter() {
       @Override
       protected void doFilterInternal(HttpServletRequest req,
@@ -176,7 +173,7 @@ public class SecurityConfiguration extends VaadinWebSecurity {
         if (matcher.matches(req)) {
           Authentication auth = SecurityContextHolder.getContext().getAuthentication();
           if (auth != null && auth.isAuthenticated()) {
-            req.getSession(true).setAttribute("origAuth", auth);
+            req.getSession(true).setAttribute(ORIGINAL_AUTH_KEY, auth);
           }
         }
         chain.doFilter(req, res);
@@ -185,10 +182,10 @@ public class SecurityConfiguration extends VaadinWebSecurity {
   }
 
   @Bean
-  @Qualifier("invenioWebClient")
+  @Qualifier("invenioZenodoWebClient")
   public WebClient invenioWebClient(OAuth2AuthorizedClientManager oAuth2AuthorizedClientManager) {
     var oauth2 = new ServletOAuth2AuthorizedClientExchangeFilterFunction(oAuth2AuthorizedClientManager);
-    oauth2.setDefaultClientRegistrationId("invenio");
+    oauth2.setDefaultClientRegistrationId("invenio-zenodo");
 
     return WebClient.builder()
         .apply(oauth2.oauth2Configuration())
