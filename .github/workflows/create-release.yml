@@ -45,7 +45,7 @@ jobs:
           git config --global user.name "JohnnyQ5"
 
       - name: Set version in Maven project
-        run: mvn versions:set -DnewVersion=${{ github.event.inputs.versionTag }}
+        run: mvn versions:set -DnewVersion=${{ github.event.inputs.versionTag }} -DprocessAllModules
 
       - name: Build with Maven
         run: VAADIN_OFFLINE_KEY=${{ secrets.VAADIN_SERVER_23_2 }} mvn -B package -Pproduction -Dvaadin.force.production.build=true --file pom.xml
@@ -86,7 +86,7 @@ jobs:
           subject-path: "**/target/*.jar"
 
       - name: Publish artefact to QBiC Nexus Repository
-        run: VAADIN_OFFLINE_KEY=${{ secrets.VAADIN_SERVER_23_2 }} mvn --quiet --settings $GITHUB_WORKSPACE/.github.settings.xml -Pproduction -DskipTests -Dvaadin.force.production.build=true deploy
+        run: mvn --quiet --settings $GITHUB_WORKSPACE/.github.settings.xml -Pproduction -DskipTests -Dvaadin.force.production.build=true deploy
         env:
           MAVEN_REPO_USERNAME: ${{ secrets.NEXUS_USERNAME }}
           MAVEN_REPO_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}

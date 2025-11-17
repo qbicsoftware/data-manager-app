@@ -1,0 +1,38 @@
+name: Test Version Commit
+on:
+  workflow_dispatch:
+    inputs:
+      versionTag:
+        description: 'Version Tag (semantic version)'
+        required: true
+
+jobs:
+  bump-version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'zulu'
+          java-version: '21'
+          settings-path: ${{ github.workspace }}
+
+      - name: Set up git
+        run: |
+          git config --global user.name "${{ github.actor }}"
+          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+
+      - name: Set version in Maven project
+        run: mvn versions:set -DnewVersion=${{ github.event.inputs.versionTag }} -DprocessAllModules
+
+      - name: Build with Maven
+        run: mvn -B package -Pproduction -Dvaadin.force.production.build=true --file pom.xml
+
+      - name: Commit Version Change
+        run: |
+          git add .
+          git commit -m "Update project version to ${{ github.event.inputs.versionTag }}"
+          git push
