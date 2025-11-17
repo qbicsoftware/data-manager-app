@@ -23,9 +23,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class UserMainLayout extends DataManagerLayout {
 
   public UserMainLayout(@Autowired AuthenticationContext authenticationContext,
-      UserInformationService userInformationService,
+      @Autowired UserInformationService userInformationService,
       @Autowired FooterComponentFactory footerComponentFactory,
-      AnnouncementService announcementService) {
+      @Autowired AnnouncementService announcementService) {
     super(Objects.requireNonNull(footerComponentFactory), announcementService);
     Span navBarTitle = new Span("Data Manager");
     navBarTitle.setClassName("navbar-title");

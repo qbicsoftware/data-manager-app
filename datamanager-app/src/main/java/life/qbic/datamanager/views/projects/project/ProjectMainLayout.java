@@ -53,16 +53,16 @@ public class ProjectMainLayout extends DataManagerLayout implements BeforeEnterO
 
   public ProjectMainLayout(@Autowired AuthenticationContext authenticationContext,
       @Autowired UserInformationService userInformationService,
-      ProjectInformationService projectInformationService,
-      ExperimentInformationService experimentInformationService,
+      @Autowired ProjectInformationService projectInformationService,
+      @Autowired ExperimentInformationService experimentInformationService,
       @Autowired AddExperimentToProjectService addExperimentToProjectService,
       @Autowired UserPermissions userPermissions,
       @Autowired SpeciesLookupService speciesLookupService,
       @Autowired FooterComponentFactory footerComponentFactory,
       @Autowired TerminologyService terminologyService,
-      CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
-      MessageSourceNotificationFactory messageSourceNotificationFactory,
-      AnnouncementService announcementService) {
+      @Autowired CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
+      @Autowired MessageSourceNotificationFactory messageSourceNotificationFactory,
+      @Autowired AnnouncementService announcementService) {
     super(requireNonNull(footerComponentFactory), announcementService);
     requireNonNull(authenticationContext);
     requireNonNull(userInformationService);

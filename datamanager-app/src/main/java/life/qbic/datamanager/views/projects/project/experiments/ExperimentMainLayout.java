@@ -71,9 +71,9 @@ public class ExperimentMainLayout extends DataManagerLayout implements BeforeEnt
       @Autowired SpeciesLookupService ontologyTermInformationService,
       @Autowired FooterComponentFactory footerComponentFactory,
       @Autowired  TerminologyService terminologyService,
-      CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
-      MessageSourceNotificationFactory messageSourceNotificationFactory,
-      AnnouncementService announcementService) {
+      @Autowired CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
+      @Autowired MessageSourceNotificationFactory messageSourceNotificationFactory,
+      @Autowired AnnouncementService announcementService) {
     super(requireNonNull(footerComponentFactory), announcementService);
     requireNonNull(authenticationContext);
     requireNonNull(userInformationService);

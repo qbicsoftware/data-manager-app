@@ -31,8 +31,10 @@ public class LandingPageLayout extends DataManagerLayout implements RouterLayout
   private Button login;
   private Button register;
 
-  public LandingPageLayout(@Autowired LandingPageHandlerInterface handlerInterface, @Autowired
-  FooterComponentFactory footerComponentFactory, AnnouncementService announcementService) {
+  public LandingPageLayout(@Autowired LandingPageHandlerInterface handlerInterface,
+      @Autowired FooterComponentFactory footerComponentFactory,
+      @Autowired AnnouncementService announcementService) {
+
     super(Objects.requireNonNull(footerComponentFactory), announcementService);
     Objects.requireNonNull(handlerInterface);
     addClassName("landing-page-layout");
