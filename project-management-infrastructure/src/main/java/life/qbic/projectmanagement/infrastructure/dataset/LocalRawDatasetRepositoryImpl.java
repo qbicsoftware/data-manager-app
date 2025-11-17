@@ -145,25 +145,7 @@ public class LocalRawDatasetRepositoryImpl implements LocalRawDatasetRepository 
       throw new LookupException("Lookup for raw datasets failed", e);
     }
 
-    Specification<LocalRawDatasetNgsEntry> sampleNameSpec = (root, query, builder) -> {
-      if (filter.filterTerm().isBlank()) {
-        return builder.conjunction();
-      }
-      Expression<String> function = createSampleLabelSearchFilter(filter, root, builder);
-
-      return builder.isNotNull(function);
-    };
-
-    Specification<LocalRawDatasetNgsEntry> experimentIdSpec = (root, query, builder) -> {
-      if  (experimentId == null) {
-        return builder.conjunction();
-      }
-      return builder.equal(root.get("experimentId").as(String.class), experimentId);
-    };
-
-    Specification<LocalRawDatasetNgsEntry> fullSpec = Specification.unrestricted();
-    fullSpec = fullSpec.and(sampleNameSpec).and(experimentIdSpec);
-
+    var fullSpec = createFullSpecificationNGS(filter, experimentId);
 
     return ngsInfoRepository.findAll(fullSpec,
             new OffsetBasedRequest(offset, limit, Sort.by(orders))).getContent()
@@ -199,33 +181,14 @@ public class LocalRawDatasetRepositoryImpl implements LocalRawDatasetRepository 
       throw new LookupException("Lookup for raw datasets failed", e);
     }
 
-    Specification<LocalRawDatasetPxpEntry> sampleNameSpec = (root, query, builder) -> {
-      if (filter.filterTerm().isBlank()) {
-        return builder.conjunction();
-      }
-      Expression<String> function = createSampleLabelSearchFilter(filter, root, builder);
-
-      return builder.isNotNull(function);
-    };
-
-    Specification<LocalRawDatasetPxpEntry> experimentIdSpec = (root, query, builder) -> {
-      if  (experimentId == null) {
-        return builder.conjunction();
-      }
-      return builder.equal(root.get("experimentId").as(String.class), experimentId);
-    };
-
-    Specification<LocalRawDatasetPxpEntry> fullSpec = Specification.unrestricted();
-    fullSpec = fullSpec.and(sampleNameSpec).and(experimentIdSpec);
+    var fullSpec = createFullSpecificationPxp(filter, experimentId);
 
     return pxpInfoRepository.findAll(fullSpec,
             new OffsetBasedRequest(offset, limit, Sort.by(orders))).getContent()
         .stream().map(LocalRawDatasetRepositoryImpl::convert).toList();
   }
 
-  @Override
-  public Integer countNGS(String experimentId, RawDatasetFilter filter) throws LookupException {
-
+  private static Specification<LocalRawDatasetNgsEntry> createFullSpecificationNGS(RawDatasetFilter filter, String experimentId) {
     Specification<LocalRawDatasetNgsEntry> sampleNameSpec = (root, query, builder) -> {
       if (filter == null) {
         return builder.conjunction();
@@ -242,10 +205,15 @@ public class LocalRawDatasetRepositoryImpl implements LocalRawDatasetRepository 
       return builder.equal(root.get("experimentId").as(String.class), experimentId);
     };
 
+    var measurementIdContains = createMeasurementIdContainsNgs(filter);
+
     Specification<LocalRawDatasetNgsEntry> fullSpec = Specification.unrestricted();
-    fullSpec = fullSpec.and(sampleNameSpec).and(experimentIdSpec);
+    return fullSpec.and(sampleNameSpec.or(measurementIdContains)).and(experimentIdSpec);
+  }
 
-
+  @Override
+  public Integer countNGS(String experimentId, RawDatasetFilter filter) throws LookupException {
+    var fullSpec = createFullSpecificationNGS(filter, experimentId);
     return Math.toIntExact(ngsInfoRepository.count(fullSpec));
   }
 
@@ -259,9 +227,7 @@ public class LocalRawDatasetRepositoryImpl implements LocalRawDatasetRepository 
     );
   }
 
-  @Override
-  public Integer countPxP(String experimentId, RawDatasetFilter filter) throws LookupException {
-
+  private static Specification<LocalRawDatasetPxpEntry> createFullSpecificationPxp(RawDatasetFilter filter, String experimentId) {
     Specification<LocalRawDatasetPxpEntry> sampleNameSpec = (root, query, builder) -> {
       if (filter == null) {
         return builder.conjunction();
@@ -278,10 +244,15 @@ public class LocalRawDatasetRepositoryImpl implements LocalRawDatasetRepository 
       return builder.equal(root.get("experimentId").as(String.class), experimentId);
     };
 
+    var measurementIdContains = createMeasurementIdContainsPxp(filter);
+
     Specification<LocalRawDatasetPxpEntry> fullSpec = Specification.unrestricted();
-    fullSpec = fullSpec.and(sampleNameSpec).and(experimentIdSpec);
+    return fullSpec.and(sampleNameSpec.or(measurementIdContains)).and(experimentIdSpec);
+  }
 
-
+  @Override
+  public Integer countPxP(String experimentId, RawDatasetFilter filter) throws LookupException {
+    var fullSpec = createFullSpecificationPxp(filter, experimentId);
     return Math.toIntExact(pxpInfoRepository.count(fullSpec));
   }
 
@@ -299,6 +270,24 @@ public class LocalRawDatasetRepositoryImpl implements LocalRawDatasetRepository 
       return Direction.ASC;
     }
     return Direction.DESC;
+  }
+
+  private static Specification<LocalRawDatasetNgsEntry> createMeasurementIdContainsNgs(RawDatasetFilter filter) {
+    return (root, query, builder) -> {
+      if (filter.filterTerm().isBlank()) {
+        return builder.conjunction();
+      }
+      return builder.like(root.get("measurementCode").as(String.class), "%"+filter.filterTerm()+"%");
+    };
+  }
+
+  private static Specification<LocalRawDatasetPxpEntry> createMeasurementIdContainsPxp(RawDatasetFilter filter) {
+    return (root, query, builder) -> {
+      if (filter.filterTerm().isBlank()) {
+        return builder.conjunction();
+      }
+      return builder.like(root.get("measurementCode").as(String.class), "%"+filter.filterTerm()+"%");
+    };
   }
 
   private static RawDatasetInformationNgs convert(LocalRawDatasetNgsEntry entry) {
