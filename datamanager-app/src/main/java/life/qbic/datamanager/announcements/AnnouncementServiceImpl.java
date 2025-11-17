@@ -26,7 +26,7 @@ public class AnnouncementServiceImpl implements AnnouncementService {
     this.refreshInterval = refreshInterval;
   }
 
-  private List<Announcement> foobar(Instant timePoint) {
+  private List<Announcement> loadActiveAnnouncementsAt(Instant timePoint) {
     return announcementRepository.getAnnouncementByDisplayStartTimeBeforeAndDisplayEndTimeAfterOrderByDisplayStartTimeAsc(
             timePoint, timePoint)
         .stream()
@@ -39,7 +39,7 @@ public class AnnouncementServiceImpl implements AnnouncementService {
   public Flux<AnnouncementBundle> activeAnnouncements() {
     return Flux.interval(initialDelay, refreshInterval)
         .doOnNext(it -> log.debug("Fetching announcements"))
-        .map(ignored -> foobar(Instant.now()))
+        .map(ignored -> loadActiveAnnouncementsAt(Instant.now()))
         .map(AnnouncementBundle::new)
         .doOnNext(it -> log.debug("Found " + it.announcements().size() + " announcements"))
         .replay(1) // every subscriber gets the last bundle directly
