@@ -7,13 +7,10 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import life.qbic.datamanager.announcements.AnnouncementService.AnnouncementBundle;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import reactor.core.Disposable;
 
 public class AnnouncementComponent extends Div {
 
-  private static final Log log = LogFactory.getLog(AnnouncementComponent.class);
   private final transient AnnouncementService announcementService;
 
 
@@ -27,9 +24,8 @@ public class AnnouncementComponent extends Div {
   private void refreshAnnouncements(AnnouncementBundle announcementBundle) {
     this.removeAll();
     this.setVisible(!announcementBundle.isEmpty());
-    announcementBundle.announcements().forEach(announcement -> {
-      add(renderAnnouncement(announcement));
-    });
+    announcementBundle.announcements().forEach(
+        announcement -> add(renderAnnouncement(announcement)));
   }
 
   private Component renderAnnouncement(AnnouncementService.Announcement announcement) {

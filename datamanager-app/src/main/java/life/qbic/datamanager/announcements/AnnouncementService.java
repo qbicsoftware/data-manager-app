@@ -36,10 +36,6 @@ public interface AnnouncementService {
       announcements = List.copyOf(announcements);
     }
 
-    static AnnouncementBundle empty() {
-      return new AnnouncementBundle(List.of());
-    }
-
     public boolean isEmpty() {
       return announcements.isEmpty();
     }

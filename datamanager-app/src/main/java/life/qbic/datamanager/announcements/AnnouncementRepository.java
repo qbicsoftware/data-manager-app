@@ -29,7 +29,7 @@ public interface AnnouncementRepository extends Repository<Announcement, Long> {
     @Column(name = "message")
     private String message;
 
-    private Announcement() {
+    protected Announcement() {
     }
 
     protected Announcement(Long id, Instant displayStartTime, Instant displayEndTime,
@@ -56,16 +56,8 @@ public interface AnnouncementRepository extends Repository<Announcement, Long> {
       return displayStartTime;
     }
 
-    public void setDisplayStartTime(Instant displayStartTime) {
-      this.displayStartTime = displayStartTime;
-    }
-
     public Instant getDisplayEndTime() {
       return displayEndTime;
-    }
-
-    public void setDisplayEndTime(Instant displayEndTime) {
-      this.displayEndTime = displayEndTime;
     }
   }
 
