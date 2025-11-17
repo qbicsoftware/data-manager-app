@@ -15,7 +15,6 @@ import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.RouteParam;
 import com.vaadin.flow.spring.security.AuthenticationContext;
-import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
@@ -40,7 +39,6 @@ import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 
 /**
  * <b> The ExperimentMainLayout functions as a layout which contains all views related to managing
@@ -73,13 +71,10 @@ public class ExperimentMainLayout extends DataManagerLayout implements BeforeEnt
       @Autowired SpeciesLookupService ontologyTermInformationService,
       @Autowired FooterComponentFactory footerComponentFactory,
       @Autowired  TerminologyService terminologyService,
-      CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
-      MessageSourceNotificationFactory messageSourceNotificationFactory,
-      AnnouncementService announcementService,
-      @Value(value = "${announcement.initial-delay}") Duration initialDelay,
-      @Value(value = "${announcement.refresh-interval}") Duration refreshInterval) {
-    super(requireNonNull(footerComponentFactory), announcementService, initialDelay,
-        refreshInterval);
+      @Autowired CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
+      @Autowired MessageSourceNotificationFactory messageSourceNotificationFactory,
+      @Autowired AnnouncementService announcementService) {
+    super(requireNonNull(footerComponentFactory), announcementService);
     requireNonNull(authenticationContext);
     requireNonNull(userInformationService);
     requireNonNull(projectInformationService);

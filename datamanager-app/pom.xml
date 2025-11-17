@@ -195,6 +195,11 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>io.projectreactor</groupId>
+      <artifactId>reactor-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>life.qbic.datamanager</groupId>
       <artifactId>identity</artifactId>
     </dependency>
