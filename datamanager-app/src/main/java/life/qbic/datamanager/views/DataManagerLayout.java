@@ -11,6 +11,7 @@ import java.util.Objects;
 import life.qbic.datamanager.announcements.AnnouncementComponent;
 import life.qbic.datamanager.announcements.AnnouncementService;
 import life.qbic.datamanager.views.general.footer.FooterComponentFactory;
+import org.springframework.beans.factory.annotation.Value;
 
 /**
  * <b>Data Manager Layout</b>
@@ -25,8 +26,8 @@ public class DataManagerLayout extends AppLayout implements RouterLayout {
 
   protected DataManagerLayout(FooterComponentFactory footerComponentFactory,
       AnnouncementService announcementService,
-      Duration initialDelay,
-      Duration refreshInterval) {
+      @Value(value = "${announcement.initial-delay}") Duration initialDelay,
+      @Value(value = "${announcement.refresh-interval}") Duration refreshInterval) {
     Objects.requireNonNull(footerComponentFactory);
     setId("data-manager-layout");
     // Create content area
