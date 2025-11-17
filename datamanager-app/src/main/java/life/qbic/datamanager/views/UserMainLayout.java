@@ -3,7 +3,6 @@ package life.qbic.datamanager.views;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.spring.security.AuthenticationContext;
-import java.time.Duration;
 import java.util.Objects;
 import life.qbic.datamanager.announcements.AnnouncementService;
 import life.qbic.datamanager.views.account.PersonalAccessTokenMain;
@@ -12,7 +11,6 @@ import life.qbic.datamanager.views.general.footer.FooterComponentFactory;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.identity.api.UserInformationService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 
 /**
  * <b> The user main layout is the layout holding all views outside of an individual project view,
@@ -27,11 +25,8 @@ public class UserMainLayout extends DataManagerLayout {
   public UserMainLayout(@Autowired AuthenticationContext authenticationContext,
       UserInformationService userInformationService,
       @Autowired FooterComponentFactory footerComponentFactory,
-      AnnouncementService announcementService,
-      @Value(value = "${announcement.initial-delay}") Duration initialDelay,
-      @Value(value = "${announcement.refresh-interval}") Duration refreshInterval) {
-    super(Objects.requireNonNull(footerComponentFactory), announcementService, initialDelay,
-        refreshInterval);
+      AnnouncementService announcementService) {
+    super(Objects.requireNonNull(footerComponentFactory), announcementService);
     Span navBarTitle = new Span("Data Manager");
     navBarTitle.setClassName("navbar-title");
     addClassName("user-main-layout");

@@ -29,6 +29,9 @@ public interface AnnouncementRepository extends Repository<Announcement, Long> {
     @Column(name = "message")
     private String message;
 
+    private Announcement() {
+    }
+
     protected Announcement(Long id, Instant displayStartTime, Instant displayEndTime,
         String message) {
       this.id = id;

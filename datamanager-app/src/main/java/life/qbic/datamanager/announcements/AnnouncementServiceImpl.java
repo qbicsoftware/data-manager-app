@@ -3,8 +3,8 @@ package life.qbic.datamanager.announcements;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
-import java.util.Objects;
-import life.qbic.projectmanagement.application.concurrent.VirtualThreadScheduler;
+import life.qbic.logging.api.Logger;
+import life.qbic.logging.service.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
@@ -16,22 +16,14 @@ public class AnnouncementServiceImpl implements AnnouncementService {
   private final Duration initialDelay;
   private final Duration refreshInterval;
 
+  private static final Logger log = LoggerFactory.logger(AnnouncementServiceImpl.class);
+
   public AnnouncementServiceImpl(AnnouncementRepository announcementRepository,
       @Value(value = "${announcement.initial-delay}") Duration initialDelay,
       @Value(value = "${announcement.refresh-interval}") Duration refreshInterval) {
     this.announcementRepository = announcementRepository;
     this.initialDelay = initialDelay;
     this.refreshInterval = refreshInterval;
-  }
-
-  @Override
-  public Flux<Announcement> loadActiveAnnouncements(Instant timePoint) {
-    return Flux.fromIterable(
-            announcementRepository.getAnnouncementByDisplayStartTimeBeforeAndDisplayEndTimeAfterOrderByDisplayStartTimeAsc(
-                timePoint, timePoint))
-        .distinctUntilChanged(Objects::hashCode) //avoid unnecessary work
-        .map(AnnouncementServiceImpl::toApiObject)
-        .subscribeOn(VirtualThreadScheduler.getScheduler());
   }
 
   private List<Announcement> foobar(Instant timePoint) {
@@ -46,8 +38,10 @@ public class AnnouncementServiceImpl implements AnnouncementService {
   @Override
   public Flux<AnnouncementBundle> activeAnnouncements() {
     return Flux.interval(initialDelay, refreshInterval)
+        .doOnNext(it -> log.debug("Fetching announcements"))
         .map(ignored -> foobar(Instant.now()))
         .map(AnnouncementBundle::new)
+        .doOnNext(it -> log.debug("Found " + it.announcements().size() + " announcements"))
         .replay(1) // every subscriber gets the last bundle directly
         .autoConnect();
   }
