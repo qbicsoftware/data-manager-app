@@ -6,7 +6,9 @@ import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import java.util.Objects;
 import life.qbic.datamanager.announcements.AnnouncementService.AnnouncementBundle;
+import org.springframework.lang.NonNull;
 import reactor.core.Disposable;
 
 public class AnnouncementComponent extends Div {
@@ -14,15 +16,16 @@ public class AnnouncementComponent extends Div {
   private final transient AnnouncementService announcementService;
 
 
-  public AnnouncementComponent(AnnouncementService announcementService) {
-    this.announcementService = announcementService;
+  public AnnouncementComponent(@NonNull AnnouncementService announcementService) {
+    this.announcementService = Objects.requireNonNull(announcementService);
     this.setId("announcements");
     this.setVisible(false); //without subscribing to announcements nothing is displayed
   }
 
 
-  private void refreshAnnouncements(AnnouncementBundle announcementBundle) {
+  private void refreshAnnouncements(@NonNull AnnouncementBundle announcementBundle) {
     this.removeAll();
+    Objects.requireNonNull(announcementBundle);
     this.setVisible(!announcementBundle.isEmpty());
     announcementBundle.announcements().forEach(
         announcement -> add(renderAnnouncement(announcement)));
