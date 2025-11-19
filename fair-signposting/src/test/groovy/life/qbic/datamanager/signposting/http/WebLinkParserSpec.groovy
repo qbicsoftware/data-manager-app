@@ -47,6 +47,15 @@ class WebLinkParserSpec extends Specification {
     def "Single parameter, quoted-string value"() {
         given:
         var validSerialisation = '<https://example.org/resource>; rel="self"'
+
+        and:
+        var weblinkParser = WebLinkParser.create()
+
+        when:
+        weblinkParser.parse(validSerialisation)
+
+        then:
+        noExceptionThrown()
     }
 
     /**
@@ -268,7 +277,7 @@ class WebLinkParserSpec extends Specification {
         var weblinkParser = WebLinkParser.create()
 
         when:
-        weblinkParser.parse(validSerialisation)
+        weblinkParser.parse(invalidSerialisation)
 
         then:
         thrown(FormatException.class)
@@ -286,7 +295,7 @@ class WebLinkParserSpec extends Specification {
         var weblinkParser = WebLinkParser.create()
 
         when:
-        weblinkParser.parse(validSerialisation)
+        weblinkParser.parse(invalidSerialisation)
 
         then:
         thrown(FormatException.class)
@@ -304,7 +313,7 @@ class WebLinkParserSpec extends Specification {
         var weblinkParser = WebLinkParser.create()
 
         when:
-        weblinkParser.parse(validSerialisation)
+        weblinkParser.parse(invalidSerialisation)
 
         then:
         thrown(FormatException.class)
@@ -323,7 +332,7 @@ class WebLinkParserSpec extends Specification {
         var weblinkParser = WebLinkParser.create()
 
         when:
-        weblinkParser.parse(validSerialisation)
+        weblinkParser.parse(invalidSerialisation)
 
         then:
         thrown(FormatException.class)
@@ -341,7 +350,7 @@ class WebLinkParserSpec extends Specification {
         var weblinkParser = WebLinkParser.create()
 
         when:
-        weblinkParser.parse(validSerialisation)
+        weblinkParser.parse(invalidSerialisation)
 
         then:
         thrown(FormatException.class)
@@ -359,7 +368,7 @@ class WebLinkParserSpec extends Specification {
         var weblinkParser = WebLinkParser.create()
 
         when:
-        weblinkParser.parse(validSerialisation)
+        weblinkParser.parse(invalidSerialisation)
 
         then:
         thrown(FormatException.class)
@@ -377,7 +386,7 @@ class WebLinkParserSpec extends Specification {
         var weblinkParser = WebLinkParser.create()
 
         when:
-        weblinkParser.parse(validSerialisation)
+        weblinkParser.parse(invalidSerialisation)
 
         then:
         thrown(FormatException.class)
@@ -395,7 +404,7 @@ class WebLinkParserSpec extends Specification {
         var weblinkParser = WebLinkParser.create()
 
         when:
-        weblinkParser.parse(validSerialisation)
+        weblinkParser.parse(invalidSerialisation)
 
         then:
         thrown(FormatException.class)
@@ -413,7 +422,7 @@ class WebLinkParserSpec extends Specification {
         var weblinkParser = WebLinkParser.create()
 
         when:
-        weblinkParser.parse(validSerialisation)
+        weblinkParser.parse(invalidSerialisation)
 
         then:
         thrown(FormatException.class)
@@ -431,7 +440,7 @@ class WebLinkParserSpec extends Specification {
         var weblinkParser = WebLinkParser.create()
 
         when:
-        weblinkParser.parse(validSerialisation)
+        weblinkParser.parse(invalidSerialisation)
 
         then:
         thrown(FormatException.class)
@@ -449,7 +458,7 @@ class WebLinkParserSpec extends Specification {
         var weblinkParser = WebLinkParser.create()
 
         when:
-        weblinkParser.parse(validSerialisation)
+        weblinkParser.parse(invalidSerialisation)
 
         then:
         thrown(FormatException.class)
@@ -467,7 +476,7 @@ class WebLinkParserSpec extends Specification {
         var weblinkParser = WebLinkParser.create()
 
         when:
-        weblinkParser.parse(validSerialisation)
+        weblinkParser.parse(invalidSerialisation)
 
         then:
         thrown(FormatException.class)
@@ -485,7 +494,7 @@ class WebLinkParserSpec extends Specification {
         var weblinkParser = WebLinkParser.create()
 
         when:
-        weblinkParser.parse(validSerialisation)
+        weblinkParser.parse(invalidSerialisation)
 
         then:
         thrown(FormatException.class)
@@ -503,7 +512,7 @@ class WebLinkParserSpec extends Specification {
         var weblinkParser = WebLinkParser.create()
 
         when:
-        weblinkParser.parse(validSerialisation)
+        weblinkParser.parse(invalidSerialisation)
 
         then:
         thrown(FormatException.class)
@@ -521,7 +530,7 @@ class WebLinkParserSpec extends Specification {
         var weblinkParser = WebLinkParser.create()
 
         when:
-        weblinkParser.parse(validSerialisation)
+        weblinkParser.parse(invalidSerialisation)
 
         then:
         thrown(FormatException.class)
@@ -539,7 +548,7 @@ class WebLinkParserSpec extends Specification {
         var weblinkParser = WebLinkParser.create()
 
         when:
-        weblinkParser.parse(validSerialisation)
+        weblinkParser.parse(invalidSerialisation)
 
         then:
         thrown(FormatException.class)
