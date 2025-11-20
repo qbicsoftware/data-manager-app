@@ -1,27 +1,25 @@
 package life.qbic.datamanager.signposting.http;
 
-import java.util.Objects;
+import java.util.List;
+import life.qbic.datamanager.signposting.http.lexer.WebLinkToken;
+import life.qbic.datamanager.signposting.http.parser.RawLinkHeader;
 
 /**
- * Parses serialized information used in Web Linking as described in <a
- * href="https://datatracker.ietf.org/doc/html/rfc8288">RFC 8288</a>.
- * <p>
- * The implementation is based on the <i>Link Serialisation in HTTP Headers</i>, section 3 of the
- * RFC 8288.
+ * <b><class short description - 1 Line!></b>
  *
- * @author sven1103
+ * <p><More detailed description - When to use, what it solves, etc.></p>
+ *
+ * @since <version tag>
  */
-public class WebLinkParser {
+public interface WebLinkParser {
 
-  private WebLinkParser() {}
+  RawLinkHeader parse(List<WebLinkToken> tokens) throws NullPointerException, StructureException;
 
-  public static WebLinkParser create() {
-    return new WebLinkParser();
+  class StructureException extends RuntimeException {
+
+    public StructureException(String message) {
+      super(message);
+    }
+
   }
-
-  public WebLink parse(String link) throws NullPointerException, FormatException {
-    Objects.requireNonNull(link);
-    throw new RuntimeException("Not implemented yet");
-  }
-
 }

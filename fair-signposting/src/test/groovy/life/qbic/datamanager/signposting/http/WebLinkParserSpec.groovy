@@ -1,5 +1,7 @@
 package life.qbic.datamanager.signposting.http
 
+import life.qbic.datamanager.signposting.http.lexer.SimpleWebLinkLexer
+import life.qbic.datamanager.signposting.http.parser.SimpleWebLinkParser
 import spock.lang.Specification
 
 class WebLinkParserSpec extends Specification {
@@ -13,13 +15,17 @@ class WebLinkParserSpec extends Specification {
         var validSerialisation = "<https://example.org>"
 
         and:
-        var weblinkParser = WebLinkParser.create()
+        var weblinkParser = SimpleWebLinkParser.create()
+
+        and:
+        var lexer = new SimpleWebLinkLexer()
 
         when:
-        weblinkParser.parse(validSerialisation)
+        var result = weblinkParser.parse(lexer.lex(validSerialisation))
 
         then:
         noExceptionThrown()
+        result != null
     }
 
     /**
@@ -31,13 +37,17 @@ class WebLinkParserSpec extends Specification {
         var validSerialisation = "<https://example.org/resource>; rel=self"
 
         and:
-        var weblinkParser = WebLinkParser.create()
+        var weblinkParser = SimpleWebLinkParser.create()
+
+        and:
+        var lexer = new SimpleWebLinkLexer()
 
         when:
-        weblinkParser.parse(validSerialisation)
+        var result = weblinkParser.parse(lexer.lex(validSerialisation))
 
         then:
         noExceptionThrown()
+        result != null
     }
 
     /**
@@ -49,13 +59,17 @@ class WebLinkParserSpec extends Specification {
         var validSerialisation = '<https://example.org/resource>; rel="self"'
 
         and:
-        var weblinkParser = WebLinkParser.create()
+        var weblinkParser = SimpleWebLinkParser.create()
+
+        and:
+        var lexer = new SimpleWebLinkLexer()
 
         when:
-        weblinkParser.parse(validSerialisation)
+        var result = weblinkParser.parse(lexer.lex(validSerialisation))
 
         then:
         noExceptionThrown()
+        result != null
     }
 
     /**
@@ -67,13 +81,17 @@ class WebLinkParserSpec extends Specification {
         var validSerialisation = '<https://example.org/resource>; rel="self"; type="application/json"'
 
         and:
-        var weblinkParser = WebLinkParser.create()
+        var weblinkParser = SimpleWebLinkParser.create()
+
+        and:
+        var lexer = new SimpleWebLinkLexer()
 
         when:
-        weblinkParser.parse(validSerialisation)
+        var result = weblinkParser.parse(lexer.lex(validSerialisation))
 
         then:
         noExceptionThrown()
+        result != null
     }
 
     /**
@@ -85,13 +103,17 @@ class WebLinkParserSpec extends Specification {
         var validSerialisation = '<https://example.org/resource>  ;  rel = "self"  ;  type = application/json'
 
         and:
-        var weblinkParser = WebLinkParser.create()
+        var weblinkParser = SimpleWebLinkParser.create()
+
+        and:
+        var lexer = new SimpleWebLinkLexer()
 
         when:
-        weblinkParser.parse(validSerialisation)
+        var result = weblinkParser.parse(lexer.lex(validSerialisation))
 
         then:
         noExceptionThrown()
+        result != null
     }
 
     /**
@@ -103,13 +125,17 @@ class WebLinkParserSpec extends Specification {
         var validSerialisation = "<https://example.org/resource>; rel"
 
         and:
-        var weblinkParser = WebLinkParser.create()
+        var weblinkParser = SimpleWebLinkParser.create()
+
+        and:
+        var lexer = new SimpleWebLinkLexer()
 
         when:
-        weblinkParser.parse(validSerialisation)
+        var result = weblinkParser.parse(lexer.lex(validSerialisation))
 
         then:
         noExceptionThrown()
+        result != null
     }
 
     /**
@@ -119,6 +145,19 @@ class WebLinkParserSpec extends Specification {
     def "Parameter with empty quoted string"() {
         given:
         var validSerialisation = '<https://example.org/resource>; title=""'
+
+        and:
+        var weblinkParser = SimpleWebLinkParser.create()
+
+        and:
+        var lexer = new SimpleWebLinkLexer()
+
+        when:
+        var result = weblinkParser.parse(lexer.lex(validSerialisation))
+
+        then:
+        noExceptionThrown()
+        result != null
     }
 
     /**
@@ -130,13 +169,17 @@ class WebLinkParserSpec extends Specification {
         var validSerialisation = '<https://example.org/resource>; rel="self describedby item"'
 
         and:
-        var weblinkParser = WebLinkParser.create()
+        var weblinkParser = SimpleWebLinkParser.create()
+
+        and:
+        var lexer = new SimpleWebLinkLexer()
 
         when:
-        weblinkParser.parse(validSerialisation)
+        var result = weblinkParser.parse(lexer.lex(validSerialisation))
 
         then:
         noExceptionThrown()
+        result != null
     }
 
     /**
@@ -148,13 +191,17 @@ class WebLinkParserSpec extends Specification {
         var validSerialisation = '</relative/path>; rel="item"'
 
         and:
-        var weblinkParser = WebLinkParser.create()
+        var weblinkParser = SimpleWebLinkParser.create()
+
+        and:
+        var lexer = new SimpleWebLinkLexer()
 
         when:
-        weblinkParser.parse(validSerialisation)
+        var result = weblinkParser.parse(lexer.lex(validSerialisation))
 
         then:
         noExceptionThrown()
+        result != null
     }
 
     /**
@@ -166,13 +213,17 @@ class WebLinkParserSpec extends Specification {
         var validSerialisation = '<https://example.org/resource>; title="Données de recherche"'
 
         and:
-        var weblinkParser = WebLinkParser.create()
+        var weblinkParser = SimpleWebLinkParser.create()
+
+        and:
+        var lexer = new SimpleWebLinkLexer()
 
         when:
-        weblinkParser.parse(validSerialisation)
+        var result = weblinkParser.parse(lexer.lex(validSerialisation))
 
         then:
         noExceptionThrown()
+        result != null
     }
 
     /**
@@ -184,13 +235,17 @@ class WebLinkParserSpec extends Specification {
         var validSerialisation = '<https://example.org/resource.linkset.json>; rel="linkset"; type="application/linkset+json"'
 
         and:
-        var weblinkParser = WebLinkParser.create()
+        var weblinkParser = SimpleWebLinkParser.create()
+
+        and:
+        var lexer = new SimpleWebLinkLexer()
 
         when:
-        weblinkParser.parse(validSerialisation)
+        var result = weblinkParser.parse(lexer.lex(validSerialisation))
 
         then:
         noExceptionThrown()
+        result != null
     }
 
     /**
@@ -202,13 +257,17 @@ class WebLinkParserSpec extends Specification {
         var validSerialisation = '<https://example.org/a>; rel="self", <https://example.org/b>; rel="next"'
 
         and:
-        var weblinkParser = WebLinkParser.create()
+        var weblinkParser = SimpleWebLinkParser.create()
+
+        and:
+        var lexer = new SimpleWebLinkLexer()
 
         when:
-        weblinkParser.parse(validSerialisation)
+        var result = weblinkParser.parse(lexer.lex(validSerialisation))
 
         then:
         noExceptionThrown()
+        result != null
     }
 
     /**
@@ -220,13 +279,17 @@ class WebLinkParserSpec extends Specification {
         var validSerialisation = '<https://example.org/resource>; type=application/ld+json'
 
         and:
-        var weblinkParser = WebLinkParser.create()
+        var weblinkParser = SimpleWebLinkParser.create()
+
+        and:
+        var lexer = new SimpleWebLinkLexer()
 
         when:
-        weblinkParser.parse(validSerialisation)
+        var result = weblinkParser.parse(lexer.lex(validSerialisation))
 
         then:
         noExceptionThrown()
+        result != null
     }
 
     /**
@@ -238,13 +301,17 @@ class WebLinkParserSpec extends Specification {
         var validSerialisation = '<https://example.org/api/records/123>; rel="self"; anchor="https://example.org/records/123"'
 
         and:
-        var weblinkParser = WebLinkParser.create()
+        var weblinkParser = SimpleWebLinkParser.create()
+
+        and:
+        var lexer = new SimpleWebLinkLexer()
 
         when:
-        weblinkParser.parse(validSerialisation)
+        var result = weblinkParser.parse(lexer.lex(validSerialisation))
 
         then:
         noExceptionThrown()
+        result != null
     }
 
     /**
@@ -256,13 +323,17 @@ class WebLinkParserSpec extends Specification {
         var validSerialisation = '<https://example.org/resource>; rel=self; type="application/json"'
 
         and:
-        var weblinkParser = WebLinkParser.create()
+        var weblinkParser = SimpleWebLinkParser.create()
+
+        and:
+        var lexer = new SimpleWebLinkLexer()
 
         when:
-        weblinkParser.parse(validSerialisation)
+        var result = weblinkParser.parse(lexer.lex(validSerialisation))
 
         then:
         noExceptionThrown()
+        result != null
     }
 
     /**
@@ -274,13 +345,16 @@ class WebLinkParserSpec extends Specification {
         var invalidSerialisation = 'https://example.org/resource; rel="self"'
 
         and:
-        var weblinkParser = WebLinkParser.create()
+        var weblinkParser = SimpleWebLinkParser.create()
+
+        and:
+        var lexer = new SimpleWebLinkLexer()
 
         when:
-        weblinkParser.parse(invalidSerialisation)
+        weblinkParser.parse(lexer.lex(invalidSerialisation))
 
         then:
-        thrown(FormatException.class)
+        thrown(WebLinkParser.StructureException.class)
     }
 
     /**
@@ -292,13 +366,16 @@ class WebLinkParserSpec extends Specification {
         var invalidSerialisation = '<>; rel="self"'
 
         and:
-        var weblinkParser = WebLinkParser.create()
+        var weblinkParser = SimpleWebLinkParser.create()
+
+        and:
+        var lexer = new SimpleWebLinkLexer()
 
         when:
-        weblinkParser.parse(invalidSerialisation)
+        weblinkParser.parse(lexer.lex(invalidSerialisation))
 
         then:
-        thrown(FormatException.class)
+        thrown(WebLinkParser.StructureException.class)
     }
 
     /**
@@ -310,13 +387,16 @@ class WebLinkParserSpec extends Specification {
         var invalidSerialisation = 'rel="self"'
 
         and:
-        var weblinkParser = WebLinkParser.create()
+        var weblinkParser = SimpleWebLinkParser.create()
+
+        and:
+        var lexer = new SimpleWebLinkLexer()
 
         when:
-        weblinkParser.parse(invalidSerialisation)
+        weblinkParser.parse(lexer.lex(invalidSerialisation))
 
         then:
-        thrown(FormatException.class)
+        thrown(WebLinkParser.StructureException.class)
 
     }
 
@@ -329,13 +409,16 @@ class WebLinkParserSpec extends Specification {
         var invalidSerialisation = '<https://example.org/resource>; =self'
 
         and:
-        var weblinkParser = WebLinkParser.create()
+        var weblinkParser = SimpleWebLinkParser.create()
+
+        and:
+        var lexer = new SimpleWebLinkLexer()
 
         when:
-        weblinkParser.parse(invalidSerialisation)
+        weblinkParser.parse(lexer.lex(invalidSerialisation))
 
         then:
-        thrown(FormatException.class)
+        thrown(WebLinkParser.StructureException.class)
     }
 
     /**
@@ -347,13 +430,16 @@ class WebLinkParserSpec extends Specification {
         var invalidSerialisation = '<https://example.org/resource>;; rel="self"'
 
         and:
-        var weblinkParser = WebLinkParser.create()
+        var weblinkParser = SimpleWebLinkParser.create()
+
+        and:
+        var lexer = new SimpleWebLinkLexer()
 
         when:
-        weblinkParser.parse(invalidSerialisation)
+        weblinkParser.parse(lexer.lex(invalidSerialisation))
 
         then:
-        thrown(FormatException.class)
+        thrown(WebLinkParser.StructureException.class)
     }
 
     /**
@@ -365,13 +451,16 @@ class WebLinkParserSpec extends Specification {
         var invalidSerialisation = '<https://example.org/resource>; rel="self'
 
         and:
-        var weblinkParser = WebLinkParser.create()
+        var weblinkParser = SimpleWebLinkParser.create()
+
+        and:
+        var lexer = new SimpleWebLinkLexer()
 
         when:
-        weblinkParser.parse(invalidSerialisation)
+        weblinkParser.parse(lexer.lex(invalidSerialisation))
 
         then:
-        thrown(FormatException.class)
+        thrown(WebLinkParser.StructureException.class)
     }
 
     /**
@@ -383,13 +472,16 @@ class WebLinkParserSpec extends Specification {
         var invalidSerialisation = '<https://example.org/resource>; re,l="self"'
 
         and:
-        var weblinkParser = WebLinkParser.create()
+        var weblinkParser = SimpleWebLinkParser.create()
+
+        and:
+        var lexer = new SimpleWebLinkLexer()
 
         when:
-        weblinkParser.parse(invalidSerialisation)
+        weblinkParser.parse(lexer.lex(invalidSerialisation))
 
         then:
-        thrown(FormatException.class)
+        thrown(WebLinkParser.StructureException.class)
     }
 
     /**
@@ -401,13 +493,16 @@ class WebLinkParserSpec extends Specification {
         var invalidSerialisation = '<https://example.org/res,ource>; rel="self"'
 
         and:
-        var weblinkParser = WebLinkParser.create()
+        var weblinkParser = SimpleWebLinkParser.create()
+
+        and:
+        var lexer = new SimpleWebLinkLexer()
 
         when:
-        weblinkParser.parse(invalidSerialisation)
+        weblinkParser.parse(lexer.lex(invalidSerialisation))
 
         then:
-        thrown(FormatException.class)
+        thrown(WebLinkParser.StructureException.class)
     }
 
     /**
@@ -419,13 +514,16 @@ class WebLinkParserSpec extends Specification {
         var invalidSerialisation = '<https://example.org/resource>; = "self"'
 
         and:
-        var weblinkParser = WebLinkParser.create()
+        var weblinkParser = SimpleWebLinkParser.create()
+
+        and:
+        var lexer = new SimpleWebLinkLexer()
 
         when:
-        weblinkParser.parse(invalidSerialisation)
+        weblinkParser.parse(lexer.lex(invalidSerialisation))
 
         then:
-        thrown(FormatException.class)
+        thrown(WebLinkParser.StructureException.class)
     }
 
     /**
@@ -437,13 +535,16 @@ class WebLinkParserSpec extends Specification {
         var invalidSerialisation = 'rel="self"; <https://example.org/resource>'
 
         and:
-        var weblinkParser = WebLinkParser.create()
+        var weblinkParser = SimpleWebLinkParser.create()
+
+        and:
+        var lexer = new SimpleWebLinkLexer()
 
         when:
-        weblinkParser.parse(invalidSerialisation)
+        weblinkParser.parse(lexer.lex(invalidSerialisation))
 
         then:
-        thrown(FormatException.class)
+        thrown(WebLinkParser.StructureException.class)
     }
 
     /**
@@ -455,13 +556,16 @@ class WebLinkParserSpec extends Specification {
         var invalidSerialisation = 'https://example.org/resource; rel="self"'
 
         and:
-        var weblinkParser = WebLinkParser.create()
+        var weblinkParser = SimpleWebLinkParser.create()
+
+        and:
+        var lexer = new SimpleWebLinkLexer()
 
         when:
-        weblinkParser.parse(invalidSerialisation)
+        weblinkParser.parse(lexer.lex(invalidSerialisation))
 
         then:
-        thrown(FormatException.class)
+        thrown(WebLinkParser.StructureException.class)
     }
 
     /**
@@ -473,13 +577,16 @@ class WebLinkParserSpec extends Specification {
         var invalidSerialisation = '<https://example.org/resource>; type="application/json; charset=utf-8"'
 
         and:
-        var weblinkParser = WebLinkParser.create()
+        var weblinkParser = SimpleWebLinkParser.create()
+
+        and:
+        var lexer = new SimpleWebLinkLexer()
 
         when:
-        weblinkParser.parse(invalidSerialisation)
+        weblinkParser.parse(lexer.lex(invalidSerialisation))
 
         then:
-        thrown(FormatException.class)
+        thrown(WebLinkParser.StructureException.class)
     }
 
     /**
@@ -491,13 +598,16 @@ class WebLinkParserSpec extends Specification {
         var invalidSerialisation = '<https://example.org/resource; rel="self"'
 
         and:
-        var weblinkParser = WebLinkParser.create()
+        var weblinkParser = SimpleWebLinkParser.create()
+
+        and:
+        var lexer = new SimpleWebLinkLexer()
 
         when:
-        weblinkParser.parse(invalidSerialisation)
+        weblinkParser.parse(lexer.lex(invalidSerialisation))
 
         then:
-        thrown(FormatException.class)
+        thrown(WebLinkParser.StructureException.class)
     }
 
     /**
@@ -509,13 +619,16 @@ class WebLinkParserSpec extends Specification {
         var invalidSerialisation = '<https://example.org/resource> foo ; rel="self"'
 
         and:
-        var weblinkParser = WebLinkParser.create()
+        var weblinkParser = SimpleWebLinkParser.create()
+
+        and:
+        var lexer = new SimpleWebLinkLexer()
 
         when:
-        weblinkParser.parse(invalidSerialisation)
+        weblinkParser.parse(lexer.lex(invalidSerialisation))
 
         then:
-        thrown(FormatException.class)
+        thrown(WebLinkParser.StructureException.class)
     }
 
     /**
@@ -527,13 +640,16 @@ class WebLinkParserSpec extends Specification {
         var invalidSerialisation = ', <https://example.org/resource>; rel="self"'
 
         and:
-        var weblinkParser = WebLinkParser.create()
+        var weblinkParser = SimpleWebLinkParser.create()
+
+        and:
+        var lexer = new SimpleWebLinkLexer()
 
         when:
-        weblinkParser.parse(invalidSerialisation)
+        weblinkParser.parse(lexer.lex(invalidSerialisation))
 
         then:
-        thrown(FormatException.class)
+        thrown(WebLinkParser.StructureException.class)
     }
 
     /**
@@ -545,13 +661,16 @@ class WebLinkParserSpec extends Specification {
         var invalidSerialisation = '<https://example.org/resource>; rel="self",'
 
         and:
-        var weblinkParser = WebLinkParser.create()
+        var weblinkParser = SimpleWebLinkParser.create()
+
+        and:
+        var lexer = new SimpleWebLinkLexer()
 
         when:
-        weblinkParser.parse(invalidSerialisation)
+        weblinkParser.parse(lexer.lex(invalidSerialisation))
 
         then:
-        thrown(FormatException.class)
+        thrown(WebLinkParser.StructureException.class)
     }
 
 }

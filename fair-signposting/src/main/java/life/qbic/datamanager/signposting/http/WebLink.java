@@ -9,8 +9,6 @@ import java.util.Objects;
 /**
  * A Java record representing a web link object following the
  * <a href="https://datatracker.ietf.org/doc/html/rfc8288">RFC 8288</a> model specification.
- *
- * @author sven1103
  */
 public record WebLink(URI reference, Map<String, List<String>> params) {
 
