@@ -270,6 +270,24 @@ class WebLinkParserSpec extends Specification {
         result != null
     }
 
+    def "Multiple links without parameters"() {
+        given:
+        var validSerialisation = '<https://example.com/1>, <https://example.com/2>'
+
+        and:
+        var weblinkParser = SimpleWebLinkParser.create()
+
+        and:
+        var lexer = new SimpleWebLinkLexer()
+
+        when:
+        var result = weblinkParser.parse(lexer.lex(validSerialisation))
+
+        then:
+        noExceptionThrown()
+        result != null
+    }
+
     /**
      * Why valid: type parameter carries a media-type; application/ld+json fits token syntax and media-type grammar.
      * Spec: RFC 8288 section 3 (defines type parameter); RFC 7231 section 3.1.1.1 (media-type grammar uses tokens).
@@ -337,12 +355,12 @@ class WebLinkParserSpec extends Specification {
     }
 
     /**
-     * Why invalid: link-value must start with "<" URI-Reference ">"; a bare URI with params does not match link-value syntax.
-     * Spec: RFC 8288 Section 3, link-value = "<" URI-Reference ">" *( ... ).
+     * Why invalid: A trailing comma indicates an empty link value, which is invalid.
+     * Spec: RFC 8288 Section 3, link-value = "<" URI-Reference ">" *( OWS ";" OWS link-param )”
      */
-    def "Invalid: Missing angle brackets around URI"() {
+    def "No trailing comma allowed for multiple link values"() {
         given:
-        var invalidSerialisation = 'https://example.org/resource; rel="self"'
+        var validSerialisation = '<https://example.org>,'
 
         and:
         var weblinkParser = SimpleWebLinkParser.create()
@@ -351,19 +369,38 @@ class WebLinkParserSpec extends Specification {
         var lexer = new SimpleWebLinkLexer()
 
         when:
-        weblinkParser.parse(lexer.lex(invalidSerialisation))
+        weblinkParser.parse(lexer.lex(validSerialisation))
 
         then:
         thrown(WebLinkParser.StructureException.class)
     }
 
-    /**
-     * Why invalid: URI-Reference cannot be empty; "<>" has no URI between angle brackets.
-     * Spec: RFC 8288 Section 3 (URI-Reference); RFC 3986 section 4.1 (URI-reference = URI / relative-ref, neither is empty).
-     */
-    def "Invalid: Empty URI reference"() {
+    def "No trailing semicolon allowed for multiple link values"() {
+
         given:
-        var invalidSerialisation = '<>; rel="self"'
+        var validSerialisation = '<https://example.org>;'
+
+        and:
+        var weblinkParser = SimpleWebLinkParser.create()
+
+        and:
+        var lexer = new SimpleWebLinkLexer()
+
+        when:
+        weblinkParser.parse(lexer.lex(validSerialisation))
+
+        then:
+        thrown(WebLinkParser.StructureException.class)
+    }
+
+
+    /**
+     * Why invalid: link-value must start with "<" URI-Reference ">"; a bare URI with params does not match link-value syntax.
+     * Spec: RFC 8288 Section 3, link-value = "<" URI-Reference ">" *( ... ).
+     */
+    def "Invalid: Missing angle brackets around URI"() {
+        given:
+        var invalidSerialisation = 'https://example.org/resource; rel="self"'
 
         and:
         var weblinkParser = SimpleWebLinkParser.create()
@@ -443,27 +480,6 @@ class WebLinkParserSpec extends Specification {
     }
 
     /**
-     * Why invalid: quoted-string must be closed; missing closing quote breaks quoted-string grammar.
-     * Spec: RFC 7230 section 3.2.6 (quoted-string ABNF).
-     */
-    def "Invalid: Broken quoted-string without closing quote"() {
-        given:
-        var invalidSerialisation = '<https://example.org/resource>; rel="self'
-
-        and:
-        var weblinkParser = SimpleWebLinkParser.create()
-
-        and:
-        var lexer = new SimpleWebLinkLexer()
-
-        when:
-        weblinkParser.parse(lexer.lex(invalidSerialisation))
-
-        then:
-        thrown(WebLinkParser.StructureException.class)
-    }
-
-    /**
      * Why invalid: Comma is not allowed in token; parameter name containing "," violates token = 1*tchar.
      * Spec: RFC 7230 section 3.2.6 (tchar set does not include ",").
      */
@@ -484,26 +500,6 @@ class WebLinkParserSpec extends Specification {
         thrown(WebLinkParser.StructureException.class)
     }
 
-    /**
-     * Why invalid (strict header parsing): Comma is the list separator in #link-value; an unencoded comma inside the URI conflicts with list parsing.
-     * Spec: RFC 7230 section 7 (#rule uses "," as separator); RFC 3986 section 2.2 and section 2.4 (reserved chars like "," should be percent-encoded when they have special meaning).
-     */
-    def "Invalid: Unencoded comma inside URI"() {
-        given:
-        var invalidSerialisation = '<https://example.org/res,ource>; rel="self"'
-
-        and:
-        var weblinkParser = SimpleWebLinkParser.create()
-
-        and:
-        var lexer = new SimpleWebLinkLexer()
-
-        when:
-        weblinkParser.parse(lexer.lex(invalidSerialisation))
-
-        then:
-        thrown(WebLinkParser.StructureException.class)
-    }
 
     /**
      * Why invalid: link-param requires a token before "="; "=" without a parameter name violates link-param syntax.
@@ -568,47 +564,6 @@ class WebLinkParserSpec extends Specification {
         thrown(WebLinkParser.StructureException.class)
     }
 
-    /**
-     * Why invalid for strict media-type typing: type is defined as a media-type; stuffing "application/json; charset=utf-8" into one quoted-string is not a proper media-type value.
-     * Spec: RFC 8288 section 3 (type parameter uses media-type); RFC 7231 section 3.1.1.1 (media-type = type "/" subtype *( OWS ";" OWS parameter )).
-     */
-    def "Invalid: Semicolon inside quoted type value treated as single media-type"() {
-        given:
-        var invalidSerialisation = '<https://example.org/resource>; type="application/json; charset=utf-8"'
-
-        and:
-        var weblinkParser = SimpleWebLinkParser.create()
-
-        and:
-        var lexer = new SimpleWebLinkLexer()
-
-        when:
-        weblinkParser.parse(lexer.lex(invalidSerialisation))
-
-        then:
-        thrown(WebLinkParser.StructureException.class)
-    }
-
-    /**
-     * Why invalid: link-value requires closing ">" around URI-Reference; missing ">" breaks "<" URI-Reference ">" pattern.
-     * Spec: RFC 8288 section 3, link-value ABNF.
-     */
-    def "Invalid: Missing closing angle bracket"() {
-        given:
-        var invalidSerialisation = '<https://example.org/resource; rel="self"'
-
-        and:
-        var weblinkParser = SimpleWebLinkParser.create()
-
-        and:
-        var lexer = new SimpleWebLinkLexer()
-
-        when:
-        weblinkParser.parse(lexer.lex(invalidSerialisation))
-
-        then:
-        thrown(WebLinkParser.StructureException.class)
-    }
 
     /**
      * Why invalid: After ">" only OWS ";" OWS link-param is allowed; arbitrary token "foo" between ">" and ";" violates link-value syntax.

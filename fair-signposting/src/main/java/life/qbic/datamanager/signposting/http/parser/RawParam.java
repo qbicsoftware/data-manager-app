@@ -1,7 +1,5 @@
 package life.qbic.datamanager.signposting.http.parser;
 
-import java.util.List;
-
 /**
  * <b><record short description - 1 Line!></b>
  *
@@ -9,6 +7,14 @@ import java.util.List;
  *
  * @since <version tag>
  */
-public record RawParam(String name, List<String> values) {
+public record RawParam(String name, String value) {
+
+  public static RawParam emptyParameter(String name) {
+    return new RawParam(name, "");
+  }
+
+  public static RawParam withValue(String name, String value) {
+    return new RawParam(name, value);
+  }
 
 }

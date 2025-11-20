@@ -1,7 +1,6 @@
 package life.qbic.datamanager.signposting.http.parser;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 
 /**
  * <b><record short description - 1 Line!></b>
@@ -10,6 +9,6 @@ import java.util.Map;
  *
  * @since <version tag>
  */
-public record RawLink(String rawURI, Map<String, RawParam> rawWebLinks) {
+public record RawLink(String rawURI, List<RawParam> rawParameters) {
 
 }
