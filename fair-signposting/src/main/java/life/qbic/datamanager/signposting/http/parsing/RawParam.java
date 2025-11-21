@@ -1,4 +1,4 @@
-package life.qbic.datamanager.signposting.http.parser;
+package life.qbic.datamanager.signposting.http.parsing;
 
 /**
  * <b><record short description - 1 Line!></b>

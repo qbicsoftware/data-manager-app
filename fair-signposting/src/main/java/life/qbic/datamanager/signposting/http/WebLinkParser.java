@@ -1,8 +1,8 @@
 package life.qbic.datamanager.signposting.http;
 
 import java.util.List;
-import life.qbic.datamanager.signposting.http.lexer.WebLinkToken;
-import life.qbic.datamanager.signposting.http.parser.RawLinkHeader;
+import life.qbic.datamanager.signposting.http.lexing.WebLinkToken;
+import life.qbic.datamanager.signposting.http.parsing.RawLinkHeader;
 
 /**
  * <b><class short description - 1 Line!></b>

@@ -1,4 +1,4 @@
-package life.qbic.datamanager.signposting.http.lexer;
+package life.qbic.datamanager.signposting.http.lexing;
 
 /**
  * Single token produced by a WebLinkLexer.

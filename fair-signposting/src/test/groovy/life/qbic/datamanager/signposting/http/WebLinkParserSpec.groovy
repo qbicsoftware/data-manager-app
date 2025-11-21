@@ -1,7 +1,7 @@
 package life.qbic.datamanager.signposting.http
 
-import life.qbic.datamanager.signposting.http.lexer.SimpleWebLinkLexer
-import life.qbic.datamanager.signposting.http.parser.SimpleWebLinkParser
+import life.qbic.datamanager.signposting.http.lexing.SimpleWebLinkLexer
+import life.qbic.datamanager.signposting.http.parsing.SimpleWebLinkParser
 import spock.lang.Specification
 
 class WebLinkParserSpec extends Specification {

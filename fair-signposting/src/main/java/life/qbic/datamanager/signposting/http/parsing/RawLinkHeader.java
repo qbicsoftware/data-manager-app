@@ -1,4 +1,4 @@
-package life.qbic.datamanager.signposting.http.parser;
+package life.qbic.datamanager.signposting.http.parsing;
 
 import java.util.List;
 

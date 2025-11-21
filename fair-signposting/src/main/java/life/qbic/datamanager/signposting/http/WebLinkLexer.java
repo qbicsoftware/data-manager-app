@@ -1,6 +1,8 @@
-package life.qbic.datamanager.signposting.http.lexer;
+package life.qbic.datamanager.signposting.http;
 
 import java.util.List;
+import life.qbic.datamanager.signposting.http.lexing.WebLinkLexingException;
+import life.qbic.datamanager.signposting.http.lexing.WebLinkToken;
 
 /**
  * Lexes a single Web Link (RFC 8288) serialisation string into a list of tokens.

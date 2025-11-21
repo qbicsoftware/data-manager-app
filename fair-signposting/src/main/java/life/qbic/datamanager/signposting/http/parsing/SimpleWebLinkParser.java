@@ -1,4 +1,4 @@
-package life.qbic.datamanager.signposting.http.parser;
+package life.qbic.datamanager.signposting.http.parsing;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -6,8 +6,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.signposting.http.WebLinkParser;
-import life.qbic.datamanager.signposting.http.lexer.WebLinkToken;
-import life.qbic.datamanager.signposting.http.lexer.WebLinkTokenType;
+import life.qbic.datamanager.signposting.http.lexing.WebLinkToken;
+import life.qbic.datamanager.signposting.http.lexing.WebLinkTokenType;
 
 /**
  * Parses serialized information used in Web Linking as described in <a

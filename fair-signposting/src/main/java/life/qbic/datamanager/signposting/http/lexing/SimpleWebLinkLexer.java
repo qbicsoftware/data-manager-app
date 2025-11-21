@@ -1,7 +1,8 @@
-package life.qbic.datamanager.signposting.http.lexer;
+package life.qbic.datamanager.signposting.http.lexing;
 
 import java.util.ArrayList;
 import java.util.List;
+import life.qbic.datamanager.signposting.http.WebLinkLexer;
 
 /**
  * Simple scanning lexer for RFC 8288 Web Link serialisations.
