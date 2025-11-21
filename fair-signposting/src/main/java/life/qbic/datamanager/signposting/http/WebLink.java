@@ -2,15 +2,15 @@ package life.qbic.datamanager.signposting.http;
 
 import java.net.URI;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * A Java record representing a web link object following the
  * <a href="https://datatracker.ietf.org/doc/html/rfc8288">RFC 8288</a> model specification.
  */
-public record WebLink(URI reference, Map<String, List<String>> params) {
+public record WebLink(URI reference, Map<String, Optional<String>> params) {
 
   /**
    * Creates an <a href="https://datatracker.ietf.org/doc/html/rfc8288">RFC 8288</a> compliant web
@@ -29,7 +29,7 @@ public record WebLink(URI reference, Map<String, List<String>> params) {
    * @throws FormatException if the parameters violate any known specification described in the RFC
    * @throws NullPointerException if any method argument is {@code null}
    */
-  public static WebLink create(URI reference, Map<String, List<String>> params)
+  public static WebLink create(URI reference, Map<String, Optional<String>> params)
       throws FormatException, NullPointerException {
     Objects.requireNonNull(reference);
     Objects.requireNonNull(params);
@@ -67,7 +67,7 @@ public record WebLink(URI reference, Map<String, List<String>> params) {
    * @param params the parameter map to check for an empty parameter key
    * @return {@code true}, if an empty parameter key exists, else {@code false}
    */
-  private static boolean hasEmptyParameterKey(Map<String, List<String>> params) {
+  private static boolean hasEmptyParameterKey(Map<String, Optional<String>> params) {
     return params.containsKey("");
   }
 

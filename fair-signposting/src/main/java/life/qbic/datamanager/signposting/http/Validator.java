@@ -14,33 +14,41 @@ public interface Validator {
 
   record ValidationResult(List<WebLink> weblinks, IssueReport report) {
 
-    boolean containsIssues() {
+    public boolean containsIssues() {
       return !report.isEmpty();
     }
   }
 
   record IssueReport(List<Issue> issues) {
 
-    boolean hasErrors() {
+    public boolean hasErrors() {
       return issues.stream().anyMatch(Issue::isError);
     }
 
-    boolean hasWarnings() {
+    public boolean hasWarnings() {
       return issues.stream().anyMatch(Issue::isWarning);
     }
 
-    boolean isEmpty() {
+    public boolean isEmpty() {
       return issues.isEmpty();
     }
   }
 
   record Issue(String message, IssueType type) {
 
-    boolean isWarning() {
+    public static Issue warning(String message) {
+      return new Issue(message, IssueType.WARNING);
+    }
+
+    public static Issue error(String message) {
+      return new Issue(message, IssueType.ERROR);
+    }
+
+    public boolean isWarning() {
       return type.equals(IssueType.WARNING);
     }
 
-    boolean isError() {
+    public boolean isError() {
       return type.equals(IssueType.ERROR);
     }
   }
