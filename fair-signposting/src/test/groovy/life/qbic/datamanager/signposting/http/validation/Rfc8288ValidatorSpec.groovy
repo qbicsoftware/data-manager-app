@@ -165,4 +165,56 @@ class Rfc8288ValidatorSpec extends Specification {
         // You may or may not decide to warn here; if you later choose to warn, adjust this:
         // !result.report().hasWarnings()
     }
+
+    def "parameter anchor with one occurrence is allowed"() {
+        given:
+        // Example representation: parameter present with null value.
+        // Adapt this to your actual RawLink model.
+        def params = [new RawParam("anchor", "https://example.org/one-anchor-only")]
+        def rawHeader = new RawLinkHeader([
+                new RawLink("https://example.org/one-anchor-only", params)
+        ])
+
+        and:
+        def validator = new Rfc8288Validator()
+
+        when:
+        Validator.ValidationResult result = validator.validate(rawHeader)
+
+        then: "URI is valid, so we get a WebLink back"
+        result.weblinks().size() == 1
+
+        and: "parameter anchor with only one occurrence does not cause an error at RFC-level"
+        !result.report().hasErrors()
+
+        // You may or may not decide to warn here; if you later choose to warn, adjust this:
+        // !result.report().hasWarnings()
+    }
+
+    def "parameter anchor must not have multiple occurrences"() {
+        given:
+        // Example representation: parameter present with null value.
+        // Adapt this to your actual RawLink model.
+        def params = [new RawParam("anchor", "https://example.org/one-anchor-only"),
+                      new RawParam("anchor", "https://example.org/another-anchor")]
+        def rawHeader = new RawLinkHeader([
+                new RawLink("https://example.org/one-anchor-only", params)
+        ])
+
+        and:
+        def validator = new Rfc8288Validator()
+
+        when:
+        Validator.ValidationResult result = validator.validate(rawHeader)
+
+        then: "URI is valid, so we get a WebLink back"
+        result.weblinks().size() == 1
+
+        and: "parameter anchor with only one occurrence does not cause an error at RFC-level"
+        result.report().hasWarnings()
+        result.report().issues().size() == 1
+
+        // You may or may not decide to warn here; if you later choose to warn, adjust this:
+        // !result.report().hasWarnings()
+    }
 }

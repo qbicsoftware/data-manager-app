@@ -2,11 +2,11 @@ package life.qbic.datamanager.signposting.http.validation;
 
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Pattern;
+import life.qbic.datamanager.signposting.http.LinkParameter;
 import life.qbic.datamanager.signposting.http.Validator;
 import life.qbic.datamanager.signposting.http.WebLink;
 import life.qbic.datamanager.signposting.http.parsing.RawLink;
@@ -54,18 +54,13 @@ public class Rfc8288Validator implements Validator {
     return new WebLink(uri, parameters);
   }
 
-  private Map<String, Optional<String>> validateParams(
+  private List<LinkParameter> validateParams(
       List<RawParam> rawParams, List<Issue> recordedIssues) {
-    var params = new HashMap<String, Optional<String>>();
+    var params = new ArrayList<LinkParameter>();
+    var seenParams = new HashSet<String>();
     for (RawParam rawParam : rawParams) {
       validateParam(rawParam, recordedIssues);
-      if (params.containsKey(rawParam.name())) {
-        recordedIssues.add(Issue.error(
-            "Duplicate parameter names are not allowed. '%s' is already defined as parameter".formatted(
-                rawParam.name())));
-      } else {
-        params.put(rawParam.name(), Optional.ofNullable(rawParam.value()));
-      }
+      validateParamOccurrence(rawParam, seenParams, params, recordedIssues);
     }
     return params;
   }
@@ -82,4 +77,29 @@ public class Rfc8288Validator implements Validator {
     return !ALLOWED_TOKEN_CHARS.matcher(token).matches();
   }
 
+  private void validateParamOccurrence(
+      RawParam rawParam,
+      Set<String> seenParams,
+      List<LinkParameter> parameters,
+      List<Issue> recordedIssues) {
+    var rfcParamOptional = RfcLinkParameter.from(rawParam.name());
+
+    if (rfcParamOptional.isPresent()) {
+      var rfcParam = rfcParamOptional.get();
+      if (seenParams.contains(rawParam.name()) && !rfcParam.equals(RfcLinkParameter.HREFLANG)) {
+        recordedIssues.add(Issue.warning(
+            "Parameter '%s' is not allowed multiple times. Skipped parameter.".formatted(rfcParam.rfcValue())));
+        return;
+      }
+    }
+    seenParams.add(rawParam.name());
+
+    LinkParameter linkParameter;
+    if (rawParam.value() == null || rawParam.value().isEmpty()) {
+      linkParameter = LinkParameter.createWithoutValue(rawParam.name());
+    } else {
+      linkParameter = LinkParameter.create(rawParam.name(), rawParam.value());
+    }
+    parameters.add(linkParameter);
+  }
 }
