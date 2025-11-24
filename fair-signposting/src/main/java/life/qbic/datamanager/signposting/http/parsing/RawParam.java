@@ -9,11 +9,34 @@ package life.qbic.datamanager.signposting.http.parsing;
  */
 public record RawParam(String name, String value) {
 
+  /**
+   * Creates an empty raw parameter, that only has a name.
+   * <p>
+   * A call to {@link #value()} will return {@code null} for empty parameters.
+   *
+   * @param name the name of the parameter
+   * @return an empty raw parameter with a name only
+   */
   public static RawParam emptyParameter(String name) {
-    return new RawParam(name, "");
+    return new RawParam(name, null);
   }
 
-  public static RawParam withValue(String name, String value) {
+  /**
+   * Creates a raw parameter with name and value.
+   * <p>
+   * The client must not pass empty or blank values as parameter value, but shall call
+   * {@link #emptyParameter(String)} explicitly. Alternatively, the client can also pass
+   * {@code null} for value, to indicate an empty parameter.
+   *
+   * @param name  the name of the parameter
+   * @param value the value of the parameter
+   * @return a raw parameter
+   * @throws IllegalArgumentException in case the value is empty or blank
+   */
+  public static RawParam withValue(String name, String value) throws IllegalArgumentException {
+    if (value != null && value.isBlank()) {
+      throw new IllegalArgumentException("Value cannot be blank");
+    }
     return new RawParam(name, value);
   }
 

@@ -130,7 +130,7 @@ class Rfc8288ValidatorSpec extends Specification {
         and: "the parameter is preserved on the resulting WebLink"
         result.weblinks().size() == 1
         def link = result.weblinks().first()
-        link.params().get("x-custom").get() == "value"
+        link.extensionAttribute("x-custom")[0] == "value"
     }
 
     /**
@@ -161,9 +161,6 @@ class Rfc8288ValidatorSpec extends Specification {
 
         and: "parameter without value does not cause an error at RFC-level"
         !result.report().hasErrors()
-
-        // You may or may not decide to warn here; if you later choose to warn, adjust this:
-        // !result.report().hasWarnings()
     }
 
     def "parameter anchor with one occurrence is allowed"() {
@@ -186,10 +183,70 @@ class Rfc8288ValidatorSpec extends Specification {
 
         and: "parameter anchor with only one occurrence does not cause an error at RFC-level"
         !result.report().hasErrors()
-
-        // You may or may not decide to warn here; if you later choose to warn, adjust this:
-        // !result.report().hasWarnings()
     }
+
+    def "a parameter with allowed multiplicity of 1 must be only processed on the first occurrence"() {
+        given:
+        // Example representation: parameter present with null value.
+        // Adapt this to your actual RawLink model.
+        def firstParam = new RawParam("rel", "https://example.org/first-occurrence")
+        def secondParam = new RawParam("rel", "https://example.org/next-occurrence")
+        def params = [firstParam, secondParam]
+        def rawHeader = new RawLinkHeader([
+                new RawLink("https://example.org/one-anchor-only", params)
+        ])
+
+        and:
+        def validator = new Rfc8288Validator()
+
+        when:
+        Validator.ValidationResult result = validator.validate(rawHeader)
+
+        then: "URI is valid, so we get a WebLink back"
+        result.weblinks().size() == 1
+
+        and: "parameter rel with only one occurrence does not cause an error at RFC-level"
+        !result.report().hasErrors()
+
+        and: "but results in a warning, since the second occurrence is skipped"
+        result.report().hasWarnings()
+
+        and: "uses only the value of the first occurrence"
+        var relations = result.weblinks().get(0).rel()
+        relations.size() == 1
+        relations.get(0).equals(firstParam.value())
+    }
+
+    def "the rel parameter can contain multiple relations as whitespace-separated list"() {
+        given:
+        // Example representation: parameter present with null value.
+        // Adapt this to your actual RawLink model.
+        def firstParam = new RawParam("rel", "self describedby     another")
+        def params = [firstParam]
+        def rawHeader = new RawLinkHeader([
+                new RawLink("https://example.org/one-anchor-only", params)
+        ])
+
+        and:
+        def validator = new Rfc8288Validator()
+
+        when:
+        Validator.ValidationResult result = validator.validate(rawHeader)
+
+        then: "URI is valid, so we get a WebLink back"
+        result.weblinks().size() == 1
+
+        and: "parameter rel with only one occurrence does not cause an error at RFC-level"
+        !result.report().hasErrors()
+
+        and: "results in no warnings"
+        !result.report().hasWarnings()
+
+        and: "splits the relations into three values"
+        var relations = result.weblinks().get(0).rel()
+        relations.size() == 3
+    }
+
 
     def "parameter anchor must not have multiple occurrences"() {
         given:
@@ -213,8 +270,5 @@ class Rfc8288ValidatorSpec extends Specification {
         and: "parameter anchor with only one occurrence does not cause an error at RFC-level"
         result.report().hasWarnings()
         result.report().issues().size() == 1
-
-        // You may or may not decide to warn here; if you later choose to warn, adjust this:
-        // !result.report().hasWarnings()
     }
 }
