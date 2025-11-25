@@ -57,7 +57,7 @@ public enum RfcLinkParameter {
    * this type.
    *
    * @param value the value to match the corresponding enum value
-   * @return the corresponding enum in an Optional, of returns Optional.empty()
+   * @return the corresponding enum in an Optional, of returns Optional.withoutValue()
    */
   public static Optional<RfcLinkParameter> from(String value) {
     return Optional.ofNullable(LOOKUP.getOrDefault(value, null));

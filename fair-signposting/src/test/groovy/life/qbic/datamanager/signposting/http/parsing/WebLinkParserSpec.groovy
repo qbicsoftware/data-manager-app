@@ -355,7 +355,7 @@ class WebLinkParserSpec extends Specification {
     }
 
     /**
-     * Why invalid: A trailing comma indicates an empty link value, which is invalid.
+     * Why invalid: A trailing comma indicates an withoutValue link value, which is invalid.
      * Spec: RFC 8288 Section 3, link-value = "<" URI-Reference ">" *( OWS ";" OWS link-param )”
      */
     def "No trailing comma allowed for multiple link values"() {
@@ -438,7 +438,7 @@ class WebLinkParserSpec extends Specification {
     }
 
     /**
-     * Why invalid: link-param must start with token; an empty name before equal sign violates token = 1*tchar.
+     * Why invalid: link-param must start with token; an withoutValue name before equal sign violates token = 1*tchar.
      * Spec: RFC 8288 section 3, link-param = token ...; RFC 7230 section 3.2.6 (token = 1*tchar).
      */
     def "Invalid: Empty parameter name"() {
@@ -459,7 +459,7 @@ class WebLinkParserSpec extends Specification {
     }
 
     /**
-     * Why invalid: Each ";" must be followed by a link-param; ";;" introduces an empty parameter without a token.
+     * Why invalid: Each ";" must be followed by a link-param; ";;" introduces an withoutValue parameter without a token.
      * Spec: RFC 8288 section 3, *( OWS ";" OWS link-param ) requires a link-param after each ";".
      */
     def "Invalid: Double semicolon introduces empty parameter"() {
@@ -587,8 +587,8 @@ class WebLinkParserSpec extends Specification {
     }
 
     /**
-     * Why invalid: #link-value requires 1+ elements separated by commas; a leading comma introduces an empty element.
-     * Spec: RFC 8288 section 3 (Link = #link-value); RFC 7230 section 7 (#rule does not allow empty list elements).
+     * Why invalid: #link-value requires 1+ elements separated by commas; a leading comma introduces an withoutValue element.
+     * Spec: RFC 8288 section 3 (Link = #link-value); RFC 7230 section 7 (#rule does not allow withoutValue list elements).
      */
     def "Invalid: Leading comma in Link header list"() {
         given:
@@ -608,8 +608,8 @@ class WebLinkParserSpec extends Specification {
     }
 
     /**
-     * Why invalid: #link-value requires 1+ elements separated by commas; a trailing comma implies an empty last element.
-     * Spec: RFC 8288 section 3 (Link = #link-value); RFC 7230 section 7 (#rule does not allow empty list elements).
+     * Why invalid: #link-value requires 1+ elements separated by commas; a trailing comma implies an withoutValue last element.
+     * Spec: RFC 8288 section 3 (Link = #link-value); RFC 7230 section 7 (#rule does not allow withoutValue list elements).
      */
     def "Invalid: Trailing comma in Link header list"() {
         given:

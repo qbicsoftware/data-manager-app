@@ -167,7 +167,7 @@ public class Rfc8288Validator implements Validator {
 
     WebLinkParameter webLinkParameter;
     if (rawParam.value() == null || rawParam.value().isEmpty()) {
-      webLinkParameter = WebLinkParameter.createWithoutValue(rawParam.name());
+      webLinkParameter = WebLinkParameter.withoutValue(rawParam.name());
     } else {
       webLinkParameter = WebLinkParameter.create(rawParam.name(), rawParam.value());
     }

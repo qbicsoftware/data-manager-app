@@ -15,6 +15,8 @@ import life.qbic.datamanager.signposting.http.lexing.WebLinkTokenType;
  * <p>
  * The implementation is based on the <i>Link Serialisation in HTTP Headers</i>, section 3 of the
  * RFC 8288.
+ * <p>
+ * Note: the implementation of this class is NOT thread-safe.
  *
  * <p>
  * <code>
@@ -71,7 +73,7 @@ public class SimpleWebLinkParser implements WebLinkParser {
 
     if (tokens.isEmpty()) {
       throw new StructureException(
-          "A link header entry must have at least one web link. Tokens were empty.");
+          "A link header entry must have at least one web link. Tokens were withoutValue.");
     }
 
     // Always reset the internal state on every parse() call
@@ -190,7 +192,7 @@ public class SimpleWebLinkParser implements WebLinkParser {
 
     next();
 
-    // Checks for empty parameter
+    // Checks for withoutValue parameter
     if (currentIsEof()
         || current().type() == WebLinkTokenType.COMMA
         || current().type() == WebLinkTokenType.SEMICOLON

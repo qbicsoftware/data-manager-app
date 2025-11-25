@@ -43,7 +43,7 @@ class Rfc8288ValidatorSpec extends Specification {
         !result.report().hasErrors()
         !result.report().hasWarnings()
 
-        and: "exactly one WebLink is produced with the expected URI and empty params"
+        and: "exactly one WebLink is produced with the expected URI and withoutValue params"
         result.weblinks().size() == 1
         WebLink link = result.weblinks().first()
         link.reference().toString() == "https://example.org/resource"
@@ -139,7 +139,7 @@ class Rfc8288ValidatorSpec extends Specification {
      * deeper interpretation to profile-specific validators (e.g. Signposting).
      *
      * How you map "no value" into your RawLink/WebLink model is up to your
-     * implementation; here we assume null or empty string is used to represent it.
+     * implementation; here we assume null or withoutValue string is used to represent it.
      */
     def "parameter without value is accepted at RFC level"() {
         given:

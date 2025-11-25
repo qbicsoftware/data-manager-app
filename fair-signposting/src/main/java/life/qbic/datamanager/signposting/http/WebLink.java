@@ -24,8 +24,8 @@ public record WebLink(URI reference, List<WebLinkParameter> params) {
    * <p>
    * {@code link-param = token BWS [ "=" BWS ( token / quoted-string ) ]}
    * <p>
-   * The parameter key must not be empty, so during construction the {@code params} keys are checked
-   * for an empty key. The values can be empty though.
+   * The parameter key must not be withoutValue, so during construction the {@code params} keys are checked
+   * for an withoutValue key. The values can be withoutValue though.
    *
    * @param reference a {@link URI} pointing to the actual resource
    * @param params    a {@link Map} of parameters as keys and a list of their values
