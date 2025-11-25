@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 import life.qbic.datamanager.signposting.http.WebLinkParameter;
-import life.qbic.datamanager.signposting.http.Validator;
+import life.qbic.datamanager.signposting.http.WebLinkValidator;
 import life.qbic.datamanager.signposting.http.WebLink;
 import life.qbic.datamanager.signposting.http.parsing.RawLink;
 import life.qbic.datamanager.signposting.http.parsing.RawLinkHeader;
@@ -17,18 +17,18 @@ import life.qbic.datamanager.signposting.http.parsing.RawParam;
  * Validation against RFC 8288 Web Linking.
  * <p>
  * Violations against the specification will be recorded as
- * {@link life.qbic.datamanager.signposting.http.Validator.IssueType#ERROR}. In the presence of at
+ * {@link WebLinkValidator.IssueType#ERROR}. In the presence of at
  * least one error, the web link MUST be regarded invalid and clients shall not continue to work
  * with the link, but treat it as exception.
  * <p>
  * The implementation also records issues as
- * {@link life.qbic.datamanager.signposting.http.Validator.IssueType#WARNING}, in case the finding
+ * {@link WebLinkValidator.IssueType#WARNING}, in case the finding
  * is not strictly against the RFC 8288, but e.g. a type usage is deprecated or when parameters have
  * been skipped when the specification demands for it. A warning results in a still usable web link,
  * but it is advised to investigate any findings.
  *
  */
-public class Rfc8288Validator implements Validator {
+public class Rfc8288WebLinkValidator implements WebLinkValidator {
 
   // Defined in https://www.rfc-editor.org/rfc/rfc7230, section 3.2.6
   private static final Pattern ALLOWED_TOKEN_CHARS = Pattern.compile(

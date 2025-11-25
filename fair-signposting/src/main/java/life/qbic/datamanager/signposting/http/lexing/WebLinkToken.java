@@ -1,5 +1,7 @@
 package life.qbic.datamanager.signposting.http.lexing;
 
+import life.qbic.datamanager.signposting.http.WebLinkTokenType;
+
 /**
  * Single token produced by a WebLinkLexer.
  *
@@ -10,8 +12,7 @@ package life.qbic.datamanager.signposting.http.lexing;
 public record WebLinkToken(
     WebLinkTokenType type,
     String text,
-    int position
-) {
+    int position) {
 
   public static WebLinkToken of(WebLinkTokenType type, String text, int position) {
     return new WebLinkToken(type, text, position);

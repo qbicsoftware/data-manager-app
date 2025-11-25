@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.signposting.http.WebLinkParser;
 import life.qbic.datamanager.signposting.http.lexing.WebLinkToken;
-import life.qbic.datamanager.signposting.http.lexing.WebLinkTokenType;
+import life.qbic.datamanager.signposting.http.WebLinkTokenType;
 
 /**
  * Parses serialized information used in Web Linking as described in <a

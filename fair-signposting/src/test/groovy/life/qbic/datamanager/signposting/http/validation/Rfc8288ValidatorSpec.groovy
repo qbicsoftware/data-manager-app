@@ -1,6 +1,6 @@
 package life.qbic.datamanager.signposting.http.validation
 
-import life.qbic.datamanager.signposting.http.Validator
+import life.qbic.datamanager.signposting.http.WebLinkValidator
 import life.qbic.datamanager.signposting.http.WebLink
 import life.qbic.datamanager.signposting.http.parsing.RawLink
 import life.qbic.datamanager.signposting.http.parsing.RawLinkHeader
@@ -8,12 +8,12 @@ import life.qbic.datamanager.signposting.http.parsing.RawParam
 import spock.lang.Specification
 
 /**
- * Specification for {@link Rfc8288Validator}.
+ * Specification for {@link Rfc8288WebLinkValidator}.
  *
  * Covers basic RFC 8288 semantics:
  * <ul>
  *   <li>Valid URIs create {@link WebLink} instances without issues.</li>
- *   <li>Invalid URIs create error {@link Validator.Issue}s and no WebLink for that entry.</li>
+ *   <li>Invalid URIs create error {@link WebLinkValidator.Issue}s and no WebLink for that entry.</li>
  *   <li>Multiple links are all validated; one invalid URI does not stop validation.</li>
  *   <li>Unknown / extension parameters are preserved and do not cause issues.</li>
  * </ul>
@@ -33,10 +33,10 @@ class Rfc8288ValidatorSpec extends Specification {
         ])
 
         and:
-        def validator = new Rfc8288Validator()
+        def validator = new Rfc8288WebLinkValidator()
 
         when:
-        Validator.ValidationResult result = validator.validate(rawHeader)
+        WebLinkValidator.ValidationResult result = validator.validate(rawHeader)
 
         then: "no issues are reported"
         !result.containsIssues()
@@ -62,10 +62,10 @@ class Rfc8288ValidatorSpec extends Specification {
         ])
 
         and:
-        def validator = new Rfc8288Validator()
+        def validator = new Rfc8288WebLinkValidator()
 
         when:
-        Validator.ValidationResult result = validator.validate(rawHeader)
+        WebLinkValidator.ValidationResult result = validator.validate(rawHeader)
 
         then: "an error is reported"
         result.containsIssues()
@@ -88,10 +88,10 @@ class Rfc8288ValidatorSpec extends Specification {
         ])
 
         and:
-        def validator = new Rfc8288Validator()
+        def validator = new Rfc8288WebLinkValidator()
 
         when:
-        Validator.ValidationResult result = validator.validate(rawHeader)
+        WebLinkValidator.ValidationResult result = validator.validate(rawHeader)
 
         then: "at least one error is reported for the invalid entry"
         result.containsIssues()
@@ -116,10 +116,10 @@ class Rfc8288ValidatorSpec extends Specification {
         ])
 
         and:
-        def validator = new Rfc8288Validator()
+        def validator = new Rfc8288WebLinkValidator()
 
         when:
-        Validator.ValidationResult result = validator.validate(rawHeader)
+        WebLinkValidator.ValidationResult result = validator.validate(rawHeader)
 
         then: "no errors are reported for unknown parameters"
         !result.report().hasErrors()
@@ -151,10 +151,10 @@ class Rfc8288ValidatorSpec extends Specification {
         ])
 
         and:
-        def validator = new Rfc8288Validator()
+        def validator = new Rfc8288WebLinkValidator()
 
         when:
-        Validator.ValidationResult result = validator.validate(rawHeader)
+        WebLinkValidator.ValidationResult result = validator.validate(rawHeader)
 
         then: "URI is valid, so we get a WebLink back"
         result.weblinks().size() == 1
@@ -173,10 +173,10 @@ class Rfc8288ValidatorSpec extends Specification {
         ])
 
         and:
-        def validator = new Rfc8288Validator()
+        def validator = new Rfc8288WebLinkValidator()
 
         when:
-        Validator.ValidationResult result = validator.validate(rawHeader)
+        WebLinkValidator.ValidationResult result = validator.validate(rawHeader)
 
         then: "URI is valid, so we get a WebLink back"
         result.weblinks().size() == 1
@@ -197,10 +197,10 @@ class Rfc8288ValidatorSpec extends Specification {
         ])
 
         and:
-        def validator = new Rfc8288Validator()
+        def validator = new Rfc8288WebLinkValidator()
 
         when:
-        Validator.ValidationResult result = validator.validate(rawHeader)
+        WebLinkValidator.ValidationResult result = validator.validate(rawHeader)
 
         then: "URI is valid, so we get a WebLink back"
         result.weblinks().size() == 1
@@ -228,10 +228,10 @@ class Rfc8288ValidatorSpec extends Specification {
         ])
 
         and:
-        def validator = new Rfc8288Validator()
+        def validator = new Rfc8288WebLinkValidator()
 
         when:
-        Validator.ValidationResult result = validator.validate(rawHeader)
+        WebLinkValidator.ValidationResult result = validator.validate(rawHeader)
 
         then: "URI is valid, so we get a WebLink back"
         result.weblinks().size() == 1
@@ -259,10 +259,10 @@ class Rfc8288ValidatorSpec extends Specification {
         ])
 
         and:
-        def validator = new Rfc8288Validator()
+        def validator = new Rfc8288WebLinkValidator()
 
         when:
-        Validator.ValidationResult result = validator.validate(rawHeader)
+        WebLinkValidator.ValidationResult result = validator.validate(rawHeader)
 
         then: "URI is valid, so we get a WebLink back"
         result.weblinks().size() == 1

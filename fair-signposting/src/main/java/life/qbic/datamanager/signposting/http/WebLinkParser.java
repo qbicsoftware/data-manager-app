@@ -12,7 +12,7 @@ import life.qbic.datamanager.signposting.http.parsing.RawLinkHeader;
  * link headers after structural validation, which can be seen as an AST (abstract syntax tree).
  * <p>
  * Note: Implementations <strong>must not</strong> perform semantic validation, this is concern of
- * {@link Validator} implementations.
+ * {@link WebLinkValidator} implementations.
  * <p>
  * In case of structural violations, implementations of the {@link WebLinkParser} interface must
  * throw a {@link StructureException}.
@@ -33,13 +33,27 @@ import life.qbic.datamanager.signposting.http.parsing.RawLinkHeader;
  */
 public interface WebLinkParser {
 
+  /**
+   * Parses a list of {@link WebLinkToken} and performs structural validation based on the RFC 8288
+   * serialisation requirement.
+   * <p>
+   * The returned value is an AST of a raw link header with a list of raw web link items that can be
+   * used for semantic validation.
+   *
+   * @param tokens a list of web link tokens to process
+   * @return a raw link header parsed from the web link tokens
+   * @throws NullPointerException if the token list is {@code null}
+   * @throws StructureException   if any structural violation occurred
+   */
   RawLinkHeader parse(List<WebLinkToken> tokens) throws NullPointerException, StructureException;
 
+  /**
+   * Indicates a structural violation of the RFC 8288 web link serialisation requirement.
+   */
   class StructureException extends RuntimeException {
 
     public StructureException(String message) {
       super(message);
     }
-
   }
 }

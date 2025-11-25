@@ -1,7 +1,6 @@
 package life.qbic.datamanager.signposting.http;
 
 import java.util.List;
-import life.qbic.datamanager.signposting.http.lexing.WebLinkLexingException;
 import life.qbic.datamanager.signposting.http.lexing.WebLinkToken;
 
 /**
@@ -19,4 +18,19 @@ public interface WebLinkLexer {
    * @throws WebLinkLexingException if the input is not lexically well-formed
    */
   List<WebLinkToken> lex(String input) throws WebLinkLexingException;
+
+  /**
+   * Thrown when the input cannot be tokenised according to the Web Link lexical rules.
+   */
+  class WebLinkLexingException extends RuntimeException {
+
+    public WebLinkLexingException(String message) {
+      super(message);
+    }
+
+    public WebLinkLexingException(String message, Throwable cause) {
+      super(message, cause);
+    }
+  }
+
 }

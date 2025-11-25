@@ -1,4 +1,4 @@
-package life.qbic.datamanager.signposting.http.lexing;
+package life.qbic.datamanager.signposting.http;
 
 /**
  * Enumeration for being used to describe different token types for the

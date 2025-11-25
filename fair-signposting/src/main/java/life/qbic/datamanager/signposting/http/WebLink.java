@@ -30,12 +30,10 @@ public record WebLink(URI reference, List<WebLinkParameter> params) {
    * @param reference a {@link URI} pointing to the actual resource
    * @param params    a {@link Map} of parameters as keys and a list of their values
    * @return the new Weblink
-   * @throws FormatException      if the parameters violate any known specification described in the
-   *                              RFC
    * @throws NullPointerException if any method argument is {@code null}
    */
   public static WebLink create(URI reference, List<WebLinkParameter> params)
-      throws FormatException, NullPointerException {
+      throws NullPointerException {
     Objects.requireNonNull(reference);
     Objects.requireNonNull(params);
     return new WebLink(reference, params);
@@ -47,11 +45,9 @@ public record WebLink(URI reference, List<WebLinkParameter> params) {
    *
    * @param reference a {@link URI} pointing to the actual resource
    * @return the new Weblink
-   * @throws FormatException      if the parameters violate any known specification described in the
-   *                              RFC
    * @throws NullPointerException if any method argument is {@code null}
    */
-  public static WebLink create(URI reference) throws FormatException, NullPointerException {
+  public static WebLink create(URI reference) throws NullPointerException {
     return create(reference, List.of());
   }
 
