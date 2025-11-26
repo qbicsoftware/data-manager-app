@@ -45,6 +45,10 @@ public interface WebLinkValidator {
    */
   record ValidationResult(List<WebLink> weblinks, IssueReport report) {
 
+    public ValidationResult {
+      weblinks = List.copyOf(weblinks);
+    }
+
     public boolean containsIssues() {
       return !report.isEmpty();
     }

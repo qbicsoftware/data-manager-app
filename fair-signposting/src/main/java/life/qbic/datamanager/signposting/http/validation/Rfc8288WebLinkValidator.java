@@ -34,6 +34,12 @@ public class Rfc8288WebLinkValidator implements WebLinkValidator {
   private static final Pattern ALLOWED_TOKEN_CHARS = Pattern.compile(
       "^[!#$%&'*+-.^_`|~0-9A-Za-z]+$");
 
+  private Rfc8288WebLinkValidator() {}
+
+  public static WebLinkValidator create() {
+    return new Rfc8288WebLinkValidator();
+  }
+
   @Override
   public ValidationResult validate(RawLinkHeader rawLinkHeader) {
     var recordedIssues = new ArrayList<Issue>();

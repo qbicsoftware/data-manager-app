@@ -15,20 +15,20 @@ public interface WebLinkLexer {
    *
    * @param input the raw Link header field-value or link-value
    * @return list of tokens ending with an EOF token
-   * @throws WebLinkLexingException if the input is not lexically well-formed
+   * @throws LexingException if the input is not lexically well-formed
    */
-  List<WebLinkToken> lex(String input) throws WebLinkLexingException;
+  List<WebLinkToken> lex(String input) throws LexingException;
 
   /**
    * Thrown when the input cannot be tokenised according to the Web Link lexical rules.
    */
-  class WebLinkLexingException extends RuntimeException {
+  class LexingException extends RuntimeException {
 
-    public WebLinkLexingException(String message) {
+    public LexingException(String message) {
       super(message);
     }
 
-    public WebLinkLexingException(String message, Throwable cause) {
+    public LexingException(String message, Throwable cause) {
       super(message, cause);
     }
   }

@@ -2,7 +2,7 @@ package life.qbic.datamanager.signposting.http.lexing
 
 
 import life.qbic.datamanager.signposting.http.WebLinkLexer
-import life.qbic.datamanager.signposting.http.WebLinkLexer.WebLinkLexingException
+import life.qbic.datamanager.signposting.http.WebLinkLexer.LexingException
 import life.qbic.datamanager.signposting.http.WebLinkTokenType;
 import spock.lang.Specification
 
@@ -12,7 +12,7 @@ import spock.lang.Specification
  * These tests verify that a raw Web Link (RFC 8288) serialisation
  * is correctly tokenised into a sequence of {@link WebLinkToken}s,
  * ending with an EOF token, and that malformed input causes a
- * {@link WebLinkLexingException}.
+ * {@link LexingException}.
  *
  */
 class WebLinkLexerSpec extends Specification {
@@ -213,7 +213,7 @@ class WebLinkLexerSpec extends Specification {
     lexer.lex(input)
 
     then:
-    thrown(WebLinkLexingException)
+    thrown(LexingException)
   }
 
   /**
@@ -229,6 +229,6 @@ class WebLinkLexerSpec extends Specification {
     lexer.lex(input)
 
     then:
-    thrown(WebLinkLexingException)
+    thrown(LexingException)
   }
 }

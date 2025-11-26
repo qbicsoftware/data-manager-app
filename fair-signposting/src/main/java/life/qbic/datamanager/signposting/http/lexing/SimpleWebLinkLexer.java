@@ -21,8 +21,15 @@ import life.qbic.datamanager.signposting.http.WebLinkTokenType;
  */
 public final class SimpleWebLinkLexer implements WebLinkLexer {
 
+  private SimpleWebLinkLexer() {}
+
+  public static SimpleWebLinkLexer create() {
+    return new SimpleWebLinkLexer();
+  }
+
+
   @Override
-  public List<WebLinkToken> lex(String input) throws WebLinkLexingException {
+  public List<WebLinkToken> lex(String input) throws LexingException {
     return new Scanner(input).scan();
   }
 
@@ -99,7 +106,7 @@ public final class SimpleWebLinkLexer implements WebLinkLexer {
       }
 
       if (eof()) {
-        throw new WebLinkLexingException(
+        throw new LexingException(
             "Unterminated URI reference: missing '>' for '<' at position " + start);
       }
 
@@ -132,7 +139,7 @@ public final class SimpleWebLinkLexer implements WebLinkLexer {
       }
 
       if (eof()) {
-        throw new WebLinkLexingException(
+        throw new LexingException(
             "Unterminated quoted-string starting at position " + start);
       }
 
