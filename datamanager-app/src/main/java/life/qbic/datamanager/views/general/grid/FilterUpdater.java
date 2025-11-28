@@ -1,7 +1,5 @@
 package life.qbic.datamanager.views.general.grid;
 
-import org.apache.poi.ss.formula.functions.T;
-
 /**
  * Implementations handle the creation of a new filter based on a given one and a search term.
  *
