@@ -206,43 +206,75 @@ public final class FilterGrid<T> extends Div {
   }
 
   /**
-   * A safe downcast of the grid to the wanted type, if the wanted type is indeed assignable from
+   * A safe downcast of the grid to the targetClass type, if the targetClass type is indeed assignable from
    * the current {@link FilterGrid} type.
    *
-   * @param wanted the wanted target class of the type the filter grid shall be
+   * @param targetClass the target target class of the type the filter grid shall be
    * @param <X>    the type of the filter grid
    * @return a type converted version of the filter grid
-   * @throws IllegalArgumentException in case the wanted class is not assignable from the filter
+   * @throws IllegalArgumentException in case the target class is not assignable from the filter
    *                                  grid's type.
    * @since 1.12.0
    */
   @SuppressWarnings("unchecked")
-  public <X> FilterGrid<X> as(Class<X> wanted) throws IllegalArgumentException {
-    if (wanted.isAssignableFrom(type)) {
+  public <X> FilterGrid<X> assignTo(Class<X> targetClass) throws IllegalArgumentException {
+    if (itemsAssignableFrom(targetClass)) {
       return (FilterGrid<X>) this;
     }
     throw new IllegalArgumentException(
-        "Grid type %s is not assignable to %s".formatted(type.getName(), wanted.getName()));
+        "Grid type %s is not assignable to %s".formatted(type.getName(), targetClass.getName()));
   }
 
   /**
-   * Takes a consumer and calls {@link Consumer#accept(Object)} if the {@code wanted} class is
+   * A safe downcast of the grid to the targetClass type, if the targetClass type is indeed
+   * assignable from the current {@link FilterGrid} type.
+   *
+   * @param targetClass the target class of the type the filter grid shall be downcast to
+   * @param <X>         the target class
+   * @return a filled {@link Optional} of the downcasted grid if assignable;
+   * {@link Optional#empty()} otherwise
+   * @throws IllegalArgumentException in case the target class is not assignable from the filter
+   *                                  grid's type.
+   * @since 1.12.0
+   */
+  public <X> Optional<FilterGrid<X>> optionalAssignTo(Class<X> targetClass) {
+    if (itemsAssignableFrom(targetClass)) {
+      return Optional.of(assignTo(targetClass));
+    }
+    return Optional.empty();
+  }
+
+  /**
+   * Tests if the items of the filter grid can be cast to the specific class.
+   *
+   * @param targetClass the target class of the type the items in the filter grid should be
+   *                    assigned.
+   * @param <X>         the target class
+   * @return true if type conversion is possible, false otherwise.
+   * @since 1.12.0
+   */
+  public <X> boolean itemsAssignableFrom(@NonNull Class<X> targetClass) {
+    Objects.requireNonNull(targetClass);
+    return targetClass.isAssignableFrom(type);
+  }
+
+  /**
+   * Takes a consumer and calls {@link Consumer#accept(Object)} if the {@code targetClass} class is
    * assignable from the current filter grid type ({@link FilterGrid#type()}).
    *
-   * @param wanted the wanted class to assign the filter grid to and pass to the consumer
+   * @param targetClass the target class to assign the filter grid to and pass to the consumer
    * @param action the consumer action
    * @param <X>    the class type of the instance of interest
    * @return {@code true}, if the assignment was successful and the grid has beed passed to the
    * consumer, else {@code false}
    * @since 1.12.0
    */
-  @SuppressWarnings("unchecked")
-  public <X> boolean withType(@NonNull Class<X> wanted,
+  public <X> boolean doIfAssignable(@NonNull Class<X> targetClass,
       @NonNull Consumer<? super FilterGrid<X>> action) {
-    Objects.requireNonNull(wanted);
+    Objects.requireNonNull(targetClass);
     Objects.requireNonNull(action);
-    if (wanted.isAssignableFrom(type)) {
-      action.accept((FilterGrid<X>) this);
+    if (targetClass.isAssignableFrom(type)) {
+      action.accept(this.assignTo(targetClass));
       return true;
     }
     return false;
