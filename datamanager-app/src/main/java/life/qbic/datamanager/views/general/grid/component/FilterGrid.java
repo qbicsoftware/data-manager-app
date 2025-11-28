@@ -43,18 +43,18 @@ public final class FilterGrid<T> extends Div {
 
   public static final String FLEX_HORIZONTAL_CSS = "flex-horizontal";
   public static final String GAP_04_CSS = "gap-04";
+
+  private static final int DEFAULT_QUERY_SIZE = 150;
+  private static final int MAX_QUERY_SIZE = 350;
+  private static final String DEFAULT_ITEM_DISPLAY_LABEL = "item";
+
+  private final Class<T> type;
   private final MultiSelectLazyLoadingGrid<T> grid;
   private final Div selectionDisplay;
   private final Div secondaryActionGroup;
-
-  private static final int DEFAULT_QUERY_SIZE = 150;
-
-  private static final int MAX_QUERY_SIZE = 350;
-
-  private static final String DEFAULT_ITEM_DISPLAY_LABEL = "item";
+  private final TextField searchField;
 
   private String currentItemDisplayLabel = DEFAULT_ITEM_DISPLAY_LABEL;
-
   private Filter currentFilter;
 
   private MenuBar showShideMenu;
