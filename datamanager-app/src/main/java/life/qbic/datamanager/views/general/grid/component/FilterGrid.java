@@ -18,6 +18,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import life.qbic.datamanager.views.general.MultiSelectLazyLoadingGrid;
 import life.qbic.datamanager.views.general.grid.Filter;
 import life.qbic.datamanager.views.general.grid.FilterUpdater;
@@ -287,15 +288,11 @@ public final class FilterGrid<T> extends Div {
    * @return an optional of type {@code R}
    * @since 1.12.0
    */
-  @SuppressWarnings("unchecked")
   public <X, R> java.util.Optional<R> mapType(@NonNull Class<X> wanted,
       @NonNull Function<? super FilterGrid<X>, ? extends R> fn) {
     java.util.Objects.requireNonNull(wanted);
     java.util.Objects.requireNonNull(fn);
-    if (wanted.isAssignableFrom(type)) {
-      return java.util.Optional.ofNullable(fn.apply((FilterGrid<X>) this));
-    }
-    return java.util.Optional.empty();
+    return optionalAssignTo(wanted).map(fn);
   }
 
   private record ColumnVisibilitySetting(String column, boolean visible) {
