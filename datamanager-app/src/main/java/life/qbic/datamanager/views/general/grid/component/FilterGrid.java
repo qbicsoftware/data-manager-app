@@ -18,7 +18,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import life.qbic.datamanager.views.general.MultiSelectLazyLoadingGrid;
 import life.qbic.datamanager.views.general.grid.Filter;
 import life.qbic.datamanager.views.general.grid.FilterUpdater;
@@ -57,11 +56,6 @@ public final class FilterGrid<T> extends Div {
   private String currentItemDisplayLabel = DEFAULT_ITEM_DISPLAY_LABEL;
   private Filter currentFilter;
 
-  private MenuBar showShideMenu;
-
-  private Class<T> type;
-
-  private final TextField searchField;
 
   public FilterGrid(
       Class<T> type,
@@ -113,7 +107,7 @@ public final class FilterGrid<T> extends Div {
     registerToColumnVisibilityChanged(this);
 
     /* Show / Hide Menu */
-    showShideMenu = new MenuBar();
+    MenuBar showShideMenu = new MenuBar();
     var showHideItem = showShideMenu.addItem("Show/Hide Columns");
     var subMenu = showHideItem.getSubMenu();
 
@@ -190,9 +184,7 @@ public final class FilterGrid<T> extends Div {
   }
 
   private static void registerToColumnVisibilityChanged(FilterGrid<?> grid) {
-    grid.addColumnVisibilityChangedListener(event -> {
-      grid.onColumnVisibilityChanged(event.setting);
-    });
+    grid.addColumnVisibilityChangedListener(event -> grid.onColumnVisibilityChanged(event.setting));
   }
 
   /**
