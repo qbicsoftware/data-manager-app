@@ -44,16 +44,17 @@ public class CachedOrganisationRepository implements OrganisationRepository {
   private static final String ROR_ID_PATTERN = "0[a-z|0-9]{6}[0-9]{2}$";
   private final Map<String, String> iriToOrganisation = new HashMap<>();
   private final int configuredCacheSize;
-
+  private final String apiClientId;
   private boolean cacheUsedForLastRequest = false;
 
 
-
-  public CachedOrganisationRepository(int cacheSize) {
+  public CachedOrganisationRepository(int cacheSize, String apiClientId) {
     this.configuredCacheSize = cacheSize;
+    this.apiClientId = apiClientId;
   }
 
-  public CachedOrganisationRepository() {
+  public CachedOrganisationRepository(String apiClientId) {
+    this.apiClientId = apiClientId;
     this.configuredCacheSize = DEFAULT_CACHE_SIZE;
   }
 
@@ -87,6 +88,7 @@ public class CachedOrganisationRepository implements OrganisationRepository {
           .followRedirects(Redirect.NORMAL).connectTimeout(
               Duration.ofSeconds(10)).build();
       HttpRequest rorQuery = HttpRequest.newBuilder().uri(URI.create(ROR_API_URL.formatted(rorId)))
+          .header("Client-Id", apiClientId)
           .header("Content-Type", "application/json").GET().build();
       var result = client.send(rorQuery, BodyHandlers.ofString());
       //If a valid RoRId was provided but the ID does not exist we fail
