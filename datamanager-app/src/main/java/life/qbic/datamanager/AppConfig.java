@@ -71,6 +71,8 @@ import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.application.sample.qualitycontrol.QualityControlService;
 import life.qbic.projectmanagement.domain.repository.ProjectRepository;
 import life.qbic.projectmanagement.infrastructure.organisations.CachedOrganisationRepository;
+import life.qbic.projectmanagement.infrastructure.organisations.RorApi;
+import life.qbic.projectmanagement.infrastructure.organisations.RorApi.RorApiV2;
 import org.jobrunr.scheduling.JobScheduler;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -115,10 +117,19 @@ public class AppConfig {
   }
 
   @Bean
-  public OrganisationRepository organisationRepository(
-      @Value("${qbic.external-service.organisation-search.ror.client-id}") String clientId) {
+  RorApi rorApi(
+      @Value("${qbic.external-service.organisation-search.ror.client-id}") String rorOrganisationEndpoint,
+      @Value("${qbic.external-service.organisation-search.ror.organisation-api-endpoint}") String clientId) {
+    Objects.requireNonNull(rorOrganisationEndpoint);
     Objects.requireNonNull(clientId);
-    return new CachedOrganisationRepository(clientId);
+    return new RorApiV2(rorOrganisationEndpoint, clientId);
+  }
+
+  @Bean
+  public OrganisationRepository organisationRepository(
+      RorApi rorApi) {
+    Objects.requireNonNull(rorApi);
+    return new CachedOrganisationRepository(rorApi);
   }
 
 
