@@ -14,6 +14,7 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.MatchResult;
 import java.util.regex.Pattern;
@@ -50,11 +51,11 @@ public class CachedOrganisationRepository implements OrganisationRepository {
 
   public CachedOrganisationRepository(int cacheSize, String apiClientId) {
     this.configuredCacheSize = cacheSize;
-    this.apiClientId = apiClientId;
+    this.apiClientId = Objects.requireNonNull(apiClientId);
   }
 
   public CachedOrganisationRepository(String apiClientId) {
-    this.apiClientId = apiClientId;
+    this.apiClientId = Objects.requireNonNull(apiClientId);
     this.configuredCacheSize = DEFAULT_CACHE_SIZE;
   }
 
