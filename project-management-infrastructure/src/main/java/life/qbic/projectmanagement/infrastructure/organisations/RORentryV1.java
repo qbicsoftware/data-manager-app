@@ -9,7 +9,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  *
  * @since 1.0.0
  */
-public class RORentry {
+public class RORentryV1 implements RoRentry {
 
   @JsonProperty("id")
   String id;
@@ -30,6 +30,11 @@ public class RORentry {
 
   public String getId() {
     return id;
+  }
+
+  @Override
+  public String getDisplayedName() {
+    return getName();
   }
 
   public void setId(String id) {

@@ -40,7 +40,7 @@ public class CachedOrganisationRepository implements OrganisationRepository {
 
   private static final Logger log = logger(CachedOrganisationRepository.class);
   private static final int DEFAULT_CACHE_SIZE = 50;
-  private static final String ROR_API_URL = "https://api.ror.org/v1/organizations/%s";
+  private static final String ROR_API_URL = "https://api.ror.org/v2/organizations/%s";
   private static final String ROR_ID_PATTERN = "0[a-z|0-9]{6}[0-9]{2}$";
   private final Map<String, String> iriToOrganisation = new HashMap<>();
   private final int configuredCacheSize;
@@ -106,12 +106,12 @@ public class CachedOrganisationRepository implements OrganisationRepository {
                 ROR_API_URL));
         return null;
       }
-      RORentry rorEntry = new ObjectMapper().configure(
+      RORentryV2 rorEntry = new ObjectMapper().configure(
               DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-          .readValue(result.body(), RORentry.class);
+          .readValue(result.body(), RORentryV2.class);
       updateCache(rorEntry);
       cacheUsedForLastRequest = false;
-      return new Organisation(rorEntry.getId(), rorEntry.getName());
+      return new Organisation(rorEntry.getId(), rorEntry.getDisplayedName());
     } catch (IOException | InterruptedException e) {
       log.error("Finding ROR entry failed for organisation: %s".formatted(rorId), e);
       /* Clean up whatever needs to be handled before interrupting  */
@@ -120,12 +120,12 @@ public class CachedOrganisationRepository implements OrganisationRepository {
     }
   }
 
-  private void updateCache(RORentry rorEntry) {
+  private void updateCache(RORentryV2 rorEntry) {
     if (iriToOrganisation.size() == configuredCacheSize) {
       String firstKey = iriToOrganisation.keySet().stream().toList().get(0);
       iriToOrganisation.remove(firstKey);
     }
-    iriToOrganisation.put(rorEntry.getId(), rorEntry.getName());
+    iriToOrganisation.put(rorEntry.getId(), rorEntry.getDisplayedName());
   }
 
   public int cacheEntries() {
