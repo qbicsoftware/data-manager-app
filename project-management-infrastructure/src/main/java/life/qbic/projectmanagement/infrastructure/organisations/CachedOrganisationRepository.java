@@ -58,6 +58,26 @@ public class CachedOrganisationRepository implements OrganisationRepository {
     this.configuredCacheSize = DEFAULT_CACHE_SIZE;
   }
 
+  /**
+   * Creates a Repository without an API Key. Not advised for use in production.
+   */
+  protected CachedOrganisationRepository() {
+    log.warn(
+        "Creating organisation repository without API Key. This is not advised to be used in production.");
+    apiClientId = null;
+    this.configuredCacheSize = DEFAULT_CACHE_SIZE;
+  }
+
+  /**
+   * Creates a Repository without an API Key. Not advised for use in production.
+   */
+  protected CachedOrganisationRepository(int cacheSize) {
+    log.warn(
+        "Creating organisation repository without API Key. This is not advised to be used in production.");
+    apiClientId = null;
+    this.configuredCacheSize = cacheSize;
+  }
+
   private static Optional<String> extractRorId(String text) {
     var pattern = Pattern.compile(ROR_ID_PATTERN);
     var matcher = pattern.matcher(text);
@@ -82,14 +102,23 @@ public class CachedOrganisationRepository implements OrganisationRepository {
     return extractRorId(iri).map(this::findOrganisationInROR).or(Optional::empty);
   }
 
+  private Optional<String> apiKey() {
+    return Optional.ofNullable(apiClientId);
+  }
+
   private Organisation findOrganisationInROR(String rorId) {
     try {
       HttpClient client = HttpClient.newBuilder().version(Version.HTTP_2)
           .followRedirects(Redirect.NORMAL).connectTimeout(
               Duration.ofSeconds(10)).build();
-      HttpRequest rorQuery = HttpRequest.newBuilder().uri(URI.create(ROR_API_URL.formatted(rorId)))
-          .header("Client-Id", apiClientId)
-          .header("Content-Type", "application/json").GET().build();
+
+      var queryBuilder = HttpRequest.newBuilder().uri(URI.create(ROR_API_URL.formatted(rorId)))
+          .header("Content-Type", "application/json").GET();
+      apiKey().ifPresentOrElse(apiKey ->
+              queryBuilder.header("Client-Id", apiClientId),
+          () -> log.warn("No ROR API Key provided."));
+
+      var rorQuery = queryBuilder.build();
       var result = client.send(rorQuery, BodyHandlers.ofString());
       //If a valid RoRId was provided but the ID does not exist we fail
       if (result.statusCode() == 404) {
