@@ -136,9 +136,9 @@ public class CachedOrganisationRepository implements OrganisationRepository {
                 ROR_API_URL));
         return null;
       }
-      RORentryV2 rorEntry = new ObjectMapper().configure(
+      RorEntryV2 rorEntry = new ObjectMapper().configure(
               DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-          .readValue(result.body(), RORentryV2.class);
+          .readValue(result.body(), RorEntryV2.class);
       updateCache(rorEntry);
       cacheUsedForLastRequest = false;
       return new Organisation(rorEntry.getId(), rorEntry.getDisplayedName());
@@ -150,7 +150,7 @@ public class CachedOrganisationRepository implements OrganisationRepository {
     }
   }
 
-  private void updateCache(RORentryV2 rorEntry) {
+  private void updateCache(RorEntryV2 rorEntry) {
     if (iriToOrganisation.size() == configuredCacheSize) {
       String firstKey = iriToOrganisation.keySet().stream().toList().get(0);
       iriToOrganisation.remove(firstKey);

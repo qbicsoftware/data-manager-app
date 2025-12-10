@@ -1,6 +1,6 @@
 package life.qbic.projectmanagement.infrastructure.organisations;
 
-public interface RoRentry {
+public interface RorEntry {
 
   String getId();
 

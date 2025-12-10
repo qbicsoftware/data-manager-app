@@ -9,7 +9,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  *
  * @since 1.0.0
  */
-public class RORentryV1 implements RoRentry {
+public class RorEntryV1 implements RorEntry {
 
   @JsonProperty("id")
   String id;

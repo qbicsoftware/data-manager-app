@@ -3,7 +3,7 @@ package life.qbic.projectmanagement.infrastructure.organisations;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
-public class RORentryV2 implements RoRentry {
+public class RorEntryV2 implements RorEntry {
 
   @JsonProperty("id")
   String id;
