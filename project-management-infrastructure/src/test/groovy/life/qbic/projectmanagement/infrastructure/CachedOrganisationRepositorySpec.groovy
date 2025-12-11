@@ -34,9 +34,9 @@ class CachedOrganisationRepositorySpec extends Specification {
     }
 
     @Shared
-    RorApi rorApi = Stub {
-        find("00v34f693") >> qbicEntry
-        find("03a1kwz48") >> universityEntry
+    RorApi rorApi = Stub() {
+        find("00v34f693") >> Optional.of(qbicEntry)
+        find("03a1kwz48") >> Optional.of(universityEntry)
     };
 
     CachedOrganisationRepository cachedOrganisationRepository = new CachedOrganisationRepository(rorApi);
