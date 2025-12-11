@@ -71,6 +71,9 @@ public interface RorApi {
       if (!this.organisationApiEndpoint.isAbsolute()) {
         throw new IllegalArgumentException("The provided api uri is not absolute.");
       }
+      if (!this.organisationApiEndpoint.getScheme().equals("https")) {
+        throw new IllegalArgumentException("No HTTPS endpoint provided.");
+      }
       this.apiClientId = Objects.requireNonNull(apiClientId);
     }
 
