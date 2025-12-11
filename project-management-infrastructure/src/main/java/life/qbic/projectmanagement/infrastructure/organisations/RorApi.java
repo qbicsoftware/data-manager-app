@@ -128,8 +128,11 @@ public interface RorApi {
       try {
         result = sendRequest(request);
       } catch (RorRequestException e) {
-        log.error(
-            "Could not request information from %s.".formatted(request.uri()), e);
+        String errorMessage = "Could not request information from " + request.uri() + ".";
+        if (e.getHttpStatusCode().isPresent()) {
+          errorMessage += "Failed with http status code " + e.getHttpStatusCode().orElseThrow();
+        }
+        log.error(errorMessage, e);
         return Optional.empty();
       }
 
