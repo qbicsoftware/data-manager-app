@@ -68,6 +68,9 @@ public interface RorApi {
 
     public RorApiV2(String organisationApiEndpoint, String apiClientId) {
       this.organisationApiEndpoint = URI.create(organisationApiEndpoint);
+      if (!this.organisationApiEndpoint.isAbsolute()) {
+        throw new IllegalArgumentException("The provided api uri is not absolute.");
+      }
       this.apiClientId = Objects.requireNonNull(apiClientId);
     }
 
