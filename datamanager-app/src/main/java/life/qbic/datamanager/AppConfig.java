@@ -122,8 +122,7 @@ public class AppConfig {
       @Value("${qbic.external-service.organisation-search.ror.organisation-api-endpoint}") String rorOrganisationEndpoint) {
     Objects.requireNonNull(rorOrganisationEndpoint);
     Objects.requireNonNull(clientId);
-    RorApiV2 rorApiV2 = new RorApiV2(rorOrganisationEndpoint, clientId);
-    return rorApiV2;
+    return new RorApiV2(rorOrganisationEndpoint, clientId);
   }
 
   @Bean
