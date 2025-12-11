@@ -46,6 +46,14 @@ public interface RorApi {
 
   }
 
+  /**
+   * Searches for an entry in the research organisation registry. If no identifier is provided or
+   * the provided identifier is empty, {@link Optional#empty()} is returned.
+   *
+   * @param rorId the ror identifier to search for e.g. 00v34f693 for QBiC
+   * @return an optional RorEntry
+   * @since 1.13.0
+   */
   Optional<RorEntry> find(String rorId);
 
   final class RorApiV2 implements RorApi {
@@ -105,6 +113,11 @@ public interface RorApi {
 
     @Override
     public Optional<RorEntry> find(String rorId) {
+      if (rorId == null || rorId.isBlank()) {
+        log.warn("API called without ror identifier. Skipping call and returning empty.");
+        return Optional.empty();
+      }
+
 
       try (HttpClient client = HttpClient.newBuilder().version(Version.HTTP_2)
           .followRedirects(Redirect.NORMAL).connectTimeout(
