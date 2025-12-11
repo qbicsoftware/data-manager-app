@@ -1,6 +1,7 @@
 package life.qbic.projectmanagement.infrastructure.organisations;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
@@ -9,13 +10,16 @@ import java.net.http.HttpClient;
 import java.net.http.HttpClient.Redirect;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
+import org.eclipse.jetty.http.HttpStatus;
 
 /**
  * API for research organisation registry. ROR (https://ror.org/)
@@ -118,46 +122,126 @@ public interface RorApi {
         return Optional.empty();
       }
 
+      var request = createHttpRequest(organisationApiEndpoint.resolve(rorId));
 
+      RorResponse result;
+      try {
+        result = sendRequest(request);
+      } catch (RorRequestException e) {
+        log.error(
+            "Could not request information from %s.".formatted(request.uri()), e);
+        return Optional.empty();
+      }
+
+      Optional<RorEntry> rorEntry = result.optionalBody()
+          .flatMap(this::parseJson);
+
+      if (rorEntry.isEmpty()) {
+        log.warn(
+            "No organisation with identifier %s was found on %s.".formatted(rorId, request.uri()));
+      }
+
+      return rorEntry;
+    }
+
+    private Optional<RorEntry> parseJson(String json) {
+      try {
+        RorEntry rorEntry = new ObjectMapper().configure(
+                DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+            .readValue(json, RorEntryV2.class);
+        return Optional.of(rorEntry);
+      } catch (JsonProcessingException e) {
+        log.error("Could not parse response from ROR.", e);
+        return Optional.empty();
+      }
+    }
+
+
+    /**
+     * Needs to be handled
+     */
+    private static class RorRequestException extends Exception {
+
+      private final Integer httpStatusCode;
+
+
+      public RorRequestException(Throwable cause) {
+        super(cause);
+        httpStatusCode = null;
+      }
+
+      public RorRequestException(String message, int httpStatusCode) {
+        super(message);
+        this.httpStatusCode = httpStatusCode;
+      }
+
+      public Optional<Integer> getHttpStatusCode() {
+        return Optional.ofNullable(httpStatusCode);
+      }
+    }
+
+    private record RorResponse(String body) {
+
+      public Optional<String> optionalBody() {
+        return Optional.ofNullable(body);
+      }
+
+      @Override
+      public String body() {
+        if (Objects.isNull(body)) {
+          throw new NoSuchElementException(
+              "No body is present. Please use RorResponse#optionalBody instead");
+        }
+        return body;
+      }
+
+      static RorResponse empty() {
+        return new RorResponse(null);
+      }
+
+      static RorResponse of(String body) {
+        Objects.requireNonNull(body);
+        return new RorResponse(body);
+      }
+    }
+
+    private RorResponse sendRequest(HttpRequest request) throws RorRequestException {
+      HttpResponse<String> result;
       try (HttpClient client = HttpClient.newBuilder().version(Version.HTTP_2)
           .followRedirects(Redirect.NORMAL).connectTimeout(
               Duration.ofSeconds(10)).build();) {
 
-        URI requestUri = organisationApiEndpoint.resolve(rorId);
-
-        var queryBuilder = HttpRequest.newBuilder()
-            .uri(requestUri)
-            .header("Content-Type", "application/json")
-            .header("Client-Id", apiClientId)
-            .GET();
-
-        var rorQuery = queryBuilder.build();
-        var result = client.send(rorQuery, BodyHandlers.ofString());
+        result = client.send(request, BodyHandlers.ofString());
         //If a valid RoRId was provided but the ID does not exist we fail
-        if (result.statusCode() == 404) {
-          log.warn(
-              "Provided Organisation ROR id: %s was not found via API call to %s".formatted(rorId,
-                  requestUri));
-          return Optional.empty();
-        }
-        //If a valid RoRId was provided but the ID does not exist we fail
-        else if (result.statusCode() != 200) {
-          log.warn(
-              ("Unexpected error retrieving an organization with ROR id %s. API call to %s").formatted(
-                  rorId,
-                  requestUri));
-          return Optional.empty();
-        }
-        RorEntry rorEntry = new ObjectMapper().configure(
-                DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-            .readValue(result.body(), RorEntryV2.class);
-        return Optional.of(rorEntry);
-      } catch (IOException | InterruptedException e) {
-        log.error("Finding ROR entry failed for organisation: %s".formatted(rorId), e);
-        /* Clean up whatever needs to be handled before interrupting  */
+      } catch (IOException e) {
+        throw new RorRequestException(e);
+      } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
-        return Optional.empty();
+        throw new RorRequestException(e);
       }
+
+      if (result.statusCode() == HttpStatus.NOT_FOUND_404) {
+        log.warn("Organisation not found for " + request.uri());
+        return RorResponse.empty();
+      }
+      //If a valid RoRId was provided but the ID does not exist we fail
+      if (result.statusCode() != 200) {
+        throw new RorRequestException(
+            "Unexpected HTTP status code returned from retrieving an organization.",
+            result.statusCode());
+      } else {
+        return RorResponse.of(result.body());
+      }
+    }
+
+    private HttpRequest createHttpRequest(URI requestUri) {
+      var queryBuilder = HttpRequest.newBuilder()
+          .uri(requestUri)
+          .header("Content-Type", "application/json")
+          .header("Client-Id", apiClientId)
+          .GET();
+
+      return queryBuilder.build();
     }
   }
 
