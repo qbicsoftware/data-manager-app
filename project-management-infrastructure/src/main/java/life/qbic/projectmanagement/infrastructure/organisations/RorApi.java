@@ -130,7 +130,7 @@ public interface RorApi {
       } catch (RorRequestException e) {
         String errorMessage = "Could not request information from " + request.uri() + ".";
         if (e.getHttpStatusCode().isPresent()) {
-          errorMessage += "Failed with http status code " + e.getHttpStatusCode().orElseThrow();
+          errorMessage += " Failed with http status code " + e.getHttpStatusCode().orElseThrow();
         }
         log.error(errorMessage, e);
         return Optional.empty();
