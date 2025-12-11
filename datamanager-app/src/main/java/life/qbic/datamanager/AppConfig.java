@@ -1,11 +1,11 @@
 package life.qbic.datamanager;
 
+import java.util.Objects;
 import life.qbic.broadcasting.Exchange;
 import life.qbic.broadcasting.MessageBusSubmission;
 import life.qbic.domain.concepts.SimpleEventStore;
 import life.qbic.domain.concepts.TemporaryEventRepository;
 import life.qbic.identity.api.UserInformationService;
-import life.qbic.identity.api.UserPasswordService;
 import life.qbic.identity.application.communication.EmailService;
 import life.qbic.identity.application.communication.broadcasting.EventHub;
 import life.qbic.identity.application.notification.NotificationService;
@@ -28,13 +28,13 @@ import life.qbic.infrastructure.email.project.ProjectManagementEmailServiceProvi
 import life.qbic.projectmanagement.application.AppContextProvider;
 import life.qbic.projectmanagement.application.OrganisationRepository;
 import life.qbic.projectmanagement.application.ProjectInformationService;
-import life.qbic.projectmanagement.application.concurrent.ElasticScheduler;
-import life.qbic.projectmanagement.application.concurrent.VirtualThreadScheduler;
 import life.qbic.projectmanagement.application.api.SampleCodeService;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
 import life.qbic.projectmanagement.application.authorization.authorities.AuthorityService;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
 import life.qbic.projectmanagement.application.communication.broadcasting.MessageRouter;
+import life.qbic.projectmanagement.application.concurrent.ElasticScheduler;
+import life.qbic.projectmanagement.application.concurrent.VirtualThreadScheduler;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.measurement.MeasurementLookupService;
 import life.qbic.projectmanagement.application.policy.BatchRegisteredPolicy;
@@ -71,6 +71,8 @@ import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.application.sample.qualitycontrol.QualityControlService;
 import life.qbic.projectmanagement.domain.repository.ProjectRepository;
 import life.qbic.projectmanagement.infrastructure.organisations.CachedOrganisationRepository;
+import life.qbic.projectmanagement.infrastructure.organisations.RorApi;
+import life.qbic.projectmanagement.infrastructure.organisations.RorApi.RorApiV2;
 import org.jobrunr.scheduling.JobScheduler;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -115,8 +117,19 @@ public class AppConfig {
   }
 
   @Bean
-  public OrganisationRepository organisationRepository() {
-    return new CachedOrganisationRepository();
+  RorApi rorApi(
+      @Value("${qbic.external-service.organisation-search.ror.client-id}") String clientId,
+      @Value("${qbic.external-service.organisation-search.ror.organisation-api-endpoint}") String rorOrganisationEndpoint) {
+    Objects.requireNonNull(rorOrganisationEndpoint);
+    Objects.requireNonNull(clientId);
+    return new RorApiV2(rorOrganisationEndpoint, clientId);
+  }
+
+  @Bean
+  public OrganisationRepository organisationRepository(
+      RorApi rorApi) {
+    Objects.requireNonNull(rorApi);
+    return new CachedOrganisationRepository(rorApi);
   }
 
 

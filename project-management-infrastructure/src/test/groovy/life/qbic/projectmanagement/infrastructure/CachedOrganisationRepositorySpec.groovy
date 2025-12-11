@@ -1,13 +1,45 @@
 package life.qbic.projectmanagement.infrastructure
 
 import life.qbic.projectmanagement.infrastructure.organisations.CachedOrganisationRepository
+import life.qbic.projectmanagement.infrastructure.organisations.RorApi
 import spock.lang.Shared
 import spock.lang.Specification
 
 class CachedOrganisationRepositorySpec extends Specification {
+    @Shared
+    def universityEntry = new RorApi.RorEntry() {
+
+        @Override
+        String getId() {
+            return "https://ror.org/03a1kwz48"
+        }
+
+        @Override
+        String getDisplayedName() {
+            return "University of Tübingen"
+        }
+    }
+    @Shared
+    def qbicEntry = new RorApi.RorEntry() {
+
+        @Override
+        String getId() {
+            return "https://ror.org/00v34f693"
+        }
+
+        @Override
+        String getDisplayedName() {
+            return "Quantitative Biology Center"
+        }
+    }
 
     @Shared
-    CachedOrganisationRepository cachedOrganisationRepository = new CachedOrganisationRepository();
+    RorApi rorApi = Stub() {
+        find("00v34f693") >> Optional.of(qbicEntry)
+        find("03a1kwz48") >> Optional.of(universityEntry)
+    };
+
+    CachedOrganisationRepository cachedOrganisationRepository = new CachedOrganisationRepository(rorApi);
 
     def setup() {
         cachedOrganisationRepository.resolve("https://ror.org/03a1kwz48")
@@ -16,7 +48,7 @@ class CachedOrganisationRepositorySpec extends Specification {
 
     def "Given a ROR IRI with valid ROR id, resolve the correct organisation"() {
         given:
-        def cachedRepoInstance = new CachedOrganisationRepository()
+        def cachedRepoInstance = new CachedOrganisationRepository(rorApi)
 
         when:
         def result = cachedRepoInstance.resolve(rorIri)
@@ -25,7 +57,6 @@ class CachedOrganisationRepositorySpec extends Specification {
         result.isPresent()
         result.get().label().matches(organisationName)
         !cachedRepoInstance.cacheUsedForLastRequest()
-
 
 
         where:
@@ -60,10 +91,10 @@ class CachedOrganisationRepositorySpec extends Specification {
 
     def "Given an unknown ROR IRI, return an empty result"() {
         given:
-        def cachedRepoInstance = new CachedOrganisationRepository()
+        def cachedRepoInstance = new CachedOrganisationRepository(rorApi)
 
         when:
-        def result = cachedRepoInstance.resolve( "https://ror.org/00v3223")
+        def result = cachedRepoInstance.resolve("https://ror.org/00v3223")
 
         then:
         result.isEmpty()
@@ -71,7 +102,7 @@ class CachedOrganisationRepositorySpec extends Specification {
 
     def "Given a full cache, free a slot and write the new entry"() {
         given:
-        def singularRepoInstance = new CachedOrganisationRepository(1)
+        def singularRepoInstance = new CachedOrganisationRepository(1, rorApi)
         singularRepoInstance.resolve("https://ror.org/03a1kwz48")
 
         and: // we override the cache entry since the size is 1
