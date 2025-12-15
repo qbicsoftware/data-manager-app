@@ -13,13 +13,13 @@ import life.qbic.datamanager.views.general.Tag.TagColor;
  */
 public final class FilterGridTab<T> extends Tab {
 
-  private final FilterGrid<T> grid;
+  private final FilterGrid<T, ?> grid;
 
   private final Tag badge;
 
   private int itemCount = 0;
 
-  public FilterGridTab(String label, FilterGrid<T> filterGrid) {
+  public FilterGridTab(String label, FilterGrid<T, ?> filterGrid) {
     super(new Span(label));
     this.badge = new Tag("");
     badge.setTagColor(TagColor.CONTRAST);
@@ -56,7 +56,7 @@ public final class FilterGridTab<T> extends Tab {
    * @return the filter grid that is assigned to the tab.
    * @since 1.12.0
    */
-  public FilterGrid<T> filterGrid() {
+  public FilterGrid<T, ?> filterGrid() {
     return grid;
   }
 
@@ -67,7 +67,7 @@ public final class FilterGridTab<T> extends Tab {
    * @since 1.12.0
    */
   public Class<T> modelType() {
-    return grid.type();
+    return grid.itemType();
   }
 
 }

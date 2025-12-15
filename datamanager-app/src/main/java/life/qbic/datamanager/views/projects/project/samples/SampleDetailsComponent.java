@@ -1,7 +1,9 @@
 package life.qbic.datamanager.views.projects.project.samples;
 
+import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.data.provider.DataProvider;
+import com.vaadin.flow.data.provider.CallbackDataProvider.CountCallback;
+import com.vaadin.flow.data.provider.CallbackDataProvider.FetchCallback;
 import com.vaadin.flow.data.provider.QuerySortOrder;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import java.io.InputStream;
@@ -21,7 +23,6 @@ import life.qbic.application.commons.FileNameFormatter;
 import life.qbic.datamanager.files.export.download.DownloadStreamProvider;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.UiHandle;
-import life.qbic.datamanager.views.general.MultiSelectLazyLoadingGrid;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.download.DownloadComponent;
@@ -102,7 +103,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     filterTabSheet.hidePrimaryActionButton();
 
     filterTabSheet.addPrimaryFeatureButtonListener(
-        ignored -> filterTabSheet.whenSelectedGrid(SamplePreview.class,
+        ignored -> filterTabSheet.doIfGridAssignable(SamplePreview.class,
             grid -> {
               if (grid != null) {
                 var selectedSamples = grid.selectedElements();
@@ -151,8 +152,8 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     return tagCollection;
   }
 
-  private static MultiSelectLazyLoadingGrid<SamplePreview> createSamplePreviewGrid() {
-    MultiSelectLazyLoadingGrid<SamplePreview> sampleGrid = new MultiSelectLazyLoadingGrid<>();
+  private static Grid<SamplePreview> createSamplePreviewGrid() {
+    Grid<SamplePreview> sampleGrid = new Grid<>();
     sampleGrid.addColumn(SamplePreview::sampleCode)
         .setHeader("Sample ID")
         .setSortProperty(UiSortKey.SAMPLE_ID.value())
@@ -252,31 +253,41 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
         });
   }
 
-  private FilterGrid<SamplePreview> createFilterGrid(
-      MultiSelectLazyLoadingGrid<SamplePreview> multiSelectGrid,
+  private FilterGrid<SamplePreview, ?> createFilterGrid(
+      Grid<SamplePreview> multiSelectGrid,
       String projectId,
       String experimentId) {
-    var filterGrid = new FilterGrid<>(SamplePreview.class, multiSelectGrid,
-        DataProvider.fromFilteringCallbacks(query -> {
-          var filter = query.getFilter().orElse(new SampleNameFilter(""));
-          var offset = query.getOffset();
-          var limit = query.getLimit();
-          var sortOrders = sortOrdersToApi(query.getSortOrders());
 
-          var sampleFilter = createSamplePreviewFilter(filter, sortOrders);
+    FetchCallback<SamplePreview, String> fetchCallback = query -> {
+      var filter = query.getFilter().orElse("");
+      var sortOrders = sortOrdersToApi(query.getSortOrders());
+      var sampleFilter = new SamplePreviewFilter(filter, sortOrders);
 
-          return asyncProjectService.getSamplePreviews(projectId,
-                  experimentId, offset, limit, sampleFilter)
-              .collectList().blockOptional().orElse(List.of()).stream();
-        }, query -> {
+      var offset = query.getOffset();
+      var limit = query.getLimit();
 
-          var sortOrders = sortOrdersToApi(query.getSortOrders());
-          var sampleFilter = createSamplePreviewFilter(query.getFilter().orElseThrow(), sortOrders);
+      return asyncProjectService.getSamplePreviews(projectId, experimentId, offset, limit,
+              sampleFilter)
+          .collectList().blockOptional().orElse(List.of()).stream();
+    };
 
-          return asyncProjectService.countSamples(projectId,
-              experimentId, sampleFilter).blockOptional().orElse(0);
-        }), new SampleNameFilter(""),
-        (filter, term) -> new SampleNameFilter(term));
+    CountCallback<SamplePreview, String> countCallback = query -> {
+      var filter = query.getFilter().orElse("");
+      var sortOrders = sortOrdersToApi(query.getSortOrders());
+      var sampleFilter = new SamplePreviewFilter(filter, sortOrders);
+
+      return asyncProjectService.countSamples(projectId, experimentId, sampleFilter).blockOptional()
+          .orElse(0);
+    };
+
+    FilterGrid<SamplePreview, String> filterGrid = new FilterGrid<>(
+        SamplePreview.class,
+        multiSelectGrid,
+        () -> "",
+        fetchCallback,
+        countCallback,
+        (searchTerm, oldFilter) -> searchTerm
+    );
     filterGrid.searchFieldPlaceholder("Search samples");
     filterGrid.itemDisplayLabel("sample");
     return filterGrid;

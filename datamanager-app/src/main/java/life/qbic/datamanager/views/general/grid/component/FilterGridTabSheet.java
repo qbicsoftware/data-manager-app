@@ -115,13 +115,10 @@ public final class FilterGridTabSheet extends TabSheet {
   }
 
   /**
-   * Untyped getter: returns the grid of the currently selected tab, if any.
+   * Shows the primary feature button
    */
-  private Optional<FilterGrid<?>> getSelectedFilterGrid() {
-    var selectedTab = getSelectedTab();
-    return (selectedTab instanceof FilterGridTab<?> tab)
-        ? java.util.Optional.of(tab.filterGrid())
-        : java.util.Optional.empty();
+  public void showPrimaryFeatureButton() {
+    primaryActionGroup.featureButton.setVisible(true);
   }
 
   /**
@@ -134,10 +131,17 @@ public final class FilterGridTabSheet extends TabSheet {
    * {@link Optional#empty()}
    * @since 1.12.0
    */
-  public <T> Optional<FilterGrid<T>> getSelectedFilterGrid(Class<T> expectedType) {
-    return getSelectedFilterGrid()
-        .filter(filterGrid -> expectedType.isAssignableFrom(filterGrid.type()))
-        .map(grid -> grid.as(expectedType));
+  public <T> Optional<FilterGrid<T, ?>> getSelectedFilterGrid(Class<T> expectedType) {
+    var optionalSelectedTab = Optional.ofNullable(getSelectedTab());
+    if (optionalSelectedTab.isEmpty()) {
+      return Optional.empty();
+    }
+    var selectedTab = optionalSelectedTab.orElseThrow();
+    if (selectedTab instanceof FilterGridTab<?> tab) {
+      return tab.filterGrid().optionalAssignTo(expectedType);
+    } else {
+      return Optional.empty();
+    }
   }
 
   /**
@@ -151,13 +155,10 @@ public final class FilterGridTabSheet extends TabSheet {
    * @return {@code true}, if the consumer got the filter grid, else returns {@code false}
    * @since 1.12.0
    */
-  public <T> boolean whenSelectedGrid(Class<T> type,
-      Consumer<FilterGrid<T>> action) {
+  public <T> boolean doIfGridAssignable(Class<T> type,
+      Consumer<FilterGrid<T, ?>> action) {
     return getSelectedFilterGrid(type)
-        .map(filterGrid -> {
-          action.accept(filterGrid);
-          return true;
-        })
+        .map(filterGrid -> filterGrid.doIfAssignable(type, action))
         .orElse(false);
   }
 

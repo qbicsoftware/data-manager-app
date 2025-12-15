@@ -1,6 +1,8 @@
 package life.qbic.datamanager.views.projects.project.rawdata;
 
-import com.vaadin.flow.data.provider.DataProvider;
+import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.data.provider.CallbackDataProvider.CountCallback;
+import com.vaadin.flow.data.provider.CallbackDataProvider.FetchCallback;
 import com.vaadin.flow.data.provider.QuerySortOrder;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import java.io.BufferedInputStream;
@@ -29,7 +31,6 @@ import life.qbic.datamanager.files.export.rawdata.RawDataUrlFile.RawDataURL;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.GridDetailsItem;
 import life.qbic.datamanager.views.UiHandle;
-import life.qbic.datamanager.views.general.MultiSelectLazyLoadingGrid;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.download.DownloadComponent;
 import life.qbic.datamanager.views.general.grid.Filter;
@@ -124,8 +125,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
     var projectCode = context.projectCode().orElse("unknown_project_code");
 
     filterTabSheet.addPrimaryActionButtonListener(event -> {
-
-      filterTabSheet.whenSelectedGrid(RawDatasetInformationNgs.class, grid -> {
+      filterTabSheet.doIfGridAssignable(RawDatasetInformationNgs.class, grid -> {
         var ids = grid.selectedElements().stream()
             .map(info -> info.dataset().measurementId())
             .map(id -> new RawDataURL(dataSourceEndpoint, id))
@@ -141,8 +141,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
             LocalDate.now(), projectCode, "ngs_measurement_dataset_locations", "txt"), file);
         downloadComponent.trigger(streamProvider);
       });
-
-      filterTabSheet.whenSelectedGrid(RawDatasetInformationPxP.class, grid -> {
+      filterTabSheet.doIfGridAssignable(RawDatasetInformationPxP.class, grid -> {
         var ids = grid.selectedElements().stream()
             .map(info -> info.dataset().measurementId())
             .map(id -> new RawDataURL(dataSourceEndpoint, id))
@@ -227,58 +226,113 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
     }
   }
 
-  private FilterGrid<RawDatasetInformationPxP> createPxpFilterGrid(
-      MultiSelectLazyLoadingGrid<RawDatasetInformationPxP> multiSelectGridPxp, String projectId,
+  private FilterGrid<RawDatasetInformationPxP, ?> createPxpFilterGrid(
+      Grid<RawDatasetInformationPxP> multiSelectGridPxp, String projectId,
       String experimentId) {
-    var filterGrid = new FilterGrid<>(RawDatasetInformationPxP.class, multiSelectGridPxp,
-        DataProvider.fromFilteringCallbacks(
-            query -> {
-              var filter = query.getFilter().orElse(new RawDataFilter(""));
-              var offset = query.getOffset();
-              var limit = query.getLimit();
-              var sortOrders = sortOrdersToApi(query.getSortOrders());
-              var rawDataFilter = createNgsRawDataFilter(filter, sortOrders);
 
-              return asyncProjectService.getRawDatasetInformationPxP(projectId, experimentId,
-                      offset, limit, rawDataFilter).collectList().blockOptional().orElse(List.of())
-                  .stream();
-            }, query -> {
-              var filter = query.getFilter().orElse(new RawDataFilter(""));
-              var sortOrders = sortOrdersToApi(query.getSortOrders());
-              var rawDataFilter = createNgsRawDataFilter(filter, sortOrders);
-              return asyncProjectService.countMeasurementsNgs(projectId, experimentId,
-                  rawDataFilter).blockOptional().orElse(0);
-            }
-        ), new RawDataFilter(""), (filter, term) -> new RawDataFilter(term));
+    FetchCallback<RawDatasetInformationPxP, RawDataFilter> fetchCallback = query -> {
+      var filter = query.getFilter().orElse(new RawDataFilter(""));
+      var offset = query.getOffset();
+      var limit = query.getLimit();
+      var sortOrders = sortOrdersToApi(query.getSortOrders());
+      var rawDataFilter = createNgsRawDataFilter(filter, sortOrders);
+
+      return asyncProjectService.getRawDatasetInformationPxP(projectId, experimentId,
+              offset, limit, rawDataFilter)
+          .collectList()
+          .blockOptional().orElse(List.of())
+          .stream();
+    };
+
+    CountCallback<RawDatasetInformationPxP, RawDataFilter> countCallback = query -> {
+      var filter = query.getFilter().orElse(new RawDataFilter(""));
+      var offset = query.getOffset();
+      var limit = query.getLimit();
+      var sortOrders = sortOrdersToApi(query.getSortOrders());
+      var rawDataFilter = createNgsRawDataFilter(filter, sortOrders);
+
+      return Math.toIntExact(asyncProjectService.getRawDatasetInformationPxP(projectId,
+              experimentId,
+              offset, limit, rawDataFilter)
+          .collectList()
+          .blockOptional().orElse(List.of())
+          .size());
+    };
+
+    var filterGrid = new FilterGrid<>(RawDatasetInformationPxP.class,
+        multiSelectGridPxp,
+        () -> new RawDataFilter(""),
+        fetchCallback,
+        countCallback,
+        (searchTerm, filter) -> new RawDataFilter(searchTerm));
+
     filterGrid.searchFieldPlaceholder("Search raw datasets");
     filterGrid.itemDisplayLabel("dataset");
     return filterGrid;
   }
 
 
-  private FilterGrid<RawDatasetInformationNgs> createNgsFilterGrid(
-      MultiSelectLazyLoadingGrid<RawDatasetInformationNgs> multiSelectNgsGrid, String projectId,
+  private FilterGrid<RawDatasetInformationNgs, ?> createNgsFilterGrid(
+      Grid<RawDatasetInformationNgs> multiSelectNgsGrid, String projectId,
       String experimentId) {
-    var filterGrid = new FilterGrid<>(RawDatasetInformationNgs.class, multiSelectNgsGrid,
-        DataProvider.fromFilteringCallbacks(
-            query -> {
-              var filter = query.getFilter().orElse(new RawDataFilter(""));
-              var offset = query.getOffset();
-              var limit = query.getLimit();
-              var sortOrders = sortOrdersToApi(query.getSortOrders());
-              var rawDataFilter = createNgsRawDataFilter(filter, sortOrders);
 
-              return asyncProjectService.getRawDatasetInformationNgs(projectId, experimentId,
-                      offset, limit, rawDataFilter).collectList().blockOptional().orElse(List.of())
-                  .stream();
-            }, query -> {
-              var filter = query.getFilter().orElse(new RawDataFilter(""));
-              var sortOrders = sortOrdersToApi(query.getSortOrders());
-              var rawDataFilter = createNgsRawDataFilter(filter, sortOrders);
-              return asyncProjectService.countMeasurementsNgs(projectId, experimentId,
-                  rawDataFilter).blockOptional().orElse(0);
-            }
-        ), new RawDataFilter(""), (filter, term) -> new RawDataFilter(term));
+    FetchCallback<RawDatasetInformationNgs, RawDataFilter> fetchCallback = query -> {
+      var sortOrders = sortOrdersToApi(query.getSortOrders());
+      var filter = query.getFilter().orElse(new RawDataFilter(""));
+      var rawDataFilter = createNgsRawDataFilter(filter, sortOrders);
+
+      var offset = query.getOffset();
+      var limit = query.getLimit();
+
+      return asyncProjectService.getRawDatasetInformationNgs(projectId, experimentId,
+              offset, limit, rawDataFilter)
+          .collectList()
+          .blockOptional().orElse(List.of())
+          .stream();
+    };
+
+    CountCallback<RawDatasetInformationNgs, RawDataFilter> countCallback = query -> {
+      var sortOrders = sortOrdersToApi(query.getSortOrders());
+      var filter = query.getFilter().orElse(new RawDataFilter(""));
+      var rawDataFilter = createNgsRawDataFilter(filter, sortOrders);
+
+      var offset = query.getOffset();
+      var limit = query.getLimit();
+
+      return asyncProjectService.getRawDatasetInformationNgs(projectId, experimentId,
+              offset, limit, rawDataFilter)
+          .collectList()
+          .blockOptional().orElse(List.of())
+          .size();
+    };
+
+    var filterGrid = new FilterGrid<>(RawDatasetInformationNgs.class,
+        multiSelectNgsGrid,
+        () -> new RawDataFilter(""),
+        fetchCallback,
+        countCallback,
+        (searchTerm, filter) -> new RawDataFilter(searchTerm));
+
+//    var filterGrid = new FilterGrid<>(RawDatasetInformationNgs.class, multiSelectNgsGrid,
+//        DataProvider.fromFilteringCallbacks(
+//            query -> {
+//              var filter = query.getFilter().orElse(new RawDataFilter(""));
+//              var offset = query.getOffset();
+//              var limit = query.getLimit();
+//              var sortOrders = sortOrdersToApi(query.getSortOrders());
+//              var rawDataFilter = createNgsRawDataFilter(filter, sortOrders);
+//
+//              return asyncProjectService.getRawDatasetInformationNgs(projectId, experimentId,
+//                      offset, limit, rawDataFilter).collectList().blockOptional().orElse(List.of())
+//                  .stream();
+//            }, query -> {
+//              var filter = query.getFilter().orElse(new RawDataFilter(""));
+//              var sortOrders = sortOrdersToApi(query.getSortOrders());
+//              var rawDataFilter = createNgsRawDataFilter(filter, sortOrders);
+//              return asyncProjectService.countMeasurementsNgs(projectId, experimentId,
+//                  rawDataFilter).blockOptional().orElse(0);
+//            }
+//        ), new RawDataFilter(""), (filter, term) -> new RawDataFilter(term));
     filterGrid.searchFieldPlaceholder("Search raw datasets");
     filterGrid.itemDisplayLabel("dataset");
     return filterGrid;
@@ -317,8 +371,8 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
         sortDirectionToApi(uiSortOrder.getDirection()));
   }
 
-  private MultiSelectLazyLoadingGrid<RawDatasetInformationNgs> createNgsRawDataGrid() {
-    MultiSelectLazyLoadingGrid<RawDatasetInformationNgs> grid = new MultiSelectLazyLoadingGrid<>();
+  private Grid<RawDatasetInformationNgs> createNgsRawDataGrid() {
+    Grid<RawDatasetInformationNgs> grid = new Grid<>();
     grid.addClassName("raw-data-grid");
     grid.addColumn(
             rawData -> rawData.dataset().measurementId())
@@ -338,8 +392,8 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
     return grid;
   }
 
-  private MultiSelectLazyLoadingGrid<RawDatasetInformationPxP> createPxpRawDataGrid() {
-    MultiSelectLazyLoadingGrid<RawDatasetInformationPxP> grid = new MultiSelectLazyLoadingGrid<>();
+  private Grid<RawDatasetInformationPxP> createPxpRawDataGrid() {
+    Grid<RawDatasetInformationPxP> grid = new Grid<>();
     grid.addClassName("raw-data-grid");
     grid.addColumn(
             rawData -> rawData.dataset().measurementId())

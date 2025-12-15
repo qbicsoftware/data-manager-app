@@ -14,7 +14,8 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
-import com.vaadin.flow.data.provider.DataProvider;
+import com.vaadin.flow.data.provider.CallbackDataProvider.CountCallback;
+import com.vaadin.flow.data.provider.CallbackDataProvider.FetchCallback;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
@@ -29,7 +30,6 @@ import life.qbic.datamanager.views.StringBean;
 import life.qbic.datamanager.views.general.Card;
 import life.qbic.datamanager.views.general.DetailBox;
 import life.qbic.datamanager.views.general.DetailBox.Header;
-import life.qbic.datamanager.views.general.MultiSelectLazyLoadingGrid;
 import life.qbic.datamanager.views.general.dialog.AppDialog;
 import life.qbic.datamanager.views.general.dialog.DialogBody;
 import life.qbic.datamanager.views.general.dialog.DialogFooter;
@@ -42,8 +42,8 @@ import life.qbic.datamanager.views.general.dialog.stepper.StepperDialog;
 import life.qbic.datamanager.views.general.dialog.stepper.StepperDialogFooter;
 import life.qbic.datamanager.views.general.dialog.stepper.StepperDisplay;
 import life.qbic.datamanager.views.general.grid.Filter;
-import life.qbic.datamanager.views.general.grid.component.FilterGrid;
 import life.qbic.datamanager.views.general.grid.PredicateFilter;
+import life.qbic.datamanager.views.general.grid.component.FilterGrid;
 import life.qbic.datamanager.views.general.grid.component.FilterGridTab;
 import life.qbic.datamanager.views.general.grid.component.FilterGridTabSheet;
 import life.qbic.datamanager.views.general.icon.IconFactory;
@@ -114,80 +114,65 @@ public class ComponentDemo extends Div {
   }
 
   private Div filterGridShowCase() {
-    var grid = new MultiSelectLazyLoadingGrid<Person>();
-    grid.addColumn(Person::firstName).setHeader("First Name").setKey("firstName");
-    grid.addColumn(Person::lastName).setHeader("Last Name").setKey("lastName");
-    grid.addColumn(Person::age).setHeader("Age").setKey("age");
 
-    var gridPersons = new MultiSelectLazyLoadingGrid<Person>();
-    gridPersons.addColumn(Person::firstName).setHeader("First Name").setKey("firstName");
-    gridPersons.addColumn(Person::lastName).setHeader("Last Name").setKey("lastName");
-    gridPersons.addColumn(Person::age).setHeader("Age").setKey("age");
+    PseudoDataBackend<Person, SimplePersonFilter> personDataBackend = new PseudoDataBackend<>(
+        examples,
+        personFilter -> (person -> personFilter.test(person)));
 
-    var filterDataProvider = DataProvider.<Person, Filter>fromFilteringCallbacks(query ->
-        {
-          var sorting = query.getSortOrders();
-          var offsetIgnored = query.getOffset();
-          var limitIgnored = query.getLimit();
-          var filter = query.getFilter().orElse(new SimplePersonFilter(""));
-          // you don't need this for remote data providers, the filter must be converted to a service API honoring filter
-          var personFilter = filter instanceof PredicateFilter<?> ? (SimplePersonFilter) filter : new SimplePersonFilter("");
-          return examples.stream().filter(personFilter::test);
-        }
-        , count -> {
-          var offsetIgnored = count.getOffset();
-          var limitIgnored = count.getLimit();
-          var filter = count.getFilter().orElse(new SimplePersonFilter(""));
-          // you don't need this for remote data providers, the filter must be converted to a service API honoring filter
-          var personFilter = filter instanceof PredicateFilter<?> ? (SimplePersonFilter) filter : new SimplePersonFilter("");
-          return examples.stream().filter(personFilter::test).toList().size();
-        });
+    FetchCallback<Person, SimplePersonFilter> contactFetchCallback = query -> {
+      var filter = query.getFilter().orElse(new SimplePersonFilter(""));
+      var sorting = query.getSortOrders();
 
-    var filterDataProviderContacts = DataProvider.<Person, Filter>fromFilteringCallbacks(
-        query ->
-        {
-          var sorting = query.getSortOrders();
-          var offsetIgnored = query.getOffset();
-          var limitIgnored = query.getLimit();
-          var filter = query.getFilter().orElse(new SimplePersonFilter(""));
-          // you don't need this for remote data providers, the filter must be converted to a service API honoring filter
-          var personFilter = filter instanceof PredicateFilter<?> ? (SimplePersonFilter) filter : new SimplePersonFilter("");
-          return examples.stream().filter(personFilter::test);
-        }
-        , count -> {
-          var offsetIgnored = count.getOffset();
-          var limitIgnored = count.getLimit();
-          var filter = count.getFilter().orElse(new SimplePersonFilter(""));
-          // you don't need this for remote data providers, the filter must be converted to a service API honoring filter
-          var personFilter = filter instanceof PredicateFilter<?> ? (SimplePersonFilter) filter : new SimplePersonFilter("");
-          return examples.stream().filter(personFilter::test).toList().size();
-        });
+      var offset = query.getOffset();
+      var limit = query.getLimit();
+      return personDataBackend.fetch(offset, limit, filter);
+    };
 
-    var filterGridContacts = new FilterGrid<>(Person.class, gridPersons, filterDataProviderContacts,
-        new SimplePersonFilter(""), (filter, term) -> new SimplePersonFilter(term));
+    CountCallback<Person, SimplePersonFilter> contactCountCallback = query -> {
+      var filter = query.getFilter().orElse(new SimplePersonFilter(""));
+      return personDataBackend.count(filter);
+    };
 
-    var filterGrid = new FilterGrid<Person>(Person.class, grid, filterDataProvider,
-        new SimplePersonFilter(""), (filter, term) -> new SimplePersonFilter(term));
+    var gridPerson = new Grid<Person>();
+    gridPerson.addColumn(Person::firstName).setHeader("First Name").setKey("firstName");
+    gridPerson.addColumn(Person::lastName).setHeader("Last Name").setKey("lastName");
+    gridPerson.addColumn(Person::age).setHeader("Age").setKey("age");
 
-    filterGrid.setSecondaryActionGroup(new Button("Edit"), new Button("Delete"));
+    var personGrid = new FilterGrid<>(
+        Person.class,
+        gridPerson,
+        () -> new SimplePersonFilter(""),
+        contactFetchCallback,
+        contactCountCallback,
+        (searchTerm, filter) -> new SimplePersonFilter(searchTerm)
+    );
 
-    filterGrid.itemDisplayLabel("person");
+    personGrid.setSecondaryActionGroup(new Button("Edit"), new Button("Delete"));
+    personGrid.itemDisplayLabel("person");
 
-    var filterTab = new FilterGridTab("Persons", filterGrid);
-    filterTab.setItemCount(examples.size());
+    var filterTab = new FilterGridTab<>("Persons", personGrid);
 
-    var filterTabContacts = new FilterGridTab("Contacts", filterGridContacts);
-    filterTabContacts.setItemCount(examples.size());
+    var gridContact = new Grid<Person>();
+    gridContact.addColumn(Person::firstName).setHeader("First Name").setKey("firstName");
+    gridContact.addColumn(Person::lastName).setHeader("Last Name").setKey("lastName");
+    gridContact.addColumn(Person::age).setHeader("Age").setKey("age");
+
+    var contactGrid = new FilterGrid<>(
+        Person.class,
+        gridContact,
+        () -> new SimplePersonFilter(""),
+        contactFetchCallback,
+        contactCountCallback,
+        (searchTerm, filter) -> new SimplePersonFilter(searchTerm)
+    );
+    var filterTabContacts = new FilterGridTab<>("Contacts", contactGrid);
 
     var tabSheet = new FilterGridTabSheet(filterTab, filterTabContacts);
 
-    tabSheet.addPrimaryFeatureButtonListener(event -> {
-      log.info("Clicked on the primary feature button: click-count is " + event.getClickCount());
-    });
-
-    tabSheet.addPrimaryActionButtonListener(event -> {
-      log.info("Clicked on the primary action button: click-count is " + event.getClickCount());
-    });
+    tabSheet.addPrimaryFeatureButtonListener(event -> log.info(
+        "Clicked on the primary feature button: click-count is " + event.getClickCount()));
+    tabSheet.addPrimaryActionButtonListener(event -> log.info(
+        "Clicked on the primary action button: click-count is " + event.getClickCount()));
 
     return new Div(tabSheet);
   }
