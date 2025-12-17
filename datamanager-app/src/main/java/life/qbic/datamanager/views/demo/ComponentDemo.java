@@ -155,6 +155,7 @@ public class ComponentDemo extends Div {
           "Updated person filter from " + event.getOldFilter() + " to " + event.getUpdatedFilter());
     });
 
+
     personGrid.setSecondaryActionGroup(new Button("Edit"), new Button("Delete"));
     personGrid.itemDisplayLabel("person");
 
@@ -176,7 +177,24 @@ public class ComponentDemo extends Div {
     );
     var filterTabContacts = new FilterGridTab<>("Contacts", contactGrid);
 
-    var tabSheet = new FilterGridTabSheet(filterTab, filterTabContacts);
+    var gridMemoryPerson = new Grid<Person>();
+    gridMemoryPerson.addColumn(Person::firstName).setHeader("First Name").setKey("firstName");
+    gridMemoryPerson.addColumn(Person::lastName).setHeader("Last Name").setKey("lastName");
+    gridMemoryPerson.addColumn(Person::age).setHeader("Age").setKey("age");
+
+    var inMemoryPersonGrid = new FilterGrid<>(
+        Person.class,
+        SimplePersonFilter.class,
+        gridMemoryPerson,
+        () -> new SimplePersonFilter(""),
+        examples,
+        (person, filter) -> person.firstName().startsWith(filter.term()) || person.lastName()
+            .startsWith(filter.term()),
+        (searchTerm, filter) -> new SimplePersonFilter(searchTerm)
+    );
+    var filterTabInMemoryPerson = new FilterGridTab<>("In Memory Persons", inMemoryPersonGrid);
+
+    var tabSheet = new FilterGridTabSheet(filterTab, filterTabContacts, filterTabInMemoryPerson);
 
     tabSheet.addPrimaryFeatureButtonListener(event -> log.info(
         "Clicked on the primary feature button: click-count is " + event.getClickCount()));

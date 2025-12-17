@@ -20,6 +20,7 @@ import com.vaadin.flow.data.provider.CallbackDataProvider.FetchCallback;
 import com.vaadin.flow.data.provider.ConfigurableFilterDataProvider;
 import com.vaadin.flow.data.provider.DataProvider;
 import com.vaadin.flow.data.value.ValueChangeMode;
+import com.vaadin.flow.function.SerializableBiPredicate;
 import com.vaadin.flow.shared.Registration;
 import java.util.List;
 import java.util.Objects;
@@ -75,6 +76,37 @@ public final class FilterGrid<T, F> extends Div {
       Class<F> filterType,
       Grid<T> grid,
       Supplier<F> filterSupplier,
+      List<T> items,
+      SerializableBiPredicate<T, F> filterFunction,
+      BiFunction<String, F, F> searchTermFilterUpdater) {
+    this.type = Objects.requireNonNull(itemType);
+    this.filterType = Objects.requireNonNull(filterType);
+    this.grid = Objects.requireNonNull(grid);
+
+    configureGridForMultiSelect(grid);
+    makeColumnsSortable(grid.getColumns());
+    grid.setItems(items);
+    //update the filter
+    searchField.addValueChangeListener(
+        event -> updateInMemoryFilter(searchTermFilterUpdater, filterFunction, filterSupplier.get(),
+            event.getValue()));
+
+    var primaryGridControls = getPrimaryGridControls(grid.getColumns());
+    add(primaryGridControls, grid);
+
+    updateSelectionDisplay(grid.getSelectionModel().getSelectedItems().size());
+    addSelectListener(event -> updateSelectionDisplay(event.selectedItems().size()));
+
+    addClassNames("flex-vertical", "gap-03", "height-full", "width-full");
+  }
+
+
+
+  public FilterGrid(
+      Class<T> itemType,
+      Class<F> filterType,
+      Grid<T> grid,
+      Supplier<F> filterSupplier,
       FetchCallback<T, F> fetchCallback,
       CountCallback<T, F> countCallback,
       BiFunction<String, F, F> searchTermFilterUpdater) {
@@ -116,8 +148,23 @@ public final class FilterGrid<T, F> extends Div {
       ConfigurableFilterDataProvider<T, Void, F> dataProvider,
       F filter,
       String searchTerm) {
+    if (grid.getDataProvider().isInMemory()) {
+      return;//Fixme log?
+    }
     F updatedFilter = searchTermFilterUpdater.apply(searchTerm, filter);
     dataProvider.setFilter(updatedFilter);
+    fireEvent(new FilterUpdateEvent<>(this.filterType, this, false, filter, updatedFilter));
+  }
+
+  private void updateInMemoryFilter(BiFunction<String, F, F> searchTermFilterUpdater,
+      SerializableBiPredicate<T, F> filterFunction,
+      F filter,
+      String searchTerm) {
+    if (!grid.getDataProvider().isInMemory()) {
+      return; //fixme log?
+    }
+    F updatedFilter = searchTermFilterUpdater.apply(searchTerm, filter);
+    grid.getListDataView().setFilter(it -> filterFunction.test(it, updatedFilter));
     fireEvent(new FilterUpdateEvent<>(this.filterType, this, false, filter, updatedFilter));
   }
 
