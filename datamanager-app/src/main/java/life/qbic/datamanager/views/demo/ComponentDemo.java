@@ -12,6 +12,7 @@ import com.vaadin.flow.component.html.ListItem;
 import com.vaadin.flow.component.html.OrderedList;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
@@ -141,12 +142,18 @@ public class ComponentDemo extends Div {
 
     var personGrid = new FilterGrid<>(
         Person.class,
+        SimplePersonFilter.class,
         gridPerson,
         () -> new SimplePersonFilter(""),
         contactFetchCallback,
         contactCountCallback,
         (searchTerm, filter) -> new SimplePersonFilter(searchTerm)
     );
+
+    personGrid.addFilterUpdateListener(event -> {
+      Notification.show(
+          "Updated person filter from " + event.getOldFilter() + " to " + event.getUpdatedFilter());
+    });
 
     personGrid.setSecondaryActionGroup(new Button("Edit"), new Button("Delete"));
     personGrid.itemDisplayLabel("person");
@@ -160,6 +167,7 @@ public class ComponentDemo extends Div {
 
     var contactGrid = new FilterGrid<>(
         Person.class,
+        SimplePersonFilter.class,
         gridContact,
         () -> new SimplePersonFilter(""),
         contactFetchCallback,

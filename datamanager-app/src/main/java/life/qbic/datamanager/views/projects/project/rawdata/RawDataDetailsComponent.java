@@ -33,7 +33,6 @@ import life.qbic.datamanager.views.GridDetailsItem;
 import life.qbic.datamanager.views.UiHandle;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.download.DownloadComponent;
-import life.qbic.datamanager.views.general.grid.Filter;
 import life.qbic.datamanager.views.general.grid.component.FilterGrid;
 import life.qbic.datamanager.views.general.grid.component.FilterGridTab;
 import life.qbic.datamanager.views.general.grid.component.FilterGridTabSheet;
@@ -235,7 +234,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
       var offset = query.getOffset();
       var limit = query.getLimit();
       var sortOrders = sortOrdersToApi(query.getSortOrders());
-      var rawDataFilter = createNgsRawDataFilter(filter, sortOrders);
+      var rawDataFilter = new RawDatasetFilter(filter.searchTerm().orElse(""), sortOrders);
 
       return asyncProjectService.getRawDatasetInformationPxP(projectId, experimentId,
               offset, limit, rawDataFilter)
@@ -249,7 +248,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
       var offset = query.getOffset();
       var limit = query.getLimit();
       var sortOrders = sortOrdersToApi(query.getSortOrders());
-      var rawDataFilter = createNgsRawDataFilter(filter, sortOrders);
+      var rawDataFilter = new RawDatasetFilter(filter.searchTerm().orElse(""), sortOrders);
 
       return Math.toIntExact(asyncProjectService.getRawDatasetInformationPxP(projectId,
               experimentId,
@@ -260,6 +259,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
     };
 
     var filterGrid = new FilterGrid<>(RawDatasetInformationPxP.class,
+        RawDataFilter.class,
         multiSelectGridPxp,
         () -> new RawDataFilter(""),
         fetchCallback,
@@ -279,7 +279,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
     FetchCallback<RawDatasetInformationNgs, RawDataFilter> fetchCallback = query -> {
       var sortOrders = sortOrdersToApi(query.getSortOrders());
       var filter = query.getFilter().orElse(new RawDataFilter(""));
-      var rawDataFilter = createNgsRawDataFilter(filter, sortOrders);
+      var rawDataFilter = new RawDatasetFilter(filter.searchTerm().orElse(""), sortOrders);
 
       var offset = query.getOffset();
       var limit = query.getLimit();
@@ -294,7 +294,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
     CountCallback<RawDatasetInformationNgs, RawDataFilter> countCallback = query -> {
       var sortOrders = sortOrdersToApi(query.getSortOrders());
       var filter = query.getFilter().orElse(new RawDataFilter(""));
-      var rawDataFilter = createNgsRawDataFilter(filter, sortOrders);
+      var rawDataFilter = new RawDatasetFilter(filter.searchTerm().orElse(""), sortOrders);
 
       var offset = query.getOffset();
       var limit = query.getLimit();
@@ -307,40 +307,21 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
     };
 
     var filterGrid = new FilterGrid<>(RawDatasetInformationNgs.class,
+        RawDataFilter.class,
         multiSelectNgsGrid,
         () -> new RawDataFilter(""),
         fetchCallback,
         countCallback,
         (searchTerm, filter) -> new RawDataFilter(searchTerm));
 
-//    var filterGrid = new FilterGrid<>(RawDatasetInformationNgs.class, multiSelectNgsGrid,
-//        DataProvider.fromFilteringCallbacks(
-//            query -> {
-//              var filter = query.getFilter().orElse(new RawDataFilter(""));
-//              var offset = query.getOffset();
-//              var limit = query.getLimit();
-//              var sortOrders = sortOrdersToApi(query.getSortOrders());
-//              var rawDataFilter = createNgsRawDataFilter(filter, sortOrders);
-//
-//              return asyncProjectService.getRawDatasetInformationNgs(projectId, experimentId,
-//                      offset, limit, rawDataFilter).collectList().blockOptional().orElse(List.of())
-//                  .stream();
-//            }, query -> {
-//              var filter = query.getFilter().orElse(new RawDataFilter(""));
-//              var sortOrders = sortOrdersToApi(query.getSortOrders());
-//              var rawDataFilter = createNgsRawDataFilter(filter, sortOrders);
-//              return asyncProjectService.countMeasurementsNgs(projectId, experimentId,
-//                  rawDataFilter).blockOptional().orElse(0);
-//            }
-//        ), new RawDataFilter(""), (filter, term) -> new RawDataFilter(term));
     filterGrid.searchFieldPlaceholder("Search raw datasets");
     filterGrid.itemDisplayLabel("dataset");
     return filterGrid;
   }
 
-  private static RawDatasetFilter createNgsRawDataFilter(Filter filter,
+  private static RawDatasetFilter createNgsRawDataFilter(String searchTerm,
       List<AsyncProjectService.SortOrder<RawDataSortingKey>> sortOrders) {
-    return new RawDatasetFilter(filter.searchTerm().orElse(""), sortOrders);
+    return new RawDatasetFilter(searchTerm, sortOrders);
   }
 
   private static List<AsyncProjectService.SortOrder<RawDataSortingKey>> sortOrdersToApi(
@@ -447,17 +428,16 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
         .format(DateTimeFormatter.ISO_LOCAL_DATE);
   }
 
-  private static class RawDataFilter implements Filter {
+  private static class RawDataFilter {
 
-    private String filter;
+    private String searchTerm;
 
-    public RawDataFilter(@NonNull String filter) {
-      this.filter = Objects.requireNonNull(filter);
+    public RawDataFilter(@NonNull String searchTerm) {
+      this.searchTerm = Objects.requireNonNull(searchTerm);
     }
 
-    @Override
     public Optional<String> searchTerm() {
-      return Optional.ofNullable(filter);
+      return Optional.ofNullable(searchTerm);
     }
   }
 }

@@ -26,7 +26,6 @@ import life.qbic.datamanager.views.UiHandle;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.download.DownloadComponent;
-import life.qbic.datamanager.views.general.grid.Filter;
 import life.qbic.datamanager.views.general.grid.component.FilterGrid;
 import life.qbic.datamanager.views.general.grid.component.FilterGridTab;
 import life.qbic.datamanager.views.general.grid.component.FilterGridTabSheet;
@@ -77,13 +76,9 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     add(downloadComponent);
     addClassNames("sample-details-component", "sample-details-content");
 
-    addAttachListener(event -> {
-      uiHandle.bind(event.getUI());
-    });
+    addAttachListener(event -> uiHandle.bind(event.getUI()));
 
-    addDetachListener(ignored -> {
-      uiHandle.unbind();
-    });
+    addDetachListener(ignored -> uiHandle.unbind());
 
     Objects.requireNonNull(context);
 
@@ -232,26 +227,26 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
                 .map(SampleId::value).
                 collect(Collectors.toSet()),
             MimeType.valueOf("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
-        .subscribe(digitalObject -> {
-          uiHandle.onUiAndPush(() -> {
-            pendingTaskToast.close();
-            messageFactory.toast("sample.metadata-fetched", new Object[]{samplePreviews.size()},
-                getLocale()).open();
-            downloadComponent.trigger(new DownloadStreamProvider() {
-              @Override
-              public String getFilename() {
-                return FileNameFormatter.formatWithTimestampedSimple(LocalDate.now(), projectCode,
-                    "sample_metadata", "xlsx");
-              }
+        .subscribe(digitalObject -> uiHandle
+            .onUiAndPush(() -> {
+              pendingTaskToast.close();
+              messageFactory.toast("sample.metadata-fetched", new Object[]{samplePreviews.size()},
+                  getLocale()).open();
+              downloadComponent.trigger(new DownloadStreamProvider() {
+                @Override
+                public String getFilename() {
+                  return FileNameFormatter.formatWithTimestampedSimple(LocalDate.now(), projectCode,
+                      "sample_metadata", "xlsx");
+                }
 
-              @Override
-              public InputStream getStream() {
-                return digitalObject.content();
-              }
-            });
-          });
-        });
+                @Override
+                public InputStream getStream() {
+                  return digitalObject.content();
+                }
+              });
+            }));
   }
+
 
   private FilterGrid<SamplePreview, ?> createFilterGrid(
       Grid<SamplePreview> multiSelectGrid,
@@ -282,12 +277,14 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
 
     FilterGrid<SamplePreview, String> filterGrid = new FilterGrid<>(
         SamplePreview.class,
+        String.class,
         multiSelectGrid,
         () -> "",
         fetchCallback,
         countCallback,
-        (searchTerm, oldFilter) -> searchTerm
-    );
+        (searchTerm, oldFilter) -> searchTerm);
+
+
     filterGrid.searchFieldPlaceholder("Search samples");
     filterGrid.itemDisplayLabel("sample");
     return filterGrid;
@@ -364,27 +361,5 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     String value() {
       return value;
     }
-  }
-
-
-  private static class SampleNameFilter implements Filter {
-
-    private String filter;
-
-    public SampleNameFilter(@NonNull String filter) {
-      this.filter = Objects.requireNonNull(filter);
-    }
-
-    @Override
-    public Optional<String> searchTerm() {
-      return Optional.ofNullable(filter);
-    }
-
-  }
-
-  private static SamplePreviewFilter createSamplePreviewFilter(
-      Filter filterUI,
-      List<SortOrder<SamplePreviewSortKey>> sortOrders) {
-    return new SamplePreviewFilter(filterUI.searchTerm().orElse(""), sortOrders);
   }
 }

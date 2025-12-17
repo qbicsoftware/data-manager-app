@@ -3,6 +3,7 @@ package life.qbic.datamanager.views.general.grid.component;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
+import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.CheckboxGroup;
 import com.vaadin.flow.component.grid.Grid;
@@ -24,6 +25,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -57,6 +59,7 @@ public final class FilterGrid<T, F> extends Div {
   private static final String DEFAULT_ITEM_DISPLAY_LABEL = "item";
 
   private final Class<T> type;
+  private final Class<F> filterType;
 
   private final Grid<T> grid;
   private final Div selectionDisplay = new SelectionNotification();
@@ -68,13 +71,15 @@ public final class FilterGrid<T, F> extends Div {
   private String currentItemDisplayLabel = DEFAULT_ITEM_DISPLAY_LABEL;
 
   public FilterGrid(
-      Class<T> type,
+      Class<T> itemType,
+      Class<F> filterType,
       Grid<T> grid,
       Supplier<F> filterSupplier,
       FetchCallback<T, F> fetchCallback,
       CountCallback<T, F> countCallback,
       BiFunction<String, F, F> searchTermFilterUpdater) {
-    this.type = Objects.requireNonNull(type);
+    this.type = Objects.requireNonNull(itemType);
+    this.filterType = Objects.requireNonNull(filterType);
     this.grid = Objects.requireNonNull(grid);
 
     ConfigurableFilterDataProvider<T, Void, F> dataProvider = DataProvider.fromFilteringCallbacks(
@@ -86,8 +91,8 @@ public final class FilterGrid<T, F> extends Div {
     optimizeLazyGrid(grid, DEFAULT_QUERY_SIZE);
     grid.setItems(dataProvider);
     //update the filter
-    searchField.addValueChangeListener(event -> dataProvider
-        .setFilter(searchTermFilterUpdater.apply(event.getValue(), filterSupplier.get())));
+    searchField.addValueChangeListener(event -> updateFilter(searchTermFilterUpdater,
+        dataProvider, filterSupplier.get(), event.getValue()));
 
     var primaryGridControls = getPrimaryGridControls(grid.getColumns());
     add(primaryGridControls, grid);
@@ -96,6 +101,86 @@ public final class FilterGrid<T, F> extends Div {
     addSelectListener(event -> updateSelectionDisplay(event.selectedItems().size()));
 
     addClassNames("flex-vertical", "gap-03", "height-full", "width-full");
+  }
+
+  /**
+   * Updates the filter and fires a
+   * {@link life.qbic.datamanager.views.general.grid.component.FilterGrid.FilterUpdateEvent}
+   *
+   * @param searchTermFilterUpdater the function that updates the filter based on a search term
+   * @param dataProvider            the dataprovider to update the filter with
+   * @param filter                  the filter to update
+   * @param searchTerm              the search term to use
+   */
+  private void updateFilter(BiFunction<String, F, F> searchTermFilterUpdater,
+      ConfigurableFilterDataProvider<T, Void, F> dataProvider,
+      F filter,
+      String searchTerm) {
+    F updatedFilter = searchTermFilterUpdater.apply(searchTerm, filter);
+    dataProvider.setFilter(updatedFilter);
+    fireEvent(new FilterUpdateEvent<>(this.filterType, this, false, filter, updatedFilter));
+  }
+
+  public Registration addFilterUpdateListener(
+      ComponentEventListener<FilterUpdateEvent<F>> listener) {
+    //noinspection unchecked
+    ComponentEventListener componentEventListener = event -> {
+      if (event instanceof FilterGrid.FilterUpdateEvent<?> filterUpdateEvent
+          && filterType.isAssignableFrom(filterUpdateEvent.filterType())) {
+        var oldFilter = filterUpdateEvent.getOldFilter()
+            .map(filterType::cast)
+            .orElse(null);
+        var updatedFilter = filterType.cast(filterUpdateEvent.updatedFilter);
+        listener.onComponentEvent(
+            new FilterUpdateEvent<>(filterType, this, event.isFromClient(), oldFilter,
+                updatedFilter));
+      }
+
+    };
+    return ComponentUtil.addListener(this, FilterUpdateEvent.class, componentEventListener);
+  }
+
+  public static class FilterUpdateEvent<Y> extends ComponentEvent<FilterGrid<?, Y>> {
+
+    private final Y oldFilter;
+    private final Y updatedFilter;
+    private final Class<Y> filterType;
+
+    /**
+     * Creates a new event using the given source and indicator whether the event originated from
+     * the client side or the server side.
+     *
+     * @param source     the source component
+     * @param fromClient <code>true</code> if the event originated from the client
+     *                   side, <code>false</code> otherwise
+     */
+    public FilterUpdateEvent(Class<Y> filterType, FilterGrid<?, Y> source, boolean fromClient,
+        Y oldFilter, Y currentFilter) {
+      super(source, fromClient);
+      this.filterType = Objects.requireNonNull(filterType);
+      this.updatedFilter = Objects.requireNonNull(currentFilter);
+      this.oldFilter = oldFilter; //can be null
+    }
+
+    public Y getUpdatedFilter() {
+      return filterType.cast(updatedFilter);
+    }
+
+    public Optional<Y> getOldFilter() {
+      return Optional.ofNullable(oldFilter);
+    }
+
+    Class<Y> filterType() {
+      return filterType;
+    }
+
+    @Override
+    public String toString() {
+      return new StringJoiner(", ", FilterUpdateEvent.class.getSimpleName() + "[", "]")
+          .add("filterType=" + filterType.getSimpleName())
+          .add("updatedFilter=" + updatedFilter)
+          .toString();
+    }
   }
 
   private @NonNull Div getPrimaryGridControls(List<Column<T>> columns) {
