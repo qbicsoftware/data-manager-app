@@ -12,13 +12,13 @@ import com.vaadin.flow.component.html.ListItem;
 import com.vaadin.flow.component.html.OrderedList;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.provider.CallbackDataProvider.CountCallback;
 import com.vaadin.flow.data.provider.CallbackDataProvider.FetchCallback;
 import com.vaadin.flow.data.value.ValueChangeMode;
+import com.vaadin.flow.function.SerializableBiPredicate;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.spring.annotation.UIScope;
@@ -110,20 +110,22 @@ public class ComponentDemo extends Div {
     }
 
     public boolean test(Person data) {
-      var fullName = String.join(" ", data.firstName, data.lastName, Integer.toString(data.age));
-      return fullName.contains(term);
+      var fullName = String.join(" ", data.firstName().toLowerCase(), data.lastName().toLowerCase(),
+          Integer.toString(data.age));
+      return fullName.contains(term.toLowerCase());
     }
   }
 
   private Div filterGridShowCase() {
+    SerializableBiPredicate<Person, SimplePersonFilter> nameContainsFilterTerm = (person, filter) ->
+        filter.test(person);
 
     PseudoDataBackend<Person, SimplePersonFilter> personDataBackend = new PseudoDataBackend<>(
         examples,
-        personFilter -> (person -> personFilter.test(person)));
+        personFilter -> (personFilter::test));
 
     FetchCallback<Person, SimplePersonFilter> contactFetchCallback = query -> {
       var filter = query.getFilter().orElse(new SimplePersonFilter(""));
-      var sorting = query.getSortOrders();
 
       var offset = query.getOffset();
       var limit = query.getLimit();
@@ -140,7 +142,7 @@ public class ComponentDemo extends Div {
     gridPerson.addColumn(Person::lastName).setHeader("Last Name").setKey("lastName");
     gridPerson.addColumn(Person::age).setHeader("Age").setKey("age");
 
-    var personGrid = new FilterGrid<>(
+    var personGrid = FilterGrid.lazy(
         Person.class,
         SimplePersonFilter.class,
         gridPerson,
@@ -150,10 +152,8 @@ public class ComponentDemo extends Div {
         (searchTerm, filter) -> new SimplePersonFilter(searchTerm)
     );
 
-    personGrid.addFilterUpdateListener(event -> {
-      Notification.show(
-          "Updated person filter from " + event.getOldFilter() + " to " + event.getUpdatedFilter());
-    });
+    personGrid.addFilterUpdateListener(
+        event -> log.info("Changed filter to " + event.getUpdatedFilter()));
 
 
     personGrid.setSecondaryActionGroup(new Button("Edit"), new Button("Delete"));
@@ -166,7 +166,7 @@ public class ComponentDemo extends Div {
     gridContact.addColumn(Person::lastName).setHeader("Last Name").setKey("lastName");
     gridContact.addColumn(Person::age).setHeader("Age").setKey("age");
 
-    var contactGrid = new FilterGrid<>(
+    var contactGrid = FilterGrid.lazy(
         Person.class,
         SimplePersonFilter.class,
         gridContact,
@@ -182,14 +182,13 @@ public class ComponentDemo extends Div {
     gridMemoryPerson.addColumn(Person::lastName).setHeader("Last Name").setKey("lastName");
     gridMemoryPerson.addColumn(Person::age).setHeader("Age").setKey("age");
 
-    var inMemoryPersonGrid = new FilterGrid<>(
+    var inMemoryPersonGrid = FilterGrid.inMemory(
         Person.class,
         SimplePersonFilter.class,
         gridMemoryPerson,
         () -> new SimplePersonFilter(""),
         examples,
-        (person, filter) -> person.firstName().startsWith(filter.term()) || person.lastName()
-            .startsWith(filter.term()),
+        nameContainsFilterTerm,
         (searchTerm, filter) -> new SimplePersonFilter(searchTerm)
     );
     var filterTabInMemoryPerson = new FilterGridTab<>("In Memory Persons", inMemoryPersonGrid);

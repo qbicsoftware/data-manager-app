@@ -3,7 +3,6 @@ package life.qbic.datamanager.views.general.grid.component;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
-import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.CheckboxGroup;
 import com.vaadin.flow.component.grid.Grid;
@@ -19,6 +18,7 @@ import com.vaadin.flow.data.provider.CallbackDataProvider.CountCallback;
 import com.vaadin.flow.data.provider.CallbackDataProvider.FetchCallback;
 import com.vaadin.flow.data.provider.ConfigurableFilterDataProvider;
 import com.vaadin.flow.data.provider.DataProvider;
+import com.vaadin.flow.data.provider.ItemCountChangeEvent;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.function.SerializableBiPredicate;
 import com.vaadin.flow.shared.Registration;
@@ -28,10 +28,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.function.BiFunction;
-import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import life.qbic.logging.api.Logger;
+import life.qbic.logging.service.LoggerFactory;
 import org.springframework.lang.NonNull;
 
 /**
@@ -58,6 +58,7 @@ public final class FilterGrid<T, F> extends Div {
   private static final int DEFAULT_QUERY_SIZE = 150;
   private static final int MAX_QUERY_SIZE = 350;
   private static final String DEFAULT_ITEM_DISPLAY_LABEL = "item";
+  private static final Logger log = LoggerFactory.logger(FilterGrid.class);
 
   private final Class<T> type;
   private final Class<F> filterType;
@@ -71,7 +72,32 @@ public final class FilterGrid<T, F> extends Div {
 
   private String currentItemDisplayLabel = DEFAULT_ITEM_DISPLAY_LABEL;
 
-  public FilterGrid(
+
+  public static <T, F> FilterGrid<T, F> inMemory(
+      Class<T> itemType,
+      Class<F> filterType,
+      Grid<T> grid,
+      Supplier<F> filterSupplier,
+      List<T> items,
+      SerializableBiPredicate<T, F> filterFunction,
+      BiFunction<String, F, F> searchTermFilterUpdater
+  ) {
+    return new FilterGrid<>(itemType, filterType, grid, filterSupplier, items, filterFunction,
+        searchTermFilterUpdater);
+  }
+
+  public static <T, F> FilterGrid<T, F> lazy(Class<T> itemType,
+      Class<F> filterType,
+      Grid<T> grid,
+      Supplier<F> filterSupplier,
+      FetchCallback<T, F> fetchCallback,
+      CountCallback<T, F> countCallback,
+      BiFunction<String, F, F> searchTermFilterUpdater) {
+    return new FilterGrid<>(itemType, filterType, grid, filterSupplier, fetchCallback,
+        countCallback, searchTermFilterUpdater);
+  }
+
+  private FilterGrid(
       Class<T> itemType,
       Class<F> filterType,
       Grid<T> grid,
@@ -79,30 +105,26 @@ public final class FilterGrid<T, F> extends Div {
       List<T> items,
       SerializableBiPredicate<T, F> filterFunction,
       BiFunction<String, F, F> searchTermFilterUpdater) {
+    //assign fields
     this.type = Objects.requireNonNull(itemType);
     this.filterType = Objects.requireNonNull(filterType);
     this.grid = Objects.requireNonNull(grid);
 
-    configureGridForMultiSelect(grid);
-    makeColumnsSortable(grid.getColumns());
+    //set items
     grid.setItems(items);
+    configureGrid(grid);
+    //construct filter Grid component
+    constructComponent(grid);
+
+    listenToSelection();
     //update the filter
     searchField.addValueChangeListener(
         event -> updateInMemoryFilter(searchTermFilterUpdater, filterFunction, filterSupplier.get(),
             event.getValue()));
-
-    var primaryGridControls = getPrimaryGridControls(grid.getColumns());
-    add(primaryGridControls, grid);
-
-    updateSelectionDisplay(grid.getSelectionModel().getSelectedItems().size());
-    addSelectListener(event -> updateSelectionDisplay(event.selectedItems().size()));
-
-    addClassNames("flex-vertical", "gap-03", "height-full", "width-full");
   }
 
 
-
-  public FilterGrid(
+  private FilterGrid(
       Class<T> itemType,
       Class<F> filterType,
       Grid<T> grid,
@@ -110,29 +132,44 @@ public final class FilterGrid<T, F> extends Div {
       FetchCallback<T, F> fetchCallback,
       CountCallback<T, F> countCallback,
       BiFunction<String, F, F> searchTermFilterUpdater) {
+    //assign fields
     this.type = Objects.requireNonNull(itemType);
     this.filterType = Objects.requireNonNull(filterType);
     this.grid = Objects.requireNonNull(grid);
 
+    //set items
     ConfigurableFilterDataProvider<T, Void, F> dataProvider = DataProvider.fromFilteringCallbacks(
             fetchCallback, countCallback)
         .withConfigurableFilter();
-
-    configureGridForMultiSelect(grid);
-    makeColumnsSortable(grid.getColumns());
-    optimizeLazyGrid(grid, DEFAULT_QUERY_SIZE);
     grid.setItems(dataProvider);
+    configureGrid(grid);
+    //construct filter Grid component
+    constructComponent(grid);
+
+    listenToSelection();
+
     //update the filter
     searchField.addValueChangeListener(event -> updateFilter(searchTermFilterUpdater,
         dataProvider, filterSupplier.get(), event.getValue()));
 
+  }
+
+  private void constructComponent(Grid<T> grid) {
     var primaryGridControls = getPrimaryGridControls(grid.getColumns());
     add(primaryGridControls, grid);
-
-    updateSelectionDisplay(grid.getSelectionModel().getSelectedItems().size());
-    addSelectListener(event -> updateSelectionDisplay(event.selectedItems().size()));
-
     addClassNames("flex-vertical", "gap-03", "height-full", "width-full");
+
+  }
+
+  private void listenToSelection() {
+    updateSelectionDisplay(this.grid.getSelectionModel().getSelectedItems().size());
+    addSelectionListener(event -> updateSelectionDisplay(event.selectedItems().size()));
+  }
+
+  private static <T> void configureGrid(Grid<T> grid) {
+    configureGridForMultiSelect(grid);
+    makeColumnsSortable(grid.getColumns());
+    optimizeGrid(grid, DEFAULT_QUERY_SIZE);
   }
 
   /**
@@ -168,25 +205,58 @@ public final class FilterGrid<T, F> extends Div {
     fireEvent(new FilterUpdateEvent<>(this.filterType, this, false, filter, updatedFilter));
   }
 
+  /**
+   * Add a listener for item count events {@link ItemCountChangeEvent}.
+   *
+   * @param listener the listener to add
+   * @return the registration with which to remove the listener
+   */
+  public Registration addItemCountListener(
+      ComponentEventListener<ItemCountChangeEvent<FilterGrid<T, F>>> listener) {
+    if (grid.getDataProvider().isInMemory()) {
+      return grid.getListDataView()
+          .addItemCountChangeListener(it -> listener.onComponentEvent(
+              new ItemCountChangeEvent<>(this, it.getItemCount(), it.isItemCountEstimated())));
+    } else {
+      return grid.getLazyDataView()
+          .addItemCountChangeListener(it -> listener.onComponentEvent(
+              new ItemCountChangeEvent<>(this, it.getItemCount(), it.isItemCountEstimated())));
+    }
+  }
+
+
+  /**
+   * Add a listener for filter update events. {@link FilterUpdateEvent} is thrown when the filter
+   * applied to the data is updated by this {@link FilterGrid}.
+   *
+   * @param listener a component listener listening to a {@link FilterUpdateEvent}
+   * @return the registration with which to remove the listener
+   */
   public Registration addFilterUpdateListener(
       ComponentEventListener<FilterUpdateEvent<F>> listener) {
-    //noinspection unchecked
     ComponentEventListener componentEventListener = event -> {
-      if (event instanceof FilterGrid.FilterUpdateEvent<?> filterUpdateEvent
-          && filterType.isAssignableFrom(filterUpdateEvent.filterType())) {
-        var oldFilter = filterUpdateEvent.getOldFilter()
-            .map(filterType::cast)
-            .orElse(null);
+      if (!(event instanceof FilterGrid.FilterUpdateEvent<?> filterUpdateEvent)) {
+        return; // wrong event type
+      }
+      if (filterType.isAssignableFrom(filterUpdateEvent.filterType())) {
+        var oldFilter = filterUpdateEvent.getOldFilter().map(filterType::cast).orElse(null);
         var updatedFilter = filterType.cast(filterUpdateEvent.updatedFilter);
         listener.onComponentEvent(
             new FilterUpdateEvent<>(filterType, this, event.isFromClient(), oldFilter,
                 updatedFilter));
+      } else {
+        log.debug("Unexpected FilterUpdateEvent. Expected filter type (%s) but got (%s).".formatted(
+            this.filterType, filterUpdateEvent.filterType()));
+        return; // we do not operate on this event
       }
-
     };
-    return ComponentUtil.addListener(this, FilterUpdateEvent.class, componentEventListener);
+    return addListener(FilterUpdateEvent.class, componentEventListener);
   }
 
+  /**
+   * An update to the applied filter.
+   * @param <Y> the type of filter that was updated.
+   */
   public static class FilterUpdateEvent<Y> extends ComponentEvent<FilterGrid<?, Y>> {
 
     private final Y oldFilter;
@@ -209,10 +279,18 @@ public final class FilterGrid<T, F> extends Div {
       this.oldFilter = oldFilter; //can be null
     }
 
+    /**
+     * Returns the filter after update.
+     * @return the filter after update
+     */
     public Y getUpdatedFilter() {
       return filterType.cast(updatedFilter);
     }
 
+    /**
+     * Returns the filter to which the update was applied
+     * @return
+     */
     public Optional<Y> getOldFilter() {
       return Optional.ofNullable(oldFilter);
     }
@@ -300,7 +378,7 @@ public final class FilterGrid<T, F> extends Div {
     return field;
   }
 
-  private static void optimizeLazyGrid(Grid<?> grid, int pageSize) {
+  private static void optimizeGrid(Grid<?> grid, int pageSize) {
     if (grid.getDataProvider().isInMemory()) {
       return;
     }
@@ -328,103 +406,6 @@ public final class FilterGrid<T, F> extends Div {
   public void searchFieldPlaceholder(String placeholder) {
     Objects.requireNonNull(placeholder);
     searchField.setPlaceholder(placeholder);
-  }
-
-  /**
-   * A safe downcast of the grid to the targetClass type, if the targetClass type is indeed assignable from
-   * the current {@link FilterGrid} type.
-   *
-   * @param targetClass the target target class of the type the filter grid shall be
-   * @param <X>    the type of the filter grid
-   * @return a type converted version of the filter grid
-   * @throws IllegalArgumentException in case the target class is not assignable from the filter
-   *                                  grid's type.
-   * @since 1.12.0
-   */
-  @SuppressWarnings("unchecked")
-  public <X> FilterGrid<X, F> assignTo(Class<X> targetClass) throws IllegalArgumentException {
-    if (itemsAssignableFrom(targetClass)) {
-      return (FilterGrid<X, F>) this;
-    }
-    throw new IllegalArgumentException(
-        "Grid type %s is not assignable to %s".formatted(type.getName(), targetClass.getName()));
-  }
-
-  /**
-   * A safe downcast of the grid to the targetClass type, if the targetClass type is indeed
-   * assignable from the current {@link FilterGrid} type.
-   *
-   * @param targetClass the target class of the type the filter grid shall be downcast to
-   * @param <X>         the target class
-   * @return a filled {@link Optional} of the downcasted grid if assignable;
-   * {@link Optional#empty()} otherwise
-   * @throws IllegalArgumentException in case the target class is not assignable from the filter
-   *                                  grid's type.
-   * @since 1.12.0
-   */
-  public <X> Optional<FilterGrid<X, ?>> optionalAssignTo(Class<X> targetClass) {
-    if (itemsAssignableFrom(targetClass)) {
-      return Optional.of(assignTo(targetClass));
-    }
-    return Optional.empty();
-  }
-
-  /**
-   * Tests if the items of the filter grid can be cast to the specific class.
-   *
-   * @param targetClass the target class of the type the items in the filter grid should be
-   *                    assigned.
-   * @param <X>         the target class
-   * @return true if type conversion is possible, false otherwise.
-   * @since 1.12.0
-   */
-  public <X> boolean itemsAssignableFrom(@NonNull Class<X> targetClass) {
-    Objects.requireNonNull(targetClass);
-    return targetClass.isAssignableFrom(type);
-  }
-
-  /**
-   * Takes a consumer and calls {@link Consumer#accept(Object)}} if the {@code targetClass} class is
-   * assignable from the current filter grid type ({@link FilterGrid#itemType()}).
-   *
-   * @param targetClass the target class to assign the filter grid to and pass to the consumer
-   * @param action the consumer action
-   * @param <X>    the class type of the instance of interest
-   * @return {@code true}, if the assignment was successful and the grid has beed passed to the
-   * consumer, else {@code false}
-   * @since 1.12.0
-   */
-  public <X> boolean doIfAssignable(@NonNull Class<X> targetClass,
-      @NonNull Consumer<? super FilterGrid<X, F>> action) {
-    Objects.requireNonNull(targetClass);
-    Objects.requireNonNull(action);
-    if (targetClass.isAssignableFrom(type)) {
-      action.accept(this.assignTo(targetClass));
-      return true;
-    }
-    return false;
-  }
-
-  /**
-   * Takes a function that consumes a filter grid of type {@code X} and returns an optional of type
-   * {@code R}.
-   * <p>
-   * The passed function is only applied to the filter grid, if the passed class {@code wanted} is
-   * assignable from the filter grid's type ({@link FilterGrid#type}).
-   *
-   * @param wanted the class of type {@code X} that the filter grid shall be assignable from to
-   *               execute the function
-   * @param fn     the function to apply that takes the filter grid as argument
-   * @param <X>    the type of the filter grid
-   * @param <R>    the type of the returned output
-   * @return an optional of type {@code R}
-   * @since 1.12.0
-   */
-  public <X, R> java.util.Optional<R> mapType(@NonNull Class<X> wanted,
-      @NonNull Function<? super FilterGrid<X, ?>, ? extends R> fn) {
-    java.util.Objects.requireNonNull(wanted);
-    java.util.Objects.requireNonNull(fn);
-    return optionalAssignTo(wanted).map(fn);
   }
 
   // helper
@@ -531,7 +512,7 @@ public final class FilterGrid<T, F> extends Div {
    * not needed anymore
    * @since 1.12.0
    */
-  public Registration addSelectListener(
+  public Registration addSelectionListener(
       ComponentEventListener<FilterGridSelectionEvent<T>> listener) {
     return grid.addSelectionListener(it -> listener.onComponentEvent(
         new FilterGridSelectionEvent<>(this, it.getAllSelectedItems(), it.isFromClient())));

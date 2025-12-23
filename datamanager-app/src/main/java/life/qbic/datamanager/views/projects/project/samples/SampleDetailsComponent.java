@@ -98,7 +98,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     filterTabSheet.hidePrimaryActionButton();
 
     filterTabSheet.addPrimaryFeatureButtonListener(
-        ignored -> filterTabSheet.doIfGridAssignable(SamplePreview.class,
+        ignored -> filterTabSheet.doForItemType(SamplePreview.class,
             grid -> {
               if (grid != null) {
                 var selectedSamples = grid.selectedElements();
@@ -275,7 +275,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
           .orElse(0);
     };
 
-    FilterGrid<SamplePreview, String> filterGrid = new FilterGrid<>(
+    FilterGrid<SamplePreview, String> filterGrid = FilterGrid.lazy(
         SamplePreview.class,
         String.class,
         multiSelectGrid,

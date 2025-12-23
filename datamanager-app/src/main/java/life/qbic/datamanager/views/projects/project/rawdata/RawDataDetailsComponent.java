@@ -10,6 +10,7 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -61,6 +62,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
   private final UiHandle uiHandle = new UiHandle();
   private final String dataSourceEndpoint;
   private final MessageSourceNotificationFactory messageFactory;
+  private static final Duration MAX_BLOCKING_DURATION = Duration.ofMinutes(5);
 
   private final List<FilterGridTab<?>> availableTabs = new ArrayList<>();
 
@@ -124,7 +126,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
     var projectCode = context.projectCode().orElse("unknown_project_code");
 
     filterTabSheet.addPrimaryActionButtonListener(event -> {
-      filterTabSheet.doIfGridAssignable(RawDatasetInformationNgs.class, grid -> {
+      filterTabSheet.doForItemType(RawDatasetInformationNgs.class, grid -> {
         var ids = grid.selectedElements().stream()
             .map(info -> info.dataset().measurementId())
             .map(id -> new RawDataURL(dataSourceEndpoint, id))
@@ -140,7 +142,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
             LocalDate.now(), projectCode, "ngs_measurement_dataset_locations", "txt"), file);
         downloadComponent.trigger(streamProvider);
       });
-      filterTabSheet.doIfGridAssignable(RawDatasetInformationPxP.class, grid -> {
+      filterTabSheet.doForItemType(RawDatasetInformationPxP.class, grid -> {
         var ids = grid.selectedElements().stream()
             .map(info -> info.dataset().measurementId())
             .map(id -> new RawDataURL(dataSourceEndpoint, id))
@@ -239,26 +241,22 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
       return asyncProjectService.getRawDatasetInformationPxP(projectId, experimentId,
               offset, limit, rawDataFilter)
           .collectList()
-          .blockOptional().orElse(List.of())
+          .blockOptional(MAX_BLOCKING_DURATION)
+          .orElse(List.of())
           .stream();
     };
 
     CountCallback<RawDatasetInformationPxP, RawDataFilter> countCallback = query -> {
       var filter = query.getFilter().orElse(new RawDataFilter(""));
-      var offset = query.getOffset();
-      var limit = query.getLimit();
       var sortOrders = sortOrdersToApi(query.getSortOrders());
       var rawDataFilter = new RawDatasetFilter(filter.searchTerm().orElse(""), sortOrders);
-
-      return Math.toIntExact(asyncProjectService.getRawDatasetInformationPxP(projectId,
-              experimentId,
-              offset, limit, rawDataFilter)
-          .collectList()
-          .blockOptional().orElse(List.of())
-          .size());
+      return asyncProjectService.countMeasurementsPxp(projectId,
+              experimentId, rawDataFilter)
+          .blockOptional(MAX_BLOCKING_DURATION)
+          .orElse(0);
     };
 
-    var filterGrid = new FilterGrid<>(RawDatasetInformationPxP.class,
+    var filterGrid = FilterGrid.lazy(RawDatasetInformationPxP.class,
         RawDataFilter.class,
         multiSelectGridPxp,
         () -> new RawDataFilter(""),
@@ -287,7 +285,8 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
       return asyncProjectService.getRawDatasetInformationNgs(projectId, experimentId,
               offset, limit, rawDataFilter)
           .collectList()
-          .blockOptional().orElse(List.of())
+          .blockOptional(MAX_BLOCKING_DURATION)
+          .orElse(List.of())
           .stream();
     };
 
@@ -296,17 +295,12 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
       var filter = query.getFilter().orElse(new RawDataFilter(""));
       var rawDataFilter = new RawDatasetFilter(filter.searchTerm().orElse(""), sortOrders);
 
-      var offset = query.getOffset();
-      var limit = query.getLimit();
-
-      return asyncProjectService.getRawDatasetInformationNgs(projectId, experimentId,
-              offset, limit, rawDataFilter)
-          .collectList()
-          .blockOptional().orElse(List.of())
-          .size();
+      return asyncProjectService.countMeasurementsNgs(projectId, experimentId, rawDataFilter)
+          .blockOptional(MAX_BLOCKING_DURATION)
+          .orElse(0);
     };
 
-    var filterGrid = new FilterGrid<>(RawDatasetInformationNgs.class,
+    var filterGrid = FilterGrid.lazy(RawDatasetInformationNgs.class,
         RawDataFilter.class,
         multiSelectNgsGrid,
         () -> new RawDataFilter(""),

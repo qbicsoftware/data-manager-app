@@ -131,14 +131,17 @@ public final class FilterGridTabSheet extends TabSheet {
    * {@link Optional#empty()}
    * @since 1.12.0
    */
-  public <T> Optional<FilterGrid<T, ?>> getSelectedFilterGrid(Class<T> expectedType) {
+  public <T> Optional<FilterGrid<T, Object>> getSelectedFilterGrid(Class<T> expectedType) {
     var optionalSelectedTab = Optional.ofNullable(getSelectedTab());
     if (optionalSelectedTab.isEmpty()) {
       return Optional.empty();
     }
     var selectedTab = optionalSelectedTab.orElseThrow();
-    if (selectedTab instanceof FilterGridTab<?> tab) {
-      return tab.filterGrid().optionalAssignTo(expectedType);
+    if (selectedTab instanceof FilterGridTab<?> tab
+        && tab.filterGrid() instanceof FilterGrid<?, ?> filterGrid
+        && filterGrid.itemType().isAssignableFrom(expectedType)) {
+      //noinspection unchecked - checked with assignable check
+      return Optional.of((FilterGrid<T, Object>) filterGrid);
     } else {
       return Optional.empty();
     }
@@ -155,11 +158,11 @@ public final class FilterGridTabSheet extends TabSheet {
    * @return {@code true}, if the consumer got the filter grid, else returns {@code false}
    * @since 1.12.0
    */
-  public <T> boolean doIfGridAssignable(Class<T> type,
-      Consumer<FilterGrid<T, ?>> action) {
-    return getSelectedFilterGrid(type)
-        .map(filterGrid -> filterGrid.doIfAssignable(type, action))
-        .orElse(false);
+  public <T> boolean doForItemType(Class<T> type,
+      Consumer<FilterGrid<T, Object>> action) {
+    Optional<FilterGrid<T, Object>> selectedFilterGrid = getSelectedFilterGrid(type);
+    selectedFilterGrid.ifPresent(action);
+    return selectedFilterGrid.isEmpty();
   }
 
   private static Button mainActionButton(String caption) {
