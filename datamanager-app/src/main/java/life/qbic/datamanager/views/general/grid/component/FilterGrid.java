@@ -358,6 +358,7 @@ public final class FilterGrid<T, F> extends Div {
     GridMultiSelectionModel<T> selectionModel = ((GridMultiSelectionModel<T>) grid.getSelectionModel());
     selectionModel.setSelectAllCheckboxVisibility(
         GridMultiSelectionModel.SelectAllCheckboxVisibility.VISIBLE);
+    selectionModel.setSelectionColumnFrozen(true);
   }
 
   private Div createSecondaryActionGroup() {
