@@ -340,6 +340,14 @@ public final class FilterGrid<T, F> extends Div {
     }
   }
 
+  /**
+   * Gets the last determined item count or fetches the item count if none was present before.
+   *
+   * @return the assumed number of items.
+   */
+  public int getItemCount() {
+    return grid.getDataCommunicator().getItemCount();
+  }
 
   /**
    * Add a listener for filter update events. {@link FilterUpdateEvent} is thrown when the filter
