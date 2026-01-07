@@ -62,14 +62,4 @@ public final class FilterGridTab<T> extends Tab {
     return grid;
   }
 
-  /**
-   * Convenience API for the grid's type.
-   *
-   * @return the {@link Class} of the assigned grid's type
-   * @since 1.12.0
-   */
-  public Class<T> modelType() {
-    return grid.itemType();
-  }
-
 }
