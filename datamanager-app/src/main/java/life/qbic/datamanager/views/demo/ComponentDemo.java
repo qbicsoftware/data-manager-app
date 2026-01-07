@@ -18,7 +18,6 @@ import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.provider.CallbackDataProvider.CountCallback;
 import com.vaadin.flow.data.provider.CallbackDataProvider.FetchCallback;
 import com.vaadin.flow.data.value.ValueChangeMode;
-import com.vaadin.flow.function.SerializableBiPredicate;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.spring.annotation.UIScope;
@@ -46,6 +45,7 @@ import life.qbic.datamanager.views.general.dialog.stepper.StepperDisplay;
 import life.qbic.datamanager.views.general.grid.Filter;
 import life.qbic.datamanager.views.general.grid.PredicateFilter;
 import life.qbic.datamanager.views.general.grid.component.FilterGrid;
+import life.qbic.datamanager.views.general.grid.component.FilterGrid.FilterTester;
 import life.qbic.datamanager.views.general.grid.component.FilterGridTab;
 import life.qbic.datamanager.views.general.grid.component.FilterGridTabSheet;
 import life.qbic.datamanager.views.general.icon.IconFactory;
@@ -117,7 +117,7 @@ public class ComponentDemo extends Div {
   }
 
   private Div filterGridShowCase() {
-    SerializableBiPredicate<Person, SimplePersonFilter> nameContainsFilterTerm = (person, filter) ->
+    FilterTester<Person, SimplePersonFilter> nameContainsFilterTerm = (person, filter) ->
         filter.test(person);
 
     PseudoDataBackend<Person, SimplePersonFilter> personDataBackend = new PseudoDataBackend<>(

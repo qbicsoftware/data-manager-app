@@ -21,7 +21,6 @@ import com.vaadin.flow.data.provider.ConfigurableFilterDataProvider;
 import com.vaadin.flow.data.provider.DataProvider;
 import com.vaadin.flow.data.provider.ItemCountChangeEvent;
 import com.vaadin.flow.data.value.ValueChangeMode;
-import com.vaadin.flow.function.SerializableBiPredicate;
 import com.vaadin.flow.shared.Registration;
 import java.util.List;
 import java.util.Objects;
@@ -81,11 +80,11 @@ public final class FilterGrid<T, F> extends Div {
       Grid<T> grid,
       Supplier<F> filterSupplier,
       List<T> items,
-      SerializableBiPredicate<T, F> filterFunction,
-      BiFunction<String, F, F> searchTermFilterUpdater
+      FilterTester<T, F> filterTester,
+      SearchTermFilterCombiner<F> searchTermFilterCombiner
   ) {
-    return new FilterGrid<>(itemType, filterType, grid, filterSupplier, items, filterFunction,
-        searchTermFilterUpdater);
+    return new FilterGrid<>(itemType, filterType, grid, filterSupplier, items, filterTester,
+        searchTermFilterCombiner);
   }
 
   public static <T, F> FilterGrid<T, F> lazy(Class<T> itemType,
@@ -94,9 +93,9 @@ public final class FilterGrid<T, F> extends Div {
       Supplier<F> filterSupplier,
       FetchCallback<T, F> fetchCallback,
       CountCallback<T, F> countCallback,
-      BiFunction<String, F, F> searchTermFilterUpdater) {
+      SearchTermFilterCombiner<F> searchTermFilterCombiner) {
     return new FilterGrid<>(itemType, filterType, grid, filterSupplier, fetchCallback,
-        countCallback, searchTermFilterUpdater);
+        countCallback, searchTermFilterCombiner);
   }
 
   private FilterGrid(
@@ -105,8 +104,8 @@ public final class FilterGrid<T, F> extends Div {
       Grid<T> grid,
       Supplier<F> filterSupplier,
       List<T> items,
-      SerializableBiPredicate<T, F> filterFunction,
-      BiFunction<String, F, F> searchTermFilterUpdater) {
+      FilterTester<T, F> filterTester,
+      SearchTermFilterCombiner<F> searchTermFilterUpdater) {
     //assign fields
     this.type = Objects.requireNonNull(itemType);
     this.filterType = Objects.requireNonNull(filterType);
@@ -121,7 +120,7 @@ public final class FilterGrid<T, F> extends Div {
     listenToSelection();
     //update the filter
     searchField.addValueChangeListener(
-        event -> updateInMemoryFilter(searchTermFilterUpdater, filterFunction, filterSupplier.get(),
+        event -> updateInMemoryFilter(searchTermFilterUpdater, filterTester, filterSupplier.get(),
             event.getValue()));
   }
 
@@ -243,7 +242,7 @@ public final class FilterGrid<T, F> extends Div {
       Supplier<F> filterSupplier,
       FetchCallback<T, F> fetchCallback,
       CountCallback<T, F> countCallback,
-      BiFunction<String, F, F> searchTermFilterUpdater) {
+      SearchTermFilterCombiner<F> searchTermFilterCombiner) {
     //assign fields
     this.type = Objects.requireNonNull(itemType);
     this.filterType = Objects.requireNonNull(filterType);
@@ -261,8 +260,9 @@ public final class FilterGrid<T, F> extends Div {
     listenToSelection();
 
     //update the filter
-    searchField.addValueChangeListener(event -> updateFilter(searchTermFilterUpdater,
-        dataProvider, filterSupplier.get(), event.getValue()));
+    searchField.addValueChangeListener(event ->
+        updateFilter(searchTermFilterCombiner, dataProvider, filterSupplier.get(),
+            event.getValue()));
 
   }
 
@@ -288,32 +288,36 @@ public final class FilterGrid<T, F> extends Div {
    * Updates the filter and fires a
    * {@link life.qbic.datamanager.views.general.grid.component.FilterGrid.FilterUpdateEvent}
    *
-   * @param searchTermFilterUpdater the function that updates the filter based on a search term
+   * @param searchTermFilterCombiner the function that updates the filter based on a search term
    * @param dataProvider            the dataprovider to update the filter with
    * @param filter                  the filter to update
    * @param searchTerm              the search term to use
    */
-  private void updateFilter(BiFunction<String, F, F> searchTermFilterUpdater,
+  private void updateFilter(SearchTermFilterCombiner<F> searchTermFilterCombiner,
       ConfigurableFilterDataProvider<T, Void, F> dataProvider,
       F filter,
       String searchTerm) {
     if (grid.getDataProvider().isInMemory()) {
-      return;//Fixme log?
+      log.warn(
+          "In memory data provider found but expected lazy data provider. Ignoring filter term");
+      return;
     }
-    F updatedFilter = searchTermFilterUpdater.apply(searchTerm, filter);
+    F updatedFilter = searchTermFilterCombiner.apply(searchTerm, filter);
     dataProvider.setFilter(updatedFilter);
     fireEvent(new FilterUpdateEvent<>(this.filterType, this, false, filter, updatedFilter));
   }
 
-  private void updateInMemoryFilter(BiFunction<String, F, F> searchTermFilterUpdater,
-      SerializableBiPredicate<T, F> filterFunction,
+  private void updateInMemoryFilter(SearchTermFilterCombiner<F> searchTermFilterCombiner,
+      FilterTester<T, F> filterTester,
       F filter,
       String searchTerm) {
     if (!grid.getDataProvider().isInMemory()) {
-      return; //fixme log?
+      log.warn(
+          "Lazy data provider found but expected in memory data provider. Ignoring filter term");
+      return;
     }
-    F updatedFilter = searchTermFilterUpdater.apply(searchTerm, filter);
-    grid.getListDataView().setFilter(it -> filterFunction.test(it, updatedFilter));
+    F updatedFilter = searchTermFilterCombiner.apply(searchTerm, filter);
+    grid.getListDataView().setFilter(it -> filterTester.test(it, updatedFilter));
     fireEvent(new FilterUpdateEvent<>(this.filterType, this, false, filter, updatedFilter));
   }
 
