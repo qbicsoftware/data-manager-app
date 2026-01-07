@@ -29,6 +29,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import life.qbic.logging.api.Logger;
@@ -124,6 +125,116 @@ public final class FilterGrid<T, F> extends Div {
             event.getValue()));
   }
 
+  /**
+   * A functional interface that represents a generic filter testing mechanism for evaluating
+   * whether an element matches a specific filter criteria.
+   *
+   * <p>This interface extends the standard {@link java.util.function.BiPredicate}
+   * to provide a more specialized contract for testing elements against filters. It allows for
+   * flexible and reusable filtering logic across different types.</p>
+   *
+   * <h2>Purpose</h2>
+   * <p>The primary purpose of this interface is to encapsulate the logic for
+   * testing whether a given element satisfies a specific filter condition.</p>
+   *
+   * <h2>Generic Type Parameters</h2>
+   * <ul>
+   *   <li><b>T</b>: The type of the element being tested</li>
+   *   <li><b>F</b>: The type of the filter used for testing</li>
+   * </ul>
+   *
+   * <h2>Usage Example</h2>
+   * <pre>
+   * FilterTester&lt;String, Pattern&gt; regexFilter = (element, filter) -&gt;
+   *     filter.matcher(element).matches();
+   *
+   * FilterTester&lt;Integer, Range&gt; rangeFilter = (value, range) -&gt;
+   *     value &gt;= range.getMin() && value &lt;= range.getMax();
+   *
+   * FilterTester&lt;Person, String&gt; personFilter = (element, searchTerm) -&gt;
+   *     element.firstName().contains(searchTerm) || element.lastName().contains(searchTerm)
+   * </pre>
+   *
+   * <h2>Contract</h2>
+   * <p>Implementations must provide a consistent and predictable method
+   * for testing whether an element matches a given filter.</p>
+   *
+   * @param <T> the type of element to be tested
+   * @param <F> the type of filter used in the testing process
+   */
+  @FunctionalInterface
+  public interface FilterTester<T, F> extends BiPredicate<T, F> {
+
+    @Override
+    boolean test(T element, F filter);
+  }
+
+
+  /**
+   * A functional interface that combines a search term with an existing filter, producing a filter
+   * that incorporates the search term's context.
+   *
+   * <p>This interface extends {@link java.util.function.BiFunction} to provide
+   * a mechanism for transforming filters based on search terms.</p>
+   *
+   * <h2>Purpose</h2>
+   * <p>The primary goal of this interface is to create a filter that integrates
+   * a search term's context, without specifying whether this is done through modification or by
+   * creating a new filter instance.</p>
+   *
+   * <h2>Generic Type Parameters</h2>
+   * <ul>
+   *   <li><b>F</b>: The type of the filter to be transformed</li>
+   * </ul>
+   *
+   * <h2>Behavior</h2>
+   * <p>Implementations may:</p>
+   * <ul>
+   *   <li>Modify the existing filter in-place</li>
+   *   <li>Create and return a new filter instance</li>
+   *   <li>Return the original filter unchanged if no transformation is needed</li>
+   * </ul>
+   *
+   * <h2>Usage Example</h2>
+   * <pre>
+   * SearchTermFilterCombiner&lt;DateRange&gt; dateRangeTransformer = (searchTerm, existingFilter) -&gt; {
+   *     // Could return a modified filter or a new filter instance
+   *     return searchTerm.contains("recent")
+   *         ? existingFilter.withMaxAge(30)
+   *         : existingFilter;
+   * };
+   *
+   * </pre>
+   *
+   * <h2>Contract</h2>
+   * <p>Implementations must provide a consistent method for transforming
+   * a filter based on a search term, with no guarantee of whether the original
+   * filter is modified or a new instance is created.</p>
+   *
+   * @param <F> the type of filter to be transformed with a search term
+   */
+  @FunctionalInterface
+  public interface SearchTermFilterCombiner<F> extends BiFunction<String, F, F> {
+
+    /**
+     * Combines a filter and search term into a filter respecting the search term.
+     *
+     * @param searchTerm the search term to integrate into the filter
+     * @param filter     the filter without the search term
+     * @return a filter that respects the search term
+     */
+    F combineWithSearchTerm(String searchTerm, F filter);
+
+    /**
+     * {@inheritDoc}
+     *
+     * @see #combineWithSearchTerm(String, Object)
+     */
+    @Override
+    default F apply(String searchTerm, F filter) {
+      return combineWithSearchTerm(searchTerm, filter);
+    }
+  }
 
   private FilterGrid(
       Class<T> itemType,
