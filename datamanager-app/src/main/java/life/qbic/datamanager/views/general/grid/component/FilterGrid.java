@@ -5,6 +5,7 @@ import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.CheckboxGroup;
+import com.vaadin.flow.component.checkbox.CheckboxGroupVariant;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.Grid.Column;
 import com.vaadin.flow.component.grid.Grid.SelectionMode;
@@ -325,6 +326,7 @@ public final class FilterGrid<T, F> extends Div {
 
     CheckboxGroup<Column<T>> checkboxGroup = createCheckboxes(columns);
     preventClickPropagation(checkboxGroup);
+    checkboxGroup.addThemeVariants(CheckboxGroupVariant.LUMO_VERTICAL);
 
     checkboxGroup.addClassNames("flex-vertical");
     subMenu.add(checkboxGroup);
