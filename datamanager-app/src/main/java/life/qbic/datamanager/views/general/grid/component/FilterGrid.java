@@ -629,6 +629,15 @@ public final class FilterGrid<T, F> extends Div {
   }
 
   /**
+   * Clears the selection on the grid and deselects all elements.
+   *
+   * @see Grid#deselectAll()
+   */
+  public void deselectAll() {
+    grid.deselectAll();
+  }
+
+  /**
    * Registers a {@link ComponentEventListener} for {@link FilterGridSelectionEvent} to the
    * selection event.
    *
