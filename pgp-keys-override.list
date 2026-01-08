@@ -67,7 +67,7 @@ io.opencensus:*:*                    = 0x600EA202B1EC682F4A788E5AAC7A514BC9F9BB7
 xerces:xercesImpl:*                  = 0x6CB87B18A453990EAC9453F87D713008CC07E9AD  # xercesImpl.  [oai_citation:12‡Untitled.txt](file-service://file-1UbSKN5j1vX3Pe1FvyAMhb)
 
 # Sigstore (your own plugin/libs)
-dev.sigstore:*:*                     = 0x2C02310024BAAE4B34976FFEAC74A3385D0E3252  # sigstore-maven-plugin / sigstore-java.  [oai_citation:13‡Untitled.txt](file-service://file-1UbSKN5j1vX3Pe1FvyAMhb)
+dev.sigstore:*:*                     = 0x300b49c14dfa7e0ad9d8515400e008229f5daf37  # sigstore-maven-plugin / sigstore-java.  [oai_citation:13‡Untitled.txt](file-service://file-1UbSKN5j1vX3Pe1FvyAMhb)
 
 # Misc seen in log
 io.github.hakky54:sslcontext-kickstart:* = 0xE5138A8E9F2E7E42D38B14D99AEE152CDCCEBFCB  # sslcontext-kickstart.  [oai_citation:14‡Untitled.txt](file-service://file-1UbSKN5j1vX3Pe1FvyAMhb)
@@ -105,7 +105,6 @@ org.hibernate.orm:*:* = 0x1452F35849B50750F6A3BBB4B54011358B352F85
 
 # --- Apache ActiveMQ Artemis (many modules in your log) ---
 org.apache.activemq:*:*      = 0x28417C95E8906D108392822354A43F3254868410
-
 
 # --- JGroups (unsigned in Maven Central) ---
 org.jgroups:jgroups:*         = noSig
@@ -225,8 +224,8 @@ org.jboss.forge.roaster:roaster-jdt:2.29.0.Final:pom = 0x001A438334F162E6AFB27F3
 # Misc seen in the log
 io.methvin:directory-watcher:0.18.0                = 0xAEE8A343247713A5A198640D4D1670765EF90EAB
 io.methvin:directory-watcher:0.18.0:pom            = 0xAEE8A343247713A5A198640D4D1670765EF90EAB
-org.mariadb.jdbc:mariadb-java-client:3.5.6         = 0x4C470FFFEFC4D3DC59778655CE1A3DD5E3C94F49
-org.mariadb.jdbc:mariadb-java-client:3.5.6:pom     = 0x4C470FFFEFC4D3DC59778655CE1A3DD5E3C94F49
+org.mariadb.jdbc:mariadb-java-client:3.5.7         = 0x4C470FFFEFC4D3DC59778655CE1A3DD5E3C94F49
+org.mariadb.jdbc:mariadb-java-client:3.5.7:pom     = 0x4C470FFFEFC4D3DC59778655CE1A3DD5E3C94F49
 com.helger.commons:ph-commons:11.1.5               = 0x670BE7D076A0C89F5F07625AE57428DA9E879E7D
 com.helger.commons:ph-commons:11.1.5:pom           = 0x670BE7D076A0C89F5F07625AE57428DA9E879E7D
 org.tomlj:tomlj:1.0.0                              = 0x80F6D6B0D90C6747753344CAB5A9E81B565E89E0

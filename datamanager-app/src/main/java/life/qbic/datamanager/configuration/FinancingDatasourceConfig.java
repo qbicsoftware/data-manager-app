@@ -4,7 +4,6 @@ import jakarta.persistence.EntityManagerFactory;
 import java.util.Map;
 import java.util.Objects;
 import javax.sql.DataSource;
-import org.apache.commons.dbcp2.BasicDataSource;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
@@ -55,7 +54,6 @@ public class FinancingDatasourceConfig {
   public DataSource dataSource() {
     return dataSourceProperties()
         .initializeDataSourceBuilder()
-        .type(BasicDataSource.class)
         .build();
   }
 
