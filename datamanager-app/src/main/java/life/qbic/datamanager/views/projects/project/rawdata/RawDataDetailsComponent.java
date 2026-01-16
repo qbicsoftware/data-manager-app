@@ -126,39 +126,40 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
 
     var projectCode = context.projectCode().orElse("unknown_project_code");
 
-    filterTabSheet.addPrimaryActionButtonListener(event -> {
-      filterTabSheet.doForItemType(RawDatasetInformationNgs.class, grid -> {
-        var ids = grid.selectedElements().stream()
-            .map(info -> info.dataset().measurementId())
-            .map(id -> new RawDataURL(dataSourceEndpoint, id))
-            .toList();
+    filterTabSheet.addPrimaryAction(filterTabNgs, tab -> {
+      var grid = tab.filterGrid();
+      Set<RawDatasetInformationNgs> selectedDatasets = grid.selectedElements();
+      if (selectedDatasets.isEmpty()) {
+        displayMissingSelectionNote();
+        return;
+      }
+      var ids = selectedDatasets.stream()
+          .map(info -> info.dataset().measurementId())
+          .map(id -> new RawDataURL(dataSourceEndpoint, id))
+          .toList();
 
-        if (ids.isEmpty()) {
-          displayMissingSelectionNote();
-          return;
-        }
+      var file = RawDataUrlFile.create(ids);
+      var streamProvider = createStreamProvider(FileNameFormatter.formatWithTimestampedSimple(
+          LocalDate.now(), projectCode, "ngs_measurement_dataset_locations", "txt"), file);
+      downloadComponent.trigger(streamProvider);
+    });
 
-        var file = RawDataUrlFile.create(ids);
-        var streamProvider = createStreamProvider(FileNameFormatter.formatWithTimestampedSimple(
-            LocalDate.now(), projectCode, "ngs_measurement_dataset_locations", "txt"), file);
-        downloadComponent.trigger(streamProvider);
-      });
-      filterTabSheet.doForItemType(RawDatasetInformationPxP.class, grid -> {
-        var ids = grid.selectedElements().stream()
-            .map(info -> info.dataset().measurementId())
-            .map(id -> new RawDataURL(dataSourceEndpoint, id))
-            .toList();
+    filterTabSheet.addPrimaryAction(filterTabPxp, tab -> {
+      var grid = tab.filterGrid();
+      Set<RawDatasetInformationPxP> selectedDatasets = grid.selectedElements();
+      if (selectedDatasets.isEmpty()) {
+        displayMissingSelectionNote();
+        return;
+      }
+      var ids = selectedDatasets.stream()
+          .map(info -> info.dataset().measurementId())
+          .map(id -> new RawDataURL(dataSourceEndpoint, id))
+          .toList();
 
-        if (ids.isEmpty()) {
-          displayMissingSelectionNote();
-          return;
-        }
-
-        var file = RawDataUrlFile.create(ids);
-        var streamProvider = createStreamProvider(FileNameFormatter.formatWithTimestampedSimple(
-            LocalDate.now(), projectCode, "proteomics_measurement_dataset_locations", "txt"), file);
-        downloadComponent.trigger(streamProvider);
-      });
+      var file = RawDataUrlFile.create(ids);
+      var streamProvider = createStreamProvider(FileNameFormatter.formatWithTimestampedSimple(
+          LocalDate.now(), projectCode, "proteomics_measurement_dataset_locations", "txt"), file);
+      downloadComponent.trigger(streamProvider);
     });
 
     add(filterTabSheet);

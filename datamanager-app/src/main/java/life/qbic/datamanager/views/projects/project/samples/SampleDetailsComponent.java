@@ -91,26 +91,25 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     var filterGrid = createFilterGrid(multiSelectGrid, projectId, experimentId);
 
     var filterTab = new FilterGridTab<>("Samples", filterGrid);
-    var filterTabSheet = new FilterGridTabSheet(filterTab);
+    var filterTabSheet = new FilterGridTabSheet();
+    filterTabSheet.addTab(filterTab);
 
     filterTabSheet.setCaptionPrimaryAction("Register Samples");
     filterTabSheet.setCaptionFeatureAction("Export");
     filterTabSheet.hidePrimaryActionButton();
 
-    filterTabSheet.addPrimaryFeatureButtonListener(
-        ignored -> filterTabSheet.doForItemType(SamplePreview.class,
-            grid -> {
-              if (grid != null) {
-                var selectedSamples = grid.selectedElements();
-                if (selectedSamples.isEmpty()) {
-                  messageFactory.toast("sample.no-sample-selected", new Object[]{}, getLocale())
-                      .open();
-                  return;
-                }
-                triggerSampleMetadataDownload(selectedSamples, projectId, experimentId,
-                    projectCode);
-              }
-            }));
+    filterTabSheet.addFeatureAction(filterTab, tab -> {
+      var grid = tab.filterGrid();
+      var selectedSamples = grid.selectedElements();
+      if (selectedSamples.isEmpty()) {
+        messageFactory.toast("sample.no-sample-selected", new Object[]{}, getLocale())
+            .open();
+        return;
+      }
+      triggerSampleMetadataDownload(selectedSamples, projectId, experimentId,
+          projectCode);
+    });
+
     add(filterTabSheet);
 
     // Update sample counter badge
@@ -283,7 +282,6 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
         fetchCallback,
         countCallback,
         (searchTerm, oldFilter) -> searchTerm);
-
 
     filterGrid.searchFieldPlaceholder("Search samples");
     filterGrid.itemDisplayLabel("sample");
