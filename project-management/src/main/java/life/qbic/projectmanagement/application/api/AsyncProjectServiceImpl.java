@@ -33,7 +33,6 @@ import life.qbic.projectmanagement.application.api.template.TemplateService;
 import life.qbic.projectmanagement.application.concurrent.VirtualThreadScheduler;
 import life.qbic.projectmanagement.application.dataset.LocalRawDatasetLookupService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
-import life.qbic.projectmanagement.application.measurement.MeasurementLookupService;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
 import life.qbic.projectmanagement.application.ontology.OntologyClass;
@@ -91,7 +90,6 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   private final ProjectCreationService projectCreationService;
   private final MeasurementService measurementService;
   private final LocalRawDatasetLookupService rawDatasetLookupService;
-  private final MeasurementLookupService measurementLookupService;
 
   public AsyncProjectServiceImpl(
       @Autowired ProjectInformationService projectService,
@@ -106,8 +104,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
       @Autowired SpeciesLookupService taxaService,
       @Autowired ProjectCreationService projectCreationService,
       @Autowired MeasurementService measurementService,
-      @Autowired LocalRawDatasetLookupService rawDatasetLookupService,
-      MeasurementLookupService measurementLookupService) {
+      @Autowired LocalRawDatasetLookupService rawDatasetLookupService) {
     this.projectService = Objects.requireNonNull(projectService);
     this.sampleInfoService = Objects.requireNonNull(sampleInfoService);
     this.scheduler = Objects.requireNonNull(scheduler);
@@ -121,7 +118,6 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     this.projectCreationService = requireNonNull(projectCreationService);
     this.measurementService = Objects.requireNonNull(measurementService);
     this.rawDatasetLookupService = requireNonNull(rawDatasetLookupService);
-    this.measurementLookupService = measurementLookupService;
   }
 
   private static Retry defaultRetryStrategy() {
