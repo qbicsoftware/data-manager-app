@@ -5,16 +5,11 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.textfield.TextField;
-import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.dom.Style.Visibility;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.VaadinSession;
-import com.vaadin.flow.spring.annotation.SpringComponent;
-import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.InputStream;
 import java.io.Serial;
@@ -23,7 +18,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -50,7 +44,6 @@ import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementTemplateListComponent.DownloadMeasurementTemplateEvent;
-import life.qbic.datamanager.views.projects.project.measurements.MeasurementTemplateSelectionComponent.Domain;
 import life.qbic.datamanager.views.projects.project.measurements.processor.ProcessorRegistry;
 import life.qbic.datamanager.views.projects.project.measurements.registration.MeasurementUpload;
 import life.qbic.logging.api.Logger;
@@ -72,11 +65,12 @@ import life.qbic.projectmanagement.application.measurement.validation.Measuremen
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
-import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import life.qbic.projectmanagement.infrastructure.experiment.measurement.foobar.NgsMeasurementJpaRepository;
+import life.qbic.projectmanagement.infrastructure.experiment.measurement.foobar.PxpMeasurementJpaRepository;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.NGSWorkbooks;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.ProteomicsWorkbooks;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -92,23 +86,24 @@ import reactor.core.publisher.Flux;
  * associated with an {@link Experiment} within a {@link Project} via the provided
  * {@link ExperimentId} and {@link ProjectId} in the URL
  */
-@SpringComponent
-@UIScope
 @Route(value = "projects/:projectId?/experiments/:experimentId?/measurements", layout = ExperimentMainLayout.class)
 @PermitAll
 public class MeasurementMain extends Main implements BeforeEnterObserver {
 
-  public static final String UPDATE_MEASUREMENT_DESCRIPTION = "Please download your measurement metadata in order to edit it. You can modify the properties in the sheet and upload it below to save the changes.";
-  public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
-  public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
   @Serial
   private static final long serialVersionUID = 3778218989387044758L;
   private static final Logger log = LoggerFactory.logger(MeasurementMain.class);
+
+  public static final String UPDATE_MEASUREMENT_DESCRIPTION = "Please download your measurement metadata in order to edit it. You can modify the properties in the sheet and upload it below to save the changes.";
+  public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
+  public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
+  private final MeasurementDetailsComponentV2 measurementDetailsComponentV2;
+  private final NgsMeasurementJpaRepository ngsMeasurementJpaRepository;
+  private final PxpMeasurementJpaRepository pxpMeasurementJpaRepository;
+
   private Disclaimer registerSamplesDisclaimer;
   private final DownloadComponent measurementTemplateDownload;
   private final Span measurementsSelectedInfoBox = new Span();
-  private final MeasurementDetailsComponent measurementDetailsComponent;
-  private final TextField measurementSearchField = new TextField();
   private final transient SampleInformationService sampleInformationService;
   private final transient MeasurementService measurementService;
   private final Div content = new Div();
@@ -121,6 +116,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private transient Context context;
   private AppDialog measurementDialog;
   private final ProjectContext projectContext;
+
 
   private final UiHandle uiHandle = new UiHandle();
 
@@ -146,45 +142,43 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
 
   public MeasurementMain(
-      @Autowired MeasurementDetailsComponent measurementDetailsComponent,
       @Autowired SampleInformationService sampleInformationService,
       @Autowired MeasurementService measurementService,
       @Autowired MeasurementValidationService measurementValidationService,
       @Autowired AsyncProjectService asyncProjectService,
       MessageSourceNotificationFactory messageFactory,
-      MessageSourceNotificationFactory messageSourceNotificationFactory) {
-    Objects.requireNonNull(measurementDetailsComponent);
+      MessageSourceNotificationFactory messageSourceNotificationFactory,
+      NgsMeasurementJpaRepository ngsMeasurementJpaRepository,
+      PxpMeasurementJpaRepository pxpMeasurementJpaRepository) {
     Objects.requireNonNull(measurementService);
     Objects.requireNonNull(measurementValidationService);
     Objects.requireNonNull(asyncProjectService);
     this.messageFactory = Objects.requireNonNull(messageFactory);
-    this.measurementDetailsComponent = measurementDetailsComponent;
     this.measurementService = measurementService;
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
     this.asyncService = asyncProjectService;
     this.projectContext = new ProjectContext();
-
+    this.ngsMeasurementJpaRepository = ngsMeasurementJpaRepository;
+    this.pxpMeasurementJpaRepository = pxpMeasurementJpaRepository;
     this.downloadComponent = new DownloadComponent();
     this.measurementTemplateDownload = new DownloadComponent();
     this.registerSamplesDisclaimer = createNoSamplesRegisteredDisclaimer();
-    add(registerSamplesDisclaimer);
     this.noMeasurementDisclaimer = createNoMeasurementDisclaimer();
-    add(noMeasurementDisclaimer);
     initContent();
-    add(measurementTemplateDownload);
-    add(measurementDetailsComponent);
 
-    measurementDetailsComponent.addListener(
-        selectionChangedEvent -> setSelectedMeasurementsInfo(
-            selectionChangedEvent.getSource().getNumberOfSelectedMeasurements()));
-
-    add(downloadComponent);
+    //TODO add download component
     addClassName("measurement");
     this.messageSourceNotificationFactory = messageSourceNotificationFactory;
 
     addAttachListener(event -> uiHandle.bind(event.getUI()));
     addDetachListener(ignored -> uiHandle.unbind());
 
+    add(registerSamplesDisclaimer, noMeasurementDisclaimer, measurementTemplateDownload,
+        downloadComponent);
+    measurementDetailsComponentV2 = new MeasurementDetailsComponentV2(
+        ngsMeasurementJpaRepository,
+        pxpMeasurementJpaRepository);
+    add(registerSamplesDisclaimer, measurementTemplateDownload, measurementDetailsComponentV2);
     log.debug(
         "Created project measurement main for " + VaadinSession.getCurrent().getSession().getId());
   }
@@ -195,85 +189,10 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     titleField.addClassNames("title");
     content.add(titleField);
     initRawDataAvailableInfo();
-    initSearchFieldAndButtonBar();
     add(content);
     content.addClassName("measurement-main-content");
   }
 
-  private void initSearchFieldAndButtonBar() {
-    measurementSearchField.setPlaceholder("Search");
-    measurementSearchField.setClearButtonVisible(true);
-    measurementSearchField.setSuffixComponent(VaadinIcon.SEARCH.create());
-    measurementSearchField.addClassNames("search-field");
-    measurementSearchField.setValueChangeMode(ValueChangeMode.LAZY);
-    measurementSearchField.addValueChangeListener(
-        event -> measurementDetailsComponent.setSearchedMeasurementValue((event.getValue())));
-    Button downloadButton = new Button("Download Metadata");
-
-    downloadButton.addClickListener(event -> {
-      Optional<String> tabLabel = measurementDetailsComponent.getSelectedTabName();
-      if (tabLabel.isEmpty()) {
-        return;
-      }
-      switch (tabLabel.get()) {
-        case "Proteomics": {
-          var ids = measurementDetailsComponent.getSelectedProteomicsMeasurements()
-              .stream()
-              .map(ProteomicsMeasurement::measurementId)
-              .map(MeasurementId::value)
-              .toList();
-          downloadProteomicsMetadata(ids);
-          return;
-        }
-        case "Genomics": {
-          var ids = measurementDetailsComponent.getSelectedNGSMeasurements()
-              .stream()
-              .map(NGSMeasurement::measurementId)
-              .map(MeasurementId::value)
-              .toList();
-          downloadNGSMetadata(ids);
-          return;
-        }
-        default:
-          throw new ApplicationException(
-              "Unknown tab: " + measurementDetailsComponent.getSelectedTabName());
-      }
-    });
-
-    Button registerMeasurementButton = new Button("Register Measurements");
-    registerMeasurementButton.addClassName("primary");
-    registerMeasurementButton.addClickListener(
-        event -> openRegistrationDialog());
-
-    Button editButton = new Button("Edit");
-    editButton.addClickListener(event -> {
-      measurementDetailsComponent.getSelectedMeasurements()
-          .ifPresentOrElse(selectedMeasurements -> {
-            var domain = selectedMeasurements.domain();
-            var dialog = initDialogForDomain(domain, selectedMeasurements.measurementIds());
-            add(dialog);
-            dialog.open();
-          }, () -> {
-            messageFactory.toast("measurement.no-measurements-selected",
-                MessageSourceNotificationFactory.EMPTY_PARAMETERS, getLocale()).open();
-            log.debug("Could not find any selected measurement");
-          });
-    });
-
-    Button deleteButton = new Button("Delete");
-    deleteButton.addClickListener(event -> onDeleteMeasurementsClicked());
-
-    Span buttonBar = new Span(downloadButton, editButton, deleteButton, registerMeasurementButton);
-    buttonBar.addClassName("button-bar");
-    // measurementSearchField disabled as the search functionality is turned off due to efficiency reasons
-    Span buttonsAndSearch = new Span(/*measurementSearchField,*/ buttonBar);
-    buttonsAndSearch.addClassName("buttonAndField");
-    measurementsSelectedInfoBox.addClassName("info");
-    setSelectedMeasurementsInfo(0);
-    Div interactionsAndInfo = new Div(buttonsAndSearch, measurementsSelectedInfoBox);
-    interactionsAndInfo.addClassName("buttonsAndInfo");
-    content.add(interactionsAndInfo);
-  }
 
   private AppDialog initDialogForDomain(MeasurementDetailsComponent.Domain domain,
       List<String> selectedMeasurements) {
@@ -341,20 +260,6 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     return dialog;
   }
 
-  private void onDeleteMeasurementsClicked() {
-    Optional<String> tabLabel = measurementDetailsComponent.getSelectedTabName();
-    if (tabLabel.isEmpty()) {
-      return;
-    }
-    String label = tabLabel.get();
-    if (label.equals("Proteomics")) {
-      handlePtxDeletionRequest(measurementDetailsComponent.getSelectedProteomicsMeasurements());
-    }
-    if (label.equals("Genomics")) {
-      handleNGSDeletionRequest(measurementDetailsComponent.getSelectedNGSMeasurements());
-    }
-  }
-
   private void handlePtxDeletionRequest(Set<ProteomicsMeasurement> measurements) {
     if (measurements.isEmpty()) {
       return;
@@ -405,7 +310,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
       };
       showErrorNotification("Deletion failed", errorMessage);
     });
-    result.onValue(v -> measurementDetailsComponent.refreshGrids());
+    result.onValue(v -> /*TODO update grids*/{
+    });
   }
 
   private void downloadProteomicsMetadata(List<String> selectedMeasurementIds) {
@@ -506,33 +412,37 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
         messageSourceNotificationFactory);
     var templateComponent = new MeasurementTemplateSelectionComponent(
         Map.ofEntries(
-            Map.entry(Domain.Genomics, new WorkbookDownloadStreamProvider() {
-              @Override
-              public String getFilename() {
-                return FileNameFormatter.formatWithVersion("ngs_measurement_registration_sheet", 1,
-                    "xlsx");
-              }
+            Map.entry(MeasurementTemplateSelectionComponent.Domain.Genomics,
+                new WorkbookDownloadStreamProvider() {
+                  @Override
+                  public String getFilename() {
+                    return FileNameFormatter.formatWithVersion("ngs_measurement_registration_sheet",
+                        1,
+                        "xlsx");
+                  }
 
-              @Override
-              public Workbook getWorkbook() {
-                return NGSWorkbooks.createRegistrationWorkbook();
-              }
-            }),
-            Map.entry(Domain.Proteomics, new WorkbookDownloadStreamProvider() {
-              @Override
-              public String getFilename() {
-                return FileNameFormatter.formatWithVersion("pxp_measurement_registration_sheet", 1,
-                    "xlsx");
-              }
+                  @Override
+                  public Workbook getWorkbook() {
+                    return NGSWorkbooks.createRegistrationWorkbook();
+                  }
+                }),
+            Map.entry(MeasurementTemplateSelectionComponent.Domain.Proteomics,
+                new WorkbookDownloadStreamProvider() {
+                  @Override
+                  public String getFilename() {
+                    return FileNameFormatter.formatWithVersion("pxp_measurement_registration_sheet",
+                        1,
+                        "xlsx");
+                  }
 
-              @Override
-              public Workbook getWorkbook() {
-                return ProteomicsWorkbooks.createRegistrationWorkbook();
-              }
-            })));
+                  @Override
+                  public Workbook getWorkbook() {
+                    return ProteomicsWorkbooks.createRegistrationWorkbook();
+                  }
+                })));
 
     var measurementRegistrationComponent = new MeasurementRegistrationComponent(templateComponent,
-        registrationMeasurementUpload, Domain.Genomics);
+        registrationMeasurementUpload, MeasurementTemplateSelectionComponent.Domain.Genomics);
 
     DialogBody.with(measurementDialog, measurementRegistrationComponent,
         measurementRegistrationComponent);
@@ -703,7 +613,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   }
 
   private void reloadMeasurements() {
-    measurementDetailsComponent.setContext(context);
+    measurementDetailsComponentV2.setContext(
+        context); /*TODO this might be a huge operation. Necessary?*/
     setMeasurementInformation();
   }
 
@@ -808,6 +719,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     }
     ExperimentId parsedExperimentId = ExperimentId.parse(experimentId);
     this.context = context.with(parsedExperimentId);
+    reloadMeasurements();
     setMeasurementInformation();
     asyncService.getProjectCode(context.projectId().orElseThrow().value())
         .doOnSuccess(projectCode -> projectContext.setProjectId(projectCode.value()))
@@ -830,14 +742,14 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private void showRegisterSamplesDisclaimer() {
     noMeasurementDisclaimer.setVisible(false);
     content.setVisible(false);
-    measurementDetailsComponent.setVisible(false);
+    measurementDetailsComponentV2.setVisible(false);
     registerSamplesDisclaimer.setVisible(true);
   }
 
   private void showRegisterMeasurementDisclaimer() {
     noMeasurementDisclaimer.setVisible(true);
     content.setVisible(false);
-    measurementDetailsComponent.setVisible(false);
+    measurementDetailsComponentV2.setVisible(false);
     registerSamplesDisclaimer.setVisible(false);
   }
 
@@ -845,8 +757,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     noMeasurementDisclaimer.setVisible(false);
     registerSamplesDisclaimer.setVisible(false);
     content.setVisible(true);
-    measurementDetailsComponent.setContext(context);
-    measurementDetailsComponent.setVisible(true);
+    measurementDetailsComponentV2.setContext(context);
+    measurementDetailsComponentV2.setVisible(true);
   }
 
   private void onDownloadMeasurementTemplateClicked(

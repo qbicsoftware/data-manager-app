@@ -19,9 +19,6 @@ import com.vaadin.flow.data.provider.AbstractDataView;
 import com.vaadin.flow.data.provider.SortDirection;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.server.StreamResource;
-import com.vaadin.flow.spring.annotation.SpringComponent;
-import com.vaadin.flow.spring.annotation.UIScope;
-import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.Instant;
@@ -41,7 +38,6 @@ import life.qbic.application.commons.SortOrder;
 import life.qbic.datamanager.ClientDetailsProvider;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.CopyToClipBoardComponent;
-import life.qbic.datamanager.views.general.MultiSelectLazyLoadingGrid;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.Tag.TagColor;
@@ -69,18 +65,16 @@ import org.springframework.beans.factory.annotation.Autowired;
  * register new measurements, search already registered measurements and view measurements dependent
  * on the lab facility (Proteomics, Genomics, Imaging...)
  */
-@SpringComponent
-@UIScope
-@PermitAll
 public class MeasurementDetailsComponent extends PageArea implements Serializable {
 
   public static final String CLICKABLE = "clickable";
   @Serial
   private static final long serialVersionUID = 5086686432247130622L;
   private static final String DATE_TIME_FORMAT = "yyyy-MM-dd HH:mm";
+
   private final TabSheet registeredMeasurementsTabSheet = new TabSheet();
-  private final MultiSelectLazyLoadingGrid<NGSMeasurement> ngsMeasurementGrid = new MultiSelectLazyLoadingGrid<>();
-  private final MultiSelectLazyLoadingGrid<ProteomicsMeasurement> proteomicsMeasurementGrid = new MultiSelectLazyLoadingGrid<>();
+  private final Grid<NGSMeasurement> ngsMeasurementGrid = new Grid<>();
+  private final Grid<ProteomicsMeasurement> proteomicsMeasurementGrid = new Grid<>();
   private final MeasurementDomainTab proteomicsTab;
   private final MeasurementDomainTab genomicsTab;
   private final Collection<GridLazyDataView<?>> measurementsGridDataViews = new ArrayList<>();
@@ -297,7 +291,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         .addItemCountChangeListener(
             countChangeEvent -> genomicsTab.setMeasurementCount(
                 (int) ngsGridDataView.getItems().count()));
-    ngsMeasurementGrid.addSelectListener(
+    ngsMeasurementGrid.addSelectionListener(
         event -> updateSelectedMeasurementsInfo(event.isFromClient()));
     measurementsGridDataViews.add(ngsGridDataView);
   }
@@ -427,7 +421,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         .addItemCountChangeListener(
             countChangeEvent -> proteomicsTab.setMeasurementCount(
                 (int) proteomicsGridDataView.getItems().count()));
-    proteomicsMeasurementGrid.addSelectListener(
+    proteomicsMeasurementGrid.addSelectionListener(
         event -> updateSelectedMeasurementsInfo(event.isFromClient()));
     measurementsGridDataViews.add(proteomicsGridDataView);
   }
@@ -602,8 +596,8 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   }
 
   private void resetSelectedMeasurements() {
-    proteomicsMeasurementGrid.clearSelectedItems();
-    ngsMeasurementGrid.clearSelectedItems();
+    proteomicsMeasurementGrid.deselectAll();
+    ngsMeasurementGrid.deselectAll();
     updateSelectedMeasurementsInfo(false);
   }
 
