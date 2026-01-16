@@ -280,7 +280,6 @@ public final class FilterGrid<T, F> extends Div {
 
   private static <T> void configureGrid(Grid<T> grid) {
     configureGridForMultiSelect(grid);
-    makeColumnsSortable(grid.getColumns());
     optimizeGrid(grid, DEFAULT_QUERY_SIZE);
   }
 
@@ -511,12 +510,6 @@ public final class FilterGrid<T, F> extends Div {
     grid.setPageSize(computedPageSize);
     // Grid height must not be determined by rows in lazy mode
     grid.setAllRowsVisible(false);
-  }
-
-  private static <X> void makeColumnsSortable(List<Column<X>> columns) {
-    columns.stream()
-        .filter(c -> hasContent(c.getHeaderText()))
-        .forEach(c -> c.setSortable(true));
   }
 
   private static boolean hasContent(String text) {
