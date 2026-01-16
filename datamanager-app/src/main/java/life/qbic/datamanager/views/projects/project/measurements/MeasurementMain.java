@@ -98,8 +98,6 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
   private final MeasurementDetailsComponentV2 measurementDetailsComponentV2;
-  private final NgsMeasurementJpaRepository ngsMeasurementJpaRepository;
-  private final PxpMeasurementJpaRepository pxpMeasurementJpaRepository;
 
   private Disclaimer registerSamplesDisclaimer;
   private final DownloadComponent measurementTemplateDownload;
@@ -158,8 +156,6 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
     this.asyncService = asyncProjectService;
     this.projectContext = new ProjectContext();
-    this.ngsMeasurementJpaRepository = ngsMeasurementJpaRepository;
-    this.pxpMeasurementJpaRepository = pxpMeasurementJpaRepository;
     this.downloadComponent = new DownloadComponent();
     this.measurementTemplateDownload = new DownloadComponent();
     this.registerSamplesDisclaimer = createNoSamplesRegisteredDisclaimer();
