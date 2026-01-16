@@ -33,6 +33,7 @@ import life.qbic.projectmanagement.application.api.template.TemplateService;
 import life.qbic.projectmanagement.application.concurrent.VirtualThreadScheduler;
 import life.qbic.projectmanagement.application.dataset.LocalRawDatasetLookupService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
+import life.qbic.projectmanagement.application.measurement.MeasurementLookupService;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
 import life.qbic.projectmanagement.application.ontology.OntologyClass;
@@ -90,6 +91,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   private final ProjectCreationService projectCreationService;
   private final MeasurementService measurementService;
   private final LocalRawDatasetLookupService rawDatasetLookupService;
+  private final MeasurementLookupService measurementLookupService;
 
   public AsyncProjectServiceImpl(
       @Autowired ProjectInformationService projectService,
@@ -104,8 +106,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
       @Autowired SpeciesLookupService taxaService,
       @Autowired ProjectCreationService projectCreationService,
       @Autowired MeasurementService measurementService,
-      @Autowired LocalRawDatasetLookupService rawDatasetLookupService
-  ) {
+      @Autowired LocalRawDatasetLookupService rawDatasetLookupService,
+      MeasurementLookupService measurementLookupService) {
     this.projectService = Objects.requireNonNull(projectService);
     this.sampleInfoService = Objects.requireNonNull(sampleInfoService);
     this.scheduler = Objects.requireNonNull(scheduler);
@@ -119,6 +121,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     this.projectCreationService = requireNonNull(projectCreationService);
     this.measurementService = Objects.requireNonNull(measurementService);
     this.rawDatasetLookupService = requireNonNull(rawDatasetLookupService);
+    this.measurementLookupService = measurementLookupService;
   }
 
   private static Retry defaultRetryStrategy() {
@@ -378,8 +381,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     var projectId = ProjectId.parse(request.projectId());
     var requestId = request.requestId();
     Mono<ProjectUpdateResponse> response = switch (request.requestBody()) {
-      case FundingInformation fundingInformation ->
-          update(projectId, requestId, fundingInformation);
+      case FundingInformation fundingInformation -> update(projectId, requestId,
+          fundingInformation);
       case ProjectManager manager -> update(projectId, requestId, manager);
       case ProjectResponsible responsible -> update(projectId, requestId, responsible);
       case PrincipalInvestigator investigator -> update(projectId, requestId, investigator);
@@ -819,7 +822,9 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
         .subscribeOn(scheduler)
         .contextWrite(reactiveSecurity(securityContext))
         .doOnError(
-            error -> log.error("Error for requesting raw datasets in project in the proteomics domain" + projectId, error))
+            error -> log.error(
+                "Error for requesting raw datasets in project in the proteomics domain" + projectId,
+                error))
         .onErrorMap(e -> mapToAPIException(e, "Raw dataset request failed"))
         .retryWhen(defaultRetryStrategy());
   }
@@ -833,7 +838,9 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
         .subscribeOn(scheduler)
         .contextWrite(reactiveSecurity(securityContext))
         .doOnError(
-            error -> log.error("Error for requesting raw datasets in project for the NGS domain" + projectId, error))
+            error -> log.error(
+                "Error for requesting raw datasets in project for the NGS domain" + projectId,
+                error))
         .onErrorMap(e -> mapToAPIException(e, "Raw dataset request failed"))
         .retryWhen(defaultRetryStrategy());
   }
@@ -849,14 +856,16 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
                 filter)
         )).subscribeOn(scheduler)
         .contextWrite(reactiveSecurity(securityContext))
-        .doOnError(error -> log.error("Error searching for raw dataset in the NGS domain" + projectId, error))
+        .doOnError(
+            error -> log.error("Error searching for raw dataset in the NGS domain" + projectId,
+                error))
         .onErrorMap(
             e -> new RequestFailedException("Error searching for raw dataset " + projectId, e))
         .retryWhen(defaultRetryStrategy());
   }
 
   @Override
-  public Mono<Integer> countMeasurementsNgs(String projectId, String experimentId,
+  public Mono<Integer> countRawDataNgs(String projectId, String experimentId,
       RawDatasetFilter rawDataFilter) {
     SecurityContext securityContext = SecurityContextHolder.getContext();
 
@@ -871,7 +880,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   @Override
-  public Mono<Integer> countMeasurementsPxp(String projectId, String experimentId,
+  public Mono<Integer> countRawDataPxp(String projectId, String experimentId,
       RawDatasetFilter rawDataFilter) {
     SecurityContext securityContext = SecurityContextHolder.getContext();
 
@@ -896,13 +905,13 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   private Mono<ValidationResponse> validateRequest(ValidationRequest request) {
     return switch (request.requestBody()) {
       // Sample Registration
-      case SampleRegistrationInformation req ->
-          validateSampleMetadata(req, request.requestId(), request.projectId(),
-              request.experimentId());
+      case SampleRegistrationInformation req -> validateSampleMetadata(req, request.requestId(),
+          request.projectId(),
+          request.experimentId());
       // Sample Update
-      case SampleUpdateInformation req ->
-          validateSampleMetadataUpdate(req, request.requestId(), request.projectId(),
-              request.experimentId());
+      case SampleUpdateInformation req -> validateSampleMetadataUpdate(req, request.requestId(),
+          request.projectId(),
+          request.experimentId());
       // Measurement Registration - NGS
       case MeasurementRegistrationInformationNGS req -> validateMeasurementMetadataNGS(req,
           request.requestId(), request.experimentId(), request.projectId());
@@ -1020,9 +1029,9 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   @Override
   public Mono<ExperimentUpdateResponse> update(ExperimentUpdateRequest request) {
     Mono<ExperimentUpdateResponse> response = switch (request.body()) {
-      case ExperimentDescription experimentDescription ->
-          updateExperimentDescription(request.projectId(), request.experimentId(),
-              experimentDescription);
+      case ExperimentDescription experimentDescription -> updateExperimentDescription(
+          request.projectId(), request.experimentId(),
+          experimentDescription);
       case ConfoundingVariableAdditions confoundingVariableAdditions -> unknownRequest();
       case ConfoundingVariableDeletions confoundingVariableDeletions -> unknownRequest();
       case ConfoundingVariableUpdates confoundingVariableUpdates -> unknownRequest();
