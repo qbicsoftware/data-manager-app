@@ -193,12 +193,22 @@ public class ComponentDemo extends Div {
     );
     var filterTabInMemoryPerson = new FilterGridTab<>("In Memory Persons", inMemoryPersonGrid);
 
-    var tabSheet = new FilterGridTabSheet(filterTab, filterTabContacts, filterTabInMemoryPerson);
+    var tabSheet = new FilterGridTabSheet();
+    tabSheet.addTab(filterTab);
+    tabSheet.addTab(filterTabContacts);
+    tabSheet.addTab(filterTabInMemoryPerson);
+    TabAction<FilterGridTab<ComponentDemo.Person>, ComponentDemo.Person> featureAction = tab -> log.info(
+        "feature for tab: " + tab);
+    TabAction<FilterGridTab<ComponentDemo.Person>, ComponentDemo.Person> primaryAction = tab -> log.info(
+        "primary action for tab: " + tab);
 
-    tabSheet.addPrimaryFeatureButtonListener(event -> log.info(
-        "Clicked on the primary feature button: click-count is " + event.getClickCount()));
-    tabSheet.addPrimaryActionButtonListener(event -> log.info(
-        "Clicked on the primary action button: click-count is " + event.getClickCount()));
+    tabSheet.addFeatureAction(filterTab, featureAction);
+    tabSheet.addFeatureAction(filterTabInMemoryPerson, featureAction);
+    tabSheet.addFeatureAction(filterTab, featureAction);
+
+    tabSheet.addPrimaryAction(filterTab, primaryAction);
+    tabSheet.addPrimaryAction(filterTabInMemoryPerson, primaryAction);
+    tabSheet.addPrimaryAction(filterTab, primaryAction);
 
     return new Div(tabSheet);
   }

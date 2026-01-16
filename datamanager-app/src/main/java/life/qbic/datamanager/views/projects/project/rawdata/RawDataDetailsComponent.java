@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.FileNameFormatter;
@@ -102,7 +103,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
 
     availableTabs.addAll(List.of(filterTabNgs, filterTabPxp));
 
-    asyncProjectService.countMeasurementsNgs(projectId, experimentId,
+    asyncProjectService.countRawDataNgs(projectId, experimentId,
             new RawDatasetFilter("", List.of()))
         .onErrorResume(ignored -> Mono.just(0))
         .subscribe(count -> uiHandle.onUiAndPush(() -> {
@@ -110,7 +111,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
           renderTabSheet();
         }));
 
-    asyncProjectService.countMeasurementsPxp(projectId, experimentId,
+    asyncProjectService.countRawDataPxp(projectId, experimentId,
             new RawDatasetFilter("", List.of()))
         .onErrorResume(ignored -> Mono.just(0))
         .subscribe(count -> uiHandle.onUiAndPush(() -> {
@@ -165,11 +166,11 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
 
   private void renderTabSheet() {
     for (var tab : availableTabs) {
-      filterTabSheet.remove(tab.filterGrid());
+      filterTabSheet.removeTab(tab);
     }
     availableTabs.stream()
         .filter(tab -> tab.getItemCount() > 0)
-        .forEach(tab -> filterTabSheet.addFilterGridTab(tab));
+        .forEach(tab -> filterTabSheet.addTab(tab));
   }
 
   private void displayMissingSelectionNote() {
@@ -250,7 +251,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
       var filter = query.getFilter().orElse(new RawDataFilter(""));
       var sortOrders = sortOrdersToApi(query.getSortOrders());
       var rawDataFilter = new RawDatasetFilter(filter.searchTerm().orElse(""), sortOrders);
-      return asyncProjectService.countMeasurementsPxp(projectId,
+      return asyncProjectService.countRawDataPxp(projectId,
               experimentId, rawDataFilter)
           .blockOptional(MAX_BLOCKING_DURATION)
           .orElse(0);
@@ -295,7 +296,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
       var filter = query.getFilter().orElse(new RawDataFilter(""));
       var rawDataFilter = new RawDatasetFilter(filter.searchTerm().orElse(""), sortOrders);
 
-      return asyncProjectService.countMeasurementsNgs(projectId, experimentId, rawDataFilter)
+      return asyncProjectService.countRawDataNgs(projectId, experimentId, rawDataFilter)
           .blockOptional(MAX_BLOCKING_DURATION)
           .orElse(0);
     };
