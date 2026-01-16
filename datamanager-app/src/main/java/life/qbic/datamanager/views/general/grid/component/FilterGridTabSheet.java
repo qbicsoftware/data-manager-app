@@ -2,14 +2,18 @@ package life.qbic.datamanager.views.general.grid.component;
 
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEventListener;
+import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.shared.Registration;
-import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Consumer;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.lang.NonNull;
 
 /**
@@ -20,56 +24,118 @@ import org.springframework.lang.NonNull;
  *
  * @since 1.12.0
  */
-public final class FilterGridTabSheet extends TabSheet {
+public final class FilterGridTabSheet extends Composite<TabSheet> {
 
+  private final TabSheet delegate;
   private final PrimaryActionButtonGroup primaryActionGroup;
 
-  public FilterGridTabSheet(FilterGridTab<?>... tabs) {
-    super();
-    Arrays.stream(tabs).forEach(tab -> add(tab, tab.filterGrid()));
+  private final Map<FilterGridTab, Set<TabAction>> primaryActions = new ConcurrentHashMap<>();
+  private final Map<FilterGridTab, Set<TabAction>> featureActions = new ConcurrentHashMap<>();
+
+  public FilterGridTabSheet() {
     this.primaryActionGroup = new PrimaryActionButtonGroup(
-        mainActionButton("Primary Action"),
-        mainFeatureButton("Main Feature"));
+        primaryActionButton("Primary Action"),
+        featureActionButton("Main Feature"));
+    delegate = getContent();
 
-    setSuffixComponent(primaryActionGroup);
-    setSizeFull();
-    addClassName("filter-grid-tabsheet");
+    delegate.setSuffixComponent(primaryActionGroup);
+    delegate.addClassNames("filter-grid-tabsheet", "width-full", "height-full");
+
+    primaryActionGroup.addClickListenerPrimaryAction(
+        ignored -> primaryActions.forEach((key, value) -> value.forEach(it -> it.execute(key))));
+    primaryActionGroup.addClickListenerFeature(
+        ignored -> featureActions.forEach((key, value) -> value.forEach(it -> it.execute(key))));
   }
 
-  public void addFilterGridTab(@NonNull FilterGridTab<?> filterTabs) {
-    add (filterTabs, filterTabs.filterGrid());
+
+  public <T> void addTab(FilterGridTab<T> tab) {
+    delegate.add(tab, tab.filterGrid());
+  }
+
+  public <T> void addTab(int index, FilterGridTab<T> tab) {
+    try {
+      delegate.getTabAt(index);
+      delegate.add(tab, tab.filterGrid(), index);
+    } catch (IllegalArgumentException e) {
+      //index less than 0 or greater available tabs, -> set to negative value and add to end
+      delegate.add(tab, tab.filterGrid(), -1);
+    }
+  }
+
+
+  public void removeTab(FilterGridTab<?> tab) {
+    var tabIndex = delegate.getIndexOf(tab);
+    if (tabIndex < 0) {
+      return;
+    }
+    delegate.remove(tabIndex);
+  }
+
+  public void removeAllTabs() {
+    while (true) {
+      try {
+        Tab fisrtTab = delegate.getTabAt(0);
+        delegate.remove(fisrtTab);
+      } catch (IllegalArgumentException maxIndexReached) {
+        break;
+      }
+    }
   }
 
   /**
-   * Registers a
-   * {@link ComponentEventListener that listens to {@link ClickEvent} of the primary action
-   * button.}
-   *
-   * @param listener the listener to register to the click event
-   * @return a {@link Registration} with the current subscription that the client can release once
-   * it is not required anymore.
-   * @since 1.12.0
+   * Adds a primary action to be performed for the provided tab when the user clicks on the primary action controls.
+   * @param tab the tab for which this action should be performed
+   * @param action the action to execute
+   * @return a registration with which the registered action can be removed
+   * @param <T> the item type of the {@link FilterGridTab}
    */
-  public Registration addPrimaryActionButtonListener(
-      ComponentEventListener<ClickEvent<Button>> listener
-  ) {
-    return primaryActionGroup.addClickListenerPrimaryAction(listener);
+  public <T> Registration addPrimaryAction(@NonNull FilterGridTab<T> tab,
+      @NonNull TabAction<FilterGridTab<T>, T> action) {
+    Objects.requireNonNull(tab);
+    Objects.requireNonNull(action);
+    primaryActions.merge(tab, new HashSet<>(Set.of(action)), (existing, provided) -> {
+      existing.addAll(provided);
+      return existing;
+    });
+
+    return () -> primaryActions.merge(tab, new HashSet<>(Set.of(action)), (existing, provided) -> {
+      existing.removeAll(provided);
+      if (existing.isEmpty()) {
+        return null; // remove map entry
+      }
+      return existing;
+    });
+  }
+  /**
+   * Adds a primary action to be performed for the provided tab when the user clicks on the feature controls.
+   * @param tab the tab for which this action should be performed
+   * @param action the action to execute
+   * @return a registration with which the registered action can be removed
+   * @param <T> the item type of the {@link FilterGridTab}
+   */
+  public <T> Registration addFeatureAction(@NonNull FilterGridTab<T> tab,
+      @NonNull TabAction<FilterGridTab<T>, T> action) {
+    Objects.requireNonNull(tab);
+    Objects.requireNonNull(action);
+    featureActions.merge(tab, new HashSet<>(Set.of(action)), (existing, provided) -> {
+      existing.addAll(provided);
+      return existing;
+    });
+
+    return () -> featureActions.merge(tab, new HashSet<>(Set.of(action)), (existing, provided) -> {
+      existing.removeAll(provided);
+      if (existing.isEmpty()) {
+        return null; // remove map entry
+      }
+      return existing;
+    });
   }
 
-  /**
-   * Registers a
-   * {@link ComponentEventListener that listens to {@link ClickEvent} of the primary feature
-   * button.}
-   *
-   * @param listener the listener to register to the click event of the primary feature button
-   * @return a {@link Registration} with the current subscription that the client can release once
-   * it is not required anymore.
-   * @since 1.12.0
-   */
-  public Registration addPrimaryFeatureButtonListener(
-      ComponentEventListener<ClickEvent<Button>> listener
-  ) {
-    return primaryActionGroup.addClickListenerFeature(listener);
+
+  @FunctionalInterface
+  public interface TabAction<T extends FilterGridTab<S>, S> {
+
+    void execute(T item);
   }
 
   /**
@@ -122,17 +188,17 @@ public final class FilterGridTabSheet extends TabSheet {
   }
 
   /**
-   * Returns the currently selected filter grid, if the selected filter grid is of the expected
+   * Returns the currently selected {@link FilterGridTab}, if the selected tab is of the expected
    * type. Else the returned value is {@link Optional#empty()}.
    *
-   * @param expectedType the expected class type of the filter grid
-   * @param <T>          the type of the class
-   * @return the selected grid assigned to the expected type if it is assignable, else will return
-   * {@link Optional#empty()}
+   * @param expectedType the expected item type of the {@link FilterGridTab}
+   * @param <T>          the item type
+   * @return the selected tab assigned to the expected type if it is assignable, else {@link Optional#empty()}
+   *
    * @since 1.12.0
    */
-  public <T> Optional<FilterGrid<T, Object>> getSelectedFilterGrid(Class<T> expectedType) {
-    var optionalSelectedTab = Optional.ofNullable(getSelectedTab());
+  public <T> Optional<FilterGridTab<T>> getSelectedTab(Class<T> expectedType) {
+    var optionalSelectedTab = Optional.ofNullable(delegate.getSelectedTab());
     if (optionalSelectedTab.isEmpty()) {
       return Optional.empty();
     }
@@ -141,37 +207,19 @@ public final class FilterGridTabSheet extends TabSheet {
         && tab.filterGrid() instanceof FilterGrid<?, ?> filterGrid
         && filterGrid.itemType().isAssignableFrom(expectedType)) {
       //noinspection unchecked - checked with assignable check
-      return Optional.of((FilterGrid<T, Object>) filterGrid);
+      return Optional.of((FilterGridTab<T>) tab);
     } else {
       return Optional.empty();
     }
   }
 
-  /**
-   * Can be used to register type-based consumers that accept the selected filter grid,  if the
-   * passed type is assignable from the filter grid's class type
-   *
-   * @param type   the type that serves as condition for the consumer to get accepted
-   * @param action the action that will accept the filter grid, if the passed type is assignable
-   *               from the filter grid
-   * @param <T>    the type of the grid's element
-   * @return {@code true}, if the consumer got the filter grid, else returns {@code false}
-   * @since 1.12.0
-   */
-  public <T> boolean doForItemType(Class<T> type,
-      Consumer<FilterGrid<T, Object>> action) {
-    Optional<FilterGrid<T, Object>> selectedFilterGrid = getSelectedFilterGrid(type);
-    selectedFilterGrid.ifPresent(action);
-    return selectedFilterGrid.isEmpty();
-  }
-
-  private static Button mainActionButton(String caption) {
+  private static Button primaryActionButton(String caption) {
     var button = new Button(caption);
     button.addClassName("button-color-primary");
     return button;
   }
 
-  private static Button mainFeatureButton(String caption) {
+  private static Button featureActionButton(String caption) {
     return new Button(caption);
   }
 
