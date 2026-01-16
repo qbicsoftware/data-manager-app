@@ -48,6 +48,7 @@ import life.qbic.datamanager.views.general.grid.component.FilterGrid;
 import life.qbic.datamanager.views.general.grid.component.FilterGrid.FilterTester;
 import life.qbic.datamanager.views.general.grid.component.FilterGridTab;
 import life.qbic.datamanager.views.general.grid.component.FilterGridTabSheet;
+import life.qbic.datamanager.views.general.grid.component.FilterGridTabSheet.TabAction;
 import life.qbic.datamanager.views.general.icon.IconFactory;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.ExperimentalVariablesInput;
