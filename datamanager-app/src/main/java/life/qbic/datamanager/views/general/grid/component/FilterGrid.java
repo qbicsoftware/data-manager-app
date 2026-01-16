@@ -499,8 +499,7 @@ public final class FilterGrid<T, F> extends Div {
     field.setPlaceholder("Search items");
     field.setClearButtonVisible(true);
     field.addClassName("width-250px");
-    field.setValueChangeMode(ValueChangeMode.EAGER);
-    field.setValueChangeTimeout(250); // Prevents refreshAll() burst during typing
+    field.setValueChangeMode(ValueChangeMode.LAZY);
     return field;
   }
 
