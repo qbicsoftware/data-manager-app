@@ -110,6 +110,7 @@ public class MeasurementProteomicsValidator {
         .combine(validationPolicy.validateMandatoryDataProvided(metadata))
         .combine(validationPolicy.validateOrganisation(metadata.organisationId()))
         .combine(validationPolicy.validateMsDevice(metadata.msDeviceCURIE()))
+        .combine(validationPolicy.validateInjectionVolume(metadata.injectionVolume()))
         .combine(missingLabelsValidation)
         .combine(distinctLabelsValidation);
   }
@@ -130,7 +131,8 @@ public class MeasurementProteomicsValidator {
         .combine(validationPolicy.validateMandatoryMetadataDataForUpdate(metadata))
         .combine(validationPolicy.validateOrganisation(metadata.organisationId()))
         .combine(validationPolicy.validateMsDevice(metadata.msDeviceCURIE()))
-        .combine(validationPolicy.validateDigestionMethod(metadata.digestionMethod()));
+        .combine(validationPolicy.validateDigestionMethod(metadata.digestionMethod()))
+        .combine(validationPolicy.validateInjectionVolume(metadata.injectionVolume()));
   }
 
   public enum PROTEOMICS_PROPERTY {
@@ -203,6 +205,8 @@ public class MeasurementProteomicsValidator {
     private static final String UNKNOWN_MS_DEVICE_ID = "Unknown ms device id: \"%s\"";
 
     private static final String UNKNOWN_DIGESTION_METHOD = "Unknown digestion method: \"%s\"";
+
+    private static final String NON_NUMERIC_INJECTION_VOLUME = "Non-numeric injection volume: \"%s\"";
 
     // The unique ROR id part of the URL is described in the official documentation:
     // https://ror.readme.io/docs/ror-identifier-pattern
@@ -516,6 +520,18 @@ public class MeasurementProteomicsValidator {
       return validation;
     }
 
+    ValidationResult validateInjectionVolume(String injectionVolume) {
+      if (injectionVolume.isBlank()) {
+        return ValidationResult.successful();
+      }
+      try {
+        int parsedVolume = (int) Double.parseDouble(injectionVolume);
+        return ValidationResult.successful();
+      } catch (NumberFormatException numberFormatException) {
+        return ValidationResult.withFailures(
+            List.of(NON_NUMERIC_INJECTION_VOLUME.formatted(injectionVolume)));
+      }
+    }
   }
 
 }
