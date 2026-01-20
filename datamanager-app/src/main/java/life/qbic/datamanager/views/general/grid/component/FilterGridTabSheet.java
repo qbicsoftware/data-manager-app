@@ -65,29 +65,48 @@ public final class FilterGridTabSheet extends Composite<TabSheet> {
 
   public void removeTab(FilterGridTab<?> tab) {
     var tabIndex = delegate.getIndexOf(tab);
+    removeTab(tabIndex);
+  }
+
+  private boolean removeTab(int tabIndex) {
     if (tabIndex < 0) {
-      return;
+      return false;
     }
-    delegate.remove(tabIndex);
+    Tab tab;
+    try {
+      tab = delegate.getTabAt(tabIndex);
+    } catch (IllegalArgumentException tabNotFound) {
+      return false;
+    }
+    if (!(tab instanceof FilterGridTab<?> filterGridTab)) {
+      return false;
+    }
+    primaryActions.remove(filterGridTab);
+    featureActions.remove(filterGridTab);
+    delegate.remove(filterGridTab);
+    return true;
   }
 
   public void removeAllTabs() {
-    while (true) {
-      try {
-        Tab fisrtTab = delegate.getTabAt(0);
-        delegate.remove(fisrtTab);
-      } catch (IllegalArgumentException maxIndexReached) {
-        break;
+    var maxLoopCount = 100;
+    var currentLoopCount = 0;
+    while (currentLoopCount < maxLoopCount) {
+      boolean aTabWasRemoved = removeTab(0);
+      if (!aTabWasRemoved) {
+        break; // nothing was removed so we exit
       }
+      currentLoopCount++;
     }
   }
 
   /**
-   * Adds a primary action to be performed for the provided tab when the user clicks on the primary action controls.
-   * @param tab the tab for which this action should be performed
+   * Adds a primary action to be performed for the provided tab when the user clicks on the primary
+   * action controls.
+   *
+   * @param tab    the tab for which this action should be performed
    * @param action the action to execute
+   * @param <T>    the item type of the {@link FilterGridTab}
    * @return a registration with which the registered action can be removed
-   * @param <T> the item type of the {@link FilterGridTab}
    */
   public <T> Registration addPrimaryAction(@NonNull FilterGridTab<T> tab,
       @NonNull TabAction<FilterGridTab<T>, T> action) {
@@ -106,12 +125,15 @@ public final class FilterGridTabSheet extends Composite<TabSheet> {
       return existing;
     });
   }
+
   /**
-   * Adds a primary action to be performed for the provided tab when the user clicks on the feature controls.
-   * @param tab the tab for which this action should be performed
+   * Adds a primary action to be performed for the provided tab when the user clicks on the feature
+   * controls.
+   *
+   * @param tab    the tab for which this action should be performed
    * @param action the action to execute
+   * @param <T>    the item type of the {@link FilterGridTab}
    * @return a registration with which the registered action can be removed
-   * @param <T> the item type of the {@link FilterGridTab}
    */
   public <T> Registration addFeatureAction(@NonNull FilterGridTab<T> tab,
       @NonNull TabAction<FilterGridTab<T>, T> action) {
@@ -193,8 +215,8 @@ public final class FilterGridTabSheet extends Composite<TabSheet> {
    *
    * @param expectedType the expected item type of the {@link FilterGridTab}
    * @param <T>          the item type
-   * @return the selected tab assigned to the expected type if it is assignable, else {@link Optional#empty()}
-   *
+   * @return the selected tab assigned to the expected type if it is assignable, else
+   * {@link Optional#empty()}
    * @since 1.12.0
    */
   public <T> Optional<FilterGridTab<T>> getSelectedTab(Class<T> expectedType) {
