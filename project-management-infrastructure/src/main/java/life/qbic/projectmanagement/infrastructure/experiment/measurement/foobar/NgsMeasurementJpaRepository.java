@@ -222,16 +222,17 @@ public interface NgsMeasurementJpaRepository extends
         return false;
       }
 
-      return Objects.equals(sampleId, that.sampleId) && Objects.equals(measurement,
-          that.measurement) && Objects.equals(sampleCode, that.sampleCode)
-          && Objects.equals(sampleLabel, that.sampleLabel) && Objects.equals(
-          comment, that.comment);
+      return Objects.equals(sampleId, that.sampleId) && Objects.equals(measurement.measurementId,
+          that.measurement.measurementId) && Objects.equals(experimentId, that.experimentId)
+          && Objects.equals(sampleCode, that.sampleCode) && Objects.equals(
+          sampleLabel, that.sampleLabel) && Objects.equals(comment, that.comment);
     }
 
     @Override
     public int hashCode() {
       int result = Objects.hashCode(sampleId);
-      result = 31 * result + Objects.hashCode(measurement);
+      result = 31 * result + Objects.hashCode(measurement.measurementId);
+      result = 31 * result + Objects.hashCode(experimentId);
       result = 31 * result + Objects.hashCode(sampleCode);
       result = 31 * result + Objects.hashCode(sampleLabel);
       result = 31 * result + Objects.hashCode(comment);
@@ -289,6 +290,12 @@ public interface NgsMeasurementJpaRepository extends
     @Column(name = "runProtocol")
     private String sequencingRunProtocol;
 
+    /**
+     * Attention: During Hibernate session, this is a
+     * {@link org.hibernate.collection.spi.PersistentBag}. The equals method of
+     * {@link org.hibernate.collection.spi.PersistentBag#equals(Object)} does not respect the
+     * {@link List#equals(Object)} contract.
+     */
     @OneToMany(mappedBy = "measurement", fetch = FetchType.EAGER)
     private List<NgsSampleInfo> sampleInfos;
 
@@ -372,6 +379,47 @@ public interface NgsMeasurementJpaRepository extends
           .add("sequencingRunProtocol='" + sequencingRunProtocol + "'")
           .add("sampleInfos=" + sampleInfos)
           .toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (!(o instanceof NgsMeasurementInformation that)) {
+        return false;
+      }
+
+      return Objects.equals(measurementId, that.measurementId) && Objects.equals(
+          projectId, that.projectId) && Objects.equals(measurementCode, that.measurementCode)
+          && Objects.equals(measurementName, that.measurementName)
+          && Objects.equals(facility, that.facility) && Objects.equals(organisation,
+          that.organisation) && Objects.equals(instrument, that.instrument)
+          && Objects.equals(samplePool, that.samplePool) && Objects.equals(
+          registeredAt, that.registeredAt) && Objects.equals(sequencingReadType,
+          that.sequencingReadType) && Objects.equals(libraryKit, that.libraryKit)
+          && Objects.equals(flowCell, that.flowCell) && Objects.equals(
+          sequencingRunProtocol, that.sequencingRunProtocol)
+          //take care of breaking interface method in persistance bag
+          && Objects.equals(sampleInfos.stream().toList(),
+          that.sampleInfos.stream().toList());
+    }
+
+    @Override
+    public int hashCode() {
+      int result = Objects.hashCode(measurementId);
+      result = 31 * result + Objects.hashCode(projectId);
+      result = 31 * result + Objects.hashCode(measurementCode);
+      result = 31 * result + Objects.hashCode(measurementName);
+      result = 31 * result + Objects.hashCode(facility);
+      result = 31 * result + Objects.hashCode(organisation);
+      result = 31 * result + Objects.hashCode(instrument);
+      result = 31 * result + Objects.hashCode(samplePool);
+      result = 31 * result + Objects.hashCode(registeredAt);
+      result = 31 * result + Objects.hashCode(sequencingReadType);
+      result = 31 * result + Objects.hashCode(libraryKit);
+      result = 31 * result + Objects.hashCode(flowCell);
+      result = 31 * result + Objects.hashCode(sequencingRunProtocol);
+      //take care of breaking interface method in persistance bag
+      result = 31 * result + Objects.hashCode(sampleInfos.stream().toList());
+      return result;
     }
   }
 

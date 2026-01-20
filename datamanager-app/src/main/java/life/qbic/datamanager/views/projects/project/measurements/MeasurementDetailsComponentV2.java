@@ -145,9 +145,11 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
       var ngsTab = new FilterGridTab<>("Genomics", filterGridNgs);
       tabSheet.addTab(0, ngsTab);
       tabSheet.addPrimaryAction(ngsTab,
-          tab -> System.out.println("registering ngs")); //TODO trigger edit
+          tab -> System.out.println(
+              "registering ngs: " + tab.filterGrid().selectedElements())); //TODO trigger edit
       tabSheet.addFeatureAction(ngsTab,
-          tab -> System.out.println("exporting ngs")); //TODO trigger export
+          tab -> System.out.println(
+              "exporting ngs:" + tab.filterGrid().selectedElements())); //TODO trigger export
     }
 
     if (jpaRepositoryPxp.count(new PxpMeasurementFilter(experimentId, "").asSpecification()) > 0) {

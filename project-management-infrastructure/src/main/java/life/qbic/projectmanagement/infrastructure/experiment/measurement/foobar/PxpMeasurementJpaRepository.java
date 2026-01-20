@@ -223,8 +223,8 @@ public interface PxpMeasurementJpaRepository extends
         return false;
       }
 
-      return Objects.equals(sampleId, that.sampleId) && Objects.equals(measurement,
-          that.measurement) && Objects.equals(sampleCode, that.sampleCode)
+      return Objects.equals(sampleId, that.sampleId) && Objects.equals(measurement.measurementId,
+          that.measurement.measurementId) && Objects.equals(sampleCode, that.sampleCode)
           && Objects.equals(sampleLabel, that.sampleLabel) && Objects.equals(
           comment, that.comment);
     }
@@ -232,7 +232,7 @@ public interface PxpMeasurementJpaRepository extends
     @Override
     public int hashCode() {
       int result = Objects.hashCode(sampleId);
-      result = 31 * result + Objects.hashCode(measurement);
+      result = 31 * result + Objects.hashCode(measurement.measurementId);
       result = 31 * result + Objects.hashCode(sampleCode);
       result = 31 * result + Objects.hashCode(sampleLabel);
       result = 31 * result + Objects.hashCode(comment);
@@ -305,6 +305,12 @@ public interface PxpMeasurementJpaRepository extends
     private String lcColumn;
 
 
+    /**
+     * Attention: During Hibernate session, this is a
+     * {@link org.hibernate.collection.spi.PersistentBag}. The equals method of
+     * {@link org.hibernate.collection.spi.PersistentBag#equals(Object)} does not respect the
+     * {@link List#equals(Object)} contract.
+     */
     @OneToMany(mappedBy = "measurement", fetch = FetchType.EAGER)
     private List<PxpSampleInfo> sampleInfos;
 
@@ -417,6 +423,55 @@ public interface PxpMeasurementJpaRepository extends
           .add("lcColumn='" + lcColumn + "'")
           .add("sampleInfos=" + sampleInfos)
           .toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (!(o instanceof PxpMeasurementInformation that)) {
+        return false;
+      }
+
+      return Double.compare(injectionVolume, that.injectionVolume) == 0
+          && Objects.equals(measurementId, that.measurementId) && Objects.equals(
+          projectId, that.projectId) && Objects.equals(measurementCode, that.measurementCode)
+          && Objects.equals(measurementName, that.measurementName)
+          && Objects.equals(facility, that.facility) && Objects.equals(organisation,
+          that.organisation) && Objects.equals(msDevice, that.msDevice)
+          && Objects.equals(samplePool, that.samplePool) && Objects.equals(
+          registeredAt, that.registeredAt) && Objects.equals(digestionEnzyme,
+          that.digestionEnzyme) && Objects.equals(digestionMethod, that.digestionMethod)
+          && Objects.equals(enrichmentMethod, that.enrichmentMethod)
+          && Objects.equals(labelType, that.labelType) && Objects.equals(label,
+          that.label) && Objects.equals(technicalReplicateName, that.technicalReplicateName)
+          && Objects.equals(lcmsMethod, that.lcmsMethod) && Objects.equals(lcColumn,
+          that.lcColumn)
+          //take care of breaking interface method in persistance bag
+          && Objects.equals(sampleInfos.stream().toList(), that.sampleInfos.stream().toList());
+    }
+
+    @Override
+    public int hashCode() {
+      int result = Objects.hashCode(measurementId);
+      result = 31 * result + Objects.hashCode(projectId);
+      result = 31 * result + Objects.hashCode(measurementCode);
+      result = 31 * result + Objects.hashCode(measurementName);
+      result = 31 * result + Objects.hashCode(facility);
+      result = 31 * result + Objects.hashCode(organisation);
+      result = 31 * result + Objects.hashCode(msDevice);
+      result = 31 * result + Objects.hashCode(samplePool);
+      result = 31 * result + Objects.hashCode(registeredAt);
+      result = 31 * result + Objects.hashCode(digestionEnzyme);
+      result = 31 * result + Objects.hashCode(digestionMethod);
+      result = 31 * result + Objects.hashCode(enrichmentMethod);
+      result = 31 * result + Double.hashCode(injectionVolume);
+      result = 31 * result + Objects.hashCode(labelType);
+      result = 31 * result + Objects.hashCode(label);
+      result = 31 * result + Objects.hashCode(technicalReplicateName);
+      result = 31 * result + Objects.hashCode(lcmsMethod);
+      result = 31 * result + Objects.hashCode(lcColumn);
+      //take care of breaking interface method in persistance bag
+      result = 31 * result + Objects.hashCode(sampleInfos.stream().toList());
+      return result;
     }
   }
 
