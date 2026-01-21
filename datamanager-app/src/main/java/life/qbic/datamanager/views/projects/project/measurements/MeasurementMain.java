@@ -95,9 +95,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
   private final MeasurementDetailsComponentV2 measurementDetailsComponentV2;
 
-  private Disclaimer registerSamplesDisclaimer;
+  private final Disclaimer registerSamplesDisclaimer;
   private final DownloadComponent measurementTemplateDownload;
-  private final Span measurementsSelectedInfoBox = new Span();
   private final transient SampleInformationService sampleInformationService;
   private final transient MeasurementService measurementService;
   private final Div content = new Div();
@@ -197,43 +196,6 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     content.addClassName("measurement-main-content");
   }
 
-
-  private AppDialog initDialogForDomain(MeasurementDetailsComponent.Domain domain,
-      List<String> selectedMeasurements) {
-    return switch (domain) {
-      case GENOMICS -> ngsEditDialog(selectedMeasurements);
-      case PROTEOMICS -> initDialogForUpdatePxP(selectedMeasurements);
-    };
-  }
-
-  private AppDialog initDialogForUpdatePxP(List<String> selectedMeasurementIds) {
-    var dialog = AppDialog.medium();
-    DialogHeader.with(dialog, "Update Measurements");
-    DialogFooter.with(dialog, "Cancel", "Update");
-    var templateDownload = new MeasurementTemplateComponent(UPDATE_MEASUREMENT_DESCRIPTION,
-        "Download metadata",
-        asyncService.measurementUpdatePxP(context.projectId().orElseThrow().value(),
-            selectedMeasurementIds, OPEN_XML),
-        messageFactory,
-        projectContext::projectId);
-    var upload = new MeasurementUpload(asyncService, context,
-        ConverterRegistry.converterFor(
-            MeasurementUpdateInformationPxP.class), messageFactory);
-    var uploadComponent = new MeasurementUpdateComponent(templateDownload, upload);
-
-    DialogBody.with(dialog, uploadComponent, uploadComponent);
-
-    dialog.registerCancelAction(dialog::close);
-    dialog.registerConfirmAction(() -> {
-      if (upload.validate().hasPassed()) {
-        var validationRequests = upload.getValidationRequestContent();
-        submitUpdateRequest(context.projectId().orElseThrow().value(),
-            createUpdateRequestPackage(validationRequests));
-        dialog.close();
-      }
-    });
-    return dialog;
-  }
 
   private AppDialog ngsEditDialog(List<String> selectedMeasurementIds) {
     var dialog = AppDialog.medium();
@@ -797,14 +759,6 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
           currentExperimentId, currentProjectId, routeToRawDataPage));
       componentEvent.getSource().getUI().ifPresent(ui -> ui.navigate(routeToRawDataPage));
     }
-  }
-
-  static class HandledException extends RuntimeException {
-
-    HandledException(Throwable cause) {
-      super(cause);
-    }
-
   }
 
   record RegistrationRequestPackage(
