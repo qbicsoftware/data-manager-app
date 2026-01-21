@@ -124,6 +124,11 @@ public final class FilterGrid<T, F> extends Div {
             event.getValue()));
   }
 
+  public void refreshAll() {
+    this.grid.getDataProvider().refreshAll();
+    this.grid.deselectAll();
+  }
+
   /**
    * A functional interface that represents a generic filter testing mechanism for evaluating
    * whether an element matches a specific filter criteria.
