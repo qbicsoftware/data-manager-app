@@ -5,7 +5,6 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.dom.Style.Visibility;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
@@ -43,7 +42,6 @@ import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactor
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
-import life.qbic.datamanager.views.projects.project.measurements.MeasurementTemplateListComponent.DownloadMeasurementTemplateEvent;
 import life.qbic.datamanager.views.projects.project.measurements.processor.ProcessorRegistry;
 import life.qbic.datamanager.views.projects.project.measurements.registration.MeasurementUpload;
 import life.qbic.logging.api.Logger;
@@ -741,7 +739,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
 
   private void updateComponentVisibility() {
     ExperimentId currentExperimentId = context.experimentId().orElseThrow();
-    if (!sampleInformationService.hasSamples(currentExperimentId)) {
+    if (!sampleInformationService.hasSamples(context.projectId().orElseThrow(),
+        currentExperimentId.value())) {
       showRegisterSamplesDisclaimer();
       return;
     }
@@ -774,12 +773,6 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     measurementDetailsComponentV2.setVisible(true);
   }
 
-  private void onDownloadMeasurementTemplateClicked(
-      DownloadMeasurementTemplateEvent downloadMeasurementTemplateEvent) {
-    measurementTemplateDownload.trigger(
-        downloadMeasurementTemplateEvent.getDownloadStreamProvider());
-  }
-
   private void initRawDataAvailableInfo() {
     rawDataAvailableInfo.setInfoText(
         "Raw data results for your registered measurement are available now");
@@ -804,17 +797,6 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
           currentExperimentId, currentProjectId, routeToRawDataPage));
       componentEvent.getSource().getUI().ifPresent(ui -> ui.navigate(routeToRawDataPage));
     }
-  }
-
-  private void setSelectedMeasurementsInfo(int selectedMeasurements) {
-    String text = "%s measurements are currently selected.".formatted(
-        String.valueOf(selectedMeasurements));
-    if (selectedMeasurements > 0) {
-      measurementsSelectedInfoBox.getStyle().setVisibility(Visibility.INITIAL);
-    } else {
-      measurementsSelectedInfoBox.getStyle().setVisibility(Visibility.HIDDEN);
-    }
-    measurementsSelectedInfoBox.setText(text);
   }
 
   static class HandledException extends RuntimeException {
