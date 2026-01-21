@@ -1,4 +1,4 @@
-package life.qbic.projectmanagement.infrastructure.experiment.measurement.foobar;
+package life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa;
 
 import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonParseException;
@@ -23,6 +23,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrimaryKeyJoinColumn;
 import jakarta.persistence.SecondaryTable;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import jakarta.persistence.criteria.Join;
 import java.io.IOException;
 import java.io.Serializable;
@@ -34,8 +35,8 @@ import java.util.Optional;
 import java.util.StringJoiner;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.infrastructure.PreventAnyUpdateEntityListener;
-import life.qbic.projectmanagement.infrastructure.experiment.measurement.foobar.NgsMeasurementJpaRepository.Instrument.InstrumentReadConverter;
-import life.qbic.projectmanagement.infrastructure.experiment.measurement.foobar.NgsMeasurementJpaRepository.NgsMeasurementInformation;
+import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.PxpMeasurementJpaRepository.MsDevice.MsDeviceReadConverter;
+import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.PxpMeasurementJpaRepository.PxpMeasurementInformation;
 import org.springframework.boot.jackson.JsonComponent;
 import org.springframework.data.convert.ReadingConverter;
 import org.springframework.data.jpa.domain.Specification;
@@ -45,27 +46,27 @@ import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface NgsMeasurementJpaRepository extends
-    PagingAndSortingRepository<NgsMeasurementInformation, MeasurementId>,
-    JpaSpecificationExecutor<NgsMeasurementInformation> {
+public interface PxpMeasurementJpaRepository extends
+    PagingAndSortingRepository<PxpMeasurementInformation, MeasurementId>,
+    JpaSpecificationExecutor<PxpMeasurementInformation> {
 
-  final class NgsMeasurementFilter {
+  final class PxpMeasurementFilter {
 
     private final String experimentId;
     private final String searchTerm;
 
-    public NgsMeasurementFilter(@NonNull String experimentId,
+    public PxpMeasurementFilter(@NonNull String experimentId,
         @NonNull String searchTerm) {
       this.searchTerm = Objects.requireNonNull(searchTerm);
       this.experimentId = Objects.requireNonNull(experimentId);
     }
 
-    public Specification<NgsMeasurementInformation> asSpecification() {
+    public Specification<PxpMeasurementInformation> asSpecification() {
       return matchesExperiment(experimentId)
           .and(containsSearchTerm(searchTerm));
     }
 
-    private static Specification<NgsMeasurementInformation> matchesExperiment(String experimentId) {
+    private static Specification<PxpMeasurementInformation> matchesExperiment(String experimentId) {
       return (root, query, criteriaBuilder) ->
       {
         query.distinct(true);
@@ -73,7 +74,7 @@ public interface NgsMeasurementJpaRepository extends
       };
     }
 
-    private static Specification<NgsMeasurementInformation> containsSearchTerm(String searchTerm) {
+    private static Specification<PxpMeasurementInformation> containsSearchTerm(String searchTerm) {
       var cleanedLowerCaseSearchTerm = searchTerm.strip().toLowerCase();
       if (Objects.isNull(searchTerm) || searchTerm.isEmpty()) {
         return Specification.unrestricted();
@@ -103,54 +104,54 @@ public interface NgsMeasurementJpaRepository extends
 
     @Override
     public String toString() {
-      return new StringJoiner(", ", NgsMeasurementFilter.class.getSimpleName() + "[", "]")
+      return new StringJoiner(", ", PxpMeasurementFilter.class.getSimpleName() + "[", "]")
           .add("experimentId='" + experimentId + "'")
           .add("searchTerm='" + searchTerm + "'")
           .toString();
     }
   }
 
-  record Instrument(String label, String oboId, String iri) implements Serializable {
+  record MsDevice(String label, String oboId, String iri) implements Serializable {
 
     @JsonComponent
-    static class InstrumentJsonDeserializer extends JsonDeserializer<Instrument> {
+    static class MsDeviceJsonDeserializer extends JsonDeserializer<MsDevice> {
 
       @Override
-      public Instrument deserialize(JsonParser jsonParser, DeserializationContext ctxt)
+      public MsDevice deserialize(JsonParser jsonParser, DeserializationContext ctxt)
           throws IOException, JacksonException {
         JsonNode tree = jsonParser.readValueAsTree();
         String oboId = Optional.ofNullable(tree.get("name"))
             .map(JsonNode::asText) //e.g. EFO_0008633
             .map(it -> it.replace("_", ":")) //e.g. EFO:0008633
-            .orElseThrow(() -> new JsonParseException("Could not parse instrument oboId."));
+            .orElseThrow(() -> new JsonParseException("Could not parse msDevice oboId."));
         String label = Optional.ofNullable(tree.get("label"))
             .map(JsonNode::asText)
-            .orElseThrow(() -> new JsonParseException("Could not parse instrument label."));
+            .orElseThrow(() -> new JsonParseException("Could not parse msDevice label."));
         String iri = Optional.ofNullable(tree.get("classIri"))
             .map(JsonNode::asText)
-            .orElseThrow(() -> new JsonParseException("Could not parse instrument iri."));
-        return new Instrument(label, oboId, iri);
+            .orElseThrow(() -> new JsonParseException("Could not parse msDevice iri."));
+        return new MsDevice(label, oboId, iri);
       }
     }
 
     @ReadingConverter
-    static class InstrumentReadConverter implements AttributeConverter<Instrument, String> {
+    static class MsDeviceReadConverter implements AttributeConverter<MsDevice, String> {
 
       private final ObjectMapper objectMapper;
 
-      public InstrumentReadConverter(ObjectMapper objectMapper) {
+      public MsDeviceReadConverter(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
       }
 
       @Override
-      public String convertToDatabaseColumn(Instrument attribute) {
+      public String convertToDatabaseColumn(MsDevice attribute) {
         return "";
       }
 
       @Override
-      public Instrument convertToEntityAttribute(String dbData) {
+      public MsDevice convertToEntityAttribute(String dbData) {
         try {
-          return objectMapper.readValue(dbData, Instrument.class);
+          return objectMapper.readValue(dbData, MsDevice.class);
         } catch (JsonProcessingException e) {
           throw new RuntimeException(e);
         }
@@ -163,18 +164,18 @@ public interface NgsMeasurementJpaRepository extends
   }
 
   @Entity
-  @Table(name = "specific_measurement_metadata_ngs")
+  @Table(name = "specific_measurement_metadata_pxp")
   @SecondaryTable(name = "sample", pkJoinColumns = @PrimaryKeyJoinColumn(
       name = "sample_id", referencedColumnName = "sample_id"
   ))
-  final class NgsSampleInfo {
+  final class PxpSampleInfo {
 
     @Id
     @Column(name = "sample_id")
     private String sampleId;
     @ManyToOne
     @JoinColumn(name = "measurement_id")
-    private NgsMeasurementInformation measurement;
+    private PxpMeasurementInformation measurement;
 
     @Column(table = "sample", name = "experiment_id")
     private String experimentId;
@@ -185,7 +186,7 @@ public interface NgsMeasurementJpaRepository extends
     @Column(name = "comment")
     private String comment;
 
-    protected NgsSampleInfo() {
+    protected PxpSampleInfo() {
 
     }
 
@@ -207,7 +208,7 @@ public interface NgsMeasurementJpaRepository extends
 
     @Override
     public String toString() {
-      return new StringJoiner(", ", NgsSampleInfo.class.getSimpleName() + "[", "]")
+      return new StringJoiner(", ", PxpSampleInfo.class.getSimpleName() + "[", "]")
           .add("sampleId='" + sampleId + "'")
           .add("measurement=" + measurement.measurementId)
           .add("sampleCode='" + sampleCode + "'")
@@ -218,21 +219,20 @@ public interface NgsMeasurementJpaRepository extends
 
     @Override
     public boolean equals(Object o) {
-      if (!(o instanceof NgsSampleInfo that)) {
+      if (!(o instanceof PxpSampleInfo that)) {
         return false;
       }
 
       return Objects.equals(sampleId, that.sampleId) && Objects.equals(measurement.measurementId,
-          that.measurement.measurementId) && Objects.equals(experimentId, that.experimentId)
-          && Objects.equals(sampleCode, that.sampleCode) && Objects.equals(
-          sampleLabel, that.sampleLabel) && Objects.equals(comment, that.comment);
+          that.measurement.measurementId) && Objects.equals(sampleCode, that.sampleCode)
+          && Objects.equals(sampleLabel, that.sampleLabel) && Objects.equals(
+          comment, that.comment);
     }
 
     @Override
     public int hashCode() {
       int result = Objects.hashCode(sampleId);
       result = 31 * result + Objects.hashCode(measurement.measurementId);
-      result = 31 * result + Objects.hashCode(experimentId);
       result = 31 * result + Objects.hashCode(sampleCode);
       result = 31 * result + Objects.hashCode(sampleLabel);
       result = 31 * result + Objects.hashCode(comment);
@@ -241,11 +241,10 @@ public interface NgsMeasurementJpaRepository extends
   }
 
 
-  @Entity(name = "ngs_measurement_metadata")
-  @Table(name = "ngs_measurements")
+  @Entity(name = "pxp_measurement_metadata")
+  @Table(name = "proteomics_measurement")
   @EntityListeners(PreventAnyUpdateEntityListener.class)
-  final class NgsMeasurementInformation {
-
+  final class PxpMeasurementInformation {
 
     @Id
     @Column(name = "measurement_id")
@@ -269,26 +268,42 @@ public interface NgsMeasurementJpaRepository extends
     private Organisation organisation;
 
     @Column(name = "instrument")
-    @Convert(converter = InstrumentReadConverter.class)
-    private Instrument instrument;
+    @Convert(converter = MsDeviceReadConverter.class)
+    private MsDevice msDevice;
 
     @Column(name = "samplePool")
     private String samplePool;
 
-    @Column(name = "registrationTime")
+    @Column(name = "registration")
     private Instant registeredAt;
 
-    @Column(name = "readType")
-    private String sequencingReadType;
+    @Column(name = "digestionEnzyme")
+    private String digestionEnzyme;
 
-    @Column(name = "libraryKit")
-    private String libraryKit;
+    @Column(name = "digestionMethod")
+    private String digestionMethod;
 
-    @Column(name = "flowcell")
-    private String flowCell;
+    @Column(name = "enrichmentMethod")
+    private String enrichmentMethod;
 
-    @Column(name = "runProtocol")
-    private String sequencingRunProtocol;
+    @Column(name = "injectionVolume")
+    private double injectionVolume;
+
+    @Column(name = "labelType")
+    private String labelType;
+
+    @Column(name = "label", insertable = false, updatable = false)
+    private String label;
+
+    @Column(name = "technicalReplicateName")
+    private String technicalReplicateName;
+
+    @Column(name = "lcmsMethod")
+    private String lcmsMethod;
+
+    @Column(name = "lcColumn")
+    private String lcColumn;
+
 
     /**
      * Attention: During Hibernate session, this is a
@@ -297,9 +312,9 @@ public interface NgsMeasurementJpaRepository extends
      * {@link List#equals(Object)} contract.
      */
     @OneToMany(mappedBy = "measurement", fetch = FetchType.EAGER)
-    private List<NgsSampleInfo> sampleInfos;
+    private List<PxpSampleInfo> sampleInfos;
 
-    protected NgsMeasurementInformation() {
+    protected PxpMeasurementInformation() {
 
     }
 
@@ -323,8 +338,13 @@ public interface NgsMeasurementJpaRepository extends
       return organisation;
     }
 
-    public Instrument instrument() {
-      return instrument;
+    public MsDevice msDevice() {
+      return msDevice;
+    }
+
+    @Transient
+    public String getMsDeviceLabel() {
+      return msDevice.label();
     }
 
     public String samplePool() {
@@ -335,71 +355,98 @@ public interface NgsMeasurementJpaRepository extends
       return registeredAt;
     }
 
-    public String sequencingReadType() {
-      return sequencingReadType;
+    public String digestionEnzyme() {
+      return digestionEnzyme;
     }
 
-    public String libraryKit() {
-      return libraryKit;
+    public String digestionMethod() {
+      return digestionMethod;
     }
 
-    public String flowCell() {
-      return flowCell;
+    public String enrichmentMethod() {
+      return enrichmentMethod;
     }
 
-    public String sequencingRunProtocol() {
-      return sequencingRunProtocol;
+    public double injectionVolume() {
+      return injectionVolume;
+    }
+
+    public String labelType() {
+      return labelType;
+    }
+
+    public String technicalReplicateName() {
+      return technicalReplicateName;
+    }
+
+    public String lcmsMethod() {
+      return lcmsMethod;
+    }
+
+    public String lcColumn() {
+      return lcColumn;
+    }
+
+    public String label() {
+      return label;
     }
 
     public String experimentId() {
       return sampleInfos().getFirst().experimentId();
     }
 
-    public List<NgsSampleInfo> sampleInfos() {
+    public List<PxpSampleInfo> sampleInfos() {
       return Collections.unmodifiableList(sampleInfos);
     }
 
     @Override
     public String toString() {
-      return new StringJoiner(", ", NgsMeasurementInformation.class.getSimpleName() + "[",
+      return new StringJoiner(", ", PxpMeasurementInformation.class.getSimpleName() + "[",
           "]")
-          .add("experimentID=" + experimentId())
-          .add("measurementId=" + measurementId)
+          .add("measurementId='" + measurementId + "'")
           .add("projectId='" + projectId + "'")
           .add("measurementCode='" + measurementCode + "'")
           .add("measurementName='" + measurementName + "'")
           .add("facility='" + facility + "'")
           .add("organisation=" + organisation)
-          .add("instrument=" + instrument)
+          .add("msDevice=" + msDevice)
           .add("samplePool='" + samplePool + "'")
           .add("registeredAt=" + registeredAt)
-          .add("sequencingReadType='" + sequencingReadType + "'")
-          .add("libraryKit='" + libraryKit + "'")
-          .add("flowCell='" + flowCell + "'")
-          .add("sequencingRunProtocol='" + sequencingRunProtocol + "'")
+          .add("digestionEnzyme='" + digestionEnzyme + "'")
+          .add("digestionMethod='" + digestionMethod + "'")
+          .add("enrichmentMethod='" + enrichmentMethod + "'")
+          .add("injectionVolume=" + injectionVolume)
+          .add("labelType='" + labelType + "'")
+          .add("label='" + label + "'")
+          .add("technicalReplicateName='" + technicalReplicateName + "'")
+          .add("lcmsMethod='" + lcmsMethod + "'")
+          .add("lcColumn='" + lcColumn + "'")
           .add("sampleInfos=" + sampleInfos)
           .toString();
     }
 
     @Override
     public boolean equals(Object o) {
-      if (!(o instanceof NgsMeasurementInformation that)) {
+      if (!(o instanceof PxpMeasurementInformation that)) {
         return false;
       }
 
-      return Objects.equals(measurementId, that.measurementId) && Objects.equals(
+      return Double.compare(injectionVolume, that.injectionVolume) == 0
+          && Objects.equals(measurementId, that.measurementId) && Objects.equals(
           projectId, that.projectId) && Objects.equals(measurementCode, that.measurementCode)
           && Objects.equals(measurementName, that.measurementName)
           && Objects.equals(facility, that.facility) && Objects.equals(organisation,
-          that.organisation) && Objects.equals(instrument, that.instrument)
+          that.organisation) && Objects.equals(msDevice, that.msDevice)
           && Objects.equals(samplePool, that.samplePool) && Objects.equals(
-          registeredAt, that.registeredAt) && Objects.equals(sequencingReadType,
-          that.sequencingReadType) && Objects.equals(libraryKit, that.libraryKit)
-          && Objects.equals(flowCell, that.flowCell) && Objects.equals(
-          sequencingRunProtocol, that.sequencingRunProtocol)
+          registeredAt, that.registeredAt) && Objects.equals(digestionEnzyme,
+          that.digestionEnzyme) && Objects.equals(digestionMethod, that.digestionMethod)
+          && Objects.equals(enrichmentMethod, that.enrichmentMethod)
+          && Objects.equals(labelType, that.labelType) && Objects.equals(label,
+          that.label) && Objects.equals(technicalReplicateName, that.technicalReplicateName)
+          && Objects.equals(lcmsMethod, that.lcmsMethod) && Objects.equals(lcColumn,
+          that.lcColumn)
           //take care of breaking interface method in persistance bag
-          && Objects.equals(sampleInfos.stream().toList(),
-          that.sampleInfos.stream().toList());
+          && Objects.equals(sampleInfos.stream().toList(), that.sampleInfos.stream().toList());
     }
 
     @Override
@@ -410,13 +457,18 @@ public interface NgsMeasurementJpaRepository extends
       result = 31 * result + Objects.hashCode(measurementName);
       result = 31 * result + Objects.hashCode(facility);
       result = 31 * result + Objects.hashCode(organisation);
-      result = 31 * result + Objects.hashCode(instrument);
+      result = 31 * result + Objects.hashCode(msDevice);
       result = 31 * result + Objects.hashCode(samplePool);
       result = 31 * result + Objects.hashCode(registeredAt);
-      result = 31 * result + Objects.hashCode(sequencingReadType);
-      result = 31 * result + Objects.hashCode(libraryKit);
-      result = 31 * result + Objects.hashCode(flowCell);
-      result = 31 * result + Objects.hashCode(sequencingRunProtocol);
+      result = 31 * result + Objects.hashCode(digestionEnzyme);
+      result = 31 * result + Objects.hashCode(digestionMethod);
+      result = 31 * result + Objects.hashCode(enrichmentMethod);
+      result = 31 * result + Double.hashCode(injectionVolume);
+      result = 31 * result + Objects.hashCode(labelType);
+      result = 31 * result + Objects.hashCode(label);
+      result = 31 * result + Objects.hashCode(technicalReplicateName);
+      result = 31 * result + Objects.hashCode(lcmsMethod);
+      result = 31 * result + Objects.hashCode(lcColumn);
       //take care of breaking interface method in persistance bag
       result = 31 * result + Objects.hashCode(sampleInfos.stream().toList());
       return result;
