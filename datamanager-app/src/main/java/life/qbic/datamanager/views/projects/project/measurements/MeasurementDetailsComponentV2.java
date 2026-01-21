@@ -3,26 +3,47 @@ package life.qbic.datamanager.views.projects.project.measurements;
 import static java.util.Objects.isNull;
 import static java.util.Objects.requireNonNull;
 
+import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.ComponentEvent;
+import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.html.Anchor;
+import com.vaadin.flow.component.html.AnchorTarget;
+import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.SvgIcon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.data.provider.SortDirection;
+import com.vaadin.flow.server.StreamResource;
+import com.vaadin.flow.shared.Registration;
+import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 import java.io.Serializable;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.OffsetBasedRequest;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.PageArea;
+import life.qbic.datamanager.views.general.dialog.AppDialog;
+import life.qbic.datamanager.views.general.dialog.DialogBody;
+import life.qbic.datamanager.views.general.dialog.DialogFooter;
+import life.qbic.datamanager.views.general.dialog.DialogHeader;
+import life.qbic.datamanager.views.general.dialog.DialogSection;
 import life.qbic.datamanager.views.general.grid.component.FilterGrid;
 import life.qbic.datamanager.views.general.grid.component.FilterGridTab;
 import life.qbic.datamanager.views.general.grid.component.FilterGridTabSheet;
-import life.qbic.projectmanagement.infrastructure.experiment.measurement.foobar.NgsMeasurementJpaRepository;
-import life.qbic.projectmanagement.infrastructure.experiment.measurement.foobar.NgsMeasurementJpaRepository.NgsMeasurementFilter;
-import life.qbic.projectmanagement.infrastructure.experiment.measurement.foobar.NgsMeasurementJpaRepository.NgsMeasurementInformation;
-import life.qbic.projectmanagement.infrastructure.experiment.measurement.foobar.PxpMeasurementJpaRepository;
-import life.qbic.projectmanagement.infrastructure.experiment.measurement.foobar.PxpMeasurementJpaRepository.PxpMeasurementFilter;
-import life.qbic.projectmanagement.infrastructure.experiment.measurement.foobar.PxpMeasurementJpaRepository.PxpMeasurementInformation;
+import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
+import life.qbic.projectmanagement.application.measurement.NgsMeasurementLookup;
+import life.qbic.projectmanagement.application.measurement.NgsMeasurementLookup.MeasurementFilter;
+import life.qbic.projectmanagement.application.measurement.NgsMeasurementLookup.MeasurementInfo;
+import life.qbic.projectmanagement.application.measurement.NgsMeasurementLookup.NgsSortKey;
+import life.qbic.projectmanagement.application.measurement.NgsMeasurementLookup.SampleInfo;
+import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.NgsMeasurementJpaRepository.NgsMeasurementFilter;
+import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.PxpMeasurementJpaRepository;
+import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.PxpMeasurementJpaRepository.PxpMeasurementFilter;
+import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.PxpMeasurementJpaRepository.PxpMeasurementInformation;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.lang.NonNull;
@@ -33,19 +54,25 @@ import org.springframework.lang.Nullable;
  */
 public class MeasurementDetailsComponentV2 extends PageArea implements Serializable {
 
-  private final FilterGridTabSheet tabSheet;
-  private SearchTermFilter ngsSearchTermFilter = SearchTermFilter.empty();
-  private SearchTermFilter pxpSearchTermFilter = SearchTermFilter.empty();
+  private static final StreamResource ROR_ICON_RESOURCE = new StreamResource("ROR_logo.svg",
+      () -> MeasurementDetailsComponentV2.class.getClassLoader()
+          .getResourceAsStream("icons/ROR_logo.svg"));
 
-  private final NgsMeasurementJpaRepository jpaRepositoryNgs; /*TODO add service in the middle*/
-  private final PxpMeasurementJpaRepository jpaRepositoryPxp; /*TODO add service in the middle*/
+  private final MessageSourceNotificationFactory messageFactory;
+
+  private final FilterGridTabSheet tabSheet;
+  private final SearchTermFilter ngsSearchTermFilter = SearchTermFilter.empty();
+  private final SearchTermFilter pxpSearchTermFilter = SearchTermFilter.empty();
+
+  private final transient NgsMeasurementLookup ngsMeasurementLookup;
+  private final transient PxpMeasurementJpaRepository jpaRepositoryPxp; /*TODO add service in the middle*/
 
   /**
    * A filter containing a search term
    *
    * @param searchTerm
    */
-  record SearchTermFilter(String searchTerm) {
+  record SearchTermFilter(String searchTerm) implements Serializable {
 
     static SearchTermFilter empty() {
       return new SearchTermFilter("");
@@ -57,16 +84,18 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
   }
 
   public MeasurementDetailsComponentV2(
-      NgsMeasurementJpaRepository jpaRepositoryNgs,
+      MessageSourceNotificationFactory messageFactory,
+      NgsMeasurementLookup ngsMeasurementLookup,
       PxpMeasurementJpaRepository jpaRepositoryPxp) {
-    this.jpaRepositoryNgs = requireNonNull(jpaRepositoryNgs);
+    this.messageFactory = requireNonNull(messageFactory);
+    this.ngsMeasurementLookup = requireNonNull(ngsMeasurementLookup);
     this.jpaRepositoryPxp = requireNonNull(jpaRepositoryPxp);
     addClassNames("measurement-details-component");
 
     //setup tab sheet
     tabSheet = new FilterGridTabSheet();
     tabSheet.showPrimaryFeatureButton();
-    tabSheet.setCaptionPrimaryAction("Register Measurements");
+    tabSheet.setCaptionPrimaryAction("Edit Measurements");
     tabSheet.showPrimaryFeatureButton();
     tabSheet.setCaptionFeatureAction("Export");
     add(tabSheet);
@@ -74,7 +103,7 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
 
   public void setContext(Context context) {
     validateContext(context);
-    String projectId = context.projectId().orElseThrow().value(); /*TODO use for service calls*/
+    String projectId = context.projectId().orElseThrow().value();
     String experimentId = context.experimentId().orElseThrow().value();
 
     // for each domain, create a grid
@@ -82,33 +111,32 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
     var pxpGrid = createPxpGrid();
 
     // for each domain, configure a filter grid
-    FilterGrid<NgsMeasurementInformation, SearchTermFilter> filterGridNgs = FilterGrid.lazy(
-        NgsMeasurementInformation.class,
+    FilterGrid<MeasurementInfo, SearchTermFilter> filterGridNgs = FilterGrid.<MeasurementInfo, SearchTermFilter>lazy(
+        MeasurementInfo.class,
         SearchTermFilter.class,
         ngsGrid,
         this::getNgsSearchTermFilter,
         query ->
         {
-          Optional<String> searchTerm = query.getFilter().map(SearchTermFilter::searchTerm);
-          NgsMeasurementFilter ngsMeasurementFilter = configureDatabaseFilterNgs(experimentId,
-              searchTerm.orElse(null));
-          var pageable = new OffsetBasedRequest(query.getOffset(), query.getLimit(),
-              Sort.by(query.getSortOrders().stream().map(
-                      s -> s.getDirection() == SortDirection.ASCENDING ? Order.asc(s.getSorted())
-                          : Order.desc(s.getSorted()))
-                  .toList()));
-          List<NgsMeasurementInformation> list = jpaRepositoryNgs.findAll(
-              ngsMeasurementFilter.asSpecification(), pageable).getContent();
-          return list.stream();
+
+          String searchTerm = query.getFilter().map(SearchTermFilter::searchTerm).orElse(
+              "");
+
+          return ngsMeasurementLookup.lookupNgsMeasurements(
+              projectId, query.getOffset(), query.getLimit(),
+              VaadinSpringDataHelpers.toSpringDataSort(query),
+              new MeasurementFilter(experimentId, searchTerm));
         },
         query ->
         {
-          Optional<String> searchTerm = query.getFilter().map(SearchTermFilter::searchTerm);
-          NgsMeasurementFilter ngsMeasurementFilter = configureDatabaseFilterNgs(experimentId,
-              searchTerm.orElse(null));
-          return (int) jpaRepositoryNgs.count(ngsMeasurementFilter.asSpecification());
+          String searchTerm = query.getFilter().map(SearchTermFilter::searchTerm).orElse(
+              "");
+
+          return ngsMeasurementLookup.countNgsMeasurements(projectId,
+              new MeasurementFilter(experimentId, searchTerm));
         },
         (searchTerm, filter) -> filter.replaceWith(searchTerm));
+    filterGridNgs.itemDisplayLabel("measurement");
 
     FilterGrid<PxpMeasurementInformation, SearchTermFilter> filterGridPxp = FilterGrid.lazy(
         PxpMeasurementInformation.class,
@@ -137,19 +165,42 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
           return (int) jpaRepositoryPxp.count(ngsMeasurementFilter.asSpecification());
         },
         (searchTerm, filter) -> filter.replaceWith(searchTerm));
+    filterGridPxp.itemDisplayLabel("measurement");
 
     //add corresponding tabs in a defined order
     tabSheet.removeAllTabs();
 
-    if (jpaRepositoryNgs.count(new NgsMeasurementFilter(experimentId, "").asSpecification()) > 0) {
+    if (ngsMeasurementLookup.countNgsMeasurements(projectId,
+        new MeasurementFilter(experimentId, "")) > 0) {
       var ngsTab = new FilterGridTab<>("Genomics", filterGridNgs);
       tabSheet.addTab(0, ngsTab);
       tabSheet.addPrimaryAction(ngsTab,
-          tab -> System.out.println(
-              "registering ngs: " + tab.filterGrid().selectedElements())); //TODO trigger edit
+          tab -> {
+            List<String> selectedMeasurementIds = tab.filterGrid().selectedElements()
+                .stream()
+                .map(MeasurementInfo::measurementId)
+                .distinct()
+                .toList();
+            if (selectedMeasurementIds.isEmpty()) {
+              displayMissingSelectionNote();
+              return;
+            }
+            fireEvent(new NgsMeasurementEditRequested(
+                selectedMeasurementIds, this, true));
+          });
       tabSheet.addFeatureAction(ngsTab,
-          tab -> System.out.println(
-              "exporting ngs:" + tab.filterGrid().selectedElements())); //TODO trigger export
+          tab -> {
+            List<String> selectedMeasurementIds = tab.filterGrid().selectedElements()
+                .stream()
+                .map(MeasurementInfo::measurementId)
+                .distinct()
+                .toList();
+            if (selectedMeasurementIds.isEmpty()) {
+              displayMissingSelectionNote();
+              return;
+            }
+            fireEvent(new NgsMeasurementExportRequested(selectedMeasurementIds, this, true));
+          });
     }
 
     if (jpaRepositoryPxp.count(new PxpMeasurementFilter(experimentId, "").asSpecification()) > 0) {
@@ -185,88 +236,89 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
     return pxpSearchTermFilter;
   }
 
-  private static Grid<NgsMeasurementInformation> createNgsGrid() {
-    var ngsGrid = new Grid<NgsMeasurementInformation>();
-    ngsGrid.addColumn(NgsMeasurementInformation::measurementCode)
+
+  private static Grid<MeasurementInfo> createNgsGrid() {
+    var ngsGrid = new Grid<MeasurementInfo>();
+    ngsGrid.addColumn(MeasurementInfo::measurementCode)
         .setHeader("QBiC Measurement ID")
-        .setKey("measurementCode")
-        .setComparator(Comparator.comparing(NgsMeasurementInformation::measurementCode))
+        .setSortProperty(NgsSortKey.MEASUREMENT_ID.sortKey())
+        .setComparator(Comparator.comparing(MeasurementInfo::measurementCode))
         .setAutoWidth(true)
         .setResizable(true)
         .setFrozen(true);
-    ngsGrid.addColumn(NgsMeasurementInformation::measurementName)
-        .setKey("measurementName")
+    ngsGrid.addColumn(MeasurementInfo::measurementName)
         .setHeader("Measurement Name")
-        .setComparator(Comparator.comparing(NgsMeasurementInformation::measurementCode))
+        .setSortProperty(NgsSortKey.MEASUREMENT_NAME.sortKey())
+        .setComparator(Comparator.comparing(MeasurementInfo::measurementCode))
         .setAutoWidth(true)
         .setResizable(true);
-    //TODO add component column for samples
-    ngsGrid.addColumn(info -> info
-            .sampleInfos().stream()
-            .map(sampleInfo -> "%s (%s)".formatted(sampleInfo.sampleLabel(), sampleInfo.sampleCode()))
-            .collect(Collectors.joining(", ")))
+    ngsGrid.addComponentColumn(measurementInfo -> renderSamplesNgs(measurementInfo,
+            info -> "%s (%s)".formatted(info.sampleLabel(), info.sampleCode())))
         .setHeader("Samples")
         .setSortable(false)
         .setAutoWidth(true)
         .setResizable(true);
-    ngsGrid.addColumn(NgsMeasurementInformation::facility)
-        .setKey("facility")
+    ngsGrid.addColumn(MeasurementInfo::facility)
         .setHeader("Facility")
-        .setComparator(Comparator.comparing(NgsMeasurementInformation::facility))
+        .setSortProperty(NgsSortKey.FACILITY.sortKey())
+        .setComparator(Comparator.comparing(MeasurementInfo::facility))
         .setAutoWidth(true)
         .setResizable(true);
-    ngsGrid.addColumn(info -> info.instrument().label() + "(" + info.instrument().oboId() + ")")
-        .setKey("instrumentLabel")
+    ngsGrid.addComponentColumn(
+            info -> renderInstrument(info.instrument().label(),
+                info.instrument().oboId(),
+                info.instrument().iri()))
         .setHeader("Instrument")
-        .setComparator(Comparator.comparing(info -> info.instrument().label()))
+        .setSortable(false)
         .setAutoWidth(true)
         .setResizable(true);
-    ngsGrid.addColumn(info -> info.organisation().label() + "(" + info.organisation().iri() + ")")
-        .setKey("organisation")
+    ngsGrid.addComponentColumn(
+            info -> renderOrganisation(info.organisation().label(),
+                info.organisation().iri()))
         .setHeader("Organisation")
-        .setComparator(Comparator.comparing(info -> info.organisation().label()))
+        .setSortable(false)
         .setAutoWidth(true)
         .setResizable(true);
-    ngsGrid.addColumn(NgsMeasurementInformation::sequencingReadType)
-        .setKey("sequencingReadType")
+
+    ngsGrid.addColumn(MeasurementInfo::readType)
         .setHeader("Read type")
-        .setComparator(Comparator.comparing(NgsMeasurementInformation::sequencingReadType))
+        .setSortProperty(NgsSortKey.READ_TYPE.sortKey())
+        .setComparator(Comparator.comparing(MeasurementInfo::readType))
         .setAutoWidth(true)
         .setResizable(true);
-    ngsGrid.addColumn(NgsMeasurementInformation::libraryKit)
-        .setKey("libraryKit")
+    ngsGrid.addColumn(MeasurementInfo::libraryKit)
         .setHeader("Library kit")
-        .setComparator(Comparator.comparing(NgsMeasurementInformation::libraryKit))
+        .setSortProperty(NgsSortKey.LIBRARY_KIT.sortKey())
+        .setComparator(Comparator.comparing(MeasurementInfo::libraryKit))
         .setAutoWidth(true)
         .setResizable(true);
-    ngsGrid.addColumn(NgsMeasurementInformation::flowCell)
-        .setKey("flowCell")
+    ngsGrid.addColumn(MeasurementInfo::flowCell)
         .setHeader("Flow cell")
-        .setComparator(Comparator.comparing(NgsMeasurementInformation::flowCell))
+        .setSortProperty(NgsSortKey.FLOW_CELL.sortKey())
+        .setComparator(Comparator.comparing(MeasurementInfo::flowCell))
         .setAutoWidth(true)
         .setResizable(true);
-    ngsGrid.addColumn(NgsMeasurementInformation::sequencingRunProtocol)
-        .setKey("sequencingRunProtocol")
+    ngsGrid.addColumn(MeasurementInfo::runProtocol)
         .setHeader("Run protocol")
-        .setComparator(Comparator.comparing(NgsMeasurementInformation::sequencingRunProtocol))
+        .setKey(NgsSortKey.RUN_PROTOCOL.sortKey())
+        .setComparator(Comparator.comparing(MeasurementInfo::runProtocol))
         .setAutoWidth(true)
         .setResizable(true);
-    ngsGrid.addColumn(NgsMeasurementInformation::registeredAt)
-        .setKey("registeredAt")
+    ngsGrid.addColumn(MeasurementInfo::registeredAt)
         .setHeader("Registration Date")
-        .setComparator(Comparator.comparing(NgsMeasurementInformation::registeredAt))
+        .setKey(NgsSortKey.REGISTRATION_DATE.sortKey())
+        .setComparator(Comparator.comparing(MeasurementInfo::registeredAt))
         .setAutoWidth(true)
         .setResizable(true);
     //TODO add component column for comments
-    ngsGrid.addColumn(info -> info
-            .sampleInfos().stream()
-            .map(sampleInfo -> "%s (%s)".formatted(sampleInfo.sampleLabel(), sampleInfo.comment()))
-            .collect(Collectors.joining(", ")))
-        .setKey("comment")
+    ngsGrid.addComponentColumn(
+            (MeasurementInfo measurementInfo) -> renderSamplesNgs(measurementInfo,
+                info -> info.comment()))
         .setHeader("Comment")
         .setSortable(false)
         .setAutoWidth(true)
         .setResizable(true);
+
     return ngsGrid;
   }
 
@@ -294,6 +346,7 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
         .setComparator(Comparator.comparing(PxpMeasurementInformation::measurementCode))
         .setAutoWidth(true)
         .setResizable(true);
+    //TODO replace with component renderer
     pxpGrid.addColumn(info -> info.organisation().label() + "(" + info.organisation().iri() + ")")
         .setKey("organisation")
         .setHeader("Organisation")
@@ -306,6 +359,7 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
         .setComparator(Comparator.comparing(PxpMeasurementInformation::facility))
         .setAutoWidth(true)
         .setResizable(true);
+    //TODO replace with component renderer
     pxpGrid.addColumn(info -> info.msDevice().label() + "(" + info.msDevice().oboId() + ")")
         .setKey("msDeviceLabel")
         .setHeader("MsDevice")
@@ -331,6 +385,81 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
     return pxpGrid;
   }
 
+  private static Span renderInstrument(String label, String oboId, String iri) {
+    Span instrumentLabel = new Span(label);
+    Span instrumentOntologyLink = new Span(oboId);
+    instrumentOntologyLink.addClassName("ontology-link");
+    Anchor instrumentNameAnchor = new Anchor(iri, instrumentOntologyLink);
+    instrumentNameAnchor.setTarget(AnchorTarget.BLANK);
+    Span organisationSpan = new Span(instrumentLabel, instrumentNameAnchor);
+    organisationSpan.addClassName("instrument-column");
+    return organisationSpan;
+  }
+
+  private static Span renderMsDevice(String label, String oboId, String iri) {
+    return renderInstrument(label, oboId, iri);
+  }
+
+  private static Anchor renderOrganisation(String label, String iri) {
+    SvgIcon svgIcon = new SvgIcon(ROR_ICON_RESOURCE);
+    svgIcon.addClassName("organisation-icon");
+    Span organisationLabel = new Span(label);
+    Anchor organisationAnchor = new Anchor(iri, organisationLabel, svgIcon);
+    organisationAnchor.setTarget(AnchorTarget.BLANK);
+    organisationAnchor.addClassName("organisation-entry");
+    return organisationAnchor;
+  }
+
+  private static Component renderSamplesNgs(MeasurementInfo measurementInfo,
+      Function<SampleInfo, String> singleSampleConverter) {
+    var sampleInfos = measurementInfo.sampleInfos();
+    if (sampleInfos.size() == 1) {
+      SampleInfo sampleInfo = sampleInfos.stream().findFirst().orElseThrow();
+      String singleSampleText = singleSampleConverter.apply(sampleInfo);
+//      var singleSampleText = "%s (%s)".formatted(sampleInfo.sampleLabel(), sampleInfo.sampleCode());
+      return new Span(singleSampleText);
+    }
+    var displayLabel = measurementInfo.samplePool();
+    var expandIcon = VaadinIcon.EXPAND_SQUARE.create();
+    expandIcon.addClassName("expand-icon");
+    var pooledSamplesSpan = new Span(new Span(displayLabel), expandIcon);
+    pooledSamplesSpan.addClassNames("sample-column-cell", "clickable");
+    pooledSamplesSpan.addClickListener(event -> openPooledSampleDialogNgs(measurementInfo));
+    return pooledSamplesSpan;
+  }
+
+  private static void openPooledSampleDialogNgs(MeasurementInfo measurementInfo) {
+    AppDialog dialog = AppDialog.medium();
+    DialogHeader.with(dialog, "View Pooled Measurement");
+    DialogFooter.withConfirmOnly(dialog, "Close");
+    var sampleInfoGrid = new Grid<SampleInfo>();
+    sampleInfoGrid.addColumn(SampleInfo::sampleLabel)
+        .setHeader("Sample Name")
+        .setAutoWidth(true);
+    sampleInfoGrid.addColumn(SampleInfo::sampleCode)
+        .setHeader("Sample Id")
+        .setAutoWidth(true);
+    sampleInfoGrid.addColumn(SampleInfo::indexI7)
+        .setHeader("Index i7")
+        .setAutoWidth(true);
+    sampleInfoGrid.addColumn(SampleInfo::indexI5)
+        .setHeader("Index i5")
+        .setAutoWidth(true);
+    sampleInfoGrid.addColumn(SampleInfo::comment)
+        .setHeader("Comment")
+        .setAutoWidth(true);
+    sampleInfoGrid.setItems(measurementInfo.sampleInfos());
+    DialogSection measuredSamplesSection = DialogSection.with(
+        "Measurement ID: " + measurementInfo.measurementCode(),
+        "Sample Pool Group: " + measurementInfo.samplePool(),
+        sampleInfoGrid);
+
+    DialogBody.withoutUserInput(dialog, measuredSamplesSection);
+    dialog.registerConfirmAction(dialog::close);
+    dialog.open();
+  }
+
+
   private void validateContext(Context context) throws ContextValidationException {
     if (isNull(context)) {
       throw new ContextValidationException("Context cannot be null");
@@ -347,4 +476,69 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
       super(message);
     }
   }
+
+  private void displayMissingSelectionNote() {
+    messageFactory.toast("measurement.no-measurements-selected", new Object[]{}, getLocale())
+        .open();
+  }
+
+  public static class NgsMeasurementEditRequested extends
+      ComponentEvent<MeasurementDetailsComponentV2> {
+
+    private final List<String> measurementIds;
+
+    /**
+     * Creates a new event using the given source and indicator whether the event originated from
+     * the client side or the server side.
+     *
+     * @param source     the source component
+     * @param fromClient <code>true</code> if the event originated from the client
+     *                   side, <code>false</code> otherwise
+     */
+    public NgsMeasurementEditRequested(List<String> measurementIds,
+        MeasurementDetailsComponentV2 source, boolean fromClient) {
+      super(source, fromClient);
+      this.measurementIds = measurementIds.stream().toList();
+    }
+
+    public List<String> measurementIds() {
+      return measurementIds;
+    }
+  }
+
+  public Registration addNgsExportListener(
+      ComponentEventListener<NgsMeasurementExportRequested> listener) {
+    return addListener(NgsMeasurementExportRequested.class, listener);
+  }
+
+  public Registration addNgsEditListener(
+      ComponentEventListener<NgsMeasurementEditRequested> listener) {
+    return addListener(NgsMeasurementEditRequested.class, listener);
+  }
+
+  public static class NgsMeasurementExportRequested extends
+      ComponentEvent<MeasurementDetailsComponentV2> {
+
+    private final List<String> measurementIds;
+
+    /**
+     * Creates a new event using the given source and indicator whether the event originated from
+     * the client side or the server side.
+     *
+     * @param source     the source component
+     * @param fromClient <code>true</code> if the event originated from the client
+     *                   side, <code>false</code> otherwise
+     */
+    public NgsMeasurementExportRequested(List<String> measurementIds,
+        MeasurementDetailsComponentV2 source, boolean fromClient) {
+      super(source, fromClient);
+      this.measurementIds = measurementIds.stream().toList();
+    }
+
+    public List<String> measurementIds() {
+      return measurementIds;
+    }
+  }
+
+
 }
