@@ -319,10 +319,12 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   }
 
   private void handleDeletionSuccessNgs() {
+    updateComponentVisibility();
     measurementDetailsComponentV2.refreshNgs();
   }
 
   private void handleDeletionSuccessPxp() {
+    updateComponentVisibility();
     measurementDetailsComponentV2.refreshPxp();
   }
 
@@ -626,9 +628,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   }
 
   private void reloadMeasurements() {
-    measurementDetailsComponentV2.setContext(
-        context); /*TODO this might be a huge operation. Necessary?*/
-    setMeasurementInformation();
+    measurementDetailsComponentV2.setContext(context);
+    updateComponentVisibility();
   }
 
   private void submitRequestNGS(String projectId,
@@ -733,13 +734,12 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     ExperimentId parsedExperimentId = ExperimentId.parse(experimentId);
     this.context = context.with(parsedExperimentId);
     reloadMeasurements();
-    setMeasurementInformation();
     asyncService.getProjectCode(context.projectId().orElseThrow().value())
         .doOnSuccess(projectCode -> projectContext.setProjectId(projectCode.value()))
         .subscribe();
   }
 
-  private void setMeasurementInformation() {
+  private void updateComponentVisibility() {
     ExperimentId currentExperimentId = context.experimentId().orElseThrow();
     if (!sampleInformationService.hasSamples(currentExperimentId)) {
       showRegisterSamplesDisclaimer();
