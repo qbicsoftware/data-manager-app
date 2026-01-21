@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.measurement.MeasurementService.DeletionErrorCode;
@@ -108,17 +109,19 @@ public class MeasurementRepositoryImplementation implements MeasurementRepositor
   }
 
   @Override
-  public void deleteAllProteomics(Set<ProteomicsMeasurement> measurements) {
-    if(measurements.isEmpty()) {
+  public void deleteAllProteomics(Set<String> measurementIds) {
+    if (measurementIds.isEmpty()) {
       return;
     }
-    List<MeasurementCode> measurementCodes = measurements.stream()
-        .map(ProteomicsMeasurement::measurementCode).toList();
-    if(measurementDataRepo.hasDataAttached(measurementCodes)) {
+    List<ProteomicsMeasurement> matchingMeasurements = pxpMeasurementJpaRepo.findAllById(
+        measurementIds.stream()
+            .map(MeasurementId::parse).collect(Collectors.toSet()));
+    if (measurementDataRepo.hasDataAttached(
+        matchingMeasurements.stream().map(ProteomicsMeasurement::measurementCode).toList())) {
       throw new MeasurementDeletionException(DeletionErrorCode.DATA_ATTACHED);
     }
     try {
-      deleteAllPtx(measurements.stream().toList());
+      deleteAllPtx(matchingMeasurements);
     } catch (Exception e) {
       log.error("Measurement deletion failed due to " + e.getMessage());
       throw new MeasurementDeletionException(DeletionErrorCode.FAILED);
@@ -126,21 +129,24 @@ public class MeasurementRepositoryImplementation implements MeasurementRepositor
   }
 
   @Override
-  public void deleteAllNGS(Set<NGSMeasurement> measurements) {
-    if(measurements.isEmpty()) {
+  public void deleteAllNgs(Set<String> measurementIds) {
+    if (measurementIds.isEmpty()) {
       return;
     }
-    List<MeasurementCode> measurementCodes = measurements.stream()
-        .map(NGSMeasurement::measurementCode).toList();
-    if(measurementDataRepo.hasDataAttached(measurementCodes)) {
+    List<NGSMeasurement> matchingMeasurements = ngsMeasurementJpaRepo.findAllById(
+        measurementIds.stream().map(MeasurementId::parse).collect(
+            Collectors.toSet()));
+    if (measurementDataRepo.hasDataAttached(
+        matchingMeasurements.stream().map(NGSMeasurement::measurementCode).toList())) {
       throw new MeasurementDeletionException(DeletionErrorCode.DATA_ATTACHED);
     }
     try {
-      deleteAllNGS(measurements.stream().toList());
+      deleteAllNGS(matchingMeasurements);
     } catch (Exception e) {
       log.error("Measurement deletion failed due to " + e.getMessage());
       throw new MeasurementDeletionException(DeletionErrorCode.FAILED);
     }
+
   }
 
   private void deleteAllPtx(List<ProteomicsMeasurement> measurements) {

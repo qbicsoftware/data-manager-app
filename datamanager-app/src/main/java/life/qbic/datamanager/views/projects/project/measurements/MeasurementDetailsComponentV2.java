@@ -6,6 +6,7 @@ import static java.util.Objects.requireNonNull;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
+import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.AnchorTarget;
@@ -20,6 +21,7 @@ import java.io.Serializable;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
@@ -66,6 +68,8 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
 
   private final transient NgsMeasurementLookup ngsMeasurementLookup;
   private final transient PxpMeasurementJpaRepository jpaRepositoryPxp; /*TODO add service in the middle*/
+  private FilterGrid<MeasurementInfo, SearchTermFilter> filterGridNgs;
+  private FilterGrid<PxpMeasurementInformation, SearchTermFilter> filterGridPxp;
 
   /**
    * A filter containing a search term
@@ -95,10 +99,20 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
     //setup tab sheet
     tabSheet = new FilterGridTabSheet();
     tabSheet.showPrimaryFeatureButton();
-    tabSheet.setCaptionPrimaryAction("Edit Measurements");
+    tabSheet.setCaptionPrimaryAction("Register Measurements");
     tabSheet.showPrimaryFeatureButton();
     tabSheet.setCaptionFeatureAction("Export");
     add(tabSheet);
+  }
+
+  public void refreshNgs() {
+    Optional.ofNullable(filterGridNgs)
+        .ifPresent(FilterGrid::refreshAll);
+  }
+
+  public void refreshPxp() {
+    Optional.ofNullable(filterGridPxp)
+        .ifPresent(FilterGrid::refreshAll);
   }
 
   public void setContext(Context context) {
@@ -111,7 +125,7 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
     var pxpGrid = createPxpGrid();
 
     // for each domain, configure a filter grid
-    FilterGrid<MeasurementInfo, SearchTermFilter> filterGridNgs = FilterGrid.<MeasurementInfo, SearchTermFilter>lazy(
+    filterGridNgs = FilterGrid.<MeasurementInfo, SearchTermFilter>lazy(
         MeasurementInfo.class,
         SearchTermFilter.class,
         ngsGrid,
@@ -137,8 +151,39 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
         },
         (searchTerm, filter) -> filter.replaceWith(searchTerm));
     filterGridNgs.itemDisplayLabel("measurement");
+    var editNgsButton = new Button("Edit");
+    editNgsButton.addClickListener(clicked -> {
+      Set<MeasurementInfo> selectedMeasurements = filterGridNgs.selectedElements();
+      List<String> selectedMeasurementIds = selectedMeasurements
+          .stream()
+          .map(MeasurementInfo::measurementId)
+          .distinct()
+          .toList();
+      if (selectedMeasurementIds.isEmpty()) {
+        displayMissingSelectionNote();
+        return;
+      }
+      fireEvent(new NgsMeasurementEditRequested(selectedMeasurementIds, this, true));
+    });
 
-    FilterGrid<PxpMeasurementInformation, SearchTermFilter> filterGridPxp = FilterGrid.lazy(
+    var deleteNgsButton = new Button("Delete");
+    deleteNgsButton.addClickListener(clicked -> {
+      Set<MeasurementInfo> selectedMeasurements = filterGridNgs.selectedElements();
+      List<String> selectedMeasurementIds = selectedMeasurements
+          .stream()
+          .map(MeasurementInfo::measurementId)
+          .distinct()
+          .toList();
+      if (selectedMeasurementIds.isEmpty()) {
+        displayMissingSelectionNote();
+        return;
+      }
+      fireEvent(new NgsMeasurementDeletionRequested(selectedMeasurementIds, this, true));
+    });
+
+    filterGridNgs.setSecondaryActionGroup(deleteNgsButton, editNgsButton);
+
+    filterGridPxp = FilterGrid.lazy(
         PxpMeasurementInformation.class,
         SearchTermFilter.class,
         pxpGrid,
@@ -175,19 +220,7 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
       var ngsTab = new FilterGridTab<>("Genomics", filterGridNgs);
       tabSheet.addTab(0, ngsTab);
       tabSheet.addPrimaryAction(ngsTab,
-          tab -> {
-            List<String> selectedMeasurementIds = tab.filterGrid().selectedElements()
-                .stream()
-                .map(MeasurementInfo::measurementId)
-                .distinct()
-                .toList();
-            if (selectedMeasurementIds.isEmpty()) {
-              displayMissingSelectionNote();
-              return;
-            }
-            fireEvent(new NgsMeasurementEditRequested(
-                selectedMeasurementIds, this, true));
-          });
+          tab -> fireEvent(new NgsMeasurementRegistrationRequested(this, true)));
       tabSheet.addFeatureAction(ngsTab,
           tab -> {
             List<String> selectedMeasurementIds = tab.filterGrid().selectedElements()
@@ -482,6 +515,29 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
         .open();
   }
 
+
+  public static class NgsMeasurementRegistrationRequested extends
+      ComponentEvent<MeasurementDetailsComponentV2> {
+
+    /**
+     * Creates a new event using the given source and indicator whether the event originated from
+     * the client side or the server side.
+     *
+     * @param source     the source component
+     * @param fromClient <code>true</code> if the event originated from the client
+     *                   side, <code>false</code> otherwise
+     */
+    public NgsMeasurementRegistrationRequested(MeasurementDetailsComponentV2 source,
+        boolean fromClient) {
+      super(source, fromClient);
+    }
+  }
+
+  public Registration addNgsRegisterListener(
+      ComponentEventListener<NgsMeasurementRegistrationRequested> listener) {
+    return addListener(NgsMeasurementRegistrationRequested.class, listener);
+  }
+
   public static class NgsMeasurementEditRequested extends
       ComponentEvent<MeasurementDetailsComponentV2> {
 
@@ -504,11 +560,6 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
     public List<String> measurementIds() {
       return measurementIds;
     }
-  }
-
-  public Registration addNgsExportListener(
-      ComponentEventListener<NgsMeasurementExportRequested> listener) {
-    return addListener(NgsMeasurementExportRequested.class, listener);
   }
 
   public Registration addNgsEditListener(
@@ -538,6 +589,41 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
     public List<String> measurementIds() {
       return measurementIds;
     }
+  }
+
+  public Registration addNgsExportListener(
+      ComponentEventListener<NgsMeasurementExportRequested> listener) {
+    return addListener(NgsMeasurementExportRequested.class, listener);
+  }
+
+  public static class NgsMeasurementDeletionRequested extends
+      ComponentEvent<MeasurementDetailsComponentV2> {
+
+    private final List<String> measurementIds;
+
+    /**
+     * Creates a new event using the given source and indicator whether the event originated from
+     * the client side or the server side.
+     *
+     * @param source     the source component
+     * @param fromClient <code>true</code> if the event originated from the client
+     *                   side, <code>false</code> otherwise
+     */
+    public NgsMeasurementDeletionRequested(List<String> measurementIds,
+        MeasurementDetailsComponentV2 source,
+        boolean fromClient) {
+      super(source, fromClient);
+      this.measurementIds = measurementIds.stream().toList();
+    }
+
+    public List<String> measurementIds() {
+      return measurementIds;
+    }
+  }
+
+  public Registration addNgsDeletionListener(
+      ComponentEventListener<NgsMeasurementDeletionRequested> listener) {
+    return addListener(NgsMeasurementDeletionRequested.class, listener);
   }
 
 

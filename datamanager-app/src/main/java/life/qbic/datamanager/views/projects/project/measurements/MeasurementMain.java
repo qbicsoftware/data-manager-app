@@ -15,6 +15,7 @@ import java.io.InputStream;
 import java.io.Serial;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -23,7 +24,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.FileNameFormatter;
-import life.qbic.application.commons.Result;
 import life.qbic.datamanager.files.export.download.DownloadStreamProvider;
 import life.qbic.datamanager.files.export.download.WorkbookDownloadStreamProvider;
 import life.qbic.datamanager.files.parsing.converters.ConverterRegistry;
@@ -66,8 +66,6 @@ import life.qbic.projectmanagement.application.measurement.validation.Measuremen
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
-import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
-import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.PxpMeasurementJpaRepository;
@@ -162,7 +160,6 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     this.noMeasurementDisclaimer = createNoMeasurementDisclaimer();
     initContent();
 
-    //TODO add download component
     addClassName("measurement");
     this.messageSourceNotificationFactory = messageSourceNotificationFactory;
 
@@ -176,10 +173,15 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
         ngsMeasurementLookup,
         pxpMeasurementJpaRepository);
 
+    measurementDetailsComponentV2.addNgsRegisterListener(
+        registrationRequest -> openRegistrationDialog());
     measurementDetailsComponentV2.addNgsEditListener(
         editRequest -> ngsEditDialog(editRequest.measurementIds()).open());
     measurementDetailsComponentV2.addNgsExportListener(
         exportRequest -> downloadNGSMetadata(exportRequest.measurementIds()));
+    measurementDetailsComponentV2.addNgsDeletionListener(
+        deletionRequest -> handleNgsDeletionRequest(
+            new HashSet<>(deletionRequest.measurementIds())));
 
 
     add(registerSamplesDisclaimer, measurementTemplateDownload, measurementDetailsComponentV2);
@@ -264,59 +266,66 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     return dialog;
   }
 
-  private void handlePtxDeletionRequest(Set<ProteomicsMeasurement> measurements) {
-    if (measurements.isEmpty()) {
+  private void handlePxpDeletionRequest(Set<String> measurementIds) {
+    if (measurementIds.isEmpty()) {
       return;
     }
     MeasurementDeletionConfirmationNotification notification =
         new MeasurementDeletionConfirmationNotification(
-            "Selected proteomics measurements will be deleted", measurements.size());
+            "Selected proteomics measurements will be deleted", measurementIds.size());
     notification.open();
     notification.addConfirmListener(event -> {
-      deletePtxMeasurements(measurements);
+      deletePxpMeasurements(measurementIds);
       notification.close();
     });
     notification.addCancelListener(event -> notification.close());
   }
 
-  private void handleNGSDeletionRequest(Set<NGSMeasurement> measurements) {
-    if (measurements.isEmpty()) {
+  private void handleNgsDeletionRequest(Set<String> measurementIds) {
+    if (measurementIds.isEmpty()) {
       return;
     }
     MeasurementDeletionConfirmationNotification notification =
         new MeasurementDeletionConfirmationNotification(
-            "Selected genomics measurements will be deleted", measurements.size());
+            "Selected genomics measurements will be deleted", measurementIds.size());
     notification.open();
     notification.addConfirmListener(event -> {
-      deleteNGSMeasurements(measurements);
+      deleteNgsMeasurements(measurementIds);
       notification.close();
     });
     notification.addCancelListener(event -> notification.close());
   }
 
-  private void deleteNGSMeasurements(Set<NGSMeasurement> measurements) {
-    Result<Void, MeasurementDeletionException> result = measurementService.deleteNGSMeasurements(
-        context.projectId().orElseThrow(), measurements);
-    handleDeletionResults(result);
+  private void deleteNgsMeasurements(Set<String> measurementIds) {
+    var result = measurementService.deleteNgsMeasurements(context.projectId().orElseThrow(),
+        measurementIds);
+    result.onError(this::handleDeletionError);
+    result.onValue(ignored -> handleDeletionSuccessNgs());
   }
 
-  private void deletePtxMeasurements(Set<ProteomicsMeasurement> measurements) {
-    Result<Void, MeasurementDeletionException> result = measurementService.deletePxPMeasurements(
-        context.projectId().orElseThrow(), measurements);
-    handleDeletionResults(result);
+  private void deletePxpMeasurements(Set<String> measurementIds) {
+    var result = measurementService.deletePxpMeasurements(context.projectId().orElseThrow(),
+        measurementIds);
+    result.onError(this::handleDeletionError);
+    result.onValue(ignored -> handleDeletionSuccessPxp());
   }
 
-  private void handleDeletionResults(Result<Void, MeasurementDeletionException> result) {
-    result.onError(error -> {
-      String errorMessage = switch (error.reason()) {
-        case FAILED -> "Deletion failed. Please try again.";
-        case DATA_ATTACHED -> "Data is attached to one or more measurements.";
-      };
-      showErrorNotification("Deletion failed", errorMessage);
-    });
-    result.onValue(v -> /*TODO update grids*/{
-    });
+  private void handleDeletionError(MeasurementDeletionException error) {
+    String errorMessage = switch (error.reason()) {
+      case FAILED -> "Deletion failed. Please try again.";
+      case DATA_ATTACHED -> "Data is attached to one or more measurements.";
+    };
+    showErrorNotification("Deletion failed", errorMessage);
   }
+
+  private void handleDeletionSuccessNgs() {
+    measurementDetailsComponentV2.refreshNgs();
+  }
+
+  private void handleDeletionSuccessPxp() {
+    measurementDetailsComponentV2.refreshPxp();
+  }
+
 
   private void downloadProteomicsMetadata(List<String> selectedMeasurementIds) {
     ProjectId projectId = context.projectId().orElseThrow();

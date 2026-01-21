@@ -1196,12 +1196,13 @@ public class MeasurementService {
         associatedExperimentsFromSamples);
   }
 
+
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
-  public Result<Void, MeasurementDeletionException> deletePxPMeasurements(ProjectId projectId,
-      Set<ProteomicsMeasurement> selectedMeasurements) {
+  public Result<Void, MeasurementDeletionException> deletePxpMeasurements(ProjectId projectId,
+      Set<String> measurementIds) {
     try {
-      measurementDomainService.deletePxP(selectedMeasurements);
-      if (!selectedMeasurements.isEmpty()) {
+      measurementDomainService.deletePxpById(measurementIds);
+      if (!measurementIds.isEmpty()) {
         dispatchProjectChangedOnMeasurementDeleted(projectId);
       }
       return Result.fromValue(null);
@@ -1211,11 +1212,11 @@ public class MeasurementService {
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
-  public Result<Void, MeasurementDeletionException> deleteNGSMeasurements(ProjectId projectId,
-      Set<NGSMeasurement> selectedMeasurements) {
+  public Result<Void, MeasurementDeletionException> deleteNgsMeasurements(ProjectId projectId,
+      Set<String> measurementIds) {
     try {
-      measurementDomainService.deleteNGS(selectedMeasurements);
-      if (!selectedMeasurements.isEmpty()) {
+      measurementDomainService.deleteNgsById(measurementIds);
+      if (!measurementIds.isEmpty()) {
         dispatchProjectChangedOnMeasurementDeleted(projectId);
       }
       return Result.fromValue(null);
