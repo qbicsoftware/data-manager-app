@@ -61,6 +61,7 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.Validatio
 import life.qbic.projectmanagement.application.api.fair.DigitalObject;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.measurement.MeasurementService.MeasurementDeletionException;
+import life.qbic.projectmanagement.application.measurement.NgsMeasurementLookup;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
@@ -69,8 +70,7 @@ import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
-import life.qbic.projectmanagement.infrastructure.experiment.measurement.foobar.NgsMeasurementJpaRepository;
-import life.qbic.projectmanagement.infrastructure.experiment.measurement.foobar.PxpMeasurementJpaRepository;
+import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.PxpMeasurementJpaRepository;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.NGSWorkbooks;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.ProteomicsWorkbooks;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -146,7 +146,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
       @Autowired AsyncProjectService asyncProjectService,
       MessageSourceNotificationFactory messageFactory,
       MessageSourceNotificationFactory messageSourceNotificationFactory,
-      NgsMeasurementJpaRepository ngsMeasurementJpaRepository,
+      NgsMeasurementLookup ngsMeasurementLookup,
       PxpMeasurementJpaRepository pxpMeasurementJpaRepository) {
     Objects.requireNonNull(measurementService);
     Objects.requireNonNull(measurementValidationService);
@@ -172,8 +172,16 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     add(registerSamplesDisclaimer, noMeasurementDisclaimer, measurementTemplateDownload,
         downloadComponent);
     measurementDetailsComponentV2 = new MeasurementDetailsComponentV2(
-        ngsMeasurementJpaRepository,
+        messageFactory,
+        ngsMeasurementLookup,
         pxpMeasurementJpaRepository);
+
+    measurementDetailsComponentV2.addNgsEditListener(
+        editRequest -> ngsEditDialog(editRequest.measurementIds()).open());
+    measurementDetailsComponentV2.addNgsExportListener(
+        exportRequest -> downloadNGSMetadata(exportRequest.measurementIds()));
+
+
     add(registerSamplesDisclaimer, measurementTemplateDownload, measurementDetailsComponentV2);
     log.debug(
         "Created project measurement main for " + VaadinSession.getCurrent().getSession().getId());
@@ -193,7 +201,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private AppDialog initDialogForDomain(MeasurementDetailsComponent.Domain domain,
       List<String> selectedMeasurements) {
     return switch (domain) {
-      case GENOMICS -> initDialogForUpdateNGS(selectedMeasurements);
+      case GENOMICS -> ngsEditDialog(selectedMeasurements);
       case PROTEOMICS -> initDialogForUpdatePxP(selectedMeasurements);
     };
   }
@@ -227,7 +235,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     return dialog;
   }
 
-  private AppDialog initDialogForUpdateNGS(List<String> selectedMeasurementIds) {
+  private AppDialog ngsEditDialog(List<String> selectedMeasurementIds) {
     var dialog = AppDialog.medium();
     DialogHeader.with(dialog, "Edit Measurements");
     DialogFooter.with(dialog, "Cancel", "Update");

@@ -1,6 +1,5 @@
 package life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa;
 
-import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -118,7 +117,7 @@ public interface PxpMeasurementJpaRepository extends
 
       @Override
       public MsDevice deserialize(JsonParser jsonParser, DeserializationContext ctxt)
-          throws IOException, JacksonException {
+          throws IOException {
         JsonNode tree = jsonParser.readValueAsTree();
         String oboId = Optional.ofNullable(tree.get("name"))
             .map(JsonNode::asText) //e.g. EFO_0008633
