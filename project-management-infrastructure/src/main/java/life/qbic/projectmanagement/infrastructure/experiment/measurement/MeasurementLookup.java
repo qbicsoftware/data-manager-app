@@ -9,6 +9,9 @@ import life.qbic.projectmanagement.application.measurement.PxpMeasurementLookup;
 import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.NgsMeasurementJpaRepository;
 import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.NgsMeasurementJpaRepository.NgsMeasurementFilter;
 import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.NgsMeasurementJpaRepository.NgsMeasurementInformation;
+import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.PxpMeasurementJpaRepository;
+import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.PxpMeasurementJpaRepository.PxpMeasurementFilter;
+import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.PxpMeasurementJpaRepository.PxpMeasurementInformation;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.lang.NonNull;
@@ -20,22 +23,27 @@ import org.springframework.stereotype.Service;
 public class MeasurementLookup implements NgsMeasurementLookup, PxpMeasurementLookup {
 
   private final NgsMeasurementJpaRepository ngsMeasurementJpaRepository;
+  private final PxpMeasurementJpaRepository pxpMeasurementJpaRepository;
 
-  public MeasurementLookup(NgsMeasurementJpaRepository ngsMeasurementJpaRepository) {
+  public MeasurementLookup(NgsMeasurementJpaRepository ngsMeasurementJpaRepository,
+      PxpMeasurementJpaRepository pxpMeasurementJpaRepository) {
     this.ngsMeasurementJpaRepository = Objects.requireNonNull(ngsMeasurementJpaRepository);
+    this.pxpMeasurementJpaRepository = Objects.requireNonNull(pxpMeasurementJpaRepository);
   }
 
   @Override
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
-  public @NonNull Stream<MeasurementInfo> lookupNgsMeasurements(@NonNull String projectId,
+  public @NonNull Stream<NgsMeasurementLookup.MeasurementInfo> lookupNgsMeasurements(
+      @NonNull String projectId,
       int offset, int limit, @NonNull Sort sort,
-      @NonNull NgsMeasurementLookup.MeasurementFilter measurementFilter) throws SortKeyException {
+      @NonNull NgsMeasurementLookup.MeasurementFilter measurementFilter)
+      throws NgsMeasurementLookup.SortKeyException {
 
     var invalidSortKeys = sort.stream()
         .filter(order -> !NgsSortKey.isValidSortKey(order.getProperty()))
         .toList();
     if (!invalidSortKeys.isEmpty()) {
-      throw new SortKeyException(
+      throw new NgsMeasurementLookup.SortKeyException(
           "Invalid sort keys for ngs measurements: " + invalidSortKeys.stream()
               .map(Order::getProperty).toList());
     }
@@ -56,16 +64,53 @@ public class MeasurementLookup implements NgsMeasurementLookup, PxpMeasurementLo
     return (int) ngsMeasurementJpaRepository.count(filter.asSpecification());
   }
 
+  @Override
+  public @NonNull Stream<PxpMeasurementLookup.MeasurementInfo> lookupPxpMeasurements(
+      @NonNull String projectId, int offset, int limit,
+      @NonNull Sort sort,
+      @NonNull PxpMeasurementLookup.MeasurementFilter measurementFilter)
+      throws PxpMeasurementLookup.SortKeyException {
+
+    var invalidSortKeys = sort.stream()
+        .filter(order -> !PxpSortKey.isValidSortKey(order.getProperty()))
+        .toList();
+    if (!invalidSortKeys.isEmpty()) {
+      throw new PxpMeasurementLookup.SortKeyException(
+          "Invalid sort keys for ngs measurements: " + invalidSortKeys.stream()
+              .map(Order::getProperty).toList());
+    }
+    var pageable = new OffsetBasedRequest(offset, limit, sort);
+    var filter = mapToDatabaseFilter(measurementFilter);
+    return pxpMeasurementJpaRepository.findAll(filter.asSpecification(), pageable)
+        .get()
+        .map((PxpMeasurementInformation dbObject) -> toApiObject(projectId, dbObject));
+  }
+
+  @Override
+  public int countPxpMeasurements(
+      @NonNull String projectId,
+      @NonNull PxpMeasurementLookup.MeasurementFilter measurementFilter) {
+    var filter = mapToDatabaseFilter(measurementFilter);
+    return (int) pxpMeasurementJpaRepository.count(filter.asSpecification());
+  }
+
   private static @NonNull NgsMeasurementJpaRepository.NgsMeasurementFilter mapToDatabaseFilter(
-      @NonNull MeasurementFilter measurementFilter) {
+      @NonNull NgsMeasurementLookup.MeasurementFilter measurementFilter) {
     return new NgsMeasurementFilter(measurementFilter.experimentId(),
         measurementFilter.searchTerm());
   }
 
-  private MeasurementInfo toApiObject(String projectId, NgsMeasurementInformation dbMeasurement) {
-    List<SampleInfo> sampleInfos = dbMeasurement.sampleInfos().stream()
+  private static @NonNull PxpMeasurementFilter mapToDatabaseFilter(
+      @NonNull PxpMeasurementLookup.MeasurementFilter measurementFilter) {
+    return new PxpMeasurementFilter(measurementFilter.experimentId(),
+        measurementFilter.searchTerm());
+  }
+
+  private NgsMeasurementLookup.MeasurementInfo toApiObject(String projectId,
+      NgsMeasurementInformation dbMeasurement) {
+    List<NgsMeasurementLookup.SampleInfo> sampleInfos = dbMeasurement.sampleInfos().stream()
         .map(sampleInfo ->
-            new SampleInfo(sampleInfo.sampleId(),
+            new NgsMeasurementLookup.SampleInfo(sampleInfo.sampleId(),
                 sampleInfo.sampleCode(),
                 sampleInfo.sampleLabel(),
                 sampleInfo.indexI5(),
@@ -77,14 +122,14 @@ public class MeasurementLookup implements NgsMeasurementLookup, PxpMeasurementLo
     NgsMeasurementJpaRepository.Instrument instrument = Objects.requireNonNull(
         dbMeasurement.instrument());
 
-    return new MeasurementInfo(
+    return new NgsMeasurementLookup.MeasurementInfo(
         dbMeasurement.measurementId(),
         projectId,
         dbMeasurement.getExperimentId(),
         dbMeasurement.measurementCode(),
         dbMeasurement.measurementName(),
         dbMeasurement.facility(),
-        new Organisation(organisation.label(), organisation.iri()),
+        new NgsMeasurementLookup.Organisation(organisation.label(), organisation.iri()),
         new Instrument(instrument.label(), instrument.oboId(),
             instrument.iri()),
         dbMeasurement.samplePool(),
@@ -93,6 +138,46 @@ public class MeasurementLookup implements NgsMeasurementLookup, PxpMeasurementLo
         dbMeasurement.libraryKit(),
         dbMeasurement.flowCell(),
         dbMeasurement.sequencingRunProtocol(),
+        sampleInfos);
+  }
+
+  private PxpMeasurementLookup.MeasurementInfo toApiObject(String projectId,
+      PxpMeasurementInformation dbMeasurement) {
+    List<PxpMeasurementLookup.SampleInfo> sampleInfos = dbMeasurement.sampleInfos().stream()
+        .map(sampleInfo ->
+            new PxpMeasurementLookup.SampleInfo(sampleInfo.sampleId(),
+                sampleInfo.sampleCode(),
+                sampleInfo.sampleLabel(),
+                sampleInfo.fractionName(),
+                sampleInfo.measurementLabel(),
+                sampleInfo.comment()))
+        .toList();
+    PxpMeasurementJpaRepository.Organisation organisation = Objects.requireNonNull(
+        dbMeasurement.organisation());
+    PxpMeasurementJpaRepository.MsDevice msDevice = Objects.requireNonNull(
+        dbMeasurement.msDevice());
+
+    return new PxpMeasurementLookup.MeasurementInfo(
+        dbMeasurement.measurementId(),
+        projectId,
+        dbMeasurement.experimentId(),
+        dbMeasurement.measurementCode(),
+        dbMeasurement.measurementName(),
+        dbMeasurement.facility(),
+        new PxpMeasurementLookup.Organisation(organisation.label(), organisation.iri()),
+        new MsDevice(msDevice.label(), msDevice.oboId(),
+            msDevice.iri()),
+        dbMeasurement.samplePool(),
+        dbMeasurement.registeredAt(),
+        dbMeasurement.digestionEnzyme(),
+        dbMeasurement.digestionMethod(),
+        dbMeasurement.enrichmentMethod(),
+        dbMeasurement.injectionVolume(),
+        dbMeasurement.labelType(),
+        dbMeasurement.label(),
+        dbMeasurement.technicalReplicateName(),
+        dbMeasurement.lcmsMethod(),
+        dbMeasurement.lcColumn(),
         sampleInfos);
   }
 

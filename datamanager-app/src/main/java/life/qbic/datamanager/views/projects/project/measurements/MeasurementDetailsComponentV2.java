@@ -3,9 +3,11 @@ package life.qbic.datamanager.views.projects.project.measurements;
 import static java.util.Objects.isNull;
 import static java.util.Objects.requireNonNull;
 
+import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Anchor;
@@ -13,19 +15,20 @@ import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.data.provider.SortDirection;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 import java.io.Serializable;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
-import life.qbic.application.commons.OffsetBasedRequest;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.dialog.AppDialog;
@@ -42,12 +45,9 @@ import life.qbic.projectmanagement.application.measurement.NgsMeasurementLookup.
 import life.qbic.projectmanagement.application.measurement.NgsMeasurementLookup.MeasurementInfo;
 import life.qbic.projectmanagement.application.measurement.NgsMeasurementLookup.NgsSortKey;
 import life.qbic.projectmanagement.application.measurement.NgsMeasurementLookup.SampleInfo;
+import life.qbic.projectmanagement.application.measurement.PxpMeasurementLookup;
 import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.NgsMeasurementJpaRepository.NgsMeasurementFilter;
-import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.PxpMeasurementJpaRepository;
 import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.PxpMeasurementJpaRepository.PxpMeasurementFilter;
-import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.PxpMeasurementJpaRepository.PxpMeasurementInformation;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.domain.Sort.Order;
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 
@@ -59,6 +59,8 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
   private static final StreamResource ROR_ICON_RESOURCE = new StreamResource("ROR_logo.svg",
       () -> MeasurementDetailsComponentV2.class.getClassLoader()
           .getResourceAsStream("icons/ROR_logo.svg"));
+  private static final String DATE_TIME_FORMAT = "yyyy-MM-dd HH:mm";
+  private final AtomicReference<String> clientTimeZone = new AtomicReference<>();
 
   private final MessageSourceNotificationFactory messageFactory;
 
@@ -67,9 +69,9 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
   private final SearchTermFilter pxpSearchTermFilter = SearchTermFilter.empty();
 
   private final transient NgsMeasurementLookup ngsMeasurementLookup;
-  private final transient PxpMeasurementJpaRepository jpaRepositoryPxp; /*TODO add service in the middle*/
+  private final transient PxpMeasurementLookup pxpMeasurementLookup; /*TODO add service in the middle*/
   private FilterGrid<MeasurementInfo, SearchTermFilter> filterGridNgs;
-  private FilterGrid<PxpMeasurementInformation, SearchTermFilter> filterGridPxp;
+  private FilterGrid<PxpMeasurementLookup.MeasurementInfo, SearchTermFilter> filterGridPxp;
 
   /**
    * A filter containing a search term
@@ -90,10 +92,10 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
   public MeasurementDetailsComponentV2(
       MessageSourceNotificationFactory messageFactory,
       NgsMeasurementLookup ngsMeasurementLookup,
-      PxpMeasurementJpaRepository jpaRepositoryPxp) {
+      PxpMeasurementLookup pxpMeasurementLookup) {
     this.messageFactory = requireNonNull(messageFactory);
     this.ngsMeasurementLookup = requireNonNull(ngsMeasurementLookup);
-    this.jpaRepositoryPxp = requireNonNull(jpaRepositoryPxp);
+    this.pxpMeasurementLookup = requireNonNull(pxpMeasurementLookup);
     addClassNames("measurement-details-component");
 
     //setup tab sheet
@@ -180,37 +182,64 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
       }
       fireEvent(new NgsMeasurementDeletionRequested(selectedMeasurementIds, this, true));
     });
-
     filterGridNgs.setSecondaryActionGroup(deleteNgsButton, editNgsButton);
 
     filterGridPxp = FilterGrid.lazy(
-        PxpMeasurementInformation.class,
+        PxpMeasurementLookup.MeasurementInfo.class,
         SearchTermFilter.class,
         pxpGrid,
         this::getPxpSearchTermFilter,
         query ->
         {
-          Optional<String> searchTerm = query.getFilter().map(SearchTermFilter::searchTerm);
-          PxpMeasurementFilter ngsMeasurementFilter = configureDatabaseFilterPxp(experimentId,
-              searchTerm.orElse(null));
-          var pageable = new OffsetBasedRequest(query.getOffset(), query.getLimit(),
-              Sort.by(query.getSortOrders().stream().map(
-                      s -> s.getDirection() == SortDirection.ASCENDING ? Order.asc(s.getSorted())
-                          : Order.desc(s.getSorted()))
-                  .toList()));
-          List<PxpMeasurementInformation> list = jpaRepositoryPxp.findAll(
-              ngsMeasurementFilter.asSpecification(), pageable).getContent();
-          return list.stream();
+
+          String searchTerm = query.getFilter().map(SearchTermFilter::searchTerm)
+              .orElse("");
+
+          return pxpMeasurementLookup.lookupPxpMeasurements(
+              projectId, query.getOffset(), query.getLimit(),
+              VaadinSpringDataHelpers.toSpringDataSort(query),
+              new PxpMeasurementLookup.MeasurementFilter(experimentId, searchTerm));
         },
         query ->
         {
-          Optional<String> searchTerm = query.getFilter().map(SearchTermFilter::searchTerm);
-          PxpMeasurementFilter ngsMeasurementFilter = configureDatabaseFilterPxp(experimentId,
-              searchTerm.orElse(null));
-          return (int) jpaRepositoryPxp.count(ngsMeasurementFilter.asSpecification());
+          var searchTerm = query.getFilter().map(SearchTermFilter::searchTerm)
+              .orElse("");
+          return pxpMeasurementLookup.countPxpMeasurements(projectId,
+              new PxpMeasurementLookup.MeasurementFilter(experimentId, searchTerm));
         },
         (searchTerm, filter) -> filter.replaceWith(searchTerm));
     filterGridPxp.itemDisplayLabel("measurement");
+    var editPxpButton = new Button("Edit");
+    editPxpButton.addClickListener(clicked -> {
+      Set<PxpMeasurementLookup.MeasurementInfo> selectedMeasurements = filterGridPxp.selectedElements();
+      List<String> selectedMeasurementIds = selectedMeasurements
+          .stream()
+          .map(PxpMeasurementLookup.MeasurementInfo::measurementId)
+          .distinct()
+          .toList();
+      if (selectedMeasurementIds.isEmpty()) {
+        displayMissingSelectionNote();
+        return;
+      }
+      fireEvent(new PxpMeasurementEditRequested(selectedMeasurementIds, this, true));
+    });
+
+    var deletePxpButton = new Button("Delete");
+    deletePxpButton.addClickListener(clicked -> {
+      Set<PxpMeasurementLookup.MeasurementInfo> selectedMeasurements = filterGridPxp.selectedElements();
+      List<String> selectedMeasurementIds = selectedMeasurements
+          .stream()
+          .map(PxpMeasurementLookup.MeasurementInfo::measurementId)
+          .distinct()
+          .toList();
+      if (selectedMeasurementIds.isEmpty()) {
+        displayMissingSelectionNote();
+        return;
+      }
+      fireEvent(new NgsMeasurementDeletionRequested(selectedMeasurementIds, this, true));
+    });
+    filterGridPxp.setSecondaryActionGroup(deletePxpButton, editPxpButton);
+
 
     //add corresponding tabs in a defined order
     tabSheet.removeAllTabs();
@@ -236,13 +265,25 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
           });
     }
 
-    if (jpaRepositoryPxp.count(new PxpMeasurementFilter(experimentId, "").asSpecification()) > 0) {
+    if (pxpMeasurementLookup.countPxpMeasurements(projectId,
+        new PxpMeasurementLookup.MeasurementFilter(experimentId, "")) > 0) {
       var pxpTab = new FilterGridTab<>("Proteomics", filterGridPxp);
       tabSheet.addTab(1, pxpTab);
       tabSheet.addPrimaryAction(pxpTab,
-          tab -> System.out.println("registering pxp")); //TODO trigger edit
+          tab -> fireEvent(new PxpMeasurementRegistrationRequested(this, true)));
       tabSheet.addFeatureAction(pxpTab,
-          tab -> System.out.println("exporting pxp")); //TODO trigger export
+          tab -> {
+            List<String> selectedMeasurementIds = tab.filterGrid().selectedElements()
+                .stream()
+                .map(PxpMeasurementLookup.MeasurementInfo::measurementId)
+                .distinct()
+                .toList();
+            if (selectedMeasurementIds.isEmpty()) {
+              displayMissingSelectionNote();
+              return;
+            }
+            fireEvent(new PxpMeasurementExportRequested(selectedMeasurementIds, this, true));
+          });
     }
   }
 
@@ -270,7 +311,7 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
   }
 
 
-  private static Grid<MeasurementInfo> createNgsGrid() {
+  private Grid<MeasurementInfo> createNgsGrid() {
     var ngsGrid = new Grid<MeasurementInfo>();
     ngsGrid.addColumn(MeasurementInfo::measurementCode)
         .setHeader("QBiC Measurement ID")
@@ -337,7 +378,7 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
         .setComparator(Comparator.comparing(MeasurementInfo::runProtocol))
         .setAutoWidth(true)
         .setResizable(true);
-    ngsGrid.addColumn(MeasurementInfo::registeredAt)
+    ngsGrid.addColumn(info -> formatTime(info.registeredAt()))
         .setHeader("Registration Date")
         .setKey(NgsSortKey.REGISTRATION_DATE.sortKey())
         .setComparator(Comparator.comparing(MeasurementInfo::registeredAt))
@@ -355,66 +396,76 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
     return ngsGrid;
   }
 
-  private static Grid<PxpMeasurementInformation> createPxpGrid() {
-    var pxpGrid = new Grid<PxpMeasurementInformation>();
-    pxpGrid.addColumn(PxpMeasurementInformation::measurementCode)
+  @Override
+  protected void onAttach(AttachEvent attachEvent) {
+    super.onAttach(attachEvent);
+    attachEvent.getUI().getPage().retrieveExtendedClientDetails(
+        receiver -> clientTimeZone.set(receiver.getTimeZoneId()));
+  }
+
+
+  private @NonNull String formatTime(Instant instant) {
+    UI.getCurrent().getPage().retrieveExtendedClientDetails(receiver -> receiver.getTimeZoneId());
+    return instant.atZone(ZoneId.of(clientTimeZone.get())).format(
+        DateTimeFormatter.ofPattern(DATE_TIME_FORMAT));
+  }
+
+  private Grid<PxpMeasurementLookup.MeasurementInfo> createPxpGrid() {
+    var pxpGrid = new Grid<PxpMeasurementLookup.MeasurementInfo>();
+    pxpGrid.addColumn(PxpMeasurementLookup.MeasurementInfo::measurementCode)
         .setHeader("QBiC Measurement ID")
-        .setKey("measurementCode")
-        .setComparator(Comparator.comparing(PxpMeasurementInformation::measurementCode))
+        .setSortProperty(NgsSortKey.MEASUREMENT_ID.sortKey())
+        .setComparator(Comparator.comparing(PxpMeasurementLookup.MeasurementInfo::measurementCode))
         .setAutoWidth(true)
         .setResizable(true)
         .setFrozen(true);
-    //TODO replace with component column
-    pxpGrid.addColumn(info -> info
-            .sampleInfos().stream()
-            .map(sampleInfo -> "%s (%s)".formatted(sampleInfo.sampleLabel(), sampleInfo.sampleCode()))
-            .collect(Collectors.joining(", ")))
+    pxpGrid.addColumn(PxpMeasurementLookup.MeasurementInfo::measurementName)
+        .setHeader("Measurement Name")
+        .setSortProperty(NgsSortKey.MEASUREMENT_NAME.sortKey())
+        .setComparator(Comparator.comparing(PxpMeasurementLookup.MeasurementInfo::measurementCode))
+        .setAutoWidth(true)
+        .setResizable(true);
+    pxpGrid.addComponentColumn(measurementInfo -> renderSamplesPxp(measurementInfo,
+            info -> "%s (%s)".formatted(info.sampleLabel(), info.sampleCode())))
         .setHeader("Samples")
         .setSortable(false)
         .setAutoWidth(true)
         .setResizable(true);
-    pxpGrid.addColumn(PxpMeasurementInformation::measurementName)
-        .setKey("measurementName")
-        .setHeader("Measurement Name")
-        .setComparator(Comparator.comparing(PxpMeasurementInformation::measurementCode))
-        .setAutoWidth(true)
-        .setResizable(true);
-    //TODO replace with component renderer
-    pxpGrid.addColumn(info -> info.organisation().label() + "(" + info.organisation().iri() + ")")
-        .setKey("organisation")
-        .setHeader("Organisation")
-        .setComparator(Comparator.comparing(info -> info.organisation().label()))
-        .setAutoWidth(true)
-        .setResizable(true);
-    pxpGrid.addColumn(PxpMeasurementInformation::facility)
-        .setKey("facility")
+    pxpGrid.addColumn(PxpMeasurementLookup.MeasurementInfo::facility)
         .setHeader("Facility")
-        .setComparator(Comparator.comparing(PxpMeasurementInformation::facility))
+        .setSortProperty(NgsSortKey.FACILITY.sortKey())
+        .setComparator(Comparator.comparing(PxpMeasurementLookup.MeasurementInfo::facility))
         .setAutoWidth(true)
         .setResizable(true);
-    //TODO replace with component renderer
-    pxpGrid.addColumn(info -> info.msDevice().label() + "(" + info.msDevice().oboId() + ")")
-        .setKey("msDeviceLabel")
-        .setHeader("MsDevice")
-        .setComparator(Comparator.comparing(info -> info.msDevice().label()))
+    pxpGrid.addComponentColumn(
+            info -> renderMsDevice(info.msDevice().label(),
+                info.msDevice().oboId(),
+                info.msDevice().iri()))
+        .setHeader("MS Device")
+        .setSortable(false)
         .setAutoWidth(true)
         .setResizable(true);
-    pxpGrid.addColumn(PxpMeasurementInformation::registeredAt)
-        .setKey("registeredAt")
+    pxpGrid.addComponentColumn(
+            info -> renderOrganisation(info.organisation().label(),
+                info.organisation().iri()))
+        .setHeader("Organisation")
+        .setSortable(false)
+        .setAutoWidth(true)
+        .setResizable(true);
+
+    pxpGrid.addColumn(info -> formatTime(info.registeredAt()))
         .setHeader("Registration Date")
-        .setComparator(Comparator.comparing(PxpMeasurementInformation::registeredAt))
+        .setKey(NgsSortKey.REGISTRATION_DATE.sortKey())
+        .setComparator(Comparator.comparing(PxpMeasurementLookup.MeasurementInfo::registeredAt))
         .setAutoWidth(true)
         .setResizable(true);
-    //TODO replace with component column
-    pxpGrid.addColumn(info -> info
-            .sampleInfos().stream()
-            .map(sampleInfo -> "%s (%s)".formatted(sampleInfo.sampleLabel(), sampleInfo.comment()))
-            .collect(Collectors.joining(", ")))
-        .setKey("comment")
+    pxpGrid.addComponentColumn(measurementInfo -> renderSamplesPxp(measurementInfo,
+            PxpMeasurementLookup.SampleInfo::comment))
         .setHeader("Comment")
         .setSortable(false)
         .setAutoWidth(true)
         .setResizable(true);
+
     return pxpGrid;
   }
 
@@ -449,7 +500,6 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
     if (sampleInfos.size() == 1) {
       SampleInfo sampleInfo = sampleInfos.stream().findFirst().orElseThrow();
       String singleSampleText = singleSampleConverter.apply(sampleInfo);
-//      var singleSampleText = "%s (%s)".formatted(sampleInfo.sampleLabel(), sampleInfo.sampleCode());
       return new Span(singleSampleText);
     }
     var displayLabel = measurementInfo.samplePool();
@@ -458,6 +508,23 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
     var pooledSamplesSpan = new Span(new Span(displayLabel), expandIcon);
     pooledSamplesSpan.addClassNames("sample-column-cell", "clickable");
     pooledSamplesSpan.addClickListener(event -> openPooledSampleDialogNgs(measurementInfo));
+    return pooledSamplesSpan;
+  }
+
+  private static Component renderSamplesPxp(PxpMeasurementLookup.MeasurementInfo measurementInfo,
+      Function<PxpMeasurementLookup.SampleInfo, String> singleSampleConverter) {
+    var sampleInfos = measurementInfo.sampleInfos();
+    if (sampleInfos.size() == 1) {
+      var sampleInfo = sampleInfos.stream().findFirst().orElseThrow();
+      String singleSampleText = singleSampleConverter.apply(sampleInfo);
+      return new Span(singleSampleText);
+    }
+    var displayLabel = measurementInfo.samplePool();
+    var expandIcon = VaadinIcon.EXPAND_SQUARE.create();
+    expandIcon.addClassName("expand-icon");
+    var pooledSamplesSpan = new Span(new Span(displayLabel), expandIcon);
+    pooledSamplesSpan.addClassNames("sample-column-cell", "clickable");
+    pooledSamplesSpan.addClickListener(event -> openPooledSampleDialogPxp(measurementInfo));
     return pooledSamplesSpan;
   }
 
@@ -479,6 +546,32 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
         .setHeader("Index i5")
         .setAutoWidth(true);
     sampleInfoGrid.addColumn(SampleInfo::comment)
+        .setHeader("Comment")
+        .setAutoWidth(true);
+    sampleInfoGrid.setItems(measurementInfo.sampleInfos());
+    DialogSection measuredSamplesSection = DialogSection.with(
+        "Measurement ID: " + measurementInfo.measurementCode(),
+        "Sample Pool Group: " + measurementInfo.samplePool(),
+        sampleInfoGrid);
+
+    DialogBody.withoutUserInput(dialog, measuredSamplesSection);
+    dialog.registerConfirmAction(dialog::close);
+    dialog.open();
+  }
+
+  private static void openPooledSampleDialogPxp(
+      PxpMeasurementLookup.MeasurementInfo measurementInfo) {
+    AppDialog dialog = AppDialog.medium();
+    DialogHeader.with(dialog, "View Pooled Measurement");
+    DialogFooter.withConfirmOnly(dialog, "Close");
+    var sampleInfoGrid = new Grid<PxpMeasurementLookup.SampleInfo>();
+    sampleInfoGrid.addColumn(PxpMeasurementLookup.SampleInfo::sampleLabel)
+        .setHeader("Sample Name")
+        .setAutoWidth(true);
+    sampleInfoGrid.addColumn(PxpMeasurementLookup.SampleInfo::sampleCode)
+        .setHeader("Sample Id")
+        .setAutoWidth(true);
+    sampleInfoGrid.addColumn(PxpMeasurementLookup.SampleInfo::comment)
         .setHeader("Comment")
         .setAutoWidth(true);
     sampleInfoGrid.setItems(measurementInfo.sampleInfos());
@@ -622,6 +715,117 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
   }
 
   public Registration addNgsDeletionListener(
+      ComponentEventListener<NgsMeasurementDeletionRequested> listener) {
+    return addListener(NgsMeasurementDeletionRequested.class, listener);
+  }
+
+
+  public static class PxpMeasurementRegistrationRequested extends
+      ComponentEvent<MeasurementDetailsComponentV2> {
+
+    /**
+     * Creates a new event using the given source and indicator whether the event originated from
+     * the client side or the server side.
+     *
+     * @param source     the source component
+     * @param fromClient <code>true</code> if the event originated from the client
+     *                   side, <code>false</code> otherwise
+     */
+    public PxpMeasurementRegistrationRequested(MeasurementDetailsComponentV2 source,
+        boolean fromClient) {
+      super(source, fromClient);
+    }
+  }
+
+  public Registration addPxpRegisterListener(
+      ComponentEventListener<PxpMeasurementRegistrationRequested> listener) {
+    return addListener(PxpMeasurementRegistrationRequested.class, listener);
+  }
+
+  public static class PxpMeasurementEditRequested extends
+      ComponentEvent<MeasurementDetailsComponentV2> {
+
+    private final List<String> measurementIds;
+
+    /**
+     * Creates a new event using the given source and indicator whether the event originated from
+     * the client side or the server side.
+     *
+     * @param source     the source component
+     * @param fromClient <code>true</code> if the event originated from the client
+     *                   side, <code>false</code> otherwise
+     */
+    public PxpMeasurementEditRequested(List<String> measurementIds,
+        MeasurementDetailsComponentV2 source, boolean fromClient) {
+      super(source, fromClient);
+      this.measurementIds = measurementIds.stream().toList();
+    }
+
+    public List<String> measurementIds() {
+      return measurementIds;
+    }
+  }
+
+  public Registration addPxpEditListener(
+      ComponentEventListener<PxpMeasurementEditRequested> listener) {
+    return addListener(PxpMeasurementEditRequested.class, listener);
+  }
+
+  public static class PxpMeasurementExportRequested extends
+      ComponentEvent<MeasurementDetailsComponentV2> {
+
+    private final List<String> measurementIds;
+
+    /**
+     * Creates a new event using the given source and indicator whether the event originated from
+     * the client side or the server side.
+     *
+     * @param source     the source component
+     * @param fromClient <code>true</code> if the event originated from the client
+     *                   side, <code>false</code> otherwise
+     */
+    public PxpMeasurementExportRequested(List<String> measurementIds,
+        MeasurementDetailsComponentV2 source, boolean fromClient) {
+      super(source, fromClient);
+      this.measurementIds = measurementIds.stream().toList();
+    }
+
+    public List<String> measurementIds() {
+      return measurementIds;
+    }
+  }
+
+  public Registration addPxpExportListener(
+      ComponentEventListener<PxpMeasurementExportRequested> listener) {
+    return addListener(PxpMeasurementExportRequested.class, listener);
+  }
+
+  public static class PxpMeasurementDeletionRequested extends
+      ComponentEvent<MeasurementDetailsComponentV2> {
+
+    private final List<String> measurementIds;
+
+    /**
+     * Creates a new event using the given source and indicator whether the event originated from
+     * the client side or the server side.
+     *
+     * @param source     the source component
+     * @param fromClient <code>true</code> if the event originated from the client
+     *                   side, <code>false</code> otherwise
+     */
+    public PxpMeasurementDeletionRequested(List<String> measurementIds,
+        MeasurementDetailsComponentV2 source,
+        boolean fromClient) {
+      super(source, fromClient);
+      this.measurementIds = measurementIds.stream().toList();
+    }
+
+    public List<String> measurementIds() {
+      return measurementIds;
+    }
+  }
+
+  public Registration addPxpDeletionListener(
       ComponentEventListener<NgsMeasurementDeletionRequested> listener) {
     return addListener(NgsMeasurementDeletionRequested.class, listener);
   }

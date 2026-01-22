@@ -182,11 +182,19 @@ public interface PxpMeasurementJpaRepository extends
     private String sampleCode;
     @Column(table = "sample", name = "label")
     private String sampleLabel;
+    @Column(table = "specific_measurement_metadata_pxp", name = "fractionName")
+    private String fractionName;
+    @Column(table = "specific_measurement_metadata_pxp", name = "label")
+    private String measurementLabel;
     @Column(name = "comment")
     private String comment;
 
     protected PxpSampleInfo() {
 
+    }
+
+    public String sampleId() {
+      return sampleId;
     }
 
     public String sampleCode() {
@@ -195,6 +203,14 @@ public interface PxpMeasurementJpaRepository extends
 
     public String sampleLabel() {
       return sampleLabel;
+    }
+
+    public String fractionName() {
+      return fractionName;
+    }
+
+    public String measurementLabel() {
+      return measurementLabel;
     }
 
     public String comment() {

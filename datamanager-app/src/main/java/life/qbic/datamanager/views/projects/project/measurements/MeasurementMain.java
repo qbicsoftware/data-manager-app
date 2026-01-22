@@ -60,13 +60,13 @@ import life.qbic.projectmanagement.application.api.fair.DigitalObject;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.measurement.MeasurementService.MeasurementDeletionException;
 import life.qbic.projectmanagement.application.measurement.NgsMeasurementLookup;
+import life.qbic.projectmanagement.application.measurement.PxpMeasurementLookup;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
-import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.PxpMeasurementJpaRepository;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.NGSWorkbooks;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.ProteomicsWorkbooks;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -142,7 +142,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
       MessageSourceNotificationFactory messageFactory,
       MessageSourceNotificationFactory messageSourceNotificationFactory,
       NgsMeasurementLookup ngsMeasurementLookup,
-      PxpMeasurementJpaRepository pxpMeasurementJpaRepository) {
+      PxpMeasurementLookup pxpMeasurementLookup) {
     Objects.requireNonNull(measurementService);
     Objects.requireNonNull(measurementValidationService);
     Objects.requireNonNull(asyncProjectService);
@@ -168,7 +168,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     measurementDetailsComponentV2 = new MeasurementDetailsComponentV2(
         messageFactory,
         ngsMeasurementLookup,
-        pxpMeasurementJpaRepository);
+        pxpMeasurementLookup);
 
     measurementDetailsComponentV2.addNgsRegisterListener(
         registrationRequest -> openRegistrationDialog());
