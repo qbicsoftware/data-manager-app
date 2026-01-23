@@ -805,8 +805,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
       List<MeasurementRegistrationInformationPxP> registrationInformationPxP) {
 
     public RegistrationRequestPackage {
-      List.copyOf(Objects.requireNonNull(registrationInformationNGS));
-      List.copyOf(Objects.requireNonNull(registrationInformationPxP));
+      registrationInformationNGS = List.copyOf(Objects.requireNonNull(registrationInformationNGS));
+      registrationInformationPxP = List.copyOf(Objects.requireNonNull(registrationInformationPxP));
     }
 
   }
@@ -815,8 +815,9 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
                               List<MeasurementUpdateInformationPxP> updateInformationPxP) {
 
     public UpdateRequestPackage {
-      List.copyOf(Objects.requireNonNull(updateInformationNGS));
-      List.copyOf(Objects.requireNonNull(updateInformationPxP));
+      updateInformationNGS = List.copyOf(Objects.requireNonNull(updateInformationNGS));
+      updateInformationPxP = List.copyOf(Objects.requireNonNull(updateInformationPxP));
+
     }
 
   }
