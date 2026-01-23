@@ -180,6 +180,16 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
         deletionRequest -> handleNgsDeletionRequest(
             new HashSet<>(deletionRequest.measurementIds())));
 
+    measurementDetailsComponentV2.addPxpRegisterListener(
+        registrationRequest -> openRegistrationDialog());
+    measurementDetailsComponentV2.addPxpEditListener(
+        editRequest -> pxpEditDialog(editRequest.measurementIds()).open());
+    measurementDetailsComponentV2.addPxpExportListener(
+        exportRequest -> downloadProteomicsMetadata(exportRequest.measurementIds()));
+    measurementDetailsComponentV2.addPxpDeletionListener(
+        deletionRequest -> handlePxpDeletionRequest(
+            new HashSet<>(deletionRequest.measurementIds())));
+
 
     add(registerSamplesDisclaimer, measurementTemplateDownload, measurementDetailsComponentV2);
     log.debug(
@@ -205,6 +215,35 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
         UPDATE_MEASUREMENT_DESCRIPTION,
         "Download Metadata",
         asyncService.measurementUpdateNGS(context.projectId().orElseThrow().value(),
+            selectedMeasurementIds, OPEN_XML),
+        messageFactory,
+        projectContext::projectId);
+
+    var upload = new MeasurementUpload(asyncService, context,
+        ConverterRegistry.converterFor(
+            MeasurementUpdateInformationNGS.class), messageFactory);
+    var uploadComponent = new MeasurementUpdateComponent(templateDownload, upload);
+    DialogBody.with(dialog, uploadComponent, uploadComponent);
+    dialog.registerCancelAction(dialog::close);
+    dialog.registerConfirmAction(() -> {
+      if (upload.validate().hasPassed()) {
+        var validationRequests = upload.getValidationRequestContent();
+        submitUpdateRequest(context.projectId().orElseThrow().value(),
+            createUpdateRequestPackage(validationRequests));
+        dialog.close();
+      }
+    });
+    return dialog;
+  }
+
+  private AppDialog pxpEditDialog(List<String> selectedMeasurementIds) {
+    var dialog = AppDialog.medium();
+    DialogHeader.with(dialog, "Edit Measurements");
+    DialogFooter.with(dialog, "Cancel", "Update");
+    var templateDownload = new MeasurementTemplateComponent(
+        UPDATE_MEASUREMENT_DESCRIPTION,
+        "Download Metadata",
+        asyncService.measurementUpdatePxP(context.projectId().orElseThrow().value(),
             selectedMeasurementIds, OPEN_XML),
         messageFactory,
         projectContext::projectId);
