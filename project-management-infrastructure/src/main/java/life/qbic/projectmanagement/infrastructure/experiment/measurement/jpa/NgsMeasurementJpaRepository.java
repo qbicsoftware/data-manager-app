@@ -86,6 +86,12 @@ public interface NgsMeasurementJpaRepository extends
         var measurementNameContains = criteriaBuilder.like(
             criteriaBuilder.lower(root.get("measurementName")),
             "%" + cleanedLowerCaseSearchTerm + "%");
+        var registrationDateContains = criteriaBuilder.like(
+            criteriaBuilder.function("DATE_FORMAT", String.class, root.get("registeredAt"),
+                criteriaBuilder.literal(
+                    "%Y-%m-%d")), //only search for date not time as problems with time zone
+            "%" + cleanedLowerCaseSearchTerm + "%");
+        //sample related matching
         Join<Object, String> sampleInfos = root.joinList("sampleInfos");
         var sampleCodeContains = criteriaBuilder.like(
             criteriaBuilder.lower(sampleInfos.get("sampleCode")),
@@ -93,12 +99,14 @@ public interface NgsMeasurementJpaRepository extends
         var SampleLabelContains = criteriaBuilder.like(
             criteriaBuilder.lower(sampleInfos.get("sampleLabel")),
             "%" + cleanedLowerCaseSearchTerm + "%");
+
         var sampleCommentContains = criteriaBuilder.like(
             criteriaBuilder.lower(sampleInfos.get("comment")),
             "%" + cleanedLowerCaseSearchTerm + "%");
         return
             criteriaBuilder.or(measurementCodeContains,
                 measurementNameContains,
+                registrationDateContains,
                 sampleCodeContains,
                 SampleLabelContains,
                 sampleCommentContains);
