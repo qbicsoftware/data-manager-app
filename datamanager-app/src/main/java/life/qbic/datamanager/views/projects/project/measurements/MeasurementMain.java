@@ -96,7 +96,6 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private final MeasurementDetailsComponentV2 measurementDetailsComponentV2;
 
   private final Disclaimer registerSamplesDisclaimer;
-  private final DownloadComponent measurementTemplateDownload;
   private final transient SampleInformationService sampleInformationService;
   private final transient MeasurementService measurementService;
   private final Div content = new Div();
@@ -152,7 +151,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     this.asyncService = asyncProjectService;
     this.projectContext = new ProjectContext();
     this.downloadComponent = new DownloadComponent();
-    this.measurementTemplateDownload = new DownloadComponent();
+    DownloadComponent measurementTemplateDownload = new DownloadComponent();
     this.registerSamplesDisclaimer = createNoSamplesRegisteredDisclaimer();
     this.noMeasurementDisclaimer = createNoMeasurementDisclaimer();
     initContent();
