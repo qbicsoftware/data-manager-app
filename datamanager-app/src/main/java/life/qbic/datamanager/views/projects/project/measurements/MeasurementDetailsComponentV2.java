@@ -854,8 +854,8 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
   }
 
   public Registration addPxpDeletionListener(
-      ComponentEventListener<NgsMeasurementDeletionRequested> listener) {
-    return addListener(NgsMeasurementDeletionRequested.class, listener);
+      ComponentEventListener<PxpMeasurementDeletionRequested> listener) {
+    return addListener(PxpMeasurementDeletionRequested.class, listener);
   }
 
 
