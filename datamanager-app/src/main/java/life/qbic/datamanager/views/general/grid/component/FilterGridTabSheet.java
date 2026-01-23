@@ -42,9 +42,21 @@ public final class FilterGridTabSheet extends Composite<TabSheet> {
     delegate.addClassNames("filter-grid-tabsheet", "width-full", "height-full");
 
     primaryActionGroup.addClickListenerPrimaryAction(
-        ignored -> primaryActions.forEach((key, value) -> value.forEach(it -> it.execute(key))));
+        ignored -> {
+          if (!(delegate.getSelectedTab() instanceof FilterGridTab<?> filterGridTab)) {
+            return;
+          }
+          primaryActions.getOrDefault(filterGridTab, Set.of()).forEach(
+              tabAction -> tabAction.execute(filterGridTab));
+        });
     primaryActionGroup.addClickListenerFeature(
-        ignored -> featureActions.forEach((key, value) -> value.forEach(it -> it.execute(key))));
+        ignored -> {
+          if (!(delegate.getSelectedTab() instanceof FilterGridTab<?> filterGridTab)) {
+            return;
+          }
+          featureActions.getOrDefault(filterGridTab, Set.of()).forEach(
+              tabAction -> tabAction.execute(filterGridTab));
+        });
   }
 
 
