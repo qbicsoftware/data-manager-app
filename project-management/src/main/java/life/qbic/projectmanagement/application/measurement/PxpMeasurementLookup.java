@@ -61,6 +61,7 @@ public interface PxpMeasurementLookup {
     MEASUREMENT_NAME("measurementName"),
     FACILITY("facility"),
     DIGESTION_ENZYME("digestionEnzyme"),
+    DIGESTION_METHOD("digestionMethod"),
     ENRICHMENT_METHOD("enrichmentMethod"),
     INJECTION_VOLUME("injectionVolume"),
     LABEL_TYPE("labelType"),

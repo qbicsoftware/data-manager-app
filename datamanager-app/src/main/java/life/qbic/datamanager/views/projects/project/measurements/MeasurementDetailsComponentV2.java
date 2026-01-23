@@ -7,9 +7,9 @@ import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
-import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.grid.Grid.MultiSortPriority;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Span;
@@ -19,6 +19,8 @@ import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 import java.io.Serializable;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -41,15 +43,10 @@ import life.qbic.datamanager.views.general.grid.component.FilterGridTab;
 import life.qbic.datamanager.views.general.grid.component.FilterGridTabSheet;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.projectmanagement.application.measurement.NgsMeasurementLookup;
-import life.qbic.projectmanagement.application.measurement.NgsMeasurementLookup.MeasurementFilter;
-import life.qbic.projectmanagement.application.measurement.NgsMeasurementLookup.MeasurementInfo;
 import life.qbic.projectmanagement.application.measurement.NgsMeasurementLookup.NgsSortKey;
-import life.qbic.projectmanagement.application.measurement.NgsMeasurementLookup.SampleInfo;
 import life.qbic.projectmanagement.application.measurement.PxpMeasurementLookup;
-import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.NgsMeasurementJpaRepository.NgsMeasurementFilter;
-import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.PxpMeasurementJpaRepository.PxpMeasurementFilter;
+import life.qbic.projectmanagement.application.measurement.PxpMeasurementLookup.PxpSortKey;
 import org.springframework.lang.NonNull;
-import org.springframework.lang.Nullable;
 
 /**
  * A component to show detailed information about existing measurements within an experiment.
@@ -60,8 +57,11 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
       () -> MeasurementDetailsComponentV2.class.getClassLoader()
           .getResourceAsStream("icons/ROR_logo.svg"));
   private static final String DATE_TIME_FORMAT = "yyyy-MM-dd HH:mm";
-  private final AtomicReference<String> clientTimeZone = new AtomicReference<>();
+  private static final NumberFormat INJECTION_VOLUME_FORMAT = new DecimalFormat("#0.00");
+  private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern(
+      DATE_TIME_FORMAT);
 
+  private final AtomicReference<String> clientTimeZone = new AtomicReference<>("UTC");
   private final MessageSourceNotificationFactory messageFactory;
 
   private final FilterGridTabSheet tabSheet;
@@ -69,8 +69,8 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
   private final SearchTermFilter pxpSearchTermFilter = SearchTermFilter.empty();
 
   private final transient NgsMeasurementLookup ngsMeasurementLookup;
-  private final transient PxpMeasurementLookup pxpMeasurementLookup; /*TODO add service in the middle*/
-  private FilterGrid<MeasurementInfo, SearchTermFilter> filterGridNgs;
+  private final transient PxpMeasurementLookup pxpMeasurementLookup;
+  private FilterGrid<NgsMeasurementLookup.MeasurementInfo, SearchTermFilter> filterGridNgs;
   private FilterGrid<PxpMeasurementLookup.MeasurementInfo, SearchTermFilter> filterGridPxp;
 
   /**
@@ -87,6 +87,17 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
     public SearchTermFilter replaceWith(String searchTerm) {
       return new SearchTermFilter(searchTerm);
     }
+  }
+
+  @Override
+  protected void onAttach(AttachEvent attachEvent) {
+    super.onAttach(attachEvent);
+    attachEvent.getUI().getPage().retrieveExtendedClientDetails(
+        receiver -> clientTimeZone.set(receiver.getTimeZoneId()));
+  }
+
+  private @NonNull String formatTime(Instant instant) {
+    return instant.atZone(ZoneId.of(clientTimeZone.get())).format(DATE_TIME_FORMATTER);
   }
 
   public MeasurementDetailsComponentV2(
@@ -127,8 +138,8 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
     var pxpGrid = createPxpGrid();
 
     // for each domain, configure a filter grid
-    filterGridNgs = FilterGrid.<MeasurementInfo, SearchTermFilter>lazy(
-        MeasurementInfo.class,
+    filterGridNgs = FilterGrid.lazy(
+        NgsMeasurementLookup.MeasurementInfo.class,
         SearchTermFilter.class,
         ngsGrid,
         this::getNgsSearchTermFilter,
@@ -141,7 +152,7 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
           return ngsMeasurementLookup.lookupNgsMeasurements(
               projectId, query.getOffset(), query.getLimit(),
               VaadinSpringDataHelpers.toSpringDataSort(query),
-              new MeasurementFilter(experimentId, searchTerm));
+              new NgsMeasurementLookup.MeasurementFilter(experimentId, searchTerm));
         },
         query ->
         {
@@ -149,16 +160,16 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
               "");
 
           return ngsMeasurementLookup.countNgsMeasurements(projectId,
-              new MeasurementFilter(experimentId, searchTerm));
+              new NgsMeasurementLookup.MeasurementFilter(experimentId, searchTerm));
         },
         (searchTerm, filter) -> filter.replaceWith(searchTerm));
     filterGridNgs.itemDisplayLabel("measurement");
     var editNgsButton = new Button("Edit");
     editNgsButton.addClickListener(clicked -> {
-      Set<MeasurementInfo> selectedMeasurements = filterGridNgs.selectedElements();
+      Set<NgsMeasurementLookup.MeasurementInfo> selectedMeasurements = filterGridNgs.selectedElements();
       List<String> selectedMeasurementIds = selectedMeasurements
           .stream()
-          .map(MeasurementInfo::measurementId)
+          .map(NgsMeasurementLookup.MeasurementInfo::measurementId)
           .distinct()
           .toList();
       if (selectedMeasurementIds.isEmpty()) {
@@ -170,10 +181,10 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
 
     var deleteNgsButton = new Button("Delete");
     deleteNgsButton.addClickListener(clicked -> {
-      Set<MeasurementInfo> selectedMeasurements = filterGridNgs.selectedElements();
+      Set<NgsMeasurementLookup.MeasurementInfo> selectedMeasurements = filterGridNgs.selectedElements();
       List<String> selectedMeasurementIds = selectedMeasurements
           .stream()
-          .map(MeasurementInfo::measurementId)
+          .map(NgsMeasurementLookup.MeasurementInfo::measurementId)
           .distinct()
           .toList();
       if (selectedMeasurementIds.isEmpty()) {
@@ -245,7 +256,7 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
     tabSheet.removeAllTabs();
 
     if (ngsMeasurementLookup.countNgsMeasurements(projectId,
-        new MeasurementFilter(experimentId, "")) > 0) {
+        new NgsMeasurementLookup.MeasurementFilter(experimentId, "")) > 0) {
       var ngsTab = new FilterGridTab<>("Genomics", filterGridNgs);
       tabSheet.addTab(0, ngsTab);
       tabSheet.addPrimaryAction(ngsTab,
@@ -254,7 +265,7 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
           tab -> {
             List<String> selectedMeasurementIds = tab.filterGrid().selectedElements()
                 .stream()
-                .map(MeasurementInfo::measurementId)
+                .map(NgsMeasurementLookup.MeasurementInfo::measurementId)
                 .distinct()
                 .toList();
             if (selectedMeasurementIds.isEmpty()) {
@@ -287,20 +298,6 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
     }
   }
 
-  private static @NonNull NgsMeasurementFilter configureDatabaseFilterNgs(
-      @NonNull String experimentId,
-      @Nullable String searchTerm) {
-    return new NgsMeasurementFilter(experimentId,
-        Optional.ofNullable(searchTerm).orElse(""));
-  }
-
-  private static @NonNull PxpMeasurementFilter configureDatabaseFilterPxp(
-      @NonNull String experimentId,
-      @Nullable String searchTerm) {
-    return new PxpMeasurementFilter(experimentId,
-        Optional.ofNullable(searchTerm).orElse(""));
-  }
-
 
   SearchTermFilter getNgsSearchTermFilter() {
     return this.ngsSearchTermFilter;
@@ -311,19 +308,20 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
   }
 
 
-  private Grid<MeasurementInfo> createNgsGrid() {
-    var ngsGrid = new Grid<MeasurementInfo>();
-    ngsGrid.addColumn(MeasurementInfo::measurementCode)
+  private Grid<NgsMeasurementLookup.MeasurementInfo> createNgsGrid() {
+    var ngsGrid = new Grid<NgsMeasurementLookup.MeasurementInfo>();
+    ngsGrid.setMultiSort(true, MultiSortPriority.APPEND, true);
+    ngsGrid.addColumn(NgsMeasurementLookup.MeasurementInfo::measurementCode)
         .setHeader("QBiC Measurement ID")
         .setSortProperty(NgsSortKey.MEASUREMENT_ID.sortKey())
-        .setComparator(Comparator.comparing(MeasurementInfo::measurementCode))
+        .setComparator(Comparator.comparing(NgsMeasurementLookup.MeasurementInfo::measurementCode))
         .setAutoWidth(true)
         .setResizable(true)
         .setFrozen(true);
-    ngsGrid.addColumn(MeasurementInfo::measurementName)
+    ngsGrid.addColumn(NgsMeasurementLookup.MeasurementInfo::measurementName)
         .setHeader("Measurement Name")
         .setSortProperty(NgsSortKey.MEASUREMENT_NAME.sortKey())
-        .setComparator(Comparator.comparing(MeasurementInfo::measurementCode))
+        .setComparator(Comparator.comparing(NgsMeasurementLookup.MeasurementInfo::measurementCode))
         .setAutoWidth(true)
         .setResizable(true);
     ngsGrid.addComponentColumn(measurementInfo -> renderSamplesNgs(measurementInfo,
@@ -332,10 +330,10 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
         .setSortable(false)
         .setAutoWidth(true)
         .setResizable(true);
-    ngsGrid.addColumn(MeasurementInfo::facility)
+    ngsGrid.addColumn(NgsMeasurementLookup.MeasurementInfo::facility)
         .setHeader("Facility")
         .setSortProperty(NgsSortKey.FACILITY.sortKey())
-        .setComparator(Comparator.comparing(MeasurementInfo::facility))
+        .setComparator(Comparator.comparing(NgsMeasurementLookup.MeasurementInfo::facility))
         .setAutoWidth(true)
         .setResizable(true);
     ngsGrid.addComponentColumn(
@@ -354,39 +352,38 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
         .setAutoWidth(true)
         .setResizable(true);
 
-    ngsGrid.addColumn(MeasurementInfo::readType)
+    ngsGrid.addColumn(NgsMeasurementLookup.MeasurementInfo::readType)
         .setHeader("Read type")
         .setSortProperty(NgsSortKey.READ_TYPE.sortKey())
-        .setComparator(Comparator.comparing(MeasurementInfo::readType))
+        .setComparator(Comparator.comparing(NgsMeasurementLookup.MeasurementInfo::readType))
         .setAutoWidth(true)
         .setResizable(true);
-    ngsGrid.addColumn(MeasurementInfo::libraryKit)
+    ngsGrid.addColumn(NgsMeasurementLookup.MeasurementInfo::libraryKit)
         .setHeader("Library kit")
         .setSortProperty(NgsSortKey.LIBRARY_KIT.sortKey())
-        .setComparator(Comparator.comparing(MeasurementInfo::libraryKit))
+        .setComparator(Comparator.comparing(NgsMeasurementLookup.MeasurementInfo::libraryKit))
         .setAutoWidth(true)
         .setResizable(true);
-    ngsGrid.addColumn(MeasurementInfo::flowCell)
+    ngsGrid.addColumn(NgsMeasurementLookup.MeasurementInfo::flowCell)
         .setHeader("Flow cell")
         .setSortProperty(NgsSortKey.FLOW_CELL.sortKey())
-        .setComparator(Comparator.comparing(MeasurementInfo::flowCell))
+        .setComparator(Comparator.comparing(NgsMeasurementLookup.MeasurementInfo::flowCell))
         .setAutoWidth(true)
         .setResizable(true);
-    ngsGrid.addColumn(MeasurementInfo::runProtocol)
+    ngsGrid.addColumn(NgsMeasurementLookup.MeasurementInfo::runProtocol)
         .setHeader("Run protocol")
         .setKey(NgsSortKey.RUN_PROTOCOL.sortKey())
-        .setComparator(Comparator.comparing(MeasurementInfo::runProtocol))
+        .setComparator(Comparator.comparing(NgsMeasurementLookup.MeasurementInfo::runProtocol))
         .setAutoWidth(true)
         .setResizable(true);
     ngsGrid.addColumn(info -> formatTime(info.registeredAt()))
         .setHeader("Registration Date")
         .setKey(NgsSortKey.REGISTRATION_DATE.sortKey())
-        .setComparator(Comparator.comparing(MeasurementInfo::registeredAt))
+        .setComparator(Comparator.comparing(NgsMeasurementLookup.MeasurementInfo::registeredAt))
         .setAutoWidth(true)
         .setResizable(true);
-    //TODO add component column for comments
     ngsGrid.addComponentColumn(
-            (MeasurementInfo measurementInfo) -> renderSamplesNgs(measurementInfo,
+            (NgsMeasurementLookup.MeasurementInfo measurementInfo) -> renderSamplesNgs(measurementInfo,
                 info -> info.comment()))
         .setHeader("Comment")
         .setSortable(false)
@@ -396,32 +393,19 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
     return ngsGrid;
   }
 
-  @Override
-  protected void onAttach(AttachEvent attachEvent) {
-    super.onAttach(attachEvent);
-    attachEvent.getUI().getPage().retrieveExtendedClientDetails(
-        receiver -> clientTimeZone.set(receiver.getTimeZoneId()));
-  }
-
-
-  private @NonNull String formatTime(Instant instant) {
-    UI.getCurrent().getPage().retrieveExtendedClientDetails(receiver -> receiver.getTimeZoneId());
-    return instant.atZone(ZoneId.of(clientTimeZone.get())).format(
-        DateTimeFormatter.ofPattern(DATE_TIME_FORMAT));
-  }
-
   private Grid<PxpMeasurementLookup.MeasurementInfo> createPxpGrid() {
     var pxpGrid = new Grid<PxpMeasurementLookup.MeasurementInfo>();
+    pxpGrid.setMultiSort(true, MultiSortPriority.APPEND, true);
     pxpGrid.addColumn(PxpMeasurementLookup.MeasurementInfo::measurementCode)
         .setHeader("QBiC Measurement ID")
-        .setSortProperty(NgsSortKey.MEASUREMENT_ID.sortKey())
+        .setSortProperty(PxpSortKey.MEASUREMENT_ID.sortKey())
         .setComparator(Comparator.comparing(PxpMeasurementLookup.MeasurementInfo::measurementCode))
         .setAutoWidth(true)
         .setResizable(true)
         .setFrozen(true);
     pxpGrid.addColumn(PxpMeasurementLookup.MeasurementInfo::measurementName)
         .setHeader("Measurement Name")
-        .setSortProperty(NgsSortKey.MEASUREMENT_NAME.sortKey())
+        .setSortProperty(PxpSortKey.MEASUREMENT_NAME.sortKey())
         .setComparator(Comparator.comparing(PxpMeasurementLookup.MeasurementInfo::measurementCode))
         .setAutoWidth(true)
         .setResizable(true);
@@ -431,9 +415,16 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
         .setSortable(false)
         .setAutoWidth(true)
         .setResizable(true);
+    pxpGrid.addComponentColumn(
+            info -> renderOrganisation(info.organisation().label(),
+                info.organisation().iri()))
+        .setHeader("Organisation")
+        .setSortable(false)
+        .setAutoWidth(true)
+        .setResizable(true);
     pxpGrid.addColumn(PxpMeasurementLookup.MeasurementInfo::facility)
         .setHeader("Facility")
-        .setSortProperty(NgsSortKey.FACILITY.sortKey())
+        .setSortProperty(PxpSortKey.FACILITY.sortKey())
         .setComparator(Comparator.comparing(PxpMeasurementLookup.MeasurementInfo::facility))
         .setAutoWidth(true)
         .setResizable(true);
@@ -445,17 +436,53 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
         .setSortable(false)
         .setAutoWidth(true)
         .setResizable(true);
-    pxpGrid.addComponentColumn(
-            info -> renderOrganisation(info.organisation().label(),
-                info.organisation().iri()))
-        .setHeader("Organisation")
-        .setSortable(false)
+    pxpGrid.addColumn(info -> info.technicalReplicateName())
+        .setHeader("Technical Replicate")
+        .setKey(PxpSortKey.TECHNICAL_REPLICATE.sortKey())
+        .setComparator(
+            Comparator.comparing(PxpMeasurementLookup.MeasurementInfo::technicalReplicateName))
+        .setAutoWidth(true)
+        .setResizable(true);
+    pxpGrid.addColumn(PxpMeasurementLookup.MeasurementInfo::digestionEnzyme)
+        .setHeader("Digestion Enzyme")
+        .setKey(PxpSortKey.DIGESTION_ENZYME.sortKey())
+        .setComparator(Comparator.comparing(PxpMeasurementLookup.MeasurementInfo::digestionEnzyme))
+        .setAutoWidth(true)
+        .setResizable(true);
+    pxpGrid.addColumn(info -> info.digestionMethod())
+        .setHeader("Digestion Method")
+        .setKey(PxpSortKey.DIGESTION_METHOD.sortKey())
+        .setComparator(Comparator.comparing(PxpMeasurementLookup.MeasurementInfo::digestionMethod))
+        .setAutoWidth(true)
+        .setResizable(true);
+    pxpGrid.addColumn(info -> INJECTION_VOLUME_FORMAT.format(info.injectionVolume()))
+        .setHeader("Injection Volume")
+        .setKey(PxpSortKey.INJECTION_VOLUME.sortKey())
+        .setComparator(Comparator.comparing(PxpMeasurementLookup.MeasurementInfo::injectionVolume))
+        .setAutoWidth(true)
+        .setResizable(true);
+    pxpGrid.addColumn(info -> info.lcmsMethod())
+        .setHeader("LCMS")
+        .setKey(PxpSortKey.LCMS_METHOD.sortKey())
+        .setComparator(Comparator.comparing(PxpMeasurementLookup.MeasurementInfo::lcmsMethod))
+        .setAutoWidth(true)
+        .setResizable(true);
+    pxpGrid.addColumn(info -> info.lcColumn())
+        .setHeader("LC column")
+        .setKey(PxpSortKey.LC_COLUMN.sortKey())
+        .setComparator(Comparator.comparing(PxpMeasurementLookup.MeasurementInfo::lcColumn))
+        .setAutoWidth(true)
+        .setResizable(true);
+    pxpGrid.addColumn(info -> info.enrichmentMethod())
+        .setHeader("Enrichment")
+        .setKey(PxpSortKey.ENRICHMENT_METHOD.sortKey())
+        .setComparator(Comparator.comparing(PxpMeasurementLookup.MeasurementInfo::enrichmentMethod))
         .setAutoWidth(true)
         .setResizable(true);
 
     pxpGrid.addColumn(info -> formatTime(info.registeredAt()))
         .setHeader("Registration Date")
-        .setKey(NgsSortKey.REGISTRATION_DATE.sortKey())
+        .setKey(PxpSortKey.REGISTRATION_DATE.sortKey())
         .setComparator(Comparator.comparing(PxpMeasurementLookup.MeasurementInfo::registeredAt))
         .setAutoWidth(true)
         .setResizable(true);
@@ -494,11 +521,11 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
     return organisationAnchor;
   }
 
-  private static Component renderSamplesNgs(MeasurementInfo measurementInfo,
-      Function<SampleInfo, String> singleSampleConverter) {
+  private static Component renderSamplesNgs(NgsMeasurementLookup.MeasurementInfo measurementInfo,
+      Function<NgsMeasurementLookup.SampleInfo, String> singleSampleConverter) {
     var sampleInfos = measurementInfo.sampleInfos();
     if (sampleInfos.size() == 1) {
-      SampleInfo sampleInfo = sampleInfos.stream().findFirst().orElseThrow();
+      NgsMeasurementLookup.SampleInfo sampleInfo = sampleInfos.stream().findFirst().orElseThrow();
       String singleSampleText = singleSampleConverter.apply(sampleInfo);
       return new Span(singleSampleText);
     }
@@ -528,24 +555,25 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
     return pooledSamplesSpan;
   }
 
-  private static void openPooledSampleDialogNgs(MeasurementInfo measurementInfo) {
+  private static void openPooledSampleDialogNgs(
+      NgsMeasurementLookup.MeasurementInfo measurementInfo) {
     AppDialog dialog = AppDialog.medium();
     DialogHeader.with(dialog, "View Pooled Measurement");
     DialogFooter.withConfirmOnly(dialog, "Close");
-    var sampleInfoGrid = new Grid<SampleInfo>();
-    sampleInfoGrid.addColumn(SampleInfo::sampleLabel)
+    var sampleInfoGrid = new Grid<NgsMeasurementLookup.SampleInfo>();
+    sampleInfoGrid.addColumn(NgsMeasurementLookup.SampleInfo::sampleLabel)
         .setHeader("Sample Name")
         .setAutoWidth(true);
-    sampleInfoGrid.addColumn(SampleInfo::sampleCode)
+    sampleInfoGrid.addColumn(NgsMeasurementLookup.SampleInfo::sampleCode)
         .setHeader("Sample Id")
         .setAutoWidth(true);
-    sampleInfoGrid.addColumn(SampleInfo::indexI7)
+    sampleInfoGrid.addColumn(NgsMeasurementLookup.SampleInfo::indexI7)
         .setHeader("Index i7")
         .setAutoWidth(true);
-    sampleInfoGrid.addColumn(SampleInfo::indexI5)
+    sampleInfoGrid.addColumn(NgsMeasurementLookup.SampleInfo::indexI5)
         .setHeader("Index i5")
         .setAutoWidth(true);
-    sampleInfoGrid.addColumn(SampleInfo::comment)
+    sampleInfoGrid.addColumn(NgsMeasurementLookup.SampleInfo::comment)
         .setHeader("Comment")
         .setAutoWidth(true);
     sampleInfoGrid.setItems(measurementInfo.sampleInfos());
