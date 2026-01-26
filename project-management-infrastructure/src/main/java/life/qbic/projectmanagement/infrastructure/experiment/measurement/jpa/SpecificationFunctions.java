@@ -39,7 +39,7 @@ public interface SpecificationFunctions {
         criteriaBuilder.literal(clientTimeOffset));
   }
 
-  static <X> Expression<String> extractFormattedLocalDate(CriteriaBuilder criteriaBuilder,
+  static Expression<String> extractFormattedLocalDate(CriteriaBuilder criteriaBuilder,
       Path<Instant> property, int clientTimeOffsetMillis, String dateTimePattern) {
     var clientTimeOffset = formatMillisToOffsetString(clientTimeOffsetMillis);
     //for CONVERT_TZ see https://mariadb.com/docs/server/reference/sql-functions/date-time-functions/convert_tz
