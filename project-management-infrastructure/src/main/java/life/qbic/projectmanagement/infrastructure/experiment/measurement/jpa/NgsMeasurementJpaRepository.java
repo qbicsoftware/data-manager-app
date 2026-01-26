@@ -76,6 +76,9 @@ public interface NgsMeasurementJpaRepository extends
     private static Specification<NgsMeasurementInformation> matchesExperiment(String experimentId) {
       return (root, query, criteriaBuilder) ->
       {
+        if (Objects.isNull(query)) {
+          return criteriaBuilder.disjunction();
+        }
         query.distinct(true);
         return criteriaBuilder.equal(root.join("sampleInfos").get("experimentId"), experimentId);
       };
@@ -88,6 +91,9 @@ public interface NgsMeasurementJpaRepository extends
         return Specification.unrestricted();
       }
       return (root, query, criteriaBuilder) -> {
+        if (Objects.isNull(query)) {
+          return criteriaBuilder.disjunction();
+        }
         query.distinct(true);
 
         //join for sample related matching
