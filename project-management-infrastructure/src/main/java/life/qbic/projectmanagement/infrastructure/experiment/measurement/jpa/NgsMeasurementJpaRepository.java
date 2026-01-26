@@ -102,6 +102,12 @@ public interface NgsMeasurementJpaRepository extends
             criteriaBuilder.or(
                 containsString(criteriaBuilder, root.get("measurementCode"), searchTerm),
                 containsString(criteriaBuilder, root.get("measurementName"), searchTerm),
+                containsString(criteriaBuilder, root.get("samplePool"), searchTerm),
+                containsString(criteriaBuilder, root.get("facility"), searchTerm),
+                containsString(criteriaBuilder, root.get("sequencingRunProtocol"), searchTerm),
+                containsString(criteriaBuilder, root.get("sequencingReadType"), searchTerm),
+                containsString(criteriaBuilder, root.get("libraryKit"), searchTerm),
+                containsString(criteriaBuilder, root.get("flowCell"), searchTerm),
                 containsString(criteriaBuilder,
                     extractFormattedLocalDate(criteriaBuilder, root.get("registeredAt"),
                         clientOffsetMillis, SpecificationFunctions.CUSTOM_DATE_TIME_PATTERN),
