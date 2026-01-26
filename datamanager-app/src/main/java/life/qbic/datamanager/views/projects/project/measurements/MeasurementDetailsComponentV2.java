@@ -28,6 +28,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import life.qbic.application.commons.ApplicationException;
@@ -61,6 +62,7 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
       "yyyy-MM-dd HH:mm");
 
   private final AtomicReference<String> clientTimeZone = new AtomicReference<>("UTC");
+  private final AtomicInteger clientTimeZoneOffset = new AtomicInteger(0);
   private final MessageSourceNotificationFactory messageFactory;
 
   private final FilterGridTabSheet tabSheet;
@@ -92,11 +94,15 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
   protected void onAttach(AttachEvent attachEvent) {
     super.onAttach(attachEvent);
     attachEvent.getUI().getPage().retrieveExtendedClientDetails(
-        receiver -> clientTimeZone.set(receiver.getTimeZoneId()));
+        receiver -> {
+          clientTimeZoneOffset.set(receiver.getTimezoneOffset());
+          clientTimeZone.set(receiver.getTimeZoneId());
+        });
   }
 
   private @NonNull String formatTime(Instant instant) {
-    return instant.atZone(ZoneId.of(clientTimeZone.get())).format(DATE_TIME_FORMATTER);
+    String zoneId = clientTimeZone.get();
+    return instant.atZone(ZoneId.of(zoneId)).format(DATE_TIME_FORMATTER);
   }
 
   public MeasurementDetailsComponentV2(
@@ -151,7 +157,8 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
           return ngsMeasurementLookup.lookupNgsMeasurements(
               projectId, query.getOffset(), query.getLimit(),
               VaadinSpringDataHelpers.toSpringDataSort(query),
-              new NgsMeasurementLookup.MeasurementFilter(experimentId, searchTerm));
+              new NgsMeasurementLookup.MeasurementFilter(experimentId, searchTerm,
+                  clientTimeZoneOffset.get()));
         },
         query ->
         {
@@ -159,7 +166,8 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
               "");
 
           return ngsMeasurementLookup.countNgsMeasurements(projectId,
-              new NgsMeasurementLookup.MeasurementFilter(experimentId, searchTerm));
+              new NgsMeasurementLookup.MeasurementFilter(experimentId, searchTerm,
+                  clientTimeZoneOffset.get()));
         },
         (searchTerm, filter) -> filter.replaceWith(searchTerm));
     filterGridNgs.itemDisplayLabel("measurement");
@@ -208,14 +216,16 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
           return pxpMeasurementLookup.lookupPxpMeasurements(
               projectId, query.getOffset(), query.getLimit(),
               VaadinSpringDataHelpers.toSpringDataSort(query),
-              new PxpMeasurementLookup.MeasurementFilter(experimentId, searchTerm));
+              new PxpMeasurementLookup.MeasurementFilter(experimentId, searchTerm,
+                  clientTimeZoneOffset.get()));
         },
         query ->
         {
           var searchTerm = query.getFilter().map(SearchTermFilter::searchTerm)
               .orElse("");
           return pxpMeasurementLookup.countPxpMeasurements(projectId,
-              new PxpMeasurementLookup.MeasurementFilter(experimentId, searchTerm));
+              new PxpMeasurementLookup.MeasurementFilter(experimentId, searchTerm,
+                  clientTimeZoneOffset.get()));
         },
         (searchTerm, filter) -> filter.replaceWith(searchTerm));
     filterGridPxp.itemDisplayLabel("measurement");
@@ -255,7 +265,7 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
     tabSheet.removeAllTabs();
 
     if (ngsMeasurementLookup.countNgsMeasurements(projectId,
-        new NgsMeasurementLookup.MeasurementFilter(experimentId, "")) > 0) {
+        new NgsMeasurementLookup.MeasurementFilter(experimentId, "", 0)) > 0) {
       var ngsTab = new FilterGridTab<>("Genomics", filterGridNgs);
       tabSheet.addTab(0, ngsTab);
       tabSheet.addPrimaryAction(ngsTab,
@@ -276,7 +286,7 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
     }
 
     if (pxpMeasurementLookup.countPxpMeasurements(projectId,
-        new PxpMeasurementLookup.MeasurementFilter(experimentId, "")) > 0) {
+        new PxpMeasurementLookup.MeasurementFilter(experimentId, "", 0)) > 0) {
       var pxpTab = new FilterGridTab<>("Proteomics", filterGridPxp);
       tabSheet.addTab(1, pxpTab);
       tabSheet.addPrimaryAction(pxpTab,

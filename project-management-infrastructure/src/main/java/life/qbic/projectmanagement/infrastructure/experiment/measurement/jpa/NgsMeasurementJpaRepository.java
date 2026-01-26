@@ -1,5 +1,8 @@
 package life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa;
 
+import static life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.SpecificationFunctions.containsString;
+import static life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.SpecificationFunctions.extractFormattedLocalDate;
+
 import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
@@ -36,6 +39,7 @@ import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.infrastructure.PreventAnyUpdateEntityListener;
 import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.NgsMeasurementJpaRepository.Instrument.InstrumentReadConverter;
 import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.NgsMeasurementJpaRepository.NgsMeasurementInformation;
+import org.hibernate.collection.spi.PersistentBag;
 import org.springframework.boot.jackson.JsonComponent;
 import org.springframework.data.convert.ReadingConverter;
 import org.springframework.data.jpa.domain.Specification;
@@ -49,20 +53,24 @@ public interface NgsMeasurementJpaRepository extends
     PagingAndSortingRepository<NgsMeasurementInformation, MeasurementId>,
     JpaSpecificationExecutor<NgsMeasurementInformation> {
 
-  final class NgsMeasurementFilter {
+  final class NgsMeasurementFilter implements JpaRepositoryFilter<NgsMeasurementInformation> {
 
     private final String experimentId;
     private final String searchTerm;
+    private final int timeZoneOffsetMillis;
 
     public NgsMeasurementFilter(@NonNull String experimentId,
-        @NonNull String searchTerm) {
+        @NonNull String searchTerm,
+        int timeZoneOffsetMillis) {
       this.searchTerm = Objects.requireNonNull(searchTerm);
       this.experimentId = Objects.requireNonNull(experimentId);
+      this.timeZoneOffsetMillis = timeZoneOffsetMillis;
     }
 
+    @Override
     public Specification<NgsMeasurementInformation> asSpecification() {
       return matchesExperiment(experimentId)
-          .and(containsSearchTerm(searchTerm));
+          .and(containsSearchTerm(searchTerm, timeZoneOffsetMillis));
     }
 
     private static Specification<NgsMeasurementInformation> matchesExperiment(String experimentId) {
@@ -73,43 +81,28 @@ public interface NgsMeasurementJpaRepository extends
       };
     }
 
-    private static Specification<NgsMeasurementInformation> containsSearchTerm(String searchTerm) {
-      var cleanedLowerCaseSearchTerm = searchTerm.strip().toLowerCase();
+
+    private static Specification<NgsMeasurementInformation> containsSearchTerm(String searchTerm,
+        int clientOffsetMillis) {
       if (Objects.isNull(searchTerm) || searchTerm.isEmpty()) {
         return Specification.unrestricted();
       }
       return (root, query, criteriaBuilder) -> {
         query.distinct(true);
-        var measurementCodeContains = criteriaBuilder.like(
-            criteriaBuilder.lower(root.get("measurementCode")),
-            "%" + cleanedLowerCaseSearchTerm + "%");
-        var measurementNameContains = criteriaBuilder.like(
-            criteriaBuilder.lower(root.get("measurementName")),
-            "%" + cleanedLowerCaseSearchTerm + "%");
-        var registrationDateContains = criteriaBuilder.like(
-            criteriaBuilder.function("DATE_FORMAT", String.class, root.get("registeredAt"),
-                criteriaBuilder.literal(
-                    "%Y-%m-%d")), //only search for date not time as problems with time zone
-            "%" + cleanedLowerCaseSearchTerm + "%");
-        //sample related matching
-        Join<Object, String> sampleInfos = root.joinList("sampleInfos");
-        var sampleCodeContains = criteriaBuilder.like(
-            criteriaBuilder.lower(sampleInfos.get("sampleCode")),
-            "%" + cleanedLowerCaseSearchTerm + "%");
-        var SampleLabelContains = criteriaBuilder.like(
-            criteriaBuilder.lower(sampleInfos.get("sampleLabel")),
-            "%" + cleanedLowerCaseSearchTerm + "%");
 
-        var sampleCommentContains = criteriaBuilder.like(
-            criteriaBuilder.lower(sampleInfos.get("comment")),
-            "%" + cleanedLowerCaseSearchTerm + "%");
+        //join for sample related matching
+        Join<Object, String> sampleInfos = root.joinList("sampleInfos");
         return
-            criteriaBuilder.or(measurementCodeContains,
-                measurementNameContains,
-                registrationDateContains,
-                sampleCodeContains,
-                SampleLabelContains,
-                sampleCommentContains);
+            criteriaBuilder.or(
+                containsString(criteriaBuilder, root.get("measurementCode"), searchTerm),
+                containsString(criteriaBuilder, root.get("measurementName"), searchTerm),
+                containsString(criteriaBuilder,
+                    extractFormattedLocalDate(criteriaBuilder, root.get("registeredAt"),
+                        clientOffsetMillis, SpecificationFunctions.CUSTOM_DATE_TIME_PATTERN),
+                    searchTerm),
+                containsString(criteriaBuilder, sampleInfos.get("sampleCode"), searchTerm),
+                containsString(criteriaBuilder, sampleInfos.get("sampleLabel"), searchTerm),
+                containsString(criteriaBuilder, sampleInfos.get("comment"), searchTerm));
       };
     }
 
@@ -208,6 +201,7 @@ public interface NgsMeasurementJpaRepository extends
     public String sampleId() {
       return sampleId;
     }
+
     public String sampleCode() {
       return sampleCode;
     }
@@ -345,10 +339,9 @@ public interface NgsMeasurementJpaRepository extends
     private String sequencingRunProtocol;
 
     /**
-     * Attention: During Hibernate session, this is a
-     * {@link org.hibernate.collection.spi.PersistentBag}. The equals method of
-     * {@link org.hibernate.collection.spi.PersistentBag#equals(Object)} does not respect the
-     * {@link List#equals(Object)} contract.
+     * Attention: During Hibernate session, this is a {@link PersistentBag}. The equals method of
+     * {@link PersistentBag#equals(Object)} does not respect the {@link List#equals(Object)}
+     * contract.
      */
     @OneToMany(mappedBy = "measurement", fetch = FetchType.EAGER)
     private List<NgsSampleInfo> sampleInfos;

@@ -124,7 +124,7 @@ public interface PxpMeasurementLookup {
 
   }
 
-  record MeasurementFilter(String experimentId, String searchTerm) {
+  record MeasurementFilter(String experimentId, String searchTerm, int timeZoneOffsetMillis) {
 
     public MeasurementFilter {
       Objects.requireNonNull(experimentId);
