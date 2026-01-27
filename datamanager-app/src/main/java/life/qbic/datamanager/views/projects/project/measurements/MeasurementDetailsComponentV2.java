@@ -46,6 +46,7 @@ import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactor
 import life.qbic.projectmanagement.application.measurement.NgsMeasurementLookup;
 import life.qbic.projectmanagement.application.measurement.NgsMeasurementLookup.NgsSortKey;
 import life.qbic.projectmanagement.application.measurement.PxpMeasurementLookup;
+import life.qbic.projectmanagement.application.measurement.PxpMeasurementLookup.MeasurementInfo;
 import life.qbic.projectmanagement.application.measurement.PxpMeasurementLookup.PxpSortKey;
 import org.springframework.lang.NonNull;
 
@@ -138,12 +139,74 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
     String projectId = context.projectId().orElseThrow().value();
     String experimentId = context.experimentId().orElseThrow().value();
 
-    // for each domain, create a grid
-    var ngsGrid = createNgsGrid();
-    var pxpGrid = createPxpGrid();
+    //add corresponding tabs in a defined order
+    tabSheet.removeAllTabs();
+    if (ngsMeasurementsExist(projectId, experimentId)) {
+      filterGridNgs = filterGridNgs(createNgsGrid(), projectId, experimentId);
+      addNgsTab(tabSheet, 0, "Genomics", filterGridNgs);
+    }
+    if (pxpMeasurementsExist(projectId, experimentId)) {
+      filterGridPxp = filterGridPxp(createPxpGrid(), projectId, experimentId);
+      addPxpTab(tabSheet, 1, "Proteomics", filterGridPxp);
+    }
+  }
 
-    // for each domain, configure a filter grid
-    filterGridNgs = FilterGrid.lazy(
+  private boolean pxpMeasurementsExist(String projectId, String experimentId) {
+    return pxpMeasurementLookup.countPxpMeasurements(projectId,
+        new PxpMeasurementLookup.MeasurementFilter(experimentId, "", 0)) > 0;
+  }
+
+  private boolean ngsMeasurementsExist(String projectId, String experimentId) {
+    return ngsMeasurementLookup.countNgsMeasurements(projectId,
+        new NgsMeasurementLookup.MeasurementFilter(experimentId, "", 0)) > 0;
+  }
+
+  private void addPxpTab(FilterGridTabSheet tabSheet, int index, String name,
+      FilterGrid<MeasurementInfo, SearchTermFilter> filterGrid) {
+    var pxpTab = new FilterGridTab<>(name, filterGrid);
+    tabSheet.addTab(index, pxpTab);
+    tabSheet.addPrimaryAction(pxpTab,
+        tab -> fireEvent(new PxpMeasurementRegistrationRequested(this, true)));
+    tabSheet.addFeatureAction(pxpTab,
+        tab -> {
+          List<String> selectedMeasurementIds = tab.filterGrid().selectedElements()
+              .stream()
+              .map(MeasurementInfo::measurementId)
+              .distinct()
+              .toList();
+          if (selectedMeasurementIds.isEmpty()) {
+            displayMissingSelectionNote();
+            return;
+          }
+          fireEvent(new PxpMeasurementExportRequested(selectedMeasurementIds, this, true));
+        });
+  }
+
+  private void addNgsTab(FilterGridTabSheet tabSheet, int index, String name,
+      FilterGrid<NgsMeasurementLookup.MeasurementInfo, SearchTermFilter> filterGrid) {
+    var ngsTab = new FilterGridTab<>(name, filterGrid);
+    tabSheet.addTab(index, ngsTab);
+    tabSheet.addPrimaryAction(ngsTab,
+        tab -> fireEvent(new NgsMeasurementRegistrationRequested(this, true)));
+    tabSheet.addFeatureAction(ngsTab,
+        tab -> {
+          List<String> selectedMeasurementIds = tab.filterGrid().selectedElements()
+              .stream()
+              .map(NgsMeasurementLookup.MeasurementInfo::measurementId)
+              .distinct()
+              .toList();
+          if (selectedMeasurementIds.isEmpty()) {
+            displayMissingSelectionNote();
+            return;
+          }
+          fireEvent(new NgsMeasurementExportRequested(selectedMeasurementIds, this, true));
+        });
+  }
+
+  private FilterGrid<NgsMeasurementLookup.MeasurementInfo, SearchTermFilter> filterGridNgs(
+      Grid<NgsMeasurementLookup.MeasurementInfo> ngsGrid, String projectId,
+      String experimentId) {
+    var filterGrid = FilterGrid.lazy(
         NgsMeasurementLookup.MeasurementInfo.class,
         SearchTermFilter.class,
         ngsGrid,
@@ -170,10 +233,11 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
                   clientTimeZoneOffset.get()));
         },
         (searchTerm, filter) -> filter.replaceWith(searchTerm));
-    filterGridNgs.itemDisplayLabel("measurement");
+    filterGrid.itemDisplayLabel("measurement");
+    filterGrid.searchFieldPlaceholder("Search Measurements");
     var editNgsButton = new Button("Edit");
     editNgsButton.addClickListener(clicked -> {
-      Set<NgsMeasurementLookup.MeasurementInfo> selectedMeasurements = filterGridNgs.selectedElements();
+      Set<NgsMeasurementLookup.MeasurementInfo> selectedMeasurements = filterGrid.selectedElements();
       List<String> selectedMeasurementIds = selectedMeasurements
           .stream()
           .map(NgsMeasurementLookup.MeasurementInfo::measurementId)
@@ -188,7 +252,7 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
 
     var deleteNgsButton = new Button("Delete");
     deleteNgsButton.addClickListener(clicked -> {
-      Set<NgsMeasurementLookup.MeasurementInfo> selectedMeasurements = filterGridNgs.selectedElements();
+      Set<NgsMeasurementLookup.MeasurementInfo> selectedMeasurements = filterGrid.selectedElements();
       List<String> selectedMeasurementIds = selectedMeasurements
           .stream()
           .map(NgsMeasurementLookup.MeasurementInfo::measurementId)
@@ -200,10 +264,14 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
       }
       fireEvent(new NgsMeasurementDeletionRequested(selectedMeasurementIds, this, true));
     });
-    filterGridNgs.setSecondaryActionGroup(deleteNgsButton, editNgsButton);
+    filterGrid.setSecondaryActionGroup(deleteNgsButton, editNgsButton);
+    return filterGrid;
+  }
 
-    filterGridPxp = FilterGrid.lazy(
-        PxpMeasurementLookup.MeasurementInfo.class,
+  private FilterGrid<PxpMeasurementLookup.MeasurementInfo, SearchTermFilter> filterGridPxp(
+      Grid<MeasurementInfo> pxpGrid, String projectId, String experimentId) {
+    var filterGrid = FilterGrid.lazy(
+        MeasurementInfo.class,
         SearchTermFilter.class,
         pxpGrid,
         this::getPxpSearchTermFilter,
@@ -228,13 +296,14 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
                   clientTimeZoneOffset.get()));
         },
         (searchTerm, filter) -> filter.replaceWith(searchTerm));
-    filterGridPxp.itemDisplayLabel("measurement");
+    filterGrid.itemDisplayLabel("measurement");
+    filterGrid.searchFieldPlaceholder("Search Measurements");
     var editPxpButton = new Button("Edit");
     editPxpButton.addClickListener(clicked -> {
-      Set<PxpMeasurementLookup.MeasurementInfo> selectedMeasurements = filterGridPxp.selectedElements();
+      Set<MeasurementInfo> selectedMeasurements = filterGrid.selectedElements();
       List<String> selectedMeasurementIds = selectedMeasurements
           .stream()
-          .map(PxpMeasurementLookup.MeasurementInfo::measurementId)
+          .map(MeasurementInfo::measurementId)
           .distinct()
           .toList();
       if (selectedMeasurementIds.isEmpty()) {
@@ -246,10 +315,10 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
 
     var deletePxpButton = new Button("Delete");
     deletePxpButton.addClickListener(clicked -> {
-      Set<PxpMeasurementLookup.MeasurementInfo> selectedMeasurements = filterGridPxp.selectedElements();
+      Set<MeasurementInfo> selectedMeasurements = filterGrid.selectedElements();
       List<String> selectedMeasurementIds = selectedMeasurements
           .stream()
-          .map(PxpMeasurementLookup.MeasurementInfo::measurementId)
+          .map(MeasurementInfo::measurementId)
           .distinct()
           .toList();
       if (selectedMeasurementIds.isEmpty()) {
@@ -258,53 +327,8 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
       }
       fireEvent(new NgsMeasurementDeletionRequested(selectedMeasurementIds, this, true));
     });
-    filterGridPxp.setSecondaryActionGroup(deletePxpButton, editPxpButton);
-
-
-    //add corresponding tabs in a defined order
-    tabSheet.removeAllTabs();
-
-    if (ngsMeasurementLookup.countNgsMeasurements(projectId,
-        new NgsMeasurementLookup.MeasurementFilter(experimentId, "", 0)) > 0) {
-      var ngsTab = new FilterGridTab<>("Genomics", filterGridNgs);
-      tabSheet.addTab(0, ngsTab);
-      tabSheet.addPrimaryAction(ngsTab,
-          tab -> fireEvent(new NgsMeasurementRegistrationRequested(this, true)));
-      tabSheet.addFeatureAction(ngsTab,
-          tab -> {
-            List<String> selectedMeasurementIds = tab.filterGrid().selectedElements()
-                .stream()
-                .map(NgsMeasurementLookup.MeasurementInfo::measurementId)
-                .distinct()
-                .toList();
-            if (selectedMeasurementIds.isEmpty()) {
-              displayMissingSelectionNote();
-              return;
-            }
-            fireEvent(new NgsMeasurementExportRequested(selectedMeasurementIds, this, true));
-          });
-    }
-
-    if (pxpMeasurementLookup.countPxpMeasurements(projectId,
-        new PxpMeasurementLookup.MeasurementFilter(experimentId, "", 0)) > 0) {
-      var pxpTab = new FilterGridTab<>("Proteomics", filterGridPxp);
-      tabSheet.addTab(1, pxpTab);
-      tabSheet.addPrimaryAction(pxpTab,
-          tab -> fireEvent(new PxpMeasurementRegistrationRequested(this, true)));
-      tabSheet.addFeatureAction(pxpTab,
-          tab -> {
-            List<String> selectedMeasurementIds = tab.filterGrid().selectedElements()
-                .stream()
-                .map(PxpMeasurementLookup.MeasurementInfo::measurementId)
-                .distinct()
-                .toList();
-            if (selectedMeasurementIds.isEmpty()) {
-              displayMissingSelectionNote();
-              return;
-            }
-            fireEvent(new PxpMeasurementExportRequested(selectedMeasurementIds, this, true));
-          });
-    }
+    filterGrid.setSecondaryActionGroup(deletePxpButton, editPxpButton);
+    return filterGrid;
   }
 
 
