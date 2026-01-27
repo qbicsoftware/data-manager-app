@@ -59,6 +59,16 @@ public interface SpecificationFunctions {
         "%" + searchTerm.strip().toLowerCase() + "%");
   }
 
+  static Predicate containsStringInJson(CriteriaBuilder criteriaBuilder, Path<String> jsonProperty,
+      String jsonPath, String searchTerm) {
+    return criteriaBuilder.like(
+        criteriaBuilder.lower(
+            //https://mariadb.com/docs/server/reference/sql-functions/special-functions/json-functions/json_extract
+            criteriaBuilder.function("JSON_EXTRACT", String.class, jsonProperty,
+                criteriaBuilder.literal(jsonPath))),
+        "%" + searchTerm.strip().toLowerCase() + "%");
+  }
+
   static Predicate containsString(CriteriaBuilder criteriaBuilder,
       Expression<String> stringExpression,
       String searchTerm) {

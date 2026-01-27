@@ -107,12 +107,14 @@ public interface NgsMeasurementJpaRepository extends
                 containsString(criteriaBuilder, root.get("sequencingReadType"), searchTerm),
                 containsString(criteriaBuilder, root.get("libraryKit"), searchTerm),
                 containsString(criteriaBuilder, root.get("flowCell"), searchTerm),
+                containsString(criteriaBuilder, root.get("organisation").get("label"), searchTerm),
+                containsString(criteriaBuilder, root.get("organisation").get("iri"), searchTerm),
+                SpecificationFunctions.containsStringInJson(criteriaBuilder, root.get("instrument"),
+                    "$.label", searchTerm),
                 containsString(criteriaBuilder,
                     extractFormattedLocalDate(criteriaBuilder, root.get("registeredAt"),
                         clientOffsetMillis, SpecificationFunctions.CUSTOM_DATE_TIME_PATTERN),
                     searchTerm),
-                //TODO instrument
-                //TODO organisation
                 containsString(criteriaBuilder, sampleInfos.get("sampleCode"), searchTerm),
                 containsString(criteriaBuilder, sampleInfos.get("sampleLabel"), searchTerm),
                 containsString(criteriaBuilder, sampleInfos.get("comment"), searchTerm));

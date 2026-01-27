@@ -108,8 +108,10 @@ public interface PxpMeasurementJpaRepository extends
                 containsString(criteriaBuilder, root.get("lcColumn"), searchTerm),
                 containsString(criteriaBuilder, root.get("enrichmentMethod"), searchTerm),
                 containsString(criteriaBuilder, root.get("samplePool"), searchTerm),
-                //TODO ms device
-                //TODO organisation
+                SpecificationFunctions.containsStringInJson(criteriaBuilder, root.get("msDevice"),
+                    "$.label", searchTerm),
+                containsString(criteriaBuilder, root.get("organisation").get("label"), searchTerm),
+                containsString(criteriaBuilder, root.get("organisation").get("iri"), searchTerm),
                 containsString(criteriaBuilder,
                     extractFormattedLocalDate(criteriaBuilder, root.get("registeredAt"),
                         clientOffsetMillis, SpecificationFunctions.CUSTOM_DATE_TIME_PATTERN),
