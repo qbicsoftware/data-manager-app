@@ -112,7 +112,7 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
     this.messageFactory = requireNonNull(messageFactory);
     this.ngsMeasurementLookup = requireNonNull(ngsMeasurementLookup);
     this.pxpMeasurementLookup = requireNonNull(pxpMeasurementLookup);
-    addClassNames("measurement-details-component");
+    addClassNames("measurement-details-component", "height-full", "width-full");
 
     //setup tab sheet
     tabSheet = new FilterGridTabSheet();
