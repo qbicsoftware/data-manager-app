@@ -112,6 +112,8 @@ public interface NgsMeasurementJpaRepository extends
                     extractFormattedLocalDate(criteriaBuilder, root.get("registeredAt"),
                         clientOffsetMillis, SpecificationFunctions.CUSTOM_DATE_TIME_PATTERN),
                     searchTerm),
+                //TODO instrument
+                //TODO organisation
                 containsString(criteriaBuilder, sampleInfos.get("sampleCode"), searchTerm),
                 containsString(criteriaBuilder, sampleInfos.get("sampleLabel"), searchTerm),
                 containsString(criteriaBuilder, sampleInfos.get("comment"), searchTerm));

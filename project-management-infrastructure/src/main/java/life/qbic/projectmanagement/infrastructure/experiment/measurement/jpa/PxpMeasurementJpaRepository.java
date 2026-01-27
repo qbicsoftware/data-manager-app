@@ -99,6 +99,17 @@ public interface PxpMeasurementJpaRepository extends
             criteriaBuilder.or(
                 containsString(criteriaBuilder, root.get("measurementCode"), searchTerm),
                 containsString(criteriaBuilder, root.get("measurementName"), searchTerm),
+                containsString(criteriaBuilder, root.get("technicalReplicateName"), searchTerm),
+                containsString(criteriaBuilder, root.get("digestionEnzyme"), searchTerm),
+                containsString(criteriaBuilder, root.get("digestionMethod"), searchTerm),
+                containsString(criteriaBuilder, root.get("injectionVolume").as(String.class),
+                    searchTerm),
+                containsString(criteriaBuilder, root.get("lcmsMethod"), searchTerm),
+                containsString(criteriaBuilder, root.get("lcColumn"), searchTerm),
+                containsString(criteriaBuilder, root.get("enrichmentMethod"), searchTerm),
+                containsString(criteriaBuilder, root.get("samplePool"), searchTerm),
+                //TODO ms device
+                //TODO organisation
                 containsString(criteriaBuilder,
                     extractFormattedLocalDate(criteriaBuilder, root.get("registeredAt"),
                         clientOffsetMillis, SpecificationFunctions.CUSTOM_DATE_TIME_PATTERN),
