@@ -53,7 +53,7 @@ public interface NgsMeasurementJpaRepository extends
     PagingAndSortingRepository<NgsMeasurementInformation, MeasurementId>,
     JpaSpecificationExecutor<NgsMeasurementInformation> {
 
-  final class NgsMeasurementFilter implements JpaRepositoryFilter<NgsMeasurementInformation> {
+  final class NgsMeasurementFilter {
 
     private final String experimentId;
     private final String searchTerm;
@@ -67,7 +67,6 @@ public interface NgsMeasurementJpaRepository extends
       this.timeZoneOffsetMillis = timeZoneOffsetMillis;
     }
 
-    @Override
     public Specification<NgsMeasurementInformation> asSpecification() {
       return matchesExperiment(experimentId)
           .and(containsSearchTerm(searchTerm, timeZoneOffsetMillis));
