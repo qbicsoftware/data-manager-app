@@ -1,0 +1,166 @@
+package life.qbic.projectmanagement.infrastructure.jpa;
+
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.Expression;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import java.text.DecimalFormat;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.util.function.Function;
+import life.qbic.logging.api.Logger;
+import life.qbic.logging.service.LoggerFactory;
+import org.springframework.data.jpa.domain.Specification;
+
+public class SpecificationFactory {
+
+  private static final Logger log = LoggerFactory.logger(SpecificationFactory.class);
+  public static final String CUSTOM_DATE_TIME_PATTERN = "%Y-%m-%d %H:%i";
+
+
+  /**
+   * Extracts an expression from a path.
+   *
+   * @param <S>
+   * @param <T>
+   */
+  public interface Extractor<S, T, X extends Expression<S>> extends Function<X, Expression<T>> {
+
+    @Override
+    default Expression<T> apply(X expression) {
+      return extractFrom(expression);
+    }
+
+    Expression<T> extractFrom(X expression);
+
+  }
+
+  public static <T> Specification<T> propertyContains(String propertyName, String searchTerm) {
+    return (root, query, criteriaBuilder) -> {
+      Class<?> propertyType = root.get(propertyName).getJavaType();
+      if (!String.class.isAssignableFrom(propertyType)) {
+        log.error("Cannot cast property of type %s to %s".formatted(propertyType, String.class));
+        return criteriaBuilder.disjunction();
+      }
+      return contains(criteriaBuilder, root.get(propertyName), searchTerm);
+    };
+  }
+
+  public static <T> Specification<T> contains(
+      Extractor<T, String, Root<T>> extractor,
+      String searchTerm) {
+    return (root, query, criteriaBuilder) ->
+        contains(criteriaBuilder, extractor.extractFrom(root), searchTerm);
+  }
+
+  public static <T> Specification<T> formattedClientTimeContains(String instantPropertyName,
+      String searchTerm, int clientOffsetMillis, String dateTimePattern) {
+    return (root, query, criteriaBuilder) -> {
+      Class<?> propertyType = root.get(instantPropertyName).getJavaType();
+      if (!propertyType.isAssignableFrom(Instant.class)) {
+        log.error("Expected property of type %s but got %s".formatted(Instant.class, propertyType));
+        return criteriaBuilder.disjunction();
+      }
+      return contains(criteriaBuilder,
+          extractFormattedLocalDate(criteriaBuilder, root.get(instantPropertyName),
+              clientOffsetMillis, dateTimePattern),
+          searchTerm);
+    };
+  }
+
+  public static <S, T> Specification<S> jsonContains(Extractor<S, T, Root<S>> extractor,
+      String jsonPath, String searchTerm) {
+    return (root, query, criteriaBuilder) ->
+        jsonContains(criteriaBuilder, extractor.extractFrom(root), jsonPath, searchTerm);
+
+  }
+
+  public static <T> Specification<T> distinct(Specification<T> specification) {
+    return (root, query, criteriaBuilder) -> {
+      query.distinct(true);
+      return specification.toPredicate(root, query, criteriaBuilder);
+    };
+  }
+
+
+  protected static Predicate contains(CriteriaBuilder criteriaBuilder,
+      Expression<String> property,
+      String searchTerm) {
+    return criteriaBuilder.like(criteriaBuilder.lower(property),
+        "%" + searchTerm.strip().toLowerCase() + "%");
+  }
+
+
+  protected static Predicate jsonContains(CriteriaBuilder criteriaBuilder,
+      Expression<?> jsonProperty,
+      String jsonPath, String searchTerm) {
+    return criteriaBuilder.like(
+        criteriaBuilder.lower(
+            extractFromJson(criteriaBuilder, jsonProperty, jsonPath, String.class)),
+        "%" + searchTerm.strip().toLowerCase() + "%");
+  }
+
+  /**
+   * Turns milliseconds into an offset String
+   *
+   * @param offsetMillis
+   * @return
+   */
+  protected static String formatMillisToOffsetString(int offsetMillis) {
+    var prefix = offsetMillis >= 0 ? "+" : "";
+    var separator = ":";
+    var seconds = offsetMillis / 1000;
+    int minutes = Math.divideExact(seconds, 60);
+    int hours = Math.divideExact(minutes, 60);
+    minutes = minutes - hours * 60;
+    DecimalFormat decimalFormat = new DecimalFormat("##00");
+    return prefix + decimalFormat.format(hours) + separator + decimalFormat.format(minutes);
+  }
+
+  protected static Expression<LocalDateTime> toClientTime(CriteriaBuilder criteriaBuilder,
+      Expression<Instant> instant, String clientTimeZone) {
+    //https://mariadb.com/docs/server/reference/sql-functions/date-time-functions/convert_tz
+    return criteriaBuilder.function("CONVERT_TZ",
+        LocalDateTime.class,
+        instant,
+        //always +00:00 as java.time.Instant is always UTC
+        criteriaBuilder.literal("+00:00"),
+        criteriaBuilder.literal(clientTimeZone));
+  }
+
+  protected static Expression<String> formatDate(CriteriaBuilder criteriaBuilder,
+      Expression<LocalDateTime> dateTime, String pattern) {
+    //https://mariadb.com/docs/server/reference/sql-functions/date-time-functions/date_format
+    return criteriaBuilder.function("DATE_FORMAT",
+        String.class,
+        dateTime,
+        criteriaBuilder.literal(pattern));
+  }
+
+  protected static Expression<String> extractFormattedLocalDate(CriteriaBuilder criteriaBuilder,
+      Expression<Instant> instant, int clientTimeOffsetMillis, String dateTimePattern) {
+    return formatDate(criteriaBuilder,
+        toClientTime(criteriaBuilder, instant,
+            formatMillisToOffsetString(clientTimeOffsetMillis)),
+        dateTimePattern);
+  }
+
+  /**
+   *
+   * @param criteriaBuilder
+   * @param jsonDoc         an expression providing a valid JSON document.
+   * @param jsonPath        <a
+   *                        href="https://mariadb.com/docs/server/reference/sql-functions/special-functions/json-functions/jsonpath-expressions">JSONPath
+   *                        Expression</a>
+   * @param <T>
+   * @return
+   */
+  protected static <T> Expression<T> extractFromJson(CriteriaBuilder criteriaBuilder,
+      Expression<?> jsonDoc,
+      String jsonPath, Class<T> expectedType) {
+    //https://mariadb.com/docs/server/reference/sql-functions/special-functions/json-functions/json_extract
+    return criteriaBuilder.function("JSON_EXTRACT", expectedType, jsonDoc,
+        criteriaBuilder.literal(jsonPath));
+  }
+
+}

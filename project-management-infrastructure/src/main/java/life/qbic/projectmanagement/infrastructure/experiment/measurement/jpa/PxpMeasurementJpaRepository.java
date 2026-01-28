@@ -1,7 +1,10 @@
 package life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa;
 
-import static life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.SpecificationFunctions.containsString;
-import static life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.SpecificationFunctions.extractFormattedLocalDate;
+import static life.qbic.projectmanagement.infrastructure.jpa.SpecificationFactory.contains;
+import static life.qbic.projectmanagement.infrastructure.jpa.SpecificationFactory.distinct;
+import static life.qbic.projectmanagement.infrastructure.jpa.SpecificationFactory.formattedClientTimeContains;
+import static life.qbic.projectmanagement.infrastructure.jpa.SpecificationFactory.jsonContains;
+import static life.qbic.projectmanagement.infrastructure.jpa.SpecificationFactory.propertyContains;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
@@ -27,6 +30,7 @@ import jakarta.persistence.SecondaryTable;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.Root;
 import java.io.IOException;
 import java.io.Serializable;
 import java.time.Instant;
@@ -39,6 +43,9 @@ import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.infrastructure.PreventAnyUpdateEntityListener;
 import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.PxpMeasurementJpaRepository.MsDevice.MsDeviceReadConverter;
 import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.PxpMeasurementJpaRepository.PxpMeasurementInformation;
+import life.qbic.projectmanagement.infrastructure.jpa.JpaFilter;
+import life.qbic.projectmanagement.infrastructure.jpa.JpaFilter.JpaFilterBuilder;
+import life.qbic.projectmanagement.infrastructure.jpa.SpecificationFactory;
 import org.hibernate.collection.spi.PersistentBag;
 import org.springframework.boot.jackson.JsonComponent;
 import org.springframework.data.convert.ReadingConverter;
@@ -53,13 +60,13 @@ public interface PxpMeasurementJpaRepository extends
     PagingAndSortingRepository<PxpMeasurementInformation, MeasurementId>,
     JpaSpecificationExecutor<PxpMeasurementInformation> {
 
-  final class PxpMeasurementFilter {
+  final class PxpMeasurementFilter implements JpaFilter<PxpMeasurementInformation> {
 
     private final String experimentId;
     private final String searchTerm;
     private final int timeZoneOffsetMillis;
 
-    public PxpMeasurementFilter(@NonNull String experimentId,
+    private PxpMeasurementFilter(@NonNull String experimentId,
         @NonNull String searchTerm,
         int timeZoneOffsetMillis) {
       this.searchTerm = Objects.requireNonNull(searchTerm);
@@ -67,59 +74,48 @@ public interface PxpMeasurementJpaRepository extends
       this.timeZoneOffsetMillis = timeZoneOffsetMillis;
     }
 
+    protected static Join<PxpMeasurementInformation, PxpSampleInfo> getSampleInfos(
+        Root<PxpMeasurementInformation> root) {
+      return root.join("sampleInfos");
+    }
+
+    @Override
     public Specification<PxpMeasurementInformation> asSpecification() {
-      return matchesExperiment(experimentId)
-          .and(containsSearchTerm(searchTerm, timeZoneOffsetMillis));
+      return
+          distinct(
+              matchesExperiment(experimentId)
+                  .and(Specification.anyOf(
+                      propertyContains("measurementCode", searchTerm),
+                      propertyContains("measurementName", searchTerm),
+                      propertyContains("technicalReplicateName", searchTerm),
+                      propertyContains("digestionEnzyme", searchTerm),
+                      propertyContains("digestionMethod", searchTerm),
+                      contains(root -> root.get("injectionVolume")
+                              .as(String.class),
+                          searchTerm),
+                      propertyContains("lcmsMethod", searchTerm),
+                      propertyContains("lcColumn", searchTerm),
+                      propertyContains("enrichmentMethod", searchTerm),
+                      propertyContains("samplePool", searchTerm),
+                      jsonContains(root -> root.get("msDevice"),
+                          "$.label", searchTerm),
+                      contains(root -> root.get("organisation")
+                              .get("label").as(String.class),
+                          searchTerm),
+                      contains(root -> root.get("organisation")
+                              .get("iri").as(String.class),
+                          searchTerm),
+                      formattedClientTimeContains("registeredAt", searchTerm, timeZoneOffsetMillis,
+                          SpecificationFactory.CUSTOM_DATE_TIME_PATTERN),
+                      contains(root -> getSampleInfos(root)
+                          .get("sampleLabel").as(String.class), searchTerm),
+                      contains(root -> getSampleInfos(root)
+                          .get("comment").as(String.class), searchTerm))));
     }
 
     private static Specification<PxpMeasurementInformation> matchesExperiment(String experimentId) {
       return (root, query, criteriaBuilder) ->
-      {
-        if (Objects.isNull(query)) {
-          return criteriaBuilder.disjunction();
-        }
-        query.distinct(true);
-        return criteriaBuilder.equal(root.join("sampleInfos").get("experimentId"), experimentId);
-      };
-    }
-
-    private static Specification<PxpMeasurementInformation> containsSearchTerm(String searchTerm,
-        int clientOffsetMillis) {
-      if (Objects.isNull(searchTerm) || searchTerm.isEmpty()) {
-        return Specification.unrestricted();
-      }
-      return (root, query, criteriaBuilder) -> {
-        if (Objects.isNull(query)) {
-          return criteriaBuilder.disjunction();
-        }
-        query.distinct(true);
-        //join for sample related matching
-        Join<Object, String> sampleInfos = root.joinList("sampleInfos");
-        return
-            criteriaBuilder.or(
-                containsString(criteriaBuilder, root.get("measurementCode"), searchTerm),
-                containsString(criteriaBuilder, root.get("measurementName"), searchTerm),
-                containsString(criteriaBuilder, root.get("technicalReplicateName"), searchTerm),
-                containsString(criteriaBuilder, root.get("digestionEnzyme"), searchTerm),
-                containsString(criteriaBuilder, root.get("digestionMethod"), searchTerm),
-                containsString(criteriaBuilder, root.get("injectionVolume").as(String.class),
-                    searchTerm),
-                containsString(criteriaBuilder, root.get("lcmsMethod"), searchTerm),
-                containsString(criteriaBuilder, root.get("lcColumn"), searchTerm),
-                containsString(criteriaBuilder, root.get("enrichmentMethod"), searchTerm),
-                containsString(criteriaBuilder, root.get("samplePool"), searchTerm),
-                SpecificationFunctions.containsStringInJson(criteriaBuilder, root.get("msDevice"),
-                    "$.label", searchTerm),
-                containsString(criteriaBuilder, root.get("organisation").get("label"), searchTerm),
-                containsString(criteriaBuilder, root.get("organisation").get("iri"), searchTerm),
-                containsString(criteriaBuilder,
-                    extractFormattedLocalDate(criteriaBuilder, root.get("registeredAt"),
-                        clientOffsetMillis, SpecificationFunctions.CUSTOM_DATE_TIME_PATTERN),
-                    searchTerm),
-                containsString(criteriaBuilder, sampleInfos.get("sampleLabel"), searchTerm),
-                containsString(criteriaBuilder, sampleInfos.get("comment"), searchTerm)
-            );
-      };
+          criteriaBuilder.equal(getSampleInfos(root).get("experimentId"), experimentId);
     }
 
     @Override
@@ -131,7 +127,38 @@ public interface PxpMeasurementJpaRepository extends
     }
   }
 
-  record MsDevice(String label, String oboId, String iri) implements Serializable {
+  final class PxpMeasurementFilterBuilder implements
+      JpaFilterBuilder<PxpMeasurementInformation, PxpMeasurementFilter, PxpMeasurementFilterBuilder> {
+
+    private final String experimentId;
+    private String searchTerm = "";
+    private int timeZoneOffsetMillis = 0;
+
+    private PxpMeasurementFilterBuilder(String experimentId) {
+      this.experimentId = experimentId;
+    }
+
+    public static PxpMeasurementFilterBuilder newBuilder(String experimentId) {
+      return new PxpMeasurementFilterBuilder(experimentId);
+    }
+
+    public PxpMeasurementFilterBuilder anyContaining(String searchTerm) {
+      this.searchTerm = searchTerm;
+      return this;
+    }
+
+    public PxpMeasurementFilterBuilder atClientTimeOffset(int clientTimeZoneOffsetMillis) {
+      this.timeZoneOffsetMillis = clientTimeZoneOffsetMillis;
+      return this;
+    }
+
+    @Override
+    public PxpMeasurementFilter build() {
+      return new PxpMeasurementFilter(experimentId, searchTerm, timeZoneOffsetMillis);
+    }
+  }
+
+  record MsDevice(String msLabel, String oboId, String iri) implements Serializable {
 
     @JsonComponent
     static class MsDeviceJsonDeserializer extends JsonDeserializer<MsDevice> {
@@ -342,10 +369,9 @@ public interface PxpMeasurementJpaRepository extends
 
 
     /**
-     * Attention: During Hibernate session, this is a
-     * {@link PersistentBag}. The equals method of
-     * {@link PersistentBag#equals(Object)} does not respect the
-     * {@link List#equals(Object)} contract.
+     * Attention: During Hibernate session, this is a {@link PersistentBag}. The equals method of
+     * {@link PersistentBag#equals(Object)} does not respect the {@link List#equals(Object)}
+     * contract.
      */
     @OneToMany(mappedBy = "measurement", fetch = FetchType.EAGER)
     private List<PxpSampleInfo> sampleInfos;
@@ -380,7 +406,7 @@ public interface PxpMeasurementJpaRepository extends
 
     @Transient
     public String getMsDeviceLabel() {
-      return msDevice.label();
+      return msDevice.msLabel();
     }
 
     public String samplePool() {

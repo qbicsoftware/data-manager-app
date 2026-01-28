@@ -1,7 +1,11 @@
 package life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa;
 
-import static life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.SpecificationFunctions.containsString;
-import static life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.SpecificationFunctions.extractFormattedLocalDate;
+import static life.qbic.projectmanagement.infrastructure.jpa.SpecificationFactory.CUSTOM_DATE_TIME_PATTERN;
+import static life.qbic.projectmanagement.infrastructure.jpa.SpecificationFactory.contains;
+import static life.qbic.projectmanagement.infrastructure.jpa.SpecificationFactory.distinct;
+import static life.qbic.projectmanagement.infrastructure.jpa.SpecificationFactory.formattedClientTimeContains;
+import static life.qbic.projectmanagement.infrastructure.jpa.SpecificationFactory.jsonContains;
+import static life.qbic.projectmanagement.infrastructure.jpa.SpecificationFactory.propertyContains;
 
 import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonParseException;
@@ -27,6 +31,7 @@ import jakarta.persistence.PrimaryKeyJoinColumn;
 import jakarta.persistence.SecondaryTable;
 import jakarta.persistence.Table;
 import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.Root;
 import java.io.IOException;
 import java.io.Serializable;
 import java.time.Instant;
@@ -67,58 +72,38 @@ public interface NgsMeasurementJpaRepository extends
       this.timeZoneOffsetMillis = timeZoneOffsetMillis;
     }
 
+    protected static Join<NgsMeasurementInformation, NgsSampleInfo> getSampleInfos(
+        Root<NgsMeasurementInformation> root) {
+      return root.join("sampleInfos");
+    }
+
     public Specification<NgsMeasurementInformation> asSpecification() {
-      return matchesExperiment(experimentId)
-          .and(containsSearchTerm(searchTerm, timeZoneOffsetMillis));
+      return distinct(matchesExperiment(experimentId)
+          .and(Specification.anyOf(
+              propertyContains("measurementCode", searchTerm),
+              propertyContains("measurementName", searchTerm),
+              propertyContains("samplePool", searchTerm),
+              propertyContains("facility", searchTerm),
+              propertyContains("measurementCode", searchTerm),
+              propertyContains("sequencingRunProtocol", searchTerm),
+              propertyContains("sequencingReadType", searchTerm),
+              propertyContains("libraryKit", searchTerm),
+              propertyContains("flowCell", searchTerm),
+              contains(root -> root.get("organisation").get("label").as(String.class), searchTerm),
+              contains(root -> root.get("organisation").get("iri").as(String.class), searchTerm),
+              jsonContains(root -> root.get("instrument"), "$.label", searchTerm),
+              formattedClientTimeContains("registeredAt", searchTerm, timeZoneOffsetMillis,
+                  CUSTOM_DATE_TIME_PATTERN),
+              contains(root -> getSampleInfos(root)
+                  .get("sampleLabel").as(String.class), searchTerm),
+              contains(root -> getSampleInfos(root)
+                  .get("comment").as(String.class), searchTerm))
+          ));
     }
 
     private static Specification<NgsMeasurementInformation> matchesExperiment(String experimentId) {
       return (root, query, criteriaBuilder) ->
-      {
-        if (Objects.isNull(query)) {
-          return criteriaBuilder.disjunction();
-        }
-        query.distinct(true);
-        return criteriaBuilder.equal(root.join("sampleInfos").get("experimentId"), experimentId);
-      };
-    }
-
-
-    private static Specification<NgsMeasurementInformation> containsSearchTerm(String searchTerm,
-        int clientOffsetMillis) {
-      if (Objects.isNull(searchTerm) || searchTerm.isEmpty()) {
-        return Specification.unrestricted();
-      }
-      return (root, query, criteriaBuilder) -> {
-        if (Objects.isNull(query)) {
-          return criteriaBuilder.disjunction();
-        }
-        query.distinct(true);
-
-        //join for sample related matching
-        Join<Object, String> sampleInfos = root.joinList("sampleInfos");
-        return
-            criteriaBuilder.or(
-                containsString(criteriaBuilder, root.get("measurementCode"), searchTerm),
-                containsString(criteriaBuilder, root.get("measurementName"), searchTerm),
-                containsString(criteriaBuilder, root.get("samplePool"), searchTerm),
-                containsString(criteriaBuilder, root.get("facility"), searchTerm),
-                containsString(criteriaBuilder, root.get("sequencingRunProtocol"), searchTerm),
-                containsString(criteriaBuilder, root.get("sequencingReadType"), searchTerm),
-                containsString(criteriaBuilder, root.get("libraryKit"), searchTerm),
-                containsString(criteriaBuilder, root.get("flowCell"), searchTerm),
-                containsString(criteriaBuilder, root.get("organisation").get("label"), searchTerm),
-                containsString(criteriaBuilder, root.get("organisation").get("iri"), searchTerm),
-                SpecificationFunctions.containsStringInJson(criteriaBuilder, root.get("instrument"),
-                    "$.label", searchTerm),
-                containsString(criteriaBuilder,
-                    extractFormattedLocalDate(criteriaBuilder, root.get("registeredAt"),
-                        clientOffsetMillis, SpecificationFunctions.CUSTOM_DATE_TIME_PATTERN),
-                    searchTerm),
-                containsString(criteriaBuilder, sampleInfos.get("sampleCode"), searchTerm),
-                containsString(criteriaBuilder, sampleInfos.get("sampleLabel"), searchTerm),
-                containsString(criteriaBuilder, sampleInfos.get("comment"), searchTerm));
-      };
+          criteriaBuilder.equal(getSampleInfos(root).get("experimentId"), experimentId);
     }
 
     @Override
