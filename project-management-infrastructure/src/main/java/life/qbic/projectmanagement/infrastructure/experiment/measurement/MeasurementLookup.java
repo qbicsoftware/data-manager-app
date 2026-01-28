@@ -11,6 +11,7 @@ import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.Ngs
 import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.NgsMeasurementJpaRepository.NgsMeasurementInformation;
 import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.PxpMeasurementJpaRepository;
 import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.PxpMeasurementJpaRepository.PxpMeasurementFilter;
+import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.PxpMeasurementJpaRepository.PxpMeasurementFilterBuilder;
 import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.PxpMeasurementJpaRepository.PxpMeasurementInformation;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
@@ -102,8 +103,10 @@ public class MeasurementLookup implements NgsMeasurementLookup, PxpMeasurementLo
 
   private static @NonNull PxpMeasurementFilter mapToDatabaseFilter(
       @NonNull PxpMeasurementLookup.MeasurementFilter measurementFilter) {
-    return new PxpMeasurementFilter(measurementFilter.experimentId(),
-        measurementFilter.searchTerm(), measurementFilter.timeZoneOffsetMillis());
+    return PxpMeasurementFilterBuilder.newBuilder(measurementFilter.experimentId())
+        .anyContaining(measurementFilter.searchTerm())
+        .atClientTimeOffset(measurementFilter.timeZoneOffsetMillis())
+        .build();
   }
 
   private NgsMeasurementLookup.MeasurementInfo toApiObject(String projectId,
@@ -165,7 +168,7 @@ public class MeasurementLookup implements NgsMeasurementLookup, PxpMeasurementLo
         dbMeasurement.measurementName(),
         dbMeasurement.facility(),
         new PxpMeasurementLookup.Organisation(organisation.label(), organisation.iri()),
-        new MsDevice(msDevice.label(), msDevice.oboId(),
+        new MsDevice(msDevice.msLabel(), msDevice.oboId(),
             msDevice.iri()),
         dbMeasurement.samplePool(),
         dbMeasurement.registeredAt(),
