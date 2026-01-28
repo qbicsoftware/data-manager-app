@@ -249,7 +249,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
 
     var upload = new MeasurementUpload(asyncService, context,
         ConverterRegistry.converterFor(
-            MeasurementUpdateInformationNGS.class), messageFactory);
+            MeasurementUpdateInformationPxP.class), messageFactory);
     var uploadComponent = new MeasurementUpdateComponent(templateDownload, upload);
     DialogBody.with(dialog, uploadComponent, uploadComponent);
     dialog.registerCancelAction(dialog::close);
