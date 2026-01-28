@@ -89,6 +89,7 @@ public interface PxpMeasurementJpaRepository extends
                       propertyContains("measurementName", searchTerm),
                       propertyContains("technicalReplicateName", searchTerm),
                       propertyContains("digestionEnzyme", searchTerm),
+                      propertyContains("facility", searchTerm),
                       propertyContains("digestionMethod", searchTerm),
                       contains(root -> root.get("injectionVolume")
                               .as(String.class),
