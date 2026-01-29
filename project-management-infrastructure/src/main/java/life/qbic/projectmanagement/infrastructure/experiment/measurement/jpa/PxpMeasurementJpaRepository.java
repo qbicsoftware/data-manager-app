@@ -74,7 +74,7 @@ public interface PxpMeasurementJpaRepository extends
       this.timeZoneOffsetMillis = timeZoneOffsetMillis;
     }
 
-    protected static Join<PxpMeasurementInformation, PxpSampleInfo> getSampleInfos(
+    private static Join<PxpMeasurementInformation, PxpSampleInfo> getSampleInfos(
         Root<PxpMeasurementInformation> root) {
       return root.join("sampleInfos");
     }
@@ -91,9 +91,7 @@ public interface PxpMeasurementJpaRepository extends
                       propertyContains("digestionEnzyme", searchTerm),
                       propertyContains("facility", searchTerm),
                       propertyContains("digestionMethod", searchTerm),
-                      contains(root -> root.get("injectionVolume")
-                              .as(String.class),
-                          searchTerm),
+                      propertyContains("injectionVolume", searchTerm),
                       propertyContains("lcmsMethod", searchTerm),
                       propertyContains("lcColumn", searchTerm),
                       propertyContains("enrichmentMethod", searchTerm),
