@@ -58,7 +58,7 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
   private static final StreamResource ROR_ICON_RESOURCE = new StreamResource("ROR_logo.svg",
       () -> MeasurementDetailsComponentV2.class.getClassLoader()
           .getResourceAsStream("icons/ROR_logo.svg"));
-  private static final NumberFormat INJECTION_VOLUME_FORMAT = new DecimalFormat("#0.00");
+  private static final NumberFormat INJECTION_VOLUME_FORMAT = new DecimalFormat("#.##");
   private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern(
       "yyyy-MM-dd HH:mm");
 

@@ -38,9 +38,11 @@ public class SpecificationFactory {
   public static <T> Specification<T> propertyContains(String propertyName, String searchTerm) {
     return (root, query, criteriaBuilder) -> {
       Class<?> propertyType = root.get(propertyName).getJavaType();
-      if (!String.class.isAssignableFrom(propertyType)) {
-        log.error("Cannot cast property of type %s to %s".formatted(propertyType, String.class));
-        return criteriaBuilder.disjunction();
+      if (propertyType != String.class) {
+        log.debug(
+            "Property %s is not of type String.class but is %s. Trying to cast.".formatted(
+                propertyName, propertyType));
+        return contains(criteriaBuilder, root.get(propertyName).as(String.class), searchTerm);
       }
       return contains(criteriaBuilder, root.get(propertyName), searchTerm);
     };
