@@ -280,7 +280,7 @@ public class NGSMeasurement {
   }
 
   private void emitUpdatedEvent() {
-    var measurementUpdatedEvent = new MeasurementUpdatedEvent(this.measurementId());
+    var measurementUpdatedEvent = new MeasurementUpdatedEvent(projectId(), this.measurementId());
     LocalDomainEventDispatcher.instance().dispatch(measurementUpdatedEvent);
   }
 
