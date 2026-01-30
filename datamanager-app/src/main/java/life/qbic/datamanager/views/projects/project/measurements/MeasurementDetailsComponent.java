@@ -124,16 +124,27 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     add(tabSheet);
   }
 
+  /**
+   * Refreshes the genomics grid.
+   */
   public void refreshNgs() {
     Optional.ofNullable(filterGridNgs)
         .ifPresent(FilterGrid::refreshAll);
   }
 
+  /**
+   * Refreshes the proteomics grid.
+   */
   public void refreshPxp() {
     Optional.ofNullable(filterGridPxp)
         .ifPresent(FilterGrid::refreshAll);
   }
 
+  /**
+   * Sets the context of the component and refreshes the view to display updated information.
+   *
+   * @param context the context for this component
+   */
   public void setContext(Context context) {
     validateContext(context);
     String projectId = context.projectId().orElseThrow().value();
