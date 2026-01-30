@@ -7,6 +7,7 @@ import jakarta.persistence.criteria.Root;
 import java.text.DecimalFormat;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.Objects;
 import java.util.function.Function;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
@@ -146,6 +147,9 @@ public class SpecificationFactory {
    */
   public static <T> Specification<T> distinct(Specification<T> specification) {
     return (root, query, criteriaBuilder) -> {
+      if (Objects.isNull(query)) {
+        return criteriaBuilder.disjunction();
+      }
       query.distinct(true);
       return specification.toPredicate(root, query, criteriaBuilder);
     };
@@ -173,12 +177,6 @@ public class SpecificationFactory {
     );
   }
 
-  /**
-   * Turns milliseconds into an offset String
-   *
-   * @param offsetMillis
-   * @return
-   */
   protected static String formatMillisToOffsetString(int offsetMillis) {
     var prefix = offsetMillis >= 0 ? "+" : "";
     var separator = ":";
@@ -218,16 +216,6 @@ public class SpecificationFactory {
         dateTimePattern);
   }
 
-  /**
-   *
-   * @param criteriaBuilder
-   * @param jsonDoc         an expression providing a valid JSON document.
-   * @param jsonPath        <a
-   *                        href="https://mariadb.com/docs/server/reference/sql-functions/special-functions/json-functions/jsonpath-expressions">JSONPath
-   *                        Expression</a>
-   * @param <T>
-   * @return
-   */
   protected static <T> Expression<T> extractFromJson(CriteriaBuilder criteriaBuilder,
       Expression<?> jsonDoc,
       String jsonPath, Class<T> expectedType) {

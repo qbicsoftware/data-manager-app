@@ -1,6 +1,7 @@
 package life.qbic.projectmanagement.infrastructure.dataset;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
+import static life.qbic.projectmanagement.infrastructure.jpa.SpecificationFactory.distinct;
 import static life.qbic.projectmanagement.infrastructure.jpa.SpecificationFactory.exactMatches;
 import static life.qbic.projectmanagement.infrastructure.jpa.SpecificationFactory.jsonContains;
 import static life.qbic.projectmanagement.infrastructure.jpa.SpecificationFactory.propertyContains;
@@ -189,15 +190,16 @@ public class LocalRawDatasetRepositoryImpl implements LocalRawDatasetRepository 
   }
 
   private static Specification<LocalRawDatasetNgsEntry> createFullSpecificationNGS(RawDatasetFilter filter, String experimentId) {
-    return allOf(
-        exactMatches(root -> root.get("experimentId"),
-            experimentId),
-        anyOf(
-            jsonContains(root -> root.get("measuredSamples"),
-                "$[*].label", filter.filterTerm()),
-            propertyContains("measurementCode", filter.filterTerm())
-        )
-    );
+    return distinct(
+        allOf(
+            exactMatches(root -> root.get("experimentId"),
+                experimentId),
+            anyOf(
+                jsonContains(root -> root.get("measuredSamples"),
+                    "$[*].label", filter.filterTerm()),
+                propertyContains("measurementCode", filter.filterTerm())
+            )
+        ));
   }
 
   @Override
@@ -207,12 +209,13 @@ public class LocalRawDatasetRepositoryImpl implements LocalRawDatasetRepository 
   }
 
   private static Specification<LocalRawDatasetPxpEntry> createFullSpecificationPxp(RawDatasetFilter filter, String experimentId) {
-    return allOf(exactMatches(root -> root.get("experimentId"), experimentId),
-        anyOf(
-            propertyContains("measurementCode", filter.filterTerm()),
-            jsonContains(root -> root.get("measuredSamples"), "$[*].label", filter.filterTerm())
-        )
-    );
+    return distinct(
+        allOf(exactMatches(root -> root.get("experimentId"), experimentId),
+            anyOf(
+                propertyContains("measurementCode", filter.filterTerm()),
+                jsonContains(root -> root.get("measuredSamples"), "$[*].label", filter.filterTerm())
+            )
+        ));
   }
 
   @Override
