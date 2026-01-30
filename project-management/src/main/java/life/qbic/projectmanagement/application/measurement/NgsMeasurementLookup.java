@@ -2,8 +2,11 @@ package life.qbic.projectmanagement.application.measurement;
 
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Stream;
 import org.springframework.data.domain.Sort;
 import org.springframework.lang.NonNull;
@@ -117,11 +120,50 @@ public interface NgsMeasurementLookup {
 
   }
 
-  record MeasurementFilter(String experimentId, String searchTerm, int timeZoneOffsetMillis) {
+  record MeasurementFilter(String experimentId, String searchTerm, int timeZoneOffsetMillis,
+                           Set<String> includedSamples,
+                           Set<String> excludedSamples) {
+
 
     public MeasurementFilter {
       Objects.requireNonNull(experimentId);
       Objects.requireNonNull(searchTerm);
+      includedSamples = new HashSet<>(includedSamples);
+      excludedSamples = new HashSet<>(excludedSamples);
+    }
+
+
+    public static MeasurementFilter forExperiment(String experimentId) {
+      Objects.requireNonNull(experimentId);
+      return new MeasurementFilter(experimentId, "", 0, Set.of(), Set.of());
+    }
+
+    public MeasurementFilter withSearch(String searchTerm, int timeZoneOffsetMillis) {
+      Objects.requireNonNull(searchTerm);
+      return new MeasurementFilter(experimentId, searchTerm, timeZoneOffsetMillis, includedSamples,
+          excludedSamples);
+    }
+
+    public MeasurementFilter includingSamples(Collection<String> sampleIds) {
+      var combinedSamples = new HashSet<String>();
+      combinedSamples.addAll(includedSamples);
+      combinedSamples.addAll(sampleIds);
+      return new MeasurementFilter(experimentId,
+          searchTerm,
+          timeZoneOffsetMillis,
+          combinedSamples,
+          excludedSamples);
+    }
+
+    public MeasurementFilter excludingSamples(Collection<String> sampleIds) {
+      var combinedSamples = new HashSet<String>();
+      combinedSamples.addAll(excludedSamples);
+      combinedSamples.addAll(sampleIds);
+      return new MeasurementFilter(experimentId,
+          searchTerm,
+          timeZoneOffsetMillis,
+          includedSamples,
+          combinedSamples);
     }
   }
 
