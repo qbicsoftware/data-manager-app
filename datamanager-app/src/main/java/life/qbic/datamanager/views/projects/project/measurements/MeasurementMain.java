@@ -94,7 +94,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   public static final String UPDATE_MEASUREMENT_DESCRIPTION = "Please download your measurement metadata in order to edit it. You can modify the properties in the sheet and upload it below to save the changes.";
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
-  private final MeasurementDetailsComponentV2 measurementDetailsComponentV2;
+  private final MeasurementDetailsComponent measurementDetailsComponent;
 
   private final Disclaimer registerSamplesDisclaimer;
   private final transient SampleInformationService sampleInformationService;
@@ -164,33 +164,32 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
 
     add(registerSamplesDisclaimer, noMeasurementDisclaimer, measurementTemplateDownload,
         downloadComponent);
-    measurementDetailsComponentV2 = new MeasurementDetailsComponentV2(
+    measurementDetailsComponent = new MeasurementDetailsComponent(
         messageFactory,
         ngsMeasurementLookup,
         pxpMeasurementLookup);
 
-    measurementDetailsComponentV2.addNgsRegisterListener(
+    measurementDetailsComponent.addNgsRegisterListener(
         registrationRequest -> openRegistrationDialog());
-    measurementDetailsComponentV2.addNgsEditListener(
+    measurementDetailsComponent.addNgsEditListener(
         editRequest -> ngsEditDialog(editRequest.measurementIds()).open());
-    measurementDetailsComponentV2.addNgsExportListener(
+    measurementDetailsComponent.addNgsExportListener(
         exportRequest -> downloadNGSMetadata(exportRequest.measurementIds()));
-    measurementDetailsComponentV2.addNgsDeletionListener(
+    measurementDetailsComponent.addNgsDeletionListener(
         deletionRequest -> handleNgsDeletionRequest(
             new HashSet<>(deletionRequest.measurementIds())));
 
-    measurementDetailsComponentV2.addPxpRegisterListener(
+    measurementDetailsComponent.addPxpRegisterListener(
         registrationRequest -> openRegistrationDialog());
-    measurementDetailsComponentV2.addPxpEditListener(
+    measurementDetailsComponent.addPxpEditListener(
         editRequest -> pxpEditDialog(editRequest.measurementIds()).open());
-    measurementDetailsComponentV2.addPxpExportListener(
+    measurementDetailsComponent.addPxpExportListener(
         exportRequest -> downloadProteomicsMetadata(exportRequest.measurementIds()));
-    measurementDetailsComponentV2.addPxpDeletionListener(
+    measurementDetailsComponent.addPxpDeletionListener(
         deletionRequest -> handlePxpDeletionRequest(
             new HashSet<>(deletionRequest.measurementIds())));
 
-
-    add(registerSamplesDisclaimer, measurementTemplateDownload, measurementDetailsComponentV2);
+    add(registerSamplesDisclaimer, measurementTemplateDownload, measurementDetailsComponent);
     log.debug(
         "Created project measurement main for " + VaadinSession.getCurrent().getSession().getId());
   }
@@ -318,12 +317,12 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
 
   private void handleDeletionSuccessNgs() {
     updateComponentVisibility();
-    measurementDetailsComponentV2.refreshNgs();
+    measurementDetailsComponent.refreshNgs();
   }
 
   private void handleDeletionSuccessPxp() {
     updateComponentVisibility();
-    measurementDetailsComponentV2.refreshPxp();
+    measurementDetailsComponent.refreshPxp();
   }
 
 
@@ -627,7 +626,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   }
 
   private void reloadMeasurements() {
-    measurementDetailsComponentV2.setContext(context);
+    measurementDetailsComponent.setContext(context);
     updateComponentVisibility();
   }
 
@@ -756,14 +755,14 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private void showRegisterSamplesDisclaimer() {
     noMeasurementDisclaimer.setVisible(false);
     content.setVisible(false);
-    measurementDetailsComponentV2.setVisible(false);
+    measurementDetailsComponent.setVisible(false);
     registerSamplesDisclaimer.setVisible(true);
   }
 
   private void showRegisterMeasurementDisclaimer() {
     noMeasurementDisclaimer.setVisible(true);
     content.setVisible(false);
-    measurementDetailsComponentV2.setVisible(false);
+    measurementDetailsComponent.setVisible(false);
     registerSamplesDisclaimer.setVisible(false);
   }
 
@@ -771,8 +770,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     noMeasurementDisclaimer.setVisible(false);
     registerSamplesDisclaimer.setVisible(false);
     content.setVisible(true);
-    measurementDetailsComponentV2.setContext(context);
-    measurementDetailsComponentV2.setVisible(true);
+    measurementDetailsComponent.setContext(context);
+    measurementDetailsComponent.setVisible(true);
   }
 
   private void initRawDataAvailableInfo() {

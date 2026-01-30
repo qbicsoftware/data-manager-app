@@ -53,10 +53,10 @@ import org.springframework.lang.NonNull;
 /**
  * A component to show detailed information about existing measurements within an experiment.
  */
-public class MeasurementDetailsComponentV2 extends PageArea implements Serializable {
+public class MeasurementDetailsComponent extends PageArea implements Serializable {
 
   private static final StreamResource ROR_ICON_RESOURCE = new StreamResource("ROR_logo.svg",
-      () -> MeasurementDetailsComponentV2.class.getClassLoader()
+      () -> MeasurementDetailsComponent.class.getClassLoader()
           .getResourceAsStream("icons/ROR_logo.svg"));
   private static final NumberFormat INJECTION_VOLUME_FORMAT = new DecimalFormat("#.##");
   private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern(
@@ -106,7 +106,7 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
     return instant.atZone(ZoneId.of(zoneId)).format(DATE_TIME_FORMATTER);
   }
 
-  public MeasurementDetailsComponentV2(
+  public MeasurementDetailsComponent(
       MessageSourceNotificationFactory messageFactory,
       NgsMeasurementLookup ngsMeasurementLookup,
       PxpMeasurementLookup pxpMeasurementLookup) {
@@ -671,7 +671,7 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
 
 
   public static class NgsMeasurementRegistrationRequested extends
-      ComponentEvent<MeasurementDetailsComponentV2> {
+      ComponentEvent<MeasurementDetailsComponent> {
 
     /**
      * Creates a new event using the given source and indicator whether the event originated from
@@ -681,7 +681,7 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
      * @param fromClient <code>true</code> if the event originated from the client
      *                   side, <code>false</code> otherwise
      */
-    public NgsMeasurementRegistrationRequested(MeasurementDetailsComponentV2 source,
+    public NgsMeasurementRegistrationRequested(MeasurementDetailsComponent source,
         boolean fromClient) {
       super(source, fromClient);
     }
@@ -693,7 +693,7 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
   }
 
   public static class NgsMeasurementEditRequested extends
-      ComponentEvent<MeasurementDetailsComponentV2> {
+      ComponentEvent<MeasurementDetailsComponent> {
 
     private final List<String> measurementIds;
 
@@ -706,7 +706,7 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
      *                   side, <code>false</code> otherwise
      */
     public NgsMeasurementEditRequested(List<String> measurementIds,
-        MeasurementDetailsComponentV2 source, boolean fromClient) {
+        MeasurementDetailsComponent source, boolean fromClient) {
       super(source, fromClient);
       this.measurementIds = measurementIds.stream().toList();
     }
@@ -722,7 +722,7 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
   }
 
   public static class NgsMeasurementExportRequested extends
-      ComponentEvent<MeasurementDetailsComponentV2> {
+      ComponentEvent<MeasurementDetailsComponent> {
 
     private final List<String> measurementIds;
 
@@ -735,7 +735,7 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
      *                   side, <code>false</code> otherwise
      */
     public NgsMeasurementExportRequested(List<String> measurementIds,
-        MeasurementDetailsComponentV2 source, boolean fromClient) {
+        MeasurementDetailsComponent source, boolean fromClient) {
       super(source, fromClient);
       this.measurementIds = measurementIds.stream().toList();
     }
@@ -751,7 +751,7 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
   }
 
   public static class NgsMeasurementDeletionRequested extends
-      ComponentEvent<MeasurementDetailsComponentV2> {
+      ComponentEvent<MeasurementDetailsComponent> {
 
     private final List<String> measurementIds;
 
@@ -764,7 +764,7 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
      *                   side, <code>false</code> otherwise
      */
     public NgsMeasurementDeletionRequested(List<String> measurementIds,
-        MeasurementDetailsComponentV2 source,
+        MeasurementDetailsComponent source,
         boolean fromClient) {
       super(source, fromClient);
       this.measurementIds = measurementIds.stream().toList();
@@ -782,7 +782,7 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
 
 
   public static class PxpMeasurementRegistrationRequested extends
-      ComponentEvent<MeasurementDetailsComponentV2> {
+      ComponentEvent<MeasurementDetailsComponent> {
 
     /**
      * Creates a new event using the given source and indicator whether the event originated from
@@ -792,7 +792,7 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
      * @param fromClient <code>true</code> if the event originated from the client
      *                   side, <code>false</code> otherwise
      */
-    public PxpMeasurementRegistrationRequested(MeasurementDetailsComponentV2 source,
+    public PxpMeasurementRegistrationRequested(MeasurementDetailsComponent source,
         boolean fromClient) {
       super(source, fromClient);
     }
@@ -804,7 +804,7 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
   }
 
   public static class PxpMeasurementEditRequested extends
-      ComponentEvent<MeasurementDetailsComponentV2> {
+      ComponentEvent<MeasurementDetailsComponent> {
 
     private final List<String> measurementIds;
 
@@ -817,7 +817,7 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
      *                   side, <code>false</code> otherwise
      */
     public PxpMeasurementEditRequested(List<String> measurementIds,
-        MeasurementDetailsComponentV2 source, boolean fromClient) {
+        MeasurementDetailsComponent source, boolean fromClient) {
       super(source, fromClient);
       this.measurementIds = measurementIds.stream().toList();
     }
@@ -833,7 +833,7 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
   }
 
   public static class PxpMeasurementExportRequested extends
-      ComponentEvent<MeasurementDetailsComponentV2> {
+      ComponentEvent<MeasurementDetailsComponent> {
 
     private final List<String> measurementIds;
 
@@ -846,7 +846,7 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
      *                   side, <code>false</code> otherwise
      */
     public PxpMeasurementExportRequested(List<String> measurementIds,
-        MeasurementDetailsComponentV2 source, boolean fromClient) {
+        MeasurementDetailsComponent source, boolean fromClient) {
       super(source, fromClient);
       this.measurementIds = measurementIds.stream().toList();
     }
@@ -862,7 +862,7 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
   }
 
   public static class PxpMeasurementDeletionRequested extends
-      ComponentEvent<MeasurementDetailsComponentV2> {
+      ComponentEvent<MeasurementDetailsComponent> {
 
     private final List<String> measurementIds;
 
@@ -875,7 +875,7 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
      *                   side, <code>false</code> otherwise
      */
     public PxpMeasurementDeletionRequested(List<String> measurementIds,
-        MeasurementDetailsComponentV2 source,
+        MeasurementDetailsComponent source,
         boolean fromClient) {
       super(source, fromClient);
       this.measurementIds = measurementIds.stream().toList();
