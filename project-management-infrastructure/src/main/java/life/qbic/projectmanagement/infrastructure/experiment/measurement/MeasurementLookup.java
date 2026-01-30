@@ -19,6 +19,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 
+/**
+ * Implementation for {@link NgsMeasurementLookup} and {@link PxpMeasurementLookup}
+ */
 @Service
 public class MeasurementLookup implements NgsMeasurementLookup, PxpMeasurementLookup {
 

@@ -12,17 +12,23 @@ import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import org.springframework.data.jpa.domain.Specification;
 
+/**
+ * A factory for {@link Specification} based on commonly required parameters.
+ */
 public class SpecificationFactory {
 
   private static final Logger log = LoggerFactory.logger(SpecificationFactory.class);
+  /**
+   * A custom date time format not in any java.time ISO formats
+   */
   public static final String CUSTOM_DATE_TIME_PATTERN = "%Y-%m-%d %H:%i";
 
 
   /**
-   * Extracts an expression from a path.
-   *
-   * @param <S>
-   * @param <T>
+   * Extracts an {@link Expression} of type {@link T }from another {@link Expression}  of type {@link S}
+   * @param <S> The type of item used in the expression
+   * @param <T> the desired type of expression after extraction
+   * @param <X> the concrete type of source Expression
    */
   public interface Extractor<S, T, X extends Expression<S>> extends Function<X, Expression<T>> {
 
@@ -31,10 +37,23 @@ public class SpecificationFactory {
       return extractFrom(expression);
     }
 
+    /**
+     * Extract an expression from the provided expression.
+     *
+     * @param expression the provided expression
+     * @return the extracted expression
+     */
     Expression<T> extractFrom(X expression);
 
   }
 
+  /**
+   * Creates a {@link Specification} that passes when a property of the provided name contains the search term.
+   * @param propertyName the property of the {@link Root} of the {@link Specification}
+   * @param searchTerm the term to search for
+   * @return a configured Specification
+   * @param <T> the type of {@link Root}
+   */
   public static <T> Specification<T> propertyContains(String propertyName, String searchTerm) {
     return (root, query, criteriaBuilder) -> {
       Class<?> propertyType = root.get(propertyName).getJavaType();
@@ -48,6 +67,13 @@ public class SpecificationFactory {
     };
   }
 
+  /**
+   * Creates a {@link Specification} that passes when value of an {@link Expression} contains the search term.
+   * @param extractor an {@link Extractor} that provides an {@link Expression} of type {@link String}
+   * @param searchTerm the term to search for
+   * @return a configured Specification
+   * @param <T> the type of the {@link Specification} {@link Root}
+   */
   public static <T> Specification<T> contains(
       Extractor<T, String, Root<T>> extractor,
       String searchTerm) {
@@ -55,6 +81,14 @@ public class SpecificationFactory {
         contains(criteriaBuilder, extractor.extractFrom(root), searchTerm);
   }
 
+  /**
+   * Creates a {@link Specification} that passes when value of an {@link Expression} equals the provided value.
+   * @param extractor an {@link Extractor} that provides an {@link Expression} of type {@link S}
+   * @param other the object to compare to
+   * @return a configured Specification
+   * @param <S> the type of item that is compared for equality
+   * @param <T> the type of the {@link Specification} {@link Root}
+   */
   public static <S, T> Specification<T> exactMatches(
       Extractor<T, S, Root<T>> extractor,
       S other
@@ -62,6 +96,16 @@ public class SpecificationFactory {
     return (root, query, criteriaBuilder) ->
         objectEquals(criteriaBuilder, extractor.extractFrom(root), other);
   }
+
+  /**
+   * Creates a {@link Specification} that passes when the formatted value of an {@link Expression} contains the search term.
+   * @param instantPropertyName the name of the property of type {@link Instant}
+   * @param searchTerm the term to search for
+   * @param clientOffsetMillis the millisecond offset used to deduct the client time zone
+   * @param dateTimePattern the format pattern to format the time. The formatted time is searched for containing the search term.
+   * @return a configured Specification
+   * @param <T> the type of the {@link Specification} {@link Root}
+   */
   public static <T> Specification<T> formattedClientTimeContains(String instantPropertyName,
       String searchTerm, int clientOffsetMillis, String dateTimePattern) {
     return (root, query, criteriaBuilder) -> {
@@ -77,6 +121,16 @@ public class SpecificationFactory {
     };
   }
 
+  /**
+   * Creates a {@link Specification} that passes when an {@link Expression} resulting in a JSON contains the search term at the specified JSON path.
+   * @param extractor an {@link Extractor} that provides an {@link Expression} of type {@link S}
+   * @param jsonPath json path to be searched
+   * @param searchTerm the term to search for
+   * @return a configured Specification
+   * @param <S> the type of item that is compared for equality
+   * @param <T> the type of the {@link Specification} {@link Root}
+   * @see <a href="https://mariadb.com/docs/server/reference/sql-functions/special-functions/json-functions/jsonpath-expressions">JSONPath Expressions</a>
+   */
   public static <S, T> Specification<S> jsonContains(Extractor<S, T, Root<S>> extractor,
       String jsonPath, String searchTerm) {
     return (root, query, criteriaBuilder) ->
@@ -84,6 +138,12 @@ public class SpecificationFactory {
 
   }
 
+  /**
+   * Wraps a {@link Specification} in a distinct constraint.
+   * @param specification the specification to wrap
+   * @return a configured {@link Specification}
+   * @param <T> the type of the {@link Specification} {@link Root}
+   */
   public static <T> Specification<T> distinct(Specification<T> specification) {
     return (root, query, criteriaBuilder) -> {
       query.distinct(true);
