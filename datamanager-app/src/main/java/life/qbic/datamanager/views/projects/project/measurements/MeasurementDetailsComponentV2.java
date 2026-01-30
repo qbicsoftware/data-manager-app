@@ -153,12 +153,12 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
 
   private boolean pxpMeasurementsExist(String projectId, String experimentId) {
     return pxpMeasurementLookup.countPxpMeasurements(projectId,
-        new PxpMeasurementLookup.MeasurementFilter(experimentId, "", 0)) > 0;
+        PxpMeasurementLookup.MeasurementFilter.forExperiment(experimentId)) > 0;
   }
 
   private boolean ngsMeasurementsExist(String projectId, String experimentId) {
     return ngsMeasurementLookup.countNgsMeasurements(projectId,
-        new NgsMeasurementLookup.MeasurementFilter(experimentId, "", 0)) > 0;
+        NgsMeasurementLookup.MeasurementFilter.forExperiment(experimentId)) > 0;
   }
 
   private void addPxpTab(FilterGridTabSheet tabSheet, int index, String name,
@@ -220,8 +220,8 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
           return ngsMeasurementLookup.lookupNgsMeasurements(
               projectId, query.getOffset(), query.getLimit(),
               VaadinSpringDataHelpers.toSpringDataSort(query),
-              new NgsMeasurementLookup.MeasurementFilter(experimentId, searchTerm,
-                  clientTimeZoneOffset.get()));
+              NgsMeasurementLookup.MeasurementFilter.forExperiment(experimentId)
+                  .withSearch(searchTerm, clientTimeZoneOffset.get()));
         },
         query ->
         {
@@ -229,8 +229,8 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
               "");
 
           return ngsMeasurementLookup.countNgsMeasurements(projectId,
-              new NgsMeasurementLookup.MeasurementFilter(experimentId, searchTerm,
-                  clientTimeZoneOffset.get()));
+              NgsMeasurementLookup.MeasurementFilter.forExperiment(experimentId)
+                  .withSearch(searchTerm, clientTimeZoneOffset.get()));
         },
         (searchTerm, filter) -> filter.replaceWith(searchTerm));
     filterGrid.itemDisplayLabel("measurement");
@@ -284,16 +284,16 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
           return pxpMeasurementLookup.lookupPxpMeasurements(
               projectId, query.getOffset(), query.getLimit(),
               VaadinSpringDataHelpers.toSpringDataSort(query),
-              new PxpMeasurementLookup.MeasurementFilter(experimentId, searchTerm,
-                  clientTimeZoneOffset.get()));
+              PxpMeasurementLookup.MeasurementFilter.forExperiment(experimentId)
+                  .withSearch(searchTerm, clientTimeZoneOffset.get()));
         },
         query ->
         {
           var searchTerm = query.getFilter().map(SearchTermFilter::searchTerm)
               .orElse("");
           return pxpMeasurementLookup.countPxpMeasurements(projectId,
-              new PxpMeasurementLookup.MeasurementFilter(experimentId, searchTerm,
-                  clientTimeZoneOffset.get()));
+              PxpMeasurementLookup.MeasurementFilter.forExperiment(experimentId)
+                  .withSearch(searchTerm, clientTimeZoneOffset.get()));
         },
         (searchTerm, filter) -> filter.replaceWith(searchTerm));
     filterGrid.itemDisplayLabel("measurement");
@@ -325,7 +325,7 @@ public class MeasurementDetailsComponentV2 extends PageArea implements Serializa
         displayMissingSelectionNote();
         return;
       }
-      fireEvent(new NgsMeasurementDeletionRequested(selectedMeasurementIds, this, true));
+      fireEvent(new PxpMeasurementDeletionRequested(selectedMeasurementIds, this, true));
     });
     filterGrid.setSecondaryActionGroup(deletePxpButton, editPxpButton);
     return filterGrid;
