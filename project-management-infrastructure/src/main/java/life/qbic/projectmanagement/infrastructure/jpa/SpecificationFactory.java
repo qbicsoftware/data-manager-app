@@ -55,6 +55,13 @@ public class SpecificationFactory {
         contains(criteriaBuilder, extractor.extractFrom(root), searchTerm);
   }
 
+  public static <S, T> Specification<T> exactMatches(
+      Extractor<T, S, Root<T>> extractor,
+      S other
+  ) {
+    return (root, query, criteriaBuilder) ->
+        objectEquals(criteriaBuilder, extractor.extractFrom(root), other);
+  }
   public static <T> Specification<T> formattedClientTimeContains(String instantPropertyName,
       String searchTerm, int clientOffsetMillis, String dateTimePattern) {
     return (root, query, criteriaBuilder) -> {
@@ -85,6 +92,10 @@ public class SpecificationFactory {
   }
 
 
+  protected static <T> Predicate objectEquals(CriteriaBuilder criteriaBuilder,
+      Expression<T> expression, T other) {
+    return criteriaBuilder.equal(expression, criteriaBuilder.literal(other));
+  }
   protected static Predicate contains(CriteriaBuilder criteriaBuilder,
       Expression<String> property,
       String searchTerm) {
@@ -96,10 +107,10 @@ public class SpecificationFactory {
   protected static Predicate jsonContains(CriteriaBuilder criteriaBuilder,
       Expression<?> jsonProperty,
       String jsonPath, String searchTerm) {
-    return criteriaBuilder.like(
-        criteriaBuilder.lower(
-            extractFromJson(criteriaBuilder, jsonProperty, jsonPath, String.class)),
-        "%" + searchTerm.strip().toLowerCase() + "%");
+    return criteriaBuilder.isNotNull(
+        searchJson(criteriaBuilder, jsonProperty, jsonPath,
+            "%" + searchTerm.strip().toLowerCase() + "%")
+    );
   }
 
   /**
@@ -162,6 +173,18 @@ public class SpecificationFactory {
       String jsonPath, Class<T> expectedType) {
     //https://mariadb.com/docs/server/reference/sql-functions/special-functions/json-functions/json_extract
     return criteriaBuilder.function("JSON_EXTRACT", expectedType, jsonDoc,
+        criteriaBuilder.literal(jsonPath));
+  }
+
+  protected static Expression<String> searchJson(CriteriaBuilder criteriaBuilder,
+      Expression<?> jsonDoc,
+      String jsonPath, String searchTerm) {
+//    https://mariadb.com/docs/server/reference/sql-functions/special-functions/json-functions/json_search
+    return criteriaBuilder.function("JSON_SEARCH", String.class,
+        jsonDoc,
+        criteriaBuilder.literal("one"),
+        criteriaBuilder.literal(searchTerm),
+        criteriaBuilder.nullLiteral(String.class),
         criteriaBuilder.literal(jsonPath));
   }
 
