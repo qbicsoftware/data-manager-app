@@ -739,12 +739,13 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
 
   private void updateComponentVisibility() {
     ExperimentId currentExperimentId = context.experimentId().orElseThrow();
-    if (!sampleInformationService.hasSamples(context.projectId().orElseThrow(),
+    ProjectId projectId = context.projectId().orElseThrow();
+    if (!sampleInformationService.hasSamples(projectId,
         currentExperimentId.value())) {
       showRegisterSamplesDisclaimer();
       return;
     }
-    if (!measurementService.hasMeasurements(currentExperimentId)) {
+    if (!measurementService.hasMeasurements(projectId, currentExperimentId)) {
       showRegisterMeasurementDisclaimer();
     } else {
       showMeasurements();
