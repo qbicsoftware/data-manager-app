@@ -102,10 +102,8 @@ public class MeasurementService {
    *                     if its contained {@link Sample} have measurements attached
    * @return true if experiments has samples with associated measurements, false if not
    */
-  public boolean hasMeasurements(ExperimentId experimentId) {
-    var result = sampleInformationService.retrieveSamplesForExperiment(experimentId);
-    var samplesInExperiment = result.getValue().stream().map(Sample::sampleId).toList();
-    return measurementLookupService.countMeasurementsBySampleIds(samplesInExperiment) != 0;
+  public boolean hasMeasurements(ProjectId projectId, ExperimentId experimentId) {
+    return measurementLookupService.countMeasurements(projectId, experimentId) != 0;
   }
 
   public Optional<ProteomicsMeasurement> findProteomicsMeasurement(String measurementCode) {
