@@ -152,11 +152,13 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
   private void setRawDataInformation() {
     //Check if measurements exist
     ExperimentId currentExperimentId = context.experimentId().orElseThrow();
-    if (!measurementService.hasMeasurements(currentExperimentId)) {
+    var projectId = context.projectId().orElseThrow();
+
+    if (!measurementService.hasMeasurements(projectId, currentExperimentId)) {
       showRegisterMeasurementDisclaimer();
       return;
     }
-    if (!remoteRawDataService.hasRawData(currentExperimentId)) {
+    if (!remoteRawDataService.hasRawData(projectId.value(), currentExperimentId)) {
       showNoRawDataRegisteredDisclaimer();
     } else {
       showRawDataForRegisteredMeasurements();
