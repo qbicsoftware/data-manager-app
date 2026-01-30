@@ -19,14 +19,12 @@ import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.account.PersonalAccessTokenMain;
 import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.Main;
-import life.qbic.datamanager.views.general.download.DownloadComponent;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.dataset.RemoteRawDataService;
-import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
@@ -55,10 +53,9 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
   @Serial
   private static final long serialVersionUID = -4506659645977994192L;
   private static final Logger log = LoggerFactory.logger(RawDataMain.class);
-  private final DownloadComponent downloadComponent;
   private final MessageSourceNotificationFactory messageSourceNotificationFactory;
   private final ClientDetailsProvider clientDetailsProvider;
-  private Div rawdataDetailsComponentContainer;
+  private final Div rawdataDetailsComponentContainer;
   private final RawDataDownloadInformationComponent rawDataDownloadInformationComponent;
   private final Div content = new Div();
   private final transient MeasurementService measurementService;
@@ -72,7 +69,6 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
 
   public RawDataMain(
       @Autowired RawDataDownloadInformationComponent rawDataDownloadInformationComponent,
-      @Autowired ExperimentInformationService experimentInformationService,
       @Autowired MeasurementService measurementService,
       @Autowired RemoteRawDataService remoteRawDataService,
       @Value("${server.download.api.measurement.url}") String dataSourceURL,
@@ -93,7 +89,6 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
     registerMeasurementsDisclaimer.addClassName("no-measurements-registered-disclaimer");
     noRawDataRegisteredDisclaimer = createNoRawDataRegisteredDisclaimer();
     noRawDataRegisteredDisclaimer.addClassName("no-raw-data-registered-disclaimer");
-    downloadComponent = new DownloadComponent();
     rawdataDetailsComponentContainer = new Div();
     rawdataDetailsComponentContainer.addClassNames("display-contents");
 
@@ -102,7 +97,6 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
     add(noRawDataRegisteredDisclaimer);
     add(rawdataDetailsComponentContainer);
     add(rawDataDownloadInformationComponent);
-    add(downloadComponent);
     addListeners();
     addClassName("raw-data");
 
@@ -236,14 +230,6 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
           "Rerouting to measurement page for experiment %s of project %s: %s",
           currentExperimentId, currentProjectId, routeToMeasurementPage));
       componentEvent.getSource().getUI().ifPresent(ui -> ui.navigate(routeToMeasurementPage));
-    }
-  }
-
-  public record RawDataURL(String serverURL, String measurementCode) {
-
-    @Override
-    public String toString() {
-      return String.format("%s/%s", serverURL(), measurementCode());
     }
   }
 

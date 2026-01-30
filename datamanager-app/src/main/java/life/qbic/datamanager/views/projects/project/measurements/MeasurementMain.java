@@ -21,6 +21,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.function.IntConsumer;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.FileNameFormatter;
 import life.qbic.datamanager.files.export.download.DownloadStreamProvider;
@@ -106,7 +107,6 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private final AsyncProjectService asyncService;
   private final MessageSourceNotificationFactory messageSourceNotificationFactory;
   private transient Context context;
-  private AppDialog measurementDialog;
   private final ProjectContext projectContext;
 
 
@@ -390,10 +390,10 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   }
 
   private Div createNoMeasurementDisclaimer() {
-    Div noMeasurementDisclaimer = new Div();
+    Div disclaimer = new Div();
     Span disclaimerTitle = new Span("Manage your measurement metadata");
     disclaimerTitle.addClassName("no-measurement-registered-title");
-    noMeasurementDisclaimer.add(disclaimerTitle);
+    disclaimer.add(disclaimerTitle);
     Div noMeasurementDisclaimerContent = new Div();
     noMeasurementDisclaimerContent.addClassName("no-measurement-registered-content");
     Span noMeasurementText1 = new Span("Start by downloading the required metadata template");
@@ -401,22 +401,23 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
         "Fill the metadata sheet and register your measurement metadata.");
     noMeasurementDisclaimerContent.add(noMeasurementText1);
     noMeasurementDisclaimerContent.add(noMeasurementText2);
-    noMeasurementDisclaimer.add(noMeasurementDisclaimerContent);
+    disclaimer.add(noMeasurementDisclaimerContent);
     InfoBox availableTemplatesInfo = new InfoBox();
     availableTemplatesInfo.setInfoText(
         "You can download the measurement metadata template from the Templates component above");
     availableTemplatesInfo.setClosable(false);
-    noMeasurementDisclaimer.add(availableTemplatesInfo);
+    disclaimer.add(availableTemplatesInfo);
     Button registerMeasurements = new Button("Register Measurements");
     registerMeasurements.addClassName("primary");
-    noMeasurementDisclaimer.add(registerMeasurements);
+    disclaimer.add(registerMeasurements);
     registerMeasurements.addClickListener(event -> openRegistrationDialog());
-    noMeasurementDisclaimer.addClassName("no-measurements-registered-disclaimer");
-    return noMeasurementDisclaimer;
+    disclaimer.addClassName("no-measurements-registered-disclaimer");
+    return disclaimer;
   }
 
   private void openRegistrationDialog() {
-    this.measurementDialog = AppDialog.medium();
+    AppDialog measurementDialog;
+    measurementDialog = AppDialog.medium();
     DialogHeader.with(measurementDialog, "Register measurements");
     DialogFooter.with(measurementDialog, "Cancel", "Register");
 
@@ -646,7 +647,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   }
 
   private void processResults(int numberOfSuccesses, int numberOfRequests,
-      Consumer<Integer> onSuccess, Consumer<Integer> onFailure) {
+      Consumer<Integer> onSuccess, IntConsumer onFailure) {
     if (numberOfSuccesses > 0 && numberOfSuccesses == numberOfRequests) {
       // Only successful registrations
       onSuccess.accept(numberOfSuccesses);

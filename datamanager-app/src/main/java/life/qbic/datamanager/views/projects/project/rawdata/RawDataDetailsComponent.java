@@ -68,8 +68,6 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
   private final Context context;
 
 
-  private FilterGridTabSheet filterTabSheet = new FilterGridTabSheet();
-
   public RawDataDetailsComponent(
       @NonNull ClientDetailsProvider clientDetailsProvider,
       @NonNull AsyncProjectService asyncProjectService,
@@ -95,6 +93,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
     var projectId = context.projectId().orElseThrow().value();
     var experimentId = context.experimentId().orElseThrow().value();
 
+    final FilterGridTabSheet filterTabSheet = new FilterGridTabSheet();
     filterTabSheet.removeAllTabs();
     if (asyncProjectService.countRawDataNgs(projectId, experimentId,
         new RawDatasetFilter("", List.of())).block(MAX_BLOCKING_DURATION) > 0) {
@@ -412,7 +411,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
 
   private static class RawDataFilter {
 
-    private String searchTerm;
+    private final String searchTerm;
 
     public RawDataFilter(@NonNull String searchTerm) {
       this.searchTerm = Objects.requireNonNull(searchTerm);
