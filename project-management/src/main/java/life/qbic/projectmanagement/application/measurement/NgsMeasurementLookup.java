@@ -12,6 +12,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 
+/**
+ * Provides methods to count and read {@link MeasurementInfo} measurement metadata.
+ */
 @Service
 public interface NgsMeasurementLookup {
 
@@ -25,6 +28,12 @@ public interface NgsMeasurementLookup {
     }
   }
 
+  /**
+   * An organisation
+   *
+   * @param label the displayed name / label of the organisation
+   * @param iri   an internationalized resource identifier for the organization
+   */
   record Organisation(@NonNull String label, @NonNull String iri) {
 
     public Organisation {
@@ -33,6 +42,12 @@ public interface NgsMeasurementLookup {
     }
   }
 
+  /**
+   * An instrucment used for the measurement
+   * @param label the displayed name/label of the instrument
+   * @param oboId the obo identifier of the instrument
+   * @param iri the inernationalized resource identifier for the instrument
+   */
   record Instrument(@NonNull String label, @NonNull String oboId, @NonNull String iri) {
 
     public Instrument {
@@ -42,6 +57,15 @@ public interface NgsMeasurementLookup {
     }
   }
 
+  /**
+   * Information about a measured sample
+   * @param sampleId the database identifier of the sample
+   * @param sampleCode the displayed identifier of the sample
+   * @param sampleLabel the name of the sample
+   * @param indexI5 the i5 index used in sequencing if any
+   * @param indexI7 the i7 index used in sequencing if any
+   * @param comment an optional comment on the measured sample
+   */
   record SampleInfo(
       @NonNull String sampleId,
       @NonNull String sampleCode,
@@ -93,6 +117,24 @@ public interface NgsMeasurementLookup {
 
   }
 
+  /**
+   * Measurement metadata for NGS measurements
+   * @param measurementId the measurement database identifier
+   * @param projectId the project database identifier
+   * @param experimentId the experiment identifier
+   * @param measurementCode the displayed measurement identifier
+   * @param measurementName the name of the measurement
+   * @param facility the facility that recorded the measurement
+   * @param organisation the organisation that measured the samples
+   * @param instrument the instrument used for measurement
+   * @param samplePool the pool name in case samples were pooled in this measurement
+   * @param registeredAt the timepoint of measurement metadata registration
+   * @param readType the read type
+   * @param libraryKit the library kit used for the measurement
+   * @param flowCell the flow cell used for the measurement
+   * @param runProtocol the run protocol used for the measurement
+   * @param sampleInfos a collection of measurement metadata for the measured samples
+   */
   record MeasurementInfo(@NonNull String measurementId,
                          @NonNull String projectId,
                          @NonNull String experimentId,
@@ -120,6 +162,14 @@ public interface NgsMeasurementLookup {
 
   }
 
+  /**
+   * A filter allowing to filter measurements. It is encouraged to create new filters using {@link #forExperiment(String)}.}
+   * @param experimentId the experiment identifier for this filter
+   * @param searchTerm the term for which to search, can be blank to include everything
+   * @param timeZoneOffsetMillis the time zone offset in milliseconds of the client. By default server time zone (value 0) is assumed.
+   * @param includedSamples a list of samples that must be measured by a measurement for the filter to accept it
+   * @param excludedSamples a list of samples that must not be measured by a measurement for the filter to accept it
+   */
   record MeasurementFilter(String experimentId, String searchTerm, int timeZoneOffsetMillis,
                            Set<String> includedSamples,
                            Set<String> excludedSamples) {
@@ -133,17 +183,33 @@ public interface NgsMeasurementLookup {
     }
 
 
+    /**
+     * Creates a new filter configured to filter for measurements belonging to the experiment.
+     * @param experimentId the identifier of the experiment
+     * @return a configured filter
+     */
     public static MeasurementFilter forExperiment(String experimentId) {
       Objects.requireNonNull(experimentId);
       return new MeasurementFilter(experimentId, "", 0, Set.of(), Set.of());
     }
 
+    /**
+     * Configures the filter to only accept measurements if they contain the provided search term in a searchable field.
+     * @param searchTerm the search term that must be contained, note case-sensitive
+     * @param timeZoneOffsetMillis the client timezone offset milliseconds for date rendering
+     * @return a configured filter
+     */
     public MeasurementFilter withSearch(String searchTerm, int timeZoneOffsetMillis) {
       Objects.requireNonNull(searchTerm);
       return new MeasurementFilter(experimentId, searchTerm, timeZoneOffsetMillis, includedSamples,
           excludedSamples);
     }
 
+    /**
+     * Adds samples to the whitelist. Measurements measuring at least one of the whitelisted samples are accepted by this filter.
+     * @param sampleIds
+     * @return a configured filter
+     */
     public MeasurementFilter includingSamples(Collection<String> sampleIds) {
       var combinedSamples = new HashSet<String>();
       combinedSamples.addAll(includedSamples);
@@ -155,6 +221,11 @@ public interface NgsMeasurementLookup {
           excludedSamples);
     }
 
+    /**
+     * Adds samples to the blacklist. Measurements measuring at least one of the whitelisted samples are not accepted by this filter.
+     * @param sampleIds
+     * @return a configured filter
+     */
     public MeasurementFilter excludingSamples(Collection<String> sampleIds) {
       var combinedSamples = new HashSet<String>();
       combinedSamples.addAll(excludedSamples);
