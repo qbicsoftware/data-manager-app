@@ -14,7 +14,6 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.EnumMap;
@@ -45,8 +44,9 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.RawDataSo
 import life.qbic.projectmanagement.application.api.AsyncProjectService.RawDatasetFilter;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.RawDatasetInformationNgs;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.RawDatasetInformationPxP;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.SortDirection;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.SortOrder;
 import org.springframework.lang.NonNull;
-import reactor.core.publisher.Mono;
 
 /**
  * Raw Data Details Component
@@ -57,15 +57,16 @@ import reactor.core.publisher.Mono;
 
 public class RawDataDetailsComponent extends PageArea implements Serializable {
 
+  private static final Duration MAX_BLOCKING_DURATION = Duration.ofMinutes(5);
+
   private final transient ClientDetailsProvider clientDetailsProvider;
   private final AsyncProjectService asyncProjectService;
   private final DownloadComponent downloadComponent = new DownloadComponent();
   private final UiHandle uiHandle = new UiHandle();
   private final String dataSourceEndpoint;
   private final MessageSourceNotificationFactory messageFactory;
-  private static final Duration MAX_BLOCKING_DURATION = Duration.ofMinutes(5);
+  private final Context context;
 
-  private final List<FilterGridTab<?>> availableTabs = new ArrayList<>();
 
   private FilterGridTabSheet filterTabSheet = new FilterGridTabSheet();
 
@@ -79,6 +80,8 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
     this.asyncProjectService = Objects.requireNonNull(asyncProjectService);
     this.dataSourceEndpoint = Objects.requireNonNull(dataSourceEndpoint);
     this.messageFactory = Objects.requireNonNull(messageFactory);
+    this.context = Objects.requireNonNull(context);
+
     addClassName("raw-data-details-component");
 
     // Vaadin requires the download component to be attached to the UI for the download trigger to work
@@ -92,61 +95,31 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
     var projectId = context.projectId().orElseThrow().value();
     var experimentId = context.experimentId().orElseThrow().value();
 
-    var multiSelectGridNgs = createNgsRawDataGrid();
-    var filterGridNgs = createNgsFilterGrid(multiSelectGridNgs, projectId, experimentId);
-
-    var multiSelectGridPxp = createPxpRawDataGrid();
-    var filterGridPxp = createPxpFilterGrid(multiSelectGridPxp, projectId, experimentId);
-
-    var filterTabNgs = new FilterGridTab<>("Genomics", filterGridNgs);
-    var filterTabPxp = new FilterGridTab<>("Proteomics", filterGridPxp);
-
-    availableTabs.addAll(List.of(filterTabNgs, filterTabPxp));
-
-    asyncProjectService.countRawDataNgs(projectId, experimentId,
-            new RawDatasetFilter("", List.of()))
-        .onErrorResume(ignored -> Mono.just(0))
-        .subscribe(count -> uiHandle.onUiAndPush(() -> {
-          filterTabNgs.setItemCount(count);
-          renderTabSheet();
-        }));
-
-    asyncProjectService.countRawDataPxp(projectId, experimentId,
-            new RawDatasetFilter("", List.of()))
-        .onErrorResume(ignored -> Mono.just(0))
-        .subscribe(count -> uiHandle.onUiAndPush(() -> {
-             filterTabPxp.setItemCount(count);
-             renderTabSheet();
-            }
-        ));
-
+    filterTabSheet.removeAllTabs();
+    if (asyncProjectService.countRawDataNgs(projectId, experimentId,
+        new RawDatasetFilter("", List.of())).block(MAX_BLOCKING_DURATION) > 0) {
+      var filterGridNgs = createNgsFilterGrid(createNgsRawDataGrid(), projectId, experimentId);
+      addNgsTab(filterTabSheet, 0, "Genomics", filterGridNgs);
+    }
+    if (asyncProjectService.countRawDataPxp(projectId, experimentId,
+        new RawDatasetFilter("", List.of())).block(MAX_BLOCKING_DURATION) > 0) {
+      var filterGridPxp = createPxpFilterGrid(createPxpRawDataGrid(), projectId, experimentId);
+      addPxpTab(filterTabSheet, 1, "Proteomics", filterGridPxp);
+    }
     filterTabSheet.hidePrimaryFeatureButton();
-
     filterTabSheet.setCaptionPrimaryAction("Export Dataset URLs");
+    add(filterTabSheet);
 
-    var projectCode = context.projectCode().orElse("unknown_project_code");
+  }
 
-    filterTabSheet.addPrimaryAction(filterTabNgs, tab -> {
+  private void addNgsTab(FilterGridTabSheet tabSheet, int index, String name,
+      FilterGrid<RawDatasetInformationNgs, ?> filterGrid) {
+    var projectCode = context.projectCode().orElseThrow();
+    var ngsTab = new FilterGridTab<>(name, filterGrid);
+    tabSheet.addTab(index, ngsTab);
+    tabSheet.addPrimaryAction(ngsTab, tab -> {
       var grid = tab.filterGrid();
       Set<RawDatasetInformationNgs> selectedDatasets = grid.selectedElements();
-      if (selectedDatasets.isEmpty()) {
-        displayMissingSelectionNote();
-        return;
-      }
-      var ids = selectedDatasets.stream()
-          .map(info -> info.dataset().measurementId())
-          .map(id -> new RawDataURL(dataSourceEndpoint, id))
-          .toList();
-
-      var file = RawDataUrlFile.create(ids);
-      var streamProvider = createStreamProvider(FileNameFormatter.formatWithTimestampedSimple(
-          LocalDate.now(), projectCode, "ngs_measurement_dataset_locations", "txt"), file);
-      downloadComponent.trigger(streamProvider);
-    });
-
-    filterTabSheet.addPrimaryAction(filterTabPxp, tab -> {
-      var grid = tab.filterGrid();
-      Set<RawDatasetInformationPxP> selectedDatasets = grid.selectedElements();
       if (selectedDatasets.isEmpty()) {
         displayMissingSelectionNote();
         return;
@@ -161,17 +134,30 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
           LocalDate.now(), projectCode, "proteomics_measurement_dataset_locations", "txt"), file);
       downloadComponent.trigger(streamProvider);
     });
-
-    add(filterTabSheet);
   }
 
-  private void renderTabSheet() {
-    for (var tab : availableTabs) {
-      filterTabSheet.removeTab(tab);
-    }
-    availableTabs.stream()
-        .filter(tab -> tab.getItemCount() > 0)
-        .forEach(tab -> filterTabSheet.addTab(tab));
+  private void addPxpTab(FilterGridTabSheet tabSheet, int index, String name,
+      FilterGrid<RawDatasetInformationPxP, ?> filterGrid) {
+    var projectCode = context.projectCode().orElseThrow();
+    var pxpTab = new FilterGridTab<>(name, filterGrid);
+    tabSheet.addTab(index, pxpTab);
+    tabSheet.addPrimaryAction(pxpTab, tab -> {
+      var grid = tab.filterGrid();
+      Set<RawDatasetInformationPxP> selectedDatasets = grid.selectedElements();
+      if (selectedDatasets.isEmpty()) {
+        displayMissingSelectionNote();
+        return;
+      }
+      var ids = selectedDatasets.stream()
+          .map(info -> info.dataset().measurementId())
+          .map(id -> new RawDataURL(dataSourceEndpoint, id))
+          .toList();
+
+      var file = RawDataUrlFile.create(ids);
+      var streamProvider = createStreamProvider(FileNameFormatter.formatWithTimestampedSimple(
+          LocalDate.now(), projectCode, "ngs_measurement_dataset_locations", "txt"), file);
+      downloadComponent.trigger(streamProvider);
+    });
   }
 
   private void displayMissingSelectionNote() {
@@ -195,7 +181,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
   }
 
 
-  private static final Map<RawDataDetailsComponent.UiSortKey, RawDataSortingKey> SORT_KEY_MAP = new EnumMap<>(
+  private static final Map<UiSortKey, RawDataSortingKey> SORT_KEY_MAP = new EnumMap<>(
       UiSortKey.class);
 
   static {
@@ -211,7 +197,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
 
 
     private static final Map<String, UiSortKey> LOOKUP = Arrays.stream(
-        RawDataDetailsComponent.UiSortKey.values()).collect(
+        UiSortKey.values()).collect(
         Collectors.toMap(UiSortKey::value, Function.identity()));
 
     private final String value;
@@ -315,36 +301,31 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
     return filterGrid;
   }
 
-  private static RawDatasetFilter createNgsRawDataFilter(String searchTerm,
-      List<AsyncProjectService.SortOrder<RawDataSortingKey>> sortOrders) {
-    return new RawDatasetFilter(searchTerm, sortOrders);
-  }
-
-  private static List<AsyncProjectService.SortOrder<RawDataSortingKey>> sortOrdersToApi(
-      List<com.vaadin.flow.data.provider.QuerySortOrder> uiSortOrders)
+  private static List<SortOrder<RawDataSortingKey>> sortOrdersToApi(
+      List<QuerySortOrder> uiSortOrders)
       throws IllegalArgumentException {
     return uiSortOrders.stream()
         .map(RawDataDetailsComponent::sortOrdersToApi)
         .toList();
   }
 
-  private static AsyncProjectService.SortDirection sortDirectionToApi(
+  private static SortDirection sortDirectionToApi(
       com.vaadin.flow.data.provider.SortDirection uiSortDirection) {
     return uiSortDirection == com.vaadin.flow.data.provider.SortDirection.ASCENDING
-        ? AsyncProjectService.SortDirection.ASC : AsyncProjectService.SortDirection.DESC;
+        ? SortDirection.ASC : SortDirection.DESC;
   }
 
-  private static AsyncProjectService.SortOrder<RawDataSortingKey> sortOrdersToApi(
+  private static SortOrder<RawDataSortingKey> sortOrdersToApi(
       QuerySortOrder uiSortOrder)
       throws IllegalArgumentException {
     var uiSortKeyValue = uiSortOrder.getSorted();
-    var uiSortKey = RawDataDetailsComponent.UiSortKey.from(uiSortKeyValue).orElseThrow(
+    var uiSortKey = UiSortKey.from(uiSortKeyValue).orElseThrow(
         () -> new IllegalArgumentException("No ui sort key provided for value: " + uiSortKeyValue));
     var apiKey = SORT_KEY_MAP.get(uiSortKey);
     if (apiKey == null) {
       throw new IllegalArgumentException("No api key provided for value: " + uiSortKey);
     }
-    return new AsyncProjectService.SortOrder<>(apiKey,
+    return new SortOrder<>(apiKey,
         sortDirectionToApi(uiSortOrder.getDirection()));
   }
 
@@ -354,7 +335,9 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
     grid.addColumn(
             rawData -> rawData.dataset().measurementId())
         .setKey(UiSortKey.MEASUREMENT_ID.value())
+        .setSortProperty(UiSortKey.MEASUREMENT_ID.value())
         .setHeader("Measurement Id");
+
     grid.addColumn(
             rawData -> rawData.linkedSampleInformation().stream().map(
                 BasicSampleInformation::sampleName).collect(Collectors.joining(",")))
@@ -364,6 +347,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
     grid.addColumn(
             rawData -> convertToLocalDate(Date.from(rawData.dataset().registrationDate())))
         .setKey(UiSortKey.UPLOAD_DATE.value())
+        .setSortProperty(UiSortKey.UPLOAD_DATE.value())
         .setHeader("Upload Date");
     grid.setItemDetailsRenderer(renderRawDataNgs());
     return grid;
@@ -375,6 +359,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
     grid.addColumn(
             rawData -> rawData.dataset().measurementId())
         .setKey(UiSortKey.MEASUREMENT_ID.value())
+        .setSortProperty(UiSortKey.MEASUREMENT_ID.value())
         .setHeader("Measurement Id");
     grid.addColumn(
             rawData -> rawData.linkedSampleInformation().stream().map(
@@ -384,6 +369,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
     grid.addColumn(
             rawData -> convertToLocalDate(Date.from(rawData.dataset().registrationDate())))
         .setKey(UiSortKey.UPLOAD_DATE.value())
+        .setSortProperty(UiSortKey.UPLOAD_DATE.value())
         .setHeader("Upload Date");
     grid.setItemDetailsRenderer(renderRawDataPxp());
     return grid;
