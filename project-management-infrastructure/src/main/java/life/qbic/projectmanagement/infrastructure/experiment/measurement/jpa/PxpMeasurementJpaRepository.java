@@ -34,17 +34,20 @@ import jakarta.persistence.criteria.Root;
 import java.io.IOException;
 import java.io.Serializable;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.StringJoiner;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.infrastructure.PreventAnyUpdateEntityListener;
 import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.PxpMeasurementJpaRepository.MsDevice.MsDeviceReadConverter;
 import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.PxpMeasurementJpaRepository.PxpMeasurementInformation;
-import life.qbic.projectmanagement.infrastructure.jpa.JpaFilter;
-import life.qbic.projectmanagement.infrastructure.jpa.JpaFilter.JpaFilterBuilder;
 import life.qbic.projectmanagement.infrastructure.jpa.SpecificationFactory;
 import org.hibernate.collection.spi.PersistentBag;
 import org.springframework.boot.jackson.JsonComponent;
@@ -60,21 +63,75 @@ public interface PxpMeasurementJpaRepository extends
     PagingAndSortingRepository<PxpMeasurementInformation, MeasurementId>,
     JpaSpecificationExecutor<PxpMeasurementInformation> {
 
-  final class PxpMeasurementFilter implements JpaFilter<PxpMeasurementInformation> {
 
+  class PxpMeasurementFilter implements
+      MeasurementFilter<PxpMeasurementInformation, PxpMeasurementFilter> {
+
+    private record SampleFilter(boolean isInclusion, Set<String> sampleIds) {
+
+      static SampleFilter including(Set<String> sampleIds) {
+        return new SampleFilter(true, new HashSet<>(sampleIds));
+      }
+
+      static SampleFilter excluding(Set<String> sampleIds) {
+        return new SampleFilter(false, new HashSet<>(sampleIds));
+      }
+
+      private SampleFilter {
+        Objects.requireNonNull(sampleIds);
+      }
+    }
     private final String experimentId;
-    private final String searchTerm;
-    private final int timeZoneOffsetMillis;
+    private String searchTerm;
+    private int timeZoneOffsetMillis;
+    private final List<SampleFilter> sampleFilters = new ArrayList<>();
 
-    private PxpMeasurementFilter(@NonNull String experimentId,
+    private PxpMeasurementFilter(String experimentId,
         @NonNull String searchTerm,
         int timeZoneOffsetMillis) {
       this.searchTerm = Objects.requireNonNull(searchTerm);
-      this.experimentId = Objects.requireNonNull(experimentId);
+      this.experimentId = experimentId;
       this.timeZoneOffsetMillis = timeZoneOffsetMillis;
     }
 
-    private static Join<PxpMeasurementInformation, PxpSampleInfo> getSampleInfos(
+    public static PxpMeasurementFilter forExperiment(String experimentId) {
+      return new PxpMeasurementFilter(experimentId, "", 0);
+    }
+
+    public static PxpMeasurementFilter withoutExperiment() {
+      return new PxpMeasurementFilter(null, "", 0);
+    }
+
+    @Override
+    public Optional<String> getExperimentId() {
+      return Optional.ofNullable(experimentId);
+    }
+
+    @Override
+    public PxpMeasurementFilter anyContaining(String searchTerm) {
+      this.searchTerm = Optional.ofNullable(searchTerm).orElse("");
+      return this;
+    }
+
+    @Override
+    public PxpMeasurementFilter atClientTimeOffset(int clientTimeZoneOffsetMillis) {
+      this.timeZoneOffsetMillis = clientTimeZoneOffsetMillis;
+      return this;
+    }
+
+    @Override
+    public PxpMeasurementFilter includingSamples(Set<String> sampleIds) {
+      sampleFilters.add(SampleFilter.including(sampleIds));
+      return this;
+    }
+
+    @Override
+    public PxpMeasurementFilter excludingSamples(Set<String> sampleIds) {
+      sampleFilters.add(SampleFilter.excluding(sampleIds));
+      return this;
+    }
+
+    protected static Join<PxpMeasurementInformation, PxpSampleInfo> getSampleInfos(
         Root<PxpMeasurementInformation> root) {
       return root.join("sampleInfos");
     }
@@ -82,37 +139,62 @@ public interface PxpMeasurementJpaRepository extends
     @Override
     public Specification<PxpMeasurementInformation> asSpecification() {
       return
-          distinct(
-              matchesExperiment(experimentId)
-                  .and(Specification.anyOf(
-                      propertyContains("measurementCode", searchTerm),
-                      propertyContains("measurementName", searchTerm),
-                      propertyContains("technicalReplicateName", searchTerm),
-                      propertyContains("digestionEnzyme", searchTerm),
-                      propertyContains("facility", searchTerm),
-                      propertyContains("digestionMethod", searchTerm),
-                      propertyContains("injectionVolume", searchTerm),
-                      propertyContains("lcmsMethod", searchTerm),
-                      propertyContains("lcColumn", searchTerm),
-                      propertyContains("enrichmentMethod", searchTerm),
-                      propertyContains("samplePool", searchTerm),
-                      jsonContains(root -> root.get("msDevice"),
-                          "$.label", searchTerm),
-                      contains(root -> root.get("organisation")
-                              .get("label").as(String.class),
-                          searchTerm),
-                      contains(root -> root.get("organisation")
-                              .get("iri").as(String.class),
-                          searchTerm),
-                      formattedClientTimeContains("registeredAt", searchTerm, timeZoneOffsetMillis,
-                          SpecificationFactory.CUSTOM_DATE_TIME_PATTERN),
-                      contains(root -> getSampleInfos(root)
-                          .get("sampleLabel").as(String.class), searchTerm),
-                      contains(root -> getSampleInfos(root)
-                          .get("comment").as(String.class), searchTerm))));
+          distinct(matchesExperiment()
+              .and(measuresSamples())
+              .and(containsSearchTerm()));
     }
 
-    private static Specification<PxpMeasurementInformation> matchesExperiment(String experimentId) {
+    private @NonNull Specification<PxpMeasurementInformation> measuresSamples() {
+      if (sampleFilters.isEmpty()) {
+        return Specification.unrestricted();
+      }
+      Set<String> includedSampleIds = sampleFilters.stream()
+          .filter(SampleFilter::isInclusion)
+          .flatMap(it -> it.sampleIds().stream())
+          .collect(Collectors.toSet());
+      Set<String> excludedSampleIds = sampleFilters.stream()
+          .filter(Predicate.not(SampleFilter::isInclusion))
+          .flatMap(it -> it.sampleIds().stream())
+          .collect(Collectors.toSet());
+      return (root, query, criteriaBuilder) -> criteriaBuilder.and(
+          getSampleInfos(root).get("sampleId").in(includedSampleIds),
+          getSampleInfos(root).get("sampleId").in(excludedSampleIds).not());
+    }
+
+    private @NonNull Specification<PxpMeasurementInformation> containsSearchTerm() {
+      return Specification.anyOf(
+          propertyContains("measurementCode", searchTerm),
+          propertyContains("measurementName", searchTerm),
+          propertyContains("technicalReplicateName", searchTerm),
+          propertyContains("digestionEnzyme", searchTerm),
+          propertyContains("facility", searchTerm),
+          propertyContains("digestionMethod", searchTerm),
+          propertyContains("injectionVolume", searchTerm),
+          propertyContains("lcmsMethod", searchTerm),
+          propertyContains("lcColumn", searchTerm),
+          propertyContains("enrichmentMethod", searchTerm),
+          propertyContains("samplePool", searchTerm),
+          jsonContains(root -> root.get("msDevice"),
+              "$.label", searchTerm),
+          contains(root -> root.get("organisation")
+                  .get("label").as(String.class),
+              searchTerm),
+          contains(root -> root.get("organisation")
+                  .get("iri").as(String.class),
+              searchTerm),
+          formattedClientTimeContains("registeredAt", searchTerm, timeZoneOffsetMillis,
+              SpecificationFactory.CUSTOM_DATE_TIME_PATTERN),
+          contains(root -> getSampleInfos(root)
+              .get("sampleLabel").as(String.class), searchTerm),
+          contains(root -> getSampleInfos(root)
+              .get("comment").as(String.class), searchTerm));
+    }
+
+
+    private Specification<PxpMeasurementInformation> matchesExperiment() {
+      if (getExperimentId().isEmpty()) {
+        return Specification.unrestricted();
+      }
       return (root, query, criteriaBuilder) ->
           criteriaBuilder.equal(getSampleInfos(root).get("experimentId"), experimentId);
     }
@@ -123,37 +205,6 @@ public interface PxpMeasurementJpaRepository extends
           .add("experimentId='" + experimentId + "'")
           .add("searchTerm='" + searchTerm + "'")
           .toString();
-    }
-  }
-
-  final class PxpMeasurementFilterBuilder implements
-      JpaFilterBuilder<PxpMeasurementInformation, PxpMeasurementFilter, PxpMeasurementFilterBuilder> {
-
-    private final String experimentId;
-    private String searchTerm = "";
-    private int timeZoneOffsetMillis = 0;
-
-    private PxpMeasurementFilterBuilder(String experimentId) {
-      this.experimentId = experimentId;
-    }
-
-    public static PxpMeasurementFilterBuilder newBuilder(String experimentId) {
-      return new PxpMeasurementFilterBuilder(experimentId);
-    }
-
-    public PxpMeasurementFilterBuilder anyContaining(String searchTerm) {
-      this.searchTerm = searchTerm;
-      return this;
-    }
-
-    public PxpMeasurementFilterBuilder atClientTimeOffset(int clientTimeZoneOffsetMillis) {
-      this.timeZoneOffsetMillis = clientTimeZoneOffsetMillis;
-      return this;
-    }
-
-    @Override
-    public PxpMeasurementFilter build() {
-      return new PxpMeasurementFilter(experimentId, searchTerm, timeZoneOffsetMillis);
     }
   }
 

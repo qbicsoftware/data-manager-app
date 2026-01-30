@@ -35,10 +35,15 @@ import jakarta.persistence.criteria.Root;
 import java.io.IOException;
 import java.io.Serializable;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.StringJoiner;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import life.qbic.projectmanagement.application.measurement.NgsMeasurementLookup.NgsSortKey;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.infrastructure.PreventAnyUpdateEntityListener;
@@ -58,18 +63,74 @@ public interface NgsMeasurementJpaRepository extends
     PagingAndSortingRepository<NgsMeasurementInformation, MeasurementId>,
     JpaSpecificationExecutor<NgsMeasurementInformation> {
 
-  final class NgsMeasurementFilter {
+  class NgsMeasurementFilter implements
+      MeasurementFilter<NgsMeasurementInformation, NgsMeasurementFilter> {
+
+
+    private record SampleFilter(boolean isInclusion, Set<String> sampleIds) {
+
+      static SampleFilter including(Set<String> sampleIds) {
+        return new SampleFilter(true, new HashSet<>(sampleIds));
+      }
+
+      static SampleFilter excluding(Set<String> sampleIds) {
+        return new SampleFilter(false, new HashSet<>(sampleIds));
+      }
+
+      private SampleFilter {
+        Objects.requireNonNull(sampleIds);
+      }
+    }
 
     private final String experimentId;
-    private final String searchTerm;
-    private final int timeZoneOffsetMillis;
+    private String searchTerm;
+    private int timeZoneOffsetMillis;
+    private final List<SampleFilter> sampleFilters = new ArrayList<>();
 
-    public NgsMeasurementFilter(@NonNull String experimentId,
+    private NgsMeasurementFilter(String experimentId,
         @NonNull String searchTerm,
         int timeZoneOffsetMillis) {
       this.searchTerm = Objects.requireNonNull(searchTerm);
-      this.experimentId = Objects.requireNonNull(experimentId);
+      this.experimentId = experimentId;
       this.timeZoneOffsetMillis = timeZoneOffsetMillis;
+    }
+
+    public static NgsMeasurementFilter forExperiment(String experimentId) {
+      return new NgsMeasurementFilter(experimentId, "", 0);
+    }
+
+    public static NgsMeasurementFilter withoutExperiment() {
+      return new NgsMeasurementFilter(null, "", 0);
+    }
+
+    @Override
+    public Optional<String> getExperimentId() {
+      return Optional.ofNullable(experimentId);
+    }
+
+    @Override
+    public NgsMeasurementFilter anyContaining(String searchTerm) {
+      this.searchTerm = Optional.ofNullable(searchTerm).orElse("");
+      return this;
+    }
+
+    @Override
+    public NgsMeasurementFilter atClientTimeOffset(int clientTimeZoneOffsetMillis) {
+      this.timeZoneOffsetMillis = clientTimeZoneOffsetMillis;
+      return this;
+    }
+
+
+    @Override
+    public NgsMeasurementFilter includingSamples(Set<String> sampleIds) {
+      sampleFilters.add(SampleFilter.including(sampleIds));
+      return this;
+    }
+
+    @Override
+    public NgsMeasurementFilter excludingSamples(Set<String> sampleIds) {
+      sampleFilters.add(SampleFilter.excluding(sampleIds));
+      return this;
     }
 
     protected static Join<NgsMeasurementInformation, NgsSampleInfo> getSampleInfos(
@@ -78,30 +139,55 @@ public interface NgsMeasurementJpaRepository extends
     }
 
     public Specification<NgsMeasurementInformation> asSpecification() {
-      return distinct(matchesExperiment(experimentId)
-          .and(Specification.anyOf(
-              propertyContains("measurementCode", searchTerm),
-              propertyContains("measurementName", searchTerm),
-              propertyContains("samplePool", searchTerm),
-              propertyContains("facility", searchTerm),
-              propertyContains("measurementCode", searchTerm),
-              propertyContains("sequencingRunProtocol", searchTerm),
-              propertyContains("sequencingReadType", searchTerm),
-              propertyContains("libraryKit", searchTerm),
-              propertyContains("flowCell", searchTerm),
-              contains(root -> root.get("organisation").get("label").as(String.class), searchTerm),
-              contains(root -> root.get("organisation").get("iri").as(String.class), searchTerm),
-              jsonContains(root -> root.get("instrument"), "$.label", searchTerm),
-              formattedClientTimeContains("registeredAt", searchTerm, timeZoneOffsetMillis,
-                  CUSTOM_DATE_TIME_PATTERN),
-              contains(root -> getSampleInfos(root)
-                  .get("sampleLabel").as(String.class), searchTerm),
-              contains(root -> getSampleInfos(root)
-                  .get("comment").as(String.class), searchTerm))
-          ));
+      return distinct(matchesExperiment()
+          .and(measuresSamples())
+          .and(containsSearchTerm()));
     }
 
-    private static Specification<NgsMeasurementInformation> matchesExperiment(String experimentId) {
+    private @NonNull Specification<NgsMeasurementInformation> measuresSamples() {
+      if (sampleFilters.isEmpty()) {
+        return Specification.unrestricted();
+      }
+      Set<String> includedSampleIds = sampleFilters.stream()
+          .filter(SampleFilter::isInclusion)
+          .flatMap(it -> it.sampleIds().stream())
+          .collect(Collectors.toSet());
+      Set<String> excludedSampleIds = sampleFilters.stream()
+          .filter(Predicate.not(SampleFilter::isInclusion))
+          .flatMap(it -> it.sampleIds().stream())
+          .collect(Collectors.toSet());
+      return (root, query, criteriaBuilder) -> criteriaBuilder.and(
+          getSampleInfos(root).get("sampleId").in(includedSampleIds),
+          getSampleInfos(root).get("sampleId").in(excludedSampleIds).not());
+    }
+
+    private @NonNull Specification<NgsMeasurementInformation> containsSearchTerm() {
+      return Specification.anyOf(
+          propertyContains("measurementCode", searchTerm),
+          propertyContains("measurementName", searchTerm),
+          propertyContains("samplePool", searchTerm),
+          propertyContains("facility", searchTerm),
+          propertyContains("measurementCode", searchTerm),
+          propertyContains("sequencingRunProtocol", searchTerm),
+          propertyContains("sequencingReadType", searchTerm),
+          propertyContains("libraryKit", searchTerm),
+          propertyContains("flowCell", searchTerm),
+          contains(root -> root.get("organisation").get("label").as(String.class), searchTerm),
+          contains(root -> root.get("organisation").get("iri").as(String.class), searchTerm),
+          jsonContains(root -> root.get("instrument"), "$.label", searchTerm),
+          formattedClientTimeContains("registeredAt", searchTerm, timeZoneOffsetMillis,
+              CUSTOM_DATE_TIME_PATTERN),
+          contains(root -> getSampleInfos(root)
+              .get("sampleLabel").as(String.class), searchTerm),
+          contains(root -> getSampleInfos(root)
+              .get("comment").as(String.class), searchTerm));
+    }
+
+
+    private Specification<NgsMeasurementInformation> matchesExperiment() {
+      if (getExperimentId().isEmpty()) {
+        return Specification.unrestricted();
+      }
       return (root, query, criteriaBuilder) ->
           criteriaBuilder.equal(getSampleInfos(root).get("experimentId"), experimentId);
     }

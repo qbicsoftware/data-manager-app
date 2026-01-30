@@ -11,7 +11,6 @@ import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.Ngs
 import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.NgsMeasurementJpaRepository.NgsMeasurementInformation;
 import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.PxpMeasurementJpaRepository;
 import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.PxpMeasurementJpaRepository.PxpMeasurementFilter;
-import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.PxpMeasurementJpaRepository.PxpMeasurementFilterBuilder;
 import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.PxpMeasurementJpaRepository.PxpMeasurementInformation;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
@@ -65,6 +64,8 @@ public class MeasurementLookup implements NgsMeasurementLookup, PxpMeasurementLo
     return (int) ngsMeasurementJpaRepository.count(filter.asSpecification());
   }
 
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
   @Override
   public @NonNull Stream<PxpMeasurementLookup.MeasurementInfo> lookupPxpMeasurements(
       @NonNull String projectId, int offset, int limit,
@@ -87,6 +88,8 @@ public class MeasurementLookup implements NgsMeasurementLookup, PxpMeasurementLo
         .map((PxpMeasurementInformation dbObject) -> toApiObject(projectId, dbObject));
   }
 
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
   @Override
   public int countPxpMeasurements(
       @NonNull String projectId,
@@ -97,16 +100,16 @@ public class MeasurementLookup implements NgsMeasurementLookup, PxpMeasurementLo
 
   private static @NonNull NgsMeasurementJpaRepository.NgsMeasurementFilter mapToDatabaseFilter(
       @NonNull NgsMeasurementLookup.MeasurementFilter measurementFilter) {
-    return new NgsMeasurementFilter(measurementFilter.experimentId(),
-        measurementFilter.searchTerm(), measurementFilter.timeZoneOffsetMillis());
+    return NgsMeasurementFilter.forExperiment(measurementFilter.experimentId())
+        .anyContaining(measurementFilter.searchTerm())
+        .atClientTimeOffset(measurementFilter.timeZoneOffsetMillis());
   }
 
   private static @NonNull PxpMeasurementFilter mapToDatabaseFilter(
       @NonNull PxpMeasurementLookup.MeasurementFilter measurementFilter) {
-    return PxpMeasurementFilterBuilder.newBuilder(measurementFilter.experimentId())
+    return PxpMeasurementFilter.forExperiment(measurementFilter.experimentId())
         .anyContaining(measurementFilter.searchTerm())
-        .atClientTimeOffset(measurementFilter.timeZoneOffsetMillis())
-        .build();
+        .atClientTimeOffset(measurementFilter.timeZoneOffsetMillis());
   }
 
   private NgsMeasurementLookup.MeasurementInfo toApiObject(String projectId,
@@ -183,5 +186,4 @@ public class MeasurementLookup implements NgsMeasurementLookup, PxpMeasurementLo
         dbMeasurement.lcColumn(),
         sampleInfos);
   }
-
 }
