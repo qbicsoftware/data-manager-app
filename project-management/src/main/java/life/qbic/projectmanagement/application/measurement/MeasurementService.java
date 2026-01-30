@@ -102,6 +102,7 @@ public class MeasurementService {
    *                     if its contained {@link Sample} have measurements attached
    * @return true if experiments has samples with associated measurements, false if not
    */
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
   public boolean hasMeasurements(ProjectId projectId, ExperimentId experimentId) {
     return measurementLookupService.countMeasurements(projectId, experimentId) != 0;
   }
