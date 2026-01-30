@@ -1,12 +1,12 @@
 package life.qbic.projectmanagement.infrastructure.dataset;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
+import static life.qbic.projectmanagement.infrastructure.jpa.SpecificationFactory.exactMatches;
+import static life.qbic.projectmanagement.infrastructure.jpa.SpecificationFactory.jsonContains;
+import static life.qbic.projectmanagement.infrastructure.jpa.SpecificationFactory.propertyContains;
+import static org.springframework.data.jpa.domain.Specification.allOf;
+import static org.springframework.data.jpa.domain.Specification.anyOf;
 
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Expression;
-import jakarta.persistence.criteria.Predicate;
-import jakarta.persistence.criteria.Root;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -28,7 +28,6 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.SortDirec
 import life.qbic.projectmanagement.application.api.AsyncProjectService.SortFieldRawData;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.SortRawData;
 import life.qbic.projectmanagement.application.dataset.LocalRawDatasetRepository;
-import org.apache.poi.ss.formula.functions.T;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -145,7 +144,8 @@ public class LocalRawDatasetRepositoryImpl implements LocalRawDatasetRepository 
       throw new LookupException("Lookup for raw datasets failed", e);
     }
 
-    var fullSpec = createFullSpecificationNGS(filter, experimentId);
+    Specification<LocalRawDatasetNgsEntry> fullSpec = createFullSpecificationNGS(filter,
+        experimentId);
 
     return ngsInfoRepository.findAll(fullSpec,
             new OffsetBasedRequest(offset, limit, Sort.by(orders))).getContent()
@@ -189,26 +189,15 @@ public class LocalRawDatasetRepositoryImpl implements LocalRawDatasetRepository 
   }
 
   private static Specification<LocalRawDatasetNgsEntry> createFullSpecificationNGS(RawDatasetFilter filter, String experimentId) {
-    Specification<LocalRawDatasetNgsEntry> sampleNameSpec = (root, query, builder) -> {
-      if (filter == null) {
-        return builder.conjunction();
-      }
-      Expression<String> function = createSampleLabelSearchFilter(filter, root, builder);
-
-      return builder.isNotNull(function);
-    };
-
-    Specification<LocalRawDatasetNgsEntry> experimentIdSpec = (root, query, builder) -> {
-      if  (experimentId == null) {
-        return builder.conjunction();
-      }
-      return builder.equal(root.get("experimentId").as(String.class), experimentId);
-    };
-
-    var measurementIdContains = createMeasurementIdContainsNgs(filter);
-
-    Specification<LocalRawDatasetNgsEntry> fullSpec = Specification.unrestricted();
-    return fullSpec.and(sampleNameSpec.or(measurementIdContains)).and(experimentIdSpec);
+    return allOf(
+        exactMatches(root -> root.get("experimentId"),
+            experimentId),
+        anyOf(
+            jsonContains(root -> root.get("measuredSamples"),
+                "$[*].label", filter.filterTerm()),
+            propertyContains("measurementCode", filter.filterTerm())
+        )
+    );
   }
 
   @Override
@@ -217,37 +206,13 @@ public class LocalRawDatasetRepositoryImpl implements LocalRawDatasetRepository 
     return Math.toIntExact(ngsInfoRepository.count(fullSpec));
   }
 
-  private static <T> Expression<String> createSampleLabelSearchFilter(RawDatasetFilter filter,
-      Root<T> root, CriteriaBuilder builder) {
-    return builder.function("JSON_SEARCH", String.class, root.get("measuredSamples"),
-        builder.literal("one"),
-        builder.literal("%" + filter.filterTerm() + "%"),
-        builder.nullLiteral(String.class),
-        builder.literal("$[*].label")
-    );
-  }
-
   private static Specification<LocalRawDatasetPxpEntry> createFullSpecificationPxp(RawDatasetFilter filter, String experimentId) {
-    Specification<LocalRawDatasetPxpEntry> sampleNameSpec = (root, query, builder) -> {
-      if (filter == null) {
-        return builder.conjunction();
-      }
-      Expression<String> function = createSampleLabelSearchFilter(filter, root, builder);
-
-      return builder.isNotNull(function);
-    };
-
-    Specification<LocalRawDatasetPxpEntry> experimentIdSpec = (root, query, builder) -> {
-      if  (experimentId == null) {
-        return builder.conjunction();
-      }
-      return builder.equal(root.get("experimentId").as(String.class), experimentId);
-    };
-
-    var measurementIdContains = createMeasurementIdContainsPxp(filter);
-
-    Specification<LocalRawDatasetPxpEntry> fullSpec = Specification.unrestricted();
-    return fullSpec.and(sampleNameSpec.or(measurementIdContains)).and(experimentIdSpec);
+    return allOf(exactMatches(root -> root.get("experimentId"), experimentId),
+        anyOf(
+            propertyContains("measurementCode", filter.filterTerm()),
+            jsonContains(root -> root.get("measuredSamples"), "$[*].label", filter.filterTerm())
+        )
+    );
   }
 
   @Override
@@ -270,24 +235,6 @@ public class LocalRawDatasetRepositoryImpl implements LocalRawDatasetRepository 
       return Direction.ASC;
     }
     return Direction.DESC;
-  }
-
-  private static Specification<LocalRawDatasetNgsEntry> createMeasurementIdContainsNgs(RawDatasetFilter filter) {
-    return (root, query, builder) -> {
-      if (filter.filterTerm().isBlank()) {
-        return builder.conjunction();
-      }
-      return builder.like(root.get("measurementCode").as(String.class), "%"+filter.filterTerm()+"%");
-    };
-  }
-
-  private static Specification<LocalRawDatasetPxpEntry> createMeasurementIdContainsPxp(RawDatasetFilter filter) {
-    return (root, query, builder) -> {
-      if (filter.filterTerm().isBlank()) {
-        return builder.conjunction();
-      }
-      return builder.like(root.get("measurementCode").as(String.class), "%"+filter.filterTerm()+"%");
-    };
   }
 
   private static RawDatasetInformationNgs convert(LocalRawDatasetNgsEntry entry) {
