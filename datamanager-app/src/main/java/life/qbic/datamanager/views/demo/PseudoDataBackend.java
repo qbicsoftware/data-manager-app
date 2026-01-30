@@ -7,6 +7,8 @@ import java.util.stream.Stream;
 
 /**
  * A list that pretends it is a backend repository with paginated API.
+ * <p>
+ * This can be used for testing or demo purposes.
  *
  * @param <T> item type
  * @param <F> filter type

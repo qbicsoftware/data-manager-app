@@ -49,6 +49,8 @@ import org.springframework.lang.NonNull;
  *   <li>selected items display - a visual indicator about how many items are selected</li>
  * </ul>
  *
+ * @param <T> the type of items displayed in the filter grid
+ * @param <F> the type of filter used in the UI
  * @since 1.12.0
  */
 public final class FilterGrid<T, F> extends Div {
@@ -74,6 +76,68 @@ public final class FilterGrid<T, F> extends Div {
   private String currentItemDisplayLabel = DEFAULT_ITEM_DISPLAY_LABEL;
 
 
+  /**
+   * Factory method for creating a {@link FilterGrid} based on an in-memory {@link List}
+   *
+   * @param itemType                 the type of item for the {@link FilterGrid}
+   * @param filterType               the type of filter for the {@link FilterGrid}
+   * @param grid                     the grid to use for display. This grid defines the columns and
+   *                                 their properties. The data provider in this grid is
+   *                                 overwritten.
+   * @param filterSupplier           supplies a filter that can be combined with a search term using
+   *                                 the {@link SearchTermFilterCombiner}.
+   * @param items                    the list of items containing the data for the grid
+   * @param filterTester             a {@link FilterTester} to filter data based on the current
+   *                                 filter
+   * @param searchTermFilterCombiner a combiner to combine the filter supplied by filterSupplier
+   *                                 with the search term in the grid
+   * @param <T>                      the item type
+   * @param <F>                      the filter type
+   *
+   *
+   *
+   *                                 <h3>Example</h3>
+   *                                 <pre>
+   *                                                                 {@code
+   *                                  // Create a grid instance for displaying items
+   *                                  Grid<MyItem> grid = new Grid<>(MyItem.class);
+   *                                  grid.addColumn(myItem -> myItem.title())
+   *                                     .setKey("itemTitle")
+   *                                     .setHeader("Item Title")
+   *                                     .setSortable(false)
+   *                                     .setAutoWidth(true);
+   *
+   *                                  // Define a filter supplier and filter tester
+   *                                  Supplier<MyFilter> filterSupplier = () -> new MyFilter();
+   *                                  FilterTester<MyItem, MyFilter> filterTester = (item, filter) -> {
+   *                                      // Implement filtering logic
+   *                                      return filter.matches(item);
+   *                                  };
+   *
+   *                                  // Create a list of items
+   *                                  List<MyItem> items = Arrays.asList(new MyItem(...), new MyItem(...));
+   *
+   *                                  // Create a search term filter combiner
+   *                                  SearchTermFilterCombiner<MyFilter> combiner = (searchTerm, filter) ->
+   *                                    {
+   *                                      //Modify or replace filter
+   *                                      return filter.withSearchTerm(searchTerm);
+   *                                    };
+   *
+   *                                  // Create the FilterGrid using the inMemory method
+   *                                  FilterGrid<MyItem, MyFilter> filterGrid = FilterGrid.inMemory(
+   *                                      MyItem.class,
+   *                                      MyFilter.class,
+   *                                      grid,
+   *                                      filterSupplier,
+   *                                      items,
+   *                                      filterTester,
+   *                                      combiner
+   *                                  );
+   *                                  }
+   *                                 </pre>
+   * @return a configured {@link FilterGrid}
+   */
   public static <T, F> FilterGrid<T, F> inMemory(
       Class<T> itemType,
       Class<F> filterType,
@@ -87,6 +151,68 @@ public final class FilterGrid<T, F> extends Div {
         searchTermFilterCombiner);
   }
 
+
+  /**
+   * Creates and configures a {@link FilterGrid} using a lazy loading mechanism based on a specified
+   * {@link FetchCallback} and {@link CountCallback}. This method allows for efficient retrieval of
+   * items based on filter criteria and pagination.
+   *
+   * @param <T> the type of items to be displayed in the {@link FilterGrid}
+   * @param <F> the type of filter used for the {@link FilterGrid}
+   * @param itemType the {@link Class} representation of the item type for the grid
+   * @param filterType the {@link Class} representation of the filter type for the grid
+   * @param grid a {@link Grid} instance that defines the grid's columns and their properties.
+   * @param filterSupplier a {@link Supplier} that generates a filter instance, which can be combined
+   *                       with a search term using the {@link SearchTermFilterCombiner}.
+   * @param fetchCallback a {@link FetchCallback} that handles the retrieval of items based on the
+   *                      current filter and pagination settings.
+   * @param countCallback a {@link CountCallback} that provides the total count of items that meet the
+   *                      filter criteria, useful for pagination.
+   * @param searchTermFilterCombiner a {@link SearchTermFilterCombiner} responsible for combining
+   *                                 the filter provided by {@code filterSupplier} with the search term
+   *                                 entered in the grid.
+   * @return a fully configured {@link FilterGrid<T, F>} instance, ready for display and interaction.
+   *
+   * @throws IllegalArgumentException if any required parameter is null.
+   * @throws UnsupportedOperationException if the provided grid is not compatible with the item type.
+   *
+   * <h3>Example</h3>
+   * <pre>
+   * {@code
+   *  // Create a grid instance for displaying items
+   *  Grid<MyItem> grid = new Grid<>(MyItem.class);
+   *
+   *  // Define a filter supplier
+   *  Supplier<MyFilter> filterSupplier = () -> new MyFilter();
+   *
+   *  // Create a fetch callback to retrieve items
+   *  FetchCallback<MyItem, MyFilter> fetchCallback = query -> {
+   *      // Logic to fetch items based on filter, offset, and limit
+   *      return myItemService.fetchItems(query.getFilter(), query.getOffset(), query.getLimit());
+   *  };
+   *
+   *  // Create a count callback to get the total count of items
+   *  CountCallback<MyItem, MyFilter> countCallback = query -> {
+   *      // Logic to count items based on filter
+   *      return myItemService.countItems(query.getFilter());
+   *  };
+   *
+   *  // Create a search term filter combiner
+   *  SearchTermFilterCombiner<MyFilter> combiner = new MySearchTermFilterCombiner();
+   *
+   *  // Create the FilterGrid using the lazy method
+   *  FilterGrid<MyItem, MyFilter> filterGrid = FilterGrid.lazy(
+   *      MyItem.class,
+   *      MyFilter.class,
+   *      grid,
+   *      filterSupplier,
+   *      fetchCallback,
+   *      countCallback,
+   *      combiner
+   *  );
+   * }
+   * </pre>
+   */
   public static <T, F> FilterGrid<T, F> lazy(Class<T> itemType,
       Class<F> filterType,
       Grid<T> grid,
@@ -124,6 +250,9 @@ public final class FilterGrid<T, F> extends Div {
             event.getValue()));
   }
 
+  /**
+   * Refreshes the grid and clears the selection.
+   */
   public void refreshAll() {
     this.grid.getDataProvider().refreshAll();
     this.grid.deselectAll();
@@ -330,6 +459,8 @@ public final class FilterGrid<T, F> extends Div {
    *
    * @param listener the listener to add
    * @return the registration with which to remove the listener
+   * @see com.vaadin.flow.data.provider.LazyDataView#addItemCountChangeListener(ComponentEventListener)
+   * @see com.vaadin.flow.data.provider.LazyDataView#addItemCountChangeListener(ComponentEventListener)
    */
   public Registration addItemCountListener(
       ComponentEventListener<ItemCountChangeEvent<FilterGrid<T, F>>> listener) {
