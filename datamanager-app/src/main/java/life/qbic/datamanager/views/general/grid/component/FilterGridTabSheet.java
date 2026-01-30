@@ -32,6 +32,7 @@ public final class FilterGridTabSheet extends Composite<TabSheet> {
   private final Map<FilterGridTab, Set<TabAction>> primaryActions = new ConcurrentHashMap<>();
   private final Map<FilterGridTab, Set<TabAction>> featureActions = new ConcurrentHashMap<>();
 
+
   public FilterGridTabSheet() {
     this.primaryActionGroup = new PrimaryActionButtonGroup(
         primaryActionButton("Primary Action"),
@@ -60,10 +61,26 @@ public final class FilterGridTabSheet extends Composite<TabSheet> {
   }
 
 
+  /**
+   * Adds a {@link FilterGridTab} to the {@link FilterGridTabSheet}.
+   *
+   * @param tab the tab to add
+   * @param <T> the item type of the {@link FilterGridTab}
+   */
   public <T> void addTab(FilterGridTab<T> tab) {
     delegate.add(tab, tab.filterGrid());
   }
 
+
+  /**
+   * Adds a {@link FilterGridTab} to the {@link FilterGridTabSheet} at a given index.
+   * In case the index is negative or exceeds the current tab count, behaves the same as {@link #addTab(FilterGridTab)}.
+   * <p>
+   * If a tab already exists at the provided index, moves the existing tabs to the right and increments its index.
+   *
+   * @param tab the tab to add
+   * @param <T> the item type of the {@link FilterGridTab}
+   */
   public <T> void addTab(int index, FilterGridTab<T> tab) {
     try {
       delegate.getTabAt(index);
@@ -75,11 +92,25 @@ public final class FilterGridTabSheet extends Composite<TabSheet> {
   }
 
 
+  /**
+   * Removes a tab from the {@link FilterGridTabSheet}. If tabs exist to the right, they are moved left and their index decrements.
+   * <p>
+   * Does nothing if the tab is not added to this {@link FilterGridTabSheet}
+   * @param tab the tab to remove
+   */
   public void removeTab(FilterGridTab<?> tab) {
     var tabIndex = delegate.getIndexOf(tab);
     removeTab(tabIndex);
   }
 
+  /**
+   * Removes a tab at the provided index from the {@link FilterGridTabSheet}. If tabs exist to the right, they are moved left and their index decrements.
+   * <p>
+   * If a tab with the index exists, removes the tab and all {@link TabAction} registered to it.
+   * Does nothing if there does not exist any tab at the provided index.
+   * @param tabIndex the index of the tab that is removed
+   * @return true if a tab existed and was removed; false otherwise
+   */
   private boolean removeTab(int tabIndex) {
     if (tabIndex < 0) {
       return false;
@@ -99,6 +130,9 @@ public final class FilterGridTabSheet extends Composite<TabSheet> {
     return true;
   }
 
+  /**
+   * Removes all tabs from this {@link FilterGridTabSheet} along any registered {@link TabAction}
+   */
   public void removeAllTabs() {
     var maxLoopCount = 100;
     var currentLoopCount = 0;
@@ -166,10 +200,20 @@ public final class FilterGridTabSheet extends Composite<TabSheet> {
   }
 
 
+  /**
+   * An action associated with a {@link FilterGridTab}. Can be executed on the associated tab.
+   * @param <T> the {@link Class} of the associated {@link FilterGridTab}
+   * @param <S> the {@link Class} of items in the associated {@link FilterGridTab}
+   */
   @FunctionalInterface
   public interface TabAction<T extends FilterGridTab<S>, S> {
 
-    void execute(T item);
+    /**
+     * Executes this action on the associated {@link FilterGridTab}
+     *
+     * @param tab
+     */
+    void execute(T tab);
   }
 
   /**
@@ -201,6 +245,9 @@ public final class FilterGridTabSheet extends Composite<TabSheet> {
     primaryActionGroup.actionButton.setVisible(false);
   }
 
+  /**
+   * Hides the primary feature button.
+   */
   public void hidePrimaryFeatureButton() {
     primaryActionGroup.featureButton.setVisible(false);
   }
