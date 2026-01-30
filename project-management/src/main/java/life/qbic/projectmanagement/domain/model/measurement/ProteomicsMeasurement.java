@@ -280,8 +280,8 @@ public class ProteomicsMeasurement {
   }
 
   private void emitUpdatedEvent() {
-    var measurementUpdatedEvent = new MeasurementUpdatedEvent(this.projectId(),
-        this.measurementId());
+    var measurementUpdatedEvent = new MeasurementUpdatedEvent(this.projectId().value(),
+        this.measurementId().value());
     LocalDomainEventDispatcher.instance().dispatch(measurementUpdatedEvent);
   }
 

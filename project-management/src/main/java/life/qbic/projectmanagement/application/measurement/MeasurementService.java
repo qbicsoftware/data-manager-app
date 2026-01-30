@@ -801,7 +801,7 @@ public class MeasurementService {
     Set<MeasurementId> dispatchedIDs = new HashSet<>();
     for (DomainEvent event : domainEventsCache) {
       if (event instanceof MeasurementUpdatedEvent measurementUpdatedEvent) {
-        MeasurementId id = measurementUpdatedEvent.measurementId();
+        MeasurementId id = MeasurementId.parse(measurementUpdatedEvent.measurementId());
         if (dispatchedIDs.contains(id)) {
           continue;
         }

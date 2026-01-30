@@ -5,7 +5,6 @@ import java.util.Optional;
 import life.qbic.domain.concepts.DomainEvent;
 import life.qbic.domain.concepts.DomainEventSubscriber;
 import life.qbic.projectmanagement.application.ProjectInformationService;
-import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.domain.model.measurement.event.MeasurementUpdatedEvent;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.repository.ProjectRepository.ProjectNotFoundException;
@@ -45,12 +44,12 @@ public class UpdateProjectUponMeasurementUpdate implements DomainEventSubscriber
   }
 
   @Job(name = "update project upon measurement update of measurement %0")
-  public void updateProjectModified(ProjectId projectId, MeasurementId measurementID,
+  public void updateProjectModified(String projectId, String measurementID,
       Instant modifiedOn) throws ProjectNotFoundException {
     if (Optional.ofNullable(measurementID).isEmpty()) {
       return;
     }
-    projectInformationService.updateModifiedDate(projectId, modifiedOn);
+    projectInformationService.updateModifiedDate(ProjectId.parse(projectId), modifiedOn);
 
   }
 }
