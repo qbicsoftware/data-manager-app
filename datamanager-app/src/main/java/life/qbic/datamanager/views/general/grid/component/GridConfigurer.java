@@ -56,7 +56,7 @@ public class GridConfigurer {
     @Override
     public Registration addItemCountChangeListener(
         ComponentEventListener<ItemCountChangeEvent<?>> listener) {
-      return grid.getListDataView().addItemCountChangeListener(listener);
+      return grid.getLazyDataView().addItemCountChangeListener(listener);
     }
 
     @Override
