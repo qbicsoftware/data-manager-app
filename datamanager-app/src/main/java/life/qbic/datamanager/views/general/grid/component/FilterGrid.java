@@ -36,21 +36,72 @@ import life.qbic.logging.service.LoggerFactory;
 import org.springframework.lang.NonNull;
 
 /**
- * A filter grid comes with some improvements for the user and decorates a plain
- * {@link Grid}.
- * <p>
- * Some of the improvements are:
+ * A {@code FilterGrid} is a UI component that decorates a plain Vaadin {@link Grid} with a consistent
+ * "filtering toolbox" and a clear contract for forwarding user-entered filter criteria to the
+ * application's data access layer.
  *
+ * <h2>When this component matters in the web application</h2>
+ * {@code FilterGrid} becomes valuable whenever a view displays a potentially large list of entities
+ * and users need to <em>quickly narrow down</em> what they see:
  * <ul>
- *   <li>selection column - shows checkboxes to select multiple rows at once</li>
- *   <li>search input field - to look-up for certain terms</li>
- *   <li>show/hide column - a menu to toggle column visibility</li>
- *   <li>secondary action group - to set up a contextual actions for the user that are semantically linked to the selected items</li>
- *   <li>selected items display - a visual indicator about how many items are selected</li>
+ *   <li>searching by a free-text term (e.g. name, identifier, description)</li>
+ *   <li>keeping selections while paging/refreshing</li>
+ *   <li>toggling column visibility to focus on relevant attributes</li>
+ *   <li>triggering contextual actions for the currently selected items</li>
  * </ul>
+ * The net benefit for users is faster navigation and fewer clicks: the list adapts immediately to
+ * the query, and selections/actions remain visible and actionable.
+ *
+ * <h2>How filtering is forwarded to the Service API / database I/O layer</h2>
+ * The search field value is treated as part of the filter model, not as a purely local UI concern.
+ * Whenever the user changes the search term, the component combines that term with an existing
+ * filter instance and applies it to the underlying data provider.
+ *
+ * <p>There are two supported integration modes:</p>
+ * <ol>
+ *   <li>
+ *     <b>Lazy (recommended for database-backed lists)</b> via {@link #lazy(Class, Class, Grid, Supplier, FetchCallback, CountCallback, SearchTermFilterCombiner)}:
+ *     <ul>
+ *       <li>The grid uses a {@link ConfigurableFilterDataProvider}.</li>
+ *       <li>On search input changes, the component calls {@link SearchTermFilterCombiner} to create an
+ *       updated filter and invokes {@code dataProvider.setFilter(updatedFilter)}.</li>
+ *       <li>Vaadin will then call your {@link FetchCallback} / {@link CountCallback} with that filter,
+ *       which is where your service/database query must interpret the search term.</li>
+ *     </ul>
+ *     This is the path that "passes down to the database I/O layer": the filter object you define
+ *     should contain the search term (and any additional criteria), and your service/repository uses
+ *     it to build the query.
+ *   </li>
+ *   <li>
+ *     <b>In-memory (for small datasets)</b> via {@link #inMemory(Class, Class, Grid, Supplier, List, FilterTester, SearchTermFilterCombiner)}:
+ *     <ul>
+ *       <li>The grid is backed by a list.</li>
+ *       <li>On search input changes, the component updates the {@link com.vaadin.flow.data.provider.ListDataView}
+ *       filter using your {@link FilterTester} predicate.</li>
+ *       <li>No database call is involved; the search term is evaluated in the UI layer.</li>
+ *     </ul>
+ *   </li>
+ * </ol>
+ *
+ * <h2>Developer usage and extension points</h2>
+ * To integrate {@code FilterGrid} into a view:
+ * <ol>
+ *   <li>Create and configure a Vaadin {@link Grid} (columns, renderers, sorting, etc.).</li>
+ *   <li>Define a filter type {@code F} that represents all filtering criteria used by your Service API
+ *       (including the search term).</li>
+ *   <li>Provide a {@link Supplier} that yields a baseline filter (often "no restrictions").</li>
+ *   <li>Provide a {@link SearchTermFilterCombiner} that injects/replaces the current search term into
+ *       the filter.</li>
+ *   <li>For lazy mode: implement {@link FetchCallback} and {@link CountCallback} to translate {@code F}
+ *       into service/repository calls.</li>
+ * </ol>
+ *
+ * <p>Whenever the filter changes, the component fires a {@link FilterUpdateEvent}. Views may listen
+ * to this event to synchronize external filter widgets (chips, dropdowns, URL parameters) or to
+ * persist filter state.</p>
  *
  * @param <T> the type of items displayed in the filter grid
- * @param <F> the type of filter used in the UI
+ * @param <F> the type of filter used in the UI and forwarded to the data provider
  * @since 1.12.0
  */
 public final class FilterGrid<T, F> extends Div {
