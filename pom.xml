@@ -56,7 +56,7 @@
     <sonar.host.url>https://sonarcloud.io</sonar.host.url>
     <sonar.organization>qbicsoftware</sonar.organization>
     <sonar.projectKey>qbicsoftware_data-manager-app</sonar.projectKey>
-    <vaadin.version>24.4.13</vaadin.version>
+    <vaadin.version>24.9.10</vaadin.version>
   </properties>
 
 
@@ -285,7 +285,7 @@
                 <dependency>
                   <groupId>org.simplify4u</groupId>
                   <artifactId>pgp-keys-map</artifactId>
-                  <version>2025.03.15</version> <!-- use latest available -->
+                  <version>2026.01.20</version> <!-- use latest available -->
                 </dependency>
               </dependencies>
             </plugin>

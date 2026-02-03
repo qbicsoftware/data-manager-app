@@ -20,7 +20,7 @@
     <sonar.host.url>https://sonarcloud.io</sonar.host.url>
     <sonar.organization>qbicsoftware</sonar.organization>
     <sonar.projectKey>qbicsoftware_data-manager-app</sonar.projectKey>
-    <vaadin.version>24.4.13</vaadin.version>
+    <vaadin.version>24.9.10</vaadin.version>
   </properties>
 
   <distributionManagement>
@@ -204,11 +204,6 @@
         <groupId>javax.cache</groupId>
         <artifactId>cache-api</artifactId>
         <version>1.1.1</version>
-      </dependency>
-      <dependency>
-        <groupId>com.h2database</groupId>
-        <artifactId>h2</artifactId>
-        <version>[2.2.224,)</version>
       </dependency>
       <dependency>
         <groupId>commons-io</groupId>

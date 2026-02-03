@@ -498,7 +498,8 @@ class VariableLevelsInput extends Div implements UserInput, CanSnapshot,
     public Registration addFocusListener
         (ComponentEventListener<FocusEvent<Component>> listener) {
       return levelValue.addFocusListener(
-          it -> listener.onComponentEvent(new FocusEvent<>(it.getSource(), it.isFromClient())));
+          it -> listener.onComponentEvent(
+              new FocusEvent<>(it.getSource(), it.isFromClient(), it.isFromClient())));
     }
 
     public boolean isEmpty() {
