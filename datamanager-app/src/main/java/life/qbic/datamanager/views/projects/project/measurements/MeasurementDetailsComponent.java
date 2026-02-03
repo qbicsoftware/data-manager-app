@@ -15,6 +15,8 @@ import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.data.provider.CallbackDataProvider.CountCallback;
+import com.vaadin.flow.data.provider.CallbackDataProvider.FetchCallback;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
@@ -42,8 +44,10 @@ import life.qbic.datamanager.views.general.dialog.DialogSection;
 import life.qbic.datamanager.views.general.grid.component.FilterGrid;
 import life.qbic.datamanager.views.general.grid.component.FilterGridTab;
 import life.qbic.datamanager.views.general.grid.component.FilterGridTabSheet;
+import life.qbic.datamanager.views.general.grid.component.GridConfigurer;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.projectmanagement.application.measurement.NgsMeasurementLookup;
+import life.qbic.projectmanagement.application.measurement.NgsMeasurementLookup.MeasurementFilter;
 import life.qbic.projectmanagement.application.measurement.NgsMeasurementLookup.NgsSortKey;
 import life.qbic.projectmanagement.application.measurement.PxpMeasurementLookup;
 import life.qbic.projectmanagement.application.measurement.PxpMeasurementLookup.MeasurementInfo;
@@ -217,33 +221,31 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   private FilterGrid<NgsMeasurementLookup.MeasurementInfo, SearchTermFilter> filterGridNgs(
       Grid<NgsMeasurementLookup.MeasurementInfo> ngsGrid, String projectId,
       String experimentId) {
-    var filterGrid = FilterGrid.lazy(
+    FetchCallback<NgsMeasurementLookup.MeasurementInfo, SearchTermFilter> fetchCallback = query ->
+    {
+      String searchTerm = query.getFilter().map(SearchTermFilter::searchTerm).orElse("");
+      return ngsMeasurementLookup.lookupNgsMeasurements(
+          projectId, query.getOffset(), query.getLimit(),
+          VaadinSpringDataHelpers.toSpringDataSort(query),
+          MeasurementFilter.forExperiment(experimentId)
+              .withSearch(searchTerm, clientTimeZoneOffset.get()));
+    };
+    CountCallback<NgsMeasurementLookup.MeasurementInfo, SearchTermFilter> countCallback = query ->
+    {
+      String searchTerm = query.getFilter().map(SearchTermFilter::searchTerm).orElse("");
+      return ngsMeasurementLookup.countNgsMeasurements(projectId,
+          MeasurementFilter.forExperiment(experimentId)
+              .withSearch(searchTerm, clientTimeZoneOffset.get()));
+    };
+    var ngsGridConfiguration = GridConfigurer.configureLazy(
+        ngsGrid, fetchCallback,
+        countCallback);
+    var filterGrid = FilterGrid.create(
         NgsMeasurementLookup.MeasurementInfo.class,
         SearchTermFilter.class,
-        ngsGrid,
         this::getNgsSearchTermFilter,
-        query ->
-        {
-
-          String searchTerm = query.getFilter().map(SearchTermFilter::searchTerm).orElse(
-              "");
-
-          return ngsMeasurementLookup.lookupNgsMeasurements(
-              projectId, query.getOffset(), query.getLimit(),
-              VaadinSpringDataHelpers.toSpringDataSort(query),
-              NgsMeasurementLookup.MeasurementFilter.forExperiment(experimentId)
-                  .withSearch(searchTerm, clientTimeZoneOffset.get()));
-        },
-        query ->
-        {
-          String searchTerm = query.getFilter().map(SearchTermFilter::searchTerm).orElse(
-              "");
-
-          return ngsMeasurementLookup.countNgsMeasurements(projectId,
-              NgsMeasurementLookup.MeasurementFilter.forExperiment(experimentId)
-                  .withSearch(searchTerm, clientTimeZoneOffset.get()));
-        },
-        (searchTerm, filter) -> filter.replaceWith(searchTerm));
+        (searchTerm, filter) -> filter.replaceWith(searchTerm),
+        ngsGridConfiguration);
     filterGrid.itemDisplayLabel("measurement");
     filterGrid.searchFieldPlaceholder("Search Measurements");
     var editNgsButton = new Button("Edit");
@@ -281,32 +283,34 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
 
   private FilterGrid<PxpMeasurementLookup.MeasurementInfo, SearchTermFilter> filterGridPxp(
       Grid<MeasurementInfo> pxpGrid, String projectId, String experimentId) {
-    var filterGrid = FilterGrid.lazy(
+    FetchCallback<MeasurementInfo, SearchTermFilter> fetchCallback = query -> {
+      String searchTerm = query.getFilter().map(SearchTermFilter::searchTerm)
+          .orElse("");
+      return pxpMeasurementLookup.lookupPxpMeasurements(
+          projectId, query.getOffset(), query.getLimit(),
+          VaadinSpringDataHelpers.toSpringDataSort(query),
+          PxpMeasurementLookup.MeasurementFilter.forExperiment(experimentId)
+              .withSearch(searchTerm, clientTimeZoneOffset.get()));
+    };
+
+    CountCallback<MeasurementInfo, SearchTermFilter> countCallback = query -> {
+      var searchTerm = query.getFilter().map(SearchTermFilter::searchTerm)
+          .orElse("");
+      return pxpMeasurementLookup.countPxpMeasurements(projectId,
+          PxpMeasurementLookup.MeasurementFilter.forExperiment(experimentId)
+              .withSearch(searchTerm, clientTimeZoneOffset.get()));
+    };
+
+    var configuration = GridConfigurer.configureLazy(pxpGrid,
+        fetchCallback,
+        countCallback);
+
+    var filterGrid = FilterGrid.create(
         MeasurementInfo.class,
         SearchTermFilter.class,
-        pxpGrid,
         this::getPxpSearchTermFilter,
-        query ->
-        {
-
-          String searchTerm = query.getFilter().map(SearchTermFilter::searchTerm)
-              .orElse("");
-
-          return pxpMeasurementLookup.lookupPxpMeasurements(
-              projectId, query.getOffset(), query.getLimit(),
-              VaadinSpringDataHelpers.toSpringDataSort(query),
-              PxpMeasurementLookup.MeasurementFilter.forExperiment(experimentId)
-                  .withSearch(searchTerm, clientTimeZoneOffset.get()));
-        },
-        query ->
-        {
-          var searchTerm = query.getFilter().map(SearchTermFilter::searchTerm)
-              .orElse("");
-          return pxpMeasurementLookup.countPxpMeasurements(projectId,
-              PxpMeasurementLookup.MeasurementFilter.forExperiment(experimentId)
-                  .withSearch(searchTerm, clientTimeZoneOffset.get()));
-        },
-        (searchTerm, filter) -> filter.replaceWith(searchTerm));
+        (searchTerm, filter) -> filter.replaceWith(searchTerm),
+        configuration);
     filterGrid.itemDisplayLabel("measurement");
     filterGrid.searchFieldPlaceholder("Search Measurements");
     var editPxpButton = new Button("Edit");

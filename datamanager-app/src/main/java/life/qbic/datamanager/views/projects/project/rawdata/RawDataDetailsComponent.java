@@ -37,6 +37,7 @@ import life.qbic.datamanager.views.general.download.DownloadComponent;
 import life.qbic.datamanager.views.general.grid.component.FilterGrid;
 import life.qbic.datamanager.views.general.grid.component.FilterGridTab;
 import life.qbic.datamanager.views.general.grid.component.FilterGridTabSheet;
+import life.qbic.datamanager.views.general.grid.component.GridConfigurer;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.BasicSampleInformation;
@@ -243,13 +244,14 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
           .orElse(0);
     };
 
-    var filterGrid = FilterGrid.lazy(RawDatasetInformationPxP.class,
-        RawDataFilter.class,
+    var pxpGridConfiguration = GridConfigurer.configureLazy(
         multiSelectGridPxp,
+        fetchCallback, countCallback);
+    var filterGrid = FilterGrid.create(RawDatasetInformationPxP.class,
+        RawDataFilter.class,
         () -> new RawDataFilter(""),
-        fetchCallback,
-        countCallback,
-        (searchTerm, filter) -> new RawDataFilter(searchTerm));
+        (searchTerm, filter) -> new RawDataFilter(searchTerm),
+        pxpGridConfiguration);
 
     filterGrid.searchFieldPlaceholder("Search raw datasets");
     filterGrid.itemDisplayLabel("dataset");
@@ -286,14 +288,13 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
           .blockOptional(MAX_BLOCKING_DURATION)
           .orElse(0);
     };
-
-    var filterGrid = FilterGrid.lazy(RawDatasetInformationNgs.class,
+    var ngsGridConfiguration = GridConfigurer.configureLazy(multiSelectNgsGrid,
+        fetchCallback, countCallback);
+    var filterGrid = FilterGrid.create(RawDatasetInformationNgs.class,
         RawDataFilter.class,
-        multiSelectNgsGrid,
         () -> new RawDataFilter(""),
-        fetchCallback,
-        countCallback,
-        (searchTerm, filter) -> new RawDataFilter(searchTerm));
+        (searchTerm, filter) -> new RawDataFilter(searchTerm),
+        ngsGridConfiguration);
 
     filterGrid.searchFieldPlaceholder("Search raw datasets");
     filterGrid.itemDisplayLabel("dataset");

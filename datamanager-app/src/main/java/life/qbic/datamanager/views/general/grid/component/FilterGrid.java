@@ -18,7 +18,6 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.provider.CallbackDataProvider.CountCallback;
 import com.vaadin.flow.data.provider.CallbackDataProvider.FetchCallback;
 import com.vaadin.flow.data.provider.ConfigurableFilterDataProvider;
-import com.vaadin.flow.data.provider.DataProvider;
 import com.vaadin.flow.data.provider.ItemCountChangeEvent;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.shared.Registration;
@@ -117,7 +116,7 @@ public final class FilterGrid<T, F> extends Div {
   private final Class<T> type;
   private final Class<F> filterType;
 
-  private final Grid<T> grid;
+  private final GridFilterConfiguration<T, F> gridFilterConfiguration;
   private final Div selectionDisplay = new SelectionNotification();
   private final Div secondaryActionGroup = createSecondaryActionGroup();
 
@@ -127,186 +126,44 @@ public final class FilterGrid<T, F> extends Div {
   private String currentItemDisplayLabel = DEFAULT_ITEM_DISPLAY_LABEL;
 
 
-  /**
-   * Factory method for creating a {@link FilterGrid} based on an in-memory {@link List}
-   *
-   * @param itemType                 the type of item for the {@link FilterGrid}
-   * @param filterType               the type of filter for the {@link FilterGrid}
-   * @param grid                     the grid to use for display. This grid defines the columns and
-   *                                 their properties. The data provider in this grid is
-   *                                 overwritten.
-   * @param filterSupplier           supplies a filter that can be combined with a search term using
-   *                                 the {@link SearchTermFilterCombiner}.
-   * @param items                    the list of items containing the data for the grid
-   * @param filterTester             a {@link FilterTester} to filter data based on the current
-   *                                 filter
-   * @param searchTermFilterCombiner a combiner to combine the filter supplied by filterSupplier
-   *                                 with the search term in the grid
-   * @param <T>                      the item type
-   * @param <F>                      the filter type
-   *
-   *
-   *
-   *                                 <h3>Example</h3>
-   *                                 <pre>
-   *                                                                 {@code
-   *                                  // Create a grid instance for displaying items
-   *                                  Grid<MyItem> grid = new Grid<>(MyItem.class);
-   *                                  grid.addColumn(myItem -> myItem.title())
-   *                                     .setKey("itemTitle")
-   *                                     .setHeader("Item Title")
-   *                                     .setSortable(false)
-   *                                     .setAutoWidth(true);
-   *
-   *                                  // Define a filter supplier and filter tester
-   *                                  Supplier<MyFilter> filterSupplier = () -> new MyFilter();
-   *                                  FilterTester<MyItem, MyFilter> filterTester = (item, filter) -> {
-   *                                      // Implement filtering logic
-   *                                      return filter.matches(item);
-   *                                  };
-   *
-   *                                  // Create a list of items
-   *                                  List<MyItem> items = Arrays.asList(new MyItem(...), new MyItem(...));
-   *
-   *                                  // Create a search term filter combiner
-   *                                  SearchTermFilterCombiner<MyFilter> combiner = (searchTerm, filter) ->
-   *                                    {
-   *                                      //Modify or replace filter
-   *                                      return filter.withSearchTerm(searchTerm);
-   *                                    };
-   *
-   *                                  // Create the FilterGrid using the inMemory method
-   *                                  FilterGrid<MyItem, MyFilter> filterGrid = FilterGrid.inMemory(
-   *                                      MyItem.class,
-   *                                      MyFilter.class,
-   *                                      grid,
-   *                                      filterSupplier,
-   *                                      items,
-   *                                      filterTester,
-   *                                      combiner
-   *                                  );
-   *                                  }
-   *                                 </pre>
-   * @return a configured {@link FilterGrid}
-   */
-  public static <T, F> FilterGrid<T, F> inMemory(
+  public static <T, F> FilterGrid<T, F> create(
       Class<T> itemType,
       Class<F> filterType,
-      Grid<T> grid,
       Supplier<F> filterSupplier,
-      List<T> items,
-      FilterTester<T, F> filterTester,
-      SearchTermFilterCombiner<F> searchTermFilterCombiner
-  ) {
-    return new FilterGrid<>(itemType, filterType, grid, filterSupplier, items, filterTester,
-        searchTermFilterCombiner);
+      SearchTermFilterCombiner<F> searchTermFilterCombiner,
+      GridFilterConfiguration<T, F> gridFilterConfiguration) {
+    return new FilterGrid<>(itemType, filterType, filterSupplier,
+        searchTermFilterCombiner, gridFilterConfiguration);
   }
 
-
-  /**
-   * Creates and configures a {@link FilterGrid} using a lazy loading mechanism based on a specified
-   * {@link FetchCallback} and {@link CountCallback}. This method allows for efficient retrieval of
-   * items based on filter criteria and pagination.
-   *
-   * @param <T> the type of items to be displayed in the {@link FilterGrid}
-   * @param <F> the type of filter used for the {@link FilterGrid}
-   * @param itemType the {@link Class} representation of the item type for the grid
-   * @param filterType the {@link Class} representation of the filter type for the grid
-   * @param grid a {@link Grid} instance that defines the grid's columns and their properties.
-   * @param filterSupplier a {@link Supplier} that generates a filter instance, which can be combined
-   *                       with a search term using the {@link SearchTermFilterCombiner}.
-   * @param fetchCallback a {@link FetchCallback} that handles the retrieval of items based on the
-   *                      current filter and pagination settings.
-   * @param countCallback a {@link CountCallback} that provides the total count of items that meet the
-   *                      filter criteria, useful for pagination.
-   * @param searchTermFilterCombiner a {@link SearchTermFilterCombiner} responsible for combining
-   *                                 the filter provided by {@code filterSupplier} with the search term
-   *                                 entered in the grid.
-   * @return a fully configured {@link FilterGrid<T, F>} instance, ready for display and interaction.
-   *
-   * @throws IllegalArgumentException if any required parameter is null.
-   * @throws UnsupportedOperationException if the provided grid is not compatible with the item type.
-   *
-   * <h3>Example</h3>
-   * <pre>
-   * {@code
-   *  // Create a grid instance for displaying items
-   *  Grid<MyItem> grid = new Grid<>(MyItem.class);
-   *
-   *  // Define a filter supplier
-   *  Supplier<MyFilter> filterSupplier = () -> new MyFilter();
-   *
-   *  // Create a fetch callback to retrieve items
-   *  FetchCallback<MyItem, MyFilter> fetchCallback = query -> {
-   *      // Logic to fetch items based on filter, offset, and limit
-   *      return myItemService.fetchItems(query.getFilter(), query.getOffset(), query.getLimit());
-   *  };
-   *
-   *  // Create a count callback to get the total count of items
-   *  CountCallback<MyItem, MyFilter> countCallback = query -> {
-   *      // Logic to count items based on filter
-   *      return myItemService.countItems(query.getFilter());
-   *  };
-   *
-   *  // Create a search term filter combiner
-   *  SearchTermFilterCombiner<MyFilter> combiner = new MySearchTermFilterCombiner();
-   *
-   *  // Create the FilterGrid using the lazy method
-   *  FilterGrid<MyItem, MyFilter> filterGrid = FilterGrid.lazy(
-   *      MyItem.class,
-   *      MyFilter.class,
-   *      grid,
-   *      filterSupplier,
-   *      fetchCallback,
-   *      countCallback,
-   *      combiner
-   *  );
-   * }
-   * </pre>
-   */
-  public static <T, F> FilterGrid<T, F> lazy(Class<T> itemType,
-      Class<F> filterType,
-      Grid<T> grid,
-      Supplier<F> filterSupplier,
-      FetchCallback<T, F> fetchCallback,
-      CountCallback<T, F> countCallback,
-      SearchTermFilterCombiner<F> searchTermFilterCombiner) {
-    return new FilterGrid<>(itemType, filterType, grid, filterSupplier, fetchCallback,
-        countCallback, searchTermFilterCombiner);
-  }
 
   private FilterGrid(
       Class<T> itemType,
       Class<F> filterType,
-      Grid<T> grid,
       Supplier<F> filterSupplier,
-      List<T> items,
-      FilterTester<T, F> filterTester,
-      SearchTermFilterCombiner<F> searchTermFilterUpdater) {
+      SearchTermFilterCombiner<F> searchTermFilterUpdater,
+      GridFilterConfiguration<T, F> gridFilterConfiguration) {
     //assign fields
     this.type = Objects.requireNonNull(itemType);
     this.filterType = Objects.requireNonNull(filterType);
-    this.grid = Objects.requireNonNull(grid);
+    this.gridFilterConfiguration = gridFilterConfiguration;
 
-    //set items
-    grid.setItems(items);
-    configureGrid(grid);
+    configureGrid(gridFilterConfiguration.getGrid());
     //construct filter Grid component
-    constructComponent(grid);
+    constructComponent(gridFilterConfiguration.getGrid());
 
     listenToSelection();
     //update the filter
     searchField.addValueChangeListener(
-        event -> updateInMemoryFilter(searchTermFilterUpdater, filterTester, filterSupplier.get(),
-            event.getValue()));
+        event -> updateFilter(searchTermFilterUpdater, filterSupplier.get(), event.getValue()));
   }
 
   /**
    * Refreshes the grid and clears the selection.
    */
   public void refreshAll() {
-    this.grid.getDataProvider().refreshAll();
-    this.grid.deselectAll();
+    this.gridFilterConfiguration.getGrid().getDataProvider().refreshAll();
+    this.gridFilterConfiguration.getGrid().deselectAll();
   }
 
   /**
@@ -420,36 +277,6 @@ public final class FilterGrid<T, F> extends Div {
     }
   }
 
-  private FilterGrid(
-      Class<T> itemType,
-      Class<F> filterType,
-      Grid<T> grid,
-      Supplier<F> filterSupplier,
-      FetchCallback<T, F> fetchCallback,
-      CountCallback<T, F> countCallback,
-      SearchTermFilterCombiner<F> searchTermFilterCombiner) {
-    //assign fields
-    this.type = Objects.requireNonNull(itemType);
-    this.filterType = Objects.requireNonNull(filterType);
-    this.grid = Objects.requireNonNull(grid);
-
-    //set items
-    ConfigurableFilterDataProvider<T, Void, F> dataProvider = DataProvider.fromFilteringCallbacks(
-            fetchCallback, countCallback)
-        .withConfigurableFilter();
-    grid.setItems(dataProvider);
-    configureGrid(grid);
-    //construct filter Grid component
-    constructComponent(grid);
-
-    listenToSelection();
-
-    //update the filter
-    searchField.addValueChangeListener(event ->
-        updateFilter(searchTermFilterCombiner, dataProvider, filterSupplier.get(),
-            event.getValue()));
-
-  }
 
   private void constructComponent(Grid<T> grid) {
     var primaryGridControls = getPrimaryGridControls(grid.getColumns());
@@ -459,7 +286,8 @@ public final class FilterGrid<T, F> extends Div {
   }
 
   private void listenToSelection() {
-    updateSelectionDisplay(this.grid.getSelectionModel().getSelectedItems().size());
+    updateSelectionDisplay(
+        this.gridFilterConfiguration.getGrid().getSelectionModel().getSelectedItems().size());
     addSelectionListener(event -> updateSelectionDisplay(event.selectedItems().size()));
   }
 
@@ -473,37 +301,17 @@ public final class FilterGrid<T, F> extends Div {
    * {@link life.qbic.datamanager.views.general.grid.component.FilterGrid.FilterUpdateEvent}
    *
    * @param searchTermFilterCombiner the function that updates the filter based on a search term
-   * @param dataProvider            the dataprovider to update the filter with
    * @param filter                  the filter to update
    * @param searchTerm              the search term to use
    */
   private void updateFilter(SearchTermFilterCombiner<F> searchTermFilterCombiner,
-      ConfigurableFilterDataProvider<T, Void, F> dataProvider,
       F filter,
       String searchTerm) {
-    if (grid.getDataProvider().isInMemory()) {
-      log.warn(
-          "In memory data provider found but expected lazy data provider. Ignoring filter term");
-      return;
-    }
     F updatedFilter = searchTermFilterCombiner.apply(searchTerm, filter);
-    dataProvider.setFilter(updatedFilter);
+    gridFilterConfiguration.setFilter(updatedFilter);
     fireEvent(new FilterUpdateEvent<>(this.filterType, this, false, filter, updatedFilter));
   }
 
-  private void updateInMemoryFilter(SearchTermFilterCombiner<F> searchTermFilterCombiner,
-      FilterTester<T, F> filterTester,
-      F filter,
-      String searchTerm) {
-    if (!grid.getDataProvider().isInMemory()) {
-      log.warn(
-          "Lazy data provider found but expected in memory data provider. Ignoring filter term");
-      return;
-    }
-    F updatedFilter = searchTermFilterCombiner.apply(searchTerm, filter);
-    grid.getListDataView().setFilter(it -> filterTester.test(it, updatedFilter));
-    fireEvent(new FilterUpdateEvent<>(this.filterType, this, false, filter, updatedFilter));
-  }
 
   /**
    * Add a listener for item count events {@link ItemCountChangeEvent}.
@@ -515,15 +323,9 @@ public final class FilterGrid<T, F> extends Div {
    */
   public Registration addItemCountListener(
       ComponentEventListener<ItemCountChangeEvent<FilterGrid<T, F>>> listener) {
-    if (grid.getDataProvider().isInMemory()) {
-      return grid.getListDataView()
-          .addItemCountChangeListener(it -> listener.onComponentEvent(
-              new ItemCountChangeEvent<>(this, it.getItemCount(), it.isItemCountEstimated())));
-    } else {
-      return grid.getLazyDataView()
-          .addItemCountChangeListener(it -> listener.onComponentEvent(
-              new ItemCountChangeEvent<>(this, it.getItemCount(), it.isItemCountEstimated())));
-    }
+    ComponentEventListener<ItemCountChangeEvent<?>> itemCountComponentListener = it -> listener.onComponentEvent(
+        new ItemCountChangeEvent<>(this, it.getItemCount(), it.isItemCountEstimated()));
+    return gridFilterConfiguration.addItemCountChangeListener(itemCountComponentListener);
   }
 
   /**
@@ -532,7 +334,7 @@ public final class FilterGrid<T, F> extends Div {
    * @return the assumed number of items.
    */
   public int getItemCount() {
-    return grid.getDataCommunicator().getItemCount();
+    return gridFilterConfiguration.getGrid().getDataCommunicator().getItemCount();
   }
 
   /**
@@ -777,7 +579,7 @@ public final class FilterGrid<T, F> extends Div {
    * @since 1.12.0
    */
   public @NonNull Set<T> selectedElements() {
-    return grid.getSelectedItems();
+    return gridFilterConfiguration.getGrid().getSelectedItems();
   }
 
   /**
@@ -813,7 +615,7 @@ public final class FilterGrid<T, F> extends Div {
    * @see Grid#deselectAll()
    */
   public void deselectAll() {
-    grid.deselectAll();
+    gridFilterConfiguration.getGrid().deselectAll();
   }
 
   /**
@@ -828,7 +630,7 @@ public final class FilterGrid<T, F> extends Div {
    */
   public Registration addSelectionListener(
       ComponentEventListener<FilterGridSelectionEvent<T>> listener) {
-    return grid.addSelectionListener(it -> listener.onComponentEvent(
+    return gridFilterConfiguration.getGrid().addSelectionListener(it -> listener.onComponentEvent(
         new FilterGridSelectionEvent<>(this, it.getAllSelectedItems(), it.isFromClient())));
   }
 

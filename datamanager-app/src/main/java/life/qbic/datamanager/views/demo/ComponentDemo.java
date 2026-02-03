@@ -49,6 +49,7 @@ import life.qbic.datamanager.views.general.grid.component.FilterGrid.FilterTeste
 import life.qbic.datamanager.views.general.grid.component.FilterGridTab;
 import life.qbic.datamanager.views.general.grid.component.FilterGridTabSheet;
 import life.qbic.datamanager.views.general.grid.component.FilterGridTabSheet.TabAction;
+import life.qbic.datamanager.views.general.grid.component.GridConfigurer;
 import life.qbic.datamanager.views.general.icon.IconFactory;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.ExperimentalVariablesInput;
@@ -143,14 +144,15 @@ public class ComponentDemo extends Div {
     gridPerson.addColumn(Person::lastName).setHeader("Last Name").setKey("lastName");
     gridPerson.addColumn(Person::age).setHeader("Age").setKey("age");
 
-    var personGrid = FilterGrid.lazy(
+    var personConfiguration = GridConfigurer.configureLazy(
+        gridPerson,
+        contactFetchCallback, contactCountCallback);
+    var personGrid = FilterGrid.create(
         Person.class,
         SimplePersonFilter.class,
-        gridPerson,
         () -> new SimplePersonFilter(""),
-        contactFetchCallback,
-        contactCountCallback,
-        (searchTerm, filter) -> new SimplePersonFilter(searchTerm)
+        (searchTerm, filter) -> new SimplePersonFilter(searchTerm),
+        personConfiguration
     );
 
     personGrid.addFilterUpdateListener(
@@ -167,14 +169,17 @@ public class ComponentDemo extends Div {
     gridContact.addColumn(Person::lastName).setHeader("Last Name").setKey("lastName");
     gridContact.addColumn(Person::age).setHeader("Age").setKey("age");
 
-    var contactGrid = FilterGrid.lazy(
+    var contactConfiguration = GridConfigurer.configureLazy(
+        gridContact,
+        contactFetchCallback,
+        contactCountCallback
+    );
+    var contactGrid = FilterGrid.create(
         Person.class,
         SimplePersonFilter.class,
-        gridContact,
         () -> new SimplePersonFilter(""),
-        contactFetchCallback,
-        contactCountCallback,
-        (searchTerm, filter) -> new SimplePersonFilter(searchTerm)
+        (searchTerm, filter) -> new SimplePersonFilter(searchTerm),
+        contactConfiguration
     );
     var filterTabContacts = new FilterGridTab<>("Contacts", contactGrid);
 
@@ -183,14 +188,18 @@ public class ComponentDemo extends Div {
     gridMemoryPerson.addColumn(Person::lastName).setHeader("Last Name").setKey("lastName");
     gridMemoryPerson.addColumn(Person::age).setHeader("Age").setKey("age");
 
-    var inMemoryPersonGrid = FilterGrid.inMemory(
+    var contactInMemoryConfiguration = GridConfigurer.configureInMemory(
+        gridMemoryPerson,
+        examples,
+        nameContainsFilterTerm::test
+    );
+
+    var inMemoryPersonGrid = FilterGrid.create(
         Person.class,
         SimplePersonFilter.class,
-        gridMemoryPerson,
         () -> new SimplePersonFilter(""),
-        examples,
-        nameContainsFilterTerm,
-        (searchTerm, filter) -> new SimplePersonFilter(searchTerm)
+        (searchTerm, filter) -> new SimplePersonFilter(searchTerm),
+        contactInMemoryConfiguration
     );
     var filterTabInMemoryPerson = new FilterGridTab<>("In Memory Persons", inMemoryPersonGrid);
 
