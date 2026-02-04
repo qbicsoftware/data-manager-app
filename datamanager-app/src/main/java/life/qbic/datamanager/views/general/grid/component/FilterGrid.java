@@ -115,7 +115,8 @@ public final class FilterGrid<T, F> extends Div {
   private final Class<T> type;
   private final Class<F> filterType;
 
-  private final GridFilterStrategy<T, F> gridFilterStrategy;
+  private final Grid<T> grid;
+  private final GridConfiguration<T, F> gridConfiguration;
   private final Div selectionDisplay = new SelectionNotification();
   private final Div secondaryActionGroup = createSecondaryActionGroup();
 
@@ -128,28 +129,34 @@ public final class FilterGrid<T, F> extends Div {
   public static <T, F> FilterGrid<T, F> create(
       Class<T> itemType,
       Class<F> filterType,
+      Grid<T> grid,
       Supplier<F> filterSupplier,
       SearchTermFilterCombiner<F> searchTermFilterCombiner,
-      GridFilterStrategy<T, F> gridFilterStrategy) {
-    return new FilterGrid<>(itemType, filterType, filterSupplier,
-        searchTermFilterCombiner, gridFilterStrategy);
+      GridConfiguration<T, F> gridConfiguration) {
+
+    return new FilterGrid<>(itemType, filterType, grid, filterSupplier,
+        searchTermFilterCombiner, gridConfiguration);
   }
 
 
   private FilterGrid(
       Class<T> itemType,
       Class<F> filterType,
+      Grid<T> grid,
       Supplier<F> filterSupplier,
       SearchTermFilterCombiner<F> searchTermFilterUpdater,
-      GridFilterStrategy<T, F> gridFilterStrategy) {
+      GridConfiguration<T, F> gridConfiguration) {
     //assign fields
     this.type = Objects.requireNonNull(itemType);
     this.filterType = Objects.requireNonNull(filterType);
-    this.gridFilterStrategy = gridFilterStrategy;
+    this.grid = Objects.requireNonNull(grid);
+    this.gridConfiguration = gridConfiguration;
 
-    configureGrid(gridFilterStrategy.getGrid());
+    configureGridForMultiSelect(grid);
+    optimizeGrid(grid, DEFAULT_QUERY_SIZE);
+    gridConfiguration.applyConfiguration(grid);
     //construct filter Grid component
-    constructComponent(gridFilterStrategy.getGrid());
+    constructComponent(grid);
 
     listenToSelection();
     //update the filter
@@ -161,8 +168,8 @@ public final class FilterGrid<T, F> extends Div {
    * Refreshes the grid and clears the selection.
    */
   public void refreshAll() {
-    this.gridFilterStrategy.getGrid().getDataProvider().refreshAll();
-    this.gridFilterStrategy.getGrid().deselectAll();
+    this.grid.getDataProvider().refreshAll();
+    this.grid.deselectAll();
   }
 
 
@@ -242,13 +249,8 @@ public final class FilterGrid<T, F> extends Div {
 
   private void listenToSelection() {
     updateSelectionDisplay(
-        this.gridFilterStrategy.getGrid().getSelectionModel().getSelectedItems().size());
+        this.grid.getSelectionModel().getSelectedItems().size());
     addSelectionListener(event -> updateSelectionDisplay(event.selectedItems().size()));
-  }
-
-  private static <T> void configureGrid(Grid<T> grid) {
-    configureGridForMultiSelect(grid);
-    optimizeGrid(grid, DEFAULT_QUERY_SIZE);
   }
 
   /**
@@ -263,7 +265,7 @@ public final class FilterGrid<T, F> extends Div {
       F filter,
       String searchTerm) {
     F updatedFilter = searchTermFilterCombiner.apply(searchTerm, filter);
-    gridFilterStrategy.setFilter(updatedFilter);
+    gridConfiguration.applyConfiguration(grid).setFilter(updatedFilter);
     fireEvent(new FilterUpdateEvent<>(this.filterType, this, false, filter, updatedFilter));
   }
 
@@ -280,7 +282,8 @@ public final class FilterGrid<T, F> extends Div {
       ComponentEventListener<ItemCountChangeEvent<FilterGrid<T, F>>> listener) {
     ComponentEventListener<ItemCountChangeEvent<?>> itemCountComponentListener = it -> listener.onComponentEvent(
         new ItemCountChangeEvent<>(this, it.getItemCount(), it.isItemCountEstimated()));
-    return gridFilterStrategy.addItemCountChangeListener(itemCountComponentListener);
+    return gridConfiguration.applyConfiguration(grid).addItemCountChangeListener(
+        itemCountComponentListener);
   }
 
   /**
@@ -289,7 +292,7 @@ public final class FilterGrid<T, F> extends Div {
    * @return the assumed number of items.
    */
   public int getItemCount() {
-    return gridFilterStrategy.getGrid().getDataCommunicator().getItemCount();
+    return grid.getDataCommunicator().getItemCount();
   }
 
   /**
@@ -534,7 +537,7 @@ public final class FilterGrid<T, F> extends Div {
    * @since 1.12.0
    */
   public @NonNull Set<T> selectedElements() {
-    return gridFilterStrategy.getGrid().getSelectedItems();
+    return grid.getSelectedItems();
   }
 
   /**
@@ -570,7 +573,7 @@ public final class FilterGrid<T, F> extends Div {
    * @see Grid#deselectAll()
    */
   public void deselectAll() {
-    gridFilterStrategy.getGrid().deselectAll();
+    grid.deselectAll();
   }
 
   /**
@@ -585,7 +588,7 @@ public final class FilterGrid<T, F> extends Div {
    */
   public Registration addSelectionListener(
       ComponentEventListener<FilterGridSelectionEvent<T>> listener) {
-    return gridFilterStrategy.getGrid().addSelectionListener(it -> listener.onComponentEvent(
+    return grid.addSelectionListener(it -> listener.onComponentEvent(
         new FilterGridSelectionEvent<>(this, it.getAllSelectedItems(), it.isFromClient())));
   }
 

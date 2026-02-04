@@ -35,9 +35,9 @@ import life.qbic.datamanager.views.UiHandle;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.download.DownloadComponent;
 import life.qbic.datamanager.views.general.grid.component.FilterGrid;
+import life.qbic.datamanager.views.general.grid.component.FilterGridConfigurations;
 import life.qbic.datamanager.views.general.grid.component.FilterGridTab;
 import life.qbic.datamanager.views.general.grid.component.FilterGridTabSheet;
-import life.qbic.datamanager.views.general.grid.component.GridFilterStrategyFactory;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.BasicSampleInformation;
@@ -244,11 +244,11 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
           .orElse(0);
     };
 
-    var pxpGridConfiguration = GridFilterStrategyFactory.configureLazy(
-        multiSelectGridPxp,
+    var pxpGridConfiguration = FilterGridConfigurations.lazy(
         fetchCallback, countCallback);
     var filterGrid = FilterGrid.create(RawDatasetInformationPxP.class,
         RawDataFilter.class,
+        multiSelectGridPxp,
         () -> new RawDataFilter(""),
         (searchTerm, filter) -> new RawDataFilter(searchTerm),
         pxpGridConfiguration);
@@ -288,10 +288,11 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
           .blockOptional(MAX_BLOCKING_DURATION)
           .orElse(0);
     };
-    var ngsGridConfiguration = GridFilterStrategyFactory.configureLazy(multiSelectNgsGrid,
+    var ngsGridConfiguration = FilterGridConfigurations.lazy(
         fetchCallback, countCallback);
     var filterGrid = FilterGrid.create(RawDatasetInformationNgs.class,
         RawDataFilter.class,
+        multiSelectNgsGrid,
         () -> new RawDataFilter(""),
         (searchTerm, filter) -> new RawDataFilter(searchTerm),
         ngsGridConfiguration);

@@ -42,9 +42,9 @@ import life.qbic.datamanager.views.general.dialog.DialogFooter;
 import life.qbic.datamanager.views.general.dialog.DialogHeader;
 import life.qbic.datamanager.views.general.dialog.DialogSection;
 import life.qbic.datamanager.views.general.grid.component.FilterGrid;
+import life.qbic.datamanager.views.general.grid.component.FilterGridConfigurations;
 import life.qbic.datamanager.views.general.grid.component.FilterGridTab;
 import life.qbic.datamanager.views.general.grid.component.FilterGridTabSheet;
-import life.qbic.datamanager.views.general.grid.component.GridFilterStrategyFactory;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.projectmanagement.application.measurement.NgsMeasurementLookup;
 import life.qbic.projectmanagement.application.measurement.NgsMeasurementLookup.MeasurementFilter;
@@ -237,12 +237,13 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
           MeasurementFilter.forExperiment(experimentId)
               .withSearch(searchTerm, clientTimeZoneOffset.get()));
     };
-    var ngsGridConfiguration = GridFilterStrategyFactory.configureLazy(
-        ngsGrid, fetchCallback,
+    var ngsGridConfiguration = FilterGridConfigurations.lazy(
+        fetchCallback,
         countCallback);
     var filterGrid = FilterGrid.create(
         NgsMeasurementLookup.MeasurementInfo.class,
         SearchTermFilter.class,
+        ngsGrid,
         this::getNgsSearchTermFilter,
         (searchTerm, filter) -> filter.replaceWith(searchTerm),
         ngsGridConfiguration);
@@ -301,13 +302,12 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
               .withSearch(searchTerm, clientTimeZoneOffset.get()));
     };
 
-    var configuration = GridFilterStrategyFactory.configureLazy(pxpGrid,
-        fetchCallback,
-        countCallback);
+    var configuration = FilterGridConfigurations.lazy(fetchCallback, countCallback);
 
     var filterGrid = FilterGrid.create(
         MeasurementInfo.class,
         SearchTermFilter.class,
+        pxpGrid,
         this::getPxpSearchTermFilter,
         (searchTerm, filter) -> filter.replaceWith(searchTerm),
         configuration);
