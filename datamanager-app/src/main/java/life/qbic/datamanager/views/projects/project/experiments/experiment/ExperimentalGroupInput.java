@@ -12,7 +12,6 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
-import com.vaadin.flow.shared.Registration;
 import jakarta.validation.constraints.Min;
 import java.io.Serial;
 import java.util.ArrayList;
@@ -25,7 +24,6 @@ import java.util.stream.Collectors;
 import life.qbic.datamanager.views.general.Container;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentalGroupInput.ExperimentalGroupBean;
 import life.qbic.projectmanagement.application.VariableValueFormatter;
-import life.qbic.projectmanagement.domain.model.experiment.Condition;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
 import life.qbic.projectmanagement.domain.model.experiment.VariableName;
@@ -64,7 +62,7 @@ import org.springframework.lang.Nullable;
  *   </li>
  *   <li>
  *     <b>Model synchronization:</b> Any change to the name, condition selection, or replicate count
- *     emits an {@link InputChangedEvent}. This makes it easy for
+ *     emits an {@link ValueChangeEvent}. This makes it easy for
  *     parent components to react to changes without listening to each sub-field individually.
  *   </li>
  *   <li>
@@ -183,9 +181,9 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
     addValidationForVariableCount();
 
     // Keep the CustomField model value in sync and emit a typed event for parent components.
-    nameField.addValueChangeListener(event -> onAnyInputChanged(event.isFromClient()));
-    variableLevelSelect.addValueChangeListener(event -> onAnyInputChanged(event.isFromClient()));
-    replicateCountField.addValueChangeListener(event -> onAnyInputChanged(event.isFromClient()));
+    nameField.addValueChangeListener(event -> onAnyInputChanged());
+    variableLevelSelect.addValueChangeListener(event -> onAnyInputChanged());
+    replicateCountField.addValueChangeListener(event -> onAnyInputChanged());
 
     variableLevelSelect.addValueChangeListener(
         event -> setInvalid(variableLevelSelect.isInvalid() || replicateCountField.isInvalid()));
@@ -197,53 +195,19 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
    * Called when any user-relevant sub-field changes.
    *
    * <p>
-   * Updates the {@link CustomField}'s model value and emits an {@link InputChangedEvent}.
+   * Updates the {@link CustomField}'s model value and emits an {@link ValueChangeEvent}.
    * </p>
    *
-   * @param fromClient whether the change originated from the client/browser
    */
-  private void onAnyInputChanged(boolean fromClient) {
+  private void onAnyInputChanged() {
     updateValue();
-    fireEvent(new InputChangedEvent(this, fromClient));
-  }
-
-  /**
-   * Fired whenever the user changes any relevant part of this input (name, condition, replicate
-   * count).
-   *
-   * <p>
-   * This event is intended for parent components to keep derived state in sync (e.g. enabling/disabling
-   * "Save", recomputing summaries, or performing cross-row validations).
-   * </p>
-   *
-   * @since 1.12.0
-   */
-  public static class InputChangedEvent extends ComponentEvent<ExperimentalGroupInput> {
-
-    @Serial
-    private static final long serialVersionUID = -2689783643228164804L;
-
-    public InputChangedEvent(ExperimentalGroupInput source, boolean fromClient) {
-      super(source, fromClient);
-    }
-  }
-
-  /**
-   * Registers a listener that is notified whenever this {@link ExperimentalGroupInput} changes.
-   *
-   * @param listener the listener to add
-   * @return a registration for removing the listener
-   * @since 1.12.0
-   */
-  public Registration addInputChangedListener(ComponentEventListener<InputChangedEvent> listener) {
-    return addListener(InputChangedEvent.class, listener);
   }
 
   /**
    * Sets the currently selected condition levels (programmatic API).
    *
    * <p>
-   * This method will also refresh the field's model value and emit an {@link InputChangedEvent}
+   * This method will also refresh the field's model value and emit an {@link ValueChangeEvent}
    * with {@code fromClient=false}.
    * </p>
    *
@@ -251,14 +215,14 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
    */
   public void setCondition(Collection<VariableLevel> levels) {
     this.variableLevelSelect.setValue(levels);
-    onAnyInputChanged(false);
+    onAnyInputChanged();
   }
 
   /**
    * Sets the group name (programmatic API).
    *
    * <p>
-   * This method will also refresh the field's model value and emit an {@link InputChangedEvent}
+   * This method will also refresh the field's model value and emit an {@link ValueChangeEvent}
    * with {@code fromClient=false}.
    * </p>
    *
@@ -266,14 +230,14 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
    */
   public void setGroupName(String groupName) {
     this.nameField.setValue(groupName);
-    onAnyInputChanged(false);
+    onAnyInputChanged();
   }
 
   /**
    * Sets the replicate count (programmatic API).
    *
    * <p>
-   * This method will also refresh the field's model value and emit an {@link InputChangedEvent}
+   * This method will also refresh the field's model value and emit an {@link ValueChangeEvent}
    * with {@code fromClient=false}.
    * </p>
    *
@@ -281,7 +245,7 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
    */
   public void setReplicateCount(int numberOfReplicates) {
     this.replicateCountField.setValue((double) numberOfReplicates);
-    onAnyInputChanged(false);
+    onAnyInputChanged();
   }
 
   /**

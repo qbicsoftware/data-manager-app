@@ -105,7 +105,7 @@ public class ExperimentalGroupsDialog extends DialogWindow {
       groupEntry.addRemoveEventListener(
           listener -> removeExperimentalGroupEntry(groupEntry));
 
-      groupEntry.addInputChangedListener(e -> validateNoDuplicateConditions());
+      groupEntry.addValueChangeListener(e -> validateNoDuplicateConditions());
 
       return groupEntry;
     }).forEach(experimentalGroupsCollection::add);
@@ -248,7 +248,7 @@ public class ExperimentalGroupsDialog extends DialogWindow {
       removeExperimentalGroupEntry(event.getSource());
     });
 
-    groupEntry.addInputChangedListener(e -> validateNoDuplicateConditions());
+    groupEntry.addValueChangeListener(e -> validateNoDuplicateConditions());
 
     validateNoDuplicateConditions();
   }
@@ -274,7 +274,7 @@ public class ExperimentalGroupsDialog extends DialogWindow {
       var groupEntry = new ExperimentalGroupInput(experimentalVariableLevels, true);
       experimentalGroupsCollection.add(groupEntry);
       groupEntry.addRemoveEventListener(event -> removeExperimentalGroupEntry(event.getSource()));
-      groupEntry.addInputChangedListener(e -> validateNoDuplicateConditions());
+      groupEntry.addValueChangeListener(e -> validateNoDuplicateConditions());
     }
   }
 
