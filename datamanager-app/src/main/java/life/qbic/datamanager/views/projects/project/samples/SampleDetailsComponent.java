@@ -29,7 +29,7 @@ import life.qbic.datamanager.views.general.download.DownloadComponent;
 import life.qbic.datamanager.views.general.grid.component.FilterGrid;
 import life.qbic.datamanager.views.general.grid.component.FilterGridTab;
 import life.qbic.datamanager.views.general.grid.component.FilterGridTabSheet;
-import life.qbic.datamanager.views.general.grid.component.GridConfigurer;
+import life.qbic.datamanager.views.general.grid.component.GridFilterStrategyFactory;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.SamplePreviewFilter;
@@ -275,7 +275,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
           .orElse(0);
     };
 
-    var gridConfiguration = GridConfigurer.configureLazy(
+    var gridConfiguration = GridFilterStrategyFactory.configureLazy(
         multiSelectGrid,
         fetchCallback, countCallback);
     FilterGrid<SamplePreview, String> filterGrid = FilterGrid.create(
