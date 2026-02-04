@@ -27,7 +27,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.function.BiFunction;
-import java.util.function.BiPredicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import life.qbic.logging.api.Logger;
@@ -59,7 +58,7 @@ import org.springframework.lang.NonNull;
  * <p>There are two supported integration modes:</p>
  * <ol>
  *   <li>
- *     <b>Lazy (recommended for database-backed lists)</b> via {@link #lazy(Class, Class, Grid, Supplier, FetchCallback, CountCallback, SearchTermFilterCombiner)}:
+ *     <b>Lazy (recommended for database-backed lists) via {@link life.qbic.datamanager.views.general.grid.component.GridFilterStrategyFactory.LazyStrategy}</b>
  *     <ul>
  *       <li>The grid uses a {@link ConfigurableFilterDataProvider}.</li>
  *       <li>On search input changes, the component calls {@link SearchTermFilterCombiner} to create an
@@ -72,11 +71,11 @@ import org.springframework.lang.NonNull;
  *     it to build the query.
  *   </li>
  *   <li>
- *     <b>In-memory (for small datasets)</b> via {@link #inMemory(Class, Class, Grid, Supplier, List, FilterTester, SearchTermFilterCombiner)}:
+ *     <b>In-memory (for small datasets)</b> via {@link life.qbic.datamanager.views.general.grid.component.GridFilterStrategyFactory.InMemoryStrategy}:
  *     <ul>
  *       <li>The grid is backed by a list.</li>
  *       <li>On search input changes, the component updates the {@link com.vaadin.flow.data.provider.ListDataView}
- *       filter using your {@link FilterTester} predicate.</li>
+ *       filter using your {@link life.qbic.datamanager.views.general.grid.component.GridFilterStrategyFactory.FilterTester} predicate.</li>
  *       <li>No database call is involved; the search term is evaluated in the UI layer.</li>
  *     </ul>
  *   </li>
@@ -164,50 +163,6 @@ public final class FilterGrid<T, F> extends Div {
   public void refreshAll() {
     this.gridFilterStrategy.getGrid().getDataProvider().refreshAll();
     this.gridFilterStrategy.getGrid().deselectAll();
-  }
-
-  /**
-   * A functional interface that represents a generic filter testing mechanism for evaluating
-   * whether an element matches a specific filter criteria.
-   *
-   * <p>This interface extends the standard {@link java.util.function.BiPredicate}
-   * to provide a more specialized contract for testing elements against filters. It allows for
-   * flexible and reusable filtering logic across different types.</p>
-   *
-   * <h2>Purpose</h2>
-   * <p>The primary purpose of this interface is to encapsulate the logic for
-   * testing whether a given element satisfies a specific filter condition.</p>
-   *
-   * <h2>Generic Type Parameters</h2>
-   * <ul>
-   *   <li><b>T</b>: The type of the element being tested</li>
-   *   <li><b>F</b>: The type of the filter used for testing</li>
-   * </ul>
-   *
-   * <h2>Usage Example</h2>
-   * <pre>
-   * FilterTester&lt;String, Pattern&gt; regexFilter = (element, filter) -&gt;
-   *     filter.matcher(element).matches();
-   *
-   * FilterTester&lt;Integer, Range&gt; rangeFilter = (value, range) -&gt;
-   *     value &gt;= range.getMin() && value &lt;= range.getMax();
-   *
-   * FilterTester&lt;Person, String&gt; personFilter = (element, searchTerm) -&gt;
-   *     element.firstName().contains(searchTerm) || element.lastName().contains(searchTerm)
-   * </pre>
-   *
-   * <h2>Contract</h2>
-   * <p>Implementations must provide a consistent and predictable method
-   * for testing whether an element matches a given filter.</p>
-   *
-   * @param <T> the type of element to be tested
-   * @param <F> the type of filter used in the testing process
-   */
-  @FunctionalInterface
-  public interface FilterTester<T, F> extends BiPredicate<T, F> {
-
-    @Override
-    boolean test(T element, F filter);
   }
 
 
