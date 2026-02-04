@@ -597,7 +597,8 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     }
     var displayLabel = measurementInfo.samplePool();
     var expandIcon = VaadinIcon.EXPAND_SQUARE.create();
-    expandIcon.addClassName("expand-icon");
+    expandIcon.addClassNames("expand-icon", "icon-size-m", "color-primary",
+        "padding-horizontal-02");
     var pooledSamplesSpan = new Span(new Span(displayLabel), expandIcon);
     pooledSamplesSpan.addClassNames("sample-column-cell", "clickable");
     pooledSamplesSpan.addClickListener(event -> openPooledSampleDialogPxp(measurementInfo));
