@@ -89,7 +89,7 @@ public class GridConfigurer {
 
     @Override
     public Grid<T> getGrid() {
-      return getGrid();
+      return grid;
     }
 
   }
