@@ -127,7 +127,7 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
    * Used to validate that the user selected exactly one level per variable.
    * </p>
    */
-  int variableCount = 0;
+  private int variableCount = 0;
 
   /**
    * Keep created binders reachable (primarily relevant for validation wiring).
