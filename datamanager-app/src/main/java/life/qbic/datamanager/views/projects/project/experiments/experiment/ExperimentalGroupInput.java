@@ -53,9 +53,8 @@ import org.springframework.lang.Nullable;
  * <h2>Contract / behavior</h2>
  * <ul>
  *   <li>
- *     <b>One level per variable:</b> Although the condition selector is technically a
- *     {@link MultiSelectComboBox}, this component enforces a "single level per variable" rule:
- *     if the user selects a second level for the same variable, the previously selected one is
+ *     <b>One level per variable:</b> this component enforces a "single level per variable" rule.
+ *     If the user selects a second level for the same variable, the previously selected one is
  *     automatically deselected (see {@link #overwriteSelectionOfSameVariable(MultiSelectComboBox)}).
  *   </li>
  *   <li>
@@ -65,7 +64,7 @@ import org.springframework.lang.Nullable;
  *   </li>
  *   <li>
  *     <b>Model synchronization:</b> Any change to the name, condition selection, or replicate count
- *     triggers {@link #updateValue()} and emits an {@link InputChangedEvent}. This makes it easy for
+ *     emits an {@link InputChangedEvent}. This makes it easy for
  *     parent components to react to changes without listening to each sub-field individually.
  *   </li>
  *   <li>
