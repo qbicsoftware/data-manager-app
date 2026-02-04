@@ -37,7 +37,7 @@ import life.qbic.datamanager.views.general.download.DownloadComponent;
 import life.qbic.datamanager.views.general.grid.component.FilterGrid;
 import life.qbic.datamanager.views.general.grid.component.FilterGridTab;
 import life.qbic.datamanager.views.general.grid.component.FilterGridTabSheet;
-import life.qbic.datamanager.views.general.grid.component.GridFilterStrategyFactory;
+import life.qbic.datamanager.views.general.grid.component.FilterGridConfigurations;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.BasicSampleInformation;
@@ -244,7 +244,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
           .orElse(0);
     };
 
-    var pxpGridConfiguration = GridFilterStrategyFactory.configureLazy(
+    var pxpGridConfiguration = FilterGridConfigurations.configureLazy(
         multiSelectGridPxp,
         fetchCallback, countCallback);
     var filterGrid = FilterGrid.create(RawDatasetInformationPxP.class,
@@ -288,7 +288,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
           .blockOptional(MAX_BLOCKING_DURATION)
           .orElse(0);
     };
-    var ngsGridConfiguration = GridFilterStrategyFactory.configureLazy(multiSelectNgsGrid,
+    var ngsGridConfiguration = FilterGridConfigurations.configureLazy(multiSelectNgsGrid,
         fetchCallback, countCallback);
     var filterGrid = FilterGrid.create(RawDatasetInformationNgs.class,
         RawDataFilter.class,

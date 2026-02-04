@@ -272,6 +272,7 @@ public final class FilterGrid<T, F> extends Div {
      * @see #combineWithSearchTerm(String, Object)
      */
     @Override
+
     default F apply(String searchTerm, F filter) {
       return combineWithSearchTerm(searchTerm, filter);
     }

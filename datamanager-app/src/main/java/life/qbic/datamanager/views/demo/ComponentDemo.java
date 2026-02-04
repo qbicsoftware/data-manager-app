@@ -49,7 +49,7 @@ import life.qbic.datamanager.views.general.grid.component.FilterGrid.FilterTeste
 import life.qbic.datamanager.views.general.grid.component.FilterGridTab;
 import life.qbic.datamanager.views.general.grid.component.FilterGridTabSheet;
 import life.qbic.datamanager.views.general.grid.component.FilterGridTabSheet.TabAction;
-import life.qbic.datamanager.views.general.grid.component.GridFilterStrategyFactory;
+import life.qbic.datamanager.views.general.grid.component.FilterGridConfigurations;
 import life.qbic.datamanager.views.general.icon.IconFactory;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.ExperimentalVariablesInput;
@@ -144,7 +144,7 @@ public class ComponentDemo extends Div {
     gridPerson.addColumn(Person::lastName).setHeader("Last Name").setKey("lastName");
     gridPerson.addColumn(Person::age).setHeader("Age").setKey("age");
 
-    var personConfiguration = GridFilterStrategyFactory.configureLazy(
+    var personConfiguration = FilterGridConfigurations.configureLazy(
         gridPerson,
         contactFetchCallback, contactCountCallback);
     var personGrid = FilterGrid.create(
@@ -169,7 +169,7 @@ public class ComponentDemo extends Div {
     gridContact.addColumn(Person::lastName).setHeader("Last Name").setKey("lastName");
     gridContact.addColumn(Person::age).setHeader("Age").setKey("age");
 
-    var contactConfiguration = GridFilterStrategyFactory.configureLazy(
+    var contactConfiguration = FilterGridConfigurations.configureLazy(
         gridContact,
         contactFetchCallback,
         contactCountCallback
@@ -188,7 +188,7 @@ public class ComponentDemo extends Div {
     gridMemoryPerson.addColumn(Person::lastName).setHeader("Last Name").setKey("lastName");
     gridMemoryPerson.addColumn(Person::age).setHeader("Age").setKey("age");
 
-    var contactInMemoryConfiguration = GridFilterStrategyFactory.configureInMemory(
+    var contactInMemoryConfiguration = FilterGridConfigurations.configureInMemory(
         gridMemoryPerson,
         examples,
         nameContainsFilterTerm::test
