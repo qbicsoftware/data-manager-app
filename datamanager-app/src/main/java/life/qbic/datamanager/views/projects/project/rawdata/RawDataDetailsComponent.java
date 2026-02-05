@@ -248,10 +248,9 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
         fetchCallback, countCallback);
     var filterGrid = FilterGrid.create(RawDatasetInformationPxP.class,
         RawDataFilter.class,
-        multiSelectGridPxp,
+        pxpGridConfiguration.applyConfiguration(multiSelectGridPxp),
         () -> new RawDataFilter(""),
-        (searchTerm, filter) -> new RawDataFilter(searchTerm),
-        pxpGridConfiguration);
+        (searchTerm, filter) -> new RawDataFilter(searchTerm));
 
     filterGrid.searchFieldPlaceholder("Search raw datasets");
     filterGrid.itemDisplayLabel("dataset");
@@ -292,10 +291,9 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
         fetchCallback, countCallback);
     var filterGrid = FilterGrid.create(RawDatasetInformationNgs.class,
         RawDataFilter.class,
-        multiSelectNgsGrid,
+        ngsGridConfiguration.applyConfiguration(multiSelectNgsGrid),
         () -> new RawDataFilter(""),
-        (searchTerm, filter) -> new RawDataFilter(searchTerm),
-        ngsGridConfiguration);
+        (searchTerm, filter) -> new RawDataFilter(searchTerm));
 
     filterGrid.searchFieldPlaceholder("Search raw datasets");
     filterGrid.itemDisplayLabel("dataset");

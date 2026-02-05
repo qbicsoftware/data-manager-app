@@ -29,6 +29,7 @@ import java.util.StringJoiner;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import life.qbic.datamanager.views.general.grid.component.GridConfiguration.ConfiguredGrid;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import org.springframework.lang.NonNull;
@@ -107,16 +108,13 @@ public final class FilterGrid<T, F> extends Div {
   static final String FLEX_HORIZONTAL_CSS = "flex-horizontal";
   static final String GAP_04_CSS = "gap-04";
 
-  private static final int DEFAULT_QUERY_SIZE = 150;
-  private static final int MAX_QUERY_SIZE = 350;
   private static final String DEFAULT_ITEM_DISPLAY_LABEL = "item";
   private static final Logger log = LoggerFactory.logger(FilterGrid.class);
 
   private final Class<T> type;
   private final Class<F> filterType;
 
-  private final Grid<T> grid;
-  private final GridConfiguration<T, F> gridConfiguration;
+  private final ConfiguredGrid<T, F> configuredGrid;
   private final Div selectionDisplay = new SelectionNotification();
   private final Div secondaryActionGroup = createSecondaryActionGroup();
 
@@ -129,36 +127,32 @@ public final class FilterGrid<T, F> extends Div {
   public static <T, F> FilterGrid<T, F> create(
       Class<T> itemType,
       Class<F> filterType,
-      Grid<T> grid,
+      ConfiguredGrid<T, F> configuredGrid,
       Supplier<F> filterSupplier,
-      SearchTermFilterCombiner<F> searchTermFilterCombiner,
-      GridConfiguration<T, F> gridConfiguration) {
+      SearchTermFilterCombiner<F> searchTermFilterCombiner) {
 
-    return new FilterGrid<>(itemType, filterType, grid, filterSupplier,
-        searchTermFilterCombiner, gridConfiguration);
+    return new FilterGrid<>(itemType, filterType, configuredGrid, filterSupplier,
+        searchTermFilterCombiner);
   }
 
 
   private FilterGrid(
       Class<T> itemType,
       Class<F> filterType,
-      Grid<T> grid,
+      ConfiguredGrid<T, F> configuredGrid,
       Supplier<F> filterSupplier,
-      SearchTermFilterCombiner<F> searchTermFilterUpdater,
-      GridConfiguration<T, F> gridConfiguration) {
+      SearchTermFilterCombiner<F> searchTermFilterUpdater) {
     //assign fields
     this.type = Objects.requireNonNull(itemType);
     this.filterType = Objects.requireNonNull(filterType);
-    this.grid = Objects.requireNonNull(grid);
-    this.gridConfiguration = gridConfiguration;
+    this.configuredGrid = Objects.requireNonNull(configuredGrid);
 
-    configureGridForMultiSelect(grid);
-    optimizeGrid(grid, DEFAULT_QUERY_SIZE);
-    gridConfiguration.applyConfiguration(grid);
     //construct filter Grid component
-    constructComponent(grid);
+    var primaryGridControls = getPrimaryGridControls(configuredGrid.getColumns());
+    add(primaryGridControls, configuredGrid);
+    addClassNames("flex-vertical", "gap-03", "height-full", "width-full");
 
-    listenToSelection();
+    forwardGridSelectionEvents();
     //update the filter
     searchField.addValueChangeListener(
         event -> updateFilter(searchTermFilterUpdater, filterSupplier.get(), event.getValue()));
@@ -168,8 +162,8 @@ public final class FilterGrid<T, F> extends Div {
    * Refreshes the grid and clears the selection.
    */
   public void refreshAll() {
-    this.grid.getDataProvider().refreshAll();
-    this.grid.deselectAll();
+    this.configuredGrid.refreshAll();
+    this.configuredGrid.deselectAll();
   }
 
 
@@ -240,16 +234,9 @@ public final class FilterGrid<T, F> extends Div {
   }
 
 
-  private void constructComponent(Grid<T> grid) {
-    var primaryGridControls = getPrimaryGridControls(grid.getColumns());
-    add(primaryGridControls, grid);
-    addClassNames("flex-vertical", "gap-03", "height-full", "width-full");
-
-  }
-
-  private void listenToSelection() {
+  private void forwardGridSelectionEvents() {
     updateSelectionDisplay(
-        this.grid.getSelectionModel().getSelectedItems().size());
+        this.configuredGrid.getSelectedItems().size());
     addSelectionListener(event -> updateSelectionDisplay(event.selectedItems().size()));
   }
 
@@ -265,7 +252,7 @@ public final class FilterGrid<T, F> extends Div {
       F filter,
       String searchTerm) {
     F updatedFilter = searchTermFilterCombiner.apply(searchTerm, filter);
-    gridConfiguration.applyConfiguration(grid).setFilter(updatedFilter);
+    configuredGrid.setFilter(updatedFilter);
     fireEvent(new FilterUpdateEvent<>(this.filterType, this, false, filter, updatedFilter));
   }
 
@@ -282,8 +269,7 @@ public final class FilterGrid<T, F> extends Div {
       ComponentEventListener<ItemCountChangeEvent<FilterGrid<T, F>>> listener) {
     ComponentEventListener<ItemCountChangeEvent<?>> itemCountComponentListener = it -> listener.onComponentEvent(
         new ItemCountChangeEvent<>(this, it.getItemCount(), it.isItemCountEstimated()));
-    return gridConfiguration.applyConfiguration(grid).addItemCountChangeListener(
-        itemCountComponentListener);
+    return configuredGrid.addItemCountChangeListener(itemCountComponentListener);
   }
 
   /**
@@ -292,7 +278,7 @@ public final class FilterGrid<T, F> extends Div {
    * @return the assumed number of items.
    */
   public int getItemCount() {
-    return grid.getDataCommunicator().getItemCount();
+    return configuredGrid.getItemCount();
   }
 
   /**
@@ -449,20 +435,6 @@ public final class FilterGrid<T, F> extends Div {
     return field;
   }
 
-  private static void optimizeGrid(Grid<?> grid, int pageSize) {
-    if (grid.getDataProvider().isInMemory()) {
-      return;
-    }
-    var computedPageSize = Math.clamp(pageSize, 100, MAX_QUERY_SIZE);
-    grid.setPageSize(computedPageSize);
-    // Grid height must not be determined by rows in lazy mode
-    grid.setAllRowsVisible(false);
-  }
-
-  private static boolean hasContent(String text) {
-    return text != null && !text.isBlank();
-  }
-
   /**
    * Defines a custom placeholder for the search field. Default is <i>"Filter"</i>
    * @param placeholder the text to use as placeholder
@@ -537,7 +509,7 @@ public final class FilterGrid<T, F> extends Div {
    * @since 1.12.0
    */
   public @NonNull Set<T> selectedElements() {
-    return grid.getSelectedItems();
+    return configuredGrid.getSelectedItems();
   }
 
   /**
@@ -573,7 +545,7 @@ public final class FilterGrid<T, F> extends Div {
    * @see Grid#deselectAll()
    */
   public void deselectAll() {
-    grid.deselectAll();
+    configuredGrid.deselectAll();
   }
 
   /**
@@ -588,7 +560,7 @@ public final class FilterGrid<T, F> extends Div {
    */
   public Registration addSelectionListener(
       ComponentEventListener<FilterGridSelectionEvent<T>> listener) {
-    return grid.addSelectionListener(it -> listener.onComponentEvent(
+    return configuredGrid.addSelectionListener(it -> listener.onComponentEvent(
         new FilterGridSelectionEvent<>(this, it.getAllSelectedItems(), it.isFromClient())));
   }
 

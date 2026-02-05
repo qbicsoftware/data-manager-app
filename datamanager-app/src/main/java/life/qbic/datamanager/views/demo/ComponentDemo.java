@@ -149,10 +149,10 @@ public class ComponentDemo extends Div {
     var personGrid = FilterGrid.create(
         Person.class,
         SimplePersonFilter.class,
-        gridPerson,
+        lazyConfiguration.applyConfiguration(gridPerson),
         () -> new SimplePersonFilter(""),
-        (searchTerm, filter) -> new SimplePersonFilter(searchTerm),
-        lazyConfiguration
+        (searchTerm, filter) -> new SimplePersonFilter(searchTerm)
+
     );
 
     personGrid.addFilterUpdateListener(
@@ -169,15 +169,13 @@ public class ComponentDemo extends Div {
     gridContact.addColumn(Person::lastName).setHeader("Last Name").setKey("lastName");
     gridContact.addColumn(Person::age).setHeader("Age").setKey("age");
 
-
     var contactGrid = FilterGrid.create(
         Person.class,
         SimplePersonFilter.class,
-        gridContact,
+        lazyConfiguration.applyConfiguration(gridContact),
         () -> new SimplePersonFilter(""),
-        (searchTerm, filter) -> new SimplePersonFilter(searchTerm),
-        lazyConfiguration
-    );
+        (searchTerm, filter) -> new SimplePersonFilter(searchTerm));
+
     var filterTabContacts = new FilterGridTab<>("Contacts", contactGrid);
 
     var gridMemoryPerson = new Grid<Person>();
@@ -193,11 +191,10 @@ public class ComponentDemo extends Div {
     var inMemoryPersonGrid = FilterGrid.create(
         Person.class,
         SimplePersonFilter.class,
-        gridMemoryPerson,
+        contactInMemoryConfiguration.applyConfiguration(gridMemoryPerson),
         () -> new SimplePersonFilter(""),
-        (searchTerm, filter) -> new SimplePersonFilter(searchTerm),
-        contactInMemoryConfiguration
-    );
+        (searchTerm, filter) -> new SimplePersonFilter(searchTerm));
+
     var filterTabInMemoryPerson = new FilterGridTab<>("In Memory Persons", inMemoryPersonGrid);
 
     var tabSheet = new FilterGridTabSheet();

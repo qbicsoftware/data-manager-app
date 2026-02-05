@@ -279,10 +279,9 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     FilterGrid<SamplePreview, String> filterGrid = FilterGrid.create(
         SamplePreview.class,
         String.class,
-        multiSelectGrid,
+        gridConfiguration.applyConfiguration(multiSelectGrid),
         () -> "",
-        (searchTerm, oldFilter) -> searchTerm,
-        gridConfiguration);
+        (searchTerm, oldFilter) -> searchTerm);
 
     filterGrid.searchFieldPlaceholder("Search samples");
     filterGrid.itemDisplayLabel("sample");

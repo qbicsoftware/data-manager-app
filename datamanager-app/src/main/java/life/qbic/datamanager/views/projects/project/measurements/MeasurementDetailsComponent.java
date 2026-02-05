@@ -243,10 +243,10 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     var filterGrid = FilterGrid.create(
         NgsMeasurementLookup.MeasurementInfo.class,
         SearchTermFilter.class,
-        ngsGrid,
+        ngsGridConfiguration.applyConfiguration(ngsGrid),
         this::getNgsSearchTermFilter,
-        (searchTerm, filter) -> filter.replaceWith(searchTerm),
-        ngsGridConfiguration);
+        (searchTerm, filter) -> filter.replaceWith(searchTerm));
+
     filterGrid.itemDisplayLabel("measurement");
     filterGrid.searchFieldPlaceholder("Search Measurements");
     var editNgsButton = new Button("Edit");
@@ -307,10 +307,10 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     var filterGrid = FilterGrid.create(
         MeasurementInfo.class,
         SearchTermFilter.class,
-        pxpGrid,
+        configuration.applyConfiguration(pxpGrid),
         this::getPxpSearchTermFilter,
-        (searchTerm, filter) -> filter.replaceWith(searchTerm),
-        configuration);
+        (searchTerm, filter) -> filter.replaceWith(searchTerm));
+
     filterGrid.itemDisplayLabel("measurement");
     filterGrid.searchFieldPlaceholder("Search Measurements");
     var editPxpButton = new Button("Edit");
