@@ -1,10 +1,10 @@
 package life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa;
 
-import static life.qbic.projectmanagement.infrastructure.jpa.SpecificationFactory.contains;
-import static life.qbic.projectmanagement.infrastructure.jpa.SpecificationFactory.distinct;
-import static life.qbic.projectmanagement.infrastructure.jpa.SpecificationFactory.formattedClientTimeContains;
-import static life.qbic.projectmanagement.infrastructure.jpa.SpecificationFactory.jsonContains;
-import static life.qbic.projectmanagement.infrastructure.jpa.SpecificationFactory.propertyContains;
+import static life.qbic.projectmanagement.infrastructure.jpa.JpaSpecifications.contains;
+import static life.qbic.projectmanagement.infrastructure.jpa.JpaSpecifications.distinct;
+import static life.qbic.projectmanagement.infrastructure.jpa.JpaSpecifications.formattedClientTimeContains;
+import static life.qbic.projectmanagement.infrastructure.jpa.JpaSpecifications.jsonContains;
+import static life.qbic.projectmanagement.infrastructure.jpa.JpaSpecifications.propertyContains;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
@@ -48,7 +48,7 @@ import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.infrastructure.PreventAnyUpdateEntityListener;
 import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.PxpMeasurementJpaRepository.MsDevice.MsDeviceReadConverter;
 import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.PxpMeasurementJpaRepository.PxpMeasurementInformation;
-import life.qbic.projectmanagement.infrastructure.jpa.SpecificationFactory;
+import life.qbic.projectmanagement.infrastructure.jpa.JpaSpecifications;
 import org.hibernate.collection.spi.PersistentBag;
 import org.springframework.boot.jackson.JsonComponent;
 import org.springframework.data.convert.ReadingConverter;
@@ -183,7 +183,7 @@ public interface PxpMeasurementJpaRepository extends
                   .get("iri").as(String.class),
               searchTerm),
           formattedClientTimeContains("registeredAt", searchTerm, timeZoneOffsetMillis,
-              SpecificationFactory.CUSTOM_DATE_TIME_PATTERN),
+              JpaSpecifications.CUSTOM_DATE_TIME_PATTERN),
           contains(root -> getSampleInfos(root)
               .get("sampleLabel").as(String.class), searchTerm),
           contains(root -> getSampleInfos(root)

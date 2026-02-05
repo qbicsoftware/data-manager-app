@@ -1,11 +1,11 @@
 package life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa;
 
-import static life.qbic.projectmanagement.infrastructure.jpa.SpecificationFactory.CUSTOM_DATE_TIME_PATTERN;
-import static life.qbic.projectmanagement.infrastructure.jpa.SpecificationFactory.contains;
-import static life.qbic.projectmanagement.infrastructure.jpa.SpecificationFactory.distinct;
-import static life.qbic.projectmanagement.infrastructure.jpa.SpecificationFactory.formattedClientTimeContains;
-import static life.qbic.projectmanagement.infrastructure.jpa.SpecificationFactory.jsonContains;
-import static life.qbic.projectmanagement.infrastructure.jpa.SpecificationFactory.propertyContains;
+import static life.qbic.projectmanagement.infrastructure.jpa.JpaSpecifications.CUSTOM_DATE_TIME_PATTERN;
+import static life.qbic.projectmanagement.infrastructure.jpa.JpaSpecifications.contains;
+import static life.qbic.projectmanagement.infrastructure.jpa.JpaSpecifications.distinct;
+import static life.qbic.projectmanagement.infrastructure.jpa.JpaSpecifications.formattedClientTimeContains;
+import static life.qbic.projectmanagement.infrastructure.jpa.JpaSpecifications.jsonContains;
+import static life.qbic.projectmanagement.infrastructure.jpa.JpaSpecifications.propertyContains;
 
 import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonParseException;

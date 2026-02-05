@@ -1,10 +1,10 @@
 package life.qbic.projectmanagement.infrastructure.dataset;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
-import static life.qbic.projectmanagement.infrastructure.jpa.SpecificationFactory.distinct;
-import static life.qbic.projectmanagement.infrastructure.jpa.SpecificationFactory.exactMatches;
-import static life.qbic.projectmanagement.infrastructure.jpa.SpecificationFactory.jsonContains;
-import static life.qbic.projectmanagement.infrastructure.jpa.SpecificationFactory.propertyContains;
+import static life.qbic.projectmanagement.infrastructure.jpa.JpaSpecifications.distinct;
+import static life.qbic.projectmanagement.infrastructure.jpa.JpaSpecifications.exactMatches;
+import static life.qbic.projectmanagement.infrastructure.jpa.JpaSpecifications.jsonContains;
+import static life.qbic.projectmanagement.infrastructure.jpa.JpaSpecifications.propertyContains;
 import static org.springframework.data.jpa.domain.Specification.allOf;
 import static org.springframework.data.jpa.domain.Specification.anyOf;
 
