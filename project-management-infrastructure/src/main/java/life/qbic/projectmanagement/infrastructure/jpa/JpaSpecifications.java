@@ -44,7 +44,12 @@ public class JpaSpecifications {
 
   private static final Logger log = LoggerFactory.logger(JpaSpecifications.class);
   /**
-   * A custom date time format not in any java.time ISO formats
+   * The date time format the database dates are formatted to.
+   * For searching, this pattern should generate the same representation the user sees in the UI.
+   * <p>
+   * The pattern is not a Java pattern for
+   * {@link java.time.format.DateTimeFormatter} but needs to match <a
+   * href="https://mariadb.com/docs/server/reference/sql-functions/date-time-functions/date_format">DATE_FORMAT</a>‚
    */
   public static final String CUSTOM_DATE_TIME_PATTERN = "%Y-%m-%d %H:%i";
 
