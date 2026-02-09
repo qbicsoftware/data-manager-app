@@ -85,7 +85,7 @@ public class JpaSpecifications {
 
     @Override
     default Expression<T> apply(X expression) {
-      return extractFrom(expression);
+      return resolve(expression);
     }
 
     /**
@@ -112,7 +112,7 @@ public class JpaSpecifications {
      * @param expression the source expression from which the target expression should be derived
      * @return the resolved expression representing the desired attribute or value
      */
-    Expression<T> extractFrom(X expression);
+    Expression<T> resolve(X expression);
 
   }
 
@@ -147,7 +147,7 @@ public class JpaSpecifications {
       ExpressionProvider<T, String, Root<T>> expressionProvider,
       String searchTerm) {
     return (root, query, criteriaBuilder) ->
-        contains(criteriaBuilder, expressionProvider.extractFrom(root), searchTerm);
+        contains(criteriaBuilder, expressionProvider.resolve(root), searchTerm);
   }
 
   /**
@@ -163,7 +163,7 @@ public class JpaSpecifications {
       S other
   ) {
     return (root, query, criteriaBuilder) ->
-        objectEquals(criteriaBuilder, expressionProvider.extractFrom(root), other);
+        objectEquals(criteriaBuilder, expressionProvider.resolve(root), other);
   }
 
   /**
@@ -205,7 +205,7 @@ public class JpaSpecifications {
       ExpressionProvider<S, T, Root<S>> expressionProvider,
       String jsonPath, String searchTerm) {
     return (root, query, criteriaBuilder) ->
-        jsonContains(criteriaBuilder, expressionProvider.extractFrom(root), jsonPath, searchTerm);
+        jsonContains(criteriaBuilder, expressionProvider.resolve(root), jsonPath, searchTerm);
 
   }
 
