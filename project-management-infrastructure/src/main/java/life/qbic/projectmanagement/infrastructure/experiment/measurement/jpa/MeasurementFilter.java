@@ -2,6 +2,7 @@ package life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa;
 
 import java.util.Optional;
 import java.util.Set;
+import life.qbic.application.commons.time.DateTimeFormat;
 import life.qbic.projectmanagement.infrastructure.jpa.JpaFilter;
 import org.springframework.data.jpa.domain.Specification;
 
@@ -33,9 +34,10 @@ public interface MeasurementFilter<T, X extends MeasurementFilter<T, X>> extends
    * Sets the client time zone offset. Provided values are expected in milliseconds.
    *
    * @param clientTimeZoneOffsetMillis milliseconds to be converted to client time zone offset.
+   * @param dateTimeFormat
    * @return a filter configured with the client time zone offset
    */
-  X atClientTimeOffset(int clientTimeZoneOffsetMillis);
+  X atClientTimeOffset(int clientTimeZoneOffsetMillis, DateTimeFormat dateTimeFormat);
 
   /**
    * Specifies which samples must measured by accepted measurements. Successive calls to this method

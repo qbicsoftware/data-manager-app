@@ -1,6 +1,5 @@
 package life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa;
 
-import static life.qbic.projectmanagement.infrastructure.jpa.JpaSpecifications.CUSTOM_DATE_TIME_PATTERN;
 import static life.qbic.projectmanagement.infrastructure.jpa.JpaSpecifications.contains;
 import static life.qbic.projectmanagement.infrastructure.jpa.JpaSpecifications.distinct;
 import static life.qbic.projectmanagement.infrastructure.jpa.JpaSpecifications.formattedClientTimeContains;
@@ -44,6 +43,7 @@ import java.util.Set;
 import java.util.StringJoiner;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import life.qbic.application.commons.time.DateTimeFormat;
 import life.qbic.projectmanagement.application.measurement.NgsMeasurementLookup.NgsSortKey;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.infrastructure.PreventAnyUpdateEntityListener;
@@ -85,6 +85,7 @@ public interface NgsMeasurementJpaRepository extends
     private final String experimentId;
     private String searchTerm;
     private int timeZoneOffsetMillis;
+    private DateTimeFormat dateTimeFormat;
     private final List<SampleFilter> sampleFilters = new ArrayList<>();
 
     private NgsMeasurementFilter(String experimentId,
@@ -115,8 +116,10 @@ public interface NgsMeasurementJpaRepository extends
     }
 
     @Override
-    public NgsMeasurementFilter atClientTimeOffset(int clientTimeZoneOffsetMillis) {
+    public NgsMeasurementFilter atClientTimeOffset(int clientTimeZoneOffsetMillis,
+        DateTimeFormat dateTimeFormat) {
       this.timeZoneOffsetMillis = clientTimeZoneOffsetMillis;
+      this.dateTimeFormat = dateTimeFormat;
       return this;
     }
 
@@ -176,7 +179,7 @@ public interface NgsMeasurementJpaRepository extends
           contains(root -> root.get("organisation").get("iri").as(String.class), searchTerm),
           jsonContains(root -> root.get("instrument"), "$.label", searchTerm),
           formattedClientTimeContains("registeredAt", searchTerm, timeZoneOffsetMillis,
-              CUSTOM_DATE_TIME_PATTERN),
+              dateTimeFormat),
           contains(root -> getSampleInfos(root)
               .get("sampleLabel").as(String.class), searchTerm),
           contains(root -> getSampleInfos(root)

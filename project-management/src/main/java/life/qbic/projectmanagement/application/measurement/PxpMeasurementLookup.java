@@ -1,5 +1,7 @@
 package life.qbic.projectmanagement.application.measurement;
 
+import static java.util.Objects.isNull;
+
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
@@ -8,6 +10,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
+import life.qbic.application.commons.time.DateTimeFormat;
 import org.springframework.data.domain.Sort;
 import org.springframework.lang.NonNull;
 
@@ -85,7 +88,7 @@ public interface PxpMeasurementLookup {
     }
 
     public static boolean isValidSortKey(String property) {
-      if (Objects.isNull(property) || property.isBlank()) {
+      if (isNull(property) || property.isBlank()) {
         return false;
       }
       return Arrays.stream(PxpMeasurementLookup.PxpSortKey.values())
@@ -128,6 +131,7 @@ public interface PxpMeasurementLookup {
   }
 
   record MeasurementFilter(String experimentId, String searchTerm, int timeZoneOffsetMillis,
+                           DateTimeFormat dateTimeFormat,
                            Set<String> includedSamples,
                            Set<String> excludedSamples) {
 
@@ -140,12 +144,15 @@ public interface PxpMeasurementLookup {
 
     public static MeasurementFilter forExperiment(String experimentId) {
       Objects.requireNonNull(experimentId);
-      return new MeasurementFilter(experimentId, "", 0, Set.of(), Set.of());
+      return new MeasurementFilter(experimentId, "", 0, DateTimeFormat.ISO_LOCAL_DATE_TIME,
+          Set.of(), Set.of());
     }
 
-    public MeasurementFilter withSearch(String searchTerm, int timeZoneOffsetMillis) {
+    public MeasurementFilter withSearch(String searchTerm, int timeZoneOffsetMillis,
+        DateTimeFormat dateTimeFormat) {
       Objects.requireNonNull(searchTerm);
-      return new MeasurementFilter(experimentId, searchTerm, timeZoneOffsetMillis, includedSamples,
+      return new MeasurementFilter(experimentId, searchTerm, timeZoneOffsetMillis, dateTimeFormat,
+          includedSamples,
           excludedSamples);
     }
 
@@ -156,6 +163,7 @@ public interface PxpMeasurementLookup {
       return new MeasurementFilter(experimentId,
           searchTerm,
           timeZoneOffsetMillis,
+          dateTimeFormat,
           combinedSamples,
           excludedSamples);
     }
@@ -167,6 +175,7 @@ public interface PxpMeasurementLookup {
       return new MeasurementFilter(experimentId,
           searchTerm,
           timeZoneOffsetMillis,
+          dateTimeFormat,
           includedSamples,
           combinedSamples);
     }

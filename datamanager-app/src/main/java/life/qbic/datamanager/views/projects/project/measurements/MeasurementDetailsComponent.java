@@ -25,7 +25,6 @@ import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -34,6 +33,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.application.commons.time.DateTimeFormat;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.dialog.AppDialog;
@@ -63,8 +63,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
       () -> MeasurementDetailsComponent.class.getClassLoader()
           .getResourceAsStream("icons/ROR_logo.svg"));
   private static final NumberFormat INJECTION_VOLUME_FORMAT = new DecimalFormat("#.##");
-  private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern(
-      "yyyy-MM-dd HH:mm");
+  private static final DateTimeFormat dateTimeFormat = DateTimeFormat.ISO_LOCAL_DATE_TIME_WHITESPACE_SEPARATED;
 
   private final AtomicReference<String> clientTimeZone = new AtomicReference<>("UTC");
   private final AtomicInteger clientTimeZoneOffset = new AtomicInteger(0);
@@ -77,7 +76,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   private final transient NgsMeasurementLookup ngsMeasurementLookup;
   private final transient PxpMeasurementLookup pxpMeasurementLookup;
   private FilterGrid<NgsMeasurementLookup.MeasurementInfo, SearchTermFilter> filterGridNgs;
-  private FilterGrid<PxpMeasurementLookup.MeasurementInfo, SearchTermFilter> filterGridPxp;
+  private FilterGrid<MeasurementInfo, SearchTermFilter> filterGridPxp;
 
   /**
    * A filter containing a search term
@@ -107,7 +106,8 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
 
   private @NonNull String formatTime(Instant instant) {
     String zoneId = clientTimeZone.get();
-    return instant.atZone(ZoneId.of(zoneId)).format(DATE_TIME_FORMATTER);
+    return instant.atZone(ZoneId.of(zoneId)).format(DateTimeFormat.asJavaFormatter(
+        dateTimeFormat));
   }
 
   public MeasurementDetailsComponent(
@@ -173,7 +173,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
 
   private boolean ngsMeasurementsExist(String projectId, String experimentId) {
     return ngsMeasurementLookup.countNgsMeasurements(projectId,
-        NgsMeasurementLookup.MeasurementFilter.forExperiment(experimentId)) > 0;
+        MeasurementFilter.forExperiment(experimentId)) > 0;
   }
 
   private void addPxpTab(FilterGridTabSheet tabSheet, int index, String name,
@@ -228,14 +228,14 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
           projectId, query.getOffset(), query.getLimit(),
           VaadinSpringDataHelpers.toSpringDataSort(query),
           MeasurementFilter.forExperiment(experimentId)
-              .withSearch(searchTerm, clientTimeZoneOffset.get()));
+              .withSearch(searchTerm, clientTimeZoneOffset.get(), dateTimeFormat));
     };
     CountCallback<NgsMeasurementLookup.MeasurementInfo, SearchTermFilter> countCallback = query ->
     {
       String searchTerm = query.getFilter().map(SearchTermFilter::searchTerm).orElse("");
       return ngsMeasurementLookup.countNgsMeasurements(projectId,
           MeasurementFilter.forExperiment(experimentId)
-              .withSearch(searchTerm, clientTimeZoneOffset.get()));
+              .withSearch(searchTerm, clientTimeZoneOffset.get(), dateTimeFormat));
     };
     var ngsGridConfiguration = FilterGridConfigurations.lazy(
         fetchCallback,
@@ -282,7 +282,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     return filterGrid;
   }
 
-  private FilterGrid<PxpMeasurementLookup.MeasurementInfo, SearchTermFilter> filterGridPxp(
+  private FilterGrid<MeasurementInfo, SearchTermFilter> filterGridPxp(
       Grid<MeasurementInfo> pxpGrid, String projectId, String experimentId) {
     FetchCallback<MeasurementInfo, SearchTermFilter> fetchCallback = query -> {
       String searchTerm = query.getFilter().map(SearchTermFilter::searchTerm)
@@ -291,7 +291,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
           projectId, query.getOffset(), query.getLimit(),
           VaadinSpringDataHelpers.toSpringDataSort(query),
           PxpMeasurementLookup.MeasurementFilter.forExperiment(experimentId)
-              .withSearch(searchTerm, clientTimeZoneOffset.get()));
+              .withSearch(searchTerm, clientTimeZoneOffset.get(), dateTimeFormat));
     };
 
     CountCallback<MeasurementInfo, SearchTermFilter> countCallback = query -> {
@@ -299,7 +299,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
           .orElse("");
       return pxpMeasurementLookup.countPxpMeasurements(projectId,
           PxpMeasurementLookup.MeasurementFilter.forExperiment(experimentId)
-              .withSearch(searchTerm, clientTimeZoneOffset.get()));
+              .withSearch(searchTerm, clientTimeZoneOffset.get(), dateTimeFormat));
     };
 
     var configuration = FilterGridConfigurations.lazy(fetchCallback, countCallback);

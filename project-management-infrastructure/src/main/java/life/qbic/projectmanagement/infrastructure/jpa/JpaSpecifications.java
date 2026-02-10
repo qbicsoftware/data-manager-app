@@ -9,6 +9,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.function.Function;
+import life.qbic.application.commons.time.DateTimeFormat;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import org.springframework.data.jpa.domain.Specification;
@@ -43,15 +44,6 @@ import org.springframework.data.jpa.domain.Specification;
 public class JpaSpecifications {
 
   private static final Logger log = LoggerFactory.logger(JpaSpecifications.class);
-  /**
-   * The date time format the database dates are formatted to.
-   * For searching, this pattern should generate the same representation the user sees in the UI.
-   * <p>
-   * The pattern is not a Java pattern for
-   * {@link java.time.format.DateTimeFormatter} but needs to match <a
-   * href="https://mariadb.com/docs/server/reference/sql-functions/date-time-functions/date_format">DATE_FORMAT</a>‚
-   */
-  public static final String CUSTOM_DATE_TIME_PATTERN = "%Y-%m-%d %H:%i";
 
 
   /**
@@ -176,13 +168,13 @@ public class JpaSpecifications {
    * @param instantPropertyName the name of the property of type {@link Instant}
    * @param searchTerm the term to search for
    * @param clientOffsetMillis the millisecond offset used to deduct the client time zone
-   * @param dateTimePattern the format pattern to format the time as specified by <a href="https://mariadb.com/docs/server/reference/sql-functions/date-time-functions/date_format">DATE_FORMAT</a>. The formatted time is searched for containing the search term.
+   * @param dateTimeFormat the format pattern to format the time as specified by <a href="https://mariadb.com/docs/server/reference/sql-functions/date-time-functions/date_format">DATE_FORMAT</a>. The formatted time is searched for containing the search term.
    * @return a configured Specification
    * @param <T> the type of the {@link Specification} {@link Root}
    * @see <a href="https://mariadb.com/docs/server/reference/sql-functions/date-time-functions/date_format">DATE_FORMAT</a>
    */
   public static <T> Specification<T> formattedClientTimeContains(String instantPropertyName,
-      String searchTerm, int clientOffsetMillis, String dateTimePattern) {
+      String searchTerm, int clientOffsetMillis, DateTimeFormat dateTimeFormat) {
     return (root, query, criteriaBuilder) -> {
       Class<?> propertyType = root.get(instantPropertyName).getJavaType();
       if (!propertyType.isAssignableFrom(Instant.class)) {
@@ -191,7 +183,7 @@ public class JpaSpecifications {
       }
       return contains(criteriaBuilder,
           extractFormattedLocalDate(criteriaBuilder, root.get(instantPropertyName),
-              clientOffsetMillis, dateTimePattern),
+              clientOffsetMillis, DateTimeFormat.asDatabasePattern(dateTimeFormat)),
           searchTerm);
     };
   }

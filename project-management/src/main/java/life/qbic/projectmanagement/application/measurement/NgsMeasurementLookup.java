@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
+import life.qbic.application.commons.time.DateTimeFormat;
 import org.springframework.data.domain.Sort;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
@@ -171,6 +172,7 @@ public interface NgsMeasurementLookup {
    * @param excludedSamples a list of samples that must not be measured by a measurement for the filter to accept it
    */
   record MeasurementFilter(String experimentId, String searchTerm, int timeZoneOffsetMillis,
+                           DateTimeFormat dateTimeFormat,
                            Set<String> includedSamples,
                            Set<String> excludedSamples) {
 
@@ -190,7 +192,8 @@ public interface NgsMeasurementLookup {
      */
     public static MeasurementFilter forExperiment(String experimentId) {
       Objects.requireNonNull(experimentId);
-      return new MeasurementFilter(experimentId, "", 0, Set.of(), Set.of());
+      return new MeasurementFilter(experimentId, "", 0, DateTimeFormat.ISO_LOCAL_DATE_TIME,
+          Set.of(), Set.of());
     }
 
     /**
@@ -199,9 +202,12 @@ public interface NgsMeasurementLookup {
      * @param timeZoneOffsetMillis the client timezone offset milliseconds for date rendering
      * @return a configured filter
      */
-    public MeasurementFilter withSearch(String searchTerm, int timeZoneOffsetMillis) {
+    public MeasurementFilter withSearch(String searchTerm, int timeZoneOffsetMillis,
+        DateTimeFormat dateTimeFormat) {
       Objects.requireNonNull(searchTerm);
-      return new MeasurementFilter(experimentId, searchTerm, timeZoneOffsetMillis, includedSamples,
+      return new MeasurementFilter(experimentId, searchTerm, timeZoneOffsetMillis,
+          dateTimeFormat,
+          includedSamples,
           excludedSamples);
     }
 
@@ -217,6 +223,7 @@ public interface NgsMeasurementLookup {
       return new MeasurementFilter(experimentId,
           searchTerm,
           timeZoneOffsetMillis,
+          dateTimeFormat,
           combinedSamples,
           excludedSamples);
     }
@@ -233,6 +240,7 @@ public interface NgsMeasurementLookup {
       return new MeasurementFilter(experimentId,
           searchTerm,
           timeZoneOffsetMillis,
+          dateTimeFormat,
           includedSamples,
           combinedSamples);
     }

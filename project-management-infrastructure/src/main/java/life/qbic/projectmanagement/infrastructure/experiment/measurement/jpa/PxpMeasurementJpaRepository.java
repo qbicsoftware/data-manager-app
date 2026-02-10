@@ -44,11 +44,11 @@ import java.util.Set;
 import java.util.StringJoiner;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import life.qbic.application.commons.time.DateTimeFormat;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.infrastructure.PreventAnyUpdateEntityListener;
 import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.PxpMeasurementJpaRepository.MsDevice.MsDeviceReadConverter;
 import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.PxpMeasurementJpaRepository.PxpMeasurementInformation;
-import life.qbic.projectmanagement.infrastructure.jpa.JpaSpecifications;
 import org.hibernate.collection.spi.PersistentBag;
 import org.springframework.boot.jackson.JsonComponent;
 import org.springframework.data.convert.ReadingConverter;
@@ -84,6 +84,7 @@ public interface PxpMeasurementJpaRepository extends
     private final String experimentId;
     private String searchTerm;
     private int timeZoneOffsetMillis;
+    private DateTimeFormat dateTimeFormat = DateTimeFormat.ISO_LOCAL_DATE_TIME_WHITESPACE_SEPARATED;
     private final List<SampleFilter> sampleFilters = new ArrayList<>();
 
     private PxpMeasurementFilter(String experimentId,
@@ -114,8 +115,10 @@ public interface PxpMeasurementJpaRepository extends
     }
 
     @Override
-    public PxpMeasurementFilter atClientTimeOffset(int clientTimeZoneOffsetMillis) {
+    public PxpMeasurementFilter atClientTimeOffset(int clientTimeZoneOffsetMillis,
+        DateTimeFormat dateTimeFormat) {
       this.timeZoneOffsetMillis = clientTimeZoneOffsetMillis;
+      this.dateTimeFormat = dateTimeFormat;
       return this;
     }
 
@@ -183,7 +186,7 @@ public interface PxpMeasurementJpaRepository extends
                   .get("iri").as(String.class),
               searchTerm),
           formattedClientTimeContains("registeredAt", searchTerm, timeZoneOffsetMillis,
-              JpaSpecifications.CUSTOM_DATE_TIME_PATTERN),
+              dateTimeFormat),
           contains(root -> getSampleInfos(root)
               .get("sampleLabel").as(String.class), searchTerm),
           contains(root -> getSampleInfos(root)

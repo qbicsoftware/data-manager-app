@@ -16,15 +16,17 @@ import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.RouteParam;
 import com.vaadin.flow.spring.annotation.RouteScope;
 import java.io.Serial;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.SortOrder;
+import life.qbic.application.commons.time.DateTimeFormat;
 import life.qbic.datamanager.views.account.UserAvatar.UserAvatarGroupItem;
 import life.qbic.datamanager.views.general.Card;
-import life.qbic.datamanager.views.general.DateTimeRendering;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.Tag.TagColor;
@@ -200,9 +202,12 @@ public class ProjectCollectionComponent extends PageArea {
       this.projectOverview = Objects.requireNonNull(projectOverview);
       Span header = createHeader(projectOverview.projectCode(), projectOverview.projectTitle());
       add(header);
+      Instant instant = projectOverview.lastModified();
       Span lastModified = new Span(
           String.format("Last modified on %s",
-              DateTimeRendering.simple(projectOverview.lastModified())));
+              DateTimeFormat.asJavaFormatter(
+                      DateTimeFormat.SIMPLE)
+                  .format(instant.atZone(ZoneId.systemDefault()))));
       lastModified.addClassName("tertiary");
       add(lastModified);
       projectDetails.addClassName("details");

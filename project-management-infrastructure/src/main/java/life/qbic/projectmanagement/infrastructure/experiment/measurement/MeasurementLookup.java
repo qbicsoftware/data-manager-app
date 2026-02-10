@@ -105,14 +105,16 @@ public class MeasurementLookup implements NgsMeasurementLookup, PxpMeasurementLo
       @NonNull NgsMeasurementLookup.MeasurementFilter measurementFilter) {
     return NgsMeasurementFilter.forExperiment(measurementFilter.experimentId())
         .anyContaining(measurementFilter.searchTerm())
-        .atClientTimeOffset(measurementFilter.timeZoneOffsetMillis());
+        .atClientTimeOffset(measurementFilter.timeZoneOffsetMillis(),
+            measurementFilter.dateTimeFormat());
   }
 
   private static @NonNull PxpMeasurementFilter mapToDatabaseFilter(
       @NonNull PxpMeasurementLookup.MeasurementFilter measurementFilter) {
     return PxpMeasurementFilter.forExperiment(measurementFilter.experimentId())
         .anyContaining(measurementFilter.searchTerm())
-        .atClientTimeOffset(measurementFilter.timeZoneOffsetMillis());
+        .atClientTimeOffset(measurementFilter.timeZoneOffsetMillis(),
+            measurementFilter.dateTimeFormat());
   }
 
   private NgsMeasurementLookup.MeasurementInfo toApiObject(String projectId,

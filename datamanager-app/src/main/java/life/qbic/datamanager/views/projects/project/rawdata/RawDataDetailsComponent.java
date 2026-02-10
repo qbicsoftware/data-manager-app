@@ -1,5 +1,7 @@
 package life.qbic.datamanager.views.projects.project.rawdata;
 
+import static life.qbic.application.commons.time.DateTimeFormat.asJavaFormatter;
+
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.data.provider.CallbackDataProvider.CountCallback;
 import com.vaadin.flow.data.provider.CallbackDataProvider.FetchCallback;
@@ -13,7 +15,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.EnumMap;
@@ -25,6 +26,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.FileNameFormatter;
+import life.qbic.application.commons.time.DateTimeFormat;
 import life.qbic.datamanager.ClientDetailsProvider;
 import life.qbic.datamanager.files.export.download.DownloadStreamProvider;
 import life.qbic.datamanager.files.export.rawdata.RawDataUrlFile;
@@ -406,7 +408,8 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
             .latestDetails()
             .orElseThrow()
             .timeZoneId()))
-        .format(DateTimeFormatter.ISO_LOCAL_DATE);
+        //FIXME why do we have java.util.Date o.O
+        .format(asJavaFormatter(DateTimeFormat.ISO_LOCAL_DATE));
   }
 
   private static class RawDataFilter {
