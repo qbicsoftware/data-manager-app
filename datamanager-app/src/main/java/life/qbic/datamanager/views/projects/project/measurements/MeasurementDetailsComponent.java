@@ -105,8 +105,8 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   }
 
   private @NonNull String formatTime(Instant instant, DateTimeFormat dateTimeFormat) {
-    String zoneId = clientTimeZone.get();
-    return instant.atZone(ZoneId.of(zoneId)).format(DateTimeFormat.asJavaFormatter(dateTimeFormat));
+    return DateTimeFormat.asJavaFormatter(dateTimeFormat, ZoneId.of(clientTimeZone.get()))
+        .format(instant);
   }
 
   public MeasurementDetailsComponent(

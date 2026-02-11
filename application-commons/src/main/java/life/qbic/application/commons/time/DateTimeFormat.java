@@ -1,5 +1,6 @@
 package life.qbic.application.commons.time;
 
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import org.springframework.lang.NonNull;
 
@@ -11,13 +12,13 @@ public enum DateTimeFormat {
   ISO_LOCAL_DATE_TIME_WHITESPACE_SEPARATED;
 
   @NonNull
-  public static DateTimeFormatter asJavaFormatter(DateTimeFormat format) {
+  public static DateTimeFormatter asJavaFormatter(DateTimeFormat format, ZoneId zoneId) {
     return switch (format) {
-      case ISO_LOCAL_DATE -> DateTimeFormatter.ISO_LOCAL_DATE;
-      case ISO_LOCAL_DATE_TIME -> DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+      case ISO_LOCAL_DATE -> DateTimeFormatter.ISO_LOCAL_DATE.withZone(zoneId);
+      case ISO_LOCAL_DATE_TIME -> DateTimeFormatter.ISO_LOCAL_DATE_TIME.withZone(zoneId);
       case ISO_LOCAL_DATE_TIME_WHITESPACE_SEPARATED -> DateTimeFormatter.ofPattern(
-          "yyyy-MM-dd HH:mm");
-      case SIMPLE -> DateTimeFormatter.ofPattern("EEEE, dd LLLL yyyy HH:mm:ss");
+          "yyyy-MM-dd HH:mm").withZone(zoneId);
+      case SIMPLE -> DateTimeFormatter.ofPattern("EEEE, dd LLLL yyyy HH:mm:ss").withZone(zoneId);
     };
   }
 

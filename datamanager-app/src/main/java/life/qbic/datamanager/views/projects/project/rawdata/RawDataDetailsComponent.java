@@ -349,7 +349,8 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
         .setKey(UiSortKey.SAMPLE_NAME.value())
         .setHeader("Sample Name")
         .setSortable(false);
-    grid.addColumn(rawData -> formatTime(rawData.dataset().registrationDate()))
+    grid.addColumn(rawData -> formatTime(rawData.dataset().registrationDate(),
+            RAW_DATA_DATE_TIME_FORMAT))
         .setKey(UiSortKey.UPLOAD_DATE.value())
         .setSortProperty(UiSortKey.UPLOAD_DATE.value())
         .setHeader("Upload Date");
@@ -357,10 +358,9 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
     return grid;
   }
 
-  private @NonNull String formatTime(Instant instant) {
-    String zoneId = clientTimeZone.get();
-    return instant.atZone(ZoneId.of(zoneId)).format(DateTimeFormat.asJavaFormatter(
-        RAW_DATA_DATE_TIME_FORMAT));
+  private @NonNull String formatTime(Instant instant, DateTimeFormat dateTimeFormat) {
+    return DateTimeFormat.asJavaFormatter(dateTimeFormat, ZoneId.of(clientTimeZone.get())).format(
+        instant);
   }
 
   private Grid<RawDatasetInformationPxP> createPxpRawDataGrid() {
@@ -377,7 +377,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
         .setKey(UiSortKey.SAMPLE_NAME.value())
         .setHeader("Sample Name");
     grid.addColumn(
-            rawData -> formatTime(rawData.dataset().registrationDate()))
+            rawData -> formatTime(rawData.dataset().registrationDate(), RAW_DATA_DATE_TIME_FORMAT))
         .setKey(UiSortKey.UPLOAD_DATE.value())
         .setSortProperty(UiSortKey.UPLOAD_DATE.value())
         .setHeader("Upload Date");

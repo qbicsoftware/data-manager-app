@@ -205,9 +205,8 @@ public class ProjectCollectionComponent extends PageArea {
       Instant instant = projectOverview.lastModified();
       Span lastModified = new Span(
           String.format("Last modified on %s",
-              DateTimeFormat.asJavaFormatter(
-                      DateTimeFormat.SIMPLE)
-                  .format(instant.atZone(ZoneId.systemDefault()))));
+              DateTimeFormat.asJavaFormatter(DateTimeFormat.SIMPLE, ZoneId.systemDefault())
+                  .format(instant)));
       lastModified.addClassName("tertiary");
       add(lastModified);
       projectDetails.addClassName("details");
