@@ -3,7 +3,6 @@ package life.qbic.projectmanagement.domain.model.measurement.event;
 import java.time.Instant;
 import java.util.Objects;
 import life.qbic.domain.concepts.DomainEvent;
-import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 
 /**
  * Indicates that a certain measurement's metadata has been updated.
@@ -12,10 +11,12 @@ import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
  */
 public class MeasurementUpdatedEvent extends DomainEvent {
 
-  private final MeasurementId measurementId;
+  private final String projectId;
+  private final String measurementId;
 
-  public MeasurementUpdatedEvent(MeasurementId measurementId) {
+  public MeasurementUpdatedEvent(String projectId, String measurementId) {
     this.measurementId = Objects.requireNonNull(measurementId);
+    this.projectId = Objects.requireNonNull(projectId);
   }
 
   @Override
@@ -23,7 +24,11 @@ public class MeasurementUpdatedEvent extends DomainEvent {
     return occurredOn;
   }
 
-  public MeasurementId measurementId() {
+  public String projectId() {
+    return projectId;
+  }
+
+  public String measurementId() {
     return this.measurementId;
   }
 

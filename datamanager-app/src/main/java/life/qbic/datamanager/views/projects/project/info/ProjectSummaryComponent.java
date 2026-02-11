@@ -23,6 +23,7 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.InputStream;
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -39,6 +40,7 @@ import java.util.function.Predicate;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ByteBufferIteratorInputStream;
 import life.qbic.application.commons.FileNameFormatter;
+import life.qbic.application.commons.time.DateTimeFormat;
 import life.qbic.datamanager.RequestCache;
 import life.qbic.datamanager.RequestCache.CacheException;
 import life.qbic.datamanager.files.export.download.DownloadStreamProvider;
@@ -47,7 +49,6 @@ import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.TagFactory;
 import life.qbic.datamanager.views.account.UserAvatar.UserAvatarGroupItem;
 import life.qbic.datamanager.views.general.CollapsibleDetails;
-import life.qbic.datamanager.views.general.DateTimeRendering;
 import life.qbic.datamanager.views.general.DetailBox;
 import life.qbic.datamanager.views.general.DetailBox.Header;
 import life.qbic.datamanager.views.general.Heading;
@@ -901,7 +902,9 @@ public class ProjectSummaryComponent extends PageArea {
     sectionContent.add(createTags(projectOverview));
 
     header.setSectionNote(new SectionNote(
-        "Last modified on %s".formatted(DateTimeRendering.simple(projectOverview.lastModified()))));
+        "Last modified on %s".formatted(DateTimeFormat.asJavaFormatter(
+                DateTimeFormat.SIMPLE_DATE_TIME, ZoneId.systemDefault())
+            .format(projectOverview.lastModified()))));
     headerSection.setHeader(header);
     headerSection.setContent(sectionContent);
   }
