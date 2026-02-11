@@ -189,7 +189,7 @@ public class JpaSpecifications {
       }
       return contains(criteriaBuilder,
           extractFormattedLocalDate(criteriaBuilder, root.get(instantPropertyName),
-              clientOffsetMillis, DateTimeFormat.asDatabasePattern(dateTimeFormat)),
+              clientOffsetMillis, DateTimeFormat.asMariaDbDatabasePattern(dateTimeFormat)),
           searchTerm);
     };
   }
