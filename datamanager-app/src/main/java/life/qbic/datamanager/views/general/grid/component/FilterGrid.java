@@ -4,100 +4,368 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.checkbox.Checkbox;
+import com.vaadin.flow.component.checkbox.CheckboxGroup;
+import com.vaadin.flow.component.checkbox.CheckboxGroupVariant;
+import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.Grid.Column;
+import com.vaadin.flow.component.grid.Grid.SelectionMode;
+import com.vaadin.flow.component.grid.GridMultiSelectionModel;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.menubar.MenuBar;
+import com.vaadin.flow.component.shared.SelectionPreservationMode;
 import com.vaadin.flow.component.textfield.TextField;
-import com.vaadin.flow.data.provider.CallbackDataProvider;
+import com.vaadin.flow.data.provider.CallbackDataProvider.CountCallback;
+import com.vaadin.flow.data.provider.CallbackDataProvider.FetchCallback;
+import com.vaadin.flow.data.provider.ConfigurableFilterDataProvider;
+import com.vaadin.flow.data.provider.ItemCountChangeEvent;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.shared.Registration;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import life.qbic.datamanager.views.general.MultiSelectLazyLoadingGrid;
-import life.qbic.datamanager.views.general.grid.Filter;
-import life.qbic.datamanager.views.general.grid.FilterUpdater;
+import java.util.StringJoiner;
+import java.util.function.BiFunction;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import life.qbic.datamanager.views.general.grid.component.GridConfiguration.ConfiguredGrid;
+import life.qbic.logging.api.Logger;
+import life.qbic.logging.service.LoggerFactory;
 import org.springframework.lang.NonNull;
 
 /**
- * A filter grid comes with some improvements for the user and decorates a plain
- * {@link MultiSelectLazyLoadingGrid}.
- * <p>
- * Some of the improvements are:
+ * A {@code FilterGrid} is a UI component that decorates a plain Vaadin {@link Grid} with a consistent
+ * "filtering toolbox" and a clear contract for forwarding user-entered filter criteria to the
+ * application's data access layer.
  *
+ * <h2>When this component matters in the web application</h2>
+ * {@code FilterGrid} becomes valuable whenever a view displays a potentially large list of entities
+ * and users need to <em>quickly narrow down</em> what they see:
  * <ul>
- *   <li>search input field - to look-up for certain terms</li>
- *   <li>show/hide column - a menu to toggle column visibility</li>
- *   <li>secondary action group - to set up a contextual actions for the user that are semantically linked to the selected items</li>
- *   <li>selected items display - a visual indicator about how many items are selected</li>
+ *   <li>searching by a free-text term (e.g. name, identifier, description)</li>
+ *   <li>keeping selections while paging/refreshing</li>
+ *   <li>toggling column visibility to focus on relevant attributes</li>
+ *   <li>triggering contextual actions for the currently selected items</li>
  * </ul>
+ * The net benefit for users is faster navigation and fewer clicks: the list adapts immediately to
+ * the query, and selections/actions remain visible and actionable.
  *
+ * <h2>How filtering is forwarded to the Service API / database I/O layer</h2>
+ * The search field value is treated as part of the filter model, not as a purely local UI concern.
+ * Whenever the user changes the search term, the component combines that term with an existing
+ * filter instance and applies it to the underlying data provider.
+ *
+ * <p>There are two supported integration modes:</p>
+ * <ol>
+ *   <li>
+ *     <b>Lazy (recommended for database-backed lists) via {@link life.qbic.datamanager.views.general.grid.component.GridFilterStrategyFactory.LazyStrategy}</b>
+ *     <ul>
+ *       <li>The grid uses a {@link ConfigurableFilterDataProvider}.</li>
+ *       <li>On search input changes, the component calls {@link SearchTermFilterCombiner} to create an
+ *       updated filter and invokes {@code dataProvider.setFilter(updatedFilter)}.</li>
+ *       <li>Vaadin will then call your {@link FetchCallback} / {@link CountCallback} with that filter,
+ *       which is where your service/database query must interpret the search term.</li>
+ *     </ul>
+ *     This is the path that "passes down to the database I/O layer": the filter object you define
+ *     should contain the search term (and any additional criteria), and your service/repository uses
+ *     it to build the query.
+ *   </li>
+ *   <li>
+ *     <b>In-memory (for small datasets)</b> via {@link life.qbic.datamanager.views.general.grid.component.GridFilterStrategyFactory.InMemoryStrategy}:
+ *     <ul>
+ *       <li>The grid is backed by a list.</li>
+ *       <li>On search input changes, the component updates the {@link com.vaadin.flow.data.provider.ListDataView}
+ *       filter using your {@link life.qbic.datamanager.views.general.grid.component.GridFilterStrategyFactory.FilterTester} predicate.</li>
+ *       <li>No database call is involved; the search term is evaluated in the UI layer.</li>
+ *     </ul>
+ *   </li>
+ * </ol>
+ *
+ * <h2>Developer usage and extension points</h2>
+ * To integrate {@code FilterGrid} into a view:
+ * <ol>
+ *   <li>Create and configure a Vaadin {@link Grid} (columns, renderers, sorting, etc.).</li>
+ *   <li>Define a filter type {@code F} that represents all filtering criteria used by your Service API
+ *       (including the search term).</li>
+ *   <li>Provide a {@link Supplier} that yields a baseline filter (often "no restrictions").</li>
+ *   <li>Provide a {@link SearchTermFilterCombiner} that injects/replaces the current search term into
+ *       the filter.</li>
+ *   <li>For lazy mode: implement {@link FetchCallback} and {@link CountCallback} to translate {@code F}
+ *       into service/repository calls.</li>
+ * </ol>
+ *
+ * <p>Whenever the filter changes, the component fires a {@link FilterUpdateEvent}. Views may listen
+ * to this event to synchronize external filter widgets (chips, dropdowns, URL parameters) or to
+ * persist filter state.</p>
+ *
+ * @param <T> the type of items displayed in the filter grid
+ * @param <F> the type of filter used in the UI and forwarded to the data provider
  * @since 1.12.0
  */
-public final class FilterGrid<T> extends Div {
+public final class FilterGrid<T, F> extends Div {
 
-  public static final String FLEX_HORIZONTAL_CSS = "flex-horizontal";
-  public static final String GAP_04_CSS = "gap-04";
-  private final MultiSelectLazyLoadingGrid<T> grid;
-  private final Div selectionDisplay;
-  private final Div secondaryActionGroup;
-
-  private static final int DEFAULT_QUERY_SIZE = 150;
-
-  private static final int MAX_QUERY_SIZE = 350;
+  static final String FLEX_HORIZONTAL_CSS = "flex-horizontal";
+  static final String GAP_04_CSS = "gap-04";
 
   private static final String DEFAULT_ITEM_DISPLAY_LABEL = "item";
+  private static final Logger log = LoggerFactory.logger(FilterGrid.class);
+
+  private final Class<T> type;
+  private final Class<F> filterType;
+
+  private final ConfiguredGrid<T, F> configuredGrid;
+  private final Div selectionDisplay = new SelectionNotification();
+  private final Div secondaryActionGroup = createSecondaryActionGroup();
+
+  // make sure the search field exists
+  private final TextField searchField = createSearchField();
 
   private String currentItemDisplayLabel = DEFAULT_ITEM_DISPLAY_LABEL;
 
-  private Filter currentFilter;
 
-  private MenuBar showShideMenu;
+  public static <T, F> FilterGrid<T, F> create(
+      Class<T> itemType,
+      Class<F> filterType,
+      ConfiguredGrid<T, F> configuredGrid,
+      Supplier<F> filterSupplier,
+      SearchTermFilterCombiner<F> searchTermFilterCombiner) {
 
-  private Class<T> type;
+    return new FilterGrid<>(itemType, filterType, configuredGrid, filterSupplier,
+        searchTermFilterCombiner);
+  }
 
-  private final TextField searchField;
 
-  public FilterGrid(
-      Class<T> type,
-      MultiSelectLazyLoadingGrid<T> grid,
-      CallbackDataProvider<T, Filter> callbackDataProvider,
-      Filter initialFilter,
-      FilterUpdater filterUpdater) {
-    this.type = Objects.requireNonNull(type);
-    this.grid = Objects.requireNonNull(grid);
-    this.currentFilter = Objects.requireNonNull(initialFilter);
+  private FilterGrid(
+      Class<T> itemType,
+      Class<F> filterType,
+      ConfiguredGrid<T, F> configuredGrid,
+      Supplier<F> filterSupplier,
+      SearchTermFilterCombiner<F> searchTermFilterUpdater) {
+    //assign fields
+    this.type = Objects.requireNonNull(itemType);
+    this.filterType = Objects.requireNonNull(filterType);
+    this.configuredGrid = Objects.requireNonNull(configuredGrid);
 
-    var dataProvider = Objects.requireNonNull(callbackDataProvider).withConfigurableFilter();
-    grid.setDataProvider(dataProvider);
-    dataProvider.setFilter(currentFilter);
+    //construct filter Grid component
+    var primaryGridControls = getPrimaryGridControls(configuredGrid.getColumns());
+    add(primaryGridControls, configuredGrid);
+    addClassNames("flex-vertical", "gap-03", "height-full", "width-full");
 
-    searchField = new TextField();
-    searchField.setSuffixComponent(VaadinIcon.SEARCH.create());
-    searchField.setPlaceholder("Search items");
-    searchField.addClassName("width-250px");
-    searchField.addValueChangeListener(e ->
-    {
-      currentFilter = filterUpdater.withSearchTerm(currentFilter, e.getValue());
-      dataProvider.setFilter(currentFilter);
-      dataProvider.refreshAll();
-    });
-    searchField.setValueChangeMode(ValueChangeMode.EAGER);
-    searchField.setValueChangeTimeout(250); // Prevents refreshAll() burst during typing
+    forwardGridSelectionEvents();
+    //update the filter
+    searchField.addValueChangeListener(
+        event -> updateFilter(searchTermFilterUpdater, filterSupplier.get(), event.getValue()));
+  }
 
-    this.selectionDisplay = new SelectionNotification();
-    hideSelectionDisplay();
+  /**
+   * Refreshes the grid and clears the selection.
+   */
+  public void refreshAll() {
+    this.configuredGrid.refreshAll();
+    this.configuredGrid.deselectAll();
+  }
 
-    this.secondaryActionGroup = new Div();
-    secondaryActionGroup.addClassNames(FLEX_HORIZONTAL_CSS, GAP_04_CSS);
 
+  /**
+   * A functional interface that combines a search term with an existing filter, producing a filter
+   * that incorporates the search term's context.
+   *
+   * <p>This interface extends {@link java.util.function.BiFunction} to provide
+   * a mechanism for transforming filters based on search terms.</p>
+   *
+   * <h2>Purpose</h2>
+   * <p>The primary goal of this interface is to create a filter that integrates
+   * a search term's context, without specifying whether this is done through modification or by
+   * creating a new filter instance.</p>
+   *
+   * <h2>Generic Type Parameters</h2>
+   * <ul>
+   *   <li><b>F</b>: The type of the filter to be transformed</li>
+   * </ul>
+   *
+   * <h2>Behavior</h2>
+   * <p>Implementations may:</p>
+   * <ul>
+   *   <li>Modify the existing filter in-place</li>
+   *   <li>Create and return a new filter instance</li>
+   *   <li>Return the original filter unchanged if no transformation is needed</li>
+   * </ul>
+   *
+   * <h2>Usage Example</h2>
+   * <pre>
+   * SearchTermFilterCombiner&lt;DateRange&gt; dateRangeTransformer = (searchTerm, existingFilter) -&gt; {
+   *     // Could return a modified filter or a new filter instance
+   *     return searchTerm.contains("recent")
+   *         ? existingFilter.withMaxAge(30)
+   *         : existingFilter;
+   * };
+   *
+   * </pre>
+   *
+   * <h2>Contract</h2>
+   * <p>Implementations must provide a consistent method for transforming
+   * a filter based on a search term, with no guarantee of whether the original
+   * filter is modified or a new instance is created.</p>
+   *
+   * @param <F> the type of filter to be transformed with a search term
+   */
+  @FunctionalInterface
+  public interface SearchTermFilterCombiner<F> extends BiFunction<String, F, F> {
+
+    /**
+     * Combines a filter and search term into a filter respecting the search term.
+     *
+     * @param searchTerm the search term to integrate into the filter
+     * @param filter     the filter without the search term
+     * @return a filter that respects the search term
+     */
+    F combineWithSearchTerm(String searchTerm, F filter);
+
+    /**
+     * {@inheritDoc}
+     *
+     * @see #combineWithSearchTerm(String, Object)
+     */
+    @Override
+    default F apply(String searchTerm, F filter) {
+      return combineWithSearchTerm(searchTerm, filter);
+    }
+  }
+
+
+  private void forwardGridSelectionEvents() {
+    updateSelectionDisplay(
+        this.configuredGrid.getSelectedItems().size());
+    addSelectionListener(event -> updateSelectionDisplay(event.selectedItems().size()));
+  }
+
+  /**
+   * Updates the filter and fires a
+   * {@link life.qbic.datamanager.views.general.grid.component.FilterGrid.FilterUpdateEvent}
+   *
+   * @param searchTermFilterCombiner the function that updates the filter based on a search term
+   * @param filter                  the filter to update
+   * @param searchTerm              the search term to use
+   */
+  private void updateFilter(SearchTermFilterCombiner<F> searchTermFilterCombiner,
+      F filter,
+      String searchTerm) {
+    F updatedFilter = searchTermFilterCombiner.apply(searchTerm, filter);
+    configuredGrid.setFilter(updatedFilter);
+    fireEvent(new FilterUpdateEvent<>(this.filterType, this, false, filter, updatedFilter));
+  }
+
+
+  /**
+   * Add a listener for item count events {@link ItemCountChangeEvent}.
+   *
+   * @param listener the listener to add
+   * @return the registration with which to remove the listener
+   * @see com.vaadin.flow.data.provider.LazyDataView#addItemCountChangeListener(ComponentEventListener)
+   * @see com.vaadin.flow.data.provider.LazyDataView#addItemCountChangeListener(ComponentEventListener)
+   */
+  public Registration addItemCountListener(
+      ComponentEventListener<ItemCountChangeEvent<FilterGrid<T, F>>> listener) {
+    ComponentEventListener<ItemCountChangeEvent<?>> itemCountComponentListener = it -> listener.onComponentEvent(
+        new ItemCountChangeEvent<>(this, it.getItemCount(), it.isItemCountEstimated()));
+    return configuredGrid.addItemCountChangeListener(itemCountComponentListener);
+  }
+
+  /**
+   * Gets the last determined item count or fetches the item count if none was present before.
+   *
+   * @return the assumed number of items.
+   */
+  public int getItemCount() {
+    return configuredGrid.getItemCount();
+  }
+
+  /**
+   * Add a listener for filter update events. {@link FilterUpdateEvent} is thrown when the filter
+   * applied to the data is updated by this {@link FilterGrid}.
+   *
+   * @param listener a component listener listening to a {@link FilterUpdateEvent}
+   * @return the registration with which to remove the listener
+   */
+  public Registration addFilterUpdateListener(
+      ComponentEventListener<FilterUpdateEvent<F>> listener) {
+    ComponentEventListener componentEventListener = event -> {
+      if (!(event instanceof FilterGrid.FilterUpdateEvent<?> filterUpdateEvent)) {
+        return; // wrong event type
+      }
+      if (filterType.isAssignableFrom(filterUpdateEvent.filterType())) {
+        var oldFilter = filterUpdateEvent.getOldFilter().map(filterType::cast).orElse(null);
+        var updatedFilter = filterType.cast(filterUpdateEvent.updatedFilter);
+        listener.onComponentEvent(
+            new FilterUpdateEvent<>(filterType, this, event.isFromClient(), oldFilter,
+                updatedFilter));
+      } else {
+        log.debug("Unexpected FilterUpdateEvent. Expected filter type (%s) but got (%s).".formatted(
+            this.filterType, filterUpdateEvent.filterType()));
+        return; // we do not operate on this event
+      }
+    };
+    return addListener(FilterUpdateEvent.class, componentEventListener);
+  }
+
+  /**
+   * An update to the applied filter.
+   * @param <Y> the type of filter that was updated.
+   */
+  public static class FilterUpdateEvent<Y> extends ComponentEvent<FilterGrid<?, Y>> {
+
+    private final Y oldFilter;
+    private final Y updatedFilter;
+    private final Class<Y> filterType;
+
+    /**
+     * Creates a new event using the given source and indicator whether the event originated from
+     * the client side or the server side.
+     *
+     * @param source     the source component
+     * @param fromClient <code>true</code> if the event originated from the client
+     *                   side, <code>false</code> otherwise
+     */
+    public FilterUpdateEvent(Class<Y> filterType, FilterGrid<?, Y> source, boolean fromClient,
+        Y oldFilter, Y currentFilter) {
+      super(source, fromClient);
+      this.filterType = Objects.requireNonNull(filterType);
+      this.updatedFilter = Objects.requireNonNull(currentFilter);
+      this.oldFilter = oldFilter; //can be null
+    }
+
+    /**
+     * Returns the filter after update.
+     * @return the filter after update
+     */
+    public Y getUpdatedFilter() {
+      return filterType.cast(updatedFilter);
+    }
+
+    /**
+     * Returns the filter to which the update was applied
+     * @return
+     */
+    public Optional<Y> getOldFilter() {
+      return Optional.ofNullable(oldFilter);
+    }
+
+    Class<Y> filterType() {
+      return filterType;
+    }
+
+    @Override
+    public String toString() {
+      return new StringJoiner(", ", FilterUpdateEvent.class.getSimpleName() + "[", "]")
+          .add("filterType=" + filterType.getSimpleName())
+          .add("updatedFilter=" + updatedFilter)
+          .toString();
+    }
+  }
+
+  private @NonNull Div getPrimaryGridControls(List<Column<T>> columns) {
     var primaryGridControls = new Div();
-
     var spacer = new Div();
     spacer.addClassName("spacer-horizontal-full-width");
 
@@ -105,94 +373,66 @@ public final class FilterGrid<T> extends Div {
     var visualSeparator = new Div();
     visualSeparator.addClassNames("border", "border-color-light", "height-07");
 
-    primaryGridControls.add(searchField, selectionDisplay, spacer, secondaryActionGroup);
     primaryGridControls.addClassNames(FLEX_HORIZONTAL_CSS, GAP_04_CSS, "flex-align-items-center");
-
-    fireOnSelectedItems();
-    registerToSelectedEvent(grid, this);
-    registerToColumnVisibilityChanged(this);
-
     /* Show / Hide Menu */
-    showShideMenu = new MenuBar();
-    var showHideItem = showShideMenu.addItem("Show/Hide Columns");
+    MenuBar showHideMenu = new MenuBar();
+    var showHideItem = showHideMenu.addItem("Show/Hide Columns");
     var subMenu = showHideItem.getSubMenu();
 
-    // Create checkboxes and fire column visibility changed event on checkbox tick
-    var checkboxes = createCheckboxesFromColumns(grid.getColumns(), this);
+    CheckboxGroup<Column<T>> checkboxGroup = createCheckboxes(columns);
+    preventClickPropagation(checkboxGroup);
+    checkboxGroup.addThemeVariants(CheckboxGroupVariant.LUMO_VERTICAL);
 
-    // Create menu items from checkboxes and keep menu open for multiple selection
-    checkboxes.forEach(checkbox -> keepMenuOpenOnClick(subMenu.addItem(checkbox)));
+    checkboxGroup.addClassNames("flex-vertical");
+    subMenu.add(checkboxGroup);
+    primaryGridControls.add(searchField, selectionDisplay, spacer, secondaryActionGroup,
+        visualSeparator, showHideMenu);
 
-    // Make the layout more compact by removing Vaadin's native hidden checkbox
-    subMenu.getItems().forEach(item -> item.getElement().getThemeList().add("no-prefix"));
-
-    showShideMenu.addClassNames(FLEX_HORIZONTAL_CSS);
-
-    primaryGridControls.add(visualSeparator, showShideMenu);
-    makeColumnsSortable(grid.getColumns());
-    optimizeGrid(grid, DEFAULT_QUERY_SIZE);
-
-    add(primaryGridControls, grid);
-    addClassNames("flex-vertical", "gap-03");
-    setSizeFull();
+    return primaryGridControls;
   }
 
-  private static void optimizeGrid(MultiSelectLazyLoadingGrid<?> grid, int pageSize) {
-    var computedPageSize = Math.clamp(pageSize, 100, MAX_QUERY_SIZE);
-    grid.setPageSize(computedPageSize);
-    // A sensitive count estimate provides faster initial rendering of the grid
-    grid.getLazyDataView().setItemCountEstimate(computedPageSize * 10);
-    // A sensitive estimate increase value can increase scrolling speed for the user
-    grid.getLazyDataView().setItemCountEstimateIncrease(computedPageSize * 2);
-    // Grid height must not be determined by rows in lazy mode
-    grid.setAllRowsVisible(false);
-  }
+  private @NonNull CheckboxGroup<Column<T>> createCheckboxes(List<Column<T>> columns) {
+    CheckboxGroup<Column<T>> checkboxGroup = new CheckboxGroup<>();
+    checkboxGroup.setItemLabelGenerator(Column::getHeaderText);
 
-  private static <X> List<Column<X>> makeColumnsSortable(List<Column<X>> columns) {
-    columns.stream()
-        .filter(c -> hasContent(c.getHeaderText()))
-        .forEach(c -> c.setSortable(true));
-    return columns;
-  }
-
-  private static <X> List<Checkbox> createCheckboxesFromColumns(@NonNull List<Column<X>> columns,
-      FilterGrid<?> eventSource) {
-    Objects.requireNonNull(columns);
-    return columns.stream()
-        .map(Column::getHeaderText)
-        .filter(FilterGrid::hasContent)
-        .map(columnHeader -> setupColumnVisibilityBox(columnHeader, eventSource))
-        .map(FilterGrid::applyDefaultCheckboxSetting)
-        .toList();
-  }
-
-  private static boolean hasContent(String text) {
-    return text != null && !text.isBlank();
-  }
-
-  private static Checkbox setupColumnVisibilityBox(String name, FilterGrid<?> eventSource) {
-    var checkbox = new Checkbox(name);
-    checkbox.addValueChangeListener(
-        e -> eventSource.fireEvent(new ColumnVisibilityChanged(eventSource,
-            new ColumnVisibilitySetting(e.getSource().getLabel(), e.getSource().getValue()),
-            true)));
-    return checkbox;
-  }
-
-  private static Checkbox applyDefaultCheckboxSetting(Checkbox checkbox) {
-    checkbox.setValue(true);
-    return checkbox;
-  }
-
-  private Registration addColumnVisibilityChangedListener(
-      ComponentEventListener<ColumnVisibilityChanged> listener) {
-    return addListener(ColumnVisibilityChanged.class, listener);
-  }
-
-  private static void registerToColumnVisibilityChanged(FilterGrid<?> grid) {
-    grid.addColumnVisibilityChangedListener(event -> {
-      grid.onColumnVisibilityChanged(event.setting);
+    //state
+    checkboxGroup.setItems(columns);
+    checkboxGroup.setValue(columns.stream()
+        .filter(Component::isVisible
+        ).collect(Collectors.toSet()));
+    //behaviour
+    checkboxGroup.addSelectionListener(event -> {
+      for (Column<T> column : columns) {
+        column.setVisible(event.getAllSelectedItems().contains(column));
+      }
     });
+    return checkboxGroup;
+  }
+
+  private static <T> void configureGridForMultiSelect(Grid<T> grid) {
+    grid.setSelectionMode(SelectionMode.MULTI);
+    grid.setSelectionPreservationMode(SelectionPreservationMode.PRESERVE_ALL);
+    GridMultiSelectionModel<T> selectionModel = ((GridMultiSelectionModel<T>) grid.getSelectionModel());
+    selectionModel.setSelectAllCheckboxVisibility(
+        GridMultiSelectionModel.SelectAllCheckboxVisibility.VISIBLE);
+    selectionModel.setSelectionColumnFrozen(true);
+  }
+
+  private Div createSecondaryActionGroup() {
+    final Div actionGroup = new Div();
+    actionGroup.addClassNames(FLEX_HORIZONTAL_CSS, GAP_04_CSS);
+    return actionGroup;
+  }
+
+  private TextField createSearchField() {
+    final TextField field;
+    field = new TextField();
+    field.setSuffixComponent(VaadinIcon.SEARCH.create());
+    field.setPlaceholder("Search items");
+    field.setClearButtonVisible(true);
+    field.addClassName("width-250px");
+    field.setValueChangeMode(ValueChangeMode.LAZY);
+    return field;
   }
 
   /**
@@ -205,126 +445,20 @@ public final class FilterGrid<T> extends Div {
     searchField.setPlaceholder(placeholder);
   }
 
-  /**
-   * A safe downcast of the grid to the wanted type, if the wanted type is indeed assignable from
-   * the current {@link FilterGrid} type.
-   *
-   * @param wanted the wanted target class of the type the filter grid shall be
-   * @param <X>    the type of the filter grid
-   * @return a type converted version of the filter grid
-   * @throws IllegalArgumentException in case the wanted class is not assignable from the filter
-   *                                  grid's type.
-   * @since 1.12.0
-   */
-  @SuppressWarnings("unchecked")
-  public <X> FilterGrid<X> as(Class<X> wanted) throws IllegalArgumentException {
-    if (wanted.isAssignableFrom(type)) {
-      return (FilterGrid<X>) this;
-    }
-    throw new IllegalArgumentException(
-        "Grid type %s is not assignable to %s".formatted(type.getName(), wanted.getName()));
-  }
-
-  /**
-   * Takes a consumer and calls {@link Consumer#accept(Object)} if the {@code wanted} class is
-   * assignable from the current filter grid type ({@link FilterGrid#type()}).
-   *
-   * @param wanted the wanted class to assign the filter grid to and pass to the consumer
-   * @param action the consumer action
-   * @param <X>    the class type of the instance of interest
-   * @return {@code true}, if the assignment was successful and the grid has beed passed to the
-   * consumer, else {@code false}
-   * @since 1.12.0
-   */
-  @SuppressWarnings("unchecked")
-  public <X> boolean withType(@NonNull Class<X> wanted,
-      @NonNull Consumer<? super FilterGrid<X>> action) {
-    Objects.requireNonNull(wanted);
-    Objects.requireNonNull(action);
-    if (wanted.isAssignableFrom(type)) {
-      action.accept((FilterGrid<X>) this);
-      return true;
-    }
-    return false;
-  }
-
-  /**
-   * Takes a function that consumes a filter grid of type {@code X} and returns an optional of type
-   * {@code R}.
-   * <p>
-   * The passed function is only applied to the filter grid, if the passed class {@code wanted} is
-   * assignable from the filter grid's type ({@link FilterGrid#type}).
-   *
-   * @param wanted the class of type {@code X} that the filter grid shall be assignable from to
-   *               execute the function
-   * @param fn     the function to apply that takes the filter grid as argument
-   * @param <X>    the type of the filter grid
-   * @param <R>    the type of the returned output
-   * @return an optional of type {@code R}
-   * @since 1.12.0
-   */
-  @SuppressWarnings("unchecked")
-  public <X, R> java.util.Optional<R> mapType(@NonNull Class<X> wanted,
-      @NonNull Function<? super FilterGrid<X>, ? extends R> fn) {
-    java.util.Objects.requireNonNull(wanted);
-    java.util.Objects.requireNonNull(fn);
-    if (wanted.isAssignableFrom(type)) {
-      return java.util.Optional.ofNullable(fn.apply((FilterGrid<X>) this));
-    }
-    return java.util.Optional.empty();
-  }
-
-  private record ColumnVisibilitySetting(String column, boolean visible) {
-
-  }
-
-  private static class ColumnVisibilityChanged extends ComponentEvent<FilterGrid<?>> {
-
-    private final ColumnVisibilitySetting setting;
-
-    public ColumnVisibilityChanged(FilterGrid<?> source, ColumnVisibilitySetting setting,
-        boolean fromClient) {
-      super(source, fromClient);
-      this.setting = setting;
-    }
-
-    public ColumnVisibilitySetting setting() {
-      return setting;
-    }
-  }
-
-  /**
-   * Get a summary of the currently selected items and their type.
-   *
-   * @return a {@link SelectionSummary} of the currently selected items
-   * @since 1.12.0
-   */
-  public SelectionSummary<T> selectionSummary() {
-    return new SelectionSummary<>(type, grid.getSelectedItems());
-  }
-
-
-  private void onColumnVisibilityChanged(ColumnVisibilitySetting setting) {
-    grid.getColumns().stream()
-        .filter(column -> column.getHeaderText() != null)
-        .filter(column -> column.getHeaderText().equals(setting.column()))
-        .forEach(tColumn -> tColumn.setVisible(setting.visible()));
-  }
-
   // helper
-  private static void keepMenuOpenOnClick(Component c) {
+  private static void preventClickPropagation(Component c) {
     // prevent the menu-bar from handling the click (which would close the submenu)
     c.getElement().executeJs(
         "this.addEventListener('click', e => e.stopPropagation());");
   }
 
-  private void updateSelectionDisplay(Set<T> selectedItems) {
+  private void updateSelectionDisplay(int selectedItemCount) {
     selectionDisplay.removeAll();
-    if (selectedItems == null || selectedItems.isEmpty()) {
+    if (selectedItemCount < 1) {
       hideSelectionDisplay();
     } else {
       selectionDisplay.add(
-          createSelectionDisplayLabel(currentItemDisplayLabel, selectedItems.size()));
+          createSelectionDisplayLabel(currentItemDisplayLabel, selectedItemCount));
       showSelectionDisplay();
     }
   }
@@ -351,13 +485,6 @@ public final class FilterGrid<T> extends Div {
     return container;
   }
 
-  private static void registerToSelectedEvent(MultiSelectLazyLoadingGrid<?> grid,
-      FilterGrid<?> filterGrid) {
-    Objects.requireNonNull(grid);
-    Objects.requireNonNull(filterGrid);
-    grid.addSelectedListener(e -> filterGrid.updateSelectionDisplay(e.getSelectedItems()));
-  }
-
   /**
    * Configures the available secondary action group of the filter grid.
    *
@@ -382,7 +509,7 @@ public final class FilterGrid<T> extends Div {
    * @since 1.12.0
    */
   public @NonNull Set<T> selectedElements() {
-    return grid.getSelectedItems();
+    return configuredGrid.getSelectedItems();
   }
 
   /**
@@ -392,7 +519,7 @@ public final class FilterGrid<T> extends Div {
    * @return the assigned {@link Class} of the filter grid
    * @since 1.12.ß
    */
-  public @NonNull Class<T> type() {
+  public @NonNull Class<T> itemType() {
     return type;
   }
 
@@ -413,6 +540,15 @@ public final class FilterGrid<T> extends Div {
   }
 
   /**
+   * Clears the selection on the grid and deselects all elements.
+   *
+   * @see Grid#deselectAll()
+   */
+  public void deselectAll() {
+    configuredGrid.deselectAll();
+  }
+
+  /**
    * Registers a {@link ComponentEventListener} for {@link FilterGridSelectionEvent} to the
    * selection event.
    *
@@ -422,46 +558,10 @@ public final class FilterGrid<T> extends Div {
    * not needed anymore
    * @since 1.12.0
    */
-  public Registration addSelectListener(ComponentEventListener<FilterGridSelectionEvent> listener) {
-    var eventAdapter = new EventListenerAdapter(this, listener);
-    return grid.addSelectedListener(eventAdapter);
-  }
-
-  private void fireOnSelectedItems() {
-    grid.addSelectedListener(
-        event -> {
-          Objects.requireNonNull(event); // fail early on NP
-          fireEvent(new FilterGridSelectionEvent(this, event.getSelectedItems(), true));
-        });
-  }
-
-  private static final class EventListenerAdapter
-      implements ComponentEventListener<MultiSelectLazyLoadingGrid.SelectedEvent> {
-
-    private final FilterGrid<?> filterGrid;
-    private final ComponentEventListener<FilterGridSelectionEvent> target;
-
-    public EventListenerAdapter(FilterGrid<?> grid,
-        ComponentEventListener<FilterGridSelectionEvent> target) {
-      this.filterGrid = grid;
-      this.target = target;
-    }
-
-    @Override
-    public void onComponentEvent(MultiSelectLazyLoadingGrid.SelectedEvent event) {
-      var translatedEvent = new FilterGridSelectionEvent(filterGrid,
-          Set.copyOf(event.getSelectedItems()),
-          event.isFromClient());
-      target.onComponentEvent(translatedEvent);
-    }
-  }
-
-  public record SelectionSummary<T>(Class<T> type, Set<T> selectedSummary) {
-
-    public SelectionSummary {
-      Objects.requireNonNull(type);
-      Objects.requireNonNull(selectedSummary);
-    }
+  public Registration addSelectionListener(
+      ComponentEventListener<FilterGridSelectionEvent<T>> listener) {
+    return configuredGrid.addSelectionListener(it -> listener.onComponentEvent(
+        new FilterGridSelectionEvent<>(this, it.getAllSelectedItems(), it.isFromClient())));
   }
 
   /**
@@ -469,9 +569,9 @@ public final class FilterGrid<T> extends Div {
    *
    * @since 1.12.0
    */
-  public static final class FilterGridSelectionEvent extends ComponentEvent<FilterGrid<?>> {
+  public static final class FilterGridSelectionEvent<T> extends ComponentEvent<FilterGrid<T, ?>> {
 
-    private final transient Set<Object> selectedItems;
+    private final transient Set<T> selectedItems;
 
     /**
      * Creates a new instance of {@link FilterGridSelectionEvent}.
@@ -484,7 +584,7 @@ public final class FilterGrid<T> extends Div {
      * @param fromClient    if the event is emitted from the client side or not
      * @since 1.12.0
      */
-    public FilterGridSelectionEvent(FilterGrid<?> source, Set<Object> selectedItems,
+    public FilterGridSelectionEvent(FilterGrid<T, ?> source, Set<T> selectedItems,
         boolean fromClient) {
       super(source, fromClient);
       this.selectedItems = Set.copyOf(Objects.requireNonNull(selectedItems));
@@ -494,13 +594,11 @@ public final class FilterGrid<T> extends Div {
      * Contains the selected elements of type {@code <X>}. The returned {@link Set} is
      * {@code unmodifiable}.
      *
-     * @param <X> the type of the item referenced in the event
      * @return an {@code unmodifiable} set of the selected items
      * @since 1.12.0
      */
-    @SuppressWarnings("unchecked")
-    public <X> Set<X> selectedItems() {
-      return (Set<X>) selectedItems;
+    public Set<T> selectedItems() {
+      return selectedItems;
     }
   }
 

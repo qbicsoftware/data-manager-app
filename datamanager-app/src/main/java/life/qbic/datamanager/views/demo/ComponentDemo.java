@@ -6,6 +6,7 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.ListItem;
 import com.vaadin.flow.component.html.OrderedList;
@@ -14,7 +15,8 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
-import com.vaadin.flow.data.provider.DataProvider;
+import com.vaadin.flow.data.provider.CallbackDataProvider.CountCallback;
+import com.vaadin.flow.data.provider.CallbackDataProvider.FetchCallback;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
@@ -29,7 +31,6 @@ import life.qbic.datamanager.views.StringBean;
 import life.qbic.datamanager.views.general.Card;
 import life.qbic.datamanager.views.general.DetailBox;
 import life.qbic.datamanager.views.general.DetailBox.Header;
-import life.qbic.datamanager.views.general.MultiSelectLazyLoadingGrid;
 import life.qbic.datamanager.views.general.dialog.AppDialog;
 import life.qbic.datamanager.views.general.dialog.DialogBody;
 import life.qbic.datamanager.views.general.dialog.DialogFooter;
@@ -42,10 +43,13 @@ import life.qbic.datamanager.views.general.dialog.stepper.StepperDialog;
 import life.qbic.datamanager.views.general.dialog.stepper.StepperDialogFooter;
 import life.qbic.datamanager.views.general.dialog.stepper.StepperDisplay;
 import life.qbic.datamanager.views.general.grid.Filter;
-import life.qbic.datamanager.views.general.grid.component.FilterGrid;
 import life.qbic.datamanager.views.general.grid.PredicateFilter;
+import life.qbic.datamanager.views.general.grid.component.FilterGrid;
+import life.qbic.datamanager.views.general.grid.component.FilterGridConfigurations;
 import life.qbic.datamanager.views.general.grid.component.FilterGridTab;
 import life.qbic.datamanager.views.general.grid.component.FilterGridTabSheet;
+import life.qbic.datamanager.views.general.grid.component.FilterGridTabSheet.TabAction;
+import life.qbic.datamanager.views.general.grid.component.GridConfiguration.FilterTester;
 import life.qbic.datamanager.views.general.icon.IconFactory;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.ExperimentalVariablesInput;
@@ -108,86 +112,107 @@ public class ComponentDemo extends Div {
     }
 
     public boolean test(Person data) {
-      var fullName = String.join(" ", data.firstName, data.lastName, Integer.toString(data.age));
-      return fullName.contains(term);
+      var fullName = String.join(" ", data.firstName().toLowerCase(), data.lastName().toLowerCase(),
+          Integer.toString(data.age));
+      return fullName.contains(term.toLowerCase());
     }
   }
 
   private Div filterGridShowCase() {
-    var grid = new MultiSelectLazyLoadingGrid<Person>();
-    grid.addColumn(Person::firstName).setHeader("First Name").setKey("firstName");
-    grid.addColumn(Person::lastName).setHeader("Last Name").setKey("lastName");
-    grid.addColumn(Person::age).setHeader("Age").setKey("age");
+    FilterTester<Person, SimplePersonFilter> nameContainsFilterTerm = (person, filter) ->
+        filter.test(person);
 
-    var gridPersons = new MultiSelectLazyLoadingGrid<Person>();
-    gridPersons.addColumn(Person::firstName).setHeader("First Name").setKey("firstName");
-    gridPersons.addColumn(Person::lastName).setHeader("Last Name").setKey("lastName");
-    gridPersons.addColumn(Person::age).setHeader("Age").setKey("age");
+    PseudoDataBackend<Person, SimplePersonFilter> personDataBackend = new PseudoDataBackend<>(
+        examples,
+        personFilter -> (personFilter::test));
 
-    var filterDataProvider = DataProvider.<Person, Filter>fromFilteringCallbacks(query ->
-        {
-          var sorting = query.getSortOrders();
-          var offsetIgnored = query.getOffset();
-          var limitIgnored = query.getLimit();
-          var filter = query.getFilter().orElse(new SimplePersonFilter(""));
-          // you don't need this for remote data providers, the filter must be converted to a service API honoring filter
-          var personFilter = filter instanceof PredicateFilter<?> ? (SimplePersonFilter) filter : new SimplePersonFilter("");
-          return examples.stream().filter(personFilter::test);
-        }
-        , count -> {
-          var offsetIgnored = count.getOffset();
-          var limitIgnored = count.getLimit();
-          var filter = count.getFilter().orElse(new SimplePersonFilter(""));
-          // you don't need this for remote data providers, the filter must be converted to a service API honoring filter
-          var personFilter = filter instanceof PredicateFilter<?> ? (SimplePersonFilter) filter : new SimplePersonFilter("");
-          return examples.stream().filter(personFilter::test).toList().size();
-        });
+    FetchCallback<Person, SimplePersonFilter> contactFetchCallback = query -> {
+      var filter = query.getFilter().orElse(new SimplePersonFilter(""));
 
-    var filterDataProviderContacts = DataProvider.<Person, Filter>fromFilteringCallbacks(
-        query ->
-        {
-          var sorting = query.getSortOrders();
-          var offsetIgnored = query.getOffset();
-          var limitIgnored = query.getLimit();
-          var filter = query.getFilter().orElse(new SimplePersonFilter(""));
-          // you don't need this for remote data providers, the filter must be converted to a service API honoring filter
-          var personFilter = filter instanceof PredicateFilter<?> ? (SimplePersonFilter) filter : new SimplePersonFilter("");
-          return examples.stream().filter(personFilter::test);
-        }
-        , count -> {
-          var offsetIgnored = count.getOffset();
-          var limitIgnored = count.getLimit();
-          var filter = count.getFilter().orElse(new SimplePersonFilter(""));
-          // you don't need this for remote data providers, the filter must be converted to a service API honoring filter
-          var personFilter = filter instanceof PredicateFilter<?> ? (SimplePersonFilter) filter : new SimplePersonFilter("");
-          return examples.stream().filter(personFilter::test).toList().size();
-        });
+      var offset = query.getOffset();
+      var limit = query.getLimit();
+      return personDataBackend.fetch(offset, limit, filter);
+    };
 
-    var filterGridContacts = new FilterGrid<>(Person.class, gridPersons, filterDataProviderContacts,
-        new SimplePersonFilter(""), (filter, term) -> new SimplePersonFilter(term));
+    CountCallback<Person, SimplePersonFilter> contactCountCallback = query -> {
+      var filter = query.getFilter().orElse(new SimplePersonFilter(""));
+      return personDataBackend.count(filter);
+    };
 
-    var filterGrid = new FilterGrid<Person>(Person.class, grid, filterDataProvider,
-        new SimplePersonFilter(""), (filter, term) -> new SimplePersonFilter(term));
+    var gridPerson = new Grid<Person>();
+    gridPerson.addColumn(Person::firstName).setHeader("First Name").setKey("firstName");
+    gridPerson.addColumn(Person::lastName).setHeader("Last Name").setKey("lastName");
+    gridPerson.addColumn(Person::age).setHeader("Age").setKey("age");
 
-    filterGrid.setSecondaryActionGroup(new Button("Edit"), new Button("Delete"));
+    var lazyConfiguration = FilterGridConfigurations.lazy(contactFetchCallback,
+        contactCountCallback);
+    var personGrid = FilterGrid.create(
+        Person.class,
+        SimplePersonFilter.class,
+        lazyConfiguration.applyConfiguration(gridPerson),
+        () -> new SimplePersonFilter(""),
+        (searchTerm, filter) -> new SimplePersonFilter(searchTerm)
 
-    filterGrid.itemDisplayLabel("person");
+    );
 
-    var filterTab = new FilterGridTab("Persons", filterGrid);
-    filterTab.setItemCount(examples.size());
+    personGrid.addFilterUpdateListener(
+        event -> log.info("Changed filter to " + event.getUpdatedFilter()));
 
-    var filterTabContacts = new FilterGridTab("Contacts", filterGridContacts);
-    filterTabContacts.setItemCount(examples.size());
 
-    var tabSheet = new FilterGridTabSheet(filterTab, filterTabContacts);
+    personGrid.setSecondaryActionGroup(new Button("Edit"), new Button("Delete"));
+    personGrid.itemDisplayLabel("person");
 
-    tabSheet.addPrimaryFeatureButtonListener(event -> {
-      log.info("Clicked on the primary feature button: click-count is " + event.getClickCount());
-    });
+    var filterTab = new FilterGridTab<>("Persons", personGrid);
 
-    tabSheet.addPrimaryActionButtonListener(event -> {
-      log.info("Clicked on the primary action button: click-count is " + event.getClickCount());
-    });
+    var gridContact = new Grid<Person>();
+    gridContact.addColumn(Person::firstName).setHeader("First Name").setKey("firstName");
+    gridContact.addColumn(Person::lastName).setHeader("Last Name").setKey("lastName");
+    gridContact.addColumn(Person::age).setHeader("Age").setKey("age");
+
+    var contactGrid = FilterGrid.create(
+        Person.class,
+        SimplePersonFilter.class,
+        lazyConfiguration.applyConfiguration(gridContact),
+        () -> new SimplePersonFilter(""),
+        (searchTerm, filter) -> new SimplePersonFilter(searchTerm));
+
+    var filterTabContacts = new FilterGridTab<>("Contacts", contactGrid);
+
+    var gridMemoryPerson = new Grid<Person>();
+    gridMemoryPerson.addColumn(Person::firstName).setHeader("First Name").setKey("firstName");
+    gridMemoryPerson.addColumn(Person::lastName).setHeader("Last Name").setKey("lastName");
+    gridMemoryPerson.addColumn(Person::age).setHeader("Age").setKey("age");
+
+    var contactInMemoryConfiguration = FilterGridConfigurations.inMemory(
+        examples,
+        nameContainsFilterTerm::test
+    );
+
+    var inMemoryPersonGrid = FilterGrid.create(
+        Person.class,
+        SimplePersonFilter.class,
+        contactInMemoryConfiguration.applyConfiguration(gridMemoryPerson),
+        () -> new SimplePersonFilter(""),
+        (searchTerm, filter) -> new SimplePersonFilter(searchTerm));
+
+    var filterTabInMemoryPerson = new FilterGridTab<>("In Memory Persons", inMemoryPersonGrid);
+
+    var tabSheet = new FilterGridTabSheet();
+    tabSheet.addTab(filterTab);
+    tabSheet.addTab(filterTabContacts);
+    tabSheet.addTab(filterTabInMemoryPerson);
+    TabAction<FilterGridTab<ComponentDemo.Person>, ComponentDemo.Person> featureAction = tab -> log.info(
+        "feature for tab: " + tab);
+    TabAction<FilterGridTab<ComponentDemo.Person>, ComponentDemo.Person> primaryAction = tab -> log.info(
+        "primary action for tab: " + tab);
+
+    tabSheet.addFeatureAction(filterTab, featureAction);
+    tabSheet.addFeatureAction(filterTabInMemoryPerson, featureAction);
+    tabSheet.addFeatureAction(filterTab, featureAction);
+
+    tabSheet.addPrimaryAction(filterTab, primaryAction);
+    tabSheet.addPrimaryAction(filterTabInMemoryPerson, primaryAction);
+    tabSheet.addPrimaryAction(filterTab, primaryAction);
 
     return new Div(tabSheet);
   }
