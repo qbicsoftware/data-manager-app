@@ -19,6 +19,12 @@ import org.springframework.data.jpa.domain.Specification;
  * Utility class providing reusable helper methods for constructing Spring Data JPA
  * {@link org.springframework.data.jpa.domain.Specification} instances.
  *
+ * <p><b>Important:<b>
+ * <ul>
+ *   <li>This implementation is tightly coupled to MariaDB.
+ *   <li>Specifications are primarily intended for UI search use-cases
+ * </ul>
+ *
  * <h2>Intention</h2>
  * <p>
  * This class centralizes common patterns for building query predicates based on entity
@@ -230,6 +236,9 @@ public class JpaSpecifications {
   protected static Predicate contains(CriteriaBuilder criteriaBuilder,
       Expression<String> property,
       String searchTerm) {
+    if (searchTerm.isBlank()) {
+      return criteriaBuilder.conjunction();
+    }
     return criteriaBuilder.like(criteriaBuilder.lower(property),
         "%" + searchTerm.strip().toLowerCase() + "%");
   }
