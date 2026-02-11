@@ -1,7 +1,5 @@
 package life.qbic.datamanager.views.projects.project.rawdata;
 
-import static life.qbic.application.commons.time.DateTimeFormat.asJavaFormatter;
-
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.data.provider.CallbackDataProvider.CountCallback;
 import com.vaadin.flow.data.provider.CallbackDataProvider.FetchCallback;
@@ -13,21 +11,22 @@ import java.io.InputStream;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.FileNameFormatter;
 import life.qbic.application.commons.time.DateTimeFormat;
-import life.qbic.datamanager.ClientDetailsProvider;
 import life.qbic.datamanager.files.export.download.DownloadStreamProvider;
 import life.qbic.datamanager.files.export.rawdata.RawDataUrlFile;
 import life.qbic.datamanager.files.export.rawdata.RawDataUrlFile.RawDataURL;
@@ -62,22 +61,21 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
 
   private static final Duration MAX_BLOCKING_DURATION = Duration.ofMinutes(5);
 
-  private final transient ClientDetailsProvider clientDetailsProvider;
+  private static final DateTimeFormat RAW_DATA_DATE_TIME_FORMAT = DateTimeFormat.ISO_LOCAL_DATE;
   private final AsyncProjectService asyncProjectService;
   private final DownloadComponent downloadComponent = new DownloadComponent();
   private final UiHandle uiHandle = new UiHandle();
   private final String dataSourceEndpoint;
   private final MessageSourceNotificationFactory messageFactory;
   private final Context context;
-
+  private final AtomicReference<String> clientTimeZone = new AtomicReference<>("UTC");
+  private final AtomicInteger clientTimeZoneOffset = new AtomicInteger(0);
 
   public RawDataDetailsComponent(
-      @NonNull ClientDetailsProvider clientDetailsProvider,
       @NonNull AsyncProjectService asyncProjectService,
       @NonNull Context context,
       @NonNull String dataSourceEndpoint,
       @NonNull MessageSourceNotificationFactory messageFactory) {
-    this.clientDetailsProvider = Objects.requireNonNull(clientDetailsProvider);
     this.asyncProjectService = Objects.requireNonNull(asyncProjectService);
     this.dataSourceEndpoint = Objects.requireNonNull(dataSourceEndpoint);
     this.messageFactory = Objects.requireNonNull(messageFactory);
@@ -89,7 +87,13 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
     add(downloadComponent);
 
     // Hooks the current UI during attach events for safe UI-thread task execution
-    addAttachListener(event -> uiHandle.bind(event.getUI()));
+    addAttachListener(event -> {
+      event.getUI().getPage().retrieveExtendedClientDetails(receiver -> {
+        clientTimeZone.set(receiver.getTimeZoneId());
+        clientTimeZoneOffset.set(receiver.getTimezoneOffset());
+      });
+      uiHandle.bind(event.getUI());
+    });
     // Frees the UI reference from the handler
     addDetachListener(ignored -> uiHandle.unbind());
 
@@ -345,13 +349,18 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
         .setKey(UiSortKey.SAMPLE_NAME.value())
         .setHeader("Sample Name")
         .setSortable(false);
-    grid.addColumn(
-            rawData -> convertToLocalDate(Date.from(rawData.dataset().registrationDate())))
+    grid.addColumn(rawData -> formatTime(rawData.dataset().registrationDate()))
         .setKey(UiSortKey.UPLOAD_DATE.value())
         .setSortProperty(UiSortKey.UPLOAD_DATE.value())
         .setHeader("Upload Date");
     grid.setItemDetailsRenderer(renderRawDataNgs());
     return grid;
+  }
+
+  private @NonNull String formatTime(Instant instant) {
+    String zoneId = clientTimeZone.get();
+    return instant.atZone(ZoneId.of(zoneId)).format(DateTimeFormat.asJavaFormatter(
+        RAW_DATA_DATE_TIME_FORMAT));
   }
 
   private Grid<RawDatasetInformationPxP> createPxpRawDataGrid() {
@@ -368,7 +377,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
         .setKey(UiSortKey.SAMPLE_NAME.value())
         .setHeader("Sample Name");
     grid.addColumn(
-            rawData -> convertToLocalDate(Date.from(rawData.dataset().registrationDate())))
+            rawData -> formatTime(rawData.dataset().registrationDate()))
         .setKey(UiSortKey.UPLOAD_DATE.value())
         .setSortProperty(UiSortKey.UPLOAD_DATE.value())
         .setHeader("Upload Date");
@@ -400,16 +409,6 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
       rawDataItem.addListEntry("File Suffixes", rawData.dataset().fileTypes());
       return rawDataItem;
     });
-  }
-
-  private String convertToLocalDate(Date date) {
-    return date.toInstant()
-        .atZone(ZoneId.of(clientDetailsProvider
-            .latestDetails()
-            .orElseThrow()
-            .timeZoneId()))
-        //FIXME why do we have java.util.Date o.O
-        .format(asJavaFormatter(DateTimeFormat.ISO_LOCAL_DATE));
   }
 
   private static class RawDataFilter {

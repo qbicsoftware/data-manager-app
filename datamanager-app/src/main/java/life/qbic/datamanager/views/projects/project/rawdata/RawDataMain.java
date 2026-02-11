@@ -182,7 +182,6 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
     rawdataDetailsComponentContainer.removeAll();
     rawdataDetailsComponentContainer.add(
         new RawDataDetailsComponent(
-            clientDetailsProvider,
             asyncProjectService,
             context,
             rawDataSourceURL,
