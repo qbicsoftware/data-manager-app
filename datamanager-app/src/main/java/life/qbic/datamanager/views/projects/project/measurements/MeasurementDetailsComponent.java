@@ -63,7 +63,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
       () -> MeasurementDetailsComponent.class.getClassLoader()
           .getResourceAsStream("icons/ROR_logo.svg"));
   private static final NumberFormat INJECTION_VOLUME_FORMAT = new DecimalFormat("#.##");
-  private static final DateTimeFormat dateTimeFormat = DateTimeFormat.ISO_LOCAL_DATE_TIME_WHITESPACE_SEPARATED;
+  private static final DateTimeFormat MEASUREMENT_REGISTRATION_DATE_TIME_FORMAT = DateTimeFormat.ISO_LOCAL_DATE_TIME_WHITESPACE_SEPARATED;
 
   private final AtomicReference<String> clientTimeZone = new AtomicReference<>("UTC");
   private final AtomicInteger clientTimeZoneOffset = new AtomicInteger(0);
@@ -104,10 +104,9 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         });
   }
 
-  private @NonNull String formatTime(Instant instant) {
+  private @NonNull String formatTime(Instant instant, DateTimeFormat dateTimeFormat) {
     String zoneId = clientTimeZone.get();
-    return instant.atZone(ZoneId.of(zoneId)).format(DateTimeFormat.asJavaFormatter(
-        dateTimeFormat));
+    return instant.atZone(ZoneId.of(zoneId)).format(DateTimeFormat.asJavaFormatter(dateTimeFormat));
   }
 
   public MeasurementDetailsComponent(
@@ -228,14 +227,16 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
           projectId, query.getOffset(), query.getLimit(),
           VaadinSpringDataHelpers.toSpringDataSort(query),
           MeasurementFilter.forExperiment(experimentId)
-              .withSearch(searchTerm, clientTimeZoneOffset.get(), dateTimeFormat));
+              .withSearch(searchTerm, clientTimeZoneOffset.get(),
+                  MEASUREMENT_REGISTRATION_DATE_TIME_FORMAT));
     };
     CountCallback<NgsMeasurementLookup.MeasurementInfo, SearchTermFilter> countCallback = query ->
     {
       String searchTerm = query.getFilter().map(SearchTermFilter::searchTerm).orElse("");
       return ngsMeasurementLookup.countNgsMeasurements(projectId,
           MeasurementFilter.forExperiment(experimentId)
-              .withSearch(searchTerm, clientTimeZoneOffset.get(), dateTimeFormat));
+              .withSearch(searchTerm, clientTimeZoneOffset.get(),
+                  MEASUREMENT_REGISTRATION_DATE_TIME_FORMAT));
     };
     var ngsGridConfiguration = FilterGridConfigurations.lazy(
         fetchCallback,
@@ -291,7 +292,8 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
           projectId, query.getOffset(), query.getLimit(),
           VaadinSpringDataHelpers.toSpringDataSort(query),
           PxpMeasurementLookup.MeasurementFilter.forExperiment(experimentId)
-              .withSearch(searchTerm, clientTimeZoneOffset.get(), dateTimeFormat));
+              .withSearch(searchTerm, clientTimeZoneOffset.get(),
+                  MEASUREMENT_REGISTRATION_DATE_TIME_FORMAT));
     };
 
     CountCallback<MeasurementInfo, SearchTermFilter> countCallback = query -> {
@@ -299,7 +301,8 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
           .orElse("");
       return pxpMeasurementLookup.countPxpMeasurements(projectId,
           PxpMeasurementLookup.MeasurementFilter.forExperiment(experimentId)
-              .withSearch(searchTerm, clientTimeZoneOffset.get(), dateTimeFormat));
+              .withSearch(searchTerm, clientTimeZoneOffset.get(),
+                  MEASUREMENT_REGISTRATION_DATE_TIME_FORMAT));
     };
 
     var configuration = FilterGridConfigurations.lazy(fetchCallback, countCallback);
@@ -424,7 +427,8 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         .setComparator(Comparator.comparing(NgsMeasurementLookup.MeasurementInfo::runProtocol))
         .setAutoWidth(true)
         .setResizable(true);
-    ngsGrid.addColumn(info -> formatTime(info.registeredAt()))
+    ngsGrid.addColumn(info -> formatTime(info.registeredAt(),
+            MEASUREMENT_REGISTRATION_DATE_TIME_FORMAT))
         .setHeader("Registration Date")
         .setKey(NgsSortKey.REGISTRATION_DATE.sortKey())
         .setComparator(Comparator.comparing(NgsMeasurementLookup.MeasurementInfo::registeredAt))
@@ -528,7 +532,8 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         .setAutoWidth(true)
         .setResizable(true);
 
-    pxpGrid.addColumn(info -> formatTime(info.registeredAt()))
+    pxpGrid.addColumn(info -> formatTime(info.registeredAt(),
+            MEASUREMENT_REGISTRATION_DATE_TIME_FORMAT))
         .setHeader("Registration Date")
         .setKey(PxpSortKey.REGISTRATION_DATE.sortKey())
         .setComparator(Comparator.comparing(PxpMeasurementLookup.MeasurementInfo::registeredAt))
