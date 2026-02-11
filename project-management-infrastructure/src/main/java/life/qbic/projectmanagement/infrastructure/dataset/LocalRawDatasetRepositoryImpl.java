@@ -149,8 +149,9 @@ public class LocalRawDatasetRepositoryImpl implements LocalRawDatasetRepository 
         experimentId);
 
     return ngsInfoRepository.findAll(fullSpec,
-            new OffsetBasedRequest(offset, limit, Sort.by(orders))).getContent()
-        .stream().map(LocalRawDatasetRepositoryImpl::convert).toList();
+            new OffsetBasedRequest(offset, limit, Sort.by(orders)))
+        .map(LocalRawDatasetRepositoryImpl::convert)
+        .toList();
   }
 
   private static Order fromAPItoJpaRawData(
@@ -185,8 +186,8 @@ public class LocalRawDatasetRepositoryImpl implements LocalRawDatasetRepository 
     var fullSpec = createFullSpecificationPxp(filter, experimentId);
 
     return pxpInfoRepository.findAll(fullSpec,
-            new OffsetBasedRequest(offset, limit, Sort.by(orders))).getContent()
-        .stream().map(LocalRawDatasetRepositoryImpl::convert).toList();
+            new OffsetBasedRequest(offset, limit, Sort.by(orders)))
+        .map(LocalRawDatasetRepositoryImpl::convert).toList();
   }
 
   private static Specification<LocalRawDatasetNgsEntry> createFullSpecificationNGS(RawDatasetFilter filter, String experimentId) {
