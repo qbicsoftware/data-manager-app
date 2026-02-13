@@ -1,9 +1,9 @@
-package life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory;
+package life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.ngs;
 
 
 import java.util.Arrays;
 import java.util.List;
-import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.NgsEditFactory.MeasurementEntryNGS;
+import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.ngs.NgsEditFactory.MeasurementEntryNGS;
 import org.apache.poi.ss.usermodel.Workbook;
 
 public class NGSWorkbooks {

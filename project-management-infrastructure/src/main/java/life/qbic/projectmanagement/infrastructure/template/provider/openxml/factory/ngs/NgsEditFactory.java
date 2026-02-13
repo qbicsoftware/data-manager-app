@@ -1,4 +1,4 @@
-package life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory;
+package life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.ngs;
 
 
 import java.util.List;
@@ -8,7 +8,7 @@ import java.util.function.BinaryOperator;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.Column;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.WorkbookFactory;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.column.NGSMeasurementEditColumn;
-import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.NGSWorkbooks.SequencingReadType;
+import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.ngs.NGSWorkbooks.SequencingReadType;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.util.XLSXTemplateHelper;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CreationHelper;

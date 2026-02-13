@@ -2,8 +2,10 @@ package life.qbic.projectmanagement.infrastructure.template.provider.openxml.fac
 
 import java.util.List;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.WorkbookFactory;
-import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.NgsEditFactory.MeasurementEntryNGS;
-import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.ProteomicsEditFactory.MeasurementEntryPxP;
+import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.ngs.NgsEditFactory;
+import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.ngs.NgsEditFactory.MeasurementEntryNGS;
+import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.proteomics.ProteomicsEditFactory;
+import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.proteomics.ProteomicsEditFactory.MeasurementEntryPxP;
 
 /**
  * <b>Measurement Template Factory</b>

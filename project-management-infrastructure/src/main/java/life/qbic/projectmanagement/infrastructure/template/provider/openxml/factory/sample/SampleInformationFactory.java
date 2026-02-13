@@ -1,4 +1,4 @@
-package life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory;
+package life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.sample;
 
 
 import java.util.ArrayList;

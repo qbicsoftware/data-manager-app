@@ -1,9 +1,9 @@
-package life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory;
+package life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.proteomics;
 
 import java.util.Arrays;
 import java.util.List;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementProteomicsValidator;
-import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.ProteomicsEditFactory.MeasurementEntryPxP;
+import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.proteomics.ProteomicsEditFactory.MeasurementEntryPxP;
 import org.apache.poi.ss.usermodel.Workbook;
 
 public class ProteomicsWorkbooks {
