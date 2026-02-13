@@ -35,11 +35,17 @@ public interface Column {
    */
   boolean isReadOnly();
 
+
   /**
-   * Information on how to fill this column
+   * Provides contextual help for filling out this column.
    *
-   * @return a helper with information on how to fill this column. Can be {@link Optional#empty()}
-   * if no help is provided.
+   * <p>
+   * The returned {@link Helper} contains example values and explanatory text,
+   * which may be shown as tooltips or spreadsheet guidance.
+   * </p>
+   * Not all columns provide contextual help. For columns without help information available, {@link Optional#empty()} is returned.
+   *
+   * @return an {@link Optional} containing fill-in help information
    */
   Optional<Helper> getFillHelp();
 
