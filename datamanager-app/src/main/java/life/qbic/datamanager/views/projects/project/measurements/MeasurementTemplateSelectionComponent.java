@@ -147,6 +147,6 @@ public class MeasurementTemplateSelectionComponent extends Div implements
   }
 
   public enum Domain {
-    Genomics, Proteomics
+    Genomics, Proteomics, ImmunoPeptidomics
   }
 }
