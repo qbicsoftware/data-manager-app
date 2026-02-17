@@ -43,11 +43,11 @@ public enum ImmunoPeptidomicsRegisterColumn implements Column {
   FACILITY("Facility", 4, false, true),
   MS_DEVICE("MS Device", 5, false, true),
   LCMS_METHOD("LCMS Method", 6, false, true),
-  MHC_ANTIBODY("MHC Antibody", 7, false, false),
-  PREP_DATE("Prep Date", 8, false, false),
-  MS_RUN_DATE("MS Run Date", 9, false, false),
-  SAMPLE_SHARE("Sample Share [%]", 10, false, false),
-  COMMENT("Comment", 13, false, false),
+  LC_COLUMN("LC Column", 7, false, true),
+  MHC_ANTIBODY("MHC Antibody", 8, false, false),
+  PREP_DATE("Prep Date", 9, false, false),
+  MS_RUN_DATE("MS Run Date", 10, false, false),
+  COMMENT("Comment", 11, false, false),
   ;
 
   private final String headerName;
@@ -82,14 +82,14 @@ public enum ImmunoPeptidomicsRegisterColumn implements Column {
           """.formatted(MS_DEVICE.headerName()));
       case LCMS_METHOD -> new Helper("Free text, e.g. CIDOT, HCDOT",
           "Laboratory specific methods that have been used for LCMS measurement.");
+      case LC_COLUMN -> new Helper("Free text, can be a commercial name or brand",
+          "The type of column that has been used.");
       case MHC_ANTIBODY -> new Helper("Free text",
           "The MHC Antibody that was used for the measurement");
       case PREP_DATE -> new Helper("Date, e.g. 2025-01-05",
           "The day the sample was prepared.");
       case MS_RUN_DATE -> new Helper("Date, e.g. 2025-01-05",
           "The day the sample was measured on the MS device.");
-      case SAMPLE_SHARE -> new Helper("Number, e.g. 50,12",
-          "Percentage of the sample mass taken for the measurement. Values from 0 to 100. A total sample mass of 1mg is assumed.");
       case COMMENT -> new Helper("Free text", "Notes about the measurement. (Max 500 characters)");
     };
   };
