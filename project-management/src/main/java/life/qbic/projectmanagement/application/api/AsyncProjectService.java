@@ -1350,8 +1350,8 @@ public interface AsyncProjectService {
     }
   }
 
-  sealed interface MeasurementUpdateRequestBody permits MeasurementUpdateInformationNGS,
-      MeasurementUpdateInformationPxP {
+  sealed interface MeasurementUpdateRequestBody permits MeasurementUpdateInformationIP,
+      MeasurementUpdateInformationNGS, MeasurementUpdateInformationPxP {
 
   }
 
@@ -1718,6 +1718,24 @@ public interface AsyncProjectService {
 
 
   /**
+   * Provides information about selected ImmunoPeptidomics measurements for updating purposes in a
+   * requested {@link MimeType}.
+   *
+   * @param projectId      the id of the project the measurements belong to
+   * @param measurementIds a {@link List} of ids of the measurements of interest
+   * @param mimeType       the desired {@link MimeType} of the {@link DigitalObject}
+   * @return a {@link Mono} publishing a {@link DigitalObject} in the requested {@link MimeType}
+   * format on success. Exceptions are provided as {@link Mono#error(Throwable)}.
+   * @throws AccessDeniedException        if the user has insufficient rights
+   * @throws RequestFailedException       if the request cannot be executed
+   * @throws UnsupportedMimeTypeException if the service cannot provide the requested
+   *                                      {@link MimeType}
+   * @since 1.12.5
+   */
+  Mono<DigitalObject> measurementUpdateIP(String projectId, List<String> measurementIds,
+      MimeType mimeType);
+
+  /**
    * Provides information about selected NGS measurements for updating purposes in a requested
    * {@link MimeType}.
    *
@@ -1761,16 +1779,20 @@ public interface AsyncProjectService {
    * <ul>
    *   <li>{@link SampleRegistrationInformation}</li>
    *   <li>{@link SampleUpdateInformation}</li>
+   *   <li>{@link MeasurementRegistrationInformationIP}</li>
    *   <li>{@link MeasurementRegistrationInformationNGS}</li>
    *   <li>{@link MeasurementRegistrationInformationPxP}</li>
+   *   <li>{@link MeasurementUpdateInformationIP}</li>
    *   <li>{@link MeasurementUpdateInformationNGS}</li>
    *   <li>{@link MeasurementUpdateInformationPxP}</li>
    * </ul>
    *
    * @since 1.10.0
    */
-  sealed interface ValidationRequestBody permits MeasurementRegistrationInformationNGS,
-      MeasurementRegistrationInformationPxP, MeasurementUpdateInformationNGS,
+  sealed interface ValidationRequestBody permits MeasurementRegistrationInformationIP,
+      MeasurementRegistrationInformationNGS,
+      MeasurementRegistrationInformationPxP, MeasurementUpdateInformationIP,
+      MeasurementUpdateInformationNGS,
       MeasurementUpdateInformationPxP, SampleRegistrationInformation, SampleUpdateInformation {
 
   }
@@ -2053,13 +2075,105 @@ public interface AsyncProjectService {
    *
    * @since 1.11.0
    */
-  sealed interface MeasurementRegistrationRequestBody permits MeasurementRegistrationInformationNGS,
-      MeasurementRegistrationInformationPxP {
+  sealed interface MeasurementRegistrationRequestBody permits MeasurementRegistrationInformationIP,
+      MeasurementRegistrationInformationNGS, MeasurementRegistrationInformationPxP {
 
   }
 
-  // TODO IP measurement service objects and methods
+  /**
+   * Carries the metadata required to register a new ImmunoPeptidomics (IP) measurement.
+   *
+   * <p>Instances of this record are assembled from a user-provided Excel sheet in the UI
+   * and serve two purposes:
+   * <ol>
+   *   <li>Validation — passed to the validation service to check that all mandatory fields
+   *       as defined by {@link life.qbic.projectmanagement.infrastructure.template.provider.openxml.column.ImmunoPeptidomicsRegisterColumn} are present and satisfy
+   *       the required constraints.</li>
+   *   <li>Registration — passed to the registration service to persist a new IP measurement
+   *       entry in the system.</li>
+   * </ol>
+   *
+   * @param sampleId        the QBiC sample identifier the measurement is linked to
+   * @param sampleName      a human-readable sample label used as a visual aid; ignored after
+   *                        upload
+   * @param measurementName an optional local identifier or descriptive name for the measurement
+   * @param organisationUrl the ROR URL of the organisation where the measurement was conducted
+   * @param facility        the name of the facility or group within the organisation
+   * @param msDevice        the mass spectrometry instrument used, as an ontology term CURIE (e.g.
+   *                        {@code NCIT:C12434})
+   * @param lcmsMethod      the laboratory-specific LC-MS method applied (e.g. {@code HCDOT})
+   * @param lcColumn        the liquid chromatography column used, identified by name or brand
+   * @param mhcAntibody     the MHC antibody used during immunoprecipitation enrichment
+   * @param samplePrepDate  the date on which the sample was prepared
+   * @param msRunDate       the date on which the sample was measured on the MS device
+   * @param comment         optional free-text notes about the measurement; must not exceed 500
+   *                        characters
+   */
+  record MeasurementRegistrationInformationIP(String sampleId, String sampleName,
+                                              String measurementName,
+                                              String organisationUrl,
+                                              String facility,
+                                              String msDevice,
+                                              String lcmsMethod,
+                                              String lcColumn,
+                                              String mhcAntibody,
+                                              Instant samplePrepDate,
+                                              Instant msRunDate,
+                                              String comment) implements
+      MeasurementRegistrationRequestBody,
+      ValidationRequestBody {
 
+  }
+
+  /**
+   * Carries the updated metadata for an existing ImmunoPeptidomics (IP) measurement.
+   *
+   * <p>Instances of this record are assembled from a user-provided Excel sheet in the UI
+   * and serve two purposes:
+   * <ol>
+   *   <li>Validation — passed to the validation service to check that all mandatory fields
+   *       as defined by {@link life.qbic.projectmanagement.infrastructure.template.provider.openxml.column.ImmunoPeptidomicsEditColumn} are present and satisfy
+   *       the required constraints.</li>
+   *   <li>Update — passed to the update service to overwrite the stored metadata of the
+   *       identified IP measurement in the system.</li>
+   * </ol>
+   *
+   * <p>The {@code measurementId} uniquely identifies the measurement to be updated.
+   * All fields provided here will replace the currently stored values.
+   *
+   * @param measurementId   the unique identifier of the IP measurement to be updated
+   * @param sampleId        the QBiC sample identifier the measurement is linked to
+   * @param sampleName      a human-readable sample label used as a visual aid; ignored after
+   *                        upload
+   * @param measurementName an optional local identifier or descriptive name for the measurement
+   * @param organisationUrl the ROR URL of the organisation where the measurement was conducted
+   * @param facility        the name of the facility or group within the organisation
+   * @param msDevice        the mass spectrometry instrument used, as an ontology term CURIE (e.g.
+   *                        {@code NCIT:C12434})
+   * @param lcmsMethod      the laboratory-specific LC-MS method applied (e.g. {@code HCDOT})
+   * @param lcColumn        the liquid chromatography column used, identified by name or brand
+   * @param mhcAntibody     the MHC antibody used during immunoprecipitation enrichment
+   * @param samplePrepDate  the date on which the sample was prepared
+   * @param msRunDate       the date on which the sample was measured on the MS device
+   * @param comment         optional free-text notes about the measurement; must not exceed 500
+   *                        characters
+   */
+  record MeasurementUpdateInformationIP(String measurementId,
+                                        String sampleId,
+                                        String sampleName,
+                                        String measurementName,
+                                        String organisationUrl,
+                                        String facility,
+                                        String msDevice,
+                                        String lcmsMethod,
+                                        String lcColumn,
+                                        String mhcAntibody,
+                                        Instant samplePrepDate,
+                                        Instant msRunDate,
+                                        String comment) implements MeasurementUpdateRequestBody,
+      ValidationRequestBody {
+
+  }
 
   /**
    * Information container to register an NGS measurement.
