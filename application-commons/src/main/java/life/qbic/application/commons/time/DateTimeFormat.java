@@ -76,7 +76,7 @@ public enum DateTimeFormat {
       case ISO_LOCAL_DATE -> DateTimeFormatter.ISO_LOCAL_DATE.withZone(zoneId);
       case ISO_LOCAL_DATE_TIME -> DateTimeFormatter.ISO_LOCAL_DATE_TIME.withZone(zoneId);
       case ISO_LOCAL_DATE_TIME_WHITESPACE_SEPARATED -> DateTimeFormatter.ofPattern(
-          "yyyy-MM-dd HH:mm").withZone(zoneId);
+          "yyyy-MM-dd HH:mm:ss").withZone(zoneId);
       case SIMPLE_DATE -> DateTimeFormatter.ofPattern("EEEE, dd LLLL yyyy").withZone(zoneId);
       case SIMPLE_DATE_TIME -> DateTimeFormatter.ofPattern("EEEE, dd LLLL yyyy HH:mm:ss").withZone(
           zoneId);
