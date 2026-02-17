@@ -2058,6 +2058,8 @@ public interface AsyncProjectService {
 
   }
 
+  // TODO IP measurement service objects and methods
+
 
   /**
    * Information container to register an NGS measurement.
