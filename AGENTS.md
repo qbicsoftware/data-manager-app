@@ -107,8 +107,7 @@ data-manager-app/
 ```
 
 **Key architectural principle:** Domain-Driven Design (DDD) with explicit bounded contexts
-(`identity`, `project-management`, `finances`). Each context has a `domain` layer (pure Java,
-no Spring), an `application` layer (use-case services, orchestration), and an `infrastructure`
+(`identity`, `project-management`, `finances`). Each context has a `domain` layer, an `application` layer (use-case services, orchestration), and an `infrastructure`
 layer (JPA, external connectors). The `datamanager-app` module is the composition root.
 
 ---
