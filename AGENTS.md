@@ -122,7 +122,7 @@ layer (JPA, external connectors). The `datamanager-app` module is the compositio
 - A running **Apache ActiveMQ Artemis** broker
 - An **SMTP server** for email
 - A **PKCS12 keystore** for the vault (see `README.md` for setup)
-- (Optional) An **OpenBIS** instance for sample data integration
+- An **OpenBIS** instance for measurement data integration
 
 ### Common commands
 
@@ -233,7 +233,7 @@ Follow the patterns in `service_api.md`:
 
 1. Local username/password — users register via `/register`, confirm via email token.
 2. ORCID OAuth2 — users can log in or link their ORCID via `/register/oidc`.
-3. Personal access tokens — stored encrypted in the vault; used for programmatic API access.
+3. Application access tokens — stored encrypted in the vault; used for programmatic API access.
 
 ### Event-driven communication
 
