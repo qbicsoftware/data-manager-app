@@ -161,10 +161,6 @@
   align-items: center;
 }
 
-.main.measurement .measurement-template-list-component {
-  grid-area: measurementtemplatelist;
-}
-
 
 .main.measurement .measurement-details-component {
   grid-area: measurementdetails

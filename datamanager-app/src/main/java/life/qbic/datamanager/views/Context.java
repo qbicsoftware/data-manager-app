@@ -7,7 +7,6 @@ import java.util.Optional;
 import java.util.StringJoiner;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
-import org.springframework.lang.NonNull;
 
 /**
  * The current context information
@@ -118,6 +117,7 @@ public final class Context implements Serializable {
     return new StringJoiner(", ", Context.class.getSimpleName() + "[", "]")
         .add("projectId=" + projectId)
         .add("experimentId=" + experimentId)
+        .add("projectCode=" + projectCode)
         .toString();
   }
 }
