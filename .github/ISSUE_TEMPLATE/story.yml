@@ -1,0 +1,45 @@
+name: Story
+description: User-facing functionality derived from PRD/Requirements
+title: "[Story] "
+labels: ["type:story"]
+body:
+  - type: input
+    id: requirement_ids
+    attributes:
+      label: Requirement IDs
+      description: Reference R-xx / NFR-xx / AC-xx from docs/requirements.md
+      placeholder: "R-01.1, NFR-01.1"
+    validations:
+      required: true
+
+  - type: textarea
+    id: user_story
+    attributes:
+      label: User Story
+      description: Use the format - As a ..., I want ..., so that ...
+      placeholder: |
+        As a ...
+        I want ...
+        So that ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: Acceptance Criteria
+      description: Concrete, testable conditions
+      placeholder: |
+        - Given ...
+        - When ...
+        - Then ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes / Context
+      description: Links to PRD section, dependencies, constraints
+    validations:
+      required: false

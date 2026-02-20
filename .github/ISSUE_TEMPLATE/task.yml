@@ -1,0 +1,38 @@
+name: Task
+description: Technical implementation task linked to a story
+title: "[Task] "
+labels: ["type:task"]
+body:
+  - type: input
+    id: parent_story
+    attributes:
+      label: Parent Story
+      description: Link to the story issue (e.g., #123)
+      placeholder: "#123"
+    validations:
+      required: true
+
+  - type: input
+    id: requirement_ids
+    attributes:
+      label: Requirement IDs
+      description: Reference R-xx / NFR-xx from docs/requirements.md
+      placeholder: "R-01.1"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What needs to be implemented?
+    validations:
+      required: true
+
+  - type: textarea
+    id: technical_notes
+    attributes:
+      label: Technical Notes
+      description: Design hints, constraints, related ADRs
+    validations:
+      required: false
