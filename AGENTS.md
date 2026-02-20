@@ -38,7 +38,18 @@
 - Test approach stated
 
 ## Output formats
-- Issues: use the repo templates.
+- Issues: use the repo templates — pick the correct template for the scenario:
+  - **Story** (`.github/ISSUE_TEMPLATE/story.yml`): use when creating issues for **user-facing
+    functionality** derived from the PRD or requirements. Required fields:
+    - *Requirement IDs* — at least one R-xx / NFR-xx / AC-xx reference.
+    - *User Story* — written as "As a `<role>`, I want `<goal>`, so that `<benefit>`."
+    - *Acceptance Criteria* — one or more testable conditions in Given / When / Then format.
+  - **Task** (`.github/ISSUE_TEMPLATE/task.yml`): use when creating issues for **concrete
+    technical implementation work** that is derived from, and linked to, a story. Required fields:
+    - *Parent Story* — a link to the parent story issue (e.g. `#123`).
+    - *Requirement IDs* — at least one R-xx / NFR-xx reference.
+    - *Description* — what needs to be implemented.
+    - *Technical Notes* (optional) — design hints, constraints, related ADRs.
 - Requirement edits: include a changelog entry in the PR description.
 
 
@@ -458,5 +469,7 @@ An agent should pause and request human review/approval before:
 | `datamanager-app/src/main/resources/application.properties` | Full application configuration with env var mappings |
 | `datamanager-bom/pom.xml` | All dependency version pins |
 | `.github/labeler.yml` | PR/branch labeling rules |
+| `.github/ISSUE_TEMPLATE/story.yml` | Issue template for user-facing functionality (user stories) |
+| `.github/ISSUE_TEMPLATE/task.yml` | Issue template for concrete technical implementation tasks |
 | `.github/release.yml` | Release changelog categories |
 | `GoogleStyle.xml` | IntelliJ Google Java Style formatter config |
