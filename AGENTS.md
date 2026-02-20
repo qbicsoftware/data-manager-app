@@ -6,6 +6,42 @@
 
 ---
 
+# Agent Operating Rules (MANDATORY)
+
+## Source of truth
+- Product intent: docs/prd.md
+- Requirements: docs/requirements.md
+- Terms: docs/glossary.md
+- Code is not a source of product intent unless referenced by a requirement/ADR.
+
+## Allowed actions
+- Propose edits via PR (never push to main directly).
+- Create GitHub issues that reference requirement IDs (R-xx / NFR-xx / AC-xx).
+- Suggest decomposition and sequencing; do not self-prioritize.
+
+## Not allowed
+- Invent requirements not present in docs/.
+- Change scope, success metrics, or constraints without explicit human approval.
+- Add compliance/security claims without a cited source or explicit requirement.
+
+## Traceability rules
+- Every issue must reference: at least one requirement ID.
+- Every PR must reference: issue(s) + requirement ID(s).
+- If a PR changes behavior, it must either:
+  (a) update docs/requirements.md, or
+  (b) explain why no requirement change is needed.
+
+## Definition of ready (for stories)
+- Clear user value
+- Acceptance criteria
+- Dependencies noted
+- Test approach stated
+
+## Output formats
+- Issues: use the repo templates.
+- Requirement edits: include a changelog entry in the PR description.
+
+
 ## 1. Project Overview
 
 **Data Manager** is a web-based, multi-omics research data management platform developed by
