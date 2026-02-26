@@ -68,8 +68,8 @@ public class ProjectCreationService {
 
     try {
       var createdProject = createProject(code, title, objective,
-          convertProjectContact(contacts.investigator()),
           convertProjectContact(contacts.manager()),
+          convertProjectContact(contacts.investigator()),
           responsiblePerson,
           fundingInformation);
       Optional.ofNullable(sourceOffer)
