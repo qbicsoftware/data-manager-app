@@ -33,6 +33,7 @@
     <module>email-service-provider</module>
     <module>finances-infrastructure</module>
     <module>finances-api</module>
+    <module>fair-signposting</module>
   </modules>
   <packaging>pom</packaging>
 
