@@ -135,4 +135,88 @@ class ProjectCreationServiceSpec extends Specification {
         result.isError()
         result.getError().errorCode() == ApplicationException.ErrorCode.GENERAL
     }
+
+  def "Project Manager and Principal Investigator are assigned to correct roles"() {
+    given: "distinct project contacts for PM and PI"
+    projectRepositoryStub.add(_ as Project) >> {}
+    var pmContact = new AsyncProjectService.ProjectContact("John Smith", "john.smith@example.com", "", "")
+    var piContact = new AsyncProjectService.ProjectContact("Jane Doe", "jane.doe@example.com", "", "")
+    var projectContacts = new ProjectContacts(piContact, pmContact)
+
+    when: "a project is created with distinct PM and PI contacts"
+    Result<Project, ApplicationException> result = projectCreationServiceWithStubs.createProject(
+            "source offer", "Q2ABCD",
+            "Test project",
+            "objective",
+            projectContacts,
+            new AsyncProjectService.FundingInformation("SFB", "1234"))
+
+    then: "the project manager is assigned to the correct role"
+    result.isValue()
+    result.getValue().getProjectManager().fullName() == "John Smith"
+    result.getValue().getProjectManager().emailAddress() == "john.smith@example.com"
+
+    and: "the principal investigator is assigned to the correct role"
+    result.getValue().getPrincipalInvestigator().fullName() == "Jane Doe"
+    result.getValue().getPrincipalInvestigator().emailAddress() == "jane.doe@example.com"
+  }
+
+  def "Responsible person is assigned to the correct role"() {
+    given: "distinct project contacts for PM, PI, and responsible person"
+    projectRepositoryStub.add(_ as Project) >> {}
+    var pmContact = new AsyncProjectService.ProjectContact("John Smith", "john.smith@example.com", "", "")
+    var piContact = new AsyncProjectService.ProjectContact("Jane Doe", "jane.doe@example.com", "", "")
+    var responsibleContact = new AsyncProjectService.ProjectContact("Bob Johnson", "bob.johnson@example.com", "", "")
+    var projectContacts = new ProjectContacts(piContact, pmContact, responsibleContact)
+
+    when: "a project is created with distinct PM, PI, and responsible contacts"
+    Result<Project, ApplicationException> result = projectCreationServiceWithStubs.createProject(
+            "source offer", "Q2ABCD",
+            "Test project",
+            "objective",
+            projectContacts,
+            new AsyncProjectService.FundingInformation("SFB", "1234"))
+
+    then: "the project manager is assigned to the correct role"
+    result.isValue()
+    result.getValue().getProjectManager().fullName() == "John Smith"
+    result.getValue().getProjectManager().emailAddress() == "john.smith@example.com"
+
+    and: "the principal investigator is assigned to the correct role"
+    result.getValue().getPrincipalInvestigator().fullName() == "Jane Doe"
+    result.getValue().getPrincipalInvestigator().emailAddress() == "jane.doe@example.com"
+
+    and: "the responsible person is assigned to the correct role"
+    result.getValue().getResponsiblePerson().isPresent()
+    result.getValue().getResponsiblePerson().get().fullName() == "Bob Johnson"
+    result.getValue().getResponsiblePerson().get().emailAddress() == "bob.johnson@example.com"
+  }
+
+  def "Project creation works correctly without a responsible person"() {
+    given: "distinct project contacts for PM and PI only"
+    projectRepositoryStub.add(_ as Project) >> {}
+    var pmContact = new AsyncProjectService.ProjectContact("John Smith", "john.smith@example.com", "", "")
+    var piContact = new AsyncProjectService.ProjectContact("Jane Doe", "jane.doe@example.com", "", "")
+    var projectContacts = new ProjectContacts(piContact, pmContact)
+
+    when: "a project is created with only PM and PI contacts"
+    Result<Project, ApplicationException> result = projectCreationServiceWithStubs.createProject(
+            "source offer", "Q2ABCD",
+            "Test project",
+            "objective",
+            projectContacts,
+            new AsyncProjectService.FundingInformation("SFB", "1234"))
+
+    then: "the project manager is assigned to the correct role"
+    result.isValue()
+    result.getValue().getProjectManager().fullName() == "John Smith"
+    result.getValue().getProjectManager().emailAddress() == "john.smith@example.com"
+
+    and: "the principal investigator is assigned to the correct role"
+    result.getValue().getPrincipalInvestigator().fullName() == "Jane Doe"
+    result.getValue().getPrincipalInvestigator().emailAddress() == "jane.doe@example.com"
+
+    and: "the responsible person is empty"
+    result.getValue().getResponsiblePerson().isEmpty()
+  }
 }
