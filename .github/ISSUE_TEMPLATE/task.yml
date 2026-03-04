@@ -16,8 +16,8 @@ body:
     id: requirement_ids
     attributes:
       label: Requirement IDs
-      description: Reference R-xx / NFR-xx from docs/requirements.md
-      placeholder: "R-01.1"
+      description: "Reference one or more requirement IDs from docs/requirements.md (R=Functional, NFR=Non-functional, C=Constraint)"
+      placeholder: "AUTH-R-02, AUTH-NFR-02"
     validations:
       required: true
 
@@ -25,14 +25,38 @@ body:
     id: description
     attributes:
       label: Description
-      description: What needs to be implemented?
+      description: "What needs to be implemented? Specify the technical scope, constraints, and acceptance criteria from parent Story."
+      placeholder: |
+        Implement TOTP setup UI and backend validation for AUTH-R-02.
+        - Create MFA setup dialog in Account Settings view (Vaadin)
+        - Generate QR code using TOTP library (zxing)
+        - Validate 6-digit codes via RFC 6238 (allow ±1 time period skew)
+        - Store TOTP secret encrypted in vault
+        - Add audit log entry for setup completion
     validations:
       required: true
 
   - type: textarea
+    id: acceptance_criteria_ref
+    attributes:
+      label: Acceptance Criteria (from parent Story)
+      description: "Copy the AC from the parent Story here for reference while implementing. The task is complete when all parent Story AC are satisfied."
+      placeholder: |
+        From parent Story #123:
+        - Given a user is logged in and on Account Settings, When they click "Enable Two-Factor Authentication", Then a QR code appears
+        - Given a user scans the QR code, When they enter the 6-digit code, Then MFA is enabled
+    validations:
+      required: false
+
+  - type: textarea
     id: technical_notes
     attributes:
-      label: Technical Notes
-      description: Design hints, constraints, related ADRs
+      label: Technical Notes (optional)
+      description: "Design hints, architectural constraints, related ADRs, module placement, dependencies on other tasks"
+      placeholder: |
+        - Implement in: identity/application/ (service), identity-infrastructure/ (JPA), datamanager-app/views/account/ (UI)
+        - Use: oss.jcraft:jzlib for TOTP RFC 6238, Spring Security for session management
+        - Related ADR: ADR-005 (Authentication Framework)
+        - Blocks: Task #456 (MFA enforcement)
     validations:
       required: false
