@@ -42,7 +42,7 @@ FAIR-C-01        Constraint, FAIR data domain
 
 ## Requirement Structure
 
-Each requirement must include three sections:
+Each requirement must include three sections (Statement, Rationale, Source). Optional sections for dependencies and relationships are described below.
 
 ### 1. **Statement** (required)
 Clear, capability-level description of what the system shall do.
@@ -82,6 +82,34 @@ Document origin of requirement. Include **all applicable**:
 - **Regulatory**: Standard or regulation (e.g., "GDPR Art. 32 (Encryption requirements)")
 - **Stakeholder**: Who requested it and when (e.g., "Stakeholder request (Security team, Jan 2025)")
 - **Technical**: Codebase patterns or frameworks (e.g., "Existing vault pattern; Spring Security best practice")
+
+### 4. **Dependencies** (optional but recommended)
+
+Capture relationships between requirements to enable impact analysis and identify prerequisites.
+
+**Types of relationships:**
+
+- **Prerequisites**: Requirements that must be implemented before this one (e.g., "AUTH-R-01 must exist before AUTH-R-02")
+- **Related**: Requirements that share context or should be reviewed together (e.g., "AUTH-NFR-02 audit logging relates to AUTH-R-02 MFA")
+- **Supersedes**: If this is a newer version, which older requirement(s) does it replace?
+
+**Format**:
+```markdown
+**Dependencies**:
+- Prerequisite: AUTH-R-01 (local authentication must exist before MFA)
+- Related: AUTH-NFR-02 (security audit logging), AUTH-NFR-03 (session security)
+```
+
+**When to include**: 
+- If requirement has a hard prerequisite (cannot be implemented without another requirement)
+- If requirement is part of a feature cluster (e.g., multiple MFA-related requirements)
+- If requirement significantly impacts other requirements (security, architecture)
+
+**Why it matters**:
+- Helps teams sequence implementation work correctly
+- Enables impact analysis: "If AUTH-R-01 changes, what else is affected?"
+- Prevents building features in the wrong order
+- Makes scope dependencies explicit during sprint planning
 
 ---
 
@@ -362,7 +390,7 @@ When reviewing requirement changes:
 
 ## Examples
 
-### Example 1: Functional Requirement
+### Example 1: Functional Requirement (with Dependencies)
 
 ```
 AUTH-R-04: Personal Access Tokens (PAT)
@@ -389,9 +417,13 @@ Source:
 - PRD §2.3 (Partner Integration)
 - API security best practice
 - Stakeholder request (automation team)
+
+Dependencies:
+- Prerequisite: AUTH-R-01 (user authentication must exist before tokens)
+- Related: AUTH-NFR-02 (audit logging of token creation/usage), AUTH-C-03 (token encryption)
 ```
 
-### Example 2: Non-Functional Requirement
+### Example 2: Non-Functional Requirement (with Dependencies)
 
 ```
 AUTH-NFR-02: Security Audit Logging
@@ -414,6 +446,10 @@ Source:
 - GDPR Art. 32 (Security measures)
 - Research data governance requirements
 - Regulatory compliance requirement
+
+Dependencies:
+- Related: AUTH-R-02 (MFA), AUTH-R-04 (PAT), AUTH-R-05 (password reset)
+  — all events from these requirements should be logged
 ```
 
 ### Example 3: Constraint
