@@ -2,6 +2,8 @@
 
 A reference for creating, maintaining, and tracing requirements in the Data Manager project.
 
+**Before writing requirements**, review the **Glossary** (`docs/glossary.md`) for definitions of domain-specific terms (TOTP, FAIR, RO-Crate, RBAC, etc.). This ensures consistent terminology across requirements and reduces ambiguity.
+
 ---
 
 ## Quick Reference: ID Schema
@@ -498,11 +500,12 @@ If `AUTH-R-02` changes, affected issues are those referencing it:
 
 ## Tools & References
 
-- **Requirement ID Scheme**: See AGENTS.md §9 (Requirement ID Scheme)
+- **Requirement ID Scheme**: See AGENTS.md § Requirement ID Scheme
 - **Story Template**: `.github/ISSUE_TEMPLATE/story.yml`
 - **Task Template**: `.github/ISSUE_TEMPLATE/task.yml`
 - **Current Requirements**: `docs/requirements.md`
 - **PRD**: `docs/prd.md`
+- **Glossary**: `docs/glossary.md` — Domain-specific terms (TOTP, FAIR, RO-Crate, RBAC, etc.) referenced in requirements
 
 ---
 
