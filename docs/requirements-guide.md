@@ -149,6 +149,153 @@ Pull Requests (Code changes)
 
 ---
 
+## Writing Acceptance Criteria for Stories
+
+Acceptance criteria (AC) define the concrete, testable conditions a Story must satisfy. They translate requirements into verifiable behaviors.
+
+### Principles
+
+Acceptance criteria should be:
+
+- **Testable**: Verifiable without ambiguity by QA, developers, or automated tests
+- **Independent**: Each criterion can be validated separately (ideally)
+- **Complete**: Together they cover the full scope of the requirement and user story
+- **Focused on behavior**: Describe what the system does, not how it does it
+- **From the user's perspective**: Use language that resonates with the user role
+
+### Format: Given/When/Then
+
+Use the **Given/When/Then** format (Gherkin-style) for clarity:
+
+- **Given**: Initial context or precondition
+- **When**: The action or trigger
+- **Then**: The expected outcome or behavior
+
+### Examples
+
+#### Example 1: AUTH-R-04 (Personal Access Tokens)
+
+**Story**: As an automation engineer, I want to generate a personal access token so that I can authenticate programmatic requests without storing my password.
+
+**Acceptance Criteria**:
+
+```
+✅ GOOD: Testable, independent, behavior-focused
+
+- Given a user is logged in and on the Account Settings page
+  When they click "Create Personal Access Token"
+  Then a dialog appears with fields for "Token Description" (optional) and "Expiration Date" (optional)
+
+- Given a user completes the token creation form without setting expiration
+  When they click "Create"
+  Then the token is displayed once and marked as "valid for 30 days" (system default)
+
+- Given a token has been created
+  When the user reloads the page
+  Then the token is NOT displayed again (shown only once at creation)
+
+- Given a user has generated a token
+  When they click "Revoke" on the token in Account Settings
+  Then the token is immediately invalidated and cannot be used for future API requests
+
+- Given a revoked token
+  When a user attempts to use it in an API request
+  Then the request returns 401 Unauthorized with message "Token is invalid or revoked"
+```
+
+#### Example 2: AUTH-R-02 (MFA Setup)
+
+**Story**: As a security-conscious researcher, I want to enable two-factor authentication so that my account is protected against credential compromise.
+
+**Acceptance Criteria**:
+
+```
+✅ GOOD: Each criterion is independent and testable
+
+- Given a user is logged in and on Account Settings
+  When they navigate to "Security" and click "Enable Two-Factor Authentication"
+  Then they are shown a QR code and a text backup code
+
+- Given a user scans the QR code into an authenticator app (Google Authenticator, Authy, etc.)
+  When they enter the 6-digit code from their app
+  Then the system verifies the code and confirms MFA is enabled
+
+- Given MFA is enabled for a user
+  When they log out and attempt to log in with correct password
+  Then they are prompted to enter a 6-digit code from their authenticator app
+
+- Given a user has 3 failed TOTP attempts in one login session
+  When they attempt a 4th attempt
+  Then the login is locked for 5 minutes with message "Too many failed attempts. Try again later."
+
+- Given MFA is enabled
+  When a user is on Account Settings
+  Then they see a "Disable Two-Factor Authentication" button and a backup code option
+```
+
+#### Example 3: PROJECT-R-01 (Project Creation)
+
+**Story**: As a project manager, I want to create a new research project so that I can organize my team and data.
+
+**Acceptance Criteria**:
+
+```
+✅ GOOD: Covers the full workflow
+
+- Given a user is logged in with Project Manager role
+  When they navigate to Projects and click "Create New Project"
+  Then a form appears with fields: Project Code, Project Title, Description, Principal Investigator
+
+- Given the project creation form is open
+  When they enter a unique project code and required fields
+  And click "Create"
+  Then the project is created and they are taken to the project overview page
+
+- Given a project has been created
+  When the creator views the project settings
+  Then they are listed as an Administrator with full permissions
+
+- Given a project exists
+  When a user who is not assigned to the project attempts to access it
+  Then they receive a "403 Forbidden" error
+
+- Given a project exists
+  When the project code conflicts with an existing project
+  Then an error message appears: "Project code already exists. Please choose a different code."
+```
+
+### Common Mistakes to Avoid
+
+| ❌ Anti-Pattern | ✅ Correct |
+|---|---|
+| "The system should handle tokens" | "Given a user creates a token without expiration, when they check settings, then it shows 30-day default" |
+| "Users can download data" | "Given a user has read access to a project, when they click Download, then a ZIP file is generated and sent to their browser" |
+| "MFA should be secure" | "Given 3 failed TOTP attempts, when a 4th is tried, then login is locked for 5 minutes" |
+| "The system shall provide good UX" | "Given a user submits an invalid email, when they click Register, then an error message appears below the email field" |
+| Acceptance criteria that are implementation details | Focus on behavior: "shall use Spring Security" → "when users log in, they receive a secure HTTP-only session cookie" |
+| Criteria that can't be tested independently | Each Given/When/Then should be verifiable on its own |
+
+### Tips for Writing Good AC
+
+1. **Write from user perspective**: Use roles ("As a researcher", "As an admin") and user-facing language
+2. **Be specific with values**: "30 days" not "a reasonable time period"
+3. **Cover the happy path and key error cases**: Include what happens when things go wrong
+4. **Test against the requirement**: Each AC should trace back to a specific part of the requirement statement
+5. **Use concrete nouns**: "Display a dialog" not "Show something to the user"
+6. **Avoid ambiguous words**: Instead of "reasonable", "quickly", "properly", use measurable terms
+
+### Acceptance Criteria vs. Requirement Statement
+
+| Aspect | Requirement | Acceptance Criteria (in Story) |
+|---|---|---|
+| **Level** | Capability level | Implementation/behavior level |
+| **Audience** | Stakeholders, product, architecture | Developers, QA, testers |
+| **Detail** | "The system shall support MFA" | "When user enters 3 wrong codes, login is locked 5 min" |
+| **Location** | `docs/requirements.md` | GitHub Story issue |
+| **Purpose** | Define WHAT must be built | Define HOW to verify it's correct |
+
+---
+
 ## Editing Requirements
 
 ### When Requirements Change
