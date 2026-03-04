@@ -6,6 +6,157 @@
 
 ---
 
+## Requirements and Issue Governance
+
+### Requirement ID Scheme
+
+All requirements must follow the domain-based ID structure:
+
+    <DOMAIN>-<TYPE>-<NN>
+
+Where:
+
+-   **DOMAIN** --- functional area (e.g. `API`, `PROJECT`, `SAMPLE`,
+    `MEASUREMENT`, `DATA`, `FAIR`, `CARE`, `QUALITY`, `LAB`, `AUTH`)
+-   **TYPE** --- requirement type:
+    -   `R` = Functional requirement (system capability)
+    -   `NFR` = Non-functional requirement (quality attribute)
+    -   `C` = Constraint (solution boundary)
+-   **NN** --- sequential number per domain and type (e.g. `01`, `02`,
+    `03`)
+
+#### Examples
+
+    API-R-01
+    API-NFR-01
+    API-C-01
+    SAMPLE-R-02
+    FAIR-NFR-01
+    LAB-C-01
+
+#### Rules
+
+-   IDs must be stable and must never be renumbered.
+-   IDs must not encode sprint numbers, versions, or document order.
+-   One requirement may be referenced by multiple stories.
+-   Constraints (`C`) influence architecture and must not be converted
+    into user stories unless user value is directly involved.
+
+------------------------------------------------------------------------
+
+### Requirement Structure
+
+All requirements must be documented in `docs/requirements.md`.
+
+Each requirement must contain:
+
+-   **ID**
+-   **Statement** --- clear, capability-level description
+-   **Rationale** --- why this requirement exists (strategic,
+    regulatory, stakeholder-driven)
+-   **Source (optional but recommended)** --- link to:
+    -   PRD section
+    -   FAIR / CARE principle
+    -   Regulatory document
+    -   Stakeholder request
+    -   ADR
+
+#### Example
+
+    API-R-01 The system shall provide authenticated API access to project metadata.
+
+    Rationale:
+    Enables integration with partner laboratories and automated analysis pipelines.
+
+    Source:
+    PRD §2.3 Partner Integration
+
+------------------------------------------------------------------------
+
+### Issues: Use the Repo Templates
+
+When creating issues, use the correct template for the scenario.
+
+------------------------------------------------------------------------
+
+#### Story (`.github/ISSUE_TEMPLATE/story.yml`)
+
+Use when creating issues for **user-facing functionality** derived from
+the PRD or requirements.
+
+Required fields:
+
+-   **Requirement IDs**
+    -   At least one `R-xx` reference
+    -   May include related `NFR-xx`
+-   **User Story** Written as: \> As a `<role>`, I want `<goal>`, so
+    that `<benefit>`.
+-   **Acceptance Criteria** One or more testable conditions in Given /
+    When / Then format.
+
+Rules:
+
+-   Stories describe value and workflow context.
+-   Stories must not introduce new system capabilities not covered by an
+    existing requirement.
+-   If new capability is needed, update `docs/requirements.md` first.
+
+------------------------------------------------------------------------
+
+#### Task (`.github/ISSUE_TEMPLATE/task.yml`)
+
+Use when creating issues for **concrete technical implementation work**
+derived from, and linked to, a story.
+
+Required fields:
+
+-   **Parent Story**
+    -   Link to the parent story issue (e.g. `#123`)
+-   **Requirement IDs**
+    -   At least one `R-xx` or `NFR-xx` reference
+-   **Description**
+    -   What needs to be implemented
+-   **Technical Notes (optional)**
+    -   Design hints
+    -   Constraints (`C-xx`)
+    -   Related ADRs
+
+Rules:
+
+-   Tasks must not redefine acceptance criteria.
+-   Tasks must not expand requirement scope.
+-   Constraints (`C-xx`) may be referenced here when relevant.
+
+------------------------------------------------------------------------
+
+### Traceability Rules
+
+- Every Story must reference at least one requirement ID.
+- Every Task must reference:
+    -   A parent Story
+    -   At least one requirement ID
+-   Every PR must:
+    -   Reference the issue it implements
+    -   List the requirement IDs addressed
+-   If implementation changes behavior:
+    -   Update the corresponding requirement
+    -   Or explicitly justify why no requirement update is needed
+
+------------------------------------------------------------------------
+
+### Requirement Edits
+
+When editing requirements:
+
+-   Use a Pull Request.
+-   Include a changelog entry in the PR description summarizing:
+    -   Added / Modified / Removed requirement IDs
+    -   Reason for change
+    -   Stakeholder or source reference (if applicable)
+
+Agents must never modify requirements silently.
+
+
 ## 1. Project Overview
 
 **Data Manager** is a web-based, multi-omics research data management platform developed by
@@ -422,5 +573,7 @@ An agent should pause and request human review/approval before:
 | `datamanager-app/src/main/resources/application.properties` | Full application configuration with env var mappings |
 | `datamanager-bom/pom.xml` | All dependency version pins |
 | `.github/labeler.yml` | PR/branch labeling rules |
+| `.github/ISSUE_TEMPLATE/story.yml` | Issue template for user-facing functionality (user stories) |
+| `.github/ISSUE_TEMPLATE/task.yml` | Issue template for concrete technical implementation tasks |
 | `.github/release.yml` | Release changelog categories |
 | `GoogleStyle.xml` | IntelliJ Google Java Style formatter config |
