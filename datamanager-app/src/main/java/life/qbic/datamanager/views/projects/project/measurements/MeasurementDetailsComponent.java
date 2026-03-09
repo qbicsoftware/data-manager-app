@@ -1,841 +1,917 @@
 package life.qbic.datamanager.views.projects.project.measurements;
 
+import static java.util.Objects.isNull;
+import static java.util.Objects.requireNonNull;
+
+import com.vaadin.flow.component.AttachEvent;
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
-import com.vaadin.flow.component.grid.dataview.GridLazyDataView;
+import com.vaadin.flow.component.grid.Grid.MultiSortPriority;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.AnchorTarget;
-import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.tabs.Tab;
-import com.vaadin.flow.component.tabs.TabSheet;
-import com.vaadin.flow.data.provider.AbstractDataView;
-import com.vaadin.flow.data.provider.SortDirection;
-import com.vaadin.flow.data.renderer.ComponentRenderer;
+import com.vaadin.flow.data.provider.CallbackDataProvider.CountCallback;
+import com.vaadin.flow.data.provider.CallbackDataProvider.FetchCallback;
 import com.vaadin.flow.server.StreamResource;
-import com.vaadin.flow.spring.annotation.SpringComponent;
-import com.vaadin.flow.spring.annotation.UIScope;
-import jakarta.annotation.security.PermitAll;
-import java.io.Serial;
+import com.vaadin.flow.shared.Registration;
+import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 import java.io.Serializable;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
+import java.util.Comparator;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
-import life.qbic.application.commons.SortOrder;
-import life.qbic.datamanager.ClientDetailsProvider;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
+import life.qbic.application.commons.ApplicationException;
+import life.qbic.application.commons.time.DateTimeFormat;
 import life.qbic.datamanager.views.Context;
-import life.qbic.datamanager.views.general.CopyToClipBoardComponent;
-import life.qbic.datamanager.views.general.MultiSelectLazyLoadingGrid;
 import life.qbic.datamanager.views.general.PageArea;
-import life.qbic.datamanager.views.general.Tag;
-import life.qbic.datamanager.views.general.Tag.TagColor;
+import life.qbic.datamanager.views.general.dialog.AppDialog;
+import life.qbic.datamanager.views.general.dialog.DialogBody;
+import life.qbic.datamanager.views.general.dialog.DialogFooter;
+import life.qbic.datamanager.views.general.dialog.DialogHeader;
+import life.qbic.datamanager.views.general.dialog.DialogSection;
+import life.qbic.datamanager.views.general.grid.component.FilterGrid;
+import life.qbic.datamanager.views.general.grid.component.FilterGridConfigurations;
+import life.qbic.datamanager.views.general.grid.component.FilterGridTab;
+import life.qbic.datamanager.views.general.grid.component.FilterGridTabSheet;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
-import life.qbic.projectmanagement.application.api.AsyncProjectService;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.RequestFailedException;
-import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
-import life.qbic.projectmanagement.application.measurement.MeasurementService;
-import life.qbic.projectmanagement.application.sample.SampleInformationService;
-import life.qbic.projectmanagement.domain.Organisation;
-import life.qbic.projectmanagement.domain.model.OntologyTerm;
-import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
-import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
-import life.qbic.projectmanagement.domain.model.measurement.NGSIndex;
-import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
-import life.qbic.projectmanagement.domain.model.measurement.NGSSpecificMeasurementMetadata;
-import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
-import life.qbic.projectmanagement.domain.model.measurement.ProteomicsSpecificMeasurementMetadata;
-import life.qbic.projectmanagement.domain.model.sample.Sample;
-import life.qbic.projectmanagement.domain.model.sample.SampleId;
-import org.springframework.beans.factory.annotation.Autowired;
+import life.qbic.projectmanagement.application.measurement.NgsMeasurementLookup;
+import life.qbic.projectmanagement.application.measurement.NgsMeasurementLookup.MeasurementFilter;
+import life.qbic.projectmanagement.application.measurement.NgsMeasurementLookup.NgsSortKey;
+import life.qbic.projectmanagement.application.measurement.PxpMeasurementLookup;
+import life.qbic.projectmanagement.application.measurement.PxpMeasurementLookup.MeasurementInfo;
+import life.qbic.projectmanagement.application.measurement.PxpMeasurementLookup.PxpSortKey;
+import org.springframework.lang.NonNull;
 
 /**
- * Enables the user to manage the registered {@link MeasurementMetadata} by providing the ability to
- * register new measurements, search already registered measurements and view measurements dependent
- * on the lab facility (Proteomics, Genomics, Imaging...)
+ * A component to show detailed information about existing measurements within an experiment.
  */
-@SpringComponent
-@UIScope
-@PermitAll
 public class MeasurementDetailsComponent extends PageArea implements Serializable {
 
-  public static final String CLICKABLE = "clickable";
-  @Serial
-  private static final long serialVersionUID = 5086686432247130622L;
-  private static final String DATE_TIME_FORMAT = "yyyy-MM-dd HH:mm";
-  private final TabSheet registeredMeasurementsTabSheet = new TabSheet();
-  private final MultiSelectLazyLoadingGrid<NGSMeasurement> ngsMeasurementGrid = new MultiSelectLazyLoadingGrid<>();
-  private final MultiSelectLazyLoadingGrid<ProteomicsMeasurement> proteomicsMeasurementGrid = new MultiSelectLazyLoadingGrid<>();
-  private final MeasurementDomainTab proteomicsTab;
-  private final MeasurementDomainTab genomicsTab;
-  private final Collection<GridLazyDataView<?>> measurementsGridDataViews = new ArrayList<>();
-  private final transient MeasurementService measurementService;
-  private final transient SampleInformationService sampleInformationService;
-  private final List<MeasurementDomainTab> tabsInTabSheet = new ArrayList<>();
-  private final StreamResource rorIconResource = new StreamResource("ROR_logo.svg",
-      () -> getClass().getClassLoader().getResourceAsStream("icons/ROR_logo.svg"));
-  private final transient ClientDetailsProvider clientDetailsProvider;
-  private final List<ComponentEventListener<MeasurementSelectionChangedEvent>> listeners = new ArrayList<>();
-  private final transient AsyncProjectService asyncProjectService;
-  private final transient MessageSourceNotificationFactory notificationFactory;
-  private transient Context context;
-  private String searchTerm = "";
-  private transient Tab selectedTab = null;
+  private static final StreamResource ROR_ICON_RESOURCE = new StreamResource("ROR_logo.svg",
+      () -> MeasurementDetailsComponent.class.getClassLoader()
+          .getResourceAsStream("icons/ROR_logo.svg"));
+  private static final NumberFormat INJECTION_VOLUME_FORMAT = new DecimalFormat("#.##");
+  private static final DateTimeFormat MEASUREMENT_REGISTRATION_DATE_TIME_FORMAT = DateTimeFormat.ISO_LOCAL_DATE_TIME_WHITESPACE_SEPARATED;
 
-  public MeasurementDetailsComponent(@Autowired MeasurementService measurementService,
-      @Autowired SampleInformationService sampleInformationService,
-      @Autowired AsyncProjectService asyncProjectService,
-      ClientDetailsProvider clientDetailsProvider,
-      @Autowired MessageSourceNotificationFactory notificationFactory) {
-    this.notificationFactory = Objects.requireNonNull(notificationFactory);
-    this.asyncProjectService = Objects.requireNonNull(asyncProjectService);
-    this.measurementService = Objects.requireNonNull(measurementService);
-    this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
-    this.clientDetailsProvider = clientDetailsProvider;
-    proteomicsTab = new MeasurementDomainTab(Domain.PROTEOMICS, 0);
-    genomicsTab = new MeasurementDomainTab(Domain.GENOMICS, 0);
-    createProteomicsGrid();
-    createNGSMeasurementGrid();
-    add(registeredMeasurementsTabSheet);
-    registeredMeasurementsTabSheet.addClassName("measurement-tabsheet");
-    addClassName("measurement-details-component");
-    registeredMeasurementsTabSheet.addSelectedChangeListener(event -> {
-      resetSelectedMeasurements();
-      selectedTab = event.getSelectedTab();
-    });
+  private final AtomicReference<String> clientTimeZone = new AtomicReference<>("UTC");
+  private final AtomicInteger clientTimeZoneOffset = new AtomicInteger(0);
+  private final MessageSourceNotificationFactory messageFactory;
+
+  private final FilterGridTabSheet tabSheet;
+  private final SearchTermFilter ngsSearchTermFilter = SearchTermFilter.empty();
+  private final SearchTermFilter pxpSearchTermFilter = SearchTermFilter.empty();
+
+  private final transient NgsMeasurementLookup ngsMeasurementLookup;
+  private final transient PxpMeasurementLookup pxpMeasurementLookup;
+  private FilterGrid<NgsMeasurementLookup.MeasurementInfo, SearchTermFilter> filterGridNgs;
+  private FilterGrid<MeasurementInfo, SearchTermFilter> filterGridPxp;
+
+  /**
+   * A filter containing a search term
+   *
+   * @param searchTerm
+   */
+  record SearchTermFilter(String searchTerm) implements Serializable {
+
+    static SearchTermFilter empty() {
+      return new SearchTermFilter("");
+    }
+
+    public SearchTermFilter replaceWith(String searchTerm) {
+      return new SearchTermFilter(searchTerm);
+    }
+  }
+
+  @Override
+  protected void onAttach(AttachEvent attachEvent) {
+    super.onAttach(attachEvent);
+    attachEvent.getUI().getPage().retrieveExtendedClientDetails(
+        receiver -> {
+          clientTimeZoneOffset.set(receiver.getTimezoneOffset());
+          clientTimeZone.set(receiver.getTimeZoneId());
+        });
+  }
+
+  private @NonNull String formatTime(Instant instant, DateTimeFormat dateTimeFormat) {
+    return DateTimeFormat.asJavaFormatter(dateTimeFormat, ZoneId.of(clientTimeZone.get()))
+        .format(instant);
+  }
+
+  public MeasurementDetailsComponent(
+      MessageSourceNotificationFactory messageFactory,
+      NgsMeasurementLookup ngsMeasurementLookup,
+      PxpMeasurementLookup pxpMeasurementLookup) {
+    this.messageFactory = requireNonNull(messageFactory);
+    this.ngsMeasurementLookup = requireNonNull(ngsMeasurementLookup);
+    this.pxpMeasurementLookup = requireNonNull(pxpMeasurementLookup);
+    addClassNames("measurement-details-component", "height-full", "width-full");
+
+    //setup tab sheet
+    tabSheet = new FilterGridTabSheet();
+    tabSheet.showPrimaryFeatureButton();
+    tabSheet.setCaptionPrimaryAction("Register Measurements");
+    tabSheet.showPrimaryFeatureButton();
+    tabSheet.setCaptionFeatureAction("Export");
+    add(tabSheet);
   }
 
   /**
-   * Provides the {@link ExperimentId} to the {@link GridLazyDataView}s to search the
-   * {@link MeasurementMetadata} shown in the grids of this component
+   * Refreshes the genomics grid.
+   */
+  public void refreshNgs() {
+    Optional.ofNullable(filterGridNgs)
+        .ifPresent(FilterGrid::refreshAll);
+  }
+
+  /**
+   * Refreshes the proteomics grid.
+   */
+  public void refreshPxp() {
+    Optional.ofNullable(filterGridPxp)
+        .ifPresent(FilterGrid::refreshAll);
+  }
+
+  /**
+   * Sets the context of the component and refreshes the view to display updated information.
    *
-   * @param context Context with the projectId and experimentId containing the samples for which
-   *                measurements could be registered
+   * @param context the context for this component
    */
   public void setContext(Context context) {
-    resetTabsInTabsheet();
-    this.context = context;
-    List<GridLazyDataView<?>> dataViewsWithItems = measurementsGridDataViews.stream()
-        .filter(gridLazyDataView -> gridLazyDataView.getItems()
-            .findAny().isPresent()).toList();
+    validateContext(context);
+    String projectId = context.projectId().orElseThrow().value();
+    String experimentId = context.experimentId().orElseThrow().value();
 
-    dataViewsWithItems.forEach(this::addMeasurementTab);
-    initializeTabCounts();
-  }
-
-  private void initializeTabCounts() {
-    genomicsTab.setMeasurementCount((int) measurementService.countNGSMeasurements(
-        context.experimentId().orElseThrow()));
-    proteomicsTab.setMeasurementCount((int) measurementService.countProteomicsMeasurements(
-        context.experimentId().orElseThrow()));
-  }
-
-  /**
-   * Propagates the search Term provided by the user
-   * <p>
-   * The string based search term is used to filter the {@link MeasurementMetadata} shown in the
-   * grid of each individual tab of the Tabsheet within this component
-   *
-   * @param searchTerm String based searchTerm for which the properties of each measurement should
-   *                   be filtered for
-   */
-  public void setSearchedMeasurementValue(String searchTerm) {
-    if (!this.searchTerm.equals(searchTerm)) {
-      refreshGrids();
+    //add corresponding tabs in a defined order
+    tabSheet.removeAllTabs();
+    if (ngsMeasurementsExist(projectId, experimentId)) {
+      filterGridNgs = filterGridNgs(createNgsGrid(), projectId, experimentId);
+      addNgsTab(tabSheet, 0, "Genomics", filterGridNgs);
     }
-    this.searchTerm = searchTerm;
-  }
-
-  /*Vaadin provides no easy way to remove all tabs in a tabSheet*/
-  private void resetTabsInTabsheet() {
-    if (!tabsInTabSheet.isEmpty()) {
-      tabsInTabSheet.forEach(registeredMeasurementsTabSheet::remove);
-      tabsInTabSheet.clear();
+    if (pxpMeasurementsExist(projectId, experimentId)) {
+      filterGridPxp = filterGridPxp(createPxpGrid(), projectId, experimentId);
+      addPxpTab(tabSheet, 1, "Proteomics", filterGridPxp);
     }
   }
 
-  private void addMeasurementTab(GridLazyDataView<?> gridLazyDataView) {
-    if (gridLazyDataView.getItems().findAny().isEmpty()) {
-      return;
-    }
-    if (gridLazyDataView.getItem(0) instanceof ProteomicsMeasurement) {
-      tabsInTabSheet.add(proteomicsTab);
-      registeredMeasurementsTabSheet.add(proteomicsTab, proteomicsMeasurementGrid);
-    }
-    if (gridLazyDataView.getItem(0) instanceof NGSMeasurement) {
-      tabsInTabSheet.add(genomicsTab);
-      registeredMeasurementsTabSheet.add(genomicsTab, ngsMeasurementGrid);
-    }
-    refreshGrids();
+  private boolean pxpMeasurementsExist(String projectId, String experimentId) {
+    return pxpMeasurementLookup.countPxpMeasurements(projectId,
+        PxpMeasurementLookup.MeasurementFilter.forExperiment(experimentId)) > 0;
   }
 
-  private void createNGSMeasurementGrid() {
-    ngsMeasurementGrid.addClassName("measurement-grid");
-    ngsMeasurementGrid.addComponentColumn(ngsMeasurement -> {
-          Span measurementCell = new Span();
-          String measurementCode = ngsMeasurement.measurementCode().value();
-          CopyToClipBoardComponent copyToClipBoardComponent = new CopyToClipBoardComponent(
-              measurementCode);
-          copyToClipBoardComponent.setIconSize("1em");
-          measurementCell.add(new Span(measurementCode), copyToClipBoardComponent);
-          measurementCell.addClassName("measurement-column-cell");
-          return measurementCell;
-        })
-        .setHeader("Measurement ID")
-        .setAutoWidth(true)
-        .setFlexGrow(0);
-    ngsMeasurementGrid.addComponentColumn(measurement -> {
-          if (measurement.isSingleSampleMeasurement()) {
-            return new Span(
-                String.join(" ", groupSampleInfoIntoCodeAndLabel(measurement.measuredSamples())));
-          }
-          return createNGSPooledSampleComponent(measurement,
-              measurement.samplePoolGroup().orElse("Pooled sample"));
-        })
-        .setTooltipGenerator(measurement -> {
-          if (measurement.isSingleSampleMeasurement()) {
-            return String.join(" ", groupSampleInfoIntoCodeAndLabel(measurement.measuredSamples()));
-          } else {
-            return "";
-          }
-        })
-        .setHeader("Samples")
-        .setAutoWidth(true);
-    ngsMeasurementGrid.addColumn(NGSMeasurement::measurementName)
-        .setHeader("Measurement Name")
-        .setTooltipGenerator(NGSMeasurement::measurementName)
-        .setAutoWidth(true);
-    ngsMeasurementGrid.addColumn(NGSMeasurement::facility)
-        .setHeader("Facility")
-        .setTooltipGenerator(NGSMeasurement::facility)
-        .setAutoWidth(true);
-    ngsMeasurementGrid.addComponentColumn(
-            ngsMeasurement -> renderInstrument().createComponent(
-                ngsMeasurement.instrument()))
-        .setHeader("Instrument")
-        .setTooltipGenerator(
-            ngsMeasurement -> ngsMeasurement.instrument().formatted())
-        .setAutoWidth(true);
-    ngsMeasurementGrid.addComponentColumn(
-            ngsMeasurement -> renderOrganisation(ngsMeasurement.organisation()))
-        .setHeader("Organisation")
-        .setTooltipGenerator(measurement -> measurement.organisation().label())
-        .setAutoWidth(true);
-    ngsMeasurementGrid.addColumn(NGSMeasurement::sequencingReadType)
-        .setHeader("Read type")
-        .setTooltipGenerator(NGSMeasurement::sequencingReadType)
-        .setAutoWidth(true);
-    ngsMeasurementGrid.addColumn(ngsMeasurement -> ngsMeasurement.libraryKit().orElse(""))
-        .setHeader("Library kit")
-        .setTooltipGenerator(ngsMeasurement -> ngsMeasurement.libraryKit().orElse(""))
-        .setAutoWidth(true);
-    ngsMeasurementGrid.addColumn(ngsMeasurement -> ngsMeasurement.flowCell().orElse(""))
-        .setHeader("Flow cell")
-        .setTooltipGenerator(ngsMeasurement -> ngsMeasurement.flowCell().orElse(""))
-        .setAutoWidth(true);
-    ngsMeasurementGrid.addColumn(
-            ngsMeasurement -> ngsMeasurement.sequencingRunProtocol().orElse(""))
-        .setHeader("Run protocol")
-        .setTooltipGenerator(ngsMeasurement -> ngsMeasurement.sequencingRunProtocol().orElse(""))
-        .setAutoWidth(true);
-    ngsMeasurementGrid.addColumn(
-            ngsMeasurement -> asClientLocalDateTime(ngsMeasurement.registrationDate())
-                .format(DateTimeFormatter.ofPattern(DATE_TIME_FORMAT)))
-        .setHeader("Registration Date")
-        .setTooltipGenerator(
-            ngsMeasurement -> asClientLocalDateTime(ngsMeasurement.registrationDate())
-                .format(DateTimeFormatter.ofPattern(DATE_TIME_FORMAT)))
-        .setAutoWidth(true);
-    ngsMeasurementGrid.addComponentColumn(measurement -> {
-          if (measurement.isSingleSampleMeasurement()) {
-            Span singularComment = new Span();
-            var optMetadata = measurement.specificMeasurementMetadata().stream().findFirst();
-            optMetadata.ifPresent(metadata -> singularComment.setText(metadata.comment().orElse("")));
-            return singularComment;
-          } else {
-            return createNGSPooledSampleComponent(measurement,
-                "Pooled sample");
-          }
-        })
-        .setHeader("Comment")
-        .setTooltipGenerator(measurement -> {
-          if (measurement.isSingleSampleMeasurement()) {
-            var optMetadata = measurement.specificMeasurementMetadata().stream().findFirst();
-            if (optMetadata.isPresent()) {
-              return optMetadata.get().comment().orElse("");
-            }
-          }
-          return "";
-        })
-        .setAutoWidth(true);
-    GridLazyDataView<NGSMeasurement> ngsGridDataView = ngsMeasurementGrid.setItems(query -> {
-      List<SortOrder> sortOrders = query.getSortOrders().stream().map(
-              it -> new SortOrder(it.getSorted(), it.getDirection().equals(SortDirection.ASCENDING)))
-          .collect(Collectors.toList());
-      sortOrders.add(SortOrder.of("measurementCode").ascending());
-      return measurementService.findNGSMeasurements(searchTerm,
-              context.experimentId().orElseThrow(),
-              query.getOffset(), query.getLimit(), sortOrders, context.projectId().orElseThrow())
-          .stream();
-    });
-    ngsGridDataView
-        .addItemCountChangeListener(
-            countChangeEvent -> genomicsTab.setMeasurementCount(
-                (int) ngsGridDataView.getItems().count()));
-    ngsMeasurementGrid.addSelectListener(
-        event -> updateSelectedMeasurementsInfo(event.isFromClient()));
-    measurementsGridDataViews.add(ngsGridDataView);
+  private boolean ngsMeasurementsExist(String projectId, String experimentId) {
+    return ngsMeasurementLookup.countNgsMeasurements(projectId,
+        MeasurementFilter.forExperiment(experimentId)) > 0;
   }
 
-  private void createProteomicsGrid() {
-    proteomicsMeasurementGrid.addClassName("measurement-grid");
-    proteomicsMeasurementGrid.addComponentColumn(measurement -> {
-          Span measurementCell = new Span();
-          String measurementCode = measurement.measurementCode().value();
-          CopyToClipBoardComponent copyToClipBoardComponent = new CopyToClipBoardComponent(
-              measurementCode);
-          copyToClipBoardComponent.setIconSize("1em");
-          measurementCell.add(new Span(measurementCode), copyToClipBoardComponent);
-          measurementCell.addClassName("measurement-column-cell");
-          return measurementCell;
-        })
-        .setHeader("Measurement ID")
-        .setAutoWidth(true)
-        .setFlexGrow(0);
-    proteomicsMeasurementGrid.addComponentColumn(measurement -> {
-          if (measurement.isSingleSampleMeasurement()) {
-            return new Span(
-                String.join(" ", groupSampleInfoIntoCodeAndLabel(measurement.measuredSamples())));
+  private void addPxpTab(FilterGridTabSheet tabSheet, int index, String name,
+      FilterGrid<MeasurementInfo, SearchTermFilter> filterGrid) {
+    var pxpTab = new FilterGridTab<>(name, filterGrid);
+    tabSheet.addTab(index, pxpTab);
+    tabSheet.addPrimaryAction(pxpTab,
+        tab -> fireEvent(new PxpMeasurementRegistrationRequested(this, true)));
+    tabSheet.addFeatureAction(pxpTab,
+        tab -> {
+          List<String> selectedMeasurementIds = tab.filterGrid().selectedElements()
+              .stream()
+              .map(MeasurementInfo::measurementId)
+              .distinct()
+              .toList();
+          if (selectedMeasurementIds.isEmpty()) {
+            displayMissingSelectionNote();
+            return;
           }
-          return createProteomicsPooledSampleComponent(measurement,
-              measurement.samplePoolGroup().orElse("Pooled sample"));
-        })
-        .setHeader("Samples")
-        .setTooltipGenerator(measurement -> {
-          if (measurement.isSingleSampleMeasurement()) {
-            return String.join(" ", groupSampleInfoIntoCodeAndLabel(measurement.measuredSamples()));
-          }
-          return "";
-        })
-        .setAutoWidth(true);
-    proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::measurementName)
-        .setHeader("Measurement Name")
-        .setTooltipGenerator(ProteomicsMeasurement::measurementName)
-        .setAutoWidth(true);
-    proteomicsMeasurementGrid.addComponentColumn(
-            proteomicsMeasurement -> renderOrganisation(proteomicsMeasurement.organisation()))
-        .setHeader("Organisation")
-        .setTooltipGenerator(measurement -> measurement.organisation().label())
-        .setAutoWidth(true);
-    proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::facility)
-        .setHeader("Facility")
-        .setTooltipGenerator(ProteomicsMeasurement::facility)
-        .setAutoWidth(true);
-    proteomicsMeasurementGrid.addComponentColumn(
-            proteomicsMeasurement -> renderInstrument().createComponent(
-                proteomicsMeasurement.msDevice()))
-        .setHeader("MS Device")
-        .setTooltipGenerator(proteomicsMeasurement -> proteomicsMeasurement.msDevice().formatted())
-        .setAutoWidth(true);
-    proteomicsMeasurementGrid.addColumn(
-            measurement -> measurement.technicalReplicateName().orElse(""))
-        .setHeader("Technical Replicate")
-        .setTooltipGenerator(measurement -> measurement.technicalReplicateName().orElse(""))
-        .setAutoWidth(true);
-    proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::digestionEnzyme)
-        .setHeader("Digestion Enzyme")
-        .setTooltipGenerator(ProteomicsMeasurement::digestionEnzyme)
-        .setAutoWidth(true);
-    proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::digestionMethod)
-        .setHeader("Digestion Method")
-        .setTooltipGenerator(ProteomicsMeasurement::digestionMethod)
-        .setAutoWidth(true);
-    proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::injectionVolume)
-        .setHeader("Injection Volume")
-        .setTooltipGenerator(measurement -> String.valueOf(measurement.injectionVolume()))
-        .setAutoWidth(true);
-    proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::lcmsMethod)
-        .setHeader("LCMS")
-        .setTooltipGenerator(ProteomicsMeasurement::lcmsMethod)
-        .setAutoWidth(true);
-    proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::lcColumn)
-        .setHeader("LC column")
-        .setTooltipGenerator(ProteomicsMeasurement::lcColumn)
-        .setAutoWidth(true);
-    proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::enrichmentMethod)
-        .setHeader("Enrichment")
-        .setTooltipGenerator(ProteomicsMeasurement::enrichmentMethod)
-        .setAutoWidth(true);
-    proteomicsMeasurementGrid.addColumn(
-            measurement -> asClientLocalDateTime(measurement.registrationDate())
-                .format(DateTimeFormatter.ofPattern(DATE_TIME_FORMAT)))
-        .setHeader("Registration Date")
-        .setTooltipGenerator(measurement -> asClientLocalDateTime(measurement.registrationDate())
-            .format(DateTimeFormatter.ofPattern(DATE_TIME_FORMAT)))
-        .setAutoWidth(true);
-    proteomicsMeasurementGrid.addComponentColumn(measurement -> {
-          if (measurement.isSingleSampleMeasurement()) {
-            Span singularComment = new Span();
-            var optMetadata = measurement.specificMetadata().stream().findFirst();
-            optMetadata.ifPresent(metadata -> singularComment.setText(metadata.comment().orElse("")));
-            return singularComment;
-          } else {
-            return createProteomicsPooledSampleComponent(measurement,
-                "Pooled sample");
-          }
-        })
-        .setHeader("Comment")
-        .setTooltipGenerator(measurement -> {
-          if (measurement.isSingleSampleMeasurement()) {
-            var optMetadata = measurement.specificMetadata().stream().findFirst();
-            if (optMetadata.isPresent()) {
-              return optMetadata.get().comment().orElse("");
-            }
-          }
-          return "";
-        })
-        .setAutoWidth(true);
-    GridLazyDataView<ProteomicsMeasurement> proteomicsGridDataView = proteomicsMeasurementGrid.setItems(
-        query -> {
-          List<SortOrder> sortOrders = query.getSortOrders().stream().map(
-                  it -> new SortOrder(it.getSorted(),
-                      it.getDirection().equals(SortDirection.ASCENDING)))
-              .collect(Collectors.toList());
-          sortOrders.add(SortOrder.of("measurementCode").ascending());
-          return measurementService.findProteomicsMeasurements(searchTerm,
-                  context.experimentId().orElseThrow(),
-                  query.getOffset(), query.getLimit(), sortOrders, context.projectId().orElseThrow())
-              .stream();
-
+          fireEvent(new PxpMeasurementExportRequested(selectedMeasurementIds, this, true));
         });
-    proteomicsGridDataView
-        .addItemCountChangeListener(
-            countChangeEvent -> proteomicsTab.setMeasurementCount(
-                (int) proteomicsGridDataView.getItems().count()));
-    proteomicsMeasurementGrid.addSelectListener(
-        event -> updateSelectedMeasurementsInfo(event.isFromClient()));
-    measurementsGridDataViews.add(proteomicsGridDataView);
   }
 
-  private Span createProteomicsPooledSampleComponent(ProteomicsMeasurement measurement,
-      String label) {
-    MeasurementPooledSamplesDialog measurementPooledSamplesDialog = new MeasurementPooledSamplesDialog(
-        measurement);
-    Icon expandIcon = VaadinIcon.EXPAND_SQUARE.create();
-    expandIcon.addClassName("expand-icon");
-    Span expandSpan = new Span(new Span(label), expandIcon);
-    expandSpan.addClassNames("sample-column-cell", CLICKABLE);
-    expandSpan.addClickListener(event -> measurementPooledSamplesDialog.open());
-    return expandSpan;
+  private void addNgsTab(FilterGridTabSheet tabSheet, int index, String name,
+      FilterGrid<NgsMeasurementLookup.MeasurementInfo, SearchTermFilter> filterGrid) {
+    var ngsTab = new FilterGridTab<>(name, filterGrid);
+    tabSheet.addTab(index, ngsTab);
+    tabSheet.addPrimaryAction(ngsTab,
+        tab -> fireEvent(new NgsMeasurementRegistrationRequested(this, true)));
+    tabSheet.addFeatureAction(ngsTab,
+        tab -> {
+          List<String> selectedMeasurementIds = tab.filterGrid().selectedElements()
+              .stream()
+              .map(NgsMeasurementLookup.MeasurementInfo::measurementId)
+              .distinct()
+              .toList();
+          if (selectedMeasurementIds.isEmpty()) {
+            displayMissingSelectionNote();
+            return;
+          }
+          fireEvent(new NgsMeasurementExportRequested(selectedMeasurementIds, this, true));
+        });
   }
 
-  private Span createNGSPooledSampleComponent(NGSMeasurement measurement, String label) {
-    MeasurementPooledSamplesDialog measurementPooledSamplesDialog = new MeasurementPooledSamplesDialog(
-        measurement);
-    Icon expandIcon = VaadinIcon.EXPAND_SQUARE.create();
-    expandIcon.addClassName("expand-icon");
-    Span expandSpan = new Span(new Span(label), expandIcon);
-    expandSpan.addClassNames("sample-column-cell", CLICKABLE);
-    expandSpan.addClickListener(event -> measurementPooledSamplesDialog.open());
-    return expandSpan;
+  private FilterGrid<NgsMeasurementLookup.MeasurementInfo, SearchTermFilter> filterGridNgs(
+      Grid<NgsMeasurementLookup.MeasurementInfo> ngsGrid, String projectId,
+      String experimentId) {
+    FetchCallback<NgsMeasurementLookup.MeasurementInfo, SearchTermFilter> fetchCallback = query ->
+    {
+      String searchTerm = query.getFilter().map(SearchTermFilter::searchTerm).orElse("");
+      return ngsMeasurementLookup.lookupNgsMeasurements(
+          projectId, query.getOffset(), query.getLimit(),
+          VaadinSpringDataHelpers.toSpringDataSort(query),
+          MeasurementFilter.forExperiment(experimentId)
+              .withSearch(searchTerm, clientTimeZoneOffset.get(),
+                  MEASUREMENT_REGISTRATION_DATE_TIME_FORMAT));
+    };
+    CountCallback<NgsMeasurementLookup.MeasurementInfo, SearchTermFilter> countCallback = query ->
+    {
+      String searchTerm = query.getFilter().map(SearchTermFilter::searchTerm).orElse("");
+      return ngsMeasurementLookup.countNgsMeasurements(projectId,
+          MeasurementFilter.forExperiment(experimentId)
+              .withSearch(searchTerm, clientTimeZoneOffset.get(),
+                  MEASUREMENT_REGISTRATION_DATE_TIME_FORMAT));
+    };
+    var ngsGridConfiguration = FilterGridConfigurations.lazy(
+        fetchCallback,
+        countCallback);
+    var filterGrid = FilterGrid.create(
+        NgsMeasurementLookup.MeasurementInfo.class,
+        SearchTermFilter.class,
+        ngsGridConfiguration.applyConfiguration(ngsGrid),
+        this::getNgsSearchTermFilter,
+        (searchTerm, filter) -> filter.replaceWith(searchTerm));
+
+    filterGrid.itemDisplayLabel("measurement");
+    filterGrid.searchFieldPlaceholder("Search Measurements");
+    var editNgsButton = new Button("Edit");
+    editNgsButton.addClickListener(clicked -> {
+      Set<NgsMeasurementLookup.MeasurementInfo> selectedMeasurements = filterGrid.selectedElements();
+      List<String> selectedMeasurementIds = selectedMeasurements
+          .stream()
+          .map(NgsMeasurementLookup.MeasurementInfo::measurementId)
+          .distinct()
+          .toList();
+      if (selectedMeasurementIds.isEmpty()) {
+        displayMissingSelectionNote();
+        return;
+      }
+      fireEvent(new NgsMeasurementEditRequested(selectedMeasurementIds, this, true));
+    });
+
+    var deleteNgsButton = new Button("Delete");
+    deleteNgsButton.addClickListener(clicked -> {
+      Set<NgsMeasurementLookup.MeasurementInfo> selectedMeasurements = filterGrid.selectedElements();
+      List<String> selectedMeasurementIds = selectedMeasurements
+          .stream()
+          .map(NgsMeasurementLookup.MeasurementInfo::measurementId)
+          .distinct()
+          .toList();
+      if (selectedMeasurementIds.isEmpty()) {
+        displayMissingSelectionNote();
+        return;
+      }
+      fireEvent(new NgsMeasurementDeletionRequested(selectedMeasurementIds, this, true));
+    });
+    filterGrid.setSecondaryActionGroup(deleteNgsButton, editNgsButton);
+    return filterGrid;
   }
 
-  private void updateSelectedMeasurementsInfo(boolean isFromClient) {
-    listeners.forEach(listener -> listener.onComponentEvent(
-        new MeasurementSelectionChangedEvent(this, isFromClient)));
+  private FilterGrid<MeasurementInfo, SearchTermFilter> filterGridPxp(
+      Grid<MeasurementInfo> pxpGrid, String projectId, String experimentId) {
+    FetchCallback<MeasurementInfo, SearchTermFilter> fetchCallback = query -> {
+      String searchTerm = query.getFilter().map(SearchTermFilter::searchTerm)
+          .orElse("");
+      return pxpMeasurementLookup.lookupPxpMeasurements(
+          projectId, query.getOffset(), query.getLimit(),
+          VaadinSpringDataHelpers.toSpringDataSort(query),
+          PxpMeasurementLookup.MeasurementFilter.forExperiment(experimentId)
+              .withSearch(searchTerm, clientTimeZoneOffset.get(),
+                  MEASUREMENT_REGISTRATION_DATE_TIME_FORMAT));
+    };
+
+    CountCallback<MeasurementInfo, SearchTermFilter> countCallback = query -> {
+      var searchTerm = query.getFilter().map(SearchTermFilter::searchTerm)
+          .orElse("");
+      return pxpMeasurementLookup.countPxpMeasurements(projectId,
+          PxpMeasurementLookup.MeasurementFilter.forExperiment(experimentId)
+              .withSearch(searchTerm, clientTimeZoneOffset.get(),
+                  MEASUREMENT_REGISTRATION_DATE_TIME_FORMAT));
+    };
+
+    var configuration = FilterGridConfigurations.lazy(fetchCallback, countCallback);
+
+    var filterGrid = FilterGrid.create(
+        MeasurementInfo.class,
+        SearchTermFilter.class,
+        configuration.applyConfiguration(pxpGrid),
+        this::getPxpSearchTermFilter,
+        (searchTerm, filter) -> filter.replaceWith(searchTerm));
+
+    filterGrid.itemDisplayLabel("measurement");
+    filterGrid.searchFieldPlaceholder("Search Measurements");
+    var editPxpButton = new Button("Edit");
+    editPxpButton.addClickListener(clicked -> {
+      Set<MeasurementInfo> selectedMeasurements = filterGrid.selectedElements();
+      List<String> selectedMeasurementIds = selectedMeasurements
+          .stream()
+          .map(MeasurementInfo::measurementId)
+          .distinct()
+          .toList();
+      if (selectedMeasurementIds.isEmpty()) {
+        displayMissingSelectionNote();
+        return;
+      }
+      fireEvent(new PxpMeasurementEditRequested(selectedMeasurementIds, this, true));
+    });
+
+    var deletePxpButton = new Button("Delete");
+    deletePxpButton.addClickListener(clicked -> {
+      Set<MeasurementInfo> selectedMeasurements = filterGrid.selectedElements();
+      List<String> selectedMeasurementIds = selectedMeasurements
+          .stream()
+          .map(MeasurementInfo::measurementId)
+          .distinct()
+          .toList();
+      if (selectedMeasurementIds.isEmpty()) {
+        displayMissingSelectionNote();
+        return;
+      }
+      fireEvent(new PxpMeasurementDeletionRequested(selectedMeasurementIds, this, true));
+    });
+    filterGrid.setSecondaryActionGroup(deletePxpButton, editPxpButton);
+    return filterGrid;
   }
 
-  private LocalDateTime asClientLocalDateTime(Instant instant) {
-    ZonedDateTime zonedDateTime = instant.atZone(ZoneId.of(
-        this.clientDetailsProvider.latestDetails()
-            .map(ClientDetailsProvider.ClientDetails::timeZoneId).orElse("UTC")));
-    return zonedDateTime.toLocalDateTime();
+
+  SearchTermFilter getNgsSearchTermFilter() {
+    return this.ngsSearchTermFilter;
   }
 
-  private Anchor renderOrganisation(Organisation organisation) {
-    SvgIcon svgIcon = new SvgIcon(rorIconResource);
+  SearchTermFilter getPxpSearchTermFilter() {
+    return pxpSearchTermFilter;
+  }
+
+
+  private Grid<NgsMeasurementLookup.MeasurementInfo> createNgsGrid() {
+    var ngsGrid = new Grid<NgsMeasurementLookup.MeasurementInfo>();
+    ngsGrid.setMultiSort(true, MultiSortPriority.APPEND, true);
+    ngsGrid.addColumn(NgsMeasurementLookup.MeasurementInfo::measurementCode)
+        .setHeader("QBiC Measurement ID")
+        .setSortProperty(NgsSortKey.MEASUREMENT_ID.sortKey())
+        .setComparator(Comparator.comparing(NgsMeasurementLookup.MeasurementInfo::measurementCode))
+        .setAutoWidth(true)
+        .setResizable(true)
+        .setFrozen(true);
+    ngsGrid.addColumn(NgsMeasurementLookup.MeasurementInfo::measurementName)
+        .setHeader("Measurement Name")
+        .setSortProperty(NgsSortKey.MEASUREMENT_NAME.sortKey())
+        .setComparator(Comparator.comparing(NgsMeasurementLookup.MeasurementInfo::measurementCode))
+        .setAutoWidth(true)
+        .setResizable(true);
+    ngsGrid.addComponentColumn(measurementInfo -> renderSamplesNgs(measurementInfo,
+            info -> "%s (%s)".formatted(info.sampleLabel(), info.sampleCode())))
+        .setHeader("Samples")
+        .setSortable(false)
+        .setAutoWidth(true)
+        .setResizable(true);
+    ngsGrid.addColumn(NgsMeasurementLookup.MeasurementInfo::facility)
+        .setHeader("Facility")
+        .setSortProperty(NgsSortKey.FACILITY.sortKey())
+        .setComparator(Comparator.comparing(NgsMeasurementLookup.MeasurementInfo::facility))
+        .setAutoWidth(true)
+        .setResizable(true);
+    ngsGrid.addComponentColumn(
+            info -> renderInstrument(info.instrument().label(),
+                info.instrument().oboId(),
+                info.instrument().iri()))
+        .setHeader("Instrument")
+        .setSortable(false)
+        .setAutoWidth(true)
+        .setResizable(true);
+    ngsGrid.addComponentColumn(
+            info -> renderOrganisation(info.organisation().label(),
+                info.organisation().iri()))
+        .setHeader("Organisation")
+        .setSortable(false)
+        .setAutoWidth(true)
+        .setResizable(true);
+
+    ngsGrid.addColumn(NgsMeasurementLookup.MeasurementInfo::readType)
+        .setHeader("Read type")
+        .setSortProperty(NgsSortKey.READ_TYPE.sortKey())
+        .setComparator(Comparator.comparing(NgsMeasurementLookup.MeasurementInfo::readType))
+        .setAutoWidth(true)
+        .setResizable(true);
+    ngsGrid.addColumn(NgsMeasurementLookup.MeasurementInfo::libraryKit)
+        .setHeader("Library kit")
+        .setSortProperty(NgsSortKey.LIBRARY_KIT.sortKey())
+        .setComparator(Comparator.comparing(NgsMeasurementLookup.MeasurementInfo::libraryKit))
+        .setAutoWidth(true)
+        .setResizable(true);
+    ngsGrid.addColumn(NgsMeasurementLookup.MeasurementInfo::flowCell)
+        .setHeader("Flow cell")
+        .setSortProperty(NgsSortKey.FLOW_CELL.sortKey())
+        .setComparator(Comparator.comparing(NgsMeasurementLookup.MeasurementInfo::flowCell))
+        .setAutoWidth(true)
+        .setResizable(true);
+    ngsGrid.addColumn(NgsMeasurementLookup.MeasurementInfo::runProtocol)
+        .setHeader("Run protocol")
+        .setKey(NgsSortKey.RUN_PROTOCOL.sortKey())
+        .setComparator(Comparator.comparing(NgsMeasurementLookup.MeasurementInfo::runProtocol))
+        .setAutoWidth(true)
+        .setResizable(true);
+    ngsGrid.addColumn(info -> formatTime(info.registeredAt(),
+            MEASUREMENT_REGISTRATION_DATE_TIME_FORMAT))
+        .setHeader("Registration Date")
+        .setKey(NgsSortKey.REGISTRATION_DATE.sortKey())
+        .setComparator(Comparator.comparing(NgsMeasurementLookup.MeasurementInfo::registeredAt))
+        .setAutoWidth(true)
+        .setResizable(true);
+    ngsGrid.addComponentColumn(
+            (NgsMeasurementLookup.MeasurementInfo measurementInfo) -> renderSamplesNgs(measurementInfo,
+                info -> info.comment()))
+        .setHeader("Comment")
+        .setSortable(false)
+        .setAutoWidth(true)
+        .setResizable(true);
+
+    return ngsGrid;
+  }
+
+  private Grid<PxpMeasurementLookup.MeasurementInfo> createPxpGrid() {
+    var pxpGrid = new Grid<PxpMeasurementLookup.MeasurementInfo>();
+    pxpGrid.setMultiSort(true, MultiSortPriority.APPEND, true);
+    pxpGrid.addColumn(PxpMeasurementLookup.MeasurementInfo::measurementCode)
+        .setHeader("QBiC Measurement ID")
+        .setSortProperty(PxpSortKey.MEASUREMENT_ID.sortKey())
+        .setComparator(Comparator.comparing(PxpMeasurementLookup.MeasurementInfo::measurementCode))
+        .setAutoWidth(true)
+        .setResizable(true)
+        .setFrozen(true);
+    pxpGrid.addColumn(PxpMeasurementLookup.MeasurementInfo::measurementName)
+        .setHeader("Measurement Name")
+        .setSortProperty(PxpSortKey.MEASUREMENT_NAME.sortKey())
+        .setComparator(Comparator.comparing(PxpMeasurementLookup.MeasurementInfo::measurementCode))
+        .setAutoWidth(true)
+        .setResizable(true);
+    pxpGrid.addComponentColumn(measurementInfo -> renderSamplesPxp(measurementInfo,
+            info -> "%s (%s)".formatted(info.sampleLabel(), info.sampleCode())))
+        .setHeader("Samples")
+        .setSortable(false)
+        .setAutoWidth(true)
+        .setResizable(true);
+    pxpGrid.addComponentColumn(
+            info -> renderOrganisation(info.organisation().label(),
+                info.organisation().iri()))
+        .setHeader("Organisation")
+        .setSortable(false)
+        .setAutoWidth(true)
+        .setResizable(true);
+    pxpGrid.addColumn(PxpMeasurementLookup.MeasurementInfo::facility)
+        .setHeader("Facility")
+        .setSortProperty(PxpSortKey.FACILITY.sortKey())
+        .setComparator(Comparator.comparing(PxpMeasurementLookup.MeasurementInfo::facility))
+        .setAutoWidth(true)
+        .setResizable(true);
+    pxpGrid.addComponentColumn(
+            info -> renderMsDevice(info.msDevice().label(),
+                info.msDevice().oboId(),
+                info.msDevice().iri()))
+        .setHeader("MS Device")
+        .setSortable(false)
+        .setAutoWidth(true)
+        .setResizable(true);
+    pxpGrid.addColumn(info -> info.technicalReplicateName())
+        .setHeader("Technical Replicate")
+        .setKey(PxpSortKey.TECHNICAL_REPLICATE.sortKey())
+        .setComparator(
+            Comparator.comparing(PxpMeasurementLookup.MeasurementInfo::technicalReplicateName))
+        .setAutoWidth(true)
+        .setResizable(true);
+    pxpGrid.addColumn(PxpMeasurementLookup.MeasurementInfo::digestionEnzyme)
+        .setHeader("Digestion Enzyme")
+        .setKey(PxpSortKey.DIGESTION_ENZYME.sortKey())
+        .setComparator(Comparator.comparing(PxpMeasurementLookup.MeasurementInfo::digestionEnzyme))
+        .setAutoWidth(true)
+        .setResizable(true);
+    pxpGrid.addColumn(info -> info.digestionMethod())
+        .setHeader("Digestion Method")
+        .setKey(PxpSortKey.DIGESTION_METHOD.sortKey())
+        .setComparator(Comparator.comparing(PxpMeasurementLookup.MeasurementInfo::digestionMethod))
+        .setAutoWidth(true)
+        .setResizable(true);
+    pxpGrid.addColumn(info -> INJECTION_VOLUME_FORMAT.format(info.injectionVolume()))
+        .setHeader("Injection Volume")
+        .setKey(PxpSortKey.INJECTION_VOLUME.sortKey())
+        .setComparator(Comparator.comparing(PxpMeasurementLookup.MeasurementInfo::injectionVolume))
+        .setAutoWidth(true)
+        .setResizable(true);
+    pxpGrid.addColumn(info -> info.lcmsMethod())
+        .setHeader("LCMS")
+        .setKey(PxpSortKey.LCMS_METHOD.sortKey())
+        .setComparator(Comparator.comparing(PxpMeasurementLookup.MeasurementInfo::lcmsMethod))
+        .setAutoWidth(true)
+        .setResizable(true);
+    pxpGrid.addColumn(info -> info.lcColumn())
+        .setHeader("LC column")
+        .setKey(PxpSortKey.LC_COLUMN.sortKey())
+        .setComparator(Comparator.comparing(PxpMeasurementLookup.MeasurementInfo::lcColumn))
+        .setAutoWidth(true)
+        .setResizable(true);
+    pxpGrid.addColumn(info -> info.enrichmentMethod())
+        .setHeader("Enrichment")
+        .setKey(PxpSortKey.ENRICHMENT_METHOD.sortKey())
+        .setComparator(Comparator.comparing(PxpMeasurementLookup.MeasurementInfo::enrichmentMethod))
+        .setAutoWidth(true)
+        .setResizable(true);
+
+    pxpGrid.addColumn(info -> formatTime(info.registeredAt(),
+            MEASUREMENT_REGISTRATION_DATE_TIME_FORMAT))
+        .setHeader("Registration Date")
+        .setKey(PxpSortKey.REGISTRATION_DATE.sortKey())
+        .setComparator(Comparator.comparing(PxpMeasurementLookup.MeasurementInfo::registeredAt))
+        .setAutoWidth(true)
+        .setResizable(true);
+    pxpGrid.addComponentColumn(measurementInfo -> renderSamplesPxp(measurementInfo,
+            PxpMeasurementLookup.SampleInfo::comment))
+        .setHeader("Comment")
+        .setSortable(false)
+        .setAutoWidth(true)
+        .setResizable(true);
+
+    return pxpGrid;
+  }
+
+  private static Span renderInstrument(String label, String oboId, String iri) {
+    Span instrumentLabel = new Span(label);
+    Span instrumentOntologyLink = new Span(oboId);
+    instrumentOntologyLink.addClassName("ontology-link");
+    Anchor instrumentNameAnchor = new Anchor(iri, instrumentOntologyLink);
+    instrumentNameAnchor.setTarget(AnchorTarget.BLANK);
+    Span organisationSpan = new Span(instrumentLabel, instrumentNameAnchor);
+    organisationSpan.addClassName("instrument-column");
+    return organisationSpan;
+  }
+
+  private static Span renderMsDevice(String label, String oboId, String iri) {
+    return renderInstrument(label, oboId, iri);
+  }
+
+  private static Anchor renderOrganisation(String label, String iri) {
+    SvgIcon svgIcon = new SvgIcon(ROR_ICON_RESOURCE);
     svgIcon.addClassName("organisation-icon");
-    Span organisationLabel = new Span(organisation.label());
-    String organisationUrl = organisation.IRI();
-    Anchor organisationAnchor = new Anchor(organisationUrl, organisationLabel, svgIcon);
+    Span organisationLabel = new Span(label);
+    Anchor organisationAnchor = new Anchor(iri, organisationLabel, svgIcon);
     organisationAnchor.setTarget(AnchorTarget.BLANK);
     organisationAnchor.addClassName("organisation-entry");
     return organisationAnchor;
   }
 
-  private ComponentRenderer<Span, OntologyTerm> renderInstrument() {
-    return new ComponentRenderer<>(instrument -> {
-      Span instrumentLabel = new Span(instrument.getLabel());
-      Span instrumentOntologyLink = new Span(instrument.getOboId().replace("_", ":"));
-      instrumentOntologyLink.addClassName("ontology-link");
-      Anchor instrumentNameAnchor = new Anchor(instrument.getClassIri(), instrumentOntologyLink);
-      instrumentNameAnchor.setTarget(AnchorTarget.BLANK);
-      Span organisationSpan = new Span(instrumentLabel, instrumentNameAnchor);
-      organisationSpan.addClassName("instrument-column");
-      return organisationSpan;
-    });
-  }
-
-  private Collection<String> groupSampleInfoIntoCodeAndLabel(Collection<SampleId> sampleIds) {
-    return sampleInformationService.retrieveSamplesByIds(sampleIds).stream()
-        .map(sample -> String.format("%s (%s)", sample.label(), sample.sampleCode().code()))
-        .toList();
-  }
-
-  public int getNumberOfSelectedMeasurements() {
-    Optional<String> tabLabel = getSelectedTabName();
-    if (tabLabel.isPresent()) {
-      String label = tabLabel.get();
-
-      if (label.equals("Proteomics")) {
-        return getSelectedProteomicsMeasurements().size();
-      }
-      if (label.equals("Genomics")) {
-        return getSelectedNGSMeasurements().size();
-      }
+  private static Component renderSamplesNgs(NgsMeasurementLookup.MeasurementInfo measurementInfo,
+      Function<NgsMeasurementLookup.SampleInfo, String> singleSampleConverter) {
+    var sampleInfos = measurementInfo.sampleInfos();
+    if (sampleInfos.size() == 1) {
+      NgsMeasurementLookup.SampleInfo sampleInfo = sampleInfos.stream().findFirst().orElseThrow();
+      String singleSampleText = singleSampleConverter.apply(sampleInfo);
+      return new Span(singleSampleText);
     }
-    return 0;
+    var displayLabel = measurementInfo.samplePool();
+    var expandIcon = VaadinIcon.EXPAND_SQUARE.create();
+    expandIcon.addClassNames("expand-icon", "icon-size-m", "color-primary",
+        "padding-horizontal-02");
+    var pooledSamplesSpan = new Span(new Span(displayLabel), expandIcon);
+    pooledSamplesSpan.addClassNames("sample-column-cell", "clickable");
+    pooledSamplesSpan.addClickListener(event -> openPooledSampleDialogNgs(measurementInfo));
+    return pooledSamplesSpan;
   }
 
-  public Set<NGSMeasurement> getSelectedNGSMeasurements() {
-    return new HashSet<>(ngsMeasurementGrid.getSelectedItems());
-  }
-
-  private List<String> selectedMeasurementsNGS() {
-    return ngsMeasurementGrid.getSelectedItems()
-        .stream()
-        .map(NGSMeasurement::measurementId)
-        .map(MeasurementId::value).toList();
-  }
-
-  private List<String> selectedMeasurementsPxP() {
-    return proteomicsMeasurementGrid.getSelectedItems()
-        .stream()
-        .map(ProteomicsMeasurement::measurementId)
-        .map(MeasurementId::value).toList();
-  }
-
-  public Set<ProteomicsMeasurement> getSelectedProteomicsMeasurements() {
-    return new HashSet<>(proteomicsMeasurementGrid.getSelectedItems());
-  }
-
-  public enum Domain {
-    GENOMICS("Genomics"), PROTEOMICS("Proteomics");
-
-    private final String value;
-
-    Domain(String value) {
-      this.value = value;
+  private static Component renderSamplesPxp(PxpMeasurementLookup.MeasurementInfo measurementInfo,
+      Function<PxpMeasurementLookup.SampleInfo, String> singleSampleConverter) {
+    var sampleInfos = measurementInfo.sampleInfos();
+    if (sampleInfos.size() == 1) {
+      var sampleInfo = sampleInfos.stream().findFirst().orElseThrow();
+      String singleSampleText = singleSampleConverter.apply(sampleInfo);
+      return new Span(singleSampleText);
     }
+    var displayLabel = measurementInfo.samplePool();
+    var expandIcon = VaadinIcon.EXPAND_SQUARE.create();
+    expandIcon.addClassNames("expand-icon", "icon-size-m", "color-primary",
+        "padding-horizontal-02");
+    var pooledSamplesSpan = new Span(new Span(displayLabel), expandIcon);
+    pooledSamplesSpan.addClassNames("sample-column-cell", "clickable");
+    pooledSamplesSpan.addClickListener(event -> openPooledSampleDialogPxp(measurementInfo));
+    return pooledSamplesSpan;
+  }
 
-    public String value() {
-      return value;
+  private static void openPooledSampleDialogNgs(
+      NgsMeasurementLookup.MeasurementInfo measurementInfo) {
+    AppDialog dialog = AppDialog.medium();
+    DialogHeader.with(dialog, "View Pooled Measurement");
+    DialogFooter.withConfirmOnly(dialog, "Close");
+    var sampleInfoGrid = new Grid<NgsMeasurementLookup.SampleInfo>();
+    sampleInfoGrid.addColumn(NgsMeasurementLookup.SampleInfo::sampleLabel)
+        .setHeader("Sample Name")
+        .setAutoWidth(true);
+    sampleInfoGrid.addColumn(NgsMeasurementLookup.SampleInfo::sampleCode)
+        .setHeader("Sample Id")
+        .setAutoWidth(true);
+    sampleInfoGrid.addColumn(NgsMeasurementLookup.SampleInfo::indexI7)
+        .setHeader("Index i7")
+        .setAutoWidth(true);
+    sampleInfoGrid.addColumn(NgsMeasurementLookup.SampleInfo::indexI5)
+        .setHeader("Index i5")
+        .setAutoWidth(true);
+    sampleInfoGrid.addColumn(NgsMeasurementLookup.SampleInfo::comment)
+        .setHeader("Comment")
+        .setAutoWidth(true);
+    sampleInfoGrid.setItems(measurementInfo.sampleInfos());
+    DialogSection measuredSamplesSection = DialogSection.with(
+        "Measurement ID: " + measurementInfo.measurementCode(),
+        "Sample Pool Group: " + measurementInfo.samplePool(),
+        sampleInfoGrid);
+
+    DialogBody.withoutUserInput(dialog, measuredSamplesSection);
+    dialog.registerConfirmAction(dialog::close);
+    dialog.open();
+  }
+
+  private static void openPooledSampleDialogPxp(
+      PxpMeasurementLookup.MeasurementInfo measurementInfo) {
+    AppDialog dialog = AppDialog.medium();
+    DialogHeader.with(dialog, "View Pooled Measurement");
+    DialogFooter.withConfirmOnly(dialog, "Close");
+    var sampleInfoGrid = new Grid<PxpMeasurementLookup.SampleInfo>();
+    sampleInfoGrid.addColumn(PxpMeasurementLookup.SampleInfo::sampleLabel)
+        .setHeader("Sample Name")
+        .setAutoWidth(true);
+    sampleInfoGrid.addColumn(PxpMeasurementLookup.SampleInfo::sampleCode)
+        .setHeader("Sample Id")
+        .setAutoWidth(true);
+    sampleInfoGrid.addColumn(PxpMeasurementLookup.SampleInfo::comment)
+        .setHeader("Comment")
+        .setAutoWidth(true);
+    sampleInfoGrid.setItems(measurementInfo.sampleInfos());
+    DialogSection measuredSamplesSection = DialogSection.with(
+        "Measurement ID: " + measurementInfo.measurementCode(),
+        "Sample Pool Group: " + measurementInfo.samplePool(),
+        sampleInfoGrid);
+
+    DialogBody.withoutUserInput(dialog, measuredSamplesSection);
+    dialog.registerConfirmAction(dialog::close);
+    dialog.open();
+  }
+
+
+  private void validateContext(Context context) throws ContextValidationException {
+    if (isNull(context)) {
+      throw new ContextValidationException("Context cannot be null");
     }
+    context.projectId().orElseThrow(
+        () -> new ContextValidationException("Context must contain the project id"));
+    context.experimentId().orElseThrow(
+        () -> new ContextValidationException("Context must contain the experiment id"));
+  }
 
-    @Override
-    public String toString() {
-      return value;
+  private static final class ContextValidationException extends ApplicationException {
+
+    public ContextValidationException(String message) {
+      super(message);
     }
   }
 
-  public record SelectedMeasurements(Domain domain, List<String> measurementIds) {
-
-    public SelectedMeasurements {
-      Objects.requireNonNull(domain);
-      Objects.requireNonNull(measurementIds);
-      measurementIds = List.copyOf(measurementIds);
-    }
+  private void displayMissingSelectionNote() {
+    messageFactory.toast("measurement.no-measurements-selected", new Object[]{}, getLocale())
+        .open();
   }
 
-  public Optional<SelectedMeasurements> getSelectedMeasurements() {
-    if (selectedTab == null) {
-      return Optional.empty();
-    }
-    if (selectedTab instanceof MeasurementDomainTab tab) {
-      return Optional.ofNullable(measurementsForTab(tab));
-    }
-    return Optional.empty();
-  }
 
-  private SelectedMeasurements measurementsForTab(MeasurementDomainTab tab) {
-    Objects.requireNonNull(tab);
-    return switch (tab.domain) {
-      case Domain.GENOMICS -> selectionNGS();
-      case Domain.PROTEOMICS -> selectionPxP();
-    };
-  }
-
-  private SelectedMeasurements selectionNGS() {
-    var selections = selectedMeasurementsNGS();
-    if (selections.isEmpty()) {
-      return null;
-    }
-    return new SelectedMeasurements(Domain.GENOMICS, selections);
-  }
-
-  private SelectedMeasurements selectionPxP() {
-    var selections = selectedMeasurementsPxP();
-    if (selections.isEmpty()) {
-      return null;
-    }
-    return new SelectedMeasurements(Domain.PROTEOMICS, selections);
-  }
-
-  public void refreshGrids() {
-    resetSelectedMeasurements();
-    measurementsGridDataViews.forEach(AbstractDataView::refreshAll);
-  }
-
-  private void resetSelectedMeasurements() {
-    proteomicsMeasurementGrid.clearSelectedItems();
-    ngsMeasurementGrid.clearSelectedItems();
-    updateSelectedMeasurementsInfo(false);
-  }
-
-  public void addListener(ComponentEventListener<MeasurementSelectionChangedEvent> listener) {
-    listeners.add(listener);
-  }
-
-  public Optional<String> getSelectedTabName() {
-    if (tabsInTabSheet.isEmpty()) {
-      return Optional.empty();
-    }
-    return Optional.ofNullable(registeredMeasurementsTabSheet.getSelectedTab())
-        .map(tab -> ((MeasurementDomainTab) tab).getTabLabel());
-  }
-
-  /**
-   * <b>Measurement Selection Changed Event</b>
-   * <p>
-   * Event that indicates that measurements were selected or deselected by the user or a deletion
-   * event {@link MeasurementDetailsComponent}
-   *
-   * @since 1.0.0
-   */
-  public static class MeasurementSelectionChangedEvent extends
+  public static class NgsMeasurementRegistrationRequested extends
       ComponentEvent<MeasurementDetailsComponent> {
 
-    @Serial
-    private static final long serialVersionUID = 1213984633337676231L;
-
-    public MeasurementSelectionChangedEvent(MeasurementDetailsComponent source,
+    /**
+     * Creates a new event using the given source and indicator whether the event originated from
+     * the client side or the server side.
+     *
+     * @param source     the source component
+     * @param fromClient <code>true</code> if the event originated from the client
+     *                   side, <code>false</code> otherwise
+     */
+    public NgsMeasurementRegistrationRequested(MeasurementDetailsComponent source,
         boolean fromClient) {
       super(source, fromClient);
     }
   }
 
-  public static class MeasurementDomainTab extends Tab {
+  public Registration addNgsRegisterListener(
+      ComponentEventListener<NgsMeasurementRegistrationRequested> listener) {
+    return addListener(NgsMeasurementRegistrationRequested.class, listener);
+  }
 
-    private final Span countBadge;
-    private final Span measurementDomainComponent;
-    private final Domain domain;
+  public static class NgsMeasurementEditRequested extends
+      ComponentEvent<MeasurementDetailsComponent> {
 
-    public MeasurementDomainTab(Domain domain, int measurementCount) {
-      this.domain = domain;
-      measurementDomainComponent = new Span();
-      this.countBadge = createBadge();
-      Span sampleCountComponent = new Span();
-      sampleCountComponent.add(countBadge);
-      this.add(measurementDomainComponent, sampleCountComponent);
-      setMeasurementDomain(domain);
-      setMeasurementCount(measurementCount);
-      addClassName("tab-with-count");
-    }
+    private final List<String> measurementIds;
 
     /**
-     * Helper method for creating a badge.
-     */
-    private static Span createBadge() {
-      Tag tag = new Tag(String.valueOf(0));
-      tag.setTagColor(TagColor.CONTRAST);
-      return tag;
-    }
-
-    public String getTabLabel() {
-      return domain.toString();
-    }
-
-    /**
-     * Setter method for specifying the number of measurements of the technology type shown in this
-     * component
+     * Creates a new event using the given source and indicator whether the event originated from
+     * the client side or the server side.
      *
-     * @param measurementCount number of samples associated with the experiment shown in this
-     *                         component
+     * @param source     the source component
+     * @param fromClient <code>true</code> if the event originated from the client
+     *                   side, <code>false</code> otherwise
      */
-    public void setMeasurementCount(int measurementCount) {
-      countBadge.setText(String.valueOf(measurementCount));
+    public NgsMeasurementEditRequested(List<String> measurementIds,
+        MeasurementDetailsComponent source, boolean fromClient) {
+      super(source, fromClient);
+      this.measurementIds = measurementIds.stream().toList();
     }
 
-    public void setMeasurementDomain(Domain domain) {
-      this.measurementDomainComponent.setText(domain.toString());
+    public List<String> measurementIds() {
+      return measurementIds;
     }
-
-    public Domain getDomain() {
-      return domain;
-    }
-
   }
 
-  public class MeasurementPooledSamplesDialog extends Dialog {
+  public Registration addNgsEditListener(
+      ComponentEventListener<NgsMeasurementEditRequested> listener) {
+    return addListener(NgsMeasurementEditRequested.class, listener);
+  }
+
+  public static class NgsMeasurementExportRequested extends
+      ComponentEvent<MeasurementDetailsComponent> {
+
+    private final List<String> measurementIds;
 
     /**
-     * Creates an empty dialog.
+     * Creates a new event using the given source and indicator whether the event originated from
+     * the client side or the server side.
+     *
+     * @param source     the source component
+     * @param fromClient <code>true</code> if the event originated from the client
+     *                   side, <code>false</code> otherwise
      */
-    private final Div measurementDetailsDiv = new Div();
-    private final Span measurementIdSpan = new Span();
-
-    public MeasurementPooledSamplesDialog(ProteomicsMeasurement proteomicsMeasurement) {
-      setLayout();
-      setMeasurementId(proteomicsMeasurement.measurementCode().value());
-      setPooledProteomicsMeasurementDetails(proteomicsMeasurement);
-      setPooledProteomicSampleDetails(proteomicsMeasurement.specificMetadata());
+    public NgsMeasurementExportRequested(List<String> measurementIds,
+        MeasurementDetailsComponent source, boolean fromClient) {
+      super(source, fromClient);
+      this.measurementIds = measurementIds.stream().toList();
     }
 
-    public MeasurementPooledSamplesDialog(NGSMeasurement ngsMeasurement) {
-      setLayout();
-      setMeasurementId(ngsMeasurement.measurementCode().value());
-      setPooledNgsMeasurementDetails(ngsMeasurement);
-      setPooledNgsSampleDetails(ngsMeasurement.specificMeasurementMetadata());
-    }
-
-    private void setLayout() {
-      setDialogHeader();
-      measurementIdSpan.addClassName("bold");
-      add(measurementIdSpan);
-      measurementDetailsDiv.addClassName("pooled-measurement-details");
-      add(measurementDetailsDiv);
-      Button closeButton = new Button("Close");
-      closeButton.addClickListener(event -> close());
-      getFooter().add(closeButton);
-      addClassName("measurement-pooled-samples-dialog");
-    }
-
-    private void setMeasurementId(String measurementId) {
-      measurementIdSpan.setText(String.format("Measurement ID: %s", measurementId));
-    }
-
-    private void setPooledProteomicsMeasurementDetails(
-        ProteomicsMeasurement proteomicsMeasurement) {
-      measurementDetailsDiv.add(
-          pooledMeasurementEntry("Sample Pool Group", proteomicsMeasurement.samplePoolGroup()
-              .orElseThrow()));
-      measurementDetailsDiv.add(
-          pooledMeasurementEntry("Labeling Type", proteomicsMeasurement.labelType()));
-    }
-
-    private void setPooledProteomicSampleDetails(
-        Collection<ProteomicsSpecificMeasurementMetadata> proteomicsSpecificMeasurementMetadata) {
-      Grid<ProteomicsSpecificMeasurementMetadata> sampleDetailsGrid = new Grid<>();
-      sampleDetailsGrid.addColumn(
-              metadata -> retrieveSampleById(metadata.measuredSample()).orElseThrow().label())
-          .setHeader("Sample Name")
-          .setTooltipGenerator(
-              metadata -> retrieveSampleById(metadata.measuredSample()).orElseThrow().label())
-          .setAutoWidth(true);
-      sampleDetailsGrid.addColumn(
-              metadata -> retrieveSampleById(metadata.measuredSample()).orElseThrow().sampleCode()
-                  .code())
-          .setHeader("Sample Id")
-          .setTooltipGenerator(
-              metadata -> retrieveSampleById(metadata.measuredSample()).orElseThrow().sampleCode()
-                  .code())
-          .setAutoWidth(true);
-      sampleDetailsGrid.addColumn(ProteomicsSpecificMeasurementMetadata::label)
-          .setHeader("Measurement Label")
-          .setTooltipGenerator(ProteomicsSpecificMeasurementMetadata::label)
-          .setAutoWidth(true);
-      sampleDetailsGrid.addColumn(metadata -> metadata.comment().orElse(""))
-          .setHeader("comment")
-          .setTooltipGenerator(metadata -> metadata.comment().orElse(""))
-          .setAutoWidth(true);
-      sampleDetailsGrid.setItems(proteomicsSpecificMeasurementMetadata);
-      add(sampleDetailsGrid);
-    }
-
-    private void setPooledNgsMeasurementDetails(
-        NGSMeasurement ngsMeasurement) {
-      measurementDetailsDiv.add(
-          pooledMeasurementEntry("Sample Pool Group", ngsMeasurement.samplePoolGroup()
-              .orElseThrow()));
-    }
-
-    private void setPooledNgsSampleDetails(
-        Collection<NGSSpecificMeasurementMetadata> ngsSpecificMeasurementMetadata) {
-      Grid<NGSSpecificMeasurementMetadata> sampleDetailsGrid = new Grid<>();
-      sampleDetailsGrid.addColumn(
-              metadata -> retrieveSampleById(metadata.measuredSample()).orElseThrow().label())
-          .setHeader("Sample Name")
-          .setTooltipGenerator(
-              metadata -> retrieveSampleById(metadata.measuredSample()).orElseThrow().label())
-          .setAutoWidth(true);
-      sampleDetailsGrid.addColumn(
-              metadata -> retrieveSampleById(metadata.measuredSample()).orElseThrow().sampleCode()
-                  .code())
-          .setHeader("Sample Id")
-          .setTooltipGenerator(
-              metadata -> retrieveSampleById(metadata.measuredSample()).orElseThrow().sampleCode()
-                  .code())
-          .setAutoWidth(true);
-      sampleDetailsGrid.addColumn(metadata -> metadata.index().map(NGSIndex::indexI7).orElse(""))
-          .setHeader("Index I7")
-          .setTooltipGenerator(metadata -> metadata.index().map(NGSIndex::indexI7).orElse(""))
-          .setAutoWidth(true);
-      sampleDetailsGrid.addColumn(metadata -> metadata.index().map(NGSIndex::indexI5).orElse(""))
-          .setHeader("Index I5")
-          .setTooltipGenerator(metadata -> metadata.index().map(NGSIndex::indexI5).orElse(""))
-          .setAutoWidth(true);
-      sampleDetailsGrid.addColumn(metadata -> metadata.comment().orElse(""))
-          .setHeader("comment")
-          .setTooltipGenerator(metadata -> metadata.comment().orElse(""))
-          .setAutoWidth(true);
-      sampleDetailsGrid.setItems(ngsSpecificMeasurementMetadata);
-      add(sampleDetailsGrid);
-    }
-
-    private Optional<Sample> retrieveSampleById(SampleId sampleId) {
-      return asyncProjectService.findSample(context.projectId().orElseThrow().value(),
-          sampleId.value()).doOnError(
-          RequestFailedException.class, this::handleRequestException).blockOptional();
-    }
-
-    private void handleRequestException(RequestFailedException e) {
-      getUI().ifPresent(ui -> ui.access(
-          () -> notificationFactory.toast("sample.query.failed", new Object[]{}, getLocale())
-              .open()));
-    }
-
-    private void setDialogHeader() {
-      setHeaderTitle("View Pooled Measurement");
-      Icon closeIcon = VaadinIcon.CLOSE_SMALL.create();
-      closeIcon.addClassNames("small", CLICKABLE);
-      closeIcon.addClickListener(event -> close());
-      getHeader().add(closeIcon);
-    }
-
-    private Span pooledMeasurementEntry(String propertyLabel, String propertyValue) {
-      Span pooledDetailLabel = new Span(String.format("%s:", propertyLabel));
-      pooledDetailLabel.addClassName("label");
-      Span pooledDetailValue = new Span(propertyValue);
-      pooledDetailValue.addClassName("value");
-      Span pooledDetail = new Span(pooledDetailLabel, pooledDetailValue);
-      pooledDetail.addClassName("pooled-detail");
-      return pooledDetail;
+    public List<String> measurementIds() {
+      return measurementIds;
     }
   }
+
+  public Registration addNgsExportListener(
+      ComponentEventListener<NgsMeasurementExportRequested> listener) {
+    return addListener(NgsMeasurementExportRequested.class, listener);
+  }
+
+  public static class NgsMeasurementDeletionRequested extends
+      ComponentEvent<MeasurementDetailsComponent> {
+
+    private final List<String> measurementIds;
+
+    /**
+     * Creates a new event using the given source and indicator whether the event originated from
+     * the client side or the server side.
+     *
+     * @param source     the source component
+     * @param fromClient <code>true</code> if the event originated from the client
+     *                   side, <code>false</code> otherwise
+     */
+    public NgsMeasurementDeletionRequested(List<String> measurementIds,
+        MeasurementDetailsComponent source,
+        boolean fromClient) {
+      super(source, fromClient);
+      this.measurementIds = measurementIds.stream().toList();
+    }
+
+    public List<String> measurementIds() {
+      return measurementIds;
+    }
+  }
+
+  public Registration addNgsDeletionListener(
+      ComponentEventListener<NgsMeasurementDeletionRequested> listener) {
+    return addListener(NgsMeasurementDeletionRequested.class, listener);
+  }
+
+
+  public static class PxpMeasurementRegistrationRequested extends
+      ComponentEvent<MeasurementDetailsComponent> {
+
+    /**
+     * Creates a new event using the given source and indicator whether the event originated from
+     * the client side or the server side.
+     *
+     * @param source     the source component
+     * @param fromClient <code>true</code> if the event originated from the client
+     *                   side, <code>false</code> otherwise
+     */
+    public PxpMeasurementRegistrationRequested(MeasurementDetailsComponent source,
+        boolean fromClient) {
+      super(source, fromClient);
+    }
+  }
+
+  public Registration addPxpRegisterListener(
+      ComponentEventListener<PxpMeasurementRegistrationRequested> listener) {
+    return addListener(PxpMeasurementRegistrationRequested.class, listener);
+  }
+
+  public static class PxpMeasurementEditRequested extends
+      ComponentEvent<MeasurementDetailsComponent> {
+
+    private final List<String> measurementIds;
+
+    /**
+     * Creates a new event using the given source and indicator whether the event originated from
+     * the client side or the server side.
+     *
+     * @param source     the source component
+     * @param fromClient <code>true</code> if the event originated from the client
+     *                   side, <code>false</code> otherwise
+     */
+    public PxpMeasurementEditRequested(List<String> measurementIds,
+        MeasurementDetailsComponent source, boolean fromClient) {
+      super(source, fromClient);
+      this.measurementIds = measurementIds.stream().toList();
+    }
+
+    public List<String> measurementIds() {
+      return measurementIds;
+    }
+  }
+
+  public Registration addPxpEditListener(
+      ComponentEventListener<PxpMeasurementEditRequested> listener) {
+    return addListener(PxpMeasurementEditRequested.class, listener);
+  }
+
+  public static class PxpMeasurementExportRequested extends
+      ComponentEvent<MeasurementDetailsComponent> {
+
+    private final List<String> measurementIds;
+
+    /**
+     * Creates a new event using the given source and indicator whether the event originated from
+     * the client side or the server side.
+     *
+     * @param source     the source component
+     * @param fromClient <code>true</code> if the event originated from the client
+     *                   side, <code>false</code> otherwise
+     */
+    public PxpMeasurementExportRequested(List<String> measurementIds,
+        MeasurementDetailsComponent source, boolean fromClient) {
+      super(source, fromClient);
+      this.measurementIds = measurementIds.stream().toList();
+    }
+
+    public List<String> measurementIds() {
+      return measurementIds;
+    }
+  }
+
+  public Registration addPxpExportListener(
+      ComponentEventListener<PxpMeasurementExportRequested> listener) {
+    return addListener(PxpMeasurementExportRequested.class, listener);
+  }
+
+  public static class PxpMeasurementDeletionRequested extends
+      ComponentEvent<MeasurementDetailsComponent> {
+
+    private final List<String> measurementIds;
+
+    /**
+     * Creates a new event using the given source and indicator whether the event originated from
+     * the client side or the server side.
+     *
+     * @param source     the source component
+     * @param fromClient <code>true</code> if the event originated from the client
+     *                   side, <code>false</code> otherwise
+     */
+    public PxpMeasurementDeletionRequested(List<String> measurementIds,
+        MeasurementDetailsComponent source,
+        boolean fromClient) {
+      super(source, fromClient);
+      this.measurementIds = measurementIds.stream().toList();
+    }
+
+    public List<String> measurementIds() {
+      return measurementIds;
+    }
+  }
+
+  public Registration addPxpDeletionListener(
+      ComponentEventListener<PxpMeasurementDeletionRequested> listener) {
+    return addListener(PxpMeasurementDeletionRequested.class, listener);
+  }
+
 
 }

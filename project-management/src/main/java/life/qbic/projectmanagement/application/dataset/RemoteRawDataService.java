@@ -1,28 +1,24 @@
 package life.qbic.projectmanagement.application.dataset;
 
 import java.time.Instant;
-import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import life.qbic.application.commons.SortOrder;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.RawDataset;
 import life.qbic.projectmanagement.application.measurement.MeasurementLookupService;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
-import life.qbic.projectmanagement.application.sample.SampleInformationService;
+import life.qbic.projectmanagement.application.measurement.NgsMeasurementLookup;
+import life.qbic.projectmanagement.application.measurement.NgsMeasurementLookup.MeasurementFilter;
+import life.qbic.projectmanagement.application.measurement.NgsMeasurementLookup.MeasurementInfo;
+import life.qbic.projectmanagement.application.measurement.PxpMeasurementLookup;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
-import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
-import life.qbic.projectmanagement.domain.model.measurement.NGSSpecificMeasurementMetadata;
-import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
-import life.qbic.projectmanagement.domain.model.measurement.ProteomicsSpecificMeasurementMetadata;
-import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.prepost.PostAuthorize;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 /**
@@ -33,19 +29,20 @@ import org.springframework.stereotype.Service;
 @Service
 public class RemoteRawDataService {
 
-  private final SampleInformationService sampleInformationService;
-  private final MeasurementLookupService measurementLookupService;
   private final RemoteRawDataLookupService remoteRawDataLookupService;
   private final RemoteRawDataLookup remoteRawDataLookup;
+  private final NgsMeasurementLookup ngsMeasurementLookup;
+  private final PxpMeasurementLookup pxpMeasurementLookup;
 
   @Autowired
-  public RemoteRawDataService(SampleInformationService sampleInformationService,
-      MeasurementLookupService measurementLookupService,
-      RemoteRawDataLookupService remoteRawDataLookupService, RemoteRawDataLookup remoteRawDataLookup) {
-    this.measurementLookupService = Objects.requireNonNull(measurementLookupService);
+  public RemoteRawDataService(MeasurementLookupService measurementLookupService,
+      RemoteRawDataLookupService remoteRawDataLookupService,
+      RemoteRawDataLookup remoteRawDataLookup,
+      NgsMeasurementLookup ngsMeasurementLookup, PxpMeasurementLookup pxpMeasurementLookup) {
     this.remoteRawDataLookupService = Objects.requireNonNull(remoteRawDataLookupService);
-    this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
     this.remoteRawDataLookup = Objects.requireNonNull(remoteRawDataLookup);
+    this.ngsMeasurementLookup = ngsMeasurementLookup;
+    this.pxpMeasurementLookup = pxpMeasurementLookup;
   }
 
   /**
@@ -56,80 +53,35 @@ public class RemoteRawDataService {
    *                     associated raw data
    * @return true if experiments has measurements with associated measurements, false if not
    */
-  public boolean hasRawData(ExperimentId experimentId) {
-    var result = sampleInformationService.retrieveSamplesForExperiment(experimentId);
-    var samplesInExperiment = result.getValue().stream().map(Sample::sampleId).toList();
-    if (samplesInExperiment.isEmpty()) {
+  public boolean hasRawData(String projectId, ExperimentId experimentId) {
+    NgsMeasurementLookup.MeasurementFilter ngsFilter = MeasurementFilter.forExperiment(
+        experimentId.value());
+    var ngsMeasurementCount = ngsMeasurementLookup.countNgsMeasurements(projectId,
+        ngsFilter);
+    Stream<String> ngsCodes =
+        ngsMeasurementCount < 1 ? Stream.empty() : ngsMeasurementLookup.lookupNgsMeasurements(
+                projectId,
+                0, ngsMeasurementCount, Sort.unsorted(), ngsFilter)
+            .map(MeasurementInfo::measurementCode);
+    PxpMeasurementLookup.MeasurementFilter pxpFilter = PxpMeasurementLookup.MeasurementFilter.forExperiment(
+        experimentId.value());
+    var pxpMeasurementCount = pxpMeasurementLookup.countPxpMeasurements(projectId,
+        pxpFilter);
+    Stream<String> pxpCodes =
+        pxpMeasurementCount < 1 ? Stream.empty() : pxpMeasurementLookup.lookupPxpMeasurements(
+                projectId,
+                0, pxpMeasurementCount, Sort.unsorted(), pxpFilter)
+            .map(PxpMeasurementLookup.MeasurementInfo::measurementCode);
+
+    var measurementCount = ngsMeasurementCount + pxpMeasurementCount;
+    if (measurementCount == 0) {
       return false;
     }
-    if (measurementLookupService.countMeasurementsBySampleIds(samplesInExperiment) == 0) {
-      return false;
-    }
-    var ngsMeasurementCodes = measurementLookupService.queryAllNGSMeasurements(samplesInExperiment)
-        .stream().map(NGSMeasurement::measurementCode);
-    var pxpMeasurementCodes = measurementLookupService.queryAllProteomicsMeasurements(
-        samplesInExperiment).stream().map(ProteomicsMeasurement::measurementCode);
-    var codes = Stream.concat(ngsMeasurementCodes, pxpMeasurementCodes)
-        .collect(Collectors.toList());
-    return remoteRawDataLookupService.countRawDataByMeasurementCodes(codes) > 0;
-  }
 
-  @PostAuthorize(
-      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
-  public Collection<RawData> findProteomicsRawData(String filter,
-      ExperimentId experimentId,
-      int offset, int limit,
-      List<SortOrder> sortOrder, ProjectId projectId) {
-
-    var measurements = retrieveProteomicsMeasurementsForExperiment(experimentId);
-    var measurementCodes = measurements.stream().map(ProteomicsMeasurement::measurementCode)
-        .toList();
-    var rawDataDatasetInformation = remoteRawDataLookupService.queryRawDataByMeasurementCodes(filter,
-        measurementCodes,
-        offset, limit, sortOrder);
-    return rawDataDatasetInformation.stream()
-        .map((RawDataDatasetInformation datasetInformation) -> {
-          var measurement = measurements.stream().filter(
-                  proteomicsMeasurement -> proteomicsMeasurement.measurementCode()
-                      .equals(datasetInformation.measurementCode()))
-              .findFirst().orElseThrow();
-          var metadataSampleInformation = sampleInformationService.retrieveSamplesByIds(
-              measurement.specificMetadata().stream()
-                  .map(ProteomicsSpecificMeasurementMetadata::measuredSample).toList());
-          var rawDataSampleInformation = metadataSampleInformation.stream()
-              .map(sample -> new RawDataSampleInformation(sample.sampleCode(), sample.label()))
-              .toList();
-          return new RawData(measurement.measurementCode(), rawDataSampleInformation,
-              datasetInformation);
-        }).toList();
-  }
-
-  @PostAuthorize(
-      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
-  public Collection<RawData> findNGSRawData(String filter,
-      ExperimentId experimentId,
-      int offset, int limit,
-      List<SortOrder> sortOrder, ProjectId projectId) {
-    var measurements = retrieveNGSMeasurementsForExperiment(experimentId);
-    var measurementCodes = measurements.stream().map(NGSMeasurement::measurementCode).toList();
-    var rawDataDatasetInformation = remoteRawDataLookupService.queryRawDataByMeasurementCodes(filter,
-        measurementCodes,
-        offset, limit, sortOrder);
-    return rawDataDatasetInformation.stream()
-        .map((RawDataDatasetInformation datasetInformation) -> {
-          var measurement = measurements.stream().filter(
-                  proteomicsMeasurement -> proteomicsMeasurement.measurementCode()
-                      .equals(datasetInformation.measurementCode()))
-              .findFirst().orElseThrow();
-          var metadataSampleInformation = sampleInformationService.retrieveSamplesByIds(
-              measurement.specificMeasurementMetadata().stream()
-                  .map(NGSSpecificMeasurementMetadata::measuredSample).toList());
-          var rawDataSampleInformation = metadataSampleInformation.stream()
-              .map(sample -> new RawDataSampleInformation(sample.sampleCode(), sample.label()))
-              .toList();
-          return new RawData(measurement.measurementCode(), rawDataSampleInformation,
-              datasetInformation);
-        }).toList();
+    Set<MeasurementCode> allCodes = Stream.concat(ngsCodes, pxpCodes)
+        .map(MeasurementCode::parse)
+        .collect(Collectors.toSet());
+    return remoteRawDataLookupService.countRawDataByMeasurementCodes(allCodes) > 0;
   }
 
   public List<RawDataset> registeredSince(Instant registeredSince, int offset, int limit) {
@@ -147,32 +99,6 @@ public class RemoteRawDataService {
         datasetInformation.registrationDate);
   }
 
-
-  private List<NGSMeasurement> retrieveNGSMeasurementsForExperiment(ExperimentId experimentId) {
-    var result = sampleInformationService.retrieveSamplesForExperiment(experimentId);
-    var samplesInExperiment = result.getValue().stream().map(Sample::sampleId).toList();
-    return measurementLookupService.queryAllNGSMeasurements(samplesInExperiment);
-  }
-
-  private List<ProteomicsMeasurement> retrieveProteomicsMeasurementsForExperiment(
-      ExperimentId experimentId) {
-    var result = sampleInformationService.retrieveSamplesForExperiment(experimentId);
-    var samplesInExperiment = result.getValue().stream().map(Sample::sampleId).toList();
-    return measurementLookupService.queryAllProteomicsMeasurements(samplesInExperiment);
-  }
-
-  public int countNGSDatasets(ExperimentId experimentId) {
-    var measurements = retrieveNGSMeasurementsForExperiment(experimentId);
-    var measurementCodes = measurements.stream().map(NGSMeasurement::measurementCode).toList();
-    return remoteRawDataLookupService.countRawDataByMeasurementCodes(measurementCodes);
-  }
-
-  public int countProteomicsDatasets(ExperimentId experimentId) {
-    var measurements = retrieveProteomicsMeasurementsForExperiment(experimentId);
-    var measurementCodes = measurements.stream().map(ProteomicsMeasurement::measurementCode)
-        .toList();
-    return remoteRawDataLookupService.countRawDataByMeasurementCodes(measurementCodes);
-  }
 
   /**
    * Raw Data File information to be employed in the frontend containing information collected from

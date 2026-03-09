@@ -2,14 +2,18 @@ package life.qbic.datamanager.views.general.grid.component;
 
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEventListener;
+import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.shared.Registration;
-import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Consumer;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.lang.NonNull;
 
 /**
@@ -20,56 +24,196 @@ import org.springframework.lang.NonNull;
  *
  * @since 1.12.0
  */
-public final class FilterGridTabSheet extends TabSheet {
+public final class FilterGridTabSheet extends Composite<TabSheet> {
 
+  private final TabSheet delegate;
   private final PrimaryActionButtonGroup primaryActionGroup;
 
-  public FilterGridTabSheet(FilterGridTab<?>... tabs) {
-    super();
-    Arrays.stream(tabs).forEach(tab -> add(tab, tab.filterGrid()));
+  private final Map<FilterGridTab, Set<TabAction>> primaryActions = new ConcurrentHashMap<>();
+  private final Map<FilterGridTab, Set<TabAction>> featureActions = new ConcurrentHashMap<>();
+
+
+  public FilterGridTabSheet() {
     this.primaryActionGroup = new PrimaryActionButtonGroup(
-        mainActionButton("Primary Action"),
-        mainFeatureButton("Main Feature"));
+        primaryActionButton("Primary Action"),
+        featureActionButton("Main Feature"));
+    delegate = getContent();
 
-    setSuffixComponent(primaryActionGroup);
-    setSizeFull();
-    addClassName("filter-grid-tabsheet");
+    delegate.setSuffixComponent(primaryActionGroup);
+    delegate.addClassNames("filter-grid-tabsheet", "width-full", "height-full");
+
+    primaryActionGroup.addClickListenerPrimaryAction(
+        ignored -> {
+          if (!(delegate.getSelectedTab() instanceof FilterGridTab<?> filterGridTab)) {
+            return;
+          }
+          primaryActions.getOrDefault(filterGridTab, Set.of()).forEach(
+              tabAction -> tabAction.execute(filterGridTab));
+        });
+    primaryActionGroup.addClickListenerFeature(
+        ignored -> {
+          if (!(delegate.getSelectedTab() instanceof FilterGridTab<?> filterGridTab)) {
+            return;
+          }
+          featureActions.getOrDefault(filterGridTab, Set.of()).forEach(
+              tabAction -> tabAction.execute(filterGridTab));
+        });
   }
 
-  public void addFilterGridTab(@NonNull FilterGridTab<?> filterTabs) {
-    add (filterTabs, filterTabs.filterGrid());
+
+  /**
+   * Adds a {@link FilterGridTab} to the {@link FilterGridTabSheet}.
+   *
+   * @param tab the tab to add
+   * @param <T> the item type of the {@link FilterGridTab}
+   */
+  public <T> void addTab(FilterGridTab<T> tab) {
+    delegate.add(tab, tab.filterGrid());
+  }
+
+
+  /**
+   * Adds a {@link FilterGridTab} to the {@link FilterGridTabSheet} at a given index.
+   * In case the index is negative or exceeds the current tab count, behaves the same as {@link #addTab(FilterGridTab)}.
+   * <p>
+   * If a tab already exists at the provided index, moves the existing tabs to the right and increments its index.
+   *
+   * @param tab the tab to add
+   * @param <T> the item type of the {@link FilterGridTab}
+   */
+  public <T> void addTab(int index, FilterGridTab<T> tab) {
+    try {
+      delegate.getTabAt(index);
+      delegate.add(tab, tab.filterGrid(), index);
+    } catch (IllegalArgumentException e) {
+      //index less than 0 or greater available tabs, -> set to negative value and add to end
+      delegate.add(tab, tab.filterGrid(), -1);
+    }
+  }
+
+
+  /**
+   * Removes a tab from the {@link FilterGridTabSheet}. If tabs exist to the right, they are moved left and their index decrements.
+   * <p>
+   * Does nothing if the tab is not added to this {@link FilterGridTabSheet}
+   * @param tab the tab to remove
+   */
+  public void removeTab(FilterGridTab<?> tab) {
+    var tabIndex = delegate.getIndexOf(tab);
+    removeTab(tabIndex);
   }
 
   /**
-   * Registers a
-   * {@link ComponentEventListener that listens to {@link ClickEvent} of the primary action
-   * button.}
-   *
-   * @param listener the listener to register to the click event
-   * @return a {@link Registration} with the current subscription that the client can release once
-   * it is not required anymore.
-   * @since 1.12.0
+   * Removes a tab at the provided index from the {@link FilterGridTabSheet}. If tabs exist to the right, they are moved left and their index decrements.
+   * <p>
+   * If a tab with the index exists, removes the tab and all {@link TabAction} registered to it.
+   * Does nothing if there does not exist any tab at the provided index.
+   * @param tabIndex the index of the tab that is removed
+   * @return true if a tab existed and was removed; false otherwise
    */
-  public Registration addPrimaryActionButtonListener(
-      ComponentEventListener<ClickEvent<Button>> listener
-  ) {
-    return primaryActionGroup.addClickListenerPrimaryAction(listener);
+  private boolean removeTab(int tabIndex) {
+    if (tabIndex < 0) {
+      return false;
+    }
+    Tab tab;
+    try {
+      tab = delegate.getTabAt(tabIndex);
+    } catch (IllegalArgumentException tabNotFound) {
+      return false;
+    }
+    if (!(tab instanceof FilterGridTab<?> filterGridTab)) {
+      return false;
+    }
+    primaryActions.remove(filterGridTab);
+    featureActions.remove(filterGridTab);
+    delegate.remove(filterGridTab);
+    return true;
   }
 
   /**
-   * Registers a
-   * {@link ComponentEventListener that listens to {@link ClickEvent} of the primary feature
-   * button.}
-   *
-   * @param listener the listener to register to the click event of the primary feature button
-   * @return a {@link Registration} with the current subscription that the client can release once
-   * it is not required anymore.
-   * @since 1.12.0
+   * Removes all tabs from this {@link FilterGridTabSheet} along any registered {@link TabAction}
    */
-  public Registration addPrimaryFeatureButtonListener(
-      ComponentEventListener<ClickEvent<Button>> listener
-  ) {
-    return primaryActionGroup.addClickListenerFeature(listener);
+  public void removeAllTabs() {
+    var maxLoopCount = 100;
+    var currentLoopCount = 0;
+    while (currentLoopCount < maxLoopCount) {
+      boolean aTabWasRemoved = removeTab(0);
+      if (!aTabWasRemoved) {
+        break; // nothing was removed so we exit
+      }
+      currentLoopCount++;
+    }
+  }
+
+  /**
+   * Adds a primary action to be performed for the provided tab when the user clicks on the primary
+   * action controls.
+   *
+   * @param tab    the tab for which this action should be performed
+   * @param action the action to execute
+   * @param <T>    the item type of the {@link FilterGridTab}
+   * @return a registration with which the registered action can be removed
+   */
+  public <T> Registration addPrimaryAction(@NonNull FilterGridTab<T> tab,
+      @NonNull TabAction<FilterGridTab<T>, T> action) {
+    Objects.requireNonNull(tab);
+    Objects.requireNonNull(action);
+    primaryActions.merge(tab, new HashSet<>(Set.of(action)), (existing, provided) -> {
+      existing.addAll(provided);
+      return existing;
+    });
+
+    return () -> primaryActions.merge(tab, new HashSet<>(Set.of(action)), (existing, provided) -> {
+      existing.removeAll(provided);
+      if (existing.isEmpty()) {
+        return null; // remove map entry
+      }
+      return existing;
+    });
+  }
+
+  /**
+   * Adds a primary action to be performed for the provided tab when the user clicks on the feature
+   * controls.
+   *
+   * @param tab    the tab for which this action should be performed
+   * @param action the action to execute
+   * @param <T>    the item type of the {@link FilterGridTab}
+   * @return a registration with which the registered action can be removed
+   */
+  public <T> Registration addFeatureAction(@NonNull FilterGridTab<T> tab,
+      @NonNull TabAction<FilterGridTab<T>, T> action) {
+    Objects.requireNonNull(tab);
+    Objects.requireNonNull(action);
+    featureActions.merge(tab, new HashSet<>(Set.of(action)), (existing, provided) -> {
+      existing.addAll(provided);
+      return existing;
+    });
+
+    return () -> featureActions.merge(tab, new HashSet<>(Set.of(action)), (existing, provided) -> {
+      existing.removeAll(provided);
+      if (existing.isEmpty()) {
+        return null; // remove map entry
+      }
+      return existing;
+    });
+  }
+
+
+  /**
+   * An action associated with a {@link FilterGridTab}. Can be executed on the associated tab.
+   * @param <T> the {@link Class} of the associated {@link FilterGridTab}
+   * @param <S> the {@link Class} of items in the associated {@link FilterGridTab}
+   */
+  @FunctionalInterface
+  public interface TabAction<T extends FilterGridTab<S>, S> {
+
+    /**
+     * Executes this action on the associated {@link FilterGridTab}
+     *
+     * @param tab
+     */
+    void execute(T tab);
   }
 
   /**
@@ -101,6 +245,9 @@ public final class FilterGridTabSheet extends TabSheet {
     primaryActionGroup.actionButton.setVisible(false);
   }
 
+  /**
+   * Hides the primary feature button.
+   */
   public void hidePrimaryFeatureButton() {
     primaryActionGroup.featureButton.setVisible(false);
   }
@@ -115,59 +262,45 @@ public final class FilterGridTabSheet extends TabSheet {
   }
 
   /**
-   * Untyped getter: returns the grid of the currently selected tab, if any.
+   * Shows the primary feature button
    */
-  private Optional<FilterGrid<?>> getSelectedFilterGrid() {
-    var selectedTab = getSelectedTab();
-    return (selectedTab instanceof FilterGridTab<?> tab)
-        ? java.util.Optional.of(tab.filterGrid())
-        : java.util.Optional.empty();
+  public void showPrimaryFeatureButton() {
+    primaryActionGroup.featureButton.setVisible(true);
   }
 
   /**
-   * Returns the currently selected filter grid, if the selected filter grid is of the expected
+   * Returns the currently selected {@link FilterGridTab}, if the selected tab is of the expected
    * type. Else the returned value is {@link Optional#empty()}.
    *
-   * @param expectedType the expected class type of the filter grid
-   * @param <T>          the type of the class
-   * @return the selected grid assigned to the expected type if it is assignable, else will return
+   * @param expectedType the expected item type of the {@link FilterGridTab}
+   * @param <T>          the item type
+   * @return the selected tab assigned to the expected type if it is assignable, else
    * {@link Optional#empty()}
    * @since 1.12.0
    */
-  public <T> Optional<FilterGrid<T>> getSelectedFilterGrid(Class<T> expectedType) {
-    return getSelectedFilterGrid()
-        .filter(filterGrid -> expectedType.isAssignableFrom(filterGrid.type()))
-        .map(grid -> grid.as(expectedType));
+  public <T> Optional<FilterGridTab<T>> getSelectedTab(Class<T> expectedType) {
+    var optionalSelectedTab = Optional.ofNullable(delegate.getSelectedTab());
+    if (optionalSelectedTab.isEmpty()) {
+      return Optional.empty();
+    }
+    var selectedTab = optionalSelectedTab.orElseThrow();
+    if (selectedTab instanceof FilterGridTab<?> tab
+        && tab.filterGrid() instanceof FilterGrid<?, ?> filterGrid
+        && filterGrid.itemType().isAssignableFrom(expectedType)) {
+      //noinspection unchecked - checked with assignable check
+      return Optional.of((FilterGridTab<T>) tab);
+    } else {
+      return Optional.empty();
+    }
   }
 
-  /**
-   * Can be used to register type-based consumers that accept the selected filter grid,  if the
-   * passed type is assignable from the filter grid's class type
-   *
-   * @param type   the type that serves as condition for the consumer to get accepted
-   * @param action the action that will accept the filter grid, if the passed type is assignable
-   *               from the filter grid
-   * @param <T>    the type of the grid's element
-   * @return {@code true}, if the consumer got the filter grid, else returns {@code false}
-   * @since 1.12.0
-   */
-  public <T> boolean whenSelectedGrid(Class<T> type,
-      Consumer<FilterGrid<T>> action) {
-    return getSelectedFilterGrid(type)
-        .map(filterGrid -> {
-          action.accept(filterGrid);
-          return true;
-        })
-        .orElse(false);
-  }
-
-  private static Button mainActionButton(String caption) {
+  private static Button primaryActionButton(String caption) {
     var button = new Button(caption);
     button.addClassName("button-color-primary");
     return button;
   }
 
-  private static Button mainFeatureButton(String caption) {
+  private static Button featureActionButton(String caption) {
     return new Button(caption);
   }
 

@@ -1,6 +1,7 @@
 name: Build Maven Package
 
 on:
+  pull_request:
   push:
     branches:
       - '**'

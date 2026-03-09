@@ -42,11 +42,11 @@
 }
 
 .main.measurement {
-  grid-template-columns: minmax(max-content, 70%) minmax(max-content, 30%);
-  grid-template-rows: minmax(max-content, 25%) minmax(max-content, 70%);
+  grid-template-columns: 100%;
+  grid-template-rows: minmax(min-content, 10%) minmax(90%, 100%);
   grid-template-areas:
-    ". measurementtemplatelist"
-    "measurementdetails measurementdetails";
+    "."
+    "measurementdetails";
 }
 
 .main.project {
@@ -94,9 +94,8 @@
     grid-template-columns: minmax(min-content, 1fr);
     grid-template-areas:
     "."
-    "measurementtemplatelist"
     "measurementdetails";
-    grid-template-rows: minmax(min-content, 20%) minmax(min-content, 20%) minmax(min-content, 60%);
+    grid-template-rows: minmax(min-content, 10%) minmax(90%, 100%);
   }
 
   .main.project {
