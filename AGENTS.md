@@ -6,7 +6,7 @@
 
 ---
 
-## Requirements and Issue Governance
+## 0. Requirements and Issue Governance
 
 ### Requirement ID Scheme
 
@@ -16,13 +16,13 @@ All requirements must follow the domain-based ID structure:
 
 Where:
 
--   **DOMAIN** --- functional area (e.g. `API`, `PROJECT`, `SAMPLE`,
+-   **DOMAIN** --- functional area (e.g. `API`, `PROJECT`, `SAMPLE`,
     `MEASUREMENT`, `DATA`, `FAIR`, `CARE`, `QUALITY`, `LAB`, `AUTH`)
 -   **TYPE** --- requirement type:
     -   `R` = Functional requirement (system capability)
     -   `NFR` = Non-functional requirement (quality attribute)
     -   `C` = Constraint (solution boundary)
--   **NN** --- sequential number per domain and type (e.g. `01`, `02`,
+-   **NN** --- sequential number per domain and type (e.g. `01`, `02`,
     `03`)
 
 #### Examples
@@ -39,10 +39,11 @@ Where:
 -   IDs must be stable and must never be renumbered.
 -   IDs must not encode sprint numbers, versions, or document order.
 -   One requirement may be referenced by multiple stories.
--   Constraints (`C`) influence architecture and must not be converted
-    into user stories unless user value is directly involved.
+-   A story may reference multiple requirement IDs when a single user workflow spans multiple requirements. If a story spans more than two domains, consider splitting it.
+-   Constraints (`C`) influence architecture and must not be referenced in Stories. Reference `C-<NN>` IDs only in Task Technical Notes.
+-   The sequential number `<NN>` must be zero-padded to at least two digits (e.g., `01`, `02`, `10`). IDs without zero-padding are invalid.
 
-------------------------------------------------------------------------
+---
 
 ### Requirement Structure
 
@@ -71,13 +72,13 @@ Each requirement must contain:
     Source:
     PRD §2.3 Partner Integration
 
-------------------------------------------------------------------------
+---
 
 ### Issues: Use the Repo Templates
 
 When creating issues, use the correct template for the scenario.
 
-------------------------------------------------------------------------
+---
 
 #### Story (`.github/ISSUE_TEMPLATE/story.yml`)
 
@@ -87,8 +88,8 @@ the PRD or requirements.
 Required fields:
 
 -   **Requirement IDs**
-    -   At least one `R-xx` reference
-    -   May include related `NFR-xx`
+    -   At least one `R-<NN>` reference
+    -   May include related `NFR-<NN>`
 -   **User Story** Written as: \> As a `<role>`, I want `<goal>`, so
     that `<benefit>`.
 -   **Acceptance Criteria** One or more testable conditions in Given /
@@ -99,9 +100,9 @@ Rules:
 -   Stories describe value and workflow context.
 -   Stories must not introduce new system capabilities not covered by an
     existing requirement.
--   If new capability is needed, update `docs/requirements.md` first.
+-   If new capability is needed, update `docs/requirements.md` first. A change introduces **new capability** if it enables a user or system to perform an action that was not previously possible, or if it changes the externally observable behavior of an existing capability in a way not described by any existing requirement.
 
-------------------------------------------------------------------------
+---
 
 #### Task (`.github/ISSUE_TEMPLATE/task.yml`)
 
@@ -111,27 +112,35 @@ derived from, and linked to, a story.
 Required fields:
 
 -   **Parent Story**
-    -   Link to the parent story issue (e.g. `#123`)
+    -   Link to the parent story issue (e.g. `#123`)
 -   **Requirement IDs**
-    -   At least one `R-xx` or `NFR-xx` reference
+    -   At least one `R-<NN>` or `NFR-<NN>` reference
 -   **Description**
     -   What needs to be implemented
 -   **Technical Notes (optional)**
     -   Design hints
-    -   Constraints (`C-xx`)
+    -   Constraints (`C-<NN>`)
     -   Related ADRs
 
 Rules:
 
 -   Tasks must not redefine acceptance criteria.
 -   Tasks must not expand requirement scope.
--   Constraints (`C-xx`) may be referenced here when relevant.
 
-------------------------------------------------------------------------
+---
+
+#### Story and Task Sequencing
+
+- A Task must always be preceded by a Story. Create the Story first, then create the Task referencing it.
+- Never create a Task without a parent Story issue.
+- If no parent Story exists for a piece of work (e.g., when acting on a direct implementation request), create the Story first before proceeding with implementation.
+- A single Story may have multiple Tasks; a Task must not span multiple Stories.
+
+---
 
 ### Traceability Rules
 
-- Every Story must reference at least one requirement ID.
+- Every Story must reference at least one functional requirement ID (`R-<NN>`).
 - Every Task must reference:
     -   A parent Story
     -   At least one requirement ID
@@ -142,7 +151,7 @@ Rules:
     -   Update the corresponding requirement
     -   Or explicitly justify why no requirement update is needed
 
-------------------------------------------------------------------------
+---
 
 ### Requirement Edits
 
@@ -154,7 +163,7 @@ When editing requirements:
     -   Reason for change
     -   Stakeholder or source reference (if applicable)
 
-Agents must never modify requirements silently.
+**Agent rule — requirement changes require human approval:** Before modifying `docs/requirements.md`, an agent must: (1) pause and confirm the change with a human reviewer (see Section 12); (2) create a dedicated PR for the requirement change alone — do not bundle requirement changes with implementation changes; (3) include the mandatory changelog entry in the PR description per the rules above.
 
 
 ## 1. Project Overview
@@ -504,6 +513,7 @@ When working on this codebase, an AI agent should:
 
 ### Before making changes
 
+0. **Check `docs/requirements.md`** to confirm the change is covered by an existing requirement. If the change introduces new system capability not covered by any existing requirement, update `docs/requirements.md` first (see "Requirements and Issue Governance"). If `docs/requirements.md` does not exist, do not create it — pause and notify a human reviewer.
 1. **Identify the bounded context** the change belongs to (`identity`, `project-management`,
    `finances`, or cross-cutting).
 2. **Identify the layer** (`domain`, `application`, `infrastructure`, `views`/UI).
@@ -555,6 +565,8 @@ An agent should pause and request human review/approval before:
 - Modifying the release or snapshot CI workflows.
 - Making changes that affect FAIR data export (RO-Crate output format).
 - Changing the Artemis messaging topic names or JMS consumer configuration.
+- Adding, modifying, or removing any entry in `docs/requirements.md`.
+- Implementing a change that introduces new system capability not covered by an existing requirement.
 
 ---
 
@@ -562,6 +574,7 @@ An agent should pause and request human review/approval before:
 
 | File / Path | Purpose |
 |---|---|
+| `docs/requirements.md` | Authoritative requirement registry — all R/NFR/C requirements documented here; must be updated before new capabilities are implemented |
 | `README.md` | Setup, configuration reference, how to run |
 | `ExceptionHandling.md` | Exception handling conventions (read before touching error handling) |
 | `service_api.md` | Service API design patterns (Mono/Flux, request/response shapes) |
