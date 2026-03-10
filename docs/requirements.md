@@ -1,395 +1,288 @@
-# Requirements
+# Requirements Registry
 
-All requirements follow the domain-based ID schema: `<DOMAIN>-<TYPE>-<NN>`
+## Intent and Scope
 
-Where:
-- **DOMAIN**: Functional area (AUTH, PROJECT, SAMPLE, MEASUREMENT, DATA, FAIR, CARE, QUALITY, LAB, API)
-- **TYPE**: R (Functional), NFR (Non-functional), C (Constraint)
-- **NN**: Sequential number per domain and type (01, 02, 03, etc.)
+This file is the **authoritative requirements registry** for the Data Manager Application. It contains all functional requirements (R), non-functional requirements (NFR), and constraints (C) that govern the system's capabilities and quality attributes.
 
-Each requirement includes:
-- **Statement**: Clear, capability-level description
-- **Rationale**: Why this requirement exists (strategic, regulatory, stakeholder-driven)
-- **Source**: PRD section, ADR, regulatory document, or stakeholder reference
+### Relationship to Other Documents
 
-Acceptance criteria for each requirement are documented in corresponding user stories (see `.github/ISSUE_TEMPLATE/story.yml`).
+- **PRD (`docs/prd.md`):** The Product Requirements Document contains the product vision, user personas, and business objectives. It is the upstream input to this registry.
+- **This Registry:** Formalises PRD objectives into traceable, ID-tagged requirements. Each requirement is derived from and traces back to the PRD, stakeholder requests, regulatory drivers, or architectural decisions.
+- **GitHub Stories and Tasks:** Requirements are one level above Stories. A Story references one or more requirement IDs and describes a user-facing workflow. A Task references a Story and implements concrete work towards that Story's acceptance criteria.
+
+### Workflow
+
+1. **PRD → Requirements → Stories → Tasks → Implementation**
+2. Before making any change to the system, check this file to confirm the change is covered by an existing requirement. If the change introduces new system capability not covered by any existing requirement, update this file first (see `docs/requirements-guide.md` for full authoring conventions).
+3. **Agents:** You must read this file and `AGENTS.md` Section 11 step 0 before making any code change.
 
 ---
 
-## Feature: Authentication & Identity Management
+## Requirement ID Schema
+
+All requirements follow a domain-based ID structure:
+
+```
+<DOMAIN>-<TYPE>-<NN>
+```
+
+- **DOMAIN** — Functional area. Allowed values:
+  - `AUTH` — Authentication, user identity, login, ORCID
+  - `PROJECT` — Project management, experiments, experimental design
+  - `SAMPLE` — Sample registration, batch management
+  - `MEASUREMENT` — Measurement metadata, data tracking
+  - `DATA` — Raw data handling, file management, downloads
+  - `FAIR` — FAIR principles, RO-Crate export, data discoverability
+  - `CARE` — CARE principles, governance, indigenous data rights
+  - `QUALITY` — Data quality, validation, integrity
+  - `LAB` — Laboratory operations, OpenBIS integration
+  - `API` — Programmatic access, API design, tokens
+  - `USER` — User management, roles, permissions, UI/UX
+  - `COMM` — Communication, notifications, announcements, email
+
+- **TYPE** — Requirement classification:
+  - `R` — Functional requirement (system capability: "the system shall…")
+  - `NFR` — Non-functional requirement (quality attribute: performance, scalability, security, usability, etc.)
+  - `C` — Constraint (solution boundary: "must use…", "must not…", architectural decision)
+
+- **NN** — Sequential number per (DOMAIN, TYPE) pair, zero-padded to two digits:
+  - Valid: `01`, `02`, `10`, `99`
+  - Invalid: `1`, `2`, `010` (no leading zeros beyond two digits)
+
+### Examples
+
+- `AUTH-R-01` — Functional requirement in the Authentication domain
+- `PROJECT-NFR-02` — Non-functional requirement in the Project Management domain
+- `SAMPLE-C-01` — Constraint in the Sample Management domain
+- `FAIR-R-03` — Functional requirement in the FAIR domain
+
+### Rules
+
+- IDs are **stable and must never be renumbered or reused.**
+- Constraints (`*-C-*`) influence architecture and must not be referenced in Stories. Reference them only in Task Technical Notes and ADRs.
+- One requirement may be referenced by multiple Stories.
+- A Story may reference multiple requirement IDs when a single user workflow spans multiple domains. If a Story spans more than two domains, consider splitting it.
+
+---
+
+## Requirement Format
+
+Each requirement must contain:
+
+```
+### <ID>: <Short Title>
+
+<Statement>
+
+**Rationale:**
+<Why this requirement exists — strategic, regulatory, stakeholder-driven, or architectural>
+
+**Source (optional but recommended):**
+<Link to PRD section, FAIR/CARE principle, regulatory document, stakeholder request, or ADR>
+```
+
+---
+
+## Worked Example
+
+### PROJECT-R-01: Project Creation by Authorised Users
+
+The system shall allow authorised users to create new research projects with metadata including title, description, and principal investigator.
+
+**Rationale:**
+Projects are the primary organisational unit in the Data Manager. Users need the ability to establish new research initiatives and provide basic context. This is a foundational capability enabling all downstream sample and measurement registration workflows.
+
+**Source:**
+PRD §3.1 Core Data Management; User story: "As a researcher, I want to create a project so that I can organise my research data."
+
+---
+
+## AUTH — Authentication and User Identity
 
 ### Functional Requirements
 
-#### AUTH-R-01: Local Username/Password Authentication
-
-**Statement**: The system shall support user registration and login via email address and password credentials.
-
-**Rationale**: Provides baseline authentication for users without institutional SSO. Essential for standalone deployments and users without ORCID accounts. Enables independent account management and password recovery workflows.
-
-**Source**: PRD §2 (Users & Primary Use Cases); Product foundation requirement
-
----
-
-#### AUTH-R-02: Multi-Factor Authentication (TOTP)
-
-**Statement**: The system shall support Time-based One-Time Password (TOTP) authentication as a second authentication factor, where users can voluntarily enable TOTP on their account using standard authenticator applications (Google Authenticator, Authy, Microsoft Authenticator, etc.).
-
-**Rationale**: Enhances account security by requiring a second factor beyond passwords. Prevents unauthorized access from credential compromise. RFC 6238 compliance ensures compatibility with industry-standard authenticator apps. Voluntary adoption allows phased rollout while protecting high-privilege users who choose to enable it. Critical for organizations managing sensitive research data and intellectual property.
-
-**Source**: Stakeholder request (Security team, Jan 2025); AUTH-NFR-02 (audit logging); Industry best practice for research data platforms
-
----
-
-#### AUTH-R-03: OAuth2/OIDC Integration (ORCID)
-
-**Statement**: The system shall support user authentication and account linking via ORCID OAuth2 provider (Open Researcher and Contributor ID), enabling users to log in using their institutional ORCID credentials.
-
-**Rationale**: Reduces registration friction for researchers who already maintain ORCID profiles. Enables auto-linking of research identity with account. Supports institutional integration where ORCID is the primary research identifier. ORCID is widely adopted in life sciences research and enables future interoperability with institutional repositories (Zenodo, InvenioRDM, etc.). Addresses PRD requirement for "Partner Integration".
-
-**Source**: PRD §2.3 (Partner Integration); Institutional requirement (QBiC operations); FAIR data principles
-
----
-
-#### AUTH-R-04: Personal Access Tokens (PAT)
-
-**Statement**: The system shall support generation and management of encrypted personal access tokens that enable programmatic API access without exposing user passwords. Tokens shall be:
-  - Generated by users in account settings with optional description and expiration date
-  - Encrypted at rest in the database
-  - Revocable by users at any time
-  - Valid for at least 30 days (configurable per deployment)
-  - Displayed only once at creation time
-
-**Rationale**: Enables secure programmatic access for automated workflows, CI/CD pipelines, and third-party integrations. Reduces risk from credential exposure compared to storing passwords in configuration files. Encryption ensures tokens cannot be compromised via database breach alone (requires vault key). Revocation enables immediate access termination without password reset. Required for API-first automation and partner integrations.
-
-**Source**: PRD §2.3 (Partner Integration); API security best practice; Stakeholder request (automation team)
-
----
-
-#### AUTH-R-05: Account Recovery (Password Reset)
-
-**Statement**: The system shall provide a secure password reset mechanism accessible to users who have forgotten their password or lost access to their account. Reset process shall:
-  - Validate user identity via email ownership
-  - Issue time-limited reset tokens (valid for 24 hours max)
-  - Require strong password on reset (conform to AUTH-C-02)
-  - Prevent token reuse and invalidate previous sessions
-
-**Rationale**: Essential for account recovery and reduces support burden. Email-based verification ensures only account owner can reset password. Time-limited tokens prevent brute-force attacks. Session invalidation on reset prevents session hijacking during recovery process.
-
-**Source**: User experience requirement; Security best practice; Support cost reduction
-
----
+_No requirements defined yet._
 
 ### Non-Functional Requirements
 
-#### AUTH-NFR-01: Login Performance
-
-**Statement**: Login completion (from credential submission to authenticated session) shall achieve p95 latency < 500ms under normal load (< 100 concurrent users) and p95 latency < 1000ms under peak load (< 1000 concurrent users).
-
-**Rationale**: Fast authentication improves user experience and reduces perceived application latency. Sub-500ms target aligns with human perception of responsiveness. Peak load target ensures graceful degradation under stress while maintaining usability.
-
-**Source**: PRD §4 (Success Metrics); UX research on authentication latency
-
----
-
-#### AUTH-NFR-02: Security Audit Logging
-
-**Statement**: The system shall create audit log entries for all authentication-related events, including:
-  - User login attempts (success and failure)
-  - MFA setup, enable, disable operations
-  - MFA challenge attempts (success and failure with attempt count)
-  - Password reset requests and completions
-  - Personal access token creation, usage, and revocation
-
-Each audit entry shall capture: user ID, event type, timestamp, IP address (if available), user agent, outcome (success/failure), and relevant context. Logs shall be retained for minimum 90 days per security compliance requirements.
-
-**Rationale**: Enables security investigation and incident response. Provides accountability trail for sensitive operations. Supports compliance audits for GDPR and research data governance. Helps detect brute-force attacks and unauthorized account access attempts.
-
-**Source**: GDPR Art. 32 (Security measures); Research data governance; Regulatory requirement
-
----
-
-#### AUTH-NFR-03: Session Security
-
-**Statement**: The system shall implement secure session management including:
-  - Session ID regeneration on successful authentication
-  - Configurable session timeout (default 30 minutes)
-  - Automatic session invalidation on password reset or MFA disable
-  - Prevention of concurrent session hijacking via session binding to IP address (optional, configurable)
-  - Secure cookies with HttpOnly and Secure flags
-
-**Rationale**: Prevents session fixation and hijacking attacks. Automatic timeout limits exposure window from stolen sessions. Session invalidation on security events (password change) forces re-authentication for critical operations. Reduces attack surface from credential compromise.
-
-**Source**: OWASP Session Management Cheat Sheet; Spring Security best practices; Security team requirements
-
----
-
-#### AUTH-NFR-04: Password Policy
-
-**Statement**: The system shall enforce password requirements:
-  - Minimum length: 12 characters
-  - Must include uppercase, lowercase, numeric, and special characters
-  - No dictionary words or common patterns
-  - No reuse of last 5 passwords
-  - Password expiration (optional, configurable per deployment)
-
-**Rationale**: Reduces susceptibility to brute-force and dictionary attacks. Requires entropy sufficient for modern attack tools. Character diversity prevents common password patterns. No-reuse prevents credential stuffing with previous compromises.
-
-**Source**: NIST SP 800-132 password guidelines (adjusted for research context); Organizational security policy
-
----
-
-#### AUTH-NFR-05: TOTP Security
-
-**Statement**: The system shall implement TOTP verification with security measures:
-  - RFC 6238 compliance (HMAC-SHA1, 30-second window)
-  - ±1 time period discrepancy tolerance (±30 seconds clock drift)
-  - Maximum 3 failed TOTP verification attempts per login session
-  - 5-minute lockout after 3 consecutive failures
-  - No code reuse within active time window
-  - Audit log of all TOTP verification attempts
-
-**Rationale**: RFC 6238 compliance ensures compatibility with all standard authenticator apps. Time window tolerance accommodates clock skew on user devices. Attempt limits and lockout prevent brute-force attacks (2^6 = 64 possible 6-digit codes). Code reuse prevention per RFC 6238 design. Audit trail enables forensic analysis and detection of account compromise attempts.
-
-**Source**: RFC 6238 (TOTP standard); NIST SP 800-63B (MFA guidelines); Security team requirements
-
----
+_No requirements defined yet._
 
 ### Constraints
 
-#### AUTH-C-01: MFA Voluntary Adoption (Phase 1)
-
-**Statement**: In Phase 1 (initial release), TOTP-based MFA shall be optional for all user roles. MFA shall not be mandatory for project access or operational use of the platform.
-
-**Rationale**: Reduces adoption friction and operational complexity for Phase 1 release. Allows users to adopt MFA incrementally. Mandatory enforcement can be phased in after successful optional rollout. Prevents lockout scenarios where users lose authenticator access before recovery procedures are established.
-
-**Source**: Product decision (Jan 2025); Risk mitigation (Phase 1 simplification)
+_No requirements defined yet._
 
 ---
 
-#### AUTH-C-02: Password Storage
-
-**Statement**: All user passwords shall be encrypted at rest in the database using bcrypt with minimum cost factor 12 or equivalent (e.g., PBKDF2 with 100k+ iterations). Plain-text password storage is strictly prohibited.
-
-**Rationale**: Bcrypt with high cost factor provides defense-in-depth against database compromise. High iteration count ensures computational cost makes brute-force attacks infeasible with current hardware. Protects user credentials even if database is breached.
-
-**Source**: OWASP Password Storage Cheat Sheet; GDPR Art. 32 (encryption); Security best practice
-
----
-
-#### AUTH-C-03: Token Encryption
-
-**Statement**: All sensitive tokens (personal access tokens, password reset tokens, TOTP secrets) shall be encrypted at rest using AES-256-GCM. Encryption keys shall be stored separately in the PKCS12 vault with minimum 100-bit entropy.
-
-**Rationale**: AES-256-GCM provides authenticated encryption preventing tampering. Separate key storage ensures compromise of database alone does not expose decryption keys. Applies existing vault pattern (established in codebase) consistently across all token types.
-
-**Source**: GDPR Art. 32 (encryption); Existing codebase pattern; Security team guidance
-
----
-
-#### AUTH-C-04: Spring Security & OAuth2 Framework
-
-**Statement**: Authentication implementation shall use Spring Security 7.x and Spring OAuth2 client libraries for all authentication flows. Custom authentication logic shall only be implemented where Spring Security does not provide equivalent functionality.
-
-**Rationale**: Reduces security implementation burden by leveraging well-tested, actively maintained framework. Simplifies code review and reduces attack surface. Enables future compatibility with Spring Security updates and security patches.
-
-**Source**: Architecture decision (codebase standardization); Framework maturity
-
----
-
-## Feature: Project Management & Lifecycle
+## PROJECT — Project Management and Experimental Design
 
 ### Functional Requirements
 
-#### PROJECT-R-01: Project Creation & Metadata
-
-**Statement**: The system shall enable users to create new research projects with metadata including:
-  - Project code (unique identifier)
-  - Project title (human-readable name)
-  - Project description (goals, scope)
-  - Principal investigator (user assignment)
-  - Associated users and roles
-  - Project status (active, archived, etc.)
-
-**Rationale**: Essential for organizing research workflows and managing access control. Project code enables integration with external systems (OpenBIS, Zenodo). Metadata enables FAIR data indexing and discovery.
-
-**Source**: PRD §2 (Multi-omics data management); Core platform functionality
-
----
-
-#### PROJECT-R-02: Experiment Design & Management
-
-**Statement**: The system shall enable users to define experiments within projects, including:
-  - Experiment title and description
-  - Experimental design (variables, factors, replicate count)
-  - Experimental groups and sample assignments
-  - Confounding variable tracking
-  - Study design documentation (blinded, randomized, etc.)
-
-**Rationale**: Enables structured documentation of experimental design, essential for reproducibility and FAIR principles. Supports complex multi-factor studies common in omics research. Prevents data quality issues from undocumented design decisions.
-
-**Source**: PRD §1 (Experimental design documentation); FAIR principles; Research best practice
-
----
-
-#### PROJECT-R-03: Sample Registration & Batch Management
-
-**Statement**: The system shall support sample registration including:
-  - Bulk sample import (XLSX/TSV file upload)
-  - Individual sample metadata capture
-  - Batch operations (assign to experiments, bulk status update)
-  - Sample-to-experiment mapping
-  - Integration with external sample repositories (OpenBIS)
-
-**Rationale**: Batch operations reduce data entry burden for large studies. File import enables integration with upstream sample tracking systems. OpenBIS integration provides enterprise-scale sample management for QBiC operations.
-
-**Source**: PRD §1 (Sample registration and batch management); Operational requirement (QBiC workflow)
-
----
-
-#### PROJECT-R-04: Measurement Metadata Management
-
-**Statement**: The system shall manage measurement metadata for multiple measurement types:
-  - Next-Generation Sequencing (NGS) measurements (sequencing platform, read count, library type, etc.)
-  - Proteomics measurements (mass spec instrument, peptide count, protein ID method, etc.)
-  - Custom measurement types (extensible metadata schema)
-
-**Rationale**: Enables structured capture of instrument-specific metadata. Different analytical platforms require different metadata. Extensible schema allows future measurement types without code changes. Essential for data reusability and method documentation.
-
-**Source**: PRD §1 (Measurement metadata management); Multi-omics support requirement
-
----
-
-## Feature: Data Quality & Validation
-
-### Functional Requirements
-
-#### QUALITY-R-01: Data Validation Framework
-
-**Statement**: The system shall implement data validation for uploaded files (XLSX, TSV, DOCX) including:
-  - Schema validation (required columns, data types)
-  - Value validation (range checks, controlled vocabulary matching)
-  - Cross-reference validation (experiment exists, sample in project)
-  - Duplicate detection
-  - Error reporting with line numbers and actionable messages
-
-**Rationale**: Prevents downstream errors from malformed data. Schema validation catches missing fields early. Cross-reference validation maintains data integrity. Actionable error messages reduce support burden and improve user experience.
-
-**Source**: PRD §1 (Data quality); Operational requirement (reduces support tickets)
-
----
-
-## Feature: FAIR Data & Export
-
-### Functional Requirements
-
-#### FAIR-R-01: RO-Crate Export
-
-**Statement**: The system shall enable export of projects as valid RO-Crate (Research Object Crate) packages that conform to the RO-Crate 1.1 specification. Exports shall include:
-  - Structured metadata (ro-crate-metadata.json) describing project, experiments, samples, and measurements
-  - File manifest with checksums
-  - License information and attribution
-  - Provenance information (creator, creation date, modifications)
-  - References to external identifiers (ORCID, project URIs)
-
-**Rationale**: Enables FAIR-compliant data sharing. RO-Crate is recognized standard for packaging research data with metadata. Enables integration with institutional repositories (Zenodo, InvenioRDM). Provides audit trail and provenance documentation.
-
-**Source**: PRD §1 (FAIR data export); FAIR principles (Findable, Accessible, Interoperable, Reusable); Zenodo integration requirement
-
----
-
-#### FAIR-R-02: Data Reusability Documentation
-
-**Statement**: The system shall capture and export data reusability metadata including:
-  - Data collection methodology
-  - Measurement protocols and parameters
-  - Quality control procedures
-  - Known limitations and caveats
-  - Applicable restrictions (data use agreements, embargoes)
-
-**Rationale**: Enables downstream researchers to evaluate fitness for use. Documents limitations and assumptions. Prevents misinterpretation or inappropriate reuse. Supports FAIR "R" principle (Reusable).
-
-**Source**: FAIR principles; Research transparency requirement; Stakeholder request (data consumers)
-
----
+_No requirements defined yet._
 
 ### Non-Functional Requirements
 
-#### FAIR-NFR-01: RO-Crate Specification Compliance
+_No requirements defined yet._
 
-**Statement**: All exported RO-Crate packages shall validate against RO-Crate 1.1 JSON-LD schema without warnings or errors. Validation shall be performed at export time, and validation errors shall prevent export completion.
+### Constraints
 
-**Rationale**: Ensures compatibility with tools consuming RO-Crate format. Prevents distribution of invalid packages that break downstream workflows. Enables automated processing by institutional repositories.
-
-**Source**: RO-Crate 1.1 specification; Zenodo ingestion requirements
+_No requirements defined yet._
 
 ---
 
-## Feature: User Management & Authorization
+## SAMPLE — Sample Registration and Batch Management
 
 ### Functional Requirements
 
-#### USER-R-01: Role-Based Access Control (RBAC)
+_No requirements defined yet._
 
-**Statement**: The system shall implement role-based access control with predefined roles:
-  - **Administrator**: Full platform access, user management, configuration
-  - **Project Manager**: Create/edit projects, manage team members, control access
-  - **Researcher**: Create experiments, register samples, upload measurements, download data
-  - **Viewer**: Read-only access to assigned projects and data
+### Non-Functional Requirements
 
-Additional custom roles may be defined per deployment. Each role shall have explicit permission grants for operations (create, read, update, delete) on resources.
+_No requirements defined yet._
 
-**Rationale**: Enables granular access control without implementation complexity. Predefined roles align with common research team structures. Custom roles support organizational variations.
+### Constraints
 
-**Source**: PRD §2 (User identity management); Spring Security ACL architecture
+_No requirements defined yet._
 
 ---
 
-#### USER-R-02: Project-Level Access Control (ACL)
-
-**Statement**: The system shall support Access Control Lists (ACL) enabling project managers to grant granular permissions on individual projects to users:
-  - **View**: Read-only access to project data
-  - **Edit**: Modify project metadata, experiments, samples
-  - **Administer**: Grant/revoke access for other users, delete project
-
-**Rationale**: Enables fine-grained access control without creating new platform roles. Allows project managers to delegate access without administrator involvement. Supports multi-team projects with differentiated permissions.
-
-**Source**: Spring Security ACL implementation (existing codebase); Multi-user project management requirement
-
----
-
-## Feature: Notifications & Communication
+## MEASUREMENT — Measurement Metadata and Data Tracking
 
 ### Functional Requirements
 
-#### COMM-R-01: Email Notifications
+_No requirements defined yet._
 
-**Statement**: The system shall send email notifications for user-initiated events:
-  - Email confirmation on account registration
-  - Password reset link delivery
-  - Project invitation notifications
-  - MFA setup completion confirmation
-  - Critical alerts (failed backup, data export issues)
+### Non-Functional Requirements
 
-Email delivery shall include clear action buttons (confirm email, reset password) and links to full notifications in the application.
+_No requirements defined yet._
 
-**Rationale**: Enables asynchronous communication with users. Email confirmation prevents typos in email addresses. Reset links provide self-service password recovery. Project invitations reduce friction for team onboarding. Alerts ensure visibility of critical issues.
+### Constraints
 
-**Source**: User experience requirement; Operational requirement (self-service support); GDPR compliance
+_No requirements defined yet._
 
 ---
 
-#### COMM-R-02: In-Application Notifications
+## DATA — Raw Data File Handling
 
-**Statement**: The system shall provide in-app notifications (toasts, banners) for:
-  - Operation status (upload in progress, export complete)
-  - User actions (project created, sample registered)
-  - Warnings (insufficient data for analysis, deprecated workflow)
-  - Errors (validation failures, permission denied)
+### Functional Requirements
 
-Notifications shall persist or auto-dismiss based on severity.
+_No requirements defined yet._
 
-**Rationale**: Provides immediate feedback for user actions. Improves user experience by reducing guesswork about operation status. Reduces support burden from user confusion.
+### Non-Functional Requirements
 
-**Source**: UX best practice; Operational requirement
+_No requirements defined yet._
+
+### Constraints
+
+_No requirements defined yet._
 
 ---
+
+## FAIR — FAIR Data Principles and Export
+
+### Functional Requirements
+
+_No requirements defined yet._
+
+### Non-Functional Requirements
+
+_No requirements defined yet._
+
+### Constraints
+
+_No requirements defined yet._
+
+---
+
+## CARE — CARE Principles and Data Governance
+
+### Functional Requirements
+
+_No requirements defined yet._
+
+### Non-Functional Requirements
+
+_No requirements defined yet._
+
+### Constraints
+
+_No requirements defined yet._
+
+---
+
+## QUALITY — Data Quality and Validation
+
+### Functional Requirements
+
+_No requirements defined yet._
+
+### Non-Functional Requirements
+
+_No requirements defined yet._
+
+### Constraints
+
+_No requirements defined yet._
+
+---
+
+## LAB — Laboratory Operations and External Integrations
+
+### Functional Requirements
+
+_No requirements defined yet._
+
+### Non-Functional Requirements
+
+_No requirements defined yet._
+
+### Constraints
+
+_No requirements defined yet._
+
+---
+
+## API — Programmatic Access and API Design
+
+### Functional Requirements
+
+_No requirements defined yet._
+
+### Non-Functional Requirements
+
+_No requirements defined yet._
+
+### Constraints
+
+_No requirements defined yet._
+
+---
+
+## USER — User Management, Roles, and Permissions
+
+### Functional Requirements
+
+_No requirements defined yet._
+
+### Non-Functional Requirements
+
+_No requirements defined yet._
+
+### Constraints
+
+_No requirements defined yet._
+
+---
+
+## COMM — Communication, Notifications, and Announcements
+
+### Functional Requirements
+
+_No requirements defined yet._
+
+### Non-Functional Requirements
+
+_No requirements defined yet._
+
+### Constraints
+
+_No requirements defined yet._
