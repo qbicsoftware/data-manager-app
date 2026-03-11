@@ -1,0 +1,49 @@
+name: Story
+description: User-facing functionality derived from PRD/Requirements
+title: "[Story] "
+labels: ["type:story"]
+body:
+  - type: input
+    id: requirement_ids
+    attributes:
+      label: Requirement IDs
+      description: "Reference one or more requirement IDs from docs/requirements.md (e.g., AUTH-R-02, PROJECT-NFR-01)"
+      placeholder: "AUTH-R-02, AUTH-NFR-03"
+    validations:
+      required: true
+
+  - type: textarea
+    id: user_story
+    attributes:
+      label: User Story
+      description: "Describe value from the user's perspective using the format: As a <role>, I want <goal>, so that <benefit>"
+      placeholder: |
+        As a researcher
+        I want to enable two-factor authentication on my account
+        So that my research data is protected against credential compromise
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: Acceptance Criteria
+      description: "Concrete, testable Given/When/Then statements."
+      placeholder: |
+        - Given a user is logged in and on Account Settings, When they click "Enable Two-Factor Authentication", Then a QR code appears
+        - Given a user scans the QR code into an authenticator app, When they enter the 6-digit code, Then MFA is enabled
+        - Given MFA is enabled, When they log in with their password, Then they are prompted for a 6-digit code
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes & Context (optional)
+      description: "Dependencies, design notes, links to PRD section, related constraints (e.g., references to AUTH-C-01)"
+      placeholder: |
+        - Depends on: #123 (parent story for user registration)
+        - Design reference: See ADR-005 for authentication framework
+        - Related requirement: AUTH-C-01 (MFA is optional in Phase 1)
+    validations:
+      required: false
