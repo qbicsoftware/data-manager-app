@@ -64,6 +64,11 @@ jobs:
           MAVEN_REPO_USERNAME: ${{ secrets.NEXUS_USERNAME }}
           MAVEN_REPO_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
 
+      - name: Configure Git Credentials
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+
       - name: Switch to new branch
         run: git checkout -b release/set-version-to-${{ github.event.inputs.versionTag }}
 
