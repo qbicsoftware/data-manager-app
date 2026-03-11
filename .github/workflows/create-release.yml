@@ -72,14 +72,11 @@ jobs:
       - name: Switch to new branch
         run: git checkout -b release/set-version-to-${{ github.event.inputs.versionTag }}
 
-      - name: Set remote branch
-        run: git push --set-upstream origin release/set-version-to-${{ github.event.inputs.versionTag }}
-
       - name: Checkin commit
         run: git commit . -m 'Set version to ${{ github.event.inputs.versionTag }}'
 
       - name: Push to Github
-        run: git push
+        run: git push --set-upstream origin release/set-version-to-${{ github.event.inputs.versionTag }}
 
       - name: Open PR with version bump
         run: gh pr create --base main --title "Update version to ${{ github.event.inputs.versionTag }}" --body "Updates the project version after a release to ${{ github.event.inputs.versionTag }}"
