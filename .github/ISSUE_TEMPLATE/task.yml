@@ -16,7 +16,7 @@ body:
     id: requirement_ids
     attributes:
       label: Requirement IDs
-      description: "Reference one or more requirement IDs from docs/requirements.md (R=Functional, NFR=Non-functional, C=Constraint)"
+      description: "Reference one or more functional (R) or non-functional (NFR) requirement IDs from docs/requirements.md. Note: Constraint IDs (C-type) must NOT be listed here — reference them exclusively in the Technical Notes field."
       placeholder: "AUTH-R-02, AUTH-NFR-02"
     validations:
       required: true
@@ -52,11 +52,12 @@ body:
     id: technical_notes
     attributes:
       label: Technical Notes (optional)
-      description: "Design hints, architectural constraints, related ADRs, module placement, dependencies on other tasks"
+      description: "Design hints, related ADRs, module placement, dependencies on other tasks, and constraint references. Constraint IDs (C-<NN>) that influence architecture and solution boundaries must be cited here and nowhere else."
       placeholder: |
         - Implement in: identity/application/ (service), identity-infrastructure/ (JPA), datamanager-app/views/account/ (UI)
         - Use: oss.jcraft:jzlib for TOTP RFC 6238, Spring Security for session management
         - Related ADR: ADR-005 (Authentication Framework)
+        - Constraints: AUTH-C-01 (no plaintext password storage), AUTH-C-03 (PKCS12 vault required)
         - Blocks: Task #456 (MFA enforcement)
     validations:
       required: false
