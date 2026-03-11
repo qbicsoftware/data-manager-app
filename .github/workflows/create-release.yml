@@ -8,7 +8,8 @@ on:
         required: true
 permissions:
   id-token: write # This is required for requesting the JWT
-  contents: read # This is required for actions/checkout
+  contents: write # This is required for branch creation
+  pull-requests: write # required for opening pull requests
   attestations: write   # required for provenance
 jobs:
   release:
