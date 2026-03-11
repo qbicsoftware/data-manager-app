@@ -83,9 +83,9 @@ Each requirement must contain:
 
 ---
 
-## Worked Example
+## Example (illustrative only)
 
-### PROJECT-R-01: Project Creation by Authorised Users
+### PROJECT-R-01: Project Creation by Authorised Users (illustrative only)
 
 The system shall allow authorised users to create new research projects with metadata including title, description, and principal investigator.
 
