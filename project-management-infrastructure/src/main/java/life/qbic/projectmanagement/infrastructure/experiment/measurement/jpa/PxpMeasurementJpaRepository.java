@@ -18,15 +18,15 @@ import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Embedded;
+import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.MapsId;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.PrimaryKeyJoinColumn;
-import jakarta.persistence.SecondaryTable;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import jakarta.persistence.criteria.Join;
@@ -160,11 +160,14 @@ public interface PxpMeasurementJpaRepository extends
           .flatMap(it -> it.sampleIds().stream())
           .collect(Collectors.toSet());
       return (root, query, criteriaBuilder) -> criteriaBuilder.and(
-          getSampleInfos(root).get("sampleId").in(includedSampleIds),
-          getSampleInfos(root).get("sampleId").in(excludedSampleIds).not());
+          getSampleInfos(root).get("sample").get("sampleId").in(includedSampleIds),
+          getSampleInfos(root).get("sample").get("sampleId").in(excludedSampleIds).not());
     }
 
     private @NonNull Specification<PxpMeasurementInformation> containsSearchTerm() {
+      if (searchTerm.isEmpty()) {
+        return Specification.unrestricted();
+      }
       return Specification.anyOf(
           propertyContains("measurementCode", searchTerm),
           propertyContains("measurementName", searchTerm),
@@ -188,7 +191,7 @@ public interface PxpMeasurementJpaRepository extends
           formattedClientTimeContains("registeredAt", searchTerm, timeZoneOffsetMillis,
               dateTimeFormat),
           contains(root -> getSampleInfos(root)
-              .get("sampleLabel").as(String.class), searchTerm),
+              .get("sample").get("sampleLabel").as(String.class), searchTerm),
           contains(root -> getSampleInfos(root)
               .get("comment").as(String.class), searchTerm));
     }
@@ -199,7 +202,8 @@ public interface PxpMeasurementJpaRepository extends
         return Specification.unrestricted();
       }
       return (root, query, criteriaBuilder) ->
-          criteriaBuilder.equal(getSampleInfos(root).get("experimentId"), experimentId);
+          criteriaBuilder.equal(getSampleInfos(root).get("sample").get("experimentId"),
+              experimentId);
     }
 
     @Override
@@ -263,26 +267,41 @@ public interface PxpMeasurementJpaRepository extends
 
   }
 
+  /**
+   * Read-only JPA entity representing a sample's participation in a proteomics (PXP) measurement.
+   *
+   * <p>Mirrors the design of {@link NgsMeasurementJpaRepository.NgsSampleInfo}: the same sample
+   * can appear in multiple measurements, so a {@link MeasuredSampleId composite primary key} is
+   * used to allow Hibernate's first-level cache to correctly distinguish instances.
+   *
+   * <p>Sample metadata is delegated to {@link SampleLookupEntity}. Measurement-specific fields
+   * ({@code comment}, {@code fractionName}, {@code measurementLabel}) are stored directly.
+   */
   @Entity
   @Table(name = "specific_measurement_metadata_pxp")
-  @SecondaryTable(name = "sample", pkJoinColumns = @PrimaryKeyJoinColumn(
-      name = "sample_id", referencedColumnName = "sample_id"
-  ))
   final class PxpSampleInfo {
 
-    @Id
-    @Column(name = "sample_id")
-    private String sampleId;
+    @EmbeddedId
+    private MeasuredSampleId id;
+
+    /**
+     * The proteomics measurement this sample info belongs to. Maps the {@code measurementId}
+     * component of the composite key.
+     */
     @ManyToOne
+    @MapsId("measurementId")
     @JoinColumn(name = "measurement_id")
     private PxpMeasurementInformation measurement;
 
-    @Column(table = "sample", name = "experiment_id")
-    private String experimentId;
-    @Column(table = "sample", name = "code")
-    private String sampleCode;
-    @Column(table = "sample", name = "label")
-    private String sampleLabel;
+    /**
+     * The sample entity providing stable metadata (label, code, experiment). Maps the
+     * {@code sampleId} component of the composite key.
+     */
+    @ManyToOne
+    @MapsId("sampleId")
+    @JoinColumn(name = "sample_id")
+    private SampleLookupEntity sample;
+
     @Column(table = "specific_measurement_metadata_pxp", name = "fractionName")
     private String fractionName;
     @Column(table = "specific_measurement_metadata_pxp", name = "label")
@@ -290,20 +309,23 @@ public interface PxpMeasurementJpaRepository extends
     @Column(name = "comment")
     private String comment;
 
+    /**
+     * Required by JPA. Do not use directly.
+     */
     protected PxpSampleInfo() {
 
     }
 
     public String sampleId() {
-      return sampleId;
+      return id.sampleId();
     }
 
     public String sampleCode() {
-      return sampleCode;
+      return sample.sampleCode();
     }
 
     public String sampleLabel() {
-      return sampleLabel;
+      return sample.sampleLabel();
     }
 
     public String fractionName() {
@@ -319,16 +341,16 @@ public interface PxpMeasurementJpaRepository extends
     }
 
     String experimentId() {
-      return experimentId;
+      return sample.experimentId();
     }
 
     @Override
     public String toString() {
       return new StringJoiner(", ", PxpSampleInfo.class.getSimpleName() + "[", "]")
-          .add("sampleId='" + sampleId + "'")
+          .add("sampleId='" + sampleId() + "'")
           .add("measurement=" + measurement.measurementId)
-          .add("sampleCode='" + sampleCode + "'")
-          .add("sampleLabel='" + sampleLabel + "'")
+          .add("sampleCode='" + sampleCode() + "'")
+          .add("sampleLabel='" + sampleLabel() + "'")
           .add("comment='" + comment + "'")
           .toString();
     }
@@ -339,18 +361,19 @@ public interface PxpMeasurementJpaRepository extends
         return false;
       }
 
-      return Objects.equals(sampleId, that.sampleId) && Objects.equals(measurement.measurementId,
-          that.measurement.measurementId) && Objects.equals(sampleCode, that.sampleCode)
-          && Objects.equals(sampleLabel, that.sampleLabel) && Objects.equals(
+      return Objects.equals(sampleId(), that.sampleId()) && Objects.equals(
+          measurement.measurementId,
+          that.measurement.measurementId) && Objects.equals(sampleCode(), that.sampleCode())
+          && Objects.equals(sampleLabel(), that.sampleLabel()) && Objects.equals(
           comment, that.comment);
     }
 
     @Override
     public int hashCode() {
-      int result = Objects.hashCode(sampleId);
+      int result = Objects.hashCode(sampleId());
       result = 31 * result + Objects.hashCode(measurement.measurementId);
-      result = 31 * result + Objects.hashCode(sampleCode);
-      result = 31 * result + Objects.hashCode(sampleLabel);
+      result = 31 * result + Objects.hashCode(sampleCode());
+      result = 31 * result + Objects.hashCode(sampleLabel());
       result = 31 * result + Objects.hashCode(comment);
       return result;
     }
