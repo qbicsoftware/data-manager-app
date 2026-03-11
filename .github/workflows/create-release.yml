@@ -49,7 +49,8 @@ jobs:
 
       - name: Create GitHub Release
         run: gh release create ${{ github.event.inputs.versionTag }} --generate-notes --fail-on-no-commits
-
+        env:
+          GH_TOKEN: ${{ github.token }}
       # Generate provenance (SLSA attestation) for all JARs
       - name: Generate SLSA build provenance
         uses: actions/attest-build-provenance@v1
@@ -76,3 +77,5 @@ jobs:
 
       - name: Open PR with version bump
         run: gh pr create --base main --title "Update version to ${{ github.event.inputs.versionTag }}" --body "Updates the project version after a release to ${{ github.event.inputs.versionTag }}"
+        env:
+          GH_TOKEN: ${{ github.token }}
