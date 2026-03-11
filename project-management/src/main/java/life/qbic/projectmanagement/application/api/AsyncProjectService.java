@@ -2436,7 +2436,7 @@ public interface AsyncProjectService {
    * @return a {@link Mono} emitting the count when available.
    * @since 1.12.0
    */
-  Mono<Integer> countMeasurementsNgs(String projectId, String experimentId,
+  Mono<Integer> countRawDataNgs(String projectId, String experimentId,
       RawDatasetFilter rawDataFilter);
 
   /**
@@ -2449,7 +2449,7 @@ public interface AsyncProjectService {
    * @return a {@link Mono} emitting the count when available.
    * @since 1.12.0
    */
-  Mono<Integer> countMeasurementsPxp(String projectId, String experimentId,
+  Mono<Integer> countRawDataPxp(String projectId, String experimentId,
       RawDatasetFilter rawDataFilter);
 
   /**

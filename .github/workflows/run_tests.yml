@@ -1,6 +1,7 @@
 name: Run Maven Tests
 
 on:
+  pull_request:
   push:
     branches:
       - '**'

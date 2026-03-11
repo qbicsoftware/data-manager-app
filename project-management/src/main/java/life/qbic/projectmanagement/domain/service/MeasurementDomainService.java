@@ -1,13 +1,10 @@
 package life.qbic.projectmanagement.domain.service;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.sample.SampleIdCodeEntry;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
@@ -25,8 +22,6 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class MeasurementDomainService {
-
-  private static final Logger log = logger(MeasurementDomainService.class);
 
   private final MeasurementRepository measurementRepository;
 
@@ -49,12 +44,12 @@ public class MeasurementDomainService {
         .toList();
   }
 
-  public void deleteNGS(Set<NGSMeasurement> measurements) {
-    measurementRepository.deleteAllNGS(measurements);
+  public void deleteNgsById(Set<String> measurementIds) {
+    measurementRepository.deleteAllNgs(measurementIds);
   }
 
-  public void deletePxP(Set<ProteomicsMeasurement> measurements) {
-    measurementRepository.deleteAllProteomics(measurements);
+  public void deletePxpById(Set<String> measurementIds) {
+    measurementRepository.deleteAllProteomics(measurementIds);
   }
 
   public List<MeasurementId> updateProteomicsAll(

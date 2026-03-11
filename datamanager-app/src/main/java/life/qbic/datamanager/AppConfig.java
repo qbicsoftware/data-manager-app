@@ -287,10 +287,10 @@ public class AppConfig {
 
   @Bean
   public MeasurementUpdatedPolicy measurementUpdatedPolicy(
-      MeasurementLookupService measurementLookupService,
       ProjectInformationService projectInformationService, JobScheduler jobScheduler) {
     var updateProjectUponMeasurementUpdate = new UpdateProjectUponMeasurementUpdate(
-        measurementLookupService, projectInformationService, jobScheduler);
+        projectInformationService,
+        jobScheduler);
     return new MeasurementUpdatedPolicy(updateProjectUponMeasurementUpdate);
   }
 
