@@ -3,8 +3,10 @@ package life.qbic.projectmanagement.application.sync;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
 import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.RawDataset;
 import life.qbic.projectmanagement.application.dataset.LocalRawDatasetCache;
 import life.qbic.projectmanagement.application.dataset.RemoteRawDataService;
 import life.qbic.projectmanagement.application.sync.WatermarkRepo.Watermark;
@@ -93,7 +95,7 @@ public class RawDataSyncService {
     }
 
     // 4) Create a new watermark for the next job to pick up at
-    var nextWatermark = createNextWatermark(currentWatermark, result.size());
+    var nextWatermark = createNextWatermark(currentWatermark, result);
 
     // 5) persist the new watermark state
     watermarkRepo.save(nextWatermark);
@@ -115,21 +117,31 @@ public class RawDataSyncService {
    * </ol>
    *
    * @param currentWatermark the currently set watermark
-   * @param lastResultSize   the result size seen from the last query
+   * @param result  the result list seen from the last query, necessary so the last successful update date can be determined
    * @return a new {@link Watermark} to continue at for the next job execution
    * @since 1.12.0
    */
-  private static Watermark createNextWatermark(Watermark currentWatermark, int lastResultSize) {
-    int newOffset =
-        moreDatasetsToSync(lastResultSize, MAX_QUERY_SIZE) ? currentWatermark.syncOffset() + MAX_QUERY_SIZE : 0;
-    // If the offset has been reset to 0, we can set the new watermark update since to now
-    if (newOffset == 0) {
-      return new Watermark(JOB_NAME, newOffset, Instant.now(), Instant.now());
-    }
-    // The query was not finished, so we need to query next time again from the currents watermark
-    // time point BUT with the new offset to continue the paginated request
-    return new Watermark(JOB_NAME, newOffset, currentWatermark.updatedSince(), Instant.now());
+  private static Watermark createNextWatermark(Watermark currentWatermark,
+      List<RawDataset> result) {
+    boolean morePages = moreDatasetsToSync(result.size(), MAX_QUERY_SIZE);
 
+    if (morePages) {
+      // Still paginating — advance offset, keep updatedSince unchanged
+      int newOffset = currentWatermark.syncOffset() + MAX_QUERY_SIZE;
+      return new Watermark(JOB_NAME, newOffset, currentWatermark.updatedSince(), Instant.now());
+    }
+
+    if (result.isEmpty()) {
+      // Empty page after an exact full-sized page
+      // nothing was missed, safe to advance to now
+      return new Watermark(JOB_NAME, 0, Instant.now(), Instant.now());
+    }
+    // Last partial page — advance updatedSince to the latest registration timestamp
+    Instant lastEntityTimestamp = result.stream()
+        .map(RawDataset::registrationDate)
+        .max(Instant::compareTo)
+        .orElse(currentWatermark.updatedSince());
+    return new Watermark(JOB_NAME, 0, lastEntityTimestamp, Instant.now());
   }
 
   private static boolean moreDatasetsToSync(int lastResultSize, int maxQuerySize) {
