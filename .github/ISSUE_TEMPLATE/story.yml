@@ -28,7 +28,7 @@ body:
     id: acceptance_criteria
     attributes:
       label: Acceptance Criteria
-      description: "Concrete, testable Given/When/Then statements. See docs/requirements-guide.md for detailed guidance and examples."
+      description: "Concrete, testable Given/When/Then statements."
       placeholder: |
         - Given a user is logged in and on Account Settings, When they click "Enable Two-Factor Authentication", Then a QR code appears
         - Given a user scans the QR code into an authenticator app, When they enter the 6-digit code, Then MFA is enabled
