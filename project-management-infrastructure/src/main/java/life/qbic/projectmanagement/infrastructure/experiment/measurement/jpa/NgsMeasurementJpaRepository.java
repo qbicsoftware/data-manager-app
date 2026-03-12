@@ -19,15 +19,15 @@ import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Embedded;
+import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.MapsId;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.PrimaryKeyJoinColumn;
-import jakarta.persistence.SecondaryTable;
 import jakarta.persistence.Table;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Root;
@@ -160,11 +160,14 @@ public interface NgsMeasurementJpaRepository extends
           .flatMap(it -> it.sampleIds().stream())
           .collect(Collectors.toSet());
       return (root, query, criteriaBuilder) -> criteriaBuilder.and(
-          getSampleInfos(root).get("sampleId").in(includedSampleIds),
-          getSampleInfos(root).get("sampleId").in(excludedSampleIds).not());
+          getSampleInfos(root).get("sample").get("sampleId").in(includedSampleIds),
+          getSampleInfos(root).get("sample").get("sampleId").in(excludedSampleIds).not());
     }
 
     private @NonNull Specification<NgsMeasurementInformation> containsSearchTerm() {
+      if (searchTerm.isBlank()) {
+        return Specification.unrestricted();
+      }
       return Specification.anyOf(
           propertyContains("measurementCode", searchTerm),
           propertyContains("measurementName", searchTerm),
@@ -181,7 +184,7 @@ public interface NgsMeasurementJpaRepository extends
           formattedClientTimeContains("registeredAt", searchTerm, timeZoneOffsetMillis,
               dateTimeFormat),
           contains(root -> getSampleInfos(root)
-              .get("sampleLabel").as(String.class), searchTerm),
+              .get("sample").get("sampleLabel").as(String.class), searchTerm),
           contains(root -> getSampleInfos(root)
               .get("comment").as(String.class), searchTerm));
     }
@@ -192,7 +195,8 @@ public interface NgsMeasurementJpaRepository extends
         return Specification.unrestricted();
       }
       return (root, query, criteriaBuilder) ->
-          criteriaBuilder.equal(getSampleInfos(root).get("experimentId"), experimentId);
+          criteriaBuilder.equal(getSampleInfos(root).get("sample").get("experimentId"),
+              experimentId);
     }
 
     @Override
@@ -256,26 +260,47 @@ public interface NgsMeasurementJpaRepository extends
 
   }
 
+  /**
+   * Read-only JPA entity representing a sample's participation in an NGS measurement.
+   *
+   * <p>A sample may appear in multiple measurements. To correctly distinguish between
+   * such cases, this entity uses a {@link MeasuredSampleId composite primary key} combining
+   * {@code sample_id} and {@code measurement_id}. This prevents Hibernate's first-level cache from
+   * resolving the wrong cached instance when the same sample appears across measurements.
+   *
+   * <p>Sample metadata (label, code, experiment) is resolved via {@link SampleLookupEntity}
+   * rather than a secondary table join, as {@code @SecondaryTable} requires the join column to
+   * reference the full primary key — which is not possible with a composite key and a secondary
+   * table keyed only on {@code sample_id}.
+   *
+   * <p>Measurement-specific fields ({@code comment}, {@code indexI5}, {@code indexI7}) are
+   * stored directly on this entity.
+   */
   @Entity
   @Table(name = "specific_measurement_metadata_ngs")
-  @SecondaryTable(name = "sample", pkJoinColumns = @PrimaryKeyJoinColumn(
-      name = "sample_id", referencedColumnName = "sample_id"
-  ))
   final class NgsSampleInfo {
 
-    @Id
-    @Column(name = "sample_id")
-    private String sampleId;
+    @EmbeddedId
+    private MeasuredSampleId id;
+
+    /**
+     * The measurement this sample info belongs to. Maps the {@code measurementId} component of the
+     * composite key.
+     */
     @ManyToOne
+    @MapsId("measurementId")
     @JoinColumn(name = "measurement_id")
     private NgsMeasurementInformation measurement;
 
-    @Column(table = "sample", name = "experiment_id")
-    private String experimentId;
-    @Column(table = "sample", name = "code")
-    private String sampleCode;
-    @Column(table = "sample", name = "label")
-    private String sampleLabel;
+    /**
+     * The sample entity providing stable metadata (label, code, experiment). Maps the
+     * {@code sampleId} component of the composite key.
+     */
+    @ManyToOne
+    @MapsId("sampleId")
+    @JoinColumn(name = "sample_id")
+    private SampleLookupEntity sample;
+
     @Column(name = "indexI5")
     private String indexI5;
     @Column(name = "indexI7")
@@ -283,20 +308,23 @@ public interface NgsMeasurementJpaRepository extends
     @Column(name = "comment")
     private String comment;
 
+    /**
+     * Required by JPA. Do not use directly.
+     */
     protected NgsSampleInfo() {
 
     }
 
     public String sampleId() {
-      return sampleId;
+      return id.sampleId();
     }
 
     public String sampleCode() {
-      return sampleCode;
+      return sample.sampleCode();
     }
 
     public String sampleLabel() {
-      return sampleLabel;
+      return sample.sampleLabel();
     }
 
     public String comment() {
@@ -312,16 +340,16 @@ public interface NgsMeasurementJpaRepository extends
     }
 
     String experimentId() {
-      return experimentId;
+      return sample.experimentId();
     }
 
     @Override
     public String toString() {
       return new StringJoiner(", ", NgsSampleInfo.class.getSimpleName() + "[", "]")
-          .add("sampleId='" + sampleId + "'")
+          .add("sampleId='" + sampleId() + "'")
           .add("measurement=" + measurement.measurementId)
-          .add("sampleCode='" + sampleCode + "'")
-          .add("sampleLabel='" + sampleLabel + "'")
+          .add("sampleCode='" + sampleCode() + "'")
+          .add("sampleLabel='" + sampleLabel() + "'")
           .add("comment='" + comment + "'")
           .toString();
     }
@@ -332,19 +360,20 @@ public interface NgsMeasurementJpaRepository extends
         return false;
       }
 
-      return Objects.equals(sampleId, that.sampleId) && Objects.equals(measurement.measurementId,
-          that.measurement.measurementId) && Objects.equals(experimentId, that.experimentId)
-          && Objects.equals(sampleCode, that.sampleCode) && Objects.equals(
-          sampleLabel, that.sampleLabel) && Objects.equals(comment, that.comment);
+      return Objects.equals(sampleId(), that.sampleId()) && Objects.equals(
+          measurement.measurementId,
+          that.measurement.measurementId) && Objects.equals(experimentId(), that.experimentId())
+          && Objects.equals(sampleCode(), that.sampleCode()) && Objects.equals(
+          sampleLabel(), that.sampleLabel()) && Objects.equals(comment, that.comment);
     }
 
     @Override
     public int hashCode() {
-      int result = Objects.hashCode(sampleId);
+      int result = Objects.hashCode(sampleId());
       result = 31 * result + Objects.hashCode(measurement.measurementId);
-      result = 31 * result + Objects.hashCode(experimentId);
-      result = 31 * result + Objects.hashCode(sampleCode);
-      result = 31 * result + Objects.hashCode(sampleLabel);
+      result = 31 * result + Objects.hashCode(experimentId());
+      result = 31 * result + Objects.hashCode(sampleCode());
+      result = 31 * result + Objects.hashCode(sampleLabel());
       result = 31 * result + Objects.hashCode(comment);
       return result;
     }
