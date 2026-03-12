@@ -13,6 +13,7 @@ import life.qbic.projectmanagement.application.sync.WatermarkRepo.Watermark;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -40,6 +41,12 @@ public class RawDataSyncService {
   private final RemoteRawDataService remoteRawDataService;
   private final WatermarkRepo watermarkRepo;
   private final LocalRawDatasetCache localRawDataService;
+
+  // Self-reference injected via proxy to ensure @Transactional on runSync() is honoured.
+  // @Lazy breaks the circular dependency that Spring would otherwise detect at startup.
+  @Autowired
+  @Lazy
+  private RawDataSyncService self;
 
   // Maximum number of entries queried from remote resource per iteration.
   // Configurable to allow operators to reduce batch size under high database load.
@@ -97,7 +104,7 @@ public class RawDataSyncService {
 
     for (int attempt = 1; attempt <= MAX_RETRY_ATTEMPTS; attempt++) {
       try {
-        return runSync();
+        return self.runSync();
       } catch (PessimisticLockingFailureException e) {
         if (attempt == MAX_RETRY_ATTEMPTS) {
           log.error(
