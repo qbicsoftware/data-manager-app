@@ -42,28 +42,36 @@ public class RawDataSyncService {
   private final WatermarkRepo watermarkRepo;
   private final LocalRawDatasetCache localRawDataService;
 
-  // Self-reference injected via proxy to ensure @Transactional on runSync() is honoured.
-  // @Lazy breaks the circular dependency that Spring would otherwise detect at startup.
-  @Autowired
-  @Lazy
-  private RawDataSyncService self;
-
   // Maximum number of entries queried from remote resource per iteration.
   // Configurable to allow operators to reduce batch size under high database load.
-  @Value("${qbic.sync.raw-data.batch-size:1000}")
-  private int maxQuerySize;
+  private final int maxQuerySize;
 
   // Should be smaller than the lockAtMostFor duration of the scheduler lock.
   // Configurable to allow tuning the sync window without redeployment.
-  @Value("${qbic.sync.raw-data.max-duration-ms:10000}")
-  private int maxDurationJobMillis;
+  private final int maxDurationJobMillis;
 
-  @Autowired
-  public RawDataSyncService(RemoteRawDataService remoteRawDataService, WatermarkRepo watermarkRepo,
-      LocalRawDatasetCache localRawDatasetCache) {
+  // Self-reference injected via proxy to ensure @Transactional on runSync() is honoured.
+  // Setter injection with @Lazy is required to break the circular dependency that Spring would
+  // otherwise detect at startup. Cannot be injected via the primary constructor for this reason.
+  private RawDataSyncService self;
+
+  public RawDataSyncService(
+      RemoteRawDataService remoteRawDataService,
+      WatermarkRepo watermarkRepo,
+      LocalRawDatasetCache localRawDatasetCache,
+      @Value("${qbic.sync.raw-data.batch-size:1000}") int maxQuerySize,
+      @Value("${qbic.sync.raw-data.max-duration-ms:10000}") int maxDurationJobMillis) {
     this.remoteRawDataService = Objects.requireNonNull(remoteRawDataService);
     this.watermarkRepo = Objects.requireNonNull(watermarkRepo);
     this.localRawDataService = Objects.requireNonNull(localRawDatasetCache);
+    this.maxQuerySize = maxQuerySize;
+    this.maxDurationJobMillis = maxDurationJobMillis;
+  }
+
+  @Autowired
+  @Lazy
+  void setSelf(RawDataSyncService self) {
+    this.self = Objects.requireNonNull(self);
   }
 
   // run every 2 minutes; add jitter to reduce thundering herd on restart
