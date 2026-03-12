@@ -13,7 +13,7 @@ name: "CodeQL"
 
 on:
   push:
-    branches: [ main, master, development, release/*, hotfix/* ]
+    branches: [ main, master, development, release/*, hotfix/*, fix/* ]
   pull_request:
     types:
       - opened
