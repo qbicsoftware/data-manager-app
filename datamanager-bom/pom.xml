@@ -5,7 +5,7 @@
 
   <groupId>life.qbic.datamanager</groupId>
   <artifactId>datamanager-bom</artifactId>
-  <version>1.12.6</version>
+  <version>1.12.7</version>
   <packaging>pom</packaging>
   <name>DataManager BOM</name>
   <description>Bill of Materials for DataManager artifacts</description>
