@@ -1,10 +1,10 @@
 package life.qbic.projectmanagement.infrastructure.sync;
 
-import java.util.Date;
 import java.util.Objects;
 import java.util.Optional;
 import life.qbic.projectmanagement.application.sync.WatermarkRepo;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * <b>Watermark Repo Impl</b>
@@ -33,6 +33,7 @@ public class WatermarkRepoImpl implements WatermarkRepo {
   }
 
   @Override
+  @Transactional
   public void save(Watermark latestWatermark) {
     WatermarkEntry entryForUpdate = findById(latestWatermark.jobName()).orElse(
         WatermarkEntry.create(latestWatermark.jobName(), latestWatermark.syncOffset(),
