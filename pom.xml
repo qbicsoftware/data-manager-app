@@ -7,7 +7,7 @@
   <groupId>life.qbic.datamanager</groupId>
   <artifactId>datamanager</artifactId>
   <name>Data Manager</name>
-  <version>1.12.7</version>
+  <version>1.12.8</version>
   <licenses>
     <license>
       <name>AGPL-3.0-or-later</name>
@@ -148,7 +148,7 @@
       <dependency>
         <groupId>life.qbic.datamanager</groupId>
         <artifactId>datamanager-bom</artifactId>
-        <version>1.12.7</version>
+        <version>1.12.8</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>

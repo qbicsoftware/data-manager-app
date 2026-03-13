@@ -5,7 +5,7 @@
   <parent>
     <groupId>life.qbic.datamanager</groupId>
     <artifactId>datamanager</artifactId>
-    <version>1.12.7</version>
+    <version>1.12.8</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>finances</artifactId>
@@ -44,7 +44,7 @@
     <dependency>
       <groupId>life.qbic.datamanager</groupId>
       <artifactId>finances-api</artifactId>
-      <version>1.12.7</version>
+      <version>1.12.8</version>
       <scope>compile</scope>
     </dependency>
   </dependencies>
