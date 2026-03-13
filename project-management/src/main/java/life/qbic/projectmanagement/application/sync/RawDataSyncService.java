@@ -157,6 +157,7 @@ public class RawDataSyncService {
     // 1) load watermark (offset/updatedSince) from control table
     var currentWatermark = watermarkRepo.fetch(JOB_NAME)
         .orElse(new Watermark(JOB_NAME, 0, Instant.EPOCH, Instant.EPOCH));
+    
     // 2) capture the query time BEFORE issuing the remote call so the watermark never skips
     // datasets that are registered on the remote between the query and the watermark save.
     Instant queryTime = Instant.now();
@@ -165,6 +166,9 @@ public class RawDataSyncService {
         currentWatermark.syncOffset(), currentWatermark.updatedSince()));
     
      // 3) poll remote resource
+    log.debug("Sync iteration started: offset=%d, updatedSince=%s".formatted(
+        currentWatermark.syncOffset(), currentWatermark.updatedSince()));
+
     var result = remoteRawDataService.registeredSince(currentWatermark.updatedSince(),
         currentWatermark.syncOffset(), maxQuerySize);
 
@@ -187,6 +191,7 @@ public class RawDataSyncService {
     log.debug("Sync iteration completed: fetched=%d, newOffset=%d".formatted(
         result.size(), nextWatermark.syncOffset()));
     // 7) signal job state
+
     // if there were fewer results than the max query size for the search, this means
     // there are no more datasets available.
     // We can signal there are more datasets available (== true), else return false if finished
