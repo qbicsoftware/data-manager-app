@@ -157,17 +157,24 @@ public class RawDataSyncService {
     // 1) load watermark (offset/updatedSince) from control table
     var currentWatermark = watermarkRepo.fetch(JOB_NAME)
         .orElse(new Watermark(JOB_NAME, 0, Instant.EPOCH, Instant.EPOCH));
-
+    
+    // 2) capture the query time BEFORE issuing the remote call so the watermark never skips
+    // datasets that are registered on the remote between the query and the watermark save.
+    Instant queryTime = Instant.now();
+   
+    log.debug("Sync iteration started: offset=%d, updatedSince=%s".formatted(
+        currentWatermark.syncOffset(), currentWatermark.updatedSince()));
+    
+     // 3) poll remote resource
     log.debug("Sync iteration started: offset=%d, updatedSince=%s".formatted(
         currentWatermark.syncOffset(), currentWatermark.updatedSince()));
 
-    // 2) poll remote resource
     var result = remoteRawDataService.registeredSince(currentWatermark.updatedSince(),
         currentWatermark.syncOffset(), maxQuerySize);
 
     log.debug("Found %d new raw datasets in external resource.".formatted(result.size()));
 
-    // 3) persist the raw dataset information if available
+    // 4) persist the raw dataset information if available
     if (!result.isEmpty()) {
       log.info("Persisting %d found external raw datasets in local resource.".formatted(
           result.size()));
@@ -175,16 +182,16 @@ public class RawDataSyncService {
       log.info("%d raw datasets synced.".formatted(result.size()));
     }
 
-    // 4) Create a new watermark for the next job to pick up at
-    var nextWatermark = createNextWatermark(currentWatermark, result);
+    // 5) Create a new watermark for the next job to pick up at
+    var nextWatermark = createNextWatermark(currentWatermark, result, queryTime);
 
-    // 5) persist the new watermark state
+    // 6) persist the new watermark state
     watermarkRepo.save(nextWatermark);
 
     log.debug("Sync iteration completed: fetched=%d, newOffset=%d".formatted(
         result.size(), nextWatermark.syncOffset()));
+    // 7) signal job state
 
-    // 6) signal job state
     // if there were fewer results than the max query size for the search, this means
     // there are no more datasets available.
     // We can signal there are more datasets available (== true), else return false if finished
@@ -192,41 +199,44 @@ public class RawDataSyncService {
   }
 
   /**
-   * There are only two meaningful updates for the newOffset:
+   * Computes the next watermark after a sync iteration.
+   *
+   * <p>There are two cases:
    * <ol>
-   *   <li>the result contained fewer entries then the max query size, then we are finished. So the offset can be set to 0
-   * and the next job will start with a zero offset and the saved date</li>
-   *  <li> the result contained as many entries as the max query size, which means that there are still more datasets to be excepted
-   * or zero, if the number of datasets % query size = 0. This will lead to the first condition in the next iteration.</li>
+   *   <li><b>Full page</b> ({@code result.size() == MAX_QUERY_SIZE}): more pages may exist.
+   *   Advance the offset by {@code MAX_QUERY_SIZE} and keep {@code updatedSince} unchanged so the
+   *   next call fetches the following page of the same time window.</li>
+   *   <li><b>Last page</b> (result is smaller than {@code MAX_QUERY_SIZE}, including empty): all
+   *   datasets in the current time window have been consumed. Reset offset to 0 and set
+   *   {@code updatedSince} to {@code queryTime} — the timestamp captured <em>before</em> the
+   *   remote call was issued — so that any dataset registered on the remote between the query and
+   *   the watermark save is included in the next sync window rather than silently skipped.</li>
    * </ol>
    *
    * @param currentWatermark the currently set watermark
-   * @param result  the result list seen from the last query, necessary so the last successful update date can be determined
+   * @param result           the result list from the last query
+   * @param queryTime        the {@link Instant} captured immediately before the remote query was
+   *                         issued; must be passed from {@code runSync()} to avoid a race where
+   *                         the watermark jumps past datasets registered after the query but
+   *                         before {@code Instant.now()} would otherwise be called here
    * @return a new {@link Watermark} to continue at for the next job execution
    * @since 1.12.0
    */
-  private Watermark createNextWatermark(Watermark currentWatermark,
-      List<RawDataset> result) {
-    boolean morePages = moreDatasetsToSync(result.size(), maxQuerySize);
+   private Watermark createNextWatermark(Watermark currentWatermark,
+       List<RawDataset> result, Instant queryTime) {
+     boolean morePages = moreDatasetsToSync(result.size(), maxQuerySize);
 
-    if (morePages) {
-      // Still paginating — advance offset, keep updatedSince unchanged
-      int newOffset = currentWatermark.syncOffset() + maxQuerySize;
-      return new Watermark(JOB_NAME, newOffset, currentWatermark.updatedSince(), Instant.now());
-    }
-
-    if (result.isEmpty()) {
-      // Empty page after an exact full-sized page
-      // nothing was missed, safe to advance to now
-      return new Watermark(JOB_NAME, 0, Instant.now(), Instant.now());
-    }
-    // Last partial page — advance updatedSince to the latest registration timestamp
-    Instant lastEntityTimestamp = result.stream()
-        .map(RawDataset::registrationDate)
-        .max(Instant::compareTo)
-        .orElse(currentWatermark.updatedSince());
-    return new Watermark(JOB_NAME, 0, lastEntityTimestamp, Instant.now());
-  }
+     if (morePages) {
+       // Still paginating — advance offset, keep updatedSince unchanged
+       int newOffset = currentWatermark.syncOffset() + maxQuerySize;
+       return new Watermark(JOB_NAME, newOffset, currentWatermark.updatedSince(), Instant.now());
+     }
+     // Last page (empty or partial) — all pages consumed. Use queryTime (captured before the
+     // remote call) as updatedSince so the next scheduled job does not skip datasets that were
+     // registered on the remote between the query and this watermark save.
+     return new Watermark(JOB_NAME, 0, queryTime, Instant.now());
+   }
+ 
 
   private static boolean moreDatasetsToSync(int lastResultSize, int maxQuerySize) {
     // if the last query returned fewer items than could have been based on the max query
