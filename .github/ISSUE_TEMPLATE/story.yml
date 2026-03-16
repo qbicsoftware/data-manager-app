@@ -4,6 +4,15 @@ title: "[Story] "
 labels: ["type:story"]
 body:
   - type: input
+    id: parent_feature
+    attributes:
+      label: Parent Feature
+      description: "Link to the Feature issue this story belongs to (e.g., #101)"
+      placeholder: "#101"
+    validations:
+      required: true
+
+  - type: input
     id: requirement_ids
     attributes:
       label: Requirement IDs
@@ -42,7 +51,7 @@ body:
       label: Notes & Context (optional)
       description: "Dependencies, design notes, links to PRD section, related constraints (e.g., references to AUTH-C-01)"
       placeholder: |
-        - Depends on: #123 (parent story for user registration)
+        - Related issue: Story #123 (user registration must complete first)
         - Design reference: See ADR-005 for authentication framework
         - Related requirement: AUTH-C-01 (MFA is optional in Phase 1)
     validations:

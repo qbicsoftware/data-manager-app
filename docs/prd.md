@@ -9,22 +9,25 @@ By combining structured metadata capture, quality assessment, and interoperabili
 
 ## 2. Users & primary use cases
 
-<!-- PLACEHOLDER: The personas and use cases below are illustrative only. Replace with actual stakeholder research and user feedback before finalising the PRD. -->
+**Persona 1: Anna Becker – Project Manager**
+- **Role:** Employed at the QBiC BioPM team; acts as the primary contact between end-users, customers, and member labs performing sample measurements. Manages service offers, tracks research project progress, and reports back to end-users.
+- **Primary need:** Quick overviews of important project updates and easy access to consolidated information for reporting — without switching between multiple systems.
+- **Pain point:** Manually checking many interfaces for information or updates, and acting as a communication proxy between end-users and internal teams.
 
-**Persona A: Dr. Sarah Meyer – Principal Investigator (Biology Group)**
-- Role: Leads a translational cancer biology research group at University of Tübingen
-- Primary need: Design and track multi-year, multi-omics studies with 200+ samples from patient cohorts
-- Pain point: Tracks experimental metadata in spreadsheets; struggles to ensure consistent sample naming and measurement parameters across internal lab work and outsourced sequencing
+**Persona 2: Dr. Jonas Weber – Researcher**
+- **Role:** Scientist conducting a scientific study; responsible for defining the experimental setup, providing sample information, and setting quality demands on analysis outputs.
+- **Primary need:** A single place where all project information comes together, so hypotheses can be tested quickly and findings published to maximise scientific impact.
+- **Pain point:** Numerous FAIR data management and best-practice requirements with limited resources and no direct incentive to comply; gets frustrated when excessive manual tasks slow down actual scientific progress.
 
-**Persona B: Marcus Klein – Lab Manager (QBiC Service Provider)**
-- Role: Manages high-throughput analysis services (NGS, proteomics) at QBiC for internal and external researchers
-- Primary need: Register samples from multiple projects, batch them for efficiency, upload measurement metadata from partner instruments, and track data transfer workflows
-- Pain point: Currently uses OpenBIS and manual scripts; needs a unified UI to manage project-level metadata and track which samples have been measured
+**Persona 3: Laura Hoffmann – Data Steward**
+- **Role:** Operates at an institutional level (university research office or data governance team); oversees data management standards and FAIR/CARE compliance across multiple research groups and projects.
+- **Primary need:** Visibility into project metadata quality, data export readiness, and audit trails to support governance reporting and funder compliance documentation.
+- **Pain point:** Manually checking compliance status across dispersed projects and coordinating with researchers to resolve metadata gaps; gets frustrated when compliance workflows require extensive back-and-forth communication.
 
-**Persona C: Jing Liu – Bioinformatician (Data Analyst)**
-- Role: Analyzes omics data for research collaborators; publishes datasets
-- Primary need: Download raw measurement data, review sample metadata, and export projects as FAIR-compliant research objects (RO-Crate) for archival and publication
-- Pain point: Data discovery across projects is fragmented; wants reproducibility and proper attribution (ORCID integration)
+**Persona 4: Dr. Minh Tran – Data Scientist**
+- **Role:** Based in a research group or core bioinformatics facility; downloads raw measurement data from the platform, integrates it with external datasets, and performs comparative analysis for publications and grant proposals.
+- **Primary need:** Structured, machine-readable metadata that minimises cleaning and reformatting work before analysis, with reliable sample tracking for reproducibility and traceability.
+- **Pain point:** Incomplete or inconsistent sample metadata that requires detective work to reconcile samples across projects; lack of standardised ontologies makes cross-project analysis cumbersome and delays publication timelines.
 
 **Top 3 jobs-to-be-done:**
 1. **Design and document an experiment** – Create a project, define experimental groups, specify variables and confounding factors, and invite collaborators without manual email coordination
