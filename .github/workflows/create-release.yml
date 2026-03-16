@@ -11,10 +11,18 @@ permissions:
   contents: write # This is required for branch creation
   pull-requests: write # required for opening pull requests
   attestations: write   # required for provenance
+
 jobs:
   release:
     runs-on: ubuntu-latest
     steps:
+      - name: Validate version tag format
+        run: |
+          if ! echo "${{ github.event.inputs.versionTag }}" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$'; then
+            echo "ERROR: versionTag must be a semantic version (e.g. 1.2.3 or 1.2.3-SNAPSHOT)"
+            exit 1
+          fi
+
       - name: Checkout repository
         uses: actions/checkout@v6
 
@@ -33,24 +41,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      - name: Debug OIDC (get a token)
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const token = await core.getIDToken('sigstore'); // audience example
-            core.setSecret(token);
-            console.log('OIDC token acquired. Length:', token.length);
-
       - name: Set version in Maven project
-        run: mvn versions:set -DnewVersion=${{ github.event.inputs.versionTag }} -DprocessAllModules
+        run: mvn versions:set -DnewVersion="${{ github.event.inputs.versionTag }}" -DprocessAllModules -DgenerateBackupPoms=false
 
       - name: Build with Maven
         run: mvn -B package -Pproduction -Dvaadin.force.production.build=true --file pom.xml
-
-      - name: Create GitHub Release
-        run: gh release create ${{ github.event.inputs.versionTag }} --generate-notes --fail-on-no-commits
-        env:
-          GH_TOKEN: ${{ github.token }}
 
       # Generate provenance (SLSA attestation) for all JARs
       - name: Generate SLSA build provenance
@@ -64,21 +59,28 @@ jobs:
           MAVEN_REPO_USERNAME: ${{ secrets.NEXUS_USERNAME }}
           MAVEN_REPO_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
 
-      - name: Configure Git Credentials
+      - name: Configure Git Credentials for GithubActions
         run: |
-          git config user.name github-actions
-          git config user.email github-actions@github.com
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Create GitHub Release
+        run: gh release create "${{ github.event.inputs.versionTag }}" --generate-notes --fail-on-no-commits
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       - name: Switch to new branch
         run: git checkout -b release/set-version-to-${{ github.event.inputs.versionTag }}
 
       - name: Checkin commit
-        run: git commit . -m 'Set version to ${{ github.event.inputs.versionTag }}'
+        run: git commit . -m 'Set version to "${{ github.event.inputs.versionTag }}"'
 
       - name: Push to Github
         run: git push --set-upstream origin release/set-version-to-${{ github.event.inputs.versionTag }}
 
       - name: Open PR with version bump
-        run: gh pr create --base main --title "Update version to ${{ github.event.inputs.versionTag }}" --body "Updates the project version after a release to ${{ github.event.inputs.versionTag }}"
+        run: gh pr create --base main --title "Update POM to released code in ${{ github.event.inputs.versionTag }}" --body "Records the version set during the release of ${{ github.event.inputs.versionTag }}."
         env:
           GH_TOKEN: ${{ github.token }}
