@@ -1,38 +1,89 @@
 name: Bug Report
 description: File a bug report.
-title: "[Provide a short descriptive title]"
+title: "[Bug] <short description of what broke>"
 labels: ["bug", "triage"]
 projects: ["qbicsoftware/25"]
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to fill out this bug report! We strongly encourage you to also add screenshots to describe the bug!
+        Thanks for taking the time to fill out this bug report!
+        Please be as specific as possible — this helps both humans and automated tools understand and reproduce the issue faster.
+
   - type: textarea
     id: what-happened
     attributes:
-      label: What happened?
-      description: Also tell us, what did you expect to happen?
-      placeholder: Tell us what you see!
-      value: "A bug happened!"
+      label: What actually happened?
+      description: Describe the observed (broken) behavior. Be specific — include any error messages shown in the UI.
+      placeholder: |
+        e.g. "After clicking 'Save' on the project creation form, a spinner appears indefinitely and no project is created."
     validations:
       required: true
+
+  - type: textarea
+    id: what-was-expected
+    attributes:
+      label: What did you expect to happen?
+      description: Describe the correct/intended behavior. This helps define what "fixed" looks like.
+      placeholder: |
+        e.g. "The project should be saved and I should be redirected to the project overview page."
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction-steps
+    attributes:
+      label: Steps to reproduce
+      description: |
+        Provide a minimal, numbered list of steps to reliably reproduce the bug.
+        The more precise, the better — include specific inputs, user roles, or data states if relevant.
+      placeholder: |
+        1. Log in as a project manager
+        2. Navigate to Projects > Create New Project
+        3. Fill in all required fields
+        4. Click "Save"
+        5. Observe the spinner does not resolve
+    validations:
+      required: true
+
+  - type: dropdown
+    id: affected-area
+    attributes:
+      label: Affected application area
+      description: Which part of the application is affected? This helps route the issue to the right code.
+      multiple: false
+      options:
+        - Project Management
+        - Sample Management
+        - Experiment Management
+        - User / Access Management
+        - Data Download / Upload
+        - Notifications
+        - Settings
+        - Other / Unknown
+    validations:
+      required: true
+
   - type: dropdown
     id: browsers
     attributes:
-      label: What browsers are you seeing the problem on?
+      label: Browser(s) where the problem occurs
       multiple: true
       options:
         - Firefox
         - Chrome
         - Safari
         - Microsoft Edge
+        - Not browser-specific / backend issue
+        -
   - type: textarea
-    id: logs
+    id: additional-context
     attributes:
-      label: Relevant log output
-      description: Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks.
-      render: shell
+      label: Additional context
+      description: |
+        Screenshots, screen recordings, test data, or anything else that helps paint the full picture.
+        If this is a data-specific bug, describe the shape or state of the data involved (without including sensitive information).
+
   - type: checkboxes
     id: terms
     attributes:
