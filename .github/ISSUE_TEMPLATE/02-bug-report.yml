@@ -75,7 +75,7 @@ body:
         - Safari
         - Microsoft Edge
         - Not browser-specific / backend issue
-        -
+        
   - type: textarea
     id: additional-context
     attributes:
