@@ -1,3 +1,7 @@
+# Local agent config files/folders
+.opencode/
+opencode.json
+
 # Any local PKCS12 stores
 *.p12
 
