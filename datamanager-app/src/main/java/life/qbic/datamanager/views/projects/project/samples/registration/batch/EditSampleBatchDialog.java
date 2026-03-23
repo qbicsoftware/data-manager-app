@@ -80,6 +80,7 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
   private final Div succeededView;
   private final MessageSourceNotificationFactory messageFactory;
   private final DownloadComponent downloadComponent;
+  private final UploadWithDisplay uploadWithDisplay;
 
   public EditSampleBatchDialog(SampleValidationService sampleValidationService,
       AsyncProjectService service, MessageSourceNotificationFactory messageFactory,
@@ -117,7 +118,7 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
     setHeaderTitle("Edit Sample Batch");
     validatedSampleMetadata = new ArrayList<>();
 
-    UploadWithDisplay uploadWithDisplay = new UploadWithDisplay(
+    uploadWithDisplay = new UploadWithDisplay(
         MAX_FILE_SIZE, new FileType[]{
         new FileType(".xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     });
@@ -246,6 +247,22 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
     this.validatedSampleMetadata.addAll(metadata);
   }
 
+  // Package-private getter for testing purposes
+  List<SampleMetadata> getValidatedSampleMetadata() {
+    return new ArrayList<>(validatedSampleMetadata);
+  }
+
+  // Package-private getter for testing purposes
+  UploadWithDisplay getUploadWithDisplay() {
+    return uploadWithDisplay;
+  }
+
+  // Package-private setter for testing purposes - allows test to set validated metadata
+  // This is needed to test the fix for issue #1401
+  void setValidatedSampleMetadataForTest(List<SampleMetadata> metadata) {
+    setValidatedSampleMetadata(metadata);
+  }
+
   private List<SampleInformationForExistingSample> extractSampleInformationForExistingSamples(
       UploadedData uploadedData) {
     ParsingResult parsingResult = XLSXParser.create().parse(uploadedData.inputStream());
@@ -348,6 +365,20 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
       batchNameField.focus();
       return;
     }
+    
+    // Validate that sample metadata was uploaded and passed validation
+    if (validatedSampleMetadata.isEmpty() && uploadWithDisplay.getUploadedData().isEmpty()) {
+      // No file was uploaded at all
+      var uploadProgressDisplay = new InvalidUploadDisplay(
+          "No file uploaded. Please upload the sample metadata template and try again.");
+      uploadWithDisplay.setDisplay(uploadProgressDisplay);
+      return;
+    } else if (validatedSampleMetadata.isEmpty() && uploadWithDisplay.getUploadedData()
+        .isPresent()) {
+      // File was uploaded but validation failed - error is already shown in UI
+      return;
+    }
+    
     fireEvent(new ConfirmEvent(this, clickEvent.isFromClient(), batchNameField.getValue(),
         Collections.unmodifiableList(validatedSampleMetadata)));
 
