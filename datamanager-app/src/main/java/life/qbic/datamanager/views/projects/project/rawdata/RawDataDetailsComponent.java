@@ -343,6 +343,10 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
         .setSortProperty(UiSortKey.MEASUREMENT_ID.value())
         .setHeader("Measurement Id");
 
+    grid.addColumn(RawDatasetInformationNgs::measurementName)
+        .setHeader("Measurement Name")
+        .setSortable(false);
+
     grid.addColumn(
             rawData -> rawData.linkedSampleInformation().stream().map(
                 BasicSampleInformation::sampleName).collect(Collectors.joining(",")))
@@ -371,6 +375,11 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
         .setKey(UiSortKey.MEASUREMENT_ID.value())
         .setSortProperty(UiSortKey.MEASUREMENT_ID.value())
         .setHeader("Measurement Id");
+
+    grid.addColumn(RawDatasetInformationPxP::measurementName)
+        .setHeader("Measurement Name")
+        .setSortable(false);
+
     grid.addColumn(
             rawData -> rawData.linkedSampleInformation().stream().map(
                 BasicSampleInformation::sampleName).collect(Collectors.joining(",")))
