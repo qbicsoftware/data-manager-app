@@ -2459,10 +2459,12 @@ public interface AsyncProjectService {
    * @param dataset                 the actual {@link RawDataset}
    * @param linkedSampleInformation further information about the linked samples as
    *                                {@link BasicSampleInformation}.
+   * @param measurementName         the name of the measurement
    * @since 1.11.0
    */
   record RawDatasetInformationNgs(RawDataset dataset,
-                                  List<BasicSampleInformation> linkedSampleInformation) {
+                                  List<BasicSampleInformation> linkedSampleInformation,
+                                  String measurementName) {
 
     public RawDatasetInformationNgs {
       requireNonNull(dataset);
@@ -2493,10 +2495,12 @@ public interface AsyncProjectService {
    * @param dataset                 the actual {@link RawDataset}
    * @param linkedSampleInformation further information about the linked samples as
    *                                {@link BasicSampleInformation}.
+   * @param measurementName         the name of the measurement
    * @since 1.11.0
    */
   record RawDatasetInformationPxP(RawDataset dataset,
-                                  List<BasicSampleInformation> linkedSampleInformation) {
+                                  List<BasicSampleInformation> linkedSampleInformation,
+                                  String measurementName) {
 
     public RawDatasetInformationPxP {
       requireNonNull(dataset);
