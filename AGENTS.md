@@ -6,6 +6,259 @@
 
 ---
 
+## 0. Requirements and Issue Governance
+
+### Governance Hierarchy
+
+The governance model for this project follows a strict top-down traceability chain:
+
+```
+PRD (docs/prd.md)
+  └── Features  (.github/ISSUE_TEMPLATE/feature.yml)
+        └── Stories  (.github/ISSUE_TEMPLATE/story.yml)
+              └── Tasks  (.github/ISSUE_TEMPLATE/task.yml)
+                    └── Implementation (code, PRs)
+```
+
+- **PRD** defines product vision, user personas, and business objectives.
+- **Features** group related Stories under a named, user-visible capability. A Feature references one or more requirement IDs and describes the high-level scope.
+- **Stories** describe user-facing workflows derived from a Feature. Each Story references a parent Feature and one or more requirement IDs.
+- **Tasks** are concrete technical work items derived from a Story.
+- **Implementation** traces back through Tasks → Stories → Features → Requirements → PRD.
+
+---
+
+### Requirement ID Schema
+
+All requirements must follow the domain-based ID structure:
+
+    <DOMAIN>-<TYPE>-<NN>
+
+Where:
+
+-   **DOMAIN** --- functional area (e.g. `API`, `PROJECT`, `SAMPLE`,
+    `MEASUREMENT`, `DATA`, `FAIR`, `CARE`, `QUALITY`, `LAB`, `AUTH`, `USER`, `COMM`)
+-   **TYPE** --- requirement type:
+    -   `R` = Functional requirement (system capability)
+    -   `NFR` = Non-functional requirement (quality attribute)
+    -   `C` = Constraint (solution boundary)
+-   **NN** --- sequential number per domain and type (e.g. `01`, `02`,
+    `03`)
+
+#### Examples
+
+    API-R-01
+    API-NFR-01
+    API-C-01
+    SAMPLE-R-02
+    FAIR-NFR-01
+    LAB-C-01
+
+#### Rules
+
+-   IDs must be stable and must never be renumbered.
+-   IDs must not encode sprint numbers, versions, or document order.
+-   One requirement may be referenced by multiple stories.
+-   A story may reference multiple requirement IDs when a single user workflow spans multiple requirements. If a story spans more than two domains, consider splitting it.
+-   Constraints (`C`) influence architecture and must not be referenced in Stories. Reference `C-<NN>` IDs only in Task Technical Notes.
+-   The sequential number `<NN>` must be zero-padded to exactly two digits (e.g., `01`, `02`, `10`). IDs without zero-padding are invalid (e.g., `1`, `010`).
+
+---
+
+### Feature ID Schema
+
+Features are identified using a short, human-readable slug:
+
+    FEAT-<SLUG>
+
+Where:
+
+-   **SLUG** --- a concise, uppercase, hyphen-separated identifier describing the user-visible capability (e.g., `FEAT-SAMPLE-REGISTRATION`, `FEAT-FAIR-EXPORT`, `FEAT-USER-AUTH`).
+
+#### Examples
+
+    FEAT-SAMPLE-REGISTRATION
+    FEAT-FAIR-EXPORT
+    FEAT-USER-AUTH
+    FEAT-MEASUREMENT-UPLOAD
+
+#### Rules
+
+-   Feature slugs must be unique across the project.
+-   Feature slugs must be stable; do not rename a Feature once Stories reference it.
+-   A Feature must reference at least one requirement ID (`R-<NN>` or `NFR-<NN>`).
+-   Constraints (`C-<NN>`) must not be used as the sole reference in a Feature — they may appear in Feature notes but Features must cite at least one `R` or `NFR` ID.
+-   One Feature may group multiple Stories across different domains, provided the Stories share a coherent user-visible purpose.
+
+---
+
+### Requirement Structure
+
+All requirements must be documented in `docs/requirements.md`.
+
+Each requirement must contain:
+
+-   **ID**
+-   **Statement** --- clear, capability-level description
+-   **Rationale** --- why this requirement exists (strategic,
+    regulatory, stakeholder-driven)
+-   **Source (optional but recommended)** --- link to:
+    -   PRD section
+    -   FAIR / CARE principle
+    -   Regulatory document
+    -   Stakeholder request
+    -   ADR
+
+#### Example
+
+    API-R-01 The system shall provide authenticated API access to project metadata.
+
+    Rationale:
+    Enables integration with partner laboratories and automated analysis pipelines.
+
+    Source:
+    PRD §2.3 Partner Integration
+
+---
+
+### Issues: Use the Repo Templates
+
+When creating issues, use the correct template for the scenario.
+
+---
+
+#### Feature (`.github/ISSUE_TEMPLATE/feature.yml`)
+
+Use when creating issues for a **named, user-visible capability** that groups multiple related Stories.
+
+Required fields:
+
+-   **Feature ID**
+    -   A unique `FEAT-<SLUG>` identifier (e.g., `FEAT-SAMPLE-REGISTRATION`)
+-   **Requirement IDs**
+    -   At least one `R-<NN>` or `NFR-<NN>` reference
+-   **Description**
+    -   High-level summary of the user-visible capability
+-   **Scope / Boundaries**
+    -   What is in scope and what is explicitly out of scope for this Feature
+
+Rules:
+
+-   A Feature must be created before any Story references it.
+-   A Feature slug must be unique and stable — do not rename it once Stories reference it.
+-   Features must not reference Constraint IDs (`C-<NN>`) as their sole requirement references.
+-   One Feature may span multiple domains if the user-visible capability is coherent.
+
+---
+
+#### Story (`.github/ISSUE_TEMPLATE/story.yml`)
+
+Use when creating issues for **user-facing functionality** derived from
+the PRD or requirements.
+
+Required fields:
+
+-   **Parent Feature**
+    -   Link to the parent Feature issue (e.g. `#101`)
+-   **Requirement IDs**
+    -   At least one `R-<NN>` reference
+    -   May include related `NFR-<NN>`
+-   **User Story** Written as: \> As a `<role>`, I want `<goal>`, so
+    that `<benefit>`.
+-   **Acceptance Criteria** One or more testable conditions in Given /
+    When / Then format.
+
+Rules:
+
+-   Stories describe value and workflow context.
+-   Stories must reference a parent Feature. Create the Feature first if one does not exist.
+-   Stories must not introduce new system capabilities not covered by an
+    existing requirement.
+-   If new capability is needed, update `docs/requirements.md` first. A change introduces **new capability** if it enables a user or system to perform an action that was not previously possible, or if it changes the externally observable behavior of an existing capability in a way not described by any existing requirement.
+
+---
+
+#### Task (`.github/ISSUE_TEMPLATE/task.yml`)
+
+Use when creating issues for **concrete technical implementation work**
+derived from, and linked to, a story.
+
+Required fields:
+
+-   **Parent Story**
+    -   Link to the parent story issue (e.g. `#123`)
+-   **Requirement IDs**
+    -   At least one `R-<NN>` or `NFR-<NN>` reference
+-   **Description**
+    -   What needs to be implemented
+-   **Technical Notes (optional)**
+    -   Design hints
+    -   Constraints (`C-<NN>`)
+    -   Related ADRs
+
+Rules:
+
+-   Tasks must not redefine acceptance criteria.
+-   Tasks must not expand requirement scope.
+
+---
+
+#### Feature, Story, and Task Sequencing
+
+- A Feature must be created before any Story references it. Create the Feature first.
+- A Story must always reference a parent Feature. Never create a Story without a parent Feature issue.
+- A Task must always be preceded by a Story. Create the Story first, then create the Task referencing it.
+- Never create a Task without a parent Story issue.
+- If no parent Feature exists for a piece of work (e.g., when acting on a direct implementation request), create the Feature first, then the Story, then the Task.
+- A single Story may have multiple Tasks; a Task must not span multiple Stories.
+
+---
+
+### Traceability Rules
+
+- Every Story must reference at least one functional requirement ID (`R-<NN>`).
+- Every Story must reference a parent Feature issue.
+- Every Task must reference:
+    -   A parent Story
+    -   At least one requirement ID
+-   Every PR must:
+    -   Reference the issue it implements
+    -   List the requirement IDs addressed
+-   If implementation changes behavior:
+    -   Update the corresponding requirement
+    -   Or explicitly justify why no requirement update is needed
+
+---
+
+### Requirement Edits
+
+When editing requirements:
+
+-   Use a Pull Request.
+-   Include a changelog entry in the PR description summarizing:
+    -   Added / Modified / Removed requirement IDs
+    -   Reason for change
+    -   Stakeholder or source reference (if applicable)
+
+**Agent rule — requirement changes require human approval:** Before modifying `docs/requirements.md`, an agent must: (1) pause and confirm the change with a human reviewer (see Section 12); (2) create a dedicated PR for the requirement change alone — do not bundle requirement changes with implementation changes; (3) include the mandatory changelog entry in the PR description per the rules above.
+
+---
+
+### Feature Edits
+
+When editing or retiring a Feature:
+
+-   Use a Pull Request.
+-   Include a changelog entry in the PR description summarizing:
+    -   Added / Modified / Retired Feature IDs
+    -   Reason for change
+    -   Impact on dependent Stories (list affected Story issues)
+
+**Agent rule — Feature slug changes require human approval:** A Feature slug must never be renamed once Stories reference it. Before retiring or splitting a Feature, an agent must: (1) pause and confirm with a human reviewer; (2) list all Story issues that reference the Feature in the PR description; (3) update Story issues to reference the replacement Feature if applicable.
+
+
+---
+
 ## 1. Project Overview
 
 **Data Manager** is a web-based, multi-omics research data management platform developed by
@@ -353,11 +606,20 @@ When working on this codebase, an AI agent should:
 
 ### Before making changes
 
+0. **Check `docs/requirements.md`** to confirm the change is covered by an existing requirement. If the change introduces new system capability not covered by any existing requirement, update `docs/requirements.md` first (see "Requirements and Issue Governance"). If `docs/requirements.md` does not exist, do not create it — pause and notify a human reviewer. Then confirm a parent Feature issue exists before creating any Story or Task.
 1. **Identify the bounded context** the change belongs to (`identity`, `project-management`,
    `finances`, or cross-cutting).
 2. **Identify the layer** (`domain`, `application`, `infrastructure`, `views`/UI).
 3. Check `ExceptionHandling.md` and `service_api.md` for patterns relevant to the change.
 4. Read existing tests in the same module before writing new code.
+
+### Creating Features
+
+- Before creating a Story, confirm a parent Feature issue exists. If none exists, create the Feature first using `.github/ISSUE_TEMPLATE/feature.yml`.
+- A Feature must reference at least one `R-<NN>` or `NFR-<NN>` requirement ID.
+- Do not create a Feature whose sole requirement reference is a Constraint (`C-<NN>`).
+- A Feature slug (`FEAT-<SLUG>`) must be unique and must not be changed once Stories reference it.
+- If you are unsure whether a new Feature is needed or an existing Feature should be extended, pause and ask a human reviewer.
 
 ### Making domain changes
 
@@ -404,6 +666,10 @@ An agent should pause and request human review/approval before:
 - Modifying the release or snapshot CI workflows.
 - Making changes that affect FAIR data export (RO-Crate output format).
 - Changing the Artemis messaging topic names or JMS consumer configuration.
+- Adding, modifying, or removing any entry in `docs/requirements.md`.
+- Implementing a change that introduces new system capability not covered by an existing requirement.
+- Retiring or renaming a Feature slug once Stories reference it.
+- Splitting a Feature into multiple Features when Stories already reference the original Feature.
 
 ---
 
@@ -411,6 +677,8 @@ An agent should pause and request human review/approval before:
 
 | File / Path | Purpose |
 |---|---|
+| `docs/requirements.md` | Authoritative requirement registry — all R/NFR/C requirements documented here; must be updated before new capabilities are implemented |
+| `docs/requirements-guide.md` | Authoring conventions for creating, editing, and retiring requirements |
 | `README.md` | Setup, configuration reference, how to run |
 | `ExceptionHandling.md` | Exception handling conventions (read before touching error handling) |
 | `service_api.md` | Service API design patterns (Mono/Flux, request/response shapes) |
@@ -422,5 +690,8 @@ An agent should pause and request human review/approval before:
 | `datamanager-app/src/main/resources/application.properties` | Full application configuration with env var mappings |
 | `datamanager-bom/pom.xml` | All dependency version pins |
 | `.github/labeler.yml` | PR/branch labeling rules |
+| `.github/ISSUE_TEMPLATE/feature.yml` | Issue template for named, user-visible capabilities (features) |
+| `.github/ISSUE_TEMPLATE/story.yml` | Issue template for user-facing functionality (user stories) |
+| `.github/ISSUE_TEMPLATE/task.yml` | Issue template for concrete technical implementation tasks |
 | `.github/release.yml` | Release changelog categories |
 | `GoogleStyle.xml` | IntelliJ Google Java Style formatter config |
