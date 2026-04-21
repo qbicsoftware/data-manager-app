@@ -1,0 +1,67 @@
+name: Feature
+description: A named, user-visible capability that groups related Stories
+title: "[Feature] "
+labels: ["type:feature"]
+body:
+  - type: input
+    id: feature_id
+    attributes:
+      label: Feature ID
+      description: "A unique FEAT-<SLUG> identifier for this feature (e.g., FEAT-SAMPLE-REGISTRATION). The slug must be uppercase, hyphen-separated, and stable — do not change it once Stories reference this Feature."
+      placeholder: "FEAT-SAMPLE-REGISTRATION"
+    validations:
+      required: true
+
+  - type: input
+    id: requirement_ids
+    attributes:
+      label: Requirement IDs
+      description: "Reference one or more functional (R) or non-functional (NFR) requirement IDs from docs/requirements.md. At least one R-<NN> or NFR-<NN> ID is required. Constraint IDs (C-<NN>) must NOT be the sole references — they may appear in notes only."
+      placeholder: "SAMPLE-R-01, SAMPLE-NFR-01"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: "High-level summary of the user-visible capability this Feature delivers. What can a user do once this Feature is complete?"
+      placeholder: |
+        Researchers can register biological samples into the system individually or in batches,
+        providing required metadata (sample type, organism, collection date) and linking samples
+        to an existing experiment. Registered samples are immediately available for measurement
+        assignment and downstream analysis workflows.
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope / Boundaries
+      description: "Explicitly state what is in scope and what is out of scope for this Feature. This prevents scope creep and clarifies what Stories belong here."
+      placeholder: |
+        In scope:
+        - Individual sample registration via UI form
+        - Batch sample registration via XLSX/TSV upload
+        - Linking samples to an existing experiment
+        - Validation of required metadata fields
+
+        Out of scope:
+        - Sample deletion (covered by FEAT-SAMPLE-MANAGEMENT)
+        - Measurement assignment (covered by FEAT-MEASUREMENT-UPLOAD)
+        - OpenBIS synchronisation (covered by FEAT-LAB-INTEGRATION)
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes & Context (optional)
+      description: "Dependencies on other Features, related ADRs, constraints that influence design, or links to PRD sections."
+      placeholder: |
+        - Depends on: FEAT-USER-AUTH (users must be authenticated before registering samples)
+        - Related PRD section: §4.2 Sample Registration
+        - Architectural constraint: SAMPLE-C-01 (all samples must be assigned a QBiC barcode)
+        - ADR reference: ADR-012 (Batch upload file format selection)
+    validations:
+      required: false

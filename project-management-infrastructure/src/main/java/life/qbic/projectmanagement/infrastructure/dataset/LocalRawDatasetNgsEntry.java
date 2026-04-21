@@ -34,6 +34,9 @@ public class LocalRawDatasetNgsEntry {
   @Column(name = "measurementCode")
   private String measurementCode;
 
+  @Column(name = "measurementName")
+  private String measurementName;
+
   @Column(name = "registration_at")
   private Instant registrationDate;
 
@@ -67,6 +70,10 @@ public class LocalRawDatasetNgsEntry {
     return measurementCode;
   }
 
+  public String getMeasurementName() {
+    return measurementName;
+  }
+
   public Instant getRegistrationDate() {
     return registrationDate;
   }
@@ -87,13 +94,14 @@ public class LocalRawDatasetNgsEntry {
     LocalRawDatasetNgsEntry that = (LocalRawDatasetNgsEntry) o;
     return totalFileSizeBytes == that.totalFileSizeBytes && numberOfFiles == that.numberOfFiles
         && Objects.equals(id, that.id) && Objects.equals(measurementCode,
-        that.measurementCode) && Objects.equals(registrationDate, that.registrationDate)
+        that.measurementCode) && Objects.equals(measurementName,
+        that.measurementName) && Objects.equals(registrationDate, that.registrationDate)
         && Objects.equals(fileTypes, that.fileTypes);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, totalFileSizeBytes, measurementCode, registrationDate, numberOfFiles,
+    return Objects.hash(id, totalFileSizeBytes, measurementCode, measurementName, registrationDate, numberOfFiles,
         fileTypes);
   }
 }

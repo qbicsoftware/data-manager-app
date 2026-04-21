@@ -248,7 +248,8 @@ public class LocalRawDatasetRepositoryImpl implements LocalRawDatasetRepository 
             entry.getNumberOfFiles(),
             entry.getFileTypes(),
             entry.getRegistrationDate()),
-        entry.getMeasuredSamples().stream().map(LocalRawDatasetRepositoryImpl::convert).toList());
+        entry.getMeasuredSamples().stream().map(LocalRawDatasetRepositoryImpl::convert).toList(),
+        entry.getMeasurementName());
   }
 
   private static RawDatasetInformationPxP convert(LocalRawDatasetPxpEntry entry) {
@@ -258,7 +259,8 @@ public class LocalRawDatasetRepositoryImpl implements LocalRawDatasetRepository 
             entry.getNumberOfFiles(),
             entry.getFileTypes(),
             entry.getRegistrationDate().toInstant()),
-        entry.getMeasuredSamples().stream().map(LocalRawDatasetRepositoryImpl::convert).toList());
+        entry.getMeasuredSamples().stream().map(LocalRawDatasetRepositoryImpl::convert).toList(),
+        entry.getMeasurementName());
   }
 
   private static BasicSampleInformation convert(MeasuredSample sample) {

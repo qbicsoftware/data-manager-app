@@ -48,6 +48,130 @@ that enables FAIR-compliant data access.
 Please find the [styleguide](https://github.com/qbicsoftware/data-manager-app-design-system) in its
 own repository.
 
+## Requirements Documentation & Workflow
+
+This project follows a structured requirements-driven development process to ensure traceability from user needs through implementation. All new features and changes must be backed by documented requirements.
+
+### Requirement IDs
+
+All requirements follow a domain-based identifier scheme:
+
+```
+<DOMAIN>-<TYPE>-<NN>
+```
+
+- **DOMAIN** — functional area (e.g., `API`, `PROJECT`, `SAMPLE`, `MEASUREMENT`, `DATA`, `FAIR`, `AUTH`)
+- **TYPE** — requirement category:
+  - `R` = Functional requirement (system capability)
+  - `NFR` = Non-functional requirement (quality attribute)
+  - `C` = Constraint (architectural boundary)
+- **NN** — zero-padded sequential number (e.g., `01`, `02`, `10`)
+
+#### Examples
+
+| ID | Type | Description |
+|---|---|---|
+| `API-R-01` | Functional | System provides authenticated API access |
+| `SAMPLE-R-02` | Functional | Users can register samples in bulk |
+| `DATA-NFR-01` | Non-functional | Data retrieval must respond within 2 seconds |
+| `FAIR-C-01` | Constraint | FAIR export must use RO-Crate v1.1.1 format |
+
+### Where Requirements Live
+
+All requirements are documented in **`docs/requirements.md`**, which is the authoritative registry. Each requirement includes:
+
+- **ID** — stable identifier (never renumbered)
+- **Statement** — clear capability description
+- **Rationale** — why this requirement exists (strategic, regulatory, stakeholder-driven)
+- **Source** (optional) — link to PRD section, regulatory reference, or stakeholder request
+
+#### Example
+
+```
+API-R-01 The system shall provide authenticated API access to project metadata.
+
+Rationale:
+Enables integration with partner laboratories and automated analysis pipelines.
+
+Source:
+PRD §2.3 Partner Integration
+```
+
+### Workflow: Stories and Tasks
+
+Contributors use two issue types, defined in `.github/ISSUE_TEMPLATE/`:
+
+#### Story (`story.yml`)
+
+Use when implementing **user-facing functionality**. A Story describes value and workflow context.
+
+**Required fields:**
+- At least one functional requirement reference (`R-<NN>`)
+- User story in the format: *"As a [role], I want [goal], so that [benefit]"*
+- Acceptance criteria in Given / When / Then format
+
+**Rules:**
+- Stories must reference existing requirements.
+- If the story requires a new capability not covered by any existing requirement, you must **create or update the requirement first** (see "Adding New Capabilities" below).
+
+#### Task (`task.yml`)
+
+Use for **concrete technical implementation work**, always linked to a parent Story.
+
+**Required fields:**
+- Parent Story reference (e.g., `#123`)
+- At least one requirement reference (`R-<NN>` or `NFR-<NN>`)
+- Description of what needs to be implemented
+- Technical notes (design hints, relevant constraints or ADRs)
+
+**Rules:**
+- Every Task must have a parent Story.
+- Tasks must not redefine acceptance criteria from the Story.
+
+#### Story → Task → PR Traceability
+
+```
+Requirement (docs/requirements.md)
+    ↓
+Story (GitHub issue, type: story.yml)
+    ↓ (may have multiple tasks)
+Task (GitHub issue, type: task.yml)
+    ↓ (implements)
+Pull Request (references task and requirement IDs)
+```
+
+### Adding New Capabilities
+
+**Golden rule:** Before implementing any new feature or changing existing behavior, ensure it is covered by a requirement in `docs/requirements.md`.
+
+If you discover that a new capability is needed but no requirement exists:
+
+1. **Update `docs/requirements.md`** first
+   - Add a new requirement ID following the scheme above
+   - Include Statement, Rationale, and Source
+   - Create a Pull Request for the requirement change alone (do not bundle with implementation changes)
+   - Include a changelog entry in the PR description listing added/modified requirement IDs and rationale
+   - Wait for maintainer approval
+
+2. **Then create the Story**
+   - Reference the new requirement ID
+   - Link to the requirements PR if helpful
+
+3. **Then create the Task(s)**
+   - Reference the Story
+   - Reference the requirement ID(s)
+
+### Contributing: Checklist
+
+When contributing code:
+
+- [ ] Is this change covered by an existing requirement in `docs/requirements.md`?
+- [ ] If it introduces new capability, have you updated requirements first (via PR)?
+- [ ] Does your PR reference the GitHub issue (Story or Task) it implements?
+- [ ] Does your PR list the requirement IDs addressed?
+
+---
+
 ## Verify build signature
 
 To mitigate the risk for supply chain attacks, we include signature bundles for every artifact (stable and snapshot) generated with [sigstore](https://www.sigstore.dev/). 
