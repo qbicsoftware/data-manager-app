@@ -1,0 +1,153 @@
+name: Label Current Sprint Issues
+
+on:
+  schedule:
+    # Run twice daily: 8 AM and 3 PM UTC
+    - cron: "0 8 * * *"
+    - cron: "0 15 * * *"
+  workflow_dispatch:  # Manual trigger for testing
+
+jobs:
+  sync-sprint-labels:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Sync sprint labels
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PROJECT_NUMBER: 24
+          ORG: qbicsoftware
+          LABEL_NAME: "sprint:current"
+        run: |
+          set -e
+          
+          echo "=== Sprint Label Sync Started ==="
+          echo "Project: $PROJECT_NUMBER"
+          echo "Label: $LABEL_NAME"
+          
+          # Create label if it doesn't exist
+          echo "Ensuring label '$LABEL_NAME' exists..."
+          gh label create "$LABEL_NAME" --color "0E8A16" --description "Issue is part of the current sprint" 2>/dev/null || echo "Label already exists"
+          
+          # Get all project items with their iteration info
+          echo "Fetching project items from project $PROJECT_NUMBER..."
+          gh project item-list $PROJECT_NUMBER \
+            --owner $ORG \
+            --format json \
+            --limit 1000 > project_items.json
+          
+          # Check if we got any data
+          if [ ! -s project_items.json ]; then
+            echo "ERROR: Failed to fetch project items or project is empty"
+            exit 1
+          fi
+          
+          # Get today's date for iteration comparison
+          TODAY=$(date +%Y-%m-%d)
+          echo "Today: $TODAY"
+          
+          # Debug: Show raw iteration data
+          echo "Raw iteration data from project:"
+          cat project_items.json | jq -r '[.items[].iteration | select(. != null)] | unique | .[] | "\(.id): \(.title) | start: \(.startDate) | end: \(.duration.endDate // .endDate)"' || true
+          
+          # Find current sprint (active iteration) - one where today is between start and end date
+          # Handle ISO 8601 date format by extracting YYYY-MM-DD portion
+          CURRENT_SPRINT=$(cat project_items.json | jq -r --arg today "$TODAY" '
+            [.items[].iteration | select(. != null)] |
+            unique |
+            .[] |
+            select(
+              (.startDate | split("T")[0]) <= $today and
+              ((.duration.endDate // .endDate) | split("T")[0]) >= $today
+            ) |
+            .id
+          ' | head -1)
+          
+          if [ -z "$CURRENT_SPRINT" ]; then
+            echo "WARNING: No active sprint found for today ($TODAY)"
+            echo "Checking all iterations in project..."
+            cat project_items.json | jq -r '[.items[].iteration | select(. != null)] | unique | .[] | "\(.id): \(.title) (\(.startDate | split(\"T\")[0]) to \((.duration.endDate // .endDate) | split(\"T\")[0]))"' || true
+            echo "Exiting - no active sprint to process"
+            exit 0
+          fi
+          
+          echo "Current sprint ID: $CURRENT_SPRINT"
+          
+          # Get issues in current sprint
+          echo "Finding issues in current sprint..."
+          cat project_items.json | jq -r \
+            --arg sprint "$CURRENT_SPRINT" \
+            '.items[] | select(.iteration.id == $sprint and .content.type == "Issue") | .content.number' \
+            | sort -n | uniq > current_sprint_issues.txt
+          
+          ISSUES_IN_SPRINT=$(wc -l < current_sprint_issues.txt | tr -d ' ')
+          echo "Found $ISSUES_IN_SPRINT issues in current sprint"
+          
+          if [ "$ISSUES_IN_SPRINT" -eq 0 ]; then
+            echo "No issues found in current sprint"
+          else
+            echo "Issues in sprint:"
+            cat current_sprint_issues.txt
+          fi
+          
+          # Get all open issues with the sprint label
+          echo "Fetching issues with label '$LABEL_NAME'..."
+          gh search issues \
+            --repo ${{ github.repository }} \
+            --label "$LABEL_NAME" \
+            --state open \
+            --json number \
+            --jq '.[].number' 2>/dev/null | sort -n | uniq > labeled_issues.txt || touch labeled_issues.txt
+          
+          ISSUES_LABELED=$(wc -l < labeled_issues.txt | tr -d ' ')
+          echo "Found $ISSUES_LABELED issues with sprint label"
+          
+          if [ "$ISSUES_LABELED" -gt 0 ]; then
+            echo "Currently labeled issues:"
+            cat labeled_issues.txt
+          fi
+          
+          # Add label to issues in sprint that don't have it
+          ADDED_COUNT=0
+          while read -r issue_number; do
+            if [ -z "$issue_number" ]; then
+              continue
+            fi
+            if ! grep -q "^${issue_number}$" labeled_issues.txt 2>/dev/null; then
+              echo "Adding label '$LABEL_NAME' to issue #$issue_number"
+              if gh issue edit "$issue_number" --add-label "$LABEL_NAME"; then
+                ADDED_COUNT=$((ADDED_COUNT + 1))
+              else
+                echo "WARNING: Failed to add label to issue #$issue_number"
+              fi
+            fi
+          done < current_sprint_issues.txt
+          
+          # Remove label from issues not in current sprint
+          REMOVED_COUNT=0
+          while read -r issue_number; do
+            if [ -z "$issue_number" ]; then
+              continue
+            fi
+            if ! grep -q "^${issue_number}$" current_sprint_issues.txt 2>/dev/null; then
+              echo "Removing label '$LABEL_NAME' from issue #$issue_number (not in current sprint)"
+              if gh issue edit "$issue_number" --remove-label "$LABEL_NAME"; then
+                REMOVED_COUNT=$((REMOVED_COUNT + 1))
+              else
+                echo "WARNING: Failed to remove label from issue #$issue_number"
+              fi
+            fi
+          done < labeled_issues.txt
+          
+          echo ""
+          echo "=== Sprint Label Sync Complete ==="
+          echo "Added label to: $ADDED_COUNT issues"
+          echo "Removed label from: $REMOVED_COUNT issues"
+          echo "Issues in sprint: $ISSUES_IN_SPRINT"
+          echo "Total labeled after sync: $((ISSUES_IN_SPRINT))"
