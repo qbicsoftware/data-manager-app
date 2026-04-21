@@ -35,7 +35,7 @@ jobs:
           echo "Ensuring label '$LABEL_NAME' exists..."
           gh label create "$LABEL_NAME" --color "0E8A16" --description "Issue is part of the current sprint" 2>/dev/null || echo "Label already exists"
           
-          # Get all project items with their iteration info
+          # Get all project items
           echo "Fetching project items from project $PROJECT_NUMBER..."
           gh project item-list $PROJECT_NUMBER \
             --owner $ORG \
@@ -50,33 +50,56 @@ jobs:
           
           # Get today's date for iteration comparison
           TODAY=$(date +%Y-%m-%d)
-          echo "Today: $TODAY"
+          echo -e "\nToday: $TODAY"
           
-          # Find current sprint (active iteration) - one where today is between start and end date
-          CURRENT_SPRINT=$(cat project_items.json | jq -r --arg today "$TODAY" '
-            [.items[].iteration | select(. != null)] |
-            unique |
-            .[] |
-            select(.startDate <= $today and .duration.endDate >= $today) |
-            .id
-          ' | head -1)
+          # Find current sprint using shell-based date math (more reliable than jq)
+          echo -e "\nSearching for current sprint..."
+          
+          # Extract all sprints and check each one using shell date commands
+          cat project_items.json | jq -r '.items[].sprint | select(. != null) | "\(.iterationId)|\(.startDate)|\(.duration)|\(.title)"' | sort -u > /tmp/sprints.txt
+          
+          CURRENT_SPRINT=""
+          while IFS='|' read -r id start_date duration title; do
+            if [ -z "$id" ] || [ -z "$start_date" ] || [ -z "$duration" ]; then
+              continue
+            fi
+            
+            # Calculate end date: start_date + duration days
+            end_date=$(date -d "$start_date + $duration days" +%Y-%m-%d 2>/dev/null || echo "")
+            
+            if [ -n "$end_date" ]; then
+              echo "Checking sprint: $title ($start_date to $end_date)"
+              
+              # Check if today is within the sprint range (POSIX-compliant)
+              if [ "$TODAY" = "$start_date" ] || [ "$TODAY" \> "$start_date" ]; then
+                if [ "$TODAY" \< "$end_date" ]; then
+                  echo "  -> Current sprint found!"
+                  CURRENT_SPRINT="$id"
+                  break
+                fi
+              fi
+            fi
+          done < /tmp/sprints.txt
           
           if [ -z "$CURRENT_SPRINT" ]; then
-            echo "WARNING: No active sprint found for today ($TODAY)"
-            echo "Checking all iterations in project..."
-            cat project_items.json | jq -r '[.items[].iteration | select(. != null)] | unique | .[] | "\(.id): \(.title) (\(.startDate) to \(.duration.endDate))"' || true
-            echo "Exiting - no active sprint to process"
+            echo -e "WARNING: No active sprint found for today ($TODAY)\n"
+            echo "All sprints in project:"
+            cat /tmp/sprints.txt | while IFS='|' read -r id start_date duration title; do
+              end_date=$(date -d "$start_date + $duration days" +%Y-%m-%d 2>/dev/null || echo "unknown")
+              echo "  - $title: $start_date to $end_date (ID: $id)"
+            done
+            echo -e "\nExiting - no active sprint to process"
             exit 0
           fi
           
-          echo "Current sprint ID: $CURRENT_SPRINT"
+          echo -e "Current sprint ID: $CURRENT_SPRINT\n"
           
           # Get issues in current sprint
           echo "Finding issues in current sprint..."
           cat project_items.json | jq -r \
             --arg sprint "$CURRENT_SPRINT" \
-            '.items[] | select(.iteration.id == $sprint and .content.type == "Issue") | .content.number' \
-            | sort -n | uniq > current_sprint_issues.txt
+            '.items[] | select(.sprint.iterationId == $sprint and .content.type == "Issue") | .content.number' \
+            | sort -n | uniq > current_sprint_issues.txt 2>/dev/null || touch current_sprint_issues.txt
           
           ISSUES_IN_SPRINT=$(wc -l < current_sprint_issues.txt | tr -d ' ')
           echo "Found $ISSUES_IN_SPRINT issues in current sprint"
@@ -89,7 +112,7 @@ jobs:
           fi
           
           # Get all open issues with the sprint label
-          echo "Fetching issues with label '$LABEL_NAME'..."
+          echo -e "\nFetching issues with label '$LABEL_NAME'..."
           gh search issues \
             --repo ${{ github.repository }} \
             --label "$LABEL_NAME" \
@@ -137,9 +160,7 @@ jobs:
             fi
           done < labeled_issues.txt
           
-          echo ""
-          echo "=== Sprint Label Sync Complete ==="
+          echo -e "\n=== Sprint Label Sync Complete ==="
           echo "Added label to: $ADDED_COUNT issues"
           echo "Removed label from: $REMOVED_COUNT issues"
           echo "Issues in sprint: $ISSUES_IN_SPRINT"
-          echo "Total labeled after sync: $((ISSUES_IN_SPRINT))"
