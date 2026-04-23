@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.FileNameFormatter;
+import life.qbic.application.commons.FileSizeFormatter;
 import life.qbic.application.commons.time.DateTimeFormat;
 import life.qbic.datamanager.files.export.download.DownloadStreamProvider;
 import life.qbic.datamanager.files.export.rawdata.RawDataUrlFile;
@@ -401,7 +402,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
           BasicSampleInformation::sampleName).toList());
       rawDataItem.addEntry("Number of Files",
           String.valueOf(rawData.dataset().numberOfFiles()));
-      rawDataItem.addEntry("File Size", String.valueOf(rawData.dataset().totalSizeBytes()));
+      rawDataItem.addEntry("File Size", FileSizeFormatter.formatBytes(rawData.dataset().totalSizeBytes()));
       rawDataItem.addListEntry("File Suffixes", rawData.dataset().fileTypes());
       return rawDataItem;
     });
@@ -414,7 +415,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
           BasicSampleInformation::sampleName).toList());
       rawDataItem.addEntry("Number of Files",
           String.valueOf(rawData.dataset().numberOfFiles()));
-      rawDataItem.addEntry("File Size", String.valueOf(rawData.dataset().totalSizeBytes()));
+      rawDataItem.addEntry("File Size", FileSizeFormatter.formatBytes(rawData.dataset().totalSizeBytes()));
       rawDataItem.addListEntry("File Suffixes", rawData.dataset().fileTypes());
       return rawDataItem;
     });
