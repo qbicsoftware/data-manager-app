@@ -536,7 +536,31 @@ public class MeasurementService {
       throw new MeasurementRegistrationException(ErrorCode.UNKNOWN_ONTOLOGY_TERM);
     }
 
-    var method = new IPMethodMetadata(instrumentQuery.get(), "", measurement.facility());
+    // For IP there is no per-sample metadata beyond the sample id itself.
+    // All fields are measurement-level; extract them from the first specific metadata entry.
+    var firstSpecific = measurement.specificMetadata().values().iterator().next();
+
+    var method = new IPMethodMetadata(
+        instrumentQuery.get(),
+        "",
+        measurement.facility(),
+        parseDoubleOrNull(firstSpecific.sampleMass()),
+        parseDoubleOrNull(firstSpecific.sampleVolume()),
+        firstSpecific.cycleFractionName(),
+        firstSpecific.mhcAntibody(),
+        firstSpecific.mhcTypingMethod(),
+        firstSpecific.enrichmentMethod(),
+        parseLocalDateOrNull(firstSpecific.prepDate()),
+        parseLocalDateOrNull(firstSpecific.msRunDate()),
+        firstSpecific.lcmsMethod(),
+        firstSpecific.lcColumn(),
+        firstSpecific.dataAcquisition(),
+        firstSpecific.massRange(),
+        parseIntegerOrNull(firstSpecific.retentionTimeRange()),
+        firstSpecific.chargeRange(),
+        firstSpecific.ionMobilityRange(),
+        firstSpecific.comment()
+    );
 
     var specificMetadata = convertSpecificMetadataIP(measurement.specificMetadata(),
         sampleIdCodeEntries);
@@ -567,32 +591,10 @@ public class MeasurementService {
     var specificMetadata = new ArrayList<IPMeasurementEntry>();
     for (Map.Entry<String, MeasurementSpecificIP> entry : measurementSpecificIPMap.entrySet()) {
       var sampleId = entry.getKey();
-      var metadata = entry.getValue();
       var sampleIdCodeEntry = sampleIdCodeEntries.stream()
           .filter(pair -> pair.sampleCode().equals(SampleCode.create(sampleId))).findAny()
           .orElseThrow();
-      var convertedMetadata = IPMeasurementEntry.create(
-          sampleIdCodeEntry.sampleId(),
-          "", // sampleName is visual aid, ignored during registration
-          "", // measurementName is at measurement level, not sample-specific
-          parseDoubleOrNull(metadata.sampleMass()),
-          parseDoubleOrNull(metadata.sampleVolume()),
-          metadata.cycleFractionName(),
-          metadata.mhcAntibody(),
-          metadata.mhcTypingMethod(),
-          metadata.enrichmentMethod(),
-          parseLocalDateOrNull(metadata.prepDate()),
-          parseLocalDateOrNull(metadata.msRunDate()),
-          metadata.lcmsMethod(),
-          metadata.lcColumn(),
-          metadata.dataAcquisition(),
-          metadata.massRange(),
-          parseIntegerOrNull(metadata.retentionTimeRange()),
-          metadata.chargeRange(),
-          metadata.ionMobilityRange(),
-          metadata.comment()
-      );
-      specificMetadata.add(convertedMetadata);
+      specificMetadata.add(IPMeasurementEntry.create(sampleIdCodeEntry.sampleId()));
     }
     return specificMetadata;
   }

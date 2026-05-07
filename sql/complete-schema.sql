@@ -597,26 +597,8 @@ CREATE TABLE IF NOT EXISTS `specific_measurement_metadata_pxp`
 
 CREATE TABLE IF NOT EXISTS `specific_measurement_metadata_ip`
 (
-    `measurement_id`     varchar(255) NOT NULL,
-    `sampleId`           varchar(255) DEFAULT NULL,
-    `sampleName`         varchar(255) DEFAULT NULL,
-    `measurementName`    varchar(255) DEFAULT NULL,
-    `sampleMass`         double       DEFAULT NULL,
-    `sampleVolume`       double       DEFAULT NULL,
-    `cycleFractionName`  varchar(255) DEFAULT NULL,
-    `mhcAntibody`        varchar(255) DEFAULT NULL,
-    `mhcTypingMethod`    varchar(255) DEFAULT NULL,
-    `enrichmentMethod`   varchar(255) DEFAULT NULL,
-    `prepDate`           date         DEFAULT NULL,
-    `msRunDate`          date         DEFAULT NULL,
-    `lcmsMethod`         varchar(255) DEFAULT NULL,
-    `lcColumn`           varchar(255) DEFAULT NULL,
-    `dataAcquisition`    varchar(255) DEFAULT NULL,
-    `massRange`          varchar(255) DEFAULT NULL,
-    `retentionTimeRange` int(11)      DEFAULT NULL,
-    `chargeRange`        varchar(255) DEFAULT NULL,
-    `ionMobilityRange`   varchar(255) DEFAULT NULL,
-    `comment`            varchar(255) DEFAULT NULL,
+    `measurement_id` varchar(255) NOT NULL,
+    `sample_id`      varchar(255) DEFAULT NULL,
     KEY `FKip_measurement_specific` (`measurement_id`),
     CONSTRAINT `FKip_measurement_specific` FOREIGN KEY (`measurement_id`) REFERENCES `ip_measurements` (`measurement_id`)
 ) ENGINE = InnoDB

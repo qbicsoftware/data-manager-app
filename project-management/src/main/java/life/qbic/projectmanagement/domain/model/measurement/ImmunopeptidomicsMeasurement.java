@@ -64,6 +64,18 @@ public class ImmunopeptidomicsMeasurement {
   String chargeRange = "";
   @Column(name = "ionMobilityRange")
   String ionMobilityRange = "";
+  @Column(name = "sampleMass")
+  Double sampleMass;
+  @Column(name = "sampleVolume")
+  Double sampleVolume;
+  @Column(name = "cycleFractionName")
+  String cycleFractionName = "";
+  @Column(name = "prepDate")
+  java.time.LocalDate prepDate;
+  @Column(name = "msRunDate")
+  java.time.LocalDate msRunDate;
+  @Column(name = "comment")
+  String comment = "";
   @EmbeddedId
   @AttributeOverride(name = "uuid", column = @Column(name = "measurement_id"))
   private MeasurementId measurementId;
@@ -103,8 +115,7 @@ public class ImmunopeptidomicsMeasurement {
           "ImmunopeptidomicsMeasurement code is not from the IP domain for: \"" + measurementCode
               + "\"");
     }
-    evaluateMandatoryMetadata(
-        method); // throws IllegalArgumentException if required properties are missing
+    evaluateMandatoryMetadata(method);
     this.measurementId = measurementId;
     this.projectId = requireNonNull(projectId, "projectId must not be null");
     this.organisation = requireNonNull(organisation, "organisation must not be null");
@@ -112,6 +123,22 @@ public class ImmunopeptidomicsMeasurement {
     this.instrumentName = method.instrumentName() != null ? method.instrumentName() : "";
     this.measurementCode = requireNonNull(measurementCode, "measurement code must not be null");
     this.facility = requireNonNull(method.facility(), "facility must not be null");
+    this.mhcAntibody = requireNonNull(method.mhcAntibody(), "mhcAntibody must not be null");
+    this.mhcTypingMethod = method.mhcTypingMethod() != null ? method.mhcTypingMethod() : "";
+    this.enrichmentMethod = requireNonNull(method.enrichmentMethod(), "enrichmentMethod must not be null");
+    this.lcmsMethod = requireNonNull(method.lcmsMethod(), "lcmsMethod must not be null");
+    this.lcColumn = requireNonNull(method.lcColumn(), "lcColumn must not be null");
+    this.dataAcquisition = requireNonNull(method.dataAcquisition(), "dataAcquisition must not be null");
+    this.massRange = requireNonNull(method.massRange(), "massRange must not be null");
+    this.retentionTimeRange = method.retentionTimeRange() != null ? method.retentionTimeRange() : 0;
+    this.chargeRange = requireNonNull(method.chargeRange(), "chargeRange must not be null");
+    this.ionMobilityRange = method.ionMobilityRange() != null ? method.ionMobilityRange() : "";
+    this.sampleMass = method.sampleMass();
+    this.sampleVolume = method.sampleVolume();
+    this.cycleFractionName = method.cycleFractionName() != null ? method.cycleFractionName() : "";
+    this.prepDate = method.prepDate();
+    this.msRunDate = method.msRunDate();
+    this.comment = method.comment() != null ? method.comment() : "";
     this.registration = registration;
     this.samplePool = samplePool;
     this.specificMetadata = new HashSet<>(measurementMetadata);
@@ -127,21 +154,29 @@ public class ImmunopeptidomicsMeasurement {
     if (method.instrument() == null) {
       throw new IllegalArgumentException("Instrument: Missing metadata");
     }
+    if (method.mhcAntibody() == null || method.mhcAntibody().isBlank()) {
+      throw new IllegalArgumentException("MHC Antibody: Missing metadata");
+    }
+    if (method.enrichmentMethod() == null || method.enrichmentMethod().isBlank()) {
+      throw new IllegalArgumentException("Enrichment method: Missing metadata");
+    }
+    if (method.lcmsMethod() == null || method.lcmsMethod().isBlank()) {
+      throw new IllegalArgumentException("LCMS Method: Missing metadata");
+    }
+    if (method.lcColumn() == null || method.lcColumn().isBlank()) {
+      throw new IllegalArgumentException("LC Column: Missing metadata");
+    }
+    if (method.dataAcquisition() == null || method.dataAcquisition().isBlank()) {
+      throw new IllegalArgumentException("Data Acquisition: Missing metadata");
+    }
+    if (method.massRange() == null || method.massRange().isBlank()) {
+      throw new IllegalArgumentException("Mass range: Missing metadata");
+    }
+    if (method.chargeRange() == null || method.chargeRange().isBlank()) {
+      throw new IllegalArgumentException("Charge range: Missing metadata");
+    }
   }
 
-  /**
-   * Creates a new pooled {@link ImmunopeptidomicsMeasurement} object instance, that describes an IP
-   * measurement entity with many describing properties about provenance and instrumentation.
-   *
-   * @param projectId                   the project id the measurement belongs to
-   * @param samplePool                  the sample pool label the measurement represents
-   * @param measurementCode             the assigned measurement code for the measurement
-   * @param organisation                where the measurement has been conducted
-   * @param method                      measurement method related metadata
-   * @param specificMeasurementMetadata sample specific metadata
-   * @return an instance of an {@link ImmunopeptidomicsMeasurement}
-   * @since 1.11.0
-   */
   public static ImmunopeptidomicsMeasurement createWithPool(ProjectId projectId, String samplePool,
       MeasurementCode measurementCode, String measurementName, Organisation organisation,
       IPMethodMetadata method, Collection<IPMeasurementEntry> specificMeasurementMetadata)
@@ -157,18 +192,6 @@ public class ImmunopeptidomicsMeasurement {
         measurementName, organisation, method, Instant.now(), specificMeasurementMetadata);
   }
 
-  /**
-   * Creates a new single {@link ImmunopeptidomicsMeasurement} object instance, that describes an IP
-   * measurement entity with many describing properties about provenance and instrumentation.
-   *
-   * @param projectId                   the project id the measurement belongs to
-   * @param measurementCode             the assigned measurement code for the measurement
-   * @param organisation                where the measurement has been conducted
-   * @param method                      measurement method related metadata
-   * @param specificMeasurementMetadata sample specific metadata
-   * @return an instance of an {@link ImmunopeptidomicsMeasurement}
-   * @since 1.11.0
-   */
   public static ImmunopeptidomicsMeasurement createSingleMeasurement(ProjectId projectId,
       MeasurementCode measurementCode, String measurementName, Organisation organisation,
       IPMethodMetadata method, IPMeasurementEntry specificMeasurementMetadata) {
@@ -183,6 +206,22 @@ public class ImmunopeptidomicsMeasurement {
     this.instrument = methodMetadata.instrument();
     this.instrumentName = methodMetadata.instrumentName() != null ? methodMetadata.instrumentName() : "";
     this.facility = methodMetadata.facility();
+    this.mhcAntibody = methodMetadata.mhcAntibody();
+    this.mhcTypingMethod = methodMetadata.mhcTypingMethod() != null ? methodMetadata.mhcTypingMethod() : "";
+    this.enrichmentMethod = methodMetadata.enrichmentMethod();
+    this.lcmsMethod = methodMetadata.lcmsMethod();
+    this.lcColumn = methodMetadata.lcColumn();
+    this.dataAcquisition = methodMetadata.dataAcquisition();
+    this.massRange = methodMetadata.massRange();
+    this.retentionTimeRange = methodMetadata.retentionTimeRange() != null ? methodMetadata.retentionTimeRange() : 0;
+    this.chargeRange = methodMetadata.chargeRange();
+    this.ionMobilityRange = methodMetadata.ionMobilityRange() != null ? methodMetadata.ionMobilityRange() : "";
+    this.sampleMass = methodMetadata.sampleMass();
+    this.sampleVolume = methodMetadata.sampleVolume();
+    this.cycleFractionName = methodMetadata.cycleFractionName() != null ? methodMetadata.cycleFractionName() : "";
+    this.prepDate = methodMetadata.prepDate();
+    this.msRunDate = methodMetadata.msRunDate();
+    this.comment = methodMetadata.comment() != null ? methodMetadata.comment() : "";
     emitUpdatedEvent();
   }
 
@@ -205,17 +244,9 @@ public class ImmunopeptidomicsMeasurement {
     setMethod(methodMetadata);
   }
 
-  /**
-   * Convenience method to query if the measurement was derived from a single sample.
-   *
-   * @return true, if the measurement was performed on a single sample, else returns false if the
-   * measurement was derived from pooled samples
-   * @since 1.11.0
-   */
   public boolean isSingleSampleMeasurement() {
     return specificMetadata.size() <= 1;
   }
-
 
   public MeasurementCode measurementCode() {
     return this.measurementCode;
@@ -295,6 +326,30 @@ public class ImmunopeptidomicsMeasurement {
 
   public Optional<String> ionMobilityRange() {
     return ionMobilityRange.isBlank() ? Optional.empty() : Optional.of(ionMobilityRange);
+  }
+
+  public Optional<Double> sampleMass() {
+    return Optional.ofNullable(sampleMass);
+  }
+
+  public Optional<Double> sampleVolume() {
+    return Optional.ofNullable(sampleVolume);
+  }
+
+  public Optional<String> cycleFractionName() {
+    return cycleFractionName.isBlank() ? Optional.empty() : Optional.of(cycleFractionName);
+  }
+
+  public Optional<java.time.LocalDate> prepDate() {
+    return Optional.ofNullable(prepDate);
+  }
+
+  public Optional<java.time.LocalDate> msRunDate() {
+    return Optional.ofNullable(msRunDate);
+  }
+
+  public Optional<String> comment() {
+    return comment.isBlank() ? Optional.empty() : Optional.of(comment);
   }
 
   public Collection<SampleId> measuredSamples() {
