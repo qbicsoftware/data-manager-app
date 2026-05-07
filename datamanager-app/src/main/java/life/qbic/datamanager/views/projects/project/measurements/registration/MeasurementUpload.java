@@ -43,6 +43,7 @@ import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactor
 import life.qbic.datamanager.views.projects.project.measurements.processor.ProcessorRegistry;
 import life.qbic.projectmanagement.application.ValidationResult;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationIP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationNGS;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationPxP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationNGS;
@@ -240,6 +241,10 @@ public class MeasurementUpload extends Div implements UserInput {
       case MeasurementRegistrationInformationPxP ignored: {
         var processor = ProcessorRegistry.processorFor(MeasurementRegistrationInformationPxP.class);
         return processor.process((List<MeasurementRegistrationInformationPxP>) validationRequest);
+      }
+      case MeasurementRegistrationInformationIP ignored: {
+        var processor = ProcessorRegistry.processorFor(MeasurementRegistrationInformationIP.class);
+        return processor.process((List<MeasurementRegistrationInformationIP>) validationRequest);
       }
       case MeasurementUpdateInformationPxP ignored: {
         var processor = ProcessorRegistry.processorFor(MeasurementUpdateInformationPxP.class);

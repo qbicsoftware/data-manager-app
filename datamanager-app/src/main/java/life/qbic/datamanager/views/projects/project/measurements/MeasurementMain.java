@@ -48,6 +48,7 @@ import life.qbic.datamanager.views.projects.project.measurements.registration.Me
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationIP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationNGS;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationPxP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationRequest;
@@ -68,6 +69,7 @@ import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.IPWorkbooks;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.NGSWorkbooks;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.ProteomicsWorkbooks;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -452,6 +454,20 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
                   public Workbook getWorkbook() {
                     return ProteomicsWorkbooks.createRegistrationWorkbook();
                   }
+                }),
+            Map.entry(MeasurementTemplateSelectionComponent.Domain.Immunopeptidomics,
+                new WorkbookDownloadStreamProvider() {
+                  @Override
+                  public String getFilename() {
+                    return FileNameFormatter.formatWithVersion(
+                        "immunopeptidomics_measurement_registration_sheet",
+                        1, "xlsx");
+                  }
+
+                  @Override
+                  public Workbook getWorkbook() {
+                    return IPWorkbooks.createRegistrationWorkbook();
+                  }
                 })));
 
     var measurementRegistrationComponent = new MeasurementRegistrationComponent(templateComponent,
@@ -518,6 +534,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
       RegistrationRequestPackage registrationRequestPackage) {
     submitRequestNGS(projectId, registrationRequestPackage.registrationInformationNGS());
     submitRequestPxP(projectId, registrationRequestPackage.registrationInformationPxP());
+    submitRequestIP(projectId, registrationRequestPackage.registrationInformationIP());
   }
 
   private void submitRequestPxP(String projectId,
@@ -532,6 +549,21 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private List<MeasurementRegistrationInformationPxP> mergeByPoolPxP(
       List<MeasurementRegistrationInformationPxP> requests) {
     var processor = ProcessorRegistry.processorFor(MeasurementRegistrationInformationPxP.class);
+    return processor.process(requests);
+  }
+
+  private void submitRequestIP(String projectId,
+      List<MeasurementRegistrationInformationIP> requestList) {
+    if (requestList.isEmpty()) {
+      return;
+    }
+    var preparedRequests = mergeByPoolIP(requestList);
+    submitPreparedRequest(projectId, preparedRequests);
+  }
+
+  private static List<MeasurementRegistrationInformationIP> mergeByPoolIP(
+      List<MeasurementRegistrationInformationIP> requests) {
+    var processor = ProcessorRegistry.processorFor(MeasurementRegistrationInformationIP.class);
     return processor.process(requests);
   }
 
@@ -556,17 +588,19 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
       List<? extends ValidationRequestBody> validationRequestBodies) {
     var requestsNGS = new ArrayList<MeasurementRegistrationInformationNGS>();
     var requestsPxP = new ArrayList<MeasurementRegistrationInformationPxP>();
+    var requestsIP = new ArrayList<MeasurementRegistrationInformationIP>();
 
     for (var entry : validationRequestBodies) {
       switch (entry) {
         case MeasurementRegistrationInformationNGS info -> requestsNGS.add(info);
         case MeasurementRegistrationInformationPxP info -> requestsPxP.add(info);
+        case MeasurementRegistrationInformationIP info -> requestsIP.add(info);
         default -> throw new IllegalStateException(
             "Unexpected request body of type: " + entry.getClass().getName());
       }
     }
 
-    return new RegistrationRequestPackage(requestsNGS, requestsPxP);
+    return new RegistrationRequestPackage(requestsNGS, requestsPxP, requestsIP);
   }
 
   private void submitPreparedRequest(String projectId,
@@ -802,11 +836,13 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
 
   record RegistrationRequestPackage(
       List<MeasurementRegistrationInformationNGS> registrationInformationNGS,
-      List<MeasurementRegistrationInformationPxP> registrationInformationPxP) {
+      List<MeasurementRegistrationInformationPxP> registrationInformationPxP,
+      List<MeasurementRegistrationInformationIP> registrationInformationIP) {
 
     public RegistrationRequestPackage {
       registrationInformationNGS = List.copyOf(Objects.requireNonNull(registrationInformationNGS));
       registrationInformationPxP = List.copyOf(Objects.requireNonNull(registrationInformationPxP));
+      registrationInformationIP = List.copyOf(Objects.requireNonNull(registrationInformationIP));
     }
 
   }

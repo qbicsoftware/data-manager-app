@@ -23,8 +23,10 @@ import life.qbic.projectmanagement.application.OrganisationLookupService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationNGS;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationPxP;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationIP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementSpecificNGS;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementSpecificPxP;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementSpecificIP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationNGS;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationPxP;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
@@ -34,6 +36,9 @@ import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
+import life.qbic.projectmanagement.domain.model.measurement.ImmunopeptidomicsMeasurement;
+import life.qbic.projectmanagement.domain.model.measurement.IPMethodMetadata;
+import life.qbic.projectmanagement.domain.model.measurement.IPMeasurementEntry;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMethodMetadata;
 import life.qbic.projectmanagement.domain.model.measurement.NGSSpecificMeasurementMetadata;
@@ -179,6 +184,35 @@ public class MeasurementService {
 
     // 4. Return measurement information
     return measurement;
+  }
+
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
+  public MeasurementRegistrationInformationIP registerMeasurementIP(ProjectId projectId,
+      MeasurementRegistrationInformationIP measurement) {
+    // 1. Setup domain event cache and dispatcher to listen to domain events
+    List<DomainEvent> domainEventsCache = new ArrayList<>();
+    var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
+    localDomainEventDispatcher.reset();
+    localDomainEventDispatcher.subscribe(
+        new MeasurementCreatedDomainEventSubscriber(domainEventsCache));
+
+    // 2. Perform actual registration
+    performRegistrationIP(measurement, projectId.value());
+
+    // 3. Dispatch domain events
+    domainEventsCache.forEach(
+        domainEvent -> DomainEventDispatcher.instance().dispatch(domainEvent));
+
+    // 4. Return measurement information
+    return measurement;
+  }
+
+  private void performRegistrationIP(MeasurementRegistrationInformationIP measurement,
+      String projectId) {
+    var sampleIdCodeEntries = buildSampleIdCodeEntries(measurement.measuredSamples());
+    var measurementDomain = toDomain(measurement, projectId, sampleIdCodeEntries);
+    measurementDomainService.addIPAll(Map.of(measurementDomain, sampleIdCodeEntries));
   }
 
   private void performUpdatePxP(MeasurementUpdateInformationPxP measurement,
@@ -486,6 +520,114 @@ public class MeasurementService {
       specificMetadata.add(convertedMetadata);
     }
     return specificMetadata;
+  }
+
+  private ImmunopeptidomicsMeasurement toDomain(MeasurementRegistrationInformationIP measurement,
+      String projectId, List<SampleIdCodeEntry> sampleIdCodeEntries) {
+    var organisationQuery = organisationLookupService.organisation(measurement.organisationId());
+
+    if (organisationQuery.isEmpty()) {
+      log.error("No organisation found for organisation id " + measurement.organisationId());
+      throw new MeasurementRegistrationException(ErrorCode.UNKNOWN_ORGANISATION_ROR_ID);
+    }
+
+    var instrumentQuery = resolveOntologyCURI(measurement.instrumentCURIE());
+    if (instrumentQuery.isEmpty()) {
+      throw new MeasurementRegistrationException(ErrorCode.UNKNOWN_ONTOLOGY_TERM);
+    }
+
+    var method = new IPMethodMetadata(instrumentQuery.get(), "", measurement.facility());
+
+    var specificMetadata = convertSpecificMetadataIP(measurement.specificMetadata(),
+        sampleIdCodeEntries);
+
+    if (measurement.samplePoolGroup().isBlank()) {
+      return ImmunopeptidomicsMeasurement.createSingleMeasurement(ProjectId.parse(projectId),
+          MeasurementCode.createIP(measurement.measuredSamples().getFirst()),
+          measurement.measurementName(),
+          organisationQuery.get(),
+          method,
+          specificMetadata.getFirst());
+    } else {
+      return ImmunopeptidomicsMeasurement.createWithPool(
+          ProjectId.parse(projectId),
+          measurement.samplePoolGroup(),
+          MeasurementCode.createIP(measurement.measuredSamples().getFirst()),
+          measurement.measurementName(),
+          organisationQuery.get(),
+          method,
+          specificMetadata
+      );
+    }
+  }
+
+  private List<IPMeasurementEntry> convertSpecificMetadataIP(
+      Map<String, MeasurementSpecificIP> measurementSpecificIPMap,
+      List<SampleIdCodeEntry> sampleIdCodeEntries) {
+    var specificMetadata = new ArrayList<IPMeasurementEntry>();
+    for (Map.Entry<String, MeasurementSpecificIP> entry : measurementSpecificIPMap.entrySet()) {
+      var sampleId = entry.getKey();
+      var metadata = entry.getValue();
+      var sampleIdCodeEntry = sampleIdCodeEntries.stream()
+          .filter(pair -> pair.sampleCode().equals(SampleCode.create(sampleId))).findAny()
+          .orElseThrow();
+      var convertedMetadata = IPMeasurementEntry.create(
+          sampleIdCodeEntry.sampleId(),
+          "", // sampleName is visual aid, ignored during registration
+          "", // measurementName is at measurement level, not sample-specific
+          parseDoubleOrNull(metadata.sampleMass()),
+          parseDoubleOrNull(metadata.sampleVolume()),
+          metadata.cycleFractionName(),
+          metadata.mhcAntibody(),
+          metadata.mhcTypingMethod(),
+          metadata.enrichmentMethod(),
+          parseLocalDateOrNull(metadata.prepDate()),
+          parseLocalDateOrNull(metadata.msRunDate()),
+          metadata.lcmsMethod(),
+          metadata.lcColumn(),
+          metadata.dataAcquisition(),
+          metadata.massRange(),
+          parseIntegerOrNull(metadata.retentionTimeRange()),
+          metadata.chargeRange(),
+          metadata.ionMobilityRange(),
+          metadata.comment()
+      );
+      specificMetadata.add(convertedMetadata);
+    }
+    return specificMetadata;
+  }
+
+  private static Double parseDoubleOrNull(String value) {
+    if (value == null || value.isBlank()) {
+      return null;
+    }
+    try {
+      return Double.parseDouble(value);
+    } catch (NumberFormatException e) {
+      return null;
+    }
+  }
+
+  private static Integer parseIntegerOrNull(String value) {
+    if (value == null || value.isBlank()) {
+      return null;
+    }
+    try {
+      return Integer.parseInt(value);
+    } catch (NumberFormatException e) {
+      return null;
+    }
+  }
+
+  private static java.time.LocalDate parseLocalDateOrNull(String value) {
+    if (value == null || value.isBlank()) {
+      return null;
+    }
+    try {
+      return java.time.LocalDate.parse(value);
+    } catch (Exception e) {
+      return null;
+    }
   }
 
   /**

@@ -642,7 +642,8 @@ CREATE view data_management.project_measurements as
 SELECT `projects`.`projectId`                            AS `projectId`,
 
        COALESCE(`proteomics`.`amountPxpMeasurements`, 0) AS `amountPxpMeasurements`, -- do not allow null values
-       COALESCE(`ngs`.`amountNgsMeasurements`, 0)        AS `amountNgsMeasurements`  -- do not allow null values
+       COALESCE(`ngs`.`amountNgsMeasurements`, 0)        AS `amountNgsMeasurements`,  -- do not allow null values
+       COALESCE(`ip`.`amountIpMeasurements`, 0)          AS `amountIpMeasurements`   -- do not allow null values
 FROM (projects_datamanager projects LEFT JOIN (SELECT ngs.`projectId`              AS `projectId`,
                                                       count(ngs.`measurementCode`) AS `amountNgsMeasurements`
                                                FROM ngs_measurements ngs
@@ -655,7 +656,12 @@ FROM (projects_datamanager projects LEFT JOIN (SELECT ngs.`projectId`           
                                                                                          from `data_management`.`proteomics_measurement` `p`
                                                                                          group by `p`.`projectId`) `pxp`
                           on (`projects`.`projectId` = `pxp`.`pID`))) `proteomics`
-                   on (`projects`.`projectId` = `proteomics`.`projectId`);
+                   on (`projects`.`projectId` = `proteomics`.`projectId`))
+         LEFT JOIN (SELECT ip.`projectId`              AS `projectId`,
+                           count(ip.`measurementCode`) AS `amountIpMeasurements`
+                    FROM ip_measurements ip
+                    GROUP BY ip.`projectId`) AS `ip`
+                   on (`projects`.`projectId` = `ip`.`projectId`);
 
 DROP VIEW IF EXISTS data_management.project_userinfo;
 
@@ -685,6 +691,7 @@ SELECT `pd`.`projectId`                     AS `projectId`,
        `pd`.`responsibePersonFullName`      AS `responsibePersonFullName`,
        `m`.`amountNgsMeasurements`          AS `amountNgsMeasurements`,
        `m`.`amountPxpMeasurements`          AS `amountPxpMeasurements`,
+       `m`.`amountIpMeasurements`             AS `amountIpMeasurements`,
        `users`.`usernames`                  AS `usernames`,
        `users`.`userInfos`                  AS `userInfos`
 FROM projects_datamanager pd

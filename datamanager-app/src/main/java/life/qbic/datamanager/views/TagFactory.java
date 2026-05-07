@@ -18,6 +18,7 @@ public class TagFactory {
     return switch (measurementType) {
       case GENOMICS -> pinkTag("Genomics");
       case PROTEOMICS -> violetTag("Proteomics");
+      case IMMUNOPEPTIDOMICS -> violetTag("Immunopeptidomics");
     };
   }
 
