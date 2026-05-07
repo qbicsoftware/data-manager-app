@@ -61,6 +61,7 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.Validatio
 import life.qbic.projectmanagement.application.api.fair.DigitalObject;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.measurement.MeasurementService.MeasurementDeletionException;
+import life.qbic.projectmanagement.application.measurement.IpMeasurementLookup;
 import life.qbic.projectmanagement.application.measurement.NgsMeasurementLookup;
 import life.qbic.projectmanagement.application.measurement.PxpMeasurementLookup;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
@@ -143,7 +144,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
       MessageSourceNotificationFactory messageFactory,
       MessageSourceNotificationFactory messageSourceNotificationFactory,
       NgsMeasurementLookup ngsMeasurementLookup,
-      PxpMeasurementLookup pxpMeasurementLookup) {
+      PxpMeasurementLookup pxpMeasurementLookup,
+      IpMeasurementLookup ipMeasurementLookup) {
     Objects.requireNonNull(measurementService);
     Objects.requireNonNull(measurementValidationService);
     Objects.requireNonNull(asyncProjectService);
@@ -169,7 +171,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     measurementDetailsComponent = new MeasurementDetailsComponent(
         messageFactory,
         ngsMeasurementLookup,
-        pxpMeasurementLookup);
+        pxpMeasurementLookup,
+        ipMeasurementLookup);
 
     measurementDetailsComponent.addNgsRegisterListener(
         registrationRequest -> openRegistrationDialog());
@@ -189,6 +192,12 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
         exportRequest -> downloadProteomicsMetadata(exportRequest.measurementIds()));
     measurementDetailsComponent.addPxpDeletionListener(
         deletionRequest -> handlePxpDeletionRequest(
+            new HashSet<>(deletionRequest.measurementIds())));
+
+    measurementDetailsComponent.addIpRegisterListener(
+        registrationRequest -> openRegistrationDialog());
+    measurementDetailsComponent.addIpDeletionListener(
+        deletionRequest -> handleIpDeletionRequest(
             new HashSet<>(deletionRequest.measurementIds())));
 
     add(registerSamplesDisclaimer, measurementTemplateDownload, measurementDetailsComponent);
@@ -295,6 +304,21 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     notification.addCancelListener(event -> notification.close());
   }
 
+  private void handleIpDeletionRequest(Set<String> measurementIds) {
+    if (measurementIds.isEmpty()) {
+      return;
+    }
+    MeasurementDeletionConfirmationNotification notification =
+        new MeasurementDeletionConfirmationNotification(
+            "Selected immunopeptidomics measurements will be deleted", measurementIds.size());
+    notification.open();
+    notification.addConfirmListener(event -> {
+      deleteIpMeasurements(measurementIds);
+      notification.close();
+    });
+    notification.addCancelListener(event -> notification.close());
+  }
+
   private void deleteNgsMeasurements(Set<String> measurementIds) {
     var result = measurementService.deleteNgsMeasurements(context.projectId().orElseThrow(),
         measurementIds);
@@ -307,6 +331,13 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
         measurementIds);
     result.onError(this::handleDeletionError);
     result.onValue(ignored -> handleDeletionSuccessPxp());
+  }
+
+  private void deleteIpMeasurements(Set<String> measurementIds) {
+    var result = measurementService.deleteIpMeasurements(context.projectId().orElseThrow(),
+        measurementIds);
+    result.onError(this::handleDeletionError);
+    result.onValue(ignored -> handleDeletionSuccessIp());
   }
 
   private void handleDeletionError(MeasurementDeletionException error) {
@@ -325,6 +356,11 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private void handleDeletionSuccessPxp() {
     updateComponentVisibility();
     measurementDetailsComponent.refreshPxp();
+  }
+
+  private void handleDeletionSuccessIp() {
+    updateComponentVisibility();
+    measurementDetailsComponent.refreshIp();
   }
 
 

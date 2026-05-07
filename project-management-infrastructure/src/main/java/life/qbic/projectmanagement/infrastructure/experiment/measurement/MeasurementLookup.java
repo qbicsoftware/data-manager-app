@@ -4,8 +4,12 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
 import life.qbic.application.commons.OffsetBasedRequest;
+import life.qbic.projectmanagement.application.measurement.IpMeasurementLookup;
 import life.qbic.projectmanagement.application.measurement.NgsMeasurementLookup;
 import life.qbic.projectmanagement.application.measurement.PxpMeasurementLookup;
+import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.IpMeasurementJpaRepository;
+import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.IpMeasurementJpaRepository.IpMeasurementFilter;
+import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.IpMeasurementJpaRepository.IpMeasurementInformation;
 import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.NgsMeasurementJpaRepository;
 import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.NgsMeasurementJpaRepository.NgsMeasurementFilter;
 import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.NgsMeasurementJpaRepository.NgsMeasurementInformation;
@@ -23,15 +27,19 @@ import org.springframework.stereotype.Service;
  * Implementation for {@link NgsMeasurementLookup} and {@link PxpMeasurementLookup}
  */
 @Service
-public class MeasurementLookup implements NgsMeasurementLookup, PxpMeasurementLookup {
+public class MeasurementLookup implements NgsMeasurementLookup, PxpMeasurementLookup,
+    IpMeasurementLookup {
 
   private final NgsMeasurementJpaRepository ngsMeasurementJpaRepository;
   private final PxpMeasurementJpaRepository pxpMeasurementJpaRepository;
+  private final IpMeasurementJpaRepository ipMeasurementJpaRepository;
 
   public MeasurementLookup(NgsMeasurementJpaRepository ngsMeasurementJpaRepository,
-      PxpMeasurementJpaRepository pxpMeasurementJpaRepository) {
+      PxpMeasurementJpaRepository pxpMeasurementJpaRepository,
+      IpMeasurementJpaRepository ipMeasurementJpaRepository) {
     this.ngsMeasurementJpaRepository = Objects.requireNonNull(ngsMeasurementJpaRepository);
     this.pxpMeasurementJpaRepository = Objects.requireNonNull(pxpMeasurementJpaRepository);
+    this.ipMeasurementJpaRepository = Objects.requireNonNull(ipMeasurementJpaRepository);
   }
 
   @Override
@@ -117,6 +125,14 @@ public class MeasurementLookup implements NgsMeasurementLookup, PxpMeasurementLo
             measurementFilter.dateTimeFormat());
   }
 
+  private static @NonNull IpMeasurementFilter mapToDatabaseFilter(
+      @NonNull IpMeasurementLookup.MeasurementFilter measurementFilter) {
+    return IpMeasurementFilter.forExperiment(measurementFilter.experimentId())
+        .anyContaining(measurementFilter.searchTerm())
+        .atClientTimeOffset(measurementFilter.timeZoneOffsetMillis(),
+            measurementFilter.dateTimeFormat());
+  }
+
   private NgsMeasurementLookup.MeasurementInfo toApiObject(String projectId,
       NgsMeasurementInformation dbMeasurement) {
     List<NgsMeasurementLookup.SampleInfo> sampleInfos = dbMeasurement.sampleInfos().stream()
@@ -141,7 +157,7 @@ public class MeasurementLookup implements NgsMeasurementLookup, PxpMeasurementLo
         dbMeasurement.measurementName(),
         dbMeasurement.facility(),
         new NgsMeasurementLookup.Organisation(organisation.label(), organisation.iri()),
-        new Instrument(instrument.label(), instrument.oboId(),
+        new NgsMeasurementLookup.Instrument(instrument.label(), instrument.oboId(),
             instrument.iri()),
         dbMeasurement.samplePool(),
         dbMeasurement.registeredAt(),
@@ -149,6 +165,78 @@ public class MeasurementLookup implements NgsMeasurementLookup, PxpMeasurementLo
         dbMeasurement.libraryKit(),
         dbMeasurement.flowCell(),
         dbMeasurement.sequencingRunProtocol(),
+        sampleInfos);
+  }
+
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
+  @Override
+  public @NonNull Stream<IpMeasurementLookup.MeasurementInfo> lookupIpMeasurements(
+      @NonNull String projectId, int offset, int limit,
+      @NonNull Sort sort,
+      @NonNull IpMeasurementLookup.MeasurementFilter measurementFilter)
+      throws IpMeasurementLookup.SortKeyException {
+
+    var invalidSortKeys = sort.stream()
+        .filter(order -> !IpSortKey.isValidSortKey(order.getProperty()))
+        .toList();
+    if (!invalidSortKeys.isEmpty()) {
+      throw new IpMeasurementLookup.SortKeyException(
+          "Invalid sort keys for ip measurements: " + invalidSortKeys.stream()
+              .map(Order::getProperty).toList());
+    }
+    var pageable = new OffsetBasedRequest(offset, limit, sort);
+    var filter = mapToDatabaseFilter(measurementFilter);
+    return ipMeasurementJpaRepository.findAll(filter.asSpecification(), pageable)
+        .get()
+        .map((IpMeasurementInformation dbObject) -> toApiObject(projectId, dbObject));
+  }
+
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
+  @Override
+  public int countIpMeasurements(@NonNull String projectId,
+      @NonNull IpMeasurementLookup.MeasurementFilter measurementFilter) {
+    var filter = mapToDatabaseFilter(measurementFilter);
+    return (int) ipMeasurementJpaRepository.count(filter.asSpecification());
+  }
+
+  private IpMeasurementLookup.MeasurementInfo toApiObject(String projectId,
+      IpMeasurementInformation dbMeasurement) {
+    List<IpMeasurementLookup.SampleInfo> sampleInfos = dbMeasurement.sampleInfos().stream()
+        .map(sampleInfo ->
+            new IpMeasurementLookup.SampleInfo(sampleInfo.sampleId(),
+                sampleInfo.sampleCode(),
+                sampleInfo.sampleLabel()))
+        .toList();
+    IpMeasurementJpaRepository.Organisation organisation = Objects.requireNonNull(
+        dbMeasurement.organisation());
+    IpMeasurementJpaRepository.Instrument instrument = Objects.requireNonNull(
+        dbMeasurement.instrument());
+
+    return new IpMeasurementLookup.MeasurementInfo(
+        dbMeasurement.measurementId(),
+        projectId,
+        dbMeasurement.getExperimentId(),
+        dbMeasurement.measurementCode(),
+        dbMeasurement.measurementName(),
+        dbMeasurement.facility(),
+        new IpMeasurementLookup.Organisation(organisation.label(), organisation.iri()),
+        new IpMeasurementLookup.Instrument(instrument.label(), instrument.oboId(),
+            instrument.iri()),
+        dbMeasurement.samplePool(),
+        dbMeasurement.registeredAt(),
+        dbMeasurement.mhcAntibody(),
+        dbMeasurement.mhcTypingMethod(),
+        dbMeasurement.enrichmentMethod(),
+        dbMeasurement.lcmsMethod(),
+        dbMeasurement.lcColumn(),
+        dbMeasurement.dataAcquisition(),
+        dbMeasurement.massRange(),
+        dbMeasurement.retentionTimeRange(),
+        dbMeasurement.chargeRange(),
+        dbMeasurement.ionMobilityRange(),
+        dbMeasurement.comment(),
         sampleInfos);
   }
 

@@ -116,6 +116,13 @@ public class MeasurementService {
     return measurementLookupService.findProteomicsMeasurement(measurementCode);
   }
 
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
+  public Optional<ImmunopeptidomicsMeasurement> findIPMeasurementById(String projectId,
+      String measurementId) {
+    return measurementLookupService.findIPMeasurementById(measurementId);
+  }
+
   /**
    * Find a measurement for a given measurement code.
    *
@@ -1021,6 +1028,20 @@ public class MeasurementService {
       Set<String> measurementIds) {
     try {
       measurementDomainService.deleteNgsById(measurementIds);
+      if (!measurementIds.isEmpty()) {
+        dispatchProjectChangedOnMeasurementDeleted(projectId);
+      }
+      return Result.fromValue(null);
+    } catch (MeasurementDeletionException e) {
+      return Result.fromError(e);
+    }
+  }
+
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
+  public Result<Void, MeasurementDeletionException> deleteIpMeasurements(ProjectId projectId,
+      Set<String> measurementIds) {
+    try {
+      measurementDomainService.deleteIpById(measurementIds);
       if (!measurementIds.isEmpty()) {
         dispatchProjectChangedOnMeasurementDeleted(projectId);
       }
