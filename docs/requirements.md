@@ -209,7 +209,8 @@ The system shall support registration of immunopeptidomics measurements via a do
 The immunopeptidomics partner facility requires a dedicated measurement template with domain-specific metadata fields (e.g., MHC antibody, enrichment method, LC column) that differ from existing proteomics and genomics templates. Structured bulk registration via Excel ensures consistency and reduces manual entry errors.
 
 **Source:**
-PRD §3 Scope — Measurement integration; Issue #1412
+PRD §3 Scope — Measurement integration; Issue #1412  
+Stakeholder artifact: `docs/stakeholder-artifacts/measurement-metadata/immunopeptidomics-registration-spec-v1.0-2026-05-11.xlsx`
 
 #### MEASUREMENT-R-02: Immunopeptidomics Measurement Editing
 
@@ -219,7 +220,8 @@ The system shall support editing of existing immunopeptidomics measurements via 
 Measurement metadata frequently requires corrections or updates after initial registration (e.g., instrument changes, comment additions). Providing a pre-filled edit template mirrors the existing proteomics and genomics workflows and ensures a consistent user experience across measurement domains.
 
 **Source:**
-PRD §3 Scope — Measurement integration; Issue #1412
+PRD §3 Scope — Measurement integration; Issue #1412  
+Stakeholder artifact: `docs/stakeholder-artifacts/measurement-metadata/immunopeptidomics-registration-spec-v1.0-2026-05-11.xlsx`
 
 #### MEASUREMENT-R-03: Immunopeptidomics Measurement Deletion
 
@@ -239,7 +241,8 @@ The system shall display registered immunopeptidomics measurements in the measur
 Project members need visibility into which immunopeptidomics measurements have been registered for an experiment. A dedicated tab with domain-specific columns and filtering enables quick discovery and review without mixing disparate metadata models.
 
 **Source:**
-PRD §3 Scope — Measurement integration; Issue #1412
+PRD §3 Scope — Measurement integration; Issue #1412  
+Stakeholder artifact: `docs/stakeholder-artifacts/measurement-metadata/immunopeptidomics-registration-spec-v1.0-2026-05-11.xlsx`
 
 ### Non-Functional Requirements
 
