@@ -154,6 +154,12 @@ public class ImmunopeptidomicsMeasurement {
     if (method.instrument() == null) {
       throw new IllegalArgumentException("Instrument: Missing metadata");
     }
+    if (method.sampleMass() == null) {
+      throw new IllegalArgumentException("Sample Mass: Missing metadata");
+    }
+    if (method.sampleVolume() == null) {
+      throw new IllegalArgumentException("Sample Volume: Missing metadata");
+    }
     if (method.mhcAntibody() == null || method.mhcAntibody().isBlank()) {
       throw new IllegalArgumentException("MHC Antibody: Missing metadata");
     }
@@ -171,6 +177,9 @@ public class ImmunopeptidomicsMeasurement {
     }
     if (method.massRange() == null || method.massRange().isBlank()) {
       throw new IllegalArgumentException("Mass range: Missing metadata");
+    }
+    if (method.retentionTimeRange() == null) {
+      throw new IllegalArgumentException("Retention time range: Missing metadata");
     }
     if (method.chargeRange() == null || method.chargeRange().isBlank()) {
       throw new IllegalArgumentException("Charge range: Missing metadata");

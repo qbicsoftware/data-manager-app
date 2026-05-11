@@ -158,7 +158,9 @@ class MeasurementIPValidatorSpec extends Specification {
 
         then:
         !result.allPassed()
-        result.failures().size() == 8
+        result.failures().size() == 10
+        result.failures().contains("Sample Mass is mandatory")
+        result.failures().contains("Sample Volume is mandatory")
         result.failures().contains("MHC Antibody is mandatory")
         result.failures().contains("Enrichment method is mandatory")
         result.failures().contains("LCMS Method is mandatory")

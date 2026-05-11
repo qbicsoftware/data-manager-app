@@ -88,6 +88,12 @@ public class MeasurementIPValidator {
     var failures = new ArrayList<String>();
     for (var entry : registration.specificMetadata().entrySet()) {
       var metadata = entry.getValue();
+      if (metadata.sampleMass() == null || metadata.sampleMass().isBlank()) {
+        failures.add("Sample Mass is mandatory");
+      }
+      if (metadata.sampleVolume() == null || metadata.sampleVolume().isBlank()) {
+        failures.add("Sample Volume is mandatory");
+      }
       if (metadata.mhcAntibody() == null || metadata.mhcAntibody().isBlank()) {
         failures.add("MHC Antibody is mandatory");
       }

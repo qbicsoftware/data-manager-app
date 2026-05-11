@@ -73,12 +73,12 @@ class MeasurementRegistrationMetadataConverterIPSpec extends Specification {
         given:
         def columnMap = buildIPColumnMap()
         def rowValues = buildFullRowValues()
-        rowValues[7] = ""   // Cycle/Fraction Name
+        rowValues[3] = ""   // Cycle/Fraction Name
         rowValues[9] = ""   // MHC Typing Method
-        rowValues[11] = ""  // Prep Date
+        rowValues[6] = ""   // Prep Date
         rowValues[12] = ""  // MS Run Date
-        rowValues[20] = "" // Ion Mobility Range
-        rowValues[21] = "" // Comment
+        rowValues[18] = ""  // Ion Mobility Range
+        rowValues[21] = ""  // Comment
 
         def parsingResult = new ParsingResult(columnMap, [new ParsingResult.Row(rowValues)])
 
@@ -104,24 +104,24 @@ class MeasurementRegistrationMetadataConverterIPSpec extends Specification {
             "QBiC Sample Id"              : 0,
             "Sample Name"                 : 1,
             "Measurement Name"            : 2,
-            "Organisation URL"            : 3,
-            "Facility"                    : 4,
-            "Sample Mass (mg)"            : 5,
-            "Sample Volume (decimal)"     : 6,
-            "Cycle/Fraction Name"         : 7,
+            "Cycle/Fraction Name"         : 3,
+            "Sample Mass (mg)"            : 4,
+            "Sample Volume (decimal)"     : 5,
+            "Prep Date"                   : 6,
+            "Enrichment method"           : 7,
             "MHC Antibody"                : 8,
             "MHC Typing Method"           : 9,
-            "Enrichment method"           : 10,
-            "Prep Date"                   : 11,
+            "Facility"                    : 10,
+            "Organisation URL"            : 11,
             "MS Run Date"                 : 12,
-            "Instrument"                  : 13,
-            "LCMS Method"                 : 14,
-            "LC Column"                   : 15,
-            "Data Acquisition"            : 16,
-            "Mass range (m/z)"            : 17,
-            "Retention time range (min)"  : 18,
-            "Charge range"                : 19,
-            "Ion mobility range (1/k0)"   : 20,
+            "Data Acquisition"            : 13,
+            "Instrument"                  : 14,
+            "LCMS Method"                 : 15,
+            "LC Column"                   : 16,
+            "Charge range"                : 17,
+            "Ion mobility range (1/k0)"   : 18,
+            "Mass range (m/z)"            : 19,
+            "Retention time range (min)"  : 20,
             "Comment"                     : 21
         ]
         def row = buildFullRowValues()
@@ -152,24 +152,24 @@ class MeasurementRegistrationMetadataConverterIPSpec extends Specification {
             "QTEST001AE",               // 0  SAMPLE_ID
             "Sample 1",                 // 1  SAMPLE_NAME
             "MS Run 1",                 // 2  MEASUREMENT_NAME
-            "https://ror.org/03a1kwz48",// 3  ORGANISATION_URL
-            "QBiC",                     // 4  FACILITY
-            "1.5",                      // 5  SAMPLE_MASS
-            "100.5",                    // 6  SAMPLE_VOLUME
-            "Fraction 1",               // 7  CYCLE_FRACTION_NAME
+            "Fraction 1",               // 3  CYCLE_FRACTION_NAME
+            "1.5",                      // 4  SAMPLE_MASS
+            "100.5",                    // 5  SAMPLE_VOLUME
+            "2024-01-15",               // 6  PREP_DATE
+            "Immune affinity",          // 7  ENRICHMENT_METHOD
             "W6/32",                    // 8  MHC_ANTIBODY
             "PCR-SSP",                  // 9  MHC_TYPING_METHOD
-            "Immune affinity",          // 10 ENRICHMENT_METHOD
-            "2024-01-15",               // 11 PREP_DATE
+            "QBiC",                     // 10 FACILITY
+            "https://ror.org/03a1kwz48",// 11 ORGANISATION_URL
             "2024-01-16",               // 12 MS_RUN_DATE
-            "EFO:0008637",              // 13 INSTRUMENT
-            "DDA",                      // 14 LCMS_METHOD
-            "C18",                      // 15 LC_COLUMN
-            "DDA",                      // 16 DATA_ACQUISITION
-            "300-1800",                 // 17 MASS_RANGE
-            "120",                      // 18 RETENTION_TIME_RANGE
-            "2-4",                      // 19 CHARGE_RANGE
-            "0.6-1.6",                  // 20 ION_MOBILITY_RANGE
+            "DDA",                      // 13 DATA_ACQUISITION
+            "EFO:0008637",              // 14 INSTRUMENT
+            "DDA",                      // 15 LCMS_METHOD
+            "C18",                      // 16 LC_COLUMN
+            "2-4",                      // 17 CHARGE_RANGE
+            "0.6-1.6",                  // 18 ION_MOBILITY_RANGE
+            "300-1800",                 // 19 MASS_RANGE
+            "120",                      // 20 RETENTION_TIME_RANGE
             "Test comment"              // 21 COMMENT
         ]
     }
