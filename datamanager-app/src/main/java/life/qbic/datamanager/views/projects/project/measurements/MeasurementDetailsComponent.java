@@ -685,6 +685,13 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
             Comparator.comparing(IpMeasurementLookup.MeasurementInfo::mhcAntibody))
         .setAutoWidth(true)
         .setResizable(true);
+    ipGrid.addColumn(IpMeasurementLookup.MeasurementInfo::mhcTypingMethod)
+        .setHeader("MHC Typing Method")
+        .setSortProperty(IpMeasurementLookup.IpSortKey.MHC_TYPING_METHOD.sortKey())
+        .setComparator(
+            Comparator.comparing(IpMeasurementLookup.MeasurementInfo::mhcTypingMethod))
+        .setAutoWidth(true)
+        .setResizable(true);
     ipGrid.addColumn(IpMeasurementLookup.MeasurementInfo::enrichmentMethod)
         .setHeader("Enrichment Method")
         .setSortProperty(IpMeasurementLookup.IpSortKey.ENRICHMENT_METHOD.sortKey())
@@ -717,10 +724,24 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         .setComparator(Comparator.comparing(IpMeasurementLookup.MeasurementInfo::massRange))
         .setAutoWidth(true)
         .setResizable(true);
+    ipGrid.addColumn(IpMeasurementLookup.MeasurementInfo::retentionTimeRange)
+        .setHeader("Retention Time Range")
+        .setSortProperty(IpMeasurementLookup.IpSortKey.RETENTION_TIME_RANGE.sortKey())
+        .setComparator(
+            Comparator.comparing(IpMeasurementLookup.MeasurementInfo::retentionTimeRange))
+        .setAutoWidth(true)
+        .setResizable(true);
     ipGrid.addColumn(IpMeasurementLookup.MeasurementInfo::chargeRange)
         .setHeader("Charge Range")
         .setSortProperty(IpMeasurementLookup.IpSortKey.CHARGE_RANGE.sortKey())
         .setComparator(Comparator.comparing(IpMeasurementLookup.MeasurementInfo::chargeRange))
+        .setAutoWidth(true)
+        .setResizable(true);
+    ipGrid.addColumn(IpMeasurementLookup.MeasurementInfo::ionMobilityRange)
+        .setHeader("Ion Mobility Range")
+        .setSortProperty(IpMeasurementLookup.IpSortKey.ION_MOBILITY_RANGE.sortKey())
+        .setComparator(
+            Comparator.comparing(IpMeasurementLookup.MeasurementInfo::ionMobilityRange))
         .setAutoWidth(true)
         .setResizable(true);
     ipGrid.addColumn(info -> formatTime(info.registeredAt(),

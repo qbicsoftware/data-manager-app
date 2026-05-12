@@ -62,12 +62,15 @@ public interface IpMeasurementLookup {
     MEASUREMENT_NAME("measurementName"),
     FACILITY("facility"),
     MHC_ANTIBODY("mhcAntibody"),
+    MHC_TYPING_METHOD("mhcTypingMethod"),
     ENRICHMENT_METHOD("enrichmentMethod"),
     LCMS_METHOD("lcmsMethod"),
     LC_COLUMN("lcColumn"),
     DATA_ACQUISITION("dataAcquisition"),
     MASS_RANGE("massRange"),
+    RETENTION_TIME_RANGE("retentionTimeRange"),
     CHARGE_RANGE("chargeRange"),
+    ION_MOBILITY_RANGE("ionMobilityRange"),
     REGISTRATION_DATE("registeredAt");
 
     private final String sortKey;
