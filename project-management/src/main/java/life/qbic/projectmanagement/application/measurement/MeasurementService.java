@@ -624,6 +624,16 @@ public class MeasurementService {
     try {
       return Integer.parseInt(value);
     } catch (NumberFormatException e) {
+      // Excel numeric cells come through as "120.0" (Double.toString of whole numbers)
+      // We accept those if they represent a whole number, but reject true decimals like "120.5"
+      try {
+        double d = Double.parseDouble(value);
+        if (d == (int) d) {
+          return (int) d;
+        }
+      } catch (NumberFormatException e2) {
+        // fall through
+      }
       return null;
     }
   }
