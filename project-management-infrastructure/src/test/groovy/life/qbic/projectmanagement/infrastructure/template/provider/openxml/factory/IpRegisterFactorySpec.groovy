@@ -22,7 +22,7 @@ class IpRegisterFactorySpec extends Specification {
   // Manual verification can be performed by running the application and exporting a template.
   def "IpRegisterFactory sheet name matches stakeholder spec"() {
     expect: "sheet name matches stakeholder spec"
-    new IpRegisterFactory().sheetName() == "Immunopeptidomics Measurement Metadata"
+    new IpRegisterFactory().sheetName() == "IP Measurement Metadata"
   }
 
   def "column order matches stakeholder spec positions 1-22"() {

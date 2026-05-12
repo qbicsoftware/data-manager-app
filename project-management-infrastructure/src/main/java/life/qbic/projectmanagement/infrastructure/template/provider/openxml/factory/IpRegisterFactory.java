@@ -30,7 +30,7 @@ public class IpRegisterFactory implements WorkbookFactory {
 
   @Override
   public String sheetName() {
-    return "Immunopeptidomics Measurement Metadata";
+    return "IP Measurement Metadata";
   }
 
   @Override

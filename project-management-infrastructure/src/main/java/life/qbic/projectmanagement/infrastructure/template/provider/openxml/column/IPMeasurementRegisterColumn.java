@@ -50,7 +50,7 @@ public enum IPMeasurementRegisterColumn implements Column {
         case SAMPLE_ID -> new Helper("QBiC sample IDs, e.g. Q2001, Q2002",
             "Each measurement need to be linked to at least on analyte sample.");
         case SAMPLE_NAME -> new Helper("Free text, e.g. Sample 1, Sample 2",
-            "Coprocessing Identifier. This is just a visual aid simplify sample navigation for the person managing the metadata. You can e.g. download the sample metadata and copy the sample ID + label column in here. This column gets ignored during measurement registration");
+            "Coprocessing Identifier. Download the sample metadata and copy the sample ID + label column here. This column gets ignored during measurement registration.");
         case MEASUREMENT_NAME -> new Helper("Free text",
             "Internal Identifier used by the partner facility to enable them to track their measurement");
         case ORGANISATION_URL -> new Helper("ROR URL, e.g. https://ror.org/03a1kwz48",
