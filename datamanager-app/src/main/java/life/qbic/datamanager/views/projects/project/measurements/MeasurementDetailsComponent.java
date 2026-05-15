@@ -582,6 +582,19 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     tabSheet.addTab(index, ipTab);
     tabSheet.addPrimaryAction(ipTab,
         tab -> fireEvent(new IpMeasurementRegistrationRequested(this, true)));
+    tabSheet.addFeatureAction(ipTab,
+        tab -> {
+          List<String> selectedMeasurementIds = tab.filterGrid().selectedElements()
+              .stream()
+              .map(IpMeasurementLookup.MeasurementInfo::measurementId)
+              .distinct()
+              .toList();
+          if (selectedMeasurementIds.isEmpty()) {
+            displayMissingSelectionNote();
+            return;
+          }
+          fireEvent(new IpMeasurementExportRequested(selectedMeasurementIds, this, true));
+        });
     var deleteIpButton = new Button("Delete");
     deleteIpButton.addClickListener(clicked -> {
       Set<IpMeasurementLookup.MeasurementInfo> selectedMeasurements = filterGrid.selectedElements();
@@ -742,6 +755,41 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         .setSortProperty(IpMeasurementLookup.IpSortKey.ION_MOBILITY_RANGE.sortKey())
         .setComparator(
             Comparator.comparing(IpMeasurementLookup.MeasurementInfo::ionMobilityRange))
+        .setAutoWidth(true)
+        .setResizable(true);
+    ipGrid.addColumn(IpMeasurementLookup.MeasurementInfo::sampleMass)
+        .setHeader("Sample Mass (mg)")
+        .setSortProperty(IpMeasurementLookup.IpSortKey.SAMPLE_MASS.sortKey())
+        .setComparator(
+            Comparator.comparing(IpMeasurementLookup.MeasurementInfo::sampleMass))
+        .setAutoWidth(true)
+        .setResizable(true);
+    ipGrid.addColumn(IpMeasurementLookup.MeasurementInfo::sampleVolume)
+        .setHeader("Sample Volume (µl)")
+        .setSortProperty(IpMeasurementLookup.IpSortKey.SAMPLE_VOLUME.sortKey())
+        .setComparator(
+            Comparator.comparing(IpMeasurementLookup.MeasurementInfo::sampleVolume))
+        .setAutoWidth(true)
+        .setResizable(true);
+    ipGrid.addColumn(IpMeasurementLookup.MeasurementInfo::cycleFractionName)
+        .setHeader("Cycle/Fraction Name")
+        .setSortProperty(IpMeasurementLookup.IpSortKey.CYCLE_FRACTION_NAME.sortKey())
+        .setComparator(
+            Comparator.comparing(IpMeasurementLookup.MeasurementInfo::cycleFractionName))
+        .setAutoWidth(true)
+        .setResizable(true);
+    ipGrid.addColumn(IpMeasurementLookup.MeasurementInfo::prepDate)
+        .setHeader("Prep Date")
+        .setSortProperty(IpMeasurementLookup.IpSortKey.PREP_DATE.sortKey())
+        .setComparator(
+            Comparator.comparing(IpMeasurementLookup.MeasurementInfo::prepDate))
+        .setAutoWidth(true)
+        .setResizable(true);
+    ipGrid.addColumn(IpMeasurementLookup.MeasurementInfo::msRunDate)
+        .setHeader("MS Run Date")
+        .setSortProperty(IpMeasurementLookup.IpSortKey.MS_RUN_DATE.sortKey())
+        .setComparator(
+            Comparator.comparing(IpMeasurementLookup.MeasurementInfo::msRunDate))
         .setAutoWidth(true)
         .setResizable(true);
     ipGrid.addColumn(info -> formatTime(info.registeredAt(),
@@ -1201,5 +1249,25 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     return addListener(IpMeasurementDeletionRequested.class, listener);
   }
 
+  public static class IpMeasurementExportRequested extends
+      ComponentEvent<MeasurementDetailsComponent> {
+
+    private final List<String> measurementIds;
+
+    public IpMeasurementExportRequested(List<String> measurementIds,
+        MeasurementDetailsComponent source, boolean fromClient) {
+      super(source, fromClient);
+      this.measurementIds = measurementIds.stream().toList();
+    }
+
+    public List<String> measurementIds() {
+      return measurementIds;
+    }
+  }
+
+  public Registration addIpExportListener(
+      ComponentEventListener<IpMeasurementExportRequested> listener) {
+    return addListener(IpMeasurementExportRequested.class, listener);
+  }
 
 }

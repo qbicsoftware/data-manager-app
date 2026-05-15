@@ -2,6 +2,9 @@ package life.qbic.projectmanagement.application.measurement.validation;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -84,39 +87,94 @@ public class MeasurementIPValidator {
     return result;
   }
 
+  private static final String RANGE_REGEX = "^\\d+(\\.\\d+)?\\s*\\-\\s*\\d+(\\.\\d+)?$";
+  private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE;
+
   private ValidationResult validateMandatoryFields(MeasurementRegistrationInformationIP registration) {
     var failures = new ArrayList<String>();
+    if (registration.facility() == null || registration.facility().isBlank()) {
+      failures.add("Facility missing mandatory metadata");
+    }
     for (var entry : registration.specificMetadata().entrySet()) {
       var metadata = entry.getValue();
       if (metadata.sampleMass() == null || metadata.sampleMass().isBlank()) {
-        failures.add("Sample Mass is mandatory");
+        failures.add("Sample Mass missing mandatory metadata");
+      } else {
+        try {
+          var value = Double.parseDouble(metadata.sampleMass());
+          if (value < 0) {
+            failures.add("Sample Mass must not be negative");
+          }
+        } catch (NumberFormatException e) {
+          failures.add("Sample Mass must be a valid number");
+        }
       }
       if (metadata.sampleVolume() == null || metadata.sampleVolume().isBlank()) {
-        failures.add("Sample Volume is mandatory");
+        failures.add("Sample Volume missing mandatory metadata");
+      } else {
+        try {
+          var value = Double.parseDouble(metadata.sampleVolume());
+          if (value < 0) {
+            failures.add("Sample Volume must not be negative");
+          }
+        } catch (NumberFormatException e) {
+          failures.add("Sample Volume must be a valid number");
+        }
       }
       if (metadata.mhcAntibody() == null || metadata.mhcAntibody().isBlank()) {
-        failures.add("MHC Antibody is mandatory");
+        failures.add("MHC Antibody missing mandatory metadata");
       }
       if (metadata.enrichmentMethod() == null || metadata.enrichmentMethod().isBlank()) {
-        failures.add("Enrichment method is mandatory");
+        failures.add("Enrichment method missing mandatory metadata");
       }
       if (metadata.lcmsMethod() == null || metadata.lcmsMethod().isBlank()) {
-        failures.add("LCMS Method is mandatory");
+        failures.add("LCMS Method missing mandatory metadata");
       }
       if (metadata.lcColumn() == null || metadata.lcColumn().isBlank()) {
-        failures.add("LC Column is mandatory");
+        failures.add("LC Column missing mandatory metadata");
       }
       if (metadata.dataAcquisition() == null || metadata.dataAcquisition().isBlank()) {
-        failures.add("Data Acquisition is mandatory");
+        failures.add("Data Acquisition missing mandatory metadata");
       }
       if (metadata.massRange() == null || metadata.massRange().isBlank()) {
-        failures.add("Mass range is mandatory");
+        failures.add("Mass range missing mandatory metadata");
+      } else if (!Pattern.compile(RANGE_REGEX).matcher(metadata.massRange()).matches()) {
+        failures.add("Mass range must be a valid range (e.g. 1-2)");
       }
       if (metadata.retentionTimeRange() == null || metadata.retentionTimeRange().isBlank()) {
-        failures.add("Retention time range is mandatory");
+        failures.add("Retention time range missing mandatory metadata");
+      } else {
+        try {
+          var value = Integer.parseInt(metadata.retentionTimeRange());
+          if (value < 0) {
+            failures.add("Retention time range must not be negative");
+          }
+        } catch (NumberFormatException e) {
+          failures.add("Retention time range must be a valid integer");
+        }
       }
       if (metadata.chargeRange() == null || metadata.chargeRange().isBlank()) {
-        failures.add("Charge range is mandatory");
+        failures.add("Charge range missing mandatory metadata");
+      } else if (!Pattern.compile(RANGE_REGEX).matcher(metadata.chargeRange()).matches()) {
+        failures.add("Charge range must be a valid range (e.g. 1-2)");
+      }
+      if (metadata.ionMobilityRange() != null && !metadata.ionMobilityRange().isBlank()
+          && !Pattern.compile(RANGE_REGEX).matcher(metadata.ionMobilityRange()).matches()) {
+        failures.add("Ion Mobility Range must be a valid range (e.g. 1-2)");
+      }
+      if (metadata.prepDate() != null && !metadata.prepDate().isBlank()) {
+        try {
+          LocalDate.parse(metadata.prepDate(), DATE_FORMATTER);
+        } catch (DateTimeParseException e) {
+          failures.add("Prep Date must be formatted as YYYY-MM-DD");
+        }
+      }
+      if (metadata.msRunDate() != null && !metadata.msRunDate().isBlank()) {
+        try {
+          LocalDate.parse(metadata.msRunDate(), DATE_FORMATTER);
+        } catch (DateTimeParseException e) {
+          failures.add("MS Run Date must be formatted as YYYY-MM-DD");
+        }
       }
     }
     if (failures.isEmpty()) {
@@ -127,7 +185,7 @@ public class MeasurementIPValidator {
 
   private ValidationResult validateInstrument(MeasurementRegistrationInformationIP registration) {
     if (registration.instrumentCURIE() == null || registration.instrumentCURIE().isBlank()) {
-      return ValidationResult.withFailures(List.of("Instrument is mandatory"));
+      return ValidationResult.withFailures(List.of("Instrument missing mandatory metadata"));
     }
     var instrument = terminologyService.findByCurie(registration.instrumentCURIE());
     if (instrument.isEmpty()) {
@@ -141,7 +199,7 @@ public class MeasurementIPValidator {
 
   private ValidationResult validateOrganisation(MeasurementRegistrationInformationIP registration) {
     if (registration.organisationId() == null || registration.organisationId().isBlank()) {
-      return ValidationResult.withFailures(List.of("Organisation URL is mandatory"));
+      return ValidationResult.withFailures(List.of("Organisation URL missing mandatory metadata"));
     }
     if (!Pattern.compile(ROR_ID_REGEX).matcher(registration.organisationId()).find()) {
       return ValidationResult.withFailures(

@@ -236,6 +236,11 @@ public class MeasurementLookup implements NgsMeasurementLookup, PxpMeasurementLo
         dbMeasurement.retentionTimeRange(),
         dbMeasurement.chargeRange(),
         dbMeasurement.ionMobilityRange(),
+        dbMeasurement.sampleMass(),
+        dbMeasurement.sampleVolume(),
+        dbMeasurement.cycleFractionName(),
+        dbMeasurement.prepDate() != null ? dbMeasurement.prepDate().toString() : null,
+        dbMeasurement.msRunDate() != null ? dbMeasurement.msRunDate().toString() : null,
         dbMeasurement.comment(),
         sampleInfos);
   }

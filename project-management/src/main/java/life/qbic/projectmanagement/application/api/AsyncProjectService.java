@@ -1743,6 +1743,19 @@ public interface AsyncProjectService {
   Mono<DigitalObject> measurementUpdatePxP(String projectId, List<String> measurementIds,
       MimeType mimeType);
 
+  /**
+   * Provides information about selected immunopeptidomics measurements for updating purposes in a
+   * requested {@link MimeType}.
+   *
+   * @param projectId      the id of the project the measurements belong to
+   * @param measurementIds a {@link List} of ids of the measurements of interest
+   * @param mimeType       the desired {@link MimeType} of the {@link DigitalObject}
+   * @return a {@link DigitalObject} in the request {@link MimeType} format
+   * @since 1.11.0
+   */
+  Mono<DigitalObject> measurementUpdateIP(String projectId, List<String> measurementIds,
+      MimeType mimeType);
+
   sealed interface ExperimentUpdateRequestBody permits ConfoundingVariableAdditions,
       ConfoundingVariableDeletions, ConfoundingVariableUpdates, ExperimentDescription {
 

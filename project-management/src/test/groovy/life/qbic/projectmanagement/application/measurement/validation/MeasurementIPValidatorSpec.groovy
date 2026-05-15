@@ -159,16 +159,16 @@ class MeasurementIPValidatorSpec extends Specification {
         then:
         !result.allPassed()
         result.failures().size() == 10
-        result.failures().contains("Sample Mass is mandatory")
-        result.failures().contains("Sample Volume is mandatory")
-        result.failures().contains("MHC Antibody is mandatory")
-        result.failures().contains("Enrichment method is mandatory")
-        result.failures().contains("LCMS Method is mandatory")
-        result.failures().contains("LC Column is mandatory")
-        result.failures().contains("Data Acquisition is mandatory")
-        result.failures().contains("Mass range is mandatory")
-        result.failures().contains("Retention time range is mandatory")
-        result.failures().contains("Charge range is mandatory")
+        result.failures().contains("Sample Mass missing mandatory metadata")
+        result.failures().contains("Sample Volume missing mandatory metadata")
+        result.failures().contains("MHC Antibody missing mandatory metadata")
+        result.failures().contains("Enrichment method missing mandatory metadata")
+        result.failures().contains("LCMS Method missing mandatory metadata")
+        result.failures().contains("LC Column missing mandatory metadata")
+        result.failures().contains("Data Acquisition missing mandatory metadata")
+        result.failures().contains("Mass range missing mandatory metadata")
+        result.failures().contains("Retention time range missing mandatory metadata")
+        result.failures().contains("Charge range missing mandatory metadata")
     }
 
     def "Given an IP registration with missing instrument, validateRegistration returns instrument failure"() {
@@ -212,7 +212,7 @@ class MeasurementIPValidatorSpec extends Specification {
 
         then:
         !result.allPassed()
-        result.failures().contains("Instrument is mandatory")
+        result.failures().contains("Instrument missing mandatory metadata")
     }
 
     def "Given an IP registration with unknown instrument CURIE, validateRegistration returns unknown instrument failure"() {
@@ -304,7 +304,7 @@ class MeasurementIPValidatorSpec extends Specification {
 
         then:
         !result.allPassed()
-        result.failures().contains("Organisation URL is mandatory")
+        result.failures().contains("Organisation URL missing mandatory metadata")
     }
 
     def "Given an IP registration with invalid ROR organisation, validateRegistration returns ROR format failure"() {
@@ -362,6 +362,203 @@ class MeasurementIPValidatorSpec extends Specification {
                 Map.of("QTEST001AE", createValidSpecific()),
                 "MS Run 1"
         )
+    }
+
+    def "Given negative numeric values, validateRegistration returns negative value failures"() {
+        given:
+        def experimentId = ExperimentId.create()
+        def sampleInformationService = Mock(SampleInformationService) {
+            findSampleId(SampleCode.create("QTEST001AE")) >> Optional.of(
+                    new SampleIdCodeEntry(SampleId.create(), SampleCode.create("QTEST001AE"))
+            )
+            retrieveSamplesByIds(_ as List<SampleId>) >> { args ->
+                def sampleId = ((List<SampleId>) args[0])[0]
+                def sample = Mock(Sample)
+                sample.sampleId() >> sampleId
+                sample.experimentId() >> experimentId
+                [sample]
+            }
+        }
+        def terminologyService = Mock(TerminologyService) {
+            findByCurie("EFO:0008637") >> Optional.of(validInstrument)
+        }
+        def projectInformationService = Mock(ProjectInformationService) {
+            find(_ as ProjectId) >> Optional.of(Mock(Project) {
+                experiments() >> [experimentId]
+            })
+        }
+        def measurementService = Mock(MeasurementService)
+
+        def validator = new MeasurementIPValidator(
+                sampleInformationService, terminologyService, projectInformationService, measurementService
+        )
+
+        def specific = new MeasurementSpecificIP(
+                "-1.5",
+                "-100.5",
+                "Fraction 1",
+                "W6/32",
+                "PCR-SSP",
+                "Immune affinity",
+                "2024-01-15",
+                "2024-01-16",
+                "DDA",
+                "C18",
+                "DDA",
+                "300-1800",
+                "-120",
+                "2-4",
+                "0.6-1.6",
+                "Test comment"
+        )
+        def registration = new MeasurementRegistrationInformationIP(
+                "https://ror.org/03a1kwz48",
+                "EFO:0008637",
+                "QBiC",
+                "QBiC Facility",
+                Map.of("QTEST001AE", specific),
+                "Test"
+        )
+
+        when:
+        def result = validator.validateRegistration(registration, experimentId.value(), ProjectId.create())
+
+        then:
+        !result.allPassed()
+        result.failures().contains("Sample Mass must not be negative")
+        result.failures().contains("Sample Volume must not be negative")
+        result.failures().contains("Retention time range must not be negative")
+    }
+
+    def "Given malformed dates, validateRegistration returns date format failures"() {
+        given:
+        def experimentId = ExperimentId.create()
+        def sampleInformationService = Mock(SampleInformationService) {
+            findSampleId(SampleCode.create("QTEST001AE")) >> Optional.of(
+                    new SampleIdCodeEntry(SampleId.create(), SampleCode.create("QTEST001AE"))
+            )
+            retrieveSamplesByIds(_ as List<SampleId>) >> { args ->
+                def sampleId = ((List<SampleId>) args[0])[0]
+                def sample = Mock(Sample)
+                sample.sampleId() >> sampleId
+                sample.experimentId() >> experimentId
+                [sample]
+            }
+        }
+        def terminologyService = Mock(TerminologyService) {
+            findByCurie("EFO:0008637") >> Optional.of(validInstrument)
+        }
+        def projectInformationService = Mock(ProjectInformationService) {
+            find(_ as ProjectId) >> Optional.of(Mock(Project) {
+                experiments() >> [experimentId]
+            })
+        }
+        def measurementService = Mock(MeasurementService)
+
+        def validator = new MeasurementIPValidator(
+                sampleInformationService, terminologyService, projectInformationService, measurementService
+        )
+
+        def specific = new MeasurementSpecificIP(
+                "1.5",
+                "100.5",
+                "Fraction 1",
+                "W6/32",
+                "PCR-SSP",
+                "Immune affinity",
+                "2024/01/15",
+                "01-01-2024",
+                "DDA",
+                "C18",
+                "DDA",
+                "300-1800",
+                "120",
+                "2-4",
+                "0.6-1.6",
+                "Test comment"
+        )
+        def registration = new MeasurementRegistrationInformationIP(
+                "https://ror.org/03a1kwz48",
+                "EFO:0008637",
+                "QBiC",
+                "QBiC Facility",
+                Map.of("QTEST001AE", specific),
+                "Test"
+        )
+
+        when:
+        def result = validator.validateRegistration(registration, experimentId.value(), ProjectId.create())
+
+        then:
+        !result.allPassed()
+        result.failures().contains("Prep Date must be formatted as YYYY-MM-DD")
+        result.failures().contains("MS Run Date must be formatted as YYYY-MM-DD")
+    }
+
+    def "Given malformed ranges, validateRegistration returns range format failures"() {
+        given:
+        def experimentId = ExperimentId.create()
+        def sampleInformationService = Mock(SampleInformationService) {
+            findSampleId(SampleCode.create("QTEST001AE")) >> Optional.of(
+                    new SampleIdCodeEntry(SampleId.create(), SampleCode.create("QTEST001AE"))
+            )
+            retrieveSamplesByIds(_ as List<SampleId>) >> { args ->
+                def sampleId = ((List<SampleId>) args[0])[0]
+                def sample = Mock(Sample)
+                sample.sampleId() >> sampleId
+                sample.experimentId() >> experimentId
+                [sample]
+            }
+        }
+        def terminologyService = Mock(TerminologyService) {
+            findByCurie("EFO:0008637") >> Optional.of(validInstrument)
+        }
+        def projectInformationService = Mock(ProjectInformationService) {
+            find(_ as ProjectId) >> Optional.of(Mock(Project) {
+                experiments() >> [experimentId]
+            })
+        }
+        def measurementService = Mock(MeasurementService)
+
+        def validator = new MeasurementIPValidator(
+                sampleInformationService, terminologyService, projectInformationService, measurementService
+        )
+
+        def specific = new MeasurementSpecificIP(
+                "1.5",
+                "100.5",
+                "Fraction 1",
+                "W6/32",
+                "PCR-SSP",
+                "Immune affinity",
+                "2024-01-15",
+                "2024-01-16",
+                "DDA",
+                "C18",
+                "DDA",
+                "12345",
+                "120",
+                "abc",
+                "invalid",
+                "Test comment"
+        )
+        def registration = new MeasurementRegistrationInformationIP(
+                "https://ror.org/03a1kwz48",
+                "EFO:0008637",
+                "QBiC",
+                "QBiC Facility",
+                Map.of("QTEST001AE", specific),
+                "Test"
+        )
+
+        when:
+        def result = validator.validateRegistration(registration, experimentId.value(), ProjectId.create())
+
+        then:
+        !result.allPassed()
+        result.failures().contains("Mass range must be a valid range (e.g. 1-2)")
+        result.failures().contains("Charge range must be a valid range (e.g. 1-2)")
+        result.failures().contains("Ion Mobility Range must be a valid range (e.g. 1-2)")
     }
 
     private static MeasurementSpecificIP createValidSpecific() {

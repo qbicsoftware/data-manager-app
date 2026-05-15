@@ -71,6 +71,11 @@ public interface IpMeasurementLookup {
     RETENTION_TIME_RANGE("retentionTimeRange"),
     CHARGE_RANGE("chargeRange"),
     ION_MOBILITY_RANGE("ionMobilityRange"),
+    SAMPLE_MASS("sampleMass"),
+    SAMPLE_VOLUME("sampleVolume"),
+    CYCLE_FRACTION_NAME("cycleFractionName"),
+    PREP_DATE("prepDate"),
+    MS_RUN_DATE("msRunDate"),
     REGISTRATION_DATE("registeredAt");
 
     private final String sortKey;
@@ -114,6 +119,11 @@ public interface IpMeasurementLookup {
       Integer retentionTimeRange,
       String chargeRange,
       String ionMobilityRange,
+      Double sampleMass,
+      Double sampleVolume,
+      String cycleFractionName,
+      String prepDate,
+      String msRunDate,
       String comment,
       @NonNull List<SampleInfo> sampleInfos
   ) {

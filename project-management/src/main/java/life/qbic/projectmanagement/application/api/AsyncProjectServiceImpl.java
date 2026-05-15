@@ -806,6 +806,19 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   @Override
+  public Mono<DigitalObject> measurementUpdateIP(String projectId, List<String> measurementIds,
+      MimeType mimeType) {
+    SecurityContext securityContext = SecurityContextHolder.getContext();
+    return applySecurityContext(Mono.fromCallable(
+        () -> templateService.measurementUpdateTemplateIP(projectId, measurementIds,
+            mimeType)))
+        .doOnError(e -> log.error("Error updating measurement " + measurementIds, e))
+        .onErrorMap(e -> mapToAPIException(e, "Error updating measurement " + measurementIds))
+        .subscribeOn(scheduler)
+        .contextWrite(reactiveSecurity(securityContext));
+  }
+
+  @Override
   public Flux<RawDatasetInformationPxP> getRawDatasetInformationPxP(String projectId,
       String experimentId, int offset,
       int limit, SortRawData sorting, String filter) {

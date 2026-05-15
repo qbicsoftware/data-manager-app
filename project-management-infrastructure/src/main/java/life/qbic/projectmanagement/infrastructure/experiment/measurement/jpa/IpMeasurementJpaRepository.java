@@ -181,6 +181,7 @@ public interface IpMeasurementJpaRepository extends
           propertyContains("retentionTimeRange", searchTerm),
           propertyContains("chargeRange", searchTerm),
           propertyContains("ionMobilityRange", searchTerm),
+          propertyContains("cycleFractionName", searchTerm),
           contains(root -> root.get("organisation").get("label").as(String.class), searchTerm),
           contains(root -> root.get("organisation").get("iri").as(String.class), searchTerm),
           jsonContains(root -> root.get("instrument"), "$.label", searchTerm),
@@ -403,6 +404,21 @@ public interface IpMeasurementJpaRepository extends
     @Column(name = "ionMobilityRange")
     private String ionMobilityRange;
 
+    @Column(name = "sampleMass")
+    private Double sampleMass;
+
+    @Column(name = "sampleVolume")
+    private Double sampleVolume;
+
+    @Column(name = "cycleFractionName")
+    private String cycleFractionName;
+
+    @Column(name = "prepDate")
+    private java.time.LocalDate prepDate;
+
+    @Column(name = "msRunDate")
+    private java.time.LocalDate msRunDate;
+
     @Column(name = "comment")
     private String comment;
 
@@ -492,6 +508,26 @@ public interface IpMeasurementJpaRepository extends
       return ionMobilityRange;
     }
 
+    public Double sampleMass() {
+      return sampleMass;
+    }
+
+    public Double sampleVolume() {
+      return sampleVolume;
+    }
+
+    public String cycleFractionName() {
+      return cycleFractionName;
+    }
+
+    public java.time.LocalDate prepDate() {
+      return prepDate;
+    }
+
+    public java.time.LocalDate msRunDate() {
+      return msRunDate;
+    }
+
     public String comment() {
       return comment;
     }
@@ -520,6 +556,11 @@ public interface IpMeasurementJpaRepository extends
           .add("dataAcquisition='" + dataAcquisition + "'")
           .add("massRange='" + massRange + "'")
           .add("chargeRange='" + chargeRange + "'")
+          .add("sampleMass=" + sampleMass)
+          .add("sampleVolume=" + sampleVolume)
+          .add("cycleFractionName='" + cycleFractionName + "'")
+          .add("prepDate=" + prepDate)
+          .add("msRunDate=" + msRunDate)
           .add("sampleInfos=" + sampleInfos)
           .toString();
     }
@@ -540,6 +581,11 @@ public interface IpMeasurementJpaRepository extends
           lcmsMethod, that.lcmsMethod) && Objects.equals(lcColumn, that.lcColumn)
           && Objects.equals(dataAcquisition, that.dataAcquisition) && Objects.equals(
           massRange, that.massRange) && Objects.equals(chargeRange, that.chargeRange)
+          && Objects.equals(sampleMass, that.sampleMass)
+          && Objects.equals(sampleVolume, that.sampleVolume)
+          && Objects.equals(cycleFractionName, that.cycleFractionName)
+          && Objects.equals(prepDate, that.prepDate)
+          && Objects.equals(msRunDate, that.msRunDate)
           && Objects.equals(sampleInfos.stream().toList(),
           that.sampleInfos.stream().toList());
     }
@@ -562,6 +608,11 @@ public interface IpMeasurementJpaRepository extends
       result = 31 * result + Objects.hashCode(dataAcquisition);
       result = 31 * result + Objects.hashCode(massRange);
       result = 31 * result + Objects.hashCode(chargeRange);
+      result = 31 * result + Objects.hashCode(sampleMass);
+      result = 31 * result + Objects.hashCode(sampleVolume);
+      result = 31 * result + Objects.hashCode(cycleFractionName);
+      result = 31 * result + Objects.hashCode(prepDate);
+      result = 31 * result + Objects.hashCode(msRunDate);
       result = 31 * result + Objects.hashCode(sampleInfos.stream().toList());
       return result;
     }

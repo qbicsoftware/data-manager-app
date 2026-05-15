@@ -196,6 +196,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
 
     measurementDetailsComponent.addIpRegisterListener(
         registrationRequest -> openRegistrationDialog());
+    measurementDetailsComponent.addIpExportListener(
+        exportRequest -> downloadIPMetadata(exportRequest.measurementIds()));
     measurementDetailsComponent.addIpDeletionListener(
         deletionRequest -> handleIpDeletionRequest(
             new HashSet<>(deletionRequest.measurementIds())));
@@ -389,6 +391,23 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     inProgressToast.open();
 
     asyncService.measurementUpdateNGS(projectId.value(), selectedMeasurementIds, OPEN_XML)
+        .subscribe(result -> {
+          uiHandle.onUiAndPush(inProgressToast::close);
+          uiHandle.onUi(() -> triggerDownload(result));
+        }, error -> {
+          uiHandle.onUi(inProgressToast::close);
+          log.error(error.getMessage(), error);
+        }, () -> uiHandle.onUi(inProgressToast::close));
+  }
+
+  private void downloadIPMetadata(List<String> selectedMeasurementIds) {
+    ProjectId projectId = context.projectId().orElseThrow();
+    var inProgressToast = messageFactory.pendingTaskToast("measurement.preparing-download",
+        MessageSourceNotificationFactory.EMPTY_PARAMETERS, getLocale());
+
+    inProgressToast.open();
+
+    asyncService.measurementUpdateIP(projectId.value(), selectedMeasurementIds, OPEN_XML)
         .subscribe(result -> {
           uiHandle.onUiAndPush(inProgressToast::close);
           uiHandle.onUi(() -> triggerDownload(result));

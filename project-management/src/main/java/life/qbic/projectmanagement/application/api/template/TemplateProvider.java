@@ -45,7 +45,8 @@ public interface TemplateProvider {
    * @since 1.10.0
    */
   sealed interface TemplateRequest permits MeasurementInformationCollectionNGS,
-      MeasurementInformationCollectionPxP, SampleInformation, SampleRegistration, SampleUpdate {
+      MeasurementInformationCollectionPxP, MeasurementInformationCollectionIP,
+      SampleInformation, SampleRegistration, SampleUpdate {
 
   }
 
@@ -122,6 +123,15 @@ public interface TemplateProvider {
       List<MeasurementInformationPxP> measurements) implements TemplateRequest {
 
     public MeasurementInformationCollectionPxP {
+      requireNonNull(measurements);
+      measurements = List.copyOf(measurements);
+    }
+  }
+
+  record MeasurementInformationCollectionIP(
+      List<MeasurementInformationIP> measurements) implements TemplateRequest {
+
+    public MeasurementInformationCollectionIP {
       requireNonNull(measurements);
       measurements = List.copyOf(measurements);
     }
@@ -278,6 +288,99 @@ public interface TemplateProvider {
   }
 
   /**
+   * Information container for an immunopeptidomics measurement.
+   *
+   * @param measurementId     the identifier of the measurement
+   * @param organisationIRI   the ROR ID of the organization that performed the measurement
+   * @param instrumentIRI     the CURIE of the instrument used for the measurement
+   * @param samplePoolGroup   the name of the sample pool
+   * @param facility          the name of the facility that performed the measurement
+   * @param mhcAntibody       the MHC antibody used
+   * @param mhcTypingMethod   the MHC typing method used
+   * @param enrichmentMethod  the enrichment method used
+   * @param lcmsMethod        the LCMS method used
+   * @param lcColumn          the LC column used
+   * @param dataAcquisition   the data acquisition method
+   * @param massRange         the mass range
+   * @param retentionTimeRange the retention time range
+   * @param chargeRange       the charge range
+   * @param ionMobilityRange  the ion mobility range
+   * @param sampleMass        the sample mass
+   * @param sampleVolume      the sample volume
+   * @param cycleFractionName the cycle/fraction name
+   * @param prepDate          the preparation date
+   * @param msRunDate         the MS run date
+   * @param specificMetadata  specific metadata that differentiates pooled samples as a
+   *                          {@link Map}, with the sample ids as keys and the sample-specific
+   *                          measurement annotations as values. Will have only one entry if no
+   *                          pooling was done. {@link MeasurementSpecificIP}
+   * @since 1.11.0
+   */
+  record MeasurementInformationIP(
+      String measurementId,
+      String organisationIRI,
+      String organisationName,
+      String instrumentIRI,
+      String instrumentName,
+      String samplePoolGroup,
+      String facility,
+      String mhcAntibody,
+      String mhcTypingMethod,
+      String enrichmentMethod,
+      String lcmsMethod,
+      String lcColumn,
+      String dataAcquisition,
+      String massRange,
+      String retentionTimeRange,
+      String chargeRange,
+      String ionMobilityRange,
+      String sampleMass,
+      String sampleVolume,
+      String cycleFractionName,
+      String prepDate,
+      String msRunDate,
+      Map<String, MeasurementSpecificIP> specificMetadata,
+      String measurementName
+  ) {
+
+    public MeasurementInformationIP {
+      requireNonNull(measurementId);
+      requireNonNull(organisationIRI);
+      requireNonNull(organisationName);
+      requireNonNull(instrumentIRI);
+      requireNonNull(instrumentName);
+      requireNonNull(facility);
+      requireNonNull(mhcAntibody);
+      requireNonNull(enrichmentMethod);
+      requireNonNull(lcmsMethod);
+      requireNonNull(lcColumn);
+      requireNonNull(dataAcquisition);
+      requireNonNull(massRange);
+      requireNonNull(retentionTimeRange);
+      requireNonNull(chargeRange);
+      requireNonNull(ionMobilityRange);
+      requireNonNull(sampleMass);
+      requireNonNull(sampleVolume);
+      requireNonNull(cycleFractionName);
+      requireNonNull(prepDate);
+      requireNonNull(msRunDate);
+      requireNonNull(specificMetadata);
+      specificMetadata = new HashMap<>(specificMetadata);
+      requireNonNull(measurementName);
+    }
+
+    /**
+     * Returns the {@link List} of sample identifiers this measurement refers to.
+     *
+     * @return the {@link List} of sample identifiers
+     * @since 1.11.0
+     */
+    public List<String> measuredSamples() {
+      return List.copyOf(specificMetadata.keySet());
+    }
+  }
+
+  /**
    * Metadata that describes a measurement properties, that are unique to the sample presented in
    * the measurement (e.g., when pooling was done)
    *
@@ -293,6 +396,21 @@ public interface TemplateProvider {
       String label,
       String fractionName,
       String comment
+  ) {
+
+  }
+
+  /**
+   * Metadata that describes measurement properties that are unique to the sample presented in
+   * the measurement for immunopeptidomics.
+   *
+   * @param sampleId   the natural ID of the sample
+   * @param sampleName the name of the sample to provide additional context for the measurement
+   * @since 1.11.0
+   */
+  record MeasurementSpecificIP(
+      String sampleId,
+      String sampleName
   ) {
 
   }
