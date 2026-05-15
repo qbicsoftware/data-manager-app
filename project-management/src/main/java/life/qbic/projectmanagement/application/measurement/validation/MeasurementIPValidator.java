@@ -145,9 +145,11 @@ public class MeasurementIPValidator {
         failures.add("Retention time range missing mandatory metadata");
       } else {
         try {
-          var value = Integer.parseInt(metadata.retentionTimeRange());
-          if (value < 0) {
+          double d = Double.parseDouble(metadata.retentionTimeRange());
+          if (d < 0) {
             failures.add("Retention time range must not be negative");
+          } else if (d != (int) d) {
+            failures.add("Retention time range must be a valid integer");
           }
         } catch (NumberFormatException e) {
           failures.add("Retention time range must be a valid integer");
