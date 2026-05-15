@@ -410,6 +410,40 @@ CREATE TABLE IF NOT EXISTS `proteomics_measurement`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS `ip_measurements`
+(
+    `measurement_id`       varchar(255) NOT NULL,
+    `facility`             varchar(255) DEFAULT NULL,
+    `mhcAntibody`          varchar(255) DEFAULT NULL,
+    `mhcTypingMethod`      varchar(255) DEFAULT NULL,
+    `enrichmentMethod`     varchar(255) DEFAULT NULL,
+    `lcmsMethod`           varchar(255) DEFAULT NULL,
+    `lcColumn`             varchar(255) DEFAULT NULL,
+    `dataAcquisition`      varchar(255) DEFAULT NULL,
+    `massRange`            varchar(255) DEFAULT NULL,
+    `retentionTimeRange`   int(11)      DEFAULT NULL,
+    `chargeRange`          varchar(255) DEFAULT NULL,
+    `ionMobilityRange`     varchar(255) DEFAULT NULL,
+    `sampleMass`           double       DEFAULT NULL,
+    `sampleVolume`         double       DEFAULT NULL,
+    `cycleFractionName`    varchar(255) DEFAULT NULL,
+    `prepDate`             date         DEFAULT NULL,
+    `msRunDate`            date         DEFAULT NULL,
+    `comment`              varchar(255) DEFAULT NULL,
+    `instrument`           longtext     DEFAULT NULL CHECK ( json_valid(`instrument`)),
+    `instrumentName`       varchar(255) DEFAULT NULL,
+    `samplePool`           varchar(255) DEFAULT NULL,
+    `measurementCode`      varchar(255) DEFAULT NULL,
+    `IRI`                  varchar(255) DEFAULT NULL,
+    `label`                varchar(255) DEFAULT NULL,
+    `projectId`            varchar(255) DEFAULT NULL,
+    `registrationTime`     datetime(6)  DEFAULT NULL,
+    `measurementName`      varchar(255) DEFAULT NULL,
+    PRIMARY KEY (`measurement_id`)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS `purchase_offer`
 (
     `id`           bigint(20) NOT NULL AUTO_INCREMENT,
@@ -567,6 +601,16 @@ CREATE TABLE IF NOT EXISTS `specific_measurement_metadata_pxp`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS `specific_measurement_metadata_ip`
+(
+    `measurement_id` varchar(255) NOT NULL,
+    `sample_id`      varchar(255) DEFAULT NULL,
+    KEY `FKip_measurement_specific` (`measurement_id`),
+    CONSTRAINT `FKip_measurement_specific` FOREIGN KEY (`measurement_id`) REFERENCES `ip_measurements` (`measurement_id`)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS `user_role`
 (
     `id`     bigint(20) NOT NULL AUTO_INCREMENT,
@@ -642,7 +686,8 @@ CREATE view data_management.project_measurements as
 SELECT `projects`.`projectId`                            AS `projectId`,
 
        COALESCE(`proteomics`.`amountPxpMeasurements`, 0) AS `amountPxpMeasurements`, -- do not allow null values
-       COALESCE(`ngs`.`amountNgsMeasurements`, 0)        AS `amountNgsMeasurements`  -- do not allow null values
+       COALESCE(`ngs`.`amountNgsMeasurements`, 0)        AS `amountNgsMeasurements`,  -- do not allow null values
+       COALESCE(`ip`.`amountIpMeasurements`, 0)          AS `amountIpMeasurements`    -- do not allow null values
 FROM (projects_datamanager projects LEFT JOIN (SELECT ngs.`projectId`              AS `projectId`,
                                                       count(ngs.`measurementCode`) AS `amountNgsMeasurements`
                                                FROM ngs_measurements ngs
@@ -655,7 +700,12 @@ FROM (projects_datamanager projects LEFT JOIN (SELECT ngs.`projectId`           
                                                                                          from `data_management`.`proteomics_measurement` `p`
                                                                                          group by `p`.`projectId`) `pxp`
                           on (`projects`.`projectId` = `pxp`.`pID`))) `proteomics`
-                   on (`projects`.`projectId` = `proteomics`.`projectId`);
+                   on (`projects`.`projectId` = `proteomics`.`projectId`)
+         LEFT JOIN (SELECT `ip`.`projectId`              AS `projectId`,
+                           count(`ip`.`measurementCode`) AS `amountIpMeasurements`
+                    FROM `data_management`.`ip_measurements` `ip`
+                    GROUP BY `ip`.`projectId`) AS `ip`
+                   ON (`projects`.`projectId` = `ip`.`projectId`);
 
 DROP VIEW IF EXISTS data_management.project_userinfo;
 
@@ -685,6 +735,7 @@ SELECT `pd`.`projectId`                     AS `projectId`,
        `pd`.`responsibePersonFullName`      AS `responsibePersonFullName`,
        `m`.`amountNgsMeasurements`          AS `amountNgsMeasurements`,
        `m`.`amountPxpMeasurements`          AS `amountPxpMeasurements`,
+       `m`.`amountIpMeasurements`           AS `amountIpMeasurements`,
        `users`.`usernames`                  AS `usernames`,
        `users`.`userInfos`                  AS `userInfos`
 FROM projects_datamanager pd

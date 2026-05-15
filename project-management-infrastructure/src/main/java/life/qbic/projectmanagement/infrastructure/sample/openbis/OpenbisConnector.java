@@ -66,6 +66,7 @@ import life.qbic.projectmanagement.application.dataset.RemoteRawDataService.RawD
 import life.qbic.projectmanagement.application.sample.SampleIdCodeEntry;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
+import life.qbic.projectmanagement.domain.model.measurement.ImmunopeptidomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.project.Project;
@@ -102,6 +103,7 @@ public class OpenbisConnector implements QbicProjectDataRepo, SampleDataReposito
   private static final String DEFAULT_DELETION_REASON = "Commanded by data manager app";
   private static final String NGS_MEASUREMENT_TYPE_CODE = "Q_NGS_MEASUREMENT";
   private static final String PROTEOMICS_MEASUREMENT_TYPE_CODE = "Q_PROTEOMICS_MEASUREMENT";
+  private static final String IP_MEASUREMENT_TYPE_CODE = "Q_IP_MEASUREMENT";
   public static final Random RANDOM = new Random();
   private final IApplicationServerApi applicationServer;
   private final IDataStoreServerApi datastoreServer;
@@ -434,6 +436,35 @@ public class OpenbisConnector implements QbicProjectDataRepo, SampleDataReposito
                   .toList();
               return prepareSampleCreation(PROTEOMICS_MEASUREMENT_TYPE_CODE, openBisSession,
                   parentCodes,
+                  measurement.measurementId(),
+                  measurement.measurementCode());
+            }
+        ).collect(Collectors.toCollection(ArrayList::new));
+    createOpenbisSamples(openBisSession, objectsToCreate);
+  }
+
+  @Override
+  public void addIPMeasurement(ImmunopeptidomicsMeasurement measurement,
+      List<SampleCode> parentCodes) {
+    createMeasurementInOpenbis(parentCodes, IP_MEASUREMENT_TYPE_CODE, measurement.measurementId(),
+        measurement.measurementCode());
+  }
+
+  @Override
+  public void saveAllIP(
+      Map<ImmunopeptidomicsMeasurement, Collection<SampleIdCodeEntry>> ipMeasurementsMapping) {
+
+    List<SampleCreation> objectsToCreate = ipMeasurementsMapping
+        .entrySet().stream()
+        .map(
+            entry -> {
+              ImmunopeptidomicsMeasurement measurement = entry.getKey();
+              Collection<SampleIdCodeEntry> sampleIdCodes = entry.getValue();
+
+              List<String> parentCodes = sampleIdCodes.stream()
+                  .map(sampleEntry -> sampleEntry.sampleCode().code())
+                  .toList();
+              return prepareSampleCreation(IP_MEASUREMENT_TYPE_CODE, openBisSession, parentCodes,
                   measurement.measurementId(),
                   measurement.measurementCode());
             }

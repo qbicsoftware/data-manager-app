@@ -15,6 +15,7 @@ import life.qbic.projectmanagement.application.measurement.MeasurementService.Me
 import life.qbic.projectmanagement.application.sample.SampleIdCodeEntry;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
+import life.qbic.projectmanagement.domain.model.measurement.ImmunopeptidomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
@@ -35,13 +36,16 @@ public class MeasurementRepositoryImplementation implements MeasurementRepositor
   private static final Logger log = logger(MeasurementRepositoryImplementation.class);
   private final NGSMeasurementJpaRepo ngsMeasurementJpaRepo;
   private final ProteomicsMeasurementJpaRepo pxpMeasurementJpaRepo;
+  private final ImmunopeptidomicsMeasurementJpaRepo ipMeasurementJpaRepo;
   private final MeasurementDataRepo measurementDataRepo;
 
   public MeasurementRepositoryImplementation(NGSMeasurementJpaRepo ngsMeasurementJpaRepo,
       ProteomicsMeasurementJpaRepo pxpMeasurementJpaRepo,
+      ImmunopeptidomicsMeasurementJpaRepo ipMeasurementJpaRepo,
       MeasurementDataRepo measurementDataRepo) {
     this.ngsMeasurementJpaRepo = ngsMeasurementJpaRepo;
     this.pxpMeasurementJpaRepo = pxpMeasurementJpaRepo;
+    this.ipMeasurementJpaRepo = ipMeasurementJpaRepo;
     this.measurementDataRepo = measurementDataRepo;
   }
 
@@ -242,6 +246,94 @@ public class MeasurementRepositoryImplementation implements MeasurementRepositor
     return ngsMeasurementJpaRepo.findNGSMeasurementByMeasurementCode(
         MeasurementCode.parse(measurementCode)).isPresent() ||
         pxpMeasurementJpaRepo.findProteomicsMeasurementByMeasurementCode(
+            MeasurementCode.parse(measurementCode)).isPresent() ||
+        ipMeasurementJpaRepo.findImmunopeptidomicsMeasurementByMeasurementCode(
             MeasurementCode.parse(measurementCode)).isPresent();
+  }
+
+  @Override
+  public Result<ImmunopeptidomicsMeasurement, ResponseCode> saveIP(
+      ImmunopeptidomicsMeasurement measurement, List<SampleCode> sampleCodes) {
+    try {
+      ipMeasurementJpaRepo.save(measurement);
+    } catch (RuntimeException e) {
+      log.error("Saving IP measurement failed", e);
+      return Result.fromError(ResponseCode.FAILED);
+    }
+    try {
+      measurementDataRepo.addIPMeasurement(measurement, sampleCodes);
+    } catch (RuntimeException e) {
+      log.error("Saving IP measurement in data repo failed for measurement "
+          + measurement.measurementCode().value(), e);
+      ipMeasurementJpaRepo.delete(measurement); // Rollback JPA save
+      return Result.fromError(ResponseCode.FAILED);
+    }
+    return Result.fromValue(measurement);
+  }
+
+  @Override
+  public Optional<ImmunopeptidomicsMeasurement> findIPMeasurement(String measurementCode) {
+    try {
+      var code = MeasurementCode.parse(measurementCode);
+      return ipMeasurementJpaRepo.findImmunopeptidomicsMeasurementByMeasurementCode(code);
+    } catch (IllegalArgumentException e) {
+      log.error("Illegal measurement code: " + measurementCode, e);
+      return Optional.empty();
+    }
+  }
+
+  @Override
+  public Optional<ImmunopeptidomicsMeasurement> findIPMeasurementById(String measurementId) {
+    try {
+      var id = MeasurementId.parse(measurementId);
+      return ipMeasurementJpaRepo.findImmunopeptidomicsMeasurementByMeasurementId(id);
+    } catch (IllegalArgumentException e) {
+      log.error("Illegal measurement id: " + measurementId, e);
+      return Optional.empty();
+    }
+  }
+
+  @Override
+  public void updateIP(ImmunopeptidomicsMeasurement measurement) {
+    ipMeasurementJpaRepo.save(measurement);
+  }
+
+  @Override
+  public void deleteAllIP(Set<String> measurementIds) {
+    if (measurementIds.isEmpty()) {
+      return;
+    }
+    List<ImmunopeptidomicsMeasurement> matchingMeasurements = ipMeasurementJpaRepo.findAllById(
+        measurementIds.stream().map(MeasurementId::parse).collect(Collectors.toSet()));
+    // IP measurements don't have data in OpenBIS, so skip the hasDataAttached check
+    try {
+      ipMeasurementJpaRepo.deleteAll(matchingMeasurements);
+    } catch (Exception e) {
+      log.error("IP Measurement deletion failed due to " + e.getMessage());
+      throw new MeasurementDeletionException(DeletionErrorCode.FAILED);
+    }
+  }
+
+  @Override
+  public void updateAllIP(Collection<ImmunopeptidomicsMeasurement> measurements) {
+    ipMeasurementJpaRepo.saveAll(measurements);
+  }
+
+  @Override
+  public void saveAllIP(
+      Map<ImmunopeptidomicsMeasurement, Collection<SampleIdCodeEntry>> ipMeasurementsMapping) {
+    try {
+      ipMeasurementJpaRepo.saveAll(ipMeasurementsMapping.keySet());
+    } catch (RuntimeException e) {
+      log.error("Saving IP measurement failed", e);
+      throw e;
+    }
+    try {
+      measurementDataRepo.saveAllIP(ipMeasurementsMapping);
+    } catch (RuntimeException e) {
+      log.error("Saving IP measurement in data repo failed", e);
+      ipMeasurementJpaRepo.deleteAll(ipMeasurementsMapping.keySet());
+      throw e;
+    }
   }
 }

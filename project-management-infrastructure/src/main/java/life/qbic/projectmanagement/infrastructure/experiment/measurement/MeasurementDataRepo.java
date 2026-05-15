@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import life.qbic.projectmanagement.application.sample.SampleIdCodeEntry;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
+import life.qbic.projectmanagement.domain.model.measurement.ImmunopeptidomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
@@ -22,6 +23,8 @@ public interface MeasurementDataRepo {
 
   void addProteomicsMeasurement(ProteomicsMeasurement proteomicsMeasurement, List<SampleCode> sampleCodes);
 
+  void addIPMeasurement(ImmunopeptidomicsMeasurement ipMeasurement, List<SampleCode> sampleCodes);
+
   void deleteProteomicsMeasurements(List<ProteomicsMeasurement> measurements);
   void deleteNGSMeasurements(List<NGSMeasurement> measurements);
 
@@ -30,6 +33,9 @@ public interface MeasurementDataRepo {
 
   void saveAllNGS(
       Map<NGSMeasurement, Collection<SampleIdCodeEntry>> ngsMeasurementsMapping);
+
+  void saveAllIP(
+      Map<ImmunopeptidomicsMeasurement, Collection<SampleIdCodeEntry>> ipMeasurementsMapping);
 
   boolean hasDataAttached(List<MeasurementCode> measurements);
 }

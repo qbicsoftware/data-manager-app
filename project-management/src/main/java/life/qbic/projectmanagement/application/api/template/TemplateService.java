@@ -17,10 +17,13 @@ import java.util.stream.Collectors;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.UnsupportedMimeTypeException;
 import life.qbic.projectmanagement.application.api.fair.DigitalObject;
+import life.qbic.projectmanagement.application.api.template.TemplateProvider.MeasurementInformationCollectionIP;
 import life.qbic.projectmanagement.application.api.template.TemplateProvider.MeasurementInformationCollectionNGS;
 import life.qbic.projectmanagement.application.api.template.TemplateProvider.MeasurementInformationCollectionPxP;
+import life.qbic.projectmanagement.application.api.template.TemplateProvider.MeasurementInformationIP;
 import life.qbic.projectmanagement.application.api.template.TemplateProvider.MeasurementInformationNGS;
 import life.qbic.projectmanagement.application.api.template.TemplateProvider.MeasurementInformationPxP;
+import life.qbic.projectmanagement.application.api.template.TemplateProvider.MeasurementSpecificIP;
 import life.qbic.projectmanagement.application.api.template.TemplateProvider.MeasurementSpecificNGS;
 import life.qbic.projectmanagement.application.api.template.TemplateProvider.MeasurementSpecificPxP;
 import life.qbic.projectmanagement.application.api.template.TemplateProvider.SampleInformation;
@@ -38,6 +41,8 @@ import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
 import life.qbic.projectmanagement.domain.model.measurement.NGSIndex;
+import life.qbic.projectmanagement.domain.model.measurement.ImmunopeptidomicsMeasurement;
+import life.qbic.projectmanagement.domain.model.measurement.IPMeasurementEntry;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.NGSSpecificMeasurementMetadata;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
@@ -309,6 +314,80 @@ public class TemplateService {
               NGSIndex::indexI7).orElse(""),
           specificMetadata.index().map(NGSIndex::indexI5).orElse(""),
           specificMetadata.comment().orElse("")));
+    }
+    return convertedMap;
+  }
+
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
+  public DigitalObject measurementUpdateTemplateIP(String projectId, List<String> measurementIds,
+      MimeType type) {
+    if (!isSupportedMimeType(type)) {
+      throw new UnsupportedMimeTypeException(UNSUPPORTED_MIME_TYPE + type);
+    }
+    return generateMeasurementUpdateTemplateIP(projectId, measurementIds);
+  }
+
+  private DigitalObject generateMeasurementUpdateTemplateIP(String projectId,
+      List<String> measurementIds) {
+    var measurements = new ArrayList<MeasurementInformationIP>();
+    for (String measurementId : measurementIds) {
+      var measurementQuery = measurementService.findIPMeasurementById(projectId, measurementId);
+      if (measurementQuery.isEmpty()) {
+        throw new MeasurementNotFound("Cannot find measurement with id: " + measurementId);
+      }
+      var sampleIdsForSpecificMetadata = measurementQuery.get().specificMeasurementMetadata().stream()
+          .map(IPMeasurementEntry::measuredSample)
+          .map(SampleId::value)
+          .toList();
+      var measuredSamples = fetchSamplesForIds(projectId, sampleIdsForSpecificMetadata);
+      var convertedEntry = convertFromDomain(measurementQuery.get(), measuredSamples);
+      measurements.add(convertedEntry);
+    }
+    return templateProvider.getTemplate(new MeasurementInformationCollectionIP(measurements));
+  }
+
+  private MeasurementInformationIP convertFromDomain(
+      ImmunopeptidomicsMeasurement measurement, List<Sample> measuredSamples) {
+    var sampleNameById = measuredSamples.stream()
+        .collect(Collectors.toMap(s -> s.sampleId().value(), Function.identity()));
+    return new MeasurementInformationIP(
+        measurement.measurementCode().value(),
+        measurement.organisation().IRI(),
+        measurement.organisation().label(),
+        measurement.instrument().oboId().toString(),
+        measurement.instrumentName().orElse(""),
+        measurement.samplePoolGroup().orElse(""),
+        measurement.facility(),
+        measurement.mhcAntibody(),
+        measurement.mhcTypingMethod().orElse(""),
+        measurement.enrichmentMethod(),
+        measurement.lcmsMethod(),
+        measurement.lcColumn(),
+        measurement.dataAcquisition(),
+        measurement.massRange(),
+        String.valueOf(measurement.retentionTimeRange()),
+        measurement.chargeRange(),
+        measurement.ionMobilityRange().orElse(""),
+        measurement.sampleMass().map(String::valueOf).orElse(""),
+        measurement.sampleVolume().map(String::valueOf).orElse(""),
+        measurement.cycleFractionName().orElse(""),
+        measurement.prepDate().map(java.time.LocalDate::toString).orElse(""),
+        measurement.msRunDate().map(java.time.LocalDate::toString).orElse(""),
+        convertSpecificMetadataIP(measurement.specificMeasurementMetadata().stream().toList(),
+            sampleNameById),
+        measurement.measurementName()
+    );
+  }
+
+  private Map<String, MeasurementSpecificIP> convertSpecificMetadataIP(
+      List<IPMeasurementEntry> metadata,
+      Map<String, Sample> sampleNameById) {
+    var convertedMap = new HashMap<String, MeasurementSpecificIP>();
+    for (var specificMetadata : metadata) {
+      convertedMap.put(specificMetadata.measuredSample().value(), new MeasurementSpecificIP(
+          sampleNameById.get(specificMetadata.measuredSample().value()).sampleCode().code(),
+          sampleNameById.get(specificMetadata.measuredSample().value()).label()));
     }
     return convertedMap;
   }

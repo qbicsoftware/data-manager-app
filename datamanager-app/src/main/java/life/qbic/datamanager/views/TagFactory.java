@@ -18,6 +18,7 @@ public class TagFactory {
     return switch (measurementType) {
       case GENOMICS -> pinkTag("Genomics");
       case PROTEOMICS -> violetTag("Proteomics");
+      case IMMUNOPEPTIDOMICS -> tealTag("Immunopeptidomics");
     };
   }
 
@@ -37,6 +38,10 @@ public class TagFactory {
 
   private static Tag pinkTag(String label) {
     return tagWithColor(label, TagColor.PINK);
+  }
+
+  private static Tag tealTag(String label) {
+    return tagWithColor(label, TagColor.TEAL);
   }
 
 }

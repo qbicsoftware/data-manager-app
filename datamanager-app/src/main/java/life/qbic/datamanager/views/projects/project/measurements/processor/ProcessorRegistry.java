@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationNGS;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationPxP;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationIP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationNGS;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationPxP;
 
@@ -28,6 +29,8 @@ public class ProcessorRegistry {
         MeasurementRegistrationProcessorNGS::new);
     registry.put(MeasurementRegistrationInformationPxP.class,
         MeasurementRegistrationProcessorPxP::new);
+    registry.put(MeasurementRegistrationInformationIP.class,
+        MeasurementRegistrationProcessorIP::new);
     registry.put(MeasurementUpdateInformationNGS.class,
         MeasurementUpdateProcessorNGS::new);
     registry.put(MeasurementUpdateInformationPxP.class,
