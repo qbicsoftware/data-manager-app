@@ -12,7 +12,10 @@ import java.util.Optional;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.api.fair.DigitalObject;
 import life.qbic.projectmanagement.application.api.template.TemplateProvider;
+import life.qbic.projectmanagement.application.api.template.TemplateProvider.MeasurementInformationCollectionIP;
+import life.qbic.projectmanagement.application.api.template.TemplateProvider.MeasurementInformationIP;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.MeasurementTemplateFactory;
+import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.IpEditFactory.MeasurementEntryIP;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.NgsEditFactory.MeasurementEntryNGS;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.ProteomicsEditFactory.MeasurementEntryPxP;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.SampleTemplateFactory;
@@ -55,6 +58,7 @@ public class TemplateProviderOpenXML implements TemplateProvider {
       case SampleInformation req -> getTemplate(req);
       case MeasurementInformationCollectionNGS req -> getTemplate(req);
       case MeasurementInformationCollectionPxP req -> getTemplate(req);
+      case MeasurementInformationCollectionIP req -> getTemplate(req);
     };
   }
 
@@ -158,6 +162,54 @@ public class TemplateProviderOpenXML implements TemplateProvider {
           specificData.indexI5(),
           specificData.comment(),
           req.measurementName()
+      );
+      entries.add(entry);
+    }
+    return entries;
+  }
+
+  private DigitalObject getTemplate(MeasurementInformationCollectionIP req) {
+    var workbook = forRequest(req);
+    return new TemplateContent(workbook, providedMimeType(), "measurement update template");
+  }
+
+  private Workbook forRequest(MeasurementInformationCollectionIP req) {
+    var entries = req.measurements().stream()
+        .flatMap(value -> fromRequest(value).stream())
+        .toList();
+    return measurementTemplateFactory.forUpdateIP(entries).createWorkbook();
+  }
+
+  private static List<MeasurementEntryIP> fromRequest(MeasurementInformationIP req) {
+    var entries = new ArrayList<MeasurementEntryIP>();
+    for (var specificMetadataEntry : req.specificMetadata().entrySet()) {
+      var specificData = specificMetadataEntry.getValue();
+      var entry = new MeasurementEntryIP(
+          req.measurementId(),
+          specificData.sampleId(),
+          specificData.sampleName(),
+          req.measurementName(),
+          req.cycleFractionName(),
+          req.sampleMass(),
+          req.sampleVolume(),
+          req.prepDate(),
+          req.enrichmentMethod(),
+          req.mhcAntibody(),
+          req.mhcTypingMethod(),
+          req.facility(),
+          req.organisationIRI(),
+          req.organisationName(),
+          req.msRunDate(),
+          req.dataAcquisition(),
+          req.instrumentIRI(),
+          req.instrumentName(),
+          req.lcmsMethod(),
+          req.lcColumn(),
+          req.chargeRange(),
+          req.ionMobilityRange(),
+          req.massRange(),
+          req.retentionTimeRange(),
+          ""
       );
       entries.add(entry);
     }

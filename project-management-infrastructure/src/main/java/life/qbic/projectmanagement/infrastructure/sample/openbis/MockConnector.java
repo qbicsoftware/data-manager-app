@@ -13,6 +13,7 @@ import life.qbic.projectmanagement.application.dataset.RemoteRawDataLookup;
 import life.qbic.projectmanagement.application.dataset.RemoteRawDataService;
 import life.qbic.projectmanagement.application.sample.SampleIdCodeEntry;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
+import life.qbic.projectmanagement.domain.model.measurement.ImmunopeptidomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.project.Project;
@@ -98,6 +99,18 @@ public class MockConnector implements QbicProjectDataRepo, SampleDataRepository,
   @Override
   public void saveAllNGS(
       Map<NGSMeasurement, Collection<SampleIdCodeEntry>> ngsMeasurementsMapping) {
+    logWarning();
+  }
+
+  @Override
+  public void addIPMeasurement(ImmunopeptidomicsMeasurement ipMeasurement,
+      List<SampleCode> sampleCodes) {
+    logWarning();
+  }
+
+  @Override
+  public void saveAllIP(
+      Map<ImmunopeptidomicsMeasurement, Collection<SampleIdCodeEntry>> ipMeasurementsMapping) {
     logWarning();
   }
 

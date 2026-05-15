@@ -3,6 +3,7 @@ package life.qbic.projectmanagement.application.measurement;
 import java.util.Objects;
 import java.util.Optional;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
+import life.qbic.projectmanagement.domain.model.measurement.ImmunopeptidomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
@@ -20,11 +21,14 @@ public class MeasurementLookupService {
   private final MeasurementRepository measurementRepository;
   private final NgsMeasurementLookup ngsMeasurementLookup;
   private final PxpMeasurementLookup pxpMeasurementLookup;
+  private final IpMeasurementLookup ipMeasurementLookup;
 
   public MeasurementLookupService(@Autowired MeasurementRepository measurementRepository,
-      NgsMeasurementLookup ngsMeasurementLookup, PxpMeasurementLookup pxpMeasurementLookup) {
+      NgsMeasurementLookup ngsMeasurementLookup, PxpMeasurementLookup pxpMeasurementLookup,
+      IpMeasurementLookup ipMeasurementLookup) {
     this.ngsMeasurementLookup = ngsMeasurementLookup;
     this.pxpMeasurementLookup = pxpMeasurementLookup;
+    this.ipMeasurementLookup = ipMeasurementLookup;
     this.measurementRepository = Objects.requireNonNull(measurementRepository);
   }
 
@@ -44,11 +48,16 @@ public class MeasurementLookupService {
     return measurementRepository.findNGSMeasurement(measurementId);
   }
 
+  public Optional<ImmunopeptidomicsMeasurement> findIPMeasurementById(String measurementId) {
+    return measurementRepository.findIPMeasurementById(measurementId);
+  }
 
   public int countMeasurements(ProjectId projectId, ExperimentId experimentId) {
     var ngsFilter = NgsMeasurementLookup.MeasurementFilter.forExperiment(experimentId.value());
     var pxpFilter = PxpMeasurementLookup.MeasurementFilter.forExperiment(experimentId.value());
+    var ipFilter = IpMeasurementLookup.MeasurementFilter.forExperiment(experimentId.value());
     return ngsMeasurementLookup.countNgsMeasurements(projectId.value(), ngsFilter)
-        + pxpMeasurementLookup.countPxpMeasurements(projectId.value(), pxpFilter);
+        + pxpMeasurementLookup.countPxpMeasurements(projectId.value(), pxpFilter)
+        + ipMeasurementLookup.countIpMeasurements(projectId.value(), ipFilter);
   }
 }

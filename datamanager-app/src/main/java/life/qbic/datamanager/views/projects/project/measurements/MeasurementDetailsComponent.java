@@ -46,6 +46,7 @@ import life.qbic.datamanager.views.general.grid.component.FilterGridConfiguratio
 import life.qbic.datamanager.views.general.grid.component.FilterGridTab;
 import life.qbic.datamanager.views.general.grid.component.FilterGridTabSheet;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
+import life.qbic.projectmanagement.application.measurement.IpMeasurementLookup;
 import life.qbic.projectmanagement.application.measurement.NgsMeasurementLookup;
 import life.qbic.projectmanagement.application.measurement.NgsMeasurementLookup.MeasurementFilter;
 import life.qbic.projectmanagement.application.measurement.NgsMeasurementLookup.NgsSortKey;
@@ -72,11 +73,14 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   private final FilterGridTabSheet tabSheet;
   private final SearchTermFilter ngsSearchTermFilter = SearchTermFilter.empty();
   private final SearchTermFilter pxpSearchTermFilter = SearchTermFilter.empty();
+  private final SearchTermFilter ipSearchTermFilter = SearchTermFilter.empty();
 
   private final transient NgsMeasurementLookup ngsMeasurementLookup;
   private final transient PxpMeasurementLookup pxpMeasurementLookup;
+  private final transient IpMeasurementLookup ipMeasurementLookup;
   private FilterGrid<NgsMeasurementLookup.MeasurementInfo, SearchTermFilter> filterGridNgs;
   private FilterGrid<MeasurementInfo, SearchTermFilter> filterGridPxp;
+  private FilterGrid<IpMeasurementLookup.MeasurementInfo, SearchTermFilter> filterGridIp;
 
   /**
    * A filter containing a search term
@@ -112,10 +116,12 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   public MeasurementDetailsComponent(
       MessageSourceNotificationFactory messageFactory,
       NgsMeasurementLookup ngsMeasurementLookup,
-      PxpMeasurementLookup pxpMeasurementLookup) {
+      PxpMeasurementLookup pxpMeasurementLookup,
+      IpMeasurementLookup ipMeasurementLookup) {
     this.messageFactory = requireNonNull(messageFactory);
     this.ngsMeasurementLookup = requireNonNull(ngsMeasurementLookup);
     this.pxpMeasurementLookup = requireNonNull(pxpMeasurementLookup);
+    this.ipMeasurementLookup = requireNonNull(ipMeasurementLookup);
     addClassNames("measurement-details-component", "height-full", "width-full");
 
     //setup tab sheet
@@ -144,6 +150,14 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   }
 
   /**
+   * Refreshes the immunopeptidomics grid.
+   */
+  public void refreshIp() {
+    Optional.ofNullable(filterGridIp)
+        .ifPresent(FilterGrid::refreshAll);
+  }
+
+  /**
    * Sets the context of the component and refreshes the view to display updated information.
    *
    * @param context the context for this component
@@ -163,6 +177,10 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
       filterGridPxp = filterGridPxp(createPxpGrid(), projectId, experimentId);
       addPxpTab(tabSheet, 1, "Proteomics", filterGridPxp);
     }
+    if (ipMeasurementsExist(projectId, experimentId)) {
+      filterGridIp = filterGridIp(createIpGrid(), projectId, experimentId);
+      addIpTab(tabSheet, 2, "Immunopeptidomics", filterGridIp);
+    }
   }
 
   private boolean pxpMeasurementsExist(String projectId, String experimentId) {
@@ -173,6 +191,11 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   private boolean ngsMeasurementsExist(String projectId, String experimentId) {
     return ngsMeasurementLookup.countNgsMeasurements(projectId,
         MeasurementFilter.forExperiment(experimentId)) > 0;
+  }
+
+  private boolean ipMeasurementsExist(String projectId, String experimentId) {
+    return ipMeasurementLookup.countIpMeasurements(projectId,
+        IpMeasurementLookup.MeasurementFilter.forExperiment(experimentId)) > 0;
   }
 
   private void addPxpTab(FilterGridTabSheet tabSheet, int index, String name,
@@ -356,6 +379,10 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
 
   SearchTermFilter getPxpSearchTermFilter() {
     return pxpSearchTermFilter;
+  }
+
+  SearchTermFilter getIpSearchTermFilter() {
+    return ipSearchTermFilter;
   }
 
 
@@ -547,6 +574,279 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         .setResizable(true);
 
     return pxpGrid;
+  }
+
+  private void addIpTab(FilterGridTabSheet tabSheet, int index, String name,
+      FilterGrid<IpMeasurementLookup.MeasurementInfo, SearchTermFilter> filterGrid) {
+    var ipTab = new FilterGridTab<>(name, filterGrid);
+    tabSheet.addTab(index, ipTab);
+    tabSheet.addPrimaryAction(ipTab,
+        tab -> fireEvent(new IpMeasurementRegistrationRequested(this, true)));
+    tabSheet.addFeatureAction(ipTab,
+        tab -> {
+          List<String> selectedMeasurementIds = tab.filterGrid().selectedElements()
+              .stream()
+              .map(IpMeasurementLookup.MeasurementInfo::measurementId)
+              .distinct()
+              .toList();
+          if (selectedMeasurementIds.isEmpty()) {
+            displayMissingSelectionNote();
+            return;
+          }
+          fireEvent(new IpMeasurementExportRequested(selectedMeasurementIds, this, true));
+        });
+    var deleteIpButton = new Button("Delete");
+    deleteIpButton.addClickListener(clicked -> {
+      Set<IpMeasurementLookup.MeasurementInfo> selectedMeasurements = filterGrid.selectedElements();
+      List<String> selectedMeasurementIds = selectedMeasurements
+          .stream()
+          .map(IpMeasurementLookup.MeasurementInfo::measurementId)
+          .distinct()
+          .toList();
+      if (selectedMeasurementIds.isEmpty()) {
+        displayMissingSelectionNote();
+        return;
+      }
+      fireEvent(new IpMeasurementDeletionRequested(selectedMeasurementIds, this, true));
+    });
+    filterGrid.setSecondaryActionGroup(deleteIpButton);
+  }
+
+  private FilterGrid<IpMeasurementLookup.MeasurementInfo, SearchTermFilter> filterGridIp(
+      Grid<IpMeasurementLookup.MeasurementInfo> ipGrid, String projectId, String experimentId) {
+    FetchCallback<IpMeasurementLookup.MeasurementInfo, SearchTermFilter> fetchCallback = query -> {
+      String searchTerm = query.getFilter().map(SearchTermFilter::searchTerm).orElse("");
+      return ipMeasurementLookup.lookupIpMeasurements(
+          projectId, query.getOffset(), query.getLimit(),
+          VaadinSpringDataHelpers.toSpringDataSort(query),
+          IpMeasurementLookup.MeasurementFilter.forExperiment(experimentId)
+              .withSearch(searchTerm, clientTimeZoneOffset.get(),
+                  MEASUREMENT_REGISTRATION_DATE_TIME_FORMAT));
+    };
+
+    CountCallback<IpMeasurementLookup.MeasurementInfo, SearchTermFilter> countCallback = query -> {
+      String searchTerm = query.getFilter().map(SearchTermFilter::searchTerm).orElse("");
+      return ipMeasurementLookup.countIpMeasurements(projectId,
+          IpMeasurementLookup.MeasurementFilter.forExperiment(experimentId)
+              .withSearch(searchTerm, clientTimeZoneOffset.get(),
+                  MEASUREMENT_REGISTRATION_DATE_TIME_FORMAT));
+    };
+
+    var configuration = FilterGridConfigurations.lazy(fetchCallback, countCallback);
+
+    var filterGrid = FilterGrid.create(
+        IpMeasurementLookup.MeasurementInfo.class,
+        SearchTermFilter.class,
+        configuration.applyConfiguration(ipGrid),
+        this::getIpSearchTermFilter,
+        (searchTerm, filter) -> filter.replaceWith(searchTerm));
+
+    filterGrid.itemDisplayLabel("measurement");
+    filterGrid.searchFieldPlaceholder("Search Measurements");
+    return filterGrid;
+  }
+
+  private Grid<IpMeasurementLookup.MeasurementInfo> createIpGrid() {
+    var ipGrid = new Grid<IpMeasurementLookup.MeasurementInfo>();
+    ipGrid.setMultiSort(true, MultiSortPriority.APPEND, true);
+    ipGrid.addColumn(IpMeasurementLookup.MeasurementInfo::measurementCode)
+        .setHeader("QBiC Measurement ID")
+        .setSortProperty(IpMeasurementLookup.IpSortKey.MEASUREMENT_ID.sortKey())
+        .setComparator(
+            Comparator.comparing(IpMeasurementLookup.MeasurementInfo::measurementCode))
+        .setAutoWidth(true)
+        .setResizable(true)
+        .setFrozen(true);
+    ipGrid.addColumn(IpMeasurementLookup.MeasurementInfo::measurementName)
+        .setHeader("Measurement Name")
+        .setSortProperty(IpMeasurementLookup.IpSortKey.MEASUREMENT_NAME.sortKey())
+        .setComparator(
+            Comparator.comparing(IpMeasurementLookup.MeasurementInfo::measurementCode))
+        .setAutoWidth(true)
+        .setResizable(true);
+    ipGrid.addComponentColumn(measurementInfo -> renderSamplesIp(measurementInfo,
+            info -> "%s (%s)".formatted(info.sampleLabel(), info.sampleCode())))
+        .setHeader("Samples")
+        .setSortable(false)
+        .setAutoWidth(true)
+        .setResizable(true);
+    ipGrid.addComponentColumn(
+            info -> renderOrganisation(info.organisation().label(),
+                info.organisation().iri()))
+        .setHeader("Organisation")
+        .setSortable(false)
+        .setAutoWidth(true)
+        .setResizable(true);
+    ipGrid.addColumn(IpMeasurementLookup.MeasurementInfo::facility)
+        .setHeader("Facility")
+        .setSortProperty(IpMeasurementLookup.IpSortKey.FACILITY.sortKey())
+        .setComparator(Comparator.comparing(IpMeasurementLookup.MeasurementInfo::facility))
+        .setAutoWidth(true)
+        .setResizable(true);
+    ipGrid.addComponentColumn(
+            info -> renderInstrument(info.instrument().label(),
+                info.instrument().oboId(),
+                info.instrument().iri()))
+        .setHeader("Instrument")
+        .setSortable(false)
+        .setAutoWidth(true)
+        .setResizable(true);
+    ipGrid.addColumn(IpMeasurementLookup.MeasurementInfo::mhcAntibody)
+        .setHeader("MHC Antibody")
+        .setSortProperty(IpMeasurementLookup.IpSortKey.MHC_ANTIBODY.sortKey())
+        .setComparator(
+            Comparator.comparing(IpMeasurementLookup.MeasurementInfo::mhcAntibody))
+        .setAutoWidth(true)
+        .setResizable(true);
+    ipGrid.addColumn(IpMeasurementLookup.MeasurementInfo::mhcTypingMethod)
+        .setHeader("MHC Typing Method")
+        .setSortProperty(IpMeasurementLookup.IpSortKey.MHC_TYPING_METHOD.sortKey())
+        .setComparator(
+            Comparator.comparing(IpMeasurementLookup.MeasurementInfo::mhcTypingMethod))
+        .setAutoWidth(true)
+        .setResizable(true);
+    ipGrid.addColumn(IpMeasurementLookup.MeasurementInfo::enrichmentMethod)
+        .setHeader("Enrichment Method")
+        .setSortProperty(IpMeasurementLookup.IpSortKey.ENRICHMENT_METHOD.sortKey())
+        .setComparator(
+            Comparator.comparing(IpMeasurementLookup.MeasurementInfo::enrichmentMethod))
+        .setAutoWidth(true)
+        .setResizable(true);
+    ipGrid.addColumn(IpMeasurementLookup.MeasurementInfo::lcmsMethod)
+        .setHeader("LCMS Method")
+        .setSortProperty(IpMeasurementLookup.IpSortKey.LCMS_METHOD.sortKey())
+        .setComparator(Comparator.comparing(IpMeasurementLookup.MeasurementInfo::lcmsMethod))
+        .setAutoWidth(true)
+        .setResizable(true);
+    ipGrid.addColumn(IpMeasurementLookup.MeasurementInfo::lcColumn)
+        .setHeader("LC Column")
+        .setSortProperty(IpMeasurementLookup.IpSortKey.LC_COLUMN.sortKey())
+        .setComparator(Comparator.comparing(IpMeasurementLookup.MeasurementInfo::lcColumn))
+        .setAutoWidth(true)
+        .setResizable(true);
+    ipGrid.addColumn(IpMeasurementLookup.MeasurementInfo::dataAcquisition)
+        .setHeader("Data Acquisition")
+        .setSortProperty(IpMeasurementLookup.IpSortKey.DATA_ACQUISITION.sortKey())
+        .setComparator(
+            Comparator.comparing(IpMeasurementLookup.MeasurementInfo::dataAcquisition))
+        .setAutoWidth(true)
+        .setResizable(true);
+    ipGrid.addColumn(IpMeasurementLookup.MeasurementInfo::massRange)
+        .setHeader("Mass Range")
+        .setSortProperty(IpMeasurementLookup.IpSortKey.MASS_RANGE.sortKey())
+        .setComparator(Comparator.comparing(IpMeasurementLookup.MeasurementInfo::massRange))
+        .setAutoWidth(true)
+        .setResizable(true);
+    ipGrid.addColumn(IpMeasurementLookup.MeasurementInfo::retentionTimeRange)
+        .setHeader("Retention Time Range")
+        .setSortProperty(IpMeasurementLookup.IpSortKey.RETENTION_TIME_RANGE.sortKey())
+        .setComparator(
+            Comparator.comparing(IpMeasurementLookup.MeasurementInfo::retentionTimeRange))
+        .setAutoWidth(true)
+        .setResizable(true);
+    ipGrid.addColumn(IpMeasurementLookup.MeasurementInfo::chargeRange)
+        .setHeader("Charge Range")
+        .setSortProperty(IpMeasurementLookup.IpSortKey.CHARGE_RANGE.sortKey())
+        .setComparator(Comparator.comparing(IpMeasurementLookup.MeasurementInfo::chargeRange))
+        .setAutoWidth(true)
+        .setResizable(true);
+    ipGrid.addColumn(IpMeasurementLookup.MeasurementInfo::ionMobilityRange)
+        .setHeader("Ion Mobility Range")
+        .setSortProperty(IpMeasurementLookup.IpSortKey.ION_MOBILITY_RANGE.sortKey())
+        .setComparator(
+            Comparator.comparing(IpMeasurementLookup.MeasurementInfo::ionMobilityRange))
+        .setAutoWidth(true)
+        .setResizable(true);
+    ipGrid.addColumn(IpMeasurementLookup.MeasurementInfo::sampleMass)
+        .setHeader("Sample Mass (mg)")
+        .setSortProperty(IpMeasurementLookup.IpSortKey.SAMPLE_MASS.sortKey())
+        .setComparator(
+            Comparator.comparing(IpMeasurementLookup.MeasurementInfo::sampleMass))
+        .setAutoWidth(true)
+        .setResizable(true);
+    ipGrid.addColumn(IpMeasurementLookup.MeasurementInfo::sampleVolume)
+        .setHeader("Sample Volume (µl)")
+        .setSortProperty(IpMeasurementLookup.IpSortKey.SAMPLE_VOLUME.sortKey())
+        .setComparator(
+            Comparator.comparing(IpMeasurementLookup.MeasurementInfo::sampleVolume))
+        .setAutoWidth(true)
+        .setResizable(true);
+    ipGrid.addColumn(IpMeasurementLookup.MeasurementInfo::cycleFractionName)
+        .setHeader("Cycle/Fraction Name")
+        .setSortProperty(IpMeasurementLookup.IpSortKey.CYCLE_FRACTION_NAME.sortKey())
+        .setComparator(
+            Comparator.comparing(IpMeasurementLookup.MeasurementInfo::cycleFractionName))
+        .setAutoWidth(true)
+        .setResizable(true);
+    ipGrid.addColumn(IpMeasurementLookup.MeasurementInfo::prepDate)
+        .setHeader("Prep Date")
+        .setSortProperty(IpMeasurementLookup.IpSortKey.PREP_DATE.sortKey())
+        .setComparator(
+            Comparator.comparing(IpMeasurementLookup.MeasurementInfo::prepDate))
+        .setAutoWidth(true)
+        .setResizable(true);
+    ipGrid.addColumn(IpMeasurementLookup.MeasurementInfo::msRunDate)
+        .setHeader("MS Run Date")
+        .setSortProperty(IpMeasurementLookup.IpSortKey.MS_RUN_DATE.sortKey())
+        .setComparator(
+            Comparator.comparing(IpMeasurementLookup.MeasurementInfo::msRunDate))
+        .setAutoWidth(true)
+        .setResizable(true);
+    ipGrid.addColumn(info -> formatTime(info.registeredAt(),
+            MEASUREMENT_REGISTRATION_DATE_TIME_FORMAT))
+        .setHeader("Registration Date")
+        .setKey(IpMeasurementLookup.IpSortKey.REGISTRATION_DATE.sortKey())
+        .setComparator(Comparator.comparing(IpMeasurementLookup.MeasurementInfo::registeredAt))
+        .setAutoWidth(true)
+        .setResizable(true);
+    ipGrid.addColumn(info -> info.comment() != null ? info.comment() : "")
+        .setHeader("Comment")
+        .setSortable(false)
+        .setAutoWidth(true)
+        .setResizable(true);
+    return ipGrid;
+  }
+
+  private static Component renderSamplesIp(IpMeasurementLookup.MeasurementInfo measurementInfo,
+      Function<IpMeasurementLookup.SampleInfo, String> singleSampleConverter) {
+    var sampleInfos = measurementInfo.sampleInfos();
+    if (sampleInfos.size() == 1) {
+      var sampleInfo = sampleInfos.stream().findFirst().orElseThrow();
+      String singleSampleText = singleSampleConverter.apply(sampleInfo);
+      return new Span(singleSampleText);
+    }
+    var displayLabel = measurementInfo.samplePool();
+    var expandIcon = VaadinIcon.EXPAND_SQUARE.create();
+    expandIcon.addClassNames("expand-icon", "icon-size-m", "color-primary",
+        "padding-horizontal-02");
+    var pooledSamplesSpan = new Span(new Span(displayLabel), expandIcon);
+    pooledSamplesSpan.addClassNames("sample-column-cell", "clickable");
+    pooledSamplesSpan.addClickListener(
+        event -> openPooledSampleDialogIp(measurementInfo));
+    return pooledSamplesSpan;
+  }
+
+  private static void openPooledSampleDialogIp(
+      IpMeasurementLookup.MeasurementInfo measurementInfo) {
+    AppDialog dialog = AppDialog.medium();
+    DialogHeader.with(dialog, "View Pooled Measurement");
+    DialogFooter.withConfirmOnly(dialog, "Close");
+    var sampleInfoGrid = new Grid<IpMeasurementLookup.SampleInfo>();
+    sampleInfoGrid.addColumn(IpMeasurementLookup.SampleInfo::sampleLabel)
+        .setHeader("Sample Name")
+        .setAutoWidth(true);
+    sampleInfoGrid.addColumn(IpMeasurementLookup.SampleInfo::sampleCode)
+        .setHeader("Sample Id")
+        .setAutoWidth(true);
+    sampleInfoGrid.setItems(measurementInfo.sampleInfos());
+    DialogSection measuredSamplesSection = DialogSection.with(
+        "Measurement ID: " + measurementInfo.measurementCode(),
+        "Sample Pool Group: " + measurementInfo.samplePool(),
+        sampleInfoGrid);
+
+    DialogBody.withoutUserInput(dialog, measuredSamplesSection);
+    dialog.registerConfirmAction(dialog::close);
+    dialog.open();
   }
 
   private static Span renderInstrument(String label, String oboId, String iri) {
@@ -913,5 +1213,61 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     return addListener(PxpMeasurementDeletionRequested.class, listener);
   }
 
+  public static class IpMeasurementRegistrationRequested extends
+      ComponentEvent<MeasurementDetailsComponent> {
+
+    public IpMeasurementRegistrationRequested(MeasurementDetailsComponent source,
+        boolean fromClient) {
+      super(source, fromClient);
+    }
+  }
+
+  public Registration addIpRegisterListener(
+      ComponentEventListener<IpMeasurementRegistrationRequested> listener) {
+    return addListener(IpMeasurementRegistrationRequested.class, listener);
+  }
+
+  public static class IpMeasurementDeletionRequested extends
+      ComponentEvent<MeasurementDetailsComponent> {
+
+    private final List<String> measurementIds;
+
+    public IpMeasurementDeletionRequested(List<String> measurementIds,
+        MeasurementDetailsComponent source,
+        boolean fromClient) {
+      super(source, fromClient);
+      this.measurementIds = measurementIds.stream().toList();
+    }
+
+    public List<String> measurementIds() {
+      return measurementIds;
+    }
+  }
+
+  public Registration addIpDeletionListener(
+      ComponentEventListener<IpMeasurementDeletionRequested> listener) {
+    return addListener(IpMeasurementDeletionRequested.class, listener);
+  }
+
+  public static class IpMeasurementExportRequested extends
+      ComponentEvent<MeasurementDetailsComponent> {
+
+    private final List<String> measurementIds;
+
+    public IpMeasurementExportRequested(List<String> measurementIds,
+        MeasurementDetailsComponent source, boolean fromClient) {
+      super(source, fromClient);
+      this.measurementIds = measurementIds.stream().toList();
+    }
+
+    public List<String> measurementIds() {
+      return measurementIds;
+    }
+  }
+
+  public Registration addIpExportListener(
+      ComponentEventListener<IpMeasurementExportRequested> listener) {
+    return addListener(IpMeasurementExportRequested.class, listener);
+  }
 
 }

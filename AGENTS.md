@@ -684,6 +684,7 @@ An agent should pause and request human review/approval before:
 | `service_api.md` | Service API design patterns (Mono/Flux, request/response shapes) |
 | `datamanager-app/front-end-components.md` | UI component composition patterns |
 | `docs/fair/research-objects.md` | FAIR/RO-Crate integration notes |
+| `docs/stakeholder-artifacts/measurement-metadata/` | Authoritative stakeholder Excel specification for immunopeptidomics measurement metadata (field definitions, positions, categories) — read before implementing template generation, parsing, or validation |
 | `docs/processes/` | Sequence diagrams (sample registration process) |
 | `sql/complete-schema.sql` | Full database DDL |
 | `sql/insert-default-values.sql` | Seed data (roles, permissions, ACL classes) |

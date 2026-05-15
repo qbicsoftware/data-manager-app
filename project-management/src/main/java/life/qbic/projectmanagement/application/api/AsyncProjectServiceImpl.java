@@ -263,6 +263,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
         return registerMeasurementNGS(request.projectId(), request.requestId(), m);
       case MeasurementRegistrationInformationPxP m:
         return registerMeasurementPxP(request.projectId(), request.requestId(), m);
+      case MeasurementRegistrationInformationIP m:
+        return registerMeasurementIP(request.projectId(), request.requestId(), m);
     }
   }
 
@@ -279,6 +281,19 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
         .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
         .doOnError(e -> log.error(errorMessage, e))
         .retryWhen(defaultRetryStrategy())
+        .onErrorMap(e1 -> mapToAPIException(e1, errorMessage));
+  }
+
+  private Mono<MeasurementRegistrationResponse> registerMeasurementIP(String projectId,
+      String requestId, MeasurementRegistrationInformationIP measurement) {
+    var errorMessage = "Error registering immunopeptidomics measurement";
+    return applySecurityContext(Mono.fromCallable(() -> {
+      measurementService.registerMeasurementIP(ProjectId.parse(projectId), measurement);
+      return new MeasurementRegistrationResponse(requestId, measurement);
+    }))
+        .subscribeOn(scheduler)
+        .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
+        .doOnError(e -> log.error(errorMessage, e)).retryWhen(defaultRetryStrategy())
         .onErrorMap(e1 -> mapToAPIException(e1, errorMessage));
   }
 
@@ -791,6 +806,19 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   @Override
+  public Mono<DigitalObject> measurementUpdateIP(String projectId, List<String> measurementIds,
+      MimeType mimeType) {
+    SecurityContext securityContext = SecurityContextHolder.getContext();
+    return applySecurityContext(Mono.fromCallable(
+        () -> templateService.measurementUpdateTemplateIP(projectId, measurementIds,
+            mimeType)))
+        .doOnError(e -> log.error("Error updating measurement " + measurementIds, e))
+        .onErrorMap(e -> mapToAPIException(e, "Error updating measurement " + measurementIds))
+        .subscribeOn(scheduler)
+        .contextWrite(reactiveSecurity(securityContext));
+  }
+
+  @Override
   public Flux<RawDatasetInformationPxP> getRawDatasetInformationPxP(String projectId,
       String experimentId, int offset,
       int limit, SortRawData sorting, String filter) {
@@ -920,6 +948,9 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
       // Measurement Update - Proteomics
       case MeasurementUpdateInformationPxP req -> validateMeasurementMetadataPxPUpdate(req,
           request.requestId(), request.experimentId(), request.projectId());
+      // Measurement Registration - Immunopeptidomics
+      case MeasurementRegistrationInformationIP req -> validateMeasurementMetadataIP(req,
+          request.requestId(), request.experimentId(), request.projectId());
     };
   }
 
@@ -973,6 +1004,18 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     var securityContext = SecurityContextHolder.getContext();
     return applySecurityContext(Mono.fromCallable(
             () -> measurementValidationService.validateNGS(registration, experimentId,
+                ProjectId.parse(projectId)))
+        .map(validationResult -> new ValidationResponse(requestId, validationResult)))
+        .contextWrite(reactiveSecurity(securityContext))
+        .subscribeOn(scheduler);
+  }
+
+  private Mono<ValidationResponse> validateMeasurementMetadataIP(
+      MeasurementRegistrationInformationIP registration, String requestId, String experimentId,
+      String projectId) {
+    var securityContext = SecurityContextHolder.getContext();
+    return applySecurityContext(Mono.fromCallable(
+            () -> measurementValidationService.validateIP(registration, experimentId,
                 ProjectId.parse(projectId)))
         .map(validationResult -> new ValidationResponse(requestId, validationResult)))
         .contextWrite(reactiveSecurity(securityContext))
