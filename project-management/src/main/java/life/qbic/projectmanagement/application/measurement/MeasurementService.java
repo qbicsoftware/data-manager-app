@@ -117,6 +117,10 @@ public class MeasurementService {
     return measurementLookupService.findProteomicsMeasurement(measurementCode);
   }
 
+  public Optional<ImmunopeptidomicsMeasurement> findIPMeasurement(String measurementCode) {
+    return measurementLookupService.findIPMeasurement(measurementCode);
+  }
+
   @PreAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
   public Optional<ImmunopeptidomicsMeasurement> findIPMeasurementById(String projectId,
