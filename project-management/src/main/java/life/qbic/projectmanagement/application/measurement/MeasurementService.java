@@ -393,6 +393,9 @@ public class MeasurementService {
     }
 
     // Extract specific metadata fields from the first entry for method-level metadata
+    if (measurement.specificMetadata() == null || measurement.specificMetadata().isEmpty()) {
+      throw new MeasurementUpdateException(ErrorCode.FAILED);
+    }
     var firstSpecific = measurement.specificMetadata().values().iterator().next();
     var method = new IPMethodMetadata(
         msDeviceQuery.get(),
