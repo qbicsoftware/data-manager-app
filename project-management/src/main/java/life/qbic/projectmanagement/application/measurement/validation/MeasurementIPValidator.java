@@ -106,7 +106,7 @@ public class MeasurementIPValidator {
           .combine(validationPolicy.validationExperimentRelation(sampleId, experimentId, projectId));
     }
     return result
-        .combine(validationPolicy.validateMeasurementCode(update.measurementId()))
+        .combine(validationPolicy.validateMeasurementCode(projectId, update.measurementId()))
         .combine(validationPolicy.validateMandatoryMetadataDataForUpdate(update))
         .combine(validationPolicy.validateOrganisation(update.organisationId()))
         .combine(validationPolicy.validateInstrument(update.instrumentCURIE()));
@@ -116,9 +116,9 @@ public class MeasurementIPValidator {
 
     private static final String ROR_ID_REGEX = "^(https?://)?ror\\.org/[0-9a-zA-Z]{9}$";
 
-    ValidationResult validateMeasurementCode(String measurementCode) {
+    ValidationResult validateMeasurementCode(ProjectId projectId, String measurementCode) {
       var queryMeasurement = measurementService.findIPMeasurementById(
-          null, measurementCode);
+          projectId.value(), measurementCode);
       return queryMeasurement.map(measurement -> ValidationResult.successful()).orElse(
           ValidationResult.withFailures(
               List.of(
