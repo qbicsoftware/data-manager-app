@@ -16,6 +16,7 @@ import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ValidationResult;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationIP;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationIP;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
@@ -85,6 +86,217 @@ public class MeasurementIPValidator {
     result = result.combine(validateInstrument(registration));
     result = result.combine(validateMandatoryFields(registration));
     return result;
+  }
+
+  /**
+   * Validates an immunopeptidomics measurement update request.
+   *
+   * @param update     the measurement update information
+   * @param experimentId the experiment ID
+   * @param projectId   the project ID
+   * @return the validation result
+   * @since 1.11.0
+   */
+  public ValidationResult validateUpdate(MeasurementUpdateInformationIP update,
+      String experimentId, ProjectId projectId) {
+    var validationPolicy = new ValidationPolicy();
+    var result = ValidationResult.successful();
+    for (String sampleId : update.measuredSamples()) {
+      result = result.combine(validationPolicy.validationProjectRelation(sampleId, projectId))
+          .combine(validationPolicy.validationExperimentRelation(sampleId, experimentId, projectId));
+    }
+    return result
+        .combine(validationPolicy.validateMeasurementCode(update.measurementId()))
+        .combine(validationPolicy.validateMandatoryMetadataDataForUpdate(update))
+        .combine(validationPolicy.validateOrganisation(update.organisationId()))
+        .combine(validationPolicy.validateInstrument(update.instrumentCURIE()));
+  }
+
+  private class ValidationPolicy {
+
+    private static final String ROR_ID_REGEX = "^(https?://)?ror\\.org/[0-9a-zA-Z]{9}$";
+
+    ValidationResult validateMeasurementCode(String measurementCode) {
+      var queryMeasurement = measurementService.findIPMeasurementById(
+          null, measurementCode);
+      return queryMeasurement.map(measurement -> ValidationResult.successful()).orElse(
+          ValidationResult.withFailures(
+              List.of(
+                  "Measurement ID: Unknown measurement for id '%s'".formatted(measurementCode))));
+    }
+
+    ValidationResult validationProjectRelation(String sampleId, ProjectId projectId) {
+      if (sampleId.isBlank()) {
+        return ValidationResult.withFailures(
+            List.of("Missing Sample id: No sample identifier was provided."));
+      }
+      SampleCode sampleCode = SampleCode.create(sampleId);
+      var projectQuery = projectInformationService.find(projectId);
+      if (projectQuery.isEmpty()) {
+        log.error("No project information found for projectId: " + projectId);
+        throw new RuntimeException("This should not happen, please try again.");
+      }
+      var experimentIds = projectQuery.get().experiments();
+      var sampleQuery = sampleInformationService.findSampleId(sampleCode).flatMap(
+          sampleIdCodeEntry -> sampleInformationService.findSample(sampleIdCodeEntry.sampleId()));
+      if (sampleQuery.isEmpty()) {
+        return ValidationResult.withFailures(
+            List.of("No sample information found for sample id: %s".formatted(sampleCode.code())));
+      }
+      if (experimentIds.contains(sampleQuery.get().experimentId())) {
+        return ValidationResult.successful();
+      }
+      return ValidationResult.withFailures(
+          List.of("Sample id does not belong to this project: %s".formatted(sampleCode.code())));
+    }
+
+    ValidationResult validationExperimentRelation(String sampleId, String experimentId,
+        ProjectId projectId) {
+      if (sampleId.isBlank()) {
+        return ValidationResult.withFailures(
+            List.of("Missing Sample id: No sample identifier was provided."));
+      }
+      SampleCode sampleCode = SampleCode.create(sampleId);
+      boolean sampleContainedInExperiment = sampleInformationService.retrieveSamplesForExperiment(
+          projectId,
+          experimentId).stream().anyMatch(it -> it.sampleCode().equals(sampleCode));
+      if (sampleContainedInExperiment) {
+        return ValidationResult.successful();
+      }
+      return ValidationResult.withFailures(
+          List.of("Sample id does not belong to this experiment: %s".formatted(sampleCode.code())));
+    }
+
+    ValidationResult validateOrganisation(String organisationId) {
+      if (Pattern.compile(ROR_ID_REGEX).matcher(organisationId).find()) {
+        return ValidationResult.successful();
+      }
+      return ValidationResult.withFailures(
+          List.of("The organisation ID does not seem to be a ROR ID: \"%s\"".formatted(organisationId)));
+    }
+
+    ValidationResult validateInstrument(String instrument) {
+      var result = terminologyService.findByCurie(instrument);
+      if (result.isPresent()) {
+        return ValidationResult.successful();
+      }
+      return ValidationResult.withFailures(
+          List.of("Unknown instrument: " + instrument));
+    }
+
+    ValidationResult validateMandatoryMetadataDataForUpdate(MeasurementUpdateInformationIP metadata) {
+      var validation = ValidationResult.successful();
+      if (metadata.measurementId() == null || metadata.measurementId().isEmpty()) {
+        validation = validation.combine(ValidationResult.withFailures(
+            List.of("Measurement id: missing measurement id for update")));
+      } else {
+        validation = validation.combine(ValidationResult.successful());
+      }
+      if (metadata.organisationId() == null || metadata.organisationId().isBlank()) {
+        validation = validation.combine(
+            ValidationResult.withFailures(List.of("Organisation URL missing mandatory metadata")));
+      } else {
+        validation = validation.combine(ValidationResult.successful());
+      }
+      if (metadata.instrumentCURIE() == null || metadata.instrumentCURIE().isBlank()) {
+        validation = validation.combine(
+            ValidationResult.withFailures(List.of("Instrument missing mandatory metadata")));
+      } else {
+        validation = validation.combine(ValidationResult.successful());
+      }
+      if (metadata.facility() == null || metadata.facility().isBlank()) {
+        validation = validation.combine(
+            ValidationResult.withFailures(List.of("Facility missing mandatory metadata")));
+      } else {
+        validation = validation.combine(ValidationResult.successful());
+      }
+      for (var entry : metadata.specificMetadata().entrySet()) {
+        var specificMetadata = entry.getValue();
+        if (specificMetadata.sampleMass() == null || specificMetadata.sampleMass().isBlank()) {
+          validation = validation.combine(
+              ValidationResult.withFailures(List.of("Sample Mass missing mandatory metadata")));
+        } else {
+          try {
+            var value = Double.parseDouble(specificMetadata.sampleMass());
+            if (value < 0) {
+              validation = validation.combine(
+                  ValidationResult.withFailures(List.of("Sample Mass must not be negative")));
+            }
+          } catch (NumberFormatException e) {
+            validation = validation.combine(
+                ValidationResult.withFailures(List.of("Sample Mass must be a valid number")));
+          }
+        }
+        if (specificMetadata.sampleVolume() == null || specificMetadata.sampleVolume().isBlank()) {
+          validation = validation.combine(
+              ValidationResult.withFailures(List.of("Sample Volume missing mandatory metadata")));
+        } else {
+          try {
+            var value = Double.parseDouble(specificMetadata.sampleVolume());
+            if (value < 0) {
+              validation = validation.combine(
+                  ValidationResult.withFailures(List.of("Sample Volume must not be negative")));
+            }
+          } catch (NumberFormatException e) {
+            validation = validation.combine(
+                ValidationResult.withFailures(List.of("Sample Volume must be a valid number")));
+          }
+        }
+        if (specificMetadata.mhcAntibody() == null || specificMetadata.mhcAntibody().isBlank()) {
+          validation = validation.combine(
+              ValidationResult.withFailures(List.of("MHC Antibody missing mandatory metadata")));
+        }
+        if (specificMetadata.enrichmentMethod() == null || specificMetadata.enrichmentMethod().isBlank()) {
+          validation = validation.combine(
+              ValidationResult.withFailures(List.of("Enrichment method missing mandatory metadata")));
+        }
+        if (specificMetadata.lcmsMethod() == null || specificMetadata.lcmsMethod().isBlank()) {
+          validation = validation.combine(
+              ValidationResult.withFailures(List.of("LCMS Method missing mandatory metadata")));
+        }
+        if (specificMetadata.lcColumn() == null || specificMetadata.lcColumn().isBlank()) {
+          validation = validation.combine(
+              ValidationResult.withFailures(List.of("LC Column missing mandatory metadata")));
+        }
+        if (specificMetadata.dataAcquisition() == null || specificMetadata.dataAcquisition().isBlank()) {
+          validation = validation.combine(
+              ValidationResult.withFailures(List.of("Data Acquisition missing mandatory metadata")));
+        }
+        if (specificMetadata.massRange() == null || specificMetadata.massRange().isBlank()) {
+          validation = validation.combine(
+              ValidationResult.withFailures(List.of("Mass range missing mandatory metadata")));
+        } else if (!Pattern.compile(RANGE_REGEX).matcher(specificMetadata.massRange()).matches()) {
+          validation = validation.combine(
+              ValidationResult.withFailures(List.of("Mass range must be a valid range (e.g. 1-2)")));
+        }
+        if (specificMetadata.retentionTimeRange() == null || specificMetadata.retentionTimeRange().isBlank()) {
+          validation = validation.combine(
+              ValidationResult.withFailures(List.of("Retention time range missing mandatory metadata")));
+        } else {
+          try {
+            double d = Double.parseDouble(specificMetadata.retentionTimeRange());
+            if (d < 0) {
+              validation = validation.combine(
+                  ValidationResult.withFailures(List.of("Retention time range must not be negative")));
+            } else if (d != (int) d) {
+              validation = validation.combine(
+                  ValidationResult.withFailures(List.of("Retention time range must be a valid integer")));
+            }
+          } catch (NumberFormatException e) {
+            validation = validation.combine(
+                ValidationResult.withFailures(List.of("Retention time range must be a valid integer")));
+          }
+        }
+        if (specificMetadata.chargeRange() == null || specificMetadata.chargeRange().isBlank()) {
+          validation = validation.combine(
+              ValidationResult.withFailures(List.of("Charge range missing mandatory metadata")));
+        } else if (!Pattern.compile(RANGE_REGEX).matcher(specificMetadata.chargeRange()).matches()) {
+          validation = validation.combine(
+              ValidationResult.withFailures(List.of("Charge range must be a valid range (e.g. 1-2)")));
+        }
+      }
+      return validation;
+    }
   }
 
   private static final String RANGE_REGEX = "^\\d+(\\.\\d+)?\\s*\\-\\s*\\d+(\\.\\d+)?$";

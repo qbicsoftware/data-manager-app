@@ -595,21 +595,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
           }
           fireEvent(new IpMeasurementExportRequested(selectedMeasurementIds, this, true));
         });
-    var deleteIpButton = new Button("Delete");
-    deleteIpButton.addClickListener(clicked -> {
-      Set<IpMeasurementLookup.MeasurementInfo> selectedMeasurements = filterGrid.selectedElements();
-      List<String> selectedMeasurementIds = selectedMeasurements
-          .stream()
-          .map(IpMeasurementLookup.MeasurementInfo::measurementId)
-          .distinct()
-          .toList();
-      if (selectedMeasurementIds.isEmpty()) {
-        displayMissingSelectionNote();
-        return;
-      }
-      fireEvent(new IpMeasurementDeletionRequested(selectedMeasurementIds, this, true));
-    });
-    filterGrid.setSecondaryActionGroup(deleteIpButton);
+    // Edit and Delete buttons are already set up in filterGridIp()
   }
 
   private FilterGrid<IpMeasurementLookup.MeasurementInfo, SearchTermFilter> filterGridIp(
@@ -643,6 +629,36 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
 
     filterGrid.itemDisplayLabel("measurement");
     filterGrid.searchFieldPlaceholder("Search Measurements");
+    var editIpButton = new Button("Edit");
+    editIpButton.addClickListener(clicked -> {
+      Set<IpMeasurementLookup.MeasurementInfo> selectedMeasurements = filterGrid.selectedElements();
+      List<String> selectedMeasurementIds = selectedMeasurements
+          .stream()
+          .map(IpMeasurementLookup.MeasurementInfo::measurementId)
+          .distinct()
+          .toList();
+      if (selectedMeasurementIds.isEmpty()) {
+        displayMissingSelectionNote();
+        return;
+      }
+      fireEvent(new IpMeasurementEditRequested(selectedMeasurementIds, this, true));
+    });
+
+    var deleteIpButton = new Button("Delete");
+    deleteIpButton.addClickListener(clicked -> {
+      Set<IpMeasurementLookup.MeasurementInfo> selectedMeasurements = filterGrid.selectedElements();
+      List<String> selectedMeasurementIds = selectedMeasurements
+          .stream()
+          .map(IpMeasurementLookup.MeasurementInfo::measurementId)
+          .distinct()
+          .toList();
+      if (selectedMeasurementIds.isEmpty()) {
+        displayMissingSelectionNote();
+        return;
+      }
+      fireEvent(new IpMeasurementDeletionRequested(selectedMeasurementIds, this, true));
+    });
+    filterGrid.setSecondaryActionGroup(deleteIpButton, editIpButton);
     return filterGrid;
   }
 
@@ -1225,6 +1241,35 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   public Registration addIpRegisterListener(
       ComponentEventListener<IpMeasurementRegistrationRequested> listener) {
     return addListener(IpMeasurementRegistrationRequested.class, listener);
+  }
+
+  public static class IpMeasurementEditRequested extends
+      ComponentEvent<MeasurementDetailsComponent> {
+
+    private final List<String> measurementIds;
+
+    /**
+     * Creates a new event using the given source and indicator whether the event originated from
+     * the client side or the server side.
+     *
+     * @param source     the source component
+     * @param fromClient <code>true</code> if the event originated from the client
+     *                   side, <code>false</code> otherwise
+     */
+    public IpMeasurementEditRequested(List<String> measurementIds,
+        MeasurementDetailsComponent source, boolean fromClient) {
+      super(source, fromClient);
+      this.measurementIds = measurementIds.stream().toList();
+    }
+
+    public List<String> measurementIds() {
+      return measurementIds;
+    }
+  }
+
+  public Registration addIpEditListener(
+      ComponentEventListener<IpMeasurementEditRequested> listener) {
+    return addListener(IpMeasurementEditRequested.class, listener);
   }
 
   public static class IpMeasurementDeletionRequested extends

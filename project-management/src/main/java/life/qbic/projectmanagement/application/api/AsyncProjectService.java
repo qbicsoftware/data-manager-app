@@ -1351,7 +1351,7 @@ public interface AsyncProjectService {
   }
 
   sealed interface MeasurementUpdateRequestBody permits MeasurementUpdateInformationNGS,
-      MeasurementUpdateInformationPxP {
+      MeasurementUpdateInformationPxP, MeasurementUpdateInformationIP {
 
   }
 
@@ -1785,7 +1785,7 @@ public interface AsyncProjectService {
   sealed interface ValidationRequestBody permits MeasurementRegistrationInformationNGS,
       MeasurementRegistrationInformationPxP, MeasurementRegistrationInformationIP,
       MeasurementUpdateInformationNGS,
-      MeasurementUpdateInformationPxP, SampleRegistrationInformation, SampleUpdateInformation {
+      MeasurementUpdateInformationPxP, MeasurementUpdateInformationIP, SampleRegistrationInformation, SampleUpdateInformation {
 
   }
 
@@ -2411,6 +2411,45 @@ public interface AsyncProjectService {
       String comment
   ) {
 
+  }
+
+  /**
+   * Information container to update an immunopeptidomics measurement.
+   *
+   * @param measurementId   the identifier of the measurement
+   * @param organisationId  the ROR ID of the organization that performed the measurement
+   * @param instrumentCURIE the CURIE of the mass spectrometry device used for the measurement
+   * @param facility        the facility within the organization that actually performed the
+   *                        measurement
+   * @param samplePoolGroup the name of the sample pool
+   * @param specificMetadata specific metadata that differentiates pooled samples as a
+   *                         {@link Map}, with the sample ids as keys and the sample-specific
+   *                         measurement annotations as values. Will have only one entry if no
+   *                         pooling was done. {@link MeasurementSpecificIP}
+   * @param measurementName a given name for the measurement. For example a local ID or label
+   *                        that helps users to connect the created dataset with the registered
+   *                        metadata
+   * @since 1.11.0
+   */
+  record MeasurementUpdateInformationIP(
+      String measurementId,
+      String organisationId,
+      String instrumentCURIE,
+      String facility,
+      String samplePoolGroup,
+      Map<String, MeasurementSpecificIP> specificMetadata,
+      String measurementName
+  ) implements ValidationRequestBody, MeasurementUpdateRequestBody {
+
+    /**
+     * Returns the {@link List} of sample identifiers this measurement refers to.
+     *
+     * @return the {@link List} of sample identifiers
+     * @since 1.11.0
+     */
+    public List<String> measuredSamples() {
+      return List.copyOf(specificMetadata.keySet());
+    }
   }
 
   /**

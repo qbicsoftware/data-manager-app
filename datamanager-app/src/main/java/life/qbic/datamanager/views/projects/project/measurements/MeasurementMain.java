@@ -55,6 +55,7 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.Measureme
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationRequestBody;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationNGS;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationPxP;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationIP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateRequest;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateRequestBody;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequestBody;
@@ -196,6 +197,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
 
     measurementDetailsComponent.addIpRegisterListener(
         registrationRequest -> openRegistrationDialog());
+    measurementDetailsComponent.addIpEditListener(
+        editRequest -> ipEditDialog(editRequest.measurementIds()).open());
     measurementDetailsComponent.addIpExportListener(
         exportRequest -> downloadIPMetadata(exportRequest.measurementIds()));
     measurementDetailsComponent.addIpDeletionListener(
@@ -262,6 +265,35 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     var upload = new MeasurementUpload(asyncService, context,
         ConverterRegistry.converterFor(
             MeasurementUpdateInformationPxP.class), messageFactory);
+    var uploadComponent = new MeasurementUpdateComponent(templateDownload, upload);
+    DialogBody.with(dialog, uploadComponent, uploadComponent);
+    dialog.registerCancelAction(dialog::close);
+    dialog.registerConfirmAction(() -> {
+      if (upload.validate().hasPassed()) {
+        var validationRequests = upload.getValidationRequestContent();
+        submitUpdateRequest(context.projectId().orElseThrow().value(),
+            createUpdateRequestPackage(validationRequests));
+        dialog.close();
+      }
+    });
+    return dialog;
+  }
+
+  private AppDialog ipEditDialog(List<String> selectedMeasurementIds) {
+    var dialog = AppDialog.medium();
+    DialogHeader.with(dialog, "Edit Measurements");
+    DialogFooter.with(dialog, "Cancel", "Update");
+    var templateDownload = new MeasurementTemplateComponent(
+        UPDATE_MEASUREMENT_DESCRIPTION,
+        "Download Metadata",
+        asyncService.measurementUpdateIP(context.projectId().orElseThrow().value(),
+            selectedMeasurementIds, OPEN_XML),
+        messageFactory,
+        projectContext::projectId);
+
+    var upload = new MeasurementUpload(asyncService, context,
+        ConverterRegistry.converterFor(
+            MeasurementUpdateInformationIP.class), messageFactory);
     var uploadComponent = new MeasurementUpdateComponent(templateDownload, upload);
     DialogBody.with(dialog, uploadComponent, uploadComponent);
     dialog.registerCancelAction(dialog::close);
@@ -547,6 +579,25 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private void submitUpdateRequest(String projectId, UpdateRequestPackage updateRequestPackage) {
     submitUpdateRequestNGS(projectId, updateRequestPackage.updateInformationNGS);
     submitUpdateRequestPxP(projectId, updateRequestPackage.updateInformationPxP);
+    submitUpdateRequestIP(projectId, updateRequestPackage.updateInformationIP);
+  }
+
+  private void submitUpdateRequestIP(String projectId,
+      List<MeasurementUpdateInformationIP> updateInformationIP) {
+    if (updateInformationIP.isEmpty()) {
+      return;
+    }
+    var preparedRequests = mergeByPoolUpdateIP(updateInformationIP);
+    submitPreparedUpdateRequest(projectId, preparedRequests);
+  }
+
+  private List<MeasurementUpdateInformationIP> mergeByPoolUpdateIP(
+      List<MeasurementUpdateInformationIP> updateInformationIP) {
+    var processor = ProcessorRegistry.processorFor(MeasurementUpdateInformationIP.class);
+    if (processor == null) {
+      throw new IllegalStateException("No processor for MeasurementUpdateInformationIP");
+    }
+    return processor.process(updateInformationIP);
   }
 
   private void submitUpdateRequestPxP(String projectId,
@@ -627,16 +678,18 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
       List<? extends ValidationRequestBody> validationRequests) {
     var requestsNGS = new ArrayList<MeasurementUpdateInformationNGS>();
     var requestsPxP = new ArrayList<MeasurementUpdateInformationPxP>();
+    var requestsIP = new ArrayList<MeasurementUpdateInformationIP>();
 
     for (var entry : validationRequests) {
       switch (entry) {
         case MeasurementUpdateInformationNGS info -> requestsNGS.add(info);
         case MeasurementUpdateInformationPxP info -> requestsPxP.add(info);
+        case MeasurementUpdateInformationIP info -> requestsIP.add(info);
         default -> throw new IllegalStateException(
             "Unexpected request body of type: " + entry.getClass().getName());
       }
     }
-    return new UpdateRequestPackage(requestsNGS, requestsPxP);
+    return new UpdateRequestPackage(requestsNGS, requestsPxP, requestsIP);
   }
 
   private RegistrationRequestPackage createRegistrationRequestPackage(
@@ -903,12 +956,13 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   }
 
   record UpdateRequestPackage(List<MeasurementUpdateInformationNGS> updateInformationNGS,
-                              List<MeasurementUpdateInformationPxP> updateInformationPxP) {
+                              List<MeasurementUpdateInformationPxP> updateInformationPxP,
+                              List<MeasurementUpdateInformationIP> updateInformationIP) {
 
     public UpdateRequestPackage {
       updateInformationNGS = List.copyOf(Objects.requireNonNull(updateInformationNGS));
       updateInformationPxP = List.copyOf(Objects.requireNonNull(updateInformationPxP));
-
+      updateInformationIP = List.copyOf(Objects.requireNonNull(updateInformationIP));
     }
 
   }
