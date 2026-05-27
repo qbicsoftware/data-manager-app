@@ -5,13 +5,11 @@ import static java.util.Objects.requireNonNull;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.data.provider.CallbackDataProvider.FetchCallback;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
-import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.general.OntologyComponent;
 import life.qbic.datamanager.views.projects.project.experiments.OntologyFilterConnector;
 import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
-import life.qbic.projectmanagement.domain.model.Ontology;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 
 /**
@@ -81,9 +79,8 @@ public class OntologyComboboxFactory {
   }
 
   private static String ontologyItemFormatted(OntologyTerm ontologyTerm) {
-    String ontologyLinkName = ontologyTerm.getOboId().replace("_", ":");
+    String ontologyLinkName = ontologyTerm.oboId().toString();
     return String.format("%s (%s)", ontologyTerm.getLabel(), ontologyLinkName);
   }
 
 }
-
