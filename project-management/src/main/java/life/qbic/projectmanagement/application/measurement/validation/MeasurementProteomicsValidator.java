@@ -225,7 +225,8 @@ public class MeasurementProteomicsValidator {
       }
       var experimentIds = projectQuery.get().experiments();
       var sampleQuery = sampleInformationService.findSampleId(sampleCode).flatMap(
-          sampleIdCodeEntry -> sampleInformationService.findSample(sampleIdCodeEntry.sampleId()));
+          sampleIdCodeEntry -> sampleInformationService.findSample(
+              projectId, sampleIdCodeEntry.sampleId()));
       if (sampleQuery.isEmpty()) {
         log.error("No sample information found for sample id: " + sampleCode);
         return ValidationResult.withFailures(

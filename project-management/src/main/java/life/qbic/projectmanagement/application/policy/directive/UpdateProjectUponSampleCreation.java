@@ -7,6 +7,7 @@ import life.qbic.domain.concepts.DomainEventSubscriber;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
+import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
@@ -47,17 +48,19 @@ public class UpdateProjectUponSampleCreation implements DomainEventSubscriber<Sa
 
   @Override
   public void handleEvent(SampleRegistered event) {
-    jobScheduler.enqueue(() -> updateProjectModified(event.registeredSample(), event.occurredOn()));
+    jobScheduler.enqueue(() -> updateProjectModified(event.experimentId(), event.registeredSample(),
+        event.occurredOn()));
   }
 
   @Job(name = "Update project upon sample creation of sample %0")
-  public void updateProjectModified(SampleId sampleID, Instant modifiedOn) {
-    Optional<Sample> sample = sampleInformationService.findSample(sampleID);
+  public void updateProjectModified(String experimentId, SampleId sampleID, Instant modifiedOn) {
+    ProjectId projectId = experimentInformationService.findProjectID(
+            ExperimentId.parse(experimentId))
+        .orElseThrow(() -> new InvalidEventDataException("Project Id not found"));
+    Optional<Sample> sample = sampleInformationService.findSample(projectId, sampleID);
     if (sample.isEmpty()) {
       throw new InvalidEventDataException("Sample not found.");
     }
-    ProjectId projectId = experimentInformationService.findProjectID(sample.get().experimentId())
-        .orElseThrow(() -> new InvalidEventDataException("Project Id not found"));
     projectInformationService.updateModifiedDate(projectId, modifiedOn);
   }
 }
