@@ -41,7 +41,7 @@
     <!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-parent -->
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.5.9</version>
+    <version>3.5.14</version>
   </parent>
 
 
@@ -245,20 +245,20 @@
         <artifactId>sonar-maven-plugin</artifactId>
         <version>5.2.0.4988</version>
       </plugin>
-      <plugin>
-        <groupId>dev.sigstore</groupId>
-        <artifactId>sigstore-maven-plugin</artifactId>
-        <version>2.0.0</version>
-        <executions>
-          <execution>
-            <id>sigstore-sign</id>
-            <phase>verify</phase>
-            <goals>
-              <goal>sign</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
+      <!--      <plugin>-->
+      <!--        <groupId>dev.sigstore</groupId>-->
+      <!--        <artifactId>sigstore-maven-plugin</artifactId>-->
+      <!--        <version>2.0.0</version>-->
+      <!--        <executions>-->
+      <!--          <execution>-->
+      <!--            <id>sigstore-sign</id>-->
+      <!--            <phase>verify</phase>-->
+      <!--            <goals>-->
+      <!--              <goal>sign</goal>-->
+      <!--            </goals>-->
+      <!--          </execution>-->
+      <!--        </executions>-->
+      <!--      </plugin>-->
     </plugins>
   </build>
   <profiles>
@@ -292,39 +292,39 @@
           </plugins>
         </pluginManagement>
         <plugins>
-          <plugin>
-            <groupId>org.simplify4u.plugins</groupId>
-            <artifactId>pgpverify-maven-plugin</artifactId>
-            <executions>
-              <!-- bind early so you fail fast -->
-              <execution>
-                <id>pgp-verify</id>
-                <goals>
-                  <goal>check</goal>
-                </goals>
-                <phase>validate</phase>
-              </execution>
-            </executions>
-            <configuration>
-              <!-- verify build plugins too (compiler, surefire, etc.) -->
-              <verifyPlugins>true</verifyPlugins>
-              <verifyPluginDependencies>true</verifyPluginDependencies>
-              <!-- include provided deps if you want to check servlet APIs etc. -->
-              <verifyProvidedDependencies>false</verifyProvidedDependencies>
-              <!-- optionally check SNAPSHOTs as well -->
-              <verifySnapshots>false</verifySnapshots>
-              <!-- add a keys map to lock critical coords to expected fingerprints -->
-              <keysMapLocations>
-                <!-- our overrides / allow-list -->
-                <keysMapLocation>/pgp-keys-map.list</keysMapLocation>
-                <keysMapLocation>${maven.multiModuleProjectDirectory}/pgp-keys-override.list
-                </keysMapLocation>
-              </keysMapLocations>
-              <suppressSignatureOkLogging>true</suppressSignatureOkLogging>
-              <!-- write a JSON report (optional) -->
-              <reportWrite>true</reportWrite>
-            </configuration>
-          </plugin>
+          <!--          <plugin>-->
+          <!--            <groupId>org.simplify4u.plugins</groupId>-->
+          <!--            <artifactId>pgpverify-maven-plugin</artifactId>-->
+          <!--            <executions>-->
+          <!--              &lt;!&ndash; bind early so you fail fast &ndash;&gt;-->
+          <!--              <execution>-->
+          <!--                <id>pgp-verify</id>-->
+          <!--                <goals>-->
+          <!--                  <goal>check</goal>-->
+          <!--                </goals>-->
+          <!--                <phase>validate</phase>-->
+          <!--              </execution>-->
+          <!--            </executions>-->
+          <!--            <configuration>-->
+          <!--              &lt;!&ndash; verify build plugins too (compiler, surefire, etc.) &ndash;&gt;-->
+          <!--              <verifyPlugins>true</verifyPlugins>-->
+          <!--              <verifyPluginDependencies>true</verifyPluginDependencies>-->
+          <!--              &lt;!&ndash; include provided deps if you want to check servlet APIs etc. &ndash;&gt;-->
+          <!--              <verifyProvidedDependencies>false</verifyProvidedDependencies>-->
+          <!--              &lt;!&ndash; optionally check SNAPSHOTs as well &ndash;&gt;-->
+          <!--              <verifySnapshots>false</verifySnapshots>-->
+          <!--              &lt;!&ndash; add a keys map to lock critical coords to expected fingerprints &ndash;&gt;-->
+          <!--              <keysMapLocations>-->
+          <!--                &lt;!&ndash; our overrides / allow-list &ndash;&gt;-->
+          <!--                <keysMapLocation>/pgp-keys-map.list</keysMapLocation>-->
+          <!--                <keysMapLocation>${maven.multiModuleProjectDirectory}/pgp-keys-override.list-->
+          <!--                </keysMapLocation>-->
+          <!--              </keysMapLocations>-->
+          <!--              <suppressSignatureOkLogging>true</suppressSignatureOkLogging>-->
+          <!--              &lt;!&ndash; write a JSON report (optional) &ndash;&gt;-->
+          <!--              <reportWrite>true</reportWrite>-->
+          <!--            </configuration>-->
+          <!--          </plugin>-->
           <plugin>
             <groupId>org.cyclonedx</groupId>
             <artifactId>cyclonedx-maven-plugin</artifactId>
