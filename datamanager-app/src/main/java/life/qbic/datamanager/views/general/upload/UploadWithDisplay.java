@@ -5,7 +5,9 @@ import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.upload.InMemoryUploadHandler;
 import com.vaadin.flow.component.upload.Upload;
+import com.vaadin.flow.component.upload.UploadHandler;
 import com.vaadin.flow.component.upload.UploadI18N;
 import com.vaadin.flow.component.upload.UploadI18N.Error;
 import com.vaadin.flow.shared.Registration;
@@ -27,7 +29,7 @@ public class UploadWithDisplay extends Div {
   private final Div errorArea;
   private final Div displayContainer;
   private final Span displayContainerTitle;
-  private final FileMemoryBuffer fileMemoryBuffer;
+  private final InMemoryUploadHandler inMemoryHandler;
 
   public UploadWithDisplay(int maxFileSize) {
     this(maxFileSize, new FileType[]{});
@@ -40,8 +42,7 @@ public class UploadWithDisplay extends Div {
     addClassName("upload-with-display");
     errorArea = new Div();
     displayContainer = new Div();
-    fileMemoryBuffer = new FileMemoryBuffer();
-    upload = new Upload();
+    inMemoryHandler = new InMemoryUploadHandler();
     var restrictions = new Div();
 
     errorArea.addClassName("error-message-box");
@@ -63,6 +64,9 @@ public class UploadWithDisplay extends Div {
       restrictions.add(new Div("Maximum file size: " + formatFileSize(maxFileSize)));
     }
 
+    // Create handler that delegates to InMemoryUploadHandler
+    UploadHandler handler = event -> inMemoryHandler.handleUploadRequest(event);
+    upload = new Upload(handler);
     upload.setAcceptedFileTypes(
         fileTypes.length > 0 ? Arrays.stream(fileTypes)
             .map(FileType::mimeType)
@@ -71,9 +75,8 @@ public class UploadWithDisplay extends Div {
 
     upload.setMaxFileSize(maxFileSize);
     upload.setMaxFiles(1); // we only allow one file
-    upload.setReceiver(fileMemoryBuffer);
     upload.addFileRemovedListener(fileRemovedEvent -> {
-      fileMemoryBuffer.clear();
+      inMemoryHandler.clear();
       displayContainer.removeAll();
       displayContainerTitle.setVisible(false);
       displayContainer.setVisible(false);
@@ -171,20 +174,23 @@ public class UploadWithDisplay extends Div {
     displayContainerTitle.setVisible(false);
     displayContainer.setVisible(false);
     errorArea.removeAll();
-    fileMemoryBuffer.clear();
+    inMemoryHandler.clear();
   }
 
   /**
    * @return the uploaded data or {@link Optional#empty()} is nothing was uploaded yet.
    */
   public Optional<UploadedData> getUploadedData() {
-    if (fileMemoryBuffer.hasUploadedData()) {
-      var fileName = fileMemoryBuffer.getFileName().orElseThrow();
-      var inputStream = fileMemoryBuffer.getInputStream().orElseThrow();
-      var mimeType = fileMemoryBuffer.getMimeType().orElseThrow();
-      return Optional.of(new UploadedData(fileName, inputStream, mimeType));
+    var files = inMemoryHandler.getFiles();
+    if (files.isEmpty()) {
+      return Optional.empty();
     }
-    return Optional.empty();
+    var file = files.get(0);
+    return Optional.of(new UploadedData(
+        file.getFileName(),
+        file.getInputStream(),
+        file.getMIMEType() != null ? file.getMIMEType() : "application/octet-stream"
+    ));
   }
 
   /**
