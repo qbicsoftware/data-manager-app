@@ -172,7 +172,6 @@
           <!-- Configuration for licenses aggregation -->
           <outputDirectory>${project.build.directory}/generated-sources/license</outputDirectory>
           <thirdPartyFilename>THIRD-PARTY.txt</thirdPartyFilename>
-          <failIfWarning>false</failIfWarning> <!-- Optional: fail the build on issues -->
           <includeTransitiveDependencies>true</includeTransitiveDependencies>
         </configuration>
       </plugin>
