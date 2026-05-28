@@ -118,7 +118,6 @@ public class MeasurementService {
    * @return an {@link Optional} of {@link NGSMeasurement}. Is {@link Optional#empty()} if no matching measurement was found.
    * @deprecated this method is unsafe, since it bypasses Spring security checks for access rights. Please use {@link #findNGSMeasurementById(String, String)} instead.
    */
-  @Deprecated(since = "1.11.0", forRemoval = true)
   public Optional<NGSMeasurement> findNGSMeasurement(String measurementCode) {
     return measurementLookupService.findNGSMeasurement(measurementCode);
   }
@@ -464,7 +463,8 @@ public class MeasurementService {
       var metadata = entry.getValue();
       var convertedMetadata = ProteomicsSpecificMeasurementMetadata.create(
           sampleIdCodeEntries.stream()
-              .filter(pair -> pair.sampleCode().equals(SampleCode.create(sampleId))).findAny().get()
+              .filter(pair -> pair.sampleCode().equals(SampleCode.create(sampleId))).findAny()
+              .orElseThrow()
               .sampleId(), metadata.label(), metadata.fractionName(), metadata.comment());
       specificMetadata.add(convertedMetadata);
     }
@@ -481,7 +481,8 @@ public class MeasurementService {
       var metadata = entry.getValue();
       var convertedMetadata = NGSSpecificMeasurementMetadata.create(
           sampleIdCodeEntries.stream()
-              .filter(pair -> pair.sampleCode().equals(SampleCode.create(sampleId))).findAny().get()
+              .filter(pair -> pair.sampleCode().equals(SampleCode.create(sampleId))).findAny()
+              .orElseThrow()
               .sampleId(), metadata.indexI5(), metadata.indexI7(), metadata.comment());
       specificMetadata.add(convertedMetadata);
     }
@@ -582,7 +583,8 @@ public class MeasurementService {
     // Start with the pooled measurements first and group the metadata entries by pool
     Map<String, List<NGSMeasurementMetadata>> measurementsByPool = ngsMeasurementMetadata.stream()
         .filter(metadata -> metadata.assignedSamplePoolGroup().isPresent())
-        .collect(Collectors.groupingBy(metadata -> metadata.assignedSamplePoolGroup().get()));
+        .collect(
+            Collectors.groupingBy(metadata -> metadata.assignedSamplePoolGroup().orElseThrow()));
 
     // We collect the "single" sample measurements extra
     List<NGSMeasurementMetadata> singleMeasurements = ngsMeasurementMetadata.stream()
@@ -612,7 +614,8 @@ public class MeasurementService {
     // Start with the pooled measurements first and group the metadata entries by pool
     Map<String, List<ProteomicsMeasurementMetadata>> measurementsByPool = proteomicsMeasurements.stream()
         .filter(metadata -> metadata.assignedSamplePoolGroup().isPresent())
-        .collect(Collectors.groupingBy(metadata -> metadata.assignedSamplePoolGroup().get()));
+        .collect(
+            Collectors.groupingBy(metadata -> metadata.assignedSamplePoolGroup().orElseThrow()));
 
     // We collect the "single" sample measurements extra
     List<ProteomicsMeasurementMetadata> singleMeasurements = proteomicsMeasurements.stream()
@@ -792,25 +795,6 @@ public class MeasurementService {
         throw new MeasurementRegistrationException(ErrorCode.MISSING_ASSOCIATED_SAMPLE);
       }
     }
-  }
-
-  private void handleUpdateEvents(List<DomainEvent> domainEventsCache,
-      List<Result<MeasurementId, ErrorCode>> results) {
-    if (results.stream().anyMatch(Result::isError)) {
-      return;
-    }
-    Set<MeasurementId> dispatchedIDs = new HashSet<>();
-    for (DomainEvent event : domainEventsCache) {
-      if (event instanceof MeasurementUpdatedEvent measurementUpdatedEvent) {
-        MeasurementId id = MeasurementId.parse(measurementUpdatedEvent.measurementId());
-        if (dispatchedIDs.contains(id)) {
-          continue;
-        }
-        DomainEventDispatcher.instance().dispatch(event);
-        dispatchedIDs.add(id);
-      }
-    }
-
   }
 
   /**

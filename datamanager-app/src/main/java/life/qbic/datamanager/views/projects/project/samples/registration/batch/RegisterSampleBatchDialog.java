@@ -192,7 +192,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
     }
 
     var registrations = sampleInformationForNewSamples.stream()
-        .map(info -> convertToRegistration(info)).toList();
+        .map(this::convertToRegistration).toList();
 
     var responseStream = executeValidation(registrations, projectId, experimentId).doOnError(cause -> {
       log.error("Validation failed.", cause);

@@ -314,7 +314,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
       case FAILED -> "Deletion failed. Please try again.";
       case DATA_ATTACHED -> "Data is attached to one or more measurements.";
     };
-    showErrorNotification("Deletion failed", errorMessage);
+    showErrorNotification(errorMessage);
   }
 
   private void handleDeletionSuccessNgs() {
@@ -726,8 +726,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     }
   }
 
-  private void showErrorNotification(String title, String description) {
-    ErrorMessage errorMessage = new ErrorMessage(title, description);
+  private void showErrorNotification(String description) {
+    ErrorMessage errorMessage = new ErrorMessage("Deletion failed", description);
     StyledNotification notification = new StyledNotification(errorMessage);
     notification.open();
   }

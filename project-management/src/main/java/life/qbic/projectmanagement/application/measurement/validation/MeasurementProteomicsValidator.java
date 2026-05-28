@@ -59,7 +59,7 @@ public class MeasurementProteomicsValidator {
    * for a QBiC-defined proteomics measurement metadata object.
    *
    * @param properties
-   * @return
+   * @return true if properties indicate proteomics content
    * @since 1.0.0
    */
   public static boolean isProteomics(Collection<String> properties) {
@@ -526,7 +526,7 @@ public class MeasurementProteomicsValidator {
         return ValidationResult.successful();
       }
       try {
-        int parsedVolume = (int) Double.parseDouble(injectionVolume);
+        Double.parseDouble(injectionVolume);
         return ValidationResult.successful();
       } catch (NumberFormatException numberFormatException) {
         return ValidationResult.withFailures(

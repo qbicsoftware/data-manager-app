@@ -104,13 +104,15 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
 
     final FilterGridTabSheet filterTabSheet = new FilterGridTabSheet();
     filterTabSheet.removeAllTabs();
-    if (asyncProjectService.countRawDataNgs(projectId, experimentId,
-        new RawDatasetFilter("", List.of())).block(MAX_BLOCKING_DURATION) > 0) {
+    Integer ngsDataCount = asyncProjectService.countRawDataNgs(projectId, experimentId,
+        new RawDatasetFilter("", List.of())).block(MAX_BLOCKING_DURATION);
+    if (ngsDataCount != null && ngsDataCount > 0) {
       var filterGridNgs = createNgsFilterGrid(createNgsRawDataGrid(), projectId, experimentId);
       addNgsTab(filterTabSheet, 0, "Genomics", filterGridNgs);
     }
-    if (asyncProjectService.countRawDataPxp(projectId, experimentId,
-        new RawDatasetFilter("", List.of())).block(MAX_BLOCKING_DURATION) > 0) {
+    Integer pxpDataCount = asyncProjectService.countRawDataPxp(projectId, experimentId,
+        new RawDatasetFilter("", List.of())).block(MAX_BLOCKING_DURATION);
+    if (pxpDataCount != null && pxpDataCount > 0) {
       var filterGridPxp = createPxpFilterGrid(createPxpRawDataGrid(), projectId, experimentId);
       addPxpTab(filterTabSheet, 1, "Proteomics", filterGridPxp);
     }
@@ -441,7 +443,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
     }
 
     public Optional<String> searchTerm() {
-      return Optional.ofNullable(searchTerm);
+      return Optional.of(searchTerm);
     }
   }
 }
