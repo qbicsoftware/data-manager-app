@@ -18,6 +18,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -73,6 +74,7 @@ import life.qbic.projectmanagement.infrastructure.template.provider.openxml.fact
 import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.MimeType;
+import org.springframework.util.MimeTypeUtils;
 import reactor.core.publisher.Flux;
 
 
@@ -373,6 +375,16 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
       public InputStream getStream() {
         return digitalObject.content();
       }
+
+      @Override
+      public String getContentType() {
+        return MimeTypeUtils.APPLICATION_OCTET_STREAM_VALUE;
+      }
+
+      @Override
+      public Optional<Long> contentLength() {
+        return Optional.empty();
+      }
     };
     downloadComponent.trigger(downloadStreamProvider);
   }
@@ -435,6 +447,11 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
                   }
 
                   @Override
+                  public Optional<Long> contentLength() {
+                    return Optional.empty();
+                  }
+
+                  @Override
                   public Workbook getWorkbook() {
                     return NGSWorkbooks.createRegistrationWorkbook();
                   }
@@ -446,6 +463,11 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
                     return FileNameFormatter.formatWithVersion("pxp_measurement_registration_sheet",
                         1,
                         "xlsx");
+                  }
+
+                  @Override
+                  public Optional<Long> contentLength() {
+                    return Optional.empty();
                   }
 
                   @Override

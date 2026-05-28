@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -317,6 +318,11 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
           @Override
           public String getFilename() {
             return filename;
+          }
+
+          @Override
+          public Optional<Long> contentLength() {
+            return Optional.empty();
           }
         })));
   }

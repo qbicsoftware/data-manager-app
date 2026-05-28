@@ -6,6 +6,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import java.io.InputStream;
 import java.time.LocalDate;
+import java.util.Optional;
 import java.util.function.Supplier;
 import life.qbic.application.commons.FileNameFormatter;
 import life.qbic.datamanager.files.export.download.DownloadStreamProvider;
@@ -13,6 +14,7 @@ import life.qbic.datamanager.views.general.download.DownloadComponent;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.projectmanagement.application.api.fair.DigitalObject;
+import org.springframework.util.MimeTypeUtils;
 import reactor.core.publisher.Mono;
 
 /**
@@ -98,6 +100,16 @@ public class MeasurementTemplateComponent extends Div {
         @Override
         public InputStream getStream() {
           return digitalObject.content();
+        }
+
+        @Override
+        public String getContentType() {
+          return MimeTypeUtils.APPLICATION_OCTET_STREAM_VALUE;
+        }
+
+        @Override
+        public Optional<Long> contentLength() {
+          return Optional.empty();
         }
       });
     }));

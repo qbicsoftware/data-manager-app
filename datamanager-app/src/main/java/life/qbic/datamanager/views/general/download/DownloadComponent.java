@@ -2,7 +2,8 @@ package life.qbic.datamanager.views.general.download;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.html.Anchor;
-import com.vaadin.flow.server.StreamResource;
+import com.vaadin.flow.server.streams.DownloadHandler;
+import com.vaadin.flow.server.streams.DownloadResponse;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.files.export.download.DownloadStreamProvider;
 
@@ -25,9 +26,11 @@ public class DownloadComponent extends Anchor {
   public synchronized void trigger(DownloadStreamProvider downloadStreamProvider) {
     UI ui = getUI().orElseThrow(() -> new ApplicationException(
         this.getClass().getSimpleName() + "component triggered but not attached to any UI."));
-    StreamResource resource = new StreamResource(downloadStreamProvider.getFilename(),
-        downloadStreamProvider::getStream);
-    this.setHref(resource);
+    DownloadHandler downloadHandler = DownloadHandler.fromInputStream(
+        event -> new DownloadResponse(downloadStreamProvider.getStream(),
+            downloadStreamProvider.getFilename(), downloadStreamProvider.getContentType(),
+            downloadStreamProvider.contentLength().orElse(-1L)));
+    this.setHref(downloadHandler);
     ui.getPage().executeJs("$0.click()", this.getElement());
   }
 }

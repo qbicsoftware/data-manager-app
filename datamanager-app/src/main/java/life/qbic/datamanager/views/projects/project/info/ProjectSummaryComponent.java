@@ -932,6 +932,18 @@ public class ProjectSummaryComponent extends PageArea {
       public InputStream getStream() {
         return forSummary(context.projectId().orElseThrow());
       }
+
+      @Override
+      public String getContentType() {
+        return "application/zip";
+      }
+
+      @Override
+      public Optional<Long> contentLength() {
+        return Optional.empty();
+      }
+
+
     });
 
   }

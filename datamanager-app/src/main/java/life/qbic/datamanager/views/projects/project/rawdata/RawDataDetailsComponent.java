@@ -50,6 +50,7 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.RawDatase
 import life.qbic.projectmanagement.application.api.AsyncProjectService.SortDirection;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.SortOrder;
 import org.springframework.lang.NonNull;
+import org.springframework.util.MimeTypeUtils;
 
 /**
  * Raw Data Details Component
@@ -183,6 +184,16 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
       public InputStream getStream() {
         return new BufferedInputStream(
             new ByteArrayInputStream(file.getBytes(StandardCharsets.UTF_8)));
+      }
+
+      @Override
+      public String getContentType() {
+        return MimeTypeUtils.TEXT_PLAIN_VALUE;
+      }
+
+      @Override
+      public Optional<Long> contentLength() {
+        return Optional.of((long) file.getBytes(StandardCharsets.UTF_8).length);
       }
     };
   }

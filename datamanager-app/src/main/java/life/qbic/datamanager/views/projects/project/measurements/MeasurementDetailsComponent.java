@@ -18,7 +18,6 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.data.provider.CallbackDataProvider.CountCallback;
 import com.vaadin.flow.data.provider.CallbackDataProvider.FetchCallback;
 import com.vaadin.flow.server.streams.DownloadHandler;
-import com.vaadin.flow.server.streams.DownloadResponse;
 import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 import java.io.Serializable;
@@ -563,14 +562,8 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   }
 
   private static Anchor renderOrganisation(String label, String iri) {
-    DownloadHandler downloadHandler = DownloadHandler.fromInputStream(event ->
-        new DownloadResponse(
-            MeasurementDetailsComponent.class.getClassLoader()
-                .getResourceAsStream("icons/ROR_logo.svg"),
-            "ror-icon.svg",
-            "image/svg+xml",
-            -1
-        ));
+    DownloadHandler downloadHandler =
+        DownloadHandler.forClassResource(MeasurementDetailsComponent.class, "/icons/ROR_logo.svg");
     SvgIcon svgIcon = new SvgIcon(downloadHandler);
     svgIcon.addClassName("organisation-icon");
     Span organisationLabel = new Span(label);

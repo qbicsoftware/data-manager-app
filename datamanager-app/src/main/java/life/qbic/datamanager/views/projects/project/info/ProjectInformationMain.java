@@ -14,6 +14,7 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import java.util.List;
+import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.files.export.download.ByteArrayDownloadStreamProvider;
@@ -194,6 +195,11 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
       public String getFilename() {
         return offer.getFileName();
       }
+
+      @Override
+      public Optional<Long> contentLength() {
+        return Optional.of((long) offer.fileContent().length);
+      }
     });
   }
 
@@ -247,6 +253,11 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
       @Override
       public String getFilename() {
         return qualityControlUpload.getFileName();
+      }
+
+      @Override
+      public Optional<Long> contentLength() {
+        return Optional.of((long) qualityControlUpload.fileContent().length);
       }
 
       @Override
