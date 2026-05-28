@@ -832,7 +832,7 @@ public class MeasurementService {
 
     var sampleId = sampleIdQueryResult.map(SampleIdCodeEntry::sampleId).orElseThrow();
 
-    var samples = sampleInformationService.retrieveSamplesByIds(List.of(sampleId));
+    var samples = sampleInformationService.retrieveSamplesByIds(projectId, List.of(sampleId));
     var associatedExperimentsFromSamples = samples.stream().map(Sample::experimentId).toList();
 
     var associatedExperimentsFromProject = projectInformationService.find(projectId).orElseThrow()
