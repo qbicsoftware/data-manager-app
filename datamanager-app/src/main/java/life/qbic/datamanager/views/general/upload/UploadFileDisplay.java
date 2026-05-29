@@ -9,7 +9,14 @@ import java.util.List;
  */
 public interface UploadFileDisplay {
 
-  void onFilesChanged(List<FileEntry> files);
+  void onFilesChanged(List<FileEntry> files, ChangeType changeType);
+
+  enum ChangeType {
+    FILE_ADDED,
+    FILE_REMOVED,
+    VALIDATION_STARTED,
+    VALIDATION_COMPLETED
+  }
 
   record FileEntry(String fileName, String mimeType, long size, ValidationStatus validationStatus,
                    String statusMessage) {
