@@ -68,18 +68,26 @@ public class SmartUploadComponent extends Div {
           uploadMetadata.fileName()) : "The removed file matches the uploaded file name";
       clearData();
     });
+    upload.addAllFinishedListener(event -> {
+      System.out.println("event = " + event);
+    });
+    upload.setMaxFiles(1);
+    add(upload);
   }
 
   private synchronized void clearData() {
     uploadMetadata = null;
     uploadedBytes = null;
-    try {
-      Files.deleteIfExists(this.tempFile);
-    } catch (IOException e) {
-      log.warn("Temporarily uploaded file %s was not deleted. Reason:%s".formatted(
-          tempFile.toAbsolutePath().toString(), e.getMessage()));
-      throw new RuntimeException(e);
+    if (tempFile != null) {
+      try {
+        Files.deleteIfExists(this.tempFile);
+      } catch (IOException e) {
+        log.warn("Temporarily uploaded file %s was not deleted. Reason:%s".formatted(
+            tempFile.toAbsolutePath().toString(), e.getMessage()));
+        throw new RuntimeException(e);
+      }
     }
+
   }
 
   private synchronized void setData(UploadMetadata metadata, File file) {

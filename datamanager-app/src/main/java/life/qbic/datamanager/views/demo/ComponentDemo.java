@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import life.qbic.datamanager.configuration.UploadConfiguration;
 import life.qbic.datamanager.views.StringBean;
 import life.qbic.datamanager.views.general.Card;
 import life.qbic.datamanager.views.general.DetailBox;
@@ -51,6 +52,7 @@ import life.qbic.datamanager.views.general.grid.component.FilterGridTabSheet;
 import life.qbic.datamanager.views.general.grid.component.FilterGridTabSheet.TabAction;
 import life.qbic.datamanager.views.general.grid.component.GridConfiguration.FilterTester;
 import life.qbic.datamanager.views.general.icon.IconFactory;
+import life.qbic.datamanager.views.general.upload.SmartUploadComponent;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.ExperimentalVariablesInput;
 import life.qbic.datamanager.views.projects.project.info.SimpleParagraph;
@@ -58,6 +60,8 @@ import life.qbic.logging.api.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.lang.NonNull;
+import org.springframework.util.unit.DataSize;
+import org.springframework.util.unit.DataUnit;
 
 /**
  * <b>Component Demo</b>
@@ -90,6 +94,7 @@ public class ComponentDemo extends Div {
     title.addClassName("heading-1");
     addClassNames("padding-horizontal-07", "padding-vertical-04");
     add(title);
+    add(new SmartUploadComponent(new UploadConfiguration(DataSize.of(5, DataUnit.MEGABYTES))));
     add(headingShowcase());
     add(colorShowCase());
     add(clickableShowCase());
