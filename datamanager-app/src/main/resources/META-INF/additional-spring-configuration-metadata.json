@@ -184,6 +184,11 @@
       "name": "qbic.external-service.person-search.orcid.issuer",
       "type": "java.lang.String",
       "description": "The URL of the orcid issuer. Most probably https://orcid.org"
+    },
+    {
+      "name": "qbic.upload.in-memory-limit",
+      "type": "java.lang.String",
+      "description": "The threshold for uploaded files to be kept in memory. Files bigger than this size are handled using temporary files."
     }
   ]
 }
