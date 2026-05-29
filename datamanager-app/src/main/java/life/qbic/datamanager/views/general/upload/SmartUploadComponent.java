@@ -102,7 +102,7 @@ public class SmartUploadComponent extends Div {
   }
 
   protected boolean isEmpty() {
-    return uploadedBytes == null && tempFile == null || Files.notExists(tempFile);
+    return uploadedBytes == null || (tempFile == null || Files.notExists(tempFile));
   }
 
   public Optional<UploadedData> getUploadedData() {
