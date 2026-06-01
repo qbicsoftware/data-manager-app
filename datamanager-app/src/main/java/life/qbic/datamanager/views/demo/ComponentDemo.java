@@ -52,7 +52,7 @@ import life.qbic.datamanager.views.general.grid.component.FilterGridTabSheet;
 import life.qbic.datamanager.views.general.grid.component.FilterGridTabSheet.TabAction;
 import life.qbic.datamanager.views.general.grid.component.GridConfiguration.FilterTester;
 import life.qbic.datamanager.views.general.icon.IconFactory;
-import life.qbic.datamanager.views.general.upload.SmartUploadComponent;
+import life.qbic.datamanager.views.general.upload.ContentUploadComponent;
 import life.qbic.datamanager.views.general.upload.UploadFileDisplay.FileEntry;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.ExperimentalVariablesInput;
@@ -110,17 +110,17 @@ public class ComponentDemo extends Div {
     add(filterGridShowCase());
   }
 
-  private static @org.jspecify.annotations.NonNull SmartUploadComponent uploadShowcase() {
-    SmartUploadComponent smartUploadComponent = new SmartUploadComponent(
+  private static @org.jspecify.annotations.NonNull ContentUploadComponent uploadShowcase() {
+    ContentUploadComponent contentUploadComponent = new ContentUploadComponent(
         new UploadConfiguration(DataSize.of(5, DataUnit.MEGABYTES)));
 
-    smartUploadComponent.addDisplay((files, changeType) -> {
+    contentUploadComponent.addDisplay((files, changeType) -> {
       for (FileEntry file : files) {
         System.out.println("file = " + file);
         System.out.println("changeType = " + changeType);
       }
     });
-    return smartUploadComponent;
+    return contentUploadComponent;
   }
 
   private record SimplePersonFilter(String term) implements PredicateFilter<Person> {

@@ -23,20 +23,20 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import life.qbic.datamanager.configuration.UploadConfiguration;
-import life.qbic.datamanager.views.general.upload.SmartUploadComponent.FileData.InMemory;
-import life.qbic.datamanager.views.general.upload.SmartUploadComponent.FileData.OnDisk;
-import life.qbic.datamanager.views.general.upload.SmartUploadComponent.ValidationStatus.Failure;
-import life.qbic.datamanager.views.general.upload.SmartUploadComponent.ValidationStatus.None;
-import life.qbic.datamanager.views.general.upload.SmartUploadComponent.ValidationStatus.Success;
-import life.qbic.datamanager.views.general.upload.SmartUploadComponent.ValidationStatus.Validating;
+import life.qbic.datamanager.views.general.upload.ContentUploadComponent.FileData.InMemory;
+import life.qbic.datamanager.views.general.upload.ContentUploadComponent.FileData.OnDisk;
+import life.qbic.datamanager.views.general.upload.ContentUploadComponent.ValidationStatus.Failure;
+import life.qbic.datamanager.views.general.upload.ContentUploadComponent.ValidationStatus.None;
+import life.qbic.datamanager.views.general.upload.ContentUploadComponent.ValidationStatus.Success;
+import life.qbic.datamanager.views.general.upload.ContentUploadComponent.ValidationStatus.Validating;
 import life.qbic.datamanager.views.general.upload.UploadFileDisplay.ChangeType;
 import life.qbic.datamanager.views.general.upload.UploadFileDisplay.FileEntry;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 
-public class SmartUploadComponent extends Div {
+public class ContentUploadComponent extends Div {
 
-  private static final Logger log = LoggerFactory.logger(SmartUploadComponent.class);
+  private static final Logger log = LoggerFactory.logger(ContentUploadComponent.class);
   private final long maxInMemoryBytes;
   private final Map<String, TrackedFile> fileDataStore = Collections.synchronizedMap(
       new LinkedHashMap<>()); //linked hash map to keep insertion order
@@ -103,7 +103,7 @@ public class SmartUploadComponent extends Div {
     UploadMetadata metadata();
   }
 
-  public SmartUploadComponent(UploadConfiguration uploadConfiguration) {
+  public ContentUploadComponent(UploadConfiguration uploadConfiguration) {
     //ensure cleanup after detachment of component
     addDetachListener(event -> deletePendingFiles());
 
