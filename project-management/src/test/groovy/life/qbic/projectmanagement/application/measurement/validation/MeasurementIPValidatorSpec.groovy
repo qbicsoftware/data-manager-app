@@ -153,6 +153,7 @@ class MeasurementIPValidatorSpec extends Specification {
         def registration = new MeasurementRegistrationInformationIP(
                 "https://ror.org/03a1kwz48",
                 "EFO:0008637",
+                "",
                 "QBiC",
                 "",
                 Map.of("QTEST001AE", blankSpecific),
@@ -209,6 +210,7 @@ class MeasurementIPValidatorSpec extends Specification {
         def registration = new MeasurementRegistrationInformationIP(
                 "https://ror.org/03a1kwz48",
                 "", // blank instrument
+                "",
                 "QBiC",
                 "",
                 Map.of("QTEST001AE", createValidSpecific()),
@@ -257,6 +259,7 @@ class MeasurementIPValidatorSpec extends Specification {
         def registration = new MeasurementRegistrationInformationIP(
                 "https://ror.org/03a1kwz48",
                 "UNKNOWN:12345",
+                "",
                 "QBiC",
                 "",
                 Map.of("QTEST001AE", createValidSpecific()),
@@ -305,6 +308,7 @@ class MeasurementIPValidatorSpec extends Specification {
         def registration = new MeasurementRegistrationInformationIP(
                 "", // blank organisation
                 "EFO:0008637",
+                "",
                 "QBiC",
                 "",
                 Map.of("QTEST001AE", createValidSpecific()),
@@ -353,6 +357,7 @@ class MeasurementIPValidatorSpec extends Specification {
         def registration = new MeasurementRegistrationInformationIP(
                 "not-a-ror-id",
                 "EFO:0008637",
+                "",
                 "QBiC",
                 "",
                 Map.of("QTEST001AE", createValidSpecific()),
@@ -371,6 +376,7 @@ class MeasurementIPValidatorSpec extends Specification {
         return new MeasurementRegistrationInformationIP(
                 "https://ror.org/03a1kwz48",
                 "EFO:0008637",
+                "",
                 "QBiC",
                 "",
                 Map.of("QTEST001AE", createValidSpecific()),
@@ -430,6 +436,7 @@ class MeasurementIPValidatorSpec extends Specification {
         def registration = new MeasurementRegistrationInformationIP(
                 "https://ror.org/03a1kwz48",
                 "EFO:0008637",
+                "",
                 "QBiC",
                 "QBiC Facility",
                 Map.of("QTEST001AE", specific),
@@ -498,6 +505,7 @@ class MeasurementIPValidatorSpec extends Specification {
         def registration = new MeasurementRegistrationInformationIP(
                 "https://ror.org/03a1kwz48",
                 "EFO:0008637",
+                "",
                 "QBiC",
                 "QBiC Facility",
                 Map.of("QTEST001AE", specific),
@@ -565,6 +573,7 @@ class MeasurementIPValidatorSpec extends Specification {
         def registration = new MeasurementRegistrationInformationIP(
                 "https://ror.org/03a1kwz48",
                 "EFO:0008637",
+                "",
                 "QBiC",
                 "QBiC Facility",
                 Map.of("QTEST001AE", specific),
@@ -686,6 +695,7 @@ class MeasurementIPValidatorSpec extends Specification {
                 "", // blank measurement id
                 "https://ror.org/03a1kwz48",
                 "EFO:0008637",
+                "",
                 "QBiC",
                 "",
                 Map.of("QTEST001AE", createValidSpecific()),
@@ -697,7 +707,7 @@ class MeasurementIPValidatorSpec extends Specification {
 
         then:
         !result.allPassed()
-        result.failures().contains("Measurement id: missing measurement id for update")
+        result.failures().contains("Measurement ID: missing measurement ID for update")
     }
 
     def "Given an IP update with unknown measurement code, validateUpdate returns failure"() {
@@ -738,6 +748,7 @@ class MeasurementIPValidatorSpec extends Specification {
                 "UNKNOWN",
                 "https://ror.org/03a1kwz48",
                 "EFO:0008637",
+                "",
                 "QBiC",
                 "",
                 Map.of("QTEST001AE", createValidSpecific()),
@@ -793,6 +804,7 @@ class MeasurementIPValidatorSpec extends Specification {
                 "IP-001",
                 "https://ror.org/03a1kwz48",
                 "EFO:0008637",
+                "",
                 "QBiC",
                 "",
                 Map.of("QTEST001AE", blankSpecific),
@@ -854,6 +866,7 @@ class MeasurementIPValidatorSpec extends Specification {
                 "IP-001",
                 "https://ror.org/03a1kwz48",
                 "UNKNOWN:12345",
+                "",
                 "QBiC",
                 "",
                 Map.of("QTEST001AE", createValidSpecific()),
@@ -906,6 +919,7 @@ class MeasurementIPValidatorSpec extends Specification {
                 "IP-001",
                 "not-a-ror-id",
                 "EFO:0008637",
+                "",
                 "QBiC",
                 "",
                 Map.of("QTEST001AE", createValidSpecific()),
@@ -925,6 +939,7 @@ class MeasurementIPValidatorSpec extends Specification {
                 "IP-001",
                 "https://ror.org/03a1kwz48",
                 "EFO:0008637",
+                "",
                 "QBiC",
                 "",
                 Map.of("QTEST001AE", createValidSpecific()),

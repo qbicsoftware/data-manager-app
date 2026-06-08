@@ -340,7 +340,8 @@ public interface TemplateProvider {
       String prepDate,
       String msRunDate,
       Map<String, MeasurementSpecificIP> specificMetadata,
-      String measurementName
+      String measurementName,
+      String comment
   ) {
 
     public MeasurementInformationIP {
@@ -367,6 +368,7 @@ public interface TemplateProvider {
       requireNonNull(specificMetadata);
       specificMetadata = new HashMap<>(specificMetadata);
       requireNonNull(measurementName);
+      requireNonNull(comment);
     }
 
     /**

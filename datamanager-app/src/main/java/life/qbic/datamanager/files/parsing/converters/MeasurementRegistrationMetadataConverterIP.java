@@ -89,6 +89,7 @@ public class MeasurementRegistrationMetadataConverterIP implements
       var metadatum = new MeasurementRegistrationInformationIP(
           organisationId,
           instrument,
+          "", // instrumentName - not present in registration template, default empty
           facility,
           "", // pool group - empty for now, can be added if needed
           Map.of(sampleId, specificMetadata),

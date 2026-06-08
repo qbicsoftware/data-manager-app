@@ -399,7 +399,7 @@ public class MeasurementService {
     var firstSpecific = measurement.specificMetadata().values().iterator().next();
     var method = new IPMethodMetadata(
         msDeviceQuery.get(),
-        "",
+        measurement.instrumentName(),
         measurement.facility(),
         parseDoubleOrNull(firstSpecific.sampleMass()),
         parseDoubleOrNull(firstSpecific.sampleVolume()),
@@ -653,7 +653,7 @@ public class MeasurementService {
 
     var method = new IPMethodMetadata(
         instrumentQuery.get(),
-        "",
+        measurement.instrumentName(),
         measurement.facility(),
         parseDoubleOrNull(firstSpecific.sampleMass()),
         parseDoubleOrNull(firstSpecific.sampleVolume()),

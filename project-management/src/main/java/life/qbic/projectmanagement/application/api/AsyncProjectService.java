@@ -2353,6 +2353,7 @@ public interface AsyncProjectService {
   record MeasurementRegistrationInformationIP(
       String organisationId,
       String instrumentCURIE,
+      String instrumentName,
       String facility,
       String samplePoolGroup,
       Map<String, MeasurementSpecificIP> specificMetadata,
@@ -2435,6 +2436,7 @@ public interface AsyncProjectService {
       String measurementId,
       String organisationId,
       String instrumentCURIE,
+      String instrumentName,
       String facility,
       String samplePoolGroup,
       Map<String, MeasurementSpecificIP> specificMetadata,

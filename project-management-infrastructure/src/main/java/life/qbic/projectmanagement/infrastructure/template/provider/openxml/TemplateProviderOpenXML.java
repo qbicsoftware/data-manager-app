@@ -209,7 +209,7 @@ public class TemplateProviderOpenXML implements TemplateProvider {
           req.ionMobilityRange(),
           req.massRange(),
           req.retentionTimeRange(),
-          ""
+          req.comment()
       );
       entries.add(entry);
     }

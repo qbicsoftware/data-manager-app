@@ -117,6 +117,9 @@ public class MeasurementIPValidator {
     private static final String ROR_ID_REGEX = "^(https?://)?ror\\.org/[0-9a-zA-Z]{9}$";
 
     ValidationResult validateMeasurementCode(String measurementCode) {
+      if (measurementCode == null || measurementCode.isBlank()) {
+        return ValidationResult.successful(); // Skip, handled by validateMandatoryMetadataDataForUpdate
+      }
       var queryMeasurement = measurementService.findIPMeasurement(measurementCode);
       return queryMeasurement.map(measurement -> ValidationResult.successful()).orElse(
           ValidationResult.withFailures(
@@ -167,6 +170,9 @@ public class MeasurementIPValidator {
     }
 
     ValidationResult validateOrganisation(String organisationId) {
+      if (organisationId == null || organisationId.isBlank()) {
+        return ValidationResult.successful(); // Skip, handled by validateMandatoryMetadataDataForUpdate
+      }
       if (Pattern.compile(ROR_ID_REGEX).matcher(organisationId).find()) {
         return ValidationResult.successful();
       }
@@ -175,6 +181,9 @@ public class MeasurementIPValidator {
     }
 
     ValidationResult validateInstrument(String instrument) {
+      if (instrument == null || instrument.isBlank()) {
+        return ValidationResult.successful(); // Skip, handled by validateMandatoryMetadataDataForUpdate
+      }
       var result = terminologyService.findByCurie(instrument);
       if (result.isPresent()) {
         return ValidationResult.successful();
@@ -187,7 +196,7 @@ public class MeasurementIPValidator {
       var validation = ValidationResult.successful();
       if (metadata.measurementId() == null || metadata.measurementId().isEmpty()) {
         validation = validation.combine(ValidationResult.withFailures(
-            List.of("Measurement id: missing measurement id for update")));
+            List.of("Measurement ID: missing measurement ID for update")));
       } else {
         validation = validation.combine(ValidationResult.successful());
       }
@@ -292,6 +301,23 @@ public class MeasurementIPValidator {
         } else if (!Pattern.compile(RANGE_REGEX).matcher(specificMetadata.chargeRange()).matches()) {
           validation = validation.combine(
               ValidationResult.withFailures(List.of("Charge range must be a valid range (e.g. 1-2)")));
+        }
+        // Date validation
+        if (specificMetadata.prepDate() != null && !specificMetadata.prepDate().isBlank()) {
+          try {
+            LocalDate.parse(specificMetadata.prepDate(), DATE_FORMATTER);
+          } catch (DateTimeParseException e) {
+            validation = validation.combine(
+                ValidationResult.withFailures(List.of("Prep Date must be formatted as YYYY-MM-DD")));
+          }
+        }
+        if (specificMetadata.msRunDate() != null && !specificMetadata.msRunDate().isBlank()) {
+          try {
+            LocalDate.parse(specificMetadata.msRunDate(), DATE_FORMATTER);
+          } catch (DateTimeParseException e) {
+            validation = validation.combine(
+                ValidationResult.withFailures(List.of("MS Run Date must be formatted as YYYY-MM-DD")));
+          }
         }
       }
       return validation;

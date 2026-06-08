@@ -81,6 +81,7 @@ class MeasurementUpdateProcessorIP implements MeasurementProcessor<MeasurementUp
           commonMetadata.measurementId(),
           commonMetadata.organisationId(),
           commonMetadata.instrumentCURIE(),
+          commonMetadata.instrumentName(),
           commonMetadata.facility(),
           commonMetadata.samplePoolGroup(),
           specificMetadata,

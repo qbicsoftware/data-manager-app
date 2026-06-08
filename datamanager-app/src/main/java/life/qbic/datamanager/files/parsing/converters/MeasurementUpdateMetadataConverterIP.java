@@ -32,6 +32,8 @@ public class MeasurementUpdateMetadataConverterIP implements
           IPMeasurementEditColumn.ORGANISATION_URL.headerName(), "");
       var instrument = parsingResult.getValueOrDefault(i,
           IPMeasurementEditColumn.INSTRUMENT.headerName(), "");
+      var instrumentName = parsingResult.getValueOrDefault(i,
+          IPMeasurementEditColumn.INSTRUMENT_NAME.headerName(), "");
       var facility = parsingResult.getValueOrDefault(i,
           IPMeasurementEditColumn.FACILITY.headerName(), "");
       var samplePoolGroup = parsingResult.getValueOrDefault(i,
@@ -96,6 +98,7 @@ public class MeasurementUpdateMetadataConverterIP implements
           measurementId,
           organisationId,
           instrument,
+          instrumentName,
           facility,
           samplePoolGroup,
           Map.of(sampleId, specificMetadata),
