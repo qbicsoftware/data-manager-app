@@ -357,21 +357,21 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     var result = measurementService.deleteNgsMeasurements(context.projectId().orElseThrow(),
         measurementIds);
     result.onError(this::handleDeletionError);
-    result.onValue(ignored -> handleDeletionSuccessNgs());
+    result.onValue(ignored -> handleDeletionSuccessNgs(measurementIds.size()));
   }
 
   private void deletePxpMeasurements(Set<String> measurementIds) {
     var result = measurementService.deletePxpMeasurements(context.projectId().orElseThrow(),
         measurementIds);
     result.onError(this::handleDeletionError);
-    result.onValue(ignored -> handleDeletionSuccessPxp());
+    result.onValue(ignored -> handleDeletionSuccessPxp(measurementIds.size()));
   }
 
   private void deleteIpMeasurements(Set<String> measurementIds) {
     var result = measurementService.deleteIpMeasurements(context.projectId().orElseThrow(),
         measurementIds);
     result.onError(this::handleDeletionError);
-    result.onValue(ignored -> handleDeletionSuccessIp());
+    result.onValue(ignored -> handleDeletionSuccessIp(measurementIds.size()));
   }
 
   private void handleDeletionError(MeasurementDeletionException error) {
@@ -382,19 +382,29 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     showErrorNotification("Deletion failed", errorMessage);
   }
 
-  private void handleDeletionSuccessNgs() {
+  private void handleDeletionSuccessNgs(int count) {
+    displayDeletionSuccess(count);
     updateComponentVisibility();
     measurementDetailsComponent.refreshNgs();
   }
 
-  private void handleDeletionSuccessPxp() {
+  private void handleDeletionSuccessPxp(int count) {
+    displayDeletionSuccess(count);
     updateComponentVisibility();
     measurementDetailsComponent.refreshPxp();
   }
 
-  private void handleDeletionSuccessIp() {
+  private void handleDeletionSuccessIp(int count) {
+    displayDeletionSuccess(count);
     updateComponentVisibility();
     measurementDetailsComponent.refreshIp();
+  }
+
+  private void displayDeletionSuccess(int numberOfDeleted) {
+    Toast toast = messageFactory.toast("measurement.deletion.successful",
+        new Object[]{numberOfDeleted},
+        getLocale());
+    toast.open();
   }
 
 
