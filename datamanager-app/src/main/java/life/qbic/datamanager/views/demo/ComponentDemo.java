@@ -43,7 +43,6 @@ import life.qbic.datamanager.views.general.dialog.stepper.Step;
 import life.qbic.datamanager.views.general.dialog.stepper.StepperDialog;
 import life.qbic.datamanager.views.general.dialog.stepper.StepperDialogFooter;
 import life.qbic.datamanager.views.general.dialog.stepper.StepperDisplay;
-import life.qbic.datamanager.views.general.grid.Filter;
 import life.qbic.datamanager.views.general.grid.PredicateFilter;
 import life.qbic.datamanager.views.general.grid.component.FilterGrid;
 import life.qbic.datamanager.views.general.grid.component.FilterGridConfigurations;
@@ -206,7 +205,7 @@ public class ComponentDemo extends Div {
 
     var contactInMemoryConfiguration = FilterGridConfigurations.inMemory(
         examples,
-        nameContainsFilterTerm::test
+        nameContainsFilterTerm
     );
 
     var inMemoryPersonGrid = FilterGrid.create(
@@ -236,21 +235,6 @@ public class ComponentDemo extends Div {
     tabSheet.addPrimaryAction(filterTab, primaryAction);
 
     return new Div(tabSheet);
-  }
-
-  static class ExampleFilter implements Filter {
-
-    private String term;
-
-    ExampleFilter(String term) {
-      this.term = term;
-    }
-
-    @Override
-    public Optional<String> searchTerm() {
-      return Optional.ofNullable(this.term);
-    }
-
   }
 
   static List<Person> examples = new ArrayList<>();

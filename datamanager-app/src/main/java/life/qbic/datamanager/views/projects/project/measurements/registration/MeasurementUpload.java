@@ -49,6 +49,7 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.Measureme
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequest;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequestBody;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationResponse;
+import org.jspecify.annotations.NonNull;
 import org.springframework.util.unit.DataSize;
 import reactor.core.publisher.Flux;
 
@@ -272,10 +273,8 @@ public class MeasurementUpload extends Div implements UserInput {
     service.validate(Flux.fromIterable(requests))
         .doOnNext(ignored -> counter.incrementAndGet())
         .bufferTimeout(20, Duration.ofMillis(200))
-        .doOnNext(item -> uiHandle.onUiAndPush(() -> {
-          setValidationProgressText(
-              "Processed " + counter.get() + " requests from " + itemsToValidate);
-        }))
+        .doOnNext(item -> uiHandle.onUiAndPush(() -> setValidationProgressText(
+            "Processed " + counter.get() + " requests from " + itemsToValidate)))
         .flatMap(Flux::fromIterable)
         .collectList()
         .doOnSuccess(it -> uiHandle.onUi(this::validationFinished))
@@ -366,6 +365,7 @@ public class MeasurementUpload extends Div implements UserInput {
   }
 
   @Override
+  @NonNull
   public InputValidation validate() {
     var inputWithFailureSearch = measurementFileItems.stream()
         .map(MeasurementFileItem::measurementValidationReport)

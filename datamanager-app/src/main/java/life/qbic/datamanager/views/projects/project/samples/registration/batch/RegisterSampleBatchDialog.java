@@ -112,6 +112,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
     var maxFiles = 1;
     contentUploadComponent.setMaxFiles(maxFiles);
     contentUploadComponent.setI18n(getUploadI18N(maxFiles));
+    contentUploadComponent.setMaxFileSize(DataSize.ofBytes(MAX_FILE_SIZE));
 
     var uploadDisplay = new SampleUploadDisplay();
     Registration controllerRegistration = new SampleUploadDisplayController(projectId,
@@ -175,13 +176,6 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
     ParsingResult parsingResult = XLSXParser.create().parse(inputStream);
     return new SampleInformationExtractor()
         .extractInformationForNewSamples(parsingResult);
-  }
-
-  private static InvalidUploadDisplay invalidDisplay(
-      String fileName, List<ValidationResult> validationResults) {
-    List<String> failureReasons = validationResults.stream()
-        .flatMap(res -> res.failures().stream()).toList();
-    return new InvalidUploadDisplay(fileName, failureReasons);
   }
 
   private static ValidationRequest convertToRequest(SampleRegistrationInformation registration,
@@ -589,7 +583,6 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
     private final Div errorArea = new Div();
     private final Div displayContainer = new Div();
     private final Div fileSizeRestriction;
-    private String[] allowedFileExtensions = new String[0];
     private final Span displayContainerTitle = new Span("Uploaded File");
     private DataSize maxFileSize = null;
 
@@ -762,7 +755,6 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
                           .setDisplay(fileName, new ValidUploadDisplay(fileName,
                               successfulValidations.size()))));
                       validatedSampleMetadata.put(fileName, registrations);
-                      return;
                     }
                   },
                   () -> componentUI.ifPresent(

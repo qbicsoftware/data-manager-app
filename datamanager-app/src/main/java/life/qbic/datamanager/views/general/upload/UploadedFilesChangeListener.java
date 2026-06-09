@@ -64,8 +64,6 @@ public interface UploadedFilesChangeListener extends
    * @param fileName         the original file name
    * @param mimeType         the MIME type of the file
    * @param size             the file size in bytes
-   * @param validationStatus the current validation state
-   * @param statusMessage    a human-readable message describing the current status
    */
   record FileEntry(String fileName, String mimeType, long size) implements
       Serializable {
