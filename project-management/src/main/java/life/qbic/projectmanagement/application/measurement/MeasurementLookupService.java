@@ -48,6 +48,10 @@ public class MeasurementLookupService {
     return measurementRepository.findNGSMeasurement(measurementId);
   }
 
+  public Optional<ImmunopeptidomicsMeasurement> findIPMeasurement(String measurementCode) {
+    return measurementRepository.findIPMeasurement(measurementCode);
+  }
+
   public Optional<ImmunopeptidomicsMeasurement> findIPMeasurementById(String measurementId) {
     return measurementRepository.findIPMeasurementById(measurementId);
   }

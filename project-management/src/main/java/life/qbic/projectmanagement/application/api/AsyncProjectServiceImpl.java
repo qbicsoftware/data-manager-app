@@ -328,6 +328,10 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
         return updateMeasurementPxP(measurementUpdateRequest.projectId(),
             measurementUpdateRequest.requestId(), m);
       }
+      case MeasurementUpdateInformationIP m -> {
+        return updateMeasurementIP(measurementUpdateRequest.projectId(),
+            measurementUpdateRequest.requestId(), m);
+      }
     }
   }
 
@@ -349,6 +353,19 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     var errorMessage = "Error updating measurement";
     return applySecurityContext(Mono.fromCallable(() -> {
       measurementService.updateMeasurementNGS(projectId, measurement);
+      return new MeasurementUpdateResponse(requestId, measurement);
+    })).subscribeOn(scheduler)
+        .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
+        .doOnError(e -> log.error(errorMessage, e))
+        .retryWhen(defaultRetryStrategy())
+        .onErrorMap(e1 -> mapToAPIException(e1, errorMessage));
+  }
+
+  private Mono<MeasurementUpdateResponse> updateMeasurementIP(String projectId, String requestId,
+      MeasurementUpdateInformationIP measurement) {
+    var errorMessage = "Error updating immunopeptidomics measurement";
+    return applySecurityContext(Mono.fromCallable(() -> {
+      measurementService.updateMeasurementIP(projectId, measurement);
       return new MeasurementUpdateResponse(requestId, measurement);
     })).subscribeOn(scheduler)
         .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
@@ -951,6 +968,9 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
       // Measurement Registration - Immunopeptidomics
       case MeasurementRegistrationInformationIP req -> validateMeasurementMetadataIP(req,
           request.requestId(), request.experimentId(), request.projectId());
+      // Measurement Update - Immunopeptidomics
+      case MeasurementUpdateInformationIP req -> validateMeasurementMetadataIPUpdate(req,
+          request.requestId(), request.experimentId(), request.projectId());
     };
   }
 
@@ -1028,6 +1048,18 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     var securityContext = SecurityContextHolder.getContext();
     return applySecurityContext(Mono.fromCallable(
             () -> measurementValidationService.validateNGS(update, experimentId,
+                ProjectId.parse(projectId)))
+        .map(validationResult -> new ValidationResponse(requestId, validationResult)))
+        .contextWrite(reactiveSecurity(securityContext))
+        .subscribeOn(scheduler);
+  }
+
+  private Mono<ValidationResponse> validateMeasurementMetadataIPUpdate(
+      MeasurementUpdateInformationIP update, String requestId, String experimentId,
+      String projectId) {
+    var securityContext = SecurityContextHolder.getContext();
+    return applySecurityContext(Mono.fromCallable(
+            () -> measurementValidationService.validateIP(update, experimentId,
                 ProjectId.parse(projectId)))
         .map(validationResult -> new ValidationResponse(requestId, validationResult)))
         .contextWrite(reactiveSecurity(securityContext))

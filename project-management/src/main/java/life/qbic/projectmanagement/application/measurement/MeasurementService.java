@@ -29,6 +29,7 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.Measureme
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementSpecificIP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationNGS;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationPxP;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationIP;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.application.sample.SampleIdCodeEntry;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
@@ -114,6 +115,10 @@ public class MeasurementService {
 
   public Optional<ProteomicsMeasurement> findProteomicsMeasurement(String measurementCode) {
     return measurementLookupService.findProteomicsMeasurement(measurementCode);
+  }
+
+  public Optional<ImmunopeptidomicsMeasurement> findIPMeasurement(String measurementCode) {
+    return measurementLookupService.findIPMeasurement(measurementCode);
   }
 
   @PreAuthorize(
@@ -312,6 +317,11 @@ public class MeasurementService {
     return measurementIdMissing(measurement.measurementId());
   }
 
+  private boolean measurementIdMissing(MeasurementUpdateInformationIP measurement) {
+    Objects.requireNonNull(measurement);
+    return measurementIdMissing(measurement.measurementId());
+  }
+
   private static boolean measurementIdMissing(String measurementId) {
     return measurementId == null || measurementId.isEmpty();
   }
@@ -354,6 +364,100 @@ public class MeasurementService {
     measurementDomain.updateMethod(method);
     measurementDomain.setMeasurementName(measurement.measurementName());
     return measurementDomain;
+  }
+
+  @NonNull
+  private ImmunopeptidomicsMeasurement toDomainUpdate(MeasurementUpdateInformationIP measurement,
+      List<SampleIdCodeEntry> sampleCodeEntries) {
+    Objects.requireNonNull(measurement);
+    if (measurementIdMissing(measurement)) {
+      throw new MeasurementUpdateException(ErrorCode.MISSING_MEASUREMENT_ID);
+    }
+    if (measurementUnknown(measurement)) {
+      throw new MeasurementUpdateException(ErrorCode.UNKNOWN_MEASUREMENT);
+    }
+
+    var measurementDomain = measurementRepository.findIPMeasurement(
+        measurement.measurementId()).orElseThrow();
+    measurementDomain.setSpecificMetadata(
+        convertSpecificMetadataIP(measurement.specificMetadata(), sampleCodeEntries));
+    var organisationQuery = organisationLookupService.organisation(
+        measurement.organisationId());
+    if (organisationQuery.isEmpty()) {
+      throw new MeasurementUpdateException(ErrorCode.UNKNOWN_ORGANISATION_ROR_ID);
+    }
+
+    var msDeviceQuery = resolveOntologyCURI(measurement.instrumentCURIE());
+    if (msDeviceQuery.isEmpty()) {
+      throw new MeasurementUpdateException(ErrorCode.UNKNOWN_ONTOLOGY_TERM);
+    }
+
+    // Extract specific metadata fields from the first entry for method-level metadata
+    if (measurement.specificMetadata() == null || measurement.specificMetadata().isEmpty()) {
+      throw new MeasurementUpdateException(ErrorCode.FAILED);
+    }
+    var firstSpecific = measurement.specificMetadata().values().iterator().next();
+    var method = new IPMethodMetadata(
+        msDeviceQuery.get(),
+        measurement.instrumentName(),
+        measurement.facility(),
+        parseDoubleOrNull(firstSpecific.sampleMass()),
+        parseDoubleOrNull(firstSpecific.sampleVolume()),
+        firstSpecific.cycleFractionName(),
+        firstSpecific.mhcAntibody(),
+        firstSpecific.mhcTypingMethod(),
+        firstSpecific.enrichmentMethod(),
+        parseLocalDateOrNull(firstSpecific.prepDate()),
+        parseLocalDateOrNull(firstSpecific.msRunDate()),
+        firstSpecific.lcmsMethod(),
+        firstSpecific.lcColumn(),
+        firstSpecific.dataAcquisition(),
+        firstSpecific.massRange(),
+        parseIntegerOrNull(firstSpecific.retentionTimeRange()),
+        firstSpecific.chargeRange(),
+        firstSpecific.ionMobilityRange(),
+        firstSpecific.comment()
+    );
+
+    measurementDomain.setOrganisation(organisationQuery.get());
+    measurementDomain.updateMethod(method);
+    measurementDomain.setMeasurementName(measurement.measurementName());
+    measurementDomain.setSamplePoolGroup(measurement.samplePoolGroup());
+    return measurementDomain;
+  }
+
+  private boolean measurementUnknown(MeasurementUpdateInformationIP measurement) {
+    Objects.requireNonNull(measurement);
+    return measurementRepository.findIPMeasurement(measurement.measurementId()).isEmpty();
+  }
+
+  private void performUpdateIP(MeasurementUpdateInformationIP measurement, String projectId) {
+    Objects.requireNonNull(measurement);
+    var sampleCodeEntries = buildSampleIdCodeEntries(measurement.measuredSamples());
+    var measurementDomain = toDomainUpdate(measurement, sampleCodeEntries);
+    measurementDomainService.updateIPAll(List.of(measurementDomain));
+  }
+
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
+  public MeasurementUpdateInformationIP updateMeasurementIP(String projectId,
+      MeasurementUpdateInformationIP measurement) throws MeasurementUpdateException {
+    // 1. Setup domain event cache and dispatcher to listen to domain events
+    List<DomainEvent> domainEventsCache = new ArrayList<>();
+    var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
+    localDomainEventDispatcher.reset();
+    localDomainEventDispatcher.subscribe(
+        new MeasurementUpdatedDomainEventSubscriber(domainEventsCache));
+
+    // 2. Perform actual update
+    performUpdateIP(measurement, projectId);
+
+    // 3. Dispatch domain events
+    domainEventsCache.forEach(
+        domainEvent -> DomainEventDispatcher.instance().dispatch(domainEvent));
+
+    // 4. Return measurement information
+    return measurement;
   }
 
   @PreAuthorize(
@@ -549,7 +653,7 @@ public class MeasurementService {
 
     var method = new IPMethodMetadata(
         instrumentQuery.get(),
-        "",
+        measurement.instrumentName(),
         measurement.facility(),
         parseDoubleOrNull(firstSpecific.sampleMass()),
         parseDoubleOrNull(firstSpecific.sampleVolume()),

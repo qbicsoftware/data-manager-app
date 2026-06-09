@@ -7,6 +7,7 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.Measureme
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationIP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationNGS;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationPxP;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationIP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.SampleRegistrationInformation;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.SampleUpdateInformation;
 import org.apache.commons.collections.map.HashedMap;
@@ -52,6 +53,8 @@ public class ConverterRegistry {
         MeasurementUpdateMetadataConverterNGS::new);
     registry.put(MeasurementUpdateInformationPxP.class,
         MeasurementUpdateMetadataConverterPxP::new);
+    registry.put(MeasurementUpdateInformationIP.class,
+        MeasurementUpdateMetadataConverterIP::new);
     // Add more mappings ...
   }
 

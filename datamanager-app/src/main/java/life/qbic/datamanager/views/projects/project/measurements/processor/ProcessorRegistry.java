@@ -8,6 +8,7 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.Measureme
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationIP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationNGS;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationPxP;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationIP;
 
 /**
  * <b>Processor Registry</b>
@@ -35,6 +36,8 @@ public class ProcessorRegistry {
         MeasurementUpdateProcessorNGS::new);
     registry.put(MeasurementUpdateInformationPxP.class,
         MeasurementUpdateProcessorPxP::new);
+    registry.put(MeasurementUpdateInformationIP.class,
+        MeasurementUpdateProcessorIP::new);
     // Add more mappings ...
   }
 

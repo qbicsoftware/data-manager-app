@@ -50,6 +50,7 @@ class MeasurementRegistrationProcessorIP implements
       var pooledMeasurement = new MeasurementRegistrationInformationIP(
           commonMetadata.organisationId(),
           commonMetadata.instrumentCURIE(),
+          commonMetadata.instrumentName(),
           commonMetadata.facility(),
           commonMetadata.samplePoolGroup(),
           specificMetadata,

@@ -376,7 +376,8 @@ public class TemplateService {
         measurement.msRunDate().map(java.time.LocalDate::toString).orElse(""),
         convertSpecificMetadataIP(measurement.specificMeasurementMetadata().stream().toList(),
             sampleNameById),
-        measurement.measurementName()
+        measurement.measurementName(),
+        measurement.comment().orElse("")
     );
   }
 
