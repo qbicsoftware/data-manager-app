@@ -11,8 +11,6 @@ import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.component.textfield.TextField;
-import com.vaadin.flow.component.upload.UploadI18N;
-import com.vaadin.flow.component.upload.UploadI18N.Error;
 import com.vaadin.flow.shared.Registration;
 import java.io.IOException;
 import java.io.InputStream;
@@ -50,7 +48,6 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.SampleReg
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequest;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationResponse;
 import life.qbic.projectmanagement.application.api.fair.DigitalObject;
-import org.jspecify.annotations.NonNull;
 import org.springframework.util.MimeType;
 import org.springframework.util.unit.DataSize;
 import reactor.core.publisher.Flux;
@@ -109,9 +106,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
     contentUploadComponent = new ContentUploadComponent(uploadConfiguration);
     contentUploadComponent.setAcceptedFileTypes(
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-    var maxFiles = 1;
-    contentUploadComponent.setMaxFiles(maxFiles);
-    contentUploadComponent.setI18n(getUploadI18N(maxFiles));
+    contentUploadComponent.setMaxFiles(1);
     contentUploadComponent.setMaxFileSize(DataSize.ofBytes(MAX_FILE_SIZE));
 
     var uploadDisplay = new SampleUploadDisplay();
@@ -138,20 +133,6 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
     failedView.setVisible(false);
     succeededView.setVisible(false);
     add(initialView, inProgressView, failedView, succeededView, downloadComponent);
-  }
-
-  private @NonNull UploadI18N getUploadI18N(int maxFiles) {
-    Error errorTranslation = new Error();
-    errorTranslation.setFileIsTooBig(
-        "The provided file is too big. Please make sure your file is smaller than "
-            + contentUploadComponent.getMaxFileSize());
-    errorTranslation.setTooManyFiles(
-        "Please upload " + maxFiles + " file" + ((maxFiles > 1) ? "s" : "") + " at a time.");
-    errorTranslation.setIncorrectFileType(
-        "Unsupported file type. Please upload .xlsx files.");
-    UploadI18N uploadI18N = new UploadI18N();
-    uploadI18N.setError(errorTranslation);
-    return uploadI18N;
   }
 
   private void handleError(Throwable throwable) {
@@ -776,13 +757,10 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
 
       var removedRegistration = contentUploadComponent.addFileRemovedListener(
           event -> sampleUploadDisplay.removeDisplay(List.of(event.getFileName())));
-      var rejectionRegistration = contentUploadComponent.addFileRejectedListener(
-          event -> sampleUploadDisplay.setErrorText(event.getErrorMessage()));
 
       return () -> {
         changeRegistration.remove();
         removedRegistration.remove();
-        rejectionRegistration.remove();
       };
     }
   }

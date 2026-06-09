@@ -8,6 +8,7 @@ import com.vaadin.flow.component.upload.FileRejectedEvent;
 import com.vaadin.flow.component.upload.FileRemovedEvent;
 import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.component.upload.UploadI18N;
+import com.vaadin.flow.component.upload.UploadI18N.Error;
 import com.vaadin.flow.server.streams.UploadHandler;
 import com.vaadin.flow.server.streams.UploadMetadata;
 import com.vaadin.flow.shared.Registration;
@@ -27,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import life.qbic.application.commons.FileSizeFormatter;
 import life.qbic.datamanager.configuration.UploadConfiguration;
 import life.qbic.datamanager.views.general.upload.ContentUploadComponent.FileData.InMemory;
 import life.qbic.datamanager.views.general.upload.ContentUploadComponent.FileData.OnDisk;
@@ -45,16 +47,13 @@ public class ContentUploadComponent extends Div {
   private final Map<String, FileData> fileDataStore = Collections.synchronizedMap(
       new LinkedHashMap<>()); //linked hash map to keep insertion order
   private final Upload upload;
-
-  public void setI18n(UploadI18N uploadI18N) {
-    upload.setI18n(uploadI18N);
-  }
+  private final Div restrictionsArea = new Div();
 
 
   public record UploadedMetadata(String fileName, String mimeType, long size) {
 
-  }
 
+  }
   sealed interface FileData permits InMemory,
       OnDisk {
 
@@ -77,16 +76,16 @@ public class ContentUploadComponent extends Div {
         result = 31 * result + Objects.hashCode(metadata);
         return result;
       }
-    }
 
+    }
     record OnDisk(UploadMetadata metadata, Path path) implements
         FileData, Serializable {
 
+
     }
-
     UploadMetadata metadata();
-  }
 
+  }
 
   public ContentUploadComponent(UploadConfiguration uploadConfiguration) {
     //ensure cleanup after detachment of component
@@ -94,6 +93,19 @@ public class ContentUploadComponent extends Div {
 
     maxInMemoryBytes = uploadConfiguration.maxInMemoryThreshold().toBytes();
     upload = new Upload();
+
+    Error errorTranslation = new Error();
+    errorTranslation.setFileIsTooBig(
+        "The provided file is too big. Please try again with a smaller file.");
+    errorTranslation.setTooManyFiles(
+        "Too many files uploaded. Please try uploading less files.");
+    errorTranslation.setIncorrectFileType(
+        "Incorrect file type detected. Please ensure your file is intact and supported."
+    );
+    UploadI18N uploadI18N = new UploadI18N();
+    uploadI18N.setError(errorTranslation);
+    upload.setI18n(uploadI18N);
+
     UploadHandler handler = event -> {
       try {
         long fileSize = event.getFileSize();
@@ -108,6 +120,7 @@ public class ContentUploadComponent extends Div {
       }
     };
     upload.setUploadHandler(handler);
+    restrictionsArea.addClassNames("restrictions", "extra-small-body-text", "color-secondary");
     if (!uploadConfiguration.maxFileSize().isNegative()) {
       setMaxFileSize(uploadConfiguration.maxFileSize());
     }
@@ -119,11 +132,24 @@ public class ContentUploadComponent extends Div {
         log.warn("Failed to upload " + event.getFileName() +
             " Reason: " + event.getErrorMessage()));
 
-    add(upload);
+    add(upload, restrictionsArea);
   }
 
   public void setMaxFileSize(@NonNull DataSize maxFileSize) {
-    upload.setMaxFileSize(Math.toIntExact(maxFileSize.toBytes()));
+    setMaxFileSize(Math.toIntExact(maxFileSize.toBytes()));
+  }
+
+  public void setMaxFileSize(int maxFileSize) {
+    if (maxFileSize <= 0) {
+      upload.getElement().removeProperty("maxFileSize");
+    } else {
+      upload.setMaxFileSize(maxFileSize);
+    }
+    updateRestrictionsDisplay();
+  }
+
+  public void setI18n(UploadI18N uploadI18N) {
+    upload.setI18n(uploadI18N);
   }
 
   /**
@@ -146,6 +172,15 @@ public class ContentUploadComponent extends Div {
         file.metadata().contentLength());
   }
 
+  protected void updateRestrictionsDisplay() {
+    if (getMaxFileSize() > 0) {
+      restrictionsArea.setText(
+          "Maximum file size is " + FileSizeFormatter.formatBytes(getMaxFileSize()));
+      restrictionsArea.setVisible(true);
+    } else {
+      restrictionsArea.setVisible(false);
+    }
+  }
   private synchronized void deletePendingFiles() {
     fileDataStore.values().forEach(
         it -> {
@@ -269,8 +304,12 @@ public class ContentUploadComponent extends Div {
     };
   }
 
-  public DataSize getMaxFileSize() {
-    return DataSize.ofBytes(upload.getMaxFileSize());
+  public long getMaxFileSize() {
+    return upload.getMaxFileSize();
+  }
+
+  public int getMaxFiles() {
+    return upload.getMaxFiles();
   }
 
   public Registration addChangeListener(UploadedFilesChangeListener listener) {
