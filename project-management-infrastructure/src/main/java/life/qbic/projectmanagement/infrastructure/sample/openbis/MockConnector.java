@@ -91,6 +91,11 @@ public class MockConnector implements QbicProjectDataRepo, SampleDataRepository,
   }
 
   @Override
+  public void deleteImmunopeptidomicsMeasurements(List<ImmunopeptidomicsMeasurement> measurements) {
+    logWarning();
+  }
+
+  @Override
   public void saveAllProteomics(
       Map<ProteomicsMeasurement, Collection<SampleIdCodeEntry>> proteomicsMeasurementsMapping) {
     logWarning();
