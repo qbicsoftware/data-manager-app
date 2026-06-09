@@ -19,6 +19,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.ClientDetailsProvider;
+import life.qbic.datamanager.configuration.UploadConfiguration;
 import life.qbic.datamanager.views.AppRoutes.ProjectRoutes;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.Disclaimer;
@@ -86,6 +87,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   private final transient SampleValidationService sampleValidationService;
   private final transient SampleRegistrationServiceV2 sampleRegistrationServiceV2;
   private final transient AsyncProjectService asyncProjectService;
+  private final transient UploadConfiguration uploadConfiguration;
   private final MessageSourceNotificationFactory messageFactory;
   private transient Context context;
 
@@ -99,9 +101,10 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
       SampleRegistrationServiceV2 sampleRegistrationServiceV2,
       MessageSourceNotificationFactory messageSourceNotificationFactory,
       BatchInformationService batchInformationService,
-      ClientDetailsProvider clientDetailsProvider) {
+      ClientDetailsProvider clientDetailsProvider,
+      UploadConfiguration uploadConfiguration) {
     this.downloadComponent = new DownloadComponent();
-
+    this.uploadConfiguration = uploadConfiguration;
     this.experimentInformationService = requireNonNull(experimentInformationService,
         "ExperimentInformationService cannot be null");
     this.deletionService = requireNonNull(deletionService,
@@ -172,7 +175,8 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
         .orElseThrow();
     RegisterSampleBatchDialog registerSampleBatchDialog = new RegisterSampleBatchDialog(
         asyncProjectService, messageFactory, experimentId.value(),
-        projectId.value(), projectOverview.projectCode());
+        projectId.value(), projectOverview.projectCode(),
+        uploadConfiguration);
     UI ui = UI.getCurrent();
     registerSampleBatchDialog.addConfirmListener(event -> {
       var sampleMetadata = new ArrayList<>(event.validatedSampleMetadata());

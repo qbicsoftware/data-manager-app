@@ -53,7 +53,7 @@ import life.qbic.datamanager.views.general.grid.component.FilterGridTabSheet.Tab
 import life.qbic.datamanager.views.general.grid.component.GridConfiguration.FilterTester;
 import life.qbic.datamanager.views.general.icon.IconFactory;
 import life.qbic.datamanager.views.general.upload.ContentUploadComponent;
-import life.qbic.datamanager.views.general.upload.UploadFileDisplay.FileEntry;
+import life.qbic.datamanager.views.general.upload.UploadedFilesChangeListener.FileEntry;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.ExperimentalVariablesInput;
 import life.qbic.datamanager.views.projects.project.info.SimpleParagraph;
@@ -61,8 +61,6 @@ import life.qbic.logging.api.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.lang.NonNull;
-import org.springframework.util.unit.DataSize;
-import org.springframework.util.unit.DataUnit;
 
 /**
  * <b>Component Demo</b>
@@ -88,10 +86,13 @@ public class ComponentDemo extends Div {
   public static final String NORMAL_BODY_TEXT = "normal-body-text";
   Div title = new Div("Data Manager - Component Demo");
   private final MessageSourceNotificationFactory messageFactory;
+  private final UploadConfiguration uploadConfiguration;
 
   @Autowired
-  public ComponentDemo(MessageSourceNotificationFactory messageSourceNotificationFactory) {
+  public ComponentDemo(MessageSourceNotificationFactory messageSourceNotificationFactory,
+      UploadConfiguration uploadConfiguration) {
     this.messageFactory = Objects.requireNonNull(messageSourceNotificationFactory);
+    this.uploadConfiguration = Objects.requireNonNull(uploadConfiguration);
     title.addClassName("heading-1");
     addClassNames("padding-horizontal-07", "padding-vertical-04");
     add(title);
@@ -110,11 +111,12 @@ public class ComponentDemo extends Div {
     add(filterGridShowCase());
   }
 
-  private static @org.jspecify.annotations.NonNull ContentUploadComponent uploadShowcase() {
-    ContentUploadComponent contentUploadComponent = new ContentUploadComponent(
-        new UploadConfiguration(DataSize.of(5, DataUnit.MEGABYTES)));
+  private @org.jspecify.annotations.NonNull ContentUploadComponent uploadShowcase() {
+    ContentUploadComponent contentUploadComponent = new ContentUploadComponent(uploadConfiguration);
 
-    contentUploadComponent.addDisplay((files, changeType) -> {
+    contentUploadComponent.addChangeListener(event -> {
+      var files = event.changedFiles();
+      var changeType = event.changeType();
       for (FileEntry file : files) {
         System.out.println("file = " + file);
         System.out.println("changeType = " + changeType);
@@ -220,9 +222,9 @@ public class ComponentDemo extends Div {
     tabSheet.addTab(filterTab);
     tabSheet.addTab(filterTabContacts);
     tabSheet.addTab(filterTabInMemoryPerson);
-    TabAction<FilterGridTab<ComponentDemo.Person>, ComponentDemo.Person> featureAction = tab -> log.info(
+    TabAction<FilterGridTab<Person>, Person> featureAction = tab -> log.info(
         "feature for tab: " + tab);
-    TabAction<FilterGridTab<ComponentDemo.Person>, ComponentDemo.Person> primaryAction = tab -> log.info(
+    TabAction<FilterGridTab<Person>, Person> primaryAction = tab -> log.info(
         "primary action for tab: " + tab);
 
     tabSheet.addFeatureAction(filterTab, featureAction);

@@ -1,73 +1,57 @@
 package life.qbic.datamanager.views.general.upload;
 
 
+import com.vaadin.flow.component.ComponentEvent;
+import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.upload.FileRejectedEvent;
+import com.vaadin.flow.component.upload.FileRemovedEvent;
 import com.vaadin.flow.component.upload.Upload;
+import com.vaadin.flow.component.upload.UploadI18N;
 import com.vaadin.flow.server.streams.UploadHandler;
 import com.vaadin.flow.server.streams.UploadMetadata;
+import com.vaadin.flow.shared.Registration;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import life.qbic.datamanager.configuration.UploadConfiguration;
 import life.qbic.datamanager.views.general.upload.ContentUploadComponent.FileData.InMemory;
 import life.qbic.datamanager.views.general.upload.ContentUploadComponent.FileData.OnDisk;
-import life.qbic.datamanager.views.general.upload.ContentUploadComponent.ValidationStatus.Failure;
-import life.qbic.datamanager.views.general.upload.ContentUploadComponent.ValidationStatus.None;
-import life.qbic.datamanager.views.general.upload.ContentUploadComponent.ValidationStatus.Success;
-import life.qbic.datamanager.views.general.upload.ContentUploadComponent.ValidationStatus.Validating;
-import life.qbic.datamanager.views.general.upload.UploadFileDisplay.ChangeType;
-import life.qbic.datamanager.views.general.upload.UploadFileDisplay.FileEntry;
+import life.qbic.datamanager.views.general.upload.UploadedFilesChangeListener.ChangeType;
+import life.qbic.datamanager.views.general.upload.UploadedFilesChangeListener.FileEntry;
+import life.qbic.datamanager.views.general.upload.UploadedFilesChangeListener.UploadedFilesChangeEvent;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
+import org.jspecify.annotations.NonNull;
+import org.springframework.util.unit.DataSize;
 
 public class ContentUploadComponent extends Div {
 
   private static final Logger log = LoggerFactory.logger(ContentUploadComponent.class);
   private final long maxInMemoryBytes;
-  private final Map<String, TrackedFile> fileDataStore = Collections.synchronizedMap(
+  private final Map<String, FileData> fileDataStore = Collections.synchronizedMap(
       new LinkedHashMap<>()); //linked hash map to keep insertion order
-  private final Set<UploadFileDisplay> displays = new HashSet<>();
   private final Upload upload;
 
-
-  sealed interface ValidationStatus permits Failure, None, Success, Validating {
-
-    record None() implements ValidationStatus {
-
-    }
-
-    record Validating() implements ValidationStatus {
-
-    }
-
-    record Success(String message) implements ValidationStatus {
-
-    }
-
-    record Failure(String message) implements ValidationStatus {
-
-    }
+  public void setI18n(UploadI18N uploadI18N) {
+    upload.setI18n(uploadI18N);
   }
+
 
   public record UploadedMetadata(String fileName, String mimeType, long size) {
-
-  }
-
-  record TrackedFile(FileData data, ValidationStatus validationStatus) {
 
   }
 
@@ -75,7 +59,7 @@ public class ContentUploadComponent extends Div {
       OnDisk {
 
     record InMemory(UploadMetadata metadata, byte[] data)
-        implements FileData {
+        implements FileData, Serializable {
 
       @Override
       public boolean equals(Object o) {
@@ -96,63 +80,76 @@ public class ContentUploadComponent extends Div {
     }
 
     record OnDisk(UploadMetadata metadata, Path path) implements
-        FileData {
+        FileData, Serializable {
 
     }
 
     UploadMetadata metadata();
   }
 
+
   public ContentUploadComponent(UploadConfiguration uploadConfiguration) {
     //ensure cleanup after detachment of component
     addDetachListener(event -> deletePendingFiles());
 
-    maxInMemoryBytes = uploadConfiguration.maxInMemoryBytes();
+    maxInMemoryBytes = uploadConfiguration.maxInMemoryThreshold().toBytes();
     upload = new Upload();
     UploadHandler handler = event -> {
-      long fileSize = event.getFileSize();
-      var fileName = event.getFileName();
-      //if file with name already exists, it is replaced.
-      if (fileDataStore.containsKey(fileName)) {
-        //seems the only way to change the error message
-        String message = "File with name " + fileName + " already exists";
-        //todo in vaadin 25 upload can be rejected with event.reject(message)
-        throw new RuntimeException(message);
+      try {
+        long fileSize = event.getFileSize();
+        //decide how to handle the upload based on filesize
+        UploadHandler delegateHandler = fileSize <= maxInMemoryBytes
+            ? UploadHandler.inMemory(this::process)
+            : UploadHandler.toTempFile(this::process);
+        delegateHandler.handleUploadRequest(event);
+      } catch (IOException e) {
+        log.warn("Unexpected upload failure: " + e.getMessage());
+        fireEvent(new UnspecificFailedEvent(this, false, e));
       }
-
-      //decide how to handle the upload based on filesize
-      UploadHandler delegateHandler = fileSize <= maxInMemoryBytes
-          ? UploadHandler.inMemory(this::setData)
-          : UploadHandler.toTempFile(this::setData);
-      delegateHandler.handleUploadRequest(event);
     };
     upload.setUploadHandler(handler);
+    if (!uploadConfiguration.maxFileSize().isNegative()) {
+      setMaxFileSize(uploadConfiguration.maxFileSize());
+    }
+
     upload.addFileRemovedListener(event -> removeFile(event.getFileName()));
     upload.addAllFinishedListener(event -> {
     });
+    upload.addFileRejectedListener(event ->
+        log.warn("Failed to upload " + event.getFileName() +
+            " Reason: " + event.getErrorMessage()));
+
     add(upload);
   }
 
-  private FileEntry maptoFileEntry(TrackedFile trackedFile) {
-    var validationMessage = switch (trackedFile.validationStatus()) {
-      case Failure(String message) -> message;
-      case None ignored -> "";
-      case Success(String message) -> message;
-      case Validating ignored -> "";
-    };
+  public void setMaxFileSize(@NonNull DataSize maxFileSize) {
+    upload.setMaxFileSize(Math.toIntExact(maxFileSize.toBytes()));
+  }
 
-    return new FileEntry(trackedFile.data().metadata().fileName(),
-        trackedFile.data().metadata().contentType(),
-        trackedFile.data().metadata().contentLength(),
-        mapValidationStatus(trackedFile.validationStatus()),
-        validationMessage
-    );
+  /**
+   * @param acceptedFileTypes a list of accepted file types
+   * @see Upload#setAcceptedFileTypes(String...)
+   */
+  public void setAcceptedFileTypes(String... acceptedFileTypes) {
+    upload.setAcceptedFileTypes(acceptedFileTypes);
+  }
+
+  public void setMaxFiles(int maxFiles) {
+    upload.setMaxFiles(maxFiles);
+  }
+
+
+  private FileEntry maptoFileEntry(FileData file) {
+
+    return new FileEntry(file.metadata().fileName(),
+        file.metadata().contentType(),
+        file.metadata().contentLength());
   }
 
   private synchronized void deletePendingFiles() {
     fileDataStore.values().forEach(
         it -> {
-          if (it.data() instanceof OnDisk onDisk) {
+          if (it instanceof OnDisk onDisk) {
             deleteFileFromDisk(onDisk);
           }
         }
@@ -163,12 +160,12 @@ public class ContentUploadComponent extends Div {
     assert fileDataStore.containsKey(
         fileName) : "The removed file was uploaded before";
     if (fileDataStore.containsKey(fileName)) {
-      TrackedFile trackedFile = fileDataStore.get(fileName);
-      if (trackedFile.data() instanceof OnDisk onDisk) {
+      FileData trackedFile = fileDataStore.get(fileName);
+      if (trackedFile instanceof OnDisk onDisk) {
         deleteFileFromDisk(onDisk);
       }
       fileDataStore.remove(fileName);
-      notifyDisplayFilesRemoved(List.of(maptoFileEntry(trackedFile)));
+      fireRemoveChange(List.of(trackedFile));
     }
   }
 
@@ -181,38 +178,34 @@ public class ContentUploadComponent extends Div {
     }
   }
 
-  private void guardDuplicateFiles(String fileName) {
-    if (fileDataStore.containsKey(fileName)) {
-      throw new RuntimeException("File with name " + fileName + " already exists");
-    }
+  private void fireAddedChange(List<FileData> files) {
+    fireEvent(new UploadedFilesChangeEvent(this,
+        fileDataStore.values().stream().map(this::maptoFileEntry).toList(),
+        files.stream().map(this::maptoFileEntry).toList(),
+        ChangeType.FILE_ADDED));
   }
 
-  private void notifyDisplayFilesAdded(List<FileEntry> files) {
-    for (UploadFileDisplay display : displays) {
-      display.onFilesChanged(files, ChangeType.FILE_ADDED);
-    }
+  private void fireRemoveChange(List<FileData> files) {
+    fireEvent(new UploadedFilesChangeEvent(this,
+        fileDataStore.values().stream().map(this::maptoFileEntry).toList(),
+        files.stream().map(this::maptoFileEntry).toList(),
+        ChangeType.FILE_REMOVED));
   }
 
-  private void notifyDisplayFilesRemoved(List<FileEntry> files) {
-    for (UploadFileDisplay display : displays) {
-      display.onFilesChanged(files, ChangeType.FILE_REMOVED);
-    }
+  private void process(UploadMetadata metadata, File file) {
+    setData(new OnDisk(metadata, file.toPath()));
   }
 
-  private synchronized void setData(UploadMetadata metadata, File file) {
-    guardDuplicateFiles(metadata.fileName());
-    TrackedFile trackedFile = new TrackedFile(new OnDisk(metadata, file.toPath()), new None());
-    fileDataStore.put(metadata.fileName(), trackedFile);
-    notifyDisplayFilesAdded(List.of(maptoFileEntry(trackedFile)));
+  private void process(UploadMetadata metadata, byte[] data) {
+    setData(new InMemory(metadata, data));
   }
 
-  private synchronized void setData(UploadMetadata metadata, byte[] data) {
-    guardDuplicateFiles(metadata.fileName());
-    TrackedFile trackedFile = new TrackedFile(new InMemory(metadata, data), new None());
-    fileDataStore.put(metadata.fileName(), trackedFile);
-    notifyDisplayFilesAdded(List.of(maptoFileEntry(trackedFile)));
-
+  private synchronized void setData(FileData fileData) {
+    String fileName = fileData.metadata().fileName();
+    fileDataStore.put(fileName, fileData);
+    fireAddedChange(List.of(fileData));
   }
+
 
 
   protected boolean isEmpty() {
@@ -235,7 +228,7 @@ public class ContentUploadComponent extends Div {
     if (!fileDataStore.containsKey(fileName)) {
       return Optional.empty();
     }
-    FileData entry = fileDataStore.get(fileName).data();
+    FileData entry = fileDataStore.get(fileName);
     return switch (entry) {
       case InMemory inMemory -> Optional.of(new UploadedMetadata(inMemory.metadata().fileName(),
           inMemory.metadata().contentType(), inMemory.metadata().contentLength()));
@@ -260,7 +253,7 @@ public class ContentUploadComponent extends Div {
     if (!fileDataStore.containsKey(fileName)) {
       return Optional.empty();
     }
-    FileData fileData = fileDataStore.get(fileName).data();
+    FileData fileData = fileDataStore.get(fileName);
     return switch (fileData) {
       case InMemory inMemory -> Optional.of(new ByteArrayInputStream(inMemory.data()));
       case OnDisk onDisk -> {
@@ -276,34 +269,48 @@ public class ContentUploadComponent extends Div {
     };
   }
 
-  public void addDisplay(UploadFileDisplay display) {
-    List<FileEntry> allFiles = fileDataStore.values()
-        .stream()
-        .map(this::maptoFileEntry)
-        .toList();
-    display.onFilesChanged(allFiles, ChangeType.FILE_ADDED);
-    List<FileEntry> validating = allFiles.stream().filter(
-        it -> it.validationStatus().equals(UploadFileDisplay.ValidationStatus.VALIDATING)).toList();
-    display.onFilesChanged(validating, ChangeType.VALIDATION_STARTED);
-    List<FileEntry> validated = allFiles.stream().filter(
-        it -> it.validationStatus().equals(UploadFileDisplay.ValidationStatus.SUCCESS)
-            || it.validationStatus().equals(
-            UploadFileDisplay.ValidationStatus.FAILED)).toList();
-    display.onFilesChanged(validated, ChangeType.VALIDATION_COMPLETED);
-    //only add at the end to ensure initial state is loaded
-    displays.add(display);
+  public DataSize getMaxFileSize() {
+    return DataSize.ofBytes(upload.getMaxFileSize());
   }
 
-  public void removeDisplay(UploadFileDisplay display) {
-    displays.remove(display);
+  public Registration addChangeListener(UploadedFilesChangeListener listener) {
+    return addListener(UploadedFilesChangeEvent.class, listener);
   }
 
-  UploadFileDisplay.ValidationStatus mapValidationStatus(ValidationStatus validationStatus) {
-    return switch (validationStatus) {
-      case Failure failure -> UploadFileDisplay.ValidationStatus.FAILED;
-      case None none -> UploadFileDisplay.ValidationStatus.UPLOADED;
-      case Success success -> UploadFileDisplay.ValidationStatus.SUCCESS;
-      case Validating validating -> UploadFileDisplay.ValidationStatus.VALIDATING;
-    };
+  public Registration addUnspecificFailureListener(
+      ComponentEventListener<UnspecificFailedEvent> listener) {
+    return addListener(UnspecificFailedEvent.class, listener);
   }
+
+  public Registration addFileRejectedListener(ComponentEventListener<FileRejectedEvent> listener) {
+    return upload.addFileRejectedListener(listener);
+  }
+
+  public Registration addFileRemovedListener(ComponentEventListener<FileRemovedEvent> listener) {
+    return upload.addFileRemovedListener(listener);
+  }
+
+  public static class UnspecificFailedEvent extends ComponentEvent<ContentUploadComponent> {
+
+    private final Exception cause;
+
+    /**
+     * Creates a new event using the given source and indicator whether the event originated from
+     * the client side or the server side.
+     *
+     * @param source     the source component
+     * @param fromClient <code>true</code> if the event originated from the client
+     *                   side, <code>false</code> otherwise
+     */
+    public UnspecificFailedEvent(ContentUploadComponent source, boolean fromClient,
+        Exception cause) {
+      super(source, fromClient);
+      this.cause = cause;
+    }
+
+    public Exception getCause() {
+      return cause;
+    }
+  }
+
 }

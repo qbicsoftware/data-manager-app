@@ -514,8 +514,7 @@ Since we want to remove the spacing between the cancel and confirm button we rep
 }
 
 .measurement-upload-dialog .upload-items-display .uploaded-measurement-items .measurement-item,
-.register-samples-dialog .uploaded-items-section .uploaded-item,
-.edit-samples-dialog .uploaded-items-section .uploaded-item {
+.uploaded-items-section .uploaded-item {
   font-size: var(--lumo-font-size-s);
   display: flex;
   padding-top: var(--lumo-space-m);

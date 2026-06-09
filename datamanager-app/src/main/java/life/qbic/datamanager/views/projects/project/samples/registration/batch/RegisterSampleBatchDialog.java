@@ -1,9 +1,9 @@
 package life.qbic.datamanager.views.projects.project.samples.registration.batch;
 
 import com.vaadin.flow.component.ClickEvent;
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
-import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
@@ -11,19 +11,25 @@ import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.component.upload.UploadI18N;
+import com.vaadin.flow.component.upload.UploadI18N.Error;
 import com.vaadin.flow.shared.Registration;
 import java.io.IOException;
+import java.io.InputStream;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.FileNameFormatter;
+import life.qbic.datamanager.configuration.UploadConfiguration;
 import life.qbic.datamanager.files.export.download.ByteArrayDownloadStreamProvider;
 import life.qbic.datamanager.files.parsing.MetadataParser.ParsingException;
 import life.qbic.datamanager.files.parsing.ParsingResult;
@@ -32,10 +38,8 @@ import life.qbic.datamanager.files.parsing.SampleInformationExtractor.SampleInfo
 import life.qbic.datamanager.files.parsing.xlsx.XLSXParser;
 import life.qbic.datamanager.views.general.WizardDialogWindow;
 import life.qbic.datamanager.views.general.download.DownloadComponent;
-import life.qbic.datamanager.views.general.upload.UploadWithDisplay;
-import life.qbic.datamanager.views.general.upload.UploadWithDisplay.FileType;
-import life.qbic.datamanager.views.general.upload.UploadWithDisplay.SucceededEvent;
-import life.qbic.datamanager.views.general.upload.UploadWithDisplay.UploadedData;
+import life.qbic.datamanager.views.general.upload.ContentUploadComponent;
+import life.qbic.datamanager.views.general.upload.UploadedFilesChangeListener.FileEntry;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
@@ -46,14 +50,16 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.SampleReg
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequest;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationResponse;
 import life.qbic.projectmanagement.application.api.fair.DigitalObject;
+import org.jspecify.annotations.NonNull;
 import org.springframework.util.MimeType;
+import org.springframework.util.unit.DataSize;
 import reactor.core.publisher.Flux;
 
 public class RegisterSampleBatchDialog extends WizardDialogWindow {
 
   private static final MimeType OPEN_XML = MimeType.valueOf(
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-  private final List<SampleRegistrationInformation> validatedSampleMetadata;
+  private final Map<String, List<SampleRegistrationInformation>> validatedSampleMetadata;
   private final TextField batchNameField;
   private static final Logger log = LoggerFactory.logger(RegisterSampleBatchDialog.class);
   private static final int MAX_FILE_SIZE = 25 * 1024 * 1024;
@@ -61,7 +67,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
   private final Div inProgressView;
   private final Div failedView;
   private final Div succeededView;
-  private final UploadWithDisplay uploadWithDisplay;
+  private final ContentUploadComponent contentUploadComponent;
   private final transient MessageSourceNotificationFactory messageFactory;
   private final DownloadComponent downloadComponent;
   private final transient AsyncProjectService service;
@@ -70,7 +76,8 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
       MessageSourceNotificationFactory messageFactory,
       String experimentId,
       String projectId,
-      String projectCode) {
+      String projectCode,
+      UploadConfiguration uploadConfiguration) {
     service = Objects.requireNonNull(asyncProjectService);
     this.messageFactory = Objects.requireNonNull(messageFactory);
     this.downloadComponent = new DownloadComponent();
@@ -97,24 +104,31 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
     Div downloadMetadataSection = setupDownloadMetadataSection(service, experimentId,
         projectId, projectCode);
 
-    validatedSampleMetadata = new ArrayList<>();
-    uploadWithDisplay = new UploadWithDisplay(MAX_FILE_SIZE, new FileType[]{
-        new FileType(".xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-    });
-    uploadWithDisplay.addUnspecificFailureListener(
+    validatedSampleMetadata = new HashMap<>();
+
+    contentUploadComponent = new ContentUploadComponent(uploadConfiguration);
+    contentUploadComponent.setAcceptedFileTypes(
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    var maxFiles = 1;
+    contentUploadComponent.setMaxFiles(maxFiles);
+    contentUploadComponent.setI18n(getUploadI18N(maxFiles));
+
+    var uploadDisplay = new SampleUploadDisplay();
+    Registration controllerRegistration = new SampleUploadDisplayController(projectId,
+        experimentId)
+        .control(uploadDisplay, contentUploadComponent);
+    uploadDisplay.addDetachListener(it -> controllerRegistration.remove());
+
+    contentUploadComponent.addUnspecificFailureListener(
         uploadFailed ->
-            /* display of the error is handled by the uploadWithDisplay component. However we do need to log with the context*/
+            /* display of the error is handled by the uploadWithDisplay component. However, we do need to log with the context*/
             log.error(
                 "Upload failed for project(" + projectId + ") experiment(" + experimentId + ")",
                 uploadFailed.getCause()));
-    uploadWithDisplay.addSuccessListener(
-        uploadSucceeded -> onUploadSucceeded(experimentId, projectId,
-            uploadSucceeded));
-    uploadWithDisplay.addRemovedListener(uploadRemoved -> setValidatedSampleMetadata(List.of()));
 
     Span uploadTheSampleDataTitle = new Span("Upload the sample data");
     uploadTheSampleDataTitle.addClassName("section-title");
-    Div uploadSection = new Div(uploadTheSampleDataTitle, uploadWithDisplay);
+    Div uploadSection = new Div(uploadTheSampleDataTitle, contentUploadComponent, uploadDisplay);
     uploadSection.addClassName("upload-section");
     uploadSection.addClassName("section-with-title");
     initialView.add(batchNameField, downloadMetadataSection, uploadSection);
@@ -123,6 +137,20 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
     failedView.setVisible(false);
     succeededView.setVisible(false);
     add(initialView, inProgressView, failedView, succeededView, downloadComponent);
+  }
+
+  private @NonNull UploadI18N getUploadI18N(int maxFiles) {
+    Error errorTranslation = new Error();
+    errorTranslation.setFileIsTooBig(
+        "The provided file is too big. Please make sure your file is smaller than "
+            + contentUploadComponent.getMaxFileSize());
+    errorTranslation.setTooManyFiles(
+        "Please upload " + maxFiles + " file" + ((maxFiles > 1) ? "s" : "") + " at a time.");
+    errorTranslation.setIncorrectFileType(
+        "Unsupported file type. Please upload .xlsx files.");
+    UploadI18N uploadI18N = new UploadI18N();
+    uploadI18N.setError(errorTranslation);
+    return uploadI18N;
   }
 
   private void handleError(Throwable throwable) {
@@ -143,8 +171,8 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
   }
 
   private static List<SampleInformationForNewSample> extractSampleInformationForNewSamples(
-      UploadedData uploadedData) {
-    ParsingResult parsingResult = XLSXParser.create().parse(uploadedData.inputStream());
+      InputStream inputStream) {
+    ParsingResult parsingResult = XLSXParser.create().parse(inputStream);
     return new SampleInformationExtractor()
         .extractInformationForNewSamples(parsingResult);
   }
@@ -161,83 +189,8 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
     return new ValidationRequest(projectId, experimentId, registration);
   }
 
-  private void setValidatedSampleMetadata(List<SampleRegistrationInformation> registrations) {
-    this.validatedSampleMetadata.clear();
-    this.validatedSampleMetadata.addAll(registrations);
-  }
 
-  private void onUploadSucceeded(
-      String experimentId,
-      String projectId,
-      SucceededEvent uploadSucceeded) {
-    UploadWithDisplay component = uploadSucceeded.getSource();
-    UI ui = component.getUI().orElseThrow();
-    UploadedData uploadedData = component.getUploadedData().orElseThrow();
-
-    InProgressDisplay uploadProgressDisplay = new InProgressDisplay(uploadedData.fileName());
-    component.setDisplay(uploadProgressDisplay);
-
-    List<SampleInformationForNewSample> sampleInformationForNewSamples;
-    try {
-      sampleInformationForNewSamples = extractSampleInformationForNewSamples(
-          uploadedData);
-    } catch (ParsingException e) {
-      RuntimeException runtimeException = new RuntimeException(
-          "Parsing failed.", e);
-      log.error("Could not complete validation. " + e.getMessage(), runtimeException);
-      InvalidUploadDisplay invalidUploadDisplay = new InvalidUploadDisplay(
-          uploadedData.fileName(), "Could not complete validation. " + e.getMessage());
-      ui.access(() -> component.setDisplay(invalidUploadDisplay));
-      throw runtimeException;
-    }
-
-    var registrations = sampleInformationForNewSamples.stream()
-        .map(this::convertToRegistration).toList();
-
-    var responseStream = executeValidation(registrations, projectId, experimentId).doOnError(cause -> {
-      log.error("Validation failed.", cause);
-      InvalidUploadDisplay invalidUploadDisplay = new InvalidUploadDisplay(
-          uploadedData.fileName(), "Apologies, the validation failed. Please try again.");
-      ui.access(() -> component.setDisplay(invalidUploadDisplay));
-    }).toStream();
-
-    List<ValidationResult> failedValidations = new ArrayList<>();
-    List<ValidationResult> successfulValidations = new ArrayList<>();
-
-    responseStream.forEach(responseResult -> {
-      if (responseResult.result().containsFailures()) {
-        failedValidations.add(responseResult.result());
-      } else {
-        successfulValidations.add(responseResult.result());
-      }
-    });
-
-    if (!failedValidations.isEmpty()) {
-      ui.access(() -> component.setDisplay(invalidDisplay(
-          uploadedData.fileName(),
-          failedValidations.stream()
-              .toList())));
-      setValidatedSampleMetadata(List.of());
-      return;
-    }
-
-    if (successfulValidations.isEmpty()) {
-      // the empty case!
-      ui.access(() -> component.setDisplay(
-          new InvalidUploadDisplay(uploadedData.fileName(),
-              "No valid sample metadata provided.")));
-    }
-
-    if (!successfulValidations.isEmpty()) {
-      ui.access(() -> component
-          .setDisplay(new ValidUploadDisplay(uploadedData.fileName(),
-              successfulValidations.size())));
-      setValidatedSampleMetadata(registrations);
-    }
-  }
-
-
-  private SampleRegistrationInformation convertToRegistration(
+  private static SampleRegistrationInformation convertToRegistration(
       SampleInformationForNewSample information) {
     return new SampleRegistrationInformation(
         information.sampleName(),
@@ -414,19 +367,16 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
       batchNameField.focus();
       return;
     }
-    if (validatedSampleMetadata.isEmpty() && uploadWithDisplay.getUploadedData().isEmpty()) {
-      // nothing is uploaded
-      var uploadProgressDisplay = new InvalidUploadDisplay(
-          "Nothing was uploaded. Please upload the sample metadata and try again.");
-      uploadWithDisplay.setDisplay(uploadProgressDisplay);
-      return;
-    } else if (validatedSampleMetadata.isEmpty() && uploadWithDisplay.getUploadedData()
-        .isPresent()) {
-      // the uploaded data is not valid
+    if (validatedSampleMetadata.isEmpty()) {
+      // nothing to do
       return;
     }
+    List<SampleRegistrationInformation> allValidatedData = validatedSampleMetadata.values().stream()
+        .flatMap(List::stream)
+        .distinct()
+        .toList();
     fireEvent(new ConfirmEvent(this, clickEvent.isFromClient(),
-        batchNameField.getValue(), validatedSampleMetadata));
+        batchNameField.getValue(), allValidatedData));
   }
 
   @Override
@@ -543,6 +493,29 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
       validationBox.add(box);
       add(fileNameLabel, validationBox);
     }
+
+    private ValidUploadDisplay(String fileName) {
+      addClassName("uploaded-item");
+      var fileIcon = VaadinIcon.FILE.create();
+      fileIcon.addClassName("file-icon");
+      Span fileNameLabel = new Span(fileIcon, new Span(fileName));
+      fileNameLabel.addClassName("file-name");
+      Div validationBox = new Div();
+      validationBox.addClassName("validation-display-box");
+      var box = new Div();
+      var approvedTitle = new Span("Your data has been approved");
+      var validIcon = VaadinIcon.CHECK_CIRCLE_O.create();
+      validIcon.addClassName("success");
+      var header = new Span(validIcon, approvedTitle);
+      header.addClassName("header");
+      var instruction = new Span("Please click Register to register your samples");
+      instruction.addClassName("secondary");
+      Div validationDetails = new Div();
+      validationDetails.add(new Span("Sample data is now ready to be registered."));
+      box.add(header, validationDetails, instruction);
+      validationBox.add(box);
+      add(fileNameLabel, validationBox);
+    }
   }
 
   private static class InProgressDisplay extends Div {
@@ -606,4 +579,222 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
       super(source, fromClient);
     }
   }
+
+  static class SampleUploadDisplay extends Div {
+
+    private final Map<String, Component> displayedFiles = new HashMap<>();
+    private final InvalidUploadDisplay emptyDisplay = new InvalidUploadDisplay(
+        "Nothing was uploaded. Please upload the sample metadata and try again.");
+
+    private final Div errorArea = new Div();
+    private final Div displayContainer = new Div();
+    private final Div fileSizeRestriction;
+    private String[] allowedFileExtensions = new String[0];
+    private final Span displayContainerTitle = new Span("Uploaded File");
+    private DataSize maxFileSize = null;
+
+    public SampleUploadDisplay() {
+      addClassName("upload-with-display");
+      errorArea.addClassNames("error-message-box");
+      displayContainer.addClassNames("uploaded-items-section");
+
+      displayContainerTitle.addClassNames("section-title");
+
+      var restrictions = new Div();
+      restrictions.addClassNames("restrictions");
+      fileSizeRestriction = new Div();
+      setMaxFileSize(maxFileSize);
+      restrictions.add(fileSizeRestriction);
+
+      updateVisibility();
+      add(emptyDisplay);
+    }
+
+    void updateVisibility() {
+      displayContainer.setVisible(hasContent());
+      displayContainerTitle.setVisible(hasContent());
+
+    }
+
+    void setMaxFileSize(DataSize maxFileSize) {
+      Optional.ofNullable(maxFileSize)
+          .ifPresent(fileSize -> {
+            this.maxFileSize = fileSize;
+            fileSizeRestriction.setText("Maximum file size: " + fileSize);
+          });
+    }
+
+    private boolean hasContent() {
+      return !displayedFiles.isEmpty();
+    }
+
+    void removeDisplay(List<String> fileNames) {
+      List<Component> associatedComponents = fileNames.stream()
+          .map(name -> displayedFiles.getOrDefault(name, null))
+          .filter(Objects::nonNull)
+          .toList();
+      remove(associatedComponents);
+      fileNames.forEach(displayedFiles::remove);
+      if (hasContent()) {
+
+        remove(emptyDisplay);
+      } else {
+        add(emptyDisplay);
+      }
+      updateVisibility();
+    }
+
+    void setDisplay(String fileName, Component display) {
+      Optional<Component> existingComponent = Optional.ofNullable(
+          displayedFiles.getOrDefault(fileName, null));
+      existingComponent.ifPresentOrElse(
+          existing -> replace(existing, display),
+          () -> add(display));
+      displayedFiles.put(fileName, display);
+      remove(emptyDisplay);
+      updateVisibility();
+    }
+
+    public void setErrorText(String errorMessage) {
+      this.errorArea.setText(errorMessage);
+      this.errorArea.setVisible(errorMessage != null && !errorMessage.isBlank());
+
+    }
+  }
+
+  class SampleUploadDisplayController {
+
+    private final String projectId;
+    private final String experimentId;
+
+    private SampleUploadDisplayController(String projectId, String experimentId) {
+      this.projectId = Objects.requireNonNull(projectId);
+      this.experimentId = Objects.requireNonNull(experimentId);
+    }
+
+
+    Registration control(SampleUploadDisplay sampleUploadDisplay,
+        ContentUploadComponent contentUploadComponent) {
+
+      Objects.requireNonNull(sampleUploadDisplay);
+      Objects.requireNonNull(contentUploadComponent);
+      var changeRegistration = contentUploadComponent.addChangeListener(event -> {
+        var componentUI = contentUploadComponent.getUI();
+        switch (event.changeType()) {
+          case FILE_ADDED -> {
+            // display validation started
+            event.changedFiles().forEach(it -> sampleUploadDisplay.setDisplay(it.fileName(),
+                new InProgressDisplay(it.fileName())));
+            // validate
+
+            event.changedFiles().forEach(fileEntry -> {
+              String fileName = fileEntry.fileName();
+              contentUploadComponent.getContent(fileName).ifPresentOrElse(
+                  fileContent -> {
+                    List<SampleInformationForNewSample> sampleInfos;
+
+                    try {
+                      sampleInfos = new ArrayList<>(
+                          extractSampleInformationForNewSamples(fileContent));
+                    } catch (ParsingException parsingException) {
+                      log.warn(
+                          "Could not parse sample file content " + parsingException.getMessage());
+                      componentUI.ifPresent(
+                          ui -> ui.access(() -> sampleUploadDisplay.setDisplay(fileName,
+                              new InvalidUploadDisplay(fileName,
+                                  "Could not complete validation. "
+                                      + parsingException.getMessage()))));
+                      return;
+                    }
+                    if (sampleInfos.isEmpty()) {
+                      componentUI.ifPresent(ui -> ui.access(() -> sampleUploadDisplay.setDisplay(
+                          fileName,
+                          new InvalidUploadDisplay(fileName, "No valid metadata provided.")
+                      )));
+                      return;
+                    }
+                    List<SampleRegistrationInformation> registrations = sampleInfos.stream()
+                        .distinct()
+                        .map(RegisterSampleBatchDialog::convertToRegistration)
+                        .toList();
+                    if (registrations.isEmpty()) {
+                      return;
+                    }
+                    Stream<ValidationResponse> responseStream = executeValidation(registrations,
+                        projectId,
+                        experimentId)
+                        .doOnError(cause -> {
+                          log.error("Validation failed.", cause);
+                          InvalidUploadDisplay invalidUploadDisplay = new InvalidUploadDisplay(
+                              fileName,
+                              "Apologies, the validation failed. Please try again.");
+                          componentUI.ifPresent(ui -> ui.access(
+                              () -> sampleUploadDisplay.setDisplay(fileName,
+                                  invalidUploadDisplay)));
+                        })
+                        .toStream();
+
+                    List<ValidationResult> failedValidations = new ArrayList<>();
+                    List<ValidationResult> successfulValidations = new ArrayList<>();
+
+                    responseStream.forEach(responseResult -> {
+                      if (responseResult.result().containsFailures()) {
+                        failedValidations.add(responseResult.result());
+                      } else {
+                        successfulValidations.add(responseResult.result());
+                      }
+                    });
+
+                    if (!failedValidations.isEmpty()) {
+                      componentUI.ifPresent(ui -> ui.access(
+                          () -> sampleUploadDisplay.setDisplay(fileName,
+                              new InvalidUploadDisplay(
+                                  fileName,
+                                  failedValidations.stream()
+                                      .flatMap(res -> res.failures().stream())
+                                      .toList()))));
+                      validatedSampleMetadata.put(fileName, List.of());
+                      return;
+                    }
+
+                    if (!successfulValidations.isEmpty()) {
+                      componentUI.ifPresent(ui -> ui.access(() -> sampleUploadDisplay
+                          .setDisplay(fileName, new ValidUploadDisplay(fileName,
+                              successfulValidations.size()))));
+                      validatedSampleMetadata.put(fileName, registrations);
+                      return;
+                    }
+                  },
+                  () -> componentUI.ifPresent(
+                      ui -> ui.access(() -> sampleUploadDisplay.setDisplay(fileName,
+                          new InvalidUploadDisplay(fileName,
+                              "No valid sample metadata provided.")))
+                  ));
+            });
+          }
+
+          case FILE_REMOVED -> {
+            event.changedFiles().forEach(it -> validatedSampleMetadata.remove(it.fileName()));
+            sampleUploadDisplay.removeDisplay(event.changedFiles().stream().map(
+                FileEntry::fileName).toList());
+          }
+        }
+      });
+
+      var removedRegistration = contentUploadComponent.addFileRemovedListener(
+          event -> sampleUploadDisplay.removeDisplay(List.of(event.getFileName())));
+      var rejectionRegistration = contentUploadComponent.addFileRejectedListener(
+          event -> sampleUploadDisplay.setErrorText(event.getErrorMessage()));
+
+      return () -> {
+        changeRegistration.remove();
+        removedRegistration.remove();
+        rejectionRegistration.remove();
+      };
+    }
+  }
+
+
+
+
 }

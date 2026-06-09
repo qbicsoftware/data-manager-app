@@ -25,6 +25,7 @@ import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.FileNameFormatter;
+import life.qbic.datamanager.configuration.UploadConfiguration;
 import life.qbic.datamanager.files.export.download.DownloadStreamProvider;
 import life.qbic.datamanager.files.export.download.WorkbookDownloadStreamProvider;
 import life.qbic.datamanager.files.parsing.converters.ConverterRegistry;
@@ -113,6 +114,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
 
 
   private final UiHandle uiHandle = new UiHandle();
+  private UploadConfiguration uploadConfiguration;
 
   static class ProjectContext {
 
@@ -143,7 +145,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
       MessageSourceNotificationFactory messageFactory,
       MessageSourceNotificationFactory messageSourceNotificationFactory,
       NgsMeasurementLookup ngsMeasurementLookup,
-      PxpMeasurementLookup pxpMeasurementLookup) {
+      PxpMeasurementLookup pxpMeasurementLookup,
+      UploadConfiguration uploadConfiguration) {
     Objects.requireNonNull(measurementService);
     Objects.requireNonNull(measurementValidationService);
     Objects.requireNonNull(asyncProjectService);
@@ -156,6 +159,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     DownloadComponent measurementTemplateDownload = new DownloadComponent();
     this.registerSamplesDisclaimer = createNoSamplesRegisteredDisclaimer();
     this.noMeasurementDisclaimer = createNoMeasurementDisclaimer();
+    this.uploadConfiguration = Objects.requireNonNull(uploadConfiguration);
     initContent();
 
     addClassName("measurement");
@@ -221,7 +225,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
 
     var upload = new MeasurementUpload(asyncService, context,
         ConverterRegistry.converterFor(
-            MeasurementUpdateInformationNGS.class), messageFactory);
+            MeasurementUpdateInformationNGS.class), messageFactory, uploadConfiguration);
     var uploadComponent = new MeasurementUpdateComponent(templateDownload, upload);
     DialogBody.with(dialog, uploadComponent, uploadComponent);
     dialog.registerCancelAction(dialog::close);
@@ -250,7 +254,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
 
     var upload = new MeasurementUpload(asyncService, context,
         ConverterRegistry.converterFor(
-            MeasurementUpdateInformationPxP.class), messageFactory);
+            MeasurementUpdateInformationPxP.class), messageFactory, uploadConfiguration);
     var uploadComponent = new MeasurementUpdateComponent(templateDownload, upload);
     DialogBody.with(dialog, uploadComponent, uploadComponent);
     dialog.registerCancelAction(dialog::close);
@@ -434,7 +438,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
 
     var registrationMeasurementUpload = new MeasurementUpload(asyncService, context,
         ConverterRegistry.converterFor(MeasurementRegistrationInformationNGS.class),
-        messageSourceNotificationFactory);
+        messageSourceNotificationFactory, uploadConfiguration);
     var templateComponent = new MeasurementTemplateSelectionComponent(
         Map.ofEntries(
             Map.entry(MeasurementTemplateSelectionComponent.Domain.Genomics,
