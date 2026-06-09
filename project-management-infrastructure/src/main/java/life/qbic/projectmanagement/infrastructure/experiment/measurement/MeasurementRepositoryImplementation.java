@@ -307,7 +307,17 @@ public class MeasurementRepositoryImplementation implements MeasurementRepositor
         measurementIds.stream().map(MeasurementId::parse).collect(Collectors.toSet()));
     // IP measurements don't have data in OpenBIS, so skip the hasDataAttached check
     try {
-      ipMeasurementJpaRepo.deleteAll(matchingMeasurements);
+      if (measurementDataRepo.hasDataAttached(
+      matchingMeasurements.stream().map(ImmunopeptidomicsMeasurement::measurementCode).toList())) {
+    throw new MeasurementDeletionException(DeletionErrorCode.DATA_ATTACHED);
+  }
+  
+  try {
+    deleteAllIP(matchingMeasurements);
+  } catch (Exception e) {
+    log.error("IP Measurement deletion failed due to " + e.getMessage());
+    throw new MeasurementDeletionException(DeletionErrorCode.FAILED);
+  }
     } catch (Exception e) {
       log.error("IP Measurement deletion failed due to " + e.getMessage());
       throw new MeasurementDeletionException(DeletionErrorCode.FAILED);

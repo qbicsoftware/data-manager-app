@@ -499,6 +499,11 @@ public class OpenbisConnector implements QbicProjectDataRepo, SampleDataReposito
     deleteMeasurements(measurements.stream().map(NGSMeasurement::measurementCode).toList());
   }
 
+  @Override
+  public void deleteImmunopeptidomicsMeasurements(List<ImmunopeptidomicsMeasurement> measurements) {
+    deleteMeasurements(measurements.stream().map(ImmunopeptidomicsMeasurement::measurementCode).toList());
+  }
+
   private void deleteMeasurements(List<MeasurementCode> measurementCodes) {
     for (MeasurementCode code : measurementCodes) {
       String sampleCode = code.value();

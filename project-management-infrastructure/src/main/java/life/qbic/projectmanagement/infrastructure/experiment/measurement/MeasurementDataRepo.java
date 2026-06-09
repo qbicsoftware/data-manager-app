@@ -8,6 +8,7 @@ import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
 import life.qbic.projectmanagement.domain.model.measurement.ImmunopeptidomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
+import life.qbic.projectmanagement.domain.model.measurement.ImmunopeptidomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 
 /**
@@ -27,6 +28,7 @@ public interface MeasurementDataRepo {
 
   void deleteProteomicsMeasurements(List<ProteomicsMeasurement> measurements);
   void deleteNGSMeasurements(List<NGSMeasurement> measurements);
+  void deleteImmunopeptidomicsMeasurements(List<ImmunopeptidomicsMeasurement> measurements);
 
   void saveAllProteomics(
       Map<ProteomicsMeasurement, Collection<SampleIdCodeEntry>> proteomicsMeasurementsMapping);
