@@ -587,7 +587,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
     private DataSize maxFileSize = null;
 
     public SampleUploadDisplay() {
-      addClassName("upload-with-display");
+      addClassName("display-contents");
       errorArea.addClassNames("error-message-box");
       displayContainer.addClassNames("uploaded-items-section");
 
@@ -600,7 +600,8 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
       restrictions.add(fileSizeRestriction);
 
       updateVisibility();
-      add(emptyDisplay);
+      displayContainer.add(emptyDisplay);
+      add(displayContainerTitle, errorArea, displayContainer, restrictions);
     }
 
     void updateVisibility() {
@@ -626,13 +627,13 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
           .map(name -> displayedFiles.getOrDefault(name, null))
           .filter(Objects::nonNull)
           .toList();
-      remove(associatedComponents);
+      displayContainer.remove(associatedComponents);
       fileNames.forEach(displayedFiles::remove);
       if (hasContent()) {
 
-        remove(emptyDisplay);
+        displayContainer.remove(emptyDisplay);
       } else {
-        add(emptyDisplay);
+        displayContainer.add(emptyDisplay);
       }
       updateVisibility();
     }
@@ -641,10 +642,10 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
       Optional<Component> existingComponent = Optional.ofNullable(
           displayedFiles.getOrDefault(fileName, null));
       existingComponent.ifPresentOrElse(
-          existing -> replace(existing, display),
-          () -> add(display));
+          existing -> displayContainer.replace(existing, display),
+          () -> displayContainer.add(display));
       displayedFiles.put(fileName, display);
-      remove(emptyDisplay);
+      displayContainer.remove(emptyDisplay);
       updateVisibility();
     }
 
