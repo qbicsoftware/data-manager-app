@@ -90,7 +90,7 @@ public class ContentUploadComponent extends Div {
   public ContentUploadComponent(UploadConfiguration uploadConfiguration) {
     //ensure cleanup after detachment of component
     addDetachListener(event -> deletePendingFiles());
-
+    addClassNames("upload-component");
     maxInMemoryBytes = uploadConfiguration.maxInMemoryThreshold().toBytes();
     upload = new Upload();
 
@@ -174,10 +174,14 @@ public class ContentUploadComponent extends Div {
 
   protected void updateRestrictionsDisplay() {
     if (getMaxFileSize() > 0) {
-      restrictionsArea.setText(
+      restrictionsArea.removeAll();
+      Div restriction = new Div(
           "Maximum file size is " + FileSizeFormatter.formatBytes(getMaxFileSize()));
+      restriction.addClassNames("restriction");
+      restrictionsArea.add(restriction);
       restrictionsArea.setVisible(true);
     } else {
+      restrictionsArea.removeAll();
       restrictionsArea.setVisible(false);
     }
   }

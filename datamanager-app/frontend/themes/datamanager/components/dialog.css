@@ -494,6 +494,10 @@ Since we want to remove the spacing between the cancel and confirm button we rep
   width: 100%;
 }
 
+.upload-component .restrictions:has(:only-child) {
+  justify-content: flex-end;
+}
+
 .measurement-upload-dialog .upload-items-display .uploaded-items-section .section-title {
   color: var(--lumo-secondary-text-color);
   font-size: var(--lumo-font-size-s);
