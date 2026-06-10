@@ -135,6 +135,11 @@ public class ContentUploadComponent extends Div {
       errorArea.setVisible(false);
       errorArea.removeAll();
     });
+    /**
+     * FIXME:
+     *   Please be advised that when even 1 file out of all files is uploaded, no rejection messages are shown.
+     *   This needs to be fixed in vaadin 25.1 where the upload handler/ upload event got necessary methods
+     */
     upload.addFileRejectedListener(event ->
     {
       log.warn("Failed to upload " + event.getFileName() +
