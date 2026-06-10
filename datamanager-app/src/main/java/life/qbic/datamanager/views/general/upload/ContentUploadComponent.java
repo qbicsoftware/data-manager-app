@@ -4,6 +4,7 @@ package life.qbic.datamanager.views.general.upload;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.upload.FileRejectedEvent;
 import com.vaadin.flow.component.upload.FileRemovedEvent;
 import com.vaadin.flow.component.upload.Upload;
@@ -48,6 +49,7 @@ public class ContentUploadComponent extends Div {
       new LinkedHashMap<>()); //linked hash map to keep insertion order
   private final Upload upload;
   private final Div restrictionsArea = new Div();
+  private final Div errorArea = new Div();
 
 
   public record UploadedMetadata(String fileName, String mimeType, long size) {
@@ -92,6 +94,12 @@ public class ContentUploadComponent extends Div {
     addDetachListener(event -> deletePendingFiles());
     addClassNames("upload-component");
     maxInMemoryBytes = uploadConfiguration.maxInMemoryThreshold().toBytes();
+
+    restrictionsArea.addClassNames("restrictions", "extra-small-body-text", "color-secondary");
+
+    errorArea.addClassNames("upload-component-error");
+    errorArea.setVisible(false);
+
     upload = new Upload();
 
     Error errorTranslation = new Error();
@@ -107,6 +115,7 @@ public class ContentUploadComponent extends Div {
     upload.setI18n(uploadI18N);
 
     UploadHandler handler = event -> {
+      //TODO in vaadin25.1 the upload event has a reject method. use that instead.
       try {
         long fileSize = event.getFileSize();
         //decide how to handle the upload based on filesize
@@ -120,19 +129,28 @@ public class ContentUploadComponent extends Div {
       }
     };
     upload.setUploadHandler(handler);
-    restrictionsArea.addClassNames("restrictions", "extra-small-body-text", "color-secondary");
-    if (!uploadConfiguration.maxFileSize().isNegative()) {
-      setMaxFileSize(uploadConfiguration.maxFileSize());
-    }
 
     upload.addFileRemovedListener(event -> removeFile(event.getFileName()));
     upload.addAllFinishedListener(event -> {
+      errorArea.setVisible(false);
+      errorArea.removeAll();
     });
     upload.addFileRejectedListener(event ->
-        log.warn("Failed to upload " + event.getFileName() +
-            " Reason: " + event.getErrorMessage()));
+    {
+      log.warn("Failed to upload " + event.getFileName() +
+          " Reason: " + event.getErrorMessage());
+      Span fileNameSpan = new Span(event.getFileName());
+      fileNameSpan.addClassNames("bold");
+      Span errorMessage = new Span(event.getErrorMessage());
+      errorArea.add(new Div(fileNameSpan, new Span(" rejected because: "),
+          errorMessage));
+      errorArea.setVisible(true);
+    });
 
-    add(upload, restrictionsArea);
+    if (!uploadConfiguration.maxFileSize().isNegative()) {
+      setMaxFileSize(uploadConfiguration.maxFileSize());
+    }
+    add(errorArea, upload, restrictionsArea);
   }
 
   public void setMaxFileSize(@NonNull DataSize maxFileSize) {

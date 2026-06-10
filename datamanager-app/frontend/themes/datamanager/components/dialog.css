@@ -498,6 +498,12 @@ Since we want to remove the spacing between the cancel and confirm button we rep
   justify-content: flex-end;
 }
 
+.upload-component .upload-component-error {
+  font-size: smaller;
+  color: var(--lumo-error-color);
+  padding: var(--lumo-space-xs);
+}
+
 .measurement-upload-dialog .upload-items-display .uploaded-items-section .section-title {
   color: var(--lumo-secondary-text-color);
   font-size: var(--lumo-font-size-s);
