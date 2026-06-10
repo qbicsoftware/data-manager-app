@@ -2508,6 +2508,24 @@ public interface AsyncProjectService {
       int limit,
       RawDatasetFilter filter);
 
+  /**
+   * Requests all available {@link RawDatasetInformationIp} for a given experiment.
+   * <p>
+   * The request supports pagination.
+   *
+   * @param projectId    the identifier of the project the experiment belongs to
+   * @param experimentId the identifier of the experiment to query the measurements for
+   * @param offset       the offset value for the search to continue (pagination)
+   * @param limit        the maximum number of results to return (pagination)
+   * @param filter       a {@link RawDatasetFilter} for the request
+   * @return a reactive {@link Flux} of {@link RawDatasetInformationIp}
+   * @since 1.12.0
+   */
+  Flux<RawDatasetInformationIp> getRawDatasetInformationIp(String projectId, String experimentId,
+      int offset,
+      int limit,
+      RawDatasetFilter filter);
+
   record RawDatasetFilter(String filterTerm, List<SortOrder<RawDataSortingKey>> sortOrders) {
 
   }
@@ -2588,6 +2606,19 @@ public interface AsyncProjectService {
       RawDatasetFilter rawDataFilter);
 
   /**
+   * Requests the total number of immunopeptidomics measurements for the given experiment in a
+   * project, based on the provided filter.
+   *
+   * @param projectId     the project to fetch the total number of measurements for
+   * @param experimentId  the experiment to fetch the total number of measurements for
+   * @param rawDataFilter the filter that applies to the count
+   * @return a {@link Mono} emitting the count when available.
+   * @since 1.12.0
+   */
+  Mono<Integer> countRawDataIp(String projectId, String experimentId,
+      RawDatasetFilter rawDataFilter);
+
+  /**
    * Aggregated information of a raw dataset derived from measurement of the NGS domain. Currently
    * consists of the core {@link RawDataset} and all {@link BasicSampleInformation}.
    *
@@ -2638,6 +2669,28 @@ public interface AsyncProjectService {
                                   String measurementName) {
 
     public RawDatasetInformationPxP {
+      requireNonNull(dataset);
+      requireNonNull(linkedSampleInformation);
+      linkedSampleInformation = List.copyOf(linkedSampleInformation);
+    }
+  }
+
+  /**
+   * Aggregated information of a raw dataset derived from measurement of the
+   * immunopeptidomics domain. Currently consists of the core {@link RawDataset} and all
+   * {@link BasicSampleInformation}.
+   *
+   * @param dataset                 the actual {@link RawDataset}
+   * @param linkedSampleInformation further information about the linked samples as
+   *                                {@link BasicSampleInformation}.
+   * @param measurementName         the name of the measurement
+   * @since 1.12.0
+   */
+  record RawDatasetInformationIp(RawDataset dataset,
+                                 List<BasicSampleInformation> linkedSampleInformation,
+                                 String measurementName) {
+
+    public RawDatasetInformationIp {
       requireNonNull(dataset);
       requireNonNull(linkedSampleInformation);
       linkedSampleInformation = List.copyOf(linkedSampleInformation);

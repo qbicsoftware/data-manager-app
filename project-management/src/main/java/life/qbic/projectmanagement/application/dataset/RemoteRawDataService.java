@@ -7,11 +7,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.RawDataset;
+import life.qbic.projectmanagement.application.measurement.IpMeasurementLookup;
 import life.qbic.projectmanagement.application.measurement.MeasurementLookupService;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.NgsMeasurementLookup;
-import life.qbic.projectmanagement.application.measurement.NgsMeasurementLookup.MeasurementFilter;
-import life.qbic.projectmanagement.application.measurement.NgsMeasurementLookup.MeasurementInfo;
 import life.qbic.projectmanagement.application.measurement.PxpMeasurementLookup;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
@@ -33,16 +32,19 @@ public class RemoteRawDataService {
   private final RemoteRawDataLookup remoteRawDataLookup;
   private final NgsMeasurementLookup ngsMeasurementLookup;
   private final PxpMeasurementLookup pxpMeasurementLookup;
+  private final IpMeasurementLookup ipMeasurementLookup;
 
   @Autowired
   public RemoteRawDataService(MeasurementLookupService measurementLookupService,
       RemoteRawDataLookupService remoteRawDataLookupService,
       RemoteRawDataLookup remoteRawDataLookup,
-      NgsMeasurementLookup ngsMeasurementLookup, PxpMeasurementLookup pxpMeasurementLookup) {
+      NgsMeasurementLookup ngsMeasurementLookup, PxpMeasurementLookup pxpMeasurementLookup,
+      IpMeasurementLookup ipMeasurementLookup) {
     this.remoteRawDataLookupService = Objects.requireNonNull(remoteRawDataLookupService);
     this.remoteRawDataLookup = Objects.requireNonNull(remoteRawDataLookup);
     this.ngsMeasurementLookup = ngsMeasurementLookup;
     this.pxpMeasurementLookup = pxpMeasurementLookup;
+    this.ipMeasurementLookup = Objects.requireNonNull(ipMeasurementLookup);
   }
 
   /**
@@ -54,7 +56,7 @@ public class RemoteRawDataService {
    * @return true if experiments has measurements with associated measurements, false if not
    */
   public boolean hasRawData(String projectId, ExperimentId experimentId) {
-    NgsMeasurementLookup.MeasurementFilter ngsFilter = MeasurementFilter.forExperiment(
+    NgsMeasurementLookup.MeasurementFilter ngsFilter = NgsMeasurementLookup.MeasurementFilter.forExperiment(
         experimentId.value());
     var ngsMeasurementCount = ngsMeasurementLookup.countNgsMeasurements(projectId,
         ngsFilter);
@@ -62,7 +64,7 @@ public class RemoteRawDataService {
         ngsMeasurementCount < 1 ? Stream.empty() : ngsMeasurementLookup.lookupNgsMeasurements(
                 projectId,
                 0, ngsMeasurementCount, Sort.unsorted(), ngsFilter)
-            .map(MeasurementInfo::measurementCode);
+            .map(NgsMeasurementLookup.MeasurementInfo::measurementCode);
     PxpMeasurementLookup.MeasurementFilter pxpFilter = PxpMeasurementLookup.MeasurementFilter.forExperiment(
         experimentId.value());
     var pxpMeasurementCount = pxpMeasurementLookup.countPxpMeasurements(projectId,
@@ -72,13 +74,23 @@ public class RemoteRawDataService {
                 projectId,
                 0, pxpMeasurementCount, Sort.unsorted(), pxpFilter)
             .map(PxpMeasurementLookup.MeasurementInfo::measurementCode);
+    IpMeasurementLookup.MeasurementFilter ipFilter = IpMeasurementLookup.MeasurementFilter.forExperiment(
+        experimentId.value());
+    var ipMeasurementCount = ipMeasurementLookup.countIpMeasurements(projectId,
+        ipFilter);
+    Stream<String> ipCodes =
+        ipMeasurementCount < 1 ? Stream.empty() : ipMeasurementLookup.lookupIpMeasurements(
+                projectId,
+                0, ipMeasurementCount, Sort.unsorted(), ipFilter)
+            .map(IpMeasurementLookup.MeasurementInfo::measurementCode);
 
-    var measurementCount = ngsMeasurementCount + pxpMeasurementCount;
+    var measurementCount = ngsMeasurementCount + pxpMeasurementCount + ipMeasurementCount;
     if (measurementCount == 0) {
       return false;
     }
 
-    Set<MeasurementCode> allCodes = Stream.concat(ngsCodes, pxpCodes)
+    Set<MeasurementCode> allCodes = Stream.concat(ngsCodes,
+            Stream.concat(pxpCodes, ipCodes))
         .map(MeasurementCode::parse)
         .collect(Collectors.toSet());
     return remoteRawDataLookupService.countRawDataByMeasurementCodes(allCodes) > 0;

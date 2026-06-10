@@ -583,6 +583,7 @@ CREATE TABLE IF NOT EXISTS `specific_measurement_metadata_ngs`
     `indexI7`        varchar(255) DEFAULT NULL,
     `sample_id`      varchar(255) DEFAULT NULL,
     KEY `FK936j925a6pi06ojgafesihm5b` (`measurement_id`),
+    KEY `FK_936j925a6pi06ojgafesihm5b_composite` (`measurement_id`, `sample_id`),
     CONSTRAINT `FK936j925a6pi06ojgafesihm5b` FOREIGN KEY (`measurement_id`) REFERENCES `ngs_measurements` (`measurement_id`)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
@@ -596,7 +597,9 @@ CREATE TABLE IF NOT EXISTS `specific_measurement_metadata_pxp`
     `label`          varchar(255) DEFAULT NULL,
     `sample_id`      varchar(255) DEFAULT NULL,
     KEY `FKn0pfbmn6xtywvflgsf5q1hbrh` (`measurement_id`),
-    CONSTRAINT `FKn0pfbmn6xtywvflgsf5q1hbrh` FOREIGN KEY (`measurement_id`) REFERENCES `proteomics_measurement` (`measurement_id`)
+    KEY `FK_pxp_measurement_sample_composite` (`measurement_id`, `sample_id`),
+    CONSTRAINT `FKn0pfbmn6xtywvflgsf5q1hbrh` FOREIGN KEY (`measurement_id`) REFERENCES `proteomics_measurement` (`measurement_id`),
+    CONSTRAINT `FK_pxp_measurement_sample` FOREIGN KEY (`sample_id`) REFERENCES `sample` (`sample_id`)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
@@ -606,7 +609,10 @@ CREATE TABLE IF NOT EXISTS `specific_measurement_metadata_ip`
     `measurement_id` varchar(255) NOT NULL,
     `sample_id`      varchar(255) DEFAULT NULL,
     KEY `FKip_measurement_specific` (`measurement_id`),
-    CONSTRAINT `FKip_measurement_specific` FOREIGN KEY (`measurement_id`) REFERENCES `ip_measurements` (`measurement_id`)
+    KEY `FK_ip_measurement_sample` (`sample_id`),
+    KEY `FK_ip_measurement_sample_composite` (`measurement_id`, `sample_id`),
+    CONSTRAINT `FKip_measurement_specific` FOREIGN KEY (`measurement_id`) REFERENCES `ip_measurements` (`measurement_id`),
+    CONSTRAINT `FK_ip_measurement_sample` FOREIGN KEY (`sample_id`) REFERENCES `sample` (`sample_id`)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
@@ -884,3 +890,72 @@ SELECT p.measurement_id,
 FROM proteomics_measurement p
          INNER JOIN remote_measurement_data rmd
                     ON rmd.measurement_id = p.measurementCode;
+
+
+-- ============================================================================
+-- IP MEASUREMENT SAMPLE SUMMARY TABLE (Pre-aggregation for performance)
+-- This table is automatically kept up-to-date by the application's
+-- LocalRawDatasetCache when new data is synced from OpenBIS.
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS `ip_measurement_sample_summary` (
+    `measurement_id` VARCHAR(255) NOT NULL PRIMARY KEY,
+    `samples_json` JSON DEFAULT NULL,
+    `experiment_ids` VARCHAR(4000) DEFAULT NULL,
+    `experiment_count` INT UNSIGNED DEFAULT 0,
+    `min_experiment_id` VARCHAR(255) DEFAULT NULL,
+    `sample_count` INT UNSIGNED DEFAULT 0
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci;
+
+-- ============================================================================
+-- IP MEASUREMENT SAMPLE JSON VIEW (Optimized)
+-- Uses the pre-aggregated summary table to avoid slow correlated subqueries.
+-- ============================================================================
+CREATE OR REPLACE VIEW v_ip_measurement_sample_json AS
+SELECT 
+    ip.measurement_id,
+    ip.facility,
+    ip.mhcAntibody,
+    ip.mhcTypingMethod,
+    ip.enrichmentMethod,
+    ip.lcmsMethod,
+    ip.lcColumn,
+    ip.dataAcquisition,
+    ip.massRange,
+    ip.retentionTimeRange,
+    ip.chargeRange,
+    ip.ionMobilityRange,
+    ip.sampleMass,
+    ip.sampleVolume,
+    ip.cycleFractionName,
+    ip.prepDate,
+    ip.msRunDate,
+    ip.comment,
+    ip.instrument,
+    ip.instrumentName,
+    ip.samplePool,
+    ip.measurementCode,
+    ip.measurementName,
+    ip.IRI,
+    ip.label                                                                           AS measurement_label,
+    ip.projectId,
+    ip.registrationTime,
+
+    COALESCE(agg.samples_json, JSON_ARRAY())                                           AS samples_json,
+    COALESCE(agg.experiment_ids, '')                                                   AS experiment_ids,
+    CASE WHEN COALESCE(agg.experiment_count, 0) = 1 THEN agg.min_experiment_id ELSE NULL END AS experiment_id,
+    COALESCE(agg.sample_count, 0)                                                      AS sample_count,
+
+    rmd.file_count,
+    rmd.file_types,
+    rmd.registration_at,
+    rmd.total_filesize_bytes,
+    rmd.updated_at                                                                    AS rmd_updated_at,
+    rmd.deleted                                                                       AS rmd_deleted,
+    rmd.last_sync_at
+FROM ip_measurements ip
+         INNER JOIN remote_measurement_data rmd
+                    ON rmd.measurement_id = ip.measurementCode
+         LEFT JOIN ip_measurement_sample_summary agg
+                    ON agg.measurement_id = ip.measurement_id;
