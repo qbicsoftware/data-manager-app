@@ -892,6 +892,39 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   @Override
+  public Flux<RawDatasetInformationIp> getRawDatasetInformationIp(String projectId,
+      String experimentId, int offset, int limit, RawDatasetFilter filter) {
+    SecurityContext securityContext = SecurityContextHolder.getContext();
+    return Flux.fromIterable(
+            rawDatasetLookupService.findAllIp(projectId, experimentId, offset, limit, filter))
+        .subscribeOn(scheduler)
+        .contextWrite(reactiveSecurity(securityContext))
+        .doOnError(
+            error -> log.error(
+                "Error for requesting raw datasets in project in the immunopeptidomics domain "
+                    + projectId,
+                error))
+        .onErrorMap(e -> mapToAPIException(e, "Raw dataset request failed"))
+        .retryWhen(defaultRetryStrategy());
+  }
+
+  @Override
+  public Mono<Integer> countRawDataIp(String projectId, String experimentId,
+      RawDatasetFilter rawDataFilter) {
+    SecurityContext securityContext = SecurityContextHolder.getContext();
+
+    return applySecurityContext(Mono.fromCallable(() ->
+        rawDatasetLookupService.countAllIp(projectId, experimentId, rawDataFilter)))
+        .subscribeOn(scheduler)
+        .contextWrite(reactiveSecurity(securityContext))
+        .doOnError(
+            error -> log.error("Error counting immunopeptidomics measurements for project "
+                + projectId, error))
+        .onErrorMap(e -> mapToAPIException(e, "Error counting immunopeptidomics measurements"))
+        .retryWhen(defaultRetryStrategy());
+  }
+
+  @Override
   public Flux<ValidationResponse> validate(Flux<ValidationRequest> requests)
       throws RequestFailedException {
     // We do not want

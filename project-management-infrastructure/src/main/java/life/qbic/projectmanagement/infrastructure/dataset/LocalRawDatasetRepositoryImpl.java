@@ -23,6 +23,7 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.BasicSamp
 import life.qbic.projectmanagement.application.api.AsyncProjectService.RawDataSortingKey;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.RawDataset;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.RawDatasetFilter;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.RawDatasetInformationIp;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.RawDatasetInformationNgs;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.RawDatasetInformationPxP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.SortDirection;
@@ -58,15 +59,18 @@ public class LocalRawDatasetRepositoryImpl implements LocalRawDatasetRepository 
   private final LocalRawDatasetJpaRepository jpaRepository;
   private final LocalRawDatasetInformationPxPJpaRepository pxpInfoRepository;
   private final LocalRawDatasetInformationNgsJpaRepository ngsInfoRepository;
+  private final LocalRawDatasetInformationIpJpaRepository ipInfoRepository;
 
   @Autowired
   public LocalRawDatasetRepositoryImpl(
       LocalRawDatasetJpaRepository jpaRepository,
       LocalRawDatasetInformationPxPJpaRepository infoPxpJpaRepository,
-      LocalRawDatasetInformationNgsJpaRepository infoNgsJpaRepository) {
+      LocalRawDatasetInformationNgsJpaRepository infoNgsJpaRepository,
+      LocalRawDatasetInformationIpJpaRepository infoIpJpaRepository) {
     this.jpaRepository = Objects.requireNonNull(jpaRepository);
     this.ngsInfoRepository = Objects.requireNonNull(infoNgsJpaRepository);
     this.pxpInfoRepository = Objects.requireNonNull(infoPxpJpaRepository);
+    this.ipInfoRepository = Objects.requireNonNull(infoIpJpaRepository);
   }
 
   @Override
@@ -225,6 +229,42 @@ public class LocalRawDatasetRepositoryImpl implements LocalRawDatasetRepository 
     return Math.toIntExact(pxpInfoRepository.count(fullSpec));
   }
 
+  private static Specification<LocalRawDatasetIpEntry> createFullSpecificationIp(RawDatasetFilter filter, String experimentId) {
+    return distinct(
+        allOf(
+            exactMatches(root -> root.get("experimentId"), experimentId),
+            anyOf(
+                propertyContains("measurementCode", filter.filterTerm()),
+                jsonContains(root -> root.get("measuredSamples"), "$[*].label", filter.filterTerm())
+            )
+        ));
+  }
+
+  @Override
+  public Integer countIp(String experimentId, RawDatasetFilter filter) throws LookupException {
+    var fullSpec = createFullSpecificationIp(filter, experimentId);
+    return Math.toIntExact(ipInfoRepository.count(fullSpec));
+  }
+
+  @Override
+  public List<RawDatasetInformationIp> findAllIp(String experimentId, int offset, int limit,
+      RawDatasetFilter filter) throws LookupException {
+    List<Order> orders;
+
+    try {
+      orders = filter.sortOrders().stream().map(LocalRawDatasetRepositoryImpl::fromAPItoJpaRawData)
+          .toList();
+    } catch (IllegalArgumentException e) {
+      throw new LookupException("Lookup for raw datasets failed", e);
+    }
+
+    var fullSpec = createFullSpecificationIp(filter, experimentId);
+
+    return ipInfoRepository.findAll(fullSpec,
+            new OffsetBasedRequest(offset, limit, Sort.by(orders)))
+        .map(LocalRawDatasetRepositoryImpl::convertIp).toList();
+  }
+
   private static Sort mapSorting(SortRawData sorting) {
     return Sort.by(mapSortOrder(sorting.sortDirection()), mapSortField(sorting.sortField()));
   }
@@ -254,6 +294,17 @@ public class LocalRawDatasetRepositoryImpl implements LocalRawDatasetRepository 
 
   private static RawDatasetInformationPxP convert(LocalRawDatasetPxpEntry entry) {
     return new RawDatasetInformationPxP(
+        new RawDataset(entry.getMeasurementCode(),
+            entry.getTotalFileSizeBytes(),
+            entry.getNumberOfFiles(),
+            entry.getFileTypes(),
+            entry.getRegistrationDate().toInstant()),
+        entry.getMeasuredSamples().stream().map(LocalRawDatasetRepositoryImpl::convert).toList(),
+        entry.getMeasurementName());
+  }
+
+  private static RawDatasetInformationIp convertIp(LocalRawDatasetIpEntry entry) {
+    return new RawDatasetInformationIp(
         new RawDataset(entry.getMeasurementCode(),
             entry.getTotalFileSizeBytes(),
             entry.getNumberOfFiles(),

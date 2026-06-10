@@ -833,3 +833,83 @@ SELECT p.measurement_id,
 FROM proteomics_measurement p
          INNER JOIN remote_measurement_data rmd
                     ON rmd.measurement_id = p.measurementCode;
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Immunopeptidomics (IP) – measurement table & raw-data view
+   (parallel-class pattern per FEAT-IMMUNOPEPTIDOMICS-MEASUREMENT)
+   ────────────────────────────────────────────────────────────────────────── */
+
+CREATE TABLE IF NOT EXISTS `ip_measurements`
+(
+    `measurement_id`   varchar(255) NOT NULL,
+    `facility`         varchar(255) DEFAULT NULL,
+    `measurementCode`  varchar(255) DEFAULT NULL,
+    `IRI`              varchar(255) DEFAULT NULL,
+    `label`            varchar(255) DEFAULT NULL,
+    `projectId`        varchar(255) DEFAULT NULL,
+    `registration`     datetime(6)  DEFAULT NULL,
+    `samplePool`       varchar(255) DEFAULT NULL,
+    `measurementName`  varchar(255) DEFAULT NULL,
+    PRIMARY KEY (`measurement_id`)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci;
+
+CREATE OR REPLACE VIEW v_ip_measurement_sample_json AS
+SELECT m.measurement_id,
+       m.facility,
+       m.measurementCode,
+       m.measurementName,
+       m.IRI,
+       m.label                                                                           AS measurement_label,
+       m.projectId,
+       m.samplePool,
+
+    /* Per-measurement JSON array of samples (keeps sample fields paired) */
+       IFNULL((SELECT JSON_ARRAYAGG(
+                              JSON_OBJECT(
+                                      'sample_id', s.sample_id,
+                                      'code', s.code,
+                                      'label', s.label
+                              )
+                              ORDER BY s.code
+                      )
+               FROM sample s
+                        JOIN sample_measurement sm
+                             ON s.sample_id = sm.sample_id
+               WHERE sm.measurement_id = m.measurement_id),
+              JSON_ARRAY())                                                              AS samples_json,
+
+    /* Per-measurement distinct experiment IDs (top-level, not in JSON) */
+       (SELECT GROUP_CONCAT(DISTINCT s2.experiment_id ORDER BY s2.experiment_id SEPARATOR ',')
+        FROM sample s2
+                 JOIN sample_measurement sm2 ON s2.sample_id = sm2.sample_id
+        WHERE sm2.measurement_id = m.measurement_id)                                    AS experiment_ids,
+
+    /* Single experiment_id if unique; NULL if mixed or none */
+       (SELECT CASE
+                   WHEN COUNT(DISTINCT s2.experiment_id) = 1
+                       THEN MIN(s2.experiment_id)
+                   ELSE NULL END
+        FROM sample s2
+                 JOIN sample_measurement sm2 ON s2.sample_id = sm2.sample_id
+        WHERE sm2.measurement_id = m.measurement_id)                                    AS experiment_id,
+
+    /* Handy count */
+       JSON_LENGTH(IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT('sample_id', s.sample_id))
+                           FROM sample s
+                                    JOIN sample_measurement sm3 ON s.sample_id = sm3.sample_id
+                           WHERE sm3.measurement_id = m.measurement_id),
+                          JSON_ARRAY()))                                                 AS sample_count,
+
+    /* remote_measurement_data via measurementCode */
+       rmd.file_count,
+       rmd.file_types,
+       rmd.registration_at,
+       rmd.total_filesize_bytes,
+       rmd.updated_at                                                                    AS rmd_updated_at,
+       rmd.deleted                                                                       AS rmd_deleted,
+       rmd.last_sync_at
+FROM ip_measurements m
+         INNER JOIN remote_measurement_data rmd
+                    ON rmd.measurement_id = m.measurementCode;
