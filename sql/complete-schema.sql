@@ -583,7 +583,6 @@ CREATE TABLE IF NOT EXISTS `specific_measurement_metadata_ngs`
     `indexI7`        varchar(255) DEFAULT NULL,
     `sample_id`      varchar(255) DEFAULT NULL,
     KEY `FK936j925a6pi06ojgafesihm5b` (`measurement_id`),
-    KEY `FK_936j925a6pi06ojgafesihm5b_composite` (`measurement_id`, `sample_id`),
     CONSTRAINT `FK936j925a6pi06ojgafesihm5b` FOREIGN KEY (`measurement_id`) REFERENCES `ngs_measurements` (`measurement_id`)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
@@ -597,7 +596,6 @@ CREATE TABLE IF NOT EXISTS `specific_measurement_metadata_pxp`
     `label`          varchar(255) DEFAULT NULL,
     `sample_id`      varchar(255) DEFAULT NULL,
     KEY `FKn0pfbmn6xtywvflgsf5q1hbrh` (`measurement_id`),
-    KEY `FK_pxp_measurement_sample_composite` (`measurement_id`, `sample_id`),
     CONSTRAINT `FKn0pfbmn6xtywvflgsf5q1hbrh` FOREIGN KEY (`measurement_id`) REFERENCES `proteomics_measurement` (`measurement_id`),
     CONSTRAINT `FK_pxp_measurement_sample` FOREIGN KEY (`sample_id`) REFERENCES `sample` (`sample_id`)
 ) ENGINE = InnoDB
