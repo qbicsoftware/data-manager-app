@@ -610,7 +610,6 @@ CREATE TABLE IF NOT EXISTS `specific_measurement_metadata_ip`
     `sample_id`      varchar(255) DEFAULT NULL,
     KEY `FKip_measurement_specific` (`measurement_id`),
     KEY `FK_ip_measurement_sample` (`sample_id`),
-    KEY `FK_ip_measurement_sample_composite` (`measurement_id`, `sample_id`),
     CONSTRAINT `FKip_measurement_specific` FOREIGN KEY (`measurement_id`) REFERENCES `ip_measurements` (`measurement_id`),
     CONSTRAINT `FK_ip_measurement_sample` FOREIGN KEY (`sample_id`) REFERENCES `sample` (`sample_id`)
 ) ENGINE = InnoDB
