@@ -893,69 +893,84 @@ FROM proteomics_measurement p
 
 
 -- ============================================================================
--- IP MEASUREMENT SAMPLE SUMMARY TABLE (Pre-aggregation for performance)
--- This table is automatically kept up-to-date by the application's
--- LocalRawDatasetCache when new data is synced from OpenBIS.
--- ============================================================================
-CREATE TABLE IF NOT EXISTS `ip_measurement_sample_summary` (
-    `measurement_id` VARCHAR(255) NOT NULL PRIMARY KEY,
-    `samples_json` JSON DEFAULT NULL,
-    `experiment_ids` VARCHAR(4000) DEFAULT NULL,
-    `experiment_count` INT UNSIGNED DEFAULT 0,
-    `min_experiment_id` VARCHAR(255) DEFAULT NULL,
-    `sample_count` INT UNSIGNED DEFAULT 0
-) ENGINE = InnoDB
-  DEFAULT CHARSET = utf8mb4
-  COLLATE = utf8mb4_unicode_ci;
-
--- ============================================================================
--- IP MEASUREMENT SAMPLE JSON VIEW (Optimized)
--- Uses the pre-aggregated summary table to avoid slow correlated subqueries.
+-- IP MEASUREMENT SAMPLE JSON VIEW
+-- Uses correlated subqueries (same pattern as v_ngs_measurement_sample_json
+-- and v_pxp_measurement_sample_json).  IP measurements have a 1:1
+-- sample-to-measurement relationship, so per-measurement aggregation is
+-- cheap and the view stays performant.
 -- ============================================================================
 CREATE OR REPLACE VIEW v_ip_measurement_sample_json AS
-SELECT 
-    ip.measurement_id,
-    ip.facility,
-    ip.mhcAntibody,
-    ip.mhcTypingMethod,
-    ip.enrichmentMethod,
-    ip.lcmsMethod,
-    ip.lcColumn,
-    ip.dataAcquisition,
-    ip.massRange,
-    ip.retentionTimeRange,
-    ip.chargeRange,
-    ip.ionMobilityRange,
-    ip.sampleMass,
-    ip.sampleVolume,
-    ip.cycleFractionName,
-    ip.prepDate,
-    ip.msRunDate,
-    ip.comment,
-    ip.instrument,
-    ip.instrumentName,
-    ip.samplePool,
-    ip.measurementCode,
-    ip.measurementName,
-    ip.IRI,
-    ip.label                                                                           AS measurement_label,
-    ip.projectId,
-    ip.registrationTime,
+SELECT ip.measurement_id,
+       ip.facility,
+       ip.mhcAntibody,
+       ip.mhcTypingMethod,
+       ip.enrichmentMethod,
+       ip.lcmsMethod,
+       ip.lcColumn,
+       ip.dataAcquisition,
+       ip.massRange,
+       ip.retentionTimeRange,
+       ip.chargeRange,
+       ip.ionMobilityRange,
+       ip.sampleMass,
+       ip.sampleVolume,
+       ip.cycleFractionName,
+       ip.prepDate,
+       ip.msRunDate,
+       ip.comment,
+       ip.instrument,
+       ip.instrumentName,
+       ip.samplePool,
+       ip.measurementCode,
+       ip.measurementName,
+       ip.IRI,
+       ip.label                                                                        AS measurement_label,
+       ip.projectId,
+       ip.registrationTime,
 
-    COALESCE(agg.samples_json, JSON_ARRAY())                                           AS samples_json,
-    COALESCE(agg.experiment_ids, '')                                                   AS experiment_ids,
-    CASE WHEN COALESCE(agg.experiment_count, 0) = 1 THEN agg.min_experiment_id ELSE NULL END AS experiment_id,
-    COALESCE(agg.sample_count, 0)                                                      AS sample_count,
+       /* Per-measurement JSON array of samples (keeps sample fields paired) */
+       IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT(
+               'sample_id', s.sample_id,
+               'code', s.code,
+               'label', s.label
+       )
+       )
+       FROM specific_measurement_metadata_ip smm
+       LEFT JOIN sample s ON s.sample_id = smm.sample_id
+       WHERE smm.measurement_id = ip.measurement_id
+       ORDER BY s.code),
+              JSON_ARRAY())                                                          AS samples_json,
 
-    rmd.file_count,
-    rmd.file_types,
-    rmd.registration_at,
-    rmd.total_filesize_bytes,
-    rmd.updated_at                                                                    AS rmd_updated_at,
-    rmd.deleted                                                                       AS rmd_deleted,
-    rmd.last_sync_at
+       /* Per-measurement distinct experiment IDs (top-level, not in JSON) */
+       (SELECT GROUP_CONCAT(DISTINCT s2.experiment_id ORDER BY s2.experiment_id SEPARATOR ',')
+        FROM specific_measurement_metadata_ip smm2
+        JOIN sample s2 ON s2.sample_id = smm2.sample_id
+        WHERE smm2.measurement_id = ip.measurement_id)                              AS experiment_ids,
+
+       /* Single experiment_id if unique; NULL if mixed or none */
+       (SELECT CASE
+                   WHEN COUNT(DISTINCT s2.experiment_id) = 1
+                       THEN MIN(s2.experiment_id)
+                   ELSE NULL END
+        FROM specific_measurement_metadata_ip smm2
+        JOIN sample s2 ON s2.sample_id = smm2.sample_id
+        WHERE smm2.measurement_id = ip.measurement_id)                              AS experiment_id,
+
+       /* Handy count */
+       JSON_LENGTH(IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT('sample_id', s.sample_id))
+                           FROM specific_measurement_metadata_ip smm3
+                           LEFT JOIN sample s ON s.sample_id = smm3.sample_id
+                           WHERE smm3.measurement_id = ip.measurement_id),
+                          JSON_ARRAY()))                                                     AS sample_count,
+
+       /* remote_measurement_data via measurementCode */
+       rmd.file_count,
+       rmd.file_types,
+       rmd.registration_at,
+       rmd.total_filesize_bytes,
+       rmd.updated_at                                                                AS rmd_updated_at,
+       rmd.deleted                                                                   AS rmd_deleted,
+       rmd.last_sync_at
 FROM ip_measurements ip
          INNER JOIN remote_measurement_data rmd
-                    ON rmd.measurement_id = ip.measurementCode
-         LEFT JOIN ip_measurement_sample_summary agg
-                    ON agg.measurement_id = ip.measurement_id;
+                    ON rmd.measurement_id = ip.measurementCode;
