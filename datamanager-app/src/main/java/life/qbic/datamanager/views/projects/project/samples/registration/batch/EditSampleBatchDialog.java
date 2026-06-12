@@ -87,17 +87,18 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
   private final ContentUploadComponent contentUploadComponent;
 
 
-  public EditSampleBatchDialog(SampleValidationService sampleValidationService,
-      AsyncProjectService service, MessageSourceNotificationFactory messageFactory,
+  public EditSampleBatchDialog(AsyncProjectService service,
+      MessageSourceNotificationFactory messageFactory,
       BatchId batchId,
       String batchName,
       String experimentId,
       String projectId,
       String projectCode,
-      SampleValidationService sampleValidationService1,
+      SampleValidationService sampleValidationService,
       UploadConfiguration uploadConfiguration) {
+
     this.messageFactory = Objects.requireNonNull(messageFactory);
-    this.sampleValidationService = sampleValidationService1;
+    this.sampleValidationService = sampleValidationService;
     this.downloadComponent = new DownloadComponent();
     this.contentUploadComponent = new ContentUploadComponent(uploadConfiguration);
 
