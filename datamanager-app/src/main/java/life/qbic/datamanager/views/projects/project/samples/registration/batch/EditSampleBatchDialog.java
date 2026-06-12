@@ -420,11 +420,9 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
               );
             });
           }
-          case FILE_REMOVED -> {
-            event.changedFiles().stream()
-                .map(FileEntry::fileName)
-                .forEach(validatedSampleMetadata::remove);
-          }
+          case FILE_REMOVED -> event.changedFiles().stream()
+              .map(FileEntry::fileName)
+              .forEach(validatedSampleMetadata::remove);
         }
       });
 

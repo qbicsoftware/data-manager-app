@@ -1,7 +1,5 @@
 package life.qbic.datamanager.views.projects.qualityControl;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
@@ -22,12 +20,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.datamanager.views.general.AllowedFileExtension;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.general.upload.EditableMultiFileMemoryBuffer;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.qualityControl.QualityControlItem.ExperimentItem;
-import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.sample.qualitycontrol.QualityControlReport;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
@@ -39,7 +37,6 @@ import life.qbic.projectmanagement.domain.model.project.ProjectId;
  */
 public class UploadQualityControlDialog extends DialogWindow {
 
-  private static final Logger log = logger(UploadQualityControlDialog.class);
   private static final String VAADIN_FILENAME_EVENT = "event.detail.file.name";
   private static final int MAX_FILE_SIZE_BYTES = 1024 * 1024 * 16; // 17 MiB
   @Serial
@@ -259,45 +256,4 @@ public class UploadQualityControlDialog extends DialogWindow {
   }
 
 
-  /**
-   * <b>Allowed File Extension</b>
-   *
-   * <p>Enumeration of all allowed File extensions in the context of the Quality Control upload.
-   * Additionally provides the MIME_type and a short description as outlined by the mozilla docs <a
-   * href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types">...</a>
-   * </p>
-   */
-  private enum AllowedFileExtension {
-
-    EXCEL(".xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        "Microsoft Excel (OpenXML)"),
-    PDF(".pdf", "application/pdf",
-        "Adobe Portable Document Format (PDF)"),
-    WORD(
-        ".docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        "Microsoft Word (OpenXML)");
-
-    private final String extension;
-    private final String mimeType;
-    private final String description;
-
-
-    AllowedFileExtension(String extension, String mimeType, String description) {
-      this.extension = extension;
-      this.mimeType = mimeType;
-      this.description = description;
-    }
-
-    public String extension() {
-      return extension;
-    }
-
-    public String mimetype() {
-      return mimeType;
-    }
-
-    public String description() {
-      return description;
-    }
-  }
 }

@@ -1,7 +1,5 @@
 package life.qbic.datamanager.views.projects.purchase;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
@@ -11,22 +9,23 @@ import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.upload.FailedEvent;
 import com.vaadin.flow.component.upload.FileRejectedEvent;
-import com.vaadin.flow.component.upload.SucceededEvent;
-import com.vaadin.flow.component.upload.Upload;
-import com.vaadin.flow.dom.DomEvent;
-import elemental.json.JsonObject;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.application.commons.FileSizeFormatter;
+import life.qbic.datamanager.configuration.UploadConfiguration;
+import life.qbic.datamanager.views.general.AllowedFileExtension;
 import life.qbic.datamanager.views.general.DialogWindow;
-import life.qbic.datamanager.views.general.upload.EditableMultiFileMemoryBuffer;
+import life.qbic.datamanager.views.general.upload.ContentUploadComponent;
+import life.qbic.datamanager.views.general.upload.UploadedFilesChangeListener.FileEntry;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
-import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.purchase.OfferDTO;
+import org.springframework.util.unit.DataSize;
 
 /**
  * <b>Upload Purchase Dialog</b>
@@ -37,39 +36,30 @@ import life.qbic.projectmanagement.application.purchase.OfferDTO;
  */
 public class UploadPurchaseDialog extends DialogWindow {
 
-  private static final Logger log = logger(UploadPurchaseDialog.class);
-  private static final String VAADIN_FILENAME_EVENT = "event.detail.file.name";
-  private static final int MAX_FILE_SIZE_BYTES = 1024 * 1024 * 16; // 16 MiB
   @Serial
   private static final long serialVersionUID = 6602134795666762831L;
-  private final Upload upload;
-  private final EditableMultiFileMemoryBuffer multiFileMemoryBuffer;
   private final Div uploadedPurchaseItems;
   private final List<PurchaseItem> purchaseItemsCache = new ArrayList<>();
   private final Div uploadedItemsSectionContent;
+  private final ContentUploadComponent contentUploadComponent;
+  private static final DataSize MAX_FILE_SIZE = DataSize.ofMegabytes(16);
 
-  public UploadPurchaseDialog() {
+  public UploadPurchaseDialog(UploadConfiguration uploadConfiguration) {
     // Vaadin's upload component setup
-    multiFileMemoryBuffer = new EditableMultiFileMemoryBuffer();
-
-    upload = new Upload(multiFileMemoryBuffer);
-    upload.setAcceptedFileTypes("application/pdf", ".pdf");
-    upload.setMaxFileSize(MAX_FILE_SIZE_BYTES);
+    contentUploadComponent = new ContentUploadComponent(uploadConfiguration);
+    contentUploadComponent.addUnspecificFailureListener(this::onUploadFailure);
+    contentUploadComponent.setAcceptedFileTypes(
+        AllowedFileExtension.PDF.mimetype()
+    );
+    contentUploadComponent.setMaxFileSize(MAX_FILE_SIZE);
 
     setHeaderTitle("Upload an offer");
     // Title box configuration
     Span uploadSectionTitle = new Span("Upload your offer");
     uploadSectionTitle.addClassName("section-title");
 
-    // Upload restriction display configuration
-    Div restrictions = new Div();
-    restrictions.addClassName("restrictions");
-    restrictions.add(new Span("Accepted file formats: PDF (.pdf)"));
-    restrictions.add(
-        new Span("Maximum file size: %s MB".formatted(MAX_FILE_SIZE_BYTES / (1024 * 1024))));
-
     Div uploadSection = new Div();
-    uploadSection.add(uploadSectionTitle, upload, restrictions);
+    uploadSection.add(uploadSectionTitle, contentUploadComponent);
 
     // Uploaded purchase items display configuration
     uploadedPurchaseItems = new Div();
@@ -86,18 +76,38 @@ public class UploadPurchaseDialog extends DialogWindow {
     Div uploadedItemsSection = new Div();
     uploadedItemsSection.add(uploadedItemsSectionContent, uploadedPurchaseItems);
 
-    // Add upload offers to the purchase item section, where users can set the signed flag
-    upload.addSucceededListener(this::onUploadSucceeded);
-
-    // Show notification if user provides invalid file
-    upload.addFailedListener(this::onUploadFailure);
-    upload.addFileRejectedListener(this::onUploadFailure);
-
-    // Synchronise the Vaadin upload component with the purchase list display
-    // When a file is removed  from the upload component, we also want to remove it properly from memory
-    // and from any additional display
-    upload.getElement().addEventListener("file-remove", this::processClientFileRemoveEvent)
-        .addEventData(VAADIN_FILENAME_EVENT);
+    var changeRegistration = contentUploadComponent.addChangeListener(event -> {
+      var componentUI = event.getSource().getUI();
+      switch (event.changeType()) {
+        case FILE_ADDED -> {
+          for (FileEntry file : event.changedFiles()) {
+            var added = new PurchaseItem(file.fileName());
+            purchaseItemsCache.add(added);
+            componentUI.ifPresent(ui -> ui.access(() -> uploadedPurchaseItems.add(added)));
+          }
+          componentUI.ifPresent(ui -> ui.access(this::toggleFileSectionIfEmpty));
+        }
+        case FILE_REMOVED -> {
+          var toBeRemoved = purchaseItemsCache.stream()
+              .filter(Objects::nonNull)
+              .filter(purchaseItem -> event.changedFiles().stream().map(FileEntry::fileName)
+                  .anyMatch(it -> it.equals(purchaseItem.fileName())))
+              .toList();
+          toBeRemoved
+              .forEach(purchaseItem -> {
+                purchaseItemsCache.remove(purchaseItem);
+                componentUI.ifPresent(
+                    ui -> ui.access(() -> uploadedPurchaseItems.remove(purchaseItem)));
+              });
+          componentUI.ifPresent(ui -> ui.access(this::toggleFileSectionIfEmpty));
+        }
+      }
+    });
+    var failureRegistration = contentUploadComponent.addFileRejectedListener(this::onUploadFailure);
+    addDetachListener(event -> {
+      changeRegistration.remove();
+      failureRegistration.remove();
+    });
 
     // Put the elements together
     add(uploadSection, uploadedItemsSection);
@@ -107,20 +117,13 @@ public class UploadPurchaseDialog extends DialogWindow {
     toggleFileSectionIfEmpty();
   }
 
-  private void onUploadSucceeded(SucceededEvent succeededEvent) {
-    var purchase = new PurchaseItem(succeededEvent.getFileName());
-    uploadedPurchaseItems.add(purchase);
-    purchaseItemsCache.add(purchase);
-    toggleFileSectionIfEmpty();
-  }
-
-  private void onUploadFailure(ComponentEvent<Upload> event) {
+  private void onUploadFailure(ComponentEvent<?> event) {
     ErrorMessage errorMessage = new ErrorMessage("Offer upload failed",
         "An unknown exception has occurred");
     if (event instanceof FileRejectedEvent) {
       errorMessage.descriptionTextSpan.setText(
-          "Please provide a file within the file limit of %s MB".formatted(
-              MAX_FILE_SIZE_BYTES / (1024 * 1024)));
+          "Please provide a file within the file limit of " + FileSizeFormatter.formatBytes(
+              contentUploadComponent.getMaxFileSize()));
     } else if (event instanceof FailedEvent) {
       errorMessage.descriptionTextSpan.setText("Offer upload was interrupted, please try again");
     }
@@ -138,17 +141,6 @@ public class UploadPurchaseDialog extends DialogWindow {
     fireEvent(new UploadPurchaseDialog.CancelEvent(this, clickEvent.isFromClient()));
   }
 
-  private void processClientFileRemoveEvent(DomEvent event) {
-    JsonObject jsonObject = event.getEventData();
-    var fileName = jsonObject.getString(VAADIN_FILENAME_EVENT);
-    removeFile(fileName);
-  }
-
-  private void removeFile(String fileName) {
-    removeFileFromBuffer(fileName);
-    removeFileFromDisplay(fileName);
-    toggleFileSectionIfEmpty();
-  }
 
   private void toggleFileSectionIfEmpty() {
     boolean filesUploaded = !uploadedPurchaseItems.getChildren().toList().isEmpty();
@@ -156,17 +148,6 @@ public class UploadPurchaseDialog extends DialogWindow {
     uploadedItemsSectionContent.setVisible(filesUploaded);
   }
 
-  private void removeFileFromBuffer(String fileName) {
-    multiFileMemoryBuffer.remove(fileName);
-  }
-
-  private void removeFileFromDisplay(String fileName) {
-    purchaseItemsCache.stream().filter(purchaseItem -> purchaseItem.fileName().equals(
-        fileName)).findAny().ifPresent(purchaseItem -> {
-      purchaseItemsCache.remove(purchaseItem);
-      uploadedPurchaseItems.remove(purchaseItem);
-    });
-  }
 
   public List<OfferDTO> purchaseItems() {
     return purchaseItemsCache.stream().map(this::convertToOffer).toList();
@@ -175,7 +156,7 @@ public class UploadPurchaseDialog extends DialogWindow {
   private OfferDTO convertToOffer(PurchaseItem purchaseItem) {
     try {
       var fileName = purchaseItem.fileName();
-      var content = multiFileMemoryBuffer.inputStream(fileName)
+      var content = contentUploadComponent.getContent(fileName)
           .orElse(new ByteArrayInputStream(new byte[]{})).readAllBytes();
       return new OfferDTO(purchaseItem.isSigned(), fileName, content);
     } catch (IOException e) {
@@ -192,23 +173,6 @@ public class UploadPurchaseDialog extends DialogWindow {
     addListener(CancelEvent.class, listener);
   }
 
-  @Override
-  public void close() {
-    emptyCachedBuffer();
-    removeContent();
-    toggleFileSectionIfEmpty();
-    super.close();
-  }
-
-  private void removeContent() {
-    this.purchaseItemsCache.clear();
-    this.uploadedPurchaseItems.removeAll();
-    this.upload.clearFileList();
-  }
-
-  private void emptyCachedBuffer() {
-    this.multiFileMemoryBuffer.clear();
-  }
 
   public static class ConfirmEvent extends ComponentEvent<UploadPurchaseDialog> {
 
