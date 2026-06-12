@@ -583,7 +583,9 @@ CREATE TABLE IF NOT EXISTS `specific_measurement_metadata_ngs`
     `indexI7`        varchar(255) DEFAULT NULL,
     `sample_id`      varchar(255) DEFAULT NULL,
     KEY `FK936j925a6pi06ojgafesihm5b` (`measurement_id`),
-    CONSTRAINT `FK936j925a6pi06ojgafesihm5b` FOREIGN KEY (`measurement_id`) REFERENCES `ngs_measurements` (`measurement_id`)
+    KEY `FK_ngs_measurement_sample` (`sample_id`),
+    CONSTRAINT `FK936j925a6pi06ojgafesihm5b` FOREIGN KEY (`measurement_id`) REFERENCES `ngs_measurements` (`measurement_id`),
+    CONSTRAINT `FK_ngs_measurement_sample` FOREIGN KEY (`sample_id`) REFERENCES `sample` (`sample_id`)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
@@ -596,7 +598,9 @@ CREATE TABLE IF NOT EXISTS `specific_measurement_metadata_pxp`
     `label`          varchar(255) DEFAULT NULL,
     `sample_id`      varchar(255) DEFAULT NULL,
     KEY `FKn0pfbmn6xtywvflgsf5q1hbrh` (`measurement_id`),
-    CONSTRAINT `FKn0pfbmn6xtywvflgsf5q1hbrh` FOREIGN KEY (`measurement_id`) REFERENCES `proteomics_measurement` (`measurement_id`)
+    KEY `FK_pxp_measurement_sample` (`sample_id`),
+    CONSTRAINT `FKn0pfbmn6xtywvflgsf5q1hbrh` FOREIGN KEY (`measurement_id`) REFERENCES `proteomics_measurement` (`measurement_id`),
+    CONSTRAINT `FK_pxp_measurement_sample` FOREIGN KEY (`sample_id`) REFERENCES `sample` (`sample_id`)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
@@ -606,7 +610,9 @@ CREATE TABLE IF NOT EXISTS `specific_measurement_metadata_ip`
     `measurement_id` varchar(255) NOT NULL,
     `sample_id`      varchar(255) DEFAULT NULL,
     KEY `FKip_measurement_specific` (`measurement_id`),
-    CONSTRAINT `FKip_measurement_specific` FOREIGN KEY (`measurement_id`) REFERENCES `ip_measurements` (`measurement_id`)
+    KEY `FK_ip_measurement_sample` (`sample_id`),
+    CONSTRAINT `FKip_measurement_specific` FOREIGN KEY (`measurement_id`) REFERENCES `ip_measurements` (`measurement_id`),
+    CONSTRAINT `FK_ip_measurement_sample` FOREIGN KEY (`sample_id`) REFERENCES `sample` (`sample_id`)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
@@ -884,3 +890,87 @@ SELECT p.measurement_id,
 FROM proteomics_measurement p
          INNER JOIN remote_measurement_data rmd
                     ON rmd.measurement_id = p.measurementCode;
+
+
+-- ============================================================================
+-- IP MEASUREMENT SAMPLE JSON VIEW
+-- Uses correlated subqueries (same pattern as v_ngs_measurement_sample_json
+-- and v_pxp_measurement_sample_json).  IP measurements have a 1:1
+-- sample-to-measurement relationship, so per-measurement aggregation is
+-- cheap and the view stays performant.
+-- ============================================================================
+CREATE OR REPLACE VIEW v_ip_measurement_sample_json AS
+SELECT ip.measurement_id,
+       ip.facility,
+       ip.mhcAntibody,
+       ip.mhcTypingMethod,
+       ip.enrichmentMethod,
+       ip.lcmsMethod,
+       ip.lcColumn,
+       ip.dataAcquisition,
+       ip.massRange,
+       ip.retentionTimeRange,
+       ip.chargeRange,
+       ip.ionMobilityRange,
+       ip.sampleMass,
+       ip.sampleVolume,
+       ip.cycleFractionName,
+       ip.prepDate,
+       ip.msRunDate,
+       ip.comment,
+       ip.instrument,
+       ip.instrumentName,
+       ip.samplePool,
+       ip.measurementCode,
+       ip.measurementName,
+       ip.IRI,
+       ip.label                                                                        AS measurement_label,
+       ip.projectId,
+       ip.registrationTime,
+
+       /* Per-measurement JSON array of samples (keeps sample fields paired) */
+       IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT(
+               'sample_id', s.sample_id,
+               'code', s.code,
+               'label', s.label
+       )
+       )
+       FROM specific_measurement_metadata_ip smm
+       LEFT JOIN sample s ON s.sample_id = smm.sample_id
+       WHERE smm.measurement_id = ip.measurement_id
+       ORDER BY s.code),
+              JSON_ARRAY())                                                          AS samples_json,
+
+       /* Per-measurement distinct experiment IDs (top-level, not in JSON) */
+       (SELECT GROUP_CONCAT(DISTINCT s2.experiment_id ORDER BY s2.experiment_id SEPARATOR ',')
+        FROM specific_measurement_metadata_ip smm2
+        JOIN sample s2 ON s2.sample_id = smm2.sample_id
+        WHERE smm2.measurement_id = ip.measurement_id)                              AS experiment_ids,
+
+       /* Single experiment_id if unique; NULL if mixed or none */
+       (SELECT CASE
+                   WHEN COUNT(DISTINCT s2.experiment_id) = 1
+                       THEN MIN(s2.experiment_id)
+                   ELSE NULL END
+        FROM specific_measurement_metadata_ip smm2
+        JOIN sample s2 ON s2.sample_id = smm2.sample_id
+        WHERE smm2.measurement_id = ip.measurement_id)                              AS experiment_id,
+
+       /* Handy count */
+       JSON_LENGTH(IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT('sample_id', s.sample_id))
+                           FROM specific_measurement_metadata_ip smm3
+                           LEFT JOIN sample s ON s.sample_id = smm3.sample_id
+                           WHERE smm3.measurement_id = ip.measurement_id),
+                          JSON_ARRAY()))                                                     AS sample_count,
+
+       /* remote_measurement_data via measurementCode */
+       rmd.file_count,
+       rmd.file_types,
+       rmd.registration_at,
+       rmd.total_filesize_bytes,
+       rmd.updated_at                                                                AS rmd_updated_at,
+       rmd.deleted                                                                   AS rmd_deleted,
+       rmd.last_sync_at
+FROM ip_measurements ip
+         INNER JOIN remote_measurement_data rmd
+                    ON rmd.measurement_id = ip.measurementCode;
