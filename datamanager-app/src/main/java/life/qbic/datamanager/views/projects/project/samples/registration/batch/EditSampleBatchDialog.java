@@ -52,6 +52,7 @@ import life.qbic.projectmanagement.application.sample.SampleMetadata;
 import life.qbic.projectmanagement.application.sample.SampleValidationService;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import org.jspecify.annotations.Nullable;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.MimeType;
 
 /**
@@ -387,26 +388,35 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
                       sampleInfos = new ArrayList<>(
                           extractSampleInformationForExistingSamples(inputStream));
                     } catch (ParsingException e) {
-                      componentUI.ifPresent(
-                          ui -> ui.access(()
-                              -> sampleUploadDisplay.setDisplay(fileName,
-                              new InvalidUploadDisplay(fileName,
-                                  "Parsing failed " + e.getMessage()))));
+                      InvalidUploadDisplay display = new InvalidUploadDisplay(fileName,
+                          "Parsing failed " + e.getMessage());
+                      componentUI.ifPresent(ui -> ui.access(() -> {
+                        sampleUploadDisplay.setDisplay(fileName, display);
+                        display.focus();
+                      }));
                       return;
                     }
                     if (sampleInfos.isEmpty()) {
-                      componentUI.ifPresent(ui -> ui.access(
-                          () -> sampleUploadDisplay.setDisplay(fileName, new InvalidUploadDisplay(
-                              fileName, "No valid metadata provided"
-                          ))));
+                      InvalidUploadDisplay display = new InvalidUploadDisplay(
+                          fileName, "No valid metadata provided"
+                      );
+                      componentUI.ifPresent(ui -> ui.access(() -> {
+                        sampleUploadDisplay.setDisplay(fileName, display);
+                        display.focus();
+                      }));
                       return;
                     }
                     runValidation(sampleInfos, fileName, sampleUploadDisplay,
                         componentUI.orElse(null));
                   },
-                  () -> componentUI.ifPresent(ui -> ui.access(()
-                      -> sampleUploadDisplay.setDisplay(fileName,
-                      new InvalidUploadDisplay(fileName, "Content extraction failed."))))
+                  () -> {
+                    InvalidUploadDisplay display = new InvalidUploadDisplay(fileName,
+                        "Content extraction failed.");
+                    componentUI.ifPresent(ui -> ui.access(() -> {
+                      sampleUploadDisplay.setDisplay(fileName, display);
+                      display.focus();
+                    }));
+                  }
               );
             });
           }
@@ -432,22 +442,27 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
 
     private void runValidation(List<SampleInformationForExistingSample> sampleInfos,
         String fileName, SampleUploadDisplay sampleUploadDisplay, @Nullable UI componentUI) {
+      var securityContext = SecurityContextHolder.getContext();
       List<CompletableFuture<ValidationResultWithPayload<SampleMetadata>>> validations = sampleInfos.stream()
-          .map(info -> sampleValidationService.validateExistingSampleAsync(
-                  info.sampleCode(),
-                  info.sampleName(),
-                  info.biologicalReplicate(),
-                  info.condition(),
-                  info.species(),
-                  info.specimen(),
-                  info.analyte(),
-                  info.analysisMethod(),
-                  info.comment(),
-                  info.confoundingVariables(),
-                  experimentId, projectId)
+          .map(info -> CompletableFuture.supplyAsync(
+                  () -> {
+                    SecurityContextHolder.setContext(securityContext);
+                    return sampleValidationService.validateExistingSample(
+                        info.sampleCode(),
+                        info.sampleName(),
+                        info.biologicalReplicate(),
+                        info.condition(),
+                        info.species(),
+                        info.specimen(),
+                        info.analyte(),
+                        info.analysisMethod(),
+                        info.comment(),
+                        info.confoundingVariables(),
+                        experimentId, projectId);
+                  })
               .orTimeout(1, TimeUnit.MINUTES))
           .toList();
-      CompletableFuture.allOf(validations.toArray(new CompletableFuture[validations.size()]))
+      CompletableFuture.allOf(validations.toArray(new CompletableFuture[0]))
           .thenApply(v -> validations.stream().map(CompletableFuture::join).toList())
           .orTimeout(5, TimeUnit.MINUTES)
           .thenAccept(results -> {
@@ -457,28 +472,34 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
                 result -> result.validationResult().allPassed()).toList();
             if (!failed.isEmpty()) {
               validatedSampleMetadata.remove(fileName);
-              Optional.ofNullable(componentUI).ifPresent(ui -> ui.access(() ->
-                  sampleUploadDisplay.setDisplay(fileName, new InvalidUploadDisplay(fileName,
-                      failed.stream()
-                          .flatMap(r -> r.validationResult().failures().stream())
-                          .toList()
-
-                  ))));
+              InvalidUploadDisplay display = new InvalidUploadDisplay(fileName,
+                  failed.stream()
+                      .flatMap(r -> r.validationResult().failures().stream())
+                      .toList());
+              Optional.ofNullable(componentUI).ifPresent(ui -> ui.access(() -> {
+                sampleUploadDisplay.setDisplay(fileName, display);
+                display.focus();
+              }));
             } else if (!succeeded.isEmpty()) {
               List<SampleMetadata> successMetadata = succeeded.stream().map(
                   ValidationResultWithPayload::payload).toList();
               validatedSampleMetadata.put(fileName, successMetadata);
-              Optional.ofNullable(componentUI).ifPresent(ui -> ui.access(() ->
-                  sampleUploadDisplay.setDisplay(fileName,
-                      new ValidUploadDisplay(fileName, successMetadata.size()))));
+              ValidUploadDisplay display = new ValidUploadDisplay(fileName, successMetadata.size());
+              Optional.ofNullable(componentUI).ifPresent(ui -> ui.access(() -> {
+                sampleUploadDisplay.setDisplay(fileName, display);
+                display.focus();
+              }));
             }
           })
           .exceptionally(e -> {
             validatedSampleMetadata.remove(fileName);
             log.error("Validation failed for file: " + fileName, e);
-            Optional.ofNullable(componentUI).ifPresent(ui -> ui.access(() ->
-                sampleUploadDisplay.setDisplay(fileName,
-                    new InvalidUploadDisplay(fileName, "Validation failed. Please try again."))));
+            InvalidUploadDisplay display = new InvalidUploadDisplay(fileName,
+                "Validation failed. Please try again.");
+            Optional.ofNullable(componentUI).ifPresent(ui -> ui.access(() -> {
+              sampleUploadDisplay.setDisplay(fileName, display);
+              display.focus();
+            }));
             return null;
           });
 

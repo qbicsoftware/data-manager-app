@@ -1,6 +1,7 @@
 package life.qbic.datamanager.views.projects.project.samples.registration.batch;
 
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.Focusable;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -96,7 +97,7 @@ class SampleUploadDisplay extends Div {
 
   }
 
-  static class InProgressDisplay extends Div {
+  static class InProgressDisplay extends Div implements Focusable<InProgressDisplay> {
 
     InProgressDisplay(String fileName) {
       addClassName("uploaded-item");
@@ -110,7 +111,7 @@ class SampleUploadDisplay extends Div {
     }
   }
 
-  static class InvalidUploadDisplay extends Div {
+  static class InvalidUploadDisplay extends Div implements Focusable<InvalidUploadDisplay> {
 
     public InvalidUploadDisplay(String error) {
       addClassName("uploaded-item");
@@ -192,7 +193,7 @@ class SampleUploadDisplay extends Div {
     }
   }
 
-  static class ValidUploadDisplay extends Div {
+  static class ValidUploadDisplay extends Div implements Focusable<ValidUploadDisplay> {
 
     ValidUploadDisplay(String fileName, int count) {
       addClassName("uploaded-item");
