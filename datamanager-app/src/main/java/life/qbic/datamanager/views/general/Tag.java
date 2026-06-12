@@ -32,7 +32,8 @@ public class Tag extends Span {
     VIOLET("violet"),
     PINK("pink"),
     CONTRAST("contrast"),
-    TEAL("teal");
+    TEAL("teal"),
+    GOLD("gold");
 
     private final String color;
 
