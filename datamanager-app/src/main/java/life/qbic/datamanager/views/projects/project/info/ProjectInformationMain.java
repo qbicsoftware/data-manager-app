@@ -43,8 +43,8 @@ import life.qbic.datamanager.views.projects.project.info.QualityControlListCompo
 import life.qbic.datamanager.views.projects.project.info.QualityControlListComponent.QualityControl;
 import life.qbic.datamanager.views.projects.purchase.PurchaseItemDeletionConfirmationNotification;
 import life.qbic.datamanager.views.projects.purchase.UploadPurchaseDialog;
-import life.qbic.datamanager.views.projects.qualityControl.QCItemDeletionConfirmationNotification;
-import life.qbic.datamanager.views.projects.qualityControl.UploadQualityControlDialog;
+import life.qbic.datamanager.views.projects.quality_control.QCItemDeletionConfirmationNotification;
+import life.qbic.datamanager.views.projects.quality_control.UploadQualityControlDialog;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.AddExperimentToProjectService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
@@ -287,7 +287,7 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
 
   private void onUploadQualityControlClicked() {
     UploadQualityControlDialog dialog = new UploadQualityControlDialog(
-        context.projectId().orElseThrow(), experimentInformationService);
+        context.projectId().orElseThrow(), experimentInformationService, uploadConfiguration);
     dialog.addConfirmListener(confirmEvent -> {
       List<QualityControlReport> qualityControlReports = confirmEvent.getSource()
           .qualityControlItems()

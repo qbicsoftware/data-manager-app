@@ -85,7 +85,6 @@ public class UploadPurchaseDialog extends DialogWindow {
             purchaseItemsCache.add(added);
             componentUI.ifPresent(ui -> ui.access(() -> uploadedPurchaseItems.add(added)));
           }
-          componentUI.ifPresent(ui -> ui.access(this::toggleFileSectionIfEmpty));
         }
         case FILE_REMOVED -> {
           var toBeRemoved = purchaseItemsCache.stream()
@@ -99,9 +98,9 @@ public class UploadPurchaseDialog extends DialogWindow {
                 componentUI.ifPresent(
                     ui -> ui.access(() -> uploadedPurchaseItems.remove(purchaseItem)));
               });
-          componentUI.ifPresent(ui -> ui.access(this::toggleFileSectionIfEmpty));
         }
       }
+      componentUI.ifPresent(ui -> ui.access(this::toggleFileSectionIfEmpty));
     });
     var failureRegistration = contentUploadComponent.addFileRejectedListener(this::onUploadFailure);
     addDetachListener(event -> {
