@@ -11,9 +11,10 @@ import java.util.Locale;
  */
 public class FileSizeFormatter {
 
-  private static final long KILOBYTE = 1_000L;
-  private static final long MEGABYTE = 1_000_000L;
-  private static final long GIGABYTE = 1_000_000_000L;
+  private static final long base = 1024;
+  private static final long KILOBYTE = base;
+  private static final long MEGABYTE = base * KILOBYTE;
+  private static final long GIGABYTE = base * MEGABYTE;
 
   private FileSizeFormatter() {
     // Utility class - no instantiation
