@@ -302,7 +302,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     var editSampleBatchDialog = new EditSampleBatchDialog(
         sampleValidationService, asyncProjectService, messageFactory, batchId, batchLabel,
         experimentId.value(),
-        projectId.value(), projectOverview.projectCode());
+        projectId.value(), projectOverview.projectCode(), uploadConfiguration);
     UI ui = UI.getCurrent();
     editSampleBatchDialog.addConfirmListener(event -> {
       var sampleMetadata = new ArrayList<>(event.validatedSampleMetadata());

@@ -18,15 +18,13 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.FileNameFormatter;
+import life.qbic.datamanager.configuration.UploadConfiguration;
 import life.qbic.datamanager.files.export.download.ByteArrayDownloadStreamProvider;
 import life.qbic.datamanager.files.parsing.MetadataParser.ParsingException;
 import life.qbic.datamanager.files.parsing.ParsingResult;
@@ -35,11 +33,14 @@ import life.qbic.datamanager.files.parsing.SampleInformationExtractor.SampleInfo
 import life.qbic.datamanager.files.parsing.xlsx.XLSXParser;
 import life.qbic.datamanager.views.general.WizardDialogWindow;
 import life.qbic.datamanager.views.general.download.DownloadComponent;
+import life.qbic.datamanager.views.general.upload.ContentUploadComponent;
 import life.qbic.datamanager.views.general.upload.UploadWithDisplay;
 import life.qbic.datamanager.views.general.upload.UploadWithDisplay.FileType;
 import life.qbic.datamanager.views.general.upload.UploadWithDisplay.SucceededEvent;
 import life.qbic.datamanager.views.general.upload.UploadWithDisplay.UploadedData;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
+import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleUploadDisplay.InProgressDisplay;
+import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleUploadDisplay.InvalidUploadDisplay;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ValidationResult;
@@ -81,6 +82,8 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
   private final Div succeededView;
   private final MessageSourceNotificationFactory messageFactory;
   private final DownloadComponent downloadComponent;
+  private final ContentUploadComponent contentUploadComponent;
+
 
   public EditSampleBatchDialog(SampleValidationService sampleValidationService,
       AsyncProjectService service, MessageSourceNotificationFactory messageFactory,
@@ -88,9 +91,10 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
       String batchName,
       String experimentId,
       String projectId,
-      String projectCode) {
+      String projectCode, UploadConfiguration uploadConfiguration) {
     this.messageFactory = Objects.requireNonNull(messageFactory);
     this.downloadComponent = new DownloadComponent();
+    this.contentUploadComponent = new ContentUploadComponent(uploadConfiguration);
 
     setHeaderTitle("Edit Sample Batch");
     setConfirmButtonLabel("Edit Batch");
@@ -118,6 +122,16 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
     setHeaderTitle("Edit Sample Batch");
     validatedSampleMetadata = new ArrayList<>();
 
+    contentUploadComponent.setMaxFiles(1);
+    contentUploadComponent.setAcceptedFileTypes(
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    contentUploadComponent.addUnspecificFailureListener(
+        uploadFailed ->
+            /* display of the error is handled by the uploadWithDisplay component. However, we do need to log with the context*/
+            log.error(
+                "Upload failed for project(" + projectId + ") experiment(" + experimentId + ")",
+                uploadFailed.getCause()));
+
     UploadWithDisplay uploadWithDisplay = new UploadWithDisplay(
         MAX_FILE_SIZE, new FileType[]{
         new FileType(".xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
@@ -136,7 +150,8 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
 
     Span uploadTheSampleDataTitle = new Span("Upload the sample data");
     uploadTheSampleDataTitle.addClassName("section-title");
-    Div uploadSection = new Div(uploadTheSampleDataTitle, uploadWithDisplay);
+    Div uploadSection = new Div(uploadTheSampleDataTitle, uploadWithDisplay,
+        contentUploadComponent);
     uploadSection.addClassName("upload-section");
     uploadSection.addClassName("section-with-title");
     initialView.add(batchNameField, downloadMetadataSection, uploadSection);
@@ -223,7 +238,7 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
           }
           if (!succeededValidations.isEmpty()) {
             ui.access(() -> component
-                .setDisplay(new ValidUploadDisplay(uploadedData.fileName(),
+                .setDisplay(new SampleUploadDisplay.ValidUploadDisplay(uploadedData.fileName(),
                     succeededValidations.size())));
             setValidatedSampleMetadata(
                 succeededValidations.stream().map(ValidationResultWithPayload::payload).toList());
@@ -254,6 +269,7 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
         .extractInformationForExistingSamples(parsingResult);
 
   }
+
 
   private Div setupDownloadMetadataSection(AsyncProjectService service,
       String batchId,
@@ -442,114 +458,40 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
     succeededView.setVisible(false);
   }
 
-  static class InvalidUploadDisplay extends Div {
 
+  class SampleEditUploadDisplayController {
 
-    public InvalidUploadDisplay(String fileName, List<String> failureReasons) {
-      addClassName(UPLOADED_ITEM_CSS);
-      var fileIcon = VaadinIcon.FILE.create();
-      fileIcon.addClassName(FILE_ICON_CSS);
-      Span fileNameLabel = new Span(fileIcon, new Span(fileName));
-      fileNameLabel.addClassName(FILE_NAME_CSS);
-      Div validationBox = new Div();
-      validationBox.addClassName(VALIDATION_DISPLAY_BOX_CSS);
-      var box = new Div();
-      var failuresTitle = new Span("Invalid sample metadata");
-      var errorIcon = VaadinIcon.CLOSE_CIRCLE.create();
-      errorIcon.addClassName(ERROR_CSS);
-      var header = new Span(errorIcon, failuresTitle);
-      header.addClassName(HEADER_CSS);
-      var instruction = new Span(
-          "Please correct the entries in the uploaded file and re-upload the file.");
-      instruction.addClassName(SECONDARY_CSS);
-      Div validationDetails = new Div();
-      Map<String, Integer> frequencyMap = failureReasons.stream()
-          .distinct()
-          .collect(Collectors.toMap(
-              Function.identity(),
-              v -> Collections.frequency(failureReasons, v)
-          ));
-      frequencyMap.forEach(
-          (key, frequency) -> {
-            String s = frequency + " sample" + ((frequency > 1) ? "s." : ".");
-            Span span = new Span(s);
-            span.addClassName("bold");
-            validationDetails.add(new Div(new Span(key + " for "), span));
-          });
-      box.add(header, validationDetails, instruction);
-      validationBox.add(box);
-      add(fileNameLabel, validationBox);
+    private final String projectId;
+    private final String experimentId;
+
+    private SampleEditUploadDisplayController(String projectId, String experimentId) {
+      this.projectId = Objects.requireNonNull(projectId);
+      this.experimentId = Objects.requireNonNull(experimentId);
     }
 
 
-    public InvalidUploadDisplay(String fileName, String failureReason) {
-      addClassName(UPLOADED_ITEM_CSS);
-      var fileIcon = VaadinIcon.FILE.create();
-      fileIcon.addClassName(FILE_ICON_CSS);
-      Span fileNameLabel = new Span(fileIcon, new Span(fileName));
-      fileNameLabel.addClassName(FILE_NAME_CSS);
-      Div validationBox = new Div();
-      validationBox.addClassName(VALIDATION_DISPLAY_BOX_CSS);
-      var box = new Div();
-      var failuresTitle = new Span("Invalid sample metadata");
-      var errorIcon = VaadinIcon.CLOSE_CIRCLE.create();
-      errorIcon.addClassName(ERROR_CSS);
-      var header = new Span(errorIcon, failuresTitle);
-      header.addClassName(HEADER_CSS);
-      var instruction = new Span(
-          "Please correct the entries in the uploaded file and re-upload the file.");
-      instruction.addClassName(SECONDARY_CSS);
-      Div validationDetails = new Div();
+    Registration control(SampleUploadDisplay sampleUploadDisplay,
+        ContentUploadComponent contentUploadComponent) {
 
-      validationDetails.add(new Div(failureReason));
-      box.add(header, validationDetails, instruction);
-      validationBox.add(box);
-      add(fileNameLabel, validationBox);
+      Objects.requireNonNull(sampleUploadDisplay);
+      Objects.requireNonNull(contentUploadComponent);
+      var changeRegistration = contentUploadComponent.addChangeListener(event -> {
+        var componentUI = contentUploadComponent.getUI();
+        switch (event.changeType()) {
+          //TODO
+        }
+      });
+
+      var removedRegistration = contentUploadComponent.addFileRemovedListener(
+          event -> sampleUploadDisplay.removeDisplay(List.of(event.getFileName())));
+
+      return () -> {
+        changeRegistration.remove();
+        removedRegistration.remove();
+      };
     }
   }
 
-  static class ValidUploadDisplay extends Div {
-
-    private ValidUploadDisplay(String fileName, int count) {
-      addClassName(UPLOADED_ITEM_CSS);
-      var fileIcon = VaadinIcon.FILE.create();
-      fileIcon.addClassName(FILE_ICON_CSS);
-      Span fileNameLabel = new Span(fileIcon, new Span(fileName));
-      fileNameLabel.addClassName(FILE_NAME_CSS);
-      Div validationBox = new Div();
-      validationBox.addClassName(VALIDATION_DISPLAY_BOX_CSS);
-      var box = new Div();
-      var approvedTitle = new Span(YOUR_DATA_HAS_BEEN_APPROVED_TEXT);
-      var validIcon = VaadinIcon.CHECK_CIRCLE_O.create();
-      validIcon.addClassName("success");
-      var header = new Span(validIcon, approvedTitle);
-      header.addClassName(HEADER_CSS);
-      var instruction = new Span("Please click Register to register your samples");
-      instruction.addClassName(SECONDARY_CSS);
-      Div validationDetails = new Div();
-      var approvedSamples = new Span("%d samples".formatted(count));
-      approvedSamples.addClassName("bold");
-      validationDetails.add(new Span("Sample data for "), approvedSamples,
-          new Span(" is now ready to be registered."));
-      box.add(header, validationDetails, instruction);
-      validationBox.add(box);
-      add(fileNameLabel, validationBox);
-    }
-  }
-
-  private static class InProgressDisplay extends Div {
-
-    private InProgressDisplay(String fileName) {
-      addClassName(UPLOADED_ITEM_CSS);
-      var fileIcon = VaadinIcon.FILE.create();
-      fileIcon.addClassName(FILE_ICON_CSS);
-      Span fileNameLabel = new Span(fileIcon, new Span(fileName));
-      fileNameLabel.addClassName(FILE_NAME_CSS);
-      ProgressBar progressBar = new ProgressBar();
-      progressBar.setIndeterminate(true);
-      add(fileNameLabel, new Div("Validating file..."), progressBar);
-    }
-  }
 
   public static class ConfirmEvent extends ComponentEvent<EditSampleBatchDialog> {
 
