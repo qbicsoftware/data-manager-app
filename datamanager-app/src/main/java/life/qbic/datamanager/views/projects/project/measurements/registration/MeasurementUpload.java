@@ -2,17 +2,14 @@ package life.qbic.datamanager.views.projects.project.measurements.registration;
 
 import static java.util.Objects.requireNonNull;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Focusable;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.upload.FailedEvent;
 import com.vaadin.flow.component.upload.FileRejectedEvent;
-import com.vaadin.flow.component.upload.FileRemovedEvent;
-import com.vaadin.flow.component.upload.SucceededEvent;
-import com.vaadin.flow.component.upload.Upload;
 import java.io.InputStream;
 import java.io.Serial;
 import java.time.Duration;
@@ -28,6 +25,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import life.qbic.datamanager.configuration.UploadConfiguration;
 import life.qbic.datamanager.files.parsing.ParsingResult;
 import life.qbic.datamanager.files.parsing.converters.MetadataConverterV2;
 import life.qbic.datamanager.files.parsing.tsv.TSVParser;
@@ -38,7 +36,8 @@ import life.qbic.datamanager.views.general.InfoBox;
 import life.qbic.datamanager.views.general.dialog.DialogSection;
 import life.qbic.datamanager.views.general.dialog.InputValidation;
 import life.qbic.datamanager.views.general.dialog.UserInput;
-import life.qbic.datamanager.views.general.upload.EditableMultiFileMemoryBuffer;
+import life.qbic.datamanager.views.general.upload.ContentUploadComponent;
+import life.qbic.datamanager.views.general.upload.UploadedFilesChangeListener.FileEntry;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.projects.project.measurements.processor.ProcessorRegistry;
 import life.qbic.projectmanagement.application.ValidationResult;
@@ -50,6 +49,8 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.Measureme
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequest;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequestBody;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationResponse;
+import org.jspecify.annotations.NonNull;
+import org.springframework.util.unit.DataSize;
 import reactor.core.publisher.Flux;
 
 /**
@@ -77,7 +78,6 @@ public class MeasurementUpload extends Div implements UserInput {
   private final MessageSourceNotificationFactory notificationFactory;
   private final UiHandle uiHandle = new UiHandle();  // keeps a reference to the current UI
 
-  private final EditableMultiFileMemoryBuffer uploadBuffer;
   private final List<MeasurementFileItem> measurementFileItems;
 
   private enum AcceptedFileType {
@@ -105,7 +105,8 @@ public class MeasurementUpload extends Div implements UserInput {
       AsyncProjectService service,
       Context context,
       MetadataConverterV2<? extends ValidationRequestBody> converter,
-      MessageSourceNotificationFactory notificationFactory) {
+      MessageSourceNotificationFactory notificationFactory,
+      UploadConfiguration uploadConfiguration) {
     isValidationInProgress = new AtomicBoolean(false);
     // Initial parameter validation of injected objects
     this.service = requireNonNull(service);
@@ -114,17 +115,30 @@ public class MeasurementUpload extends Div implements UserInput {
     this.notificationFactory = requireNonNull(notificationFactory);
     // Initial parameter instantiation of local objects
     this.measurementFileItems = new ArrayList<>();
-    this.uploadBuffer = new EditableMultiFileMemoryBuffer();
     this.validationProgress = new Div();
 
     // Set up the upload section
-    var upload = new Upload(uploadBuffer);
+    var upload = new ContentUploadComponent(requireNonNull(uploadConfiguration));
     upload.setAcceptedFileTypes(AcceptedFileType.allMimeTypes().toArray(String[]::new));
-    upload.setMaxFileSize(MAX_FILE_SIZE_BYTES);
-    upload.addSucceededListener(this::onUploadSucceeded);
-    upload.addFileRejectedListener(this::onFileRejected);
-    upload.addFailedListener(this::onUploadFailed);
-    upload.addFileRemovedListener(this::onFileRemoved);
+    upload.setMaxFileSize(DataSize.ofBytes(MAX_FILE_SIZE_BYTES));
+    upload.addChangeListener(event ->
+        {
+          switch (event.changeType()) {
+            case FILE_ADDED -> {
+              for (FileEntry changedFile : event.changedFiles()) {
+                onUploadSucceeded(changedFile.fileName(), changedFile.mimeType(),
+                    upload.getContent(changedFile.fileName()).orElseThrow());
+              }
+            }
+            case FILE_REMOVED -> {
+              for (FileEntry changedFile : event.changedFiles()) {
+                removeFile(changedFile.fileName());
+              }
+            }
+          }
+        }
+    );
+    upload.addFileRejectedListener(rejectedEvent -> displayError());
     this.uploadedItemsDisplay = new UploadedItemsDisplay(upload);
 
     // Create the different sections
@@ -168,20 +182,11 @@ public class MeasurementUpload extends Div implements UserInput {
   }
 
   private void removeFile(String fileName) {
-    uploadBuffer.remove(fileName);
     measurementFileItems.removeIf(
         measurementFileItem -> measurementFileItem.fileName().equals(fileName));
     uploadedItemsDisplay.removeFileFromDisplay(fileName);
     validationRequestsPerFile.remove(fileName);
     refresh();
-  }
-
-  private void onFileRemoved(FileRemovedEvent fileRemovedEvent) {
-    removeFile(fileRemovedEvent.getFileName());
-  }
-
-  private void onUploadFailed(FailedEvent failedEvent) {
-    displayError();
   }
 
   private void displayUnsupportedFileType() {
@@ -196,18 +201,17 @@ public class MeasurementUpload extends Div implements UserInput {
     toast.open();
   }
 
-  private void onUploadSucceeded(SucceededEvent succeededEvent) {
-    var fileName = succeededEvent.getFileName();
-    Optional<MeasurementUpload.AcceptedFileType> knownFileType = AcceptedFileType.forMimeType(
-        succeededEvent.getMIMEType());
+  private void onUploadSucceeded(String fileName, String mimeType, InputStream inputStream) {
+    Optional<AcceptedFileType> knownFileType = AcceptedFileType.forMimeType(
+        mimeType);
     if (knownFileType.isEmpty()) {
       displayUnsupportedFileType();
       return;
     }
 
     var parsingResult = switch (knownFileType.get()) {
-      case EXCEL -> parseXLSX(uploadBuffer.inputStream(fileName).orElseThrow());
-      case TSV -> parseTSV(uploadBuffer.inputStream(fileName).orElseThrow());
+      case EXCEL -> parseXLSX(inputStream);
+      case TSV -> parseTSV(inputStream);
     };
 
     var result = converter.convert(parsingResult);
@@ -231,27 +235,33 @@ public class MeasurementUpload extends Div implements UserInput {
     if (validationRequest.isEmpty()) {
       return validationRequest;
     }
-    var firstEntry = requireNonNull(validationRequest.get(0));
-    switch (firstEntry) {
-      case MeasurementRegistrationInformationNGS ignored: {
-        var processor = ProcessorRegistry.processorFor(MeasurementRegistrationInformationNGS.class);
-        return processor.process((List<MeasurementRegistrationInformationNGS>) validationRequest);
-      }
-      case MeasurementRegistrationInformationPxP ignored: {
-        var processor = ProcessorRegistry.processorFor(MeasurementRegistrationInformationPxP.class);
-        return processor.process((List<MeasurementRegistrationInformationPxP>) validationRequest);
-      }
-      case MeasurementUpdateInformationPxP ignored: {
-        var processor = ProcessorRegistry.processorFor(MeasurementUpdateInformationPxP.class);
-        return processor.process((List<MeasurementUpdateInformationPxP>) validationRequest);
-      }
-      case MeasurementUpdateInformationNGS ignored: {
-        var processor = ProcessorRegistry.processorFor(MeasurementUpdateInformationNGS.class);
-        return processor.process((List<MeasurementUpdateInformationNGS>) validationRequest);
-      }
-      default:
-        throw new IllegalStateException("Unknown validation request: " + validationRequest);
+    if (validationRequest.stream()
+        .map(Object::getClass)
+        .distinct().count() > 1) {
+      // not all the same class
+      throw new RuntimeException("Not all validation requests are of the same class");
     }
+    var firstEntry = requireNonNull(validationRequest.getFirst());
+    return switch (firstEntry) {
+      case MeasurementRegistrationInformationNGS ignored -> {
+        var processor = ProcessorRegistry.processorFor(MeasurementRegistrationInformationNGS.class);
+        yield processor.process((List<MeasurementRegistrationInformationNGS>) validationRequest);
+      }
+      case MeasurementRegistrationInformationPxP ignored -> {
+        var processor = ProcessorRegistry.processorFor(MeasurementRegistrationInformationPxP.class);
+        yield processor.process((List<MeasurementRegistrationInformationPxP>) validationRequest);
+      }
+      case MeasurementUpdateInformationPxP ignored -> {
+        var processor = ProcessorRegistry.processorFor(MeasurementUpdateInformationPxP.class);
+        yield processor.process((List<MeasurementUpdateInformationPxP>) validationRequest);
+      }
+      case MeasurementUpdateInformationNGS ignored -> {
+        var processor = ProcessorRegistry.processorFor(MeasurementUpdateInformationNGS.class);
+        yield processor.process((List<MeasurementUpdateInformationNGS>) validationRequest);
+      }
+      default -> throw new IllegalStateException(
+          "Unknown validation request: " + validationRequest);
+    };
   }
 
   private void runValidation(ArrayList<ValidationRequest> requests, int itemsToValidate,
@@ -263,10 +273,8 @@ public class MeasurementUpload extends Div implements UserInput {
     service.validate(Flux.fromIterable(requests))
         .doOnNext(ignored -> counter.incrementAndGet())
         .bufferTimeout(20, Duration.ofMillis(200))
-        .doOnNext(item -> uiHandle.onUiAndPush(() -> {
-          setValidationProgressText(
-              "Processed " + counter.get() + " requests from " + itemsToValidate);
-        }))
+        .doOnNext(item -> uiHandle.onUiAndPush(() -> setValidationProgressText(
+            "Processed " + counter.get() + " requests from " + itemsToValidate)))
         .flatMap(Flux::fromIterable)
         .collectList()
         .doOnSuccess(it -> uiHandle.onUi(this::validationFinished))
@@ -357,6 +365,7 @@ public class MeasurementUpload extends Div implements UserInput {
   }
 
   @Override
+  @NonNull
   public InputValidation validate() {
     var inputWithFailureSearch = measurementFileItems.stream()
         .map(MeasurementFileItem::measurementValidationReport)
@@ -379,7 +388,7 @@ public class MeasurementUpload extends Div implements UserInput {
     private final Div uploadedItemsDisplays;
     private final DialogSection uploadedFilesSection;
 
-    public UploadedItemsDisplay(Upload upload) {
+    public UploadedItemsDisplay(Component uploadComponent) {
 
       var saveYourFileInfo = new InfoBox().setInfoText(
               "When uploading a tab-separated file, please save your Excel file as UTF-16 Unicode Text (*.txt) before uploading.")
@@ -393,7 +402,7 @@ public class MeasurementUpload extends Div implements UserInput {
           "Maximum file size: %s MB".formatted(MAX_FILE_SIZE_BYTES / Math.pow(1024, 2))));
 
       this.uploadSection = new Div();
-      uploadSection.add(saveYourFileInfo, upload, restrictions);
+      uploadSection.add(saveYourFileInfo, uploadComponent, restrictions);
       uploadSection.addClassNames("upload-section", "flex-vertical", "gap-03");
 
       uploadedItemsDisplays = new Div();

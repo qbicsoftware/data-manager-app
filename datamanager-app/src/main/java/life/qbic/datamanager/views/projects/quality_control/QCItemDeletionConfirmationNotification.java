@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.projects.qualityControl;
+package life.qbic.datamanager.views.projects.quality_control;
 
 import com.vaadin.flow.component.html.Span;
 import life.qbic.datamanager.views.notifications.NotificationDialog;

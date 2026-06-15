@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
+import life.qbic.datamanager.configuration.UploadConfiguration;
 import life.qbic.datamanager.files.export.download.ByteArrayDownloadStreamProvider;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
@@ -42,8 +43,8 @@ import life.qbic.datamanager.views.projects.project.info.QualityControlListCompo
 import life.qbic.datamanager.views.projects.project.info.QualityControlListComponent.QualityControl;
 import life.qbic.datamanager.views.projects.purchase.PurchaseItemDeletionConfirmationNotification;
 import life.qbic.datamanager.views.projects.purchase.UploadPurchaseDialog;
-import life.qbic.datamanager.views.projects.qualityControl.QCItemDeletionConfirmationNotification;
-import life.qbic.datamanager.views.projects.qualityControl.UploadQualityControlDialog;
+import life.qbic.datamanager.views.projects.quality_control.QCItemDeletionConfirmationNotification;
+import life.qbic.datamanager.views.projects.quality_control.UploadQualityControlDialog;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.AddExperimentToProjectService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
@@ -95,6 +96,7 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
   private final transient MessageSourceNotificationFactory messageSourceNotificationFactory;
   private final transient TerminologyService terminologyService;
   private Context context;
+  private final UploadConfiguration uploadConfiguration;
 
   public ProjectInformationMain(@Autowired ProjectSummaryComponent projectSummaryComponent,
       @Autowired ExperimentListComponent experimentListComponent,
@@ -106,7 +108,8 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
       @Autowired QualityControlService qualityControlService,
       @Autowired TerminologyService terminologyService,
       CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
-      MessageSourceNotificationFactory messageSourceNotificationFactory) {
+      MessageSourceNotificationFactory messageSourceNotificationFactory,
+      UploadConfiguration uploadConfiguration) {
     this.projectSummaryComponent = requireNonNull(projectSummaryComponent);
     this.experimentListComponent = requireNonNull(experimentListComponent,
         "experimentListComponent must not be null");
@@ -125,6 +128,7 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
         "messageSourceNotificationFactory must not be null");
     this.cancelConfirmationDialogFactory = requireNonNull(cancelConfirmationDialogFactory,
         "cancelConfirmationDialogFactory must not be null");
+    this.uploadConfiguration = requireNonNull(uploadConfiguration);
 
     downloadComponent = new DownloadComponent();
     offerListComponent = getConfiguredOfferList();
@@ -220,7 +224,7 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
   private void onUploadOfferClicked(UploadOfferClickEvent uploadOfferClickEvent,
       ProjectPurchaseService projectPurchaseService,
       String projectId) {
-    UploadPurchaseDialog dialog = new UploadPurchaseDialog();
+    UploadPurchaseDialog dialog = new UploadPurchaseDialog(uploadConfiguration);
     dialog.addConfirmListener(confirmEvent -> {
       List<OfferDTO> offerDTOs = confirmEvent.getSource().purchaseItems().stream()
           .map(it -> new OfferDTO(it.signed(), it.fileName(), it.content()))
@@ -283,7 +287,7 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
 
   private void onUploadQualityControlClicked() {
     UploadQualityControlDialog dialog = new UploadQualityControlDialog(
-        context.projectId().orElseThrow(), experimentInformationService);
+        context.projectId().orElseThrow(), experimentInformationService, uploadConfiguration);
     dialog.addConfirmListener(confirmEvent -> {
       List<QualityControlReport> qualityControlReports = confirmEvent.getSource()
           .qualityControlItems()

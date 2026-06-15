@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import life.qbic.datamanager.configuration.UploadConfiguration;
 import life.qbic.datamanager.views.StringBean;
 import life.qbic.datamanager.views.general.Card;
 import life.qbic.datamanager.views.general.DetailBox;
@@ -42,7 +43,6 @@ import life.qbic.datamanager.views.general.dialog.stepper.Step;
 import life.qbic.datamanager.views.general.dialog.stepper.StepperDialog;
 import life.qbic.datamanager.views.general.dialog.stepper.StepperDialogFooter;
 import life.qbic.datamanager.views.general.dialog.stepper.StepperDisplay;
-import life.qbic.datamanager.views.general.grid.Filter;
 import life.qbic.datamanager.views.general.grid.PredicateFilter;
 import life.qbic.datamanager.views.general.grid.component.FilterGrid;
 import life.qbic.datamanager.views.general.grid.component.FilterGridConfigurations;
@@ -51,6 +51,8 @@ import life.qbic.datamanager.views.general.grid.component.FilterGridTabSheet;
 import life.qbic.datamanager.views.general.grid.component.FilterGridTabSheet.TabAction;
 import life.qbic.datamanager.views.general.grid.component.GridConfiguration.FilterTester;
 import life.qbic.datamanager.views.general.icon.IconFactory;
+import life.qbic.datamanager.views.general.upload.ContentUploadComponent;
+import life.qbic.datamanager.views.general.upload.UploadedFilesChangeListener.FileEntry;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.ExperimentalVariablesInput;
 import life.qbic.datamanager.views.projects.project.info.SimpleParagraph;
@@ -83,13 +85,17 @@ public class ComponentDemo extends Div {
   public static final String NORMAL_BODY_TEXT = "normal-body-text";
   Div title = new Div("Data Manager - Component Demo");
   private final MessageSourceNotificationFactory messageFactory;
+  private final UploadConfiguration uploadConfiguration;
 
   @Autowired
-  public ComponentDemo(MessageSourceNotificationFactory messageSourceNotificationFactory) {
+  public ComponentDemo(MessageSourceNotificationFactory messageSourceNotificationFactory,
+      UploadConfiguration uploadConfiguration) {
     this.messageFactory = Objects.requireNonNull(messageSourceNotificationFactory);
+    this.uploadConfiguration = Objects.requireNonNull(uploadConfiguration);
     title.addClassName("heading-1");
     addClassNames("padding-horizontal-07", "padding-vertical-04");
     add(title);
+    add(uploadShowcase());
     add(headingShowcase());
     add(colorShowCase());
     add(clickableShowCase());
@@ -102,6 +108,20 @@ public class ComponentDemo extends Div {
     add(borderShowcase());
     add(createTestComponent());
     add(filterGridShowCase());
+  }
+
+  private @org.jspecify.annotations.NonNull ContentUploadComponent uploadShowcase() {
+    ContentUploadComponent contentUploadComponent = new ContentUploadComponent(uploadConfiguration);
+
+    contentUploadComponent.addChangeListener(event -> {
+      var files = event.changedFiles();
+      var changeType = event.changeType();
+      for (FileEntry file : files) {
+        System.out.println("file = " + file);
+        System.out.println("changeType = " + changeType);
+      }
+    });
+    return contentUploadComponent;
   }
 
   private record SimplePersonFilter(String term) implements PredicateFilter<Person> {
@@ -185,7 +205,7 @@ public class ComponentDemo extends Div {
 
     var contactInMemoryConfiguration = FilterGridConfigurations.inMemory(
         examples,
-        nameContainsFilterTerm::test
+        nameContainsFilterTerm
     );
 
     var inMemoryPersonGrid = FilterGrid.create(
@@ -201,9 +221,9 @@ public class ComponentDemo extends Div {
     tabSheet.addTab(filterTab);
     tabSheet.addTab(filterTabContacts);
     tabSheet.addTab(filterTabInMemoryPerson);
-    TabAction<FilterGridTab<ComponentDemo.Person>, ComponentDemo.Person> featureAction = tab -> log.info(
+    TabAction<FilterGridTab<Person>, Person> featureAction = tab -> log.info(
         "feature for tab: " + tab);
-    TabAction<FilterGridTab<ComponentDemo.Person>, ComponentDemo.Person> primaryAction = tab -> log.info(
+    TabAction<FilterGridTab<Person>, Person> primaryAction = tab -> log.info(
         "primary action for tab: " + tab);
 
     tabSheet.addFeatureAction(filterTab, featureAction);
@@ -215,21 +235,6 @@ public class ComponentDemo extends Div {
     tabSheet.addPrimaryAction(filterTab, primaryAction);
 
     return new Div(tabSheet);
-  }
-
-  static class ExampleFilter implements Filter {
-
-    private String term;
-
-    ExampleFilter(String term) {
-      this.term = term;
-    }
-
-    @Override
-    public Optional<String> searchTerm() {
-      return Optional.ofNullable(this.term);
-    }
-
   }
 
   static List<Person> examples = new ArrayList<>();
