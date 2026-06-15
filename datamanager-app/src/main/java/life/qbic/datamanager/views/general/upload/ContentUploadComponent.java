@@ -41,6 +41,28 @@ import life.qbic.logging.service.LoggerFactory;
 import org.jspecify.annotations.NonNull;
 import org.springframework.util.unit.DataSize;
 
+/**
+ * A file upload component that supports single and multi-file uploads with automatic in-memory
+ * and on-disk storage management.
+ *
+ * <p>Files uploaded within the configured {@code maxInMemoryBytes} threshold are stored in memory;
+ * larger files are temporarily written to disk and cleaned up automatically on component detachment
+ * or when files are removed.
+ *
+ * <p>The component exposes change events via {@link UploadedFilesChangeListener}, allowing consumers
+ * to react to files being added or removed. It also provides methods to retrieve uploaded data
+ * ({@link #getContent(String)}) and metadata ({@link #getMetadata(String)}) after upload completion.
+ *
+ * <p><b>Error display:</b> File rejection errors (too big, wrong type, too many files) are displayed
+ * inline below the upload area. {@link UnspecificFailedEvent} is fired for network-level failures.
+ *
+ * <p><b>Thread safety:</b> The internal file data store is backed by a synchronized map.
+ * File removal and data storage operations are thread-safe.
+ *
+ * @author QBiC
+ * @see UploadedFilesChangeListener
+ * @see UploadedFilesChangeListener.FileEntry
+ */
 public class ContentUploadComponent extends Div {
 
   private static final Logger log = LoggerFactory.logger(ContentUploadComponent.class);
@@ -52,13 +74,33 @@ public class ContentUploadComponent extends Div {
   private final Div errorArea = new Div();
 
 
+  /**
+   * Holds metadata for an uploaded file, including file name, MIME type, and content length.
+   *
+   * @param fileName     the name of the uploaded file
+   * @param mimeType     the MIME content type of the file
+   * @param size         the content length in bytes
+   */
   public record UploadedMetadata(String fileName, String mimeType, long size) {
 
 
   }
+  /**
+   * Represents the storage format for uploaded file data.
+   *
+   * <p>Files within the configured in-memory threshold are stored as in-memory byte arrays;
+   * larger files are written to temporary disk storage. The sealed hierarchy ensures safe
+   * pattern matching for consumers.
+   */
   sealed interface FileData permits InMemory,
       OnDisk {
 
+    /**
+     * In-memory file data storing the metadata and raw byte content.
+     *
+     * <p>Used for files whose size is at or below the configured {@code maxInMemoryBytes} threshold.
+     * Implements {@link Serializable} for potential clustering/session replication support.
+     */
     record InMemory(UploadMetadata metadata, byte[] data)
         implements FileData, Serializable {
 
@@ -80,6 +122,13 @@ public class ContentUploadComponent extends Div {
       }
 
     }
+    /**
+     * On-disk file data storing the metadata and a path to a temporary file.
+     *
+     * <p>Used for files whose size exceeds the configured {@code maxInMemoryBytes} threshold.
+     * The temporary file is automatically deleted when the component is detached or the file is removed.
+     * Implements {@link Serializable} for potential clustering/session replication support.
+     */
     record OnDisk(UploadMetadata metadata, Path path) implements
         FileData, Serializable {
 
@@ -89,6 +138,17 @@ public class ContentUploadComponent extends Div {
 
   }
 
+  /**
+   * Creates a new upload component with the given upload configuration.
+   *
+   * <p>Configures file size thresholds, upload constraints (max files, accepted file types),
+   * internationalized error messages, and file rejection/removed handlers.
+   *
+   * <p>Cleanup of temporary on-disk files is handled automatically via a detach listener.
+   *
+   * @param uploadConfiguration configuration for max in-memory threshold and file size limits
+   * @throws NullPointerException if uploadConfiguration is null
+   */
   public ContentUploadComponent(UploadConfiguration uploadConfiguration) {
     //ensure cleanup after detachment of component
     addDetachListener(event -> deletePendingFiles());
@@ -158,10 +218,31 @@ public class ContentUploadComponent extends Div {
     add(errorArea, upload, restrictionsArea);
   }
 
+  /**
+   * Sets the maximum allowed file size for uploads, expressed as a {@link DataSize}.
+   *
+   * <p>Calling this method with a negative or zero value removes the file size restriction.
+   * Updates the restrictions display area automatically.
+   *
+   * @param maxFileSize maximum upload size; zero or negative removes the limit
+   * @throws IllegalArgumentException if maxFileSize is negative (pre-condition check)
+   */
   public void setMaxFileSize(@NonNull DataSize maxFileSize) {
+    if (maxFileSize.toBytes() > Integer.MAX_VALUE) {
+      throw new IllegalArgumentException(
+          "Maximum file size exceeds Integer.MAX_VALUE bytes and cannot be applied");
+    }
     setMaxFileSize(Math.toIntExact(maxFileSize.toBytes()));
   }
 
+  /**
+   * Sets the maximum allowed file size for uploads, expressed in bytes.
+   *
+   * <p>Calling this method with a value less than or equal to zero removes the file size restriction.
+   * Updates the restrictions display area automatically.
+   *
+   * @param maxFileSize maximum upload size in bytes; zero or negative removes the limit
+   */
   public void setMaxFileSize(int maxFileSize) {
     if (maxFileSize <= 0) {
       upload.getElement().removeProperty("maxFileSize");
@@ -171,22 +252,42 @@ public class ContentUploadComponent extends Div {
     updateRestrictionsDisplay();
   }
 
+  /**
+   * Sets internationalization (I18N) labels for the upload component.
+   *
+   * <p>Configures error messages for file rejection scenarios such as oversized files,
+   * incorrect file types, and exceeding the maximum file count.
+   *
+   * @param uploadI18N internationalization configuration containing error labels
+   */
   public void setI18n(UploadI18N uploadI18N) {
     upload.setI18n(uploadI18N);
   }
 
   /**
-   * @param acceptedFileTypes a list of accepted file types
+   * Sets the list of accepted file types by MIME type and/or extension.
+   *
+   * <p>Accepts file types such as mime type strings ({@code "application/pdf"}) and/or file
+   * extensions ({@code ".pdf"}). File type filtering is performed on the client side.
+   * Server-side validation should still be performed by the consumer after upload.
+   *
+   * @param acceptedFileTypes array of accepted file type strings (MIME types or extensions)
    * @see Upload#setAcceptedFileTypes(String...)
    */
   public void setAcceptedFileTypes(String... acceptedFileTypes) {
     upload.setAcceptedFileTypes(acceptedFileTypes);
   }
 
+  /**
+   * Sets the maximum number of files that may be uploaded in a single batch.
+   *
+   * <p>Exceeding this limit results in a {@link FileRejectedEvent} for additional files.
+   *
+   * @param maxFiles maximum number of files allowed in one batch upload
+   */
   public void setMaxFiles(int maxFiles) {
     upload.setMaxFiles(maxFiles);
   }
-
 
   private FileEntry maptoFileEntry(FileData file) {
 
@@ -195,6 +296,12 @@ public class ContentUploadComponent extends Div {
         file.metadata().contentLength());
   }
 
+  /**
+   * Updates the restrictions display area to show the current maximum file size.
+   *
+   * <p>Displays the file size restriction text when {@link #getMaxFileSize()} returns a positive value,
+   * and hides the area when no restriction is set.
+   */
   protected void updateRestrictionsDisplay() {
     if (getMaxFileSize() > 0) {
       restrictionsArea.removeAll();
@@ -286,6 +393,12 @@ public class ContentUploadComponent extends Div {
         .toList();
   }
 
+  /**
+   * Retrieves metadata for the specified uploaded file.
+   *
+   * @param fileName the name of the uploaded file
+   * @return an {@link Optional} containing the file metadata if found, or empty otherwise
+   */
   public Optional<UploadedMetadata> getMetadata(String fileName) {
     if (!fileDataStore.containsKey(fileName)) {
       return Optional.empty();
@@ -298,15 +411,18 @@ public class ContentUploadComponent extends Div {
           new UploadedMetadata(onDisk.metadata().fileName(), onDisk.metadata().contentType(),
               onDisk.metadata().contentLength()));
     };
-
   }
 
   /**
-   * Request the data for a specific file
+   * Retrieves an input stream for the content of the specified uploaded file.
    *
-   * @param fileName the name of the uploaded file.
-   * @return the uploaded data or {@link Optional#empty()} if not data was found for the provided
-   * fileName.
+   * <p>For in-memory files, a {@link ByteArrayInputStream} is returned. For on-disk files,
+   * a {@link FileInputStream} is opened pointing to the temporary file. Callers must close
+   * the returned stream to avoid resource leaks.
+   *
+   * @param fileName the name of the uploaded file
+   * @return an {@link Optional} containing the input stream of the file's content, or empty if
+   *         the file was not uploaded or a {@link FileNotFoundException} occurred
    */
   public Optional<InputStream> getContent(String fileName) {
     if (isEmpty()) {
@@ -331,28 +447,62 @@ public class ContentUploadComponent extends Div {
     };
   }
 
+  /**
+   * Retrieves the configured maximum file size in bytes.
+   *
+   * @return the maximum file size; returns -1 if no limit is set
+   */
   public long getMaxFileSize() {
     return upload.getMaxFileSize();
   }
 
+  /**
+   * Retrieves the configured maximum number of files per upload batch.
+   *
+   * @return the maximum number of files allowed; returns -1 if unlimited
+   */
   public int getMaxFiles() {
     return upload.getMaxFiles();
   }
 
+  /**
+   * Registers a listener for file addition and removal change events.
+   *
+   * @param listener the change listener to register
+   * @return a {@link Registration} that can be used to remove the listener
+   */
   public Registration addChangeListener(UploadedFilesChangeListener listener) {
     return addListener(UploadedFilesChangeEvent.class, listener);
   }
 
+  /**
+   * Registers a listener for unspecific upload failures (e.g., network errors).
+   *
+   * @param listener the failure event listener to register
+   * @return a {@link Registration} that can be used to remove the listener
+   */
   public Registration addUnspecificFailureListener(
       ComponentEventListener<UnspecificFailedEvent> listener) {
     return addListener(UnspecificFailedEvent.class, listener);
   }
 
-  public Registration addFileRejectedListener(ComponentEventListener<FileRejectedEvent> listener) {
+  /**
+   * Registers a listener for file rejection events triggered when files violate upload constraints.
+   *
+   * <p>{@inheritDoc}
+   */
+  public Registration addFileRejectedListener(
+      ComponentEventListener<FileRejectedEvent> listener) {
     return upload.addFileRejectedListener(listener);
   }
 
-  public Registration addFileRemovedListener(ComponentEventListener<FileRemovedEvent> listener) {
+  /**
+   * Registers a listener for file removal events triggered when the user removes a file from the upload queue.
+   *
+   * <p>{@inheritDoc}
+   */
+  public Registration addFileRemovedListener(
+      ComponentEventListener<FileRemovedEvent> listener) {
     return upload.addFileRemovedListener(listener);
   }
 
