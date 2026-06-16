@@ -141,7 +141,15 @@ _No features defined yet._
 
 ### Functional Requirements
 
-_No requirements defined yet._
+#### AUTH-R-01: InvenioRDM OAuth2 Authentication
+
+The system shall support OAuth2 authentication with external InvenioRDM instances (e.g., Zenodo, FDAT), including authorization code flow with refresh tokens. Users shall be able to authenticate with one or more configured instances to access private datasets and establish authorized linkages.
+
+**Rationale:**
+Users need to access their own datasets on InvenioRDM platforms. OAuth2 with refresh tokens provides a seamless experience without requiring repeated authentication. This follows the same pattern as the existing ORCID OAuth2 integration.
+
+**Source:**
+PRD §5 Constraints — Authentication; Feature `FEAT-EXTERNAL-DATASET-LINKAGE`
 
 ### Non-Functional Requirements
 
@@ -161,7 +169,15 @@ _No features defined yet._
 
 ### Functional Requirements
 
-_No requirements defined yet._
+#### PROJECT-R-01: Experiment-Level External Dataset Association
+
+The system shall support associating linked external datasets at the experiment level within a project, with inheritance to the parent project view. Users shall be able to browse datasets by experiment or see all project-associated datasets in a consolidated view.
+
+**Rationale:**
+Experiment-level granularity allows researchers to organize associated datasets by the specific experimental context that generated or used them, while project-level inheritance maintains the central access point.
+
+**Source:**
+PRD §3 Scope — Project lifecycle management; Feature `FEAT-EXTERNAL-DATASET-LINKAGE`
 
 ### Non-Functional Requirements
 
@@ -292,6 +308,26 @@ Data scientists and bioinformaticians need programmatic access to raw immunopept
 **Source:**
 PRD §3 Scope — File management; Issue #1412
 
+#### DATA-R-04: External Dataset Discovery and Linkage
+
+The system shall enable users to search public InvenioRDM instances and link discovered datasets to a DataManager project. The system shall display linked dataset metadata (title, DOI, authors, publication date, license) within the project context. Users shall be able to remove a linkage without affecting the source dataset.
+
+**Rationale:**
+Researchers manage many types of associated data (figures, protocols, supplementary datasets) on external platforms. Providing a unified view within DataManager reduces context switching and supports good scientific practice for data publication.
+
+**Source:**
+PRD §3 Scope — File management; Feature `FEAT-EXTERNAL-DATASET-LINKAGE`
+
+#### DATA-R-05: Linked Dataset Metadata Synchronization
+
+The system shall maintain synchronized metadata for linked InvenioRDM datasets, refreshing automatically at configurable intervals and on-demand via user action. If a source dataset becomes unavailable or its metadata changes significantly, the system shall reflect the current state and notify the user.
+
+**Rationale:**
+External dataset metadata evolves (new versions, updated descriptions). Live linkage ensures the DataManager view remains accurate without manual maintenance.
+
+**Source:**
+PRD §3 Scope — File management; Feature `FEAT-EXTERNAL-DATASET-LINKAGE`
+
 ### Non-Functional Requirements
 
 _No requirements defined yet._
@@ -310,7 +346,15 @@ _No features defined yet._
 
 ### Functional Requirements
 
-_No requirements defined yet._
+#### FAIR-R-01: FAIR Signposting Bidirectional Linkage
+
+The system shall establish machine-actionable bidirectional relationships between DataManager projects and linked InvenioRDM datasets. The DataManager project URL shall be recorded as a related identifier within the InvenioRDM dataset metadata, discoverable via FAIR Signposting HTTP Link headers and embedded metadata.
+
+**Rationale:**
+True FAIR integration requires machine-readable, discoverable relationships rather than manual bookmarks. Bidirectional linkage enables external tools and services to navigate between the project management context and the published dataset.
+
+**Source:**
+PRD §3 Scope — FAIR data export; Feature `FEAT-EXTERNAL-DATASET-LINKAGE`
 
 ### Non-Functional Requirements
 
