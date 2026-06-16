@@ -43,10 +43,12 @@ import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactor
 import life.qbic.datamanager.views.projects.project.measurements.processor.ProcessorRegistry;
 import life.qbic.projectmanagement.application.ValidationResult;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationIP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationNGS;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationPxP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationNGS;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationPxP;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationIP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequest;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequestBody;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationResponse;
@@ -241,6 +243,10 @@ public class MeasurementUpload extends Div implements UserInput {
         var processor = ProcessorRegistry.processorFor(MeasurementRegistrationInformationPxP.class);
         return processor.process((List<MeasurementRegistrationInformationPxP>) validationRequest);
       }
+      case MeasurementRegistrationInformationIP ignored: {
+        var processor = ProcessorRegistry.processorFor(MeasurementRegistrationInformationIP.class);
+        return processor.process((List<MeasurementRegistrationInformationIP>) validationRequest);
+      }
       case MeasurementUpdateInformationPxP ignored: {
         var processor = ProcessorRegistry.processorFor(MeasurementUpdateInformationPxP.class);
         return processor.process((List<MeasurementUpdateInformationPxP>) validationRequest);
@@ -248,6 +254,10 @@ public class MeasurementUpload extends Div implements UserInput {
       case MeasurementUpdateInformationNGS ignored: {
         var processor = ProcessorRegistry.processorFor(MeasurementUpdateInformationNGS.class);
         return processor.process((List<MeasurementUpdateInformationNGS>) validationRequest);
+      }
+      case MeasurementUpdateInformationIP ignored: {
+        var processor = ProcessorRegistry.processorFor(MeasurementUpdateInformationIP.class);
+        return processor.process((List<MeasurementUpdateInformationIP>) validationRequest);
       }
       default:
         throw new IllegalStateException("Unknown validation request: " + validationRequest);
