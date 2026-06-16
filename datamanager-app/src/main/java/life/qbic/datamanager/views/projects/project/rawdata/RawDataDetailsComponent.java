@@ -45,6 +45,7 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.BasicSampleInformation;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.RawDataSortingKey;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.RawDatasetFilter;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.RawDatasetInformationIp;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.RawDatasetInformationNgs;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.RawDatasetInformationPxP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.SortDirection;
@@ -116,6 +117,11 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
       var filterGridPxp = createPxpFilterGrid(createPxpRawDataGrid(), projectId, experimentId);
       addPxpTab(filterTabSheet, 1, "Proteomics", filterGridPxp);
     }
+    if (asyncProjectService.countRawDataIp(projectId, experimentId,
+        new RawDatasetFilter("", List.of())).block(MAX_BLOCKING_DURATION) > 0) {
+      var filterGridIp = createIpFilterGrid(createIpRawDataGrid(), projectId, experimentId);
+      addIpTab(filterTabSheet, 2, "Immunopeptidomics", filterGridIp);
+    }
     filterTabSheet.hidePrimaryFeatureButton();
     filterTabSheet.setCaptionPrimaryAction("Export Dataset URLs");
     add(filterTabSheet);
@@ -166,6 +172,30 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
       var file = RawDataUrlFile.create(ids);
       var streamProvider = createStreamProvider(FileNameFormatter.formatWithTimestampedSimple(
           LocalDate.now(), projectCode, "ngs_measurement_dataset_locations", "txt"), file);
+      downloadComponent.trigger(streamProvider);
+    });
+  }
+
+  private void addIpTab(FilterGridTabSheet tabSheet, int index, String name,
+      FilterGrid<RawDatasetInformationIp, ?> filterGrid) {
+    var projectCode = context.projectCode().orElseThrow();
+    var ipTab = new FilterGridTab<>(name, filterGrid);
+    tabSheet.addTab(index, ipTab);
+    tabSheet.addPrimaryAction(ipTab, tab -> {
+      var grid = tab.filterGrid();
+      Set<RawDatasetInformationIp> selectedDatasets = grid.selectedElements();
+      if (selectedDatasets.isEmpty()) {
+        displayMissingSelectionNote();
+        return;
+      }
+      var ids = selectedDatasets.stream()
+          .map(info -> info.dataset().measurementId())
+          .map(id -> new RawDataURL(dataSourceEndpoint, id))
+          .toList();
+
+      var file = RawDataUrlFile.create(ids);
+      var streamProvider = createStreamProvider(FileNameFormatter.formatWithTimestampedSimple(
+          LocalDate.now(), projectCode, "immunopeptidomics_measurement_dataset_locations", "txt"), file);
       downloadComponent.trigger(streamProvider);
     });
   }
@@ -320,6 +350,48 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
     return filterGrid;
   }
 
+  private FilterGrid<RawDatasetInformationIp, ?> createIpFilterGrid(
+      Grid<RawDatasetInformationIp> multiSelectGridIp, String projectId,
+      String experimentId) {
+
+    FetchCallback<RawDatasetInformationIp, RawDataFilter> fetchCallback = query -> {
+      var filter = query.getFilter().orElse(new RawDataFilter(""));
+      var offset = query.getOffset();
+      var limit = query.getLimit();
+      var sortOrders = sortOrdersToApi(query.getSortOrders());
+      var rawDataFilter = new RawDatasetFilter(filter.searchTerm().orElse(""), sortOrders);
+
+      return asyncProjectService.getRawDatasetInformationIp(projectId, experimentId,
+              offset, limit, rawDataFilter)
+          .collectList()
+          .blockOptional(MAX_BLOCKING_DURATION)
+          .orElse(List.of())
+          .stream();
+    };
+
+    CountCallback<RawDatasetInformationIp, RawDataFilter> countCallback = query -> {
+      var filter = query.getFilter().orElse(new RawDataFilter(""));
+      var sortOrders = sortOrdersToApi(query.getSortOrders());
+      var rawDataFilter = new RawDatasetFilter(filter.searchTerm().orElse(""), sortOrders);
+      return asyncProjectService.countRawDataIp(projectId,
+              experimentId, rawDataFilter)
+          .blockOptional(MAX_BLOCKING_DURATION)
+          .orElse(0);
+    };
+
+    var ipGridConfiguration = FilterGridConfigurations.lazy(
+        fetchCallback, countCallback);
+    var filterGrid = FilterGrid.create(RawDatasetInformationIp.class,
+        RawDataFilter.class,
+        ipGridConfiguration.applyConfiguration(multiSelectGridIp),
+        () -> new RawDataFilter(""),
+        (searchTerm, filter) -> new RawDataFilter(searchTerm));
+
+    filterGrid.searchFieldPlaceholder("Search raw datasets");
+    filterGrid.itemDisplayLabel("dataset");
+    return filterGrid;
+  }
+
   private static List<SortOrder<RawDataSortingKey>> sortOrdersToApi(
       List<QuerySortOrder> uiSortOrders)
       throws IllegalArgumentException {
@@ -422,6 +494,46 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
   }
 
   private ComponentRenderer<GridDetailsItem, RawDatasetInformationNgs> renderRawDataNgs() {
+    return new ComponentRenderer<>(rawData -> {
+      GridDetailsItem rawDataItem = new GridDetailsItem();
+      rawDataItem.addListEntry("Sample Name(s)", rawData.linkedSampleInformation().stream().map(
+          BasicSampleInformation::sampleName).toList());
+      rawDataItem.addEntry("Number of Files",
+          String.valueOf(rawData.dataset().numberOfFiles()));
+      rawDataItem.addEntry("File Size", FileSizeFormatter.formatBytes(rawData.dataset().totalSizeBytes()));
+      rawDataItem.addListEntry("File Suffixes", rawData.dataset().fileTypes());
+      return rawDataItem;
+    });
+  }
+
+  private Grid<RawDatasetInformationIp> createIpRawDataGrid() {
+    Grid<RawDatasetInformationIp> grid = new Grid<>();
+    grid.addClassName("raw-data-grid");
+    grid.addColumn(
+            rawData -> rawData.dataset().measurementId())
+        .setKey(UiSortKey.MEASUREMENT_ID.value())
+        .setSortProperty(UiSortKey.MEASUREMENT_ID.value())
+        .setHeader("Measurement Id");
+
+    grid.addColumn(RawDatasetInformationIp::measurementName)
+        .setHeader("Measurement Name")
+        .setSortable(false);
+
+    grid.addColumn(
+            rawData -> rawData.linkedSampleInformation().stream().map(
+                BasicSampleInformation::sampleName).collect(Collectors.joining(",")))
+        .setKey(UiSortKey.SAMPLE_NAME.value())
+        .setHeader("Sample Name");
+    grid.addColumn(
+            rawData -> formatTime(rawData.dataset().registrationDate(), RAW_DATA_DATE_TIME_FORMAT))
+        .setKey(UiSortKey.UPLOAD_DATE.value())
+        .setSortProperty(UiSortKey.UPLOAD_DATE.value())
+        .setHeader("Upload Date");
+    grid.setItemDetailsRenderer(renderRawDataIp());
+    return grid;
+  }
+
+  private ComponentRenderer<GridDetailsItem, RawDatasetInformationIp> renderRawDataIp() {
     return new ComponentRenderer<>(rawData -> {
       GridDetailsItem rawDataItem = new GridDetailsItem();
       rawDataItem.addListEntry("Sample Name(s)", rawData.linkedSampleInformation().stream().map(

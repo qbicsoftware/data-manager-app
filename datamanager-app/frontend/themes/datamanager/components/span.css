@@ -209,3 +209,8 @@ span.inline {
   background-color: var(--lumo-warning-color-10pct);
   color: var(--lumo-warning-text-color);
 }
+
+.tag.gold {
+  background-color: #FFF3CC;
+  color: #A68500;
+}

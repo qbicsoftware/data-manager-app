@@ -170,7 +170,8 @@ public class ProjectCollectionComponent extends PageArea {
    */
   public enum MeasurementType {
     PROTEOMICS("Proteomics"),
-    GENOMICS("Genomics");
+    GENOMICS("Genomics"),
+    IMMUNOPEPTIDOMICS("Immunopeptidomics");
 
     private final String type;
 
@@ -249,6 +250,9 @@ public class ProjectCollectionComponent extends PageArea {
       if (projectOverview.ngsMeasurementCount() > 0) {
         measurementTypes.add(MeasurementType.GENOMICS);
       }
+      if (projectOverview.ipMeasurementCount() > 0) {
+        measurementTypes.add(MeasurementType.IMMUNOPEPTIDOMICS);
+      }
       measurementTypes.forEach(measurementType -> {
         Tag tag = new Tag(measurementType.getType());
         tag.setTagColor(getMeasurementSpecificTagColor(measurementType));
@@ -260,6 +264,7 @@ public class ProjectCollectionComponent extends PageArea {
       return switch (measurementType) {
         case PROTEOMICS -> TagColor.VIOLET;
         case GENOMICS -> TagColor.PINK;
+        case IMMUNOPEPTIDOMICS -> TagColor.GOLD;
       };
     }
   }
