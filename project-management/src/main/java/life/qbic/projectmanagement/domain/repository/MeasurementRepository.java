@@ -7,6 +7,7 @@ import java.util.Optional;
 import java.util.Set;
 import life.qbic.application.commons.Result;
 import life.qbic.projectmanagement.application.sample.SampleIdCodeEntry;
+import life.qbic.projectmanagement.domain.model.measurement.ImmunopeptidomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
@@ -50,6 +51,21 @@ public interface MeasurementRepository {
       Map<ProteomicsMeasurement, Collection<SampleIdCodeEntry>> proteomicsMeasurementsMapping);
 
   void saveAllNGS(Map<NGSMeasurement, Collection<SampleIdCodeEntry>> ngsMeasurementsMapping);
+
+  Result<ImmunopeptidomicsMeasurement, ResponseCode> saveIP(ImmunopeptidomicsMeasurement measurement, List<SampleCode> sampleCodes);
+
+  Optional<ImmunopeptidomicsMeasurement> findIPMeasurement(String measurementCode);
+
+  Optional<ImmunopeptidomicsMeasurement> findIPMeasurementById(String measurementCode);
+
+  void updateIP(ImmunopeptidomicsMeasurement measurement);
+
+  void deleteAllIP(Set<String> measurementIds);
+
+  void updateAllIP(Collection<ImmunopeptidomicsMeasurement> measurement);
+
+  void saveAllIP(
+      Map<ImmunopeptidomicsMeasurement, Collection<SampleIdCodeEntry>> ipMeasurementsMapping);
 
   boolean existsMeasurement(String measurementCode);
 }

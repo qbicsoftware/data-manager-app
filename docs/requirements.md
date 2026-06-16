@@ -201,7 +201,48 @@ _No features defined yet._
 
 ### Functional Requirements
 
-_No requirements defined yet._
+#### MEASUREMENT-R-01: Immunopeptidomics Measurement Registration
+
+The system shall support registration of immunopeptidomics measurements via a domain-specific Excel template. Each successfully registered measurement shall be assigned a unique measurement code with an `IP-` domain prefix. The system shall validate all mandatory fields per the template specification and reject the entire batch if any row contains invalid or missing mandatory data.
+
+**Rationale:**
+The immunopeptidomics partner facility requires a dedicated measurement template with domain-specific metadata fields (e.g., MHC antibody, enrichment method, LC column) that differ from existing proteomics and genomics templates. Structured bulk registration via Excel ensures consistency and reduces manual entry errors.
+
+**Source:**
+PRD §3 Scope — Measurement integration; Issue #1412  
+Stakeholder artifact: `docs/stakeholder-artifacts/measurement-metadata/immunopeptidomics-registration-spec-v1.0-2026-05-11.xlsx`
+
+#### MEASUREMENT-R-02: Immunopeptidomics Measurement Editing
+
+The system shall support editing of existing immunopeptidomics measurements via a pre-filled Excel template. Users shall download a template containing current values for selected measurements, modify editable fields, and re-upload to apply changes. The system shall validate the uploaded sheet and reject the batch if any editable mandatory field is missing or invalid.
+
+**Rationale:**
+Measurement metadata frequently requires corrections or updates after initial registration (e.g., instrument changes, comment additions). Providing a pre-filled edit template mirrors the existing proteomics and genomics workflows and ensures a consistent user experience across measurement domains.
+
+**Source:**
+PRD §3 Scope — Measurement integration; Issue #1412  
+Stakeholder artifact: `docs/stakeholder-artifacts/measurement-metadata/immunopeptidomics-registration-spec-v1.0-2026-05-11.xlsx`
+
+#### MEASUREMENT-R-03: Immunopeptidomics Measurement Deletion
+
+The system shall allow authorised users to delete immunopeptidomics measurements. Measurements with an attached raw dataset shall not be deletable; the system shall inform the user that the attached dataset must be removed first. Deletion shall be synchronised between the Data Manager and the OpenBIS repository.
+
+**Rationale:**
+Users need the ability to remove erroneously registered measurements. Preventing deletion when raw data is attached protects data integrity and prevents orphaned datasets. OpenBIS synchronisation ensures consistency across the integrated data ecosystem.
+
+**Source:**
+PRD §3 Scope — Measurement integration; Issue #1412
+
+#### MEASUREMENT-R-04: Immunopeptidomics Measurement View and Filtering
+
+The system shall display registered immunopeptidomics measurements in the measurement view on a dedicated tab, distinctly from NGS and proteomics measurements. The view shall show domain-specific columns as defined in the immunopeptidomics template (e.g., MHC Antibody, Enrichment Method, Mass Range) and provide a search filter across all visible properties. The count of immunopeptidomics measurements shall be shown.
+
+**Rationale:**
+Project members need visibility into which immunopeptidomics measurements have been registered for an experiment. A dedicated tab with domain-specific columns and filtering enables quick discovery and review without mixing disparate metadata models.
+
+**Source:**
+PRD §3 Scope — Measurement integration; Issue #1412  
+Stakeholder artifact: `docs/stakeholder-artifacts/measurement-metadata/immunopeptidomics-registration-spec-v1.0-2026-05-11.xlsx`
 
 ### Non-Functional Requirements
 
@@ -221,7 +262,35 @@ _No features defined yet._
 
 ### Functional Requirements
 
-_No requirements defined yet._
+#### DATA-R-01: Immunopeptidomics Raw Dataset View and Filtering
+
+The system shall display uploaded immunopeptidomics raw datasets in the raw data view on a dedicated tab, distinctly from NGS and proteomics datasets. The displayed information shall include Measurement ID, Sample Name, Upload Date, Number of Files, File Size, and File Suffixes. The view shall provide a search filter across all visible properties and show the count of immunopeptidomics datasets.
+
+**Rationale:**
+Project members need to verify that raw data has been successfully uploaded and associated with the correct immunopeptidomics measurements. A dedicated, filterable view keeps the user experience consistent with existing NGS and proteomics raw data workflows.
+
+**Source:**
+PRD §3 Scope — File management; Issue #1412
+
+#### DATA-R-02: Immunopeptidomics Raw Data Upload via SFTP
+
+The system shall support upload of immunopeptidomics raw datasets via SFTP to the data scanner application. Datasets shall be associated with the correct immunopeptidomics measurement ID using the `IP-` prefix during the upload and registration process. The uploaded dataset shall be discoverable in the Data Manager raw data view.
+
+**Rationale:**
+Partner facilities generate large immunopeptidomics raw data files that must be transferred efficiently via SFTP. Recognising the `IP-` measurement prefix ensures the data scanner routes datasets to the correct domain and associates them with the proper metadata record.
+
+**Source:**
+PRD §3 Scope — File management; Issue #1412
+
+#### DATA-R-03: Immunopeptidomics Raw Data Download
+
+The system shall support download of immunopeptidomics raw datasets via standard protocols (e.g., wget, cURL) from the data download server. Project members with appropriate access rights shall be able to specify an immunopeptidomics measurement ID and retrieve the associated dataset in the same manner as proteomics and genomics datasets.
+
+**Rationale:**
+Data scientists and bioinformaticians need programmatic access to raw immunopeptidomics data for downstream analysis. Consistent download behaviour across all measurement domains reduces friction and enables reproducible analysis pipelines.
+
+**Source:**
+PRD §3 Scope — File management; Issue #1412
 
 ### Non-Functional Requirements
 

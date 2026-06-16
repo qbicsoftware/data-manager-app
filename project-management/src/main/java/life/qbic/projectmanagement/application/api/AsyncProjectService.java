@@ -1351,7 +1351,7 @@ public interface AsyncProjectService {
   }
 
   sealed interface MeasurementUpdateRequestBody permits MeasurementUpdateInformationNGS,
-      MeasurementUpdateInformationPxP {
+      MeasurementUpdateInformationPxP, MeasurementUpdateInformationIP {
 
   }
 
@@ -1743,6 +1743,19 @@ public interface AsyncProjectService {
   Mono<DigitalObject> measurementUpdatePxP(String projectId, List<String> measurementIds,
       MimeType mimeType);
 
+  /**
+   * Provides information about selected immunopeptidomics measurements for updating purposes in a
+   * requested {@link MimeType}.
+   *
+   * @param projectId      the id of the project the measurements belong to
+   * @param measurementIds a {@link List} of ids of the measurements of interest
+   * @param mimeType       the desired {@link MimeType} of the {@link DigitalObject}
+   * @return a {@link DigitalObject} in the request {@link MimeType} format
+   * @since 1.11.0
+   */
+  Mono<DigitalObject> measurementUpdateIP(String projectId, List<String> measurementIds,
+      MimeType mimeType);
+
   sealed interface ExperimentUpdateRequestBody permits ConfoundingVariableAdditions,
       ConfoundingVariableDeletions, ConfoundingVariableUpdates, ExperimentDescription {
 
@@ -1770,8 +1783,9 @@ public interface AsyncProjectService {
    * @since 1.10.0
    */
   sealed interface ValidationRequestBody permits MeasurementRegistrationInformationNGS,
-      MeasurementRegistrationInformationPxP, MeasurementUpdateInformationNGS,
-      MeasurementUpdateInformationPxP, SampleRegistrationInformation, SampleUpdateInformation {
+      MeasurementRegistrationInformationPxP, MeasurementRegistrationInformationIP,
+      MeasurementUpdateInformationNGS,
+      MeasurementUpdateInformationPxP, MeasurementUpdateInformationIP, SampleRegistrationInformation, SampleUpdateInformation {
 
   }
 
@@ -2054,7 +2068,7 @@ public interface AsyncProjectService {
    * @since 1.11.0
    */
   sealed interface MeasurementRegistrationRequestBody permits MeasurementRegistrationInformationNGS,
-      MeasurementRegistrationInformationPxP {
+      MeasurementRegistrationInformationPxP, MeasurementRegistrationInformationIP {
 
   }
 
@@ -2320,6 +2334,127 @@ public interface AsyncProjectService {
   }
 
   /**
+   * Information container to register an immunopeptidomics measurement.
+   *
+   * @param organisationId    the ROR ID of the organization that performed the measurement
+   * @param instrumentCURIE   the CURIE of the mass spectrometry device used for the measurement
+   * @param facility          the facility within the organization that actually performed the
+   *                          measurement
+   * @param samplePoolGroup   the name of the sample pool
+   * @param specificMetadata  specific metadata that differentiates pooled samples as a
+   *                          {@link Map}, with the sample ids as keys and the sample-specific
+   *                          measurement annotations as values. Will have only one entry if no
+   *                          pooling was done. {@link MeasurementSpecificIP}
+   * @param measurementName   a given name for the measurement. For example a local ID or label
+   *                          that helps users to connect the created dataset with the registered
+   *                          metadata
+   * @since 1.11.0
+   */
+  record MeasurementRegistrationInformationIP(
+      String organisationId,
+      String instrumentCURIE,
+      String instrumentName,
+      String facility,
+      String samplePoolGroup,
+      Map<String, MeasurementSpecificIP> specificMetadata,
+      String measurementName
+  ) implements ValidationRequestBody, MeasurementRegistrationRequestBody {
+
+    /**
+     * Returns the {@link List} of sample identifiers this measurement refers to.
+     *
+     * @return the {@link List} of sample identifiers
+     * @since 1.11.0
+     */
+    public List<String> measuredSamples() {
+      return List.copyOf(specificMetadata.keySet());
+    }
+  }
+
+  /**
+   * Metadata that describes immunopeptidomics measurement properties, that are unique to each
+   * sample presented in the measurement (e.g., when pooling was done)
+   *
+   * @param sampleMass          the sample mass in mg
+   * @param sampleVolume        the sample volume in microliters
+   * @param cycleFractionName   the cycle/fraction name
+   * @param mhcAntibody         the MHC antibody used
+   * @param mhcTypingMethod     the MHC typing method
+   * @param enrichmentMethod    the enrichment method used
+   * @param prepDate            the preparation date
+   * @param msRunDate           the MS run date
+   * @param lcmsMethod          the LC-MS method used
+   * @param lcColumn            the LC column used
+   * @param dataAcquisition     the data acquisition method (DDA, DIA, PRM)
+   * @param massRange           the mass range (m/z)
+   * @param retentionTimeRange  the retention time range in minutes
+   * @param chargeRange         the charge range
+   * @param ionMobilityRange    the ion mobility range (1/k0)
+   * @param comment             some comment from the measuring lab
+   * @since 1.11.0
+   */
+  record MeasurementSpecificIP(
+      String sampleMass,
+      String sampleVolume,
+      String cycleFractionName,
+      String mhcAntibody,
+      String mhcTypingMethod,
+      String enrichmentMethod,
+      String prepDate,
+      String msRunDate,
+      String lcmsMethod,
+      String lcColumn,
+      String dataAcquisition,
+      String massRange,
+      String retentionTimeRange,
+      String chargeRange,
+      String ionMobilityRange,
+      String comment
+  ) {
+
+  }
+
+  /**
+   * Information container to update an immunopeptidomics measurement.
+   *
+   * @param measurementId   the identifier of the measurement
+   * @param organisationId  the ROR ID of the organization that performed the measurement
+   * @param instrumentCURIE the CURIE of the mass spectrometry device used for the measurement
+   * @param facility        the facility within the organization that actually performed the
+   *                        measurement
+   * @param samplePoolGroup the name of the sample pool
+   * @param specificMetadata specific metadata that differentiates pooled samples as a
+   *                         {@link Map}, with the sample ids as keys and the sample-specific
+   *                         measurement annotations as values. Will have only one entry if no
+   *                         pooling was done. {@link MeasurementSpecificIP}
+   * @param measurementName a given name for the measurement. For example a local ID or label
+   *                        that helps users to connect the created dataset with the registered
+   *                        metadata
+   * @since 1.11.0
+   */
+  record MeasurementUpdateInformationIP(
+      String measurementId,
+      String organisationId,
+      String instrumentCURIE,
+      String instrumentName,
+      String facility,
+      String samplePoolGroup,
+      Map<String, MeasurementSpecificIP> specificMetadata,
+      String measurementName
+  ) implements ValidationRequestBody, MeasurementUpdateRequestBody {
+
+    /**
+     * Returns the {@link List} of sample identifiers this measurement refers to.
+     *
+     * @return the {@link List} of sample identifiers
+     * @since 1.11.0
+     */
+    public List<String> measuredSamples() {
+      return List.copyOf(specificMetadata.keySet());
+    }
+  }
+
+  /**
    * Requests all available {@link RawDatasetInformationPxP} for a given experiment.
    * <p>
    * The request supports pagination.
@@ -2369,6 +2504,24 @@ public interface AsyncProjectService {
    * @since 1.12.0
    */
   Flux<RawDatasetInformationNgs> getRawDatasetInformationNgs(String projectId, String experimentId,
+      int offset,
+      int limit,
+      RawDatasetFilter filter);
+
+  /**
+   * Requests all available {@link RawDatasetInformationIp} for a given experiment.
+   * <p>
+   * The request supports pagination.
+   *
+   * @param projectId    the identifier of the project the experiment belongs to
+   * @param experimentId the identifier of the experiment to query the measurements for
+   * @param offset       the offset value for the search to continue (pagination)
+   * @param limit        the maximum number of results to return (pagination)
+   * @param filter       a {@link RawDatasetFilter} for the request
+   * @return a reactive {@link Flux} of {@link RawDatasetInformationIp}
+   * @since 1.12.0
+   */
+  Flux<RawDatasetInformationIp> getRawDatasetInformationIp(String projectId, String experimentId,
       int offset,
       int limit,
       RawDatasetFilter filter);
@@ -2453,6 +2606,19 @@ public interface AsyncProjectService {
       RawDatasetFilter rawDataFilter);
 
   /**
+   * Requests the total number of immunopeptidomics measurements for the given experiment in a
+   * project, based on the provided filter.
+   *
+   * @param projectId     the project to fetch the total number of measurements for
+   * @param experimentId  the experiment to fetch the total number of measurements for
+   * @param rawDataFilter the filter that applies to the count
+   * @return a {@link Mono} emitting the count when available.
+   * @since 1.12.0
+   */
+  Mono<Integer> countRawDataIp(String projectId, String experimentId,
+      RawDatasetFilter rawDataFilter);
+
+  /**
    * Aggregated information of a raw dataset derived from measurement of the NGS domain. Currently
    * consists of the core {@link RawDataset} and all {@link BasicSampleInformation}.
    *
@@ -2503,6 +2669,28 @@ public interface AsyncProjectService {
                                   String measurementName) {
 
     public RawDatasetInformationPxP {
+      requireNonNull(dataset);
+      requireNonNull(linkedSampleInformation);
+      linkedSampleInformation = List.copyOf(linkedSampleInformation);
+    }
+  }
+
+  /**
+   * Aggregated information of a raw dataset derived from measurement of the
+   * immunopeptidomics domain. Currently consists of the core {@link RawDataset} and all
+   * {@link BasicSampleInformation}.
+   *
+   * @param dataset                 the actual {@link RawDataset}
+   * @param linkedSampleInformation further information about the linked samples as
+   *                                {@link BasicSampleInformation}.
+   * @param measurementName         the name of the measurement
+   * @since 1.12.0
+   */
+  record RawDatasetInformationIp(RawDataset dataset,
+                                 List<BasicSampleInformation> linkedSampleInformation,
+                                 String measurementName) {
+
+    public RawDatasetInformationIp {
       requireNonNull(dataset);
       requireNonNull(linkedSampleInformation);
       linkedSampleInformation = List.copyOf(linkedSampleInformation);
