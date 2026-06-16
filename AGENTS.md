@@ -14,11 +14,16 @@ The governance model for this project follows a strict top-down traceability cha
 
 ```
 PRD (docs/prd.md)
-  └── Features  (.github/ISSUE_TEMPLATE/feature.yml)
-        └── Stories  (.github/ISSUE_TEMPLATE/story.yml)
+  └── Features  (docs/features.md + .github/ISSUE_TEMPLATE/feature.yml)
+        └── Stories  (docs/features.md + .github/ISSUE_TEMPLATE/story.yml)
               └── Tasks  (.github/ISSUE_TEMPLATE/task.yml)
                     └── Implementation (code, PRs)
 ```
+
+Stories are tracked in two places: `docs/features.md` (the stakeholder-facing, stable record) and
+GitHub issues (the implementation tracking record). When a story moves from draft (discussion in
+SharePoint Word doc) to approved (ready for implementation), it receives a stable Story ID and is
+documented in both locations simultaneously. See **§11.1 Story Lifecycle** for the full workflow.
 
 - **PRD** defines product vision, user personas, and business objectives.
 - **Features** group related Stories under a named, user-visible capability. A Feature references one or more requirement IDs and describes the high-level scope.
@@ -89,6 +94,33 @@ Where:
 -   A Feature must reference at least one requirement ID (`R-<NN>` or `NFR-<NN>`).
 -   Constraints (`C-<NN>`) must not be used as the sole reference in a Feature — they may appear in Feature notes but Features must cite at least one `R` or `NFR` ID.
 -   One Feature may group multiple Stories across different domains, provided the Stories share a coherent user-visible purpose.
+
+---
+
+### Story ID Schema
+
+Stories are identified using a short, human-readable slug derived from their parent Feature:
+
+    FEAT-<SLUG>-<NN>
+
+Where:
+
+-   **SLUG** --- a concise, abbreviated identifier derived from the parent Feature slug (e.g., `IP-MEAS` for `FEAT-IMMUNOPEPTIDOMICS-MEASUREMENT`). Abbreviations must be short enough for readability but descriptive enough to be self-explanatory within the Feature context.
+-   **NN** --- sequential number, zero-padded to exactly two digits (e.g., `01`, `02`, `10`).
+
+#### Examples
+
+    FEAT-IP-MEAS-01
+    FEAT-IP-MEAS-05
+    FEAT-SAMPLE-03
+
+#### Rules
+
+-   Story IDs are assigned when a story moves from draft (discussion/refinement) to approved (ready for implementation).
+-   Story IDs must be stable and must never be renumbered.
+-   Tasks reference stories by their stable ID, not by GitHub issue number.
+-   GitHub issues for stories are updated to carry the stable story ID in the title and body.
+-   Abbreviated slugs must be unique within their parent Feature, but do not need to be globally unique across Features.
 
 ---
 
@@ -200,6 +232,27 @@ Rules:
 
 -   Tasks must not redefine acceptance criteria.
 -   Tasks must not expand requirement scope.
+-   Tasks reference stories by their stable ID (e.g., `FEAT-IP-MEAS-01`), not by GitHub issue number.
+
+---
+
+#### Story Lifecycle
+
+Stories move through a lifecycle from draft to implementation. This flow keeps the GitHub issue history clean and ensures stakeholders have a stable, reviewable document.
+
+1. **Draft (Discussion)** — The story is captured in a SharePoint Word document or similar internal medium where discussion, refinement, and iteration happen. No stable ID is assigned. The story is not yet tracked in `docs/features.md`.
+2. **Approved (Ready for Implementation)** — The story is finalised, a stable `FEAT-<SLUG>-<NN>` ID is assigned, and it is:
+   - Written into `docs/features.md` with full narrative and acceptance criteria
+   - A GitHub issue is created (if it does not already exist) or an existing issue is updated with the stable ID in the title and body
+   - The status in `docs/features.md` is updated from 🔴 (Open) to 🟡 (In Progress) when implementation begins, and 🟢 (Done) when complete
+3. **Implementation** — Tasks are created in GitHub referencing the stable story ID (not the GitHub issue number). Implementation traces: Task → Story (stable ID) → Feature → Requirement → PRD.
+
+**Rules:**
+
+- A story must never be implemented without a stable ID in `docs/features.md`.
+- When a story was created on GitHub before this flow existed (e.g., old issue numbers), update the existing issue with the stable ID rather than creating a new one.
+- Tasks reference stories by their stable ID in the "Parent Story" field, not by GitHub issue number.
+- The GitHub issue remains the source of truth for implementation tracking (comments, sub-issues, assignees), but `docs/features.md` is the source of truth for story content (narrative, acceptance criteria).
 
 ---
 
@@ -207,8 +260,9 @@ Rules:
 
 - A Feature must be created before any Story references it. Create the Feature first.
 - A Story must always reference a parent Feature. Never create a Story without a parent Feature issue.
-- A Task must always be preceded by a Story. Create the Story first, then create the Task referencing it.
-- Never create a Task without a parent Story issue.
+- A Story must receive a stable `FEAT-<SLUG>-<NN>` ID before any Task is created for it.
+- A Task must always be preceded by a Story. Create the Story first (draft → approved → stable ID), then create the Task referencing the stable story ID.
+- Never create a Task without a parent Story issue. Tasks must reference the story by its stable ID.
 - If no parent Feature exists for a piece of work (e.g., when acting on a direct implementation request), create the Feature first, then the Story, then the Task.
 - A single Story may have multiple Tasks; a Task must not span multiple Stories.
 
@@ -621,6 +675,14 @@ When working on this codebase, an AI agent should:
 - A Feature slug (`FEAT-<SLUG>`) must be unique and must not be changed once Stories reference it.
 - If you are unsure whether a new Feature is needed or an existing Feature should be extended, pause and ask a human reviewer.
 
+### Creating Stories
+
+- Stories start as drafts (discussion/refinement in SharePoint Word or similar internal medium). They are NOT tracked in `docs/features.md` or GitHub while in draft.
+- When a story is finalised and approved for implementation: assign a stable `FEAT-<SLUG>-<NN>` ID, write it into `docs/features.md` with full narrative and acceptance criteria, and create or update the corresponding GitHub issue with the stable ID in the title and body.
+- For stories that were created on GitHub before this workflow existed, update the existing issue with the stable ID rather than creating a new one.
+- Tasks reference the story by its stable ID (e.g., `FEAT-IP-MEAS-01`), not by GitHub issue number.
+- If you are unsure whether a new Story is needed or an existing Feature should be extended, pause and ask a human reviewer.
+
 ### Making domain changes
 
 - New domain concepts go in `domain/model/` of the relevant bounded context.
@@ -679,6 +741,7 @@ An agent should pause and request human review/approval before:
 |---|---|
 | `docs/requirements.md` | Authoritative requirement registry — all R/NFR/C requirements documented here; must be updated before new capabilities are implemented |
 | `docs/requirements-guide.md` | Authoring conventions for creating, editing, and retiring requirements |
+| `docs/features.md` | Stakeholder-facing features and user stories tracker — stable story records with narrative, acceptance criteria, and status; stories move here from draft once approved |
 | `README.md` | Setup, configuration reference, how to run |
 | `ExceptionHandling.md` | Exception handling conventions (read before touching error handling) |
 | `service_api.md` | Service API design patterns (Mono/Flux, request/response shapes) |
