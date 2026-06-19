@@ -7,7 +7,7 @@
   <groupId>life.qbic.datamanager</groupId>
   <artifactId>datamanager</artifactId>
   <name>Data Manager</name>
-  <version>1.12.8</version>
+  <version>1.12.10</version>
   <licenses>
     <license>
       <name>AGPL-3.0-or-later</name>
@@ -56,7 +56,7 @@
     <sonar.host.url>https://sonarcloud.io</sonar.host.url>
     <sonar.organization>qbicsoftware</sonar.organization>
     <sonar.projectKey>qbicsoftware_data-manager-app</sonar.projectKey>
-    <vaadin.version>24.9.10</vaadin.version>
+    <vaadin.version>24.10.4</vaadin.version>
   </properties>
 
 
@@ -148,7 +148,7 @@
       <dependency>
         <groupId>life.qbic.datamanager</groupId>
         <artifactId>datamanager-bom</artifactId>
-        <version>1.12.8</version>
+        <version>1.12.10</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
