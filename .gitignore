@@ -2,6 +2,9 @@
 .opencode/
 opencode.json
 
+# Any local run configuration file
+.run
+
 # Local git worktrees
 .worktrees/
 
