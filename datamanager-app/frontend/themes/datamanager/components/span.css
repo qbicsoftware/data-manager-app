@@ -214,3 +214,8 @@ span.inline {
   background-color: #FFF3CC;
   color: #A68500;
 }
+
+.tag.teal {
+  background-color: #E0F5F3;
+  color: #007A6E;
+}

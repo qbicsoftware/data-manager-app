@@ -1332,6 +1332,17 @@ Older stuff -
 .section-header-row {
   display: flex;
   width: 100%;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.actionbar {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: var(--spacing-03);
+  align-items: center;
+  flex-shrink: 0;
 }
 
 .section-title {
