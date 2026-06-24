@@ -16,20 +16,33 @@
     <!--    custom dependency properties-->
     <apache.poi.version>5.5.1</apache.poi.version>
     <docx4j.version>11.5.9</docx4j.version>
-    <!--    <jackson.version>2.18.3</jackson.version>-->
+    <jackson-bom.version>2.21.1</jackson-bom.version>
     <jobrunr.version>7.3.2</jobrunr.version>
     <reactor.version>3.8.5</reactor.version>
     <shedlock.version>6.10.0</shedlock.version>
     <vaadin.version>24.10.7</vaadin.version>
     <ro-crate-java.version>1.1.1</ro-crate-java.version>
     <spock.version>2.4-M4-groovy-4.0</spock.version>
-    <spring-boot.version>3.5.15</spring-boot.version>
+    <spring-boot.version>3.5.14</spring-boot.version>
   </properties>
 
   <dependencyManagement>
     <dependencies>
       <!-- note to self: dependencies defined first take priority over later definitions-->
-
+      <!--      <dependency>-->
+      <!--        <groupId>com.fasterxml.jackson</groupId>-->
+      <!--        <artifactId>jackson-bom</artifactId>-->
+      <!--        <version>${jackson-bom.version}</version>-->
+      <!--        <type>pom</type>-->
+      <!--        <scope>import</scope>-->
+      <!--      </dependency>-->
+      <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-dependencies</artifactId>
+        <version>${spring-boot.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
       <!-- Internal artifacts all align to the BOM’s version -->
       <dependency>
         <groupId>life.qbic.datamanager</groupId>
@@ -112,12 +125,6 @@
         <version>${project.version}</version>
       </dependency>
 
-
-      <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-dependencies</artifactId>
-        <version>${spring-boot.version}</version>
-      </dependency>
 
 
       <!-- Third-party pins (or import their BOMs instead) -->

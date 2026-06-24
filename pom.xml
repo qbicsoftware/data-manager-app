@@ -18,7 +18,6 @@
   <modules>
     <module>datamanager-bom</module>
     <module>datamanager-app</module>
-    <module>domain-concept</module>
     <module>identity</module>
     <module>broadcasting</module>
     <module>application-commons</module>
@@ -27,6 +26,7 @@
     <module>subscription-api</module>
     <module>finances</module>
     <module>project-management</module>
+    <module>domain-concept</module>
     <module>identity-api</module>
     <module>identity-infrastructure</module>
     <module>project-management-infrastructure</module>
