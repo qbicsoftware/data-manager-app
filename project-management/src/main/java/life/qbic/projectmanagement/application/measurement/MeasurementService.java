@@ -21,25 +21,25 @@ import life.qbic.domain.concepts.LocalDomainEventDispatcher;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.OrganisationLookupService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationIP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationNGS;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationPxP;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationIP;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementSpecificIP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementSpecificNGS;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementSpecificPxP;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementSpecificIP;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationIP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationNGS;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationPxP;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationIP;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.application.sample.SampleIdCodeEntry;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
+import life.qbic.projectmanagement.domain.model.measurement.IPMeasurementEntry;
+import life.qbic.projectmanagement.domain.model.measurement.IPMethodMetadata;
+import life.qbic.projectmanagement.domain.model.measurement.ImmunopeptidomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
-import life.qbic.projectmanagement.domain.model.measurement.ImmunopeptidomicsMeasurement;
-import life.qbic.projectmanagement.domain.model.measurement.IPMethodMetadata;
-import life.qbic.projectmanagement.domain.model.measurement.IPMeasurementEntry;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMethodMetadata;
 import life.qbic.projectmanagement.domain.model.measurement.NGSSpecificMeasurementMetadata;
@@ -54,13 +54,13 @@ import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.repository.MeasurementRepository;
 import life.qbic.projectmanagement.domain.service.MeasurementDomainService;
+import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import reactor.util.annotation.NonNull;
 
 
 /**
@@ -135,6 +135,7 @@ public class MeasurementService {
    * @return an {@link Optional} of {@link NGSMeasurement}. Is {@link Optional#empty()} if no matching measurement was found.
    * @deprecated this method is unsafe, since it bypasses Spring security checks for access rights. Please use {@link #findNGSMeasurementById(String, String)} instead.
    */
+  @Deprecated
   public Optional<NGSMeasurement> findNGSMeasurement(String measurementCode) {
     return measurementLookupService.findNGSMeasurement(measurementCode);
   }

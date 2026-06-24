@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
 import life.qbic.logging.api.Logger;
-import org.springframework.util.CollectionUtils;
 
 /**
  * Stepper Component
@@ -153,14 +152,14 @@ public class Stepper extends Div {
    * Returns the first defined step in the Stepper component
    */
   public StepIndicator getFirstStep() {
-    return CollectionUtils.firstElement(stepList);
+    return stepList.getFirst();
   }
 
   /**
    * Returns the last defined step in the Stepper component
    */
   public StepIndicator getLastStep() {
-    return CollectionUtils.lastElement(stepList);
+    return stepList.getLast();
   }
 
   private void setStepAsActive(StepIndicator activatableStep) {

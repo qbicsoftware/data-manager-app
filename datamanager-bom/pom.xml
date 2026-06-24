@@ -11,35 +11,25 @@
   <description>Bill of Materials for DataManager artifacts</description>
 
   <properties>
-    <apache.poi.version>5.5.1</apache.poi.version>
-    <jackson.version>2.18.3</jackson.version>
+    <!--    spring boot properties-->
     <jakarta.persistence.version>3.2.0</jakarta.persistence.version>
-    <logback.version>1.5.24</logback.version>
-    <maven.compiler.source>21</maven.compiler.source>
-    <maven.compiler.target>21</maven.compiler.target>
-    <sonar.host.url>https://sonarcloud.io</sonar.host.url>
-    <sonar.organization>qbicsoftware</sonar.organization>
-    <sonar.projectKey>qbicsoftware_data-manager-app</sonar.projectKey>
-    <vaadin.version>24.10.4</vaadin.version>
+    <!--    custom dependency properties-->
+    <apache.poi.version>5.5.1</apache.poi.version>
+    <docx4j.version>11.5.9</docx4j.version>
+    <!--    <jackson.version>2.18.3</jackson.version>-->
+    <jobrunr.version>7.3.2</jobrunr.version>
+    <reactor.version>3.8.5</reactor.version>
+    <shedlock.version>6.10.0</shedlock.version>
+    <vaadin.version>24.10.7</vaadin.version>
+    <ro-crate-java.version>1.1.1</ro-crate-java.version>
+    <spock.version>2.4-M4-groovy-4.0</spock.version>
+    <spring-boot.version>3.5.15</spring-boot.version>
   </properties>
-
-  <distributionManagement>
-    <repository>
-      <uniqueVersion>true</uniqueVersion>
-      <id>nexus-releases</id>
-      <name>QBiC Releases</name>
-      <url>https://qbic-repo.qbic.uni-tuebingen.de/repository/maven-releases</url>
-    </repository>
-    <snapshotRepository>
-      <uniqueVersion>false</uniqueVersion>
-      <id>nexus-snapshots</id>
-      <name>QBiC Snapshots</name>
-      <url>https://qbic-repo.qbic.uni-tuebingen.de/repository/maven-snapshots</url>
-    </snapshotRepository>
-  </distributionManagement>
 
   <dependencyManagement>
     <dependencies>
+      <!-- note to self: dependencies defined first take priority over later definitions-->
+
       <!-- Internal artifacts all align to the BOM’s version -->
       <dependency>
         <groupId>life.qbic.datamanager</groupId>
@@ -123,124 +113,14 @@
       </dependency>
 
 
+      <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-dependencies</artifactId>
+        <version>${spring-boot.version}</version>
+      </dependency>
+
+
       <!-- Third-party pins (or import their BOMs instead) -->
-      <dependency>
-        <groupId>com.vaadin</groupId>
-        <artifactId>vaadin-bom</artifactId>
-        <version>${vaadin.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.commons</groupId>
-        <artifactId>commons-fileupload2-core</artifactId>
-        <version>2.0.0-M4</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.commons</groupId>
-        <artifactId>commons-lang3</artifactId>
-        <version>3.20.0</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.activemq</groupId>
-        <artifactId>artemis-jakarta-server</artifactId>
-        <exclusions>
-          <exclusion>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-          </exclusion>
-        </exclusions>
-        <version>2.43.0</version> <!-- version 2.44 is signed differently-->
-      </dependency>
-      <dependency>
-        <groupId>com.sun.mail</groupId>
-        <artifactId>jakarta.mail</artifactId>
-        <version>2.0.2</version>
-      </dependency>
-      <dependency>
-        <groupId>org.spockframework</groupId>
-        <artifactId>spock-core</artifactId>
-        <version>2.4-M4-groovy-4.0</version>
-      </dependency>
-      <dependency>
-        <groupId>org.spockframework</groupId>
-        <artifactId>spock-spring</artifactId>
-        <version>2.4-M4-groovy-4.0</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.groovy</groupId>
-        <artifactId>groovy-all</artifactId>
-        <version>4.0.24</version>
-        <type>pom</type>
-      </dependency>
-      <dependency>
-        <groupId>org.jobrunr</groupId>
-        <artifactId>jobrunr-spring-boot-3-starter</artifactId>
-        <version>7.3.2</version>
-      </dependency>
-      <dependency>
-        <groupId>com.fasterxml.jackson.core</groupId>
-        <artifactId>jackson-core</artifactId>
-        <version>${jackson.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.fasterxml.jackson.core</groupId>
-        <artifactId>jackson-databind</artifactId>
-        <version>${jackson.version}</version>
-      </dependency>
-      <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.datatype/jackson-datatype-jsr310 -->
-      <dependency>
-        <groupId>com.fasterxml.jackson.datatype</groupId>
-        <artifactId>jackson-datatype-jsr310</artifactId>
-        <version>${jackson.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.apicatalog</groupId>
-        <artifactId>titanium-json-ld</artifactId>
-        <!-- Use specific version to avoid revoked outdated version-->
-        <version>1.6.0</version>
-      </dependency>
-      <dependency>
-        <groupId>javax.cache</groupId>
-        <artifactId>cache-api</artifactId>
-        <version>1.1.1</version>
-      </dependency>
-      <dependency>
-        <groupId>commons-io</groupId>
-        <artifactId>commons-io</artifactId>
-        <version>2.20.0</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.poi</groupId>
-        <artifactId>poi</artifactId>
-        <version>${apache.poi.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.fasterxml.jackson.core</groupId>
-        <artifactId>jackson-annotations</artifactId>
-        <version>2.18.3</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.poi</groupId>
-        <artifactId>poi-ooxml</artifactId>
-        <version>${apache.poi.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-          </exclusion>
-        </exclusions>
-      </dependency>
-      <dependency>
-        <groupId>net.javacrumbs.shedlock</groupId>
-        <artifactId>shedlock-spring</artifactId>
-        <version>6.10.0</version>
-      </dependency>
-      <dependency>
-        <groupId>net.javacrumbs.shedlock</groupId>
-        <artifactId>shedlock-provider-jdbc-template</artifactId>
-        <version>6.10.0</version>
-      </dependency>
       <dependency>
         <groupId>life.qbic</groupId>
         <artifactId>openbis-api</artifactId>
@@ -248,56 +128,90 @@
         <classifier>r1700646105</classifier>
         <scope>compile</scope>
       </dependency>
+
+      <dependency>
+        <groupId>com.vaadin</groupId>
+        <artifactId>vaadin-spring-bom</artifactId>
+        <version>${vaadin.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>io.projectreactor</groupId>
+        <artifactId>reactor-core</artifactId>
+        <version>${reactor.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.jobrunr</groupId>
+        <artifactId>jobrunr</artifactId>
+        <version>${jobrunr.version}</version>
+        <scope>compile</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>net.javacrumbs.shedlock</groupId>
+        <artifactId>shedlock-spring</artifactId>
+        <version>${shedlock.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>net.javacrumbs.shedlock</groupId>
+        <artifactId>shedlock-provider-jdbc-template</artifactId>
+        <version>${shedlock.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.poi</groupId>
+        <artifactId>poi</artifactId>
+        <version>${apache.poi.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.poi</groupId>
+        <artifactId>poi-ooxml</artifactId>
+        <version>${apache.poi.version}</version>
+      </dependency>
       <dependency>
         <groupId>org.docx4j</groupId>
-        <artifactId>docx4j-JAXB-ReferenceImpl</artifactId>
-        <version>11.5.9</version>
+        <artifactId>docx4j-core</artifactId>
+        <version>${docx4j.version}</version>
         <exclusions>
           <exclusion>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
           </exclusion>
         </exclusions>
       </dependency>
       <dependency>
         <groupId>edu.kit.datamanager</groupId>
         <artifactId>ro-crate-java</artifactId>
-        <version>1.1.1</version>
-        <exclusions>
-          <exclusion>
-            <groupId>commons-beanutils</groupId>
-            <artifactId>commons-beanutils</artifactId>
-          </exclusion>
-        </exclusions>
+        <version>${ro-crate-java.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.spockframework</groupId>
+        <artifactId>spock-core</artifactId>
+        <version>${spock.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.spockframework</groupId>
+        <artifactId>spock-spring</artifactId>
+        <version>${spock.version}</version>
+        <scope>test</scope>
       </dependency>
 
-      <dependency>
-        <groupId>commons-beanutils</groupId>
-        <artifactId>commons-beanutils</artifactId>
-        <version>1.11.0</version>
-      </dependency>
+      <!--      For spring boot 4-->
+      <!--      <dependency>-->
+      <!--        <groupId>org.jobrunr</groupId>-->
+      <!--        <artifactId>jobrunr</artifactId>-->
+      <!--        <version>8.6.0</version>-->
+      <!--        <scope>compile</scope>-->
+      <!--      </dependency>-->
 
-      <dependency>
-        <groupId>org.docx4j</groupId>
-        <artifactId>docx4j-core</artifactId>
-        <version>11.5.9</version>
-        <exclusions>
-          <exclusion>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-          </exclusion>
-        </exclusions>
-      </dependency>
-      <dependency>
-        <groupId>org.glassfish.jaxb</groupId>
-        <artifactId>jaxb-runtime</artifactId>
-        <version>4.0.5</version>
-      </dependency>
-      <dependency>
-        <groupId>jakarta.xml.bind</groupId>
-        <artifactId>jakarta.xml.bind-api</artifactId>
-        <version>4.0.2</version>
-      </dependency>
+
     </dependencies>
   </dependencyManagement>
 </project>

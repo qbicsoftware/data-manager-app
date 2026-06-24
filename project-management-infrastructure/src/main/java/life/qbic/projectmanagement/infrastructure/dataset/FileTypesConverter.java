@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -35,7 +36,7 @@ class FileTypesConverter implements AttributeConverter<Set<String>, String> {
     if (s == null || s.isEmpty()) return new HashSet<>();
     try {
       return new LinkedHashSet<>(Arrays.asList(objectMapper.readValue(s, String[].class)));
-    } catch (JsonProcessingException e) {
+    } catch (IOException e) {
       log.error(e.getMessage(), e);
       throw new IllegalArgumentException("Cannot convert " + s + " from JSON");
     }

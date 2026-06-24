@@ -161,8 +161,8 @@ public class ProjectSideNavigationComponent extends Div implements
     MenuItem projectOverviewItem = projectSelectionSubMenu.addItem(projectOverview);
     projectOverviewItem.addClassName("transparent-icon");
     projectOverviewItem.addSingleClickListener(event -> routeToProjectOverview());
-    projectSelectionSubMenu.add(generateSectionDivider());
-    projectSelectionSubMenu.add(recentProjectsHeader);
+    projectSelectionSubMenu.addComponent(generateSectionDivider());
+    projectSelectionSubMenu.addComponent(recentProjectsHeader);
     return projectSelectionSubMenu;
   }
 

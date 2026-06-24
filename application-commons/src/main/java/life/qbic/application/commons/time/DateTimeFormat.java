@@ -2,7 +2,7 @@ package life.qbic.application.commons.time;
 
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import org.springframework.lang.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Defines canonical date/time formats used consistently across the application.

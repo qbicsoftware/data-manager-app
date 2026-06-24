@@ -6,10 +6,8 @@ import static life.qbic.projectmanagement.infrastructure.jpa.JpaSpecifications.f
 import static life.qbic.projectmanagement.infrastructure.jpa.JpaSpecifications.jsonContains;
 import static life.qbic.projectmanagement.infrastructure.jpa.JpaSpecifications.propertyContains;
 
-import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -44,12 +42,10 @@ import java.util.StringJoiner;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.time.DateTimeFormat;
-import life.qbic.projectmanagement.application.measurement.IpMeasurementLookup.IpSortKey;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.infrastructure.PreventAnyUpdateEntityListener;
 import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.IpMeasurementJpaRepository.Instrument.InstrumentReadConverter;
 import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.IpMeasurementJpaRepository.IpMeasurementInformation;
-import org.hibernate.collection.spi.PersistentBag;
 import org.springframework.boot.jackson.JsonComponent;
 import org.springframework.data.convert.ReadingConverter;
 import org.springframework.data.jpa.domain.Specification;
@@ -216,18 +212,21 @@ public interface IpMeasurementJpaRepository extends
 
       @Override
       public Instrument deserialize(JsonParser jsonParser, DeserializationContext ctxt)
-          throws IOException, JacksonException {
+          throws IOException {
         JsonNode tree = jsonParser.readValueAsTree();
         String oboId = Optional.ofNullable(tree.get("name"))
             .map(JsonNode::asText)
             .map(it -> it.replace("_", ":"))
-            .orElseThrow(() -> new JsonParseException("Could not parse instrument oboId."));
+            .orElseThrow(
+                () -> new JsonParseException(jsonParser, "Could not parse instrument oboId."));
         String label = Optional.ofNullable(tree.get("label"))
             .map(JsonNode::asText)
-            .orElseThrow(() -> new JsonParseException("Could not parse instrument label."));
+            .orElseThrow(
+                () -> new JsonParseException(jsonParser, "Could not parse instrument label."));
         String iri = Optional.ofNullable(tree.get("classIri"))
             .map(JsonNode::asText)
-            .orElseThrow(() -> new JsonParseException("Could not parse instrument iri."));
+            .orElseThrow(
+                () -> new JsonParseException(jsonParser, "Could not parse instrument iri."));
         return new Instrument(label, oboId, iri);
       }
     }
@@ -250,7 +249,7 @@ public interface IpMeasurementJpaRepository extends
       public Instrument convertToEntityAttribute(String dbData) {
         try {
           return objectMapper.readValue(dbData, Instrument.class);
-        } catch (JsonProcessingException e) {
+        } catch (IOException e) {
           throw new RuntimeException(e);
         }
       }

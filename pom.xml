@@ -18,6 +18,7 @@
   <modules>
     <module>datamanager-bom</module>
     <module>datamanager-app</module>
+    <module>domain-concept</module>
     <module>identity</module>
     <module>broadcasting</module>
     <module>application-commons</module>
@@ -26,7 +27,6 @@
     <module>subscription-api</module>
     <module>finances</module>
     <module>project-management</module>
-    <module>domain-concept</module>
     <module>identity-api</module>
     <module>identity-infrastructure</module>
     <module>project-management-infrastructure</module>
@@ -44,19 +44,16 @@
     <version>3.5.15</version>
   </parent>
 
-
   <properties>
+    <!--    spring boot properties-->
     <java.version>21</java.version>
-    <apache.poi.version>5.5.1</apache.poi.version>
-    <jackson.version>2.18.3</jackson.version>
-    <jakarta.persistence.version>3.2.0</jakarta.persistence.version>
-    <logback.version>1.5.24</logback.version>
-    <maven.compiler.source>${java.version}</maven.compiler.source>
-    <maven.compiler.target>${java.version}</maven.compiler.target>
+    <!--    custom dependency properties-->
+    <vaadin.version>24.10.7</vaadin.version>
+
+    <!--    SonarCloud properties for CI -->
     <sonar.host.url>https://sonarcloud.io</sonar.host.url>
     <sonar.organization>qbicsoftware</sonar.organization>
     <sonar.projectKey>qbicsoftware_data-manager-app</sonar.projectKey>
-    <vaadin.version>24.10.7</vaadin.version>
   </properties>
 
 
@@ -154,6 +151,37 @@
       </dependency>
     </dependencies>
   </dependencyManagement>
+  <dependencies>
+    <dependency>
+      <groupId>org.apache.groovy</groupId>
+      <artifactId>groovy</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.spockframework</groupId>
+      <artifactId>spock-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.spockframework</groupId>
+      <artifactId>spock-spring</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.projectreactor</groupId>
+      <artifactId>reactor-test</artifactId>
+    </dependency>
+  </dependencies>
 
   <build>
     <plugins>
@@ -234,10 +262,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <source>${maven.compiler.source}</source>
-          <target>${maven.compiler.target}</target>
-        </configuration>
       </plugin>
       <plugin>
         <groupId>org.sonarsource.scanner.maven</groupId>

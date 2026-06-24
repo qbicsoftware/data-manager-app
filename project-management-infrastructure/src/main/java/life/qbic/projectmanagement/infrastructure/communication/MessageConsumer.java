@@ -4,6 +4,7 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.communication.broadcasting.IntegrationEvent;
 import life.qbic.projectmanagement.application.communication.broadcasting.MessageRouter;
@@ -45,6 +46,8 @@ public class MessageConsumer {
     } catch (JsonProcessingException e) {
       log.error("Json to object mapping failed!", e);
       throw new IllegalArgumentException("Content does not seem to be an integration event.");
+    } catch (IOException e) {
+      throw new RuntimeException(e);
     }
   }
 }

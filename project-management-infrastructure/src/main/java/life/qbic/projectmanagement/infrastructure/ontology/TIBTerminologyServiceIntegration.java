@@ -373,6 +373,8 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
       return terms;
     } catch (JsonProcessingException e) {
       throw wrapProcessingException(e);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
     }
   }
 

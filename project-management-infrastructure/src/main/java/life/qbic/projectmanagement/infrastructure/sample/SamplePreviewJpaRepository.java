@@ -145,7 +145,9 @@ public class SamplePreviewJpaRepository implements SamplePreviewLookup {
         sampleNameSpec, biologialReplicateSpec, batchLabelSpec, conditionSpec, speciesSpec,
         specimenSpec, analyteSpec, analysisMethodContains, commentSpec);
     Specification<SamplePreview> isDistinctSpec = SamplePreviewSpecs.isDistinct();
-    return Specification.where(experimentIdSpec).and(isBlankSpec)
+    return Specification.<SamplePreview>unrestricted()
+        .and(experimentIdSpec)
+        .and(isBlankSpec)
         .and(containsFilterSpec)
         .and(isDistinctSpec);
   }

@@ -1,7 +1,6 @@
 package life.qbic.projectmanagement.infrastructure.api.fair.rocrate;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import java.io.File;
 import java.io.IOException;
 
@@ -19,7 +18,7 @@ public class YamlFileSupplier<T> implements FileSupplier {
 
   @Override
   public File getFile(String fileName) {
-    ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+    var mapper = new YAMLMapper();
     File file = new File(fileName);
     try {
       mapper.writeValue(file, payload);

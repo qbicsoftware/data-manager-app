@@ -227,13 +227,15 @@ public interface PxpMeasurementJpaRepository extends
         String oboId = Optional.ofNullable(tree.get("name"))
             .map(JsonNode::asText) //e.g. EFO_0008633
             .map(it -> it.replace("_", ":")) //e.g. EFO:0008633
-            .orElseThrow(() -> new JsonParseException("Could not parse msDevice oboId."));
+            .orElseThrow(
+                () -> new JsonParseException(jsonParser, "Could not parse msDevice oboId."));
         String label = Optional.ofNullable(tree.get("label"))
             .map(JsonNode::asText)
-            .orElseThrow(() -> new JsonParseException("Could not parse msDevice label."));
+            .orElseThrow(
+                () -> new JsonParseException(jsonParser, "Could not parse msDevice label."));
         String iri = Optional.ofNullable(tree.get("classIri"))
             .map(JsonNode::asText)
-            .orElseThrow(() -> new JsonParseException("Could not parse msDevice iri."));
+            .orElseThrow(() -> new JsonParseException(jsonParser, "Could not parse msDevice iri."));
         return new MsDevice(label, oboId, iri);
       }
     }
@@ -257,6 +259,8 @@ public interface PxpMeasurementJpaRepository extends
         try {
           return objectMapper.readValue(dbData, MsDevice.class);
         } catch (JsonProcessingException e) {
+          throw new RuntimeException(e);
+        } catch (IOException e) {
           throw new RuntimeException(e);
         }
       }

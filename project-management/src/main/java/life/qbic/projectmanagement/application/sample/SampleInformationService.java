@@ -50,6 +50,7 @@ public class SampleInformationService {
    * @return true if experiments has samples, false if not
    * @deprecated Use {@link SampleInformationService#hasSamples(ProjectId, String)} instead.
    */
+  @Deprecated
   public boolean hasSamples(ExperimentId experimentId) {
     Objects.requireNonNull(experimentId, "experiment id must not be null");
     return sampleRepository.countSamplesWithExperimentId(experimentId) != 0;
