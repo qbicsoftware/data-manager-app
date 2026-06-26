@@ -114,6 +114,9 @@ Key rules from HAProxy's `errorfile` specification:
 6. The HTML body follows after the blank line
 7. The entire file is served verbatim as the HTTP response
 
+## File size restriction
+HA-Proxy has a max cap for the file size per response for the error messages of 16,800 bytes. Stay below that.
+
 ## License
 
 Same as the Data Manager project: AGPL-3.0-or-later.
