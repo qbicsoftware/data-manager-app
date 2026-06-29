@@ -19,4 +19,8 @@ public interface WorkbookDownloadStreamProvider extends DownloadStreamProvider {
       throw new RuntimeException(e);
     }
   }
+
+  default String getContentType() {
+    return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+  }
 }

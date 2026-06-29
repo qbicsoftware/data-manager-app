@@ -17,7 +17,7 @@ import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.data.provider.CallbackDataProvider.CountCallback;
 import com.vaadin.flow.data.provider.CallbackDataProvider.FetchCallback;
-import com.vaadin.flow.server.StreamResource;
+import com.vaadin.flow.server.streams.DownloadHandler;
 import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 import java.io.Serializable;
@@ -60,9 +60,6 @@ import org.springframework.lang.NonNull;
  */
 public class MeasurementDetailsComponent extends PageArea implements Serializable {
 
-  private static final StreamResource ROR_ICON_RESOURCE = new StreamResource("ROR_logo.svg",
-      () -> MeasurementDetailsComponent.class.getClassLoader()
-          .getResourceAsStream("icons/ROR_logo.svg"));
   private static final NumberFormat INJECTION_VOLUME_FORMAT = new DecimalFormat("#.##");
   private static final DateTimeFormat MEASUREMENT_REGISTRATION_DATE_TIME_FORMAT = DateTimeFormat.ISO_LOCAL_DATE_TIME_WHITESPACE_SEPARATED;
 
@@ -881,7 +878,9 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   }
 
   private static Anchor renderOrganisation(String label, String iri) {
-    SvgIcon svgIcon = new SvgIcon(ROR_ICON_RESOURCE);
+    DownloadHandler downloadHandler =
+        DownloadHandler.forClassResource(MeasurementDetailsComponent.class, "/icons/ROR_logo.svg");
+    SvgIcon svgIcon = new SvgIcon(downloadHandler);
     svgIcon.addClassName("organisation-icon");
     Span organisationLabel = new Span(label);
     Anchor organisationAnchor = new Anchor(iri, organisationLabel, svgIcon);

@@ -1,10 +1,10 @@
 package life.qbic.datamanager.security;
 
+import static com.vaadin.flow.spring.security.VaadinSecurityConfigurer.vaadin;
 import static java.util.Objects.requireNonNull;
 
 import com.vaadin.flow.spring.security.VaadinAwareSecurityContextHolderStrategyConfiguration;
 import com.vaadin.flow.spring.security.VaadinDefaultRequestCache;
-import com.vaadin.flow.spring.security.VaadinWebSecurity;
 import life.qbic.datamanager.views.login.LoginLayout;
 import life.qbic.identity.application.security.QBiCPasswordEncoder;
 import life.qbic.identity.application.user.IdentityService;
@@ -16,13 +16,13 @@ import org.springframework.context.annotation.Import;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @EnableWebSecurity
 @Configuration
 @Import(VaadinAwareSecurityContextHolderStrategyConfiguration.class)
-public class SecurityConfiguration extends VaadinWebSecurity {
+public class SecurityConfiguration {
 
   final VaadinDefaultRequestCache defaultRequestCache;
   private final IdentityService identityService;
@@ -45,6 +45,30 @@ public class SecurityConfiguration extends VaadinWebSecurity {
   }
 
   @Bean
+  public SecurityFilterChain vaadinSecurityFilterChain(HttpSecurity http) throws Exception {
+    http.requestCache(c -> c.requestCache(defaultRequestCache));
+
+    http.authorizeHttpRequests(v -> v
+        .requestMatchers(
+            "/oauth2/authorization/orcid",
+            "/oauth2/code/**",
+            "/link/**",
+            "/images/*.png")
+        .permitAll()
+    );
+
+    http.oauth2Login(oauth2 -> oauth2.
+        loginPage("/login").permitAll()
+        .defaultSuccessUrl("/")
+        .successHandler(authenticationSuccessHandler())
+        .failureUrl("/login?errorOauth2=true&error"));
+
+    http.with(vaadin(), vaadin -> vaadin
+        .loginView(LoginLayout.class, contextPath + "/login?logout=true"));
+    return http.build();
+  }
+
+  @Bean
   public PasswordEncoder passwordEncoder() {
     return new QBiCPasswordEncoder();
   }
@@ -55,35 +79,5 @@ public class SecurityConfiguration extends VaadinWebSecurity {
         registrationOrcidEndpoint, emailConfirmationEndpoint, identityService);
     storedRequestAwareOidcAuthenticationSuccessHandler.setRequestCache(defaultRequestCache);
     return storedRequestAwareOidcAuthenticationSuccessHandler;
-  }
-
-  @Override
-  protected void configure(HttpSecurity http) throws Exception {
-    // Use Vaadin’s request cache (so redirects back to the original Flow route work)
-    http.requestCache(c -> c.requestCache(defaultRequestCache));
-
-    http.authorizeHttpRequests(v -> v
-        .requestMatchers(VaadinWebSecurity.getDefaultWebSecurityIgnoreMatcher()).permitAll()
-        .requestMatchers(
-            new AntPathRequestMatcher("/oauth2/authorization/orcid"),
-            new AntPathRequestMatcher("/oauth2/code/**"),
-            new AntPathRequestMatcher("/link/**"),
-            new AntPathRequestMatcher("/images/*.png"))
-        .permitAll()
-    );
-
-    http.oauth2Login(oAuth2Login -> {
-      oAuth2Login.loginPage("/login").permitAll();
-      oAuth2Login.defaultSuccessUrl("/");
-      oAuth2Login.successHandler(
-          authenticationSuccessHandler());
-      oAuth2Login.failureUrl("/login?errorOauth2=true&error");
-    });
-
-    // Let Vaadin register its filters/matchers
-    super.configure(http);
-
-    // Set the login view
-    setLoginView(http, LoginLayout.class, contextPath + "/login?logout=true");
   }
 }

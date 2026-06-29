@@ -243,6 +243,16 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
                 public InputStream getStream() {
                   return digitalObject.content();
                 }
+
+                @Override
+                public String getContentType() {
+                  return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+                }
+
+                @Override
+                public Optional<Long> contentLength() {
+                  return Optional.empty();
+                }
               });
             }));
   }

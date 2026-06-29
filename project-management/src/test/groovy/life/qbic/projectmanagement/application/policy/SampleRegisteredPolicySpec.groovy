@@ -20,7 +20,7 @@ class SampleRegisteredPolicySpec extends Specification {
 
     def "Given a sample registered event, the respective directive is executed"() {
         given:
-        SampleRegistered sampleRegistered = SampleRegistered.create(BatchId.create(), SampleId.create())
+        SampleRegistered sampleRegistered = SampleRegistered.create(UUID.randomUUID().toString(), BatchId.create(), SampleId.create())
 
         and:
         AddSampleToBatch addSampleToBatch = Mock(AddSampleToBatch.class)

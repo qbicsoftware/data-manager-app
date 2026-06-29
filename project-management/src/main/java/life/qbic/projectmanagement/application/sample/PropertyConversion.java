@@ -98,7 +98,7 @@ public class PropertyConversion {
    */
   public static String toString(OntologyTerm ontologyTerm) {
     Objects.requireNonNull(ontologyTerm);
-    return ONTOLOGY_TERM.formatted(ontologyTerm.getLabel(), ontologyTerm.getOboId());
+    return ONTOLOGY_TERM.formatted(ontologyTerm.getLabel(), ontologyTerm.oboId().toString());
   }
 
   /**

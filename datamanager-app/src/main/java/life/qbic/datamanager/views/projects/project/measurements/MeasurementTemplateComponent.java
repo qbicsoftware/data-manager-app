@@ -6,6 +6,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import java.io.InputStream;
 import java.time.LocalDate;
+import java.util.Optional;
 import java.util.function.Supplier;
 import life.qbic.application.commons.FileNameFormatter;
 import life.qbic.datamanager.files.export.download.DownloadStreamProvider;
@@ -13,6 +14,7 @@ import life.qbic.datamanager.views.general.download.DownloadComponent;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.projectmanagement.application.api.fair.DigitalObject;
+import org.springframework.util.MimeTypeUtils;
 import reactor.core.publisher.Mono;
 
 /**
@@ -63,16 +65,14 @@ public class MeasurementTemplateComponent extends Div {
     var failureToast = messageFactory.toast("task.failed", new Object[]{"Template generation"}, getLocale());
     var inProgressToast = messageFactory.pendingTaskToast("measurement.preparing-download",
         MessageSourceNotificationFactory.EMPTY_PARAMETERS, getLocale());
-    var downloadButton = new Button(buttonText, e -> {
-      templateMono
-          .doOnSubscribe(ignored -> openToast(inProgressToast))
-          .doOnSuccess(this::triggerDownload).doOnTerminate(() -> closeToast(inProgressToast))
-          .doOnError(throwable -> {
-            closeToast(inProgressToast);
-            openToast(failureToast);
-          })
-          .subscribe();
-    });
+    var downloadButton = new Button(buttonText, e -> templateMono
+        .doOnSubscribe(ignored -> openToast(inProgressToast))
+        .doOnSuccess(this::triggerDownload).doOnTerminate(() -> closeToast(inProgressToast))
+        .doOnError(throwable -> {
+          closeToast(inProgressToast);
+          openToast(failureToast);
+        })
+        .subscribe());
     var buttonElement = new Div(downloadButton);
 
     add(descriptionElement, buttonElement, downloadComponent);
@@ -87,20 +87,29 @@ public class MeasurementTemplateComponent extends Div {
   }
 
   private void triggerDownload(DigitalObject digitalObject) {
-    getUI().ifPresent(ui -> ui.access(() -> {
-      downloadComponent.trigger(new DownloadStreamProvider() {
-        @Override
-        public String getFilename() {
-          var projectId = projectIdSupplier.get();
-          return FileNameFormatter.formatWithTimestampedSimple(LocalDate.now(), projectId, "measurements", "xlsx");
-        }
+    getUI().ifPresent(ui -> ui.access(() -> downloadComponent.trigger(new DownloadStreamProvider() {
+      @Override
+      public String getFilename() {
+        var projectId = projectIdSupplier.get();
+        return FileNameFormatter.formatWithTimestampedSimple(LocalDate.now(), projectId,
+            "measurements", "xlsx");
+      }
 
-        @Override
-        public InputStream getStream() {
-          return digitalObject.content();
-        }
-      });
-    }));
+      @Override
+      public InputStream getStream() {
+        return digitalObject.content();
+      }
+
+      @Override
+      public String getContentType() {
+        return MimeTypeUtils.APPLICATION_OCTET_STREAM_VALUE;
+      }
+
+      @Override
+      public Optional<Long> contentLength() {
+        return Optional.empty();
+      }
+    })));
   }
 
 }

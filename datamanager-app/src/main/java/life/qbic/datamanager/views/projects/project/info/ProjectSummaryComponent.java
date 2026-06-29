@@ -84,7 +84,6 @@ import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.projects.ProjectInformation;
 import life.qbic.datamanager.views.projects.edit.EditContactsComponent;
 import life.qbic.datamanager.views.projects.edit.ProjectDesignForm;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentDetailsComponent;
 import life.qbic.datamanager.views.strategy.scope.ReadScopeStrategy;
 import life.qbic.datamanager.views.strategy.scope.UserScopeStrategy;
 import life.qbic.datamanager.views.strategy.scope.WriteScopeStrategy;
@@ -113,8 +112,6 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectUp
 import life.qbic.projectmanagement.application.api.AsyncProjectService.RequestFailedException;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.UnknownRequestException;
 import life.qbic.projectmanagement.application.contact.PersonLookupService;
-import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
-import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.project.Contact;
 import life.qbic.projectmanagement.domain.model.project.Contact.OidcInformation;
 import life.qbic.projectmanagement.domain.model.project.Project;
@@ -148,7 +145,6 @@ public class ProjectSummaryComponent extends PageArea {
   public static final String SAVE_BUTTON_TEXT = "Save";
   private static final Logger log = logger(ProjectSummaryComponent.class);
   private final transient ProjectInformationService projectInformationService;
-  private final transient ExperimentInformationService experimentInformationService;
   private final transient PersonLookupService personLookupService;
   private final transient UserPermissions userPermissions;
   private final transient MessageSourceNotificationFactory notificationFactory;
@@ -162,7 +158,6 @@ public class ProjectSummaryComponent extends PageArea {
   private final RequestCache requestCache;
   private final MessageSourceNotificationFactory messageSourceNotificationFactory;
   private final Map<String, Toast> pendingTaskToasts = new HashMap<>();
-  private final ExperimentDetailsComponent experimentDetailsComponent;
   private Toast taskInProgressToast;
   private Context context;
   private transient List<? extends UserScopeStrategy> scopes;
@@ -172,14 +167,12 @@ public class ProjectSummaryComponent extends PageArea {
 
   @Autowired
   public ProjectSummaryComponent(ProjectInformationService projectInformationService,
-      ExperimentInformationService experimentInformationService,
       PersonLookupService personLookupService,
       UserPermissions userPermissions,
       MessageSourceNotificationFactory notificationFactory,
       AsyncProjectService asyncProjectService,
       RequestCache requestCache,
-      MessageSourceNotificationFactory messageSourceNotificationFactory,
-      ExperimentDetailsComponent experimentDetailsComponent) {
+      MessageSourceNotificationFactory messageSourceNotificationFactory) {
     this.projectInformationService = Objects.requireNonNull(projectInformationService);
     this.personLookupService = requireNonNull(personLookupService,
         "person lookup service must not be null");
@@ -190,7 +183,6 @@ public class ProjectSummaryComponent extends PageArea {
     this.projectContactsSection = new SectionBuilder().build();
     this.userPermissions = Objects.requireNonNull(userPermissions);
     this.notificationFactory = Objects.requireNonNull(notificationFactory);
-    this.experimentInformationService = experimentInformationService;
     this.asyncProjectService = Objects.requireNonNull(asyncProjectService);
     this.requestCache = Objects.requireNonNull(requestCache);
     this.downloadComponent = new DownloadComponent();
@@ -204,7 +196,6 @@ public class ProjectSummaryComponent extends PageArea {
     add(projectContactsSection);
     add(downloadComponent);
     this.messageSourceNotificationFactory = messageSourceNotificationFactory;
-    this.experimentDetailsComponent = experimentDetailsComponent;
   }
 
   private static ProjectInformation convertToInfo(Project project) {
@@ -234,9 +225,9 @@ public class ProjectSummaryComponent extends PageArea {
         contact.oidcInformation().map(OidcInformation::oidcIssuer).orElse(null));
   }
 
-  private static Button createButtonWithListener(String label,
+  private static Button createButtonWithListener(
       ComponentEventListener<ClickEvent<Button>> listener) {
-    var button = new Button(label);
+    var button = new Button("Edit");
     button.addClickListener(listener);
     return button;
   }
@@ -294,8 +285,7 @@ public class ProjectSummaryComponent extends PageArea {
         .orElseThrow(() -> new ApplicationException("No project with given ID found"));
     var fullProject = projectInformationService.find(projectId)
         .orElseThrow(() -> new ApplicationException("No project found"));
-    var experiments = experimentInformationService.findAllForProject(projectId);
-    setContent(projectOverview, fullProject, experiments);
+    setContent(projectOverview, fullProject);
     this.scopes = loadScope(userPermissions::editProject, projectId, projectDesignSection,
         fundingInformationSection, projectContactsSection);
     this.scopes.forEach(UserScopeStrategy::execute);
@@ -323,7 +313,7 @@ public class ProjectSummaryComponent extends PageArea {
           var species = new HashSet<OntologyTerm>();
           var specimen = new HashSet<OntologyTerm>();
           var analytes = new HashSet<OntologyTerm>();
-          experiments.stream().forEach(experiment -> {
+          experiments.forEach(experiment -> {
             species.addAll(experiment.species());
             specimen.addAll(experiment.specimen());
             analytes.addAll(experiment.analytes());
@@ -385,8 +375,7 @@ public class ProjectSummaryComponent extends PageArea {
     buildProjectContactsInfoSection(project);
   }
 
-  private void setContent(ProjectOverview projectOverview, Project fullProject,
-      List<Experiment> experiments) {
+  private void setContent(ProjectOverview projectOverview, Project fullProject) {
     Objects.requireNonNull(projectOverview);
     buildHeaderSection(projectOverview);
     buildDesignSection(projectOverview, fullProject);
@@ -426,7 +415,7 @@ public class ProjectSummaryComponent extends PageArea {
 
   private void buildProjectContactsInfoSection(Project project) {
     // set up the edit button, that opens the dialog for editing contacts
-    var editButton = createButtonWithListener("Edit", listener -> {
+    var editButton = createButtonWithListener(listener -> {
       var editContacts = new EditContactsComponent(convertToInfo(project),
           Utility.tryToLoadFromPrincipal().orElse(null), personLookupService);
       AppDialog dialog = AppDialog.medium();
@@ -516,7 +505,7 @@ public class ProjectSummaryComponent extends PageArea {
 
   private void buildFundingInformationSection(Project fullProject,
       ProjectInformation projectInformation) {
-    var editButton = createButtonWithListener("Edit", listener -> {
+    var editButton = createButtonWithListener(listener -> {
       var dialog = AppDialog.small();
       DialogHeader.with(dialog, "Edit funding information");
       DialogFooter.with(dialog, CANCEL_BUTTON_TEXT, SAVE_BUTTON_TEXT);
@@ -612,7 +601,7 @@ public class ProjectSummaryComponent extends PageArea {
     editButton.addClickListener(listener -> {
       var form = new ProjectDesignForm();
       form.setContent(convertToInfo(project));
-      AppDialog dialog = createEditDesignDialog(project.getId().value(), form, form);
+      AppDialog dialog = createEditDesignDialog(form, form);
       dialog.registerCancelAction(dialog::close);
       dialog.registerConfirmAction(() -> {
         dialog.close();
@@ -837,18 +826,17 @@ public class ProjectSummaryComponent extends PageArea {
    */
   private void handleRequestFailed(RequestFailedException error) {
     log.error("request failed", error);
-    getUI().ifPresent(ui -> ui.access(() -> {
-      requestCache.get(error.getRequestId()).ifPresentOrElse(request -> {
-        // do sth with the cache
-        var toast = notificationFactory.toast("project.updated.error.retry",
-            new String[]{}, getLocale());
-        toast.open();
-      }, () -> {
-        var toast = notificationFactory.toast("project.updated.error",
-            new String[]{}, getLocale());
-        toast.open();
-      });
-    }));
+    getUI().ifPresent(
+        ui -> ui.access(() -> requestCache.get(error.getRequestId()).ifPresentOrElse(request -> {
+          // do sth with the cache
+          var toast = notificationFactory.toast("project.updated.error.retry",
+              new String[]{}, getLocale());
+          toast.open();
+        }, () -> {
+          var toast = notificationFactory.toast("project.updated.error",
+              new String[]{}, getLocale());
+          toast.open();
+        })));
   }
 
   /*
@@ -876,7 +864,7 @@ public class ProjectSummaryComponent extends PageArea {
     }));
   }
 
-  private AppDialog createEditDesignDialog(String projectId, Component body, UserInput input) {
+  private AppDialog createEditDesignDialog(Component body, UserInput input) {
     var appDialog = AppDialog.medium();
     DialogHeader.with(appDialog, "Edit Project Design");
     DialogFooter.with(appDialog, CANCEL_BUTTON_TEXT, SAVE_BUTTON_TEXT);
@@ -933,6 +921,18 @@ public class ProjectSummaryComponent extends PageArea {
       public InputStream getStream() {
         return forSummary(context.projectId().orElseThrow());
       }
+
+      @Override
+      public String getContentType() {
+        return "application/zip";
+      }
+
+      @Override
+      public Optional<Long> contentLength() {
+        return Optional.empty();
+      }
+
+
     });
 
   }

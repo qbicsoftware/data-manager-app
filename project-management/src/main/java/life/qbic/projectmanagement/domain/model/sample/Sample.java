@@ -196,7 +196,8 @@ public class Sample {
   }
 
   private void emitCreatedEvent() {
-    var createdEvent = SampleRegistered.create(this.assignedBatch(), this.id);
+    var createdEvent = SampleRegistered.create(this.experimentId.value(), this.assignedBatch(),
+        this.id);
     LocalDomainEventDispatcher.instance().dispatch(createdEvent);
   }
 

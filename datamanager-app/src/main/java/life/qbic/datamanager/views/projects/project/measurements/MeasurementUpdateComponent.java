@@ -17,14 +17,12 @@ import life.qbic.datamanager.views.projects.project.measurements.registration.Me
 public class MeasurementUpdateComponent extends Div implements UserInput {
 
 
-  private final MeasurementTemplateComponent templateComponent;
   private final MeasurementUpload measurementUpload;
 
   public MeasurementUpdateComponent(
       MeasurementTemplateComponent templateComponent,
       MeasurementUpload measurementUpload
   ) {
-    this.templateComponent = Objects.requireNonNull(templateComponent);
     this.measurementUpload = Objects.requireNonNull(measurementUpload);
 
     var templateSection = DialogSection.with("Download Metadata", templateComponent);
