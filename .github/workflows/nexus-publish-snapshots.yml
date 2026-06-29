@@ -56,7 +56,7 @@ jobs:
 
       # Generate provenance (SLSA attestation) for all JARs
       - name: Generate SLSA build provenance
-        uses: actions/attest-build-provenance@v1
+        uses: actions/attest-build-provenance@v3
         with:
           subject-path: "**/target/*.jar"
 
