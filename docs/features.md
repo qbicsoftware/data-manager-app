@@ -225,4 +225,31 @@ Where:
 
 ---
 
-*Last updated: 2026-06-15*
+### FEAT-EXTERNAL-DATASET-LINKAGE
+
+| Field | Value |
+|---|---|
+| **Description** | Users can search public and private InvenioRDM repositories, link discovered datasets to their DataManager projects and experiments, and maintain live bidirectional metadata synchronization via FAIR Signposting. DataManager becomes the central hub; InvenioRDM remains the publishing platform. |
+| **PRD Section** | §3 Scope — FAIR data export; §5 Constraints — FAIR principles; File management |
+| **Requirements** | `AUTH-R-01`, `DATA-R-04`, `DATA-R-05`, `FAIR-R-01`, `PROJECT-R-01` |
+| **GitHub Feature** | TBD |
+| **Status** | 🔴 Open |
+
+---
+
+### Stories
+
+_No stories approved yet. Draft stories below for refinement._
+
+| Story ID | Title | Requirement(s) | Status |
+|---|---|---|---|
+| `FEAT-EXT-DATA-01` | Authenticate with InvenioRDM via OAuth2 | `AUTH-R-01` | 🔴 Draft |
+| `FEAT-EXT-DATA-02` | Search and discover InvenioRDM datasets | `DATA-R-04` | 🔴 Draft |
+| `FEAT-EXT-DATA-03` | Link discovered datasets to a project/experiment | `DATA-R-04`, `PROJECT-R-01` | 🔴 Draft |
+| `FEAT-EXT-DATA-04` | View and manage linked datasets in project context | `DATA-R-04`, `PROJECT-R-01` | 🔴 Draft |
+| `FEAT-EXT-DATA-05` | Synchronize linked dataset metadata | `DATA-R-05` | 🔴 Draft |
+| `FEAT-EXT-DATA-06` | Establish FAIR Signposting bidirectional linkage | `FAIR-R-01` | 🔴 Draft |
+
+---
+
+*Last updated: 2026-06-16*

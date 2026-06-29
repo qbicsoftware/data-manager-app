@@ -48,6 +48,7 @@ By combining structured metadata capture, quality assessment, and interoperabili
 - **Measurement integration** – Register measurement batches (NGS, proteomics, immunopeptidomics, metabolomics); capture measurement parameters (sequencing depth, instrument model, data quality scores); track measurement files
 - **File management** – Upload, store, and download raw data files; metadata-driven file organization; checksums for integrity
 - **FAIR data export** – Generate RO-Crate bundles for research objects, enable archival and publication workflows, include project metadata, sample metadata, measurement parameters, and data availability statements
+- **External dataset linkage** – Discover, link, and synchronize datasets hosted on public InvenioRDM instances (e.g., Zenodo, FDAT) with projects and experiments; establish machine-actionable bidirectional relationships via FAIR Signposting; DataManager acts as the central hub, InvenioRDM remains the publishing platform
 - **User authentication and authorization** – Local username/password registration, ORCID OAuth2 login, role-based access control, personal access tokens for programmatic API access
 - **Notifications and audit** – Email notifications for project events, announcements, audit logs for data access and modifications
 
@@ -76,6 +77,7 @@ By combining structured metadata capture, quality assessment, and interoperabili
 | Sample registration volume | 0 | 5,000+ samples registered/month within 9 months | Database query on `sample` table |
 | Measurement data uploads | 0 | 200+ batches/month by month 12 | File system and database audit logs |
 | FAIR export usage | 0 | 20+ RO-Crate exports/month by month 12 | RO-Crate generation event logs |
+| External dataset linkage usage | 0 | 10+ linked datasets per project (active projects) by month 12 | Database query on external dataset linkage table |
 | User adoption (active monthly users) | 0 | 50+ researchers and staff by month 12 | Login and action tracking via audit logs |
 | Data integrity (file checksum match) | N/A | 99.9% file integrity rate | Automated checksum validation on download |
 | CARE principle compliance | N/A | 100% of projects include attribution, minimal data collection, community-driven governance documentation | Manual audit of exported metadata |
@@ -99,7 +101,7 @@ By combining structured metadata capture, quality assessment, and interoperabili
 ### Technical Constraints
 - **Authentication:** ORCID OAuth2 integration for researcher identity; local password-based authentication as fallback
 - **Data persistence:** MariaDB 10.6+ as primary data store; schema migration strategy required for updates; no breaking schema changes without migration tooling
-- **Integrations:** OpenBIS API (asynchronous batch imports only); TIB Terminology Service for ontology lookup; ROR API for organization validation
+- **Integrations:** OpenBIS API (asynchronous batch imports only); TIB Terminology Service for ontology lookup; ROR API for organization validation; InvenioRDM API for external dataset discovery and linkage (OAuth2, REST API, FAIR Signposting)
 - **Scalability:** Support 100+ concurrent users, 10+ GB monthly data uploads; performance SLA: page load < 2 seconds, API response < 500 ms for 95th percentile
 - **Performance targets:** Background jobs (sample sync, file upload) complete within 5 minutes for typical batch sizes (1,000 samples)
 
@@ -115,6 +117,7 @@ By combining structured metadata capture, quality assessment, and interoperabili
 
 <!-- PLACEHOLDER: The questions below are illustrative. Track and resolve with stakeholders during requirements validation and design phases. -->
 
+- [ ] **InvenioRDM integration scope:** Should the initial MVP support dataset linking only (read-only metadata sync), or should direct dataset creation on InvenioRDM from within DataManager be included in the first iteration? Which InvenioRDM instances (Zenodo, FDAT, others) must be supported at launch?
 - [ ] **Data deletion policy:** Should researchers be able to delete projects and associated samples, or only deactivate them? What is the retention window for audit logs after project deletion?
 - [ ] **OpenBIS synchronization:** Should measurement data sync from OpenBIS be real-time (pull on project view) or scheduled (nightly batch)? What is acceptable latency?
 - [ ] **Multi-site deployments:** Should the platform support federated/distributed deployments across multiple institutional sites, or is a single-instance SaaS model acceptable?
