@@ -24,10 +24,6 @@
     </dependency>
     <dependency>
       <groupId>life.qbic.datamanager</groupId>
-      <artifactId>domain-concept</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>life.qbic.datamanager</groupId>
       <artifactId>identity-api</artifactId>
     </dependency>
 
