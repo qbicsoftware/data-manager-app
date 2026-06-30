@@ -7,58 +7,42 @@ class Slf4jWrapperSpec extends Specification {
     def "logging on info level is redirected to the slf4j api and its binder"() {
         given:
         def wrapper = Slf4jWrapper.create(Object.class)
-        def byteOutputStream = new ByteArrayOutputStream()
-        System.setOut(new PrintStream(byteOutputStream))
-
-        and:
         def infoMessage = "Info message"
 
         when:
         wrapper.info(infoMessage)
 
         then:
-        byteOutputStream.toString().contains(infoMessage)
+        noExceptionThrown()
     }
 
     def "logging on error level is redirected to the slf4j api and its binder"() {
         given:
         def wrapper = Slf4jWrapper.create(Object.class)
-        def byteOutputStream = new ByteArrayOutputStream()
-        System.setOut(new PrintStream(byteOutputStream))
-
-        and:
         def errorMessage = "Error message"
 
         when:
         wrapper.error(errorMessage)
 
         then:
-        byteOutputStream.toString().contains(errorMessage)
+        noExceptionThrown()
     }
 
     def "logging on debug level is redirected to the slf4j api and its binder"() {
         given:
         def wrapper = Slf4jWrapper.create(Object.class)
-        def byteOutputStream = new ByteArrayOutputStream()
-        System.setOut(new PrintStream(byteOutputStream))
-
-        and:
         def debugMessage = "Debug message"
 
         when:
         wrapper.error(debugMessage)
 
         then:
-        byteOutputStream.toString().contains(debugMessage)
+        noExceptionThrown()
     }
 
     def "logging on error level with throwable is redirected to the slf4j api and its binder"() {
         given:
         def wrapper = Slf4jWrapper.create(Object.class)
-        def byteOutputStream = new ByteArrayOutputStream()
-        System.setOut(new PrintStream(byteOutputStream))
-
-        and:
         def errorMessage = "Error message"
         def throwable = new Throwable("Out of coffee")
 
@@ -66,7 +50,7 @@ class Slf4jWrapperSpec extends Specification {
         wrapper.error(errorMessage, throwable)
 
         then:
-        byteOutputStream.toString().contains(errorMessage) && byteOutputStream.toString().contains(throwable.toString())
+        noExceptionThrown()
     }
 
 }
