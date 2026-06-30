@@ -197,17 +197,13 @@
         <artifactId>ro-crate-java</artifactId>
         <version>${ro-crate-java.version}</version>
       </dependency>
+      <!-- Source: https://mvnrepository.com/artifact/org.spockframework/spock-bom -->
       <dependency>
         <groupId>org.spockframework</groupId>
-        <artifactId>spock-core</artifactId>
-        <version>${spock.version}</version>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.spockframework</groupId>
-        <artifactId>spock-spring</artifactId>
-        <version>${spock.version}</version>
-        <scope>test</scope>
+        <artifactId>spock-bom</artifactId>
+        <version>2.4-groovy-4.0</version>
+        <type>pom</type>
+        <scope>import</scope>
       </dependency>
 
       <!--      For spring boot 4-->
