@@ -46,6 +46,21 @@
 
   <properties>
     <!--    spring boot properties-->
+    <jakarta.persistence.version>3.2.0</jakarta.persistence.version>
+    <!--    custom dependency properties-->
+    <apache.poi.version>5.5.1</apache.poi.version>
+    <docx4j.version>11.5.14</docx4j.version>
+    <jackson-bom.version>2.21.1</jackson-bom.version>
+    <jobrunr.version>7.3.2</jobrunr.version>
+    <reactor.version>3.8.5</reactor.version>
+    <shedlock.version>6.10.0</shedlock.version>
+    <vaadin.version>24.10.7</vaadin.version>
+    <ro-crate-java.version>1.1.1</ro-crate-java.version>
+    <spock.version>2.4-M4-groovy-4.0</spock.version>
+    <spring-boot.version>3.5.15</spring-boot.version>
+
+
+    <!--    spring boot properties-->
     <java.version>21</java.version>
     <!--    custom dependency properties-->
     <vaadin.version>24.10.7</vaadin.version>
