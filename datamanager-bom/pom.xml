@@ -128,13 +128,7 @@
 
 
       <!-- Third-party pins (or import their BOMs instead) -->
-      <dependency>
-        <groupId>life.qbic</groupId>
-        <artifactId>openbis-api</artifactId>
-        <version>20.10.7.3</version>
-        <classifier>r1700646105</classifier>
-        <scope>compile</scope>
-      </dependency>
+
 
       <dependency>
         <groupId>com.vaadin</groupId>
@@ -213,7 +207,13 @@
       <!--        <version>8.6.0</version>-->
       <!--        <scope>compile</scope>-->
       <!--      </dependency>-->
-
+      <dependency>
+        <groupId>life.qbic</groupId>
+        <artifactId>openbis-api</artifactId>
+        <version>20.10.7.3</version>
+        <classifier>r1700646105</classifier>
+        <scope>compile</scope>
+      </dependency>
 
     </dependencies>
   </dependencyManagement>
