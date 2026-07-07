@@ -208,7 +208,7 @@
     </dependency>
     <dependency>
       <groupId>org.jobrunr</groupId>
-      <artifactId>jobrunr</artifactId>
+      <artifactId>jobrunr-spring-boot-3-starter</artifactId>
     </dependency>
     <dependency>
       <groupId>jakarta.persistence</groupId>
@@ -259,6 +259,19 @@
       <groupId>com.mysql</groupId>
       <artifactId>mysql-connector-j</artifactId>
       <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-artemis</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.activemq</groupId>
+      <artifactId>artemis-jms-server</artifactId>
     </dependency>
     <dependency>
       <groupId>org.apache.groovy</groupId>

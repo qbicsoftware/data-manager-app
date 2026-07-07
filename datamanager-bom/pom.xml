@@ -162,6 +162,11 @@
 
       <dependency>
         <groupId>org.jobrunr</groupId>
+        <artifactId>jobrunr-spring-boot-3-starter</artifactId>
+        <version>${jobrunr.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.jobrunr</groupId>
         <artifactId>jobrunr</artifactId>
         <version>${jobrunr.version}</version>
         <scope>compile</scope>
@@ -202,6 +207,12 @@
         <groupId>org.docx4j</groupId>
         <artifactId>docx4j-openxml-objects</artifactId>
         <version>${docx4j.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.docx4j</groupId>
+        <artifactId>docx4j-JAXB-ReferenceImpl</artifactId>
+        <version>${docx4j.version}</version>
+        <scope>runtime</scope>
       </dependency>
       <dependency>
         <groupId>edu.kit.datamanager</groupId>

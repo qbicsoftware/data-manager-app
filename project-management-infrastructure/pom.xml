@@ -33,6 +33,11 @@
       <artifactId>docx4j-core</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.docx4j</groupId>
+      <artifactId>docx4j-JAXB-ReferenceImpl</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
       <groupId>org.apache.poi</groupId>
       <artifactId>poi</artifactId>
     </dependency>
