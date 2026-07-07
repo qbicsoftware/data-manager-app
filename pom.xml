@@ -41,7 +41,7 @@
     <!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-parent -->
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.5.15</version>
+    <version>3.5.16</version>
   </parent>
 
   <properties>
@@ -57,7 +57,7 @@
     <vaadin.version>24.10.7</vaadin.version>
     <ro-crate-java.version>1.1.1</ro-crate-java.version>
     <spock.version>2.4-M4-groovy-4.0</spock.version>
-    <spring-boot.version>3.5.15</spring-boot.version>
+    <spring-boot.version>3.5.16</spring-boot.version>
 
 
     <!--    spring boot properties-->
