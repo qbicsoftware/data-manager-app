@@ -78,6 +78,10 @@
     </dependency>
     <dependency>
       <groupId>life.qbic.datamanager</groupId>
+      <artifactId>identity-infrastructure</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>life.qbic.datamanager</groupId>
       <artifactId>project-management-infrastructure</artifactId>
     </dependency>
     <dependency>
@@ -92,6 +96,10 @@
     <dependency>
       <groupId>life.qbic.datamanager</groupId>
       <artifactId>finances-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>life.qbic.datamanager</groupId>
+      <artifactId>finances-infrastructure</artifactId>
     </dependency>
     <dependency>
       <groupId>life.qbic.datamanager</groupId>
