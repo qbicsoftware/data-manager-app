@@ -30,14 +30,15 @@
       <artifactId>identity</artifactId>
     </dependency>
     <!-- spring dependencies-->
-    <dependency>
-      <groupId>org.springframework</groupId>
-      <artifactId>spring-messaging</artifactId>
-    </dependency>
+
     <!-- third party dependencies-->
     <dependency>
       <groupId>org.eclipse.angus</groupId>
       <artifactId>jakarta.mail</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>jakarta.activation</groupId>
+      <artifactId>jakarta.activation-api</artifactId>
     </dependency>
   </dependencies>
 </project>
