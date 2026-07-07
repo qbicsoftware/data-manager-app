@@ -17,32 +17,24 @@
 
 
   <properties>
-    <!--    spring boot properties-->
-    <jakarta.persistence.version>3.2.0</jakarta.persistence.version>
-    <!--    custom dependency properties-->
+    <!--    custom properties, not spring boot managed-->
     <apache.poi.version>5.5.1</apache.poi.version>
     <docx4j.version>11.5.14</docx4j.version>
-    <jackson-bom.version>2.21.1</jackson-bom.version>
     <jobrunr.version>7.3.2</jobrunr.version>
-    <reactor.version>3.8.5</reactor.version>
     <shedlock.version>6.10.0</shedlock.version>
     <vaadin.version>24.10.7</vaadin.version>
     <ro-crate-java.version>1.1.1</ro-crate-java.version>
+
+    <!-- overwritten spring boot properties (need to be set in importing pom as well)-->
+    <jakarta.persistence.version>3.2.0</jakarta.persistence.version>
     <spock.version>2.4-M4-groovy-4.0</spock.version>
     <spring-boot.version>3.5.16</spring-boot.version>
+    <commons-lang3.version>3.18.0</commons-lang3.version>
+    <artemis.version>2.55.0</artemis.version>
   </properties>
 
   <dependencyManagement>
     <dependencies>
-      <!-- note to self: dependencies defined first take priority over later definitions-->
-      <!--      <dependency>-->
-      <!--        <groupId>com.fasterxml.jackson</groupId>-->
-      <!--        <artifactId>jackson-bom</artifactId>-->
-      <!--        <version>${jackson-bom.version}</version>-->
-      <!--        <type>pom</type>-->
-      <!--        <scope>import</scope>-->
-      <!--      </dependency>-->
-      <!-- Internal artifacts all align to the BOM’s version -->
       <dependency>
         <groupId>life.qbic.datamanager</groupId>
         <artifactId>application-commons</artifactId>
@@ -125,7 +117,6 @@
       </dependency>
 
 
-
       <!-- Third-party pins (or import their BOMs instead) -->
 
 
@@ -150,14 +141,6 @@
         <groupId>net.javacrumbs.shedlock</groupId>
         <artifactId>shedlock-spring</artifactId>
         <version>${shedlock.version}</version>
-        <!--        <type>pom</type>-->
-        <!--        <scope>import</scope>-->
-      </dependency>
-
-      <dependency>
-        <groupId>io.projectreactor</groupId>
-        <artifactId>reactor-core</artifactId>
-        <version>${reactor.version}</version>
       </dependency>
 
       <dependency>
@@ -223,6 +206,10 @@
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-jdk14</artifactId>
           </exclusion>
+          <exclusion>
+            <groupId>commons-validator</groupId>
+            <artifactId>commons-validator</artifactId>
+          </exclusion>
         </exclusions>
       </dependency>
       <!-- Source: https://mvnrepository.com/artifact/org.spockframework/spock-bom -->
@@ -234,21 +221,6 @@
         <scope>import</scope>
       </dependency>
 
-      <!--      For spring boot 4-->
-      <!--      <dependency>-->
-      <!--        <groupId>org.jobrunr</groupId>-->
-      <!--        <artifactId>jobrunr</artifactId>-->
-      <!--        <version>8.6.0</version>-->
-      <!--        <scope>compile</scope>-->
-      <!--      </dependency>-->
-
-      <!--      <dependency>-->
-      <!--        <groupId>org.apache.groovy</groupId>-->
-      <!--        <artifactId>groovy</artifactId>-->
-      <!--        <version>${groovy.version}</version>-->
-      <!--        <scope>test</scope>-->
-      <!--      </dependency>-->
-
 
       <dependency>
         <groupId>life.qbic</groupId>
@@ -257,6 +229,12 @@
         <classifier>r1700646105</classifier>
         <scope>compile</scope>
       </dependency>
+      <dependency>
+        <groupId>commons-beanutils</groupId>
+        <artifactId>commons-beanutils</artifactId>
+        <version>1.10.1</version>
+      </dependency>
+
 
     </dependencies>
   </dependencyManagement>
