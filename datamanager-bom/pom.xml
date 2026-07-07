@@ -207,6 +207,12 @@
         <groupId>edu.kit.datamanager</groupId>
         <artifactId>ro-crate-java</artifactId>
         <version>${ro-crate-java.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-jdk14</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <!-- Source: https://mvnrepository.com/artifact/org.spockframework/spock-bom -->
       <dependency>
