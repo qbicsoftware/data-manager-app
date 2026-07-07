@@ -81,6 +81,11 @@
       <artifactId>project-management-infrastructure</artifactId>
     </dependency>
     <dependency>
+      <groupId>commons-logging</groupId>
+      <artifactId>commons-logging</artifactId>
+      <version>1.3.5</version>
+    </dependency>
+    <dependency>
       <groupId>life.qbic.datamanager</groupId>
       <artifactId>identity-api</artifactId>
     </dependency>
@@ -209,10 +214,10 @@
       <groupId>jakarta.annotation</groupId>
       <artifactId>jakarta.annotation-api</artifactId>
     </dependency>
-    <dependency>
-      <groupId>jakarta.servlet</groupId>
-      <artifactId>jakarta.servlet-api</artifactId>
-    </dependency>
+    <!--    <dependency>-->
+    <!--      <groupId>jakarta.servlet</groupId>-->
+    <!--      <artifactId>jakarta.servlet-api</artifactId>-->
+    <!--    </dependency>-->
     <dependency>
       <groupId>io.projectreactor</groupId>
       <artifactId>reactor-core</artifactId>
@@ -234,6 +239,15 @@
       <artifactId>jcl-over-slf4j</artifactId>
     </dependency>
     <dependency>
+      <groupId>life.qbic</groupId>
+      <artifactId>openbis-api</artifactId>
+      <classifier>r1700646105</classifier>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.tomcat.embed</groupId>
+      <artifactId>tomcat-embed-core</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.apache.groovy</groupId>
       <artifactId>groovy</artifactId>
       <scope>test</scope>
@@ -241,6 +255,11 @@
     <dependency>
       <groupId>org.spockframework</groupId>
       <artifactId>spock-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>
