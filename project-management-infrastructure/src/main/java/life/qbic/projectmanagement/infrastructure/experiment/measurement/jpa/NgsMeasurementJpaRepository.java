@@ -220,13 +220,16 @@ public interface NgsMeasurementJpaRepository extends
         String oboId = Optional.ofNullable(tree.get("name"))
             .map(JsonNode::asText) //e.g. EFO_0008633
             .map(it -> it.replace("_", ":")) //e.g. EFO:0008633
-            .orElseThrow(() -> new JsonParseException("Could not parse instrument oboId."));
+            .orElseThrow(
+                () -> new JsonParseException(jsonParser, "Could not parse instrument oboId."));
         String label = Optional.ofNullable(tree.get("label"))
             .map(JsonNode::asText)
-            .orElseThrow(() -> new JsonParseException("Could not parse instrument label."));
+            .orElseThrow(
+                () -> new JsonParseException(jsonParser, "Could not parse instrument label."));
         String iri = Optional.ofNullable(tree.get("classIri"))
             .map(JsonNode::asText)
-            .orElseThrow(() -> new JsonParseException("Could not parse instrument iri."));
+            .orElseThrow(
+                () -> new JsonParseException(jsonParser, "Could not parse instrument iri."));
         return new Instrument(label, oboId, iri);
       }
     }
@@ -250,6 +253,8 @@ public interface NgsMeasurementJpaRepository extends
         try {
           return objectMapper.readValue(dbData, Instrument.class);
         } catch (JsonProcessingException e) {
+          throw new RuntimeException(e);
+        } catch (IOException e) {
           throw new RuntimeException(e);
         }
       }

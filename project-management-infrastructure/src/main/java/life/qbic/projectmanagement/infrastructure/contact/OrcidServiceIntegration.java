@@ -93,9 +93,7 @@ public class OrcidServiceIntegration implements PersonSelect {
     try {
       var response = client.send(request, HttpResponse.BodyHandlers.ofString());
       ObjectMapper mapper = new ObjectMapper();
-      try (var parser = mapper.createParser(response.body())) {
-        return parser.readValueAs(AuthResponse.class);
-      }
+      return mapper.readValue(response.body(), AuthResponse.class);
     } catch (IOException | InterruptedException e) {
       if (e instanceof InterruptedException) {
         Thread.currentThread().interrupt();
@@ -103,9 +101,7 @@ public class OrcidServiceIntegration implements PersonSelect {
       log.error("Error sending orcid request", e);
       throw new OrcidServiceIntegration.QueryException("Authentication failed", e);
     }
-
   }
-
   private OrcidEntry convert(OrcidRecord orcidRecord) {
     var emailList = Arrays.stream(orcidRecord.email()).toList();
     if (orcidRecord.orcidID() == null || orcidRecord.orcidID().isEmpty()) {
@@ -178,6 +174,9 @@ public class OrcidServiceIntegration implements PersonSelect {
     } catch (JsonProcessingException e) {
       log.error(e.getMessage(), e);
       return List.of();
+    } catch (IOException e) {
+      log.error(e.getMessage(), e);
+      return List.of();
     }
     if (!node.has("expanded-result")) {
       log.error("Could not parse orcid response: " + node);
@@ -185,7 +184,7 @@ public class OrcidServiceIntegration implements PersonSelect {
     }
     var value = node.get("expanded-result");
     HttpStatus httpStatus = HttpStatus.resolve(response.statusCode());
-    if (value.isEmpty()) {
+    if (value.isNull()) {
       return List.of();
     }
     if (httpStatus != null && httpStatus.is2xxSuccessful()) {
@@ -195,7 +194,8 @@ public class OrcidServiceIntegration implements PersonSelect {
           .filter(Objects::nonNull)
           .toList();
     } else {
-      log.error("Error getting orcid records due to " + response.statusCode());
+      log.error(
+          "Error getting orcid records due to " + response.statusCode() + ": " + response.body());
       return List.of();
     }
   }

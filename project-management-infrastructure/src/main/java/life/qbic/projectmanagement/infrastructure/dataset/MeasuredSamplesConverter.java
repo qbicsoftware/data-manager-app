@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.AttributeConverter;
+import java.io.IOException;
 import java.util.List;
 import life.qbic.logging.api.Logger;
 
@@ -42,6 +43,8 @@ public class MeasuredSamplesConverter implements
     } catch (JsonProcessingException e) {
       log.error("Error converting json to measured samples", e);
       throw new IllegalStateException(e);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
     }
   }
 }
