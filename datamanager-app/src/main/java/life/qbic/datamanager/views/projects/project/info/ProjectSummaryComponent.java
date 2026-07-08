@@ -2,6 +2,7 @@ package life.qbic.datamanager.views.projects.project.info;
 
 import static java.util.Objects.requireNonNull;
 import static life.qbic.datamanager.views.MeasurementType.GENOMICS;
+import static life.qbic.datamanager.views.MeasurementType.IMMUNOPEPTIDOMICS;
 import static life.qbic.datamanager.views.MeasurementType.PROTEOMICS;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
@@ -958,6 +959,9 @@ public class ProjectSummaryComponent extends PageArea {
     }
     if (projectInformation.pxpMeasurementCount() > 0) {
       tags.add(TagFactory.forMeasurement(PROTEOMICS));
+    }
+    if (projectInformation.ipMeasurementCount() > 0) {
+      tags.add(TagFactory.forMeasurement(IMMUNOPEPTIDOMICS));
     }
     return tags;
   }

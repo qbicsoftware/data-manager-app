@@ -1,10 +1,12 @@
 package life.qbic.projectmanagement.application.measurement.validation;
 
 import life.qbic.projectmanagement.application.ValidationResult;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationIP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationNGS;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationPxP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationNGS;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationPxP;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationIP;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -26,12 +28,15 @@ public class MeasurementValidationService {
 
   private final MeasurementNGSValidator measurementNgsValidator;
   private final MeasurementProteomicsValidator measurementProteomicsValidator;
+  private final MeasurementIPValidator measurementIpValidator;
 
   @Autowired
   public MeasurementValidationService(MeasurementNGSValidator measurementNgsValidator,
-      MeasurementProteomicsValidator measurementProteomicsValidator) {
+      MeasurementProteomicsValidator measurementProteomicsValidator,
+      MeasurementIPValidator measurementIpValidator) {
     this.measurementNgsValidator = measurementNgsValidator;
     this.measurementProteomicsValidator = measurementProteomicsValidator;
+    this.measurementIpValidator = measurementIpValidator;
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
@@ -60,7 +65,19 @@ public class MeasurementValidationService {
     return measurementProteomicsValidator.validateUpdate(update, experimentId, projectId);
   }
 
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
+  public ValidationResult validateIP(MeasurementRegistrationInformationIP registration,
+      String experimentId, ProjectId projectId) {
+    return measurementIpValidator.validateRegistration(registration, experimentId, projectId);
+  }
+
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
+  public ValidationResult validateIP(MeasurementUpdateInformationIP update, String experimentId,
+      ProjectId projectId) {
+    return measurementIpValidator.validateUpdate(update, experimentId, projectId);
+  }
+
   public enum Domain {
-    NGS, PROTEOMICS
+    NGS, PROTEOMICS, IMMUNOPEPTIDOMICS
   }
 }

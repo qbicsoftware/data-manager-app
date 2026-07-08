@@ -56,6 +56,10 @@ public class MeasurementCode {
     return MeasurementCode.create(MEASUREMENT_PREFIX.MS, sampleCode);
   }
 
+  public static MeasurementCode createIP(String sampleCode) {
+    return MeasurementCode.create(MEASUREMENT_PREFIX.IP, sampleCode);
+  }
+
   public static MeasurementCode parse(String value) {
     for (MEASUREMENT_PREFIX prefix : MEASUREMENT_PREFIX.values()) {
       if (value.startsWith(prefix.toString())) {
@@ -88,6 +92,10 @@ public class MeasurementCode {
     return prefix == MEASUREMENT_PREFIX.IMG;
   }
 
+  public boolean isIPDomain() {
+    return prefix == MEASUREMENT_PREFIX.IP;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -111,7 +119,7 @@ public class MeasurementCode {
   }
 
   public enum MEASUREMENT_PREFIX {
-    NGS, MS, IMG
+    NGS, MS, IMG, IP
   }
   static class MeasurementCodeConverter implements AttributeConverter<MeasurementCode, String> {
 

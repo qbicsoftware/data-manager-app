@@ -11,6 +11,7 @@ import life.qbic.datamanager.views.projects.project.measurements.MeasurementTemp
 import life.qbic.datamanager.views.projects.project.measurements.processor.MeasurementProcessor;
 import life.qbic.datamanager.views.projects.project.measurements.processor.ProcessorRegistry;
 import life.qbic.datamanager.views.projects.project.measurements.registration.MeasurementUpload;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationIP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationNGS;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationPxP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequestBody;
@@ -65,6 +66,8 @@ public class MeasurementRegistrationComponent extends Div implements UserInput {
       case Genomics -> ConverterRegistry.converterFor(MeasurementRegistrationInformationNGS.class);
       case Proteomics ->
           ConverterRegistry.converterFor(MeasurementRegistrationInformationPxP.class);
+      case Immunopeptidomics ->
+          ConverterRegistry.converterFor(MeasurementRegistrationInformationIP.class);
     };
   }
 

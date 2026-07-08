@@ -52,6 +52,9 @@ public class ProjectOverview {
   @Column(name = "amountPxpMeasurements")
   private long pxpMeasurementCount;
 
+  @Column(name = "amountIpMeasurements")
+  private long ipMeasurementCount;
+
 
   @Convert(converter = CollaboratorUserInfosConverter.class)
   @Column(name = "userInfos")
@@ -95,6 +98,10 @@ public class ProjectOverview {
 
   public long pxpMeasurementCount() {
     return pxpMeasurementCount;
+  }
+
+  public long ipMeasurementCount() {
+    return ipMeasurementCount;
   }
 
   public Collection<UserInfo> collaboratorUserInfos() {

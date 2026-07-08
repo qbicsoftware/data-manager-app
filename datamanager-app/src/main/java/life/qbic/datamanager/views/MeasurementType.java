@@ -10,7 +10,8 @@ package life.qbic.datamanager.views;
  */
 public enum MeasurementType {
   PROTEOMICS("Proteomics"),
-  GENOMICS("Genomics");
+  GENOMICS("Genomics"),
+  IMMUNOPEPTIDOMICS("Immunopeptidomics");
 
   private final String type;
 

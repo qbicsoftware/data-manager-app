@@ -384,7 +384,7 @@ public final class FilterGrid<T, F> extends Div {
     checkboxGroup.addThemeVariants(CheckboxGroupVariant.LUMO_VERTICAL);
 
     checkboxGroup.addClassNames("flex-vertical");
-    subMenu.add(checkboxGroup);
+    subMenu.addComponent(checkboxGroup);
     primaryGridControls.add(searchField, selectionDisplay, spacer, secondaryActionGroup,
         visualSeparator, showHideMenu);
 

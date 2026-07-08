@@ -3,7 +3,7 @@
 ## 1. Goal
 Our vision is to build a research data management platform that enables scientists to plan, document, and manage their research projects in a structured, transparent, and FAIR-compliant manner.
 
-The platform will support the full lifecycle of high-throughput research workflows — from project and experimental design documentation, through sample registration and measurement parameter capture, to raw data registration and quality tracking. It will integrate partner laboratories performing high-throughput analyses (e.g., next-generation sequencing, proteomics, metabolomics) and ensure that all managed data fulfills FAIR and CARE principles.
+The platform will support the full lifecycle of high-throughput research workflows — from project and experimental design documentation, through sample registration and measurement parameter capture, to raw data registration and quality tracking. It will integrate partner laboratories performing high-throughput analyses (e.g., next-generation sequencing, proteomics, immunopeptidomics, metabolomics) and ensure that all managed data fulfills FAIR and CARE principles.
 
 By combining structured metadata capture, quality assessment, and interoperability, the platform will provide a reliable foundation for reproducible, transparent, and reusable research.
 
@@ -45,7 +45,7 @@ By combining structured metadata capture, quality assessment, and interoperabili
 - **Project lifecycle management** – Create projects, invite collaborators, assign roles (PI, Project Manager, Scientist, Lab Manager, Bioinformatician), track project status
 - **Experimental design** – Define experiments within a project; document experimental groups, variables (e.g., treatment, timepoint, disease stage), and confounding factors
 - **Sample registration and metadata capture** – Bulk register samples via XLSX/TSV upload; capture structured metadata (material type, organism, tissue, extraction method); link to external identifiers (OpenBIS sample codes)
-- **Measurement integration** – Register measurement batches (NGS, proteomics, metabolomics); capture measurement parameters (sequencing depth, instrument model, data quality scores); track measurement files
+- **Measurement integration** – Register measurement batches (NGS, proteomics, immunopeptidomics, metabolomics); capture measurement parameters (sequencing depth, instrument model, data quality scores); track measurement files
 - **File management** – Upload, store, and download raw data files; metadata-driven file organization; checksums for integrity
 - **FAIR data export** – Generate RO-Crate bundles for research objects, enable archival and publication workflows, include project metadata, sample metadata, measurement parameters, and data availability statements
 - **User authentication and authorization** – Local username/password registration, ORCID OAuth2 login, role-based access control, personal access tokens for programmatic API access

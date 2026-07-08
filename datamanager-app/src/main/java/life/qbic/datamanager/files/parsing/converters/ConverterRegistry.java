@@ -1,15 +1,16 @@
 package life.qbic.datamanager.files.parsing.converters;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationIP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationNGS;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationPxP;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationIP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationNGS;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationPxP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.SampleRegistrationInformation;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.SampleUpdateInformation;
-import org.apache.commons.collections.map.HashedMap;
-import org.apache.poi.ss.formula.functions.T;
 
 /**
  * Converter Factory for creating {@link MetadataConverterV2} instances.
@@ -33,7 +34,7 @@ import org.apache.poi.ss.formula.functions.T;
 public class ConverterRegistry {
 
   // Registry with suppliers
-  private static final Map<Class<?>, Supplier<? extends MetadataConverterV2<?>>> registry = new HashedMap();
+  private static final Map<Class<?>, Supplier<? extends MetadataConverterV2<?>>> registry = new HashMap<>();
 
   static {
     // Registration of matching classes and suppliers (e.g., constructors)
@@ -45,10 +46,14 @@ public class ConverterRegistry {
         MeasurementRegistrationMetadataConverterNGS::new);
     registry.put(MeasurementRegistrationInformationPxP.class,
         MeasurementRegistrationMetadataConverterPxP::new);
+    registry.put(MeasurementRegistrationInformationIP.class,
+        MeasurementRegistrationMetadataConverterIP::new);
     registry.put(MeasurementUpdateInformationNGS.class,
         MeasurementUpdateMetadataConverterNGS::new);
     registry.put(MeasurementUpdateInformationPxP.class,
         MeasurementUpdateMetadataConverterPxP::new);
+    registry.put(MeasurementUpdateInformationIP.class,
+        MeasurementUpdateMetadataConverterIP::new);
     // Add more mappings ...
   }
 

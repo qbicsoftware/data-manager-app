@@ -2,6 +2,7 @@ package life.qbic.projectmanagement.infrastructure.template.provider.openxml.fac
 
 import java.util.List;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.WorkbookFactory;
+import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.IpEditFactory.MeasurementEntryIP;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.NgsEditFactory.MeasurementEntryNGS;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.ProteomicsEditFactory.MeasurementEntryPxP;
 
@@ -22,6 +23,11 @@ public class MeasurementTemplateFactory {
   public WorkbookFactory forUpdatePxP(List<MeasurementEntryPxP> measurements) {
 
     return new ProteomicsEditFactory(measurements);
+  }
+
+  public WorkbookFactory forUpdateIP(List<MeasurementEntryIP> measurements) {
+
+    return new IpEditFactory(measurements);
   }
 
 }

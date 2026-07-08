@@ -6,6 +6,7 @@ import life.qbic.domain.concepts.DomainEvent;
 import life.qbic.domain.concepts.DomainEventSubscriber;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.measurement.MeasurementLookupService;
+import life.qbic.projectmanagement.domain.model.measurement.ImmunopeptidomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
@@ -55,10 +56,16 @@ public class UpdateProjectUponMeasurementCreation implements DomainEventSubscrib
     } else {
       Optional<ProteomicsMeasurement> ptx = measurementLookupService.findProteomicsMeasurementById(
           measurementID.value());
-      if(ptx.isEmpty()) {
-        throw new InvalidEventDataException("Measurement not found.");
+      if (ptx.isPresent()) {
+        projectInformationService.updateModifiedDate(ptx.get().projectId(), modifiedOn);
+      } else {
+        Optional<ImmunopeptidomicsMeasurement> ip = measurementLookupService.findIPMeasurementById(
+            measurementID.value());
+        if (ip.isEmpty()) {
+          throw new InvalidEventDataException("Measurement not found.");
+        }
+        projectInformationService.updateModifiedDate(ip.get().projectId(), modifiedOn);
       }
-      projectInformationService.updateModifiedDate(ptx.get().projectId(), modifiedOn);
     }
   }
 }

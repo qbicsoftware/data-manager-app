@@ -21,7 +21,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.FileNameFormatter;
@@ -50,16 +49,19 @@ import life.qbic.datamanager.views.projects.project.measurements.registration.Me
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationIP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationNGS;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationPxP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationRequest;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationRequestBody;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationIP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationNGS;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationPxP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateRequest;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateRequestBody;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequestBody;
 import life.qbic.projectmanagement.application.api.fair.DigitalObject;
+import life.qbic.projectmanagement.application.measurement.IpMeasurementLookup;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.measurement.MeasurementService.MeasurementDeletionException;
 import life.qbic.projectmanagement.application.measurement.NgsMeasurementLookup;
@@ -70,6 +72,7 @@ import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.IPWorkbooks;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.NGSWorkbooks;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.ProteomicsWorkbooks;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -146,6 +149,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
       MessageSourceNotificationFactory messageSourceNotificationFactory,
       NgsMeasurementLookup ngsMeasurementLookup,
       PxpMeasurementLookup pxpMeasurementLookup,
+      IpMeasurementLookup ipMeasurementLookup,
       UploadConfiguration uploadConfiguration) {
     Objects.requireNonNull(measurementService);
     Objects.requireNonNull(measurementValidationService);
@@ -173,7 +177,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     measurementDetailsComponent = new MeasurementDetailsComponent(
         messageFactory,
         ngsMeasurementLookup,
-        pxpMeasurementLookup);
+        pxpMeasurementLookup,
+        ipMeasurementLookup);
 
     measurementDetailsComponent.addNgsRegisterListener(
         registrationRequest -> openRegistrationDialog());
@@ -193,6 +198,16 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
         exportRequest -> downloadProteomicsMetadata(exportRequest.measurementIds()));
     measurementDetailsComponent.addPxpDeletionListener(
         deletionRequest -> handlePxpDeletionRequest(
+            new HashSet<>(deletionRequest.measurementIds())));
+
+    measurementDetailsComponent.addIpRegisterListener(
+        registrationRequest -> openRegistrationDialog());
+    measurementDetailsComponent.addIpEditListener(
+        editRequest -> ipEditDialog(editRequest.measurementIds()).open());
+    measurementDetailsComponent.addIpExportListener(
+        exportRequest -> downloadIPMetadata(exportRequest.measurementIds()));
+    measurementDetailsComponent.addIpDeletionListener(
+        deletionRequest -> handleIpDeletionRequest(
             new HashSet<>(deletionRequest.measurementIds())));
 
     add(registerSamplesDisclaimer, measurementTemplateDownload, measurementDetailsComponent);
@@ -269,6 +284,36 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     return dialog;
   }
 
+  private AppDialog ipEditDialog(List<String> selectedMeasurementIds) {
+    var dialog = AppDialog.medium();
+    DialogHeader.with(dialog, "Edit Measurements");
+    DialogFooter.with(dialog, "Cancel", "Update");
+    var templateDownload = new MeasurementTemplateComponent(
+        UPDATE_MEASUREMENT_DESCRIPTION,
+        "Download Metadata",
+        asyncService.measurementUpdateIP(context.projectId().orElseThrow().value(),
+            selectedMeasurementIds, OPEN_XML),
+        messageFactory,
+        projectContext::projectId);
+
+    var upload = new MeasurementUpload(asyncService, context,
+        ConverterRegistry.converterFor(
+            MeasurementUpdateInformationIP.class), messageFactory,
+        uploadConfiguration);
+    var uploadComponent = new MeasurementUpdateComponent(templateDownload, upload);
+    DialogBody.with(dialog, uploadComponent, uploadComponent);
+    dialog.registerCancelAction(dialog::close);
+    dialog.registerConfirmAction(() -> {
+      if (upload.validate().hasPassed()) {
+        var validationRequests = upload.getValidationRequestContent();
+        submitUpdateRequest(context.projectId().orElseThrow().value(),
+            createUpdateRequestPackage(validationRequests));
+        dialog.close();
+      }
+    });
+    return dialog;
+  }
+
   private void handlePxpDeletionRequest(Set<String> measurementIds) {
     if (measurementIds.isEmpty()) {
       return;
@@ -299,18 +344,40 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     notification.addCancelListener(event -> notification.close());
   }
 
+  private void handleIpDeletionRequest(Set<String> measurementIds) {
+    if (measurementIds.isEmpty()) {
+      return;
+    }
+    MeasurementDeletionConfirmationNotification notification =
+        new MeasurementDeletionConfirmationNotification(
+            "Selected immunopeptidomics measurements will be deleted", measurementIds.size());
+    notification.open();
+    notification.addConfirmListener(event -> {
+      deleteIpMeasurements(measurementIds);
+      notification.close();
+    });
+    notification.addCancelListener(event -> notification.close());
+  }
+
   private void deleteNgsMeasurements(Set<String> measurementIds) {
     var result = measurementService.deleteNgsMeasurements(context.projectId().orElseThrow(),
         measurementIds);
     result.onError(this::handleDeletionError);
-    result.onValue(ignored -> handleDeletionSuccessNgs());
+    result.onValue(ignored -> handleDeletionSuccessNgs(measurementIds.size()));
   }
 
   private void deletePxpMeasurements(Set<String> measurementIds) {
     var result = measurementService.deletePxpMeasurements(context.projectId().orElseThrow(),
         measurementIds);
     result.onError(this::handleDeletionError);
-    result.onValue(ignored -> handleDeletionSuccessPxp());
+    result.onValue(ignored -> handleDeletionSuccessPxp(measurementIds.size()));
+  }
+
+  private void deleteIpMeasurements(Set<String> measurementIds) {
+    var result = measurementService.deleteIpMeasurements(context.projectId().orElseThrow(),
+        measurementIds);
+    result.onError(this::handleDeletionError);
+    result.onValue(ignored -> handleDeletionSuccessIp(measurementIds.size()));
   }
 
   private void handleDeletionError(MeasurementDeletionException error) {
@@ -321,14 +388,29 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     showErrorNotification(errorMessage);
   }
 
-  private void handleDeletionSuccessNgs() {
+  private void handleDeletionSuccessNgs(int count) {
+    displayDeletionSuccess(count);
     updateComponentVisibility();
     measurementDetailsComponent.refreshNgs();
   }
 
-  private void handleDeletionSuccessPxp() {
+  private void handleDeletionSuccessPxp(int count) {
+    displayDeletionSuccess(count);
     updateComponentVisibility();
     measurementDetailsComponent.refreshPxp();
+  }
+
+  private void handleDeletionSuccessIp(int count) {
+    displayDeletionSuccess(count);
+    updateComponentVisibility();
+    measurementDetailsComponent.refreshIp();
+  }
+
+  private void displayDeletionSuccess(int numberOfDeleted) {
+    Toast toast = messageFactory.toast("measurement.deletion.successful",
+        new Object[]{numberOfDeleted},
+        getLocale());
+    toast.open();
   }
 
 
@@ -357,6 +439,23 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     inProgressToast.open();
 
     asyncService.measurementUpdateNGS(projectId.value(), selectedMeasurementIds, OPEN_XML)
+        .subscribe(result -> {
+          uiHandle.onUiAndPush(inProgressToast::close);
+          uiHandle.onUi(() -> triggerDownload(result));
+        }, error -> {
+          uiHandle.onUi(inProgressToast::close);
+          log.error(error.getMessage(), error);
+        }, () -> uiHandle.onUi(inProgressToast::close));
+  }
+
+  private void downloadIPMetadata(List<String> selectedMeasurementIds) {
+    ProjectId projectId = context.projectId().orElseThrow();
+    var inProgressToast = messageFactory.pendingTaskToast("measurement.preparing-download",
+        MessageSourceNotificationFactory.EMPTY_PARAMETERS, getLocale());
+
+    inProgressToast.open();
+
+    asyncService.measurementUpdateIP(projectId.value(), selectedMeasurementIds, OPEN_XML)
         .subscribe(result -> {
           uiHandle.onUiAndPush(inProgressToast::close);
           uiHandle.onUi(() -> triggerDownload(result));
@@ -478,6 +577,25 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
                   public Workbook getWorkbook() {
                     return ProteomicsWorkbooks.createRegistrationWorkbook();
                   }
+                }),
+            Map.entry(MeasurementTemplateSelectionComponent.Domain.Immunopeptidomics,
+                new WorkbookDownloadStreamProvider() {
+                  @Override
+                  public String getFilename() {
+                    return FileNameFormatter.formatWithVersion(
+                        "immunopeptidomics_measurement_registration_sheet",
+                        1, "xlsx");
+                  }
+
+                  @Override
+                  public Optional<Long> contentLength() {
+                    return Optional.empty();
+                  }
+
+                  @Override
+                  public Workbook getWorkbook() {
+                    return IPWorkbooks.createRegistrationWorkbook();
+                  }
                 })));
 
     var measurementRegistrationComponent = new MeasurementRegistrationComponent(templateComponent,
@@ -502,6 +620,25 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private void submitUpdateRequest(String projectId, UpdateRequestPackage updateRequestPackage) {
     submitUpdateRequestNGS(projectId, updateRequestPackage.updateInformationNGS);
     submitUpdateRequestPxP(projectId, updateRequestPackage.updateInformationPxP);
+    submitUpdateRequestIP(projectId, updateRequestPackage.updateInformationIP);
+  }
+
+  private void submitUpdateRequestIP(String projectId,
+      List<MeasurementUpdateInformationIP> updateInformationIP) {
+    if (updateInformationIP.isEmpty()) {
+      return;
+    }
+    var preparedRequests = mergeByPoolUpdateIP(updateInformationIP);
+    submitPreparedUpdateRequest(projectId, preparedRequests);
+  }
+
+  private List<MeasurementUpdateInformationIP> mergeByPoolUpdateIP(
+      List<MeasurementUpdateInformationIP> updateInformationIP) {
+    var processor = ProcessorRegistry.processorFor(MeasurementUpdateInformationIP.class);
+    if (processor == null) {
+      throw new IllegalStateException("No processor for MeasurementUpdateInformationIP");
+    }
+    return processor.process(updateInformationIP);
   }
 
   private void submitUpdateRequestPxP(String projectId,
@@ -544,6 +681,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
       RegistrationRequestPackage registrationRequestPackage) {
     submitRequestNGS(projectId, registrationRequestPackage.registrationInformationNGS());
     submitRequestPxP(projectId, registrationRequestPackage.registrationInformationPxP());
+    submitRequestIP(projectId, registrationRequestPackage.registrationInformationIP());
   }
 
   private void submitRequestPxP(String projectId,
@@ -561,38 +699,57 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     return processor.process(requests);
   }
 
+  private void submitRequestIP(String projectId,
+      List<MeasurementRegistrationInformationIP> requestList) {
+    if (requestList.isEmpty()) {
+      return;
+    }
+    var preparedRequests = mergeByPoolIP(requestList);
+    submitPreparedRequest(projectId, preparedRequests);
+  }
+
+  private static List<MeasurementRegistrationInformationIP> mergeByPoolIP(
+      List<MeasurementRegistrationInformationIP> requests) {
+    var processor = ProcessorRegistry.processorFor(MeasurementRegistrationInformationIP.class);
+    return processor.process(requests);
+  }
+
 
   private UpdateRequestPackage createUpdateRequestPackage(
       List<? extends ValidationRequestBody> validationRequests) {
     var requestsNGS = new ArrayList<MeasurementUpdateInformationNGS>();
     var requestsPxP = new ArrayList<MeasurementUpdateInformationPxP>();
+    var requestsIP = new ArrayList<MeasurementUpdateInformationIP>();
 
     for (var entry : validationRequests) {
       switch (entry) {
         case MeasurementUpdateInformationNGS info -> requestsNGS.add(info);
         case MeasurementUpdateInformationPxP info -> requestsPxP.add(info);
+        case MeasurementUpdateInformationIP info -> requestsIP.add(info);
         default -> throw new IllegalStateException(
             "Unexpected request body of type: " + entry.getClass().getName());
       }
     }
-    return new UpdateRequestPackage(requestsNGS, requestsPxP);
+    return new UpdateRequestPackage(requestsNGS, requestsPxP, requestsIP);
   }
 
   private RegistrationRequestPackage createRegistrationRequestPackage(
       List<? extends ValidationRequestBody> validationRequestBodies) {
     var requestsNGS = new ArrayList<MeasurementRegistrationInformationNGS>();
     var requestsPxP = new ArrayList<MeasurementRegistrationInformationPxP>();
+    var requestsIP = new ArrayList<MeasurementRegistrationInformationIP>();
 
     for (var entry : validationRequestBodies) {
       switch (entry) {
         case MeasurementRegistrationInformationNGS info -> requestsNGS.add(info);
         case MeasurementRegistrationInformationPxP info -> requestsPxP.add(info);
+        case MeasurementRegistrationInformationIP info -> requestsIP.add(info);
         default -> throw new IllegalStateException(
             "Unexpected request body of type: " + entry.getClass().getName());
       }
     }
 
-    return new RegistrationRequestPackage(requestsNGS, requestsPxP);
+    return new RegistrationRequestPackage(requestsNGS, requestsPxP, requestsIP);
   }
 
   private void submitPreparedRequest(String projectId,
@@ -672,7 +829,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   }
 
   private void processResults(int numberOfSuccesses, int numberOfRequests,
-      Consumer<Integer> onSuccess, IntConsumer onFailure) {
+      IntConsumer onSuccess, IntConsumer onFailure) {
     if (numberOfSuccesses > 0 && numberOfSuccesses == numberOfRequests) {
       // Only successful registrations
       onSuccess.accept(numberOfSuccesses);
@@ -828,22 +985,25 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
 
   record RegistrationRequestPackage(
       List<MeasurementRegistrationInformationNGS> registrationInformationNGS,
-      List<MeasurementRegistrationInformationPxP> registrationInformationPxP) {
+      List<MeasurementRegistrationInformationPxP> registrationInformationPxP,
+      List<MeasurementRegistrationInformationIP> registrationInformationIP) {
 
     public RegistrationRequestPackage {
       registrationInformationNGS = List.copyOf(Objects.requireNonNull(registrationInformationNGS));
       registrationInformationPxP = List.copyOf(Objects.requireNonNull(registrationInformationPxP));
+      registrationInformationIP = List.copyOf(Objects.requireNonNull(registrationInformationIP));
     }
 
   }
 
   record UpdateRequestPackage(List<MeasurementUpdateInformationNGS> updateInformationNGS,
-                              List<MeasurementUpdateInformationPxP> updateInformationPxP) {
+                              List<MeasurementUpdateInformationPxP> updateInformationPxP,
+                              List<MeasurementUpdateInformationIP> updateInformationIP) {
 
     public UpdateRequestPackage {
       updateInformationNGS = List.copyOf(Objects.requireNonNull(updateInformationNGS));
       updateInformationPxP = List.copyOf(Objects.requireNonNull(updateInformationPxP));
-
+      updateInformationIP = List.copyOf(Objects.requireNonNull(updateInformationIP));
     }
 
   }

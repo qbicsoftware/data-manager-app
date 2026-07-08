@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import life.qbic.projectmanagement.application.sample.SampleIdCodeEntry;
+import life.qbic.projectmanagement.domain.model.measurement.ImmunopeptidomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
@@ -44,6 +45,13 @@ public class MeasurementDomainService {
         .toList();
   }
 
+  public List<MeasurementId> addIPAll(
+      Map<ImmunopeptidomicsMeasurement, Collection<SampleIdCodeEntry>> ipMeasurementsMapping) {
+    measurementRepository.saveAllIP(ipMeasurementsMapping);
+    return ipMeasurementsMapping.keySet().stream().map(ImmunopeptidomicsMeasurement::measurementId)
+        .toList();
+  }
+
   public void deleteNgsById(Set<String> measurementIds) {
     measurementRepository.deleteAllNgs(measurementIds);
   }
@@ -61,6 +69,15 @@ public class MeasurementDomainService {
   public List<MeasurementId> updateNGSAll(List<NGSMeasurement> ngsMeasurements) {
     measurementRepository.updateAllNGS(ngsMeasurements);
     return ngsMeasurements.stream().map(NGSMeasurement::measurementId).toList();
+  }
+
+  public List<MeasurementId> updateIPAll(List<ImmunopeptidomicsMeasurement> ipMeasurements) {
+    measurementRepository.updateAllIP(ipMeasurements);
+    return ipMeasurements.stream().map(ImmunopeptidomicsMeasurement::measurementId).toList();
+  }
+
+  public void deleteIpById(Set<String> measurementIds) {
+    measurementRepository.deleteAllIP(measurementIds);
   }
 
   public enum ResponseCode {

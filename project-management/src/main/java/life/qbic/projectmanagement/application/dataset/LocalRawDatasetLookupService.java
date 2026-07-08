@@ -3,6 +3,7 @@ package life.qbic.projectmanagement.application.dataset;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.RawDatasetFilter;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.RawDatasetInformationIp;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.RawDatasetInformationNgs;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.RawDatasetInformationPxP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.SortRawData;
@@ -70,6 +71,19 @@ public class LocalRawDatasetLookupService {
   public List<RawDatasetInformationPxP> findAllPxP(String projectId, String experimentId,
       int offset, int limit, RawDatasetFilter filter) {
     return rawDatasetRepository.findAllPxP(experimentId, offset, limit, filter);
+  }
+
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
+  public Integer countAllIp(String projectId, String experimentId, RawDatasetFilter filter) {
+    return rawDatasetRepository.countIp(experimentId, filter);
+  }
+
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
+  public List<RawDatasetInformationIp> findAllIp(String projectId, String experimentId,
+      int offset, int limit, RawDatasetFilter filter) {
+    return rawDatasetRepository.findAllIp(experimentId, offset, limit, filter);
   }
 
   static class ServiceException extends RuntimeException {

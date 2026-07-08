@@ -19,7 +19,7 @@ import java.util.Objects;
 import java.util.Optional;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
-import org.eclipse.jetty.http.HttpStatus;
+import org.springframework.http.HttpStatus;
 
 /**
  * API for research organisation registry. ROR (https://ror.org/)
@@ -162,6 +162,9 @@ public interface RorApi {
       } catch (JsonProcessingException e) {
         log.error("Could not parse response from ROR.", e);
         return Optional.empty();
+      } catch (IOException e) {
+        log.error("Could not parse response from ROR.", e);
+        return Optional.empty();
       }
     }
 
@@ -229,7 +232,7 @@ public interface RorApi {
         throw new RorRequestException(e);
       }
 
-      if (result.statusCode() == HttpStatus.NOT_FOUND_404) {
+      if (result.statusCode() == HttpStatus.NOT_FOUND.value()) {
         log.warn("Organisation not found for " + request.uri());
         return RorResponse.empty();
       }
