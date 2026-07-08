@@ -2,7 +2,6 @@ package life.qbic.datamanager.views.identicon
 
 import life.qbic.datamanager.files.export.XLSXTemplateHelper
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
-import spock.lang.Ignore
 import spock.lang.Specification
 
 class XLSXTemplateHelperSpec extends Specification {
@@ -23,8 +22,6 @@ class XLSXTemplateHelperSpec extends Specification {
 
     }
 
-    //FIXME this test should not be ignored. Remind me before committing anyting.
-    @Ignore
     def "test that column reference works"() {
         given:
         XSSFWorkbook workbook = new XSSFWorkbook()
