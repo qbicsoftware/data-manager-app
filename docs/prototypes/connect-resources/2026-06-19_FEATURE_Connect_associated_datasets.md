@@ -103,8 +103,29 @@ Acceptance Criteria:
 -	If the synchronization is successful, the system informs users about the number of updated datasets
 -	If the synchronization fails, the system informs users about the failure and next steps.
 
-Missing topics
--	tbd
+
+Story 14 – Add credentials for an InvenioRDM instance
+
+As a researcher, I want to provide my access token for an available InvenioRDM instance, so that I can connect access-restricted resources in a project.
+
+Acceptance Criteria:
+- The system offers users a way in their account settings to configure InvenioRDM instances 
+- The system displays users available InvenioRDM instances to configure
+- Tokens are validated via the InvenioRDM instance
+- Users are informed that if the token is invalid, in which case the token must not be added to the user's account.
+- Users are informed that a valid token has been added and that the InvenioRDM instance is now connected
+- The system highlights a description of what the benefits of providing tokens for an InvenioRDM instance are (the connection of access-restricted datasets to a project) 
+
+
+Story 15 – Remove credentials for a configured InvenioRDM instance
+
+As a researcher, I want to remove my access token for an available InvenioRDM instance, because the token is not valid anymore.
+
+Acceptance Criteria:
+
+- After users execute a remove action, the token gets deleted from the system and the users cannot add access-restricted records from this InvenioRDM instance anymore to their projects
+- Users are informed that the token has been successfully removed 
+- The system displays users that the InvenioRDM instance is not configured anymore for access-restricted access 
 
 
 

@@ -1,3 +1,13 @@
 .analysis-type-combo-box::part(overlay) {
   width: 20rem;
 }
+
+/*
+ * The "Connect dataset" sidebar prototype uses a ComboBox inside a fixed-position
+ * sidebar panel at z-index 1000. Vaadin's base overlay uses a hard-coded z-index of
+ * 200. This rule, applied via setOverlayClassName(), raises the overlay above the
+ * sidebar so the dropdown is actually selectable.
+ */
+vaadin-combo-box-overlay.connect-dataset-sidebar-overlay {
+  z-index: 1001 !important;
+}
