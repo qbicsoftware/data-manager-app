@@ -64,7 +64,7 @@ public class UploadQualityControlDialog extends DialogWindow {
     contentUploadComponent.setMaxFileSize(Math.toIntExact(MAX_FILE_SIZE.toBytes()));
 
     // Vaadin's upload component setup
-    contentUploadComponent.setAcceptedFileTypes(
+    contentUploadComponent.setAcceptedMimeTypes(
         AllowedFileExtension.PDF.mimetype(),
         AllowedFileExtension.EXCEL.mimetype(),
         AllowedFileExtension.WORD.mimetype()

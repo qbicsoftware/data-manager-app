@@ -91,7 +91,8 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
 
     // Hooks the current UI during attach events for safe UI-thread task execution
     addAttachListener(event -> {
-      event.getUI().getPage().retrieveExtendedClientDetails(receiver -> {
+      event.getUI().getPage().getExtendedClientDetails()
+          .refresh(receiver -> {
         clientTimeZone.set(receiver.getTimeZoneId());
         clientTimeZoneOffset.set(receiver.getTimezoneOffset());
       });

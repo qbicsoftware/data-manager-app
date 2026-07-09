@@ -98,7 +98,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   @Override
   protected void onAttach(AttachEvent attachEvent) {
     super.onAttach(attachEvent);
-    attachEvent.getUI().getPage().retrieveExtendedClientDetails(
+    attachEvent.getUI().getPage().getExtendedClientDetails().refresh(
         receiver -> {
           clientTimeZoneOffset.set(receiver.getTimezoneOffset());
           clientTimeZone.set(receiver.getTimeZoneId());

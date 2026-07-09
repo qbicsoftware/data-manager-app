@@ -45,9 +45,9 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationIP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationNGS;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationPxP;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationIP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationNGS;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationPxP;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationIP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequest;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequestBody;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationResponse;
@@ -121,7 +121,7 @@ public class MeasurementUpload extends Div implements UserInput {
 
     // Set up the upload section
     var upload = new ContentUploadComponent(requireNonNull(uploadConfiguration));
-    upload.setAcceptedFileTypes(AcceptedFileType.allMimeTypes().toArray(String[]::new));
+    upload.setAcceptedMimeTypes(AcceptedFileType.allMimeTypes().toArray(String[]::new));
     upload.setMaxFileSize(DataSize.ofBytes(MAX_FILE_SIZE_BYTES));
     upload.addChangeListener(event ->
         {

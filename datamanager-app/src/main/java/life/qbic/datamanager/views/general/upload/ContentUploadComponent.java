@@ -274,8 +274,8 @@ public class ContentUploadComponent extends Div {
    * @param acceptedFileTypes array of accepted file type strings (MIME types or extensions)
    * @see Upload#setAcceptedFileTypes(String...)
    */
-  public void setAcceptedFileTypes(String... acceptedFileTypes) {
-    upload.setAcceptedFileTypes(acceptedFileTypes);
+  public void setAcceptedMimeTypes(String... acceptedFileTypes) {
+    upload.setAcceptedMimeTypes(acceptedFileTypes);
   }
 
   /**

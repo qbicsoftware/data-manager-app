@@ -130,7 +130,7 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
     validatedSampleMetadata = new HashMap<>();
 
     contentUploadComponent.setMaxFiles(1);
-    contentUploadComponent.setAcceptedFileTypes(
+    contentUploadComponent.setAcceptedMimeTypes(
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     contentUploadComponent.addUnspecificFailureListener(
         uploadFailed ->

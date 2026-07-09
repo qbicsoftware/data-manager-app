@@ -48,7 +48,7 @@ public class UploadPurchaseDialog extends DialogWindow {
     // Vaadin's upload component setup
     contentUploadComponent = new ContentUploadComponent(uploadConfiguration);
     contentUploadComponent.addUnspecificFailureListener(this::onUploadFailure);
-    contentUploadComponent.setAcceptedFileTypes(
+    contentUploadComponent.setAcceptedMimeTypes(
         AllowedFileExtension.PDF.mimetype()
     );
     contentUploadComponent.setMaxFileSize(MAX_FILE_SIZE);

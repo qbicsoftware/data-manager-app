@@ -63,7 +63,7 @@ public class UploadQualityControlDialog extends DialogWindow {
     // Vaadin's upload component setup
     contentUploadComponent = new ContentUploadComponent(uploadConfiguration);
     contentUploadComponent.addUnspecificFailureListener(this::onUploadFailure);
-    contentUploadComponent.setAcceptedFileTypes(
+    contentUploadComponent.setAcceptedMimeTypes(
         AllowedFileExtension.PDF.extension(), AllowedFileExtension.PDF.mimetype(),
         AllowedFileExtension.EXCEL.extension(), AllowedFileExtension.EXCEL.mimetype(),
         AllowedFileExtension.WORD.extension(), AllowedFileExtension.WORD.mimetype()

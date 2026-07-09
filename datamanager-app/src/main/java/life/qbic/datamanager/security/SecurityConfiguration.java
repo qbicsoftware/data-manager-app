@@ -3,7 +3,6 @@ package life.qbic.datamanager.security;
 import static com.vaadin.flow.spring.security.VaadinSecurityConfigurer.vaadin;
 import static java.util.Objects.requireNonNull;
 
-import com.vaadin.flow.spring.security.VaadinAwareSecurityContextHolderStrategyConfiguration;
 import com.vaadin.flow.spring.security.VaadinDefaultRequestCache;
 import life.qbic.datamanager.views.login.LoginLayout;
 import life.qbic.identity.application.security.QBiCPasswordEncoder;
@@ -12,7 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -21,7 +19,6 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 
 @EnableWebSecurity
 @Configuration
-@Import(VaadinAwareSecurityContextHolderStrategyConfiguration.class)
 public class SecurityConfiguration {
 
   final VaadinDefaultRequestCache defaultRequestCache;

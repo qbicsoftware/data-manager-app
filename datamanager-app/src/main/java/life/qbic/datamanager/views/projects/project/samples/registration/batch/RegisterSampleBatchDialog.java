@@ -104,7 +104,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
     validatedSampleMetadata = new HashMap<>();
 
     contentUploadComponent = new ContentUploadComponent(uploadConfiguration);
-    contentUploadComponent.setAcceptedFileTypes(
+    contentUploadComponent.setAcceptedMimeTypes(
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     contentUploadComponent.setMaxFiles(1);
     contentUploadComponent.setMaxFileSize(DataSize.ofBytes(MAX_FILE_SIZE));

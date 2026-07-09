@@ -3,12 +3,12 @@ package life.qbic.datamanager.views.general.confounding;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 
+import com.vaadin.flow.component.HasValidation;
 import com.vaadin.flow.component.customfield.CustomField;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.shared.HasClientValidation;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.BinderValidationStatus;
@@ -234,7 +234,7 @@ public class ConfoundingVariablesUserInput extends Div implements UserInput {
   }
 
   private static class ConfoundingVariableField extends CustomField<ConfoundingVariable> implements
-      HasClientValidation {
+      HasValidation {
 
     private VariableReference variableReference;
     private final TextField variableName;

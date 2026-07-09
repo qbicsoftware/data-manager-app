@@ -3,6 +3,7 @@ package life.qbic.datamanager.views.general.dialog;
 import static java.util.Objects.requireNonNull;
 
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.ModalityMode;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.router.BeforeLeaveEvent;
@@ -51,7 +52,7 @@ public class AppDialog extends Dialog implements BeforeLeaveObserver {
     super.getHeader().add(header);
     super.add(navigation);
     super.add(body);
-    setModal(true);
+    setModality(ModalityMode.STRICT);
     setCloseOnOutsideClick(false);
     setCloseOnEsc(false);
     // by default, the navigation is not visible.
