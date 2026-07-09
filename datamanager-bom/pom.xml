@@ -20,10 +20,11 @@
     <!--    custom properties, not spring boot managed-->
     <apache.poi.version>5.5.1</apache.poi.version>
     <docx4j.version>11.5.14</docx4j.version>
-    <jobrunr.version>7.3.2</jobrunr.version>
+    <jobrunr.version>7.5.3</jobrunr.version>
     <shedlock.version>6.10.0</shedlock.version>
     <vaadin.version>24.10.7</vaadin.version>
     <ro-crate-java.version>1.1.1</ro-crate-java.version>
+    <snakeyaml.version>2.5</snakeyaml.version>
 
     <!-- overwritten spring boot properties (need to be set in importing pom as well)-->
     <jakarta.persistence.version>3.2.0</jakarta.persistence.version>

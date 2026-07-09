@@ -54,7 +54,7 @@
     <spring-boot.version>3.5.16</spring-boot.version>
     <commons-lang3.version>3.18.0</commons-lang3.version>
     <artemis.version>2.55.0</artemis.version>
-
+    <snakeyaml.version>2.5</snakeyaml.version>
     <!--    SonarCloud properties for CI -->
     <sonar.host.url>https://sonarcloud.io</sonar.host.url>
     <sonar.organization>qbicsoftware</sonar.organization>
