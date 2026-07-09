@@ -55,7 +55,7 @@ public class DataManagerContextProvider implements AppContextProvider {
   @Override
   public String urlToSamplePage(String projectId, String experimentId) {
     try {
-      return baseUrlApplication.toURI().resolve(samplesEndpoint.formatted(experimentId, projectId))
+      return baseUrlApplication.toURI().resolve(samplesEndpoint.formatted(projectId, experimentId))
           .toURL()
           .toExternalForm();
     } catch (MalformedURLException | URISyntaxException e) {
