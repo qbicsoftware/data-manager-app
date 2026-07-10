@@ -20,6 +20,10 @@ PRD (docs/prd.md)
                     └── Implementation (code, PRs)
 ```
 
+Significant architectural decisions are recorded as **Architecture Decision Records (ADRs)** in
+[`docs/adr/`](docs/adr/README.md), which provide rationale and context that span across the
+traceability chain above.
+
 Stories are tracked in two places: `docs/features.md` (the stakeholder-facing, stable record) and
 GitHub issues (the implementation tracking record). When a story moves from draft (discussion in
 SharePoint Word doc) to approved (ready for implementation), it receives a stable Story ID and is
@@ -238,21 +242,45 @@ Rules:
 
 #### Story Lifecycle
 
-Stories move through a lifecycle from draft to implementation. This flow keeps the GitHub issue history clean and ensures stakeholders have a stable, reviewable document.
+Stories move through a lifecycle from draft to implementation. This flow keeps the GitHub issue
+history clean and ensures stakeholders have a stable, reviewable document.
 
-1. **Draft (Discussion)** — The story is captured in a SharePoint Word document or similar internal medium where discussion, refinement, and iteration happen. No stable ID is assigned. The story is not yet tracked in `docs/features.md`.
-2. **Approved (Ready for Implementation)** — The story is finalised, a stable `FEAT-<SLUG>-<NN>` ID is assigned, and it is:
-   - Written into `docs/features.md` with full narrative and acceptance criteria
-   - A GitHub issue is created (if it does not already exist) or an existing issue is updated with the stable ID in the title and body
-   - The status in `docs/features.md` is updated from 🔴 (Open) to 🟡 (In Progress) when implementation begins, and 🟢 (Done) when complete
-3. **Implementation** — Tasks are created in GitHub referencing the stable story ID (not the GitHub issue number). Implementation traces: Task → Story (stable ID) → Feature → Requirement → PRD.
+The lifecycle spans two **decoupled surfaces**, with the Product Owner as the handoff actor:
+
+- **Stakeholder space** (Word Online / SharePoint, email) — where stakeholders and the PO
+  draft and discuss stories. This material is PO-internal; developers do not read it.
+- **Developer space** (GitHub issues, `docs/features.md`) — where approved stories become
+  versioned, traceable specification that drives Tasks and implementation.
+
+The handoff between these two spaces is a deliberate, reviewable action performed by the PO:
+
+1. **Draft (Discussion)** — The story is drafted in stakeholder space (Word Online /
+   SharePoint) where the PO and stakeholders discuss, refine, and iterate. No stable ID is
+   assigned. The story is not yet tracked in GitHub or `docs/features.md`.
+2. **Approved (Ready for Implementation)** — The PO finalises the story, assigns a stable
+   `FEAT-<SLUG>-<NN>` ID, and performs the handoff:
+   - A Feature issue is created (if one does not already exist).
+   - A Story issue is created using `.github/ISSUE_TEMPLATE/story.yml`, with the stable ID in
+     the title and body, the parent Feature linked, and at least one `R-<NN>` referenced.
+   - The story is written into `docs/features.md` with full narrative and acceptance criteria.
+   - The status in `docs/features.md` starts at 🔴 (Open) and moves to 🟡 (In Progress) when
+     implementation begins, then 🟢 (Done) when complete.
+3. **Implementation** — Tasks are created in GitHub referencing the stable story ID (not the
+   GitHub issue number). Implementation traces:
+   Task → Story (stable ID) → Feature → Requirement → PRD.
 
 **Rules:**
 
 - A story must never be implemented without a stable ID in `docs/features.md`.
-- When a story was created on GitHub before this flow existed (e.g., old issue numbers), update the existing issue with the stable ID rather than creating a new one.
-- Tasks reference stories by their stable ID in the "Parent Story" field, not by GitHub issue number.
-- The GitHub issue remains the source of truth for implementation tracking (comments, sub-issues, assignees), but `docs/features.md` is the source of truth for story content (narrative, acceptance criteria).
+- When a story was created on GitHub before this flow existed (e.g., old issue numbers),
+  update the existing issue with the stable ID rather than creating a new one.
+- Tasks reference stories by their stable ID in the "Parent Story" field, not by GitHub issue
+  number.
+- The GitHub issue remains the source of truth for implementation tracking (comments,
+  sub-issues, assignees), but `docs/features.md` is the source of truth for story content
+  (narrative, acceptance criteria).
+- Post-approval changes to a story happen via a PR to `docs/features.md` and a corresponding
+  GitHub issue comment — not by editing the original Word Online draft.
 
 ---
 
@@ -665,7 +693,11 @@ When working on this codebase, an AI agent should:
    `finances`, or cross-cutting).
 2. **Identify the layer** (`domain`, `application`, `infrastructure`, `views`/UI).
 3. Check `ExceptionHandling.md` and `service_api.md` for patterns relevant to the change.
-4. Read existing tests in the same module before writing new code.
+4. **Check `docs/adr/README.md`** for existing ADRs that apply to the change area. If the change
+   is a significant architectural decision, consider creating a new ADR using the MADR template
+   at `docs/adr/templates/madr-template.md`. See [`docs/adr/README.md`](docs/adr/README.md) for
+   naming conventions and rules.
+5. Read existing tests in the same module before writing new code.
 
 ### Creating Features
 
@@ -677,11 +709,21 @@ When working on this codebase, an AI agent should:
 
 ### Creating Stories
 
-- Stories start as drafts (discussion/refinement in SharePoint Word or similar internal medium). They are NOT tracked in `docs/features.md` or GitHub while in draft.
-- When a story is finalised and approved for implementation: assign a stable `FEAT-<SLUG>-<NN>` ID, write it into `docs/features.md` with full narrative and acceptance criteria, and create or update the corresponding GitHub issue with the stable ID in the title and body.
-- For stories that were created on GitHub before this workflow existed, update the existing issue with the stable ID rather than creating a new one.
-- Tasks reference the story by its stable ID (e.g., `FEAT-IP-MEAS-01`), not by GitHub issue number.
-- If you are unsure whether a new Story is needed or an existing Feature should be extended, pause and ask a human reviewer.
+- Stories start as drafts in stakeholder space (Word Online / SharePoint, email) — PO-internal
+  material that developers do not read. They are NOT tracked in `docs/features.md` or GitHub
+  while in draft.
+- When a story is ready for handoff: the PO translates it into GitHub, using
+  `.github/ISSUE_TEMPLATE/story.yml`, assigns a stable `FEAT-<SLUG>-<NN>` ID, writes it into
+  `docs/features.md` with full narrative and acceptance criteria, and links it to the parent
+  Feature issue.
+- For stories that were created on GitHub before this workflow existed, update the existing
+  issue with the stable ID rather than creating a new one.
+- Tasks reference the story by their stable ID (e.g., `FEAT-IP-MEAS-01`), not by GitHub
+  issue number.
+- Post-approval changes happen via PR against `docs/features.md` — not by editing the Word
+  Online draft.
+- If you are unsure whether a new Story is needed or an existing Feature should be extended,
+  pause and ask a human reviewer.
 
 ### Making domain changes
 
@@ -732,6 +774,8 @@ An agent should pause and request human review/approval before:
 - Implementing a change that introduces new system capability not covered by an existing requirement.
 - Retiring or renaming a Feature slug once Stories reference it.
 - Splitting a Feature into multiple Features when Stories already reference the original Feature.
+- Creating a new Architecture Decision Record (ADR) — to ensure the decision is captured in the
+  correct format and the ADR index in `docs/adr/README.md` is updated.
 
 ---
 
@@ -742,6 +786,8 @@ An agent should pause and request human review/approval before:
 | `docs/requirements.md` | Authoritative requirement registry — all R/NFR/C requirements documented here; must be updated before new capabilities are implemented |
 | `docs/requirements-guide.md` | Authoring conventions for creating, editing, and retiring requirements |
 | `docs/features.md` | Stakeholder-facing features and user stories tracker — stable story records with narrative, acceptance criteria, and status; stories move here from draft once approved |
+| `docs/adr/README.md` | Architecture Decision Records index — naming rules, creation process, and list of ADRs |
+| `docs/adr/templates/madr-template.md` | MADR template for creating new ADRs (see [`docs/adr/README.md`](docs/adr/README.md)) |
 | `README.md` | Setup, configuration reference, how to run |
 | `ExceptionHandling.md` | Exception handling conventions (read before touching error handling) |
 | `service_api.md` | Service API design patterns (Mono/Flux, request/response shapes) |
