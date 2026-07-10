@@ -12,6 +12,8 @@ The vision is to simplify data management for the various assets that are usuall
 If the integration turns out to be successful, additional features like the direct creation of datasets on these InvenioRDM instances from within Data Manager can be put into focus and evaluation.
 Data Manager becomes the hub. InvenioRDM remains the publishing platform.
 The integration is based on FAIR Signposting, providing machine-actionable, machine-readable relationships between the project in Data Manager and the associated datasets on InvenioRDM. This demonstrates true FAIR integration — the connections are not manual bookmarks, but discoverable by other tools and services.
+
+> **⚠️ Note (2026-07-10):** The integration mechanism described above has been **revised**. FAIR Signposting cannot be used because of a severe bug in InvenioRDM's serialization of Signposting metadata; the fix is scheduled for a future major release that would delay the feature unacceptably. The current implementation uses **conventional API-based integration** against the InvenioRDM OpenAPI. See feature issue [#1466](https://github.com/qbicsoftware/data-manager-app/issues/1466) for the current design.
 Initial scope
 •	Target platforms: Zenodo and FDAT (University of Tübingen public InvenioRDM instance)
 

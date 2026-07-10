@@ -18,6 +18,8 @@ The vision is to simplify data management for the various assets that are usuall
 
 The integration is based on **FAIR Signposting**, providing machine-actionable, machine-readable relationships between the project in DataManager and the associated datasets on InvenioRDM. This demonstrates true FAIR integration — the connections are not manual bookmarks, but discoverable by other tools and services.
 
+> **⚠️ Note (2026-07-10):** The integration mechanism described above has been **revised**. FAIR Signposting cannot be used because of a severe bug in InvenioRDM's serialization of Signposting metadata; the fix is scheduled for a future major release that would delay the feature unacceptably. The current implementation uses **conventional API-based integration** against the InvenioRDM OpenAPI. See [`docs/adr/README.md`](./adr/README.md) and the linked feature issue for the formal decision once recorded.
+
 ### Initial scope
 
 - **Target platforms:** Zenodo and FDAT (University of Tübingen public InvenioRDM instance)
