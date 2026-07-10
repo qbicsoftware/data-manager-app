@@ -1,8 +1,869 @@
-/*
- * The "Connect dataset" sidebar prototype uses dialogs. Vaadin's base overlay
- * uses a hard-coded z-index of 200. This rule raises the dialog above the
- * sidebar panel (z-index: 1000).
- */
-vaadin-dialog-overlay.connect-dataset-sidebar-dialog {
-  z-index: 1001 !important;
+.dialog-window .confirm-button:hover::before {
+  opacity: 0.05;
+}
+
+vaadin-dialog-overlay::part(content) {
+  padding: 1rem 4rem 3rem 4rem;
+}
+
+vaadin-dialog-overlay::part(footer) {
+  padding: 1rem 4rem 1rem 0;
+}
+
+vaadin-dialog-overlay::part(header) {
+  padding: 2rem 4rem 1rem 4rem;
+}
+
+vaadin-dialog-overlay::part(title) {
+  margin-inline-start: 0;
+}
+
+.dialog-large::part(overlay) {
+  width: 66vw;
+}
+
+/* set the width of the notification */
+.notification-dialog::part(overlay) {
+  width: 36.75rem;
+}
+
+.notification-dialog .content {
+  width: 100%;
+}
+
+/* notification dialog header */
+.notification-dialog > [slot="header"] {
+  display: flex;
+  align-items: center;
+  justify-items: flex-start;
+  gap: var(--spacing-03);
+}
+
+.notification-dialog .title {
+  font-family: var(--lumo-font-family);
+  line-height: var(--lumo-line-height-m);
+  font-size: var(--lumo-font-size-xl);
+  margin: 0;
+}
+
+/*Vaadin currently does not allow to style the flex items within the footer.
+Since we want to remove the spacing between the cancel and confirm button we replace the flex setting with a grid layout*/
+.notification-dialog::part(footer) {
+  display: grid;
+  grid-auto-flow: column;
+}
+
+/* icon in header */
+.notification-dialog > [slot="header"] vaadin-icon {
+  width: 1.83rem;
+  height: 1.83rem;
+  margin: 0.46rem;
+  margin-inline-start: calc(var(--lumo-space-l) - var(--lumo-space-m));
+}
+
+.notification-dialog .error-icon {
+  fill: var(--lumo-error-color);
+}
+
+.notification-dialog .warning-icon {
+  fill: var(--lumo-warning-color);
+}
+
+.notification-dialog .info-icon {
+  fill: var(--lumo-primary-color);
+}
+
+/* experimental groups exist dialog on variable edit */
+.existing-groups-prevent-variable-edit .content .experimental-group-count {
+  font-weight: bold;
+}
+
+/* samples exist on variable edit */
+.existing-samples-prevent-variable-edit .content .sample-count {
+  font-weight: bold;
+}
+
+/* samples exist on group edit */
+.existing-samples-prevent-group-edit .content .sample-count {
+  font-weight: bold;
+}
+
+.add-personal-access-token-dialog::part(overlay) {
+  height: 50%;
+  min-width: 50vw;
+}
+
+.add-personal-access-token-dialog::part(content) {
+  display: flex;
+  flex-direction: column;
+}
+
+.add-personal-access-token-dialog .expiration-date {
+  width: 50%;
+}
+
+.add-user-to-project-dialog::part(overlay) {
+  height: clamp(700px, 100%, 700px);
+  width: clamp(700px, 100%, 700px);
+}
+
+.add-user-to-project-dialog::part(content) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-xl);
+}
+
+.add-user-to-project-dialog .person-selection-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-03);
+}
+
+.add-user-to-project-dialog .role-selection-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-03);
+}
+
+.add-user-to-project-dialog .section-title {
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-l);
+  font-weight: bold;
+}
+
+.add-experiment-dialog::part(overlay),
+.edit-experiment-dialog::part(overlay) {
+  width: 66vw;
+}
+
+.edit-experiment-content,
+.add-experiment-content {
+  padding-top: var(--lumo-space-m);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  gap: var(--lumo-space-m);
+  box-sizing: border-box;
+}
+
+.edit-experiment-content .header,
+.add-experiment-content .header {
+  font-weight: bold;
+}
+
+.edit-experiment-content .full-width-input,
+.add-experiment-content .full-width-input {
+  width: 100%;
+}
+
+.input-with-icon-selection {
+  display: inline-flex;
+  column-gap: 1rem;
+}
+
+.icon-and-component {
+  display: inline-flex;
+  justify-content: start;
+  align-items: flex-end;
+  column-gap: var(--lumo-space-m);
+}
+
+.box-flexgrow {
+  flex-grow: 1;
+}
+
+.edit-project-dialog .content {
+  max-width: 60vw;
+  padding-bottom: 1em;
+}
+
+.edit-project-dialog::part(overlay) {
+  width: 66vw;
+}
+
+.edit-project-dialog .funding-field .input-fields,
+.contact-field .input-fields {
+  display: flex;
+  gap: 1em;
+  align-items: baseline;
+}
+
+.contact-field .contact-selection,
+.contact-field .input-fields,
+.contact-field .input-fields > * {
+  width: 100%;
+}
+
+.contact-field .prefill-input-fields {
+  line-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: baseline;
+}
+
+.contact-field .prefill-input-fields .contact-self-select {
+  width: 36em;
+}
+
+.edit-project-dialog .form-content .contact-field .name-field {
+  flex-grow: 1;
+}
+
+.edit-project-dialog .form-content .contact-field .email-field {
+  flex-grow: 1;
+}
+
+.edit-project-dialog .project-contacts {
+  display: flex;
+  gap: 1em;
+  flex-direction: column;
+  flex-wrap: wrap;
+  margin: 0;
+  padding: var(--lumo-space-m) 0 0;
+}
+
+.experiment-group-dialog::part(overlay) {
+  width: 66%;
+}
+
+.experiment-group-dialog .number-field {
+  min-width: 175px;
+}
+
+.experiment-group-dialog .text-field {
+  min-width: 100px;
+}
+
+.experiment-group-dialog .experimental-group-entry {
+  display: grid;
+  grid: auto auto auto auto / auto 1fr 175px auto;
+  column-gap: 1rem;
+  align-items: baseline;
+}
+
+.experiment-variable-dialog vaadin-icon {
+  cursor: pointer;
+  color: var(--lumo-primary-color);
+}
+
+.experiment-group-dialog vaadin-icon {
+  cursor: pointer;
+  color: var(--lumo-primary-color);
+}
+
+.experiment-group-dialog .header {
+  font-weight: bold;
+}
+
+.experiment-variable-dialog .add-new-group-action {
+  display: flex;
+  column-gap: 1rem;
+  color: var(--lumo-primary-color)
+}
+
+.experiment-variable-dialog .add-new-group-action span {
+  cursor: pointer;
+}
+
+.experiment-variable-dialog .content {
+  display: flex;
+  flex-direction: column;
+}
+
+.experiment-group-dialog .add-new-group-action {
+  display: flex;
+  column-gap: 1rem;
+  color: var(--lumo-primary-color)
+}
+.experiment-group-dialog .add-new-group-action span {
+  cursor: pointer;
+}
+
+.experiment-group-dialog .content {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.experiment-group-dialog .content .group-collection {
+  display: grid;
+  gap: 1rem;
+}
+
+.experiment-variable-dialog .content .variables {
+  display: flex;
+  flex-direction: column;
+}
+
+.experiment-variable-dialog .content .variables .header {
+  font-weight: bold;
+}
+
+.experiment-variable-dialog .content .row {
+  display: flex;
+  align-items: baseline;
+  column-gap: var(--lumo-space-l);
+}
+
+
+.add-project-dialog::part(content) {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  /*Necessary so the dividers span the whole dialog*/
+  padding: 0;
+}
+
+.add-project-dialog::part(overlay) {
+  width: 66%;
+  height: 100%;
+}
+
+.add-project-dialog::part(footer) {
+  background-color: transparent;
+  justify-content: space-between;
+  padding-inline: 4rem;
+}
+
+.add-project-dialog .footer-right-buttons-container {
+  gap: var(--lumo-space-m);
+  display: inline-flex;
+}
+
+.add-project-dialog .collaborators-layout {
+  width: 100%;
+  height: 100%;
+  gap: 1em;
+  display: flex;
+  flex-direction: column;
+}
+
+.add-project-dialog .layout-container {
+  /*dialog content paddings*/
+  height: 100%;
+  padding: 1rem 4rem 3rem 4rem
+}
+
+.add-project-dialog .experiment-information-layout {
+  width: 100%;
+  height: 100%;
+  gap: 1em;
+  /*gap: var(--lumo-space-m)*/
+  display: flex;
+  /*display: inline-flex:*/
+  flex-direction: column;
+}
+
+.add-project-dialog .experiment-information-layout .experiment-name-field {
+  width: 50%
+}
+
+.add-project-dialog .funding-information-layout {
+  width: 100%;
+  height: 100%;
+  gap: 1em;
+  display: flex;
+  flex-direction: column;
+}
+
+.add-project-dialog .funding-information-layout .funding-field .grant-label-field {
+  min-width: 15vw;
+}
+
+.add-project-dialog .funding-information-layout .funding-field .input-fields {
+  width: 100%;
+  gap: var(--lumo-space-xl);
+  display: inline-flex;
+}
+
+.add-project-dialog .project-design-layout {
+  width: 100%;
+  height: 100%;
+  gap: 1em;
+  display: flex;
+  flex-direction: column;
+}
+
+.add-project-dialog .project-design-layout .description-field {
+  height: 100%;
+  width: 100%;
+  min-height: 15vh;
+}
+
+.add-project-dialog .project-design-layout .title-field {
+  width: 100%;
+  margin-left: var(--lumo-space-m);
+}
+
+.add-project-dialog .project-design-layout .code-field {
+  max-width: 20%;
+}
+
+.add-project-dialog .project-design-layout .search-field {
+  max-width: 30%;
+}
+
+.add-project-dialog .project-design-layout .code-and-title {
+  width: 100%;
+  gap: var(--spacing-03);
+  display: inline-flex;
+  align-items: baseline;
+}
+
+.change-user-details-dialog::part(overlay) {
+  min-width: fit-content;
+  min-height: fit-content;
+  width: 50%;
+  height: 50%;
+}
+
+.change-user-details-dialog .change-user-name {
+  width: 100%;
+}
+
+.measurement-pooled-samples-dialog::part(overlay) {
+  min-width: 50vw;
+}
+
+.measurement-pooled-samples-dialog::part(content) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-l);
+}
+
+.measurement-pooled-samples-dialog .pooled-measurement-details {
+  gap: var(--lumo-space-xs);
+  display: flex;
+  flex-direction: column;
+}
+
+.measurement-pooled-samples-dialog .pooled-measurement-details .pooled-detail {
+  gap: var(--spacing-03);
+  display: inline-flex;
+}
+
+.measurement-pooled-samples-dialog .pooled-measurement-details .pooled-detail .label {
+  color: var(--lumo-secondary-text-color);
+  font-weight: bold;
+}
+
+.measurement-upload-dialog::part(overlay),
+.register-samples-dialog::part(overlay),
+.edit-samples-dialog::part(overlay) {
+  min-width: 66%;
+  min-height: 66%;
+  max-height: 66%;
+  max-width: 66%;
+}
+
+.register-samples-dialog::part(overlay),
+.edit-samples-dialog::part(overlay) {
+  min-width: 66%;
+  min-height: 80%;
+  max-height: 80%;
+  max-width: 66%;
+}
+
+.measurement-upload-dialog::part(content) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-03);
+}
+
+.measurement-upload-dialog .upload-items-display {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+}
+
+.measurement-upload-dialog .upload-items-display .upload-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+}
+
+.measurement-upload-dialog .upload-items-display .upload-section .restrictions,
+.register-samples-dialog .restrictions,
+.edit-samples-dialog .restrictions {
+  font-size: smaller;
+  display: inline-flex;
+  justify-content: space-between;
+  color: var(--lumo-contrast-60pct);
+  column-gap: var(--lumo-space-s);
+  width: 100%;
+}
+
+.measurement-upload-dialog .upload-items-display .uploaded-items-section .section-title {
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-s);
+  font-weight: 500;
+}
+
+.measurement-upload-dialog.uploaded-items-description {
+  font-size: var(--lumo-font-size-s);
+}
+
+.measurement-upload-dialog .upload-items-display .uploaded-measurement-items,
+.register-samples-dialog .uploaded-items-section,
+.edit-samples-dialog .uploaded-items-section {
+  border: 1px solid var(--lumo-contrast-20pct);
+  border-radius: var(--lumo-border-radius-l);
+  display: flex;
+  flex-direction: column;
+}
+
+.measurement-upload-dialog .upload-items-display .uploaded-measurement-items .measurement-item,
+.register-samples-dialog .uploaded-items-section .uploaded-item,
+.edit-samples-dialog .uploaded-items-section .uploaded-item {
+  font-size: var(--lumo-font-size-s);
+  display: flex;
+  padding-top: var(--lumo-space-m);
+  padding-bottom: var(--lumo-space-s);
+  margin-inline: var(--lumo-space-m);
+  flex-direction: column;
+  row-gap: var(--lumo-space-m);
+}
+
+.measurement-upload-dialog .upload-items-display .uploaded-measurement-items .measurement-item {
+  border-bottom-color: var(--lumo-contrast-20pct);
+  border-bottom-style: solid;
+  border-width: 1px;
+}
+
+.measurement-upload-dialog .upload-items-display .uploaded-measurement-items .measurement-item .file-name,
+.register-samples-dialog .uploaded-items-section .uploaded-item .file-name,
+.edit-samples-dialog .uploaded-items-section .uploaded-item .file-name {
+  display: inline-flex;
+  align-items: center;
+  column-gap: var(--lumo-space-s);
+}
+
+.measurement-upload-dialog .upload-items-display .uploaded-measurement-items .measurement-item .file-icon,
+.register-samples-dialog .uploaded-items-section .uploaded-item .file-icon,
+.edit-samples-dialog .uploaded-items-section .uploaded-item .file-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  font-size: smaller;
+  color: var(--lumo-tertiary-text-color);
+}
+
+.measurement-upload-dialog .upload-items-display .uploaded-measurement-items .measurement-item .validation-display-box,
+.register-samples-dialog .uploaded-items-section .uploaded-item .validation-display-box,
+.edit-samples-dialog .uploaded-items-section .uploaded-item .validation-display-box {
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--lumo-space-s);
+  background-color: var(--lumo-contrast-5pct);
+  padding-inline: var(--lumo-space-m);
+  padding-top: var(--lumo-space-xs);
+  padding-bottom: var(--lumo-space-xs);
+  border-radius: var(--lumo-border-radius-m);
+}
+
+.measurement-upload-dialog .upload-items-display .uploaded-measurement-items .measurement-item .validation-display-box .header,
+.register-samples-dialog .uploaded-items-section .uploaded-item .validation-display-box .header,
+.edit-samples-dialog .uploaded-items-section .uploaded-item .validation-display-box .header {
+  font-size: small;
+  align-items: center;
+  display: inline-flex;
+  column-gap: var(--lumo-space-s);
+  font-weight: bold;
+}
+
+.measurement-upload-dialog .upload-items-display .uploaded-measurement-items .measurement-item .validation-display-box .invalid-measurement-list,
+.register-samples-dialog .uploaded-items-section .uploaded-item .validation-display-box .invalid-list,
+.edit-samples-dialog .uploaded-items-section .uploaded-item .validation-display-box .invalid-list {
+  padding-left: var(--lumo-space-m);
+}
+
+.measurement-upload-dialog .upload-items-display .uploaded-measurement-items .measurement-item:last-child {
+  border-style: none;
+}
+
+.measurement-upload-dialog .upload-progress-display {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+}
+
+.measurement-upload-dialog .upload-progress-display .display-box {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+  border-radius: var(--lumo-border-radius-l);
+  border: 1px solid var(--lumo-contrast-20pct);
+  padding: var(--lumo-space-m);
+  margin-top: var(--lumo-space-s);
+}
+
+.measurement-upload-dialog .upload-progress-display .display-box .description {
+  display: inline-flex;
+  gap: var(--lumo-space-s);
+  align-items: center;
+}
+
+.project-information-dialog::part(overlay) {
+  width: 66vw;
+}
+
+.project-information-dialog .define-project-content {
+  width: 100%;
+  height: 100%;
+  gap: 1em;
+  display: flex;
+  flex-direction: column;
+}
+
+.project-information-dialog .define-project-content .information {
+  display: flex;
+  flex-direction: column;
+}
+
+.project-information-dialog .define-project-content .contacts {
+  display: flex;
+  flex-direction: column;
+}
+
+
+.purchase-item-upload::part(overlay) {
+  width: 50%;
+  min-width: 400px;
+}
+
+
+vaadin-upload-file::part(meta){
+  font-size: smaller;
+}
+
+.purchase-item-upload::part(content) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+}
+
+.purchase-item-upload .restrictions {
+  font-size: smaller;
+  display: flex;
+  justify-content: space-between;
+  color: var(--lumo-contrast-60pct);
+}
+
+.purchase-item-upload .section-title {
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-s);
+  font-weight: 500;
+}
+
+
+.purchase-item-upload .uploaded-items-description {
+  font-size: var(--lumo-font-size-s);
+}
+
+
+.quality-control-upload::part(content) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+}
+
+.quality-control-upload .restrictions {
+  font-size: smaller;
+  display: inline-flex;
+  justify-content: space-between;
+  color: var(--lumo-contrast-60pct);
+  column-gap: var(--lumo-space-s);
+}
+
+.quality-control-upload.section-title {
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-s);
+  font-weight: 500;
+}
+
+.quality-control-upload .uploaded-items-description {
+  font-size: var(--lumo-font-size-s);
+}
+
+.uploaded-quality-control-items {
+  border: 1px solid var(--lumo-contrast-20pct);
+  border-radius: var(--lumo-border-radius-l);
+  display: flex;
+  flex-direction: column;
+}
+
+.uploaded-quality-control-items .quality-control-item {
+  border-bottom-color: var(--lumo-contrast-20pct);
+  border-bottom-style: solid;
+  border-width: 1px;
+  font-size: var(--lumo-font-size-s);
+  display: flex;
+  padding-top: var(--lumo-space-m);
+  padding-bottom: var(--lumo-space-s);
+  margin-inline: var(--lumo-space-m);
+  flex-direction: column;
+  row-gap: var(--lumo-space-s);
+}
+
+.uploaded-quality-control-items .quality-control-item .file-name {
+  display: inline-flex;
+  align-items: center;
+  column-gap: var(--lumo-space-xs);
+}
+
+.uploaded-quality-control-items .quality-control-item .file-icon {
+  display: inline-flex;
+  font-size: smaller;
+  flex-shrink: 0;
+  color: var(--lumo-tertiary-text-color);
+}
+
+.uploaded-quality-control-items .quality-control-item:last-child {
+  border-style: none;
+}
+
+.uploaded-quality-control-items .quality-control-item .offer-icon {
+  background-color: #4CADE8;
+  display: inline-flex;
+  font-size: var(--lumo-font-size-xs);
+  color: white;
+  padding-inline: var(--lumo-space-xs);
+  border-radius: var(--lumo-border-radius-s);
+}
+
+.uploaded-purchase-items {
+  border: 1px solid var(--lumo-contrast-20pct);
+  border-radius: var(--lumo-border-radius-l);
+  display: flex;
+  flex-direction: column;
+}
+
+.uploaded-purchase-items .purchase-item {
+  border-bottom-color: var(--lumo-contrast-20pct);
+  border-bottom-style: solid;
+  border-width: 1px;
+  font-size: var(--lumo-font-size-s);
+  display: flex;
+  padding-top: var(--lumo-space-m);
+  padding-bottom: var(--lumo-space-s);
+  margin-inline: var(--lumo-space-m);
+  flex-direction: column;
+  row-gap: var(--lumo-space-s);
+}
+
+.uploaded-purchase-items .purchase-item .file-name {
+  display: inline-flex;
+  align-items: center;
+  column-gap: var(--lumo-space-xs);
+}
+
+.uploaded-purchase-items .purchase-item .file-icon {
+  display: inline-flex;
+  font-size: smaller;
+  flex-shrink: 0;
+  color: var(--lumo-tertiary-text-color);
+}
+
+.uploaded-purchase-items .purchase-item:last-child {
+  border-style: none;
+}
+
+.uploaded-purchase-items .purchase-item .signature-box {
+  display: inline-flex;
+  column-gap: var(--lumo-space-xs);
+}
+
+.uploaded-purchase-items .purchase-item .offer-icon {
+  background-color: #4CADE8;
+  display: inline-flex;
+  font-size: var(--lumo-font-size-xs);
+  color: white;
+  padding-inline: var(--lumo-space-xs);
+  border-radius: var(--lumo-border-radius-s);
+}
+
+.register-samples-dialog .batch-name-field label,
+.edit-samples-dialog .batch-name-field label,
+.register-samples-dialog .section-title,
+.edit-samples-dialog .section-title {
+  /*font-size: var(--lumo-font-size-l);*/
+  font-weight: bold;
+  color: var(--lumo-secondary-text-color);
+  margin-bottom: var(--lumo-space-s);
+}
+
+.register-samples-dialog .section-with-title,
+.edit-samples-dialog .section-with-title {
+  display: flex;
+  flex-direction: column;
+}
+
+.register-samples-dialog .download-metadata-section-content,
+.edit-samples-dialog .download-metadata-section-content {
+  border: 1px solid var(--lumo-contrast-20pct);
+  border-radius: var(--lumo-border-radius-l);
+  display: flex;
+  flex-direction: row;
+  padding: 1em;
+  align-content: baseline;
+  column-gap: var(--lumo-space-m);
+  align-items: center;
+}
+
+.register-samples-dialog .initial-view,
+.edit-samples-dialog .initial-view {
+  display: grid;
+  row-gap: var(--lumo-space-m);
+}
+
+.register-samples-dialog .batch-name-field,
+.edit-samples-dialog .batch-name-field {
+  max-width: 50%;
+}
+
+.register-samples-dialog .validation-display-box,
+.edit-samples-dialog .validation-display-box {
+  display: grid;
+}
+
+.register-samples-dialog .in-progress-view,
+.register-samples-dialog .failed-view,
+.register-samples-dialog .succeeded-view,
+.register-samples-dialog .upload-with-display,
+.edit-samples-dialog .in-progress-view,
+.edit-samples-dialog .failed-view,
+.edit-samples-dialog .succeeded-view,
+.edit-samples-dialog .upload-with-display {
+  display: grid;
+  row-gap: var(--lumo-space-m);
+}
+
+.register-samples-dialog .content-part > .title,
+.edit-samples-dialog .content-part > .title {
+  font-size: larger;
+  font-weight: bold;
+  color: var(--lumo-secondary-text-color);
+}
+
+.register-samples-dialog .content-part > .body.success-box,
+.edit-samples-dialog .content-part > .body.success-box {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  column-gap: var(--lumo-space-s);
+}
+
+.register-samples-dialog .content-part > .body.error-box,
+.edit-samples-dialog .content-part > .body.error-box {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  column-gap: var(--lumo-space-s);
+}
+
+.register-samples-dialog .content-part[highlighted],
+.edit-samples-dialog .content-part[highlighted] {
+  border: solid var(--lumo-contrast-20pct) 2px;
+  border-radius: var(--lumo-border-radius-l);
+  padding: var(--lumo-space-m);
 }
