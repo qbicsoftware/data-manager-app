@@ -17,6 +17,7 @@ import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
+import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.router.Route;
@@ -25,8 +26,10 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import life.qbic.datamanager.views.general.InfoBox;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.Tag.TagColor;
@@ -58,6 +61,12 @@ import org.springframework.context.annotation.Profile;
  * </ul>
  *
  * <p>Covers user stories 01–08 from the feature specification.</p>
+ *
+ * <p><b>Stories 14 & 15 (credential management):</b> A dedicated section below the
+ * connected resources grid allows users to configure InvenioRDM instances by adding or
+ * removing Personal Access Tokens. Configuring a token unlocks access to restricted
+ * datasets on that instance; removing it revokes that access. Token validation is
+ * simulated in this prototype.</p>
  *
  * <p>This view is only available with the {@code development} profile.</p>
  *
@@ -178,9 +187,73 @@ public class AssociatedDatasetsDemoV2 extends Div {
           "Discovery-phase proteomics data. Under peer review.")
   );
 
+  // ── InvenioRDM instance definitions & credential state ────────────────
+
+  /**
+   * An InvenioRDM instance available for credential configuration.
+   * Users can store a Personal Access Token for each instance to access
+   * restricted datasets.
+   */
+  record InvenioRDMInstance(
+      String id,
+      String displayName,
+      String shortName,
+      String baseUrl,
+      String description,
+      String tokenSetupUrl
+  ) {}
+
+  /**
+   * A stored credential (Personal Access Token) for an InvenioRDM instance.
+   * The actual token value is never held in memory as plaintext in the UI;
+   * only a masked representation is displayed.
+   */
+  record RepositoryCredential(
+      String instanceId,
+      String maskedToken,
+      LocalDate addedOn
+  ) {}
+
+  /**
+   * InvenioRDM instances that users can configure with credentials.
+   */
+  private static final List<InvenioRDMInstance> AVAILABLE_INSTANCES = List.of(
+      new InvenioRDMInstance(
+          "zenodo",
+          "Zenodo (zenodo.org)",
+          "Zenodo",
+          "https://zenodo.org",
+          "Open-access research data repository operated by CERN. Widely accepted "
+              + "by journals and funders; any researcher can deposit datasets and "
+              + "receive a DOI.",
+          "https://zenodo.org/account/settings/applications/tokens/new/"
+      ),
+      new InvenioRDMInstance(
+          "fdat",
+          "FDAT (fdat.uni-tuebingen.de)",
+          "FDAT",
+          "https://fdat.uni-tuebingen.de",
+          "InvenioRDM instance operated by the University of Tübingen. Provides "
+              + "FAIR-compliant publishing for institutional and collaborative "
+              + "research datasets.",
+          "https://fdat.uni-tuebingen.de/account/settings/applications/tokens/new/"
+      )
+  );
+
   // ── Mutable state ─────────────────────────────────────────────────────
 
   private final List<ConnectedResource> connectedResources = new ArrayList<>();
+
+  /**
+   * Maps InvenioRDM instance IDs (e.g. "zenodo") to their stored credentials.
+   * An entry present in this map means the instance is fully configured and
+   * the user can search restricted datasets on it.
+   */
+  private final Map<String, RepositoryCredential> configuredCredentials = new HashMap<>();
+
+  /** Content container for the credentials section — rebuildable when state changes. */
+  private Div credentialsContentContainer;
+
   private Grid<ConnectedResource> resourcesGrid;
   private final TextField searchField = new TextField();
   private final ComboBox<String> instanceSelector = new ComboBox<>();
@@ -214,10 +287,19 @@ public class AssociatedDatasetsDemoV2 extends Div {
     add(subtitle);
     add(new Div()); // spacer
 
-    // ── Main content: Connected Resources section ───────────────────
+    // ── Seed credentials BEFORE building the section so the cards
+    //     render in their correct configured / unconfigured state.
+    //     Zenodo is pre-configured; FDAT is intentionally left empty
+    //     so the demo shows both card states side-by-side.
+    seedCredentials();
+
+    // ── Main content: Connected Resources section ──────────────────
     add(buildConnectedResourcesSection());
 
-    // ── Sidebar overlay + panel (initially hidden) ──────────────────
+    // ── Repository credentials section (stories 14 & 15) ─────────
+    add(buildRepositoryCredentialsSection());
+
+    // ── Sidebar overlay + panel (initially hidden) ────────────────
     buildConnectSidebar();
   }
 
@@ -1151,5 +1233,513 @@ public class AssociatedDatasetsDemoV2 extends Div {
         "Dataset", null,
         null,
         "seed-05", LocalDate.of(2025, 6, 20), false));
+  }
+
+  // ══════════════════════════════════════════════════════════════════════
+  //  REPOSITORY CREDENTIALS — Account Settings (Stories 14 & 15)
+  // ══════════════════════════════════════════════════════════════════════
+
+  /**
+   * Builds the "Repository Access" section that lets users configure
+   * InvenioRDM instances with Personal Access Tokens (Story 14) and remove
+   * them again (Story 15). Each available instance is shown as a card with
+   * its connection status and an appropriate action button.
+   */
+  private Section buildRepositoryCredentialsSection() {
+    var section = new Section.SectionBuilder().build();
+
+    var header = new SectionHeader(
+        new SectionTitle("Repository Access — Account Settings"),
+        new ActionBar(),
+        new SectionNote(
+            "Connect your personal access tokens for InvenioRDM repositories. "
+                + "A valid token enables Data Manager to search and connect "
+                + "access-restricted datasets from that repository to your projects. "
+                + "Public datasets are always accessible without a token.")
+    );
+    header.enableControls();
+    section.setHeader(header);
+
+    var content = new SectionContent();
+
+    credentialsContentContainer = new Div();
+    credentialsContentContainer.addClassNames("flex-vertical", "gap-03");
+    refreshCredentialsContent();
+    content.add(credentialsContentContainer);
+
+    section.setContent(content);
+    return section;
+  }
+
+  /**
+   * Rebuilds the cards inside {@link #credentialsContentContainer} to reflect
+   * the current state of {@link #configuredCredentials}. Called after tokens
+   * are added or removed.
+   */
+  private void refreshCredentialsContent() {
+    credentialsContentContainer.removeAll();
+
+    // Benefits description — shown once at the top of the section
+    var benefitsCallout = new Div();
+    benefitsCallout.addClassNames("border", "rounded-02");
+    benefitsCallout.getStyle().set("padding",
+        "var(--lumo-space-m) var(--lumo-space-l)");
+    benefitsCallout.getStyle().set("background-color",
+        "var(--lumo-primary-color-10pct)");
+    benefitsCallout.getStyle().set("border-color",
+        "var(--lumo-primary-color-30pct)");
+    benefitsCallout.getStyle().set("margin-bottom", "var(--lumo-space-s)");
+
+    var benefitsHeader = new Div();
+    benefitsHeader.addClassNames("flex-horizontal", "gap-02", "items-center");
+    var benefitsIcon = VaadinIcon.LIGHTBULB.create();
+    benefitsIcon.getStyle().set("color", "var(--lumo-primary-color)");
+    var benefitsTitle = new Span(
+        "Why configure repository access?");
+    benefitsTitle.getStyle().set("font-weight", "600");
+    benefitsTitle.addClassName("normal-body-text");
+    benefitsHeader.add(benefitsIcon, benefitsTitle);
+    benefitsCallout.add(benefitsHeader);
+
+    var benefitsList = new Div();
+    benefitsList.getStyle().set("margin-top", "var(--lumo-space-xs)");
+    benefitsList.getStyle().set("padding-left", "var(--lumo-space-l)");
+    benefitsList.getElement().setProperty("innerHTML",
+        "<ul style='margin:0;padding-left:1.2em;'>"
+            + "<li style='margin-bottom:var(--lumo-space-xxs);'>"
+            + "Search and connect <b>access-restricted datasets</b> "
+            + "to your projects (e.g. datasets under embargo or with controlled access)</li>"
+            + "<li style='margin-bottom:var(--lumo-space-xxs);'>"
+            + "Keep an overview of <b>all associated data</b> — public and restricted — "
+            + "in a single place</li>"
+            + "<li style='margin-bottom:var(--lumo-space-xxs);'>"
+            + "Collaborate with your team on datasets that are not yet publicly visible</li>"
+            + "<li>Your token is stored <b>encrypted in the system vault</b> and is only "
+            + "used to query the repository on your behalf.</li>"
+            + "</ul>");
+    benefitsList.addClassName("normal-body-text");
+    benefitsCallout.add(benefitsList);
+    credentialsContentContainer.add(benefitsCallout);
+
+    // One card per InvenioRDM instance
+    for (var instance : AVAILABLE_INSTANCES) {
+      credentialsContentContainer.add(buildInstanceCard(instance));
+    }
+  }
+
+  /**
+   * Builds a card for a single InvenioRDM instance showing its connection status
+   * and the appropriate action button (Configure or Remove).
+   */
+  private Div buildInstanceCard(InvenioRDMInstance instance) {
+    var card = new Div();
+    card.addClassNames("border", "rounded-02");
+    card.getStyle().set("padding", "var(--lumo-space-m) var(--lumo-space-l)");
+
+    boolean isConfigured = configuredCredentials.containsKey(instance.id());
+
+    // ── Top row: icon + name + status badge ───────────────────────
+    var topRow = new Div();
+    topRow.addClassNames("flex-horizontal", "items-center", "gap-03");
+    topRow.getStyle().set("margin-bottom", "var(--lumo-space-xs)");
+
+    var repoIcon = VaadinIcon.CLOUD.create();
+    repoIcon.getStyle().set("font-size", "var(--lumo-icon-size-m)");
+    repoIcon.getStyle().set("color",
+        "Zenodo".equals(instance.shortName())
+            ? "var(--lumo-primary-color)"
+            : "var(--lumo-success-color)");
+    topRow.add(repoIcon);
+
+    var nameAndDesc = new Div();
+    nameAndDesc.addClassNames("flex-vertical", "gap-01");
+    nameAndDesc.getStyle().set("flex-grow", "1");
+
+    var nameSpan = new Span(instance.displayName());
+    nameSpan.getStyle().set("font-weight", "600");
+    nameSpan.addClassName("normal-body-text");
+    nameAndDesc.add(nameSpan);
+    topRow.add(nameAndDesc);
+
+    // Status badge
+    if (isConfigured) {
+      var connectedBadge = new Tag("\u2713 Connected");
+      connectedBadge.setTagColor(TagColor.SUCCESS);
+      topRow.add(connectedBadge);
+    } else {
+      var notConfiguredBadge = new Tag("Not configured");
+      notConfiguredBadge.setTagColor(TagColor.CONTRAST);
+      topRow.add(notConfiguredBadge);
+    }
+    card.add(topRow);
+
+    // ── Description ────────────────────────────────────────────────
+    var descSpan = new Span(instance.description());
+    descSpan.addClassName("extra-small-body-text");
+    descSpan.addClassName("color-secondary");
+    descSpan.getStyle().set("display", "block");
+    descSpan.getStyle().set("margin-bottom", "var(--lumo-space-s)");
+    card.add(descSpan);
+
+    // ── Bottom row: details (if configured) + action button ────────
+    var bottomRow = new Div();
+    bottomRow.addClassNames("flex-horizontal", "items-center");
+    bottomRow.getStyle().set("gap", "var(--lumo-space-s)");
+
+    if (isConfigured) {
+      RepositoryCredential credential = configuredCredentials.get(instance.id());
+
+      var detailsWrapper = new Div();
+      detailsWrapper.addClassNames("flex-horizontal", "gap-04", "items-center");
+      detailsWrapper.getStyle().set("flex-grow", "1");
+
+      var tokenInfo = new Span(
+          "Token: " + credential.maskedToken()
+              + "  |  Added: "
+              + credential.addedOn().format(
+                  DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.ENGLISH)));
+      tokenInfo.addClassName("extra-small-body-text");
+      tokenInfo.addClassName("color-secondary");
+      detailsWrapper.add(tokenInfo);
+
+      var removeButton = new Button("Remove",
+          VaadinIcon.TRASH.create());
+      removeButton.addThemeVariants(
+          ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_TERTIARY);
+      removeButton.setTooltipText(
+          "Remove the stored token for " + instance.shortName()
+              + ". Restricted datasets from this instance will no longer "
+              + "be accessible.");
+      removeButton.addClickListener(
+          e -> openRemoveTokenDialog(instance));
+      bottomRow.add(detailsWrapper, removeButton);
+    } else {
+      var hintText = new Span(
+          "No personal access token configured for this repository.");
+      hintText.addClassName("extra-small-body-text");
+      hintText.addClassName("color-secondary");
+      hintText.getStyle().set("flex-grow", "1");
+
+      var configureButton = new Button("Configure",
+          VaadinIcon.PLUS_CIRCLE.create());
+      configureButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+      configureButton.setTooltipText(
+          "Add a personal access token to connect restricted datasets from "
+              + instance.shortName() + ".");
+      configureButton.addClickListener(
+          e -> openAddTokenDialog(instance));
+      bottomRow.add(hintText, configureButton);
+    }
+    card.add(bottomRow);
+
+    return card;
+  }
+
+  // ── Add Token Dialog (Story 14) ────────────────────────────────────────
+
+  /**
+   * Opens a dialog that lets the user add a Personal Access Token for the
+   * given InvenioRDM instance. Token validation is simulated in this
+   * prototype — any non-empty token is accepted.
+   */
+  private void openAddTokenDialog(InvenioRDMInstance instance) {
+    var dialog = new com.vaadin.flow.component.dialog.Dialog();
+    dialog.setHeaderTitle("Connect " + instance.displayName());
+    dialog.setWidth("520px");
+    dialog.setCloseOnOutsideClick(false);
+
+    var content = new Div();
+    content.addClassNames("flex-vertical", "gap-03");
+    content.getStyle().set("padding",
+        "var(--lumo-space-s) var(--lumo-space-m)");
+
+    // Explanation
+    var introText = new Div();
+    introText.addClassName("normal-body-text");
+    introText.getElement().setProperty("innerHTML",
+        "To connect access-restricted datasets from <b>" + instance.shortName()
+            + "</b>, provide a Personal Access Token from your "
+            + instance.shortName() + " account. The token is validated against "
+            + "the repository and stored securely.");
+    content.add(introText);
+
+    // Token input
+    var tokenField = new PasswordField();
+    tokenField.setLabel("Personal Access Token");
+    tokenField.setPlaceholder("Paste your token here…");
+    tokenField.setWidthFull();
+    tokenField.setRequiredIndicatorVisible(true);
+    tokenField.setHelperText(
+        "Generate a token in your " + instance.shortName()
+            + " account settings.");
+    content.add(tokenField);
+
+    // Helper link to the token creation page
+    var tokenSetupLink = new Anchor(instance.tokenSetupUrl(),
+        "Open " + instance.shortName() + " token settings \u2192");
+    tokenSetupLink.setTarget(AnchorTarget.BLANK);
+    tokenSetupLink.addClassName("extra-small-body-text");
+    content.add(tokenSetupLink);
+
+    // Token status feedback area
+    var statusArea = new Div();
+    statusArea.getStyle().set("display", "none");
+    statusArea.getStyle().set("padding", "var(--lumo-space-s)");
+    statusArea.getStyle().set("border-radius", "var(--lumo-border-radius-m)");
+    content.add(statusArea);
+
+    // Validation hint
+    var validationHint = new Div();
+    validationHint.addClassName("extra-small-body-text");
+    validationHint.addClassName("color-secondary");
+    validationHint.getStyle().set("font-style", "italic");
+    validationHint.setText(
+        "In this prototype, any non-empty token is accepted. "
+            + "In production, the token is validated against the "
+            + "InvenioRDM REST API.");
+    content.add(validationHint);
+
+    // Security note
+    var securityNote = new Div();
+    securityNote.addClassNames("flex-horizontal", "gap-02");
+    securityNote.getStyle().set("padding",
+        "var(--lumo-space-xs) var(--lumo-space-s)");
+    securityNote.getStyle().set("background-color",
+        "var(--lumo-contrast-5pct)");
+    securityNote.getStyle().set("border-radius",
+        "var(--lumo-border-radius-m)");
+    var lockIcon = VaadinIcon.LOCK.create();
+    lockIcon.getStyle().set("color", "var(--lumo-success-color)");
+    lockIcon.getStyle().set("font-size", "var(--lumo-icon-size-s)");
+    var lockText = new Span(
+        "Your token is stored encrypted in the system vault. "
+            + "It never leaves the platform and is only used to query "
+            + instance.shortName() + " on your behalf.");
+    lockText.addClassName("extra-small-body-text");
+    lockText.addClassName("color-secondary");
+    securityNote.add(lockIcon, lockText);
+    content.add(securityNote);
+
+    dialog.add(content);
+
+    // Build footer buttons — button is created first, then the listener is
+    // added in a separate step so the lambda can safely reference it.
+    Button connectBtn = new Button("Validate & Connect");
+    connectBtn.addClickListener(e -> {
+          String tokenValue = tokenField.getValue();
+          if (tokenValue == null || tokenValue.isBlank()) {
+            // Show error in status area
+            statusArea.removeAll();
+            statusArea.getStyle().set("display", "block");
+            statusArea.getStyle().set("background-color",
+                "var(--lumo-error-color-10pct)");
+            statusArea.getStyle().set("border",
+                "1px solid var(--lumo-error-color)");
+            var errRow = new Div();
+            errRow.addClassNames("flex-horizontal", "gap-02", "items-center");
+            var errIcon = VaadinIcon.WARNING.create();
+            errIcon.getStyle().set("color", "var(--lumo-error-color)");
+            errIcon.getStyle().set("font-size",
+                "var(--lumo-icon-size-s)");
+            var errText = new Span(
+                "Token cannot be empty. Please paste a valid Personal "
+                    + "Access Token.");
+            errText.addClassName("normal-body-text");
+            errText.getStyle().set("color",
+                "var(--lumo-error-color)");
+            errRow.add(errIcon, errText);
+            statusArea.add(errRow);
+            return;
+          }
+
+          // Simulate token validation (in production this would call
+          // the InvenioRDM REST API)
+          // For the prototype, simulate a success response after a
+          // brief delay.
+          var ui = UI.getCurrent();
+          connectBtn.setEnabled(false);
+          connectBtn.setText("Validating\u2026");
+
+          statusArea.removeAll();
+          statusArea.getStyle().set("display", "block");
+          statusArea.getStyle().set("background-color",
+              "var(--lumo-primary-color-10pct)");
+          statusArea.getStyle().set("border",
+              "1px solid var(--lumo-primary-color-30pct)");
+          var validatingRow = new Div();
+          validatingRow.addClassNames("flex-horizontal", "gap-02",
+              "items-center");
+          var spinnerIcon = VaadinIcon.SPINNER.create();
+          var validatingText = new Span(
+              "Validating token against " + instance.baseUrl() + "\u2026");
+          validatingText.addClassName("extra-small-body-text");
+          validatingRow.add(spinnerIcon, validatingText);
+          statusArea.add(validatingRow);
+
+          new Thread(() -> {
+            try {
+              Thread.sleep(1200);  // simulate network call
+            } catch (InterruptedException ex) {
+              Thread.currentThread().interrupt();
+            }
+            ui.access(() -> {
+              // Mask the token for safe display
+              String masked = maskToken(tokenValue);
+              configuredCredentials.put(instance.id(),
+                  new RepositoryCredential(instance.id(), masked,
+                      LocalDate.now()));
+              dialog.close();
+              refreshCredentialsContent();
+              showSuccessNotification(
+                  "Token connected successfully for "
+                      + instance.shortName()
+                      + ". You can now access restricted datasets from "
+                      + "this repository.");
+            });
+          }).start();
+        });
+    connectBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+
+    var cancelBtn = new Button("Cancel", e -> dialog.close());
+    cancelBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+
+    dialog.getFooter().add(cancelBtn, connectBtn);
+    dialog.open();
+
+    // Focus the token field for convenience
+    tokenField.focus();
+  }
+
+  /**
+   * Returns a masked representation of a token, showing only the first 4
+   * and last 4 characters, e.g. "abcd••••••••wxyz".
+   */
+  private String maskToken(String token) {
+    if (token == null || token.length() <= 8) {
+      return "****";
+    }
+    return token.substring(0, 4) + "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022"
+        + token.substring(token.length() - 4);
+  }
+
+  // ── Remove Token Dialog (Story 15) ─────────────────────────────────────
+
+  /**
+   * Opens a confirmation dialog before removing the stored credentials for
+   * the given InvenioRDM instance. After confirmation, the credential is
+   * deleted from {@link #configuredCredentials} and the UI is refreshed.
+   */
+  private void openRemoveTokenDialog(InvenioRDMInstance instance) {
+    var dialog = new com.vaadin.flow.component.dialog.Dialog();
+    dialog.setCloseOnOutsideClick(false);
+    dialog.setCloseOnEsc(false);
+    dialog.setWidth("480px");
+
+    var body = new Div();
+    body.addClassNames("flex-vertical", "gap-03");
+    body.getStyle().set("padding",
+        "var(--lumo-space-s) var(--lumo-space-m)");
+
+    // Header with warning icon
+    var headerRow = new Div();
+    headerRow.addClassNames("flex-horizontal", "gap-03", "items-center");
+    var warnIcon = VaadinIcon.EXCLAMATION_CIRCLE.create();
+    warnIcon.addClassName("icon-color-warning");
+    var titleSpan = new Span("Remove Repository Connection");
+    titleSpan.addClassName("heading-3");
+    headerRow.add(warnIcon, titleSpan);
+    body.add(headerRow);
+
+    // Confirmation text
+    var confirmText = new Div();
+    confirmText.addClassName("normal-body-text");
+    confirmText.getElement().setProperty("innerHTML",
+        "You are about to remove the Personal Access Token for "
+            + "<b>" + instance.displayName() + "</b>.");
+    body.add(confirmText);
+
+    // Impact description
+    var impactBox = new Div();
+    impactBox.addClassNames("flex-vertical", "gap-02");
+    impactBox.getStyle().set("padding",
+        "var(--lumo-space-s) var(--lumo-space-m)");
+    impactBox.getStyle().set("background-color",
+        "var(--lumo-contrast-5pct)");
+    impactBox.getStyle().set("border-radius",
+        "var(--lumo-border-radius-m)");
+
+    var impactTitle = new Span("What happens:");
+    impactTitle.addClassName("normal-body-text");
+    impactTitle.getStyle().set("font-weight", "600");
+    impactBox.add(impactTitle);
+
+    var impactList = new Div();
+    impactList.getElement().setProperty("innerHTML",
+        "<ul style='margin:0;padding-left:1.2em;'>"
+            + "<li style='margin-bottom:var(--lumo-space-xxs);'>"
+            + "The stored token is <b>permanently deleted</b> from the system.</li>"
+            + "<li style='margin-bottom:var(--lumo-space-xxs);'>"
+            + "You will <b>no longer be able to add access-restricted datasets</b> "
+            + "from " + instance.shortName() + " to your projects.</li>"
+            + "<li>"
+            + "Already-connected restricted datasets remain in the project but "
+            + "can no longer be synced.</li>"
+            + "</ul>");
+    impactList.addClassName("extra-small-body-text");
+    impactBox.add(impactList);
+
+    body.add(impactBox);
+
+    var reversalNote = new Span(
+        "You can reconfigure this repository at any time by adding a new token.");
+    reversalNote.addClassName("extra-small-body-text");
+    reversalNote.addClassName("color-secondary");
+    reversalNote.getStyle().set("display", "block");
+    body.add(reversalNote);
+
+    dialog.add(body);
+
+    // Footer buttons
+    var removeBtn = new Button("Remove Token", VaadinIcon.TRASH.create(),
+        e -> {
+          configuredCredentials.remove(instance.id());
+          dialog.close();
+          refreshCredentialsContent();
+          showSuccessNotification("Repository connection removed for "
+              + instance.shortName()
+              + ". Access-restricted datasets from this instance "
+              + "are no longer available.");
+        });
+    removeBtn.addThemeVariants(
+        ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_PRIMARY);
+
+    var cancelBtn = new Button("Cancel", e -> dialog.close());
+    cancelBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+
+    dialog.getFooter().add(cancelBtn, removeBtn);
+    dialog.open();
+  }
+
+  // ── Credentials seed data ─────────────────────────────────────────────
+
+  /**
+   * Seeds the demo with Zenodo pre-configured (token present) and FDAT
+   * not configured, so the prototype shows both card states immediately.
+   */
+  private void seedCredentials() {
+    configuredCredentials.put("zenodo",
+        new RepositoryCredential("zenodo",
+            "a1b2\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022c3d4",
+            LocalDate.of(2025, 3, 10)));
+    // FDAT is intentionally left unconfigured for demo contrast
+  }
+
+  // ── Error notification helper ──────────────────────────────────────────
+
+  private void showErrorNotification(String message) {
+    var notification = new Notification(message, 4000);
+    notification.addClassName("error-toast");
+    notification.setPosition(Notification.Position.BOTTOM_END);
+    notification.open();
   }
 }

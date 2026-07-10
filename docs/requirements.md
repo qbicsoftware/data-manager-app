@@ -95,7 +95,7 @@ All requirements follow a domain-based ID structure:
 ### Rules
 
 - IDs are **stable and must never be renumbered or reused.**
-- Constraints (`*-C-*`) influence architecture and must not be referenced in Stories. Reference them only in Task Technical Notes and ADRs.
+- Constraints (`*-C-*`) influence architecture and must not be referenced in Stories. Reference them only in Task Technical Notes and [ADRs](../adr/README.md).
 - One requirement may be referenced by multiple Stories.
 - A Story may reference multiple requirement IDs when a single user workflow spans multiple domains. If a Story spans more than two domains, consider splitting it.
 
@@ -114,7 +114,7 @@ Each requirement must contain:
 <Why this requirement exists — strategic, regulatory, stakeholder-driven, or architectural>
 
 **Source (optional but recommended):**
-<Link to PRD section, FAIR/CARE principle, regulatory document, stakeholder request, or ADR>
+<Link to PRD section, FAIR/CARE principle, regulatory document, stakeholder request, or [ADR](../adr/README.md)>
 ```
 
 ---
