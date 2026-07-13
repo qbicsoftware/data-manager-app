@@ -270,8 +270,9 @@
       <artifactId>spring-boot-starter-artemis</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.apache.activemq</groupId>
+      <groupId>org.apache.artemis</groupId>
       <artifactId>artemis-jms-server</artifactId>
+      <version>2.55.0</version>
     </dependency>
     <dependency>
       <groupId>org.apache.groovy</groupId>
@@ -339,7 +340,7 @@
             <executions>
               <execution>
                 <goals>
-                  <goal>build-frontend</goal>
+                  <goal>prepare-frontend</goal>
                 </goals>
                 <phase>compile</phase>
               </execution>
