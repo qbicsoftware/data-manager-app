@@ -52,7 +52,10 @@ Where `NNNN` is a zero-padded, four-digit sequential number assigned in creation
 
 | # | Title | Status | Date |
 |---|---|---|---|
-| *(no ADRs recorded yet)* | | | |
+| [0001](0001-associated-datasets-domain-model.md) | Domain model and bounded context for associated datasets | proposed | 2026-07-13 |
+| [0002](0002-invenio-rdm-api-client-credentials.md) | InvenioRDM API client design and external credential security | proposed | 2026-07-13 |
+| [0003](0003-connection-lifecycle-stewardship.md) | Dataset connection lifecycle and data stewardship | proposed | 2026-07-13 |
+| [0004](0004-fair-signposting-deferred.md) | FAIR Signposting integration deferred | proposed | 2026-07-13 |
 
 *Update this table whenever a new ADR is added.*
 
