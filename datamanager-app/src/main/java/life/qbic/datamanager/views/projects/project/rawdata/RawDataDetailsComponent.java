@@ -198,7 +198,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
       sortedMeasurementIds.addAll(ids);
       sortedMeasurementIds.sort(
           Comparator.comparing(RawDataURL::measurementCode, new NaturalOrderComparator(true)));
-      var file = RawDataUrlFile.create(ids);
+      var file = RawDataUrlFile.create(sortedMeasurementIds);
       var streamProvider = createStreamProvider(FileNameFormatter.formatWithTimestampedSimple(
           LocalDate.now(), projectCode, "immunopeptidomics_measurement_dataset_locations", "txt"), file);
       downloadComponent.trigger(streamProvider);
