@@ -206,9 +206,9 @@
       <groupId>com.zaxxer</groupId>
       <artifactId>HikariCP</artifactId>
     </dependency>
-    <dependency>
-      <groupId>org.jobrunr</groupId>
-      <artifactId>jobrunr-spring-boot-3-starter</artifactId>
+  <dependency>
+    <groupId>org.jobrunr</groupId>
+      <artifactId>jobrunr-spring-boot-4-starter</artifactId>
     </dependency>
     <dependency>
       <groupId>jakarta.persistence</groupId>
