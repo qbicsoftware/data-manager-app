@@ -17,6 +17,7 @@ import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.Pxp
 import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.PxpMeasurementJpaRepository.PxpMeasurementFilter;
 import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.PxpMeasurementJpaRepository.PxpMeasurementInformation;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.lang.NonNull;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -58,7 +59,8 @@ public class MeasurementLookup implements NgsMeasurementLookup, PxpMeasurementLo
           "Invalid sort keys for ngs measurements: " + invalidSortKeys.stream()
               .map(Order::getProperty).toList());
     }
-    var pageable = new OffsetBasedRequest(offset, limit, sort);
+    Sort ascendingMeasurementCodeSort = Sort.by(Direction.ASC, "measurementCode");
+    var pageable = new OffsetBasedRequest(offset, limit, ascendingMeasurementCodeSort);
     var filter = mapToDatabaseFilter(measurementFilter);
     return ngsMeasurementJpaRepository.findAll(filter.asSpecification(), pageable)
         .get()
@@ -92,7 +94,8 @@ public class MeasurementLookup implements NgsMeasurementLookup, PxpMeasurementLo
           "Invalid sort keys for ngs measurements: " + invalidSortKeys.stream()
               .map(Order::getProperty).toList());
     }
-    var pageable = new OffsetBasedRequest(offset, limit, sort);
+    Sort ascendingMeasurementCodeSort = Sort.by(Direction.ASC, "measurementCode");
+    var pageable = new OffsetBasedRequest(offset, limit, ascendingMeasurementCodeSort);
     var filter = mapToDatabaseFilter(measurementFilter);
     return pxpMeasurementJpaRepository.findAll(filter.asSpecification(), pageable)
         .get()
@@ -185,7 +188,8 @@ public class MeasurementLookup implements NgsMeasurementLookup, PxpMeasurementLo
           "Invalid sort keys for ip measurements: " + invalidSortKeys.stream()
               .map(Order::getProperty).toList());
     }
-    var pageable = new OffsetBasedRequest(offset, limit, sort);
+    Sort ascendingMeasurementCodeSort = Sort.by(Direction.ASC, "measurementCode");
+    var pageable = new OffsetBasedRequest(offset, limit, ascendingMeasurementCodeSort);
     var filter = mapToDatabaseFilter(measurementFilter);
     return ipMeasurementJpaRepository.findAll(filter.asSpecification(), pageable)
         .get()

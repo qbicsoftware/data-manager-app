@@ -7,15 +7,16 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.api.fair.DigitalObject;
 import life.qbic.projectmanagement.application.api.template.TemplateProvider;
-import life.qbic.projectmanagement.application.api.template.TemplateProvider.MeasurementInformationCollectionIP;
-import life.qbic.projectmanagement.application.api.template.TemplateProvider.MeasurementInformationIP;
-import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.MeasurementTemplateFactory;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.IpEditFactory.MeasurementEntryIP;
+import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.MeasurementTemplateFactory;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.NgsEditFactory.MeasurementEntryNGS;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.ProteomicsEditFactory.MeasurementEntryPxP;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.SampleTemplateFactory;
@@ -92,7 +93,10 @@ public class TemplateProviderOpenXML implements TemplateProvider {
     var entries = req.measurements().stream()
         .flatMap(value -> fromRequest(value).stream())
         .toList();
-    return measurementTemplateFactory.forUpdatePxP(entries).createWorkbook();
+    var sortedPxPMeasurements = new ArrayList<>(entries);
+    sortedPxPMeasurements.sort(
+        Comparator.comparing(MeasurementEntryPxP::measurementId, new NaturalOrderComparator(true)));
+    return measurementTemplateFactory.forUpdatePxP(sortedPxPMeasurements).createWorkbook();
   }
 
   private DigitalObject getTemplate(MeasurementInformationCollectionNGS req) {
@@ -105,7 +109,10 @@ public class TemplateProviderOpenXML implements TemplateProvider {
     var entries = req.measurements().stream()
         .flatMap(value -> fromRequest(value).stream())
         .toList();
-    return measurementTemplateFactory.forUpdateNGS(entries).createWorkbook();
+    var sortedNGSMeasurements = new ArrayList<>(entries);
+    sortedNGSMeasurements.sort(
+        Comparator.comparing(MeasurementEntryNGS::measurementId, new NaturalOrderComparator(true)));
+    return measurementTemplateFactory.forUpdateNGS(sortedNGSMeasurements).createWorkbook();
   }
 
   private static List<MeasurementEntryPxP> fromRequest(MeasurementInformationPxP req) {
@@ -177,7 +184,10 @@ public class TemplateProviderOpenXML implements TemplateProvider {
     var entries = req.measurements().stream()
         .flatMap(value -> fromRequest(value).stream())
         .toList();
-    return measurementTemplateFactory.forUpdateIP(entries).createWorkbook();
+    var sortedIPMeasurements = new ArrayList<>(entries);
+    sortedIPMeasurements.sort(
+        Comparator.comparing(MeasurementEntryIP::measurementId, new NaturalOrderComparator(true)));
+    return measurementTemplateFactory.forUpdateIP(sortedIPMeasurements).createWorkbook();
   }
 
   private static List<MeasurementEntryIP> fromRequest(MeasurementInformationIP req) {
@@ -227,8 +237,11 @@ public class TemplateProviderOpenXML implements TemplateProvider {
   }
 
   private Workbook forRequest(SampleInformation req) {
+    var sortedSamples = new ArrayList<>(req.samples());
+    sortedSamples.sort(Comparator.comparing(sample -> sample.sampleCode().code(),
+        new NaturalOrderComparator(true)));
     return sampleTemplateFactory.forInformation(
-        req.samples(),
+        sortedSamples,
         req.analysisMethods(),
         req.conditions(),
         req.analytes(),
@@ -242,8 +255,11 @@ public class TemplateProviderOpenXML implements TemplateProvider {
 
   private Workbook forRequest(SampleUpdate req) {
     var info = req.information();
+    var sortedSamples = new ArrayList<>(req.information().samples());
+    sortedSamples.sort(Comparator.comparing(sample -> sample.sampleCode().code(),
+        new NaturalOrderComparator(true)));
     return sampleTemplateFactory.forUpdate(
-        info.samples(),
+        sortedSamples,
         info.analysisMethods(),
         info.conditions(),
         info.analytes(),
@@ -285,5 +301,49 @@ public class TemplateProviderOpenXML implements TemplateProvider {
     public Optional<String> id() {
       return Optional.empty();
     }
+  }
+}
+
+
+// Sort by ID of the measurement within the excel sheet keeping the natural order while accounting for lexicographical sorting of 09, 10, 11
+class NaturalOrderComparator implements Comparator<String> {
+
+  private static final Pattern CHUNK = Pattern.compile("(\\d+|\\D+)");
+
+  private final boolean caseInsensitive;
+
+  public NaturalOrderComparator(boolean caseInsensitive) {
+    this.caseInsensitive = caseInsensitive;
+  }
+
+  @Override
+  public int compare(String a, String b) {
+    if (a == null || b == null) {
+      return a == null ? (b == null ? 0 : -1) : 1;
+    }
+
+    Matcher ma = CHUNK.matcher(a);
+    Matcher mb = CHUNK.matcher(b);
+
+    while (ma.find() && mb.find()) {
+      String chunkA = ma.group();
+      String chunkB = mb.group();
+
+      int cmp;
+      if (Character.isDigit(chunkA.charAt(0)) && Character.isDigit(chunkB.charAt(0))) {
+        // compare numerically, stripping leading zeros for correctness
+        cmp = new java.math.BigInteger(chunkA).compareTo(new java.math.BigInteger(chunkB));
+      } else {
+        cmp = caseInsensitive
+            ? chunkA.compareToIgnoreCase(chunkB)
+            : chunkA.compareTo(chunkB);
+      }
+
+      if (cmp != 0) {
+        return cmp;
+      }
+    }
+
+    return a.length() - b.length(); // shorter string wins if all matched chunks were equal
   }
 }

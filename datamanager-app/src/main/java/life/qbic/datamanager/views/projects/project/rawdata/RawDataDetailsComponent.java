@@ -1,6 +1,7 @@
 package life.qbic.datamanager.views.projects.project.rawdata;
 
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.grid.GridSortOrder;
 import com.vaadin.flow.data.provider.CallbackDataProvider.CountCallback;
 import com.vaadin.flow.data.provider.CallbackDataProvider.FetchCallback;
 import com.vaadin.flow.data.provider.QuerySortOrder;
@@ -14,7 +15,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +27,8 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.FileNameFormatter;
 import life.qbic.application.commons.FileSizeFormatter;
@@ -168,7 +173,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
 
       var file = RawDataUrlFile.create(ids);
       var streamProvider = createStreamProvider(FileNameFormatter.formatWithTimestampedSimple(
-          LocalDate.now(), projectCode, "ngs_measurement_dataset_locations", "txt"), file);
+          LocalDate.now(), projectCode, "pxp_measurement_dataset_locations", "txt"), file);
       downloadComponent.trigger(streamProvider);
     });
   }
@@ -189,7 +194,10 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
           .map(info -> info.dataset().measurementId())
           .map(id -> new RawDataURL(dataSourceEndpoint, id))
           .toList();
-
+      var sortedMeasurementIds = new ArrayList<>(ids);
+      sortedMeasurementIds.addAll(ids);
+      sortedMeasurementIds.sort(
+          Comparator.comparing(RawDataURL::measurementCode, new NaturalOrderComparator(true)));
       var file = RawDataUrlFile.create(ids);
       var streamProvider = createStreamProvider(FileNameFormatter.formatWithTimestampedSimple(
           LocalDate.now(), projectCode, "immunopeptidomics_measurement_dataset_locations", "txt"), file);
@@ -410,7 +418,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
   private Grid<RawDatasetInformationNgs> createNgsRawDataGrid() {
     Grid<RawDatasetInformationNgs> grid = new Grid<>();
     grid.addClassName("raw-data-grid");
-    grid.addColumn(
+    var measurementIdColumn = grid.addColumn(
             rawData -> rawData.dataset().measurementId())
         .setKey(UiSortKey.MEASUREMENT_ID.value())
         .setSortProperty(UiSortKey.MEASUREMENT_ID.value())
@@ -432,6 +440,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
         .setSortProperty(UiSortKey.UPLOAD_DATE.value())
         .setHeader("Upload Date");
     grid.setItemDetailsRenderer(renderRawDataNgs());
+    grid.sort(GridSortOrder.asc(measurementIdColumn).build());
     return grid;
   }
 
@@ -443,7 +452,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
   private Grid<RawDatasetInformationPxP> createPxpRawDataGrid() {
     Grid<RawDatasetInformationPxP> grid = new Grid<>();
     grid.addClassName("raw-data-grid");
-    grid.addColumn(
+    var measurementIdColumn = grid.addColumn(
             rawData -> rawData.dataset().measurementId())
         .setKey(UiSortKey.MEASUREMENT_ID.value())
         .setSortProperty(UiSortKey.MEASUREMENT_ID.value())
@@ -464,6 +473,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
         .setSortProperty(UiSortKey.UPLOAD_DATE.value())
         .setHeader("Upload Date");
     grid.setItemDetailsRenderer(renderRawDataPxp());
+    grid.sort(GridSortOrder.asc(measurementIdColumn).build());
     return grid;
   }
 
@@ -496,7 +506,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
   private Grid<RawDatasetInformationIp> createIpRawDataGrid() {
     Grid<RawDatasetInformationIp> grid = new Grid<>();
     grid.addClassName("raw-data-grid");
-    grid.addColumn(
+    var measurementIdColumn = grid.addColumn(
             rawData -> rawData.dataset().measurementId())
         .setKey(UiSortKey.MEASUREMENT_ID.value())
         .setSortProperty(UiSortKey.MEASUREMENT_ID.value())
@@ -517,6 +527,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
         .setSortProperty(UiSortKey.UPLOAD_DATE.value())
         .setHeader("Upload Date");
     grid.setItemDetailsRenderer(renderRawDataIp());
+    grid.sort(GridSortOrder.asc(measurementIdColumn).build());
     return grid;
   }
 
@@ -544,5 +555,48 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
     public Optional<String> searchTerm() {
       return Optional.ofNullable(searchTerm);
     }
+  }
+}
+
+// Sort by MeasurementId of the downloaded URLs while keeping the natural order accounting for lexicographical sorting of 09, 10, 11
+class NaturalOrderComparator implements Comparator<String> {
+
+  private static final Pattern CHUNK = Pattern.compile("(\\d+|\\D+)");
+
+  private final boolean caseInsensitive;
+
+  public NaturalOrderComparator(boolean caseInsensitive) {
+    this.caseInsensitive = caseInsensitive;
+  }
+
+  @Override
+  public int compare(String a, String b) {
+    if (a == null || b == null) {
+      return a == null ? (b == null ? 0 : -1) : 1;
+    }
+
+    Matcher ma = CHUNK.matcher(a);
+    Matcher mb = CHUNK.matcher(b);
+
+    while (ma.find() && mb.find()) {
+      String chunkA = ma.group();
+      String chunkB = mb.group();
+
+      int cmp;
+      if (Character.isDigit(chunkA.charAt(0)) && Character.isDigit(chunkB.charAt(0))) {
+        // compare numerically, stripping leading zeros for correctness
+        cmp = new java.math.BigInteger(chunkA).compareTo(new java.math.BigInteger(chunkB));
+      } else {
+        cmp = caseInsensitive
+            ? chunkA.compareToIgnoreCase(chunkB)
+            : chunkA.compareTo(chunkB);
+      }
+
+      if (cmp != 0) {
+        return cmp;
+      }
+    }
+
+    return a.length() - b.length(); // shorter string wins if all matched chunks were equal
   }
 }

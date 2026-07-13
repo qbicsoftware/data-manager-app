@@ -1,6 +1,7 @@
 package life.qbic.datamanager.views.projects.project.samples;
 
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.grid.GridSortOrder;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.data.provider.CallbackDataProvider.CountCallback;
 import com.vaadin.flow.data.provider.CallbackDataProvider.FetchCallback;
@@ -149,7 +150,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
 
   private static Grid<SamplePreview> createSamplePreviewGrid() {
     Grid<SamplePreview> sampleGrid = new Grid<>();
-    sampleGrid.addColumn(SamplePreview::sampleCode)
+    var sampleIdColumn = sampleGrid.addColumn(SamplePreview::sampleCode)
         .setHeader("Sample ID")
         .setSortProperty(UiSortKey.SAMPLE_ID.value())
         .setAutoWidth(true)
@@ -210,6 +211,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
         .setResizable(true);
     sampleGrid.addClassName("sample-grid");
     sampleGrid.setColumnReorderingAllowed(true);
+    sampleGrid.sort(GridSortOrder.asc(sampleIdColumn).build());
     return sampleGrid;
   }
 
