@@ -1,6 +1,6 @@
 package life.qbic.projectmanagement.application.policy.directive;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import tools.jackson.annotation.JsonProperty;
 import life.qbic.identity.api.UserInfo;
 
 public class RecipientDTO {

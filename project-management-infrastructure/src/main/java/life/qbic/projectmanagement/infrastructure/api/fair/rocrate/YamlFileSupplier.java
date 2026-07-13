@@ -1,6 +1,6 @@
 package life.qbic.projectmanagement.infrastructure.api.fair.rocrate;
 
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 import java.io.File;
 import java.io.IOException;
 

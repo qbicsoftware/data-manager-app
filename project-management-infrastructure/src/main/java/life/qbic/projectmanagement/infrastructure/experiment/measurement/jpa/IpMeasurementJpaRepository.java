@@ -6,12 +6,7 @@ import static life.qbic.projectmanagement.infrastructure.jpa.JpaSpecifications.f
 import static life.qbic.projectmanagement.infrastructure.jpa.JpaSpecifications.jsonContains;
 import static life.qbic.projectmanagement.infrastructure.jpa.JpaSpecifications.propertyContains;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
@@ -46,7 +41,7 @@ import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.infrastructure.PreventAnyUpdateEntityListener;
 import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.IpMeasurementJpaRepository.Instrument.InstrumentReadConverter;
 import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.IpMeasurementJpaRepository.IpMeasurementInformation;
-import org.springframework.boot.jackson.JsonComponent;
+
 import org.springframework.data.convert.ReadingConverter;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -206,30 +201,6 @@ public interface IpMeasurementJpaRepository extends
   }
 
   record Instrument(String label, String oboId, String iri) implements Serializable {
-
-    @JsonComponent
-    static class InstrumentJsonDeserializer extends JsonDeserializer<Instrument> {
-
-      @Override
-      public Instrument deserialize(JsonParser jsonParser, DeserializationContext ctxt)
-          throws IOException {
-        JsonNode tree = jsonParser.readValueAsTree();
-        String oboId = Optional.ofNullable(tree.get("name"))
-            .map(JsonNode::asText)
-            .map(it -> it.replace("_", ":"))
-            .orElseThrow(
-                () -> new JsonParseException(jsonParser, "Could not parse instrument oboId."));
-        String label = Optional.ofNullable(tree.get("label"))
-            .map(JsonNode::asText)
-            .orElseThrow(
-                () -> new JsonParseException(jsonParser, "Could not parse instrument label."));
-        String iri = Optional.ofNullable(tree.get("classIri"))
-            .map(JsonNode::asText)
-            .orElseThrow(
-                () -> new JsonParseException(jsonParser, "Could not parse instrument iri."));
-        return new Instrument(label, oboId, iri);
-      }
-    }
 
     @ReadingConverter
     static class InstrumentReadConverter implements AttributeConverter<Instrument, String> {

@@ -1,7 +1,7 @@
 package life.qbic.identity.infrastructure.broadcasting;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JsonProcessingException;
+import tools.jackson.databind.ObjectMapper;
 import java.util.Objects;
 import life.qbic.identity.application.communication.broadcasting.EventHub;
 import life.qbic.identity.application.communication.broadcasting.IntegrationEvent;

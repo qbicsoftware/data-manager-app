@@ -2,8 +2,8 @@ package life.qbic.projectmanagement.infrastructure.communication;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JsonProcessingException;
+import tools.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.communication.broadcasting.IntegrationEvent;

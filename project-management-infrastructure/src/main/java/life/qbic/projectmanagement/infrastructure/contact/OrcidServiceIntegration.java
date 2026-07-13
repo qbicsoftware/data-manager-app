@@ -2,11 +2,11 @@ package life.qbic.projectmanagement.infrastructure.contact;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.annotation.JsonIgnoreProperties;
+import tools.jackson.annotation.JsonProperty;
+import tools.jackson.core.JsonProcessingException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;

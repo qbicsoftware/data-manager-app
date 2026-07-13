@@ -2,9 +2,9 @@ package life.qbic.projectmanagement.infrastructure.dataset;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JsonProcessingException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 import jakarta.persistence.AttributeConverter;
 import java.io.IOException;
 import java.util.List;

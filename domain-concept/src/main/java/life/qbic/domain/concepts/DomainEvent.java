@@ -1,6 +1,6 @@
 package life.qbic.domain.concepts;
 
-import com.fasterxml.jackson.annotation.JsonGetter;
+import tools.jackson.annotation.JsonGetter;
 import java.io.Serializable;
 import java.time.Instant;
 

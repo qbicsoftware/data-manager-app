@@ -1,6 +1,6 @@
 package life.qbic.identity.domain.event;
 
-import com.fasterxml.jackson.annotation.JsonGetter;
+import tools.jackson.annotation.JsonGetter;
 import java.io.Serial;
 import life.qbic.domain.concepts.DomainEvent;
 
