@@ -10,8 +10,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import life.qbic.application.commons.NaturalOrderComparator;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.api.fair.DigitalObject;
 import life.qbic.projectmanagement.application.api.template.TemplateProvider;
@@ -95,7 +94,8 @@ public class TemplateProviderOpenXML implements TemplateProvider {
         .toList();
     var sortedPxPMeasurements = new ArrayList<>(entries);
     sortedPxPMeasurements.sort(
-        Comparator.comparing(MeasurementEntryPxP::measurementId, new NaturalOrderComparator(true)));
+        Comparator.comparing(MeasurementEntryPxP::measurementId,
+            NaturalOrderComparator.CASE_INSENSITIVE));
     return measurementTemplateFactory.forUpdatePxP(sortedPxPMeasurements).createWorkbook();
   }
 
@@ -111,7 +111,8 @@ public class TemplateProviderOpenXML implements TemplateProvider {
         .toList();
     var sortedNGSMeasurements = new ArrayList<>(entries);
     sortedNGSMeasurements.sort(
-        Comparator.comparing(MeasurementEntryNGS::measurementId, new NaturalOrderComparator(true)));
+        Comparator.comparing(MeasurementEntryNGS::measurementId,
+            NaturalOrderComparator.CASE_INSENSITIVE));
     return measurementTemplateFactory.forUpdateNGS(sortedNGSMeasurements).createWorkbook();
   }
 
@@ -186,7 +187,8 @@ public class TemplateProviderOpenXML implements TemplateProvider {
         .toList();
     var sortedIPMeasurements = new ArrayList<>(entries);
     sortedIPMeasurements.sort(
-        Comparator.comparing(MeasurementEntryIP::measurementId, new NaturalOrderComparator(true)));
+        Comparator.comparing(MeasurementEntryIP::measurementId,
+            NaturalOrderComparator.CASE_INSENSITIVE));
     return measurementTemplateFactory.forUpdateIP(sortedIPMeasurements).createWorkbook();
   }
 
@@ -239,7 +241,7 @@ public class TemplateProviderOpenXML implements TemplateProvider {
   private Workbook forRequest(SampleInformation req) {
     var sortedSamples = new ArrayList<>(req.samples());
     sortedSamples.sort(Comparator.comparing(sample -> sample.sampleCode().code(),
-        new NaturalOrderComparator(true)));
+        NaturalOrderComparator.CASE_INSENSITIVE));
     return sampleTemplateFactory.forInformation(
         sortedSamples,
         req.analysisMethods(),
@@ -257,7 +259,7 @@ public class TemplateProviderOpenXML implements TemplateProvider {
     var info = req.information();
     var sortedSamples = new ArrayList<>(req.information().samples());
     sortedSamples.sort(Comparator.comparing(sample -> sample.sampleCode().code(),
-        new NaturalOrderComparator(true)));
+        NaturalOrderComparator.CASE_INSENSITIVE));
     return sampleTemplateFactory.forUpdate(
         sortedSamples,
         info.analysisMethods(),
@@ -302,48 +304,5 @@ public class TemplateProviderOpenXML implements TemplateProvider {
       return Optional.empty();
     }
   }
-}
 
-
-// Sort by ID of the measurement within the excel sheet keeping the natural order while accounting for lexicographical sorting of 09, 10, 11
-class NaturalOrderComparator implements Comparator<String> {
-
-  private static final Pattern CHUNK = Pattern.compile("(\\d+|\\D+)");
-
-  private final boolean caseInsensitive;
-
-  public NaturalOrderComparator(boolean caseInsensitive) {
-    this.caseInsensitive = caseInsensitive;
-  }
-
-  @Override
-  public int compare(String a, String b) {
-    if (a == null || b == null) {
-      return a == null ? (b == null ? 0 : -1) : 1;
-    }
-
-    Matcher ma = CHUNK.matcher(a);
-    Matcher mb = CHUNK.matcher(b);
-
-    while (ma.find() && mb.find()) {
-      String chunkA = ma.group();
-      String chunkB = mb.group();
-
-      int cmp;
-      if (Character.isDigit(chunkA.charAt(0)) && Character.isDigit(chunkB.charAt(0))) {
-        // compare numerically, stripping leading zeros for correctness
-        cmp = new java.math.BigInteger(chunkA).compareTo(new java.math.BigInteger(chunkB));
-      } else {
-        cmp = caseInsensitive
-            ? chunkA.compareToIgnoreCase(chunkB)
-            : chunkA.compareTo(chunkB);
-      }
-
-      if (cmp != 0) {
-        return cmp;
-      }
-    }
-
-    return a.length() - b.length(); // shorter string wins if all matched chunks were equal
-  }
 }
