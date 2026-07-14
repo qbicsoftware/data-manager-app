@@ -32,7 +32,6 @@
     <spring-boot.version>4.1.0</spring-boot.version>
     <commons-lang3.version>3.18.0</commons-lang3.version>
     <artemis.version>2.55.0</artemis.version>
-    <jackson-2-bom.version>2.19.4</jackson-2-bom.version>
   </properties>
 
   <dependencyManagement>
@@ -164,6 +163,10 @@
         <version>${shedlock.version}</version>
       </dependency>
       <dependency>
+        <groupId>com.fasterxml.jackson.datatype</groupId>
+        <artifactId>jackson-datatype-jsr310</artifactId>
+      </dependency>
+      <dependency>
         <groupId>tools.jackson.core</groupId>
         <artifactId>jackson-core</artifactId>
         <version>${jackson-bom.version}</version>
@@ -173,16 +176,7 @@
         <artifactId>jackson-databind</artifactId>
         <version>${jackson-bom.version}</version>
       </dependency>
-      <dependency>
-        <groupId>com.fasterxml.jackson.core</groupId>
-        <artifactId>jackson-annotations</artifactId>
-        <version>${jackson-2-bom.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.fasterxml.jackson.datatype</groupId>
-        <artifactId>jackson-datatype-jsr310</artifactId>
-        <version>${jackson-2-bom.version}</version>
-      </dependency>
+
       <dependency>
         <groupId>tools.jackson.dataformat</groupId>
         <artifactId>jackson-dataformat-yaml</artifactId>

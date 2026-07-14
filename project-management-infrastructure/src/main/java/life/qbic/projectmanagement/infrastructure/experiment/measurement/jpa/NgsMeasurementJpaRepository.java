@@ -6,9 +6,6 @@ import static life.qbic.projectmanagement.infrastructure.jpa.JpaSpecifications.f
 import static life.qbic.projectmanagement.infrastructure.jpa.JpaSpecifications.jsonContains;
 import static life.qbic.projectmanagement.infrastructure.jpa.JpaSpecifications.propertyContains;
 
-import tools.jackson.core.JsonProcessingException;
-import tools.jackson.databind.ObjectMapper;
-import tools.jackson.databind.json.JsonMapper;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
@@ -52,6 +49,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Repository;
+import tools.jackson.databind.ObjectMapper;
 
 @Repository
 public interface NgsMeasurementJpaRepository extends

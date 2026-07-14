@@ -2,8 +2,6 @@ package life.qbic.projectmanagement.application;
 
 import static java.util.Objects.isNull;
 
-import tools.jackson.core.exc.JsonProcessingException;
-import tools.jackson.databind.ObjectMapper;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 import java.io.ByteArrayOutputStream;
@@ -12,6 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.projectmanagement.application.ProjectOverview.UserInfo;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Converts a string containing a json list of user info json objects to the java equivalent and
@@ -53,7 +53,7 @@ public class CollaboratorUserInfosConverter implements
           objectMapper.getTypeFactory().constructCollectionType(
               List.class, UserInfo.class)
       );
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       // we need to throw to prevent data loss
       throw new ApplicationException("Unexpected failure parsing project collaborators from database",
           e);

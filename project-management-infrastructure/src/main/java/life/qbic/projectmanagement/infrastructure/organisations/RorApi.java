@@ -1,9 +1,6 @@
 package life.qbic.projectmanagement.infrastructure.organisations;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import tools.jackson.core.JsonProcessingException;
-import tools.jackson.databind.DeserializationFeature;
-import tools.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -20,6 +17,9 @@ import java.util.Optional;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * API for research organisation registry. ROR (https://ror.org/)
@@ -159,10 +159,7 @@ public interface RorApi {
                 DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
             .readValue(json, RorEntryV2.class);
         return Optional.of(rorEntry);
-      } catch (JsonProcessingException e) {
-        log.error("Could not parse response from ROR.", e);
-        return Optional.empty();
-      } catch (IOException e) {
+      } catch (JacksonException | IOException e) {
         log.error("Could not parse response from ROR.", e);
         return Optional.empty();
       }

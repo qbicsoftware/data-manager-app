@@ -2,13 +2,12 @@ package life.qbic.projectmanagement.infrastructure.dataset;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
-import tools.jackson.core.JsonProcessingException;
-import tools.jackson.core.type.TypeReference;
-import tools.jackson.databind.ObjectMapper;
 import jakarta.persistence.AttributeConverter;
-import java.io.IOException;
 import java.util.List;
 import life.qbic.logging.api.Logger;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * <b>Measured Samples Converter</b>
@@ -29,7 +28,7 @@ public class MeasuredSamplesConverter implements
   public String convertToDatabaseColumn(List<MeasuredSample> measuredSamples) {
     try {
       return MAPPER.writeValueAsString(measuredSamples);
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       log.error("Error converting measured samples to json", e);
       throw new IllegalStateException(e);
     }
@@ -40,11 +39,9 @@ public class MeasuredSamplesConverter implements
     try {
       return MAPPER.readValue(s, new TypeReference<List<MeasuredSample>>() {
       });
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       log.error("Error converting json to measured samples", e);
       throw new IllegalStateException(e);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
     }
   }
 }

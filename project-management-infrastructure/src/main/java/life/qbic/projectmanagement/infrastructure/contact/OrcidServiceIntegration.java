@@ -4,9 +4,6 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import tools.jackson.core.JsonProcessingException;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -31,6 +28,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * <b>Orcid Service Integration</b>
@@ -171,10 +171,7 @@ public class OrcidServiceIntegration implements PersonSelect {
     JsonNode node;
     try {
       node = mapper.readTree(response.body());
-    } catch (JsonProcessingException e) {
-      log.error(e.getMessage(), e);
-      return List.of();
-    } catch (IOException e) {
+    } catch (JacksonException e) {
       log.error(e.getMessage(), e);
       return List.of();
     }
