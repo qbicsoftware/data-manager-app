@@ -1,6 +1,6 @@
 # 0002 — InvenioRDM API client design and external credential security
 
-* Status: proposed
+* Status: approved
 * Deciders: project team (interviewed via [`interview-feat-dataset-connection.md`](interview-feat-dataset-connection.md))
 * Date: 2026-07-13
 

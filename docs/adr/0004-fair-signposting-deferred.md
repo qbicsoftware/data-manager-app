@@ -1,6 +1,6 @@
 # 0004 — FAIR Signposting integration deferred
 
-* Status: proposed
+* Status: approved
 * Deciders: project team (interviewed via [`interview-feat-dataset-connection.md`](interview-feat-dataset-connection.md))
 * Date: 2026-07-13
 

@@ -1,6 +1,6 @@
 # 0001 — Domain model and bounded context for associated datasets
 
-* Status: proposed
+* Status: approved
 * Deciders: project team (interviewed via [`interview-feat-dataset-connection.md`](interview-feat-dataset-connection.md))
 * Date: 2026-07-13
 
