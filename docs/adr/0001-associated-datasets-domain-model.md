@@ -64,7 +64,7 @@ grow.
 
 ## Decision Outcome
 
-**Chosen option: B with soft delete (O-variant of Option F).** Package `associated-dataset`
+**Chosen option: B with soft delete.** Package `associated-dataset`
 within the `project-management` bounded context; source-agnostic aggregate root carrying
 `source_type`, `external_handle`, connection state, and universal fields as regular columns;
 source-specific metadata encapsulated in a sealed `ResourceMetadata` hierarchy stored in a
