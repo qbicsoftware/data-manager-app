@@ -101,6 +101,8 @@ Concretely:
 
 2. **Instance discovery (I2):** Instances are configured via `application.properties`:
    ```properties
+   # Example config, evaluate other extendable options for external instances
+   # No decision on array usage yet
    qbic.external-service.invenio-rdm.instances[0].name=Zenodo
    qbic.external-service.invenio-rdm.instances[0].url=https://zenodo.org
    qbic.external-service.invenio-rdm.instances[1].name=FDAT
@@ -126,7 +128,7 @@ Concretely:
 
 5. **Result types (R2):** Two distinct types — `SearchResult` (transient, paginated, drives the
    UI search display via `List<SearchHit>`) and `ResourceMetadata` (sealed hierarchy, persisted
-   as the canonical metadata snapshot on the aggregate). They overlap heavily in fields because
+   as the canonical metadata snapshot on the aggregate). `SearchResult` and `ResourceMetadata` overlap heavily in fields because
    InvenioRDM search hits carry most metadata inline, but they differ in purpose: one is
    "what the API returned right now" (transient), the other is "what we persist as the
    snapshot of truth."
