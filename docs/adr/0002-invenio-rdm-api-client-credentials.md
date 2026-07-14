@@ -150,7 +150,7 @@ Concretely:
    (no existing concept for them; users don't copy from toasts).
 
 9. **Credential status updates:** The `status` field of a stored credential (`VALID`,
-   `INVALIDATED`, `UNKNOWN`) is updated **only on explicit verification** (user clicks "Add"
+   `INVALIDATED`) is updated **only on explicit verification** (user clicks "Add"
    or "Validate" in the UI). A failed sync due to 401/403 does **not** silently update the
    credential status; it surfaces only an error to the user.
 
