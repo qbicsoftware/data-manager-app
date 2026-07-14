@@ -16,8 +16,8 @@ import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.DataRepoConnectionTester;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
+import org.springframework.boot.webmvc.autoconfigure.error.ErrorMvcAutoConfiguration;
 import org.springframework.context.annotation.ComponentScan;
 
 /**
