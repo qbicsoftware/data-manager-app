@@ -23,7 +23,6 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Root;
-import java.io.IOException;
 import java.io.Serializable;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -42,14 +41,19 @@ import life.qbic.projectmanagement.infrastructure.PreventAnyUpdateEntityListener
 import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.NgsMeasurementJpaRepository.Instrument.InstrumentReadConverter;
 import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.NgsMeasurementJpaRepository.NgsMeasurementInformation;
 import org.hibernate.collection.spi.PersistentBag;
-import org.springframework.boot.jackson.JsonComponent;
 import org.springframework.data.convert.ReadingConverter;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Repository;
+import tools.jackson.core.JsonParser;
+import tools.jackson.core.exc.StreamReadException;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ValueDeserializer;
+import tools.jackson.databind.json.JsonMapper;
 
 @Repository
 public interface NgsMeasurementJpaRepository extends
@@ -203,26 +207,24 @@ public interface NgsMeasurementJpaRepository extends
 
   record Instrument(String label, String oboId, String iri) implements Serializable {
 
-    @JsonComponent
-    static class InstrumentJsonDeserializer extends JsonDeserializer<Instrument> {
+    public static class InstrumentJsonDeserializer extends ValueDeserializer<Instrument> {
 
       @Override
-      public Instrument deserialize(JsonParser jsonParser, DeserializationContext ctxt)
-          throws IOException, JacksonException {
+      public Instrument deserialize(JsonParser jsonParser, DeserializationContext ctxt) {
         JsonNode tree = jsonParser.readValueAsTree();
         String oboId = Optional.ofNullable(tree.get("name"))
-            .map(JsonNode::asText) //e.g. EFO_0008633
-            .map(it -> it.replace("_", ":")) //e.g. EFO:0008633
+            .map(JsonNode::asText) // e.g. EFO_0008633
+            .map(it -> it.replace("_", ":")) // e.g. EFO:0008633
             .orElseThrow(
-                () -> new JsonParseException(jsonParser, "Could not parse instrument oboId."));
+                () -> new StreamReadException(jsonParser, "Could not parse instrument oboId."));
         String label = Optional.ofNullable(tree.get("label"))
             .map(JsonNode::asText)
             .orElseThrow(
-                () -> new JsonParseException(jsonParser, "Could not parse instrument label."));
+                () -> new StreamReadException(jsonParser, "Could not parse instrument label."));
         String iri = Optional.ofNullable(tree.get("classIri"))
             .map(JsonNode::asText)
             .orElseThrow(
-                () -> new JsonParseException(jsonParser, "Could not parse instrument iri."));
+                () -> new StreamReadException(jsonParser, "Could not parse instrument iri."));
         return new Instrument(label, oboId, iri);
       }
     }
@@ -243,13 +245,7 @@ public interface NgsMeasurementJpaRepository extends
 
       @Override
       public Instrument convertToEntityAttribute(String dbData) {
-        try {
-          return objectMapper.readValue(dbData, Instrument.class);
-        } catch (JsonProcessingException e) {
-          throw new RuntimeException(e);
-        } catch (IOException e) {
-          throw new RuntimeException(e);
-        }
+        return objectMapper.readValue(dbData, Instrument.class);
       }
     }
   }

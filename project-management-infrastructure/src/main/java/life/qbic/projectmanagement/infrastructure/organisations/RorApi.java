@@ -18,8 +18,7 @@ import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import tools.jackson.core.JacksonException;
-import tools.jackson.databind.DeserializationFeature;
-import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * API for research organisation registry. ROR (https://ror.org/)
@@ -155,11 +154,9 @@ public interface RorApi {
 
     private Optional<RorEntry> parseJson(String json) {
       try {
-        RorEntry rorEntry = new ObjectMapper().configure(
-                DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-            .readValue(json, RorEntryV2.class);
+        RorEntry rorEntry = JsonMapper.builder().build().readValue(json, RorEntryV2.class);
         return Optional.of(rorEntry);
-      } catch (JacksonException | IOException e) {
+      } catch (JacksonException e) {
         log.error("Could not parse response from ROR.", e);
         return Optional.empty();
       }

@@ -29,6 +29,7 @@ import tools.jackson.core.JacksonException;
 import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * <b>TIB Terminology Service</b>
@@ -361,9 +362,7 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
    * @since 1.4.0
    */
   private List<TibTerm> parseResponse(HttpResponse<String> response) {
-    ObjectMapper mapper = new ObjectMapper().configure(
-        DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).configure(
-        DeserializationFeature.FAIL_ON_IGNORED_PROPERTIES, false);
+    ObjectMapper mapper = JsonMapper.builder().build();
     try {
       JsonNode node = mapper.readTree(response.body()).at("/response/docs");
       List<TibTerm> terms = new ArrayList<>();
