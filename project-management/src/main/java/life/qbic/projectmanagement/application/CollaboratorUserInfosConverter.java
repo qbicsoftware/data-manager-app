@@ -2,7 +2,7 @@ package life.qbic.projectmanagement.application;
 
 import static java.util.Objects.isNull;
 
-import tools.jackson.core.JsonProcessingException;
+import tools.jackson.core.exc.JsonProcessingException;
 import tools.jackson.databind.ObjectMapper;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;

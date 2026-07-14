@@ -1,7 +1,7 @@
 package life.qbic.projectmanagement.domain.model.sample.event;
 
-import tools.jackson.annotation.JsonGetter;
-import tools.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonGetter;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serial;
 import java.util.Objects;
 import life.qbic.domain.concepts.DomainEvent;

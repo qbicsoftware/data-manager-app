@@ -2,8 +2,8 @@ package life.qbic.projectmanagement.infrastructure.contact;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
-import tools.jackson.annotation.JsonIgnoreProperties;
-import tools.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import tools.jackson.core.JsonProcessingException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;

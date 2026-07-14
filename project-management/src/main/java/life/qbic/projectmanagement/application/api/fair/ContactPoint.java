@@ -1,6 +1,6 @@
 package life.qbic.projectmanagement.application.api.fair;
 
-import tools.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * A schema.org <a href="https://schema.org/ContactPoint">ContactPoint</a> representation in Java.

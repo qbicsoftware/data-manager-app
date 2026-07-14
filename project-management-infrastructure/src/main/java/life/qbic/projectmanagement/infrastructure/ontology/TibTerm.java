@@ -1,6 +1,6 @@
 package life.qbic.projectmanagement.infrastructure.ontology;
 
-import tools.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;

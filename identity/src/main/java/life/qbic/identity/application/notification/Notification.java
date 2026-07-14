@@ -1,6 +1,6 @@
 package life.qbic.identity.application.notification;
 
-import tools.jackson.annotation.JsonGetter;
+import com.fasterxml.jackson.annotation.JsonGetter;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.Instant;

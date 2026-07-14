@@ -1,6 +1,6 @@
 package life.qbic.projectmanagement.application.api.fair;
 
-import tools.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
 /**
