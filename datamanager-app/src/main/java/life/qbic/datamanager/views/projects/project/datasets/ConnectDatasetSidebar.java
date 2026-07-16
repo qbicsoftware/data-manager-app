@@ -85,13 +85,16 @@ public class ConnectDatasetSidebar extends Div {
   private final Span selectionCountLabel;
 
   /**
-   * Wraps {@code resultsGrid} together with {@code loadingIndicator}.
-   * The spinner is a sibling (not a CSS overlay) because the grid is
-   * already the scroll container; we just swap visibility.
+   * Wraps {@code resultsGrid} together with {@code loadingIndicator} and
+   * {@code welcomeMessage}. The spinner is a sibling (not a CSS overlay)
+   * because the grid is already the scroll container; we just swap
+   * visibility. The welcome message is absolutely positioned over the
+   * empty grid until the user initiates a search.
    */
   private final Div resultsContainer;
   private final Div loadingIndicator;
   private final ProgressBar progressBar;
+  private final Div welcomeMessage;
 
   /**
    * Buffer for errors caught inside the lazy-loading callback. The
@@ -201,13 +204,44 @@ public class ConnectDatasetSidebar extends Div {
     loadingIndicator.getStyle().set("display", "none");
     loadingIndicator.add(progressBar, loadingLabel);
 
+    // ── Welcome message (shown before first search) ──────────────────
+    welcomeMessage = new Div();
+    welcomeMessage.addClassNames("flex-vertical", "items-center", "gap-02");
+    welcomeMessage.getStyle().set("position", "absolute");
+    welcomeMessage.getStyle().set("top", "0");
+    welcomeMessage.getStyle().set("left", "0");
+    welcomeMessage.getStyle().set("width", "100%");
+    welcomeMessage.getStyle().set("height", "100%");
+    welcomeMessage.getStyle().set("justify-content", "center");
+    welcomeMessage.getStyle().set("background-color", "var(--lumo-base-color)");
+    welcomeMessage.getStyle().set("color", "var(--lumo-secondary-text-color)");
+    welcomeMessage.getStyle().set("z-index", "1");
+    welcomeMessage.getStyle().set("cursor", "default");
+    
+    var welcomeIcon = VaadinIcon.SEARCH.create();
+    welcomeIcon.getStyle().set("font-size", "var(--lumo-font-size-xxxl)");
+    welcomeIcon.getStyle().set("color", "var(--lumo-tertiary-text-color)");
+    
+    var welcomeTitle = new Span("Search for datasets");
+    welcomeTitle.addClassName("heading-4");
+    welcomeTitle.getStyle().set("margin-top", "var(--lumo-space-s)");
+    
+    var welcomeSubtitle = new Span(
+        "Use the search field above to find open datasets you can connect to this project.");
+    welcomeSubtitle.addClassName("body-text");
+    welcomeSubtitle.getStyle().set("text-align", "center");
+    welcomeSubtitle.getStyle().set("padding", "0 var(--lumo-space-l)");
+    welcomeSubtitle.getStyle().set("color", "var(--lumo-tertiary-text-color)");
+    
+    welcomeMessage.add(welcomeIcon, welcomeTitle, welcomeSubtitle);
+
     resultsContainer = new Div();
     resultsContainer.addClassNames("flex-vertical");
     resultsContainer.getStyle().set("position", "relative");
     // Make this container fill remaining space in the flex column
     resultsContainer.getStyle().set("flex-grow", "1");
     resultsContainer.getStyle().set("min-height", "0"); // Critical for flex layout
-    resultsContainer.add(loadingIndicator, resultsGrid);
+    resultsContainer.add(loadingIndicator, welcomeMessage, resultsGrid);
 
     experimentSelector = new ComboBox<>();
     experimentSelector.setLabel("Link to experiment (optional)");
@@ -356,6 +390,7 @@ public class ConnectDatasetSidebar extends Div {
     searchButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     searchButton.addClickListener(e -> {
       searchInitiated = true;
+      welcomeMessage.getStyle().set("display", "none");
       refreshSearchResults();
     });
 
@@ -364,6 +399,7 @@ public class ConnectDatasetSidebar extends Div {
     clearButton.addClickListener(e -> {
       searchField.clear();
       searchInitiated = true;
+      welcomeMessage.getStyle().set("display", "none");
       refreshSearchResults();
     });
 
