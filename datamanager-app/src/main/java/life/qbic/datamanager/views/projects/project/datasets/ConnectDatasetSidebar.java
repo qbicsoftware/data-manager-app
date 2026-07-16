@@ -14,7 +14,6 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
-import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.provider.Query;
 import com.vaadin.flow.shared.Registration;
@@ -94,7 +93,6 @@ public class ConnectDatasetSidebar extends Div {
    */
   private final Div resultsContainer;
   private final Div loadingIndicator;
-  private final ProgressBar progressBar;
   private final Div welcomeMessage;
 
   /**
@@ -201,19 +199,31 @@ public class ConnectDatasetSidebar extends Div {
     // Note: without @Push the bar is rendered in the same response as
     // the data so it flashes briefly, but it still gives the user a
     // visible cue that a fetch is in progress on the server side.
-    progressBar = new ProgressBar();
-    progressBar.setIndeterminate(true);
-    progressBar.setWidthFull();
-
-    var loadingLabel = new Span("Searching…");
-    loadingLabel.addClassName("extra-small-body-text");
-    loadingLabel.addClassName("color-secondary");
+    // Indeterminate spinner + clear messaging, shown during searches
+    var spinner = new Span();
+    spinner.getElement().setProperty("innerHTML", "&#8987;"); // hourglass symbol
+    spinner.getStyle().set("font-size", "var(--lumo-font-size-xxxl)");
+    spinner.getStyle().set("animation", "spin 1s linear infinite");
+    
+    var loadingLabel = new Span("Searching for datasets...");
+    loadingLabel.addClassName("normal-body-text");
+    loadingLabel.getStyle().set("font-weight", "500");
+    
+    var loadingHint = new Span("This may take a few seconds");
+    loadingHint.addClassName("small-body-text");
+    loadingHint.getStyle().set("color", "var(--lumo-tertiary-text-color)");
 
     loadingIndicator = new Div();
     loadingIndicator.addClassNames("flex-vertical", "items-center", "gap-02");
-    loadingIndicator.getStyle().set("padding", "var(--lumo-space-m)");
-    loadingIndicator.getStyle().set("display", "none");
-    loadingIndicator.add(progressBar, loadingLabel);
+    loadingIndicator.getStyle().set("position", "absolute");
+    loadingIndicator.getStyle().set("top", "0");
+    loadingIndicator.getStyle().set("left", "0");
+    loadingIndicator.getStyle().set("width", "100%");
+    loadingIndicator.getStyle().set("height", "100%");
+    loadingIndicator.getStyle().set("justify-content", "center");
+    loadingIndicator.getStyle().set("background-color", "var(--lumo-base-color)");
+    loadingIndicator.getStyle().set("z-index", "2");
+    loadingIndicator.add(spinner, loadingLabel, loadingHint);
 
     // ── Welcome message (shown before first search) ──────────────────
     welcomeMessage = new Div();
