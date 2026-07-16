@@ -36,6 +36,7 @@ import life.qbic.projectmanagement.application.experiment.ExperimentInformationS
 import life.qbic.projectmanagement.domain.model.associated_dataset.AccessLevel;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.associated_dataset.SourceType;
@@ -73,6 +74,7 @@ public class ConnectDatasetSidebar extends Div {
 
   private final AssociatedDatasetService associatedDatasetService;
   private final ExperimentInformationService experimentInformationService;
+  private final Executor taskExecutor;
 
   private final Div overlay;
   private final Div panel;
@@ -148,9 +150,11 @@ public class ConnectDatasetSidebar extends Div {
   public ConnectDatasetSidebar(
       AssociatedDatasetService associatedDatasetService,
       ExperimentInformationService experimentInformationService,
+      Executor taskExecutor,
       Object userPermissions) {
     this.associatedDatasetService = associatedDatasetService;
     this.experimentInformationService = experimentInformationService;
+    this.taskExecutor = taskExecutor;
 
     // ── Form controls (MUST be initialized before buildSidebarBody) ──
     // Some fields are referenced directly inside buildSidebarBody, which is
@@ -537,52 +541,52 @@ public class ConnectDatasetSidebar extends Div {
     // Capture UI reference before async operation
     var ui = UI.getCurrent();
 
-    // Capture search parameters and user identity
+    // Capture search parameters and user identity in main thread
     var instance = instanceSelector.getValue();
     var searchTerm = searchField.getValue();
     var currentUser = currentUserId();
 
-    // Perform HTTP fetch in background thread
-    new Thread(() -> {
-      try {
-        // Perform the actual search with all required parameters
-        var result = associatedDatasetService.searchDatasets(
-            SourceType.INVENIO_RDM,
-            instance.id(),
-            searchTerm.trim().isEmpty() ? null : searchTerm.trim(),
-            0,          // page 0 (zero-indexed)
-            100,        // pageSize - load up to 100 results in first fetch
-            currentUser
-        );
-
-        // Update cached results with thread-safe list
-        synchronized (cachedResults) {
-          cachedResults.clear();
-          cachedResults.addAll(result.hits());
-        }
-
-        // Push results back to UI thread
-        if (ui != null) {
-          ui.access(() -> {
-            loadingIndicator.getStyle().set("display", "none");
-            resultsGrid.getDataProvider().refreshAll();
-            setControlsEnabled(true);
-          });
-        }
-      } catch (Exception e) {
-        // Store error for display
-        lastSearchError = e.getMessage();
-
-        // Push error back to UI thread
-        if (ui != null) {
-          ui.access(() -> {
-            loadingIndicator.getStyle().set("display", "none");
-            setControlsEnabled(true);
-            showErrorNotification("Search failed: " + lastSearchError);
-          });
-        }
+    // Perform HTTP fetch asynchronously using the security-context-aware executor
+    CompletableFuture.supplyAsync(() -> {
+      // This runs in a thread with the security context propagated by DelegatingSecurityContextAsyncTaskExecutor
+      return associatedDatasetService.searchDatasets(
+          SourceType.INVENIO_RDM,
+          instance.id(),
+          searchTerm.trim().isEmpty() ? null : searchTerm.trim(),
+          0,          // page 0 (zero-indexed)
+          100,        // pageSize - load up to 100 results in first fetch
+          currentUser
+      );
+    }, taskExecutor).thenAccept(result -> {
+      // This runs after the async operation completes
+      // Update cached results with thread-safe list
+      synchronized (cachedResults) {
+        cachedResults.clear();
+        cachedResults.addAll(result.hits());
       }
-    }).start();
+
+      // Push results back to UI thread
+      if (ui != null) {
+        ui.access(() -> {
+          loadingIndicator.getStyle().set("display", "none");
+          resultsGrid.getDataProvider().refreshAll();
+          setControlsEnabled(true);
+        });
+      }
+    }).exceptionally(throwable -> {
+      // Handle errors
+      lastSearchError = throwable.getMessage();
+
+      // Push error back to UI thread
+      if (ui != null) {
+        ui.access(() -> {
+          loadingIndicator.getStyle().set("display", "none");
+          setControlsEnabled(true);
+          showErrorNotification("Search failed: " + lastSearchError);
+        });
+      }
+      return null;
+    });
   }
 
   /**
