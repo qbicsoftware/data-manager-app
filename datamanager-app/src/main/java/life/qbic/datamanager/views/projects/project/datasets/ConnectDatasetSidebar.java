@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.stream.Stream;
 import life.qbic.datamanager.views.Context;
+import life.qbic.datamanager.views.UiHandle;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.Tag.TagColor;
 import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
@@ -36,7 +37,6 @@ import life.qbic.projectmanagement.application.experiment.ExperimentInformationS
 import life.qbic.projectmanagement.domain.model.associated_dataset.AccessLevel;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.associated_dataset.SourceType;
@@ -74,7 +74,7 @@ public class ConnectDatasetSidebar extends Div {
 
   private final AssociatedDatasetService associatedDatasetService;
   private final ExperimentInformationService experimentInformationService;
-  private final Executor taskExecutor;
+  private final UiHandle uiHandle = new UiHandle();
 
   private final Div overlay;
   private final Div panel;
@@ -150,11 +150,9 @@ public class ConnectDatasetSidebar extends Div {
   public ConnectDatasetSidebar(
       AssociatedDatasetService associatedDatasetService,
       ExperimentInformationService experimentInformationService,
-      Executor taskExecutor,
       Object userPermissions) {
     this.associatedDatasetService = associatedDatasetService;
     this.experimentInformationService = experimentInformationService;
-    this.taskExecutor = taskExecutor;
 
     // ── Form controls (MUST be initialized before buildSidebarBody) ──
     // Some fields are referenced directly inside buildSidebarBody, which is
@@ -328,6 +326,9 @@ public class ConnectDatasetSidebar extends Div {
   }
 
   public void open() {
+    // Bind UI context for async operations
+    uiHandle.bind(UI.getCurrent());
+    
     loadInstances();
     // Load experiments asynchronously to avoid blocking
     if (context != null && context.projectId().isPresent()) {
@@ -360,6 +361,8 @@ public class ConnectDatasetSidebar extends Div {
     synchronized (cachedResults) {
       cachedResults.clear();
     }
+    // Unbind UI context
+    uiHandle.unbind();
   }
 
   public Registration addDatasetsConnectedListener(
@@ -497,17 +500,14 @@ public class ConnectDatasetSidebar extends Div {
     CompletableFuture.supplyAsync(
             () -> experimentInformationService.findAllForProject(projectId))
         .thenAccept(experiments -> {
-          // Schedule UI update on Vaadin's UI access thread
-          UI ui = UI.getCurrent();
-          if (ui != null) {
-            ui.access(() -> {
-              availableExperiments.clear();
-              for (Experiment exp : experiments) {
-                availableExperiments.add(new ExperimentEntry(exp.experimentId(), exp.getName()));
-              }
-              experimentSelector.setItems(availableExperiments);
-            });
-          }
+          // Update UI safely using uiHandle
+          uiHandle.onUiAndPush(() -> {
+            availableExperiments.clear();
+            for (Experiment exp : experiments) {
+              availableExperiments.add(new ExperimentEntry(exp.experimentId(), exp.getName()));
+            }
+            experimentSelector.setItems(availableExperiments);
+          });
         });
   }
 
@@ -538,9 +538,6 @@ public class ConnectDatasetSidebar extends Div {
     welcomeMessage.getStyle().set("display", "none");
     loadingIndicator.getStyle().set("display", "flex");
 
-    // Capture UI reference before async operation
-    var ui = UI.getCurrent();
-
     // Capture search parameters and user identity in main thread
     var instance = instanceSelector.getValue();
     var searchTerm = searchField.getValue();
@@ -557,7 +554,7 @@ public class ConnectDatasetSidebar extends Div {
           100,        // pageSize - load up to 100 results in first fetch
           currentUser
       );
-    }, taskExecutor).thenAccept(result -> {
+    }).thenAccept(result -> {
       // This runs after the async operation completes
       // Update cached results with thread-safe list
       synchronized (cachedResults) {
@@ -566,25 +563,21 @@ public class ConnectDatasetSidebar extends Div {
       }
 
       // Push results back to UI thread
-      if (ui != null) {
-        ui.access(() -> {
-          loadingIndicator.getStyle().set("display", "none");
-          resultsGrid.getDataProvider().refreshAll();
-          setControlsEnabled(true);
-        });
-      }
+      uiHandle.onUiAndPush(() -> {
+        loadingIndicator.getStyle().set("display", "none");
+        resultsGrid.getDataProvider().refreshAll();
+        setControlsEnabled(true);
+      });
     }).exceptionally(throwable -> {
       // Handle errors
       lastSearchError = throwable.getMessage();
 
       // Push error back to UI thread
-      if (ui != null) {
-        ui.access(() -> {
-          loadingIndicator.getStyle().set("display", "none");
-          setControlsEnabled(true);
-          showErrorNotification("Search failed: " + lastSearchError);
-        });
-      }
+      uiHandle.onUiAndPush(() -> {
+        loadingIndicator.getStyle().set("display", "none");
+        setControlsEnabled(true);
+        showErrorNotification("Search failed: " + lastSearchError);
+      });
       return null;
     });
   }

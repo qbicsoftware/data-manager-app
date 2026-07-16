@@ -253,12 +253,17 @@ public interface InvenioRdmClient {
     private String buildSearchUrl(String instanceUrl, SearchParams params) {
       StringBuilder sb = new StringBuilder(normalizeBaseUrl(instanceUrl))
           .append("/api/records?page=").append(params.page())
-          .append("&size=").append(params.size())
-          .append("&sort=newest");
+          .append("&size=").append(params.size());
+      
+      // When there's a search query, rely on the API's default relevance-based sorting.
+      // When listing records without a query (browsing), sort by newest first.
       if (params.query() != null && !params.query().isBlank()) {
         sb.append("&q=").append(
             URLEncoder.encode(params.query(), StandardCharsets.UTF_8));
+      } else {
+        sb.append("&sort=newest");
       }
+      
       return sb.toString();
     }
 

@@ -15,9 +15,7 @@ import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.projects.project.ProjectMainLayout;
 import life.qbic.projectmanagement.application.associated_dataset.AssociatedDatasetService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
-import java.util.concurrent.Executor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 
 /**
  * <b>Associated Datasets view</b>
@@ -48,7 +46,6 @@ public class AssociatedDatasetsMain extends Main implements BeforeEnterObserver 
 
   private final transient AssociatedDatasetService associatedDatasetService;
   private final transient ExperimentInformationService experimentInformationService;
-  private final transient Executor taskExecutor;
   private final transient UserPermissions userPermissions;
 
   private final ConnectedResourcesComponent connectedResourcesComponent;
@@ -60,13 +57,11 @@ public class AssociatedDatasetsMain extends Main implements BeforeEnterObserver 
   public AssociatedDatasetsMain(
       AssociatedDatasetService associatedDatasetService,
       ExperimentInformationService experimentInformationService,
-      @Qualifier("taskExecutor") Executor taskExecutor,
       UserPermissions userPermissions) {
     this.associatedDatasetService = requireNonNull(associatedDatasetService,
         "associatedDatasetService must not be null");
     this.experimentInformationService = requireNonNull(experimentInformationService,
         "experimentInformationService must not be null");
-    this.taskExecutor = requireNonNull(taskExecutor, "taskExecutor must not be null");
     this.userPermissions = requireNonNull(userPermissions,
         "userPermissions must not be null");
 
@@ -102,7 +97,6 @@ public class AssociatedDatasetsMain extends Main implements BeforeEnterObserver 
       connectDatasetSidebar = new ConnectDatasetSidebar(
           associatedDatasetService,
           experimentInformationService,
-          taskExecutor,
           userPermissions);
       connectDatasetSidebar.setContext(context);
       connectDatasetSidebar.addDatasetsConnectedListener(
