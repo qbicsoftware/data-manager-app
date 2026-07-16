@@ -329,6 +329,13 @@ public class ConnectDatasetSidebar extends Div {
     // Bind UI context for async operations
     uiHandle.bind(UI.getCurrent());
     
+    // Reset UI state to ensure welcome message is visible
+    searchInitiated = false;
+    loadingIndicator.getStyle().set("display", "none");
+    welcomeMessage.getStyle().set("display", "flex");
+    resultsGrid.getDataProvider().refreshAll();
+    setControlsEnabled(true);
+    
     loadInstances();
     // Load experiments asynchronously to avoid blocking
     if (context != null && context.projectId().isPresent()) {
