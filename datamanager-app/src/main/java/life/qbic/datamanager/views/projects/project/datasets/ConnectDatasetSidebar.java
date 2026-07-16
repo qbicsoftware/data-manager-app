@@ -537,9 +537,10 @@ public class ConnectDatasetSidebar extends Div {
     // Capture UI reference before async operation
     var ui = UI.getCurrent();
 
-    // Capture search parameters
+    // Capture search parameters and user identity
     var instance = instanceSelector.getValue();
     var searchTerm = searchField.getValue();
+    var currentUser = currentUserId();
 
     // Perform HTTP fetch in background thread
     new Thread(() -> {
@@ -551,7 +552,7 @@ public class ConnectDatasetSidebar extends Div {
             searchTerm.trim().isEmpty() ? null : searchTerm.trim(),
             0,          // page 0 (zero-indexed)
             100,        // pageSize - load up to 100 results in first fetch
-            currentUserId()
+            currentUser
         );
 
         // Update cached results with thread-safe list
