@@ -79,6 +79,7 @@ public class ConnectDatasetSidebar extends Div {
   private final Div panel;
   private final ComboBox<SourceInstanceDescriptor> instanceSelector;
   private final TextField searchField;
+  private Button searchButton;
   private final Grid<SearchHit> resultsGrid;
   private final ComboBox<ExperimentEntry> experimentSelector;
   private final Button connectButton;
@@ -128,6 +129,19 @@ public class ConnectDatasetSidebar extends Div {
    */
   private volatile boolean searchInitiated = false;
 
+  /**
+   * Tracks whether a search is currently in progress (async HTTP fetch).
+   * Used to disable controls and prevent duplicate requests.
+   */
+  private volatile boolean searchInProgress = false;
+
+  /**
+   * Cached search results from the most recent successful search.
+   * Populated by the background thread in {@link #refreshSearchResults()},
+   * then sliced on-demand by {@link #fetchPage(Query)} for virtual scrolling.
+   */
+  private final List<SearchHit> cachedResults = new ArrayList<>();
+
   private final List<SourceInstanceDescriptor> availableInstances = new ArrayList<>();
   private final List<ExperimentEntry> availableExperiments = new ArrayList<>();
 
@@ -165,10 +179,7 @@ public class ConnectDatasetSidebar extends Div {
     searchField.setPlaceholder("Search by title, DOI, or creator…");
     searchField.setClearButtonVisible(true);
     searchField.getStyle().set("flex-grow", "1");
-    searchField.addKeyDownListener(Key.ENTER, e -> {
-      searchInitiated = true;
-      refreshSearchResults();
-    });
+    searchField.addKeyDownListener(Key.ENTER, e -> refreshSearchResults());
 
     resultsGrid = new Grid<>();
     resultsGrid.addThemeVariants(GridVariant.LUMO_COMPACT, GridVariant.LUMO_NO_ROW_BORDERS);
@@ -327,6 +338,14 @@ public class ConnectDatasetSidebar extends Div {
     // Clear the flag so the next open() does not fire the grid's
     // automatic first-page fetch against a stale default instance.
     searchInitiated = false;
+    // Reset UI state
+    loadingIndicator.getStyle().set("display", "none");
+    welcomeMessage.getStyle().set("display", "flex");
+    setControlsEnabled(true);
+    // Clear cached results
+    synchronized (cachedResults) {
+      cachedResults.clear();
+    }
   }
 
   public Registration addDatasetsConnectedListener(
@@ -386,20 +405,14 @@ public class ConnectDatasetSidebar extends Div {
     searchButtonBar.getStyle().set("display", "flex");
     searchButtonBar.getStyle().set("gap", "var(--lumo-space-xs)");
 
-    var searchButton = new Button("Search", VaadinIcon.SEARCH.create());
+    searchButton = new Button("Search", VaadinIcon.SEARCH.create());
     searchButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    searchButton.addClickListener(e -> {
-      searchInitiated = true;
-      welcomeMessage.getStyle().set("display", "none");
-      refreshSearchResults();
-    });
-
+    searchButton.addClickListener(e -> refreshSearchResults());
+    
     var clearButton = new Button("Clear");
     clearButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
     clearButton.addClickListener(e -> {
       searchField.clear();
-      searchInitiated = true;
-      welcomeMessage.getStyle().set("display", "none");
       refreshSearchResults();
     });
 
@@ -497,23 +510,88 @@ public class ConnectDatasetSidebar extends Div {
    * the callback is surfaced synchronously to the user afterwards.</p>
    */
   private void refreshSearchResults() {
-    lastSearchError = null;
-    resultsGrid.getDataProvider().refreshAll();
-    if (lastSearchError != null) {
-      showErrorNotification("Search failed: " + lastSearchError);
+    // Prevent duplicate concurrent searches
+    if (searchInProgress) {
+      return;
     }
+
+    // Mark that user has initiated at least one search (for fetchPage guard)
+    searchInitiated = true;
+    lastSearchError = null;
+
+    // Show loading state immediately and disable controls
+    setControlsEnabled(false);
+    welcomeMessage.getStyle().set("display", "none");
+    loadingIndicator.getStyle().set("display", "flex");
+
+    // Capture UI reference before async operation
+    var ui = UI.getCurrent();
+
+    // Capture search parameters
+    var instance = instanceSelector.getValue();
+    var searchTerm = searchField.getValue();
+
+    // Perform HTTP fetch in background thread
+    new Thread(() -> {
+      try {
+        // Perform the actual search with all required parameters
+        var result = associatedDatasetService.searchDatasets(
+            SourceType.INVENIO_RDM,
+            instance.id(),
+            searchTerm.trim().isEmpty() ? null : searchTerm.trim(),
+            0,          // page 0 (zero-indexed)
+            100,        // pageSize - load up to 100 results in first fetch
+            currentUserId()
+        );
+
+        // Update cached results with thread-safe list
+        synchronized (cachedResults) {
+          cachedResults.clear();
+          cachedResults.addAll(result.hits());
+        }
+
+        // Push results back to UI thread
+        if (ui != null) {
+          ui.access(() -> {
+            loadingIndicator.getStyle().set("display", "none");
+            resultsGrid.getDataProvider().refreshAll();
+            setControlsEnabled(true);
+          });
+        }
+      } catch (Exception e) {
+        // Store error for display
+        lastSearchError = e.getMessage();
+
+        // Push error back to UI thread
+        if (ui != null) {
+          ui.access(() -> {
+            loadingIndicator.getStyle().set("display", "none");
+            setControlsEnabled(true);
+            showErrorNotification("Search failed: " + lastSearchError);
+          });
+        }
+      }
+    }).start();
+  }
+
+  /**
+   * Enables or disables all search controls during async search.
+   */
+  private void setControlsEnabled(boolean enabled) {
+    searchInProgress = !enabled;
+    searchButton.setEnabled(enabled);
+    searchField.setEnabled(enabled);
+    instanceSelector.setEnabled(enabled);
   }
 
   /**
    * Lazy-loading callback wired to {@link #resultsGrid}.
    *
-   * <p>Invoked by Vaadin when the grid needs a page of data — i.e. when
-   * the grid first renders, or when the user scrolls. The mapping from
-   * the grid's {@code offset/limit} to InvenioRDM's {@code page/size}
-   * (InvenioRDM pages are 1-indexed) is handled here.</p>
+   * <p>Slices the {@link #cachedResults} list for virtual scrolling. This method
+   * does NOT make HTTP calls - those happen asynchronously in {@link #refreshSearchResults()}.</p>
    *
-   * <p>Errors are caught and stored in {@link #lastSearchError}; the
-   * surrounding refresh call surfaces them via toast.</p>
+   * <p>This callback is invoked by Vaadin when the grid needs a page of data - i.e. when
+   * the grid first renders, or when the user scrolls.</p>
    */
   private Stream<SearchHit> fetchPage(Query<SearchHit, Void> query) {
     // Satisfy Vaadin's data provider contract: must access offset and limit
@@ -522,43 +600,22 @@ public class ConnectDatasetSidebar extends Div {
     // cause rendering bugs or memory issues.
     int offset = query.getOffset();
     int limit = query.getLimit();
-    
-    // Until the user has explicitly triggered a search at least once in
-    // this sidebar session, we never make an HTTP call — even if Vaadin
-    // asks for the first page in order to render initially-visible rows.
-    // This is what keeps the sidebar open() instant regardless of
-    // InvenioRDM latency.
+
+    // Guard: until the user has initiated at least one search, return empty
     if (!searchInitiated) {
       return Stream.empty();
     }
-    if (instanceSelector.isEmpty() || instanceSelector.getValue() == null) {
-      return Stream.empty();
-    }
-    var instance = instanceSelector.getValue();
-    String searchTerm = searchField.getValue() != null ? searchField.getValue() : "";
-    int pageSize = limit;
-    // Guard against zero-limit queries (can happen when grid is not yet
-    // fully laid out — Vaadin sometimes calls with limit = 0).
-    if (pageSize <= 0) {
-      return Stream.empty();
-    }
-    int page = offset / pageSize + 1;  // InvenioRDM pages are 1-indexed
 
-    loadingIndicator.getStyle().set("display", "flex");
-    try {
-      SearchResult result = associatedDatasetService.searchDatasets(
-          SourceType.INVENIO_RDM,
-          instance.id(),
-          searchTerm,
-          page,
-          pageSize,
-          currentUserId());
-      return result.hits().stream();
-    } catch (Exception e) {
-      lastSearchError = e.getMessage();
+    // Guard: validate offset and limit
+    if (offset < 0 || limit <= 0) {
       return Stream.empty();
-    } finally {
-      loadingIndicator.getStyle().set("display", "none");
+    }
+
+    // Slice cachedResults for virtual scrolling
+    synchronized (cachedResults) {
+      return cachedResults.stream()
+          .skip(offset)
+          .limit(limit);
     }
   }
 
