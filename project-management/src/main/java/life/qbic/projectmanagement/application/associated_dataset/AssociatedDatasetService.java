@@ -1,0 +1,287 @@
+package life.qbic.projectmanagement.application.associated_dataset;
+
+import static java.util.Objects.requireNonNull;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import life.qbic.application.commons.ApplicationException;
+import life.qbic.application.commons.Result;
+import life.qbic.domain.concepts.DomainEvent;
+import life.qbic.domain.concepts.DomainEventDispatcher;
+import life.qbic.domain.concepts.DomainEventSubscriber;
+import life.qbic.domain.concepts.LocalDomainEventDispatcher;
+import life.qbic.logging.api.Logger;
+import life.qbic.logging.service.LoggerFactory;
+import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.domain.model.associated_dataset.AssociatedDataset;
+import life.qbic.projectmanagement.domain.model.associated_dataset.AssociatedDatasetId;
+import life.qbic.projectmanagement.domain.model.associated_dataset.ExternalHandle;
+import life.qbic.projectmanagement.domain.model.associated_dataset.ResourceMetadata;
+import life.qbic.projectmanagement.domain.model.associated_dataset.SourceType;
+import life.qbic.projectmanagement.domain.model.associated_dataset.event.AssociatedDatasetConnectedEvent;
+import life.qbic.projectmanagement.domain.model.associated_dataset.repository.AssociatedDatasetRepository;
+import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.stereotype.Service;
+
+/**
+ * Application service for associating external datasets with projects.
+ *
+ * <p>Orchestrates the use cases of searching external data sources,
+ * connecting datasets to projects, and listing connected datasets.
+ * Depends on the {@link DatasetSource} port for external system
+ * interaction and the {@link AssociatedDatasetRepository} for
+ * persistence.</p>
+ *
+ * <p>Per ADR-0003, operations are user-initiated and use the invoking
+ * user's identity. Credentials are never borrowed between users.</p>
+ *
+ * @since 1.12.0
+ */
+@Service
+public class AssociatedDatasetService {
+
+  private static final Logger log = LoggerFactory.logger(AssociatedDatasetService.class);
+
+  private final DatasetSource datasetSource;
+  private final AssociatedDatasetRepository associatedDatasetRepository;
+  private final SourceInstanceRegistry sourceInstanceRegistry;
+  private final ProjectInformationService projectInformationService;
+
+  public AssociatedDatasetService(
+      DatasetSource datasetSource,
+      AssociatedDatasetRepository associatedDatasetRepository,
+      SourceInstanceRegistry sourceInstanceRegistry,
+      ProjectInformationService projectInformationService) {
+    this.datasetSource = requireNonNull(datasetSource, "datasetSource must not be null");
+    this.associatedDatasetRepository = requireNonNull(associatedDatasetRepository,
+        "associatedDatasetRepository must not be null");
+    this.sourceInstanceRegistry = requireNonNull(sourceInstanceRegistry,
+        "sourceInstanceRegistry must not be null");
+    this.projectInformationService = requireNonNull(projectInformationService,
+        "projectInformationService must not be null");
+  }
+
+  // ── Search ──────────────────────────────────────────────────────────────
+
+  /**
+   * Searches an external data source for datasets matching the query,
+   * returning paginated results.
+   *
+   * <p>No project-level permission is required for the search itself —
+   * the user must already have access to the project in order to be
+   * in the datasets view. The search is an external lookup and does
+   * not read or mutate project data.</p>
+   *
+   * <p>The {@code searchingUserId} is forwarded to the infrastructure
+   * adapter so it can resolve any per-user credentials needed (e.g.
+   * for restricted dataset search). The application layer never handles
+   * authentication material (ADR-0002 D1).</p>
+   *
+   * @param sourceType     the source system type (e.g. {@link SourceType#INVENIO_RDM})
+   * @param instanceId     the configured instance identifier (e.g. "zenodo")
+   * @param query          the free-text search term; blank for "list all"
+   * @param page           zero-indexed page number
+   * @param pageSize       results per page
+   * @param searchingUserId the ID of the user performing the search
+   *                       (used by the adapter to resolve per-user credentials)
+   * @return paginated search results
+   * @throws ApplicationException if the instance is not configured or the
+   *         external search fails
+   */
+  public SearchResult searchDatasets(
+      SourceType sourceType,
+      String instanceId,
+      String query,
+      int page,
+      int pageSize,
+      String searchingUserId) {
+    Objects.requireNonNull(sourceType, "sourceType must not be null");
+    Objects.requireNonNull(searchingUserId, "searchingUserId must not be null");
+    var config = resolveInstanceConfig(instanceId);
+    var searchQuery = new SearchQuery(query, page, pageSize);
+    try {
+      return datasetSource.search(searchQuery, config, searchingUserId);
+    } catch (ApplicationException e) {
+      log.error("Search failed on instance %s: %s".formatted(instanceId, e.getMessage()));
+      throw e;
+    } catch (Exception e) {
+      log.error("Unexpected error searching instance %s".formatted(instanceId), e);
+      throw new ApplicationException("Search failed on instance " + instanceId, e);
+    }
+  }
+
+  // ── Connect ─────────────────────────────────────────────────────────────
+
+  /**
+   * Connects an external dataset to a project.
+   *
+   * <p>Resolves the record metadata from the source system, creates the
+   * {@link AssociatedDataset} aggregate, persists it, and dispatches
+   * domain events (driving notifications to other project members).</p>
+   *
+   * <p>Requires WRITE permission on the project (ADR-0003).</p>
+   *
+   * @param projectId           the project to connect the dataset to
+   * @param sourceType          the source system type
+   * @param instanceId          the configured instance identifier
+   * @param externalHandleValue the external record identifier on the source
+   * @param experimentId        optional experiment to associate the dataset with
+   * @param connectedByUserId   the user ID performing the action
+   * @return the resulting {@link AssociatedDatasetId} on success, or an
+   *         error code on failure
+   */
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
+  public Result<AssociatedDatasetId, ConnectDatasetError> connectDataset(
+      ProjectId projectId,
+      SourceType sourceType,
+      String instanceId,
+      String externalHandleValue,
+      Optional<ExperimentId> experimentId,
+      String connectedByUserId) {
+
+    Objects.requireNonNull(projectId, "projectId must not be null");
+    Objects.requireNonNull(sourceType, "sourceType must not be null");
+    Objects.requireNonNull(externalHandleValue, "externalHandleValue must not be null");
+    Objects.requireNonNull(connectedByUserId, "connectedByUserId must not be null");
+    Objects.requireNonNull(experimentId, "experimentId must not be null (use Optional.empty())");
+
+    InstanceConfig config;
+    try {
+      config = resolveInstanceConfig(instanceId);
+    } catch (ApplicationException e) {
+      log.warn("Instance not found: %s".formatted(instanceId));
+      return Result.fromError(ConnectDatasetError.INSTANCE_NOT_FOUND);
+    }
+
+    // 1. Resolve record metadata from the source system
+    Optional<ResourceMetadata> metadata;
+    try {
+      metadata = datasetSource.resolveMetadata(externalHandleValue, config, connectedByUserId);
+    } catch (Exception e) {
+      log.error("Failed to resolve metadata for record %s on instance %s"
+          .formatted(externalHandleValue, instanceId), e);
+      return Result.fromError(ConnectDatasetError.RECORD_NOT_FOUND);
+    }
+    if (metadata.isEmpty()) {
+      log.warn("Record %s not found on instance %s".formatted(externalHandleValue, instanceId));
+      return Result.fromError(ConnectDatasetError.RECORD_NOT_FOUND);
+    }
+
+    // 2. Set up local event dispatcher to cache events emitted during the
+    //    aggregate creation, then forward them to the global domain event
+    //    dispatcher after save (collect-during, forward-after pattern).
+    List<DomainEvent> domainEventsCache = new ArrayList<>();
+    var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
+    localDomainEventDispatcher.reset();
+    localDomainEventDispatcher.subscribe(
+        new ConnectedEventCollectorSubscriber(domainEventsCache));
+
+    // 3. Create the aggregate (emits AssociatedDatasetConnectedEvent)
+    AssociatedDataset dataset;
+    try {
+      dataset = AssociatedDataset.connect(
+          projectId,
+          sourceType,
+          new ExternalHandle(externalHandleValue),
+          metadata.get(),
+          connectedByUserId,
+          experimentId.orElse(null));
+    } catch (Exception e) {
+      log.error("Failed to create associated dataset aggregate", e);
+      return Result.fromError(ConnectDatasetError.CONNECT_FAILED);
+    }
+
+    // 4. Persist
+    try {
+      associatedDatasetRepository.save(dataset);
+    } catch (Exception e) {
+      log.error("Failed to persist associated dataset for project %s".formatted(projectId), e);
+      return Result.fromError(ConnectDatasetError.CONNECT_FAILED);
+    }
+
+    // 5. Forward cached events to the global domain event dispatcher
+    //    (this triggers notification policy directives like
+    //    InformProjectMembersAboutDatasetConnection from Task 6)
+    domainEventsCache.forEach(
+        domainEvent -> DomainEventDispatcher.instance().dispatch(domainEvent));
+
+    log.info("Dataset %s connected to project %s by user %s"
+        .formatted(dataset.id(), projectId, connectedByUserId));
+
+    return Result.fromValue(dataset.id());
+  }
+
+  // ── List connected datasets ─────────────────────────────────────────────
+
+  /**
+   * Lists all actively connected datasets for a project.
+   *
+   * <p>Requires READ permission on the project (ADR-0003).</p>
+   *
+   * @param projectId the project to list connected datasets for
+   * @return the list of connected datasets (never null, empty if none);
+   *         soft-deleted (REMOVED) connections are excluded
+   */
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
+  public List<AssociatedDataset> listConnectedDatasets(ProjectId projectId) {
+    Objects.requireNonNull(projectId, "projectId must not be null");
+    if (projectInformationService.find(projectId).isEmpty()) {
+      throw new ApplicationException("Project not found: %s".formatted(projectId));
+    }
+    return associatedDatasetRepository.findByProject(projectId);
+  }
+
+  // ── Available instances ─────────────────────────────────────────────────
+
+  /**
+   * Returns the list of configured source instances for the given source
+   * type, as descriptors (without credentials). Used by the UI to
+   * populate the instance selector combo box.
+   *
+   * @param sourceType the source system type
+   * @return configured instances; never null
+   */
+  public List<SourceInstanceDescriptor> availableInstances(SourceType sourceType) {
+    return sourceInstanceRegistry.findBySourceType(sourceType);
+  }
+
+  // ── Internals ───────────────────────────────────────────────────────────
+
+  private InstanceConfig resolveInstanceConfig(String instanceId) {
+    var descriptor = sourceInstanceRegistry.find(instanceId)
+        .orElseThrow(() -> new ApplicationException(
+            "No source instance configured with id: " + instanceId));
+    return descriptor.toInstanceConfig();
+  }
+
+  /**
+   * Subscribes specifically to {@link AssociatedDatasetConnectedEvent}
+   * and caches it for later forwarding to the global
+   * {@link DomainEventDispatcher} (collect-during, forward-after
+   * pattern, same as {@code MeasurementService}).
+   *
+   * <p>The {@code LocalDomainEventDispatcher} uses <em>exact type
+   * matching</em> ({@code ==}) when filtering subscribers, so the
+   * subscriber must return the actual event class, not a parent type.</p>
+   */
+  private record ConnectedEventCollectorSubscriber(
+      List<DomainEvent> domainEventsCache
+  ) implements DomainEventSubscriber<AssociatedDatasetConnectedEvent> {
+
+    @Override
+    public Class<? extends DomainEvent> subscribedToEventType() {
+      return AssociatedDatasetConnectedEvent.class;
+    }
+
+    @Override
+    public void handleEvent(AssociatedDatasetConnectedEvent event) {
+      domainEventsCache.add(event);
+    }
+  }
+}

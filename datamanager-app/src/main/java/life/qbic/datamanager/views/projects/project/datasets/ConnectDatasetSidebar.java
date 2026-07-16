@@ -1,0 +1,624 @@
+package life.qbic.datamanager.views.projects.project.datasets;
+
+import com.vaadin.flow.component.ClickEvent;
+import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.ComponentEventListener;
+import com.vaadin.flow.component.Key;
+import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.combobox.ComboBox;
+import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.grid.GridVariant;
+import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.progressbar.ProgressBar;
+import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.provider.Query;
+import com.vaadin.flow.shared.Registration;
+import java.io.Serial;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.stream.Stream;
+import life.qbic.datamanager.views.Context;
+import life.qbic.datamanager.views.general.Tag;
+import life.qbic.datamanager.views.general.Tag.TagColor;
+import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
+import life.qbic.projectmanagement.application.associated_dataset.AssociatedDatasetService;
+import life.qbic.projectmanagement.application.associated_dataset.SearchHit;
+import life.qbic.projectmanagement.application.associated_dataset.SearchResult;
+import life.qbic.projectmanagement.application.associated_dataset.SourceInstanceDescriptor;
+import life.qbic.projectmanagement.application.associated_dataset.ConnectDatasetError;
+import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
+import life.qbic.projectmanagement.domain.model.associated_dataset.AccessLevel;
+import life.qbic.projectmanagement.domain.model.experiment.Experiment;
+import java.util.concurrent.CompletableFuture;
+import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import life.qbic.projectmanagement.domain.model.associated_dataset.SourceType;
+import org.springframework.security.core.context.SecurityContextHolder;
+
+/**
+ * <b>Connect Dataset Sidebar</b>
+ *
+ * <p>A right-side sliding panel that overlays the associated-datasets
+ * view. Allows users to:
+ * <ul>
+ *   <li>select which InvenioRDM instance to search in (ComboBox);</li>
+ *   <li>search for open datasets via InvenioRDM's REST API (TextField
+ *       with Enter-key trigger);</li>
+ *   <li>select one or more search results via a multi-select grid with
+ *       card-style rows;</li>
+ *   <li>optionally pick an experiment to associate each selected dataset
+ *       with;</li>
+ *   <li>confirm the connection via a footer button.</li>
+ * </ul>
+ *
+ * <p>The sidebar is instantiated lazily by the parent view and opened
+ * via {@link #open()}. It closes itself after a successful connect or
+ * when the user clicks the close button / backdrop.</p>
+ *
+ * <p>Fires {@link DatasetsConnectedEvent} on a successful connect so the
+ * parent view can refresh the connected-resources grid.</p>
+ *
+ * @since 1.12.0
+ */
+public class ConnectDatasetSidebar extends Div {
+
+  @Serial
+  private static final long serialVersionUID = 1L;
+
+  private final AssociatedDatasetService associatedDatasetService;
+  private final ExperimentInformationService experimentInformationService;
+
+  private final Div overlay;
+  private final Div panel;
+  private final ComboBox<SourceInstanceDescriptor> instanceSelector;
+  private final TextField searchField;
+  private final Grid<SearchHit> resultsGrid;
+  private final ComboBox<ExperimentEntry> experimentSelector;
+  private final Button connectButton;
+  private final Span selectionCountLabel;
+
+  /**
+   * Wraps {@code resultsGrid} together with {@code loadingIndicator}.
+   * The spinner is a sibling (not a CSS overlay) because the grid is
+   * already the scroll container; we just swap visibility.
+   */
+  private final Div resultsContainer;
+  private final Div loadingIndicator;
+  private final ProgressBar progressBar;
+
+  /**
+   * Buffer for errors caught inside the lazy-loading callback. The
+   * callback cannot show a Notification directly because it fires
+   * during Grid rendering; instead it stores the message here and
+   * {@link #refreshSearchResults()} surfaces it afterwards.
+   */
+  private volatile String lastSearchError;
+
+  private final List<SourceInstanceDescriptor> availableInstances = new ArrayList<>();
+  private final List<ExperimentEntry> availableExperiments = new ArrayList<>();
+
+  private Context context;
+
+  public ConnectDatasetSidebar(
+      AssociatedDatasetService associatedDatasetService,
+      ExperimentInformationService experimentInformationService,
+      Object userPermissions) {
+    this.associatedDatasetService = associatedDatasetService;
+    this.experimentInformationService = experimentInformationService;
+
+    // ── Form controls (MUST be initialized before buildSidebarBody) ──
+    // Some fields are referenced directly inside buildSidebarBody, which is
+    // called at the end of this constructor. Initializing them up front
+    // avoids a NullPointerException that would otherwise fire the moment
+    // the sidebar is built.
+    instanceSelector = new ComboBox<>();
+    instanceSelector.setLabel("Repository");
+    instanceSelector.setPlaceholder("Select repository…");
+    instanceSelector.setItemLabelGenerator(SourceInstanceDescriptor::displayName);
+    instanceSelector.addValueChangeListener(e -> refreshSearchResults());
+    instanceSelector.setOverlayClassName("connect-dataset-sidebar-overlay");
+
+    searchField = new TextField();
+    searchField.setPlaceholder("Search by title, DOI, or creator…");
+    searchField.setClearButtonVisible(true);
+    searchField.getStyle().set("flex-grow", "1");
+    searchField.addKeyDownListener(Key.ENTER, e -> refreshSearchResults());
+
+    resultsGrid = new Grid<>();
+    resultsGrid.addThemeVariants(GridVariant.LUMO_COMPACT, GridVariant.LUMO_NO_ROW_BORDERS);
+    resultsGrid.setSelectionMode(Grid.SelectionMode.MULTI);
+    resultsGrid.setWidthFull();
+    resultsGrid.setHeight("400px"); // Fixed height to enable virtual scrolling
+    resultsGrid.addComponentColumn(this::buildSearchResultCard).setFlexGrow(1);
+    resultsGrid.addSelectionListener(e -> onSelectionChanged());
+
+    // ── Lazy-loading data provider ────────────────────────────────
+    // The grid fetches pages on demand as the user scrolls, rather than
+    // pulling the first page synchronously when the sidebar opens. This
+    // keeps the UI responsive regardless of InvenioRDM latency.
+    resultsGrid.setItems(this::fetchPage);
+
+    // ── Loading indicator ──────────────────────────────────────────
+    // Indeterminate progress bar + "Searching…" label, shown during
+    // lazy fetches. Wrapped together with the grid in resultsContainer.
+    // Note: without @Push the bar is rendered in the same response as
+    // the data so it flashes briefly, but it still gives the user a
+    // visible cue that a fetch is in progress on the server side.
+    progressBar = new ProgressBar();
+    progressBar.setIndeterminate(true);
+    progressBar.setWidthFull();
+
+    var loadingLabel = new Span("Searching…");
+    loadingLabel.addClassName("extra-small-body-text");
+    loadingLabel.addClassName("color-secondary");
+
+    loadingIndicator = new Div();
+    loadingIndicator.addClassNames("flex-vertical", "items-center", "gap-02");
+    loadingIndicator.getStyle().set("padding", "var(--lumo-space-m)");
+    loadingIndicator.getStyle().set("display", "none");
+    loadingIndicator.add(progressBar, loadingLabel);
+
+    resultsContainer = new Div();
+    resultsContainer.addClassNames("flex-vertical");
+    resultsContainer.getStyle().set("position", "relative");
+    // Make this container fill remaining space in the flex column
+    resultsContainer.getStyle().set("flex-grow", "1");
+    resultsContainer.getStyle().set("min-height", "0"); // Critical for flex layout
+    resultsContainer.add(loadingIndicator, resultsGrid);
+
+    experimentSelector = new ComboBox<>();
+    experimentSelector.setLabel("Link to experiment (optional)");
+    experimentSelector.setPlaceholder("No experiment selected");
+    experimentSelector.setItems(availableExperiments);
+    experimentSelector.setItemLabelGenerator(ExperimentEntry::label);
+    experimentSelector.setClearButtonVisible(true);
+    experimentSelector.setWidthFull();
+
+    selectionCountLabel = new Span();
+    selectionCountLabel.addClassName("normal-body-text");
+    selectionCountLabel.addClassName("color-secondary");
+
+    connectButton = new Button("Connect Selected", VaadinIcon.PLUS_CIRCLE.create());
+    connectButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    connectButton.setEnabled(false);
+    connectButton.addClickListener(e -> connectSelectedDatasets());
+
+    // ── Overlay (semi-transparent backdrop) ──────────────────────────
+    overlay = new Div();
+    overlay.getStyle().set("position", "fixed");
+    overlay.getStyle().set("top", "0");
+    overlay.getStyle().set("left", "0");
+    overlay.getStyle().set("width", "100%");
+    overlay.getStyle().set("height", "100%");
+    overlay.getStyle().set("background-color", "rgba(0,0,0,0.3)");
+    overlay.getStyle().set("z-index", "999");
+    overlay.getStyle().set("display", "none");
+    overlay.addClickListener(e -> close());
+    add(overlay);
+
+    // ── Panel ─────────────────────────────────────────────────────────
+    panel = new Div();
+    panel.getStyle().set("position", "fixed");
+    panel.getStyle().set("top", "0");
+    panel.getStyle().set("right", "0");
+    panel.getStyle().set("width", "640px");
+    panel.getStyle().set("height", "100%");
+    panel.getStyle().set("background-color", "var(--lumo-base-color)");
+    panel.getStyle().set("box-shadow", "-4px 0 24px rgba(0,0,0,0.12)");
+    panel.getStyle().set("z-index", "1000");
+    panel.getStyle().set("box-sizing", "border-box");
+    panel.getStyle().set("display", "none");
+    add(panel);
+
+    // Build sidebar body AFTER form-controls are initialized — it reads
+    // instanceSelector / searchField / resultsGrid / experimentSelector /
+    // selectionCountLabel / connectButton directly when composing the DOM.
+    panel.add(buildSidebarBody());
+  }
+
+  // ── Public API ──────────────────────────────────────────────────────
+
+  public void setContext(Context context) {
+    this.context = context;
+    if (context != null && context.projectId().isPresent()) {
+      loadInstances();
+    }
+  }
+
+  public void open() {
+    loadInstances();
+    // Load experiments asynchronously to avoid blocking
+    if (context != null && context.projectId().isPresent()) {
+      loadExperimentsAsync();
+    }
+    overlay.getStyle().set("display", "block");
+    panel.getStyle().set("display", "block");
+    // Note: we do NOT eagerly fetch the first page here. The grid's
+    // lazy-loading data provider will fire its first fetch when the
+    // grid first renders on the client — keeping this method
+    // non-blocking even if InvenioRDM has high latency.
+  }
+
+  public void close() {
+    overlay.getStyle().set("display", "none");
+    panel.getStyle().set("display", "none");
+    resultsGrid.deselectAll();
+    selectionCountLabel.setText("");
+    connectButton.setEnabled(false);
+  }
+
+  public Registration addDatasetsConnectedListener(
+      ComponentEventListener<DatasetsConnectedEvent> listener) {
+    return addListener(DatasetsConnectedEvent.class, listener);
+  }
+
+  // ── Internal build ──────────────────────────────────────────────────
+
+  private Div buildSidebarBody() {
+    var body = new Div();
+    body.getStyle().set("height", "100%");
+    body.getStyle().set("box-sizing", "border-box");
+    body.getStyle().set("display", "flex");
+    body.getStyle().set("flex-direction", "column");
+
+    // Header
+    var header = new Div();
+    header.addClassNames("flex-horizontal", "items-center");
+    header.getStyle().set("padding", "var(--lumo-space-m) var(--lumo-space-l)");
+    header.getStyle().set("border-bottom", "1px solid var(--lumo-contrast-10pct)");
+    header.getStyle().set("flex-shrink", "0");
+    header.getStyle().set("gap", "var(--lumo-space-s)");
+
+    var sidebarTitle = new Span("Connect Datasets");
+    sidebarTitle.addClassName("heading-3");
+    sidebarTitle.getStyle().set("flex-grow", "1");
+
+    var closeButton = new Button(VaadinIcon.CLOSE_SMALL.create());
+    closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+    closeButton.setTooltipText("Close");
+    closeButton.addClickListener(e -> close());
+
+    header.add(sidebarTitle, closeButton);
+    body.add(header);
+
+    // Content area - handles search form and results
+    var content = new Div();
+    content.getStyle().set("flex-grow", "1");
+    content.getStyle().set("padding", "var(--lumo-space-l)");
+    content.getStyle().set("display", "flex");
+    content.getStyle().set("flex-direction", "column");
+    content.getStyle().set("min-height", "0");
+    content.getStyle().set("overflow-y", "auto"); // Make content scrollable
+
+    var searchRow = new Div();
+    searchRow.getStyle().set("display", "flex");
+    searchRow.getStyle().set("gap", "var(--lumo-space-xs)");
+    searchRow.getStyle().set("align-items", "flex-end");
+    searchRow.getStyle().set("margin-bottom", "var(--lumo-space-s)");
+    searchRow.getStyle().set("min-width", "0");
+
+    instanceSelector.setWidth("200px");
+    searchRow.add(instanceSelector, searchField);
+
+    var searchButtonBar = new Div();
+    searchButtonBar.getStyle().set("display", "flex");
+    searchButtonBar.getStyle().set("gap", "var(--lumo-space-xs)");
+
+    var searchButton = new Button("Search", VaadinIcon.SEARCH.create());
+    searchButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    searchButton.addClickListener(e -> refreshSearchResults());
+
+    var clearButton = new Button("Clear");
+    clearButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+    clearButton.addClickListener(e -> {
+      searchField.clear();
+      refreshSearchResults();
+    });
+
+    searchButtonBar.add(searchButton, clearButton);
+    content.add(searchRow, searchButtonBar);
+    
+    // Results container - takes remaining space in content
+    resultsContainer.getStyle().set("flex-grow", "1");
+    resultsContainer.getStyle().set("min-height", "200px"); // Minimum height for grid
+    content.add(resultsContainer);
+
+    body.add(content);
+
+    // Footer with experiment selector and connect button
+    var footer = new Div();
+    footer.addClassNames("flex-vertical");
+    footer.getStyle().set("padding", "var(--lumo-space-m) var(--lumo-space-l)");
+    footer.getStyle().set("border-top", "1px solid var(--lumo-contrast-10pct)");
+    footer.getStyle().set("flex-shrink", "0");
+    
+    // Experiment picker (optional association — AC9)
+    var experimentSection = new Div();
+    experimentSection.addClassNames("flex-vertical", "gap-01");
+    experimentSection.getStyle().set("margin-bottom", "var(--lumo-space-m)");
+    experimentSection.add(experimentSelector);
+    var experimentHelp = new Span(
+        "Optionally link the connected dataset(s) to a specific experiment.");
+    experimentHelp.addClassName("extra-small-body-text");
+    experimentHelp.addClassName("color-secondary");
+    experimentSection.add(experimentHelp);
+    footer.add(experimentSection);
+
+    // Connect button row
+    var buttonRow = new Div();
+    buttonRow.addClassNames("flex-horizontal", "items-center", "gap-03");
+    selectionCountLabel.addClassName("extra-small-body-text");
+    selectionCountLabel.addClassName("color-secondary");
+    buttonRow.add(selectionCountLabel, connectButton);
+    footer.add(buttonRow);
+    
+    body.add(footer);
+
+    return body;
+  }
+
+  // ── Data loading ────────────────────────────────────────────────────
+
+  private void loadInstances() {
+    availableInstances.clear();
+    availableInstances.addAll(associatedDatasetService.availableInstances(SourceType.INVENIO_RDM));
+    instanceSelector.setItems(availableInstances);
+    if (!availableInstances.isEmpty() && instanceSelector.isEmpty()) {
+      instanceSelector.setValue(availableInstances.get(0));
+    }
+  }
+
+  /**
+   * Loads experiments asynchronously to avoid blocking the UI thread.
+   * Called from {@link #open()} so the sidebar opens instantly even
+   * when the experiment query is slow.
+   */
+  private void loadExperimentsAsync() {
+    if (context == null || context.projectId().isEmpty()) {
+      return;
+    }
+    ProjectId projectId = context.projectId().orElseThrow();
+    // Fetch in background thread, then update UI on the main thread
+    CompletableFuture.supplyAsync(
+            () -> experimentInformationService.findAllForProject(projectId))
+        .thenAccept(experiments -> {
+          // Schedule UI update on Vaadin's UI access thread
+          UI ui = UI.getCurrent();
+          if (ui != null) {
+            ui.access(() -> {
+              availableExperiments.clear();
+              for (Experiment exp : experiments) {
+                availableExperiments.add(new ExperimentEntry(exp.experimentId(), exp.getName()));
+              }
+              experimentSelector.setItems(availableExperiments);
+            });
+          }
+        });
+  }
+
+  // ── Search ──────────────────────────────────────────────────────────
+
+  /**
+   * Triggers a re-fetch of search results by invalidating the lazy-
+   * loading data provider. Called whenever the instance selector
+   * changes, the user submits / clears the search field, etc.
+   *
+   * <p>The actual HTTP call happens inside {@link #fetchPage(Query)},
+   * invoked by the grid on demand as it renders/scrolls. This method
+   * simply tells the grid to re-evaluate its data; any error caught in
+   * the callback is surfaced synchronously to the user afterwards.</p>
+   */
+  private void refreshSearchResults() {
+    lastSearchError = null;
+    resultsGrid.getDataProvider().refreshAll();
+    if (lastSearchError != null) {
+      showErrorNotification("Search failed: " + lastSearchError);
+    }
+  }
+
+  /**
+   * Lazy-loading callback wired to {@link #resultsGrid}.
+   *
+   * <p>Invoked by Vaadin when the grid needs a page of data — i.e. when
+   * the grid first renders, or when the user scrolls. The mapping from
+   * the grid's {@code offset/limit} to InvenioRDM's {@code page/size}
+   * (InvenioRDM pages are 1-indexed) is handled here.</p>
+   *
+   * <p>Errors are caught and stored in {@link #lastSearchError}; the
+   * surrounding refresh call surfaces them via toast.</p>
+   */
+  private Stream<SearchHit> fetchPage(Query<SearchHit, Void> query) {
+    if (instanceSelector.isEmpty() || instanceSelector.getValue() == null) {
+      return Stream.empty();
+    }
+    var instance = instanceSelector.getValue();
+    String searchTerm = searchField.getValue() != null ? searchField.getValue() : "";
+    int pageSize = query.getLimit();
+    // Guard against zero-limit queries (can happen when grid is not yet
+    // fully laid out — Vaadin sometimes calls with limit = 0).
+    if (pageSize <= 0) {
+      return Stream.empty();
+    }
+    int page = query.getOffset() / pageSize + 1;  // InvenioRDM pages are 1-indexed
+
+    loadingIndicator.getStyle().set("display", "flex");
+    try {
+      SearchResult result = associatedDatasetService.searchDatasets(
+          SourceType.INVENIO_RDM,
+          instance.id(),
+          searchTerm,
+          page,
+          pageSize,
+          currentUserId());
+      return result.hits().stream();
+    } catch (Exception e) {
+      lastSearchError = e.getMessage();
+      return Stream.empty();
+    } finally {
+      loadingIndicator.getStyle().set("display", "none");
+    }
+  }
+
+  private void onSelectionChanged() {
+    int count = resultsGrid.getSelectedItems().size();
+    selectionCountLabel.setText(count == 0 ? "" : count + " selected");
+    connectButton.setEnabled(count > 0);
+  }
+
+  // ── Connect confirmation ────────────────────────────────────────────
+
+  private void connectSelectedDatasets() {
+    if (context == null || context.projectId().isEmpty()) {
+      return;
+    }
+    ProjectId projectId = context.projectId().orElseThrow();
+    var instance = instanceSelector.getValue();
+    var selected = new ArrayList<>(resultsGrid.getSelectedItems());
+    if (selected.isEmpty()) {
+      return;
+    }
+    var experimentId = experimentSelector.isReadOnly() || experimentSelector.isEmpty()
+        ? null
+        : experimentSelector.getValue().id();
+
+    int successCount = 0;
+    int failureCount = 0;
+
+    String actingUser = currentUserId();
+    for (SearchHit hit : selected) {
+      var result = associatedDatasetService.connectDataset(
+          projectId,
+          SourceType.INVENIO_RDM,
+          instance.id(),
+          hit.externalHandleValue(),
+          java.util.Optional.ofNullable(experimentId),
+          actingUser);
+      if (result.isValue()) {
+        successCount++;
+      } else {
+        failureCount++;
+      }
+    }
+
+    resultsGrid.deselectAll();
+    onSelectionChanged();
+    close();
+
+    if (successCount > 0) {
+      showSuccessNotification(
+          "%d dataset(s) connected to this project.".formatted(successCount));
+      fireEvent(new DatasetsConnectedEvent(this));
+    }
+    if (failureCount > 0) {
+      showErrorNotification(
+          "%d dataset(s) could not be connected.".formatted(failureCount));
+    }
+  }
+
+  // ── Card-style row ──────────────────────────────────────────────────
+
+  private Component buildSearchResultCard(SearchHit hit) {
+    var card = new Div();
+    card.addClassName("border");
+    card.getStyle().set("padding", "var(--lumo-space-m)");
+    card.getStyle().set("margin-bottom", "var(--lumo-space-s)");
+    card.getStyle().set("border-radius", "var(--lumo-border-radius-m)");
+
+    // Top row: access badge + provider + date
+    var topRow = new Div();
+    topRow.addClassNames("flex-horizontal", "items-center", "gap-02");
+    topRow.getStyle().set("margin-bottom", "var(--lumo-space-xs)");
+
+    Tag accessBadge = hit.accessLevel() == AccessLevel.PUBLIC
+        ? new Tag("Public") : new Tag("Restricted");
+    accessBadge.setTagColor(hit.accessLevel() == AccessLevel.PUBLIC
+        ? TagColor.SUCCESS : TagColor.WARNING);
+    topRow.add(accessBadge);
+
+    var providerTag = new Tag(hit.resourceProvider());
+    providerTag.setTagColor(TagColor.PRIMARY);
+    topRow.add(providerTag);
+
+    var dateSpan = new Span(hit.publicationDate().format(
+        DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.ENGLISH)));
+    dateSpan.addClassName("extra-small-body-text");
+    dateSpan.addClassName("color-secondary");
+    dateSpan.getStyle().set("margin-left", "auto");
+    topRow.add(dateSpan);
+
+    card.add(topRow);
+
+    // Title
+    var title = new Span(hit.title());
+    title.addClassName("normal-body-text");
+    title.getStyle().set("font-weight", "600");
+    title.getStyle().set("margin-bottom", "var(--lumo-space-xs)");
+    title.getStyle().set("display", "block");
+    card.add(title);
+
+    // Creator + DOI row
+    var metaRow = new Div();
+    metaRow.addClassNames("flex-horizontal", "gap-04", "items-center");
+    metaRow.add(new Span("PID: " + hit.pid()));
+    card.add(metaRow);
+
+    return card;
+  }
+
+  // ── Helpers ─────────────────────────────────────────────────────────
+
+  private String currentUserId() {
+    var principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    if (principal instanceof QbicUserDetails ud) {
+      return ud.getUserId();
+    }
+    throw new IllegalStateException("Unable to resolve current user identity");
+  }
+
+  private void showSuccessNotification(String message) {
+    var n = new Notification(message, 3500);
+    n.addClassName("success-toast");
+    n.setPosition(Notification.Position.BOTTOM_END);
+    n.open();
+  }
+
+  private void showErrorNotification(String message) {
+    var n = new Notification(message, 4500);
+    n.addClassName("error-toast");
+    n.setPosition(Notification.Position.BOTTOM_END);
+    n.open();
+  }
+
+  /** A lightweight record mapping an ExperimentId to its display name. */
+  record ExperimentEntry(ExperimentId id, String label) {
+    @Override
+    public String toString() {
+      return label;
+    }
+  }
+
+  // ── Custom event ────────────────────────────────────────────────────
+
+  /**
+   * Fired when one or more datasets have been successfully connected to
+   * the project. The parent view refreshes its connected-resources grid
+   * in response.
+   */
+  public static class DatasetsConnectedEvent
+      extends com.vaadin.flow.component.ComponentEvent<ConnectDatasetSidebar> {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
+
+    public DatasetsConnectedEvent(ConnectDatasetSidebar source) {
+      super(source, false);
+    }
+  }
+}

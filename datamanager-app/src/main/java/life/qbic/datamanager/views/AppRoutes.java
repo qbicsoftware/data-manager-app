@@ -113,6 +113,11 @@ public class AppRoutes {
     public static final String ONTOLOGY = "projects/%s/ontology";
 
     /**
+     * Path to the associated datasets view within a project (FEAT-DATSET-01).
+     */
+    public static final String DATASETS = "projects/%s/datasets";
+
+    /**
      * The profile page that displays information for the currently logged-in user
      */
     public static final String PROFILE = "profile";
