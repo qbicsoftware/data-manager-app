@@ -273,6 +273,7 @@ public class ConnectDatasetSidebar extends Div {
     experimentSelector.setItemLabelGenerator(ExperimentEntry::label);
     experimentSelector.setClearButtonVisible(true);
     experimentSelector.setWidthFull();
+    experimentSelector.setOverlayClassName("connect-dataset-sidebar-overlay");
 
     selectionCountLabel = new Span();
     selectionCountLabel.addClassName("normal-body-text");
