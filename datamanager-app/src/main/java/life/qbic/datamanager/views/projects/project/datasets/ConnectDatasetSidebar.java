@@ -480,6 +480,13 @@ public class ConnectDatasetSidebar extends Div {
    * surrounding refresh call surfaces them via toast.</p>
    */
   private Stream<SearchHit> fetchPage(Query<SearchHit, Void> query) {
+    // Satisfy Vaadin's data provider contract: must access offset and limit
+    // before returning, even on early-exit paths. Vaadin's DataCommunicator
+    // verifies these are called to prevent arbitrary data returns that could
+    // cause rendering bugs or memory issues.
+    int offset = query.getOffset();
+    int limit = query.getLimit();
+    
     // Until the user has explicitly triggered a search at least once in
     // this sidebar session, we never make an HTTP call — even if Vaadin
     // asks for the first page in order to render initially-visible rows.
@@ -493,13 +500,13 @@ public class ConnectDatasetSidebar extends Div {
     }
     var instance = instanceSelector.getValue();
     String searchTerm = searchField.getValue() != null ? searchField.getValue() : "";
-    int pageSize = query.getLimit();
+    int pageSize = limit;
     // Guard against zero-limit queries (can happen when grid is not yet
     // fully laid out — Vaadin sometimes calls with limit = 0).
     if (pageSize <= 0) {
       return Stream.empty();
     }
-    int page = query.getOffset() / pageSize + 1;  // InvenioRDM pages are 1-indexed
+    int page = offset / pageSize + 1;  // InvenioRDM pages are 1-indexed
 
     loadingIndicator.getStyle().set("display", "flex");
     try {
