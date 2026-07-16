@@ -101,6 +101,30 @@ public class ConnectDatasetSidebar extends Div {
    */
   private volatile String lastSearchError;
 
+  /**
+   * Gate for the lazy-loading callback.
+   *
+   * <p>Vaadin calls {@link #fetchPage(Query)} automatically whenever the
+   * grid first renders (to fill initially-visible rows) or when it needs
+   * a page during scroll. If the sidebar is being opened (the grid was
+   * just attached to the UI), this automatic first-page fetch would fire
+   * an HTTP call against InvenioRDM from the same Vaadin response that
+   * is supposed to reveal the sidebar — making the open action appear
+   * to freeze.
+   *
+   * <p>To keep {@code open()} instant, the flag is cleared in
+   * {@link #close()} and set to {@code true} only when the user has
+   * explicitly triggered a search (by clicking Search, pressing Enter,
+   * or clearing the field). Until then, {@code fetchPage} returns an
+   * empty stream. After the first explicit search the gate stays open
+   * for the lifetime of that sidebar session, so scrolling still loads
+   * follow-up pages lazily.
+   *
+   * <p>This does not affect AC3 ("Paginated results when no query") —
+   * the user's very first search can be with an empty term.
+   */
+  private volatile boolean searchInitiated = false;
+
   private final List<SourceInstanceDescriptor> availableInstances = new ArrayList<>();
   private final List<ExperimentEntry> availableExperiments = new ArrayList<>();
 
@@ -122,14 +146,26 @@ public class ConnectDatasetSidebar extends Div {
     instanceSelector.setLabel("Repository");
     instanceSelector.setPlaceholder("Select repository…");
     instanceSelector.setItemLabelGenerator(SourceInstanceDescriptor::displayName);
-    instanceSelector.addValueChangeListener(e -> refreshSearchResults());
+    instanceSelector.addValueChangeListener(e -> {
+      // Only refetch when the user changes the instance *after* an
+      // explicit search. During open(), loadInstances() auto-selects the
+      // first item — we must NOT treat that auto-selection as a search
+      // trigger, or the sidebar would block on InvenioRDM latency.
+      if (!searchInitiated) {
+        return;
+      }
+      refreshSearchResults();
+    });
     instanceSelector.setOverlayClassName("connect-dataset-sidebar-overlay");
 
     searchField = new TextField();
     searchField.setPlaceholder("Search by title, DOI, or creator…");
     searchField.setClearButtonVisible(true);
     searchField.getStyle().set("flex-grow", "1");
-    searchField.addKeyDownListener(Key.ENTER, e -> refreshSearchResults());
+    searchField.addKeyDownListener(Key.ENTER, e -> {
+      searchInitiated = true;
+      refreshSearchResults();
+    });
 
     resultsGrid = new Grid<>();
     resultsGrid.addThemeVariants(GridVariant.LUMO_COMPACT, GridVariant.LUMO_NO_ROW_BORDERS);
@@ -240,10 +276,12 @@ public class ConnectDatasetSidebar extends Div {
     }
     overlay.getStyle().set("display", "block");
     panel.getStyle().set("display", "block");
-    // Note: we do NOT eagerly fetch the first page here. The grid's
-    // lazy-loading data provider will fire its first fetch when the
-    // grid first renders on the client — keeping this method
-    // non-blocking even if InvenioRDM has high latency.
+    // We intentionally do NOT trigger any fetch here. The grid's lazy-
+    // loading data provider is gated by {@link #searchInitiated} — until
+    // the user clicks Search / presses Enter / clicks Clear, fetchPage()
+    // returns an empty stream without making an HTTP call. That is what
+    // keeps this method non-blocking even when InvenioRDM has high
+    // latency.
   }
 
   public void close() {
@@ -252,6 +290,9 @@ public class ConnectDatasetSidebar extends Div {
     resultsGrid.deselectAll();
     selectionCountLabel.setText("");
     connectButton.setEnabled(false);
+    // Clear the flag so the next open() does not fire the grid's
+    // automatic first-page fetch against a stale default instance.
+    searchInitiated = false;
   }
 
   public Registration addDatasetsConnectedListener(
@@ -313,12 +354,16 @@ public class ConnectDatasetSidebar extends Div {
 
     var searchButton = new Button("Search", VaadinIcon.SEARCH.create());
     searchButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    searchButton.addClickListener(e -> refreshSearchResults());
+    searchButton.addClickListener(e -> {
+      searchInitiated = true;
+      refreshSearchResults();
+    });
 
     var clearButton = new Button("Clear");
     clearButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
     clearButton.addClickListener(e -> {
       searchField.clear();
+      searchInitiated = true;
       refreshSearchResults();
     });
 
@@ -435,6 +480,14 @@ public class ConnectDatasetSidebar extends Div {
    * surrounding refresh call surfaces them via toast.</p>
    */
   private Stream<SearchHit> fetchPage(Query<SearchHit, Void> query) {
+    // Until the user has explicitly triggered a search at least once in
+    // this sidebar session, we never make an HTTP call — even if Vaadin
+    // asks for the first page in order to render initially-visible rows.
+    // This is what keeps the sidebar open() instant regardless of
+    // InvenioRDM latency.
+    if (!searchInitiated) {
+      return Stream.empty();
+    }
     if (instanceSelector.isEmpty() || instanceSelector.getValue() == null) {
       return Stream.empty();
     }
