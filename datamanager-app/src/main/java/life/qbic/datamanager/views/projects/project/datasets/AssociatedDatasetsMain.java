@@ -15,6 +15,7 @@ import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.projects.project.ProjectMainLayout;
 import life.qbic.projectmanagement.application.associated_dataset.AssociatedDatasetService;
+import life.qbic.projectmanagement.application.api.AsyncAssociatedDatasetService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -46,6 +47,7 @@ public class AssociatedDatasetsMain extends Main implements BeforeEnterObserver 
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
 
   private final transient AssociatedDatasetService associatedDatasetService;
+  private final transient AsyncAssociatedDatasetService asyncAssociatedDatasetService;
   private final transient ExperimentInformationService experimentInformationService;
   private final transient UserPermissions userPermissions;
   private final transient MessageSourceNotificationFactory notificationFactory;
@@ -58,11 +60,14 @@ public class AssociatedDatasetsMain extends Main implements BeforeEnterObserver 
   @Autowired
   public AssociatedDatasetsMain(
       AssociatedDatasetService associatedDatasetService,
+      AsyncAssociatedDatasetService asyncAssociatedDatasetService,
       ExperimentInformationService experimentInformationService,
       UserPermissions userPermissions,
       MessageSourceNotificationFactory notificationFactory) {
     this.associatedDatasetService = requireNonNull(associatedDatasetService,
         "associatedDatasetService must not be null");
+    this.asyncAssociatedDatasetService = requireNonNull(asyncAssociatedDatasetService,
+        "asyncAssociatedDatasetService must not be null");
     this.experimentInformationService = requireNonNull(experimentInformationService,
         "experimentInformationService must not be null");
     this.userPermissions = requireNonNull(userPermissions,
@@ -102,6 +107,7 @@ public class AssociatedDatasetsMain extends Main implements BeforeEnterObserver 
     if (connectDatasetSidebar == null) {
       connectDatasetSidebar = new ConnectDatasetSidebar(
           associatedDatasetService,
+          asyncAssociatedDatasetService,
           experimentInformationService,
           userPermissions,
           notificationFactory);

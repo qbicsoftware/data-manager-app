@@ -19,16 +19,22 @@ import com.vaadin.flow.shared.Registration;
 import java.io.Serial;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 import static java.util.Objects.requireNonNull;
 import java.util.stream.Stream;
 import life.qbic.datamanager.views.Context;
+import com.vaadin.flow.theme.lumo.LumoIcon;
 import life.qbic.datamanager.views.UiHandle;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.Tag.TagColor;
 import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
+import life.qbic.projectmanagement.application.api.AsyncAssociatedDatasetService;
 import life.qbic.projectmanagement.application.associated_dataset.AssociatedDatasetService;
 import life.qbic.projectmanagement.application.associated_dataset.SearchHit;
 import life.qbic.projectmanagement.application.associated_dataset.SearchResult;
@@ -38,6 +44,9 @@ import life.qbic.projectmanagement.application.experiment.ExperimentInformationS
 import life.qbic.projectmanagement.domain.model.associated_dataset.AccessLevel;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.associated_dataset.SourceType;
@@ -76,6 +85,7 @@ public class ConnectDatasetSidebar extends Div {
   private static final Logger log = LoggerFactory.getLogger(ConnectDatasetSidebar.class);
 
   private final AssociatedDatasetService associatedDatasetService;
+  private final AsyncAssociatedDatasetService asyncAssociatedDatasetService;
   private final ExperimentInformationService experimentInformationService;
   private final MessageSourceNotificationFactory notificationFactory;
   private final UiHandle uiHandle = new UiHandle();
@@ -121,7 +131,12 @@ public class ConnectDatasetSidebar extends Div {
    */
   private final Div resultsContainer;
   private final Div loadingIndicator;
+  private final Span loadingMessage = new Span("Searching for datasets...");
   private final Div welcomeMessage;
+
+  private enum ConnectionStatus {
+    NONE, PENDING, SUCCESS, ERROR
+  }
 
   /**
    * Buffer for errors caught inside the lazy-loading callback. The
@@ -130,6 +145,9 @@ public class ConnectDatasetSidebar extends Div {
    * {@link #refreshSearchResults()} surfaces it afterwards.
    */
   private volatile String lastSearchError;
+
+  /** Tracks per-row connection state during a multi-connect batch. */
+  private final Map<String, ConnectionStatus> rowConnectionStatuses = new ConcurrentHashMap<>();
 
   /**
    * Gate for the lazy-loading callback.
@@ -175,10 +193,12 @@ public class ConnectDatasetSidebar extends Div {
 
   public ConnectDatasetSidebar(
       AssociatedDatasetService associatedDatasetService,
+      AsyncAssociatedDatasetService asyncAssociatedDatasetService,
       ExperimentInformationService experimentInformationService,
       Object userPermissions,
       MessageSourceNotificationFactory notificationFactory) {
     this.associatedDatasetService = associatedDatasetService;
+    this.asyncAssociatedDatasetService = asyncAssociatedDatasetService;
     this.experimentInformationService = experimentInformationService;
     this.notificationFactory = requireNonNull(notificationFactory,
         "notificationFactory must not be null");
@@ -236,9 +256,8 @@ public class ConnectDatasetSidebar extends Div {
     spinner.getStyle().set("font-size", "var(--lumo-font-size-xxxl)");
     spinner.getStyle().set("animation", "spin 1s linear infinite");
     
-    var loadingLabel = new Span("Searching for datasets...");
-    loadingLabel.addClassName("normal-body-text");
-    loadingLabel.getStyle().set("font-weight", "500");
+    loadingMessage.addClassName("normal-body-text");
+    loadingMessage.getStyle().set("font-weight", "500");
     
     var loadingHint = new Span("This may take a few seconds");
     loadingHint.addClassName("small-body-text");
@@ -254,7 +273,7 @@ public class ConnectDatasetSidebar extends Div {
     loadingIndicator.getStyle().set("justify-content", "center");
     loadingIndicator.getStyle().set("background-color", "var(--lumo-base-color)");
     loadingIndicator.getStyle().set("z-index", "2");
-    loadingIndicator.add(spinner, loadingLabel, loadingHint);
+    loadingIndicator.add(spinner, loadingMessage, loadingHint);
 
     // ── Welcome message (shown before first search) ──────────────────
     welcomeMessage = new Div();
@@ -704,48 +723,89 @@ public class ConnectDatasetSidebar extends Div {
         ? null
         : experimentSelector.getValue().id();
 
-    int successCount = 0;
-    int failureCount = 0;
+    uiHandle.bind(UI.getCurrent());
 
-    String actingUser = currentUserId();
+    // 1. Build request list, map correlation ids, mark rows as PENDING
+    Map<String, String> requestIdToHandle = new HashMap<>();
+    List<AsyncAssociatedDatasetService.ConnectDatasetRequest> requests = new ArrayList<>();
     for (SearchHit hit : selected) {
-      var result = associatedDatasetService.connectDataset(
-          projectId,
-          SourceType.INVENIO_RDM,
-          instance.id(),
-          hit.externalHandleValue(),
-          java.util.Optional.ofNullable(experimentId),
-          actingUser);
-      if (result.isValue()) {
-        successCount++;
-      } else {
-        failureCount++;
-      }
+      String reqId = "req-" + UUID.randomUUID();
+      requestIdToHandle.put(reqId, hit.externalHandleValue());
+      rowConnectionStatuses.put(hit.externalHandleValue(), ConnectionStatus.PENDING);
+      requests.add(new AsyncAssociatedDatasetService.ConnectDatasetRequest(
+          reqId, projectId, SourceType.INVENIO_RDM, instance.id(),
+          hit.externalHandleValue(), Optional.ofNullable(experimentId), currentUserId()));
     }
 
-    resultsGrid.deselectAll();
-    onSelectionChanged();
-    close();
+    // 2. UI: enter "connecting" state immediately
+    loadingMessage.setText("Connecting datasets...");
+    loadingIndicator.getStyle().set("display", "flex");
+    setControlsEnabled(false);
+    resultsGrid.getDataProvider().refreshAll();
 
-    if (successCount > 0) {
-      notificationFactory.toast("dataset.connected.success",
-          new Object[]{successCount}, getLocale()).open();
-      fireEvent(new DatasetsConnectedEvent(this));
-    }
-    if (failureCount > 0) {
-      notificationFactory.toast("dataset.connected.failure",
-          new Object[]{failureCount}, getLocale()).open();
-    }
+    AtomicInteger successCount = new AtomicInteger(0);
+    AtomicInteger failureCount = new AtomicInteger(0);
+
+    // 3. Fire-and-subscribe — callbacks run on boundedElastic worker threads
+    asyncAssociatedDatasetService.connectDatasets(requests).subscribe(
+        response -> {
+          String handle = requestIdToHandle.get(response.requestId());
+          rowConnectionStatuses.put(handle,
+              response.associatedDatasetId() != null
+                  ? ConnectionStatus.SUCCESS
+                  : ConnectionStatus.ERROR);
+          if (response.associatedDatasetId() != null) {
+            successCount.incrementAndGet();
+          } else {
+            failureCount.incrementAndGet();
+          }
+          uiHandle.onUiAndPush(() -> resultsGrid.getDataProvider().refreshAll());
+        },
+        error -> {
+          // Should not fire — per-request errors are wrapped by the service
+          failureCount.addAndGet(selected.size());
+          uiHandle.onUiAndPush(() -> resultsGrid.getDataProvider().refreshAll());
+        },
+        () -> {
+          // onComplete — runs on boundedElastic after all responses received
+          CompletableFuture.delayedExecutor(600, TimeUnit.MILLISECONDS).execute(() -> {
+            uiHandle.onUiAndPush(() -> {
+              loadingIndicator.getStyle().set("display", "none");
+              loadingMessage.setText("Searching for datasets...");
+              setControlsEnabled(true);
+              rowConnectionStatuses.clear();
+              resultsGrid.getDataProvider().refreshAll();
+              resultsGrid.deselectAll();
+              onSelectionChanged();
+              close();
+              if (successCount.get() > 0) {
+                notificationFactory.toast("dataset.connected.success",
+                    new Object[]{successCount.get()}, getLocale()).open();
+                fireEvent(new DatasetsConnectedEvent(this));
+              }
+              if (failureCount.get() > 0) {
+                notificationFactory.toast("dataset.connected.failure",
+                    new Object[]{failureCount.get()}, getLocale()).open();
+              }
+            });
+          });
+        }
+    );
   }
 
   // ── Card-style row ──────────────────────────────────────────────────
 
   private Component buildSearchResultCard(SearchHit hit) {
+    ConnectionStatus status = rowConnectionStatuses.getOrDefault(
+        hit.externalHandleValue(), ConnectionStatus.NONE);
+
     var card = new Div();
     card.addClassName("border");
     card.getStyle().set("padding", "var(--lumo-space-m)");
     card.getStyle().set("margin-bottom", "var(--lumo-space-s)");
     card.getStyle().set("border-radius", "var(--lumo-border-radius-m)");
+    card.getStyle().set("transition", "opacity 0.2s ease");
+    card.getStyle().set("opacity", status == ConnectionStatus.PENDING ? "0.5" : "1");
 
     // Top row: access badge + provider + date
     var topRow = new Div();
@@ -768,6 +828,19 @@ public class ConnectDatasetSidebar extends Div {
     dateSpan.addClassName("color-secondary");
     dateSpan.getStyle().set("margin-left", "auto");
     topRow.add(dateSpan);
+
+    // Connection status indicator (SUCCESS / ERROR) appended on the right
+    if (status == ConnectionStatus.SUCCESS) {
+      var icon = LumoIcon.CHECKMARK.create();
+      icon.getStyle().set("color", "var(--lumo-success-color)");
+      icon.getStyle().set("margin-left", "var(--lumo-space-s)");
+      topRow.add(icon);
+    } else if (status == ConnectionStatus.ERROR) {
+      var icon = LumoIcon.CROSS.create();
+      icon.getStyle().set("color", "var(--lumo-error-color)");
+      icon.getStyle().set("margin-left", "var(--lumo-space-s)");
+      topRow.add(icon);
+    }
 
     card.add(topRow);
 

@@ -26,6 +26,9 @@ import life.qbic.infrastructure.email.EmailServiceProvider;
 import life.qbic.infrastructure.email.identity.IdentityEmailServiceProvider;
 import life.qbic.infrastructure.email.project.ProjectManagementEmailServiceProvider;
 import life.qbic.projectmanagement.application.AppContextProvider;
+import life.qbic.projectmanagement.application.api.AsyncAssociatedDatasetService;
+import life.qbic.projectmanagement.application.api.AsyncAssociatedDatasetServiceImpl;
+import life.qbic.projectmanagement.application.associated_dataset.AssociatedDatasetService;
 import life.qbic.projectmanagement.application.OrganisationRepository;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.api.SampleCodeService;
@@ -321,6 +324,12 @@ public class AppConfig {
     var updateProjectUponQCChange = new UpdateProjectUponQCCreation(
         qualityControlService, projectInformationService, jobScheduler);
     return new QCAddedPolicy(updateProjectUponQCChange);
+  }
+
+  @Bean
+  public AsyncAssociatedDatasetService asyncAssociatedDatasetService(
+      AssociatedDatasetService associatedDatasetService) {
+    return new AsyncAssociatedDatasetServiceImpl(associatedDatasetService);
   }
 
   @Bean
