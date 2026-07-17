@@ -42,10 +42,11 @@ import life.qbic.projectmanagement.application.associated_dataset.ConnectDataset
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.domain.model.associated_dataset.AccessLevel;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import reactor.core.publisher.Mono;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.associated_dataset.SourceType;
@@ -750,27 +751,14 @@ public class ConnectDatasetSidebar extends Div {
     // 3. Fire-and-subscribe — callbacks run on boundedElastic worker threads
     associatedDatasetService.connectDatasets(requests).subscribe(
         response -> {
-          String handle = requestIdToHandle.get(response.requestId());
-          rowConnectionStatuses.put(handle,
-              response.associatedDatasetId() != null
-                  ? ConnectionStatus.SUCCESS
-                  : ConnectionStatus.ERROR);
-          if (response.associatedDatasetId() != null) {
-            successCount.incrementAndGet();
-            // Auto-deselect the successfully-connected hit so it cannot be
-            // re-connected by a subsequent "Connect Selected" click. The
-            // footer selection counter ticks down automatically.
-            selected.stream()
-                .filter(h -> h.externalHandleValue().equals(handle))
-                .findFirst()
-                .ifPresent(resultsGrid::deselect);
-          } else {
-            failureCount.incrementAndGet();
-          }
-          uiHandle.onUiAndPush(() -> resultsGrid.getDataProvider().refreshAll());
+          onConnectResponse(response, requestIdToHandle, selected, successCount, failureCount);
         },
         error -> {
-          // Should not fire — per-request errors are wrapped by the service
+          // Should not fire — per-request errors are wrapped by the service.
+          // But if the stream itself terminates in error, record everything
+          // as failed so the UI reflects what happened.
+          log.error("Unexpected error during batch dataset connect",
+              error);
           failureCount.addAndGet(selected.size());
           uiHandle.onUiAndPush(() -> resultsGrid.getDataProvider().refreshAll());
         },
@@ -780,29 +768,89 @@ public class ConnectDatasetSidebar extends Div {
           // badges must stay visible until the user closes the sidebar or
           // starts a new search (cleared in `close()` and
           // `refreshSearchResults()`).
-          CompletableFuture.delayedExecutor(600, TimeUnit.MILLISECONDS).execute(() -> {
+          try {
+            int finalSuccess = successCount.get();
+            int finalFailure = failureCount.get();
+
+            // Hide spinner and restore controls on the UI thread.
             uiHandle.onUiAndPush(() -> {
               loadingIndicator.getStyle().set("display", "none");
               loadingMessage.setText("Searching for datasets...");
               setControlsEnabled(true);
-              // Refresh once more so the auto-deselect is reflected on screen
               resultsGrid.getDataProvider().refreshAll();
               onSelectionChanged();
-              // Let the user see the per-row indicators through the toast.
-              // The sidebar closes when the toast auto-dismisses (≈5s).
-              if (successCount.get() > 0) {
+
+              if (finalSuccess > 0) {
                 notificationFactory.toast("dataset.connected.success",
-                    new Object[]{successCount.get()}, getLocale()).open();
+                    new Object[]{finalSuccess}, getLocale()).open();
                 fireEvent(new DatasetsConnectedEvent(this));
               }
-              if (failureCount.get() > 0) {
+              if (finalFailure > 0) {
                 notificationFactory.toast("dataset.connected.failure",
-                    new Object[]{failureCount.get()}, getLocale()).open();
+                    new Object[]{finalFailure}, getLocale()).open();
               }
             });
-          });
+
+            // Schedule sidebar close to match the toast auto-dismiss
+            // duration (Toast.DEFAULT_OPEN_DURATION ≈ 5s). The user can
+            // also close it manually at any point before the close fires.
+            Mono.delay(Duration.ofSeconds(5))
+                .doOnNext(x -> uiHandle.onUiAndPush(ConnectDatasetSidebar.this::close))
+                .subscribe();
+          } catch (Exception e) {
+            // If anything goes wrong in onComplete we still want the UI to
+            // recover to a sane state. Hide the spinner at minimum.
+            log.error("Exception in connect onComplete",
+                e);
+            uiHandle.onUiAndPush(() -> {
+              loadingIndicator.getStyle().set("display", "none");
+              setControlsEnabled(true);
+              onCloseError("Failed to finish connecting: " + e.getMessage());
+            });
+          }
         }
     );
+  }
+
+  /**
+   * Handles a single per-request response on the boundedElastic worker
+   * thread. Updates the row status map, auto-deselects on success so the
+   * footer counter ticks down live, and refreshes the grid on the UI
+   * thread.
+   */
+  private void onConnectResponse(
+      AssociatedDatasetService.ConnectDatasetResponse response,
+      Map<String, String> requestIdToHandle,
+      List<SearchHit> selected,
+      AtomicInteger successCount,
+      AtomicInteger failureCount) {
+    String handle = requestIdToHandle.get(response.requestId());
+    boolean success = response.associatedDatasetId() != null;
+    rowConnectionStatuses.put(handle,
+        success ? ConnectionStatus.SUCCESS : ConnectionStatus.ERROR);
+    if (success) {
+      successCount.incrementAndGet();
+      // Auto-deselect the successfully-connected hit so it cannot be
+      // re-connected by a subsequent "Connect Selected" click. The
+      // footer selection counter ticks down automatically.
+      selected.stream()
+          .filter(h -> h.externalHandleValue().equals(handle))
+          .findFirst()
+          .ifPresent(resultsGrid::deselect);
+    } else {
+      failureCount.incrementAndGet();
+    }
+    uiHandle.onUiAndPush(() -> resultsGrid.getDataProvider().refreshAll());
+  }
+
+  /**
+   * Fallback error handler invoked when the onComplete path itself fails.
+   * Shows the user a toast so they know something went wrong even if the
+   * normal success/failure toasts didn't fire.
+   */
+  private void onCloseError(String message) {
+    notificationFactory.toast("dataset.search.failed",
+        new Object[]{}, getLocale()).open();
   }
 
   // ── Card-style row ──────────────────────────────────────────────────
