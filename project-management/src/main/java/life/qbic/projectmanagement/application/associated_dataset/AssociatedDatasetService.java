@@ -34,7 +34,15 @@ import life.qbic.projectmanagement.domain.model.associated_dataset.repository.As
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 import org.springframework.stereotype.Service;
+import life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils;
+import java.time.Duration;
+import java.util.List;
 
 /**
  * Application service for associating external datasets with projects.
@@ -231,6 +239,86 @@ public class AssociatedDatasetService {
         .formatted(dataset.id(), projectId, connectedByUserId));
 
     return Result.fromValue(dataset.id());
+  }
+
+  // ── Reactive (non-blocking) connect ─────────────────────────────────────
+
+  private static final Duration PER_REQUEST_TIMEOUT = Duration.ofSeconds(30);
+  private static final int BOUNDED_PARALLELISM = 3;
+
+  /**
+   * Per-request payload mirroring {@link #connectDataset}. Used by the
+   * reactive {@link #connectDatasetAsync(ConnectDatasetRequest)} and
+   * {@link #connectDatasets}. Carries a {@code requestId} so the UI can
+   * correlate responses back to the original grid row.
+   */
+  public record ConnectDatasetRequest(
+      String requestId,
+      ProjectId projectId,
+      SourceType sourceType,
+      String instanceId,
+      String externalHandleValue,
+      Optional<ExperimentId> experimentId,
+      String userId
+  ) {}
+
+  /**
+   * Per-response payload returned by the reactive connect methods.
+   * Exactly one of {@link #associatedDatasetId()} or {@link #error()} is
+   * non-null.
+   */
+  public record ConnectDatasetResponse(
+      String requestId,
+      AssociatedDatasetId associatedDatasetId,
+      ConnectDatasetError error
+  ) {}
+
+  /**
+   * Reactive counterpart of {@link #connectDataset}. Runs the blocking
+   * call on a {@link Schedulers#boundedElastic()} worker thread, with a
+   * per-request 30s timeout. Errors (including timeout and network
+   * exceptions) are wrapped into a
+   * {@link ConnectDatasetError#CONNECT_FAILED} so the reactive stream
+   * never terminates in {@code onError} — enabling the UI to tally
+   * partial successes and failures independently.
+   */
+  @PreAuthorize(
+      "hasPermission(#request.projectId(), 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
+  public Mono<ConnectDatasetResponse> connectDatasetAsync(ConnectDatasetRequest request) {
+    SecurityContext securityContext = SecurityContextHolder.getContext();
+    return Mono.fromCallable(() -> {
+           Result<AssociatedDatasetId, ConnectDatasetError> result = connectDataset(
+               request.projectId(),
+               request.sourceType(),
+               request.instanceId(),
+               request.externalHandleValue(),
+               request.experimentId(),
+               request.userId());
+           return new ConnectDatasetResponse(
+               request.requestId(),
+               result.fold(value -> value, error -> null),
+               result.fold(value -> null, error -> error));
+         })
+        // Propagate caller's SecurityContext to the boundedElastic worker
+        // thread so Spring Security `@PreAuthorize` on connectDataset
+        // resolves correctly.
+        .contextWrite(ReactiveSecurityContextUtils.reactiveSecurity(securityContext))
+        .subscribeOn(Schedulers.boundedElastic())
+        .timeout(PER_REQUEST_TIMEOUT)
+        .onErrorResume(Throwable.class, t ->
+            Mono.just(new ConnectDatasetResponse(
+                request.requestId(), null, ConnectDatasetError.CONNECT_FAILED)));
+  }
+
+  /**
+   * Connects a batch of datasets to a project. Each dataset is resolved
+   * concurrently with bounded parallelism (3, matching unauthenticated
+   * rate limits of public InvenioRDM instances). Responses are emitted
+   * in insertion order so the UI can map them back to grid rows.
+   */
+  public Flux<ConnectDatasetResponse> connectDatasets(List<ConnectDatasetRequest> requests) {
+    return Flux.fromIterable(requests)
+        .flatMapSequential(this::connectDatasetAsync, BOUNDED_PARALLELISM);
   }
 
   // ── List connected datasets ─────────────────────────────────────────────

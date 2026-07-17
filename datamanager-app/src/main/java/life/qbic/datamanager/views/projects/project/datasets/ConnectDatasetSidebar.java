@@ -34,7 +34,6 @@ import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactor
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.Tag.TagColor;
 import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
-import life.qbic.projectmanagement.application.api.AsyncAssociatedDatasetService;
 import life.qbic.projectmanagement.application.associated_dataset.AssociatedDatasetService;
 import life.qbic.projectmanagement.application.associated_dataset.SearchHit;
 import life.qbic.projectmanagement.application.associated_dataset.SearchResult;
@@ -85,7 +84,6 @@ public class ConnectDatasetSidebar extends Div {
   private static final Logger log = LoggerFactory.getLogger(ConnectDatasetSidebar.class);
 
   private final AssociatedDatasetService associatedDatasetService;
-  private final AsyncAssociatedDatasetService asyncAssociatedDatasetService;
   private final ExperimentInformationService experimentInformationService;
   private final MessageSourceNotificationFactory notificationFactory;
   private final UiHandle uiHandle = new UiHandle();
@@ -193,12 +191,10 @@ public class ConnectDatasetSidebar extends Div {
 
   public ConnectDatasetSidebar(
       AssociatedDatasetService associatedDatasetService,
-      AsyncAssociatedDatasetService asyncAssociatedDatasetService,
       ExperimentInformationService experimentInformationService,
       Object userPermissions,
       MessageSourceNotificationFactory notificationFactory) {
     this.associatedDatasetService = associatedDatasetService;
-    this.asyncAssociatedDatasetService = asyncAssociatedDatasetService;
     this.experimentInformationService = experimentInformationService;
     this.notificationFactory = requireNonNull(notificationFactory,
         "notificationFactory must not be null");
@@ -727,12 +723,12 @@ public class ConnectDatasetSidebar extends Div {
 
     // 1. Build request list, map correlation ids, mark rows as PENDING
     Map<String, String> requestIdToHandle = new HashMap<>();
-    List<AsyncAssociatedDatasetService.ConnectDatasetRequest> requests = new ArrayList<>();
+    List<AssociatedDatasetService.ConnectDatasetRequest> requests = new ArrayList<>();
     for (SearchHit hit : selected) {
       String reqId = "req-" + UUID.randomUUID();
       requestIdToHandle.put(reqId, hit.externalHandleValue());
       rowConnectionStatuses.put(hit.externalHandleValue(), ConnectionStatus.PENDING);
-      requests.add(new AsyncAssociatedDatasetService.ConnectDatasetRequest(
+      requests.add(new AssociatedDatasetService.ConnectDatasetRequest(
           reqId, projectId, SourceType.INVENIO_RDM, instance.id(),
           hit.externalHandleValue(), Optional.ofNullable(experimentId), currentUserId()));
     }
@@ -747,7 +743,7 @@ public class ConnectDatasetSidebar extends Div {
     AtomicInteger failureCount = new AtomicInteger(0);
 
     // 3. Fire-and-subscribe — callbacks run on boundedElastic worker threads
-    asyncAssociatedDatasetService.connectDatasets(requests).subscribe(
+    associatedDatasetService.connectDatasets(requests).subscribe(
         response -> {
           String handle = requestIdToHandle.get(response.requestId());
           rowConnectionStatuses.put(handle,
