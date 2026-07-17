@@ -231,9 +231,19 @@ public class AssociatedDatasetService {
 
     // 5. Forward cached events to the global domain event dispatcher
     //    (this triggers notification policy directives like
-    //    InformProjectMembersAboutDatasetConnection from Task 6)
-    domainEventsCache.forEach(
-        domainEvent -> DomainEventDispatcher.instance().dispatch(domainEvent));
+    //    InformProjectMembersAboutDatasetConnection from Task 6).
+    //    The dispatch must not fail the connect itself — the dataset
+    //    has already been persisted in step 4 — so any exception here
+    //    is logged and swallowed so the connect still returns success.
+    try {
+      domainEventsCache.forEach(
+          domainEvent -> DomainEventDispatcher.instance().dispatch(domainEvent));
+    } catch (Exception e) {
+      log.warn("Event dispatch failed while forwarding domain event "
+          + "after dataset connection on project {}; the connection "
+          + "itself succeeded, but collaborators may not have been "
+          + "notified: {}".formatted(projectId, e.getMessage()));
+    }
 
     log.info("Dataset %s connected to project %s by user %s"
         .formatted(dataset.id(), projectId, connectedByUserId));
