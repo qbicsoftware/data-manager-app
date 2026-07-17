@@ -44,7 +44,6 @@ import life.qbic.projectmanagement.domain.model.associated_dataset.AccessLevel;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import reactor.core.publisher.Mono;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
@@ -133,10 +132,6 @@ public class ConnectDatasetSidebar extends Div {
   private final Span loadingMessage = new Span("Searching for datasets...");
   private final Div welcomeMessage;
 
-  private enum ConnectionStatus {
-    NONE, PENDING, SUCCESS, ERROR
-  }
-
   /**
    * Buffer for errors caught inside the lazy-loading callback. The
    * callback cannot show a Notification directly because it fires
@@ -144,9 +139,6 @@ public class ConnectDatasetSidebar extends Div {
    * {@link #refreshSearchResults()} surfaces it afterwards.
    */
   private volatile String lastSearchError;
-
-  /** Tracks per-row connection state during a multi-connect batch. */
-  private final Map<String, ConnectionStatus> rowConnectionStatuses = new ConcurrentHashMap<>();
 
   /**
    * Gate for the lazy-loading callback.
@@ -417,7 +409,6 @@ public class ConnectDatasetSidebar extends Div {
       cachedResults.clear();
     }
     // Unbind UI context
-    rowConnectionStatuses.clear();
     uiHandle.unbind();
   }
 
@@ -604,10 +595,6 @@ public class ConnectDatasetSidebar extends Div {
     searchInitiated = true;
     lastSearchError = null;
 
-    // Clear per-row connection state from any previous connect so a fresh
-    // search starts from a clean slate.
-    rowConnectionStatuses.clear();
-
     // Show loading state immediately and disable controls
     setControlsEnabled(false);
     welcomeMessage.getStyle().set("display", "none");
@@ -727,13 +714,12 @@ public class ConnectDatasetSidebar extends Div {
 
     uiHandle.bind(UI.getCurrent());
 
-    // 1. Build request list, map correlation ids, mark rows as PENDING
+    // 1. Build request list and mark rows as PENDING (no need — just build requests)
     Map<String, String> requestIdToHandle = new HashMap<>();
     List<AssociatedDatasetService.ConnectDatasetRequest> requests = new ArrayList<>();
     for (SearchHit hit : selected) {
       String reqId = "req-" + UUID.randomUUID();
       requestIdToHandle.put(reqId, hit.externalHandleValue());
-      rowConnectionStatuses.put(hit.externalHandleValue(), ConnectionStatus.PENDING);
       requests.add(new AssociatedDatasetService.ConnectDatasetRequest(
           reqId, projectId, SourceType.INVENIO_RDM, instance.id(),
           hit.externalHandleValue(), Optional.ofNullable(experimentId), currentUserId()));
@@ -745,65 +731,57 @@ public class ConnectDatasetSidebar extends Div {
     setControlsEnabled(false);
     resultsGrid.getDataProvider().refreshAll();
 
-    AtomicInteger successCount = new AtomicInteger(0);
-    AtomicInteger failureCount = new AtomicInteger(0);
-    AtomicInteger completedCount = new AtomicInteger(0);
+    final AtomicInteger successCount = new AtomicInteger(0);
+    final AtomicInteger failureCount = new AtomicInteger(0);
+    final AtomicInteger completedCount = new AtomicInteger(0);
     final int total = requests.size();
 
     // 3. Fire-and-subscribe — callbacks run on boundedElastic worker threads.
-    // IMPORTANT: We intentionally do NOT rely on the `onComplete` callback of
-    // the deprecated 3-arg `subscribe(onNext, onError, onComplete)` because it
-    // has known issues in reactor-core 3.x where it is silently skipped when
-    // `subscribeOn(boundedElastic)` is combined with `onErrorResume`. Instead
-    // we count completed responses inside `onNext` and trigger the final UI
-    // update inline once `completedCount == total`.
+    // Count completed responses via AtomicInteger (the 3-arg subscribe's
+    // onComplete callback is not reliable with subscribeOn + onErrorResume).
     associatedDatasetService.connectDatasets(requests)
         .doOnError(error -> log.error("Unexpected error in connect stream", error))
         .subscribe(response -> {
           try {
-            onConnectResponse(response, requestIdToHandle, selected,
-                successCount, failureCount);
+            // Update counters
+            if (response.associatedDatasetId() != null) {
+              successCount.incrementAndGet();
+            } else {
+              failureCount.incrementAndGet();
+            }
 
-            // When the last response is processed, perform the post-connection
-            // UI work on the UI thread. This replaces the deprecated `onComplete`
-            // callback and is guaranteed to run regardless of whether the Flux
-            // actually fires `onComplete`.
+            // When all responses are in, close sidebar and show results
             if (completedCount.incrementAndGet() == total) {
-              onBatchFinished(successCount.get(), failureCount.get(), total);
+              onBatchFinished(successCount.get(), failureCount.get());
             }
           } catch (Exception e) {
-            // Per-response handler must never throw — an exception here would
-            // terminate the Flux on this worker thread and no further onNext
-            // calls would fire, leaving the UI stuck on the spinner forever.
-            log.error("Unhandled exception in onConnectResponse", e);
-            uiHandle.onUiAndPush(() -> {
-              resultsGrid.getDataProvider().refreshAll();
-              onSelectionChanged();
-            });
-            // Still count it so the batch eventually finishes if every
-            // remaining response also throws.
+            // Never let an exception escape — would freeze the UI
+            log.error("Exception in connect response handler", e);
+            failureCount.incrementAndGet();
             if (completedCount.incrementAndGet() == total) {
-              onBatchFinished(0, total, total);
+              onBatchFinished(successCount.get(), failureCount.get());
             }
           }
         });
   }
 
   /**
-   * Runs on the Reactor worker thread when the Nth (last) response has been
-   * processed. Hides the spinner, refreshes the grid, fires success/failure
-   * toasts, and schedules a timed sidebar auto-close.
+   * Hides the spinner, closes the sidebar, fires appropriate toasts, and
+   * dispatches DatasetsConnectedEvent to refresh the parent list.
+   * Called on the Reactor worker thread — UI work goes through UiHandle.
    */
-  private void onBatchFinished(int successCount, int failureCount, int total) {
-    // Ensure UI work runs on the UI thread via the bound UiHandle.
+  private void onBatchFinished(int successCount, int failureCount) {
     uiHandle.onUiAndPush(() -> {
       try {
+        // Hide spinner and restore controls
         loadingIndicator.getStyle().set("display", "none");
         loadingMessage.setText("Searching for datasets...");
         setControlsEnabled(true);
-        resultsGrid.getDataProvider().refreshAll();
-        onSelectionChanged();
 
+        // Close the sidebar immediately — don't keep it open magically
+        close();
+
+        // Show toast with results
         if (successCount > 0) {
           notificationFactory.toast("dataset.connected.success",
               new Object[]{successCount}, getLocale()).open();
@@ -814,87 +792,24 @@ public class ConnectDatasetSidebar extends Div {
               new Object[]{failureCount}, getLocale()).open();
         }
       } catch (Exception e) {
-        // UI refresh itself must never throw; if it does, the user at least
-        // still has the sidebar open and can close it manually.
-        log.error("Exception in onBatchFinished UI refresh", e);
+        log.error("Exception in onBatchFinished", e);
       }
     });
-
-    // Schedule sidebar auto-close ~5s after batch finishes so the user has
-    // time to inspect the per-row SUCCESS/ERROR indicators. Manual close
-    // via the `×` button always supersedes this timer.
-    Mono.delay(Duration.ofSeconds(5))
-        .subscribe(
-            tick -> uiHandle.onUiAndPush(ConnectDatasetSidebar.this::close),
-            error -> log.warn("Scheduled sidebar close was cancelled", error));
-  }
-
-  /**
-   * Handles a single per-request response on the boundedElastic worker
-   * thread. Updates the row status map, auto-deselects on success so the
-   * footer counter ticks down live, and refreshes the grid on the UI
-   * thread. Does not throw — any exception must be caught up the call
-   * chain so the Flux is not terminated prematurely.
-   */
-  private void onConnectResponse(
-      AssociatedDatasetService.ConnectDatasetResponse response,
-      Map<String, String> requestIdToHandle,
-      List<SearchHit> selected,
-      AtomicInteger successCount,
-      AtomicInteger failureCount) {
-    String handle = requestIdToHandle.get(response.requestId());
-    boolean success = response.associatedDatasetId() != null;
-    rowConnectionStatuses.put(handle,
-        success ? ConnectionStatus.SUCCESS : ConnectionStatus.ERROR);
-    if (success) {
-      successCount.incrementAndGet();
-      // Auto-deselect the successfully-connected hit so it cannot be
-      // re-connected by a subsequent "Connect Selected" click. The
-      // footer selection counter ticks down automatically.
-      selected.stream()
-          .filter(h -> h.externalHandleValue().equals(handle))
-          .findFirst()
-          .ifPresent(resultsGrid::deselect);
-    } else {
-      failureCount.incrementAndGet();
-    }
-    uiHandle.onUiAndPush(() -> resultsGrid.getDataProvider().refreshAll());
   }
 
   // ── Card-style row ─────────────────────────────────────────────────
 
   private Component buildSearchResultCard(SearchHit hit) {
-    ConnectionStatus status = rowConnectionStatuses.getOrDefault(
-        hit.externalHandleValue(), ConnectionStatus.NONE);
-
     var card = new Div();
     card.addClassName("border");
     card.getStyle().set("padding", "var(--lumo-space-m)");
     card.getStyle().set("margin-bottom", "var(--lumo-space-s)");
     card.getStyle().set("border-radius", "var(--lumo-border-radius-m)");
-    card.getStyle().set("transition", "opacity 0.2s ease, background-color 0.2s ease");
 
-    // SUCCESS → success-tinted background so the connected row pops out
-    // even before the user glances at the top-row icon.
-    if (status == ConnectionStatus.SUCCESS) {
-      card.getStyle().set("background-color", "var(--lumo-success-color-10pct)");
-    } else {
-      card.getStyle().set("opacity",
-          status == ConnectionStatus.PENDING ? "0.5" : "1");
-    }
-
-    // Top row: connection state badge (when SUCCESS) + access badge + provider + date
+    // Top row: access badge + provider + date
     var topRow = new Div();
     topRow.addClassNames("flex-horizontal", "items-center", "gap-02");
     topRow.getStyle().set("margin-bottom", "var(--lumo-space-xs)");
-
-    // "Connected" badge rendered FIRST so it leads the row visually.
-    if (status == ConnectionStatus.SUCCESS) {
-      Tag connectedBadge = new Tag("Connected");
-      connectedBadge.setTagColor(TagColor.SUCCESS);
-      connectedBadge.add(LumoIcon.CHECKMARK.create());
-      topRow.add(connectedBadge);
-    }
 
     Tag accessBadge = hit.accessLevel() == AccessLevel.PUBLIC
         ? new Tag("Public") : new Tag("Restricted");
@@ -912,14 +827,6 @@ public class ConnectDatasetSidebar extends Div {
     dateSpan.addClassName("color-secondary");
     dateSpan.getStyle().set("margin-left", "auto");
     topRow.add(dateSpan);
-
-    // Trailing error icon for ERROR state (SUCCESS already has the leading badge).
-    if (status == ConnectionStatus.ERROR) {
-      var icon = LumoIcon.CROSS.create();
-      icon.getStyle().set("color", "var(--lumo-error-color)");
-      icon.getStyle().set("margin-left", "var(--lumo-space-s)");
-      topRow.add(icon);
-    }
 
     card.add(topRow);
 
