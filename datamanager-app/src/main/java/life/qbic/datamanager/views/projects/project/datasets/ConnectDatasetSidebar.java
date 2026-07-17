@@ -13,7 +13,6 @@ import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.provider.Query;
 import com.vaadin.flow.shared.Registration;
@@ -22,9 +21,11 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import static java.util.Objects.requireNonNull;
 import java.util.stream.Stream;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.UiHandle;
+import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.Tag.TagColor;
 import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
@@ -72,6 +73,13 @@ import org.springframework.security.core.context.SecurityContextHolder;
  */
 public class ConnectDatasetSidebar extends Div {
 
+  private static final Logger log = LoggerFactory.getLogger(ConnectDatasetSidebar.class);
+
+  private final AssociatedDatasetService associatedDatasetService;
+  private final ExperimentInformationService experimentInformationService;
+  private final MessageSourceNotificationFactory notificationFactory;
+  private final UiHandle uiHandle = new UiHandle();
+
   /**
    * Clamp a title to {@code maxLines} lines with a CSS ellipsis.
    * The full title is exposed as a native HTML {@code title} attribute so hovering reveals
@@ -93,12 +101,6 @@ public class ConnectDatasetSidebar extends Div {
 
   @Serial
   private static final long serialVersionUID = 1L;
-
-  private static final Logger log = LoggerFactory.getLogger(ConnectDatasetSidebar.class);
-
-  private final AssociatedDatasetService associatedDatasetService;
-  private final ExperimentInformationService experimentInformationService;
-  private final UiHandle uiHandle = new UiHandle();
 
   private final Div overlay;
   private final Div panel;
@@ -174,9 +176,12 @@ public class ConnectDatasetSidebar extends Div {
   public ConnectDatasetSidebar(
       AssociatedDatasetService associatedDatasetService,
       ExperimentInformationService experimentInformationService,
-      Object userPermissions) {
+      Object userPermissions,
+      MessageSourceNotificationFactory notificationFactory) {
     this.associatedDatasetService = associatedDatasetService;
     this.experimentInformationService = experimentInformationService;
+    this.notificationFactory = requireNonNull(notificationFactory,
+        "notificationFactory must not be null");
 
     // ── Form controls (MUST be initialized before buildSidebarBody) ──
     // Some fields are referenced directly inside buildSidebarBody, which is
@@ -551,7 +556,8 @@ public class ConnectDatasetSidebar extends Div {
       } catch (Exception e) {
         log.error("Failed to load experiments for project {}: {}", projectId.value(), e.getMessage(), e);
         uiHandle.onUiAndPush(() -> {
-          showErrorNotification("Failed to load experiments: " + e.getMessage());
+          notificationFactory.toast("dataset.experiments.failed",
+              new Object[]{}, getLocale()).open();
         });
       } finally {
         SecurityContextHolder.clearContext();
@@ -624,7 +630,8 @@ public class ConnectDatasetSidebar extends Div {
       uiHandle.onUiAndPush(() -> {
         loadingIndicator.getStyle().set("display", "none");
         setControlsEnabled(true);
-        showErrorNotification("Search failed: " + lastSearchError);
+        notificationFactory.toast("dataset.search.failed",
+            new Object[]{}, getLocale()).open();
       });
       return null;
     });
@@ -721,13 +728,13 @@ public class ConnectDatasetSidebar extends Div {
     close();
 
     if (successCount > 0) {
-      showSuccessNotification(
-          "%d dataset(s) connected to this project.".formatted(successCount));
+      notificationFactory.toast("dataset.connected.success",
+          new Object[]{successCount}, getLocale()).open();
       fireEvent(new DatasetsConnectedEvent(this));
     }
     if (failureCount > 0) {
-      showErrorNotification(
-          "%d dataset(s) could not be connected.".formatted(failureCount));
+      notificationFactory.toast("dataset.connected.failure",
+          new Object[]{failureCount}, getLocale()).open();
     }
   }
 
@@ -787,20 +794,6 @@ public class ConnectDatasetSidebar extends Div {
       return ud.getUserId();
     }
     throw new IllegalStateException("Unable to resolve current user identity");
-  }
-
-  private void showSuccessNotification(String message) {
-    var n = new Notification(message, 3500);
-    n.addClassName("success-toast");
-    n.setPosition(Notification.Position.BOTTOM_END);
-    n.open();
-  }
-
-  private void showErrorNotification(String message) {
-    var n = new Notification(message, 4500);
-    n.addClassName("error-toast");
-    n.setPosition(Notification.Position.BOTTOM_END);
-    n.open();
   }
 
   /** A lightweight record mapping an ExperimentId to its display name. */

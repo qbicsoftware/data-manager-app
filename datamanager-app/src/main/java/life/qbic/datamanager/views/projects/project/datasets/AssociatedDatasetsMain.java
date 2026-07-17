@@ -12,6 +12,7 @@ import jakarta.annotation.security.PermitAll;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.Main;
+import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.projects.project.ProjectMainLayout;
 import life.qbic.projectmanagement.application.associated_dataset.AssociatedDatasetService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
@@ -47,6 +48,7 @@ public class AssociatedDatasetsMain extends Main implements BeforeEnterObserver 
   private final transient AssociatedDatasetService associatedDatasetService;
   private final transient ExperimentInformationService experimentInformationService;
   private final transient UserPermissions userPermissions;
+  private final transient MessageSourceNotificationFactory notificationFactory;
 
   private final ConnectedResourcesComponent connectedResourcesComponent;
   private ConnectDatasetSidebar connectDatasetSidebar;
@@ -57,13 +59,16 @@ public class AssociatedDatasetsMain extends Main implements BeforeEnterObserver 
   public AssociatedDatasetsMain(
       AssociatedDatasetService associatedDatasetService,
       ExperimentInformationService experimentInformationService,
-      UserPermissions userPermissions) {
+      UserPermissions userPermissions,
+      MessageSourceNotificationFactory notificationFactory) {
     this.associatedDatasetService = requireNonNull(associatedDatasetService,
         "associatedDatasetService must not be null");
     this.experimentInformationService = requireNonNull(experimentInformationService,
         "experimentInformationService must not be null");
     this.userPermissions = requireNonNull(userPermissions,
         "userPermissions must not be null");
+    this.notificationFactory = requireNonNull(notificationFactory,
+        "notificationFactory must not be null");
 
     addClassName("project");
     addClassName("datasets");
@@ -98,7 +103,8 @@ public class AssociatedDatasetsMain extends Main implements BeforeEnterObserver 
       connectDatasetSidebar = new ConnectDatasetSidebar(
           associatedDatasetService,
           experimentInformationService,
-          userPermissions);
+          userPermissions,
+          notificationFactory);
       connectDatasetSidebar.setContext(context);
       connectDatasetSidebar.addDatasetsConnectedListener(
           e -> connectedResourcesComponent.refresh());
