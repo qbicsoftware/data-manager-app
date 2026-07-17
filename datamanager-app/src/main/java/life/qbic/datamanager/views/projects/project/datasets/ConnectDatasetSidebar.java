@@ -747,76 +747,94 @@ public class ConnectDatasetSidebar extends Div {
 
     AtomicInteger successCount = new AtomicInteger(0);
     AtomicInteger failureCount = new AtomicInteger(0);
+    AtomicInteger completedCount = new AtomicInteger(0);
+    final int total = requests.size();
 
-    // 3. Fire-and-subscribe — callbacks run on boundedElastic worker threads
-    associatedDatasetService.connectDatasets(requests).subscribe(
-        response -> {
-          onConnectResponse(response, requestIdToHandle, selected, successCount, failureCount);
-        },
-        error -> {
-          // Should not fire — per-request errors are wrapped by the service.
-          // But if the stream itself terminates in error, record everything
-          // as failed so the UI reflects what happened.
-          log.error("Unexpected error during batch dataset connect",
-              error);
-          failureCount.addAndGet(selected.size());
-          uiHandle.onUiAndPush(() -> resultsGrid.getDataProvider().refreshAll());
-        },
-        () -> {
-          // onComplete — runs on boundedElastic after all responses received.
-          // Do NOT clear `rowConnectionStatuses` here — the SUCCESS/ERROR
-          // badges must stay visible until the user closes the sidebar or
-          // starts a new search (cleared in `close()` and
-          // `refreshSearchResults()`).
+    // 3. Fire-and-subscribe — callbacks run on boundedElastic worker threads.
+    // IMPORTANT: We intentionally do NOT rely on the `onComplete` callback of
+    // the deprecated 3-arg `subscribe(onNext, onError, onComplete)` because it
+    // has known issues in reactor-core 3.x where it is silently skipped when
+    // `subscribeOn(boundedElastic)` is combined with `onErrorResume`. Instead
+    // we count completed responses inside `onNext` and trigger the final UI
+    // update inline once `completedCount == total`.
+    associatedDatasetService.connectDatasets(requests)
+        .doOnError(error -> log.error("Unexpected error in connect stream", error))
+        .subscribe(response -> {
           try {
-            int finalSuccess = successCount.get();
-            int finalFailure = failureCount.get();
+            onConnectResponse(response, requestIdToHandle, selected,
+                successCount, failureCount);
 
-            // Hide spinner and restore controls on the UI thread.
+            // When the last response is processed, perform the post-connection
+            // UI work on the UI thread. This replaces the deprecated `onComplete`
+            // callback and is guaranteed to run regardless of whether the Flux
+            // actually fires `onComplete`.
+            if (completedCount.incrementAndGet() == total) {
+              onBatchFinished(successCount.get(), failureCount.get(), total);
+            }
+          } catch (Exception e) {
+            // Per-response handler must never throw — an exception here would
+            // terminate the Flux on this worker thread and no further onNext
+            // calls would fire, leaving the UI stuck on the spinner forever.
+            log.error("Unhandled exception in onConnectResponse", e);
             uiHandle.onUiAndPush(() -> {
-              loadingIndicator.getStyle().set("display", "none");
-              loadingMessage.setText("Searching for datasets...");
-              setControlsEnabled(true);
               resultsGrid.getDataProvider().refreshAll();
               onSelectionChanged();
-
-              if (finalSuccess > 0) {
-                notificationFactory.toast("dataset.connected.success",
-                    new Object[]{finalSuccess}, getLocale()).open();
-                fireEvent(new DatasetsConnectedEvent(this));
-              }
-              if (finalFailure > 0) {
-                notificationFactory.toast("dataset.connected.failure",
-                    new Object[]{finalFailure}, getLocale()).open();
-              }
             });
-
-            // Schedule sidebar close to match the toast auto-dismiss
-            // duration (Toast.DEFAULT_OPEN_DURATION ≈ 5s). The user can
-            // also close it manually at any point before the close fires.
-            Mono.delay(Duration.ofSeconds(5))
-                .doOnNext(x -> uiHandle.onUiAndPush(ConnectDatasetSidebar.this::close))
-                .subscribe();
-          } catch (Exception e) {
-            // If anything goes wrong in onComplete we still want the UI to
-            // recover to a sane state. Hide the spinner at minimum.
-            log.error("Exception in connect onComplete",
-                e);
-            uiHandle.onUiAndPush(() -> {
-              loadingIndicator.getStyle().set("display", "none");
-              setControlsEnabled(true);
-              onCloseError("Failed to finish connecting: " + e.getMessage());
-            });
+            // Still count it so the batch eventually finishes if every
+            // remaining response also throws.
+            if (completedCount.incrementAndGet() == total) {
+              onBatchFinished(0, total, total);
+            }
           }
+        });
+  }
+
+  /**
+   * Runs on the Reactor worker thread when the Nth (last) response has been
+   * processed. Hides the spinner, refreshes the grid, fires success/failure
+   * toasts, and schedules a timed sidebar auto-close.
+   */
+  private void onBatchFinished(int successCount, int failureCount, int total) {
+    // Ensure UI work runs on the UI thread via the bound UiHandle.
+    uiHandle.onUiAndPush(() -> {
+      try {
+        loadingIndicator.getStyle().set("display", "none");
+        loadingMessage.setText("Searching for datasets...");
+        setControlsEnabled(true);
+        resultsGrid.getDataProvider().refreshAll();
+        onSelectionChanged();
+
+        if (successCount > 0) {
+          notificationFactory.toast("dataset.connected.success",
+              new Object[]{successCount}, getLocale()).open();
+          fireEvent(new DatasetsConnectedEvent(this));
         }
-    );
+        if (failureCount > 0) {
+          notificationFactory.toast("dataset.connected.failure",
+              new Object[]{failureCount}, getLocale()).open();
+        }
+      } catch (Exception e) {
+        // UI refresh itself must never throw; if it does, the user at least
+        // still has the sidebar open and can close it manually.
+        log.error("Exception in onBatchFinished UI refresh", e);
+      }
+    });
+
+    // Schedule sidebar auto-close ~5s after batch finishes so the user has
+    // time to inspect the per-row SUCCESS/ERROR indicators. Manual close
+    // via the `×` button always supersedes this timer.
+    Mono.delay(Duration.ofSeconds(5))
+        .subscribe(
+            tick -> uiHandle.onUiAndPush(ConnectDatasetSidebar.this::close),
+            error -> log.warn("Scheduled sidebar close was cancelled", error));
   }
 
   /**
    * Handles a single per-request response on the boundedElastic worker
    * thread. Updates the row status map, auto-deselects on success so the
    * footer counter ticks down live, and refreshes the grid on the UI
-   * thread.
+   * thread. Does not throw — any exception must be caught up the call
+   * chain so the Flux is not terminated prematurely.
    */
   private void onConnectResponse(
       AssociatedDatasetService.ConnectDatasetResponse response,
@@ -843,17 +861,7 @@ public class ConnectDatasetSidebar extends Div {
     uiHandle.onUiAndPush(() -> resultsGrid.getDataProvider().refreshAll());
   }
 
-  /**
-   * Fallback error handler invoked when the onComplete path itself fails.
-   * Shows the user a toast so they know something went wrong even if the
-   * normal success/failure toasts didn't fire.
-   */
-  private void onCloseError(String message) {
-    notificationFactory.toast("dataset.search.failed",
-        new Object[]{}, getLocale()).open();
-  }
-
-  // ── Card-style row ──────────────────────────────────────────────────
+  // ── Card-style row ─────────────────────────────────────────────────
 
   private Component buildSearchResultCard(SearchHit hit) {
     ConnectionStatus status = rowConnectionStatuses.getOrDefault(
