@@ -416,6 +416,7 @@ public class ConnectDatasetSidebar extends Div {
       cachedResults.clear();
     }
     // Unbind UI context
+    rowConnectionStatuses.clear();
     uiHandle.unbind();
   }
 
@@ -602,6 +603,10 @@ public class ConnectDatasetSidebar extends Div {
     searchInitiated = true;
     lastSearchError = null;
 
+    // Clear per-row connection state from any previous connect so a fresh
+    // search starts from a clean slate.
+    rowConnectionStatuses.clear();
+
     // Show loading state immediately and disable controls
     setControlsEnabled(false);
     welcomeMessage.getStyle().set("display", "none");
@@ -752,6 +757,13 @@ public class ConnectDatasetSidebar extends Div {
                   : ConnectionStatus.ERROR);
           if (response.associatedDatasetId() != null) {
             successCount.incrementAndGet();
+            // Auto-deselect the successfully-connected hit so it cannot be
+            // re-connected by a subsequent "Connect Selected" click. The
+            // footer selection counter ticks down automatically.
+            selected.stream()
+                .filter(h -> h.externalHandleValue().equals(handle))
+                .findFirst()
+                .ifPresent(resultsGrid::deselect);
           } else {
             failureCount.incrementAndGet();
           }
@@ -763,17 +775,21 @@ public class ConnectDatasetSidebar extends Div {
           uiHandle.onUiAndPush(() -> resultsGrid.getDataProvider().refreshAll());
         },
         () -> {
-          // onComplete — runs on boundedElastic after all responses received
+          // onComplete — runs on boundedElastic after all responses received.
+          // Do NOT clear `rowConnectionStatuses` here — the SUCCESS/ERROR
+          // badges must stay visible until the user closes the sidebar or
+          // starts a new search (cleared in `close()` and
+          // `refreshSearchResults()`).
           CompletableFuture.delayedExecutor(600, TimeUnit.MILLISECONDS).execute(() -> {
             uiHandle.onUiAndPush(() -> {
               loadingIndicator.getStyle().set("display", "none");
               loadingMessage.setText("Searching for datasets...");
               setControlsEnabled(true);
-              rowConnectionStatuses.clear();
+              // Refresh once more so the auto-deselect is reflected on screen
               resultsGrid.getDataProvider().refreshAll();
-              resultsGrid.deselectAll();
               onSelectionChanged();
-              close();
+              // Let the user see the per-row indicators through the toast.
+              // The sidebar closes when the toast auto-dismisses (≈5s).
               if (successCount.get() > 0) {
                 notificationFactory.toast("dataset.connected.success",
                     new Object[]{successCount.get()}, getLocale()).open();
@@ -800,13 +816,29 @@ public class ConnectDatasetSidebar extends Div {
     card.getStyle().set("padding", "var(--lumo-space-m)");
     card.getStyle().set("margin-bottom", "var(--lumo-space-s)");
     card.getStyle().set("border-radius", "var(--lumo-border-radius-m)");
-    card.getStyle().set("transition", "opacity 0.2s ease");
-    card.getStyle().set("opacity", status == ConnectionStatus.PENDING ? "0.5" : "1");
+    card.getStyle().set("transition", "opacity 0.2s ease, background-color 0.2s ease");
 
-    // Top row: access badge + provider + date
+    // SUCCESS → success-tinted background so the connected row pops out
+    // even before the user glances at the top-row icon.
+    if (status == ConnectionStatus.SUCCESS) {
+      card.getStyle().set("background-color", "var(--lumo-success-color-10pct)");
+    } else {
+      card.getStyle().set("opacity",
+          status == ConnectionStatus.PENDING ? "0.5" : "1");
+    }
+
+    // Top row: connection state badge (when SUCCESS) + access badge + provider + date
     var topRow = new Div();
     topRow.addClassNames("flex-horizontal", "items-center", "gap-02");
     topRow.getStyle().set("margin-bottom", "var(--lumo-space-xs)");
+
+    // "Connected" badge rendered FIRST so it leads the row visually.
+    if (status == ConnectionStatus.SUCCESS) {
+      Tag connectedBadge = new Tag("Connected");
+      connectedBadge.setTagColor(TagColor.SUCCESS);
+      connectedBadge.add(LumoIcon.CHECKMARK.create());
+      topRow.add(connectedBadge);
+    }
 
     Tag accessBadge = hit.accessLevel() == AccessLevel.PUBLIC
         ? new Tag("Public") : new Tag("Restricted");
@@ -825,13 +857,8 @@ public class ConnectDatasetSidebar extends Div {
     dateSpan.getStyle().set("margin-left", "auto");
     topRow.add(dateSpan);
 
-    // Connection status indicator (SUCCESS / ERROR) appended on the right
-    if (status == ConnectionStatus.SUCCESS) {
-      var icon = LumoIcon.CHECKMARK.create();
-      icon.getStyle().set("color", "var(--lumo-success-color)");
-      icon.getStyle().set("margin-left", "var(--lumo-space-s)");
-      topRow.add(icon);
-    } else if (status == ConnectionStatus.ERROR) {
+    // Trailing error icon for ERROR state (SUCCESS already has the leading badge).
+    if (status == ConnectionStatus.ERROR) {
       var icon = LumoIcon.CROSS.create();
       icon.getStyle().set("color", "var(--lumo-error-color)");
       icon.getStyle().set("margin-left", "var(--lumo-space-s)");
