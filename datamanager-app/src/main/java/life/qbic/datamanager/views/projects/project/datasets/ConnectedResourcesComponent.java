@@ -19,6 +19,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
+import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.Tag.TagColor;
@@ -29,9 +30,8 @@ import life.qbic.datamanager.views.general.section.SectionHeader;
 import life.qbic.datamanager.views.general.section.SectionNote;
 import life.qbic.datamanager.views.general.section.SectionTitle;
 import life.qbic.projectmanagement.application.associated_dataset.AssociatedDatasetService;
+import life.qbic.projectmanagement.application.associated_dataset.ConnectedDatasetView;
 import life.qbic.projectmanagement.domain.model.associated_dataset.AccessLevel;
-import life.qbic.projectmanagement.domain.model.associated_dataset.AssociatedDataset;
-import life.qbic.projectmanagement.domain.model.associated_dataset.InvenioRdmResourceMetadata;
 
 /**
  * <b>Connected Resources Component</b>
@@ -45,6 +45,11 @@ import life.qbic.projectmanagement.domain.model.associated_dataset.InvenioRdmRes
  *       empty-state guidance panel when no datasets are connected yet.</li>
  * </ul>
  *
+ * <p>The grid consumes {@link ConnectedDatasetView} DTOs from the
+ * application layer (never domain entities directly). User and experiment
+ * display names are already resolved by the service — this component
+ * renders them as-is.</p>
+ *
  * <p>The component fires a {@link ConnectDatasetsClickEvent} whenever the
  * "Connect Datasets" button is clicked (from either the action bar or the
  * empty-state CTA), delegating the sidebar open/close handling to the
@@ -57,9 +62,12 @@ public class ConnectedResourcesComponent extends Div {
   @Serial
   private static final long serialVersionUID = 1L;
 
+  private static final DateTimeFormatter DATE_FMT =
+      DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.ENGLISH);
+
   private final AssociatedDatasetService associatedDatasetService;
   private final Section section;
-  private final Grid<AssociatedDataset> grid;
+  private final Grid<ConnectedDatasetView> grid;
   private final Button connectButton;
 
   private Context context;
@@ -67,6 +75,7 @@ public class ConnectedResourcesComponent extends Div {
   public ConnectedResourcesComponent(AssociatedDatasetService associatedDatasetService) {
     this.associatedDatasetService = associatedDatasetService;
     addClassNames("padding-horizontal-07", "padding-vertical-04", "flex-vertical");
+    addClassName("datasets-content");
 
     // ── Action bar (always visible) ──────────────────────────────────
     connectButton = new Button("Connect Datasets", VaadinIcon.PLUS_CIRCLE.create());
@@ -118,7 +127,7 @@ public class ConnectedResourcesComponent extends Div {
     SectionContent content = section.content();
     content.removeAll();
 
-    List<AssociatedDataset> datasets = associatedDatasetService.listConnectedDatasets(
+    List<ConnectedDatasetView> datasets = associatedDatasetService.listConnectedDatasetViews(
         context.projectId().orElseThrow());
 
     if (datasets.isEmpty()) {
@@ -176,14 +185,15 @@ public class ConnectedResourcesComponent extends Div {
 
   // ── Grid ────────────────────────────────────────────────────────────
 
-  private Grid<AssociatedDataset> buildGrid() {
-    var g = new Grid<AssociatedDataset>();
+  private Grid<ConnectedDatasetView> buildGrid() {
+    var g = new Grid<ConnectedDatasetView>();
     g.addThemeVariants(GridVariant.LUMO_COMPACT, GridVariant.LUMO_ROW_STRIPES);
     g.setSelectionMode(Grid.SelectionMode.NONE);
     g.setWidthFull();
 
     // Expandable detail row for medium-priority fields
-    g.setItemDetailsRenderer(new com.vaadin.flow.data.renderer.ComponentRenderer<>(this::buildDetailPanel));
+    g.setItemDetailsRenderer(
+        new com.vaadin.flow.data.renderer.ComponentRenderer<>(this::buildDetailPanel));
 
     // Title (high-priority)
     g.addComponentColumn(this::buildTitleCell)
@@ -198,11 +208,8 @@ public class ConnectedResourcesComponent extends Div {
         .setHeader("Access").setAutoWidth(true).setKey("access");
 
     // Version
-    g.addColumn(ds -> {
-      var meta = ds.resourceMetadata();
-      String v = meta.version();
-      return v != null && !v.isBlank() ? v : "—";
-    }).setHeader("Version").setAutoWidth(true).setKey("version");
+    g.addColumn(view -> view.version() != null ? view.version() : "—")
+        .setHeader("Version").setAutoWidth(true).setKey("version");
 
     // Access link
     g.addComponentColumn(this::buildAccessLinkCell)
@@ -215,15 +222,15 @@ public class ConnectedResourcesComponent extends Div {
     return g;
   }
 
-  private Component buildTitleCell(AssociatedDataset ds) {
-    var title = new Span(ds.title());
+  private Component buildTitleCell(ConnectedDatasetView view) {
+    var title = new Span(view.title());
     title.addClassName("normal-body-text");
     title.getStyle().set("font-weight", "500");
     return title;
   }
 
-  private Component buildPidCell(AssociatedDataset ds) {
-    String pid = ds.pid();
+  private Component buildPidCell(ConnectedDatasetView view) {
+    String pid = view.pid();
     if (pid == null || pid.isBlank()) {
       return new Span("—");
     }
@@ -234,9 +241,9 @@ public class ConnectedResourcesComponent extends Div {
     return link;
   }
 
-  private Component buildAccessStatusCell(AssociatedDataset ds) {
+  private Component buildAccessStatusCell(ConnectedDatasetView view) {
     var wrapper = new Div();
-    if (ds.accessLevel() == AccessLevel.PUBLIC) {
+    if (view.accessLevel() == AccessLevel.PUBLIC) {
       var badge = new Tag("Public");
       badge.setTagColor(TagColor.SUCCESS);
       wrapper.add(badge);
@@ -244,8 +251,9 @@ public class ConnectedResourcesComponent extends Div {
       var badge = new Tag("Restricted");
       badge.setTagColor(TagColor.WARNING);
       wrapper.add(badge);
-      if (ds.resourceMetadata() instanceof InvenioRdmResourceMetadata inv) {
-        var detail = new Span(inv.accessDetailDisplay());
+      String accessDetail = view.accessDetail();
+      if (accessDetail != null) {
+        var detail = new Span(accessDetail);
         detail.addClassName("extra-small-body-text");
         detail.addClassName("color-secondary");
         wrapper.add(detail);
@@ -254,11 +262,8 @@ public class ConnectedResourcesComponent extends Div {
     return wrapper;
   }
 
-  private Component buildAccessLinkCell(AssociatedDataset ds) {
-    if (!(ds.resourceMetadata() instanceof InvenioRdmResourceMetadata inv)) {
-      return new Span("—");
-    }
-    String link = inv.accessLink();
+  private Component buildAccessLinkCell(ConnectedDatasetView view) {
+    String link = view.accessLink();
     if (link == null || link.isBlank()) {
       return new Span("—");
     }
@@ -268,16 +273,15 @@ public class ConnectedResourcesComponent extends Div {
     return anchor;
   }
 
-  private Component buildPublicationDateCell(AssociatedDataset ds) {
-    LocalDate date = ds.publicationDate();
+  private Component buildPublicationDateCell(ConnectedDatasetView view) {
+    LocalDate date = view.publicationDate();
     if (date == null) {
       return new Span("—");
     }
-    return new Span(date.format(
-        DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.ENGLISH)));
+    return new Span(date.format(DATE_FMT));
   }
 
-  private Component buildDetailPanel(AssociatedDataset ds) {
+  private Component buildDetailPanel(ConnectedDatasetView view) {
     var panel = new Div();
     panel.addClassNames("flex-vertical", "gap-03");
     panel.getStyle().set("padding", "var(--lumo-space-s) var(--lumo-space-m)");
@@ -292,26 +296,46 @@ public class ConnectedResourcesComponent extends Div {
     var body = new Div();
     body.addClassNames("flex-vertical", "gap-02");
 
-    String expLabel = ds.experimentId().isPresent() ? ds.experimentId().get().value() : "—";
-    addDetailRow(body, "Connected By", ds.connectedBy());
-    addDetailRow(body, "Connected On", ds.connectedOn() != null
-        ? ds.connectedOn().toLocalDate()
-            .format(DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.ENGLISH))
-        : "—");
+    // Connected By — resolved display name, never a raw UUID
+    addDetailRow(body, "Connected By", view.connectedByDisplayName());
 
-    if (ds.resourceMetadata() instanceof InvenioRdmResourceMetadata inv) {
-      addDetailRow(body, "Resource Provider", inv.resourceProvider());
-      addDetailRow(body, "Creator", inv.creatorsDisplay());
-      addDetailRow(body, "Resource Type", inv.resourceType() != null ? inv.resourceType() : "—");
-      addDetailRow(body, "Community", inv.community() != null ? inv.community() : "—");
+    // Connected On
+    addDetailRow(body, "Connected On",
+        view.connectedOn() != null
+            ? view.connectedOn().toLocalDate().format(DATE_FMT)
+            : "—");
+
+    // Source-specific detail rows
+    addDetailRow(body, "Resource Provider", view.resourceProvider());
+    addDetailRow(body, "Creator", view.creatorsDisplay());
+    addDetailRow(body, "Resource Type",
+        view.resourceType() != null ? view.resourceType() : "—");
+    addDetailRow(body, "Community",
+        view.community() != null ? view.community() : "—");
+
+    // Linked Experiment — clickable name opening the experiment view
+    // in a new tab, or "—" when no experiment is linked.
+    if (view.experimentId() != null && context.projectId().isPresent()) {
+        var href = AppRoutes.ProjectRoutes.EXPERIMENT.formatted(
+            context.projectId().get().value(), view.experimentId());
+        var anchor = new Anchor(href, view.experimentName());
+        anchor.setTarget(AnchorTarget.BLANK);
+        anchor.addClassName("normal-body-text");
+        anchor.getStyle().set("color", "var(--lumo-primary-text-color)");
+        addDetailRow(body, "Linked Experiment", anchor);
+    } else {
+        addDetailRow(body, "Linked Experiment", "—");
     }
-    addDetailRow(body, "Linked Experiment", expLabel);
 
     panel.add(body);
     return panel;
   }
 
   private void addDetailRow(Div container, String label, String value) {
+    addDetailRow(container, label, new Span(value != null ? value : "—"));
+  }
+
+  private void addDetailRow(Div container, String label, Component valueComponent) {
     var row = new Div();
     row.addClassNames("flex-horizontal", "gap-02");
     row.getStyle().set("align-items", "baseline");
@@ -320,9 +344,8 @@ public class ConnectedResourcesComponent extends Div {
     labelSpan.getStyle().set("font-weight", "600");
     labelSpan.getStyle().set("min-width", "160px");
     labelSpan.addClassName("color-secondary");
-    var valueSpan = new Span(value != null ? value : "—");
-    valueSpan.addClassName("normal-body-text");
-    row.add(labelSpan, valueSpan);
+    valueComponent.addClassName("normal-body-text");
+    row.add(labelSpan, valueComponent);
     container.add(row);
   }
 

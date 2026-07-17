@@ -376,18 +376,23 @@ public class InvenioRdmDatasetSource implements DatasetSource {
   }
 
   private String version(InvenioRdmClient.Hit h) {
-    // Zenodo: version is often in metadata.version on newer instances,
-    // or derived from relations.version for versioned records.
+    // 1. Some InvenioRDM instances (newer) populate metadata.version
+    //    directly with a human-readable label (e.g. "2.0", "v2"). Use it
+    //    as-is when present.
     if (h.metadata != null && h.metadata.version != null && !h.metadata.version.isBlank()) {
       return h.metadata.version;
     }
+    // 2. Authoritative fallback: metadata.relations.version carries the
+    //    version chain on every InvenioRDM record (including single-
+    //    version records, where Zenodo does not populate metadata.
+    //    version). The index is 0-based — add 1 for display. We prefer
+    //    the entry that has a parent (the one belonging to the global
+    //    version chain) and pick the current record's own index.
     if (h.metadata != null && h.metadata.relations != null
         && h.metadata.relations.version != null) {
       for (var relation : h.metadata.relations.version) {
         if (relation != null && relation.parent != null && relation.parent.pidValue != null) {
-          // Treat the parent relation's pid_value as the version handle
-          // (concept DOI / recid). We expose it as "v" + index if available.
-          return "v" + relation.index;
+          return "v" + (relation.index + 1);
         }
       }
     }
@@ -395,8 +400,17 @@ public class InvenioRdmDatasetSource implements DatasetSource {
   }
 
   private String recordVersion(InvenioRdmClient.RecordResponse rec) {
+    // Priority matches version(Hit) above.
     if (rec.metadata != null && rec.metadata.version != null && !rec.metadata.version.isBlank()) {
       return rec.metadata.version;
+    }
+    if (rec.metadata != null && rec.metadata.relations != null
+        && rec.metadata.relations.version != null) {
+      for (var relation : rec.metadata.relations.version) {
+        if (relation != null && relation.parent != null && relation.parent.pidValue != null) {
+          return "v" + (relation.index + 1);
+        }
+      }
     }
     return null;
   }

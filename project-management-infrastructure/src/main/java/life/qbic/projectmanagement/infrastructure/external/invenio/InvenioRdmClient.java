@@ -156,6 +156,14 @@ public interface InvenioRdmClient {
   }
 
   /**
+   * {@code links.versions} in the InvenioRDM response is a URL string
+   * pointing to the REST versions endpoint — it is not a structured
+   * block. Do not attempt to map it as {@code @JsonProperty("versions")}
+   * on {@link Hit} or {@link RecordResponse}. The authoritative version
+   * metadata lives in {@link Relations#version}.
+   */
+
+  /**
    * Single record detail response, mirroring InvenioRDM record JSON structure.
    */
   @JsonIgnoreProperties(ignoreUnknown = true)

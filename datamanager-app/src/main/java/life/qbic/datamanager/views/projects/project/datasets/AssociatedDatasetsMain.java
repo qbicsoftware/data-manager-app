@@ -66,6 +66,7 @@ public class AssociatedDatasetsMain extends Main implements BeforeEnterObserver 
         "userPermissions must not be null");
 
     addClassName("project");
+    addClassName("datasets");
     connectedResourcesComponent = new ConnectedResourcesComponent(associatedDatasetService);
     connectedResourcesComponent.addConnectDatasetsClickListener(e -> openConnectSidebar());
     add(connectedResourcesComponent);

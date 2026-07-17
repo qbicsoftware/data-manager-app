@@ -2,22 +2,31 @@ package life.qbic.projectmanagement.application.associated_dataset;
 
 import static java.util.Objects.requireNonNull;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
 import life.qbic.domain.concepts.DomainEvent;
 import life.qbic.domain.concepts.DomainEventDispatcher;
 import life.qbic.domain.concepts.DomainEventSubscriber;
 import life.qbic.domain.concepts.LocalDomainEventDispatcher;
+import life.qbic.identity.api.UserInformationService;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
+import life.qbic.projectmanagement.domain.model.associated_dataset.AccessLevel;
 import life.qbic.projectmanagement.domain.model.associated_dataset.AssociatedDataset;
 import life.qbic.projectmanagement.domain.model.associated_dataset.AssociatedDatasetId;
 import life.qbic.projectmanagement.domain.model.associated_dataset.ExternalHandle;
+import life.qbic.projectmanagement.domain.model.associated_dataset.InvenioRdmResourceMetadata;
 import life.qbic.projectmanagement.domain.model.associated_dataset.ResourceMetadata;
 import life.qbic.projectmanagement.domain.model.associated_dataset.SourceType;
 import life.qbic.projectmanagement.domain.model.associated_dataset.event.AssociatedDatasetConnectedEvent;
@@ -50,12 +59,16 @@ public class AssociatedDatasetService {
   private final AssociatedDatasetRepository associatedDatasetRepository;
   private final SourceInstanceRegistry sourceInstanceRegistry;
   private final ProjectInformationService projectInformationService;
+  private final UserInformationService userInformationService;
+  private final ExperimentInformationService experimentInformationService;
 
   public AssociatedDatasetService(
       DatasetSource datasetSource,
       AssociatedDatasetRepository associatedDatasetRepository,
       SourceInstanceRegistry sourceInstanceRegistry,
-      ProjectInformationService projectInformationService) {
+      ProjectInformationService projectInformationService,
+      UserInformationService userInformationService,
+      ExperimentInformationService experimentInformationService) {
     this.datasetSource = requireNonNull(datasetSource, "datasetSource must not be null");
     this.associatedDatasetRepository = requireNonNull(associatedDatasetRepository,
         "associatedDatasetRepository must not be null");
@@ -63,6 +76,10 @@ public class AssociatedDatasetService {
         "sourceInstanceRegistry must not be null");
     this.projectInformationService = requireNonNull(projectInformationService,
         "projectInformationService must not be null");
+    this.userInformationService = requireNonNull(userInformationService,
+        "userInformationService must not be null");
+    this.experimentInformationService = requireNonNull(experimentInformationService,
+        "experimentInformationService must not be null");
   }
 
   // ── Search ──────────────────────────────────────────────────────────────
@@ -219,22 +236,154 @@ public class AssociatedDatasetService {
   // ── List connected datasets ─────────────────────────────────────────────
 
   /**
-   * Lists all actively connected datasets for a project.
+   * Lists all actively connected datasets for a project as display-ready
+   * {@link ConnectedDatasetView} DTOs.
+   *
+   * <p>Each view is enriched with resolved display names: the connecting
+   * user's full name (via {@link UserInformationService}) and the linked
+   * experiment's display name (via {@link ExperimentInformationService}).
+   * Resolution failures fall back to the raw UUID so the view always
+   * renders something human-readable.</p>
+   *
+   * <p>Resolution is performed via a collect-distinct-then-batch-resolve
+   * strategy: distinct user IDs and experiment IDs are collected first,
+   * resolved exactly once, and then applied to all rows — avoiding N+1
+   * queries regardless of dataset count.</p>
    *
    * <p>Requires READ permission on the project (ADR-0003).</p>
    *
    * @param projectId the project to list connected datasets for
-   * @return the list of connected datasets (never null, empty if none);
-   *         soft-deleted (REMOVED) connections are excluded
+   * @return the list of display-ready dataset views (never null, empty
+   *         if none); soft-deleted (REMOVED) connections are excluded
    */
   @PreAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
-  public List<AssociatedDataset> listConnectedDatasets(ProjectId projectId) {
+  public List<ConnectedDatasetView> listConnectedDatasetViews(ProjectId projectId) {
     Objects.requireNonNull(projectId, "projectId must not be null");
     if (projectInformationService.find(projectId).isEmpty()) {
       throw new ApplicationException("Project not found: %s".formatted(projectId));
     }
-    return associatedDatasetRepository.findByProject(projectId);
+    List<AssociatedDataset> datasets = associatedDatasetRepository.findByProject(projectId);
+
+    // 1. Collect distinct user IDs and experiment IDs present in this batch
+    Set<String> distinctUserIds = datasets.stream()
+        .map(AssociatedDataset::connectedBy)
+        .collect(Collectors.toSet());
+    Set<ExperimentId> distinctExperimentIds = datasets.stream()
+        .map(AssociatedDataset::experimentId)
+        .filter(Optional::isPresent)
+        .map(Optional::get)
+        .collect(Collectors.toSet());
+
+    // 2. Resolve each distinct ID exactly once
+    Map<String, String> userDisplayNames = resolveUserDisplayNames(distinctUserIds);
+    Map<ExperimentId, String> experimentDisplayNames = resolveExperimentDisplayNames(
+        projectId, distinctExperimentIds);
+
+    // 3. Build display-ready views
+    return datasets.stream()
+        .map(ds -> toView(ds, userDisplayNames, experimentDisplayNames))
+        .toList();
+  }
+
+  /**
+   * Resolves a set of distinct user IDs to their full display names via
+   * {@link UserInformationService}. Unresolvable IDs are silently omitted
+   * from the returned map; callers fall back to the raw UUID.
+   */
+  private Map<String, String> resolveUserDisplayNames(Set<String> userIds) {
+    Map<String, String> result = new HashMap<>(userIds.size());
+    for (String userId : userIds) {
+      userInformationService.findById(userId)
+          .ifPresent(info -> result.put(userId, info.fullName()));
+    }
+    return result;
+  }
+
+  /**
+   * Resolves a set of distinct experiment IDs to their display names via
+   * {@link ExperimentInformationService}. Unresolvable IDs (e.g. when an
+   * experiment has been deleted) are omitted; callers fall back to the
+   * raw UUID string.
+   */
+  private Map<ExperimentId, String> resolveExperimentDisplayNames(
+      ProjectId projectId, Set<ExperimentId> experimentIds) {
+    Map<ExperimentId, String> result = new HashMap<>(experimentIds.size());
+    for (ExperimentId eid : experimentIds) {
+      experimentInformationService.find(projectId.value(), eid)
+          .ifPresent(exp -> result.put(eid, exp.getName()));
+    }
+    return result;
+  }
+
+  /**
+   * Maps a domain aggregate to a {@link ConnectedDatasetView}, extracting
+   * source-specific fields (currently only InvenioRDM) into flat top-level
+   * fields and substituting resolved display names.
+   */
+  private ConnectedDatasetView toView(
+      AssociatedDataset ds,
+      Map<String, String> userDisplayNames,
+      Map<ExperimentId, String> experimentDisplayNames) {
+
+    ResourceMetadata metadata = ds.resourceMetadata();
+
+    // Source-type-independent fields
+    String displayName = userDisplayNames.getOrDefault(ds.connectedBy(), ds.connectedBy());
+    String expDisplay = ds.experimentId()
+        .map(eid -> experimentDisplayNames.getOrDefault(eid, eid.value()))
+        .orElse(null);
+
+    // Source-specific fields (InvenioRDM-only for now)
+    String version;
+    String accessLink;
+    String resourceProvider;
+    String creatorsDisplay;
+    String resourceType;
+    String community;
+    String accessDetail;
+
+    if (metadata instanceof InvenioRdmResourceMetadata inv) {
+      version = inv.version();
+      accessLink = inv.accessLink();
+      resourceProvider = inv.resourceProvider();
+      creatorsDisplay = inv.creatorsDisplay();
+      resourceType = inv.resourceType();
+      community = inv.community();
+      accessDetail = ds.accessLevel() == AccessLevel.RESTRICTED
+          ? inv.accessDetailDisplay()
+          : null;
+    } else {
+      // Source-agnostic fallback — universal columns only
+      version = metadata.version();
+      accessLink = null;
+      resourceProvider = ds.sourceType().name();
+      creatorsDisplay = null;
+      resourceType = null;
+      community = null;
+      accessDetail = null;
+    }
+
+    return new ConnectedDatasetView(
+        ds.id().value(),
+        ds.title(),
+        ds.pid(),
+        ds.accessLevel(),
+        version,
+        accessLink,
+        ds.publicationDate(),
+        resourceProvider,
+        creatorsDisplay,
+        resourceType,
+        community,
+        accessDetail,
+        ds.connectedBy(),
+        displayName,
+        ds.connectedOn(),
+        ds.experimentId().map(ExperimentId::value).orElse(null),
+        expDisplay,
+        ds.sourceType().name()
+    );
   }
 
   // ── Available instances ─────────────────────────────────────────────────

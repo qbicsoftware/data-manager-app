@@ -40,6 +40,9 @@ import java.util.concurrent.CompletableFuture;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.associated_dataset.SourceType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 /**
@@ -69,8 +72,29 @@ import org.springframework.security.core.context.SecurityContextHolder;
  */
 public class ConnectDatasetSidebar extends Div {
 
+  /**
+   * Clamp a title to {@code maxLines} lines with a CSS ellipsis.
+   * The full title is exposed as a native HTML {@code title} attribute so hovering reveals
+   * it even when truncated.
+   */
+  private Span clampableTitle(String title, int maxLines) {
+    var span = new Span(title);
+    span.addClassName("normal-body-text");
+    span.getElement().getStyle().set("display", "-webkit-box");
+    span.getElement().getStyle().set("-webkit-line-clamp", String.valueOf(maxLines));
+    span.getElement().getStyle().set("-webkit-box-orient", "vertical");
+    span.getElement().getStyle().set("overflow", "hidden");
+    span.getElement().getStyle().set("text-overflow", "ellipsis");
+    span.getElement().getStyle().set("line-height", "1.4");
+    span.getElement().getStyle().set("white-space", "normal");
+    span.getElement().setAttribute("title", title);
+    return span;
+  }
+
   @Serial
   private static final long serialVersionUID = 1L;
+
+  private static final Logger log = LoggerFactory.getLogger(ConnectDatasetSidebar.class);
 
   private final AssociatedDatasetService associatedDatasetService;
   private final ExperimentInformationService experimentInformationService;
@@ -302,7 +326,9 @@ public class ConnectDatasetSidebar extends Div {
     panel.getStyle().set("position", "fixed");
     panel.getStyle().set("top", "0");
     panel.getStyle().set("right", "0");
-    panel.getStyle().set("width", "640px");
+    panel.getStyle().set("width", "min(55%, 720px)");
+    panel.getStyle().set("min-width", "460px");
+    panel.getStyle().set("max-width", "100vw");
     panel.getStyle().set("height", "100%");
     panel.getStyle().set("background-color", "var(--lumo-base-color)");
     panel.getStyle().set("box-shadow", "-4px 0 24px rgba(0,0,0,0.12)");
@@ -500,23 +526,37 @@ public class ConnectDatasetSidebar extends Div {
    * when the experiment query is slow.
    */
   private void loadExperimentsAsync() {
-    if (context == null || context.projectId().isEmpty()) {
+    if (context == null || context.projectId().isEmpty() || experimentInformationService == null) {
       return;
     }
     ProjectId projectId = context.projectId().orElseThrow();
-    // Fetch in background thread, then update UI on the main thread
-    CompletableFuture.supplyAsync(
-            () -> experimentInformationService.findAllForProject(projectId))
-        .thenAccept(experiments -> {
-          // Update UI safely using uiHandle
-          uiHandle.onUiAndPush(() -> {
-            availableExperiments.clear();
-            for (Experiment exp : experiments) {
-              availableExperiments.add(new ExperimentEntry(exp.experimentId(), exp.getName()));
-            }
-            experimentSelector.setItems(availableExperiments);
-          });
+
+    // Capture security context on the main thread for propagation to the async thread
+    // This is critical because Spring Security checks happen in the async thread
+    SecurityContext securityContext = SecurityContextHolder.getContext();
+
+    CompletableFuture.runAsync(() -> {
+      try {
+        // Restore security context in the async thread
+        SecurityContextHolder.setContext(securityContext);
+        List<Experiment> experiments = experimentInformationService.findAllForProject(projectId);
+
+        uiHandle.onUiAndPush(() -> {
+          availableExperiments.clear();
+          for (Experiment experiment : experiments) {
+            availableExperiments.add(new ExperimentEntry(experiment.experimentId(), experiment.getName()));
+          }
+          experimentSelector.setItems(new ArrayList<>(availableExperiments));
         });
+      } catch (Exception e) {
+        log.error("Failed to load experiments for project {}: {}", projectId.value(), e.getMessage(), e);
+        uiHandle.onUiAndPush(() -> {
+          showErrorNotification("Failed to load experiments: " + e.getMessage());
+        });
+      } finally {
+        SecurityContextHolder.clearContext();
+      }
+    });
   }
 
   // ── Search ──────────────────────────────────────────────────────────
@@ -724,12 +764,10 @@ public class ConnectDatasetSidebar extends Div {
 
     card.add(topRow);
 
-    // Title
-    var title = new Span(hit.title());
-    title.addClassName("normal-body-text");
+    // Title (clamp to 2 lines, full title in tooltip on hover)
+    var title = clampableTitle(hit.title(), 2);
     title.getStyle().set("font-weight", "600");
     title.getStyle().set("margin-bottom", "var(--lumo-space-xs)");
-    title.getStyle().set("display", "block");
     card.add(title);
 
     // Creator + DOI row
