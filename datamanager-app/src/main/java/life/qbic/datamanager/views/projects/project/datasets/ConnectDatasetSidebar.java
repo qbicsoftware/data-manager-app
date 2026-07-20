@@ -10,6 +10,8 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
+import com.vaadin.flow.component.html.Anchor;
+import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -226,6 +228,18 @@ public class ConnectDatasetSidebar extends Div {
     resultsGrid.setHeight("400px"); // Fixed height to enable virtual scrolling
     resultsGrid.addComponentColumn(this::buildSearchResultCard).setFlexGrow(1);
     resultsGrid.addSelectionListener(e -> onSelectionChanged());
+    // Clicking anywhere on a row (not just the checkbox) toggles selection.
+    // The checkbox still works independently. Cursor pointer is applied
+    // per-card in buildSearchResultCard so the affordance is scoped to the
+    // card content, not the whole grid.
+    resultsGrid.addItemClickListener(e -> {
+      SearchHit hit = e.getItem();
+      if (resultsGrid.getSelectedItems().contains(hit)) {
+        resultsGrid.deselect(hit);
+      } else {
+        resultsGrid.select(hit);
+      }
+    });
 
     // ── Lazy-loading data provider ────────────────────────────────
     // The grid fetches pages on demand as the user scrolls, rather than
@@ -315,6 +329,9 @@ public class ConnectDatasetSidebar extends Div {
     selectionCountLabel = new Span();
     selectionCountLabel.addClassName("normal-body-text");
     selectionCountLabel.addClassName("color-secondary");
+    // Start hidden — an empty Span still reserves line-height space and
+    // would push the button right of the footer's left alignment.
+    selectionCountLabel.getStyle().set("display", "none");
 
     connectButton = new Button("Connect Selected", VaadinIcon.PLUS_CIRCLE.create());
     connectButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
@@ -692,7 +709,13 @@ public class ConnectDatasetSidebar extends Div {
 
   private void onSelectionChanged() {
     int count = resultsGrid.getSelectedItems().size();
-    selectionCountLabel.setText(count == 0 ? "" : count + " selected");
+    if (count == 0) {
+      selectionCountLabel.setText("");
+      selectionCountLabel.getStyle().set("display", "none");
+    } else {
+      selectionCountLabel.setText(count + " selected");
+      selectionCountLabel.getStyle().remove("display");
+    }
     connectButton.setEnabled(count > 0);
   }
 
@@ -805,6 +828,9 @@ public class ConnectDatasetSidebar extends Div {
     card.getStyle().set("padding", "var(--lumo-space-m)");
     card.getStyle().set("margin-bottom", "var(--lumo-space-s)");
     card.getStyle().set("border-radius", "var(--lumo-border-radius-m)");
+    // Clicking the card toggles selection (row click listener is attached
+    // to the grid). Cursor pointer makes the affordance explicit.
+    card.getStyle().set("cursor", "pointer");
 
     // Top row: access badge + provider + date
     var topRow = new Div();
@@ -836,10 +862,18 @@ public class ConnectDatasetSidebar extends Div {
     title.getStyle().set("margin-bottom", "var(--lumo-space-xs)");
     card.add(title);
 
-    // Creator + DOI row
+    // PID rendered as a clickable link — opens the record in a new tab so
+    // users can verify it before connecting. The "PID:" label is implicit
+    // and removed to reduce visual noise.
+    String pidHref = hit.pid().startsWith("http")
+        ? hit.pid() : "https://doi.org/" + hit.pid();
+    var pidLink = new Anchor(pidHref, hit.pid());
+    pidLink.setTarget(AnchorTarget.BLANK);
+    pidLink.addClassName("extra-small-body-text");
+
     var metaRow = new Div();
     metaRow.addClassNames("flex-horizontal", "gap-04", "items-center");
-    metaRow.add(new Span("PID: " + hit.pid()));
+    metaRow.add(pidLink);
     card.add(metaRow);
 
     return card;
