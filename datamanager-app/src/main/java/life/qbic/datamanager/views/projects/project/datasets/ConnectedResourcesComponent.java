@@ -5,8 +5,6 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.grid.Grid;
-import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
@@ -37,23 +35,28 @@ import life.qbic.projectmanagement.domain.model.associated_dataset.AccessLevel;
  * <b>Connected Resources Component</b>
  *
  * <p>Renders the "Connected Resources" section within the associated
- * datasets view. Contains:
+ * datasets view. Contains:</p>
  * <ul>
  *   <li>an action bar with a primary "Connect Datasets" button (and a
- *       "Sync All" button reserved for story 04, currently disabled);</li>
- *   <li>a grid of connected datasets when at least one is present, or an
- *       empty-state guidance panel when no datasets are connected yet.</li>
+ *       "Sync All" button reserved for FEAT-DATSET-04, currently disabled);</li>
+ *   <li>a <b>rich row card list</b> of connected datasets, with high-priority
+ * *       properties (title, PID, version, access link, published date) in the
+ *       primary tier, the resource type as a header-row badge for fast
+ *       scanning, and medium-priority properties (connected by, creator,
+ *       community, linked experiment, connected on) always visible below
+ *       a subtle tier separator;</li>
+ *   <li>an empty-state guidance panel when no datasets are connected yet,</li>
+ *   <li>a CTA button that opens the connect-sidebar to search and connect
+ *       datasets from InvenioRDM repositories.</li>
  * </ul>
  *
- * <p>The grid consumes {@link ConnectedDatasetView} DTOs from the
- * application layer (never domain entities directly). User and experiment
- * display names are already resolved by the service — this component
- * renders them as-is.</p>
+ * <p>Cards consume {@link ConnectedDatasetView} DTOs from the application
+ * layer (never domain entities directly). User and experiment display names
+ * are already resolved by the service — this component renders them as-is.</p>
  *
- * <p>The component fires a {@link ConnectDatasetsClickEvent} whenever the
- * "Connect Datasets" button is clicked (from either the action bar or the
- * empty-state CTA), delegating the sidebar open/close handling to the
- * parent view.</p>
+ * <p>Per FEAT-DATSET-01 this component <b>does not</b> render per-row actions
+ * (Sync, Remove) — those belong to later stories (FEAT-DATSET-04 and
+ * beyond). The "Sync All" button is rendered but disabled until FEAT-DATSET-04.</p>
  *
  * @since 1.12.0
  */
@@ -65,9 +68,11 @@ public class ConnectedResourcesComponent extends Div {
   private static final DateTimeFormatter DATE_FMT =
       DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.ENGLISH);
 
+  private static final String SECONDARY_COLOR = "var(--lumo-secondary-text-color)";
+
   private final AssociatedDatasetService associatedDatasetService;
   private final Section section;
-  private final Grid<ConnectedDatasetView> grid;
+  private final Div cardsContainer;
   private final Button connectButton;
 
   private Context context;
@@ -90,12 +95,14 @@ public class ConnectedResourcesComponent extends Div {
     actionBar.addButton(connectButton);
     actionBar.addButton(syncAllButton);
 
+    var note = new SectionNote(
+        "Datasets connected from InvenioRDM repositories. "
+            + "Each dataset is shown as a card with all properties visible. "
+            + "Click the persistent identifier (DOI) or access link to open the dataset.");
     var header = new SectionHeader(
         new SectionTitle("Connected Resources"),
         actionBar,
-        new SectionNote(
-            "Datasets connected from InvenioRDM repositories. High-priority "
-                + "properties are shown below. Expand a row for more information.")
+        note
     );
     header.enableControls();
 
@@ -103,7 +110,10 @@ public class ConnectedResourcesComponent extends Div {
         .withHeader(header)
         .build();
 
-    grid = buildGrid();
+    // ── Card container ───────────────────────────────────────────────
+    cardsContainer = new Div();
+    cardsContainer.addClassNames("flex-vertical");
+    cardsContainer.getStyle().set("gap", "var(--lumo-space-m)");
 
     // Initial render (empty): the content is populated on refresh() after
     // the context has been set.
@@ -130,11 +140,14 @@ public class ConnectedResourcesComponent extends Div {
     List<ConnectedDatasetView> datasets = associatedDatasetService.listConnectedDatasetViews(
         context.projectId().orElseThrow());
 
+    cardsContainer.removeAll();
     if (datasets.isEmpty()) {
       content.add(buildEmptyState());
     } else {
-      content.add(grid);
-      grid.setItems(datasets);
+      for (ConnectedDatasetView view : datasets) {
+        cardsContainer.add(buildCard(view));
+      }
+      content.add(cardsContainer);
     }
   }
 
@@ -183,173 +196,285 @@ public class ConnectedResourcesComponent extends Div {
     return wrapper;
   }
 
-  // ── Grid ────────────────────────────────────────────────────────────
+  // ─ Card builder ────────────────────────────────────────────────────
 
-  private Grid<ConnectedDatasetView> buildGrid() {
-    var g = new Grid<ConnectedDatasetView>();
-    g.addThemeVariants(GridVariant.LUMO_COMPACT, GridVariant.LUMO_ROW_STRIPES);
-    g.setSelectionMode(Grid.SelectionMode.NONE);
-    g.setWidthFull();
+  private Component buildCard(ConnectedDatasetView view) {
+    var card = new Div();
+    card.addClassNames("rounded-02");
+    card.getStyle().set("display", "flex");
+    card.getStyle().set("flex-direction", "column");
+    card.getStyle().set("padding", "0");
+    card.getStyle().set("overflow", "hidden");
+    card.getStyle().set("background-color", "var(--lumo-base-color)");
+    // Explicit border — .border class is too subtle for card listings;
+    // use a slightly darker contrast token so individual cards are
+    // visually distinguishable even when stacked densely.
+    card.getStyle().set("border", "1px solid var(--lumo-contrast-20pct)");
 
-    // Expandable detail row for medium-priority fields
-    g.setItemDetailsRenderer(
-        new com.vaadin.flow.data.renderer.ComponentRenderer<>(this::buildDetailPanel));
+    // ═══ HEADER ROW: Provider · Access · Published ═══
+    var headerRow = new Div();
+    headerRow.addClassNames("flex-horizontal", "items-center", "gap-03");
+    headerRow.getStyle().set("padding",
+        "var(--lumo-space-m) var(--lumo-space-m) var(--lumo-space-s) var(--lumo-space-m)");
+    headerRow.getStyle().set("flex-wrap", "wrap");
 
-    // Title (high-priority)
-    g.addComponentColumn(this::buildTitleCell)
-        .setHeader("Title").setFlexGrow(3).setKey("title");
-
-    // PID / DOI
-    g.addComponentColumn(this::buildPidCell)
-        .setHeader("PID / DOI").setAutoWidth(true).setFlexGrow(1).setKey("pid");
-
-    // Access status (coarse)
-    g.addComponentColumn(this::buildAccessStatusCell)
-        .setHeader("Access").setAutoWidth(true).setKey("access");
-
-    // Version
-    g.addColumn(view -> view.version() != null ? view.version() : "—")
-        .setHeader("Version").setAutoWidth(true).setKey("version");
-
-    // Access link
-    g.addComponentColumn(this::buildAccessLinkCell)
-        .setHeader("Access Link").setAutoWidth(true).setKey("accessLink");
-
-    // Publication date
-    g.addComponentColumn(this::buildPublicationDateCell)
-        .setHeader("Published").setAutoWidth(true).setKey("publicationDate");
-
-    return g;
-  }
-
-  private Component buildTitleCell(ConnectedDatasetView view) {
-    var title = new Span(view.title());
-    title.addClassName("normal-body-text");
-    title.getStyle().set("font-weight", "500");
-    return title;
-  }
-
-  private Component buildPidCell(ConnectedDatasetView view) {
-    String pid = view.pid();
-    if (pid == null || pid.isBlank()) {
-      return new Span("—");
-    }
-    String href = pid.startsWith("http") ? pid : "https://doi.org/" + pid;
-    var link = new Anchor(href, pid);
-    link.setTarget(AnchorTarget.BLANK);
-    link.addClassName("extra-small-body-text");
-    return link;
-  }
-
-  private Component buildAccessStatusCell(ConnectedDatasetView view) {
-    var wrapper = new Div();
-    if (view.accessLevel() == AccessLevel.PUBLIC) {
-      var badge = new Tag("Public");
-      badge.setTagColor(TagColor.SUCCESS);
-      wrapper.add(badge);
-    } else {
-      var badge = new Tag("Restricted");
-      badge.setTagColor(TagColor.WARNING);
-      wrapper.add(badge);
-      String accessDetail = view.accessDetail();
-      if (accessDetail != null) {
-        var detail = new Span(accessDetail);
-        detail.addClassName("extra-small-body-text");
-        detail.addClassName("color-secondary");
-        wrapper.add(detail);
-      }
-    }
-    return wrapper;
-  }
-
-  private Component buildAccessLinkCell(ConnectedDatasetView view) {
-    String link = view.accessLink();
-    if (link == null || link.isBlank()) {
-      return new Span("—");
-    }
-    var anchor = new Anchor(link, "Open ↗");
-    anchor.setTarget(AnchorTarget.BLANK);
-    anchor.addClassName("extra-small-body-text");
-    return anchor;
-  }
-
-  private Component buildPublicationDateCell(ConnectedDatasetView view) {
-    LocalDate date = view.publicationDate();
-    if (date == null) {
-      return new Span("—");
-    }
-    return new Span(date.format(DATE_FMT));
-  }
-
-  private Component buildDetailPanel(ConnectedDatasetView view) {
-    var panel = new Div();
-    panel.addClassNames("flex-vertical", "gap-03");
-    panel.getStyle().set("padding", "var(--lumo-space-s) var(--lumo-space-m)");
-    panel.getStyle().set("background-color", "var(--lumo-contrast-5pct)");
-    panel.getStyle().set("border-radius", "var(--lumo-border-radius-m)");
-
-    var heading = new Span("Additional Information");
-    heading.getStyle().set("font-weight", "600");
-    heading.addClassName("normal-body-text");
-    panel.add(heading);
-
-    var body = new Div();
-    body.addClassNames("flex-vertical", "gap-02");
-
-    // Connected By — resolved display name, never a raw UUID
-    addDetailRow(body, "Connected By", view.connectedByDisplayName());
-
-    // Connected On
-    addDetailRow(body, "Connected On",
-        view.connectedOn() != null
-            ? view.connectedOn().toLocalDate().format(DATE_FMT)
-            : "—");
-
-    // Source-specific detail rows
-    addDetailRow(body, "Resource Provider", view.resourceProvider());
-    addDetailRow(body, "Creator", view.creatorsDisplay());
-    addDetailRow(body, "Resource Type",
-        view.resourceType() != null ? view.resourceType() : "—");
-    addDetailRow(body, "Community",
-        view.community() != null ? view.community() : "—");
-
-    // Linked Experiment — clickable name opening the experiment view
-    // in a new tab, or "—" when no experiment is linked.
-    if (view.experimentId() != null && context.projectId().isPresent()) {
-        var href = AppRoutes.ProjectRoutes.EXPERIMENT.formatted(
-            context.projectId().get().value(), view.experimentId());
-        var anchor = new Anchor(href, view.experimentName());
-        anchor.setTarget(AnchorTarget.BLANK);
-        anchor.addClassName("normal-body-text");
-        anchor.getStyle().set("color", "var(--lumo-primary-text-color)");
-        addDetailRow(body, "Linked Experiment", anchor);
-    } else {
-        addDetailRow(body, "Linked Experiment", "—");
+    // Provider tag
+    String provider = view.resourceProvider();
+    if (provider != null && !provider.isBlank()) {
+      var providerTag = new Tag(provider);
+      providerTag.setTagColor(
+          "Zenodo".equals(provider) ? TagColor.PRIMARY : TagColor.TEAL);
+      headerRow.add(providerTag);
     }
 
-    panel.add(body);
-    return panel;
+    // Access badge
+    var accessBadge = new Tag(
+        view.accessLevel() == AccessLevel.PUBLIC ? "Public" : "Restricted");
+    accessBadge.setTagColor(
+        view.accessLevel() == AccessLevel.PUBLIC ? TagColor.SUCCESS : TagColor.WARNING);
+    headerRow.add(accessBadge);
+
+    // Resource type badge — elevated to the header row for fast scanning.
+    // Rendered as a neutral CONTRAST tag so it does not compete with the
+    // provider (PRIMARY) or access-level (SUCCESS/WARNING) badges.
+    String resourceType = view.resourceType();
+    if (resourceType != null && !resourceType.isBlank()) {
+      var typeTag = new Tag(resourceType);
+      typeTag.setTagColor(TagColor.CONTRAST);
+      headerRow.add(typeTag);
+    }
+
+    // Access-detail note for restricted datasets (inline after badge)
+    String accessDetail = view.accessDetail();
+    if (accessDetail != null && !accessDetail.isBlank()) {
+      var detailNote = new Span(accessDetail);
+      detailNote.addClassName("extra-small-body-text");
+      detailNote.getStyle().set("color", SECONDARY_COLOR);
+      detailNote.getStyle().set("font-style", "italic");
+      headerRow.add(detailNote);
+    }
+
+    // Spacer
+    var spacer = new Div();
+    spacer.getStyle().set("flex-grow", "1");
+    headerRow.add(spacer);
+
+    // Published date
+    LocalDate pubDate = view.publicationDate();
+    if (pubDate != null) {
+      var dateSpan = new Span("Published: " + pubDate.format(DATE_FMT));
+      dateSpan.addClassName("extra-small-body-text");
+      dateSpan.getStyle().set("color", SECONDARY_COLOR);
+      headerRow.add(dateSpan);
+    }
+
+    card.add(headerRow);
+
+    // ═══ TITLE BLOCK ═══
+    var titleBlock = new Div();
+    titleBlock.getStyle().set("padding",
+        "0 var(--lumo-space-m) var(--lumo-space-m) var(--lumo-space-m)");
+    titleBlock.getStyle().set("min-width", "0");
+
+    var titleSpan = new Span(view.title());
+    titleSpan.addClassNames("normal-body-text");
+    titleSpan.getStyle().set("font-weight", "600");
+    titleSpan.getStyle().set("line-height", "1.4");
+    titleBlock.add(titleSpan);
+
+    card.add(titleBlock);
+
+    // ═══ META ROW: PID · Version · Access Link ═══
+    var metaRow = new Div();
+    metaRow.addClassNames("flex-horizontal", "items-center", "gap-03");
+    metaRow.getStyle().set("padding",
+        "0 var(--lumo-space-m) var(--lumo-space-m) var(--lumo-space-m)");
+    metaRow.getStyle().set("flex-wrap", "wrap");
+
+    // PID (linked to DOI resolver)
+    String pidHref = view.pid().startsWith("http")
+        ? view.pid() : "https://doi.org/" + view.pid();
+    var pidLink = new Anchor(pidHref, view.pid());
+    pidLink.setTarget(AnchorTarget.BLANK);
+    pidLink.addClassName("extra-small-body-text");
+    metaRow.add(pidLink);
+
+    // Version (hide when remote info is missing — avoid meaningless "—")
+    String vNorm = view.version();
+    if (vNorm != null && !vNorm.isBlank()) {
+      String display = "v" + vNorm.replaceFirst("^v", "");
+      var versionSpan = new Span(display);
+      versionSpan.addClassName("extra-small-body-text");
+      versionSpan.getStyle().set("color", SECONDARY_COLOR);
+      addMetaSeparator(metaRow);
+      metaRow.add(versionSpan);
+    }
+
+    // Access link (hide when missing)
+    String accessLink = view.accessLink();
+    if (accessLink != null && !accessLink.isBlank()) {
+      addMetaSeparator(metaRow);
+      var accessAnchor = new Anchor(accessLink, "Open ↗");
+      accessAnchor.setTarget(AnchorTarget.BLANK);
+      accessAnchor.addClassName("extra-small-body-text");
+      accessAnchor.getElement().setAttribute("title", accessLink);
+      metaRow.add(accessAnchor);
+    }
+
+    card.add(metaRow);
+
+    // ══ MEDIUM-PRIO TIER ═══
+    var detailRow = buildDetailTier(view);
+    card.add(detailRow);
+
+    return card;
   }
 
-  private void addDetailRow(Div container, String label, String value) {
-    addDetailRow(container, label, new Span(value != null ? value : "—"));
-  }
-
-  private void addDetailRow(Div container, String label, Component valueComponent) {
+  private Div buildDetailTier(ConnectedDatasetView view) {
     var row = new Div();
-    row.addClassNames("flex-horizontal", "gap-02");
-    row.getStyle().set("align-items", "baseline");
+    row.addClassNames("flex-horizontal", "items-start");
+    row.getStyle().set("padding",
+        "var(--lumo-space-m) var(--lumo-space-m)");
+    row.getStyle().set("flex-wrap", "wrap");
+    row.getStyle().set("gap", "var(--lumo-space-m) var(--lumo-space-xl)");
+    row.getStyle().set("background-color", "var(--lumo-contrast-5pct)");
+    row.getStyle().set("border-top", "2px solid var(--lumo-contrast-10pct)");
+
+    // Creator — truncate long lists with tooltip showing full names;
+    // hide entirely when remote info is missing.
+    String fullCreatorDisplay = view.creatorsDisplay();
+    if (fullCreatorDisplay != null && !fullCreatorDisplay.isBlank()) {
+        addDetailCellCreator(row, fullCreatorDisplay);
+    }
+
+    // Resource type is shown in the card header row.
+
+    // Community — hide when remote info is missing.
+    String community = view.community();
+    if (community != null && !community.isBlank()) {
+      addDetailCell(row, "Community", community);
+    }
+
+    // Linked experiment — clickable link to the experiment view in a new tab;
+    // hide entirely when not linked.
+    if (view.experimentId() != null) {
+        String expName = view.experimentName() != null ? view.experimentName() : view.experimentId();
+        Component experimentComponent;
+        if (context.projectId().isPresent()) {
+            var href = AppRoutes.ProjectRoutes.EXPERIMENT.formatted(
+                context.projectId().get().value(), view.experimentId());
+            var anchor = new Anchor(href, expName);
+            anchor.setTarget(AnchorTarget.BLANK);
+            anchor.addClassName("extra-small-body-text");
+            anchor.getStyle().set("color", "var(--lumo-primary-text-color)");
+            experimentComponent = anchor;
+        } else {
+            experimentComponent = new Span(expName);
+            experimentComponent.addClassName("extra-small-body-text");
+        }
+        addDetailCellComponent(row, "Linked Experiment", experimentComponent);
+    }
+
+    // Attribution — fused inline sentence combining who and when.
+    // These two fields are semantically the same event (the connection action),
+    // so rendering them as two separate label: value cells is redundant and
+    // eats horizontal space. A single natural-language line reads faster and
+    // lets the previous cells breathe. Verb-first order ("connected …") is
+    // chosen so the line reads as a complete attribution phrase rather than a
+    // label-value pair.
+    String connectedBy = view.connectedByDisplayName();
+    LocalDate connectedOn = view.connectedOn() != null ? view.connectedOn().toLocalDate() : null;
+    if ((connectedBy != null && !connectedBy.isBlank()) && connectedOn != null) {
+      var attribCell = new Div();
+      attribCell.addClassName("extra-small-body-text");
+      attribCell.getStyle().set("color", SECONDARY_COLOR);
+      attribCell.getStyle().set("font-style", "italic");
+      attribCell.setText("connected on " + connectedOn.format(DATE_FMT) + " by " + connectedBy);
+      row.add(attribCell);
+    } else if (connectedBy != null && !connectedBy.isBlank()) {
+      var attribCell = new Div();
+      attribCell.addClassName("extra-small-body-text");
+      attribCell.getStyle().set("color", SECONDARY_COLOR);
+      attribCell.getStyle().set("font-style", "italic");
+      attribCell.setText("connected by " + connectedBy);
+      row.add(attribCell);
+    } else if (connectedOn != null) {
+      var attribCell = new Div();
+      attribCell.addClassName("extra-small-body-text");
+      attribCell.getStyle().set("color", SECONDARY_COLOR);
+      attribCell.getStyle().set("font-style", "italic");
+      attribCell.setText("connected on " + connectedOn.format(DATE_FMT));
+      row.add(attribCell);
+    }
+
+    return row;
+  }
+
+  private void addDetailCellCreator(Div container, String fullCreatorDisplay) {
+    var cell = new Div();
+    cell.addClassNames("flex-horizontal", "gap-02", "items-baseline");
+
+    var labelSpan = new Span("Creator:");
+    labelSpan.addClassNames("extra-small-body-text");
+    labelSpan.getStyle().set("font-weight", "600");
+    labelSpan.getStyle().set("color", SECONDARY_COLOR);
+    cell.add(labelSpan);
+
+    // Truncate at 2 creators; show full list in tooltip.
+    String[] parts = fullCreatorDisplay.split("\\s*,\\s*");
+    String display;
+    if (parts.length <= 2) {
+        display = fullCreatorDisplay;
+    } else {
+        String firstTwo = parts[0] + ", " + parts[1];
+        display = firstTwo + " …and " + (parts.length - 2) + " more";
+    }
+
+    var valueSpan = new Span(display);
+    valueSpan.addClassNames("extra-small-body-text");
+    // Always expose the full list via tooltip, regardless of truncation.
+    valueSpan.getElement().setAttribute("title", fullCreatorDisplay);
+    cell.add(valueSpan);
+    container.add(cell);
+  }
+
+  /**
+   * Renders a label-value pair in the detail tier. When {@code value} is
+   * {@code null} or blank the cell is omitted entirely — the caller is
+   * responsible for only invoking this when there is something meaningful
+   * to show.
+   */
+  private void addDetailCell(Div container, String label, String value) {
+    if (value == null) {
+      return;
+    }
+    addDetailCellComponent(container, label, new Span(value));
+  }
+
+  private void addDetailCellComponent(Div container, String label, Component valueComponent) {
+    var cell = new Div();
+    cell.addClassNames("flex-horizontal", "gap-02", "items-baseline");
+
     var labelSpan = new Span(label + ":");
     labelSpan.addClassName("extra-small-body-text");
     labelSpan.getStyle().set("font-weight", "600");
-    labelSpan.getStyle().set("min-width", "160px");
-    labelSpan.addClassName("color-secondary");
-    valueComponent.addClassName("normal-body-text");
-    row.add(labelSpan, valueComponent);
-    container.add(row);
+    labelSpan.getStyle().set("color", SECONDARY_COLOR);
+
+    if (valueComponent instanceof Span s) {
+      s.addClassName("extra-small-body-text");
+    }
+    cell.add(labelSpan, valueComponent);
+    container.add(cell);
   }
 
-  // ── Event wiring ────────────────────────────────────────────────────
+  private void addMetaSeparator(Div row) {
+    var sep = new Span("·");
+    sep.addClassName("extra-small-body-text");
+    sep.getStyle().set("color", "var(--lumo-contrast-30pct)");
+    row.add(sep);
+  }
+
+  // ─ Event wiring ──────────────────────────────────────
 
   private void fireConnectDatasetsClick() {
     fireEvent(new ConnectDatasetsClickEvent(this));
