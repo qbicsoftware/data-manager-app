@@ -838,18 +838,18 @@ public class ConnectDatasetSidebar extends Div {
     topRow.addClassNames("flex-horizontal", "items-center", "gap-02");
     topRow.getStyle().set("margin-bottom", "var(--lumo-space-xs)");
 
-    Tag accessBadge = hit.accessLevel() == AccessLevel.PUBLIC
-        ? new Tag("Public") : new Tag("Restricted");
-    accessBadge.setTagColor(hit.accessLevel() == AccessLevel.PUBLIC
-        ? TagColor.SUCCESS : TagColor.WARNING);
-    topRow.add(accessBadge);
-
     // Provider tag — styled via centralized factory so this view and the
     // connected-resources list share the same color scheme.
     String provider = hit.resourceProvider();
     if (provider != null && !provider.isBlank()) {
       topRow.add(ResourceProviderTag.of(provider));
     }
+
+    Tag accessBadge = hit.accessLevel() == AccessLevel.PUBLIC
+        ? new Tag("Public") : new Tag("Restricted");
+    accessBadge.setTagColor(hit.accessLevel() == AccessLevel.PUBLIC
+        ? TagColor.SUCCESS : TagColor.WARNING);
+    topRow.add(accessBadge);
 
     var dateSpan = new Span(hit.publicationDate().format(
         DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.ENGLISH)));
