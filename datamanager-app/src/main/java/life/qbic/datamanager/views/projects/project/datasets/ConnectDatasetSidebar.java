@@ -844,7 +844,14 @@ public class ConnectDatasetSidebar extends Div {
     topRow.add(accessBadge);
 
     var providerTag = new Tag(hit.resourceProvider());
-    providerTag.setTagColor(TagColor.PRIMARY);
+    // Color scheme must match the connected-resources card (see
+    // ConnectedResourcesComponent.buildCard) so the two views read as
+    // the same visual language. Zenodo → PRIMARY (blue), every other
+    // provider → TEAL.
+    providerTag.setTagColor(
+        hit.resourceProvider() != null
+            && hit.resourceProvider().startsWith("Zenodo")
+            ? TagColor.PRIMARY : TagColor.TEAL);
     topRow.add(providerTag);
 
     var dateSpan = new Span(hit.publicationDate().format(
