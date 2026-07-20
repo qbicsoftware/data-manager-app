@@ -33,6 +33,7 @@ import life.qbic.datamanager.views.Context;
 import com.vaadin.flow.theme.lumo.LumoIcon;
 import life.qbic.datamanager.views.UiHandle;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
+import life.qbic.datamanager.views.general.ResourceProviderTag;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.Tag.TagColor;
 import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
@@ -843,16 +844,12 @@ public class ConnectDatasetSidebar extends Div {
         ? TagColor.SUCCESS : TagColor.WARNING);
     topRow.add(accessBadge);
 
-    var providerTag = new Tag(hit.resourceProvider());
-    // Color scheme must match the connected-resources card (see
-    // ConnectedResourcesComponent.buildCard) so the two views read as
-    // the same visual language. Zenodo → PRIMARY (blue), every other
-    // provider → TEAL.
-    providerTag.setTagColor(
-        hit.resourceProvider() != null
-            && hit.resourceProvider().startsWith("Zenodo")
-            ? TagColor.PRIMARY : TagColor.TEAL);
-    topRow.add(providerTag);
+    // Provider tag — styled via centralized factory so this view and the
+    // connected-resources list share the same color scheme.
+    String provider = hit.resourceProvider();
+    if (provider != null && !provider.isBlank()) {
+      topRow.add(ResourceProviderTag.of(provider));
+    }
 
     var dateSpan = new Span(hit.publicationDate().format(
         DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.ENGLISH)));

@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Locale;
 import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.Context;
+import life.qbic.datamanager.views.general.ResourceProviderTag;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.Tag.TagColor;
 import life.qbic.datamanager.views.general.section.ActionBar;
@@ -43,8 +44,9 @@ import life.qbic.projectmanagement.domain.model.associated_dataset.AccessLevel;
  * *       properties (title, PID, version, access link, published date) in the
  *       primary tier, the resource type as a header-row badge for fast
  *       scanning, and medium-priority properties (connected by, creator,
- *       community, linked experiment, connected on) always visible below
- *       a subtle tier separator;</li>
+ *       community, linked experiment) always visible below
+ *       a subtle tier separator; the provenance line "connected on …"
+ *       and attribution are rendered as a single italic footer note.</li>
  *   <li>an empty-state guidance panel when no datasets are connected yet,</li>
  *   <li>a CTA button that opens the connect-sidebar to search and connect
  *       datasets from InvenioRDM repositories.</li>
@@ -218,13 +220,11 @@ public class ConnectedResourcesComponent extends Div {
         "var(--lumo-space-m) var(--lumo-space-m) var(--lumo-space-s) var(--lumo-space-m)");
     headerRow.getStyle().set("flex-wrap", "wrap");
 
-    // Provider tag
+    // Provider tag — styled via centralized factory so this view and the
+    // connect-datasets sidebar share the same color scheme.
     String provider = view.resourceProvider();
     if (provider != null && !provider.isBlank()) {
-      var providerTag = new Tag(provider);
-      providerTag.setTagColor(
-          "Zenodo".equals(provider) ? TagColor.PRIMARY : TagColor.TEAL);
-      headerRow.add(providerTag);
+      headerRow.add(ResourceProviderTag.of(provider));
     }
 
     // Access badge
