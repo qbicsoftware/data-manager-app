@@ -5,6 +5,7 @@ import life.qbic.projectmanagement.domain.model.associated_dataset.AssociatedDat
 import life.qbic.projectmanagement.domain.model.associated_dataset.AssociatedDatasetId;
 import life.qbic.projectmanagement.domain.model.associated_dataset.ConnectionState;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -25,11 +26,18 @@ interface AssociatedDatasetJpaRepository
    * Returns all connected datasets for a project, excluding REMOVED
    * (tombstone) rows. This is the standard query used for listing
    * active connections in the datasets view.
+   *
+   * <p>Ordering is driven by the {@code Sort} parameter — the caller
+   * ({@link AssociatedDatasetRepositoryImpl}) picks the default sort.
+   * This keeps the query open for future ordering needs (e.g. by title
+   * or publication date) without changing the JPQL.</p>
    */
   @Query("SELECT d FROM associated_dataset d "
       + "WHERE d.projectId = :projectId "
       + "AND d.connectionState <> life.qbic.projectmanagement.domain.model.associated_dataset.ConnectionState.REMOVED")
-  List<AssociatedDataset> findActiveByProjectId(@Param("projectId") ProjectId projectId);
+  List<AssociatedDataset> findActiveByProjectId(
+      @Param("projectId") ProjectId projectId,
+      Sort sort);
 
   /**
    * Checks whether a dataset with the given external handle (for the

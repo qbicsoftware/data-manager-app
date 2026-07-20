@@ -7,6 +7,7 @@ import life.qbic.projectmanagement.domain.model.associated_dataset.AssociatedDat
 import life.qbic.projectmanagement.domain.model.associated_dataset.AssociatedDatasetId;
 import life.qbic.projectmanagement.domain.model.associated_dataset.repository.AssociatedDatasetRepository;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 
 /**
@@ -44,7 +45,10 @@ public class AssociatedDatasetRepositoryImpl implements AssociatedDatasetReposit
   @Override
   public List<AssociatedDataset> findByProject(ProjectId projectId) {
     Objects.requireNonNull(projectId, "projectId must not be null");
-    return jpaRepository.findActiveByProjectId(projectId);
+    // Default sort: newest connections first.
+    // Future callers (e.g., UI column-header sorting) can extend this
+    // by adding new methods to the domain repo interface.
+    return jpaRepository.findActiveByProjectId(projectId, Sort.by(Sort.Direction.DESC, "connectedOn"));
   }
 
   @Override
