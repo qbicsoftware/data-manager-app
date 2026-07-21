@@ -48,7 +48,6 @@ import life.qbic.projectmanagement.infrastructure.PreventAnyUpdateEntityListener
 import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.IpMeasurementJpaRepository.Instrument.InstrumentReadConverter;
 import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.IpMeasurementJpaRepository.IpMeasurementInformation;
 
-import org.springframework.data.convert.ReadingConverter;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.repository.PagingAndSortingRepository;
@@ -230,7 +229,6 @@ public interface IpMeasurementJpaRepository extends
       }
     }
 
-    @ReadingConverter
     static class InstrumentReadConverter implements AttributeConverter<Instrument, String> {
 
       private final ObjectMapper objectMapper;
@@ -246,7 +244,11 @@ public interface IpMeasurementJpaRepository extends
 
       @Override
       public Instrument convertToEntityAttribute(String dbData) {
-        return objectMapper.readValue(dbData, Instrument.class);
+        try {
+          return objectMapper.readValue(dbData, Instrument.class);
+        } catch (Exception e) {
+          throw new RuntimeException(e);
+        }
       }
     }
   }

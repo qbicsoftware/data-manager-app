@@ -49,7 +49,6 @@ import life.qbic.projectmanagement.infrastructure.PreventAnyUpdateEntityListener
 import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.PxpMeasurementJpaRepository.MsDevice.MsDeviceReadConverter;
 import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.PxpMeasurementJpaRepository.PxpMeasurementInformation;
 import org.hibernate.collection.spi.PersistentBag;
-import org.springframework.data.convert.ReadingConverter;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.repository.PagingAndSortingRepository;
@@ -237,7 +236,6 @@ public interface PxpMeasurementJpaRepository extends
       }
     }
 
-    @ReadingConverter
     static class MsDeviceReadConverter implements AttributeConverter<MsDevice, String> {
 
       private final ObjectMapper objectMapper;
@@ -253,7 +251,11 @@ public interface PxpMeasurementJpaRepository extends
 
       @Override
       public MsDevice convertToEntityAttribute(String dbData) {
-        return objectMapper.readValue(dbData, MsDevice.class);
+        try {
+          return objectMapper.readValue(dbData, MsDevice.class);
+        } catch (Exception e) {
+          throw new RuntimeException(e);
+        }
       }
     }
   }

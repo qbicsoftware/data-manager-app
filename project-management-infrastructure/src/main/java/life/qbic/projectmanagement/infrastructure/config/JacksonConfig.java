@@ -6,6 +6,8 @@ import org.springframework.context.annotation.Configuration;
 import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.IpMeasurementJpaRepository;
 import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.NgsMeasurementJpaRepository;
 import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.PxpMeasurementJpaRepository;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.module.SimpleModule;
 
 /**
@@ -25,6 +27,23 @@ import tools.jackson.databind.module.SimpleModule;
  */
 @Configuration
 public class JacksonConfig {
+
+  @Bean
+  public ObjectMapper objectMapper() {
+    SimpleModule module = new SimpleModule("MeasurementInstrumentModule");
+    module.addDeserializer(
+        NgsMeasurementJpaRepository.Instrument.class,
+        new NgsMeasurementJpaRepository.Instrument.InstrumentJsonDeserializer());
+    module.addDeserializer(
+        PxpMeasurementJpaRepository.MsDevice.class,
+        new PxpMeasurementJpaRepository.MsDevice.MsDeviceJsonDeserializer());
+    module.addDeserializer(
+        IpMeasurementJpaRepository.Instrument.class,
+        new IpMeasurementJpaRepository.Instrument.InstrumentJsonDeserializer());
+    return JsonMapper.builder()
+        .addModule(module)
+        .build();
+  }
 
   @Bean
   public JsonMapperBuilderCustomizer measurementInstrumentModuleCustomizer() {
