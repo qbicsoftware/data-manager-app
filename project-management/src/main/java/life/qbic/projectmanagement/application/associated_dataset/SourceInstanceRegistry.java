@@ -1,9 +1,8 @@
 package life.qbic.projectmanagement.application.associated_dataset;
 
-import life.qbic.projectmanagement.domain.model.associated_dataset.SourceType;
-
 import java.util.List;
 import java.util.Optional;
+import life.qbic.projectmanagement.domain.model.associated_dataset.SourceType;
 
 /**
  * Registry of available external data source instances.

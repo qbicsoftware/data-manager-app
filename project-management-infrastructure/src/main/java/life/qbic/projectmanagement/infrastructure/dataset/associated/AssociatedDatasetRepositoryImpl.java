@@ -57,19 +57,10 @@ public class AssociatedDatasetRepositoryImpl implements AssociatedDatasetReposit
     return jpaRepository.findById(id);
   }
 
-  /**
-   * Returns whether an actively-connected dataset with the given
-   * external handle (same source type) already exists for the project.
-   * Used to detect duplicates before attempting to connect.
-   *
-   * <p>This method is not part of the domain repository interface
-   * because it's an infrastructure/optimization concern. It is exposed
-   * here as an implementation-level hook available to the application
-   * service when needed.</p>
-   */
-  public boolean isActiveConnectionPresent(
-      ProjectId projectId, String externalHandleValue) {
-    return jpaRepository.countActiveByProjectIdAndExternalHandle(
-        projectId, externalHandleValue) > 0;
+  @Override
+  public boolean isActiveConnectionPresent(ProjectId projectId, String pid) {
+    Objects.requireNonNull(projectId, "projectId must not be null");
+    Objects.requireNonNull(pid, "pid must not be null");
+    return jpaRepository.countActiveByProjectIdAndPid(projectId, pid) > 0;
   }
 }

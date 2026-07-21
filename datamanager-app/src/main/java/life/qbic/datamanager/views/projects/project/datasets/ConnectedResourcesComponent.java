@@ -1,6 +1,5 @@
 package life.qbic.datamanager.views.projects.project.datasets;
 
-import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
@@ -33,13 +32,12 @@ import life.qbic.projectmanagement.application.associated_dataset.ConnectedDatas
 import life.qbic.projectmanagement.domain.model.associated_dataset.AccessLevel;
 
 /**
- * <b>Connected Resources Component</b>
+ * <b>Connected Datasets Component</b>
  *
- * <p>Renders the "Connected Resources" section within the associated
+ * <p>Renders the "Datasets" section within the associated
  * datasets view. Contains:</p>
  * <ul>
- *   <li>an action bar with a primary "Connect Datasets" button (and a
- *       "Sync All" button reserved for FEAT-DATSET-04, currently disabled);</li>
+ *   <li>an action bar with a primary "Connect Datasets" button;</li>
  *   <li>a <b>rich row card list</b> of connected datasets, with high-priority
  * *       properties (title, PID, version, access link, published date) in the
  *       primary tier, the resource type as a header-row badge for fast
@@ -58,7 +56,7 @@ import life.qbic.projectmanagement.domain.model.associated_dataset.AccessLevel;
  *
  * <p>Per FEAT-DATSET-01 this component <b>does not</b> render per-row actions
  * (Sync, Remove) — those belong to later stories (FEAT-DATSET-04 and
- * beyond). The "Sync All" button is rendered but disabled until FEAT-DATSET-04.</p>
+ * beyond).</p>
  *
  * @since 1.12.0
  */
@@ -89,20 +87,13 @@ public class ConnectedResourcesComponent extends Div {
     connectButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     connectButton.addClickListener(e -> fireConnectDatasetsClick());
 
-    var syncAllButton = new Button("Sync All", VaadinIcon.REFRESH.create());
-    syncAllButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-    syncAllButton.setEnabled(false); // Reserved for FEAT-DATSET-04
-
-    var actionBar = new ActionBar();
-    actionBar.addButton(connectButton);
-    actionBar.addButton(syncAllButton);
+    var actionBar = new ActionBar(connectButton);
 
     var note = new SectionNote(
-        "Datasets connected from InvenioRDM repositories. "
-            + "Each dataset is shown as a card with all properties visible. "
-            + "Click the persistent identifier (DOI) or access link to open the dataset.");
+        "External datasets connected to this project and its experiments. "
+            + "Click any DOI or access link to open the record on the source.");
     var header = new SectionHeader(
-        new SectionTitle("Connected Resources"),
+        new SectionTitle("All datasets"),
         actionBar,
         note
     );
@@ -314,7 +305,7 @@ public class ConnectedResourcesComponent extends Div {
     String accessLink = view.accessLink();
     if (accessLink != null && !accessLink.isBlank()) {
       addMetaSeparator(metaRow);
-      var accessAnchor = new Anchor(accessLink, "Open ↗");
+      var accessAnchor = new Anchor(accessLink, "Access ↗");
       accessAnchor.setTarget(AnchorTarget.BLANK);
       accessAnchor.addClassName("extra-small-body-text");
       accessAnchor.getElement().setAttribute("title", accessLink);
@@ -342,9 +333,9 @@ public class ConnectedResourcesComponent extends Div {
 
     // Creator — truncate long lists with tooltip showing full names;
     // hide entirely when remote info is missing.
-    String fullCreatorDisplay = view.creatorsDisplay();
-    if (fullCreatorDisplay != null && !fullCreatorDisplay.isBlank()) {
-        addDetailCellCreator(row, fullCreatorDisplay);
+    List<String> creators = view.creators();
+    if (creators != null && !creators.isEmpty()) {
+        addDetailCellCreator(row, creators);
     }
 
     // Resource type is shown in the card header row.
@@ -410,7 +401,7 @@ public class ConnectedResourcesComponent extends Div {
     return row;
   }
 
-  private void addDetailCellCreator(Div container, String fullCreatorDisplay) {
+  private void addDetailCellCreator(Div container, List<String> creators) {
     var cell = new Div();
     cell.addClassNames("flex-horizontal", "gap-02", "items-baseline");
 
@@ -421,19 +412,18 @@ public class ConnectedResourcesComponent extends Div {
     cell.add(labelSpan);
 
     // Truncate at 2 creators; show full list in tooltip.
-    String[] parts = fullCreatorDisplay.split("\\s*,\\s*");
     String display;
-    if (parts.length <= 2) {
-        display = fullCreatorDisplay;
+    if (creators.size() <= 2) {
+        display = String.join(", ", creators);
     } else {
-        String firstTwo = parts[0] + ", " + parts[1];
-        display = firstTwo + " …and " + (parts.length - 2) + " more";
+        display = creators.get(0) + ", " + creators.get(1)
+            + " …and " + (creators.size() - 2) + " more";
     }
 
     var valueSpan = new Span(display);
     valueSpan.addClassNames("extra-small-body-text");
     // Always expose the full list via tooltip, regardless of truncation.
-    valueSpan.getElement().setAttribute("title", fullCreatorDisplay);
+    valueSpan.getElement().setAttribute("title", String.join(", ", creators));
     cell.add(valueSpan);
     container.add(cell);
   }

@@ -34,4 +34,15 @@ public interface AssociatedDatasetRepository {
    */
   Optional<AssociatedDataset> findById(AssociatedDatasetId id);
 
+  /**
+   * Checks whether an active connection with the given PID already
+   * exists for the project. Used to prevent duplicate connections to
+   * the same logical record (a PID is globally unique per design).
+   *
+   * @param projectId the project to scope the check to
+   * @param pid       the persistent identifier (e.g. DOI) to check
+   * @return {@code true} if an active (non-REMOVED) connection exists
+   */
+  boolean isActiveConnectionPresent(ProjectId projectId, String pid);
+
 }

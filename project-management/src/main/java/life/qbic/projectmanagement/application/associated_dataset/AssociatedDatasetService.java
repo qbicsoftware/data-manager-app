@@ -2,7 +2,7 @@ package life.qbic.projectmanagement.application.associated_dataset;
 
 import static java.util.Objects.requireNonNull;
 
-import java.time.LocalDate;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -21,6 +21,7 @@ import life.qbic.identity.api.UserInformationService;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.domain.model.associated_dataset.AccessLevel;
 import life.qbic.projectmanagement.domain.model.associated_dataset.AssociatedDataset;
@@ -36,13 +37,10 @@ import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
-import org.springframework.stereotype.Service;
-import life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils;
-import java.time.Duration;
-import java.util.List;
 
 /**
  * Application service for associating external datasets with projects.
@@ -195,6 +193,16 @@ public class AssociatedDatasetService {
     if (metadata.isEmpty()) {
       log.warn("Record %s not found on instance %s".formatted(externalHandleValue, instanceId));
       return Result.fromError(ConnectDatasetError.RECORD_NOT_FOUND);
+    }
+
+    // 1b. Duplicate check — a dataset with the same PID is already
+    //     connected to this project. PID is the dedup key because it is
+    //     globally unique and persistent by design (DOI/PID).
+    if (associatedDatasetRepository.isActiveConnectionPresent(
+        projectId, metadata.get().pid())) {
+      log.info("Dataset with PID %s is already connected to project %s — skipping"
+          .formatted(metadata.get().pid(), projectId));
+      return Result.fromError(ConnectDatasetError.ALREADY_CONNECTED);
     }
 
     // 2. Set up local event dispatcher to cache events emitted during the
@@ -436,7 +444,7 @@ public class AssociatedDatasetService {
     String version;
     String accessLink;
     String resourceProvider;
-    String creatorsDisplay;
+    List<String> creators;
     String resourceType;
     String community;
     String accessDetail;
@@ -445,7 +453,7 @@ public class AssociatedDatasetService {
       version = inv.version();
       accessLink = inv.accessLink();
       resourceProvider = inv.resourceProvider();
-      creatorsDisplay = inv.creatorsDisplay();
+      creators = inv.creators();
       resourceType = inv.resourceType();
       community = inv.community();
       accessDetail = ds.accessLevel() == AccessLevel.RESTRICTED
@@ -456,7 +464,7 @@ public class AssociatedDatasetService {
       version = metadata.version();
       accessLink = null;
       resourceProvider = ds.sourceType().name();
-      creatorsDisplay = null;
+      creators = List.of();
       resourceType = null;
       community = null;
       accessDetail = null;
@@ -471,7 +479,7 @@ public class AssociatedDatasetService {
         accessLink,
         ds.publicationDate(),
         resourceProvider,
-        creatorsDisplay,
+        creators,
         resourceType,
         community,
         accessDetail,

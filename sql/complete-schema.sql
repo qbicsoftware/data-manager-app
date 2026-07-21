@@ -1008,11 +1008,17 @@ CREATE TABLE IF NOT EXISTS `associated_dataset`
     `experiment_id`     varchar(36)     DEFAULT NULL COMMENT 'optional experiment association',
     `last_synced_at`    datetime(3)     DEFAULT NULL,
 
+    -- Generated column for partial unique index: NULL when REMOVED so that
+    -- MariaDB excludes tombstoned rows from the uniqueness check.
+    `active_pid`        varchar(255) GENERATED ALWAYS AS
+                                        (CASE WHEN `connection_state` <> 'REMOVED' THEN `pid` ELSE NULL END) VIRTUAL,
+
     PRIMARY KEY (`id`),
     KEY `idx_assoc_ds_project`          (`project_id`),
     KEY `idx_assoc_ds_state`            (`connection_state`),
     KEY `idx_assoc_ds_source_type`      (`source_type`),
-    KEY `idx_assoc_ds_project_state`    (`project_id`, `connection_state`)
+    KEY `idx_assoc_ds_project_state`    (`project_id`, `connection_state`),
+    UNIQUE KEY `uk_assoc_ds_project_pid` (`project_id`, `active_pid`)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;

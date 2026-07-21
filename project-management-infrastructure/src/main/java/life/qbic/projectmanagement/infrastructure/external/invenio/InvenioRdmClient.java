@@ -1,8 +1,10 @@
 package life.qbic.projectmanagement.infrastructure.external.invenio;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.net.URI;
@@ -25,11 +27,13 @@ import life.qbic.logging.service.LoggerFactory;
 /**
  * Low-level HTTP client for the Invenio REST API.
  *
- * <p>Implements the endpoints and DTO shapes described in the InvenioRDM
- * OpenAPI specification:
+ * <p>DTOs model the InvenioRDM v12 record format (OpenAPI 3.1.1,
+ * API version 12.0.0), served at {@code GET /api/records} by both
+ * Zenodo and FDAT when requesting the content type
+ * {@code application/vnd.inveniordm.v1+json}. See
  * <a href="https://inveniosoftware.github.io/invenio-openapi/">inveniosoftware.github.io/invenio-openapi</a>
- * (OpenAPI 3.1.1, API version 12.0.0). The specification is the source
- * of truth for all request/response structures used by this client.</p>
+ * for the specification; the shape was verified against live FDAT and
+ * Zenodo responses.</p>
  *
  * <p>Implements the two endpoints required by FEAT-DATSET-01:
  * <ul>
@@ -93,18 +97,22 @@ public interface InvenioRdmClient {
   }
 
   /**
-   * Single search hit, mirroring InvenioRDM search JSON structure.
-   * Access is extracted from {@code metadata.access_right} (Zenodo-specific).
+   * Single search hit (v12).
+   *
+   * <p>In the v12 format ({@code application/vnd.inveniordm.v1+json}),
+   * both Zenodo and FDAT return identical shapes for hits. Access, PIDs,
+   * versions, and community membership are all top-level fields.</p>
    */
   @JsonIgnoreProperties(ignoreUnknown = true)
   final class Hit {
     @JsonProperty("id") public String id;
-    @JsonProperty("doi") public String doi;
-    @JsonProperty("title") public String title;
     @JsonProperty("links") public HitLinks links;
     @JsonProperty("metadata") public HitMetadata metadata;
     @JsonProperty("created") public String created;
-    @JsonProperty("revision") public int revision;
+    @JsonProperty("access") public RecordAccess access;
+    @JsonProperty("pids") public Pids pids;
+    @JsonProperty("versions") public RecordVersions versions;
+    @JsonProperty("parent") public Parent parent;
   }
 
   @JsonIgnoreProperties(ignoreUnknown = true)
@@ -112,83 +120,198 @@ public interface InvenioRdmClient {
     @JsonProperty("self_html") public String selfHtml;
   }
 
+  /**
+   * Persistent identifiers block (v12). DOIs are at
+   * {@code pids.doi.identifier}.
+   */
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  final class Pids {
+    @JsonProperty("doi") public PidEntry doi;
+  }
+
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  final class PidEntry {
+    @JsonProperty("identifier") public String identifier;
+  }
+
+  /**
+   * Version block (v12). {@code versions.index} is 1-based; 0 indicates
+   * the first published version (Zenodo returns index 1 for the first).
+   */
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  final class RecordVersions {
+    @JsonProperty("is_latest") public boolean isLatest;
+    @JsonProperty("index") public int index;
+  }
+
+  /**
+   * Parent block (v12). Community membership is at
+   * {@code parent.communities.entries}, where each entry carries the
+   * community {@code slug} and {@code metadata.title}.
+   */
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  final class Parent {
+    @JsonProperty("communities") public ParentCommunities communities;
+  }
+
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  final class ParentCommunities {
+    @JsonProperty("default") public String defaultCommunity;
+    @JsonProperty("ids") public List<String> ids;
+    @JsonProperty("entries") public List<Community> entries;
+  }
+
+  /**
+   * A single community entry from {@code parent.communities.entries}
+   * (v12).
+   */
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  final class Community {
+    @JsonProperty("id") public String id;
+    @JsonProperty("slug") public String slug;
+    @JsonProperty("metadata") public CommunityMetadata metadata;
+
+    /**
+     * Best-effort display label: prefers {@code metadata.title},
+     * then {@code slug}, then the raw {@code id}.
+     */
+    @JsonIgnore
+    public String displayLabel() {
+      if (metadata != null && metadata.title != null && !metadata.title.isBlank()) {
+        return metadata.title;
+      }
+      if (slug != null && !slug.isBlank()) {
+        return slug;
+      }
+      return id;
+    }
+  }
+
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  final class CommunityMetadata {
+    @JsonProperty("title") public String title;
+  }
+
   @JsonIgnoreProperties(ignoreUnknown = true)
   final class HitMetadata {
     @JsonProperty("title") public String title;
-    @JsonProperty("doi") public String doi;
     @JsonProperty("publication_date") public String publicationDate;
     @JsonProperty("description") public String description;
     @JsonProperty("creators") public List<Creator> creators;
     @JsonProperty("resource_type") public ResourceType resourceType;
-    @JsonProperty("access_right") public String accessRight;
-    @JsonProperty("relations") public Relations relations;
-    @JsonProperty("version") public String version;
   }
 
+  /**
+   * Creator (v12). Identity is nested under {@code person_or_org};
+   * affiliations are siblings at the creator level.
+   *
+   * <p>{@link #resolvedName()} and {@link #resolvedAffiliation()} provide
+   * null-safe access to display values, extracting from
+   * {@code person_or_org.name} and the first affiliation entry.</p>
+   */
   @JsonIgnoreProperties(ignoreUnknown = true)
   final class Creator {
-    @JsonProperty("name") public String name;
-    @JsonProperty("affiliation") public String affiliation;
+    @JsonIgnore public PersonOrOrg personOrOrg;
+    @JsonIgnore public List<Affiliation> affiliations;
+
+    @JsonProperty("person_or_org")
+    private void setPersonOrOrg(PersonOrOrg po) { this.personOrOrg = po; }
+
+    @JsonProperty("affiliations")
+    private void setAffiliations(List<Affiliation> af) { this.affiliations = af; }
+
+    public String resolvedName() {
+      return (personOrOrg == null || personOrOrg.name == null
+          || personOrOrg.name.isBlank()) ? null : personOrOrg.name;
+    }
+
+    public String resolvedAffiliation() {
+      if (affiliations == null || affiliations.isEmpty()) return null;
+      Affiliation first = affiliations.getFirst();
+      return (first == null || first.name == null || first.name.isBlank())
+          ? null : first.name;
+    }
   }
 
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  final class PersonOrOrg {
+    @JsonProperty("name") public String name;
+    @JsonProperty("type") public String type;
+    @JsonProperty("given_name") public String givenName;
+    @JsonProperty("family_name") public String familyName;
+  }
+
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  final class Affiliation {
+    @JsonProperty("id") public String id;
+    @JsonProperty("name") public String name;
+  }
+
+  /**
+   * Resource type (v12). The title field is a localised object
+   * (e.g. {@code {"en": "Dataset"}}). {@link #resolvedTitle()} returns
+   * the {@code en} value when present, falling back to the first
+   * available language key.
+   */
   @JsonIgnoreProperties(ignoreUnknown = true)
   final class ResourceType {
-    @JsonProperty("type") public String type;
-    @JsonProperty("title") public String title;
-  }
+    @JsonProperty("id") public String id;
+    @JsonIgnore private String resolvedTitle;
 
-  @JsonIgnoreProperties(ignoreUnknown = true)
-  final class Relations {
-    @JsonProperty("version") public List<VersionRelation> version;
-  }
+    @JsonProperty("title")
+    private void setTitleRaw(JsonNode node) {
+      if (node == null || node.isNull()) {
+        resolvedTitle = null;
+        return;
+      }
+      if (node.isTextual()) {
+        resolvedTitle = node.asText();
+        return;
+      }
+      if (node.isObject()) {
+        if (node.has("en") && node.get("en").isTextual()) {
+          resolvedTitle = node.get("en").asText();
+        } else {
+          var it = node.fields();
+          if (it.hasNext()) {
+            JsonNode val = it.next().getValue();
+            resolvedTitle = val.isTextual() ? val.asText() : null;
+          } else {
+            resolvedTitle = null;
+          }
+        }
+      }
+    }
 
-  @JsonIgnoreProperties(ignoreUnknown = true)
-  final class VersionRelation {
-    @JsonProperty("index") public int index;
-    @JsonProperty("is_last") public boolean isLast;
-    @JsonProperty("parent") public ParentRelation parent;
-  }
-
-  @JsonIgnoreProperties(ignoreUnknown = true)
-  final class ParentRelation {
-    @JsonProperty("pid_type") public String pidType;
-    @JsonProperty("pid_value") public String pidValue;
+    public String resolvedTitle() {
+      return resolvedTitle;
+    }
   }
 
   /**
-   * {@code links.versions} in the InvenioRDM response is a URL string
-   * pointing to the REST versions endpoint — it is not a structured
-   * block. Do not attempt to map it as {@code @JsonProperty("versions")}
-   * on {@link Hit} or {@link RecordResponse}. The authoritative version
-   * metadata lives in {@link Relations#version}.
-   */
-
-  /**
-   * Single record detail response, mirroring InvenioRDM record JSON structure.
+   * Single record detail response (v12).
    */
   @JsonIgnoreProperties(ignoreUnknown = true)
   final class RecordResponse {
     @JsonProperty("id") public String id;
-    @JsonProperty("doi") public String doi;
     @JsonProperty("links") public HitLinks links;
     @JsonProperty("metadata") public RecordMetadata metadata;
     @JsonProperty("created") public String created;
-    @JsonProperty("revision") public int revision;
+    @JsonProperty("updated") public String updated;
     @JsonProperty("is_published") public boolean isPublished;
+    @JsonProperty("access") public RecordAccess access;
+    @JsonProperty("pids") public Pids pids;
+    @JsonProperty("versions") public RecordVersions versions;
+    @JsonProperty("parent") public Parent parent;
   }
 
   @JsonIgnoreProperties(ignoreUnknown = true)
   final class RecordMetadata {
     @JsonProperty("title") public String title;
-    @JsonProperty("doi") public String doi;
     @JsonProperty("publication_date") public String publicationDate;
     @JsonProperty("description") public String description;
     @JsonProperty("creators") public List<Creator> creators;
     @JsonProperty("resource_type") public ResourceType resourceType;
-    @JsonProperty("access_right") public String accessRight;
-    @JsonProperty("relations") public Relations relations;
-    @JsonProperty("version") public String version;
-    @JsonProperty("access") public RecordAccess access;
   }
 
   @JsonIgnoreProperties(ignoreUnknown = true)
@@ -290,7 +413,7 @@ public interface InvenioRdmClient {
         try {
           var requestBuilder = HttpRequest.newBuilder()
               .uri(URI.create(url))
-              .header("Accept", "application/json")
+              .header("Accept", "application/vnd.inveniordm.v1+json")
               .timeout(Duration.ofSeconds(HTTP_REQUEST_TIMEOUT_S))
               .GET();
           if (authHeader != null) {

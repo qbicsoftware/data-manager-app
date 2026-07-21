@@ -1,6 +1,7 @@
 package life.qbic.datamanager.views.projects.project.datasets;
 
-import com.vaadin.flow.component.ClickEvent;
+import static java.util.Objects.requireNonNull;
+
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Key;
@@ -27,31 +28,25 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import static java.util.Objects.requireNonNull;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 import life.qbic.datamanager.views.Context;
-import com.vaadin.flow.theme.lumo.LumoIcon;
 import life.qbic.datamanager.views.UiHandle;
-import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.general.ResourceProviderTag;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.Tag.TagColor;
-import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
+import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.projectmanagement.application.associated_dataset.AssociatedDatasetService;
 import life.qbic.projectmanagement.application.associated_dataset.SearchHit;
-import life.qbic.projectmanagement.application.associated_dataset.SearchResult;
 import life.qbic.projectmanagement.application.associated_dataset.SourceInstanceDescriptor;
-import life.qbic.projectmanagement.application.associated_dataset.ConnectDatasetError;
+import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.domain.model.associated_dataset.AccessLevel;
+import life.qbic.projectmanagement.domain.model.associated_dataset.SourceType;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
-import java.time.Duration;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicInteger;
-import reactor.core.publisher.Mono;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
-import life.qbic.projectmanagement.domain.model.associated_dataset.SourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.context.SecurityContext;
@@ -495,6 +490,7 @@ public class ConnectDatasetSidebar extends Div {
     clearButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
     clearButton.addClickListener(e -> {
       searchField.clear();
+      resultsGrid.deselectAll();
       refreshSearchResults();
     });
 
@@ -757,6 +753,7 @@ public class ConnectDatasetSidebar extends Div {
 
     final AtomicInteger successCount = new AtomicInteger(0);
     final AtomicInteger failureCount = new AtomicInteger(0);
+    final AtomicInteger alreadyConnectedCount = new AtomicInteger(0);
     final AtomicInteger completedCount = new AtomicInteger(0);
     final int total = requests.size();
 
@@ -770,20 +767,25 @@ public class ConnectDatasetSidebar extends Div {
             // Update counters
             if (response.associatedDatasetId() != null) {
               successCount.incrementAndGet();
+            } else if (response.error()
+                == life.qbic.projectmanagement.application.associated_dataset.ConnectDatasetError.ALREADY_CONNECTED) {
+              alreadyConnectedCount.incrementAndGet();
             } else {
               failureCount.incrementAndGet();
             }
 
             // When all responses are in, close sidebar and show results
             if (completedCount.incrementAndGet() == total) {
-              onBatchFinished(successCount.get(), failureCount.get());
+              onBatchFinished(successCount.get(), failureCount.get(),
+                  alreadyConnectedCount.get());
             }
           } catch (Exception e) {
             // Never let an exception escape — would freeze the UI
             log.error("Exception in connect response handler", e);
             failureCount.incrementAndGet();
             if (completedCount.incrementAndGet() == total) {
-              onBatchFinished(successCount.get(), failureCount.get());
+              onBatchFinished(successCount.get(), failureCount.get(),
+                  alreadyConnectedCount.get());
             }
           }
         });
@@ -794,7 +796,8 @@ public class ConnectDatasetSidebar extends Div {
    * dispatches DatasetsConnectedEvent to refresh the parent list.
    * Called on the Reactor worker thread — UI work goes through UiHandle.
    */
-  private void onBatchFinished(int successCount, int failureCount) {
+  private void onBatchFinished(int successCount, int failureCount,
+      int alreadyConnectedCount) {
     uiHandle.onUiAndPush(() -> {
       try {
         // Hide spinner and restore controls
@@ -810,6 +813,10 @@ public class ConnectDatasetSidebar extends Div {
           notificationFactory.toast("dataset.connected.success",
               new Object[]{successCount}, getLocale()).open();
           fireEvent(new DatasetsConnectedEvent(this));
+        }
+        if (alreadyConnectedCount > 0) {
+          notificationFactory.toast("dataset.connected.already",
+              new Object[]{alreadyConnectedCount}, getLocale()).open();
         }
         if (failureCount > 0) {
           notificationFactory.toast("dataset.connected.failure",

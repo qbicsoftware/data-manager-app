@@ -40,16 +40,19 @@ interface AssociatedDatasetJpaRepository
       Sort sort);
 
   /**
-   * Checks whether a dataset with the given external handle (for the
-   * same source type) is already connected (active) to the project.
-   * Used to detect duplicates before connecting.
+   * Checks whether a dataset with the given PID (persistent identifier,
+   * e.g. DOI) is already actively connected to the project. Used to
+   * prevent duplicate connections to the same logical record.
+   *
+   * <p>PIDs are globally unique by design, so no source-type filter is
+   * needed — a DOI from Zenodo and the same DOI from another InvenioRDM
+   * instance refer to the same logical record.</p>
    */
   @Query("SELECT COUNT(d) FROM associated_dataset d WHERE "
       + "d.projectId = :projectId "
-      + "AND d.externalHandle = :externalHandle "
-      + "AND d.sourceType = life.qbic.projectmanagement.domain.model.associated_dataset.SourceType.INVENIO_RDM "
+      + "AND d.pid = :pid "
       + "AND d.connectionState <> life.qbic.projectmanagement.domain.model.associated_dataset.ConnectionState.REMOVED")
-  long countActiveByProjectIdAndExternalHandle(
+  long countActiveByProjectIdAndPid(
       @Param("projectId") ProjectId projectId,
-      @Param("externalHandle") String externalHandle);
+      @Param("pid") String pid);
 }

@@ -24,7 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * <p>The main view for the "Connect associated datasets with Data Manager
  * projects" feature (FEAT-DATSET-01). Provides:
  * <ul>
- *   <li>a "Connected Resources" section showing the datasets currently
+ *   <li>an "All datasets" section showing the datasets currently
  *       connected to the selected project, or an empty-state guide when
  *       no datasets are connected yet;</li>
  *   <li>a sliding connect-datasets sidebar that searches InvenioRDM
@@ -32,8 +32,6 @@ import org.springframework.beans.factory.annotation.Autowired;
  *       associates them with a project experiment.</li>
  * </ul>
  *
- * <p>Accessible from the project navigation drawer (DATASETS link, placed
- * directly below SUMMARY).</p>
  *
  * @since 1.12.0
  */
@@ -41,7 +39,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 @UIScope
 @Route(value = "projects/:projectId?/datasets", layout = ProjectMainLayout.class)
 @PermitAll
-public class AssociatedDatasetsMain extends Main implements BeforeEnterObserver {
+public class ConnectedDatasetsMain extends Main implements BeforeEnterObserver {
 
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
 
@@ -56,7 +54,7 @@ public class AssociatedDatasetsMain extends Main implements BeforeEnterObserver 
   private Context context = new Context();
 
   @Autowired
-  public AssociatedDatasetsMain(
+  public ConnectedDatasetsMain(
       AssociatedDatasetService associatedDatasetService,
       ExperimentInformationService experimentInformationService,
       UserPermissions userPermissions,

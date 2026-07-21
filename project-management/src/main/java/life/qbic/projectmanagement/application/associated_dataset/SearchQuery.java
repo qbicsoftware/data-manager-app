@@ -1,7 +1,5 @@
 package life.qbic.projectmanagement.application.associated_dataset;
 
-import java.util.Objects;
-
 /**
  * The query parameters for searching an external data source.
  *

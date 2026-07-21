@@ -2,6 +2,7 @@ package life.qbic.projectmanagement.application.associated_dataset;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Objects;
 import life.qbic.projectmanagement.domain.model.associated_dataset.AccessLevel;
 
@@ -25,6 +26,7 @@ import life.qbic.projectmanagement.domain.model.associated_dataset.AccessLevel;
  *   <li>{@code accessLink} — null when not available</li>
  *   <li>{@code resourceType}, {@code community} — null when not provided by the source</li>
  *   <li>{@code accessDetail} — null when not applicable (e.g. PUBLIC datasets)</li>
+ *   <li>{@code creators} — empty list when unknown/missing (never null)</li>
  *   <li>{@code experimentId}, {@code experimentName} — null when no experiment was linked</li>
  * </ul>
  *
@@ -57,8 +59,13 @@ public record ConnectedDatasetView(
     /** Display name of the source instance (e.g. "Zenodo", "FDAT"). */
     String resourceProvider,
 
-    /** Comma-joined creator display string, or "—" if unknown. */
-    String creatorsDisplay,
+    /**
+     * Individual creator display names (e.g. [{@code "Stanger, Anna"},
+     * {@code "Kimmich, Lucca"}]). Empty when unknown. Each element may
+     * itself contain commas (v12 InvenioRDM uses "Last, First" format),
+     * so callers must not split this field on comma.
+     */
+    List<String> creators,
 
     /** Resource type label (e.g. "Dataset"), or null. */
     String resourceType,

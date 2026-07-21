@@ -22,6 +22,13 @@ public enum ConnectDatasetError {
   /**
    * The dataset could not be connected due to an unexpected error.
    */
-  CONNECT_FAILED;
+  CONNECT_FAILED,
+
+  /**
+   * A dataset with the same persistent identifier (PID/DOI) is already
+   * actively connected to the project. Prevents duplicate connections
+   * to the same logical record.
+   */
+  ALREADY_CONNECTED;
 
 }
