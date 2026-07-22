@@ -99,4 +99,28 @@ First some general property definitions
   --spacing-10: 4rem;
   --spacing-11: 5rem;
   --spacing-12: 6rem;
+
+  /* --- Design tokens (from style guide, --color-* family) --- */
+  --color-primary: #1676f3;
+  --color-error: #ff4238;
+  --color-warning: #fec901;
+  --color-success: #15c15d;
+  --color-text-primary: #1676f3;
+  --color-text-error: #f52419;
+  --color-text-warning: #f2c004;
+  --color-text-success: #08b344;
+
+  /* --- Dark-surface shade tokens (from style guide) --- */
+  --color-shade-base: #192434;
+  --color-shade-90: rgba(24, 39, 58, 0.94);
+  --color-shade-50: rgba(28, 48, 74, 0.5);
+  --color-shade-10: rgba(26, 56, 96, 0.1);
+  --color-shade-5: rgba(25, 59, 103, 0.05);
+
+  /* --- Toast dark-surface tokens --- */
+  --toast-background-color: #223348;
+  --toast-text-color: rgba(235, 244, 255, 0.9);
+  --toast-subtle-text-color: rgba(209, 227, 250, 0.6);
+  --toast-link-color: #66A8FF;
+  --toast-progress-track-color: rgba(173, 200, 235, 0.14);
 }
