@@ -34,7 +34,7 @@ public class MeasurementLookup implements NgsMeasurementLookup, PxpMeasurementLo
   private final NgsMeasurementJpaRepository ngsMeasurementJpaRepository;
   private final PxpMeasurementJpaRepository pxpMeasurementJpaRepository;
   private final IpMeasurementJpaRepository ipMeasurementJpaRepository;
-  private final String MEASUREMENTCODEPROPERTY = "measurementCode";
+  private static final String MEASUREMENTCODE_PROPERTY = "measurementCode";
   public MeasurementLookup(NgsMeasurementJpaRepository ngsMeasurementJpaRepository,
       PxpMeasurementJpaRepository pxpMeasurementJpaRepository,
       IpMeasurementJpaRepository ipMeasurementJpaRepository) {
@@ -59,7 +59,7 @@ public class MeasurementLookup implements NgsMeasurementLookup, PxpMeasurementLo
           "Invalid sort keys for ngs measurements: " + invalidSortKeys.stream()
               .map(Order::getProperty).toList());
     }
-    Sort ascendingMeasurementCodeSort = Sort.by(Direction.ASC, MEASUREMENTCODEPROPERTY);
+    Sort ascendingMeasurementCodeSort = Sort.by(Direction.ASC, MEASUREMENTCODE_PROPERTY);
     var pageable = new OffsetBasedRequest(offset, limit, ascendingMeasurementCodeSort);
     var filter = mapToDatabaseFilter(measurementFilter);
     return ngsMeasurementJpaRepository.findAll(filter.asSpecification(), pageable)
@@ -94,7 +94,7 @@ public class MeasurementLookup implements NgsMeasurementLookup, PxpMeasurementLo
           "Invalid sort keys for ngs measurements: " + invalidSortKeys.stream()
               .map(Order::getProperty).toList());
     }
-    Sort ascendingMeasurementCodeSort = Sort.by(Direction.ASC, MEASUREMENTCODEPROPERTY);
+    Sort ascendingMeasurementCodeSort = Sort.by(Direction.ASC, MEASUREMENTCODE_PROPERTY);
     var pageable = new OffsetBasedRequest(offset, limit, ascendingMeasurementCodeSort);
     var filter = mapToDatabaseFilter(measurementFilter);
     return pxpMeasurementJpaRepository.findAll(filter.asSpecification(), pageable)
@@ -188,7 +188,7 @@ public class MeasurementLookup implements NgsMeasurementLookup, PxpMeasurementLo
           "Invalid sort keys for ip measurements: " + invalidSortKeys.stream()
               .map(Order::getProperty).toList());
     }
-    Sort ascendingMeasurementCodeSort = Sort.by(Direction.ASC, MEASUREMENTCODEPROPERTY);
+    Sort ascendingMeasurementCodeSort = Sort.by(Direction.ASC, MEASUREMENTCODE_PROPERTY);
     var pageable = new OffsetBasedRequest(offset, limit, ascendingMeasurementCodeSort);
     var filter = mapToDatabaseFilter(measurementFilter);
     return ipMeasurementJpaRepository.findAll(filter.asSpecification(), pageable)
