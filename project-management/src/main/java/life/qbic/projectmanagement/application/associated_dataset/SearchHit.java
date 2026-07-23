@@ -2,7 +2,6 @@ package life.qbic.projectmanagement.application.associated_dataset;
 
 import java.time.LocalDate;
 import java.util.Objects;
-import life.qbic.projectmanagement.domain.model.associated_dataset.AccessLevel;
 
 /**
  * A single record found by searching an external data source.
@@ -44,11 +43,11 @@ public record SearchHit(
     String description,
 
     /**
-     * Coarse access level derived from the source-specific model.
-     * For InvenioRDM: PUBLIC only when record + file access are public
+     * Whether the dataset is publicly accessible.
+     * For InvenioRDM: true only when record + file access are public
      * and no embargo is active.
      */
-    AccessLevel accessLevel,
+    boolean isPublic,
 
     /**
      * A source-specific access detail string for display, e.g.
@@ -64,6 +63,5 @@ public record SearchHit(
     Objects.requireNonNull(pid, "pid must not be null");
     Objects.requireNonNull(publicationDate, "publicationDate must not be null");
     Objects.requireNonNull(resourceProvider, "resourceProvider must not be null");
-    Objects.requireNonNull(accessLevel, "accessLevel must not be null");
   }
 }

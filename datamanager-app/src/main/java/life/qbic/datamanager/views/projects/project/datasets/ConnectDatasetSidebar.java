@@ -29,20 +29,21 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.UiHandle;
-import life.qbic.datamanager.views.general.ResourceProviderTag;
-import life.qbic.datamanager.views.general.Tag;
-import life.qbic.datamanager.views.general.Tag.TagColor;
+import life.qbic.datamanager.views.general.DataSetTagFactory;
+import life.qbic.datamanager.views.general.DataSetTagFactory.TagType;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.projectmanagement.application.associated_dataset.AssociatedDatasetService;
+import life.qbic.projectmanagement.application.associated_dataset.AssociatedDatasetServiceException;
 import life.qbic.projectmanagement.application.associated_dataset.SearchHit;
 import life.qbic.projectmanagement.application.associated_dataset.SourceInstanceDescriptor;
 import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
-import life.qbic.projectmanagement.domain.model.associated_dataset.AccessLevel;
 import life.qbic.projectmanagement.domain.model.associated_dataset.SourceType;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
@@ -90,17 +91,14 @@ public class ConnectDatasetSidebar extends Div {
    * Clamp a title to {@code maxLines} lines with a CSS ellipsis.
    * The full title is exposed as a native HTML {@code title} attribute so hovering reveals
    * it even when truncated.
+   *
+   * <p>{@code maxLines} must be 1, 2, or 3 (matching the {@code .clamp-N-line}
+   * CSS utility classes defined in {@code all.css}).</p>
    */
   private Span clampableTitle(String title, int maxLines) {
     var span = new Span(title);
     span.addClassName("normal-body-text");
-    span.getElement().getStyle().set("display", "-webkit-box");
-    span.getElement().getStyle().set("-webkit-line-clamp", String.valueOf(maxLines));
-    span.getElement().getStyle().set("-webkit-box-orient", "vertical");
-    span.getElement().getStyle().set("overflow", "hidden");
-    span.getElement().getStyle().set("text-overflow", "ellipsis");
-    span.getElement().getStyle().set("line-height", "1.4");
-    span.getElement().getStyle().set("white-space", "normal");
+    span.addClassName("clamp-" + maxLines + "-line");
     span.getElement().setAttribute("title", title);
     return span;
   }
@@ -129,14 +127,6 @@ public class ConnectDatasetSidebar extends Div {
   private final Div loadingIndicator;
   private final Span loadingMessage = new Span("Searching for datasets...");
   private final Div welcomeMessage;
-
-  /**
-   * Buffer for errors caught inside the lazy-loading callback. The
-   * callback cannot show a Notification directly because it fires
-   * during Grid rendering; instead it stores the message here and
-   * {@link #refreshSearchResults()} surfaces it afterwards.
-   */
-  private volatile String lastSearchError;
 
   /**
    * Gate for the lazy-loading callback.
@@ -183,12 +173,15 @@ public class ConnectDatasetSidebar extends Div {
   public ConnectDatasetSidebar(
       AssociatedDatasetService associatedDatasetService,
       ExperimentInformationService experimentInformationService,
-      Object userPermissions,
       MessageSourceNotificationFactory notificationFactory) {
     this.associatedDatasetService = associatedDatasetService;
     this.experimentInformationService = experimentInformationService;
     this.notificationFactory = requireNonNull(notificationFactory,
         "notificationFactory must not be null");
+
+    // Root scope class — all .cds-* CSS rules in connect-dataset-sidebar.css
+    // are scoped under this class so they cannot leak into other views.
+    addClassName("connect-dataset-sidebar");
 
     // ── Form controls (MUST be initialized before buildSidebarBody) ──
     // Some fields are referenced directly inside buildSidebarBody, which is
@@ -214,7 +207,7 @@ public class ConnectDatasetSidebar extends Div {
     searchField = new TextField();
     searchField.setPlaceholder("Search by title, DOI, or creator…");
     searchField.setClearButtonVisible(true);
-    searchField.getStyle().set("flex-grow", "1");
+    searchField.addClassName("flex-grow");
     searchField.addKeyDownListener(Key.ENTER, e -> refreshSearchResults());
 
     resultsGrid = new Grid<>();
@@ -249,68 +242,56 @@ public class ConnectDatasetSidebar extends Div {
     // Note: without @Push the bar is rendered in the same response as
     // the data so it flashes briefly, but it still gives the user a
     // visible cue that a fetch is in progress on the server side.
-    // Indeterminate spinner + clear messaging, shown during searches
-    var spinner = new Span();
-    spinner.getElement().setProperty("innerHTML", "&#8987;"); // hourglass symbol
-    spinner.getStyle().set("font-size", "var(--lumo-font-size-xxxl)");
-    spinner.getStyle().set("animation", "spin 1s linear infinite");
+    // Indeterminate spinner + clear messaging, shown during searches.
+    // Spinner size, colors and animation live entirely in CSS (pure-CSS
+    // arc spinner — Spinner II, Temani Afif); the DOM element is an empty
+    // div carrying only the .cds-loading-spinner class.
+    var spinner = new Div();
+    spinner.addClassName("cds-loading-spinner");
     
     loadingMessage.addClassName("normal-body-text");
-    loadingMessage.getStyle().set("font-weight", "500");
+    loadingMessage.addClassName("cds-loading-message");
     
     var loadingHint = new Span("This may take a few seconds");
     loadingHint.addClassName("small-body-text");
-    loadingHint.getStyle().set("color", "var(--lumo-tertiary-text-color)");
+    loadingHint.addClassName("cds-loading-hint");
 
+    // The loading overlay uses .overlay-center-fill for the absolute-fill
+    // + centred-positioning primitives (see all.css); .cds-loading adds
+    // the base-colour backdrop and z-index (see connect-dataset-sidebar.css).
     loadingIndicator = new Div();
-    loadingIndicator.addClassNames("flex-vertical", "items-center", "gap-02");
-    loadingIndicator.getStyle().set("position", "absolute");
-    loadingIndicator.getStyle().set("top", "0");
-    loadingIndicator.getStyle().set("left", "0");
-    loadingIndicator.getStyle().set("width", "100%");
-    loadingIndicator.getStyle().set("height", "100%");
-    loadingIndicator.getStyle().set("justify-content", "center");
-    loadingIndicator.getStyle().set("background-color", "var(--lumo-base-color)");
-    loadingIndicator.getStyle().set("z-index", "2");
+    loadingIndicator.addClassNames(
+        "flex-vertical", "items-center", "gap-02",
+        "overlay-center-fill", "cds-loading");
     loadingIndicator.add(spinner, loadingMessage, loadingHint);
 
     // ── Welcome message (shown before first search) ──────────────────
+    // Same absolute-fill + centred-positioning as the loading overlay;
+    // .cds-welcome adds its own colour scheme and z-index.
     welcomeMessage = new Div();
-    welcomeMessage.addClassNames("flex-vertical", "items-center", "gap-02");
-    welcomeMessage.getStyle().set("position", "absolute");
-    welcomeMessage.getStyle().set("top", "0");
-    welcomeMessage.getStyle().set("left", "0");
-    welcomeMessage.getStyle().set("width", "100%");
-    welcomeMessage.getStyle().set("height", "100%");
-    welcomeMessage.getStyle().set("justify-content", "center");
-    welcomeMessage.getStyle().set("background-color", "var(--lumo-base-color)");
-    welcomeMessage.getStyle().set("color", "var(--lumo-secondary-text-color)");
-    welcomeMessage.getStyle().set("z-index", "1");
-    welcomeMessage.getStyle().set("cursor", "default");
+    welcomeMessage.addClassNames(
+        "flex-vertical", "items-center", "gap-02",
+        "overlay-center-fill", "cds-welcome");
     
     var welcomeIcon = VaadinIcon.SEARCH.create();
-    welcomeIcon.getStyle().set("font-size", "var(--lumo-font-size-xxxl)");
-    welcomeIcon.getStyle().set("color", "var(--lumo-tertiary-text-color)");
+    welcomeIcon.addClassName("cds-welcome-icon");
     
     var welcomeTitle = new Span("Search for datasets");
     welcomeTitle.addClassName("heading-4");
-    welcomeTitle.getStyle().set("margin-top", "var(--lumo-space-s)");
+    welcomeTitle.addClassName("mt-s");
     
     var welcomeSubtitle = new Span(
         "Use the search field above to find open datasets you can connect to this project.");
     welcomeSubtitle.addClassName("body-text");
-    welcomeSubtitle.getStyle().set("text-align", "center");
-    welcomeSubtitle.getStyle().set("padding", "0 var(--lumo-space-l)");
-    welcomeSubtitle.getStyle().set("color", "var(--lumo-tertiary-text-color)");
+    welcomeSubtitle.addClassName("cds-welcome-subtitle");
     
     welcomeMessage.add(welcomeIcon, welcomeTitle, welcomeSubtitle);
 
+    // .cds-results sets position:relative (the parent for the absolute
+    // overlays above) and min-height:200px so the grid always has room
+    // to display at least one card row even before data has loaded.
     resultsContainer = new Div();
-    resultsContainer.addClassNames("flex-vertical");
-    resultsContainer.getStyle().set("position", "relative");
-    // Make this container fill remaining space in the flex column
-    resultsContainer.getStyle().set("flex-grow", "1");
-    resultsContainer.getStyle().set("min-height", "0"); // Critical for flex layout
+    resultsContainer.addClassNames("flex-vertical", "flex-grow", "cds-results");
     resultsContainer.add(loadingIndicator, welcomeMessage, resultsGrid);
 
     experimentSelector = new ComboBox<>();
@@ -335,31 +316,19 @@ public class ConnectDatasetSidebar extends Div {
     connectButton.addClickListener(e -> connectSelectedDatasets());
 
     // ── Overlay (semi-transparent backdrop) ──────────────────────────
+    // .cds-backdrop carries all visual properties; display toggling stays
+    // inline because it represents runtime open/close state, not layout.
     overlay = new Div();
-    overlay.getStyle().set("position", "fixed");
-    overlay.getStyle().set("top", "0");
-    overlay.getStyle().set("left", "0");
-    overlay.getStyle().set("width", "100%");
-    overlay.getStyle().set("height", "100%");
-    overlay.getStyle().set("background-color", "rgba(0,0,0,0.3)");
-    overlay.getStyle().set("z-index", "999");
+    overlay.addClassName("cds-backdrop");
     overlay.getStyle().set("display", "none");
     overlay.addClickListener(e -> close());
     add(overlay);
 
     // ── Panel ─────────────────────────────────────────────────────────
+    // .cds-panel carries width, shadow, z-index, etc.; display toggling
+    // stays inline (same rationale as overlay above).
     panel = new Div();
-    panel.getStyle().set("position", "fixed");
-    panel.getStyle().set("top", "0");
-    panel.getStyle().set("right", "0");
-    panel.getStyle().set("width", "min(55%, 720px)");
-    panel.getStyle().set("min-width", "460px");
-    panel.getStyle().set("max-width", "100vw");
-    panel.getStyle().set("height", "100%");
-    panel.getStyle().set("background-color", "var(--lumo-base-color)");
-    panel.getStyle().set("box-shadow", "-4px 0 24px rgba(0,0,0,0.12)");
-    panel.getStyle().set("z-index", "1000");
-    panel.getStyle().set("box-sizing", "border-box");
+    panel.addClassName("cds-panel");
     panel.getStyle().set("display", "none");
     add(panel);
 
@@ -433,23 +402,19 @@ public class ConnectDatasetSidebar extends Div {
   // ── Internal build ──────────────────────────────────────────────────
 
   private Div buildSidebarBody() {
+    // .flex-vertical gives the body its column direction;
+    // .height-full makes it fill the panel; .cds-body adds box-sizing:border-box.
     var body = new Div();
-    body.getStyle().set("height", "100%");
-    body.getStyle().set("box-sizing", "border-box");
-    body.getStyle().set("display", "flex");
-    body.getStyle().set("flex-direction", "column");
+    body.addClassNames("flex-vertical", "height-full", "cds-body");
 
-    // Header
+    // Header — padding and border-bottom live in .cds-header;
+    // flex direction, alignment, gap, and flex-shrink use Lumo utilities.
     var header = new Div();
-    header.addClassNames("flex-horizontal", "items-center");
-    header.getStyle().set("padding", "var(--lumo-space-m) var(--lumo-space-l)");
-    header.getStyle().set("border-bottom", "1px solid var(--lumo-contrast-10pct)");
-    header.getStyle().set("flex-shrink", "0");
-    header.getStyle().set("gap", "var(--lumo-space-s)");
+    header.addClassNames(
+        "flex-horizontal", "items-center", "gap-s", "flex-shrink-0", "cds-header");
 
     var sidebarTitle = new Span("Connect Datasets");
-    sidebarTitle.addClassName("heading-3");
-    sidebarTitle.getStyle().set("flex-grow", "1");
+    sidebarTitle.addClassNames("heading-3", "flex-grow");
 
     var closeButton = new Button(VaadinIcon.CLOSE_SMALL.create());
     closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
@@ -459,28 +424,26 @@ public class ConnectDatasetSidebar extends Div {
     header.add(sidebarTitle, closeButton);
     body.add(header);
 
-    // Content area - handles search form and results
+    // Scrollable content area (search form + results container).
+    // .flex-vertical sets the column direction, .flex-grow fills available
+    // space, .scroll-vertical gives it overflow-y:scroll, and .cds-content
+    // sets the padding and min-height:0 critical for flex-column children.
     var content = new Div();
-    content.getStyle().set("flex-grow", "1");
-    content.getStyle().set("padding", "var(--lumo-space-l)");
-    content.getStyle().set("display", "flex");
-    content.getStyle().set("flex-direction", "column");
-    content.getStyle().set("min-height", "0");
-    content.getStyle().set("overflow-y", "auto"); // Make content scrollable
+    content.addClassNames("flex-vertical", "flex-grow", "scroll-vertical", "cds-content");
 
+    // Search row: instance-selector + search field.
+    // .items-end aligns bottoms so the shorter selector button aligns with
+    // the taller text field. min-width:0 in .cds-search-row prevents
+    // the search field from overflowing a narrow panel (classic flex trap).
     var searchRow = new Div();
-    searchRow.getStyle().set("display", "flex");
-    searchRow.getStyle().set("gap", "var(--lumo-space-xs)");
-    searchRow.getStyle().set("align-items", "flex-end");
-    searchRow.getStyle().set("margin-bottom", "var(--lumo-space-s)");
-    searchRow.getStyle().set("min-width", "0");
+    searchRow.addClassNames(
+        "flex-horizontal", "items-end", "gap-xs", "mb-s", "cds-search-row");
 
     instanceSelector.setWidth("200px");
     searchRow.add(instanceSelector, searchField);
 
     var searchButtonBar = new Div();
-    searchButtonBar.getStyle().set("display", "flex");
-    searchButtonBar.getStyle().set("gap", "var(--lumo-space-xs)");
+    searchButtonBar.addClassNames("flex-horizontal", "gap-xs");
 
     searchButton = new Button("Search", VaadinIcon.SEARCH.create());
     searchButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
@@ -496,38 +459,36 @@ public class ConnectDatasetSidebar extends Div {
 
     searchButtonBar.add(searchButton, clearButton);
     content.add(searchRow, searchButtonBar);
-    
-    // Results container - takes remaining space in content
-    resultsContainer.getStyle().set("flex-grow", "1");
-    resultsContainer.getStyle().set("min-height", "200px"); // Minimum height for grid
+
+    // Results container was already configured with .flex-vertical +
+    // .flex-grow + .cds-results in the constructor (see resultsContainer
+    // setup). No inline overrides needed here — .cds-results sets
+    // position:relative + min-height:200px to keep at least one card row
+    // visible even before data has loaded.
     content.add(resultsContainer);
 
     body.add(content);
 
-    // Footer with experiment selector and connect button
+    // Footer — padding + border-top live in .cds-footer;
+    // flex direction and flex-shrink use utilities.
     var footer = new Div();
-    footer.addClassNames("flex-vertical");
-    footer.getStyle().set("padding", "var(--lumo-space-m) var(--lumo-space-l)");
-    footer.getStyle().set("border-top", "1px solid var(--lumo-contrast-10pct)");
-    footer.getStyle().set("flex-shrink", "0");
+    footer.addClassNames("flex-vertical", "flex-shrink-0", "cds-footer");
     
     // Experiment picker (optional association — AC9)
+    // .mb-m replaces the inline margin-bottom with a Lumo utility.
     var experimentSection = new Div();
-    experimentSection.addClassNames("flex-vertical", "gap-01");
-    experimentSection.getStyle().set("margin-bottom", "var(--lumo-space-m)");
+    experimentSection.addClassNames("flex-vertical", "gap-01", "mb-m");
     experimentSection.add(experimentSelector);
     var experimentHelp = new Span(
         "Optionally link the connected dataset(s) to a specific experiment.");
-    experimentHelp.addClassName("extra-small-body-text");
-    experimentHelp.addClassName("color-secondary");
+    experimentHelp.addClassNames("extra-small-body-text", "color-secondary");
     experimentSection.add(experimentHelp);
     footer.add(experimentSection);
 
     // Connect button row
     var buttonRow = new Div();
     buttonRow.addClassNames("flex-horizontal", "items-center", "gap-03");
-    selectionCountLabel.addClassName("extra-small-body-text");
-    selectionCountLabel.addClassName("color-secondary");
+    selectionCountLabel.addClassNames("extra-small-body-text", "color-secondary");
     buttonRow.add(selectionCountLabel, connectButton);
     footer.add(buttonRow);
     
@@ -607,7 +568,6 @@ public class ConnectDatasetSidebar extends Div {
 
     // Mark that user has initiated at least one search (for fetchPage guard)
     searchInitiated = true;
-    lastSearchError = null;
 
     // Show loading state immediately and disable controls
     setControlsEnabled(false);
@@ -645,15 +605,20 @@ public class ConnectDatasetSidebar extends Div {
         setControlsEnabled(true);
       });
     }).exceptionally(throwable -> {
-      // Handle errors
-      lastSearchError = throwable.getMessage();
+
+      // Resolve a user-friendly message: if the service threw one of our
+      // typed exceptions, unwrap and use its message for the toast; otherwise
+      // fall back to a generic "Search failed." text. The original cause is
+      // logged (with infrastructure details) by the service itself.
+      final String userMessage = resolveUserMessage(throwable,
+          "Search failed. Please try again in a moment.");
 
       // Push error back to UI thread
       uiHandle.onUiAndPush(() -> {
         loadingIndicator.getStyle().set("display", "none");
         setControlsEnabled(true);
         notificationFactory.toast("dataset.search.failed",
-            new Object[]{}, getLocale()).open();
+            new Object[]{userMessage}, getLocale()).open();
       });
       return null;
     });
@@ -742,7 +707,7 @@ public class ConnectDatasetSidebar extends Div {
       requestIdToHandle.put(reqId, hit.externalHandleValue());
       requests.add(new AssociatedDatasetService.ConnectDatasetRequest(
           reqId, projectId, SourceType.INVENIO_RDM, instance.id(),
-          hit.externalHandleValue(), Optional.ofNullable(experimentId), currentUserId()));
+          hit.externalHandleValue(), experimentId, currentUserId()));
     }
 
     // 2. UI: enter "connecting" state immediately
@@ -831,46 +796,44 @@ public class ConnectDatasetSidebar extends Div {
   // ── Card-style row ─────────────────────────────────────────────────
 
   private Component buildSearchResultCard(SearchHit hit) {
+    // .border + .p-m + .mb-s + .clickable cover padding, spacing, and cursor;
+    // .cds-card adds the rounded border.
     var card = new Div();
-    card.addClassName("border");
-    card.getStyle().set("padding", "var(--lumo-space-m)");
-    card.getStyle().set("margin-bottom", "var(--lumo-space-s)");
-    card.getStyle().set("border-radius", "var(--lumo-border-radius-m)");
+    card.addClassNames("border", "p-m", "mb-s", "clickable", "cds-card");
     // Clicking the card toggles selection (row click listener is attached
-    // to the grid). Cursor pointer makes the affordance explicit.
-    card.getStyle().set("cursor", "pointer");
+    // to the grid). .clickable makes the affordance explicit.
 
-    // Top row: access badge + provider + date
+    // Top row: provider tag + access badge + date.
+    // .flex-horizontal + .items-center + .gap-02 from Lumo utilities;
+    // .mb-xs replaces the inline margin-bottom with a Lumo utility.
     var topRow = new Div();
-    topRow.addClassNames("flex-horizontal", "items-center", "gap-02");
-    topRow.getStyle().set("margin-bottom", "var(--lumo-space-xs)");
+    topRow.addClassNames("flex-horizontal", "items-center", "gap-02", "mb-xs");
 
     // Provider tag — styled via centralized factory so this view and the
     // connected-resources list share the same color scheme.
     String provider = hit.resourceProvider();
     if (provider != null && !provider.isBlank()) {
-      topRow.add(ResourceProviderTag.of(provider));
+      topRow.add(DataSetTagFactory.create(TagType.PROVIDER, provider));
     }
 
-    Tag accessBadge = hit.accessLevel() == AccessLevel.PUBLIC
-        ? new Tag("Public") : new Tag("Restricted");
-    accessBadge.setTagColor(hit.accessLevel() == AccessLevel.PUBLIC
-        ? TagColor.SUCCESS : TagColor.WARNING);
-    topRow.add(accessBadge);
+    // Access badge — styled via centralized factory
+    topRow.add(DataSetTagFactory.create(
+        TagType.ACCESS_TYPE, hit.isPublic()));
 
+    // Date — pushed to the trailing edge of the flex row via .ml-auto
+    // (Lumo margin utility replaces inline margin-left:auto).
     var dateSpan = new Span(hit.publicationDate().format(
         DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.ENGLISH)));
-    dateSpan.addClassName("extra-small-body-text");
-    dateSpan.addClassName("color-secondary");
-    dateSpan.getStyle().set("margin-left", "auto");
+    dateSpan.addClassNames("extra-small-body-text", "color-secondary", "ml-auto");
     topRow.add(dateSpan);
 
     card.add(topRow);
 
-    // Title (clamp to 2 lines, full title in tooltip on hover)
+    // Title — clamped to 2 visible lines with a hover tooltip for the
+    // full title. .clamp-2-line + .normal-body-text live in all.css;
+    // .cds-card-title + .mb-xs handle weight and bottom margin.
     var title = clampableTitle(hit.title(), 2);
-    title.getStyle().set("font-weight", "600");
-    title.getStyle().set("margin-bottom", "var(--lumo-space-xs)");
+    title.addClassNames("cds-card-title", "mb-xs");
     card.add(title);
 
     // PID rendered as a clickable link — opens the record in a new tab so
@@ -891,6 +854,26 @@ public class ConnectDatasetSidebar extends Div {
   }
 
   // ── Helpers ─────────────────────────────────────────────────────────
+
+  /**
+   * Resolves a user-friendly message from an async throwable. Walks the
+   * cause chain in case of {@code CompletionException} / ExecutionException
+   * wrapping, and returns the service-specific user message when found;
+   * otherwise falls back to the given {@code defaultMessage}.
+   */
+  private String resolveUserMessage(Throwable throwable, String defaultMessage) {
+    Throwable cause = throwable;
+    while (cause instanceof CompletionException || cause instanceof ExecutionException) {
+      cause = cause.getCause();
+      if (cause == null) {
+        return defaultMessage;
+      }
+    }
+    if (cause instanceof AssociatedDatasetServiceException serviceException) {
+      return serviceException.userMessage();
+    }
+    return defaultMessage;
+  }
 
   private String currentUserId() {
     var principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();

@@ -131,7 +131,7 @@ public class InvenioRdmDatasetSource implements DatasetSource {
     return new SearchHit(
         String.valueOf(h.id),
         title, pid, version, publicationDate, resourceProvider,
-        description, accessLevel, accessDetail
+        description, accessLevel == AccessLevel.PUBLIC, accessDetail
     );
   }
 
@@ -154,14 +154,13 @@ public class InvenioRdmDatasetSource implements DatasetSource {
     // v12 access block lives at the response top level.
     InvenioRdmAccessStatus recordAccess = recordAccessStatus(rec.access);
     InvenioRdmAccessStatus fileAccess = fileAccessStatus(rec.access);
-    LocalDate embargoUntil = embargoUntil(rec.access);
 
     return new InvenioRdmResourceMetadata(
         title, pid, version, accessLink,
         resourceProvider, creators, resourceType,
         community,
         publicationDate, description,
-        recordAccess, fileAccess, embargoUntil
+        recordAccess, fileAccess
     );
   }
 
@@ -229,19 +228,6 @@ public class InvenioRdmDatasetSource implements DatasetSource {
       case "embargoed" -> InvenioRdmAccessStatus.EMBARGOED;
       default -> InvenioRdmAccessStatus.RESTRICTED;
     };
-  }
-
-  static LocalDate embargoUntil(InvenioRdmClient.RecordAccess access) {
-    if (access == null || access.embargo == null) return null;
-    if (!access.embargo.active) return null;
-    if (access.embargo.until == null) return null;
-    try {
-      return LocalDate.parse(access.embargo.until);
-    } catch (DateTimeParseException e) {
-      log.warn("Unparseable embargo 'until' date: "
-          + access.embargo.until);
-      return null;
-    }
   }
 
   /**

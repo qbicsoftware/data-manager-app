@@ -1004,9 +1004,9 @@ CREATE TABLE IF NOT EXISTS `associated_dataset`
 
     -- Connection metadata
     `connected_by`      varchar(255)    NOT NULL,
-    `connected_on`      datetime(3)     NOT NULL,
+    `connected_on`      timestamp(3)    NOT NULL,
     `experiment_id`     varchar(36)     DEFAULT NULL COMMENT 'optional experiment association',
-    `last_synced_at`    datetime(3)     DEFAULT NULL,
+    `last_synced_at`    timestamp(3)    DEFAULT NULL,
 
     -- Generated column for partial unique index: NULL when REMOVED so that
     -- MariaDB excludes tombstoned rows from the uniqueness check.

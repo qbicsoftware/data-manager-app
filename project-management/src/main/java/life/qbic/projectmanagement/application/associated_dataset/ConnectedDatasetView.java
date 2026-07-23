@@ -1,10 +1,9 @@
 package life.qbic.projectmanagement.application.associated_dataset;
 
+import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
-import life.qbic.projectmanagement.domain.model.associated_dataset.AccessLevel;
 
 /**
  * API-contract DTO returned by {@link AssociatedDatasetService#listConnectedDatasetViews
@@ -44,8 +43,8 @@ public record ConnectedDatasetView(
     /** Persistent identifier (PID / DOI). Never null. */
     String pid,
 
-    /** Coarse access level derived from source-specific metadata. */
-    AccessLevel accessLevel,
+    /** Whether the dataset is publicly accessible (true for public access). */
+    boolean isPublic,
 
     /** Version string (e.g. "v1"), or null if not available. */
     String version,
@@ -90,7 +89,7 @@ public record ConnectedDatasetView(
     String connectedByDisplayName,
 
     /** Timestamp of the connection. */
-    LocalDateTime connectedOn,
+    Instant connectedOn,
 
     /**
      * Raw experiment ID (UUID string), or null if no experiment is linked.
@@ -114,7 +113,6 @@ public record ConnectedDatasetView(
     Objects.requireNonNull(id, "id must not be null");
     Objects.requireNonNull(title, "title must not be null");
     Objects.requireNonNull(pid, "pid must not be null");
-    Objects.requireNonNull(accessLevel, "accessLevel must not be null");
     Objects.requireNonNull(connectedByUserId, "connectedByUserId must not be null");
     Objects.requireNonNull(connectedByDisplayName, "connectedByDisplayName must not be null");
     Objects.requireNonNull(connectedOn, "connectedOn must not be null");

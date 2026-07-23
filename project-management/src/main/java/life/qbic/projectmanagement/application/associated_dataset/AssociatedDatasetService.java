@@ -11,7 +11,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
 import life.qbic.domain.concepts.DomainEvent;
 import life.qbic.domain.concepts.DomainEventDispatcher;
@@ -34,6 +33,7 @@ import life.qbic.projectmanagement.domain.model.associated_dataset.event.Associa
 import life.qbic.projectmanagement.domain.model.associated_dataset.repository.AssociatedDatasetRepository;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import org.springframework.lang.Nullable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -112,8 +112,11 @@ public class AssociatedDatasetService {
    * @param searchingUserId the ID of the user performing the search
    *                       (used by the adapter to resolve per-user credentials)
    * @return paginated search results
-   * @throws ApplicationException if the instance is not configured or the
-   *         external search fails
+   * @throws DatasetSourceUnavailableException if the external data repository
+   *         could not be reached (network failure, timeout, rate-limit,
+   *         server error) or returned unparseable data
+   * @throws DatasetSourceNotFoundException   if the {@code instanceId} does
+   *         not match any configured repository
    */
   public SearchResult searchDatasets(
       SourceType sourceType,
@@ -124,16 +127,23 @@ public class AssociatedDatasetService {
       String searchingUserId) {
     Objects.requireNonNull(sourceType, "sourceType must not be null");
     Objects.requireNonNull(searchingUserId, "searchingUserId must not be null");
+    // resolveInstanceConfig propagates DatasetSourceNotFoundException directly
     var config = resolveInstanceConfig(instanceId);
     var searchQuery = new SearchQuery(query, page, pageSize);
     try {
       return datasetSource.search(searchQuery, config, searchingUserId);
-    } catch (ApplicationException e) {
-      log.error("Search failed on instance %s: %s".formatted(instanceId, e.getMessage()));
+    } catch (AssociatedDatasetServiceException e) {
+      // already translated lower in the stack — propagate unchanged
       throw e;
     } catch (Exception e) {
-      log.error("Unexpected error searching instance %s".formatted(instanceId), e);
-      throw new ApplicationException("Search failed on instance " + instanceId, e);
+      // translate any infrastructure exception (ApplicationException from
+      // the DatasetSource port, or truly unexpected runtime errors) into
+      // a user-friendly service exception. Technical details stay in the
+      // log; the message reaching the caller contains neither URLs,
+      // status codes, nor infrastructure names.
+      log.error("External search failed for user %s on source type %s".formatted(
+          searchingUserId, sourceType), e);
+      throw new DatasetSourceUnavailableException(e);
     }
   }
 
@@ -164,20 +174,20 @@ public class AssociatedDatasetService {
       SourceType sourceType,
       String instanceId,
       String externalHandleValue,
-      Optional<ExperimentId> experimentId,
+      @Nullable ExperimentId experimentId,
       String connectedByUserId) {
 
     Objects.requireNonNull(projectId, "projectId must not be null");
     Objects.requireNonNull(sourceType, "sourceType must not be null");
     Objects.requireNonNull(externalHandleValue, "externalHandleValue must not be null");
     Objects.requireNonNull(connectedByUserId, "connectedByUserId must not be null");
-    Objects.requireNonNull(experimentId, "experimentId must not be null (use Optional.empty())");
+    // experimentId is @Nullable — null means no experiment association
 
     InstanceConfig config;
     try {
       config = resolveInstanceConfig(instanceId);
-    } catch (ApplicationException e) {
-      log.warn("Instance not found: %s".formatted(instanceId));
+    } catch (DatasetSourceNotFoundException e) {
+      log.error("Instance not found: %s".formatted(instanceId));
       return Result.fromError(ConnectDatasetError.INSTANCE_NOT_FOUND);
     }
 
@@ -198,8 +208,20 @@ public class AssociatedDatasetService {
     // 1b. Duplicate check — a dataset with the same PID is already
     //     connected to this project. PID is the dedup key because it is
     //     globally unique and persistent by design (DOI/PID).
-    if (associatedDatasetRepository.isActiveConnectionPresent(
-        projectId, metadata.get().pid())) {
+    boolean alreadyConnected;
+    try {
+      alreadyConnected = associatedDatasetRepository.isActiveConnectionPresent(
+          projectId, metadata.get().pid());
+    } catch (Exception e) {
+      // Persistence/query failures (schema mismatch, table unavailable, etc.)
+      // must not silently swallow the connect attempt — log the cause so
+      // it surfaces in the application log rather than disappearing into
+      // the reactive pipeline's onErrorResume catch-all.
+      log.error("Duplicate-check query failed for project %s / PID %s"
+          .formatted(projectId, metadata.get().pid()), e);
+      return Result.fromError(ConnectDatasetError.CONNECT_FAILED);
+    }
+    if (alreadyConnected) {
       log.info("Dataset with PID %s is already connected to project %s — skipping"
           .formatted(metadata.get().pid(), projectId));
       return Result.fromError(ConnectDatasetError.ALREADY_CONNECTED);
@@ -223,7 +245,7 @@ public class AssociatedDatasetService {
           new ExternalHandle(externalHandleValue),
           metadata.get(),
           connectedByUserId,
-          experimentId.orElse(null));
+          experimentId);
     } catch (Exception e) {
       log.error("Failed to create associated dataset aggregate", e);
       return Result.fromError(ConnectDatasetError.CONNECT_FAILED);
@@ -248,9 +270,9 @@ public class AssociatedDatasetService {
           domainEvent -> DomainEventDispatcher.instance().dispatch(domainEvent));
     } catch (Exception e) {
       log.warn("Event dispatch failed while forwarding domain event "
-          + "after dataset connection on project {}; the connection "
+          + "after dataset connection on project %s; the connection ".formatted(projectId)
           + "itself succeeded, but collaborators may not have been "
-          + "notified: {}".formatted(projectId, e.getMessage()));
+          + "notified: %s".formatted(e.getMessage()));
     }
 
     log.info("Dataset %s connected to project %s by user %s"
@@ -276,7 +298,7 @@ public class AssociatedDatasetService {
       SourceType sourceType,
       String instanceId,
       String externalHandleValue,
-      Optional<ExperimentId> experimentId,
+      @Nullable ExperimentId experimentId,
       String userId
   ) {}
 
@@ -323,9 +345,18 @@ public class AssociatedDatasetService {
         .contextWrite(ReactiveSecurityContextUtils.reactiveSecurity(securityContext))
         .subscribeOn(Schedulers.boundedElastic())
         .timeout(PER_REQUEST_TIMEOUT)
-        .onErrorResume(Throwable.class, t ->
-            Mono.just(new ConnectDatasetResponse(
-                request.requestId(), null, ConnectDatasetError.CONNECT_FAILED)));
+        .onErrorResume(Throwable.class, t -> {
+          // Safety net: any exception escaping connectDataset() (schema
+          // errors, unexpected runtime exceptions, timeouts) is converted
+          // into CONNECT_FAILED so the caller can tally partial failures.
+          // The log.error here is critical — without it, uncaught errors
+          // become silent failures that the user can only see as a
+          // generic toast with no entry in the application log.
+          log.error("Async connect pipeline failed for request %s: %s"
+              .formatted(request.requestId(), t.getMessage()), t);
+          return Mono.just(new ConnectDatasetResponse(
+              request.requestId(), null, ConnectDatasetError.CONNECT_FAILED));
+        });
   }
 
   /**
@@ -367,7 +398,12 @@ public class AssociatedDatasetService {
   public List<ConnectedDatasetView> listConnectedDatasetViews(ProjectId projectId) {
     Objects.requireNonNull(projectId, "projectId must not be null");
     if (projectInformationService.find(projectId).isEmpty()) {
-      throw new ApplicationException("Project not found: %s".formatted(projectId));
+      // The project existence check is redundant with the @PreAuthorize
+      // ACL guard — if the project has been deleted between ACL creation
+      // and this call, no datasets exist anyway. Returning an empty list
+      // is both logically correct and avoids leaking internal state via
+      // an exception message.
+      return List.of();
     }
     List<AssociatedDataset> datasets = associatedDatasetRepository.findByProject(projectId);
 
@@ -474,7 +510,7 @@ public class AssociatedDatasetService {
         ds.id().value(),
         ds.title(),
         ds.pid(),
-        ds.accessLevel(),
+        ds.accessLevel() == AccessLevel.PUBLIC,
         version,
         accessLink,
         ds.publicationDate(),
@@ -510,8 +546,10 @@ public class AssociatedDatasetService {
 
   private InstanceConfig resolveInstanceConfig(String instanceId) {
     var descriptor = sourceInstanceRegistry.find(instanceId)
-        .orElseThrow(() -> new ApplicationException(
-            "No source instance configured with id: " + instanceId));
+        .orElseThrow(() -> {
+          log.warn("No source instance configured with id: %s".formatted(instanceId));
+          return new DatasetSourceNotFoundException();
+        });
     return descriptor.toInstanceConfig();
   }
 

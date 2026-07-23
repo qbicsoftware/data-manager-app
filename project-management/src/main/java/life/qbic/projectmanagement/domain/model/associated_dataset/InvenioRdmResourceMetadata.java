@@ -1,5 +1,6 @@
 package life.qbic.projectmanagement.domain.model.associated_dataset;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Locale;
@@ -15,8 +16,15 @@ import java.util.Objects;
  *
  * <p>Instances are immutable.</p>
  *
+ * <p><strong>Backward-compatible deserialization:</strong> because this
+ * record is persisted as a JSON blob in the {@code resource_metadata}
+ * column, unknown fields are silently ignored on read. This allows
+ * future removals or renames of fields without breaking rows that were
+ * written by earlier versions of the application.</p>
+ *
  * @since 1.12.0
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public record InvenioRdmResourceMetadata(
 
     // --- ResourceMetadata interface fields ---
@@ -50,9 +58,7 @@ public record InvenioRdmResourceMetadata(
     /** Access status of the record's metadata. Never null. */
     InvenioRdmAccessStatus recordAccess,
     /** Access status of the record's files. Never null. */
-    InvenioRdmAccessStatus fileAccess,
-    /** The date when an embargo lifts (null if not under embargo). */
-    LocalDate embargoUntil
+    InvenioRdmAccessStatus fileAccess
 
 ) implements ResourceMetadata {
 
@@ -94,16 +100,20 @@ public record InvenioRdmResourceMetadata(
 
   /**
    * Derives the coarse {@link AccessLevel} from the two independent
-   * access dimensions plus embargo state.
+   * access dimensions reported by InvenioRDM.
    *
    * <p>Rule: the dataset is fully public only when both record and file
-   * access are {@link InvenioRdmAccessStatus#PUBLIC} <em>and</em> no
-   * embargo is set. Otherwise it is {@link AccessLevel#RESTRICTED}.</p>
+   * access are {@link InvenioRdmAccessStatus#PUBLIC}. Otherwise it is
+   * {@link AccessLevel#RESTRICTED}.</p>
+   *
+   * <p>Note: InvenioRDM reports {@code access.status = "embargoed"} for
+   * time-locked records, which maps to {@link InvenioRdmAccessStatus#EMBARGOED}
+   * on the access status fields — so an embargoed record naturally fails
+   * this check without requiring a separate embargo-date comparison.</p>
    */
   public AccessLevel deriveAccessLevel() {
     if (recordAccess == InvenioRdmAccessStatus.PUBLIC
-        && fileAccess == InvenioRdmAccessStatus.PUBLIC
-        && embargoUntil == null) {
+        && fileAccess == InvenioRdmAccessStatus.PUBLIC) {
       return AccessLevel.PUBLIC;
     }
     return AccessLevel.RESTRICTED;

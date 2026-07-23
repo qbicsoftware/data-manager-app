@@ -122,7 +122,7 @@ public class InformProjectCollaboratorsAboutDatasetConnection
     return recipients;
   }
 
-  @Job(name = "Notify collaborator about dataset connection on project %0 for dataset %1")
+  @Job(name = "Notify collaborator about dataset connection on project %3 for dataset %4")
   public void notifyRecipient(
       String emailAddress,
       String fullName,

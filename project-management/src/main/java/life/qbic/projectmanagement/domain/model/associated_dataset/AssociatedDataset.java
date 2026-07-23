@@ -11,8 +11,8 @@ import jakarta.persistence.Convert;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
+import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.Optional;
 import life.qbic.domain.concepts.LocalDomainEventDispatcher;
@@ -83,10 +83,10 @@ public class AssociatedDataset {
   private String connectedBy;
 
   @Column(name = "connected_on", nullable = false)
-  private LocalDateTime connectedOn;
+  private Instant connectedOn;
 
   @Column(name = "last_synced_at")
-  private LocalDateTime lastSyncedAt;
+  private Instant lastSyncedAt;
 
   @Embedded
   @AttributeOverride(name = "uuid", column = @Column(name = "experiment_id"))
@@ -150,7 +150,7 @@ public class AssociatedDataset {
     Objects.requireNonNull(connectedBy, "connectedBy must not be null");
     applyMetadata(metadata);
     this.connectedBy = connectedBy;
-    this.connectedOn = LocalDateTime.now();
+    this.connectedOn = Instant.now();
     this.experimentId = experimentId; // nullable — optional during connect
   }
 
@@ -161,8 +161,7 @@ public class AssociatedDataset {
    * <p>The {@link AccessLevel} of the connection is derived from the
    * provided {@link ResourceMetadata}. For InvenioRDM resources, the
    * coarse access level is PUBLIC only when both record and file access
-   * are {@link InvenioRdmAccessStatus#PUBLIC} with no active embargo;
-   * otherwise RESTRICTED (see
+   * are {@link InvenioRdmAccessStatus#PUBLIC}; otherwise RESTRICTED (see
    * {@link InvenioRdmResourceMetadata#deriveAccessLevel()}).</p>
    */
   public static AssociatedDataset connect(
@@ -219,7 +218,7 @@ public class AssociatedDataset {
   public void updateMetadata(ResourceMetadata metadata) {
     Objects.requireNonNull(metadata, "metadata must not be null");
     applyMetadata(metadata);
-    this.lastSyncedAt = LocalDateTime.now();
+    this.lastSyncedAt = Instant.now();
   }
 
   // ── Accessors ───────────────────────────────────────────────────────────
@@ -270,11 +269,11 @@ public class AssociatedDataset {
     return connectedBy;
   }
 
-  public LocalDateTime connectedOn() {
+  public Instant connectedOn() {
     return connectedOn;
   }
 
-  public Optional<LocalDateTime> lastSyncedAt() {
+  public Optional<Instant> lastSyncedAt() {
     return Optional.ofNullable(lastSyncedAt);
   }
 
@@ -411,7 +410,15 @@ public class AssociatedDataset {
       try {
         return MAPPER.readValue(dbData, ResourceMetadata.class);
       } catch (JsonProcessingException e) {
-        throw new IllegalStateException("Failed to deserialize ResourceMetadata", e);
+        // Surface the offending payload (truncated) to aid diagnosis — a
+        // schema drift between what was persisted and what the record
+        // accepts is the usual cause, and Jackson's default message
+        // doesn't include the raw JSON.
+        String preview = dbData.length() > 200
+            ? dbData.substring(0, 200) + "..."
+            : dbData;
+        throw new IllegalStateException(
+            "Failed to deserialize ResourceMetadata — payload: " + preview, e);
       }
     }
   }

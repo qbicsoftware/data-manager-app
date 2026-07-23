@@ -319,13 +319,6 @@ public interface InvenioRdmClient {
     @JsonProperty("record") public String record;
     @JsonProperty("files") public String files;
     @JsonProperty("status") public String status;
-    @JsonProperty("embargo") public Embargo embargo;
-  }
-
-  @JsonIgnoreProperties(ignoreUnknown = true)
-  final class Embargo {
-    @JsonProperty("active") public boolean active;
-    @JsonProperty("until") public String until;
   }
 
   /**

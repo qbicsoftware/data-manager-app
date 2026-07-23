@@ -12,15 +12,16 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.shared.Registration;
 import java.io.Serial;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
 import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.Context;
-import life.qbic.datamanager.views.general.ResourceProviderTag;
-import life.qbic.datamanager.views.general.Tag;
-import life.qbic.datamanager.views.general.Tag.TagColor;
+import life.qbic.datamanager.views.general.DataSetTagFactory;
+import life.qbic.datamanager.views.general.DataSetTagFactory.TagType;
 import life.qbic.datamanager.views.general.section.ActionBar;
 import life.qbic.datamanager.views.general.section.Section;
 import life.qbic.datamanager.views.general.section.SectionContent;
@@ -29,7 +30,6 @@ import life.qbic.datamanager.views.general.section.SectionNote;
 import life.qbic.datamanager.views.general.section.SectionTitle;
 import life.qbic.projectmanagement.application.associated_dataset.AssociatedDatasetService;
 import life.qbic.projectmanagement.application.associated_dataset.ConnectedDatasetView;
-import life.qbic.projectmanagement.domain.model.associated_dataset.AccessLevel;
 
 /**
  * <b>Connected Datasets Component</b>
@@ -215,24 +215,19 @@ public class ConnectedResourcesComponent extends Div {
     // connect-datasets sidebar share the same color scheme.
     String provider = view.resourceProvider();
     if (provider != null && !provider.isBlank()) {
-      headerRow.add(ResourceProviderTag.of(provider));
+      headerRow.add(DataSetTagFactory.create(TagType.PROVIDER, provider));
     }
 
-    // Access badge
-    var accessBadge = new Tag(
-        view.accessLevel() == AccessLevel.PUBLIC ? "Public" : "Restricted");
-    accessBadge.setTagColor(
-        view.accessLevel() == AccessLevel.PUBLIC ? TagColor.SUCCESS : TagColor.WARNING);
-    headerRow.add(accessBadge);
+    // Access badge — styled via centralized factory
+    headerRow.add(DataSetTagFactory.create(
+        TagType.ACCESS_TYPE, view.isPublic()));
 
     // Resource type badge — elevated to the header row for fast scanning.
     // Rendered as a neutral CONTRAST tag so it does not compete with the
     // provider (PRIMARY) or access-level (SUCCESS/WARNING) badges.
     String resourceType = view.resourceType();
     if (resourceType != null && !resourceType.isBlank()) {
-      var typeTag = new Tag(resourceType);
-      typeTag.setTagColor(TagColor.CONTRAST);
-      headerRow.add(typeTag);
+      headerRow.add(DataSetTagFactory.create(TagType.DATA_SET_TYPE, resourceType));
     }
 
     // Access-detail note for restricted datasets (inline after badge)
@@ -374,7 +369,9 @@ public class ConnectedResourcesComponent extends Div {
     // chosen so the line reads as a complete attribution phrase rather than a
     // label-value pair.
     String connectedBy = view.connectedByDisplayName();
-    LocalDate connectedOn = view.connectedOn() != null ? view.connectedOn().toLocalDate() : null;
+    LocalDate connectedOn = view.connectedOn() != null
+        ? LocalDate.ofInstant(view.connectedOn(), ZoneOffset.UTC)
+        : null;
     if ((connectedBy != null && !connectedBy.isBlank()) && connectedOn != null) {
       var attribCell = new Div();
       attribCell.addClassName("extra-small-body-text");

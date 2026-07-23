@@ -101,7 +101,6 @@ public class ConnectedDatasetsMain extends Main implements BeforeEnterObserver {
       connectDatasetSidebar = new ConnectDatasetSidebar(
           associatedDatasetService,
           experimentInformationService,
-          userPermissions,
           notificationFactory);
       connectDatasetSidebar.setContext(context);
       connectDatasetSidebar.addDatasetsConnectedListener(
