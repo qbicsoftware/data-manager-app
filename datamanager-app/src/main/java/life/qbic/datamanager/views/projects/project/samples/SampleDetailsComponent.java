@@ -12,6 +12,7 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -42,6 +43,7 @@ import life.qbic.projectmanagement.domain.model.batch.Batch;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
+import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import org.springframework.lang.NonNull;
 import org.springframework.util.MimeType;
@@ -153,6 +155,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     var sampleIdColumn = sampleGrid.addColumn(SamplePreview::sampleCode)
         .setHeader("Sample ID")
         .setSortProperty(UiSortKey.SAMPLE_ID.value())
+        .setComparator(SamplePreview::sampleCode)
         .setAutoWidth(true)
         .setFlexGrow(0)
         .setTooltipGenerator(SamplePreview::sampleCode)
