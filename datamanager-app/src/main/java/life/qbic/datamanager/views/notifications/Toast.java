@@ -10,11 +10,13 @@ import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.router.BeforeLeaveListener;
 import com.vaadin.flow.router.RouteParameters;
@@ -24,9 +26,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Consumer;
 import life.qbic.datamanager.views.general.ComponentFunctions;
-import java.util.Optional;
 
 /**
  * A toast notification is a non-modal, unobtrusive window element. It is meant to show information
@@ -47,10 +47,10 @@ public final class Toast extends Notification {
   private final Button closeButton;
 
   private Component content;
-  private Optional<Component> levelIcon = Optional.empty();
-  private Optional<Component> actionButton = Optional.empty();
-  private Optional<String> title = Optional.empty();
-  private Optional<String> subtext = Optional.empty();
+  private Component levelIcon;
+  private Component actionButton;
+  private String title;
+  private String subtext;
 
   Toast(NotificationLevel level) {
     super();
@@ -95,7 +95,7 @@ public final class Toast extends Notification {
     iconContainer.getElement().setAttribute("aria-label",
         "Notification status indicator");
 
-    this.levelIcon = Optional.of(iconContainer);
+    this.levelIcon = iconContainer;
     refresh();
     return this;
   }
@@ -106,24 +106,24 @@ public final class Toast extends Notification {
         var icon = new Icon();
         icon.getElement().setAttribute("icon", "vaadin:check");
         icon.getElement().getStyle().setColor("white");
-        icon.getElement().getStyle().setWidth("14px");
-        icon.getElement().getStyle().setHeight("14px");
+        icon.getElement().getStyle().set("width", "var(--icon-size-xs)");
+        icon.getElement().getStyle().set("height", "var(--icon-size-xs)");
         yield icon;
       }
       case ERROR, WARNING -> {
         var icon = new Icon();
         icon.getElement().setAttribute("icon", "vaadin:close");
         icon.getElement().getStyle().setColor("white");
-        icon.getElement().getStyle().setWidth("14px");
-        icon.getElement().getStyle().setHeight("14px");
+        icon.getElement().getStyle().set("width", "var(--icon-size-xs)");
+        icon.getElement().getStyle().set("height", "var(--icon-size-xs)");
         yield icon;
       }
       case INFO -> {
         var icon = new Icon();
         icon.getElement().setAttribute("icon", "vaadin:info");
         icon.getElement().getStyle().setColor("white");
-        icon.getElement().getStyle().setWidth("14px");
-        icon.getElement().getStyle().setHeight("14px");
+        icon.getElement().getStyle().set("width", "var(--icon-size-xs)");
+        icon.getElement().getStyle().set("height", "var(--icon-size-xs)");
         yield icon;
       }
     };
@@ -139,27 +139,29 @@ public final class Toast extends Notification {
 
   /**
    * Sets a title for the toast (used in progress/indeterminate toasts).
-   * Title is displayed in 18px bold text above the main content.
+   * Title is displayed in 16px bold text above the main content.
+   * Supports HTML markup.
    *
-   * @param title the title text
+   * @param title the title text (may contain HTML markup)
    * @return the modified toast
    */
   Toast withTitle(String title) {
     requireNonNull(title, "title must not be null");
-    this.title = Optional.of(title);
+    this.title = title;
     return this;
   }
 
   /**
    * Sets subtext for the toast (used in progress/indeterminate toasts).
    * Subtext is displayed in 16px regular text below the progress bar.
+   * Supports HTML markup.
    *
-   * @param subtext the subtext
+   * @param subtext the subtext (may contain HTML markup)
    * @return the modified toast
    */
   Toast withSubtext(String subtext) {
     requireNonNull(subtext, "subtext must not be null");
-    this.subtext = Optional.of(subtext);
+    this.subtext = subtext;
     return this;
   }
 
@@ -178,7 +180,7 @@ public final class Toast extends Notification {
     button.addClassName("action-button");
     button.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
     button.getElement().setAttribute("aria-label", label);
-    this.actionButton = Optional.of(button);
+    this.actionButton = button;
     button.addClickListener(listener);
     // Auto-close toast on action click
     button.addClickListener(event -> close());
@@ -245,7 +247,7 @@ public final class Toast extends Notification {
   /**
    * Builds a progress-style toast layout with title, progress bar, and subtext.
    * Used for indeterminate progress indicators. The layout is:
-   * Row(Column(title, bar, subtext), [actionButton], closeButton).
+   * Row(VerticalLayout(title, bar, subtext), [actionButton], closeButton).
    *
    * @param progressBar the progress bar component (should be indeterminate)
    * @return the modified toast
@@ -255,21 +257,21 @@ public final class Toast extends Notification {
     var barContainer = new Div(progressBar);
     barContainer.addClassName("progress-bar-container");
 
-    var verticalLayout = new Div();
+    var verticalLayout = new VerticalLayout();
     verticalLayout.addClassName("progress-vertical");
+    verticalLayout.setSpacing(false);
+    verticalLayout.setPadding(false);
 
-    if (title.isPresent()) {
-      var titleWrapper = new com.vaadin.flow.component.Html(
-          "<div class=\"toast-title\">" + title.get() + "</div>");
-      verticalLayout.add(titleWrapper);
+    if (title != null) {
+      var titleElement = new Html("<span class=\"toast-title\">" + title + "</span>");
+      verticalLayout.add(titleElement);
     }
 
     verticalLayout.add(barContainer);
 
-    if (subtext.isPresent()) {
-      var subtextWrapper = new com.vaadin.flow.component.Html(
-          "<span class=\"toast-subtext\">" + subtext.get() + "</span>");
-      verticalLayout.add(subtextWrapper);
+    if (subtext != null) {
+      var subtextElement = new Html("<span class=\"toast-subtext\">" + subtext + "</span>");
+      verticalLayout.add(subtextElement);
     }
 
     refreshWithProgress(verticalLayout);
@@ -282,10 +284,12 @@ public final class Toast extends Notification {
     layout.addClassName("toast-layout");
     layout.setAlignItems(Alignment.BASELINE);
     // Add level icon if present
-    levelIcon.ifPresent(layout::add);
+    if (levelIcon != null) {
+      layout.add(levelIcon);
+    }
     layout.add(verticalLayout);
-    if (actionButton.isPresent()) {
-      layout.add(actionButton.get());
+    if (actionButton != null) {
+      layout.add(actionButton);
     }
     layout.add(closeButton);
     layout.setSpacing(true);
@@ -304,13 +308,15 @@ public final class Toast extends Notification {
     layout.setAlignItems(Alignment.CENTER);
 
     // Add level icon if present (stored separately from content)
-    levelIcon.ifPresent(layout::add);
+    if (levelIcon != null) {
+      layout.add(levelIcon);
+    }
     if (this.content != null) {
       layout.add(this.content);
     }
 
-    if (actionButton.isPresent()) {
-      layout.add(actionButton.get());
+    if (actionButton != null) {
+      layout.add(actionButton);
     }
     layout.add(closeButton);
     layout.setSpacing(true);
