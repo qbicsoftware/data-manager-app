@@ -3,7 +3,6 @@ package life.qbic.projectmanagement.infrastructure.dataset.associated;
 import java.util.List;
 import life.qbic.projectmanagement.domain.model.associated_dataset.AssociatedDataset;
 import life.qbic.projectmanagement.domain.model.associated_dataset.AssociatedDatasetId;
-import life.qbic.projectmanagement.domain.model.associated_dataset.ConnectionState;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -14,8 +13,7 @@ import org.springframework.data.repository.query.Param;
  * Spring Data JPA repository for {@link AssociatedDataset} entities.
  *
  * <p>Default queries exclude soft-deleted (REMOVED) connections per
- * ADR-0001. Use {@link #findByProjectIdExcludingState} with the
- * {@link ConnectionState#REMOVED} state to get active-only rows.</p>
+ * ADR-0001.
  *
  * @since 1.12.0
  */
