@@ -26,7 +26,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -48,6 +47,7 @@ import life.qbic.projectmanagement.domain.model.associated_dataset.SourceType;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.context.SecurityContext;
@@ -886,7 +886,7 @@ public class ConnectDatasetSidebar extends Div {
   /** A lightweight record mapping an ExperimentId to its display name. */
   record ExperimentEntry(ExperimentId id, String label) {
     @Override
-    public String toString() {
+    public @NonNull String toString() {
       return label;
     }
   }

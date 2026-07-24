@@ -23,10 +23,10 @@ import life.qbic.projectmanagement.domain.model.associated_dataset.ResourceMetad
  * <p>Stateless by design (ADR-0002 P2): no session concept. Each call
  * carries everything needed via {@link InstanceConfig}.</p>
  *
- * <p>Implementations must throw
- * {@link life.qbic.application.commons.ApplicationException} for
- * user-visible errors (network failures, bad credentials) rather than
- * returning opaque nulls.</p>
+ * <p>Implementations must throw {@link DatasetSearchException} for
+ * search failures and {@link DatasetResolveException} for metadata
+ * resolve failures, rather than returning opaque nulls or using
+ * generic {@link life.qbic.application.commons.ApplicationException}.</p>
  *
  * @since 1.12.0
  */
@@ -46,11 +46,11 @@ public interface DatasetSource {
    * @param config       the target instance (base URL, display name)
    * @param actingUserId the ID of the user performing the search
    * @return paginated search results
-   * @throws life.qbic.application.commons.ApplicationException
-   *         if the search cannot be performed (network error, bad
-   *         instance, rate limit, etc.)
+   * @throws DatasetSearchException if the search cannot be performed
+   *         (network error, rate limit, server error, etc.)
    */
-  SearchResult search(SearchQuery query, InstanceConfig config, String actingUserId);
+  SearchResult search(SearchQuery query, InstanceConfig config,
+      String actingUserId) throws DatasetSearchException;
 
   /**
    * Resolves the full metadata for a single record on the source system,
@@ -65,13 +65,12 @@ public interface DatasetSource {
    * @param config              the target instance
    * @param actingUserId        the ID of the user performing the resolve
    * @return the resource metadata, or empty if the record was not found
-   *         or is not accessible to the user
-   * @throws life.qbic.application.commons.ApplicationException
-   *         if the metadata cannot be retrieved (network error, rate
-   *         limit, etc.) — distinct from an access-denied case,
-   *         which returns {@code Optional.empty()}
+   * @throws DatasetResolveException if the metadata cannot be retrieved
+   *         (network error, rate limit, server error, etc.) —
+   *         distinct from a missing record, which returns empty
    */
   Optional<ResourceMetadata> resolveMetadata(
-      String externalHandleValue, InstanceConfig config, String actingUserId);
+      String externalHandleValue, InstanceConfig config,
+      String actingUserId) throws DatasetResolveException;
 
 }

@@ -285,10 +285,7 @@ class InvenioRdmClientParsingSpec extends Specification {
 
   def "Community.displayLabel prefers title over slug over id"() {
     given:
-    def c = new InvenioRdmClient.Community()
-    c.id = id
-    c.slug = slug
-    c.metadata = meta
+    def c = new InvenioRdmClient.Community(id, slug, meta)
 
     expect:
     InvenioRdmDatasetSource.community(buildParent(c)) == expected
@@ -303,27 +300,20 @@ class InvenioRdmClientParsingSpec extends Specification {
   }
 
   private InvenioRdmClient.Parent buildParent(InvenioRdmClient.Community c) {
-    def pc = new InvenioRdmClient.ParentCommunities()
-    pc.entries = [c]
-    def p = new InvenioRdmClient.Parent()
-    p.communities = pc
+    def pc = new InvenioRdmClient.ParentCommunities(null, null, [c])
+    def p = new InvenioRdmClient.Parent(pc)
     return p
   }
 
   private InvenioRdmClient.CommunityMetadata metaWithTitle(String title) {
-    def m = new InvenioRdmClient.CommunityMetadata()
-    m.title = title
-    return m
+    new InvenioRdmClient.CommunityMetadata(title)
   }
 
   // ── Access mapping ──────────────────────────────────────────────────
 
   def "access.status 'open' maps to PUBLIC"() {
     given:
-    def access = new InvenioRdmClient.RecordAccess()
-    access.status = "open"
-    access.record = "public"
-    access.files = "public"
+    def access = new InvenioRdmClient.RecordAccess("public", "public", "open")
 
     expect:
     InvenioRdmDatasetSource.accessLevel(access) == life.qbic.projectmanagement.domain.model.associated_dataset.AccessLevel.PUBLIC
@@ -333,10 +323,7 @@ class InvenioRdmClientParsingSpec extends Specification {
 
   def "access.status 'restricted' maps to RESTRICTED"() {
     given:
-    def access = new InvenioRdmClient.RecordAccess()
-    access.status = "restricted"
-    access.record = "restricted"
-    access.files = "restricted"
+    def access = new InvenioRdmClient.RecordAccess("restricted", "restricted", "restricted")
 
     expect:
     InvenioRdmDatasetSource.accessLevel(access) == life.qbic.projectmanagement.domain.model.associated_dataset.AccessLevel.RESTRICTED
@@ -346,10 +333,7 @@ class InvenioRdmClientParsingSpec extends Specification {
 
   def "access with independent record/file dimensions"() {
     given: "record is public, files are restricted"
-    def access = new InvenioRdmClient.RecordAccess()
-    access.status = "open"
-    access.record = "public"
-    access.files = "restricted"
+    def access = new InvenioRdmClient.RecordAccess("public", "restricted", "open")
 
     expect:
     InvenioRdmDatasetSource.recordAccessStatus(access) == life.qbic.projectmanagement.domain.model.associated_dataset.InvenioRdmAccessStatus.PUBLIC
@@ -366,10 +350,8 @@ class InvenioRdmClientParsingSpec extends Specification {
 
   def "DOI is extracted from pids.doi.identifier"() {
     given:
-    def pids = new InvenioRdmClient.Pids()
-    def doi = new InvenioRdmClient.PidEntry()
-    doi.identifier = "10.57754/FDAT.abc-123"
-    pids.doi = doi
+    def pids = new InvenioRdmClient.Pids(
+        new InvenioRdmClient.PidEntry("10.57754/FDAT.abc-123"))
 
     expect:
     InvenioRdmDatasetSource.safePid(pids, "fallback-id") == "10.57754/FDAT.abc-123"
@@ -382,7 +364,7 @@ class InvenioRdmClientParsingSpec extends Specification {
 
   def "pids with no DOI falls back to record ID"() {
     given:
-    def pids = new InvenioRdmClient.Pids()
+    def pids = new InvenioRdmClient.Pids(null)
 
     expect:
     InvenioRdmDatasetSource.safePid(pids, "rec-99") == "rec-99"
@@ -392,9 +374,7 @@ class InvenioRdmClientParsingSpec extends Specification {
 
   def "version index is formatted as v-number"() {
     given:
-    def versions = new InvenioRdmClient.RecordVersions()
-    versions.index = 5
-    versions.isLatest = true
+    def versions = new InvenioRdmClient.RecordVersions(true, 5)
 
     expect:
     InvenioRdmDatasetSource.versionString(versions) == "v5"
@@ -407,8 +387,7 @@ class InvenioRdmClientParsingSpec extends Specification {
 
   def "version index zero returns null"() {
     given:
-    def versions = new InvenioRdmClient.RecordVersions()
-    versions.index = 0
+    def versions = new InvenioRdmClient.RecordVersions(false, 0)
 
     expect:
     InvenioRdmDatasetSource.versionString(versions) == null
@@ -539,9 +518,10 @@ class InvenioRdmClientParsingSpec extends Specification {
 
   def "missing hit title falls back to untitled placeholder"() {
     given:
-    def h = new InvenioRdmClient.Hit()
-    h.metadata = new InvenioRdmClient.HitMetadata()
-    h.metadata.title = null
+    def h = new InvenioRdmClient.Hit(
+        null, null, new InvenioRdmClient.HitMetadata(
+            null, null, null, null, null),
+        null, null, null, null, null)
 
     expect:
     InvenioRdmDatasetSource.safeHitTitle(h) == "(untitled record)"
@@ -549,9 +529,10 @@ class InvenioRdmClientParsingSpec extends Specification {
 
   def "blank record title falls back to untitled placeholder"() {
     given:
-    def rec = new InvenioRdmClient.RecordResponse()
-    rec.metadata = new InvenioRdmClient.RecordMetadata()
-    rec.metadata.title = "   "
+    def rec = new InvenioRdmClient.RecordResponse(
+        null, null, new InvenioRdmClient.RecordMetadata(
+            "   ", null, null, null, null),
+        null, null, false, null, null, null, null)
 
     expect:
     InvenioRdmDatasetSource.safeRecordTitle(rec) == "(untitled record)"

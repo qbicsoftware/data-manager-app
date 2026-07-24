@@ -132,8 +132,9 @@ public class AssociatedDatasetService {
     var searchQuery = new SearchQuery(query, page, pageSize);
     try {
       return datasetSource.search(searchQuery, config, searchingUserId);
-    } catch (AssociatedDatasetServiceException e) {
-      // already translated lower in the stack — propagate unchanged
+    } catch (AssociatedDatasetServiceException
+        | DatasetSearchException e) {
+      // interface-level exception already translated — propagate unchanged
       throw e;
     } catch (Exception e) {
       // translate any infrastructure exception (ApplicationException from
@@ -195,8 +196,15 @@ public class AssociatedDatasetService {
     Optional<ResourceMetadata> metadata;
     try {
       metadata = datasetSource.resolveMetadata(externalHandleValue, config, connectedByUserId);
-    } catch (Exception e) {
+    } catch (DatasetResolveException e) {
       log.error("Failed to resolve metadata for record %s on instance %s"
+          .formatted(externalHandleValue, instanceId), e);
+      return Result.fromError(ConnectDatasetError.CONNECT_FAILED);
+    } catch (Exception e) {
+      // Non-infrastructure errors (shouldn't happen — the interface
+      // only declares the two exception types above) are treated as
+      // record-not-found to keep the error-path simple.
+      log.error("Unexpected error resolving metadata for record %s on instance %s"
           .formatted(externalHandleValue, instanceId), e);
       return Result.fromError(ConnectDatasetError.RECORD_NOT_FOUND);
     }
@@ -434,7 +442,7 @@ public class AssociatedDatasetService {
    * from the returned map; callers fall back to the raw UUID.
    */
   private Map<String, String> resolveUserDisplayNames(Set<String> userIds) {
-    Map<String, String> result = new HashMap<>(userIds.size());
+    Map<String, String> result = HashMap.newHashMap(userIds.size());
     for (String userId : userIds) {
       userInformationService.findById(userId)
           .ifPresent(info -> result.put(userId, info.fullName()));
@@ -450,7 +458,7 @@ public class AssociatedDatasetService {
    */
   private Map<ExperimentId, String> resolveExperimentDisplayNames(
       ProjectId projectId, Set<ExperimentId> experimentIds) {
-    Map<ExperimentId, String> result = new HashMap<>(experimentIds.size());
+    Map<ExperimentId, String> result = HashMap.newHashMap(experimentIds.size());
     for (ExperimentId eid : experimentIds) {
       experimentInformationService.find(projectId.value(), eid)
           .ifPresent(exp -> result.put(eid, exp.getName()));
