@@ -101,7 +101,7 @@ class InvenioRdmClientParsingSpec extends Specification {
     rec.isPublished
     rec.links.selfHtml == "https://fdat.example.org/records/abc-123"
     rec.access.status == "open"
-    rec.access.record == "public"
+    rec.access.invenioRecord == "public"
     rec.access.files == "public"
     rec.pids.doi.identifier == "10.57754/FDAT.abc-123"
     rec.versions.index == 3

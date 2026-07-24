@@ -19,7 +19,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
-import life.qbic.application.commons.ApplicationException;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 
@@ -363,7 +362,7 @@ public interface InvenioRdmClient {
   ) {
     /**
      * Null-safe access to the creator's display name.
-     * Extracts from {@code person_or_org.name}.
+     * Extracts from {@code person_or_org.name}. Returns null if no person or organization is defined.
      */
     public String resolvedName() {
       return (personOrOrg == null || personOrOrg.name == null
@@ -403,8 +402,13 @@ public interface InvenioRdmClient {
    */
   @JsonIgnoreProperties(ignoreUnknown = true)
   final class ResourceType {
-    @JsonProperty("id") public String id;
+    @JsonIgnore private String id;
     @JsonIgnore private String resolvedTitle;
+
+    @JsonProperty("id")
+    private void setId(String id) {
+      this.id = id;
+    }
 
     @JsonProperty("title")
     private void setTitleRaw(JsonNode node) {
@@ -464,7 +468,7 @@ public interface InvenioRdmClient {
 
   @JsonIgnoreProperties(ignoreUnknown = true)
   record RecordAccess(
-      @JsonProperty("record") String record,
+      @JsonProperty("record") String invenioRecord,
       @JsonProperty("files") String files,
       @JsonProperty("status") String status
   ) {}
@@ -603,8 +607,6 @@ public interface InvenioRdmClient {
                   .formatted(operationName, status, MAX_ATTEMPTS, url),
               status, MAX_ATTEMPTS, null, url);
 
-        } catch (InvenioRdmInterruptedException e) {
-          throw e;
         } catch (IOException e) {
           lastIo = e;
           if (currentAttempt < MAX_ATTEMPTS) {

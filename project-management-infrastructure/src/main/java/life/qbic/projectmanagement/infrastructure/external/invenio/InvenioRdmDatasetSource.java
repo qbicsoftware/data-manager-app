@@ -196,8 +196,8 @@ public class InvenioRdmDatasetSource implements DatasetSource {
   }
 
   static String accessDetail(InvenioRdmClient.RecordAccess access) {
-    String recordLabel = access != null && access.record() != null
-        ? access.record().toLowerCase() : "unknown";
+    String recordLabel = access != null && access.invenioRecord() != null
+        ? access.invenioRecord().toLowerCase() : "unknown";
     String filesLabel = access != null && access.files() != null
         ? access.files().toLowerCase() : "unknown";
     return "Record: " + recordLabel + " | Files: " + filesLabel;
@@ -206,7 +206,7 @@ public class InvenioRdmDatasetSource implements DatasetSource {
   static InvenioRdmAccessStatus recordAccessStatus(
       InvenioRdmClient.RecordAccess access) {
     if (access == null) return InvenioRdmAccessStatus.PUBLIC;
-    String rec = access.record() != null ? access.record() : access.status();
+    String rec = access.invenioRecord() != null ? access.invenioRecord() : access.status();
     return mapAccessStatus(rec);
   }
 

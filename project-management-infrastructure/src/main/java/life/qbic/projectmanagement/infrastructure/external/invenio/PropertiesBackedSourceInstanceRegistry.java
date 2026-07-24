@@ -30,11 +30,11 @@ public class PropertiesBackedSourceInstanceRegistry implements SourceInstanceReg
   public PropertiesBackedSourceInstanceRegistry(InvenioRdmProperties properties) {
     Objects.requireNonNull(properties, "properties must not be null");
     this.descriptors = properties.getInstances().stream()
-        .filter(e -> e.getId() != null && e.getBaseUrl() != null)
+        .filter(e -> e.id() != null && e.baseUrl() != null)
         .map(e -> new SourceInstanceDescriptor(
-            e.getId(),
-            e.getDisplayName() != null ? e.getDisplayName() : e.getId(),
-            e.getBaseUrl()))
+            e.id(),
+            e.displayName() != null ? e.displayName() : e.id(),
+            e.baseUrl()))
         .toList();
     log.info("Loaded %d InvenioRDM instance(s): %s"
         .formatted(descriptors.size(),

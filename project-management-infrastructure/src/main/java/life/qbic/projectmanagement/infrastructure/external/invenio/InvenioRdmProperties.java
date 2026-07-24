@@ -36,40 +36,24 @@ public class InvenioRdmProperties {
     this.instances = instances;
   }
 
-  public static class InstanceEntry {
-
-    private String id;
-    private String displayName;
-    private String baseUrl;
-    private String sourceType = "INVENIO_RDM";
-    /**
-     * Targeted API version of the Invenio REST API (see
-     * <a href="https://inveniosoftware.github.io/invenio-openapi/">Invenio OpenAPI</a>).
-     *
-     * <p>Reserved for future per-instance adapter dispatch. The current
-     * implementation ({@link InvenioRdmDatasetSource}) targets version
-     * 12.0.0 of the spec. When an instance drifts to a different API
-     * version, this field will be used by a version-aware factory to
-     * route to a dedicated adapter implementation without impacting the
-     * port contract.</p>
-     *
-     * <p>Default: "12".</p>
-     */
-    private String apiVersion = "12";
-
-    public String getId() { return id; }
-    public void setId(String id) { this.id = id; }
-
-    public String getDisplayName() { return displayName; }
-    public void setDisplayName(String displayName) { this.displayName = displayName; }
-
-    public String getBaseUrl() { return baseUrl; }
-    public void setBaseUrl(String baseUrl) { this.baseUrl = baseUrl; }
-
-    public String getSourceType() { return sourceType; }
-    public void setSourceType(String sourceType) { this.sourceType = sourceType; }
-
-    public String getApiVersion() { return apiVersion; }
-    public void setApiVersion(String apiVersion) { this.apiVersion = apiVersion; }
-  }
+  /**
+   * Configuration entry for a single InvenioRDM instance.
+   *
+   * <p>Bound from indexed properties such as
+   * {@code qbic.external-service.invenio-rdm.instances[0].id}.</p>
+   *
+   * <p>Fields {@code sourceType} and {@code apiVersion} are optional
+   * (nullable). Callers must resolve defaults:
+   * <ul>
+   *   <li>{@code sourceType} → {@literal "INVENIO_RDM"}</li>
+   *   <li>{@code apiVersion} → {@literal "12"}</li>
+   * </ul></p>
+   */
+  public record InstanceEntry(
+      String id,
+      String displayName,
+      String baseUrl,
+      String sourceType,
+      String apiVersion
+  ) {}
 }
