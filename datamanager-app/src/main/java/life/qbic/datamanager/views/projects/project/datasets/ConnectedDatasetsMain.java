@@ -14,6 +14,7 @@ import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.projects.project.ProjectMainLayout;
+import life.qbic.identity.api.AuthenticationToUserIdTranslator;
 import life.qbic.projectmanagement.application.associated_dataset.AssociatedDatasetService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,6 +50,7 @@ public class ConnectedDatasetsMain extends Main implements BeforeEnterObserver {
   private final transient MessageSourceNotificationFactory notificationFactory;
 
   private final ConnectedResourcesComponent connectedResourcesComponent;
+  private final AuthenticationToUserIdTranslator authenticationToUserIdTranslator;
   private ConnectDatasetSidebar connectDatasetSidebar;
 
   private Context context = new Context();
@@ -58,7 +60,9 @@ public class ConnectedDatasetsMain extends Main implements BeforeEnterObserver {
       AssociatedDatasetService associatedDatasetService,
       ExperimentInformationService experimentInformationService,
       UserPermissions userPermissions,
-      MessageSourceNotificationFactory notificationFactory) {
+      MessageSourceNotificationFactory notificationFactory,
+      AuthenticationToUserIdTranslator authenticationToUserIdTranslator
+      ) {
     this.associatedDatasetService = requireNonNull(associatedDatasetService,
         "associatedDatasetService must not be null");
     this.experimentInformationService = requireNonNull(experimentInformationService,
@@ -67,6 +71,7 @@ public class ConnectedDatasetsMain extends Main implements BeforeEnterObserver {
         "userPermissions must not be null");
     this.notificationFactory = requireNonNull(notificationFactory,
         "notificationFactory must not be null");
+    this.authenticationToUserIdTranslator = requireNonNull(authenticationToUserIdTranslator);
 
     addClassName("project");
     addClassName("datasets");
@@ -101,7 +106,8 @@ public class ConnectedDatasetsMain extends Main implements BeforeEnterObserver {
       connectDatasetSidebar = new ConnectDatasetSidebar(
           associatedDatasetService,
           experimentInformationService,
-          notificationFactory);
+          notificationFactory,
+          authenticationToUserIdTranslator);
       connectDatasetSidebar.setContext(context);
       connectDatasetSidebar.addDatasetsConnectedListener(
           e -> connectedResourcesComponent.refresh());

@@ -37,6 +37,7 @@ import life.qbic.datamanager.views.UiHandle;
 import life.qbic.datamanager.views.general.DataSetTagFactory;
 import life.qbic.datamanager.views.general.DataSetTagFactory.TagType;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
+import life.qbic.identity.api.AuthenticationToUserIdTranslator;
 import life.qbic.projectmanagement.application.associated_dataset.AssociatedDatasetService;
 import life.qbic.projectmanagement.application.associated_dataset.AssociatedDatasetServiceException;
 import life.qbic.projectmanagement.application.associated_dataset.SearchHit;
@@ -52,6 +53,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 
 /**
  * <b>Connect Dataset Sidebar</b>
@@ -86,6 +88,7 @@ public class ConnectDatasetSidebar extends Div {
   private final ExperimentInformationService experimentInformationService;
   private final MessageSourceNotificationFactory notificationFactory;
   private final UiHandle uiHandle = new UiHandle();
+  private final AuthenticationToUserIdTranslator authenticationToUserIdTranslator;
 
   /**
    * Clamp a title to {@code maxLines} lines with a CSS ellipsis.
@@ -173,11 +176,13 @@ public class ConnectDatasetSidebar extends Div {
   public ConnectDatasetSidebar(
       AssociatedDatasetService associatedDatasetService,
       ExperimentInformationService experimentInformationService,
-      MessageSourceNotificationFactory notificationFactory) {
+      MessageSourceNotificationFactory notificationFactory,
+      AuthenticationToUserIdTranslator authenticationToUserIdTranslator) {
     this.associatedDatasetService = associatedDatasetService;
     this.experimentInformationService = experimentInformationService;
     this.notificationFactory = requireNonNull(notificationFactory,
         "notificationFactory must not be null");
+    this.authenticationToUserIdTranslator = requireNonNull(authenticationToUserIdTranslator);
 
     // Root scope class — all .cds-* CSS rules in connect-dataset-sidebar.css
     // are scoped under this class so they cannot leak into other views.
@@ -876,11 +881,11 @@ public class ConnectDatasetSidebar extends Div {
   }
 
   private String currentUserId() {
-    var principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-    if (principal instanceof QbicUserDetails ud) {
-      return ud.getUserId();
-    }
-    throw new IllegalStateException("Unable to resolve current user identity");
+    var authentication = SecurityContextHolder.getContext().getAuthentication();
+    return authenticationToUserIdTranslator.translateToUserId(authentication).orElseThrow(() -> {
+      log.error("Could not translate authentication to user ID");
+      return new IllegalStateException("Could not translate authentication to user ID");
+    });
   }
 
   /** A lightweight record mapping an ExperimentId to its display name. */
