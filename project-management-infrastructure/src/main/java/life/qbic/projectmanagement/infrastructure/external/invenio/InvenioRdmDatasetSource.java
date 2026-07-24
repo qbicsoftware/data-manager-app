@@ -8,8 +8,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import life.qbic.application.commons.ApplicationException;
 import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.application.associated_dataset.DatasetResolveException;
+import life.qbic.projectmanagement.application.associated_dataset.DatasetSearchException;
 import life.qbic.projectmanagement.application.associated_dataset.DatasetSource;
 import life.qbic.projectmanagement.application.associated_dataset.InstanceConfig;
 import life.qbic.projectmanagement.application.associated_dataset.SearchHit;
@@ -49,10 +50,11 @@ public class InvenioRdmDatasetSource implements DatasetSource {
 
   @Override
   public SearchResult search(SearchQuery query, InstanceConfig config,
-      String actingUserId) {
+      String actingUserId) throws DatasetSearchException {
     Objects.requireNonNull(query, "query must not be null");
     Objects.requireNonNull(config, "config must not be null");
 
+    // Endpoint uses 1-based page indexing
     int invenioPage = query.page() + 1;
     var params = new InvenioRdmClient.SearchParams(
         query.effectiveQuery(), invenioPage, query.pageSize());
@@ -60,35 +62,36 @@ public class InvenioRdmDatasetSource implements DatasetSource {
     try {
       var response = client.search(config.baseUrl(), params);
       List<SearchHit> hits = mapSearchHits(response, config.displayName());
-      return new SearchResult(hits, response.hits.total, query.page(),
+      return new SearchResult(hits, response.hits().total(), query.page(),
           query.pageSize());
-    } catch (ApplicationException e) {
-      log.error("Search failed on %s for query '%s'"
-          .formatted(config.displayName(), query.effectiveQuery()));
-      throw e;
+    } catch (InvenioRdmClient.InvenioRdmException e) {
+      log.error("Search failed on %s for query '%s'".formatted(
+          config.displayName(), query.effectiveQuery()));
+      throw new DatasetSearchException("Search failed", e);
     }
   }
 
   @Override
   public Optional<ResourceMetadata> resolveMetadata(
       String externalHandleValue, InstanceConfig config,
-      String actingUserId) {
+      String actingUserId) throws DatasetResolveException {
     Objects.requireNonNull(externalHandleValue,
         "externalHandleValue must not be null");
     Objects.requireNonNull(config, "config must not be null");
 
     try {
-      var record = client.getRecord(config.baseUrl(), externalHandleValue);
+      var invenioRecord = client.getRecord(config.baseUrl(), externalHandleValue);
       InvenioRdmResourceMetadata metadata = mapRecordToResourceMetadata(
-          record, config.displayName());
+          invenioRecord, config.displayName());
       return Optional.of(metadata);
-    } catch (ApplicationException e) {
-      if (e.getMessage() != null && e.getMessage().contains("status 404")) {
+    } catch (InvenioRdmClient.InvenioRdmException e) {
+      if (e instanceof InvenioRdmClient.InvenioRdmPermanentException pe
+          && pe.getStatusCode() == 404) {
         return Optional.empty();
       }
       log.error("Failed to resolve record %s on %s"
           .formatted(externalHandleValue, config.displayName()));
-      throw e;
+      throw new DatasetResolveException("Failed to resolve metadata record", e);
     }
   }
 
@@ -98,15 +101,16 @@ public class InvenioRdmDatasetSource implements DatasetSource {
       InvenioRdmClient.SearchResultResponse response,
       String resourceProvider) {
     List<SearchHit> hits = new ArrayList<>();
-    if (response.hits == null || response.hits.hits == null) {
+    var hitsResult = response.hits();
+    if (hitsResult == null || hitsResult.hits() == null) {
       return hits;
     }
-    for (InvenioRdmClient.Hit h : response.hits.hits) {
+    for (InvenioRdmClient.Hit h : hitsResult.hits()) {
       try {
         hits.add(mapHit(h, resourceProvider));
       } catch (Exception e) {
         log.warn("Skipping malformed search hit (id=%s): %s"
-            .formatted(h.id, e.getMessage()));
+            .formatted(h.id(), e.getMessage()));
       }
     }
     return hits;
@@ -114,22 +118,18 @@ public class InvenioRdmDatasetSource implements DatasetSource {
 
   private SearchHit mapHit(InvenioRdmClient.Hit h, String resourceProvider) {
     String title = safeHitTitle(h);
-    String pid = safePid(h.pids, h.id);
+    String pid = safePid(h.pids(), h.id());
     LocalDate publicationDate = parseDateOrToday(
-        h.metadata != null ? h.metadata.publicationDate : null);
-    String description = h.metadata != null ? h.metadata.description : null;
-    String resourceType = resolvedResourceType(
-        h.metadata != null ? h.metadata.resourceType : null);
-    List<String> creators = resolvedCreators(
-        h.metadata != null ? h.metadata.creators : null);
-    String version = versionString(h.versions);
+        h.metadata() != null ? h.metadata().publicationDate() : null);
+    String description = h.metadata() != null ? h.metadata().description() : null;
+    String version = versionString(h.versions());
 
     // v12 access block lives at the response top level.
-    AccessLevel accessLevel = accessLevel(h.access);
-    String accessDetail = accessDetail(h.access);
+    AccessLevel accessLevel = accessLevel(h.access());
+    String accessDetail = accessDetail(h.access());
 
     return new SearchHit(
-        String.valueOf(h.id),
+        String.valueOf(h.id()),
         title, pid, version, publicationDate, resourceProvider,
         description, accessLevel == AccessLevel.PUBLIC, accessDetail
     );
@@ -138,22 +138,22 @@ public class InvenioRdmDatasetSource implements DatasetSource {
   private InvenioRdmResourceMetadata mapRecordToResourceMetadata(
       InvenioRdmClient.RecordResponse rec, String resourceProvider) {
     String title = safeRecordTitle(rec);
-    String pid = safePid(rec.pids, rec.id);
+    String pid = safePid(rec.pids(), rec.id());
     LocalDate publicationDate = parseDateOrToday(
-        rec.metadata != null ? rec.metadata.publicationDate : null);
-    String description = rec.metadata != null
-        ? rec.metadata.description : null;
+        rec.metadata() != null ? rec.metadata().publicationDate() : null);
+    String description = rec.metadata() != null
+        ? rec.metadata().description() : null;
     String resourceType = resolvedResourceType(
-        rec.metadata != null ? rec.metadata.resourceType : null);
+        rec.metadata() != null ? rec.metadata().resourceType() : null);
     List<String> creators = resolvedCreators(
-        rec.metadata != null ? rec.metadata.creators : null);
-    String version = versionString(rec.versions);
-    String accessLink = selfHtmlLink(rec.links);
-    String community = community(rec.parent);
+        rec.metadata() != null ? rec.metadata().creators() : null);
+    String version = versionString(rec.versions());
+    String accessLink = selfHtmlLink(rec.links());
+    String community = community(rec.parent());
 
     // v12 access block lives at the response top level.
-    InvenioRdmAccessStatus recordAccess = recordAccessStatus(rec.access);
-    InvenioRdmAccessStatus fileAccess = fileAccessStatus(rec.access);
+    InvenioRdmAccessStatus recordAccess = recordAccessStatus(rec.access());
+    InvenioRdmAccessStatus fileAccess = fileAccessStatus(rec.access());
 
     return new InvenioRdmResourceMetadata(
         title, pid, version, accessLink,
@@ -173,13 +173,12 @@ public class InvenioRdmDatasetSource implements DatasetSource {
    * community.
    */
   static String community(InvenioRdmClient.Parent parent) {
-    if (parent == null || parent.communities == null
-        || parent.communities.entries == null
-        || parent.communities.entries.isEmpty()) {
+    var communities = parent != null ? parent.communities() : null;
+    var entries = communities != null ? communities.entries() : null;
+    if (entries == null || entries.isEmpty()) {
       return null;
     }
-    InvenioRdmClient.Community first =
-        parent.communities.entries.getFirst();
+    InvenioRdmClient.Community first = entries.getFirst();
     return first != null ? first.displayLabel() : null;
   }
 
@@ -188,33 +187,33 @@ public class InvenioRdmDatasetSource implements DatasetSource {
    * PUBLIC, everything else is RESTRICTED.
    */
   static AccessLevel accessLevel(InvenioRdmClient.RecordAccess access) {
-    if (access == null || access.status == null
-        || access.status.isBlank()) {
+    String status = access != null ? access.status() : null;
+    if (status == null || status.isBlank()) {
       return AccessLevel.RESTRICTED;
     }
-    return "open".equalsIgnoreCase(access.status)
+    return "open".equalsIgnoreCase(status)
         ? AccessLevel.PUBLIC : AccessLevel.RESTRICTED;
   }
 
   static String accessDetail(InvenioRdmClient.RecordAccess access) {
-    String recordLabel = access != null && access.record != null
-        ? access.record.toLowerCase() : "unknown";
-    String filesLabel = access != null && access.files != null
-        ? access.files.toLowerCase() : "unknown";
+    String recordLabel = access != null && access.record() != null
+        ? access.record().toLowerCase() : "unknown";
+    String filesLabel = access != null && access.files() != null
+        ? access.files().toLowerCase() : "unknown";
     return "Record: " + recordLabel + " | Files: " + filesLabel;
   }
 
   static InvenioRdmAccessStatus recordAccessStatus(
       InvenioRdmClient.RecordAccess access) {
     if (access == null) return InvenioRdmAccessStatus.PUBLIC;
-    String rec = access.record != null ? access.record : access.status;
+    String rec = access.record() != null ? access.record() : access.status();
     return mapAccessStatus(rec);
   }
 
   static InvenioRdmAccessStatus fileAccessStatus(
       InvenioRdmClient.RecordAccess access) {
     if (access == null) return InvenioRdmAccessStatus.PUBLIC;
-    String files = access.files != null ? access.files : access.status;
+    String files = access.files() != null ? access.files() : access.status();
     return mapAccessStatus(files);
   }
 
@@ -235,10 +234,10 @@ public class InvenioRdmDatasetSource implements DatasetSource {
    * Falls back to the record {@code id} when no DOI is present.
    */
   static String safePid(InvenioRdmClient.Pids pids, String recordId) {
-    if (pids != null && pids.doi != null
-        && pids.doi.identifier != null
-        && !pids.doi.identifier.isBlank()) {
-      return pids.doi.identifier;
+    var doi = pids != null ? pids.doi() : null;
+    var identifier = doi != null ? doi.identifier() : null;
+    if (identifier != null && !identifier.isBlank()) {
+      return identifier;
     }
     return String.valueOf(recordId);
   }
@@ -249,7 +248,7 @@ public class InvenioRdmDatasetSource implements DatasetSource {
    */
   static String versionString(InvenioRdmClient.RecordVersions versions) {
     if (versions == null) return null;
-    return versions.index <= 0 ? null : "v" + versions.index;
+    return versions.index() <= 0 ? null : "v" + versions.index();
   }
 
   static List<String> resolvedCreators(
@@ -267,21 +266,21 @@ public class InvenioRdmDatasetSource implements DatasetSource {
   }
 
   static String selfHtmlLink(InvenioRdmClient.HitLinks links) {
-    return links != null ? links.selfHtml : null;
+    return links != null ? links.selfHtml() : null;
   }
 
   static String safeHitTitle(InvenioRdmClient.Hit h) {
-    if (h.metadata != null && h.metadata.title != null
-        && !h.metadata.title.isBlank()) {
-      return h.metadata.title;
+    var title = h.metadata() != null ? h.metadata().title() : null;
+    if (title != null && !title.isBlank()) {
+      return title;
     }
     return "(untitled record)";
   }
 
   static String safeRecordTitle(InvenioRdmClient.RecordResponse rec) {
-    if (rec.metadata != null && rec.metadata.title != null
-        && !rec.metadata.title.isBlank()) {
-      return rec.metadata.title;
+    var title = rec.metadata() != null ? rec.metadata().title() : null;
+    if (title != null && !title.isBlank()) {
+      return title;
     }
     return "(untitled record)";
   }

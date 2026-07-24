@@ -19,7 +19,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
@@ -63,8 +62,151 @@ import life.qbic.logging.service.LoggerFactory;
  */
 public interface InvenioRdmClient {
 
-  SearchResultResponse search(String instanceUrl, SearchParams params);
-  RecordResponse getRecord(String instanceUrl, String recordId);
+  /**
+   * Base exception for all InvenioRDM client failures.
+   *
+   * <p>All specific exceptions extend this class. Callers may catch the
+   * base type to handle all client errors uniformly, or catch specific
+   * subclasses to differentiate between permanent failures, transient
+   * retry exhaustion, parsing errors, and interruptions.</p>
+   */
+  abstract class InvenioRdmException extends RuntimeException {
+    private final String url;
+
+    protected InvenioRdmException(String message, String url) {
+      super(message);
+      this.url = url;
+    }
+
+    protected InvenioRdmException(String message, Throwable cause, String url) {
+      super(message, cause);
+      this.url = url;
+    }
+
+    /** The request URL that caused this failure. */
+    public String getUrl() { return url; }
+  }
+
+  /**
+   * Thrown when the InvenioRDM server returns a permanent error (4xx) that
+   * is not retried, per ADR-0002 §9.
+   *
+   * <p>This covers HTTP 401, 403, 404, and other 4xx codes. HTTP 429
+   * (Too Many Requests) is treated as transient and is retried.</p>
+   *
+   * @see <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401">HTTP 401</a>
+   * @see <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403">HTTP 403</a>
+   * @see <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404">HTTP 404</a>
+   */
+  final class InvenioRdmPermanentException extends InvenioRdmException {
+    private final int statusCode;
+
+    InvenioRdmPermanentException(String message, int statusCode, String url) {
+      super(message, url);
+      this.statusCode = statusCode;
+    }
+
+    /** The HTTP status code that caused this failure. */
+    public int getStatusCode() { return statusCode; }
+  }
+
+  /**
+   * Thrown when transient errors (5xx, 429, network failures) exhaust all
+   * retry attempts.
+   *
+   * <p>The client retries up to 3 times with exponential backoff for:
+   * <ul>
+   *   <li>HTTP 5xx server errors</li>
+   *   <li>HTTP 429 Too Many Requests (honours Retry-After header)</li>
+   *   <li>Network I/O errors (timeouts, connection refused, etc.)</li>
+   * </ul>
+   * After exhausting all retries, this exception is thrown.</p>
+   */
+  final class InvenioRdmTransientException extends InvenioRdmException {
+    private final int statusCode;  // -1 for I/O errors, otherwise HTTP status
+    private final int attempts;
+    private final Throwable lastError;
+
+    InvenioRdmTransientException(String message, int statusCode, int attempts,
+        Throwable lastError, String url) {
+      super(message, lastError, url);
+      this.statusCode = statusCode;
+      this.attempts = attempts;
+      this.lastError = lastError;
+    }
+
+    /** HTTP status code, or -1 for I/O errors. */
+    public int getStatusCode() { return statusCode; }
+
+    /** Number of attempts made. */
+    public int getAttempts() { return attempts; }
+
+    /** The last error encountered (HTTP exception or IOException). */
+    public Throwable getLastError() { return lastError; }
+  }
+
+  /**
+   * Thrown when the JSON response from the InvenioRDM server cannot be
+   * parsed.
+   *
+   * <p>This may indicate a server response format change or corruption.
+   * The response body is included in the exception message for diagnostics.</p>
+   */
+  final class InvenioRdmResponseParsingException extends InvenioRdmException {
+    private final Class<?> targetType;
+
+    InvenioRdmResponseParsingException(String message, Throwable cause, Class<?> targetType, String url) {
+      super(message, cause, url);
+      this.targetType = targetType;
+    }
+
+    /** The expected response type. */
+    public Class<?> getTargetType() { return targetType; }
+  }
+
+  /**
+   * Thrown when the HTTP request is interrupted.
+   *
+   * <p>This typically occurs if the calling thread is interrupted during
+   * the retry sleep period.</p>
+   */
+  final class InvenioRdmInterruptedException extends InvenioRdmException {
+    InvenioRdmInterruptedException(String message, Throwable cause, String url) {
+      super(message, cause, url);
+    }
+  }
+
+  /**
+   * Search for records matching the given parameters.
+   *
+   * @param instanceUrl the base URL of the InvenioRDM instance
+   * @param params search parameters (query, page, size)
+   * @return search results containing matching records
+   * @throws InvenioRdmPermanentException if the server returns a 4xx status code
+   *     that is not retried (401, 403, 404, etc.)
+   * @throws InvenioRdmTransientException if transient errors exhaust all retries
+   *     (5xx, 429, network failures after 3 attempts)
+   * @throws InvenioRdmResponseParsingException if the JSON response cannot be parsed
+   */
+  SearchResultResponse search(String instanceUrl, SearchParams params)
+      throws InvenioRdmPermanentException, InvenioRdmTransientException,
+             InvenioRdmResponseParsingException;
+  
+  /**
+   * Retrieve a single record by its ID.
+   *
+   * @param instanceUrl the base URL of the InvenioRDM instance
+   * @param recordId the record identifier
+   * @return the record details
+   * @throws InvenioRdmPermanentException if the server returns a 4xx status code
+   *     that is not retried (401, 403, 404, etc.)
+   * @throws InvenioRdmTransientException if transient errors exhaust all retries
+   *     (5xx, 429, network failures after 3 attempts)
+   * @throws InvenioRdmResponseParsingException if the JSON response cannot be parsed
+   */
+  RecordResponse getRecord(String instanceUrl, String recordId)
+      throws InvenioRdmPermanentException, InvenioRdmTransientException,
+             InvenioRdmResponseParsingException;
 
   /**
    * Parameters for a search request. All nullable fields are optional.
@@ -86,13 +228,18 @@ public interface InvenioRdmClient {
    * Search endpoint response, mirroring InvenioRDM JSON structure.
    */
   @JsonIgnoreProperties(ignoreUnknown = true)
-  final class SearchResultResponse {
-    @JsonProperty("hits") public Hits hits;
-
+  record SearchResultResponse(Hits hits) {
+    /**
+     * Paginated search results.
+     */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class Hits {
-      @JsonProperty("total") public int total;
-      @JsonProperty("hits") public List<Hit> hits = List.of();
+    record Hits(int total, List<Hit> hits) {
+      /**
+       * Null-safe access to hit list — defaults to empty list.
+       */
+      public List<Hit> hits() {
+        return hits == null ? List.of() : hits;
+      }
     }
   }
 
@@ -104,45 +251,45 @@ public interface InvenioRdmClient {
    * versions, and community membership are all top-level fields.</p>
    */
   @JsonIgnoreProperties(ignoreUnknown = true)
-  final class Hit {
-    @JsonProperty("id") public String id;
-    @JsonProperty("links") public HitLinks links;
-    @JsonProperty("metadata") public HitMetadata metadata;
-    @JsonProperty("created") public String created;
-    @JsonProperty("access") public RecordAccess access;
-    @JsonProperty("pids") public Pids pids;
-    @JsonProperty("versions") public RecordVersions versions;
-    @JsonProperty("parent") public Parent parent;
-  }
+  record Hit(
+      @JsonProperty("id") String id,
+      @JsonProperty("links") HitLinks links,
+      @JsonProperty("metadata") HitMetadata metadata,
+      @JsonProperty("created") String created,
+      @JsonProperty("access") RecordAccess access,
+      @JsonProperty("pids") Pids pids,
+      @JsonProperty("versions") RecordVersions versions,
+      @JsonProperty("parent") Parent parent
+  ) {}
 
   @JsonIgnoreProperties(ignoreUnknown = true)
-  final class HitLinks {
-    @JsonProperty("self_html") public String selfHtml;
-  }
+  record HitLinks(
+      @JsonProperty("self_html") String selfHtml
+  ) {}
 
   /**
    * Persistent identifiers block (v12). DOIs are at
    * {@code pids.doi.identifier}.
    */
   @JsonIgnoreProperties(ignoreUnknown = true)
-  final class Pids {
-    @JsonProperty("doi") public PidEntry doi;
-  }
+  record Pids(
+      @JsonProperty("doi") PidEntry doi
+  ) {}
 
   @JsonIgnoreProperties(ignoreUnknown = true)
-  final class PidEntry {
-    @JsonProperty("identifier") public String identifier;
-  }
+  record PidEntry(
+      @JsonProperty("identifier") String identifier
+  ) {}
 
   /**
-   * Version block (v12). {@code versions.index} is 1-based; 0 indicates
+   * Version block (v12). {@code index} is 1-based; 0 indicates
    * the first published version (Zenodo returns index 1 for the first).
    */
   @JsonIgnoreProperties(ignoreUnknown = true)
-  final class RecordVersions {
-    @JsonProperty("is_latest") public boolean isLatest;
-    @JsonProperty("index") public int index;
-  }
+  record RecordVersions(
+      @JsonProperty("is_latest") boolean isLatest,
+      @JsonProperty("index") int index
+  ) {}
 
   /**
    * Parent block (v12). Community membership is at
@@ -150,27 +297,27 @@ public interface InvenioRdmClient {
    * community {@code slug} and {@code metadata.title}.
    */
   @JsonIgnoreProperties(ignoreUnknown = true)
-  final class Parent {
-    @JsonProperty("communities") public ParentCommunities communities;
-  }
+  record Parent(
+      @JsonProperty("communities") ParentCommunities communities
+  ) {}
 
   @JsonIgnoreProperties(ignoreUnknown = true)
-  final class ParentCommunities {
-    @JsonProperty("default") public String defaultCommunity;
-    @JsonProperty("ids") public List<String> ids;
-    @JsonProperty("entries") public List<Community> entries;
-  }
+  record ParentCommunities(
+      @JsonProperty("default") String defaultCommunity,
+      @JsonProperty("ids") List<String> ids,
+      @JsonProperty("entries") List<Community> entries
+  ) {}
 
   /**
    * A single community entry from {@code parent.communities.entries}
    * (v12).
    */
   @JsonIgnoreProperties(ignoreUnknown = true)
-  final class Community {
-    @JsonProperty("id") public String id;
-    @JsonProperty("slug") public String slug;
-    @JsonProperty("metadata") public CommunityMetadata metadata;
-
+  record Community(
+      @JsonProperty("id") String id,
+      @JsonProperty("slug") String slug,
+      @JsonProperty("metadata") CommunityMetadata metadata
+  ) {
     /**
      * Best-effort display label: prefers {@code metadata.title},
      * then {@code slug}, then the raw {@code id}.
@@ -188,18 +335,18 @@ public interface InvenioRdmClient {
   }
 
   @JsonIgnoreProperties(ignoreUnknown = true)
-  final class CommunityMetadata {
-    @JsonProperty("title") public String title;
-  }
+  record CommunityMetadata(
+      @JsonProperty("title") String title
+  ) {}
 
   @JsonIgnoreProperties(ignoreUnknown = true)
-  final class HitMetadata {
-    @JsonProperty("title") public String title;
-    @JsonProperty("publication_date") public String publicationDate;
-    @JsonProperty("description") public String description;
-    @JsonProperty("creators") public List<Creator> creators;
-    @JsonProperty("resource_type") public ResourceType resourceType;
-  }
+  record HitMetadata(
+      @JsonProperty("title") String title,
+      @JsonProperty("publication_date") String publicationDate,
+      @JsonProperty("description") String description,
+      @JsonProperty("creators") List<Creator> creators,
+      @JsonProperty("resource_type") ResourceType resourceType
+  ) {}
 
   /**
    * Creator (v12). Identity is nested under {@code person_or_org};
@@ -210,21 +357,22 @@ public interface InvenioRdmClient {
    * {@code person_or_org.name} and the first affiliation entry.</p>
    */
   @JsonIgnoreProperties(ignoreUnknown = true)
-  final class Creator {
-    @JsonIgnore public PersonOrOrg personOrOrg;
-    @JsonIgnore public List<Affiliation> affiliations;
-
-    @JsonProperty("person_or_org")
-    private void setPersonOrOrg(PersonOrOrg po) { this.personOrOrg = po; }
-
-    @JsonProperty("affiliations")
-    private void setAffiliations(List<Affiliation> af) { this.affiliations = af; }
-
+  record Creator(
+      @JsonProperty("person_or_org") PersonOrOrg personOrOrg,
+      @JsonProperty("affiliations") List<Affiliation> affiliations
+  ) {
+    /**
+     * Null-safe access to the creator's display name.
+     * Extracts from {@code person_or_org.name}.
+     */
     public String resolvedName() {
       return (personOrOrg == null || personOrOrg.name == null
           || personOrOrg.name.isBlank()) ? null : personOrOrg.name;
     }
 
+    /**
+     * Null-safe access to the first affiliation's display name.
+     */
     public String resolvedAffiliation() {
       if (affiliations == null || affiliations.isEmpty()) return null;
       Affiliation first = affiliations.getFirst();
@@ -234,18 +382,18 @@ public interface InvenioRdmClient {
   }
 
   @JsonIgnoreProperties(ignoreUnknown = true)
-  final class PersonOrOrg {
-    @JsonProperty("name") public String name;
-    @JsonProperty("type") public String type;
-    @JsonProperty("given_name") public String givenName;
-    @JsonProperty("family_name") public String familyName;
-  }
+  record PersonOrOrg(
+      @JsonProperty("name") String name,
+      @JsonProperty("type") String type,
+      @JsonProperty("given_name") String givenName,
+      @JsonProperty("family_name") String familyName
+  ) {}
 
   @JsonIgnoreProperties(ignoreUnknown = true)
-  final class Affiliation {
-    @JsonProperty("id") public String id;
-    @JsonProperty("name") public String name;
-  }
+  record Affiliation(
+      @JsonProperty("id") String id,
+      @JsonProperty("name") String name
+  ) {}
 
   /**
    * Resource type (v12). The title field is a localised object
@@ -292,34 +440,34 @@ public interface InvenioRdmClient {
    * Single record detail response (v12).
    */
   @JsonIgnoreProperties(ignoreUnknown = true)
-  final class RecordResponse {
-    @JsonProperty("id") public String id;
-    @JsonProperty("links") public HitLinks links;
-    @JsonProperty("metadata") public RecordMetadata metadata;
-    @JsonProperty("created") public String created;
-    @JsonProperty("updated") public String updated;
-    @JsonProperty("is_published") public boolean isPublished;
-    @JsonProperty("access") public RecordAccess access;
-    @JsonProperty("pids") public Pids pids;
-    @JsonProperty("versions") public RecordVersions versions;
-    @JsonProperty("parent") public Parent parent;
-  }
+  record RecordResponse(
+      @JsonProperty("id") String id,
+      @JsonProperty("links") HitLinks links,
+      @JsonProperty("metadata") RecordMetadata metadata,
+      @JsonProperty("created") String created,
+      @JsonProperty("updated") String updated,
+      @JsonProperty("is_published") boolean isPublished,
+      @JsonProperty("access") RecordAccess access,
+      @JsonProperty("pids") Pids pids,
+      @JsonProperty("versions") RecordVersions versions,
+      @JsonProperty("parent") Parent parent
+  ) {}
 
   @JsonIgnoreProperties(ignoreUnknown = true)
-  final class RecordMetadata {
-    @JsonProperty("title") public String title;
-    @JsonProperty("publication_date") public String publicationDate;
-    @JsonProperty("description") public String description;
-    @JsonProperty("creators") public List<Creator> creators;
-    @JsonProperty("resource_type") public ResourceType resourceType;
-  }
+  record RecordMetadata(
+      @JsonProperty("title") String title,
+      @JsonProperty("publication_date") String publicationDate,
+      @JsonProperty("description") String description,
+      @JsonProperty("creators") List<Creator> creators,
+      @JsonProperty("resource_type") ResourceType resourceType
+  ) {}
 
   @JsonIgnoreProperties(ignoreUnknown = true)
-  final class RecordAccess {
-    @JsonProperty("record") public String record;
-    @JsonProperty("files") public String files;
-    @JsonProperty("status") public String status;
-  }
+  record RecordAccess(
+      @JsonProperty("record") String record,
+      @JsonProperty("files") String files,
+      @JsonProperty("status") String status
+  ) {}
 
   /**
    * Implementation of the InvenioRDM HTTP client.
@@ -352,7 +500,9 @@ public interface InvenioRdmClient {
     }
 
     @Override
-    public SearchResultResponse search(String instanceUrl, SearchParams params) {
+    public SearchResultResponse search(String instanceUrl, SearchParams params)
+        throws InvenioRdmPermanentException, InvenioRdmTransientException,
+               InvenioRdmResponseParsingException {
       Objects.requireNonNull(instanceUrl, "instanceUrl must not be null");
       Objects.requireNonNull(params, "params must not be null");
 
@@ -362,7 +512,9 @@ public interface InvenioRdmClient {
     }
 
     @Override
-    public RecordResponse getRecord(String instanceUrl, String recordId) {
+    public RecordResponse getRecord(String instanceUrl, String recordId)
+        throws InvenioRdmPermanentException, InvenioRdmTransientException,
+               InvenioRdmResponseParsingException {
       Objects.requireNonNull(instanceUrl, "instanceUrl must not be null");
       Objects.requireNonNull(recordId, "recordId must not be null");
 
@@ -395,7 +547,8 @@ public interface InvenioRdmClient {
       return url.endsWith("/") ? url.substring(0, url.length() - 1) : url;
     }
 
-    private String getWithRetry(String url, String authHeader, String operationName) {
+    private String getWithRetry(String url, String authHeader, String operationName)
+        throws InvenioRdmPermanentException, InvenioRdmTransientException {
       int retryCount = 0;
       long backoffMs = INITIAL_BACKOFF_MS;
       IOException lastIo = null;
@@ -423,10 +576,11 @@ public interface InvenioRdmClient {
           }
 
           // Permanent failure: 4xx (except 429) — don't retry
-          if (status >= 400 && status < 500 && status != 429) {
-            throw new ApplicationException(
+          if (isClientError(status) && !isTooManyRequests(status)) {
+            throw new InvenioRdmPermanentException(
                 "InvenioRDM request failed (%s) with status %d. URL: %s"
-                    .formatted(operationName, status, url));
+                    .formatted(operationName, status, url),
+                status, url);
           }
 
           // Transient: 5xx or 429 — retry with Retry-After honouring
@@ -444,10 +598,13 @@ public interface InvenioRdmClient {
           }
 
           // Exhausted retries on transient
-          throw new ApplicationException(
+          throw new InvenioRdmTransientException(
               "InvenioRDM request failed (%s) with status %d after %d attempts. URL: %s"
-                  .formatted(operationName, status, MAX_ATTEMPTS, url));
+                  .formatted(operationName, status, MAX_ATTEMPTS, url),
+              status, MAX_ATTEMPTS, null, url);
 
+        } catch (InvenioRdmInterruptedException e) {
+          throw e;
         } catch (IOException e) {
           lastIo = e;
           if (currentAttempt < MAX_ATTEMPTS) {
@@ -456,24 +613,47 @@ public interface InvenioRdmClient {
             sleep(backoffMs);
             backoffMs = Math.min(backoffMs * 2, MAX_BACKOFF_MS);
             retryCount++;
-            continue;
           }
         } catch (InterruptedException e) {
           Thread.currentThread().interrupt();
-          throw new ApplicationException(
-              "InvenioRDM request interrupted (%s)".formatted(operationName), e);
+          throw new InvenioRdmInterruptedException(
+              "InvenioRDM request interrupted (%s)".formatted(operationName),
+              e, url);
         }
       }
 
-      throw new ApplicationException(
+      throw new InvenioRdmTransientException(
           "InvenioRDM request failed (%s) after %d attempts. Last status=%s, last error=%s. URL: %s"
               .formatted(operationName, MAX_ATTEMPTS, lastStatus,
                   lastIo == null ? "n/a" : lastIo.getMessage(), url),
-          lastIo);
+          lastStatus != null ? lastStatus : -1, MAX_ATTEMPTS, lastIo, url);
     }
 
+    /**
+     * Returns true if the status code is a success (2xx).
+     * @param status the status code to check
+     * @return true if the status code is a success (2xx)
+     */
     private static boolean isSuccess(int status) {
       return status >= 200 && status < 300;
+    }
+
+    /**
+     * Returns true if the status code is a client error (4xx).
+     * @param status the status code to check
+     * @return true if the status code is a client error (4xx)
+     */
+    private static boolean isClientError(int status) {
+      return status >= 400 && status < 500;
+    }
+
+    /**
+     * Returns true if the status code is 429 Too Many Requests.
+     * @param status the status code to check
+     * @return true if the status code is 429 Too Many Requests
+     */
+    private static boolean isTooManyRequests(int status) {
+      return status == 429;
     }
 
     private long parseRetryAfter(HttpResponse<String> response, long fallbackMs) {
@@ -499,8 +679,9 @@ public interface InvenioRdmClient {
       try {
         return OBJECT_MAPPER.readValue(body, type);
       } catch (IOException e) {
-        throw new ApplicationException(
-            "Failed to parse InvenioRDM JSON response as " + type.getSimpleName(), e);
+        throw new InvenioRdmResponseParsingException(
+            "Failed to parse InvenioRDM JSON response as " + type.getSimpleName(),
+            e, type, null);
       }
     }
   }
