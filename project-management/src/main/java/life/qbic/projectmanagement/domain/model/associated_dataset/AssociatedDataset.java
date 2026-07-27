@@ -17,6 +17,7 @@ import java.util.Objects;
 import java.util.Optional;
 import life.qbic.domain.concepts.LocalDomainEventDispatcher;
 import life.qbic.projectmanagement.domain.model.associated_dataset.event.AssociatedDatasetConnectedEvent;
+import life.qbic.projectmanagement.domain.model.associated_dataset.event.AssociatedDatasetRemovedEvent;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 
@@ -186,17 +187,29 @@ public class AssociatedDataset {
   // ── Lifecycle operations ────────────────────────────────────────────────
 
   /**
-   * Removes the connection (soft-delete). After this call the aggregate
-   * is in {@link ConnectionState#REMOVED} state and should not be
-   * surfaced through active queries.
+   * Removes the connection (soft-delete). Transitions the aggregate to
+   * {@link ConnectionState#REMOVED} state and dispatches an
+   * {@link AssociatedDatasetRemovedEvent} via the local domain event
+   * dispatcher so the application-service layer can forward it to
+   * collaborator-notification policy directives.
    *
-   * @throws IllegalStateException if the dataset is already removed
+   * <p>After this call the aggregate should not be surfaced through
+   * active queries — the repository excludes REMOVED rows by default
+   * (ADR-0001). The row is retained as an audit tombstone.</p>
+   *
+   * @param removedByUserId the user who performed the removal;
+   *                       recorded in the emitted event as the actor
+   *                       (may differ from {@link #connectedBy()})
+   * @throws IllegalStateException  if the dataset is already removed
+   * @throws NullPointerException   if {@code removedByUserId} is null
    */
-  public void remove() {
+  public void remove(String removedByUserId) {
+    Objects.requireNonNull(removedByUserId, "removedByUserId must not be null");
     if (this.connectionState == ConnectionState.REMOVED) {
       throw new IllegalStateException("Dataset connection is already removed");
     }
     this.connectionState = ConnectionState.REMOVED;
+    emitRemovedEvent(removedByUserId);
   }
 
   /**
@@ -334,6 +347,23 @@ public class AssociatedDataset {
   private void emitConnectedEvent() {
     var event = AssociatedDatasetConnectedEvent.create(
         this.id, this.projectId, this.connectedBy, this.title, this.pid);
+    LocalDomainEventDispatcher.instance().dispatch(event);
+  }
+
+  /**
+   * Dispatches an {@link AssociatedDatasetRemovedEvent} via the
+   * {@link LocalDomainEventDispatcher}. The application-service layer
+   * subscribes to these events (collect-during, forward-after pattern)
+   * and forwards them to the global dispatcher, which drives the
+   * collaborator-notification policy directives.
+   *
+   * <p>The event's actor is the user who performed the removal
+   * ({@code removedByUserId}), which may differ from the user who
+   * originally connected the dataset ({@code connectedBy}).</p>
+   */
+  private void emitRemovedEvent(String removedByUserId) {
+    var event = AssociatedDatasetRemovedEvent.create(
+        this.id, this.projectId, removedByUserId, this.title, this.pid);
     LocalDomainEventDispatcher.instance().dispatch(event);
   }
 

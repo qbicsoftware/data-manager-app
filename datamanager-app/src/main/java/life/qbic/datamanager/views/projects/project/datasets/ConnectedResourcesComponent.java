@@ -77,6 +77,8 @@ public class ConnectedResourcesComponent extends Div {
 
   private Context context;
 
+  private boolean writeAllowed = false;
+
   public ConnectedResourcesComponent(AssociatedDatasetService associatedDatasetService) {
     this.associatedDatasetService = associatedDatasetService;
     addClassNames("padding-horizontal-07", "padding-vertical-04", "flex-vertical");
@@ -121,6 +123,11 @@ public class ConnectedResourcesComponent extends Div {
     refresh();
   }
 
+  /** Controls whether the "Remove" button is rendered on each card. */
+  public void setWriteAllowed(boolean writeAllowed) {
+    this.writeAllowed = writeAllowed;
+  }
+
   /** Reloads connected datasets and re-renders the content area. */
   public void refresh() {
     if (context == null || context.projectId().isEmpty()) {
@@ -151,6 +158,19 @@ public class ConnectedResourcesComponent extends Div {
   public Registration addConnectDatasetsClickListener(
       ComponentEventListener<ConnectDatasetsClickEvent> listener) {
     return addListener(ConnectDatasetsClickEvent.class, listener);
+  }
+
+  /**
+   * Registers a listener invoked when the "Remove" button on a dataset
+   * card is clicked. Listener receives the aggregate ID of the clicked
+   * dataset. Only fires when {@link #setWriteAllowed(boolean)} is
+   * {@code true}.
+   *
+   * @since 1.12.0
+   */
+  public Registration addRemoveDatasetClickListener(
+      ComponentEventListener<RemoveDatasetClickEvent> listener) {
+    return addListener(RemoveDatasetClickEvent.class, listener);
   }
 
   // ── Empty state ─────────────────────────────────────────────────────
@@ -240,18 +260,29 @@ public class ConnectedResourcesComponent extends Div {
       headerRow.add(detailNote);
     }
 
-    // Spacer
+    // Spacer — pushes everything after it to the right edge.
     var spacer = new Div();
     spacer.getStyle().set("flex-grow", "1");
     headerRow.add(spacer);
 
-    // Published date
+    // Published date (right-aligned, secondary info).
     LocalDate pubDate = view.publicationDate();
     if (pubDate != null) {
       var dateSpan = new Span("Published: " + pubDate.format(DATE_FMT));
       dateSpan.addClassName("extra-small-body-text");
       dateSpan.getStyle().set("color", SECONDARY_COLOR);
       headerRow.add(dateSpan);
+    }
+
+    // Remove button (write-access only, right-aligned as a primary action).
+    if (writeAllowed) {
+      var removeButton = new Button(VaadinIcon.TRASH.create());
+      removeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE,
+          ButtonVariant.LUMO_ERROR);
+      removeButton.getElement().setAttribute("title", "Remove dataset connection");
+      removeButton.getElement().setAttribute("aria-label", "Remove dataset connection");
+      removeButton.addClickListener(e -> fireRemoveDatasetClick(view.id()));
+      headerRow.add(removeButton);
     }
 
     card.add(headerRow);
@@ -467,6 +498,10 @@ public class ConnectedResourcesComponent extends Div {
     fireEvent(new ConnectDatasetsClickEvent(this));
   }
 
+  private void fireRemoveDatasetClick(String datasetId) {
+    fireEvent(new RemoveDatasetClickEvent(this, datasetId));
+  }
+
   /**
    * Custom event fired when either the action-bar "Connect Datasets"
    * button or the empty-state CTA is clicked. The parent view is
@@ -480,6 +515,31 @@ public class ConnectedResourcesComponent extends Div {
 
     public ConnectDatasetsClickEvent(ConnectedResourcesComponent source) {
       super(source, false);
+    }
+  }
+
+  /**
+   * Custom event fired when the "Remove" button on a dataset card is
+   * clicked. Carries the aggregate ID of the dataset to remove.
+   *
+   * @since 1.12.0
+   */
+  public static class RemoveDatasetClickEvent
+      extends com.vaadin.flow.component.ComponentEvent<ConnectedResourcesComponent> {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
+
+    private final String datasetId;
+
+    public RemoveDatasetClickEvent(ConnectedResourcesComponent source, String datasetId) {
+      super(source, false);
+      this.datasetId = datasetId;
+    }
+
+    /** Aggregate ID (UUID string) of the dataset to remove. */
+    public String getDatasetId() {
+      return datasetId;
     }
   }
 }
