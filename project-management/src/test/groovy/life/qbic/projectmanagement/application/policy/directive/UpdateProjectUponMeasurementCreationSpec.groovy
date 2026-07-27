@@ -1,6 +1,5 @@
 package life.qbic.projectmanagement.application.policy.directive
 
-import java.time.Instant
 import life.qbic.projectmanagement.application.ProjectInformationService
 import life.qbic.projectmanagement.application.measurement.MeasurementLookupService
 import life.qbic.projectmanagement.domain.model.measurement.ImmunopeptidomicsMeasurement
@@ -10,6 +9,8 @@ import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasuremen
 import life.qbic.projectmanagement.domain.model.project.ProjectId
 import org.jobrunr.scheduling.JobScheduler
 import spock.lang.Specification
+
+import java.time.Instant
 
 class UpdateProjectUponMeasurementCreationSpec extends Specification {
 

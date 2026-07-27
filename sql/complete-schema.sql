@@ -974,3 +974,51 @@ SELECT ip.measurement_id,
 FROM ip_measurements ip
          INNER JOIN remote_measurement_data rmd
                     ON rmd.measurement_id = ip.measurementCode;
+
+-- ===========================================================================
+-- Associated Dataset
+-- Per ADR-0001: source-agnostic aggregate within project-management bounded
+-- context. Source-specific metadata is stored as a MariaDB JSON blob; a
+-- small set of "universal columns" (title, pid, version, publication_date)
+-- are extracted to regular columns for SQL sort/filter.
+-- Soft-delete: connection_state = 'REMOVED' keeps the row as an audit
+-- tombstone; active queries filter it out.
+-- ===========================================================================
+CREATE TABLE IF NOT EXISTS `associated_dataset`
+(
+    `id`                varchar(36) NOT NULL,
+    `project_id`        varchar(36)     NOT NULL,
+    `source_type`       varchar(32)     NOT NULL    COMMENT 'e.g. INVENIO_RDM',
+    `external_handle`   varchar(512)    NOT NULL    COMMENT 'record ID on the source',
+    `connection_state`  varchar(16)     NOT NULL    COMMENT 'CONNECTED | REMOVED (soft-delete)',
+    `access_level`      varchar(16)     NOT NULL    COMMENT 'coarse access, derived from metadata',
+
+    -- Universal columns (source-agnostic, used for sort/filter)
+    `title`             varchar(1024)   DEFAULT NULL,
+    `pid`               varchar(255)    DEFAULT NULL,
+    `version`           varchar(32)     DEFAULT NULL,
+    `publication_date`  date            DEFAULT NULL,
+
+    -- Source-specific metadata (opaque JSON; see ResourceMetadata hierarchy)
+    `resource_metadata` json            DEFAULT NULL,
+
+    -- Connection metadata
+    `connected_by`      varchar(255)    NOT NULL,
+    `connected_on`      timestamp(3)    NOT NULL,
+    `experiment_id`     varchar(36)     DEFAULT NULL COMMENT 'optional experiment association',
+    `last_synced_at`    timestamp(3)    DEFAULT NULL,
+
+    -- Generated column for partial unique index: NULL when REMOVED so that
+    -- MariaDB excludes tombstoned rows from the uniqueness check.
+    `active_pid`        varchar(255) GENERATED ALWAYS AS
+                                        (CASE WHEN `connection_state` <> 'REMOVED' THEN `pid` ELSE NULL END) VIRTUAL,
+
+    PRIMARY KEY (`id`),
+    KEY `idx_assoc_ds_project`          (`project_id`),
+    KEY `idx_assoc_ds_state`            (`connection_state`),
+    KEY `idx_assoc_ds_source_type`      (`source_type`),
+    KEY `idx_assoc_ds_project_state`    (`project_id`, `connection_state`),
+    UNIQUE KEY `uk_assoc_ds_project_pid` (`project_id`, `active_pid`)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci;

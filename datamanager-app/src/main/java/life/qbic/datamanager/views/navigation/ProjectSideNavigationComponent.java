@@ -186,6 +186,7 @@ public class ProjectSideNavigationComponent extends Div implements
   private static Div createProjectItems(String projectId, boolean canUserAdministrate) {
     Div projectItems = new Div();
     projectItems.add(createProjectSummaryLink(projectId));
+    projectItems.add(createProjectDatasetsLink(projectId));
     if (canUserAdministrate) {
       projectItems.add(createProjectUsers(projectId));
     }
@@ -198,6 +199,11 @@ public class ProjectSideNavigationComponent extends Div implements
         projectId);
     return new SideNavItem("SUMMARY",
         projectSummaryPath, VaadinIcon.DEINDENT.create());
+  }
+
+  private static SideNavItem createProjectDatasetsLink(String projectId) {
+    String datasetsPath = String.format(ProjectRoutes.DATASETS, projectId);
+    return new SideNavItem("DATASETS", datasetsPath, VaadinIcon.DATABASE.create());
   }
 
   private static SideNavItem createProjectUsers(String projectId) {

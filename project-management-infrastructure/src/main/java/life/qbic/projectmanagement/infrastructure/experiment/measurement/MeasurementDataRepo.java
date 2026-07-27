@@ -4,11 +4,10 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import life.qbic.projectmanagement.application.sample.SampleIdCodeEntry;
-import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
 import life.qbic.projectmanagement.domain.model.measurement.ImmunopeptidomicsMeasurement;
+import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
-import life.qbic.projectmanagement.domain.model.measurement.ImmunopeptidomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 
 /**

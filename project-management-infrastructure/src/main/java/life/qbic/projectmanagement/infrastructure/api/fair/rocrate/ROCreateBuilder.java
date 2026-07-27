@@ -10,11 +10,7 @@ import edu.kit.datamanager.ro_crate.entities.contextual.ContextualEntity.Context
 import edu.kit.datamanager.ro_crate.entities.data.FileEntity.FileEntityBuilder;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.ArrayList;
-import life.qbic.projectmanagement.application.api.fair.ContactPoint;
 import life.qbic.projectmanagement.application.api.fair.ResearchProject;
-import life.qbic.projectmanagement.domain.model.project.Contact;
-import life.qbic.projectmanagement.domain.model.project.Project;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.springframework.stereotype.Component;
 
