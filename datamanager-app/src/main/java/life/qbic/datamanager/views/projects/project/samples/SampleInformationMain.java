@@ -340,8 +340,8 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
         .warning()
         .title("Discard changes?")
         .message("By aborting the editing process and closing the dialog, you will lose all information entered.")
-        .confirmButton("Discard changes", () -> dialog.close())
-        .cancelButton("Continue editing", () -> {})
+        .confirmButton("Discard", () -> dialog.close())
+        .cancelButton("Cancel", () -> {})
         .build()
         .open();
   }
@@ -485,8 +485,8 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
         .warning()
         .title("Discard changes?")
         .message("By aborting the editing process and closing the dialog, you will lose all information entered.")
-        .confirmButton("Discard changes", () -> editBatchDialog.close())
-        .cancelButton("Continue editing", () -> {})
+        .confirmButton("Discard", () -> editBatchDialog.close())
+        .cancelButton("Cancel", () -> {})
         .build()
         .open();
   }

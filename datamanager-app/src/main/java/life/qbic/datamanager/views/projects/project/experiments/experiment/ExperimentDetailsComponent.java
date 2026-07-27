@@ -322,8 +322,8 @@ public class ExperimentDetailsComponent extends PageArea {
         .warning()
         .title("Discard changes?")
         .message("By aborting the editing process and closing the dialog, you will lose all information entered.")
-        .confirmButton("Discard changes", () -> editExperimentDialog.close())
-        .cancelButton("Continue editing", () -> {})
+        .confirmButton("Discard", () -> editExperimentDialog.close())
+        .cancelButton("Cancel", () -> {})
         .build()
         .open();
   }

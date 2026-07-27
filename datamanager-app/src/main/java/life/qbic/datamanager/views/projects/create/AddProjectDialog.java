@@ -23,6 +23,7 @@ import life.qbic.datamanager.views.general.HasBinderValidation;
 import life.qbic.datamanager.views.general.QbicDialog;
 import life.qbic.datamanager.views.general.Stepper;
 import life.qbic.datamanager.views.general.Stepper.StepIndicator;
+import life.qbic.datamanager.views.general.dialog.AlertDialog;
 import life.qbic.datamanager.views.general.funding.FundingEntry;
 import life.qbic.datamanager.views.projects.create.CollaboratorsLayout.ProjectCollaborators;
 import life.qbic.datamanager.views.projects.create.ExperimentalInformationLayout.ExperimentalInformation;
@@ -141,12 +142,12 @@ public class AddProjectDialog extends QbicDialog {
   }
 
   private void onCancelClicked() {
-    life.qbic.datamanager.views.general.dialog.AlertDialog.alert(this)
+    AlertDialog.alert(this)
         .warning()
         .title("Discard changes?")
         .message("By aborting the editing process and closing the dialog, you will lose all information entered.")
-        .confirmButton("Discard changes", () -> close())
-        .cancelButton("Continue editing", () -> {})
+        .confirmButton("Discard", () -> close())
+        .cancelButton("Cancel", () -> {})
         .build()
         .open();
   }

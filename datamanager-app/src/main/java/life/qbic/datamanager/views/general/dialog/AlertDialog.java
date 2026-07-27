@@ -179,11 +179,11 @@ public class AlertDialog {
       messageDiv.add(new Span(message));
       DialogBody.withoutUserInput(dialog, messageDiv);
 
-      // Footer — danger intent gets a red confirm button via the existing
+      // Footer — DANGER and WARNING intents get a red confirm button via the
       // withDangerousConfirm helper; other intents use the default primary
       // style. If no cancel action is set, the builder skips the cancel
       // button (single-action confirmation).
-      if (intent == Intent.DANGER && cancelLabel != null && cancelAction != null) {
+      if ((intent == Intent.DANGER || intent == Intent.WARNING) && cancelLabel != null && cancelAction != null) {
         DialogFooter.withDangerousConfirm(dialog, cancelLabel, confirmLabel);
       } else if (cancelLabel != null && cancelAction != null) {
         DialogFooter.with(dialog, cancelLabel, confirmLabel);
