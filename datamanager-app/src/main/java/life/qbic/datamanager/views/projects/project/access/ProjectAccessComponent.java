@@ -189,18 +189,6 @@ public class ProjectAccessComponent extends PageArea {
           if (!userPermissions.changeProjectAccess(context.projectId().orElseThrow())) {
             return new Span();
           }
-          //You can't remove or edit your own role
-          if (isCurrentUser(projectUser)) {
-            return new Span();
-          }
-          //You can't remove or edit the project owner
-          if (projectUser.projectRole() == ProjectRole.OWNER) {
-            return new Span();
-          }
-          //You don't have the rights to change the user
-          if (!userPermissions.changeProjectAccess(context.projectId().orElseThrow())) {
-            return new Span();
-          }
           return changeProjectAccessCell(projectUser);
         })
         .setHeader("Action")
