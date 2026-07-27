@@ -2,6 +2,8 @@ package life.qbic.datamanager.views.projects.project.datasets;
 
 import static java.util.Objects.requireNonNull;
 
+import com.vaadin.flow.component.AttachEvent;
+import com.vaadin.flow.component.DetachEvent;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.NotFoundException;
@@ -9,15 +11,28 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ForkJoinPool;
+import life.qbic.application.commons.Result;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
+import life.qbic.datamanager.views.UiHandle;
 import life.qbic.datamanager.views.general.Main;
+import life.qbic.datamanager.views.general.dialog.AlertDialog;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
+import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.projects.project.ProjectMainLayout;
 import life.qbic.identity.api.AuthenticationToUserIdTranslator;
+import life.qbic.logging.api.Logger;
+import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.associated_dataset.AssociatedDatasetService;
+import life.qbic.projectmanagement.application.associated_dataset.ConnectedDatasetView;
+import life.qbic.projectmanagement.application.associated_dataset.RemoveDatasetError;
+import life.qbic.projectmanagement.domain.model.associated_dataset.AssociatedDatasetId;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 /**
  * <b>Associated Datasets view</b>
@@ -54,6 +69,7 @@ public class ConnectedDatasetsMain extends Main implements BeforeEnterObserver {
   private ConnectDatasetSidebar connectDatasetSidebar;
 
   private Context context = new Context();
+  private final UiHandle uiHandle = new UiHandle();
 
   @Autowired
   public ConnectedDatasetsMain(
@@ -77,7 +93,34 @@ public class ConnectedDatasetsMain extends Main implements BeforeEnterObserver {
     addClassName("datasets");
     connectedResourcesComponent = new ConnectedResourcesComponent(associatedDatasetService);
     connectedResourcesComponent.addConnectDatasetsClickListener(e -> openConnectSidebar());
+    connectedResourcesComponent.addRemoveDatasetClickListener(
+        e -> onRemoveDataset(e.getDatasetId()));
     add(connectedResourcesComponent);
+  }
+
+  @Override
+  protected void onAttach(AttachEvent attachEvent) {
+    super.onAttach(attachEvent);
+    uiHandle.bind(attachEvent.getUI());
+  }
+
+  @Override
+  protected void onDetach(DetachEvent detachEvent) {
+    uiHandle.unbind();
+    super.onDetach(detachEvent);
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────
+
+  private static final Logger log = LoggerFactory.logger(ConnectedDatasetsMain.class);
+
+  /** Resolves the current Spring Security user to a DM user ID. */
+  private String resolveCurrentUserId() {
+    var auth = SecurityContextHolder.getContext().getAuthentication();
+    return authenticationToUserIdTranslator.translateToUserId(auth).orElseThrow(() -> {
+      log.error("Could not translate authentication to user ID");
+      return new IllegalStateException("Could not translate authentication to user ID");
+    });
   }
 
   @Override
@@ -91,13 +134,120 @@ public class ConnectedDatasetsMain extends Main implements BeforeEnterObserver {
       return;
     }
     this.context = new Context().with(parsedProjectId);
-    setContext();
+    setContext(parsedProjectId);
   }
 
-  private void setContext() {
+  private void setContext(
+      life.qbic.projectmanagement.domain.model.project.ProjectId parsedProjectId) {
+    connectedResourcesComponent.setWriteAllowed(userPermissions.editProject(parsedProjectId));
     connectedResourcesComponent.setContext(context);
     if (connectDatasetSidebar != null) {
       connectDatasetSidebar.setContext(context);
+    }
+  }
+
+  // ── Remove dataset flow ─────────────────────────────────────────────
+
+  /**
+   * Drives the Remove flow: opens a {@link AlertDialog} confirmation;
+   * on confirm, calls {@code associatedDatasetService.removeDataset(…)},
+   * shows a toast, and refreshes the card list.
+   */
+  private void onRemoveDataset(String datasetId) {
+    // Resolve dataset view from current list so we can reference title
+    // in the confirmation body and in subsequent toasts.
+    List<ConnectedDatasetView> currentDatasets = List.of();
+    if (context.projectId().isPresent()) {
+      currentDatasets = associatedDatasetService.listConnectedDatasetViews(
+          context.projectId().orElseThrow());
+    }
+    ConnectedDatasetView view = currentDatasets.stream()
+        .filter(ds -> ds.id().equals(datasetId))
+        .findFirst()
+        .orElseThrow(() -> new IllegalStateException(
+            "Remove click event referenced unknown dataset %s".formatted(datasetId)));
+
+    AlertDialog.danger(this,
+        "Remove dataset connection?",
+        "This will disconnect the dataset '" + view.title() + "' ("
+            + view.pid() + ") from the project. The connection can be "
+            + "re-established at any time.",
+        () -> performRemoveAsync(datasetId))
+        .open();
+  }
+
+  /**
+   * Runs {@code removeDataset} on a background thread, wrapping the
+   * blocking call in a {@link CompletableFuture}. A pending-task toast
+   * is shown immediately; it is replaced by a success or error toast when
+   * the async call completes. UI updates happen through {@link UiHandle},
+   * which safely routes the callback back onto the Vaadin UI thread and
+   * pushes it to the client (if Push is enabled on the app).
+   *
+   * <p>The dialog has already closed when this method runs (the
+   * {@link AlertDialog#danger(Component, String, String, life.qbic.datamanager.views.general.dialog.DialogAction)}
+   * factory closes the dialog inside the confirm action wrapper) — the
+   * visible feedback for the user is therefore the pending toast,
+   * followed by either a success or failure toast.</p>
+   */
+  private void performRemoveAsync(String datasetId) {
+    var userId = resolveCurrentUserId();
+
+    // Pending-task toast: stays open (duration set to ZERO inside
+    // {@link MessageSourceNotificationFactory#pendingTaskToast}) until
+    // closed manually in the whenComplete callback.
+    Toast pendingToast = notificationFactory.pendingTaskToast(
+        "dataset.removing.in-progress", EMPTY_PARAMETERS, getLocale());
+    pendingToast.open();
+
+    final CompletableFuture<Result<AssociatedDatasetId, RemoveDatasetError>> future =
+        CompletableFuture.supplyAsync(
+            () -> associatedDatasetService.removeDataset(datasetId, userId),
+            ForkJoinPool.commonPool());
+
+    future.whenComplete((result, error) -> uiHandle.onUiAndPush(() -> {
+      // Always close the pending indicator.
+      pendingToast.close();
+
+      if (error != null) {
+        log.error("Async remove pipeline failed for dataset %s: %s"
+            .formatted(datasetId, error.getMessage()), error);
+        notificationFactory.toast("dataset.removed.failure",
+            EMPTY_PARAMETERS, getLocale()).open();
+        return;
+      }
+
+      if (result.isError()) {
+        handleRemoveError(result.getError());
+      } else {
+        notificationFactory.toast("dataset.removed.success",
+            EMPTY_PARAMETERS, getLocale()).open();
+        connectedResourcesComponent.refresh();
+      }
+    }));
+  }
+
+  private static final Object[] EMPTY_PARAMETERS = new Object[]{ };
+
+  /** Maps each {@link RemoveDatasetError} to its user-visible feedback.
+   *  Non-critical errors ({@code DATASET_NOT_FOUND},
+   *  {@code DATASET_ALREADY_REMOVED}) silently refresh the list so the
+   *  card vanishes if the dataset was already gone. */
+  private void handleRemoveError(RemoveDatasetError error) {
+    switch (error) {
+      case DATASET_ALREADY_REMOVED:
+        // Already gone — nothing else to tell the user.
+        connectedResourcesComponent.refresh();
+        break;
+      case DATASET_NOT_FOUND:
+        // Already gone — silently refresh.
+        connectedResourcesComponent.refresh();
+        break;
+      case REMOVAL_FAILED:
+      default:
+        notificationFactory.toast("dataset.removed.failure",
+            EMPTY_PARAMETERS, getLocale()).open();
+        break;
     }
   }
 

@@ -100,4 +100,31 @@ public class Messages {
         """, fullNameUser, projectTitle, datasetTitle, datasetPid, projectUri);
   }
 
+  /**
+   * A pre-formatted message that informs a project collaborator about
+   * a dataset connection that has been removed by a teammate.
+   *
+   * @param fullNameUser the full name of the recipient
+   * @param projectTitle the title of the project the dataset was removed from
+   * @param datasetTitle the human-readable title of the dataset connection
+   * @param datasetPid   the persistent identifier (PID / DOI) of the dataset
+   * @param projectUri   a resolvable URL to the project in Data Manager
+   * @return the filled out template message
+   * @since 1.12.0
+   */
+  public static String datasetRemovedFromProject(String fullNameUser, String projectTitle,
+      String datasetTitle, String datasetPid, String projectUri) {
+    return String.format("""
+        Dear %s,
+
+        a dataset connection has been removed from the project '%s':
+
+          Title: %s
+          PID:   %s
+
+        Please open the project to see the current list of connected datasets:
+
+        %s
+        """, fullNameUser, projectTitle, datasetTitle, datasetPid, projectUri);
+  }
 }

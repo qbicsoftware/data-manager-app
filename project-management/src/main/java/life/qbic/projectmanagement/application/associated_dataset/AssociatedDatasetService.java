@@ -30,6 +30,7 @@ import life.qbic.projectmanagement.domain.model.associated_dataset.InvenioRdmRes
 import life.qbic.projectmanagement.domain.model.associated_dataset.ResourceMetadata;
 import life.qbic.projectmanagement.domain.model.associated_dataset.SourceType;
 import life.qbic.projectmanagement.domain.model.associated_dataset.event.AssociatedDatasetConnectedEvent;
+import life.qbic.projectmanagement.domain.model.associated_dataset.event.AssociatedDatasetRemovedEvent;
 import life.qbic.projectmanagement.domain.model.associated_dataset.repository.AssociatedDatasetRepository;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
@@ -378,6 +379,120 @@ public class AssociatedDatasetService {
         .flatMapSequential(this::connectDatasetAsync, BOUNDED_PARALLELISM);
   }
 
+  // ── Remove dataset ──────────────────────────────────────────────────────
+
+  /**
+   * Removes (soft-deletes) an existing dataset connection from a project.
+   *
+   * <p>The aggregate transitions to
+   * {@link life.qbic.projectmanagement.domain.model.associated_dataset.ConnectionState#REMOVED}
+   * and is retained in the database as an audit tombstone
+   * (ADR-0001). A {@link AssociatedDatasetRemovedEvent} is emitted so the
+   * collaborator-notification policy directive can inform other project
+   * members via email.</p>
+   *
+   * <p>Per ADR-0003, only users with {@code WRITE} permission on the
+   * parent project may remove a connection — callers must have resolved
+   * the project permission before invoking this method (the aggregate
+   * does not carry a separate ACL entry). If the caller lacks WRITE
+   * permission this method must not be invoked; the UI layer is
+   * responsible for hiding or disabling the remove action.</p>
+   *
+   * @param associatedDatasetIdStr the identifier of the dataset connection
+   *                               to remove (UUID string)
+   * @param removedByUserId        the user performing the removal;
+   *                               recorded in the emitted event as the
+   *                               actor (may differ from the original
+   *                               connector)
+   * @return success with the removed dataset's ID, or an error code
+   * @throws NullPointerException if either argument is {@code null}
+   * @since 1.12.0
+   */
+  public Result<AssociatedDatasetId, RemoveDatasetError> removeDataset(
+      String associatedDatasetIdStr, String removedByUserId) {
+    Objects.requireNonNull(associatedDatasetIdStr, "associatedDatasetId must not be null");
+    Objects.requireNonNull(removedByUserId, "removedByUserId must not be null");
+
+    // 1. Lookup the dataset — not found → DATASET_NOT_FOUND
+    var parsedId = AssociatedDatasetId.parse(associatedDatasetIdStr);
+    Optional<AssociatedDataset> datasetOpt;
+    try {
+      datasetOpt = associatedDatasetRepository.findById(parsedId);
+    } catch (Exception e) {
+      // Persistence/query failures are surfaced as REMOVAL_FAILED (the
+      // lookup is part of the removal process).
+      log.error("Repository lookup failed for dataset %s"
+          .formatted(associatedDatasetIdStr), e);
+      return Result.fromError(RemoveDatasetError.REMOVAL_FAILED);
+    }
+    if (datasetOpt.isEmpty()) {
+      log.warn("Dataset %s not found in repository — cannot remove"
+          .formatted(associatedDatasetIdStr));
+      return Result.fromError(RemoveDatasetError.DATASET_NOT_FOUND);
+    }
+    var dataset = datasetOpt.get();
+
+    // 2. If already removed, return DATASET_ALREADY_REMOVED.
+    //    (dataset.remove(…) would throw IllegalStateException for this —
+    //    translate cleanly rather than propagating the runtime exception.)
+    if (!dataset.isConnected()) {
+      log.info("Dataset %s is already in REMOVED state — skipping"
+          .formatted(associatedDatasetIdStr));
+      return Result.fromError(RemoveDatasetError.DATASET_ALREADY_REMOVED);
+    }
+
+    // 3. Set up local event dispatcher to cache events emitted during the
+    //    aggregate mutation, then forward them to the global domain event
+    //    dispatcher after save (collect-during, forward-after pattern).
+    List<DomainEvent> domainEventsCache = new ArrayList<>();
+    var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
+    localDomainEventDispatcher.reset();
+    localDomainEventDispatcher.subscribe(
+        new RemovedEventCollectorSubscriber(domainEventsCache));
+
+    // 4. Domain mutation (emits AssociatedDatasetRemovedEvent)
+    try {
+      dataset.remove(removedByUserId);
+    } catch (IllegalStateException e) {
+      // Defensive — already covered by the isConnected() check above,
+      // but keep as a safety net (e.g. concurrent remove race).
+      log.warn("Concurrent removal detected on dataset %s: %s"
+          .formatted(associatedDatasetIdStr, e.getMessage()));
+      return Result.fromError(RemoveDatasetError.DATASET_ALREADY_REMOVED);
+    } catch (Exception e) {
+      log.error("Domain mutation failed for dataset %s"
+          .formatted(associatedDatasetIdStr), e);
+      return Result.fromError(RemoveDatasetError.REMOVAL_FAILED);
+    }
+
+    // 5. Persist the state transition
+    try {
+      associatedDatasetRepository.save(dataset);
+    } catch (Exception e) {
+      log.error("Failed to persist removal of dataset %s"
+          .formatted(associatedDatasetIdStr), e);
+      return Result.fromError(RemoveDatasetError.REMOVAL_FAILED);
+    }
+
+    // 6. Forward cached events to the global dispatcher — same best-effort
+    //    semantics as connectDataset(): failure here is logged but does not
+    //    roll the removal back (the dataset state is already saved).
+    try {
+      domainEventsCache.forEach(
+          domainEvent -> DomainEventDispatcher.instance().dispatch(domainEvent));
+    } catch (Exception e) {
+      log.warn("Event dispatch failed while forwarding removal domain event "
+          + "after dataset removal on project %s; the removal itself succeeded, "
+          + "but collaborators may not have been notified: %s"
+          .formatted(dataset.projectId(), e.getMessage()));
+    }
+
+    log.info("Dataset %s removed from project %s by user %s"
+        .formatted(dataset.id(), dataset.projectId(), removedByUserId));
+
+    return Result.fromValue(dataset.id());
+  }
+
   // ── List connected datasets ─────────────────────────────────────────────
 
   /**
@@ -582,6 +697,33 @@ public class AssociatedDatasetService {
 
     @Override
     public void handleEvent(AssociatedDatasetConnectedEvent event) {
+      domainEventsCache.add(event);
+    }
+  }
+
+  /**
+   * Subscribes specifically to {@link AssociatedDatasetRemovedEvent}
+   * and caches it for later forwarding to the global
+   * {@link DomainEventDispatcher} (collect-during, forward-after
+   * pattern, same as {@code connectDataset()}).
+   *
+   * <p>The {@code LocalDomainEventDispatcher} uses <em>exact type
+   * matching</em> ({@code ==}) when filtering subscribers, so the
+   * subscriber must return the actual event class, not a parent type.</p>
+   *
+   * @since 1.12.0
+   */
+  private record RemovedEventCollectorSubscriber(
+      List<DomainEvent> domainEventsCache
+  ) implements DomainEventSubscriber<AssociatedDatasetRemovedEvent> {
+
+    @Override
+    public Class<? extends DomainEvent> subscribedToEventType() {
+      return AssociatedDatasetRemovedEvent.class;
+    }
+
+    @Override
+    public void handleEvent(AssociatedDatasetRemovedEvent event) {
       domainEventsCache.add(event);
     }
   }
