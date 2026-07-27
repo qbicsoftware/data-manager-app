@@ -496,8 +496,7 @@ public class AssociatedDatasetService {
 
   /**
    * Reactive counterpart of {@link #removeDataset}. Runs the blocking
-   * call on a {@link Schedulers#boundedElastic()} worker thread, with a
-   * per-request {@value #PER_REQUEST_TIMEOUT} timeout. Errors (including
+   * call on a {@link Schedulers#boundedElastic()} worker thread. Errors (including
    * timeout and infrastructure exceptions) are wrapped into a
    * {@link RemoveDatasetError#REMOVAL_FAILED} so the reactive stream
    * never terminates in {@code onError} — enabling the UI to show a
@@ -513,7 +512,6 @@ public class AssociatedDatasetService {
         // removeDataset resolves correctly.
         .contextWrite(ReactiveSecurityContextUtils.reactiveSecurity(securityContext))
         .subscribeOn(Schedulers.boundedElastic())
-        .timeout(PER_REQUEST_TIMEOUT)
         .onErrorResume(Throwable.class, t -> {
           // Safety net: any exception escaping removeDataset() (schema
           // errors, unexpected runtime exceptions, timeouts) is converted
