@@ -1,5 +1,6 @@
 package life.qbic.datamanager;
 
+import com.vaadin.flow.spring.annotation.VaadinTaskExecutor;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionHandler;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -31,6 +32,7 @@ public class AsyncConfig implements AsyncConfigurer {
   }
 
   @Bean
+  @VaadinTaskExecutor
   public DelegatingSecurityContextAsyncTaskExecutor taskExecutor() {
     return new DelegatingSecurityContextAsyncTaskExecutor(threadPoolTaskExecutor);
   }
