@@ -10,6 +10,7 @@ import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.DetachEvent;
 import com.vaadin.flow.component.button.Button;
+import life.qbic.datamanager.views.general.dialog.AlertDialog;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
@@ -49,7 +50,6 @@ import life.qbic.datamanager.views.general.dialog.DialogBody;
 import life.qbic.datamanager.views.general.dialog.DialogFooter;
 import life.qbic.datamanager.views.general.dialog.DialogHeader;
 import life.qbic.datamanager.views.general.icon.IconFactory;
-import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.CardCollection;
@@ -134,7 +134,6 @@ public class ExperimentDetailsComponent extends PageArea {
   private final Disclaimer noConfoundingVariablesDefined;
   private final transient TerminologyService terminologyService;
   private final transient MessageSourceNotificationFactory messageSourceNotificationFactory;
-  private final transient CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
   private final transient ConfoundingVariableService confoundingVariableService;
   private final transient AsyncProjectService asyncProjectService;
   private Context context;
@@ -148,7 +147,6 @@ public class ExperimentDetailsComponent extends PageArea {
       SpeciesLookupService ontologyTermInformationService,
       TerminologyService terminologyService,
       MessageSourceNotificationFactory messageSourceNotificationFactory,
-      CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
       ConfoundingVariableService confoundingVariableService,
       AsyncProjectService asyncProjectService) {
     this.confoundingVariableService = requireNonNull(confoundingVariableService);
@@ -161,7 +159,6 @@ public class ExperimentDetailsComponent extends PageArea {
     this.noExperimentalGroupsDefined = createNoGroupsDisclaimer();
     this.noConfoundingVariablesDefined = createNoConfoundingVariablesDisclaimer();
     this.terminologyService = terminologyService;
-    this.cancelConfirmationDialogFactory = requireNonNull(cancelConfirmationDialogFactory);
     this.addClassName("experiment-details-component");
     confoundingVariablesContainer = new Div();
     confoundingVariablesContainer.addClassNames("width-full", "height-full");
@@ -321,9 +318,13 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private void showCancelConfirmationDialog(EditExperimentDialog editExperimentDialog) {
-    cancelConfirmationDialogFactory.cancelConfirmationDialog(
-            it -> editExperimentDialog.close(),
-            "experiment.edit", getLocale())
+    AlertDialog.alert(this)
+        .warning()
+        .title("Discard changes?")
+        .message("By aborting the editing process and closing the dialog, you will lose all information entered.")
+        .confirmButton("Discard changes", () -> editExperimentDialog.close())
+        .cancelButton("Continue editing", () -> {})
+        .build()
         .open();
   }
 
@@ -655,9 +656,15 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private void showExistingSamplesPreventGroupEdit(int numberOfRegisteredSamples) {
-    ExistingSamplesPreventGroupEdit existingSamplesPreventGroupEdit = new ExistingSamplesPreventGroupEdit(
-        numberOfRegisteredSamples);
-    existingSamplesPreventGroupEdit.open();
+    AlertDialog.alert(this)
+        .error()
+        .title("Cannot edit experimental groups")
+        .message("Editing experimental groups is only possible if samples are not registered. You have %d sample%s registered.".formatted(
+            numberOfRegisteredSamples,
+            numberOfRegisteredSamples > 1 ? "s" : ""))
+        .confirmButton("Okay", () -> {})
+        .build()
+        .open();
   }
 
   private void addSampleSourceInformationComponent() {

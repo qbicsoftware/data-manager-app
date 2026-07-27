@@ -5,13 +5,12 @@ import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.component.UI;
-import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.server.ErrorEvent;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.exceptionhandling.ErrorMessageTranslationService.UserFriendlyErrorMessage;
-import life.qbic.datamanager.views.notifications.NotificationDialog;
+import life.qbic.datamanager.views.general.dialog.AlertDialog;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.associated_dataset.AssociatedDatasetServiceException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -126,9 +125,12 @@ public class UiExceptionHandler {
   }
 
   private void showErrorDialog(UserFriendlyErrorMessage userFriendlyError) {
-    NotificationDialog.errorDialog()
-        .withTitle(userFriendlyError.title())
-        .withContent(new Span(userFriendlyError.message()))
+    AlertDialog.alert(UI.getCurrent())
+        .error()
+        .title(userFriendlyError.title())
+        .message(userFriendlyError.message())
+        .confirmButton("Okay", () -> {})
+        .build()
         .open();
   }
 }

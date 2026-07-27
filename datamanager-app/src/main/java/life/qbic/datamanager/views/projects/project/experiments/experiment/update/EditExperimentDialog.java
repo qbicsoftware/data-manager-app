@@ -27,9 +27,9 @@ import java.util.Optional;
 import java.util.Set;
 import life.qbic.datamanager.views.events.UserCancelEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
+import life.qbic.datamanager.views.general.dialog.AlertDialog;
 import life.qbic.datamanager.views.projects.create.OntologyComboboxFactory;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.SampleOriginType;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExistingSamplesPreventSampleOriginEdit;
 import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
@@ -134,13 +134,14 @@ public class EditExperimentDialog extends DialogWindow {
   }
 
   private void showSamplesPreventOriginEdit(OntologyTerm species) {
-    ExistingSamplesPreventSampleOriginEdit samplesPreventSampleOriginEdit = new ExistingSamplesPreventSampleOriginEdit(
-        species.getLabel());
-    samplesPreventSampleOriginEdit.addConfirmListener(
-        confirmEvent -> confirmEvent.getSource().close());
-    samplesPreventSampleOriginEdit.addRejectListener(
-        rejectEvent -> rejectEvent.getSource().close());
-    samplesPreventSampleOriginEdit.open();
+    AlertDialog.alert(this)
+        .error()
+        .title("Cannot remove sample origin")
+        .message("'%s' cannot be deleted, as it is referenced in samples of this experiment.".formatted(
+            species.getLabel()))
+        .confirmButton("Okay", () -> {})
+        .build()
+        .open();
   }
 
   @Override

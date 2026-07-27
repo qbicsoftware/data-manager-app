@@ -38,6 +38,7 @@ import life.qbic.datamanager.views.general.dialog.DialogBody;
 import life.qbic.datamanager.views.general.dialog.DialogFooter;
 import life.qbic.datamanager.views.general.dialog.DialogHeader;
 import life.qbic.datamanager.views.general.download.DownloadComponent;
+import life.qbic.datamanager.views.general.dialog.AlertDialog;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.notifications.StyledNotification;
@@ -312,45 +313,30 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     if (measurementIds.isEmpty()) {
       return;
     }
-    MeasurementDeletionConfirmationNotification notification =
-        new MeasurementDeletionConfirmationNotification(
-            "Selected proteomics measurements will be deleted", measurementIds.size());
-    notification.open();
-    notification.addConfirmListener(event -> {
-      deletePxpMeasurements(measurementIds);
-      notification.close();
-    });
-    notification.addCancelListener(event -> notification.close());
+    AlertDialog.danger(this,
+        "Selected proteomics measurements will be deleted",
+        "Are you sure you want to delete %d measurements?".formatted(measurementIds.size()),
+        () -> deletePxpMeasurements(measurementIds)).open();
   }
 
   private void handleNgsDeletionRequest(Set<String> measurementIds) {
     if (measurementIds.isEmpty()) {
       return;
     }
-    MeasurementDeletionConfirmationNotification notification =
-        new MeasurementDeletionConfirmationNotification(
-            "Selected genomics measurements will be deleted", measurementIds.size());
-    notification.open();
-    notification.addConfirmListener(event -> {
-      deleteNgsMeasurements(measurementIds);
-      notification.close();
-    });
-    notification.addCancelListener(event -> notification.close());
+    AlertDialog.danger(this,
+        "Selected genomics measurements will be deleted",
+        "Are you sure you want to delete %d measurements?".formatted(measurementIds.size()),
+        () -> deleteNgsMeasurements(measurementIds)).open();
   }
 
   private void handleIpDeletionRequest(Set<String> measurementIds) {
     if (measurementIds.isEmpty()) {
       return;
     }
-    MeasurementDeletionConfirmationNotification notification =
-        new MeasurementDeletionConfirmationNotification(
-            "Selected immunopeptidomics measurements will be deleted", measurementIds.size());
-    notification.open();
-    notification.addConfirmListener(event -> {
-      deleteIpMeasurements(measurementIds);
-      notification.close();
-    });
-    notification.addCancelListener(event -> notification.close());
+    AlertDialog.danger(this,
+        "Selected immunopeptidomics measurements will be deleted",
+        "Are you sure you want to delete %d measurements?".formatted(measurementIds.size()),
+        () -> deleteIpMeasurements(measurementIds)).open();
   }
 
   private void deleteNgsMeasurements(Set<String> measurementIds) {

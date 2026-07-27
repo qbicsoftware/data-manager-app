@@ -29,6 +29,7 @@ import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.account.UserAvatar;
 import life.qbic.datamanager.views.general.PageArea;
+import life.qbic.datamanager.views.general.dialog.AlertDialog;
 import life.qbic.datamanager.views.general.oidc.OidcLogo;
 import life.qbic.datamanager.views.general.oidc.OidcType;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
@@ -188,6 +189,18 @@ public class ProjectAccessComponent extends PageArea {
           if (!userPermissions.changeProjectAccess(context.projectId().orElseThrow())) {
             return new Span();
           }
+          //You can't remove or edit your own role
+          if (isCurrentUser(projectUser)) {
+            return new Span();
+          }
+          //You can't remove or edit the project owner
+          if (projectUser.projectRole() == ProjectRole.OWNER) {
+            return new Span();
+          }
+          //You don't have the rights to change the user
+          if (!userPermissions.changeProjectAccess(context.projectId().orElseThrow())) {
+            return new Span();
+          }
           return changeProjectAccessCell(projectUser);
         })
         .setHeader("Action")
@@ -218,13 +231,11 @@ public class ProjectAccessComponent extends PageArea {
             "You don't have permission to remove the user from this project");
         return;
       }
-      ProjectUserRemovalConfirmationNotification projectUserRemovalConfirmationNotification = new ProjectUserRemovalConfirmationNotification(
-          projectUser);
-      projectUserRemovalConfirmationNotification.addConfirmListener(
-          event -> removeCollaborator(projectUser));
-      projectUserRemovalConfirmationNotification.addCancelListener(
-          event -> projectUserRemovalConfirmationNotification.close());
-      projectUserRemovalConfirmationNotification.open();
+      AlertDialog.danger(this,
+          "Remove user from project",
+          "Are you sure you want to remove the user %s from the project?".formatted(
+              projectUser.userName()),
+          () -> removeCollaborator(projectUser)).open();
     });
     //We want to ensure that even if the frontend components are shown no event is propagated
     // if the user doesn't have the correct role or tries to edit himself/the project owner

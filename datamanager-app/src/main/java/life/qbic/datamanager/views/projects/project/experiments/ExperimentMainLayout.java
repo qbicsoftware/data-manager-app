@@ -25,7 +25,6 @@ import life.qbic.datamanager.views.DataManagerLayout;
 import life.qbic.datamanager.views.general.DataManagerMenu;
 import life.qbic.datamanager.views.general.footer.FooterComponentFactory;
 import life.qbic.datamanager.views.navigation.ProjectSideNavigationComponent;
-import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentNavigationComponent.RoutingTab;
@@ -71,7 +70,6 @@ public class ExperimentMainLayout extends DataManagerLayout implements BeforeEnt
       @Autowired SpeciesLookupService ontologyTermInformationService,
       @Autowired FooterComponentFactory footerComponentFactory,
       @Autowired  TerminologyService terminologyService,
-      @Autowired CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
       @Autowired MessageSourceNotificationFactory messageSourceNotificationFactory,
       @Autowired AnnouncementService announcementService) {
     super(requireNonNull(footerComponentFactory), announcementService);
@@ -91,7 +89,7 @@ public class ExperimentMainLayout extends DataManagerLayout implements BeforeEnt
     this.projectSideNavigationComponent = new ProjectSideNavigationComponent(
         projectInformationService, experimentInformationService, addExperimentToProjectService,
         userPermissions, ontologyTermInformationService, terminologyService,
-        cancelConfirmationDialogFactory, messageSourceNotificationFactory);
+messageSourceNotificationFactory);
     initializeNavbar();
     initializeAppDrawer();
     addClassName("experiment-main-layout");

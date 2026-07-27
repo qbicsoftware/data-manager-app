@@ -31,8 +31,8 @@ import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.DisclaimerConfirmedEvent;
 import life.qbic.datamanager.views.general.Main;
+import life.qbic.datamanager.views.general.dialog.AlertDialog;
 import life.qbic.datamanager.views.general.download.DownloadComponent;
-import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
@@ -96,7 +96,6 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   private final Disclaimer noGroupsDefinedDisclaimer;
   private final Disclaimer noSamplesRegisteredDisclaimer;
   private final transient ProjectInformationService projectInformationService;
-  private final transient CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
   private final transient MessageSourceNotificationFactory notificationFactory;
   private final transient SampleValidationService sampleValidationService;
   private final transient SampleRegistrationServiceV2 sampleRegistrationServiceV2;
@@ -113,7 +112,6 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
       @Autowired SampleInformationService sampleInformationService,
       @Autowired AsyncProjectService asyncProjectService,
       ProjectInformationService projectInformationService,
-      CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
       MessageSourceNotificationFactory notificationFactory,
       SampleValidationService sampleValidationService,
       SampleRegistrationServiceV2 sampleRegistrationServiceV2,
@@ -132,8 +130,6 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     this.batchDetailsComponent = new BatchDetailsComponent(requireNonNull(batchInformationService),
         requireNonNull(clientDetailsProvider));
     this.projectInformationService = projectInformationService;
-    this.cancelConfirmationDialogFactory = requireNonNull(cancelConfirmationDialogFactory,
-        "cancelConfirmationDialogFactory must not be null");
     this.notificationFactory = requireNonNull(notificationFactory,
         "messageSourceNotificationFactory must not be null");
     this.sampleValidationService = sampleValidationService;
@@ -340,8 +336,13 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   }
 
   private void showCancelConfirmationDialog(RegisterSampleBatchDialog dialog) {
-    cancelConfirmationDialogFactory.cancelConfirmationDialog(it -> dialog.close(),
-            "sample-batch.register", getLocale())
+    AlertDialog.alert(this)
+        .warning()
+        .title("Discard changes?")
+        .message("By aborting the editing process and closing the dialog, you will lose all information entered.")
+        .confirmButton("Discard changes", () -> dialog.close())
+        .cancelButton("Continue editing", () -> {})
+        .build()
         .open();
   }
 
@@ -402,9 +403,12 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   }
 
   private void displayUpdateFailure() {
-    notificationFactory.dialog("sample-batch.update.failure",
-            MessageSourceNotificationFactory.EMPTY_PARAMETERS,
-            getLocale())
+    AlertDialog.alert(this)
+        .error()
+        .title("Didn't update sample batch.")
+        .message("We are sorry! The sample batch update failed. Please try again.")
+        .confirmButton("Okay", () -> {})
+        .build()
         .open();
   }
 
@@ -477,11 +481,13 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   }
 
   private void showCancelConfirmationDialog(EditSampleBatchDialog editBatchDialog) {
-    cancelConfirmationDialogFactory
-        .cancelConfirmationDialog(
-            it -> editBatchDialog.close(),
-            "sample-batch.edit",
-            getLocale())
+    AlertDialog.alert(this)
+        .warning()
+        .title("Discard changes?")
+        .message("By aborting the editing process and closing the dialog, you will lose all information entered.")
+        .confirmButton("Discard changes", () -> editBatchDialog.close())
+        .cancelButton("Continue editing", () -> {})
+        .build()
         .open();
   }
 
@@ -493,14 +499,10 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   }
 
   private void onDeleteBatchClicked(DeleteBatchEvent deleteBatchEvent) {
-    BatchDeletionConfirmationNotification batchDeletionConfirmationNotification = new BatchDeletionConfirmationNotification();
-    batchDeletionConfirmationNotification.open();
-    batchDeletionConfirmationNotification.addConfirmListener(event -> {
-      deleteBatch(deleteBatchEvent);
-      batchDeletionConfirmationNotification.close();
-    });
-    batchDeletionConfirmationNotification.addCancelListener(
-        event -> batchDeletionConfirmationNotification.close());
+    AlertDialog.danger(this,
+        "Samples within batch will be deleted",
+        "Deleting this Batch will also delete the samples contained within. Proceed?",
+        () -> deleteBatch(deleteBatchEvent)).open();
   }
 
   /**

@@ -13,6 +13,7 @@ import java.time.Duration;
 import java.time.format.DateTimeParseException;
 import java.util.Locale;
 import java.util.Optional;
+import life.qbic.datamanager.views.general.dialog.AlertDialog;
 import life.qbic.logging.api.Logger;
 import org.springframework.context.MessageSource;
 import org.springframework.context.NoSuchMessageException;
@@ -139,26 +140,12 @@ public class MessageSourceNotificationFactory {
   }
 
   /**
-   * Creates a dialog notification with the contents found for the message key. This method produces
-   * a notification dialog with the link text read from the message properties file.
+   * Creates a dialog notification with the contents found for the message key.
    *
-   * <p>
-   * The following message keys have to be present:
-   * <ul>
-   *   <li>{@code <key>.title} - the title; optional
-   *   <li>{@code <key>.level} - the level; mandatory
-   *   <li>{@code <key>.message.type} - the type (text or html); mandatory
-   *   <li>{@code <key>.message.text} - the text; mandatory
-   *   <li>{@code <key>.confirm-text} - the text of the confirm button; optional
-   * </ul>
-   * <p>
-   * For more information please see dialog-notifications.properties
-   *
-   * @param key        the key for the messages
-   * @param parameters parameters to use in the message
-   * @param locale     the locale for which to load the message
-   * @return a notification dialog with loaded content
+   * @deprecated Use {@link AlertDialog} directly instead. This method will be removed in a future
+   *             version. See {@code front-end-components.md} for the migration guide.
    */
+  @Deprecated(since = "1.12.0", forRemoval = true)
   public NotificationDialog dialog(String key, Object[] parameters, Locale locale) {
     MessageType type = parseMessageType(key, locale);
     String messageText = parseMessage(key, parameters, locale);
