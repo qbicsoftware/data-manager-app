@@ -12,8 +12,6 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ForkJoinPool;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
@@ -29,7 +27,6 @@ import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.associated_dataset.AssociatedDatasetService;
 import life.qbic.projectmanagement.application.associated_dataset.ConnectedDatasetView;
 import life.qbic.projectmanagement.application.associated_dataset.RemoveDatasetError;
-import life.qbic.projectmanagement.domain.model.associated_dataset.AssociatedDatasetId;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -172,59 +169,57 @@ public class ConnectedDatasetsMain extends Main implements BeforeEnterObserver {
         "This will disconnect the dataset '" + view.title() + "' ("
             + view.pid() + ") from the project. The connection can be "
             + "re-established at any time.",
-        () -> performRemoveAsync(datasetId))
+        () -> performRemove(datasetId, view.title()))
         .open();
   }
 
   /**
-   * Runs {@code removeDataset} on a background thread, wrapping the
-   * blocking call in a {@link CompletableFuture}. A pending-task toast
-   * is shown immediately; it is replaced by a success or error toast when
-   * the async call completes. UI updates happen through {@link UiHandle},
-   * which safely routes the callback back onto the Vaadin UI thread and
-   * pushes it to the client (if Push is enabled on the app).
+   * Kicks off the removal via
+   * {@link AssociatedDatasetService#removeDatasetAsync(String, String)}
+   * (which wraps the blocking service call on a bounded-elastic worker
+   * thread). A pending toast is shown immediately; it is closed in an
+   * {@code doFinally} terminal handler so it is always replaced by a
+   * success or error toast regardless of failure mode.
    *
-   * <p>The dialog has already closed when this method runs (the
-   * {@link AlertDialog#danger(Component, String, String, life.qbic.datamanager.views.general.dialog.DialogAction)}
-   * factory closes the dialog inside the confirm action wrapper) — the
-   * visible feedback for the user is therefore the pending toast,
-   * followed by either a success or failure toast.</p>
+   * <p>The {@link AlertDialog#danger(Component, String, String, life.qbic.datamanager.views.general.dialog.DialogAction)}
+   * factory already closes the dialog inside the confirm-action wrapper,
+   * so the user's visible feedback is the pending toast, followed by the
+   * result toast.</p>
    */
-  private void performRemoveAsync(String datasetId) {
+  private void performRemove(String datasetId, String datasetTitle) {
     var userId = resolveCurrentUserId();
 
-    // Pending-task toast: stays open (duration set to ZERO inside
-    // {@link MessageSourceNotificationFactory#pendingTaskToast}) until
-    // closed manually in the whenComplete callback.
+    // Stays open until closed by the terminal doFinally handler below.
     Toast pendingToast = notificationFactory.pendingTaskToast(
         "dataset.removing.in-progress", EMPTY_PARAMETERS, getLocale());
     pendingToast.open();
 
-    final CompletableFuture<Result<AssociatedDatasetId, RemoveDatasetError>> future =
-        CompletableFuture.supplyAsync(
-            () -> associatedDatasetService.removeDataset(datasetId, userId),
-            ForkJoinPool.commonPool());
-
-    future.whenComplete((result, error) -> uiHandle.onUiAndPush(() -> {
-      // Always close the pending indicator.
-      pendingToast.close();
-
-      if (error != null) {
-        log.error("Async remove pipeline failed for dataset %s: %s"
-            .formatted(datasetId, error.getMessage()), error);
-        notificationFactory.toast("dataset.removed.failure",
-            EMPTY_PARAMETERS, getLocale()).open();
-        return;
-      }
-
-      if (result.isError()) {
-        handleRemoveError(result.getError());
-      } else {
-        notificationFactory.toast("dataset.removed.success",
-            EMPTY_PARAMETERS, getLocale()).open();
-        connectedResourcesComponent.refresh();
-      }
-    }));
+    associatedDatasetService.removeDatasetAsync(datasetId, userId)
+        // Always close the pending indicator on the UI thread.
+        .doFinally(signal -> uiHandle.onUiAndPush(pendingToast::close))
+        .subscribe(
+            // Success path — the application-layer onErrorResume
+            // converts every throwable into a REMOVAL_FAILED Result,
+            // so a real error signal here is unexpected.
+            result -> uiHandle.onUiAndPush(() -> {
+              if (result.isError()) {
+                handleRemoveError(result.getError());
+              } else {
+                notificationFactory.toast("dataset.removed.success",
+                    EMPTY_PARAMETERS, getLocale()).open();
+                connectedResourcesComponent.refresh();
+              }
+            }),
+            // onError — defensive: the service layer converts any
+            // throwable into a REMOVAL_FAILED Result, so this should
+            // never fire. Kept as a safety net and a log entry.
+            error -> uiHandle.onUiAndPush(() -> {
+              log.error("Unexpected error on remove subscription for dataset %s: %s"
+                  .formatted(datasetId, error.getMessage()), error);
+              notificationFactory.toast("dataset.removed.failure",
+                  EMPTY_PARAMETERS, getLocale()).open();
+            })
+        );
   }
 
   private static final Object[] EMPTY_PARAMETERS = new Object[]{ };

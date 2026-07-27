@@ -493,6 +493,41 @@ public class AssociatedDatasetService {
     return Result.fromValue(dataset.id());
   }
 
+  // ── Reactive (non-blocking) remove ──────────────────────────────────────
+
+  /**
+   * Reactive counterpart of {@link #removeDataset}. Runs the blocking
+   * call on a {@link Schedulers#boundedElastic()} worker thread, with a
+   * per-request {@value #PER_REQUEST_TIMEOUT} timeout. Errors (including
+   * timeout and infrastructure exceptions) are wrapped into a
+   * {@link RemoveDatasetError#REMOVAL_FAILED} so the reactive stream
+   * never terminates in {@code onError} — enabling the UI to show a
+   * generic failure toast while the application log captures the full
+   * cause.
+   */
+  public Mono<Result<AssociatedDatasetId, RemoveDatasetError>> removeDatasetAsync(
+      String associatedDatasetId, String removedByUserId) {
+    SecurityContext securityContext = SecurityContextHolder.getContext();
+    return Mono.fromCallable(() -> removeDataset(associatedDatasetId, removedByUserId))
+        // Propagate the caller's SecurityContext to the boundedElastic
+        // worker thread so Spring Security {@code @PreAuthorize} on
+        // removeDataset resolves correctly.
+        .contextWrite(ReactiveSecurityContextUtils.reactiveSecurity(securityContext))
+        .subscribeOn(Schedulers.boundedElastic())
+        .timeout(PER_REQUEST_TIMEOUT)
+        .onErrorResume(Throwable.class, t -> {
+          // Safety net: any exception escaping removeDataset() (schema
+          // errors, unexpected runtime exceptions, timeouts) is converted
+          // into REMOVAL_FAILED so the UI can show a generic failure
+          // toast. The log.error here is critical — without it, uncaught
+          // errors become silent failures only visible in the application
+          // log, not in the user's feedback.
+          log.error("Async remove pipeline failed for dataset %s: %s"
+              .formatted(associatedDatasetId, t.getMessage()), t);
+          return Mono.just(Result.fromError(RemoveDatasetError.REMOVAL_FAILED));
+        });
+  }
+
   // ── List connected datasets ─────────────────────────────────────────────
 
   /**
