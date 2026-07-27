@@ -3,6 +3,7 @@ package life.qbic.datamanager.views.projects.project.datasets;
 import static java.util.Objects.requireNonNull;
 
 import com.vaadin.flow.component.AttachEvent;
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.DetachEvent;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
@@ -169,7 +170,7 @@ public class ConnectedDatasetsMain extends Main implements BeforeEnterObserver {
         "This will disconnect the dataset '" + view.title() + "' ("
             + view.pid() + ") from the project. The connection can be "
             + "re-established at any time.",
-        () -> performRemove(datasetId, view.title()))
+        () -> performRemove(datasetId))
         .open();
   }
 
@@ -186,7 +187,7 @@ public class ConnectedDatasetsMain extends Main implements BeforeEnterObserver {
    * so the user's visible feedback is the pending toast, followed by the
    * result toast.</p>
    */
-  private void performRemove(String datasetId, String datasetTitle) {
+  private void performRemove(String datasetId) {
     var userId = resolveCurrentUserId();
 
     // Stays open until closed by the terminal doFinally handler below.

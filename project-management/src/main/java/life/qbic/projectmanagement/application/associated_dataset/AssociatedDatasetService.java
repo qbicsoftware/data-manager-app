@@ -430,7 +430,7 @@ public class AssociatedDatasetService {
           .formatted(associatedDatasetIdStr));
       return Result.fromError(RemoveDatasetError.DATASET_NOT_FOUND);
     }
-    var dataset = datasetOpt.get();
+    var dataset = datasetOpt.orElseThrow();
 
     // 2. If already removed, return DATASET_ALREADY_REMOVED.
     //    (dataset.remove(…) would throw IllegalStateException for this —
@@ -460,7 +460,7 @@ public class AssociatedDatasetService {
           .formatted(associatedDatasetIdStr, e.getMessage()));
       return Result.fromError(RemoveDatasetError.DATASET_ALREADY_REMOVED);
     } catch (Exception e) {
-      log.error("Domain mutation failed for dataset %s"
+      log.error("Failed removing dataset. Domain mutation failed for dataset %s"
           .formatted(associatedDatasetIdStr), e);
       return Result.fromError(RemoveDatasetError.REMOVAL_FAILED);
     }
@@ -482,9 +482,8 @@ public class AssociatedDatasetService {
           domainEvent -> DomainEventDispatcher.instance().dispatch(domainEvent));
     } catch (Exception e) {
       log.warn("Event dispatch failed while forwarding removal domain event "
-          + "after dataset removal on project %s; the removal itself succeeded, "
-          + "but collaborators may not have been notified: %s"
-          .formatted(dataset.projectId(), e.getMessage()));
+          + "after dataset removal on project %s; the removal itself succeeded, ".formatted(dataset.projectId())
+          + "but collaborators may not have been notified: %s".formatted(e.getMessage()));
     }
 
     log.info("Dataset %s removed from project %s by user %s"
