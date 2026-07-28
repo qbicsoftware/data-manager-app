@@ -129,7 +129,7 @@ public class UiExceptionHandler {
         .error()
         .title(userFriendlyError.title())
         .message(userFriendlyError.message())
-        .confirmButton("Okay", () -> {})
+        .confirmButton("Got it", () -> {})
         .build()
         .open();
   }

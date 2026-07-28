@@ -33,12 +33,12 @@ import life.qbic.datamanager.views.UiHandle;
 import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.InfoBox;
 import life.qbic.datamanager.views.general.Main;
+import life.qbic.datamanager.views.general.dialog.AlertDialog;
 import life.qbic.datamanager.views.general.dialog.AppDialog;
 import life.qbic.datamanager.views.general.dialog.DialogBody;
 import life.qbic.datamanager.views.general.dialog.DialogFooter;
 import life.qbic.datamanager.views.general.dialog.DialogHeader;
 import life.qbic.datamanager.views.general.download.DownloadComponent;
-import life.qbic.datamanager.views.general.dialog.AlertDialog;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.notifications.StyledNotification;
@@ -315,7 +315,10 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     }
     AlertDialog.danger(this,
         "Selected proteomics measurements will be deleted",
-        "Are you sure you want to delete %d measurements?".formatted(measurementIds.size()),
+        "Are you sure you want to delete %d measurement%s?".formatted(measurementIds.size(),
+            measurementIds.size() > 1 ? "s" : ""),
+        "Delete measurements",
+        "Keep measurements",
         () -> deletePxpMeasurements(measurementIds)).open();
   }
 
@@ -325,7 +328,10 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     }
     AlertDialog.danger(this,
         "Selected genomics measurements will be deleted",
-        "Are you sure you want to delete %d measurements?".formatted(measurementIds.size()),
+        "Are you sure you want to delete %d measurement%s?".formatted(measurementIds.size(),
+            measurementIds.size() > 1 ? "s" : ""),
+        "Delete measurements",
+        "Keep measurements",
         () -> deleteNgsMeasurements(measurementIds)).open();
   }
 
@@ -335,7 +341,10 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     }
     AlertDialog.danger(this,
         "Selected immunopeptidomics measurements will be deleted",
-        "Are you sure you want to delete %d measurements?".formatted(measurementIds.size()),
+        "Are you sure you want to delete %d measurement%s?".formatted(measurementIds.size(),
+            measurementIds.size() > 1 ? "s" : ""),
+        "Delete measurements",
+        "Keep measurements",
         () -> deleteIpMeasurements(measurementIds)).open();
   }
 

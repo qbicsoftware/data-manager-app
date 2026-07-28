@@ -78,6 +78,8 @@ public class PersonalAccessTokenMain extends Main implements BeforeEnterObserver
     AlertDialog.danger(this,
         "Personal Access Token will be deleted",
         "Deleting this Personal Access Token will make it unusable. Proceed?",
+        "Delete token",
+        "Keep token",
         () -> {
           var userId = userIdTranslator.translateToUserId(
                   SecurityContextHolder.getContext().getAuthentication())

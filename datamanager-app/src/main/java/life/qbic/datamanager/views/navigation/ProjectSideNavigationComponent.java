@@ -339,8 +339,8 @@ private static void routeToProject(ProjectId projectId) {
         .warning()
         .title("Discard changes?")
         .message("By aborting the editing process and closing the dialog, you will lose all information entered.")
-        .confirmButton("Discard", creationDialog::close)
-        .cancelButton("Cancel", () -> {})
+        .confirmButton("Discard changes", creationDialog::close)
+        .cancelButton("Keep editing", () -> {})
         .build()
         .open();
   }

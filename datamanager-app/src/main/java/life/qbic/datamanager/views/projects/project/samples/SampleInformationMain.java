@@ -340,8 +340,8 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
         .warning()
         .title("Discard changes?")
         .message("By aborting the editing process and closing the dialog, you will lose all information entered.")
-        .confirmButton("Discard", () -> dialog.close())
-        .cancelButton("Cancel", () -> {})
+        .confirmButton("Discard changes", () -> dialog.close())
+        .cancelButton("Keep editing", () -> {})
         .build()
         .open();
   }
@@ -407,7 +407,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
         .error()
         .title("Didn't update sample batch.")
         .message("We are sorry! The sample batch update failed. Please try again.")
-        .confirmButton("Okay", () -> {})
+        .confirmButton("Got it", () -> {})
         .build()
         .open();
   }
@@ -485,8 +485,8 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
         .warning()
         .title("Discard changes?")
         .message("By aborting the editing process and closing the dialog, you will lose all information entered.")
-        .confirmButton("Discard", () -> editBatchDialog.close())
-        .cancelButton("Cancel", () -> {})
+        .confirmButton("Discard changes", () -> editBatchDialog.close())
+        .cancelButton("Keep editing", () -> {})
         .build()
         .open();
   }
@@ -502,6 +502,8 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     AlertDialog.danger(this,
         "Samples within batch will be deleted",
         "Deleting this Batch will also delete the samples contained within. Proceed?",
+        "Delete batch",
+        "Keep batch",
         () -> deleteBatch(deleteBatchEvent)).open();
   }
 

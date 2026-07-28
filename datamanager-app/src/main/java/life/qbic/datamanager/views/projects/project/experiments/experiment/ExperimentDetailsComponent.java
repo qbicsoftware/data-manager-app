@@ -322,8 +322,8 @@ public class ExperimentDetailsComponent extends PageArea {
         .warning()
         .title("Discard changes?")
         .message("By aborting the editing process and closing the dialog, you will lose all information entered.")
-        .confirmButton("Discard", () -> editExperimentDialog.close())
-        .cancelButton("Cancel", () -> {})
+        .confirmButton("Discard changes", editExperimentDialog::close)
+        .cancelButton("Keep editing", () -> {})
         .build()
         .open();
   }
@@ -662,7 +662,7 @@ public class ExperimentDetailsComponent extends PageArea {
         .message("Editing experimental groups is only possible if samples are not registered. You have %d sample%s registered.".formatted(
             numberOfRegisteredSamples,
             numberOfRegisteredSamples > 1 ? "s" : ""))
-        .confirmButton("Okay", () -> {})
+        .confirmButton("Got it", () -> {})
         .build()
         .open();
   }

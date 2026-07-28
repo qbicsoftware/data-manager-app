@@ -195,6 +195,8 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
     AlertDialog.danger(this,
         "Offer will be deleted",
         "Are you sure you want to delete this offer?",
+        "Delete offer",
+        "Keep offer",
         () -> {
           projectPurchaseService.deleteOffer(context.projectId().orElseThrow().value(),
               deleteOfferClickEvent.offerId());
@@ -252,6 +254,8 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
     AlertDialog.danger(this,
         "Quality control will be deleted",
         "Are you sure you want to delete this file?",
+        "Delete file",
+        "Keep file",
         () -> {
           qualityControlService.deleteQualityControl(context.projectId().orElseThrow().value(),
               deleteQualityControlEvent.qualityControlId());
@@ -346,8 +350,8 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
         .warning()
         .title("Discard changes?")
         .message("By aborting the editing process and closing the dialog, you will lose all information entered.")
-        .confirmButton("Discard", () -> creationDialog.close())
-        .cancelButton("Cancel", () -> {})
+        .confirmButton("Discard changes", () -> creationDialog.close())
+        .cancelButton("Keep editing", () -> {})
         .build()
         .open();
   }

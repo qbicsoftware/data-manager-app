@@ -223,6 +223,8 @@ public class ProjectAccessComponent extends PageArea {
           "Remove user from project",
           "Are you sure you want to remove the user %s from the project?".formatted(
               projectUser.userName()),
+          "Remove user",
+          "Keep user",
           () -> removeCollaborator(projectUser)).open();
     });
     //We want to ensure that even if the frontend components are shown no event is propagated

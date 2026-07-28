@@ -146,8 +146,8 @@ public class AddProjectDialog extends QbicDialog {
         .warning()
         .title("Discard changes?")
         .message("By aborting the editing process and closing the dialog, you will lose all information entered.")
-        .confirmButton("Discard", () -> close())
-        .cancelButton("Cancel", () -> {})
+        .confirmButton("Discard changes", () -> close())
+        .cancelButton("Keep editing", () -> {})
         .build()
         .open();
   }

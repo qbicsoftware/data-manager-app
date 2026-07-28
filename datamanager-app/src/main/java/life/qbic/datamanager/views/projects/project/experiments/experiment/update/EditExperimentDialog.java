@@ -139,7 +139,7 @@ public class EditExperimentDialog extends DialogWindow {
         .title("Cannot remove sample origin")
         .message("'%s' cannot be deleted, as it is referenced in samples of this experiment.".formatted(
             species.getLabel()))
-        .confirmButton("Okay", () -> {})
+        .confirmButton("Got it", () -> {})
         .build()
         .open();
   }
