@@ -144,7 +144,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
 
       var file = RawDataUrlFile.create(ids);
       var streamProvider = createStreamProvider(FileNameFormatter.formatWithTimestampedSimple(
-          LocalDate.now(), projectCode, "proteomics_measurement_dataset_locations", "txt"), file);
+          LocalDate.now(), projectCode, "ngs_measurement_dataset_locations", "txt"), file);
       downloadComponent.trigger(streamProvider);
     });
   }
@@ -168,7 +168,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
 
       var file = RawDataUrlFile.create(ids);
       var streamProvider = createStreamProvider(FileNameFormatter.formatWithTimestampedSimple(
-          LocalDate.now(), projectCode, "ngs_measurement_dataset_locations", "txt"), file);
+          LocalDate.now(), projectCode, "proteomics_measurement_dataset_locations", "txt"), file);
       downloadComponent.trigger(streamProvider);
     });
   }
