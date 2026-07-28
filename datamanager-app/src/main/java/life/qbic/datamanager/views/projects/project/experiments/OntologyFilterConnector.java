@@ -8,7 +8,6 @@ import life.qbic.application.commons.SortOrder;
 import life.qbic.projectmanagement.application.ontology.OntologyClass;
 import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
-import life.qbic.projectmanagement.domain.model.Ontology;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 
 /**

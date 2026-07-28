@@ -8,7 +8,6 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.Measureme
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationPxP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementSpecificNGS;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementSpecificPxP;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationPxP;
 
 /**
  * <b>Validation Rule</b>
