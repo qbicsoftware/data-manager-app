@@ -38,6 +38,7 @@ import life.qbic.projectmanagement.application.concurrent.VirtualThreadScheduler
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.measurement.MeasurementLookupService;
 import life.qbic.projectmanagement.application.policy.AssociatedDatasetConnectedPolicy;
+import life.qbic.projectmanagement.application.policy.AssociatedDatasetRemovedPolicy;
 import life.qbic.projectmanagement.application.policy.BatchRegisteredPolicy;
 import life.qbic.projectmanagement.application.policy.ExperimentCreatedPolicy;
 import life.qbic.projectmanagement.application.policy.ExperimentUpdatedPolicy;
@@ -54,6 +55,7 @@ import life.qbic.projectmanagement.application.policy.directive.AddSampleToBatch
 import life.qbic.projectmanagement.application.policy.directive.CreateNewSampleStatisticsEntry;
 import life.qbic.projectmanagement.application.policy.directive.DeleteSampleFromBatch;
 import life.qbic.projectmanagement.application.policy.directive.InformProjectCollaboratorsAboutDatasetConnection;
+import life.qbic.projectmanagement.application.policy.directive.InformProjectCollaboratorsAboutDatasetRemoval;
 import life.qbic.projectmanagement.application.policy.directive.InformUserAboutGrantedAccess;
 import life.qbic.projectmanagement.application.policy.directive.InformUsersAboutBatchRegistration;
 import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponBatchCreation;
@@ -344,6 +346,20 @@ public class AppConfig {
         emailService, projectAccessService, userInformationService, projectInformationService,
         appContextProvider, jobScheduler);
     return new AssociatedDatasetConnectedPolicy(informCollaborators);
+  }
+
+  @Bean
+  public AssociatedDatasetRemovedPolicy associatedDatasetRemovedPolicy(
+      life.qbic.projectmanagement.application.communication.EmailService emailService,
+      ProjectAccessService projectAccessService,
+      UserInformationService userInformationService,
+      ProjectInformationService projectInformationService,
+      AppContextProvider appContextProvider,
+      JobScheduler jobScheduler) {
+    var informCollaborators = new InformProjectCollaboratorsAboutDatasetRemoval(
+        emailService, projectAccessService, userInformationService,
+        projectInformationService, appContextProvider, jobScheduler);
+    return new AssociatedDatasetRemovedPolicy(informCollaborators);
   }
 
   /*
