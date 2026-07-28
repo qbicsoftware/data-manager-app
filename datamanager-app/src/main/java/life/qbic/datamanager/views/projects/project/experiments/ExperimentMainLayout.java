@@ -69,7 +69,7 @@ public class ExperimentMainLayout extends DataManagerLayout implements BeforeEnt
       @Autowired UserPermissions userPermissions,
       @Autowired SpeciesLookupService ontologyTermInformationService,
       @Autowired FooterComponentFactory footerComponentFactory,
-      @Autowired  TerminologyService terminologyService,
+      @Autowired TerminologyService terminologyService,
       @Autowired MessageSourceNotificationFactory messageSourceNotificationFactory,
       @Autowired AnnouncementService announcementService) {
     super(requireNonNull(footerComponentFactory), announcementService);
@@ -89,7 +89,7 @@ public class ExperimentMainLayout extends DataManagerLayout implements BeforeEnt
     this.projectSideNavigationComponent = new ProjectSideNavigationComponent(
         projectInformationService, experimentInformationService, addExperimentToProjectService,
         userPermissions, ontologyTermInformationService, terminologyService,
-messageSourceNotificationFactory);
+        messageSourceNotificationFactory);
     initializeNavbar();
     initializeAppDrawer();
     addClassName("experiment-main-layout");
