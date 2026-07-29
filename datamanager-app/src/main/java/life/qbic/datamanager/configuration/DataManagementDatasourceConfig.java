@@ -89,7 +89,11 @@ public class DataManagementDatasourceConfig {
         .packages("life.qbic.projectmanagement", "life.qbic.identity",
             "life.qbic.datamanager.announcements")
         .properties(Map.of(
-            "hibernate.hbm2ddl.auto", hibernateDdlAuto
+            "hibernate.hbm2ddl.auto", hibernateDdlAuto,
+            // Force UTC for all TIMESTAMP ↔ Instant conversions so that event
+            // timestamps (connectedOn, lastSyncedAt, ...) have consistent
+            // semantics regardless of the JVM host's default timezone.
+            "hibernate.jdbc.time_zone", "UTC"
         ))
         .build();
   }

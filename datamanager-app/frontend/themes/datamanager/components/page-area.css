@@ -625,3 +625,12 @@
   align-items: center;
   column-gap: var(--lumo-space-s);
 }
+
+/*
+ * Datasets view: Connected Resources section.
+ * Placed into the `datasets-content` grid area defined in grid-templates.css
+ * for `.main.project.datasets`, which spans the full available width.
+ */
+.datasets-content {
+  grid-area: datasets-content;
+}

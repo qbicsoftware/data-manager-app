@@ -1,0 +1,211 @@
+/* ────────────────────────────────────────────────────────────────────────────
+ * Connect Dataset Sidebar
+ *
+ * All styles are scoped under the .connect-dataset-sidebar root class so they
+ * cannot leak into other components.  Layout and spacing that can be expressed
+ * with Lumo utility classes (flex-grow, gap-s, items-center, mb-m, …) are
+ * applied via addClassName() in the Java view; this file contains only the
+ * properties that are too specific or too contextual for a utility class
+ * (exact widths, box-shadows, borders with project-specific colours, etc.).
+ *
+ * Hierarchy (see ConnectDatasetSidebar.java):
+ *   .connect-dataset-sidebar           ← root Div (the sidebar itself)
+ *     .cds-backdrop                     semi-transparent overlay behind panel
+ *     .cds-panel                        the sliding panel
+ *       .cds-body                       full-height flex column
+ *         .cds-header                   top bar with title + close button
+ *         .cds-content                  scrollable body (search + results)
+ *           .cds-search-row             instance-selector + search field
+ *           .cds-results                grid + loading/welcome overlays
+ *             .cds-loading              loading spinner overlay
+ *             .cds-welcome              empty-state overlay
+ *             .cds-card                 individual search-result card
+ *               .cds-card-top-row       first row (provider + access + date)
+ *               .cds-card-title         clamped title (also .clamp-2-line)
+ *         .cds-footer                   experiment selector + connect button
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+/* ── Backdrop (behind the panel) ─────────────────────────────────────────── */
+
+.connect-dataset-sidebar .cds-backdrop {
+  position: fixed;
+  inset: 0;                              /* top/right/bottom/left: 0 */
+  background-color: rgba(0, 0, 0, 0.3);
+  z-index: 999;
+}
+
+/* ── Panel ───────────────────────────────────────────────────────────────── */
+
+.connect-dataset-sidebar .cds-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: min(55%, 720px);
+  min-width: 460px;
+  max-width: 100vw;
+  height: 100%;
+  background-color: var(--lumo-base-color);
+  /* Drop shadow to the left — the only open edge of a right-anchored panel. */
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.12);
+  z-index: 1000;
+  box-sizing: border-box;
+}
+
+/* ── Body (full-height flex column inside panel) ─────────────────────────── */
+
+.connect-dataset-sidebar .cds-body {
+  height: 100%;
+  box-sizing: border-box;
+}
+
+/* ── Header (title + close button) ──────────────────────────────────────── */
+
+.connect-dataset-sidebar .cds-header {
+  padding: var(--lumo-space-m) var(--lumo-space-l);
+  /* Contrast-10 border is lighter than the default project border colour so
+     it remains subtle inside the panel's own background. */
+  border-bottom: 1px solid var(--lumo-contrast-10pct);
+}
+
+/* ── Content area (search + results, scrollable) ────────────────────────── */
+
+.connect-dataset-sidebar .cds-content {
+  padding: var(--lumo-space-l);
+  /* Critical: allows the search-row + results-container to shrink inside
+     the flex column without overflowing. */
+  min-height: 0;
+}
+
+/* ── Search row (instance selector + text field) ─────────────────────────── */
+
+.connect-dataset-sidebar .cds-search-row {
+  /* flexbox needs min-width:0 so child flex items can shrink below their
+     min-content size — prevents the search field from overflowing narrow
+     panels. */
+  min-width: 0;
+}
+
+/* ── Results container (relative positioned parent for overlays) ────────── */
+
+.connect-dataset-sidebar .cds-results {
+  position: relative;
+  min-height: 200px;
+}
+
+/* ── Loading overlay (spinner inside results container) ─────────────────── */
+
+.connect-dataset-sidebar .cds-loading {
+  background-color: var(--lumo-base-color);
+  z-index: 2;
+}
+
+/*
+ * Pure-CSS four-dots rotating spinner ("Spinner II", Temani Afif).
+ * A single grid div with two pseudo-elements; each carries four dots
+ * at the cardinal points. The outer ring (.cds-loading-spinner::after,
+ * larger dots, slower animation) and the inner ring (::before, smaller
+ * dots, margin-inset, linear timing) rotate at slightly different
+ * rates to produce the characteristic "four-dots orbit" effect.
+ *
+ * Each ring has its own named color token:
+ *   --cds-spinner-outer  (default: Lumo primary color)
+ *   --cds-spinner-inner  (default: hue-rotated Lumo primary)
+ * Override either from the parent to theme the rings independently.
+ *
+ * Credit: https://codepen.io/t_afif/pen/yLMXBRL  (Spinner #2)
+ */
+.connect-dataset-sidebar .cds-loading-spinner {
+  width: 48px;
+  aspect-ratio: 1;
+  display: grid;
+  --cds-spinner-outer: var(--lumo-primary-color);
+  /* 45deg hue shift off the primary produces a complementary accent
+     (e.g. blue primary → teal inner dots, red primary → orange). Keeps
+     the palette harmonious with any Lumo primary-color choice. */
+  --cds-spinner-inner: #00acac;
+}
+
+.connect-dataset-sidebar .cds-loading-spinner::after {
+  content: "";
+  grid-area: 1 / 1;
+  --c: radial-gradient(farthest-side, var(--cds-spinner-outer) 92%, #0000);
+  background:
+      var(--c) 50%   0,
+      var(--c) 50%   100%,
+      var(--c) 100%  50%,
+      var(--c) 0     50%;
+  background-size: 12px 12px;
+  background-repeat: no-repeat;
+  animation: cds-spin-half 1s infinite;
+}
+
+.connect-dataset-sidebar .cds-loading-spinner::before {
+  content: "";
+  grid-area: 1 / 1;
+  margin: 4px;
+  --c: radial-gradient(farthest-side, var(--cds-spinner-inner) 92%, #0000);
+  background:
+      var(--c) 50%   0,
+      var(--c) 50%   100%,
+      var(--c) 100%  50%,
+      var(--c) 0     50%;
+  background-size: 8px 8px;
+  background-repeat: no-repeat;
+  /*filter: hue-rotate(45deg);*/
+  animation: cds-spin-half 1s infinite linear;
+}
+
+@keyframes cds-spin-half {
+  100% { transform: rotate(0.5turn); }
+}
+
+.connect-dataset-sidebar .cds-loading-message {
+  font-weight: var(--font-weight-medium);
+}
+
+.connect-dataset-sidebar .cds-loading-hint {
+  color: var(--lumo-tertiary-text-color);
+}
+
+/* ── Welcome / empty-state overlay ──────────────────────────────────────── */
+
+.connect-dataset-sidebar .cds-welcome {
+  background-color: var(--lumo-base-color);
+  color: var(--lumo-secondary-text-color);
+  z-index: 1;
+  cursor: default;
+}
+
+.connect-dataset-sidebar .cds-welcome-icon {
+  font-size: var(--lumo-font-size-xxxl);
+  color: var(--lumo-tertiary-text-color);
+}
+
+.connect-dataset-sidebar .cds-welcome-subtitle {
+  text-align: center;
+  padding: 0 var(--lumo-space-l);
+  color: var(--lumo-tertiary-text-color);
+}
+
+/* ── Footer (experiment selector + connect button) ───────────────────────── */
+
+.connect-dataset-sidebar .cds-footer {
+  padding: var(--lumo-space-m) var(--lumo-space-l);
+  border-top: 1px solid var(--lumo-contrast-10pct);
+}
+
+/* ── Search-result card ─────────────────────────────────────────────────── */
+
+.connect-dataset-sidebar .cds-card {
+  border-radius: var(--lumo-border-radius-m);
+}
+
+/* Tighten the gap between the date label and the card's bottom edge when
+   the only content in the card is the top row + title + PID. */
+.connect-dataset-sidebar .cds-card-top-row {
+  /* Inherits flex-horizontal, items-center, gap-02 from Java addClassName(). */
+}
+
+.connect-dataset-sidebar .cds-card-title {
+  font-weight: var(--font-weight-semi-bold);
+}
