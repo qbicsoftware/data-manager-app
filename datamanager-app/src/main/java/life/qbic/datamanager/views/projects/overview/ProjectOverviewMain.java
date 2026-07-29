@@ -23,7 +23,6 @@ import life.qbic.datamanager.views.UserMainLayout;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.general.contact.Contact;
 import life.qbic.datamanager.views.general.funding.FundingEntry;
-import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.projects.create.AddProjectDialog;
@@ -82,7 +81,6 @@ public class ProjectOverviewMain extends Main {
       UserInformationService userInformationService,
       AuthenticationToUserIdTranslationService userIdTranslator,
       TerminologyService terminologyService,
-      CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
       MessageSourceNotificationFactory messageSourceNotificationFactory) {
     this.projectCollectionComponent = requireNonNull(projectCollectionComponent,
         "project collection component can not be null");
@@ -101,8 +99,6 @@ public class ProjectOverviewMain extends Main {
         "user information service can not be null");
     this.userIdTranslator = requireNonNull(userIdTranslator, "userIdTranslator must not be null");
     requireNonNull(terminologyService, "terminologyService must not be null");
-    requireNonNull(cancelConfirmationDialogFactory,
-        "cancelConfirmationDialogFactory must not be null");
 
     addTitleAndDescription();
     add(projectCollectionComponent);
@@ -110,8 +106,7 @@ public class ProjectOverviewMain extends Main {
       AddProjectDialog addProjectDialog = new AddProjectDialog(this.projectInformationService,
           this.financeService,
           personLookupService,
-          this.ontologyTermInformationService, terminologyService,
-          cancelConfirmationDialogFactory);
+          this.ontologyTermInformationService, terminologyService);
       if (isOfferSearchAllowed()) {
         addProjectDialog.enableOfferSearch();
       }

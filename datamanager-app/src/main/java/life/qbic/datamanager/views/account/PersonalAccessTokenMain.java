@@ -18,6 +18,7 @@ import life.qbic.datamanager.views.account.PersonalAccessTokenComponent.AddToken
 import life.qbic.datamanager.views.account.PersonalAccessTokenComponent.DeleteTokenEvent;
 import life.qbic.datamanager.views.account.PersonalAccessTokenComponent.PersonalAccessTokenFrontendBean;
 import life.qbic.datamanager.views.general.Main;
+import life.qbic.datamanager.views.general.dialog.AlertDialog;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.identity.api.PersonalAccessToken;
@@ -74,18 +75,18 @@ public class PersonalAccessTokenMain extends Main implements BeforeEnterObserver
   }
 
   private void onDeleteTokenClicked(DeleteTokenEvent deleteTokenEvent) {
-    AccessTokenDeletionConfirmationNotification tokenDeletionConfirmationNotification = new AccessTokenDeletionConfirmationNotification();
-    tokenDeletionConfirmationNotification.open();
-    tokenDeletionConfirmationNotification.addConfirmListener(event -> {
-      var userId = userIdTranslator.translateToUserId(
-              SecurityContextHolder.getContext().getAuthentication())
-          .orElseThrow();
-      personalAccessTokenService.delete(deleteTokenEvent.tokenId(), userId);
-      loadGeneratedPersonalAccessTokens();
-      tokenDeletionConfirmationNotification.close();
-    });
-    tokenDeletionConfirmationNotification.addCancelListener(
-        event -> tokenDeletionConfirmationNotification.close());
+    AlertDialog.danger(this,
+        "Personal Access Token will be deleted",
+        "Deleting this Personal Access Token will make it unusable. Proceed?",
+        "Delete token",
+        "Keep token",
+        () -> {
+          var userId = userIdTranslator.translateToUserId(
+                  SecurityContextHolder.getContext().getAuthentication())
+              .orElseThrow();
+          personalAccessTokenService.delete(deleteTokenEvent.tokenId(), userId);
+          loadGeneratedPersonalAccessTokens();
+        }).open();
   }
 
   private void onAddTokenClicked(AddTokenEvent addTokenEvent) {
