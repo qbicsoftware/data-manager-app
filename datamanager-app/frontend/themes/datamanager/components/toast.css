@@ -40,17 +40,17 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: var(--icon-size-m);
+  height: var(--icon-size-m);
   border-radius: 50%;
   flex-shrink: 0;
 }
 
 /* Force the icon glyph inside the circle to white */
 .toast-icon vaadin-icon {
-  color: white !important;
-  width: var(--icon-size-xs) !important;
-  height: var(--icon-size-xs) !important;
+  color: white;
+  width: var(--icon-size-xs);
+  height: var(--icon-size-xs);
 }
 
 .toast-icon-success {

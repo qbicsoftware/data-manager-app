@@ -66,7 +66,7 @@ public class MessageSourceNotificationFactory {
     String messageText = parseMessage(key, parameters, locale);
 
     Component content = switch (type) {
-      case HTML -> new Html("<span>%s</span>".formatted(messageText));
+      case HTML -> new Html("<div>%s</div>".formatted(messageText));
       case TEXT -> new Span(messageText);
     };
 
@@ -211,7 +211,7 @@ public class MessageSourceNotificationFactory {
     MessageType type = parseMessageType(key, locale);
     String messageText = parseMessage(key, parameters, locale);
     Component content = switch (type) {
-      case HTML -> new Html("<span>%s</span>".formatted(messageText));
+      case HTML -> new Html("<div>%s</div>".formatted(messageText));
       case TEXT -> new Span(messageText);
     };
 

@@ -49,6 +49,7 @@ public final class Toast extends Notification {
   private Component content;
   private Component levelIcon;
   private Component actionButton;
+  private ProgressBar progressBar;
   private String title;
   private String subtext;
 
@@ -105,25 +106,16 @@ public final class Toast extends Notification {
       case SUCCESS -> {
         var icon = new Icon();
         icon.getElement().setAttribute("icon", "vaadin:check");
-        icon.getElement().getStyle().setColor("white");
-        icon.getElement().getStyle().set("width", "var(--icon-size-xs)");
-        icon.getElement().getStyle().set("height", "var(--icon-size-xs)");
         yield icon;
       }
       case ERROR, WARNING -> {
         var icon = new Icon();
         icon.getElement().setAttribute("icon", "vaadin:close");
-        icon.getElement().getStyle().setColor("white");
-        icon.getElement().getStyle().set("width", "var(--icon-size-xs)");
-        icon.getElement().getStyle().set("height", "var(--icon-size-xs)");
         yield icon;
       }
       case INFO -> {
         var icon = new Icon();
         icon.getElement().setAttribute("icon", "vaadin:info");
-        icon.getElement().getStyle().setColor("white");
-        icon.getElement().getStyle().set("width", "var(--icon-size-xs)");
-        icon.getElement().getStyle().set("height", "var(--icon-size-xs)");
         yield icon;
       }
     };
@@ -148,6 +140,9 @@ public final class Toast extends Notification {
   Toast withTitle(String title) {
     requireNonNull(title, "title must not be null");
     this.title = title;
+    if (progressBar != null) {
+      refresh();
+    }
     return this;
   }
 
@@ -162,6 +157,9 @@ public final class Toast extends Notification {
   Toast withSubtext(String subtext) {
     requireNonNull(subtext, "subtext must not be null");
     this.subtext = subtext;
+    if (progressBar != null) {
+      refresh();
+    }
     return this;
   }
 
@@ -227,7 +225,7 @@ public final class Toast extends Notification {
 
   /**
    * Sets the content of the toast.
-   * Content is displayed in 16px text with the toast's primary text color.
+   * Content is displayed in with the toast's primary text color.
    *
    * @param content the content of the toast to set.
    * @return the modified toast
@@ -245,15 +243,27 @@ public final class Toast extends Notification {
   }
 
   /**
-   * Builds a progress-style toast layout with title, progress bar, and subtext.
-   * Used for indeterminate progress indicators. The layout is:
-   * Row(VerticalLayout(title, bar, subtext), [actionButton], closeButton).
+   * Adds a progress bar to the toast. When set, the toast enters progress mode:
+   * the center slot renders a vertical layout (title, progress bar, subtext)
+   * instead of the content component, and alignment switches to BASELINE.
+   * <p>
+   * Composable with {@link #withTitle(String)} and {@link #withSubtext(String)}
+   * in any order.
    *
    * @param progressBar the progress bar component (should be indeterminate)
    * @return the modified toast
    */
   Toast withProgressBar(ProgressBar progressBar) {
     requireNonNull(progressBar, "progressBar must not be null");
+    this.progressBar = progressBar;
+    refresh();
+    return this;
+  }
+
+  /**
+   * Builds the vertical layout used in progress mode: title, progress bar, subtext.
+   */
+  private Component buildProgressLayout() {
     var barContainer = new Div(progressBar);
     barContainer.addClassName("progress-bar-container");
 
@@ -274,44 +284,34 @@ public final class Toast extends Notification {
       verticalLayout.add(subtextElement);
     }
 
-    refreshWithProgress(verticalLayout);
-    return this;
-  }
-
-  private void refreshWithProgress(Component verticalLayout) {
-    removeAll();
-    var layout = new HorizontalLayout();
-    layout.addClassName("toast-layout");
-    layout.setAlignItems(Alignment.BASELINE);
-    // Add level icon if present
-    if (levelIcon != null) {
-      layout.add(levelIcon);
-    }
-    layout.add(verticalLayout);
-    if (actionButton != null) {
-      layout.add(actionButton);
-    }
-    layout.add(closeButton);
-    layout.setSpacing(true);
-    layout.setPadding(false);
-    super.add(layout);
+    return verticalLayout;
   }
 
   /**
    * Refreshes the toast content and layout.
-   * Builds: HorizontalLayout(icon?, content, actionButton?, closeButton)
+   * <p>
+   * In progress mode (progress bar set), the center slot is a vertical layout
+   * built from title + progress bar + subtext, aligned at {@code BASELINE}.
+   * Otherwise the center slot is {@link #content}, aligned at {@code CENTER}.
+   * <p>
+   * Builds: HorizontalLayout(icon?, center, actionButton?, closeButton)
    */
   private void refresh() {
     removeAll();
     var layout = new HorizontalLayout();
     layout.addClassName("toast-layout");
-    layout.setAlignItems(Alignment.CENTER);
+
+    boolean isProgress = (progressBar != null);
+    layout.setAlignItems(isProgress ? Alignment.BASELINE : Alignment.CENTER);
 
     // Add level icon if present (stored separately from content)
     if (levelIcon != null) {
       layout.add(levelIcon);
     }
-    if (this.content != null) {
+
+    if (isProgress) {
+      layout.add(buildProgressLayout());
+    } else if (this.content != null) {
       layout.add(this.content);
     }
 
