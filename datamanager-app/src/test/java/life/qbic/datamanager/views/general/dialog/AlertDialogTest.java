@@ -24,7 +24,8 @@ class AlertDialogTest {
 
   @Test
   void danger_returnsAlertDialogInstance() {
-    var dialog = AlertDialog.danger(parent, "Remove?", "Body text.", () -> {});
+    var dialog = AlertDialog.danger(parent, "Remove?", "Body text.", "Remove user",
+        "Keep user", () -> {});
     Assertions.assertNotNull(dialog, "danger() must return a non-null AlertDialog");
     Assertions.assertNotNull(dialog.dialog(), "internal AppDialog must be non-null");
   }
@@ -32,25 +33,37 @@ class AlertDialogTest {
   @Test
   void danger_throwsOnNullParent() {
     Assertions.assertThrows(NullPointerException.class,
-        () -> AlertDialog.danger(null, "Title", "Msg", () -> {}));
+        () -> AlertDialog.danger(null, "Title", "Msg", "Remove user", "Keep user", () -> {}));
   }
 
   @Test
   void danger_throwsOnNullTitle() {
     Assertions.assertThrows(NullPointerException.class,
-        () -> AlertDialog.danger(parent, null, "Msg", () -> {}));
+        () -> AlertDialog.danger(parent, null, "Msg", "Remove user", "Keep user", () -> {}));
   }
 
   @Test
   void danger_throwsOnNullMessage() {
     Assertions.assertThrows(NullPointerException.class,
-        () -> AlertDialog.danger(parent, "Title", null, () -> {}));
+        () -> AlertDialog.danger(parent, "Title", null, "Remove user", "Keep user", () -> {}));
+  }
+
+  @Test
+  void danger_throwsOnNullConfirmLabel() {
+    Assertions.assertThrows(NullPointerException.class,
+        () -> AlertDialog.danger(parent, "Title", "Msg", null, "Keep user", () -> {}));
+  }
+
+  @Test
+  void danger_throwsOnNullCancelLabel() {
+    Assertions.assertThrows(NullPointerException.class,
+        () -> AlertDialog.danger(parent, "Title", "Msg", "Remove user", null, () -> {}));
   }
 
   @Test
   void danger_throwsOnNullConfirmAction() {
     Assertions.assertThrows(NullPointerException.class,
-        () -> AlertDialog.danger(parent, "Title", "Msg", null));
+        () -> AlertDialog.danger(parent, "Title", "Msg", "Remove user", "Keep user", null));
   }
 
   // ── Fluent builder ───────────────────────────────────────────────────────

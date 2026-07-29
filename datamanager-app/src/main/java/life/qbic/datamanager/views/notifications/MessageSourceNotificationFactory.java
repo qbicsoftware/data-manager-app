@@ -36,7 +36,6 @@ public class MessageSourceNotificationFactory {
 
   public static final Object[] EMPTY_PARAMETERS = new Object[]{};
   private static final Logger log = logger(MessageSourceNotificationFactory.class);
-  private static final String DEFAULT_CONFIRM_TEXT = "Okay";
   private static final NotificationLevel DEFAULT_LEVEL = NotificationLevel.INFO;
   private static final MessageType DEFAULT_MESSAGE_TYPE = MessageType.HTML;
   private final MessageSource messageSource;
@@ -138,46 +137,6 @@ public class MessageSourceNotificationFactory {
     return toast.add(progressBar);
   }
 
-  /**
-   * Creates a dialog notification with the contents found for the message key. This method produces
-   * a notification dialog with the link text read from the message properties file.
-   *
-   * <p>
-   * The following message keys have to be present:
-   * <ul>
-   *   <li>{@code <key>.title} - the title; optional
-   *   <li>{@code <key>.level} - the level; mandatory
-   *   <li>{@code <key>.message.type} - the type (text or html); mandatory
-   *   <li>{@code <key>.message.text} - the text; mandatory
-   *   <li>{@code <key>.confirm-text} - the text of the confirm button; optional
-   * </ul>
-   * <p>
-   * For more information please see dialog-notifications.properties
-   *
-   * @param key        the key for the messages
-   * @param parameters parameters to use in the message
-   * @param locale     the locale for which to load the message
-   * @return a notification dialog with loaded content
-   */
-  public NotificationDialog dialog(String key, Object[] parameters, Locale locale) {
-    MessageType type = parseMessageType(key, locale);
-    String messageText = parseMessage(key, parameters, locale);
-    Component content = switch (type) {
-      case HTML -> new Html("<div style=\"display:contents\">%s</div>".formatted(messageText));
-      case TEXT -> new Span(messageText);
-    };
-
-    NotificationLevel level = parseLevel(key, locale);
-    NotificationDialog notificationDialog = new NotificationDialog(level)
-        .withContent(content);
-    parseTitle(key, locale).ifPresent(notificationDialog::withTitle);
-    parseConfirmText(key, locale).ifPresentOrElse(
-        notificationDialog::setConfirmText,
-        () -> notificationDialog.setConfirmText(DEFAULT_CONFIRM_TEXT));
-
-    return notificationDialog;
-  }
-
   private NotificationLevel parseLevel(String key, Locale locale) {
     String levelProperty;
     try {
@@ -222,16 +181,6 @@ public class MessageSourceNotificationFactory {
 
   }
 
-  private Optional<String> parseTitle(String key, Locale locale) {
-    try {
-      return Optional.of(messageSource.getMessage("%s.title".formatted(key),
-          EMPTY_PARAMETERS, locale).strip());
-    } catch (NoSuchMessageException e) {
-      log.warn("No title specified for %s.title".formatted(key));
-      return Optional.empty();
-    }
-  }
-
   private Optional<Duration> parseDuration(String key, Locale locale) {
     String durationProperty = messageSource.getMessage("%s.duration".formatted(key),
         EMPTY_PARAMETERS, null, locale);
@@ -255,11 +204,6 @@ public class MessageSourceNotificationFactory {
       throw new RuntimeException("No link text specified for " + key, e);
     }
     return linkText;
-  }
-
-  private Optional<String> parseConfirmText(String key, Locale locale) {
-    return Optional.ofNullable(messageSource.getMessage("%s.confirm-text".formatted(key),
-        new Object[]{}, null, locale));
   }
 
   private enum MessageType {

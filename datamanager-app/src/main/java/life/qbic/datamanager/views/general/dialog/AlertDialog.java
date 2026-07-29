@@ -30,15 +30,16 @@ import life.qbic.datamanager.views.general.icon.IconFactory;
  * <p>Two entry points:</p>
  * <pre>{@code
  * // Shortcut for the most common case: danger-intent confirm dialog
- * AlertDialog.danger(parent, "Remove dataset?", "This will disconnect…", onRemove).open();
+ * AlertDialog.danger(parent, "Remove dataset?", "This will disconnect…",
+ *     "Disconnect dataset", "Keep connection", onRemove).open();
  *
  * // Fluent builder for full control
  * AlertDialog.alert(parent)
  *     .danger()
  *     .title("Remove dataset?")
  *     .message("This will disconnect…")
- *     .confirmButton("Remove", onRemove)
- *     .cancelButton("Cancel", onCancel)
+ *     .confirmButton("Disconnect dataset", onRemove)
+ *     .cancelButton("Keep connection", onCancel)
  *     .build().open();
  * }</pre>
  *
@@ -179,11 +180,11 @@ public class AlertDialog {
       messageDiv.add(new Span(message));
       DialogBody.withoutUserInput(dialog, messageDiv);
 
-      // Footer — danger intent gets a red confirm button via the existing
+      // Footer — DANGER and WARNING intents get a red confirm button via the
       // withDangerousConfirm helper; other intents use the default primary
       // style. If no cancel action is set, the builder skips the cancel
       // button (single-action confirmation).
-      if (intent == Intent.DANGER && cancelLabel != null && cancelAction != null) {
+      if ((intent == Intent.DANGER || intent == Intent.WARNING) && cancelLabel != null && cancelAction != null) {
         DialogFooter.withDangerousConfirm(dialog, cancelLabel, confirmLabel);
       } else if (cancelLabel != null && cancelAction != null) {
         DialogFooter.with(dialog, cancelLabel, confirmLabel);
@@ -282,24 +283,40 @@ public class AlertDialog {
    * confirm button, a cancel button labelled "Cancel" that simply
    * closes the dialog, and a body message with the given text.
    *
-   * <p>The cancel action only closes the dialog (no external side-effect).
-   * If the caller needs a custom cancel handler, use {@link #alert(Component)}
-   * and {@code .cancelButton(...)} explicitly.</p>
+   * <p>The {@code confirmLabel} should describe the destructive action
+   * in a concise, action-oriented verb (e.g. "Remove user",
+   * "Disconnect dataset", "Delete offer") so the user knows exactly
+   * what clicking it will do. The {@code cancelLabel} should describe
+   * the outcome of dismissing the confirm (e.g. "Keep user",
+   * "Keep connection", "Keep offer") so both buttons clearly state
+   * their respective outcomes. This avoids generic single-word labels
+   * and minimises cognitive load.
+   * The cancel action only closes the dialog (no external side-effect).
+   * If the caller needs a custom cancel handler, use
+   * {@link #alert(Component)} and {@code .cancelButton(...)} explicitly.</p>
    *
    * <p>Usage:</p>
    * <pre>{@code
    *   AlertDialog.danger(this,
    *       "Remove dataset connection?",
    *       "This will disconnect the dataset from the project.",
+   *       "Disconnect dataset",
+   *       "Keep connection",
    *       () -> performRemove())
    *       .open();
    * }</pre>
    *
-   * @param parent     the component that owns this dialog (for UI tree
-   *                   attachment)
-   * @param title      the header text next to the icon
-   * @param message    the body description
-   * @param onConfirm  the action invoked when the user confirms
+   * @param parent        the component that owns this dialog (for UI tree
+   *                      attachment)
+   * @param title         the header text next to the icon
+   * @param message       the body description
+   * @param confirmLabel  a concise, action-oriented label for the confirm
+   *                      button (e.g. "Remove user", "Delete offer",
+   *                      "Disconnect dataset")
+   * @param cancelLabel   a label describing the outcome of cancelling
+   *                      (e.g. "Keep user", "Keep offer",
+   *                      "Keep connection")
+   * @param onConfirm     the action invoked when the user confirms
    * @return a ready-to-{@code open()} AlertDialog
    * @throws NullPointerException if any argument is null
    */
@@ -307,13 +324,15 @@ public class AlertDialog {
       Component parent,
       String title,
       String message,
+      String confirmLabel,
+      String cancelLabel,
       DialogAction onConfirm) {
     return alert(parent)
         .danger()
         .title(title)
         .message(message)
-        .confirmButton("Confirm", onConfirm)
-        .cancelButton("Cancel", () -> { /* dismiss only */ })
+        .confirmButton(confirmLabel, onConfirm)
+        .cancelButton(cancelLabel, () -> { /* dismiss only */ })
         .build();
   }
 }

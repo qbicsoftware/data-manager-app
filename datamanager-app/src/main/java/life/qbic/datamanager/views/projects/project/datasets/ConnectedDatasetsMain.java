@@ -170,6 +170,8 @@ public class ConnectedDatasetsMain extends Main implements BeforeEnterObserver {
         "This will disconnect the dataset '" + view.title() + "' ("
             + view.pid() + ") from the project. The connection can be "
             + "re-established at any time.",
+        "Disconnect dataset",
+        "Keep connection",
         () -> performRemove(datasetId))
         .open();
   }
@@ -182,7 +184,7 @@ public class ConnectedDatasetsMain extends Main implements BeforeEnterObserver {
    * {@code doFinally} terminal handler so it is always replaced by a
    * success or error toast regardless of failure mode.
    *
-   * <p>The {@link AlertDialog#danger(Component, String, String, life.qbic.datamanager.views.general.dialog.DialogAction)}
+   * <p>The {@link AlertDialog#danger(Component, String, String, String, String, life.qbic.datamanager.views.general.dialog.DialogAction)}
    * factory already closes the dialog inside the confirm-action wrapper,
    * so the user's visible feedback is the pending toast, followed by the
    * result toast.</p>
