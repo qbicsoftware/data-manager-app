@@ -152,6 +152,35 @@ class AesGcmCredentialEncryptorSpec extends Specification {
         thrown(IllegalArgumentException)
     }
 
+    def "AES key shorter than 32 bytes fails at construction"() {
+        given: "a 16-byte AES key (AES-128, not AES-256)"
+        def shortKey = new SecretKeySpec(
+            "1234567890123456".getBytes(StandardCharsets.UTF_8), "AES")
+
+        when:
+        new AesGcmCredentialEncryptor(shortKey)
+
+        then:
+        def e = thrown(IllegalArgumentException)
+        e.message.contains("256 bits")
+        e.message.contains("32 bytes")
+    }
+
+    def "AES key longer than 32 bytes fails at construction"() {
+        given: "a 48-byte AES key (not a valid AES key size)"
+        def longKey = new SecretKeySpec(
+            "123456789012345678901234567890123456789012345678".getBytes(StandardCharsets.UTF_8),
+            "AES")
+
+        when:
+        new AesGcmCredentialEncryptor(longKey)
+
+        then:
+        def e = thrown(IllegalArgumentException)
+        e.message.contains("256 bits")
+        e.message.contains("32 bytes")
+    }
+
     // ── Helpers ────────────────────────────────────────────────────
 
     private static AesGcmCredentialEncryptor buildEncryptor(

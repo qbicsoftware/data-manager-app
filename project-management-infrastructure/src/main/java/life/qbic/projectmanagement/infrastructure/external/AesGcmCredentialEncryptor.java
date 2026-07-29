@@ -46,6 +46,7 @@ public class AesGcmCredentialEncryptor implements CredentialEncryptor {
   static final String CIPHER_ALGORITHM = "AES/GCM/NoPadding";
   static final int GCM_NONCE_BYTES = 12;
   static final int GCM_TAG_BITS = 128;
+  public static final int AES_256_KEY_BYTES = 32;
 
   private final SecretKey masterKey;
   private final SecureRandom secureRandom;
@@ -53,9 +54,9 @@ public class AesGcmCredentialEncryptor implements CredentialEncryptor {
   /**
    * Creates the encryptor with the given AES master key.
    *
-   * @param masterKey an AES SecretKey (must be 128, 192, or 256 bits)
-   * @throws IllegalArgumentException if the key is null or has an
-   *         unsupported algorithm
+   * @param masterKey an AES SecretKey (must be 256 bits / 32 bytes)
+   * @throws IllegalArgumentException if the key is null, has an
+   *         unsupported algorithm, or has an incorrect key size
    */
   public AesGcmCredentialEncryptor(SecretKey masterKey) {
     this(masterKey, new SecureRandom());
@@ -67,6 +68,12 @@ public class AesGcmCredentialEncryptor implements CredentialEncryptor {
     if (!"AES".equalsIgnoreCase(masterKey.getAlgorithm())) {
       throw new IllegalArgumentException(
           "masterKey algorithm must be AES, got: " + masterKey.getAlgorithm());
+    }
+    byte[] keyBytes = masterKey.getEncoded();
+    if (keyBytes == null || keyBytes.length != AES_256_KEY_BYTES) {
+      throw new IllegalArgumentException(
+          "masterKey must be 256 bits (32 bytes), got: "
+              + (keyBytes == null ? "null" : keyBytes.length + " bytes"));
     }
     this.secureRandom = requireNonNull(secureRandom,
         "secureRandom must not be null");

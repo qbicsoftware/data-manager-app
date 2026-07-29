@@ -1,6 +1,7 @@
 package life.qbic.datamanager.configuration;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Map;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -85,8 +86,23 @@ public class InvenioRdmConfiguration {
                 + "'. The external credential master key must be "
                 + "provisioned in the PKCS12 keystore before the "
                 + "application starts."));
-    SecretKey secretKey = new SecretKeySpec(
-        keyString.getBytes(StandardCharsets.UTF_8), "AES");
+    byte[] keyBytes;
+    try {
+      keyBytes = Base64.getDecoder().decode(keyString);
+    } catch (IllegalArgumentException e) {
+      throw new IllegalStateException(
+          "Vault entry for alias '" + keyAlias
+              + "' is not valid Base64-encoded data. The key must be "
+              + "stored as a Base64-encoded 32-byte AES key.", e);
+    }
+    if (keyBytes.length != AesGcmCredentialEncryptor.AES_256_KEY_BYTES) {
+      throw new IllegalStateException(
+          "Vault entry for alias '" + keyAlias
+              + "' has incorrect key size: " + keyBytes.length
+              + " bytes (expected " + AesGcmCredentialEncryptor.AES_256_KEY_BYTES
+              + " for AES-256).");
+    }
+    SecretKey secretKey = new SecretKeySpec(keyBytes, "AES");
     return new AesGcmCredentialEncryptor(secretKey);
   }
 

@@ -64,7 +64,10 @@
 - [ ] 🔒 Master key is loaded **once** at bean creation and held as a `javax.crypto.SecretKey` field
 - [ ] 🔒 Master key value is never returned from any method, never logged, never included in `toString()`/`hashCode()`/exception messages
 - [ ] 🔒 Exception messages do not include plaintext token value
-- [ ] Spock spec `AesGcmCredentialEncryptorSpec` exists and covers: round-trip, nonce uniqueness, wrong-key failure, corrupted-data failure
+- [ ] 🔒 Encryptor constructor validates that the master key material is exactly 32 bytes (AES-256); rejects AES-128/AES-192 keys with a clear error message
+- [ ] 🔒 Spring configuration (`InvenioRdmConfiguration.credentialEncryptor`) reads the vault entry as a Base64-encoded string, decodes it, and validates the decoded length is exactly 32 bytes before constructing the `SecretKey`
+- [ ] 🔒 Vault provisioning instructions document that the key must be stored Base64-encoded (e.g., `openssl rand -base64 32`)
+- [ ] Spock spec `AesGcmCredentialEncryptorSpec` exists and covers: round-trip, nonce uniqueness, wrong-key failure, corrupted-data failure, key-size validation (rejects too-short and too-long keys)
 - [ ] Vault integration is lazy or fail-fast — missing alias throws a clear `DataManagerVaultException` at startup, not a `KeyStoreException` deep in a request
 
 ---

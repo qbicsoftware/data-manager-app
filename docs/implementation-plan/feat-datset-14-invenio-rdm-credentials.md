@@ -815,9 +815,23 @@ private char[] resolveTokenForUser(String userId, String instanceId) {
 qbic.security.vault.external-credential.key-alias=external-credential-master-key
 ```
 
-**Vault setup:** At deployment, a new PKCS12 keystore entry is created with alias `external-credential-master-key` containing an AES-256 secret key. This is separate from the existing OpenBIS vault entries.
+**Vault setup:** At deployment, a new PKCS12 keystore entry is created with alias `external-credential-master-key` containing an AES-256 secret key **encoded as Base64**. The key must be exactly 32 bytes (256 bits) before encoding; Base64 encoding produces a 44-character string. Provisioning example:
 
-**Bean wiring:** `ExternalCredentialEncryptor` reads this alias from the configuration, loads the corresponding `SecretKey` from the `DataManagerVault`, and uses it for all AES-GCM operations.
+```bash
+# Generate a 32-byte key, Base64-encode, and store in the PKCS12 keystore
+# (The string produced by openssl rand -base64 32 is exactly the form the application expects)
+AES_KEY=$(openssl rand -base64 32)
+echo "$AES_KEY" | keytool -importpass \
+    -alias external-credential-master-key \
+    -keystore /path/to/shared/keystore.p12 \
+    -storepass $DATAMANAGER_VAULT_KEY \
+    -keypass $DATAMANAGER_VAULT_ENTRY_PASSWORD \
+    -storetype PKCS12
+```
+
+This is separate from the existing OpenBIS vault entries.
+
+**Bean wiring:** `InvenioRdmConfiguration.credentialEncryptor()` reads the alias from the configuration, loads the corresponding Base64-encoded string from the `DataManagerVault`, decodes it via `Base64.getDecoder()`, and validates the decoded length is exactly 32 bytes. The application fails fast at startup with a clear error if the entry is missing, not valid Base64, or has the wrong length.
 
 **Security consideration:** The key alias is configurable so that environments can use different keys (e.g., for key rotation in the future). The vault entry password is the same existing `DATAMANAGER_VAULT_ENTRY_PASSWORD` env var — the alias is the distinguishing factor.
 
@@ -827,53 +841,40 @@ qbic.security.vault.external-credential.key-alias=external-credential-master-key
 
 **File:** `datamanager-app/src/main/java/life/qbic/datamanager/configuration/InvenioRdmConfiguration.java`
 
-**New beans to register:**
+**Bean wiring for the credential encryptor:**
 ```java
 // ── Encryption (provider-agnostic) ─────────────────────────────────
 @Bean
-public ExternalCredentialEncryptor externalCredentialEncryptor(
+public CredentialEncryptor credentialEncryptor(
     DataManagerVault vault,
     @Value("${qbic.security.vault.external-credential.key-alias}") String keyAlias) {
-    return new AesGcmCredentialEncryptor(vault, keyAlias);
-}
-
-// ── Per-provider credential validator adapters ──────────────────────
-@Bean
-public CredentialValidatorAdapter invenioRdmCredentialValidatorAdapter(
-    InvenioRdmClient client) {
-    return new InvenioRdmCredentialValidatorAdapter(client);
-}
-
-// ── Composite dispatcher ────────────────────────────────────────────
-@Bean
-public ExternalCredentialValidator externalCredentialValidator(
-    CredentialValidatorAdapter invenioRdmCredentialValidatorAdapter) {
-    return new SourceTypeDispatchingCredentialValidator(Map.of(
-        SourceType.INVENIO_RDM, invenioRdmCredentialValidatorAdapter
-        // Future: SourceType.LIMS, limsCredentialValidatorAdapter
-    ));
-}
-
-// ── Application service (provider-agnostic) ─────────────────────────
-@Bean
-public ExternalCredentialService externalCredentialService(
-    ExternalCredentialValidator validator,
-    UserExternalCredentialRepository credentialRepository,
-    ExternalCredentialEncryptor encryptor,
-    SourceInstanceRegistry registry) {
-    return new DefaultExternalCredentialService(
-        validator, credentialRepository, encryptor, registry);
-}
-
-// ── Update DatasetSource bean ───────────────────────────────────────
-@Bean
-public DatasetSource invenioRdmDatasetSource(
-    InvenioRdmClient client,
-    UserExternalCredentialRepository credentialRepository,
-    ExternalCredentialEncryptor encryptor) {
-    return new InvenioRdmDatasetSource(client, credentialRepository, encryptor);
+  String keyString = vault.read(keyAlias)
+      .orElseThrow(() -> new IllegalStateException(
+          "Vault entry not found for alias '" + keyAlias + "'."));
+  byte[] keyBytes;
+  try {
+    keyBytes = Base64.getDecoder().decode(keyString);
+  } catch (IllegalArgumentException e) {
+    throw new IllegalStateException(
+        "Vault entry for alias '" + keyAlias
+            + "' is not valid Base64-encoded data.", e);
+  }
+  if (keyBytes.length != AesGcmCredentialEncryptor.AES_256_KEY_BYTES) {
+    throw new IllegalStateException(
+        "Vault entry for alias '" + keyAlias + "' has incorrect key size: "
+            + keyBytes.length + " bytes (expected 32 for AES-256).");
+  }
+  SecretKey secretKey = new SecretKeySpec(keyBytes, "AES");
+  return new AesGcmCredentialEncryptor(secretKey);
 }
 ```
+
+**Note:** The bean validates three things at startup:
+1. The vault entry exists (clear error naming the alias).
+2. The entry content is valid Base64 (clear error explaining Base64 requirement).
+3. The decoded key is exactly 32 bytes (clear error naming the expected size for AES-256).
+
+**Additional beans:** Same as previous revision — `InvenioRdmClient`, `SourceInstanceRegistry`, `CredentialValidatorAdapter`, composite `ExternalCredentialValidator`, `ExternalCredentialService`, and `DatasetSource`. See the existing `InvenioRdmConfiguration` for the complete list and wiring. The only change to Task 10 from the previous revision is the `credentialEncryptor` bean, which now Base64-decodes and validates the key length.
 
 ---
 
@@ -895,6 +896,10 @@ public DatasetSource invenioRdmDatasetSource(
 - Different nonces produce different ciphertexts for same plaintext
 - Decryption with wrong key fails
 - Decrypting corrupted data throws meaningful exception
+- AES key shorter than 32 bytes fails at construction (AES-128 rejected)
+- AES key longer than 32 bytes fails at construction (48 bytes rejected)
+- Null master key fails at construction
+- Non-AES algorithm key fails at construction
 
 **`InvenioRdmCredentialValidatorAdapterSpec`:**
 - 200 response → `validate()` returns `true`
