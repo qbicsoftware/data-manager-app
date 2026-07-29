@@ -30,7 +30,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.FileNameFormatter;
 import life.qbic.application.commons.FileSizeFormatter;
-import life.qbic.application.commons.MeasurementCodeComparator;
 import life.qbic.application.commons.time.DateTimeFormat;
 import life.qbic.datamanager.files.export.download.DownloadStreamProvider;
 import life.qbic.datamanager.files.export.rawdata.RawDataUrlFile;
@@ -147,8 +146,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
           .toList();
       var sortedMeasurementIds = new ArrayList<>(ids);
       sortedMeasurementIds.sort(
-          Comparator.comparing(RawDataURL::measurementCode,
-              MeasurementCodeComparator.INSTANCE));
+          Comparator.comparing(RawDataURL::measurementCode));
       var file = RawDataUrlFile.create(ids);
       var streamProvider = createStreamProvider(FileNameFormatter.formatWithTimestampedSimple(
           LocalDate.now(), projectCode, "ngs_measurement_dataset_locations", "txt"), file);
@@ -174,8 +172,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
           .toList();
       var sortedMeasurementIds = new ArrayList<>(ids);
       sortedMeasurementIds.sort(
-          Comparator.comparing(RawDataURL::measurementCode,
-              MeasurementCodeComparator.INSTANCE));
+          Comparator.comparing(RawDataURL::measurementCode));
       var file = RawDataUrlFile.create(ids);
       var streamProvider = createStreamProvider(FileNameFormatter.formatWithTimestampedSimple(
           LocalDate.now(), projectCode, "proteomics_measurement_dataset_locations", "txt"), file);
@@ -201,8 +198,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
           .toList();
       var sortedMeasurementIds = new ArrayList<>(ids);
       sortedMeasurementIds.sort(
-          Comparator.comparing(RawDataURL::measurementCode,
-              MeasurementCodeComparator.INSTANCE));
+          Comparator.comparing(RawDataURL::measurementCode));
       var file = RawDataUrlFile.create(sortedMeasurementIds);
       var streamProvider = createStreamProvider(FileNameFormatter.formatWithTimestampedSimple(
           LocalDate.now(), projectCode, "immunopeptidomics_measurement_dataset_locations", "txt"), file);

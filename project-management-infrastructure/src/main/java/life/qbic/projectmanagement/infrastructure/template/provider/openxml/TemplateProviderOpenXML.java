@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import life.qbic.application.commons.MeasurementCodeComparator;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.api.fair.DigitalObject;
 import life.qbic.projectmanagement.application.api.template.TemplateProvider;
@@ -94,8 +93,7 @@ public class TemplateProviderOpenXML implements TemplateProvider {
         .toList();
     var sortedPxPMeasurements = new ArrayList<>(entries);
     sortedPxPMeasurements.sort(
-        Comparator.comparing(MeasurementEntryPxP::measurementId,
-            MeasurementCodeComparator.INSTANCE));
+        Comparator.comparing(MeasurementEntryPxP::measurementId));
     return measurementTemplateFactory.forUpdatePxP(sortedPxPMeasurements).createWorkbook();
   }
 
@@ -111,8 +109,7 @@ public class TemplateProviderOpenXML implements TemplateProvider {
         .toList();
     var sortedNGSMeasurements = new ArrayList<>(entries);
     sortedNGSMeasurements.sort(
-        Comparator.comparing(MeasurementEntryNGS::measurementId,
-            MeasurementCodeComparator.INSTANCE));
+        Comparator.comparing(MeasurementEntryNGS::measurementId));
     return measurementTemplateFactory.forUpdateNGS(sortedNGSMeasurements).createWorkbook();
   }
 
@@ -187,8 +184,7 @@ public class TemplateProviderOpenXML implements TemplateProvider {
         .toList();
     var sortedIPMeasurements = new ArrayList<>(entries);
     sortedIPMeasurements.sort(
-        Comparator.comparing(MeasurementEntryIP::measurementId,
-            MeasurementCodeComparator.INSTANCE));
+        Comparator.comparing(MeasurementEntryIP::measurementId));
     return measurementTemplateFactory.forUpdateIP(sortedIPMeasurements).createWorkbook();
   }
 
@@ -241,7 +237,7 @@ public class TemplateProviderOpenXML implements TemplateProvider {
   private Workbook forRequest(SampleInformation req) {
     var sortedSamples = new ArrayList<>(req.samples());
     sortedSamples.sort(Comparator.comparing(sample -> sample.sampleCode().code(),
-       Comparator.naturalOrder()));
+        Comparator.naturalOrder()));
     return sampleTemplateFactory.forInformation(
         sortedSamples,
         req.analysisMethods(),
@@ -257,7 +253,7 @@ public class TemplateProviderOpenXML implements TemplateProvider {
 
   private Workbook forRequest(SampleUpdate req) {
     var info = req.information();
-    var sortedSamples = new ArrayList<>(req.information().samples());
+    var sortedSamples = req.information().samples();
     sortedSamples.sort(Comparator.comparing(sample -> sample.sampleCode().code(),
         Comparator.naturalOrder()));
     return sampleTemplateFactory.forUpdate(
@@ -304,5 +300,4 @@ public class TemplateProviderOpenXML implements TemplateProvider {
       return Optional.empty();
     }
   }
-
 }
