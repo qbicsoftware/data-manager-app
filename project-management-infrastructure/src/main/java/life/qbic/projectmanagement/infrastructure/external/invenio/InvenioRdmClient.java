@@ -190,7 +190,23 @@ public interface InvenioRdmClient {
   SearchResultResponse search(String instanceUrl, SearchParams params)
       throws InvenioRdmPermanentException, InvenioRdmTransientException,
              InvenioRdmResponseParsingException;
-  
+
+  /**
+   * Search for records with an optional Authorization header.
+   *
+   * @param instanceUrl the base URL of the InvenioRDM instance
+   * @param params      search parameters (query, page, size)
+   * @param authHeader  the full Authorization header value (e.g.
+   *                    {@code "Bearer <token>"}), or {@code null} for
+   *                    unauthenticated (public) access
+   * @return search results containing matching records
+   * @throws InvenioRdmPermanentException on 4xx
+   * @throws InvenioRdmTransientException on transient errors after retries
+   */
+  SearchResultResponse search(String instanceUrl, SearchParams params,
+      String authHeader)
+      throws InvenioRdmPermanentException, InvenioRdmTransientException;
+
   /**
    * Retrieve a single record by its ID.
    *
@@ -204,6 +220,51 @@ public interface InvenioRdmClient {
    * @throws InvenioRdmResponseParsingException if the JSON response cannot be parsed
    */
   RecordResponse getRecord(String instanceUrl, String recordId)
+      throws InvenioRdmPermanentException, InvenioRdmTransientException,
+             InvenioRdmResponseParsingException;
+
+  /**
+   * Retrieve a single record by its ID, with an optional Authorization header.
+   *
+   * @param instanceUrl the base URL of the InvenioRDM instance
+   * @param recordId    the record identifier
+   * @param authHeader  the full Authorization header value (e.g.
+   *                    {@code "Bearer <token>"}), or {@code null} for
+   *                    unauthenticated (public) access
+   * @return the record details
+   * @throws InvenioRdmPermanentException on 4xx
+   * @throws InvenioRdmTransientException on transient errors after retries
+   */
+  RecordResponse getRecord(String instanceUrl, String recordId,
+      String authHeader)
+      throws InvenioRdmPermanentException, InvenioRdmTransientException;
+
+  /**
+   * Retrieves the authenticated user's identity from the InvenioRDM instance.
+   *
+   * <p>This is the token validation endpoint defined in the InvenioRDM
+   * OpenAPI specification (operationId: {@code getAUserById}).</p>
+   *
+   * <ul>
+   *   <li>{@code 200} — token is valid; response contains the user's
+   *       identity as a JSON object.</li>
+   *   <li>{@code 401} — token is missing, invalid, or expired.</li>
+   * </ul>
+   *
+   * <p>The response body is typed {@code type: object} in the official
+   * spec (no named fields guaranteed). The DTO below captures best-effort
+   * display values for informational/log purposes only — validation
+   * succeeds based purely on the 200 status.</p>
+   *
+   * @param instanceUrl the base URL of the InvenioRDM instance
+   * @param authHeader  the full Authorization header value
+   *                    (e.g. {@code "Bearer <token>"})
+   * @return authenticated user response
+   * @throws InvenioRdmPermanentException on 4xx (401 = invalid token)
+   * @throws InvenioRdmTransientException on 5xx or network errors after retries
+   * @throws InvenioRdmResponseParsingException if the response cannot be parsed
+   */
+  AuthenticatedUserResponse getAuthenticatedUser(String instanceUrl, String authHeader)
       throws InvenioRdmPermanentException, InvenioRdmTransientException,
              InvenioRdmResponseParsingException;
 
@@ -474,6 +535,21 @@ public interface InvenioRdmClient {
   ) {}
 
   /**
+   * Authenticated user response from the InvenioRDM spec-defined
+   * {@code GET /api/users} endpoint (operationId: {@code getAUserById}).
+   *
+   * <p>The response body is typed {@code type: object} in the official
+   * spec (no named fields guaranteed). This DTO captures best-effort
+   * display values. Validation succeeds purely on the 200 status;</n   * the fields are for informational/log purposes only.</p>
+   */
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  record AuthenticatedUserResponse(
+      @JsonProperty("id") String id,
+      @JsonProperty("username") String username,
+      @JsonProperty("email") String email
+  ) {}
+
+  /**
    * Implementation of the InvenioRDM HTTP client.
    *
    * <p>Thread-safe: the underlying {@link HttpClient} is shared and
@@ -507,11 +583,18 @@ public interface InvenioRdmClient {
     public SearchResultResponse search(String instanceUrl, SearchParams params)
         throws InvenioRdmPermanentException, InvenioRdmTransientException,
                InvenioRdmResponseParsingException {
+      return search(instanceUrl, params, null);
+    }
+
+    @Override
+    public SearchResultResponse search(String instanceUrl, SearchParams params,
+        String authHeader)
+        throws InvenioRdmPermanentException, InvenioRdmTransientException {
       Objects.requireNonNull(instanceUrl, "instanceUrl must not be null");
       Objects.requireNonNull(params, "params must not be null");
 
       String url = buildSearchUrl(instanceUrl, params);
-      String body = getWithRetry(url, null, "search records");
+      String body = getWithRetry(url, authHeader, "search records");
       return parseJson(body, SearchResultResponse.class);
     }
 
@@ -519,13 +602,33 @@ public interface InvenioRdmClient {
     public RecordResponse getRecord(String instanceUrl, String recordId)
         throws InvenioRdmPermanentException, InvenioRdmTransientException,
                InvenioRdmResponseParsingException {
+      return getRecord(instanceUrl, recordId, null);
+    }
+
+    @Override
+    public RecordResponse getRecord(String instanceUrl, String recordId,
+        String authHeader)
+        throws InvenioRdmPermanentException, InvenioRdmTransientException {
       Objects.requireNonNull(instanceUrl, "instanceUrl must not be null");
       Objects.requireNonNull(recordId, "recordId must not be null");
 
       String url = normalizeBaseUrl(instanceUrl) + "/api/records/"
           + URLEncoder.encode(recordId, StandardCharsets.UTF_8);
-      String body = getWithRetry(url, null, "get record " + recordId);
+      String body = getWithRetry(url, authHeader, "get record " + recordId);
       return parseJson(body, RecordResponse.class);
+    }
+
+    @Override
+    public AuthenticatedUserResponse getAuthenticatedUser(
+        String instanceUrl, String authHeader)
+        throws InvenioRdmPermanentException, InvenioRdmTransientException,
+               InvenioRdmResponseParsingException {
+      Objects.requireNonNull(instanceUrl, "instanceUrl must not be null");
+      Objects.requireNonNull(authHeader, "authHeader must not be null");
+
+      String url = normalizeBaseUrl(instanceUrl) + "/api/users";
+      String body = getWithRetry(url, authHeader, "get authenticated user");
+      return parseJson(body, AuthenticatedUserResponse.class);
     }
 
     // ── Internals ───────────────────────────────────────────────────

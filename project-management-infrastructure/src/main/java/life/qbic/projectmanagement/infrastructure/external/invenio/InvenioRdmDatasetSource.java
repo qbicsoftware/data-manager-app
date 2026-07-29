@@ -5,10 +5,12 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.application.associated_dataset.CredentialEncryptor;
 import life.qbic.projectmanagement.application.associated_dataset.DatasetResolveException;
 import life.qbic.projectmanagement.application.associated_dataset.DatasetSearchException;
 import life.qbic.projectmanagement.application.associated_dataset.DatasetSource;
@@ -20,6 +22,8 @@ import life.qbic.projectmanagement.domain.model.associated_dataset.AccessLevel;
 import life.qbic.projectmanagement.domain.model.associated_dataset.InvenioRdmAccessStatus;
 import life.qbic.projectmanagement.domain.model.associated_dataset.InvenioRdmResourceMetadata;
 import life.qbic.projectmanagement.domain.model.associated_dataset.ResourceMetadata;
+import life.qbic.projectmanagement.domain.model.associated_dataset.SourceType;
+import life.qbic.projectmanagement.domain.model.associated_dataset.repository.UserExternalCredentialRepository;
 
 /**
  * Infrastructure adapter implementing the {@link DatasetSource} port for
@@ -41,9 +45,17 @@ public class InvenioRdmDatasetSource implements DatasetSource {
   private static final Logger log = logger(InvenioRdmDatasetSource.class);
 
   private final InvenioRdmClient client;
+  private final UserExternalCredentialRepository credentialRepository;
+  private final CredentialEncryptor encryptor;
 
-  public InvenioRdmDatasetSource(InvenioRdmClient client) {
+  public InvenioRdmDatasetSource(InvenioRdmClient client,
+      UserExternalCredentialRepository credentialRepository,
+      CredentialEncryptor encryptor) {
     this.client = Objects.requireNonNull(client, "client must not be null");
+    this.credentialRepository = Objects.requireNonNull(credentialRepository,
+        "credentialRepository must not be null");
+    this.encryptor = Objects.requireNonNull(encryptor,
+        "encryptor must not be null");
   }
 
   // ── Port implementation ─────────────────────────────────────────────
@@ -59,15 +71,22 @@ public class InvenioRdmDatasetSource implements DatasetSource {
     var params = new InvenioRdmClient.SearchParams(
         query.effectiveQuery(), invenioPage, query.pageSize());
 
+    char[] token = resolveTokenForUser(actingUserId, config.id());
     try {
-      var response = client.search(config.baseUrl(), params);
+      String authHeader = token != null
+          ? "Bearer " + new String(token) : null;
+      var response = client.search(config.baseUrl(), params, authHeader);
       List<SearchHit> hits = mapSearchHits(response, config.displayName());
-      return new SearchResult(hits, response.hits().total(), query.page(),
-          query.pageSize());
+      return new SearchResult(hits, response.hits().total(),
+          query.page(), query.pageSize());
     } catch (InvenioRdmClient.InvenioRdmException e) {
       log.error("Search failed on %s for query '%s'".formatted(
           config.displayName(), query.effectiveQuery()));
       throw new DatasetSearchException("Search failed", e);
+    } finally {
+      if (token != null) {
+        Arrays.fill(token, '\0');
+      }
     }
   }
 
@@ -79,8 +98,12 @@ public class InvenioRdmDatasetSource implements DatasetSource {
         "externalHandleValue must not be null");
     Objects.requireNonNull(config, "config must not be null");
 
+    char[] token = resolveTokenForUser(actingUserId, config.id());
     try {
-      var invenioRecord = client.getRecord(config.baseUrl(), externalHandleValue);
+      String authHeader = token != null
+          ? "Bearer " + new String(token) : null;
+      var invenioRecord = client.getRecord(config.baseUrl(),
+          externalHandleValue, authHeader);
       InvenioRdmResourceMetadata metadata = mapRecordToResourceMetadata(
           invenioRecord, config.displayName());
       return Optional.of(metadata);
@@ -92,7 +115,31 @@ public class InvenioRdmDatasetSource implements DatasetSource {
       log.error("Failed to resolve record %s on %s"
           .formatted(externalHandleValue, config.displayName()));
       throw new DatasetResolveException("Failed to resolve metadata record", e);
+    } finally {
+      if (token != null) {
+        Arrays.fill(token, '\0');
+      }
     }
+  }
+
+  /**
+   * Resolves the decrypted user token for the given user and
+   * InvenioRDM instance, or returns {@code null} if no credential
+   * is configured.
+   *
+   * <p>The returned {@code char[]} <strong>MUST</strong> be zeroed
+   * by the caller in a {@code finally} block
+   * (ADR-0002 D1 decryption boundary).</p>
+   */
+  private char[] resolveTokenForUser(String userId, String instanceId) {
+    if (userId == null) {
+      return null;
+    }
+    return credentialRepository
+        .findByUserIdAndSourceTypeAndInstanceId(
+            userId, SourceType.INVENIO_RDM, instanceId)
+        .map(cred -> encryptor.decrypt(cred.getEncryptedToken()))
+        .orElse(null);
   }
 
   // ── Mapping: v12 response → DTO ─────────────────────────────────────
