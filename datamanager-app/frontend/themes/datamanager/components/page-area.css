@@ -435,7 +435,7 @@
   text-overflow: ellipsis;
   white-space: normal;
   cursor: pointer;
-  text-decoration: none !important;
+  text-decoration: none
 }
 
 /* The wrapper now owns the card's visual styling (shadow, rounded corners,
@@ -667,8 +667,8 @@
 
 .project-dataset-footer,
 .project-dataset-footer *,
-.project-dataset-footer a {
-  text-decoration: none !important;
+a.project-dataset-footer, a.project-dataset-footer:hover {
+  text-decoration: none;
   box-sizing: border-box;
 }
 

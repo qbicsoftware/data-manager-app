@@ -18,12 +18,10 @@ import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.spring.annotation.RouteScope;
 import java.io.Serial;
 import java.time.Instant;
-import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -44,7 +42,8 @@ import org.springframework.stereotype.Component;
 /**
  * <b>Project Collection</b>
  * <p>
- * A component that displays cards showing the content of accessible {@link ProjectOverview for the logged-in user.
+ * A component that displays cards showing the content of accessible
+ * {@link ProjectOverview for the logged-in user.
  * <p>
  * The component also fires {@link ProjectCreationSubmitEvent} to all registered listeners, if a
  * user has the intend to create a new project.
@@ -221,13 +220,13 @@ public class ProjectCollectionComponent extends PageArea {
      * Builds the card-body RouterLink (navigates to project info).
      *
      * <p>The card body is a RouterLink, not a Div-with-addClickListener, so the
-     * footer RouterLink (a sibling, not a child) cannot have its click propagate
-     * up to the card body. This is the fix for the "footer click navigates to
-     * project info first, then to datasets" bug.</p>
+     * footer RouterLink (a sibling, not a child) cannot have its click propagate up to the card
+     * body. This is the fix for the "footer click navigates to project info first, then to
+     * datasets" bug.</p>
      *
      * <p>The card body carries the {@code project-overview-item} class so the
-     * existing page-area.css card styles (shadow, border-radius, padding) apply
-     * to it directly.</p>
+     * existing page-area.css card styles (shadow, border-radius, padding) apply to it
+     * directly.</p>
      */
     private RouterLink projectInfoLink() {
       var link = new RouterLink("", ProjectInformationMain.class,
@@ -239,7 +238,7 @@ public class ProjectCollectionComponent extends PageArea {
       Instant instant = projectOverview.lastModified();
       Span lastModified = new Span(
           String.format("Last modified on %s",
-              DateTimeFormat.asJavaFormatter(DateTimeFormat.SIMPLE_DATE_TIME,
+              DateTimeFormat.asJavaFormatter(DateTimeFormat.SIMPLE_DATE_SHORT,
                       ZoneId.systemDefault())
                   .format(instant)));
       lastModified.addClassName("tertiary");
@@ -278,14 +277,6 @@ public class ProjectCollectionComponent extends PageArea {
      * <p>When no datasets are connected, nothing is rendered — avoids
      * advertising an empty state on the listing.</p>
      */
-    /**
-     * Attaches the connected-dataset footer as a child of the given wrapper Div.
-     * The footer is a RouterLink that navigates to the dataset view.
-     *
-     * <p>Both the card body and footer are children of the wrapper, forming one
-     * visual card with rounded corners. The wrapper prevents click propagation
-     * between the two RouterLinks.</p>
-     */
     private void attachDatasetFooter(Div wrapper) {
       if (projectOverview.connectedDatasetCount() > 0) {
         wrapper.add(buildDatasetFooter(projectOverview));
@@ -296,18 +287,17 @@ public class ProjectCollectionComponent extends PageArea {
      * Builds the connected-dataset footer for a project card.
      *
      * <p>Layout (left-right): database icon, count, open/restricted
-     * {@link Tag} pills, last-connected date, spacer, trailing chevron.
-     * Wrapped in a {@link RouterLink} so the entire footer is a large
-     * click target (44px+) — better accessibility than an icon-only link.
+     * {@link Tag} pills, last-connected date, spacer, trailing chevron. Wrapped in a
+     * {@link RouterLink} so the entire footer is a large click target (44px+) — better
+     * accessibility than an icon-only link.
      *
      * <p>The footer RouterLink is a sibling (not a child) of the card-body
-     * RouterLink on {@code ProjectOverviewItem}, so a footer click
-     * cannot also fire the card's project-info navigation — no
-     * event-propagation workaround required.</p>
+     * RouterLink on {@code ProjectOverviewItem}, so a footer click cannot also fire the card's
+     * project-info navigation — no event-propagation workaround required.</p>
      *
      * <p>All layout/presentation is driven by CSS classes defined in
-     * {@code all.css} (flex utilities, spacing, typography) and in
-     * {@code page-area.css} ({@code .project-dataset-footer}).</p>
+     * {@code all.css} (flex utilities, spacing, typography) and in {@code page-area.css}
+     * ({@code .project-dataset-footer}).</p>
      */
     private static RouterLink buildDatasetFooter(ProjectOverview projectOverview) {
       // ── Footer content (plain Div inside the RouterLink) ──────
@@ -383,7 +373,7 @@ public class ProjectCollectionComponent extends PageArea {
       // Anchored to the per-project datasets route already registered
       // for ConnectedDatasetsMain.
       var link = new RouterLink("", ConnectedDatasetsMain.class,
-          new RouteParameters("projectId", projectOverview.projectId().value()));
+          new RouteParameters(PROJECT_ID_ROUTE_PARAMETER, projectOverview.projectId().value()));
       link.addClassName("project-dataset-footer");
       link.add(content);
 
@@ -405,14 +395,11 @@ public class ProjectCollectionComponent extends PageArea {
      * Formats the {@code connected_on} instant for display in the footer.
      *
      * <p>Uses {@code dd MMM yyyy} (e.g. {@code "05 Jul 2026"}, English
-     * locale) — shorter than the card's {@code lastModified} timestamp
-     * but still human-readable. The instant is converted to the system
-     * default zone before formatting.</p>
+     * locale) — shorter than the card's {@code lastModified} timestamp but still human-readable.
+     * The instant is converted to the system default zone before formatting.</p>
      */
     private static String formatLastConnectedDate(Instant instant) {
-      return DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH)
-          .withZone(ZoneId.systemDefault())
-          .format(instant);
+      return DateTimeFormat.asJavaFormatter(DateTimeFormat.SIMPLE_DATE_SHORT, ZoneId.systemDefault()).format(instant);
     }
 
     /**
@@ -421,8 +408,8 @@ public class ProjectCollectionComponent extends PageArea {
      * <p>Shape: {@code "Open datasets for Q2KX4B: 4 connected, 2 open,
      * 2 restricted, last updated 05 July 2026"}</p>
      * <p>Screen readers get a coherent sentence describing the link
-     * action (open the datasets view) and the current state — far more
-     * useful than an icon-only label would be.</p>
+     * action (open the datasets view) and the current state — far more useful than an icon-only
+     * label would be.</p>
      */
     private static String buildAriaLabel(ProjectOverview projectOverview, int total,
         int open, int restricted, Instant lastConnected) {

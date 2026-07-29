@@ -33,6 +33,13 @@ public enum DateTimeFormat {
    * Format: {@code <weekday_name>, <day> <month_name> <year>}}
    */
   SIMPLE_DATE,
+
+  /**
+   * A more compact date representation. E.g. {@code 11 Feb 2026}
+   * Format: {@code <day> <month_name> <year>}
+   */
+  SIMPLE_DATE_SHORT,
+
   /**
    * A simple to read, textual date-time representation. E.g.
    * {@code Wednesday, 11 February 2026 11:12:10}
@@ -78,6 +85,7 @@ public enum DateTimeFormat {
       case ISO_LOCAL_DATE_TIME_WHITESPACE_SEPARATED -> DateTimeFormatter.ofPattern(
           "yyyy-MM-dd HH:mm").withZone(zoneId);
       case SIMPLE_DATE -> DateTimeFormatter.ofPattern("EEEE, dd LLLL yyyy").withZone(zoneId);
+      case SIMPLE_DATE_SHORT -> DateTimeFormatter.ofPattern("d MMM yyyy").withZone(zoneId);
       case SIMPLE_DATE_TIME -> DateTimeFormatter.ofPattern("EEEE, dd LLLL yyyy HH:mm:ss").withZone(
           zoneId);
     };
@@ -95,6 +103,7 @@ public enum DateTimeFormat {
   public static String asMariaDbDatabasePattern(@NonNull DateTimeFormat format) {
     return switch (format) {
       case SIMPLE_DATE -> "%W, %d %M %Y";
+      case SIMPLE_DATE_SHORT -> "%d %M %Y";
       case SIMPLE_DATE_TIME -> "%W, %d %M %Y %T";
       case ISO_LOCAL_DATE -> "%Y-%m-%d";
       case ISO_LOCAL_DATE_TIME -> "%Y-%m-%dT%T";
