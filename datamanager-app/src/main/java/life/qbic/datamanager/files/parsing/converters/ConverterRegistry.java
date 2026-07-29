@@ -2,16 +2,15 @@ package life.qbic.datamanager.files.parsing.converters;
 
 import java.util.Map;
 import java.util.function.Supplier;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationIP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationNGS;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationPxP;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationIP;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationIP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationNGS;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationPxP;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationIP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.SampleRegistrationInformation;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.SampleUpdateInformation;
 import org.apache.commons.collections.map.HashedMap;
-import org.apache.poi.ss.formula.functions.T;
 
 /**
  * Converter Factory for creating {@link MetadataConverterV2} instances.

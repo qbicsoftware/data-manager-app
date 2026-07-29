@@ -1,7 +1,6 @@
 package life.qbic.datamanager.files.parsing.converters;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import life.qbic.datamanager.files.parsing.ParsingResult;

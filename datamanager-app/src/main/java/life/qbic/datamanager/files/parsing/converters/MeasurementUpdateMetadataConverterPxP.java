@@ -7,8 +7,6 @@ import life.qbic.datamanager.files.parsing.ParsingResult;
 import life.qbic.datamanager.files.structure.measurement.ProteomicsMeasurementEditColumn;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementSpecificPxP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationPxP;
-import life.qbic.projectmanagement.application.measurement.Labeling;
-import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 
 /**
  * Measurement Update Metadata Converter PxP

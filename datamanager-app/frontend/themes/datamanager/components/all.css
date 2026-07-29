@@ -1497,3 +1497,42 @@ Older stuff -
 .overflow-auto {
   overflow: auto;
 }
+
+/*region Multi-line text truncation (line clamp)*/
+/*
+Truncate text after N visible lines. Uses the WebKit-specific
+-webkit-line-clamp property, which requires -webkit-box +
+-webkit-box-orient:vertical to function. Works in all browsers
+that support Chromium (including Vaadin). The "line-height:1.4"
+keeps truncated text visually consistent with surrounding labels.
+*/
+.clamp-1-line,
+.clamp-2-line,
+.clamp-3-line {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+  white-space: normal;
+}
+
+.clamp-1-line { -webkit-line-clamp: 1; }
+.clamp-2-line { -webkit-line-clamp: 2; }
+.clamp-3-line { -webkit-line-clamp: 3; }
+/*endregion*/
+
+/*region Positioned centre-fill overlay*/
+/*
+Absolutely fills and centres content within its nearest
+positioned ancestor. Used for loading spinners, welcome/empty
+states, and modal-like overlays that sit inside a flex container.
+*/
+.overlay-center-fill {
+  position: absolute;
+  inset: 0;                          /* top:0; right:0; bottom:0; left:0 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/*endregion*/

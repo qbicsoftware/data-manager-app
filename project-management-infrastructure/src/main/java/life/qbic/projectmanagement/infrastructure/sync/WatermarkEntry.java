@@ -6,7 +6,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.io.Serializable;
 import java.time.Instant;
-import java.util.Date;
 import java.util.Objects;
 import org.springframework.lang.NonNull;
 
