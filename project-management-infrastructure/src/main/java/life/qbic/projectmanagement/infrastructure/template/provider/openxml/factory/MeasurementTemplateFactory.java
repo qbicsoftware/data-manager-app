@@ -15,16 +15,21 @@ import life.qbic.projectmanagement.infrastructure.template.provider.openxml.fact
  */
 public class MeasurementTemplateFactory {
 
+  /**
+   * @param measurements expected to be pre-sorted by ascending measurement code ascending
+   */
   public WorkbookFactory forUpdateNGS(List<MeasurementEntryNGS> measurements) {
 
     return new NgsEditFactory(measurements);
   }
 
+  /** @param measurements expected to be pre-sorted by ascending measurement code ascending */
   public WorkbookFactory forUpdatePxP(List<MeasurementEntryPxP> measurements) {
 
     return new ProteomicsEditFactory(measurements);
   }
 
+  /** @param measurements expected to be pre-sorted by ascending measurement code ascending */
   public WorkbookFactory forUpdateIP(List<MeasurementEntryIP> measurements) {
 
     return new IpEditFactory(measurements);

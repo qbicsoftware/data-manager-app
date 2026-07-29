@@ -41,7 +41,7 @@ public class SampleTemplateFactory {
   }
 
   /**
-   * @param samples                   the samples to be updated
+   * @param samples                   the samples to be updated expected to be presorted by default in an ascending manner
    * @param analysisMethods           the analysis methods planned
    * @param conditions                the conditions available from the experimental design
    * @param analytes                  the analytes planned for measurement
@@ -71,7 +71,7 @@ public class SampleTemplateFactory {
   }
 
   /**
-   * @param samples                   the target samples to display the information for
+   * @param samples                   the target samples to display the information for, expected to be presorted by default in an ascending manner
    * @param analysisMethods           the analysis methods planned
    * @param conditions                the conditions available from the experimental design
    * @param analytes                  the analytes planned for measurement
