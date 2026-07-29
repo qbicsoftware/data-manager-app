@@ -19,11 +19,9 @@ import com.vaadin.flow.spring.annotation.RouteScope;
 import java.io.Serial;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Locale;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.SortOrder;
@@ -267,12 +265,11 @@ public class ProjectCollectionComponent extends PageArea {
     }
 
     /**
-     * Attaches the connected-dataset footer to the card body when the project has
-     * any connected datasets. The footer is rendered as a full-width
-     * {@link RouterLink} to the project's connected-datasets view; it is a
-     * sibling (not a child) of the card-body RouterLink, so each click
-     * target has exactly one handler and neither can fire the other's
-     * navigation — no event-propagation workaround required.
+     * Attaches the connected-dataset footer to the card body when the project has any connected
+     * datasets. The footer is rendered as a full-width {@link RouterLink} to the project's
+     * connected-datasets view; it is a sibling (not a child) of the card-body RouterLink, so each
+     * click target has exactly one handler and neither can fire the other's navigation — no
+     * event-propagation workaround required.
      *
      * <p>When no datasets are connected, nothing is rendered — avoids
      * advertising an empty state on the listing.</p>
@@ -399,7 +396,8 @@ public class ProjectCollectionComponent extends PageArea {
      * The instant is converted to the system default zone before formatting.</p>
      */
     private static String formatLastConnectedDate(Instant instant) {
-      return DateTimeFormat.asJavaFormatter(DateTimeFormat.SIMPLE_DATE_SHORT, ZoneId.systemDefault()).format(instant);
+      return DateTimeFormat.asJavaFormatter(DateTimeFormat.SIMPLE_DATE_SHORT,
+          ZoneId.systemDefault()).format(instant);
     }
 
     /**
@@ -416,9 +414,8 @@ public class ProjectCollectionComponent extends PageArea {
       String base = "Open datasets for %s: %d connected, %d open, %d restricted".formatted(
           projectOverview.projectCode(), total, open, restricted);
       if (lastConnected != null) {
-        String full = DateTimeFormatter.ofPattern("dd MMMM yyyy", Locale.ENGLISH)
-            .withZone(ZoneId.systemDefault())
-            .format(lastConnected);
+        String full = DateTimeFormat.asJavaFormatter(DateTimeFormat.SIMPLE_DATE_SHORT,
+            ZoneId.systemDefault()).format(lastConnected);
         return base + ", last updated " + full;
       }
       return base;
