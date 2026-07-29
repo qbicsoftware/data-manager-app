@@ -80,7 +80,11 @@ public class InvenioRdmConfiguration {
   public CredentialEncryptor credentialEncryptor(
       DataManagerVault vault,
       @Value("${qbic.security.vault.external-credential.key-alias}") String keyAlias) {
-    String keyString = vault.read(keyAlias)
+    // PKCS12 keystores force entry password = store password (the keystore key).
+    // The vault entry was created via keytool, which silently used the keystore
+    // password, so we must read it using the keystore password, not the
+    // separate entry password used for entries created via DataManagerVault.add().
+    String keyString = vault.read(keyAlias, true)
         .orElseThrow(() -> new IllegalStateException(
             "Vault entry not found for alias '" + keyAlias
                 + "'. The external credential master key must be "

@@ -161,9 +161,23 @@ public class DataManagerVault implements DisposableBean {
    * @since 1.8.0
    */
   public Optional<String> read(String alias) throws DataManagerVaultException {
+    return read(alias, false);
+  }
+
+  /**
+   * Reads a secret from the vault.
+   *
+   * @param alias the alias of the secret to read
+   * @param useKeystorePassword true to use the keystore password (for PKCS12 keystores),
+   *                           false to use the entry password
+   * @return the secret value, or empty if the alias doesn't exist
+   * @throws DataManagerVaultException if the read fails
+   */
+  public Optional<String> read(String alias, boolean useKeystorePassword) throws DataManagerVaultException {
+    String passwordEnvVar = useKeystorePassword ? envVarKeystorePassword : envVarKeystoreEntryPassword;
     try {
       return Optional.ofNullable(
-              this.keyStore.getKey(alias, System.getenv(envVarKeystoreEntryPassword).toCharArray()))
+              this.keyStore.getKey(alias, System.getenv(passwordEnvVar).toCharArray()))
           .map(k -> new String(k.getEncoded(), StandardCharsets.UTF_8));
     } catch (KeyStoreException | NoSuchAlgorithmException e) {
       throw new DataManagerVaultException(UNEXPECTED_VAULT_EXCEPTION, e);
