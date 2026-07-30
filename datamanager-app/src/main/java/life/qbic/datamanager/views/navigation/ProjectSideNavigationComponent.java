@@ -32,9 +32,8 @@ import life.qbic.application.commons.SortOrder;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.AppRoutes.ProjectRoutes;
 import life.qbic.datamanager.views.Context;
-import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
+import life.qbic.datamanager.views.general.dialog.AlertDialog;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
-import life.qbic.datamanager.views.notifications.NotificationDialog;
 import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.datamanager.views.projects.project.ProjectMainLayout;
@@ -79,7 +78,6 @@ public class ProjectSideNavigationComponent extends Div implements
   private final transient ExperimentInformationService experimentInformationService;
   private final transient AddExperimentToProjectService addExperimentToProjectService;
   private final transient UserPermissions userPermissions;
-  private final transient CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
   private final transient MessageSourceNotificationFactory messageSourceNotificationFactory;
   private final transient TerminologyService terminologyService;
   private final transient SpeciesLookupService speciesLookupService;
@@ -92,7 +90,6 @@ public class ProjectSideNavigationComponent extends Div implements
       UserPermissions userPermissions,
       SpeciesLookupService speciesLookupService,
       TerminologyService terminologyService,
-      CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
       MessageSourceNotificationFactory messageSourceNotificationFactory) {
     content = new Div();
     requireNonNull(projectInformationService);
@@ -100,8 +97,6 @@ public class ProjectSideNavigationComponent extends Div implements
     requireNonNull(addExperimentToProjectService);
     this.messageSourceNotificationFactory = requireNonNull(messageSourceNotificationFactory,
         "messageSourceNotificationFactory must not be null");
-    this.cancelConfirmationDialogFactory = requireNonNull(cancelConfirmationDialogFactory,
-        "cancelConfirmationDialogFactory must not be null");
     this.speciesLookupService = speciesLookupService;
     this.addExperimentToProjectService = addExperimentToProjectService;
     this.userPermissions = requireNonNull(userPermissions, "userPermissions must not be null");
@@ -340,12 +335,14 @@ private static void routeToProject(ProjectId projectId) {
   }
 
   private void showCancelConfirmationDialog(AddExperimentDialog creationDialog) {
-    NotificationDialog confirmationDialog = cancelConfirmationDialogFactory.cancelConfirmationDialog(
-        it -> creationDialog.close(),
-        "experiment.create",
-        getLocale()
-    );
-    confirmationDialog.open();
+    AlertDialog.alert(this)
+        .warning()
+        .title("Discard changes?")
+        .message("By aborting the editing process and closing the dialog, you will lose all information entered.")
+        .confirmButton("Discard changes", creationDialog::close)
+        .cancelButton("Keep editing", () -> {})
+        .build()
+        .open();
   }
 
   private void onExperimentAddEvent(ExperimentAddEvent event) {

@@ -1454,6 +1454,10 @@ Older stuff -
   flex-grow: 1;
 }
 
+.flex-shrink-0 {
+  flex-shrink: 0;
+}
+
 .wrapping-flex-container {
   flex-wrap: wrap;
 }

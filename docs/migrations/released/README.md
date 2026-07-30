@@ -9,9 +9,9 @@ guide.
 
 ## Current state
 
-**Empty.** The three-tier migration documentation structure was established in
-2026-07 for FEAT-DATSET-01. Until the first release that uses the new
-structure is cut, no files will appear here.
+| Release | Guide |
+|---|---|
+| **1.14.0** | [`v1.14.0.md`](v1.14.0.md) |
 
 For migrations targeting the upcoming (unreleased) version, see
 [`../NEXT.md`](../NEXT.md).

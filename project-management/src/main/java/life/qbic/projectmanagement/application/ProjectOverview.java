@@ -55,6 +55,25 @@ public class ProjectOverview {
   @Column(name = "amountIpMeasurements")
   private long ipMeasurementCount;
 
+  /** Aggregate count of datasets currently connected to the project. */
+  @Column(name = "connectedDatasetCount", nullable = false)
+  private int connectedDatasetCount;
+
+  /** Aggregate count of connected datasets with PUBLIC access level. */
+  @Column(name = "openDatasetCount", nullable = false)
+  private int openDatasetCount;
+
+  /** Aggregate count of connected datasets with RESTRICTED access level. */
+  @Column(name = "restrictedDatasetCount", nullable = false)
+  private int restrictedDatasetCount;
+
+  /**
+   * Most-recent {@code connected_on} timestamp across all connected
+   * datasets for this project. Null when no datasets are connected.
+   */
+  @Column(name = "lastConnectedOn")
+  private Instant lastConnectedOn;
+
 
   @Convert(converter = CollaboratorUserInfosConverter.class)
   @Column(name = "userInfos")
@@ -102,6 +121,23 @@ public class ProjectOverview {
 
   public long ipMeasurementCount() {
     return ipMeasurementCount;
+  }
+
+  public int connectedDatasetCount() {
+    return connectedDatasetCount;
+  }
+
+  public int openDatasetCount() {
+    return openDatasetCount;
+  }
+
+  public int restrictedDatasetCount() {
+    return restrictedDatasetCount;
+  }
+
+  /** Nullable — {@code null} for projects with no connected datasets. */
+  public Instant lastConnectedOn() {
+    return lastConnectedOn;
   }
 
   public Collection<UserInfo> collaboratorUserInfos() {

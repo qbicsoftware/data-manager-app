@@ -904,7 +904,7 @@ public class ProjectSummaryComponent extends PageArea {
 
     header.setSectionNote(new SectionNote(
         "Last modified on %s".formatted(DateTimeFormat.asJavaFormatter(
-                DateTimeFormat.SIMPLE_DATE_TIME, ZoneId.systemDefault())
+                DateTimeFormat.SIMPLE_DATE_SHORT, ZoneId.systemDefault())
             .format(projectOverview.lastModified()))));
     headerSection.setHeader(header);
     headerSection.setContent(sectionContent);

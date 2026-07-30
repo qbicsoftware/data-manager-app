@@ -1,6 +1,6 @@
 # Migration: Next release
 
-**Current pom version:** 1.12.10  
+**Current pom version:** TBD  
 **Target release version:** TBD *(renamed to `released/v<version>.md` at release cut)*  
 **Status:** under development
 

@@ -743,7 +743,11 @@ SELECT `pd`.`projectId`                     AS `projectId`,
        `m`.`amountPxpMeasurements`          AS `amountPxpMeasurements`,
        `m`.`amountIpMeasurements`           AS `amountIpMeasurements`,
        `users`.`usernames`                  AS `usernames`,
-       `users`.`userInfos`                  AS `userInfos`
+       `users`.`userInfos`                  AS `userInfos`,
+       COALESCE(connected_datasets.connectedDatasetCount,   0) AS `connectedDatasetCount`,
+       COALESCE(connected_datasets.openDatasetCount,        0) AS `openDatasetCount`,
+       COALESCE(connected_datasets.restrictedDatasetCount,  0) AS `restrictedDatasetCount`,
+       connected_datasets.lastConnectedOn                      AS `lastConnectedOn`
 FROM projects_datamanager pd
          LEFT JOIN project_measurements m ON pd.projectId = m.projectId
          LEFT JOIN (SELECT project_userinfo.projectId,
@@ -751,7 +755,18 @@ FROM projects_datamanager pd
                            JSON_ARRAYAGG(JSON_OBJECT('userId', project_userinfo.userId, 'userName',
                                                      project_userinfo.userName))  AS `userInfos`
                     FROM project_userinfo
-                    GROUP BY projectId) AS users ON users.projectId = pd.projectId;
+                    GROUP BY projectId) AS users ON users.projectId = pd.projectId
+         LEFT JOIN (
+             SELECT
+                 `project_id`,
+                 COUNT(*)                                                            AS connectedDatasetCount,
+                 SUM(CASE WHEN `access_level` = 'PUBLIC'     THEN 1 ELSE 0 END)      AS openDatasetCount,
+                 SUM(CASE WHEN `access_level` = 'RESTRICTED' THEN 1 ELSE 0 END)      AS restrictedDatasetCount,
+                 MAX(`connected_on`)                                                 AS lastConnectedOn
+             FROM `associated_dataset`
+             WHERE `connection_state` = 'CONNECTED'
+             GROUP BY `project_id`
+         ) AS connected_datasets ON connected_datasets.project_id = pd.projectId;
 
 CREATE OR REPLACE VIEW v_ngs_measurement_sample_json AS
 SELECT m.measurement_id,
