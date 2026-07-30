@@ -100,6 +100,58 @@ public class DefaultExternalCredentialService implements ExternalCredentialServi
   }
 
   @Override
+  public AddCredentialResult validateCredential(String userId, String instanceId) {
+    requireNonNull(userId, "userId must not be null");
+    requireNonNull(instanceId, "instanceId must not be null");
+
+    Optional<SourceInstanceDescriptor> descriptor =
+        instanceRegistry.find(instanceId);
+    if (descriptor.isEmpty()) {
+      return new UnknownInstance(instanceId);
+    }
+    SourceInstanceDescriptor instance = descriptor.get();
+    InstanceConfig config = instance.toInstanceConfig();
+    SourceType sourceType = instance.sourceType();
+
+    Optional<UserExternalCredential> existing =
+        credentialRepository.findByUserIdAndSourceTypeAndInstanceId(
+            userId, sourceType, instanceId);
+
+    if (existing.isEmpty()) {
+      return new ServiceError("No credential found for instance: " + instanceId);
+    }
+
+    UserExternalCredential cred = existing.get();
+    byte[] encryptedToken = cred.getEncryptedToken();
+    char[] token = null;
+    try {
+      token = encryptor.decrypt(encryptedToken);
+      boolean valid;
+      try {
+        valid = validator.validateToken(sourceType, config, token);
+      } catch (CredentialValidationException e) {
+        return new ServiceError(
+            "Token validation could not be completed: " + e.getMessage());
+      }
+
+      if (valid) {
+        cred.transitionTo(CredentialStatus.VALID);
+        credentialRepository.save(cred);
+        return new Success();
+      } else {
+        cred.transitionTo(CredentialStatus.INVALIDATED);
+        credentialRepository.save(cred);
+        return new InvalidToken(
+            "The token was rejected by " + instance.displayName());
+      }
+    } finally {
+      if (token != null) {
+        Arrays.fill(token, '\0');
+      }
+    }
+  }
+
+  @Override
   public boolean removeCredential(String userId, String instanceId) {
     requireNonNull(userId, "userId must not be null");
     requireNonNull(instanceId, "instanceId must not be null");
@@ -132,29 +184,31 @@ public class DefaultExternalCredentialService implements ExternalCredentialServi
 
     return allInstances.stream()
         .map(instance -> {
-          boolean configured = credentialRepository
+          var credential = credentialRepository
               .findByUserIdAndSourceTypeAndInstanceId(
-                  userId, instance.sourceType(), instance.id())
-              .isPresent();
+                  userId, instance.sourceType(), instance.id());
+          boolean configured = credential.isPresent();
 
           String status;
+          Instant configuredAt = null;
           if (!configured) {
             status = "NOT_CONFIGURED";
           } else {
-            // Find the actual status
-            status = credentialRepository
-                .findByUserIdAndSourceTypeAndInstanceId(
-                    userId, instance.sourceType(), instance.id())
-                .map(c -> c.getStatus().name())
+            status = credential.map(c -> c.getStatus().name())
                 .orElse("NOT_CONFIGURED");
+            configuredAt = credential
+                .map(life.qbic.projectmanagement.domain.model.associated_dataset.UserExternalCredential::getCreatedAt)
+                .orElse(null);
           }
 
           return new CredentialStatusView(
               instance.sourceType(),
               instance.id(),
               instance.displayName(),
+              instance.baseUrl(),
               configured,
-              status);
+              status,
+              configuredAt);
         })
         .toList();
   }

@@ -1,5 +1,6 @@
 package life.qbic.projectmanagement.application.associated_dataset;
 
+import java.time.Instant;
 import java.util.List;
 import life.qbic.projectmanagement.domain.model.associated_dataset.SourceType;
 
@@ -61,6 +62,24 @@ public interface ExternalCredentialService {
    */
   List<CredentialStatusView> listCredentialStatuses(String userId);
 
+  /**
+   * Validates the currently stored token for a user and instance against
+   * the external provider, and updates the stored status accordingly.
+   *
+   * <p>This method decrypts the stored encrypted token, sends it to the
+   * provider's validation endpoint, and transitions the credential to
+   * {@link life.qbic.projectmanagement.domain.model.associated_dataset.CredentialStatus#VALID}
+   * or
+   * {@link life.qbic.projectmanagement.domain.model.associated_dataset.CredentialStatus#INVALIDATED}
+   * based on the response. Per ADR-0002, status transitions happen only
+   * on explicit user-initiated validation.</p>
+   *
+   * @param userId     the DM user whose credential to validate
+   * @param instanceId the target instance (e.g. {@code "zenodo"})
+   * @return result indicating success or failure
+   */
+  AddCredentialResult validateCredential(String userId, String instanceId);
+
   // ── Result types ────────────────────────────────────────────────
 
   /**
@@ -97,9 +116,11 @@ public interface ExternalCredentialService {
       SourceType sourceType,
       String instanceId,
       String instanceDisplayName,
+      String instanceBaseUrl,
       boolean configured,
       /** {@code "VALID"}, {@code "INVALIDATED"}, or {@code "NOT_CONFIGURED"} */
-      String status
+      String status,
+      Instant configuredAt
   ) {
   }
 
