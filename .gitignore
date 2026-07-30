@@ -1,3 +1,6 @@
+# Project-local SSH configuration (keys, config, known_hosts)
+.ssh/
+
 # Local agent config files/folders
 .opencode/
 opencode.json

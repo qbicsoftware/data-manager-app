@@ -99,4 +99,12 @@ First some general property definitions
   --spacing-10: 4rem;
   --spacing-11: 5rem;
   --spacing-12: 6rem;
+
+  /* --- Toast dark-surface tokens --- */
+  --toast-background-color: #223348;
+  --toast-text-color: rgba(235, 244, 255, 0.9);
+  --toast-subtle-text-color: rgba(209, 227, 250, 0.6);
+  --toast-link-color: #66A8FF;
+  --toast-progress-track-color: rgba(173, 200, 235, 0.14);
+  --toast-shade-overlay: rgba(25, 59, 103, 0.05); /* subtle gradient overlay for toast backgrounds */
 }

@@ -36,6 +36,7 @@ public class MessageSourceNotificationFactory {
 
   public static final Object[] EMPTY_PARAMETERS = new Object[]{};
   private static final Logger log = logger(MessageSourceNotificationFactory.class);
+  private static final String DEFAULT_CONFIRM_TEXT = "Okay";
   private static final NotificationLevel DEFAULT_LEVEL = NotificationLevel.INFO;
   private static final MessageType DEFAULT_MESSAGE_TYPE = MessageType.HTML;
   private final MessageSource messageSource;
@@ -65,7 +66,7 @@ public class MessageSourceNotificationFactory {
     String messageText = parseMessage(key, parameters, locale);
 
     Component content = switch (type) {
-      case HTML -> new Html("<div style=\"display:contents\">%s</div>".formatted(messageText));
+      case HTML -> new Html("<div>%s</div>".formatted(messageText));
       case TEXT -> new Span(messageText);
     };
 
@@ -73,6 +74,7 @@ public class MessageSourceNotificationFactory {
     Duration duration = parseDuration(key, locale).orElse(Toast.DEFAULT_OPEN_DURATION);
 
     Toast toast = new Toast(level);
+    toast.withLevelIcon(level);
     toast.withContent(content);
     toast.setDuration(duration);
 
@@ -114,11 +116,11 @@ public class MessageSourceNotificationFactory {
    * {@link Duration#ZERO}, since it is the client's job to close the toast explicitly after the
    * pending task has finished.
    * <p>
-   * The following message keys have to be present:
+   * The toast uses the progress layout (no icon) with:
    * <ul>
-   *   <li>{@code <key>.message.type}
-   *   <li>{@code <key>.message.text}
-   *   <li>{@code <key>.routing.link.text}
+   *   <li>Title (from message.text) in 18px bold</li>
+   *   <li>Indeterminate progress bar</li>
+   *   <li>Optional subtext (from message.subtext) in 16px regular</li>
    * </ul>
    * <p>
    * For more information please see toast-notifications.properties
@@ -126,15 +128,62 @@ public class MessageSourceNotificationFactory {
    * @param key         the key for the messages
    * @param messageArgs the parameters shown in the message
    * @param locale      the locale for which to load the message
-   * @return a Toast with loaded content
-   * @see #toast(String, Object[], Locale)
+   * @return a Toast with progress indicator
    */
   public Toast pendingTaskToast(String key, Object[] messageArgs, Locale locale) {
-    var toast = toast(key, messageArgs, locale);
+    String messageText = parseMessage(key, messageArgs, locale);
+    NotificationLevel level = parseLevel(key, locale);
+
+    Toast toast = new Toast(level);
+    toast.withTitle(messageText);
+    parseSubtext(key, locale).ifPresent(toast::withSubtext);
+
     var progressBar = new ProgressBar();
     progressBar.setIndeterminate(true);
+    toast.withProgressBar(progressBar);
     toast.setDuration(Duration.ZERO);
-    return toast.add(progressBar);
+
+    return toast;
+  }
+
+  /**
+   * Creates a toast with an action button (e.g., "Retry", "Try Again") for error scenarios.
+   * Useful for error toasts where the user can take corrective action.
+   * <p>
+   * The toast includes:
+   * <ul>
+   *   <li>Error icon (red close-circle)</li>
+   *   <li>Error message</li>
+   *   <li>Action button (styled with #66A8FF)</li>
+   *   <li>Close button</li>
+   * </ul>
+   *
+   * @param key              the key for the messages
+   * @param parameters       the parameters shown in the message
+   * @param actionLabel      the action button label (e.g., "Try Again")
+   * @param actionListener   the click handler for the action button
+   * @param locale           the locale for which to load the message
+   * @return a Toast with an action button
+   */
+  public Toast actionToast(String key, Object[] parameters, String actionLabel,
+      com.vaadin.flow.component.ComponentEventListener<com.vaadin.flow.component.ClickEvent<com.vaadin.flow.component.button.Button>> actionListener,
+      Locale locale) {
+    Toast toast = toast(key, parameters, locale);
+    toast.withAction(actionLabel, actionListener);
+    return toast;
+  }
+
+  /**
+   * Parses an optional subtext key for progress toasts.
+   */
+  private Optional<String> parseSubtext(String key, Locale locale) {
+    try {
+      return Optional.of(messageSource.getMessage("%s.message.subtext".formatted(key),
+          new Object[]{}, locale).strip());
+    } catch (NoSuchMessageException e) {
+      log.debug("No subtext specified for %s.message.subtext".formatted(key));
+      return Optional.empty();
+    }
   }
 
   private NotificationLevel parseLevel(String key, Locale locale) {
