@@ -39,7 +39,7 @@ All requirement IDs follow this pattern:
 - IDs are **stable** and must never be renumbered or reused, even if a requirement is deprecated.
 - IDs must not encode sprint numbers, versions, or document order.
 - One requirement may be referenced by multiple Stories.
-- Constraints (`*-C-*`) influence architecture and must not be referenced in Stories — reference them only in Task Technical Notes and ADRs.
+- Constraints (`*-C-*`) influence architecture and must not be referenced in Stories — reference them only in Task Technical Notes and [ADRs](../adr/README.md).
 
 ---
 
@@ -56,7 +56,7 @@ Each requirement entry in `docs/requirements.md` must contain:
 <Why this requirement exists — strategic, regulatory, stakeholder-driven, or architectural>
 
 **Source (optional but recommended):**
-<Link to PRD section, FAIR/CARE principle, regulatory document, stakeholder request, or ADR>
+<Link to PRD section, FAIR/CARE principle, regulatory document, stakeholder request, or [ADR](../adr/README.md)>
 ```
 
 ### Field Definitions
@@ -65,7 +65,7 @@ Each requirement entry in `docs/requirements.md` must contain:
 - **Short Title** — One line, noun-focused, describing the capability or quality attribute
 - **Statement** — 1–3 sentences describing what the system shall do (for R/NFR) or the solution boundary (for C)
 - **Rationale** — Why this requirement exists: strategic importance, regulatory drivers, stakeholder requests, technical necessity
-- **Source** — Link(s) to the upstream authority: PRD section, FAIR/CARE principle reference, standards document, ADR, or stakeholder issue
+- **Source** — Link(s) to the upstream authority: PRD section, FAIR/CARE principle reference, standards document, [ADR](../adr/README.md), or stakeholder issue
 
 ### Example
 

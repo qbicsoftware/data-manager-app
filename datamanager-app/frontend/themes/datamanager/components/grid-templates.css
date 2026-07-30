@@ -58,6 +58,18 @@
     "projectdetails qualitycontrollist";
 }
 
+/*
+ * Override for the Associated Datasets view (FEAT-DATSET-01).
+ * The dataset view has a single full-width child, so collapse the
+ * two-column project grid into a single 1fr column.
+ * See grid-templates.css.
+ */
+.main.project.datasets {
+  grid-template-columns: 1fr;
+  grid-template-rows: auto;
+  grid-template-areas: "datasets-content";
+}
+
 .main.ontology-lookup-main {
   grid-template-columns: auto;
   grid-template-rows: auto;

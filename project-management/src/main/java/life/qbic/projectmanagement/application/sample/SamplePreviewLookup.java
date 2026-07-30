@@ -2,7 +2,6 @@ package life.qbic.projectmanagement.application.sample;
 
 import java.util.List;
 import life.qbic.application.commons.SortOrder;
-import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.SamplePreviewFilter;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 

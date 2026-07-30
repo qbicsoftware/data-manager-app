@@ -1,44 +1,214 @@
-.toast-notification::part(content) {
-  /*you can style the notification content here*/
+/**********
+ * Toast Notification - Dark Mode Design System
+ * Regular toasts: 420–640px wide, ~1/3 viewport, text wraps at cap.
+ * Progress toasts: multiline title/subtext in vertical layout.
+ * Backgrounds set directly on ::part(overlay) — CSS custom properties
+ * do not reliably cascade through Vaadin's Shadow DOM parts.
+ **********/
+
+/* === Default surface (base level) === */
+.toast-notification::part(overlay) {
+  background: linear-gradient(0deg, var(--toast-shade-overlay), var(--toast-shade-overlay)), var(--toast-background-color);
+  border: 1px solid var(--shade-color-20pct);
+  border-radius: 8px;
+  box-shadow: 0px 3px 12px -1px var(--shade-color-30pct),
+              0px 2px 4px -1px var(--shade-color-20pct);
+  /* Consistent width so the close button stays in a fixed position */
+  min-width: 420px;
+  max-width: min(640px, 33vw);
 }
 
-.toast-notification.success-toast::part(content) {
-  background-color: var(--lumo-success-color-10pct);
-  /*you can style the notification content here*/
+/* --- Level-specific overrides --- */
+.toast-notification.success-toast::part(overlay) {
+  background: var(--toast-background-color);
+  box-shadow: 0px 4px 4px rgba(21, 193, 93, 0.25);
 }
 
-.toast-notification.info-toast::part(content) {
-  /*you can style the notification content here*/
-  background-color: var(--lumo-primary-color-10pct);
+.toast-notification.error-toast::part(overlay) {
+  background: linear-gradient(0deg, var(--toast-shade-overlay), var(--toast-shade-overlay)), var(--toast-background-color);
+  box-shadow: 0px 4px 4px rgba(255, 66, 56, 0.25);
 }
+
+.toast-notification.info-toast::part(overlay) {
+  background: linear-gradient(0deg, var(--toast-shade-overlay), var(--toast-shade-overlay)), var(--toast-background-color);
+  box-shadow: 0px 5px 4px 1px rgba(22, 118, 243, 0.25);
+}
+
+/* --- Icon container (28x28 colored circle) --- */
+
+.toast-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--icon-size-m);
+  height: var(--icon-size-m);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Force the icon glyph inside the circle to white */
+.toast-icon vaadin-icon {
+  color: white;
+  width: var(--icon-size-xs);
+  height: var(--icon-size-xs);
+}
+
+.toast-icon-success {
+  background: var(--success-color);
+}
+
+.toast-icon-error {
+  background: var(--error-color);
+}
+
+.toast-icon-info {
+  background: var(--primary-color);
+}
+
+.toast-icon-progress {
+  background: var(--primary-color);
+}
+
+/* === Layout structure (HorizontalLayout) === */
+
+.toast-notification .toast-layout {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 14px;
+  padding: 10px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* --- Content text (non-routing and routing) --- */
+/* Toast grows to fit content — text wraps when max-width is reached */
 
 .toast-notification .toast-content {
-  /*this is the content of your notification excluding the close button*/
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 100%;
+  color: var(--toast-text-color);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: var(--lumo-font-size-m);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--lumo-line-height-m);
+}
+
+/* Links inside toast content */
+.toast-notification .toast-content a {
+  color: var(--toast-link-color);
+  text-decoration: underline;
+}
+
+/* --- Routing container (flex child when routing) --- */
+
+.toast-notification .routing-container {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--lumo-space-m);
+}
+
+/* --- Title text for progress toasts (16px bold, multiline) --- */
+
+.toast-notification .toast-title {
+  color: var(--toast-text-color);
+  font-size: var(--lumo-font-size-m);
+  font-weight: var(--font-weight-semi-bold);
+  line-height: var(--lumo-line-height-s);
+}
+
+/* --- Subtext for progress toasts (multiline) --- */
+
+.toast-notification .toast-subtext {
+  color: var(--toast-text-color);
+  font-size: var(--lumo-font-size-m);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--lumo-line-height-m);
+}
+
+/* --- Close button (30x30) --- */
+
+.toast-notification .close-button {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  color: var(--toast-subtle-text-color);
+}
+
+/* --- Action button (tertiary styled) --- */
+
+.toast-notification .action-button {
+  background: var(--toast-shade-overlay);
+  border-radius: 4px;
+  color: var(--toast-link-color);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: var(--lumo-font-size-m);
+  font-weight: var(--font-weight-regular);
+  padding: 8px 14px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.toast-notification .action-button::part(label) {
+  color: var(--toast-link-color);
+}
+
+/* --- Progress bar (webcomponent shadow DOM) --- */
+
+.toast-notification .progress-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-04);
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.toast-notification .progress-bar-container {
   width: 100%;
 }
 
-.toast-notification .toast-content strong {
-  margin-left: .5ch;
-  margin-right: .5ch;
+.toast-notification vaadin-progress-bar {
+  height: 8px;
+  width: 100%;
+  display: block;
 }
 
-.toast-notification .close-button {
-  /*you can style the toast close button here*/
+.toast-notification vaadin-progress-bar::part(bar) {
+  background: var(--toast-progress-track-color);
+  border-radius: 40px;
 }
 
-.toast-notification .routing-container {
-  display: grid;
-  grid-template-columns: minmax(min-content, max-content) auto minmax(min-content, max-content);
-  column-gap: var(--lumo-space-m);
+.toast-notification vaadin-progress-bar::part(value) {
+  background: var(--primary-color);
+  border-radius: 40px;
 }
 
-.toast-notification .routing-content {
-  /*in case of routing this can style the content without the routing link*/
-  align-content: center;
-}
+/* --- Routing link and button --- */
 
 .toast-notification .routing-link {
-  grid-column: 3;
-  align-content: center;
-  justify-content: center;
+  flex-shrink: 0;
+}
+
+.toast-notification .routing-button {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--toast-link-color);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: var(--lumo-font-size-m);
+  font-weight: var(--font-weight-regular);
+  text-decoration: underline;
+  cursor: pointer;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.toast-notification .routing-button::part(label) {
+  color: var(--toast-link-color);
 }

@@ -5,14 +5,14 @@ import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.component.UI;
-import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.server.ErrorEvent;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.exceptionhandling.ErrorMessageTranslationService.UserFriendlyErrorMessage;
-import life.qbic.datamanager.views.notifications.NotificationDialog;
+import life.qbic.datamanager.views.general.dialog.AlertDialog;
 import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.application.associated_dataset.AssociatedDatasetServiceException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -54,6 +54,20 @@ public class UiExceptionHandler {
     } catch (UnknownHostException ignored) {
       log.error(throwable.getMessage(), throwable);
     }
+
+    // Service-level exceptions (e.g. from AssociatedDatasetService) carry
+    // a user-friendly message that has already been translated at the
+    // application-layer boundary — no infrastructure details leak through.
+    // We surface that message directly so the user sees something meaningful
+    // instead of the generic "Something went wrong" fallback.
+    if (throwable instanceof AssociatedDatasetServiceException serviceException) {
+      var friendly = new UserFriendlyErrorMessage(
+          "Operation failed",
+          serviceException.userMessage());
+      displayUserFriendlyMessage(ui, friendly);
+      return;
+    }
+
     ApplicationException applicationException = ApplicationException.wrapping(throwable);
     displayUserFriendlyMessage(ui, applicationException);
   }
@@ -61,6 +75,28 @@ public class UiExceptionHandler {
   private void displayUserFriendlyMessage(UI ui, ApplicationException exception) {
     requireNonNull(ui, "ui must not be null");
     requireNonNull(exception, "exception must not be null");
+    if (!isUiReady(ui)) {
+      return;
+    }
+    UserFriendlyErrorMessage errorMessage = userMessageService.translate(exception, ui.getLocale());
+    ui.access(() -> showErrorDialog(errorMessage));
+  }
+
+  private void displayUserFriendlyMessage(UI ui, UserFriendlyErrorMessage message) {
+    requireNonNull(ui, "ui must not be null");
+    requireNonNull(message, "message must not be null");
+    if (!isUiReady(ui)) {
+      return;
+    }
+    ui.access(() -> showErrorDialog(message));
+  }
+
+  /**
+   * Verifies the UI is still attached and not closing. Returns
+   * {@code false} (and logs the situation) when the UI cannot receive
+   * a new message, so callers can simply {@code return} after invoking it.
+   */
+  private boolean isUiReady(UI ui) {
     if (ui.isClosing()) {
       if (nonNull(ui.getSession())) {
         log.error(
@@ -70,8 +106,7 @@ public class UiExceptionHandler {
         log.error(
             "tried to show message on closing UI ui[%s] session is null".formatted(ui.getUIId()));
       }
-
-      return;
+      return false;
     }
     if (!ui.isAttached()) {
       if (nonNull(ui.getSession())) {
@@ -84,16 +119,18 @@ public class UiExceptionHandler {
             "tried to show message on detached UI ui[%s] session is null".formatted(
                 ui.getUIId()));
       }
-      return;
+      return false;
     }
-    UserFriendlyErrorMessage errorMessage = userMessageService.translate(exception, ui.getLocale());
-    ui.access(() -> showErrorDialog(errorMessage));
+    return true;
   }
 
   private void showErrorDialog(UserFriendlyErrorMessage userFriendlyError) {
-    NotificationDialog.errorDialog()
-        .withTitle(userFriendlyError.title())
-        .withContent(new Span(userFriendlyError.message()))
+    AlertDialog.alert(UI.getCurrent())
+        .error()
+        .title(userFriendlyError.title())
+        .message(userFriendlyError.message())
+        .confirmButton("Got it", () -> {})
+        .build()
         .open();
   }
 }

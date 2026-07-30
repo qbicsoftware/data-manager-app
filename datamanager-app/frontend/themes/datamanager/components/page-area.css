@@ -424,22 +424,34 @@
   padding: var(--lumo-space-xs);
 }
 
-.project-collection-component .project-overview-item {
-  border: black;
-  border-radius: var(--lumo-border-radius-m);
-  box-shadow: var(--lumo-box-shadow-s);
+.project-collection-component .project-overview-item,
+.project-collection-component .project-overview-item:hover {
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   flex-wrap: wrap;
-  margin-bottom: var(--lumo-space-s);
-  margin-top: var(--lumo-space-s);
-  overflow: hidden;
   padding: var(--lumo-space-l);
   row-gap: var(--lumo-space-s);
   text-overflow: ellipsis;
   white-space: normal;
   cursor: pointer;
+  text-decoration: none
+}
+
+/* The wrapper now owns the card's visual styling (shadow, rounded corners,
+ * spacing between cards). The card body RouterLink inside it provides only
+ * padding and the content flow; the footer RouterLink (when present) shares
+ * the same rounded shape with a subtle top-border divider.
+ */
+.project-card-wrapper {
+  border: black;
+  border-radius: var(--lumo-border-radius-m);
+  box-shadow: var(--lumo-box-shadow-s);
+  overflow: hidden;
+  margin-bottom: var(--lumo-space-s);
+  margin-top: var(--lumo-space-s);
+  display: flex;
+  flex-direction: column;
 }
 
 .project-collection-component .project-overview-item .header {
@@ -624,4 +636,74 @@
   flex-direction: row;
   align-items: center;
   column-gap: var(--lumo-space-s);
+}
+
+/*
+ * Datasets view: Connected Resources section.
+ * Placed into the `datasets-content` grid area defined in grid-templates.css
+ * for `.main.project.datasets`, which spans the full available width.
+ */
+.datasets-content {
+  grid-area: datasets-content;
+}
+
+/*
+ * project-dataset footer — full-width RouterLink rendered at the bottom of
+ * each project card in the collection view. The entire footer is the click
+ * target (44px+ click target for accessibility); it visually merges with
+ * the card body above it, forming a single unified card with a subtle
+ * top-border divider and slightly tinted background.
+ *
+ * Visual merge details (paired with .project-card-wrapper above):
+ *   - Card body lives inside .project-card-wrapper (no shadow / no rounded
+ *     corners of its own) with padding matching the footer.
+ *   - Footer has only the top-border as a visual divider; background matches
+ *     the card body (white).
+ *   - .project-card-wrapper carries the rounded corner shape (overflow: hidden
+ *     clips both children into the same card outline) and the inter-card margin.
+ *
+ * Styling is component-specific; not extracted to all.css utilities.
+ */
+
+.project-dataset-footer,
+.project-dataset-footer *,
+a.project-dataset-footer, a.project-dataset-footer:hover {
+  text-decoration: none;
+  box-sizing: border-box;
+}
+
+.project-dataset-footer {
+  display: block;
+  color: var(--lumo-body-text-color);
+  border-top: 1px solid var(--lumo-contrast-10pct);
+  background-color: var(--lumo-base-color);
+  padding-top: var(--spacing-04);
+  padding-bottom: var(--spacing-04);
+  padding-left: var(--spacing-05);
+  padding-right: var(--spacing-05);
+  margin: 0;
+  transition:
+    background-color 150ms ease,
+    border-top-color 150ms ease;
+}
+
+.project-dataset-footer:hover,
+.project-dataset-footer:focus-within {
+  background-color: var(--background-color-5pct);
+  border-top-color: var(--lumo-contrast-20pct);
+}
+
+.project-dataset-footer vaadin-icon {
+  color: var(--icon-color);
+  transition: color 150ms ease;
+}
+
+.project-dataset-footer:hover vaadin-icon,
+.project-dataset-footer:focus-within vaadin-icon {
+  color: var(--primary-text-color);
+}
+
+.project-dataset-footer:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: -2px;
 }

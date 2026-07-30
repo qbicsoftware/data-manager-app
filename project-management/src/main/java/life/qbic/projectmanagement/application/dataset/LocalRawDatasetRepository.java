@@ -1,8 +1,6 @@
 package life.qbic.projectmanagement.application.dataset;
 
-import java.util.Collection;
 import java.util.List;
-import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.RawDataset;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.RawDatasetFilter;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.RawDatasetInformationIp;

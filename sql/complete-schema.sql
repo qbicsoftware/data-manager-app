@@ -743,7 +743,11 @@ SELECT `pd`.`projectId`                     AS `projectId`,
        `m`.`amountPxpMeasurements`          AS `amountPxpMeasurements`,
        `m`.`amountIpMeasurements`           AS `amountIpMeasurements`,
        `users`.`usernames`                  AS `usernames`,
-       `users`.`userInfos`                  AS `userInfos`
+       `users`.`userInfos`                  AS `userInfos`,
+       COALESCE(connected_datasets.connectedDatasetCount,   0) AS `connectedDatasetCount`,
+       COALESCE(connected_datasets.openDatasetCount,        0) AS `openDatasetCount`,
+       COALESCE(connected_datasets.restrictedDatasetCount,  0) AS `restrictedDatasetCount`,
+       connected_datasets.lastConnectedOn                      AS `lastConnectedOn`
 FROM projects_datamanager pd
          LEFT JOIN project_measurements m ON pd.projectId = m.projectId
          LEFT JOIN (SELECT project_userinfo.projectId,
@@ -751,7 +755,18 @@ FROM projects_datamanager pd
                            JSON_ARRAYAGG(JSON_OBJECT('userId', project_userinfo.userId, 'userName',
                                                      project_userinfo.userName))  AS `userInfos`
                     FROM project_userinfo
-                    GROUP BY projectId) AS users ON users.projectId = pd.projectId;
+                    GROUP BY projectId) AS users ON users.projectId = pd.projectId
+         LEFT JOIN (
+             SELECT
+                 `project_id`,
+                 COUNT(*)                                                            AS connectedDatasetCount,
+                 SUM(CASE WHEN `access_level` = 'PUBLIC'     THEN 1 ELSE 0 END)      AS openDatasetCount,
+                 SUM(CASE WHEN `access_level` = 'RESTRICTED' THEN 1 ELSE 0 END)      AS restrictedDatasetCount,
+                 MAX(`connected_on`)                                                 AS lastConnectedOn
+             FROM `associated_dataset`
+             WHERE `connection_state` = 'CONNECTED'
+             GROUP BY `project_id`
+         ) AS connected_datasets ON connected_datasets.project_id = pd.projectId;
 
 CREATE OR REPLACE VIEW v_ngs_measurement_sample_json AS
 SELECT m.measurement_id,
@@ -974,3 +989,51 @@ SELECT ip.measurement_id,
 FROM ip_measurements ip
          INNER JOIN remote_measurement_data rmd
                     ON rmd.measurement_id = ip.measurementCode;
+
+-- ===========================================================================
+-- Associated Dataset
+-- Per ADR-0001: source-agnostic aggregate within project-management bounded
+-- context. Source-specific metadata is stored as a MariaDB JSON blob; a
+-- small set of "universal columns" (title, pid, version, publication_date)
+-- are extracted to regular columns for SQL sort/filter.
+-- Soft-delete: connection_state = 'REMOVED' keeps the row as an audit
+-- tombstone; active queries filter it out.
+-- ===========================================================================
+CREATE TABLE IF NOT EXISTS `associated_dataset`
+(
+    `id`                varchar(36) NOT NULL,
+    `project_id`        varchar(36)     NOT NULL,
+    `source_type`       varchar(32)     NOT NULL    COMMENT 'e.g. INVENIO_RDM',
+    `external_handle`   varchar(512)    NOT NULL    COMMENT 'record ID on the source',
+    `connection_state`  varchar(16)     NOT NULL    COMMENT 'CONNECTED | REMOVED (soft-delete)',
+    `access_level`      varchar(16)     NOT NULL    COMMENT 'coarse access, derived from metadata',
+
+    -- Universal columns (source-agnostic, used for sort/filter)
+    `title`             varchar(1024)   DEFAULT NULL,
+    `pid`               varchar(255)    DEFAULT NULL,
+    `version`           varchar(32)     DEFAULT NULL,
+    `publication_date`  date            DEFAULT NULL,
+
+    -- Source-specific metadata (opaque JSON; see ResourceMetadata hierarchy)
+    `resource_metadata` json            DEFAULT NULL,
+
+    -- Connection metadata
+    `connected_by`      varchar(255)    NOT NULL,
+    `connected_on`      timestamp(3)    NOT NULL,
+    `experiment_id`     varchar(36)     DEFAULT NULL COMMENT 'optional experiment association',
+    `last_synced_at`    timestamp(3)    DEFAULT NULL,
+
+    -- Generated column for partial unique index: NULL when REMOVED so that
+    -- MariaDB excludes tombstoned rows from the uniqueness check.
+    `active_pid`        varchar(255) GENERATED ALWAYS AS
+                                        (CASE WHEN `connection_state` <> 'REMOVED' THEN `pid` ELSE NULL END) VIRTUAL,
+
+    PRIMARY KEY (`id`),
+    KEY `idx_assoc_ds_project`          (`project_id`),
+    KEY `idx_assoc_ds_state`            (`connection_state`),
+    KEY `idx_assoc_ds_source_type`      (`source_type`),
+    KEY `idx_assoc_ds_project_state`    (`project_id`, `connection_state`),
+    UNIQUE KEY `uk_assoc_ds_project_pid` (`project_id`, `active_pid`)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci;
