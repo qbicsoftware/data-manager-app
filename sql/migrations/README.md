@@ -15,6 +15,7 @@ For the three-tier migration documentation structure, see
 | # | Script | Description | Story | Target datasource |
 |---|---|---|---|---|
 | 1 | [`create-associated-dataset.sql`](create-associated-dataset.sql) | Create `associated_dataset` table for connecting InvenioRDM datasets to projects | [#1467](https://github.com/qbicsoftware/data-manager-app/issues/1467) | `data_management` |
+| 2 | [`extend-dataset-visibility-in-project-overview.sql`](extend-dataset-visibility-in-project-overview.sql) | Add connected-dataset aggregates (count, open/restricted breakdown, last-connected) to `project_overview` view | [#1475](https://github.com/qbicsoftware/data-manager-app/issues/1475) | `data_management` |
 
 *Add a row here and drop in the script when a new migration lands.*
 
