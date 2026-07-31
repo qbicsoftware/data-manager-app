@@ -10,6 +10,7 @@ import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.Grid.MultiSortPriority;
+import com.vaadin.flow.component.grid.GridSortOrder;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Span;
@@ -386,7 +387,8 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   private Grid<NgsMeasurementLookup.MeasurementInfo> createNgsGrid() {
     var ngsGrid = new Grid<NgsMeasurementLookup.MeasurementInfo>();
     ngsGrid.setMultiSort(true, MultiSortPriority.APPEND, true);
-    ngsGrid.addColumn(NgsMeasurementLookup.MeasurementInfo::measurementCode)
+    var measurementIdColumn = ngsGrid.addColumn(
+            NgsMeasurementLookup.MeasurementInfo::measurementCode)
         .setHeader("QBiC Measurement ID")
         .setSortProperty(NgsSortKey.MEASUREMENT_ID.sortKey())
         .setComparator(Comparator.comparing(NgsMeasurementLookup.MeasurementInfo::measurementCode))
@@ -465,14 +467,15 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         .setSortable(false)
         .setAutoWidth(true)
         .setResizable(true);
-
+    ngsGrid.sort(GridSortOrder.asc(measurementIdColumn).build());
     return ngsGrid;
   }
 
   private Grid<PxpMeasurementLookup.MeasurementInfo> createPxpGrid() {
     var pxpGrid = new Grid<PxpMeasurementLookup.MeasurementInfo>();
     pxpGrid.setMultiSort(true, MultiSortPriority.APPEND, true);
-    pxpGrid.addColumn(PxpMeasurementLookup.MeasurementInfo::measurementCode)
+    var measurementIdColumn = pxpGrid.addColumn(
+            PxpMeasurementLookup.MeasurementInfo::measurementCode)
         .setHeader("QBiC Measurement ID")
         .setSortProperty(PxpSortKey.MEASUREMENT_ID.sortKey())
         .setComparator(Comparator.comparing(PxpMeasurementLookup.MeasurementInfo::measurementCode))
@@ -569,7 +572,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         .setSortable(false)
         .setAutoWidth(true)
         .setResizable(true);
-
+    pxpGrid.sort(GridSortOrder.asc(measurementIdColumn).build());
     return pxpGrid;
   }
 
@@ -662,7 +665,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   private Grid<IpMeasurementLookup.MeasurementInfo> createIpGrid() {
     var ipGrid = new Grid<IpMeasurementLookup.MeasurementInfo>();
     ipGrid.setMultiSort(true, MultiSortPriority.APPEND, true);
-    ipGrid.addColumn(IpMeasurementLookup.MeasurementInfo::measurementCode)
+    var measurementIdColumn = ipGrid.addColumn(IpMeasurementLookup.MeasurementInfo::measurementCode)
         .setHeader("QBiC Measurement ID")
         .setSortProperty(IpMeasurementLookup.IpSortKey.MEASUREMENT_ID.sortKey())
         .setComparator(
@@ -817,6 +820,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         .setSortable(false)
         .setAutoWidth(true)
         .setResizable(true);
+    ipGrid.sort(GridSortOrder.asc(measurementIdColumn).build());
     return ipGrid;
   }
 

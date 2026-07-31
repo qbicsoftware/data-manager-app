@@ -22,8 +22,8 @@ import life.qbic.datamanager.files.export.download.ByteArrayDownloadStreamProvid
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.Main;
+import life.qbic.datamanager.views.general.dialog.AlertDialog;
 import life.qbic.datamanager.views.general.download.DownloadComponent;
-import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.projects.project.ProjectMainLayout;
@@ -41,10 +41,8 @@ import life.qbic.datamanager.views.projects.project.info.OfferListComponent.Uplo
 import life.qbic.datamanager.views.projects.project.info.QualityControlListComponent.DeleteQualityControlEvent;
 import life.qbic.datamanager.views.projects.project.info.QualityControlListComponent.DownloadQualityControlEvent;
 import life.qbic.datamanager.views.projects.project.info.QualityControlListComponent.QualityControl;
-import life.qbic.datamanager.views.projects.purchase.PurchaseItemDeletionConfirmationNotification;
 import life.qbic.datamanager.views.projects.purchase.UploadPurchaseDialog;
-import life.qbic.datamanager.views.projects.quality_control.QCItemDeletionConfirmationNotification;
-import life.qbic.datamanager.views.projects.quality_control.UploadQualityControlDialog;
+import life.qbic.datamanager.views.projects.qualityControl.UploadQualityControlDialog;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.AddExperimentToProjectService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
@@ -92,7 +90,6 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
   private final DownloadComponent downloadComponent;
   private final OfferListComponent offerListComponent;
   private final QualityControlListComponent qualityControlListComponent;
-  private final transient CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
   private final transient MessageSourceNotificationFactory messageSourceNotificationFactory;
   private final transient TerminologyService terminologyService;
   private Context context;
@@ -107,7 +104,6 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
       @Autowired ProjectPurchaseService projectPurchaseService,
       @Autowired QualityControlService qualityControlService,
       @Autowired TerminologyService terminologyService,
-      CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
       MessageSourceNotificationFactory messageSourceNotificationFactory,
       UploadConfiguration uploadConfiguration) {
     this.projectSummaryComponent = requireNonNull(projectSummaryComponent);
@@ -126,8 +122,6 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
         "qualityControlService must not be null");
     this.messageSourceNotificationFactory = requireNonNull(messageSourceNotificationFactory,
         "messageSourceNotificationFactory must not be null");
-    this.cancelConfirmationDialogFactory = requireNonNull(cancelConfirmationDialogFactory,
-        "cancelConfirmationDialogFactory must not be null");
     this.uploadConfiguration = requireNonNull(uploadConfiguration);
 
     downloadComponent = new DownloadComponent();
@@ -208,17 +202,17 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
   }
 
   private void onDeleteOfferClicked(DeleteOfferClickEvent deleteOfferClickEvent) {
-    PurchaseItemDeletionConfirmationNotification purchaseItemDeletionConfirmationNotification = new PurchaseItemDeletionConfirmationNotification();
-    purchaseItemDeletionConfirmationNotification.open();
-    purchaseItemDeletionConfirmationNotification.addConfirmListener(event -> {
-      projectPurchaseService.deleteOffer(context.projectId().orElseThrow().value(),
-          deleteOfferClickEvent.offerId());
-      deleteOfferClickEvent.getSource().remove(deleteOfferClickEvent.offerId());
-      downloadComponent.removeHref();
-      purchaseItemDeletionConfirmationNotification.close();
-    });
-    purchaseItemDeletionConfirmationNotification.addCancelListener(
-        event -> purchaseItemDeletionConfirmationNotification.close());
+    AlertDialog.danger(this,
+        "Offer will be deleted",
+        "Are you sure you want to delete this offer?",
+        "Delete offer",
+        "Keep offer",
+        () -> {
+          projectPurchaseService.deleteOffer(context.projectId().orElseThrow().value(),
+              deleteOfferClickEvent.offerId());
+          deleteOfferClickEvent.getSource().remove(deleteOfferClickEvent.offerId());
+          downloadComponent.removeHref();
+        }).open();
   }
 
   private void onUploadOfferClicked(UploadOfferClickEvent uploadOfferClickEvent,
@@ -272,17 +266,17 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
   }
 
   private void onDeleteQualityControlClicked(DeleteQualityControlEvent deleteQualityControlEvent) {
-    QCItemDeletionConfirmationNotification qcItemDeletionConfirmationNotification = new QCItemDeletionConfirmationNotification();
-    qcItemDeletionConfirmationNotification.open();
-    qcItemDeletionConfirmationNotification.addConfirmListener(event -> {
-      qualityControlService.deleteQualityControl(context.projectId().orElseThrow().value(),
-          deleteQualityControlEvent.qualityControlId());
-      downloadComponent.removeHref();
-      refreshQualityControls();
-      qcItemDeletionConfirmationNotification.close();
-    });
-    qcItemDeletionConfirmationNotification.addCancelListener(
-        event -> qcItemDeletionConfirmationNotification.close());
+    AlertDialog.danger(this,
+        "Quality control will be deleted",
+        "Are you sure you want to delete this file?",
+        "Delete file",
+        "Keep file",
+        () -> {
+          qualityControlService.deleteQualityControl(context.projectId().orElseThrow().value(),
+              deleteQualityControlEvent.qualityControlId());
+          downloadComponent.removeHref();
+          refreshQualityControls();
+        }).open();
   }
 
   private void onUploadQualityControlClicked() {
@@ -367,9 +361,13 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
   }
 
   private void showCancelConfirmationDialog(AddExperimentDialog creationDialog) {
-    cancelConfirmationDialogFactory.cancelConfirmationDialog(
-            it -> creationDialog.close(),
-            "experiment.create", getLocale())
+    AlertDialog.alert(this)
+        .warning()
+        .title("Discard changes?")
+        .message("By aborting the editing process and closing the dialog, you will lose all information entered.")
+        .confirmButton("Discard changes", () -> creationDialog.close())
+        .cancelButton("Keep editing", () -> {})
+        .build()
         .open();
   }
 

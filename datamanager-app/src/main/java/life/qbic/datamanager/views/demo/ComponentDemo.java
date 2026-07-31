@@ -19,6 +19,7 @@ import com.vaadin.flow.data.provider.CallbackDataProvider.CountCallback;
 import com.vaadin.flow.data.provider.CallbackDataProvider.FetchCallback;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.util.ArrayList;
@@ -557,48 +558,173 @@ public class ComponentDemo extends Div {
   }
 
   private Div toastShowCase() {
-    var title = new Div("Toast it!");
+    var title = new Div("Toast Notifications");
     title.addClassName(HEADING_2);
     var description = new Div(
-        "Let's see how toasts work and also how to use them when we want to indicate a background task to the user.");
+        "Demonstrates all toast notification types with the new dark-mode design system. Includes success, info, error toasts with icons, progress toasts with action buttons, and routing toasts.");
     description.addClassName(NORMAL_BODY_TEXT);
-    var content = new Div();
-    content.addClassNames(FLEX_VERTICAL, GAP_04);
 
-    content.add(title);
-    content.add(description);
+    var container = new Div();
+    container.addClassNames("border", "padding-04");
 
-    var button = new Button("Show Toast");
+    var grid = new Div();
+    grid.addClassNames("flex-horizontal");
+    grid.addClassName("gap-05");
 
-    content.add(button);
+    // --- Column 1: Basic Toasts ---
+    var col1 = new Div();
+    col1.addClassNames("flex-vertical", "gap-03", "width-250px");
 
-    button.addClickListener(e ->
-    {
-      var progressBar = new ProgressBar();
-      progressBar.setIndeterminate(true);
-      var toast = messageFactory.pendingTaskToast("task.in-progress",
-          new Object[]{"Doing something really heavy here"}, getLocale());
-      var succeededToast = messageFactory.toast("task.finished", new Object[]{"Heavy Task #1"},
+    var col1Header = new Div("Basic Toasts");
+    col1Header.addClassName(HEADING_3);
+    col1.add(col1Header);
+
+    // Success toast
+    var successToastBtn = new Button("Success Toast");
+    successToastBtn.addClickListener(e -> {
+      var toast = messageFactory.toast("experiment.created.success",
+          new Object[]{"My New Experiment"}, getLocale());
+      toast.open();
+    });
+    col1.add(successToastBtn);
+
+    // Info toast with routing
+    var infoToastBtn = new Button("Info Toast + Route");
+    infoToastBtn.addClickListener(e -> {
+      var toast = messageFactory.routingToast("from.experiment.to.sample.batch",
+          new Object[]{}, new Object[]{},
+          life.qbic.datamanager.views.projects.project.samples.SampleInformationMain.class,
+          new RouteParameters("projectId", "test-project"),
           getLocale());
+      toast.open();
+    });
+    col1.add(infoToastBtn);
+
+    // Error toast
+    var errorToastBtn = new Button("Error Toast");
+    errorToastBtn.addClickListener(e -> {
+      var toast = messageFactory.toast("project.created.error", new Object[]{}, getLocale());
+      toast.open();
+    });
+    col1.add(errorToastBtn);
+
+    // --- Column 2: Action & Progress Toasts ---
+    var col2 = new Div();
+    col2.addClassNames("flex-vertical", "gap-03", "width-250px");
+
+    var col2Header = new Div("Action & Progress Toasts");
+    col2Header.addClassName(HEADING_3);
+    col2.add(col2Header);
+
+    // Error toast with action (retry)
+    var actionToastBtn = new Button("Error + Retry");
+    actionToastBtn.addClickListener(e -> {
+      var toast = messageFactory.actionToast(
+          "project.updated.error.retry",
+          new Object[]{},
+          "Retry",
+          buttonClick -> {
+            UI.getCurrent().getPage().executeJs("console.log('Retry action clicked!')");
+          },
+          getLocale());
+      toast.open();
+    });
+    col2.add(actionToastBtn);
+
+    // Pending task toast (progress)
+    var pendingToastBtn = new Button("Pending Task (Progress)");
+    pendingToastBtn.addClickListener(e -> {
+      var toast = messageFactory.pendingTaskToast("task.in-progress",
+          new Object[]{"Registering 50 samples"}, getLocale());
       toast.open();
       var ui = UI.getCurrent();
       CompletableFuture.runAsync(() -> {
         try {
           Thread.sleep(5000);
-
         } catch (InterruptedException ex) {
           Thread.currentThread().interrupt();
         }
       }).thenRunAsync(() -> {
         ui.access(() -> {
-              toast.close();
-              succeededToast.open();
-            }
-        );
+            toast.close();
+            var success = messageFactory.toast("sample-batch.registered.success",
+                new Object[]{"Registration Batch #1"}, getLocale());
+            success.open();
+          });
       });
     });
-    content.add(button);
-    return content;
+    col2.add(pendingToastBtn);
+
+    // Measurement in-progress with subtext
+    var measureToastBtn = new Button("Measurement Registration");
+    measureToastBtn.addClickListener(e -> {
+      var toast = messageFactory.pendingTaskToast("measurement.registration.in-progress",
+          new Object[]{}, getLocale());
+      toast.open();
+      var ui = UI.getCurrent();
+      CompletableFuture.runAsync(() -> {
+        try {
+          Thread.sleep(6000);
+        } catch (InterruptedException ex) {
+          Thread.currentThread().interrupt();
+        }
+      }).thenRunAsync(() -> {
+        ui.access(() -> {
+            toast.close();
+            var success = messageFactory.toast("measurement.registration.successful",
+                new Object[]{42}, getLocale());
+            success.open();
+          });
+      });
+    });
+    col2.add(measureToastBtn);
+
+    // --- Column 3: Individual Toast Tests ---
+    var col3 = new Div();
+    col3.addClassNames("flex-vertical", "gap-03", "width-250px");
+
+    var col3Header = new Div("Toast Variants");
+    col3Header.addClassName(HEADING_3);
+    col3.add(col3Header);
+
+    // Short success toast
+    var shortSuccessBtn = new Button("Short Success (5s)");
+    shortSuccessBtn.addClickListener(e -> {
+      var toast = messageFactory.toast("experimental.groups.created.success",
+          new Object[]{}, getLocale());
+      toast.open();
+    });
+    col3.add(shortSuccessBtn);
+
+    // Personal access token success (8s duration)
+    var patToastBtn = new Button("PAT Created (8s)");
+    patToastBtn.addClickListener(e -> {
+      var toast = messageFactory.toast("personal-access-token.created.success",
+          new Object[]{"my-token-12345"}, getLocale());
+      toast.open();
+    });
+    col3.add(patToastBtn);
+
+    // Measurement failure toast
+    var measureFailToastBtn = new Button("Measurement Upload Failed");
+    measureFailToastBtn.addClickListener(e -> {
+      var toast = messageFactory.toast("measurement.upload.failed",
+          new Object[]{}, getLocale());
+      toast.open();
+    });
+    col3.add(measureFailToastBtn);
+
+    // Profile link success
+    var profileToastBtn = new Button("Profile Linked");
+    profileToastBtn.addClickListener(e -> {
+      var toast = messageFactory.toast("profile.oidc.link.success", new Object[]{}, getLocale());
+      toast.open();
+    });
+    col3.add(profileToastBtn);
+
+    grid.add(col1, col2, col3);
+    container.add(title, description, grid);
+    return container;
   }
 
   private static Div detailBoxShowCase() {

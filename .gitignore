@@ -1,6 +1,12 @@
+# Project-local SSH configuration (keys, config, known_hosts)
+.ssh/
+
 # Local agent config files/folders
 .opencode/
 opencode.json
+
+# Any local run configuration file
+.run
 
 # Local git worktrees
 .worktrees/

@@ -95,7 +95,7 @@ All requirements follow a domain-based ID structure:
 ### Rules
 
 - IDs are **stable and must never be renumbered or reused.**
-- Constraints (`*-C-*`) influence architecture and must not be referenced in Stories. Reference them only in Task Technical Notes and ADRs.
+- Constraints (`*-C-*`) influence architecture and must not be referenced in Stories. Reference them only in Task Technical Notes and [ADRs](../adr/README.md).
 - One requirement may be referenced by multiple Stories.
 - A Story may reference multiple requirement IDs when a single user workflow spans multiple domains. If a Story spans more than two domains, consider splitting it.
 
@@ -114,7 +114,7 @@ Each requirement must contain:
 <Why this requirement exists — strategic, regulatory, stakeholder-driven, or architectural>
 
 **Source (optional but recommended):**
-<Link to PRD section, FAIR/CARE principle, regulatory document, stakeholder request, or ADR>
+<Link to PRD section, FAIR/CARE principle, regulatory document, stakeholder request, or [ADR](../adr/README.md)>
 ```
 
 ---
@@ -291,6 +291,36 @@ Data scientists and bioinformaticians need programmatic access to raw immunopept
 
 **Source:**
 PRD §3 Scope — File management; Issue #1412
+
+#### DATA-R-04: Connected-Dataset Project-Listing Visibility
+
+The system shall, for each project accessible to the logged-in user in the project collection view, display (a) the number of datasets connected to that project, (b) the per-access-level breakdown (open / restricted), and (c) the most-recent connection date across those datasets. The connected-dataset indicator shall be a distinct click target within the project card that navigates directly to the project's connected-datasets view.
+
+**Rationale:**
+Researchers need to assess dataset connectivity at a glance from their project listing, without opening each project individually. Surface-level visibility of both quantity and access status (including restricted data awaiting credential unlock) supports triage and prioritisation of project work.
+
+**Source:**
+Feature #1466 § FEAT-DATASET-CONNECTION; Story #1475 (FEAT-DATSET-09)
+
+#### DATA-R-05: Connected-Dataset Synchronisation
+
+The system shall support synchronising connected dataset metadata with the source InvenioRDM instance, so that locally stored connection records stay consistent with upstream changes (e.g. new versions, embargoes lifted, titles corrected).
+
+**Rationale:**
+Connected-dataset metadata can change on the source platform after connexion. Stale local metadata misleads researchers about access status and data provenance.
+
+**Source:**
+Feature #1466 § FEAT-DATASET-CONNECTION; Stories #1470, #1474
+
+#### DATA-R-06: InvenioRDM Credential Management
+
+The system shall allow individual users to register, list, and remove personal access tokens for InvenioRDM instances. Registered tokens shall be encrypted at rest and used only to search and connect access-restricted datasets on behalf of the user.
+
+**Rationale:**
+Access-restricted datasets require a valid InvenioRDM personal access token. Without a per-user credential management surface, researchers cannot connect restricted datasets or unlock embargoes their institution has access to.
+
+**Source:**
+Feature #1466 § FEAT-DATASET-CONNECTION; Stories #1471–#1479
 
 ### Non-Functional Requirements
 

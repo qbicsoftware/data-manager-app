@@ -7,15 +7,14 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.api.fair.DigitalObject;
 import life.qbic.projectmanagement.application.api.template.TemplateProvider;
-import life.qbic.projectmanagement.application.api.template.TemplateProvider.MeasurementInformationCollectionIP;
-import life.qbic.projectmanagement.application.api.template.TemplateProvider.MeasurementInformationIP;
-import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.MeasurementTemplateFactory;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.IpEditFactory.MeasurementEntryIP;
+import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.MeasurementTemplateFactory;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.NgsEditFactory.MeasurementEntryNGS;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.ProteomicsEditFactory.MeasurementEntryPxP;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.SampleTemplateFactory;
@@ -92,7 +91,10 @@ public class TemplateProviderOpenXML implements TemplateProvider {
     var entries = req.measurements().stream()
         .flatMap(value -> fromRequest(value).stream())
         .toList();
-    return measurementTemplateFactory.forUpdatePxP(entries).createWorkbook();
+    var sortedPxPMeasurements = new ArrayList<>(entries);
+    sortedPxPMeasurements.sort(
+        Comparator.comparing(MeasurementEntryPxP::measurementId));
+    return measurementTemplateFactory.forUpdatePxP(sortedPxPMeasurements).createWorkbook();
   }
 
   private DigitalObject getTemplate(MeasurementInformationCollectionNGS req) {
@@ -105,7 +107,10 @@ public class TemplateProviderOpenXML implements TemplateProvider {
     var entries = req.measurements().stream()
         .flatMap(value -> fromRequest(value).stream())
         .toList();
-    return measurementTemplateFactory.forUpdateNGS(entries).createWorkbook();
+    var sortedNGSMeasurements = new ArrayList<>(entries);
+    sortedNGSMeasurements.sort(
+        Comparator.comparing(MeasurementEntryNGS::measurementId));
+    return measurementTemplateFactory.forUpdateNGS(sortedNGSMeasurements).createWorkbook();
   }
 
   private static List<MeasurementEntryPxP> fromRequest(MeasurementInformationPxP req) {
@@ -177,7 +182,10 @@ public class TemplateProviderOpenXML implements TemplateProvider {
     var entries = req.measurements().stream()
         .flatMap(value -> fromRequest(value).stream())
         .toList();
-    return measurementTemplateFactory.forUpdateIP(entries).createWorkbook();
+    var sortedIPMeasurements = new ArrayList<>(entries);
+    sortedIPMeasurements.sort(
+        Comparator.comparing(MeasurementEntryIP::measurementId));
+    return measurementTemplateFactory.forUpdateIP(sortedIPMeasurements).createWorkbook();
   }
 
   private static List<MeasurementEntryIP> fromRequest(MeasurementInformationIP req) {
@@ -227,8 +235,11 @@ public class TemplateProviderOpenXML implements TemplateProvider {
   }
 
   private Workbook forRequest(SampleInformation req) {
+    var sortedSamples = new ArrayList<>(req.samples());
+    sortedSamples.sort(Comparator.comparing(sample -> sample.sampleCode().code(),
+        Comparator.naturalOrder()));
     return sampleTemplateFactory.forInformation(
-        req.samples(),
+        sortedSamples,
         req.analysisMethods(),
         req.conditions(),
         req.analytes(),
@@ -242,8 +253,11 @@ public class TemplateProviderOpenXML implements TemplateProvider {
 
   private Workbook forRequest(SampleUpdate req) {
     var info = req.information();
+    var sortedSamples = req.information().samples();
+    sortedSamples.sort(Comparator.comparing(sample -> sample.sampleCode().code(),
+        Comparator.naturalOrder()));
     return sampleTemplateFactory.forUpdate(
-        info.samples(),
+        sortedSamples,
         info.analysisMethods(),
         info.conditions(),
         info.analytes(),

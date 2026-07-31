@@ -1,6 +1,7 @@
 package life.qbic.datamanager.views.projects.project.rawdata;
 
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.grid.GridSortOrder;
 import com.vaadin.flow.data.provider.CallbackDataProvider.CountCallback;
 import com.vaadin.flow.data.provider.CallbackDataProvider.FetchCallback;
 import com.vaadin.flow.data.provider.QuerySortOrder;
@@ -14,7 +15,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -145,10 +148,12 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
           .map(info -> info.dataset().measurementId())
           .map(id -> new RawDataURL(dataSourceEndpoint, id))
           .toList();
-
+      var sortedMeasurementIds = new ArrayList<>(ids);
+      sortedMeasurementIds.sort(
+          Comparator.comparing(RawDataURL::measurementCode));
       var file = RawDataUrlFile.create(ids);
       var streamProvider = createStreamProvider(FileNameFormatter.formatWithTimestampedSimple(
-          LocalDate.now(), projectCode, "proteomics_measurement_dataset_locations", "txt"), file);
+          LocalDate.now(), projectCode, "ngs_measurement_dataset_locations", "txt"), file);
       downloadComponent.trigger(streamProvider);
     });
   }
@@ -169,10 +174,12 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
           .map(info -> info.dataset().measurementId())
           .map(id -> new RawDataURL(dataSourceEndpoint, id))
           .toList();
-
+      var sortedMeasurementIds = new ArrayList<>(ids);
+      sortedMeasurementIds.sort(
+          Comparator.comparing(RawDataURL::measurementCode));
       var file = RawDataUrlFile.create(ids);
       var streamProvider = createStreamProvider(FileNameFormatter.formatWithTimestampedSimple(
-          LocalDate.now(), projectCode, "ngs_measurement_dataset_locations", "txt"), file);
+          LocalDate.now(), projectCode, "proteomics_measurement_dataset_locations", "txt"), file);
       downloadComponent.trigger(streamProvider);
     });
   }
@@ -193,8 +200,10 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
           .map(info -> info.dataset().measurementId())
           .map(id -> new RawDataURL(dataSourceEndpoint, id))
           .toList();
-
-      var file = RawDataUrlFile.create(ids);
+      var sortedMeasurementIds = new ArrayList<>(ids);
+      sortedMeasurementIds.sort(
+          Comparator.comparing(RawDataURL::measurementCode));
+      var file = RawDataUrlFile.create(sortedMeasurementIds);
       var streamProvider = createStreamProvider(FileNameFormatter.formatWithTimestampedSimple(
           LocalDate.now(), projectCode, "immunopeptidomics_measurement_dataset_locations", "txt"), file);
       downloadComponent.trigger(streamProvider);
@@ -424,7 +433,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
   private Grid<RawDatasetInformationNgs> createNgsRawDataGrid() {
     Grid<RawDatasetInformationNgs> grid = new Grid<>();
     grid.addClassName("raw-data-grid");
-    grid.addColumn(
+    var measurementIdColumn = grid.addColumn(
             rawData -> rawData.dataset().measurementId())
         .setKey(UiSortKey.MEASUREMENT_ID.value())
         .setSortProperty(UiSortKey.MEASUREMENT_ID.value())
@@ -446,6 +455,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
         .setSortProperty(UiSortKey.UPLOAD_DATE.value())
         .setHeader("Upload Date");
     grid.setItemDetailsRenderer(renderRawDataNgs());
+    grid.sort(GridSortOrder.asc(measurementIdColumn).build());
     return grid;
   }
 
@@ -457,7 +467,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
   private Grid<RawDatasetInformationPxP> createPxpRawDataGrid() {
     Grid<RawDatasetInformationPxP> grid = new Grid<>();
     grid.addClassName("raw-data-grid");
-    grid.addColumn(
+    var measurementIdColumn = grid.addColumn(
             rawData -> rawData.dataset().measurementId())
         .setKey(UiSortKey.MEASUREMENT_ID.value())
         .setSortProperty(UiSortKey.MEASUREMENT_ID.value())
@@ -478,6 +488,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
         .setSortProperty(UiSortKey.UPLOAD_DATE.value())
         .setHeader("Upload Date");
     grid.setItemDetailsRenderer(renderRawDataPxp());
+    grid.sort(GridSortOrder.asc(measurementIdColumn).build());
     return grid;
   }
 
@@ -510,7 +521,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
   private Grid<RawDatasetInformationIp> createIpRawDataGrid() {
     Grid<RawDatasetInformationIp> grid = new Grid<>();
     grid.addClassName("raw-data-grid");
-    grid.addColumn(
+    var measurementIdColumn = grid.addColumn(
             rawData -> rawData.dataset().measurementId())
         .setKey(UiSortKey.MEASUREMENT_ID.value())
         .setSortProperty(UiSortKey.MEASUREMENT_ID.value())
@@ -531,6 +542,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
         .setSortProperty(UiSortKey.UPLOAD_DATE.value())
         .setHeader("Upload Date");
     grid.setItemDetailsRenderer(renderRawDataIp());
+    grid.sort(GridSortOrder.asc(measurementIdColumn).build());
     return grid;
   }
 

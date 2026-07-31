@@ -3,7 +3,6 @@ package life.qbic.projectmanagement.infrastructure.template.provider.openxml.fac
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.BinaryOperator;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.Column;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.WorkbookFactory;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.column.IPMeasurementEditColumn;

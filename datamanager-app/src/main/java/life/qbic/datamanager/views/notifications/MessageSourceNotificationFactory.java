@@ -66,7 +66,7 @@ public class MessageSourceNotificationFactory {
     String messageText = parseMessage(key, parameters, locale);
 
     Component content = switch (type) {
-      case HTML -> new Html("<div style=\"display:contents\">%s</div>".formatted(messageText));
+      case HTML -> new Html("<div>%s</div>".formatted(messageText));
       case TEXT -> new Span(messageText);
     };
 
@@ -74,6 +74,7 @@ public class MessageSourceNotificationFactory {
     Duration duration = parseDuration(key, locale).orElse(Toast.DEFAULT_OPEN_DURATION);
 
     Toast toast = new Toast(level);
+    toast.withLevelIcon(level);
     toast.withContent(content);
     toast.setDuration(duration);
 
@@ -115,11 +116,11 @@ public class MessageSourceNotificationFactory {
    * {@link Duration#ZERO}, since it is the client's job to close the toast explicitly after the
    * pending task has finished.
    * <p>
-   * The following message keys have to be present:
+   * The toast uses the progress layout (no icon) with:
    * <ul>
-   *   <li>{@code <key>.message.type}
-   *   <li>{@code <key>.message.text}
-   *   <li>{@code <key>.routing.link.text}
+   *   <li>Title (from message.text) in 18px bold</li>
+   *   <li>Indeterminate progress bar</li>
+   *   <li>Optional subtext (from message.subtext) in 16px regular</li>
    * </ul>
    * <p>
    * For more information please see toast-notifications.properties
@@ -127,55 +128,62 @@ public class MessageSourceNotificationFactory {
    * @param key         the key for the messages
    * @param messageArgs the parameters shown in the message
    * @param locale      the locale for which to load the message
-   * @return a Toast with loaded content
-   * @see #toast(String, Object[], Locale)
+   * @return a Toast with progress indicator
    */
   public Toast pendingTaskToast(String key, Object[] messageArgs, Locale locale) {
-    var toast = toast(key, messageArgs, locale);
+    String messageText = parseMessage(key, messageArgs, locale);
+    NotificationLevel level = parseLevel(key, locale);
+
+    Toast toast = new Toast(level);
+    toast.withTitle(messageText);
+    parseSubtext(key, locale).ifPresent(toast::withSubtext);
+
     var progressBar = new ProgressBar();
     progressBar.setIndeterminate(true);
+    toast.withProgressBar(progressBar);
     toast.setDuration(Duration.ZERO);
-    return toast.add(progressBar);
+
+    return toast;
   }
 
   /**
-   * Creates a dialog notification with the contents found for the message key. This method produces
-   * a notification dialog with the link text read from the message properties file.
-   *
+   * Creates a toast with an action button (e.g., "Retry", "Try Again") for error scenarios.
+   * Useful for error toasts where the user can take corrective action.
    * <p>
-   * The following message keys have to be present:
+   * The toast includes:
    * <ul>
-   *   <li>{@code <key>.title} - the title; optional
-   *   <li>{@code <key>.level} - the level; mandatory
-   *   <li>{@code <key>.message.type} - the type (text or html); mandatory
-   *   <li>{@code <key>.message.text} - the text; mandatory
-   *   <li>{@code <key>.confirm-text} - the text of the confirm button; optional
+   *   <li>Error icon (red close-circle)</li>
+   *   <li>Error message</li>
+   *   <li>Action button (styled with #66A8FF)</li>
+   *   <li>Close button</li>
    * </ul>
-   * <p>
-   * For more information please see dialog-notifications.properties
    *
-   * @param key        the key for the messages
-   * @param parameters parameters to use in the message
-   * @param locale     the locale for which to load the message
-   * @return a notification dialog with loaded content
+   * @param key              the key for the messages
+   * @param parameters       the parameters shown in the message
+   * @param actionLabel      the action button label (e.g., "Try Again")
+   * @param actionListener   the click handler for the action button
+   * @param locale           the locale for which to load the message
+   * @return a Toast with an action button
    */
-  public NotificationDialog dialog(String key, Object[] parameters, Locale locale) {
-    MessageType type = parseMessageType(key, locale);
-    String messageText = parseMessage(key, parameters, locale);
-    Component content = switch (type) {
-      case HTML -> new Html("<div style=\"display:contents\">%s</div>".formatted(messageText));
-      case TEXT -> new Span(messageText);
-    };
+  public Toast actionToast(String key, Object[] parameters, String actionLabel,
+      com.vaadin.flow.component.ComponentEventListener<com.vaadin.flow.component.ClickEvent<com.vaadin.flow.component.button.Button>> actionListener,
+      Locale locale) {
+    Toast toast = toast(key, parameters, locale);
+    toast.withAction(actionLabel, actionListener);
+    return toast;
+  }
 
-    NotificationLevel level = parseLevel(key, locale);
-    NotificationDialog notificationDialog = new NotificationDialog(level)
-        .withContent(content);
-    parseTitle(key, locale).ifPresent(notificationDialog::withTitle);
-    parseConfirmText(key, locale).ifPresentOrElse(
-        notificationDialog::setConfirmText,
-        () -> notificationDialog.setConfirmText(DEFAULT_CONFIRM_TEXT));
-
-    return notificationDialog;
+  /**
+   * Parses an optional subtext key for progress toasts.
+   */
+  private Optional<String> parseSubtext(String key, Locale locale) {
+    try {
+      return Optional.of(messageSource.getMessage("%s.message.subtext".formatted(key),
+          new Object[]{}, locale).strip());
+    } catch (NoSuchMessageException e) {
+      log.debug("No subtext specified for %s.message.subtext".formatted(key));
+      return Optional.empty();
+    }
   }
 
   private NotificationLevel parseLevel(String key, Locale locale) {
@@ -222,16 +230,6 @@ public class MessageSourceNotificationFactory {
 
   }
 
-  private Optional<String> parseTitle(String key, Locale locale) {
-    try {
-      return Optional.of(messageSource.getMessage("%s.title".formatted(key),
-          EMPTY_PARAMETERS, locale).strip());
-    } catch (NoSuchMessageException e) {
-      log.warn("No title specified for %s.title".formatted(key));
-      return Optional.empty();
-    }
-  }
-
   private Optional<Duration> parseDuration(String key, Locale locale) {
     String durationProperty = messageSource.getMessage("%s.duration".formatted(key),
         EMPTY_PARAMETERS, null, locale);
@@ -255,11 +253,6 @@ public class MessageSourceNotificationFactory {
       throw new RuntimeException("No link text specified for " + key, e);
     }
     return linkText;
-  }
-
-  private Optional<String> parseConfirmText(String key, Locale locale) {
-    return Optional.ofNullable(messageSource.getMessage("%s.confirm-text".formatted(key),
-        new Object[]{}, null, locale));
   }
 
   private enum MessageType {
