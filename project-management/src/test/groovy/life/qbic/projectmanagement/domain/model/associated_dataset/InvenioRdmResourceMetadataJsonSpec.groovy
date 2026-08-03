@@ -1,9 +1,7 @@
 package life.qbic.projectmanagement.domain.model.associated_dataset
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.SerializationFeature
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import spock.lang.Specification
+import tools.jackson.databind.ObjectMapper
 
 /**
  * Regression coverage for the {@code resource_metadata} JSON column.
@@ -24,8 +22,6 @@ class InvenioRdmResourceMetadataJsonSpec extends Specification {
 
   def setup() {
     mapper = new ObjectMapper()
-    mapper.registerModule(new JavaTimeModule())
-    mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
   }
 
   def "legacy JSON containing 'embargoUntil' is deserialized without error"() {

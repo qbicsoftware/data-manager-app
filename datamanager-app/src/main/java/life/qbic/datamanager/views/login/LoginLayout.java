@@ -119,7 +119,7 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
 
   private void createLoginForm() {
     this.loginForm = new ConfigurableLoginForm();
-    loginForm.setAction("login");
+//    loginForm.setAction("login");
     loginForm.setUsernameText("Email");
   }
 

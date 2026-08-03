@@ -54,11 +54,12 @@ public class SecurityConfiguration {
         .permitAll()
     );
 
-    http.oauth2Login(oauth2 -> oauth2.
-        loginPage("/login").permitAll()
-        .defaultSuccessUrl("/")
-        .successHandler(authenticationSuccessHandler())
-        .failureUrl("/login?errorOauth2=true&error"));
+    http.oauth2Login(oauth2 ->
+        oauth2.loginPage("/login")
+            .permitAll()
+            .defaultSuccessUrl("/")
+            .successHandler(authenticationSuccessHandler())
+            .failureUrl("/login?errorOauth2=true&error"));
 
     http.with(vaadin(), vaadin -> vaadin
         .loginView(LoginLayout.class, contextPath + "/login?logout=true"));

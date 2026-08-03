@@ -146,7 +146,7 @@
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-oauth2-client</artifactId>
+      <artifactId>spring-boot-starter-security-oauth2-client</artifactId>
     </dependency>
     <dependency>
       <groupId>org.springframework.security</groupId>
@@ -336,13 +336,13 @@
         <version>${vaadin.version}</version>
         <!-- Skip prepare-frontend in default lifecycle: Vaadin 24.10.7 ReflectorClassLoader bug (NoSuchMethodError on ObjectNode.toPrettyString()) -->
         <!-- Developers can run "mvn vaadin:prepare-frontend" manually in IDE when needed -->
-        <!--        <executions>-->
-        <!--          <execution>-->
-        <!--            <goals>-->
-        <!--              <goal>prepare-frontend</goal>-->
-        <!--            </goals>-->
-        <!--          </execution>-->
-        <!--        </executions>-->
+        <executions>
+          <execution>
+            <goals>
+              <goal>build-frontend</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>
@@ -360,7 +360,7 @@
             <executions>
               <execution>
                 <goals>
-                  <goal>prepare-frontend</goal>
+                  <goal>build-frontend</goal>
                 </goals>
                 <phase>compile</phase>
               </execution>

@@ -1,12 +1,13 @@
 package life.qbic.projectmanagement.infrastructure.config;
 
-import org.springframework.boot.jackson.autoconfigure.JsonMapperBuilderCustomizer;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.IpMeasurementJpaRepository;
 import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.NgsMeasurementJpaRepository;
 import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.PxpMeasurementJpaRepository;
-import tools.jackson.databind.ObjectMapper;
+import org.springframework.boot.jackson.autoconfigure.JsonMapperBuilderCustomizer;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.module.SimpleModule;
 
@@ -28,25 +29,36 @@ import tools.jackson.databind.module.SimpleModule;
 @Configuration
 public class JacksonConfig {
 
-  @Bean
-  public ObjectMapper objectMapper() {
-    SimpleModule module = new SimpleModule("MeasurementInstrumentModule");
-    module.addDeserializer(
-        NgsMeasurementJpaRepository.Instrument.class,
-        new NgsMeasurementJpaRepository.Instrument.InstrumentJsonDeserializer());
-    module.addDeserializer(
-        PxpMeasurementJpaRepository.MsDevice.class,
-        new PxpMeasurementJpaRepository.MsDevice.MsDeviceJsonDeserializer());
-    module.addDeserializer(
-        IpMeasurementJpaRepository.Instrument.class,
-        new IpMeasurementJpaRepository.Instrument.InstrumentJsonDeserializer());
-    return JsonMapper.builder()
-        .addModule(module)
-        .build();
+  @Bean(name = "nullableFieldsObjectMapper")
+  public JsonMapper nullableFieldsObjectMapper(JsonMapper.Builder builder) {
+    builder.disable(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES);
+    return builder.build();
   }
 
+  /**
+   * This is usually provided by the
+   * {@link org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration}. As we provide
+   * an additional JsonMapper and the default is only provided
+   * {@link org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean}, we need to
+   * provide it explicitly
+   *
+   * @param builder
+   * @return a JsonMapper
+   */
+  @Bean(name = "jacksonJsonMapper")
+  @Primary
+  JsonMapper jacksonJsonMapper(JsonMapper.Builder builder) {
+    return builder.build();
+  }
+
+  /**
+   * Adds a builder customizer to the default {@link JsonMapper.Builder} provided by
+   * {@link org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration}
+   *
+   * @return a customizer providing measurement related DTO deserializers
+   */
   @Bean
-  public JsonMapperBuilderCustomizer measurementInstrumentModuleCustomizer() {
+  public JsonMapperBuilderCustomizer measurementDtoBuilderCustomizer() {
     return builder -> {
       SimpleModule module = new SimpleModule("MeasurementInstrumentModule");
       module.addDeserializer(
