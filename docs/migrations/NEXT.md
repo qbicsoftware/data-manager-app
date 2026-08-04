@@ -230,9 +230,7 @@ message.
    echo "$AES_KEY" | keytool -importpass \
        -alias external-credential-master-key \
        -keystore /path/to/shared/keystore.p12 \
-       -storepass $DATAMANAGER_VAULT_KEY \
-       -keypass $DATAMANAGER_VAULT_ENTRY_PASSWORD \
-       -storetype PKCS12
+       -storepass $DATAMANAGER_VAULT_KEY
    ```
 
    **Key format**: The vault entry **must** contain a Base64-encoded string
