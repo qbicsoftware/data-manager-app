@@ -133,5 +133,7 @@ public class ProjectMainLayout extends DataManagerLayout implements BeforeEnterO
     drawerTitle.addClassName("project-navigation-drawer-title");
     addToDrawer(drawerTitle, projectSideNavigationComponent);
     setPrimarySection(Section.DRAWER);
+    // Vaadin 25: Open drawer by default when navigating to a project
+    getElement().executeJs("this.drawerOpened = true");
   }
 }
