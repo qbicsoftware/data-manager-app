@@ -36,6 +36,8 @@ public class DataManagerLayout extends AppLayout implements RouterLayout {
     Div mainLayout = new Div(announcementComponent, contentArea, footerComponentFactory.get());
     mainLayout.setId("main-layout");
     setContent(mainLayout);
+    // Vaadin 25: Ensure drawer is closed by default when no content is added
+    getElement().setAttribute("drawer-opened", false);
   }
 
   /**
