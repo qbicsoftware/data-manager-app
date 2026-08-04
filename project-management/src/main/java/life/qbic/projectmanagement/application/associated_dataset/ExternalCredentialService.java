@@ -2,6 +2,7 @@ package life.qbic.projectmanagement.application.associated_dataset;
 
 import java.time.Instant;
 import java.util.List;
+import life.qbic.projectmanagement.domain.model.associated_dataset.CredentialStatus;
 import life.qbic.projectmanagement.domain.model.associated_dataset.SourceType;
 
 /**
@@ -55,7 +56,7 @@ public interface ExternalCredentialService {
    * <p>Returns one entry per configured instance (from
    * {@link SourceInstanceRegistry}). Instances where the user has no
    * token configured are included with status
-   * {@code "NOT_CONFIGURED"}.</p>
+   * {@link CredentialStatus#NOT_CONFIGURED}.</p>
    *
    * @param userId the DM user whose credentials to list
    * @return credential status per instance; never null
@@ -118,8 +119,7 @@ public interface ExternalCredentialService {
       String instanceDisplayName,
       String instanceBaseUrl,
       boolean configured,
-      /** {@code "VALID"}, {@code "INVALIDATED"}, or {@code "NOT_CONFIGURED"} */
-      String status,
+      CredentialStatus status,
       Instant configuredAt
   ) {
   }

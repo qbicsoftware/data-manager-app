@@ -25,7 +25,17 @@ public enum CredentialStatus {
    * removed it or re-validation failed). The stored encrypted blob
    * is retained for audit but must not be used for authentication.
    */
-  INVALIDATED;
+  INVALIDATED,
+
+  /**
+   * No credential is stored for this user/instance pair. This is an
+   * application-layer status used by
+   * {@link life.qbic.projectmanagement.application.associated_dataset.ExternalCredentialService.CredentialStatusView}
+   * to represent the absence of a credential. It is <strong>never
+   * persisted</strong> in the database — the entity only stores
+   * {@link #VALID} or {@link #INVALIDATED}.
+   */
+  NOT_CONFIGURED;
 
   public static CredentialStatus parse(String value) {
     try {

@@ -189,15 +189,15 @@ public class DefaultExternalCredentialService implements ExternalCredentialServi
                   userId, instance.sourceType(), instance.id());
           boolean configured = credential.isPresent();
 
-          String status;
+          CredentialStatus status;
           Instant configuredAt = null;
           if (!configured) {
-            status = "NOT_CONFIGURED";
+            status = CredentialStatus.NOT_CONFIGURED;
           } else {
-            status = credential.map(c -> c.getStatus().name())
-                .orElse("NOT_CONFIGURED");
+            status = credential.map(UserExternalCredential::getStatus)
+                .orElse(CredentialStatus.NOT_CONFIGURED);
             configuredAt = credential
-                .map(life.qbic.projectmanagement.domain.model.associated_dataset.UserExternalCredential::getCreatedAt)
+                .map(UserExternalCredential::getCreatedAt)
                 .orElse(null);
           }
 

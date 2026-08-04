@@ -136,6 +136,13 @@ public class VerificationSidebar extends Div {
     runVerification();
   }
 
+  /**
+   * Returns whether the sidebar is currently in its open (visible) state.
+   */
+  public boolean isOpen() {
+    return getClassNames().contains("vs-open");
+  }
+
   /** Closes the sidebar immediately (no slide-out transition). */
   public void close() {
     removeClassName("vs-open");

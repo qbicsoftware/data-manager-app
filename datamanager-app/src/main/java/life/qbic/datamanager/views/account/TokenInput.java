@@ -36,6 +36,7 @@ class TokenInput extends Div implements UserInput {
    * @param instanceDisplayName human-readable instance name (e.g. "Zenodo")
    * @param tokenCreationUrl    URL to the instance's token-settings page,
    *                            or {@code null} when no URL can be derived
+   *                            (the link is then omitted)
    */
   TokenInput(String instanceDisplayName, String tokenCreationUrl) {
     addClassName("token-input");
@@ -55,7 +56,7 @@ class TokenInput extends Div implements UserInput {
     helpLine.add(new Span(
         "Your token is stored encrypted and used only to access "
             + "your own restricted datasets. You can create one at: "));
-    if (tokenCreationUrl != null && !"#".equals(tokenCreationUrl)) {
+    if (tokenCreationUrl != null) {
       helpLine.add(new Anchor(tokenCreationUrl,
           instanceDisplayName + " token settings", AnchorTarget.BLANK));
     } else {

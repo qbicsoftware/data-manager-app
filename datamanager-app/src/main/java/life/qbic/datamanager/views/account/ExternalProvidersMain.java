@@ -21,13 +21,8 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
-import java.time.LocalDate;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
-import java.time.format.FormatStyle;
 import java.util.List;
-import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import life.qbic.application.commons.time.DateTimeFormat;
@@ -45,6 +40,7 @@ import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.AuthenticationToUserIdTranslationService;
 import life.qbic.projectmanagement.application.associated_dataset.ExternalCredentialService;
+import life.qbic.projectmanagement.domain.model.associated_dataset.CredentialStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 /**
@@ -75,7 +71,7 @@ public class ExternalProvidersMain extends Main
 
 
 
-  private final String SECONDARY_COLOR =
+  private static final String SECONDARY_COLOR =
       "var(--lumo-secondary-text-color)";
 
   private final transient ExternalCredentialService credentialService;
@@ -152,7 +148,7 @@ public class ExternalProvidersMain extends Main
     verifyButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
     verifyButton.addClickListener(e -> {
       // If sidebar is open, refresh; otherwise open it
-      if (verificationSidebar.getClassNames().contains("vs-open")) {
+      if (isSidebarOpen()) {
         verificationSidebar.refresh();
       } else {
         verificationSidebar.open();
@@ -162,6 +158,7 @@ public class ExternalProvidersMain extends Main
     content.add(toolbar);
 
     // ── Instance list (AC-1, AC-2) ──
+    // TODO: Consider incremental DOM updates instead of full re-render
     List<ExternalCredentialService.CredentialStatusView> statuses =
         credentialService.listCredentialStatuses(userId());
 
@@ -184,7 +181,7 @@ public class ExternalProvidersMain extends Main
     String stateClass;
     if (!status.configured()) {
       stateClass = "instance-card--not-connected";
-    } else if ("INVALIDATED".equals(status.status())) {
+    } else if (isInvalidated(status)) {
       stateClass = "instance-card--invalidated";
     } else {
       stateClass = "instance-card--connected";
@@ -208,9 +205,7 @@ public class ExternalProvidersMain extends Main
     providerName.addClassNames("font-bold", "text-size-l");
 
     if (baseUrl != null && !baseUrl.isBlank()) {
-      String displayUrl = baseUrl.endsWith("/")
-          ? baseUrl.substring(0, baseUrl.length() - 1)
-          : baseUrl;
+      String displayUrl = stripTrailingSlash(baseUrl);
       var urlAnchor = new Anchor(baseUrl + "/", displayUrl);
       urlAnchor.addClassNames("instance-card__url", "text-size-s");
       urlAnchor.setTarget(AnchorTarget.BLANK);
@@ -222,7 +217,7 @@ public class ExternalProvidersMain extends Main
     header.add(identity);
 
     // Action buttons (top-right)
-    if ("INVALIDATED".equals(status.status())) {
+    if (isInvalidated(status)) {
       // Side-by-side Reconnect + Disconnect for invalid state
       var buttonGroup = new Div();
       buttonGroup.addClassNames("instance-card__action-group");
@@ -248,7 +243,7 @@ public class ExternalProvidersMain extends Main
     statusLine.addClassNames("instance-card__status-line");
 
     if (status.configured()) {
-      if ("INVALIDATED".equals(status.status())) {
+      if (isInvalidated(status)) {
         var tag = new Tag("Token invalid");
         tag.setTagColor(TagColor.ERROR);
         statusLine.add(tag);
@@ -296,7 +291,7 @@ public class ExternalProvidersMain extends Main
       return "Connect your account to link " + name
           + " datasets to your projects.";
     }
-    if ("INVALIDATED".equals(status.status())) {
+    if (isInvalidated(status)) {
       return "Your token was rejected by " + name
           + " — please reconnect to restore access.";
     }
@@ -369,7 +364,7 @@ public class ExternalProvidersMain extends Main
     renderContent();
     // If the verification sidebar is open, refresh it to reflect the
     // new NOT_CONFIGURED state after disconnect
-    if (verificationSidebar.getClassNames().contains("vs-open")) {
+    if (isSidebarOpen()) {
       verificationSidebar.refresh();
     }
   }
@@ -402,33 +397,16 @@ public class ExternalProvidersMain extends Main
 
     var dialog = AppDialog.medium();
 
-    var tokenInput = new TokenInput(
-        extractProviderName(status.instanceDisplayName()),
-        tokenUrl);
+    String providerName = extractProviderName(status.instanceDisplayName());
 
-    var spinner = new Div();
-    spinner.addClassName("spinner");
+    var tokenInput = new TokenInput(providerName, tokenUrl);
 
-    var loadingLabel = new Span(
-        "Validating your token with "
-            + extractProviderName(status.instanceDisplayName())
-            + "…");
-    loadingLabel.addClassName("token-loading-label");
-
-    var loadingHint = new Span("This may take a few seconds.");
-    loadingHint.addClassName("token-loading-hint");
-
-    var loadingOverlay = new Div();
-    loadingOverlay.addClassNames("token-loading-overlay");
-    loadingOverlay.add(spinner, loadingLabel, loadingHint);
-    loadingOverlay.getElement().getStyle()
-        .set("display", "none");
+    var loadingOverlay = buildLoadingOverlay(providerName);
 
     var bodyWrapper = new Div(tokenInput, loadingOverlay);
     bodyWrapper.getElement().getStyle().set("position", "relative");
 
-    DialogHeader.with(dialog,
-        "Connect to " + extractProviderName(status.instanceDisplayName()));
+    DialogHeader.with(dialog, "Connect to " + providerName);
     DialogBody.with(dialog, bodyWrapper, tokenInput);
     DialogFooter.with(dialog, "Cancel", "Validate & Save");
 
@@ -436,89 +414,9 @@ public class ExternalProvidersMain extends Main
 
     var validationRunning = new AtomicBoolean(false);
 
-    dialog.registerConfirmAction(() -> {
-      if (!validationRunning.compareAndSet(false, true)) {
-        return;
-      }
-      tokenInput.setEnabled(false);
-      loadingOverlay.getElement().getStyle()
-          .set("display", "flex");
-
-      final char[] token = tokenInput.getToken();
-      final var userIdCurrent = userId();
-      uiHandle.bind(UI.getCurrent());
-      final var securityContext = SecurityContextHolder.getContext();
-
-      CompletableFuture.supplyAsync(() -> {
-        SecurityContextHolder.setContext(securityContext);
-        try {
-          return credentialService.addCredential(
-              userIdCurrent, status.instanceId(), token);
-        } finally {
-          SecurityContextHolder.clearContext();
-        }
-      }).whenComplete((result, throwable) -> {
-        uiHandle.onUiAndPush(() -> {
-          loadingOverlay.getElement().getStyle()
-              .set("display", "none");
-          tokenInput.setEnabled(true);
-          validationRunning.set(false);
-
-          if (throwable != null) {
-            tokenInput.setError(
-                "Could not validate the token. Please try again.");
-            showToast("Token validation failed due to an unexpected error.",
-                NotificationVariant.LUMO_ERROR);
-            log.error("Credential validation threw unexpectedly for instance '"
-                + status.instanceId() + "': " + throwable.getMessage(),
-                throwable);
-            return;
-          }
-
-          if (result instanceof ExternalCredentialService.Success) {
-            tokenInput.clearField();
-            dialog.close();
-            showToast(
-                "Token validated successfully. "
-                    + extractProviderName(status.instanceDisplayName())
-                    + " is now connected.",
-                NotificationVariant.LUMO_SUCCESS);
-            renderContent();
-            // If the verification sidebar is open, refresh it so its
-            // rows reflect the newly-VALID state (not the stale red row)
-            if (verificationSidebar.getClassNames().contains("vs-open")) {
-              verificationSidebar.refresh();
-            }
-
-          } else if (result
-              instanceof ExternalCredentialService.InvalidToken inv) {
-            tokenInput.setError(
-                "Token was rejected by "
-                    + extractProviderName(status.instanceDisplayName())
-                    + ". Please check and try again.");
-            showToast("Token validation failed: " + inv.reason()
-                + ". Please check your token and try again.",
-                NotificationVariant.LUMO_ERROR);
-
-          } else if (result
-              instanceof ExternalCredentialService.ServiceError err) {
-            tokenInput.setError(
-                "Could not validate the token now. Please try again later.");
-            showToast("Token validation failed due to a transient error: "
-                + err.reason() + ". Please try again later.",
-                NotificationVariant.LUMO_ERROR);
-            log.warn("Credential validation service error for instance '"
-                + status.instanceId() + "': " + err.reason());
-
-          } else if (result
-              instanceof ExternalCredentialService.UnknownInstance) {
-            tokenInput.setError("Unknown instance.");
-            log.error("Add-token attempted for unknown instance '"
-                + status.instanceId() + "'");
-          }
-        });
-      });
-    });
+    dialog.registerConfirmAction(() ->
+        validateAndSaveToken(status, providerName, tokenInput,
+            dialog, loadingOverlay, validationRunning));
 
     dialog.open();
   }
@@ -538,7 +436,7 @@ public class ExternalProvidersMain extends Main
 
   static String buildTokenCreationUrl(String baseUrl) {
     if (baseUrl == null || baseUrl.isBlank()) {
-      return "#";
+      return null;
     }
     String normalized = baseUrl.endsWith("/")
         ? baseUrl : baseUrl + "/";
@@ -560,6 +458,121 @@ public class ExternalProvidersMain extends Main
     notification.setDuration(4000);
     notification.add(new Span(message));
     notification.open();
+  }
+
+  private boolean isSidebarOpen() {
+    return verificationSidebar.isOpen();
+  }
+
+  private static boolean isInvalidated(
+      ExternalCredentialService.CredentialStatusView status) {
+    return status.status() == CredentialStatus.INVALIDATED;
+  }
+
+  private static String stripTrailingSlash(String url) {
+    if (url != null && url.endsWith("/")) {
+      return url.substring(0, url.length() - 1);
+    }
+    return url;
+  }
+
+  private Div buildLoadingOverlay(String providerName) {
+    var spinner = new Div();
+    spinner.addClassName("spinner");
+
+    var loadingLabel = new Span(
+        "Validating your token with " + providerName + "…");
+    loadingLabel.addClassName("token-loading-label");
+
+    var loadingHint = new Span("This may take a few seconds.");
+    loadingHint.addClassName("token-loading-hint");
+
+    var overlay = new Div();
+    overlay.addClassNames("token-loading-overlay");
+    overlay.add(spinner, loadingLabel, loadingHint);
+    overlay.getElement().getStyle().set("display", "none");
+    return overlay;
+  }
+
+  private void validateAndSaveToken(
+      ExternalCredentialService.CredentialStatusView status,
+      String providerName,
+      TokenInput tokenInput,
+      AppDialog dialog,
+      Div loadingOverlay,
+      AtomicBoolean validationRunning) {
+    if (!validationRunning.compareAndSet(false, true)) {
+      return;
+    }
+    tokenInput.setEnabled(false);
+    loadingOverlay.getElement().getStyle().set("display", "flex");
+
+    final char[] token = tokenInput.getToken();
+    final var userIdCurrent = userId();
+    uiHandle.bind(UI.getCurrent());
+    final var securityContext = SecurityContextHolder.getContext();
+
+    CompletableFuture.supplyAsync(() -> {
+      SecurityContextHolder.setContext(securityContext);
+      try {
+        return credentialService.addCredential(
+            userIdCurrent, status.instanceId(), token);
+      } finally {
+        SecurityContextHolder.clearContext();
+      }
+    }).whenComplete((result, throwable) -> {
+      uiHandle.onUiAndPush(() -> {
+        loadingOverlay.getElement().getStyle().set("display", "none");
+        tokenInput.setEnabled(true);
+        validationRunning.set(false);
+        handleValidationResult(result, throwable, status, providerName,
+            tokenInput, dialog);
+      });
+    });
+  }
+
+  private void handleValidationResult(
+      Object result, Throwable throwable,
+      ExternalCredentialService.CredentialStatusView status,
+      String providerName,
+      TokenInput tokenInput, AppDialog dialog) {
+    if (throwable != null) {
+      tokenInput.setError("Could not validate the token. Please try again.");
+      showToast("Token validation failed due to an unexpected error.",
+          NotificationVariant.LUMO_ERROR);
+      log.error("Credential validation threw unexpectedly for instance '"
+          + status.instanceId() + "': " + throwable.getMessage(), throwable);
+      return;
+    }
+
+    if (result instanceof ExternalCredentialService.Success) {
+      tokenInput.clearField();
+      dialog.close();
+      showToast("Token validated successfully. " + providerName
+          + " is now connected.", NotificationVariant.LUMO_SUCCESS);
+      renderContent();
+      if (isSidebarOpen()) {
+        verificationSidebar.refresh();
+      }
+    } else if (result instanceof ExternalCredentialService.InvalidToken(String reason)) {
+      tokenInput.setError("Token was rejected by " + providerName
+          + ". Please check and try again.");
+      showToast("Token validation failed: " + reason
+          + ". Please check your token and try again.",
+          NotificationVariant.LUMO_ERROR);
+    } else if (result instanceof ExternalCredentialService.ServiceError(String reason)) {
+      tokenInput.setError(
+          "Could not validate the token now. Please try again later.");
+      showToast("Token validation failed due to a transient error: "
+          + reason + ". Please try again later.",
+          NotificationVariant.LUMO_ERROR);
+      log.warn("Credential validation service error for instance '"
+          + status.instanceId() + "': " + reason);
+    } else if (result instanceof ExternalCredentialService.UnknownInstance) {
+      tokenInput.setError("Unknown instance.");
+      log.error("Add-token attempted for unknown instance '"
+          + status.instanceId() + "'");
+    }
   }
 
 }
