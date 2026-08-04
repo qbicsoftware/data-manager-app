@@ -25,9 +25,12 @@ public interface CredentialValidatorAdapter {
    *
    * @param config the target instance configuration (base URL, display
    *               name)
-   * @param token  the plaintext token as {@code char[]} —
-   *               implementation <strong>MUST</strong> zero after use
-   *               ({@code Arrays.fill(token, '\0')} in a finally block)
+   * @param token  the plaintext token as {@code char[]} — the
+   *               implementation must not retain or expose the token
+   *               value. The original array is <strong>not</strong>
+   *               zeroed by the implementation; the caller owns the
+   *               token lifecycle and is responsible for zeroing it
+   *               after all operations are complete.
    * @return {@code true} if the token is valid (the remote API
    *         returned 200), {@code false} if the token was rejected
    *         (401/403)

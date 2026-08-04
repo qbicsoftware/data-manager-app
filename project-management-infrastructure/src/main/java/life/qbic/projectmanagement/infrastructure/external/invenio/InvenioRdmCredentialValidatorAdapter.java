@@ -21,8 +21,13 @@ import life.qbic.projectmanagement.infrastructure.external.CredentialValidatorAd
  *       {@link CredentialValidationException}</li>
  * </ul>
  *
- * <p>The plaintext token is zeroed in a {@code finally} block after
- * use (ADR-0002 D1 decryption boundary).</p>
+ * <p>The adapter copies the token into a local array for building the
+ * auth header and zeroes that copy in a {@code finally} block. The
+ * original token array is <em>not</em> zeroed here — the caller
+ * ({@link life.qbic.projectmanagement.application.associated_dataset.ExternalCredentialService})
+ * retains ownership of the token lifecycle and is responsible for
+ * zeroing it when all operations (validation + encryption) are
+ * complete.</p>
  *
  * @since 1.12.0
  */
@@ -40,8 +45,9 @@ public class InvenioRdmCredentialValidatorAdapter implements CredentialValidator
     Objects.requireNonNull(token, "token must not be null");
 
     // Copy token to build the auth header string in local scope.
-    // The original token array is zeroed in the finally block per the
-    // CredentialValidatorAdapter contract (ADR-0002 D1).
+    // Only the copy is zeroed in the finally block — the caller owns
+    // the original token array and is responsible for zeroing it
+    // after all operations (validation + encryption) are complete.
     char[] tokenCopy = Arrays.copyOf(token, token.length);
     try {
       String authHeader = "Bearer " + new String(tokenCopy);
@@ -69,7 +75,9 @@ public class InvenioRdmCredentialValidatorAdapter implements CredentialValidator
               + " was interrupted", e);
     } finally {
       Arrays.fill(tokenCopy, '\0');
-      Arrays.fill(token, '\0');
+      // Note: the original token is NOT zeroed here. The caller
+      // (DefaultExternalCredentialService) owns the token lifecycle
+      // and zeroes it in its own finally block after encryption.
     }
   }
 

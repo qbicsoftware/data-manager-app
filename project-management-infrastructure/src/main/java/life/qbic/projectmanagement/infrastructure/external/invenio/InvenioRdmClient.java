@@ -540,7 +540,8 @@ public interface InvenioRdmClient {
    *
    * <p>The response body is typed {@code type: object} in the official
    * spec (no named fields guaranteed). This DTO captures best-effort
-   * display values. Validation succeeds purely on the 200 status;</n   * the fields are for informational/log purposes only.</p>
+   * display values. Validation succeeds purely on the 200 status;
+   * the fields are for informational/log purposes only.</p>
    */
   @JsonIgnoreProperties(ignoreUnknown = true)
   record AuthenticatedUserResponse(

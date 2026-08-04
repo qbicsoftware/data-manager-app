@@ -14,6 +14,8 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import life.qbic.datamanager.views.UiHandle;
+import life.qbic.logging.api.Logger;
+import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.AuthenticationToUserIdTranslationService;
 import life.qbic.projectmanagement.application.associated_dataset.ExternalCredentialService;
 import life.qbic.projectmanagement.application.associated_dataset.ExternalCredentialService.CredentialStatusView;
@@ -50,6 +52,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 public class VerificationSidebar extends Div {
 
   @Serial private static final long serialVersionUID = 1L;
+  private static final Logger log = LoggerFactory.logger(
+      VerificationSidebar.class);
 
   private final ExternalCredentialService credentialService;
   private final AuthenticationToUserIdTranslationService userIdTranslator;
@@ -248,6 +252,9 @@ public class VerificationSidebar extends Div {
       uiHandle.onUiAndPush(() -> {
         if (throwable != null) {
           // Transient failure — keep it informative; the user can retry.
+          log.error("Credential validation threw unexpectedly for instance '"
+              + status.instanceId() + "': " + throwable.getMessage(),
+              throwable);
           updateRowToStatus(status.instanceId(),
               "Error", null, false, true, false);
         } else if (result instanceof Success) {
@@ -258,10 +265,14 @@ public class VerificationSidebar extends Div {
           // The row must render as red "Invalid" with a Reconnect link so
           // the user can recover from either the sidebar or the main page
           // (where the card mirrors the same INVALIDATED state).
+          log.info("Token for instance '" + status.instanceId()
+              + "' was rejected: " + inv.reason());
           updateRowToStatus(status.instanceId(),
               "Invalid", inv.reason(), false, false, false);
         } else {
           // Unknown / unhandled result form — defensive fallback
+          log.warn("Unexpected credential validation result for instance '"
+              + status.instanceId() + "': " + result);
           updateRowToStatus(status.instanceId(),
               "Error", null, false, true, false);
         }

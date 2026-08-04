@@ -8,8 +8,10 @@ import spock.lang.Specification
  * Unit tests for {@link InvenioRdmCredentialValidatorAdapter}.
  *
  * <p>Verifies the {@link life.qbic.projectmanagement.infrastructure.external.CredentialValidatorAdapter}
- * contract, in particular that the plaintext token {@code char[]} is
- * zeroed after the method returns (ADR-0002 D1 decryption boundary).</p>
+ * contract: the adapter copies the token into a local array for the
+ * auth header and zeroes only that copy. The original token array is
+ * <em>not</em> zeroed by the adapter — the caller retains ownership
+ * of the token lifecycle.</p>
  *
  * @since 1.12.0
  */
@@ -18,25 +20,30 @@ class InvenioRdmCredentialValidatorAdapterSpec extends Specification {
     static final InstanceConfig CONFIG = new InstanceConfig(
         "zenodo", "Zenodo (zenodo.org)", "https://zenodo.org")
 
-    // ── Token zeroing contract (ADR-0002 D1) ─────────────────────────
+    // ── Token ownership contract ──────────────────────────────────────
+    // The adapter copies the token into a local array for the auth
+    // header and zeroes only that copy. The original token array is
+    // NOT zeroed by the adapter — the caller retains ownership and is
+    // responsible for zeroing it after all operations are complete.
 
-    def "token array is zeroed after successful validation"() {
+    def "original token array is preserved after successful validation"() {
         given: "a client that returns 200 (valid token)"
         def client = Mock(InvenioRdmClient)
         client.getAuthenticatedUser(CONFIG.baseUrl(), _) >>
             new InvenioRdmClient.AuthenticatedUserResponse("1", "user", "user@example.org")
         def adapter = new InvenioRdmCredentialValidatorAdapter(client)
         def token = "my-secret-token".toCharArray()
+        def expected = token.clone()
 
         when:
         def result = adapter.validate(CONFIG, token)
 
         then:
         result
-        token.every { it == (char) '\0' }
+        token == expected  // original token is untouched
     }
 
-    def "token array is zeroed after invalid token (401)"() {
+    def "original token array is preserved after invalid token (401)"() {
         given: "a client that returns 401 (invalid token)"
         def client = Mock(InvenioRdmClient)
         client.getAuthenticatedUser(CONFIG.baseUrl(), _) >> {
@@ -45,16 +52,17 @@ class InvenioRdmCredentialValidatorAdapterSpec extends Specification {
         }
         def adapter = new InvenioRdmCredentialValidatorAdapter(client)
         def token = "expired-token-xyz".toCharArray()
+        def expected = token.clone()
 
         when:
         def result = adapter.validate(CONFIG, token)
 
         then:
         !result
-        token.every { it == (char) '\0' }
+        token == expected  // original token is untouched
     }
 
-    def "token array is zeroed after forbidden token (403)"() {
+    def "original token array is preserved after forbidden token (403)"() {
         given: "a client that returns 403"
         def client = Mock(InvenioRdmClient)
         client.getAuthenticatedUser(CONFIG.baseUrl(), _) >> {
@@ -63,16 +71,17 @@ class InvenioRdmCredentialValidatorAdapterSpec extends Specification {
         }
         def adapter = new InvenioRdmCredentialValidatorAdapter(client)
         def token = "forbidden-token".toCharArray()
+        def expected = token.clone()
 
         when:
         def result = adapter.validate(CONFIG, token)
 
         then:
         !result
-        token.every { it == (char) '\0' }
+        token == expected  // original token is untouched
     }
 
-    def "token array is zeroed after transient error"() {
+    def "original token array is preserved after transient error"() {
         given: "a client that throws a transient error (5xx after retries)"
         def client = Mock(InvenioRdmClient)
         client.getAuthenticatedUser(CONFIG.baseUrl(), _) >> {
@@ -82,16 +91,17 @@ class InvenioRdmCredentialValidatorAdapterSpec extends Specification {
         }
         def adapter = new InvenioRdmCredentialValidatorAdapter(client)
         def token = "token-on-failing-server".toCharArray()
+        def expected = token.clone()
 
         when:
         adapter.validate(CONFIG, token)
 
         then:
         thrown(CredentialValidationException)
-        token.every { it == (char) '\0' }
+        token == expected  // original token is untouched
     }
 
-    def "token array is zeroed after interrupted exception"() {
+    def "original token array is preserved after interrupted exception"() {
         given: "a client that throws an interrupted exception"
         def client = Mock(InvenioRdmClient)
         client.getAuthenticatedUser(CONFIG.baseUrl(), _) >> {
@@ -101,17 +111,18 @@ class InvenioRdmCredentialValidatorAdapterSpec extends Specification {
         }
         def adapter = new InvenioRdmCredentialValidatorAdapter(client)
         def token = "token-on-interrupted".toCharArray()
+        def expected = token.clone()
 
         when:
         adapter.validate(CONFIG, token)
 
         then:
         thrown(CredentialValidationException)
-        token.every { it == (char) '\0' }
+        token == expected  // original token is untouched
         Thread.interrupted() // clear the interrupt flag for test hygiene
     }
 
-    def "token array is zeroed after unexpected permanent error (e.g. 404)"() {
+    def "original token array is preserved after unexpected permanent error (e.g. 404)"() {
         given: "a client that throws a non-auth permanent error"
         def client = Mock(InvenioRdmClient)
         client.getAuthenticatedUser(CONFIG.baseUrl(), _) >> {
@@ -120,13 +131,14 @@ class InvenioRdmCredentialValidatorAdapterSpec extends Specification {
         }
         def adapter = new InvenioRdmCredentialValidatorAdapter(client)
         def token = "token-on-bad-endpoint".toCharArray()
+        def expected = token.clone()
 
         when:
         adapter.validate(CONFIG, token)
 
         then:
         thrown(CredentialValidationException)
-        token.every { it == (char) '\0' }
+        token == expected  // original token is untouched
     }
 
     // ── Validation result mapping ────────────────────────────────────
