@@ -161,6 +161,11 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
     showError("Incorrect username or password", "Please try again.");
   }
 
+  private void showOauth2LoginError() {
+    showError("Login with ORCID failed",
+        "Something went wrong during authentication. Please try again or use your email and password to log in.");
+  }
+
   private void showEmailConfirmationInformation() {
     showInformation("Email address confirmed", "You can now login with your credentials.");
   }
@@ -203,7 +208,10 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
   public void handle(BeforeEvent beforeEvent) {
     Map<String, List<String>> queryParams = beforeEvent.getLocation().getQueryParameters()
         .getParameters();
-    if (queryParams.containsKey("error")) {
+    if (queryParams.containsKey("errorOauth2")) {
+      log.error("OAuth2 login failed — user redirected with error. Check server logs for details.");
+      showOauth2LoginError();
+    } else if (queryParams.containsKey("error")) {
       showInvalidCredentialsError();
     }
     if (queryParams.containsKey(emailConfirmationParameter)) {
