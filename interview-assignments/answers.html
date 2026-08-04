@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Answers — Data Manager Interview</title>
+<style>
+  :root {
+    --bg: #f6f8fa;
+    --text: #1f2328;
+    --card-bg: #ffffff;
+    --card-border: #d0d7de;
+    --accent: #0969da;
+    --danger: #cf222e;
+    --success: #1a7f37;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+  .container { max-width: 900px; margin: 0 auto; padding: 40px 24px; }
+  .hero { margin-bottom: 32px; padding-bottom: 20px; border-bottom: 1px solid var(--card-border); }
+  .hero h1 { margin: 0 0 8px; font-size: 28px; font-weight: 800; }
+  .hero p { margin: 0; color: #656d76; font-size: 16px; }
+  .lock-box { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 32px; text-align: center; max-width: 420px; margin: 40px auto; }
+  .lock-box h2 { margin: 0 0 12px; font-size: 20px; }
+  .lock-box p { margin: 0 0 20px; color: #656d76; font-size: 14px; }
+  .lock-box input { width: 100%; padding: 10px 14px; font-size: 15px; border: 1px solid #d0d7de; border-radius: 6px; margin-bottom: 12px; }
+  .lock-box button { width: 100%; padding: 10px; font-size: 15px; font-weight: 600; color: #fff; background: var(--accent); border: none; border-radius: 6px; cursor: pointer; }
+  .lock-box button:hover { background: #0550ae; }
+  .lock-box .error { color: var(--danger); font-size: 13px; margin-top: 10px; min-height: 18px; }
+  .answers { display: none; }
+  .assignment-answer { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 28px; margin-bottom: 32px; }
+  .assignment-answer h2 { margin: 0 0 16px; font-size: 20px; font-weight: 700; }
+  .assignment-answer ol { margin: 0; padding-left: 22px; }
+  .assignment-answer li { margin-bottom: 18px; font-size: 15px; }
+  .assignment-answer li strong { color: var(--success); }
+  .assignment-answer li code { background: rgba(175,184,193,0.2); padding: 2px 5px; border-radius: 4px; font-size: 13px; font-family: ui-monospace,SFMono-Regular,SF Mono,Menlo,Consolas,Liberation Mono,monospace; }
+  .back-link { display: inline-block; margin-bottom: 24px; color: var(--accent); text-decoration: none; font-size: 14px; font-weight: 500; }
+  .back-link:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<div class="container">
+  <a class="back-link" href="index.html">&#8592; Back to assignments</a>
+
+  <div class="hero">
+    <h1>Interview Answers</h1>
+    <p>For interviewer use only. Enter the password to reveal the expected answers.</p>
+  </div>
+
+  <div class="lock-box" id="lockBox">
+    <h2>&#128274; Password Required</h2>
+    <p>These answers are intended for interviewers and reviewers.</p>
+    <input type="password" id="passwordInput" placeholder="Enter password" autocomplete="off">
+    <button onclick="checkPassword()">Unlock</button>
+    <div class="error" id="errorMsg"></div>
+  </div>
+
+  <div class="answers" id="answers">
+
+    <!-- Assignment 1 -->
+    <div class="assignment-answer">
+      <h2>1. API Contract Reading</h2>
+      <ol>
+        <li><strong>Required fields:</strong> <code>design</code>, <code>contacts</code>, <code>requestId</code>, and <code>projectCode</code> — the compact constructor calls <code>requireNonNull</code> on each. <code>funding</code> (and <code>offerId</code>) are explicitly allowed to be <code>null</code>; there is no <code>requireNonNull</code> for them.</li>
+        <li><strong>Safer because</strong> <code>funding()</code> may return <code>null</code> directly (documented in its Javadoc), which risks a <code>NullPointerException</code> if the caller does not check. <code>optionalFundingInformation()</code> wraps the value in an <code>Optional</code>, forcing the caller to handle the absent case safely.</li>
+        <li><strong>Correlation / tracing.</strong> In an async/reactive API, responses may not arrive in the same order or may be processed by different threads. The <code>requestId</code> lets the client match a response to its original request and enables distributed tracing and logging across the call chain.</li>
+        <li><strong>Mono means the result is not immediately available</strong> — it will be provided asynchronously later (e.g., after database writes or validation). The client can subscribe to it or compose it with other async operations without blocking the current thread.</li>
+      </ol>
+    </div>
+
+    <!-- Assignment 2 -->
+    <div class="assignment-answer">
+      <h2>2. Validation & Authorization</h2>
+      <ol>
+        <li><strong>Failures</strong> are blocking errors that prevent the operation. <strong>Warnings</strong> are non-blocking alerts that the client should see, but the operation can still proceed. <code>allPassed()</code> returns <code>true</code> because it only checks <code>failures.isEmpty()</code> — warnings do not count as failures.</li>
+        <li>Success: <code>ValidationResult.successful()</code>. With failures: <code>ValidationResult.withFailures(List.of("message"))</code>.</li>
+        <li>Any two of: (a) all return <code>ValidationResult</code>, (b) all are annotated with <code>@PreAuthorize</code> requiring <code>WRITE</code> permission on the Project, (c) all accept a <code>ProjectId</code> parameter, (d) all delegate to a domain-specific validator component rather than containing the rules themselves.</li>
+        <li><strong>The user must have WRITE permission</strong> on the specific <code>Project</code> identified by <code>projectId</code>. If they only have READ permission or no permission, Spring Security will reject the method call before any validation logic runs.</li>
+        <li><strong>Facade pattern.</strong> It provides a single, stable entry point for the UI layer. If the internal validator implementations are refactored (split, merged, or replaced), the UI code that calls <code>MeasurementValidationService</code> does not need to change.</li>
+      </ol>
+    </div>
+
+    <!-- Assignment 3 -->
+    <div class="assignment-answer">
+      <h2>3. Domain Model & Bug Hunt</h2>
+      <ol>
+        <li><code>createSingleMeasurement</code> takes a single <code>NGSSpecificMeasurementMetadata</code> and creates a measurement for one sample. <code>createWithPool</code> takes a <code>Collection&lt;NGSSpecificMeasurementMetadata&gt;</code> and creates a measurement for a pooled sample group. The key business-rule difference: pooled measurements require every metadata entry to have an index present.</li>
+        <li>Every entry in <code>specificMeasurementMetadata</code> must have an index present (i.e., <code>Optional::isEmpty</code> on the index must be <code>false</code>). If violated, an <code>IllegalArgumentException</code> is thrown with the message: <em>"All specific metadata must have an index in a pooled measurement"</em>.</li>
+        <li>The five mandatory fields checked in <code>validateMandatoryDataRegistration</code> are: <code>measuredSamples</code> (sample IDs), <code>organisationId</code>, <code>instrumentCURIE</code>, <code>facility</code>, and <code>sequencingReadType</code>.</li>
+        <li><strong>Bug:</strong> In the first <code>if/else</code> block of the deprecated <code>validateMandatoryDataForUpdate</code>, the code calls <code>validation.combine(...)</code> but <strong>never assigns the result back</strong> to <code>validation</code>. It should be <code>validation = validation.combine(...)</code>, matching all the later blocks. Because of this, the check for an empty <code>measurementIdentifier</code> is silently discarded — its failure message is lost. <br><strong>Fix:</strong> Add the missing assignment in the first block.</li>
+        <li>Two <code>MeasurementUpdatedEvent</code> objects are fired (one per setter call). This is <strong>potentially problematic</strong> because downstream consumers see two separate update events for what is logically a single multi-field update. It can lead to redundant processing, duplicate audit-log entries, or race conditions if consumers react to each event independently.</li>
+      </ol>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // SHA-256 of the password "qbic-interview-2024"
+  // To change the password, open browser devtools and run:
+  //   await crypto.subtle.digest('SHA-256', new TextEncoder().encode('YOUR_PASSWORD')).then(b => Array.from(new Uint8Array(b)).map(x => x.toString(16).padStart(2,'0')).join(''))
+  // Then replace the hash below.
+  const EXPECTED_HASH = "d04c545e9d0b447ce2976211637b4cb8c3deeaf12cc50339bdd4d2e5a49c5f8c";
+
+  async function sha256(str) {
+    const buf = new TextEncoder().encode(str);
+    const hashBuf = await crypto.subtle.digest('SHA-256', buf);
+    return Array.from(new Uint8Array(hashBuf))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+  }
+
+  async function checkPassword() {
+    const input = document.getElementById('passwordInput').value;
+    const errorMsg = document.getElementById('errorMsg');
+    const hash = await sha256(input);
+    if (hash === EXPECTED_HASH) {
+      document.getElementById('lockBox').style.display = 'none';
+      document.getElementById('answers').style.display = 'block';
+    } else {
+      errorMsg.textContent = "Incorrect password.";
+    }
+  }
+
+  document.getElementById('passwordInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') checkPassword();
+  });
+</script>
+</body>
+</html>

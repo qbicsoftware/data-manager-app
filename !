@@ -1,0 +1,11 @@
+npm warn deprecated glob@10.5.0: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+Error accessing directory /Users/sven1103/git/data-manager/--help: Error: ENOENT: no such file or directory, stat '/Users/sven1103/git/data-manager/--help'
+    at async Object.stat (node:internal/fs/promises:1686:18)
+    at async file:///Users/sven1103/.npm/_npx/a3241bba59c344f5/node_modules/@modelcontextprotocol/server-filesystem/dist/index.js:43:23
+    at async Promise.all (index 0)
+    at async file:///Users/sven1103/.npm/_npx/a3241bba59c344f5/node_modules/@modelcontextprotocol/server-filesystem/dist/index.js:41:1 {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/sven1103/git/data-manager/--help'
+}

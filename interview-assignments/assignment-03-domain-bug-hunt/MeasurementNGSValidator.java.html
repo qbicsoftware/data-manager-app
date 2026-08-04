@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MeasurementNGSValidator.java</title>
+<style>
+:root { --bg: #0d1117; --fg: #c9d1d9; --line-num: #484f58; --comment: #8b949e; --keyword: #ff7b72; --string: #a5d6ff; --number: #79c0ff; --type: #ffa657; --annotation: #d2a8ff; --code: #e6edf3; --link: #58a6ff; --bold: #e6edf3; --italic: #c9d1d9; --header: #79c0ff; --codeblock: #8b949e; }
+body { margin: 0; font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; background: var(--bg); color: var(--fg); }
+.header { background: #161b22; padding: 16px 24px; border-bottom: 1px solid #30363d; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+.header a { color: #58a6ff; text-decoration: none; font-size: 14px; }
+.header a:hover { text-decoration: underline; }
+.header h1 { margin: 0; font-size: 16px; font-weight: 600; color: #e6edf3; }
+.container { padding: 24px; }
+pre { margin: 0; background: var(--bg); border: 1px solid #30363d; border-radius: 6px; padding: 12px 16px; overflow-x: auto; font-size: 13px; line-height: 1.1; counter-reset: line; }
+code { font-family: ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace; display: block; }
+.line { display: block; counter-increment: line; white-space: pre; }
+.line::before { content: counter(line); display: inline-block; width: 3em; margin-right: 1em; color: var(--line-num); text-align: right; user-select: none; }
+.comment { color: var(--comment); font-style: italic; }
+.keyword { color: var(--keyword); font-weight: 600; }
+.string { color: var(--string); }
+.number { color: var(--number); }
+.type { color: var(--type); }
+.annotation { color: var(--annotation); }
+
+/* Markdown rendered styles */
+.md-content { font-size: 15px; line-height: 1.6; max-width: 900px; }
+.md-content h1, .md-content h2, .md-content h3, .md-content h4 { color: var(--header); margin-top: 28px; margin-bottom: 12px; border-bottom: 1px solid #30363d; padding-bottom: 6px; }
+.md-content h1 { font-size: 26px; }
+.md-content h2 { font-size: 22px; }
+.md-content h3 { font-size: 18px; }
+.md-content p { margin: 0 0 14px; }
+.md-content ul, .md-content ol { margin: 0 0 14px; padding-left: 24px; }
+.md-content li { margin-bottom: 6px; }
+.md-content li code, .md-content p code { background: rgba(110,118,129,0.2); padding: 2px 5px; border-radius: 4px; font-size: 13px; font-family: ui-monospace,SFMono-Regular,SF Mono,Menlo,Consolas,Liberation Mono,monospace; color: var(--code); }
+.md-content pre { margin: 14px 0; background: #161b22; padding: 14px 16px; border-radius: 8px; border: 1px solid #30363d; }
+.md-content pre code { display: block; line-height: 1.4; font-size: 13px; color: var(--code); }
+.md-content a { color: var(--link); text-decoration: none; }
+.md-content a:hover { text-decoration: underline; }
+.md-content hr { border: none; border-top: 1px solid #30363d; margin: 24px 0; }
+.md-content strong { color: var(--bold); }
+.md-content em { color: var(--italic); font-style: italic; }
+.mermaid { background: #ffffff; border-radius: 8px; padding: 16px; margin: 16px 0; text-align: center; }
+</style>
+</head>
+<body>
+<div class="header">
+<h1>MeasurementNGSValidator.java</h1>
+<a href="../index.html">&#8592; Back to assignments</a>
+</div>
+<div class="container">
+<pre><code><span class="line"><span class="keyword">package</span> life.qbic.projectmanagement.application.measurement.validation;</span>
+<span class="line"></span>
+<span class="line"><span class="keyword">import</span> <span class="keyword">static</span> life.qbic.logging.service.<span class="type">LoggerFactory</span>.logger;</span>
+<span class="line"></span>
+<span class="line"><span class="keyword">import</span> java.util.<span class="type">Arrays</span>;</span>
+<span class="line"><span class="keyword">import</span> java.util.<span class="type">Collection</span>;</span>
+<span class="line"><span class="keyword">import</span> java.util.<span class="type">HashSet</span>;</span>
+<span class="line"><span class="keyword">import</span> java.util.<span class="type">List</span>;</span>
+<span class="line"><span class="keyword">import</span> java.util.<span class="type">Objects</span>;</span>
+<span class="line"><span class="keyword">import</span> java.util.regex.<span class="type">Pattern</span>;</span>
+<span class="line"><span class="keyword">import</span> life.qbic.logging.api.<span class="type">Logger</span>;</span>
+<span class="line"><span class="keyword">import</span> life.qbic.projectmanagement.application.<span class="type">ProjectInformationService</span>;</span>
+<span class="line"><span class="keyword">import</span> life.qbic.projectmanagement.application.<span class="type">ValidationException</span>;</span>
+<span class="line"><span class="keyword">import</span> life.qbic.projectmanagement.application.<span class="type">ValidationResult</span>;</span>
+<span class="line"><span class="keyword">import</span> life.qbic.projectmanagement.application.api.<span class="type">AsyncProjectService</span>.<span class="type">MeasurementRegistrationInformationNGS</span>;</span>
+<span class="line"><span class="keyword">import</span> life.qbic.projectmanagement.application.api.<span class="type">AsyncProjectService</span>.<span class="type">MeasurementUpdateInformationNGS</span>;</span>
+<span class="line"><span class="keyword">import</span> life.qbic.projectmanagement.application.measurement.<span class="type">MeasurementService</span>;</span>
+<span class="line"><span class="keyword">import</span> life.qbic.projectmanagement.application.measurement.<span class="type">NGSMeasurementMetadata</span>;</span>
+<span class="line"><span class="keyword">import</span> life.qbic.projectmanagement.application.ontology.<span class="type">TerminologyService</span>;</span>
+<span class="line"><span class="keyword">import</span> life.qbic.projectmanagement.application.sample.<span class="type">SampleInformationService</span>;</span>
+<span class="line"><span class="keyword">import</span> life.qbic.projectmanagement.domain.model.project.<span class="type">ProjectId</span>;</span>
+<span class="line"><span class="keyword">import</span> life.qbic.projectmanagement.domain.model.sample.<span class="type">SampleCode</span>;</span>
+<span class="line"><span class="keyword">import</span> org.springframework.beans.factory.annotation.<span class="type">Autowired</span>;</span>
+<span class="line"><span class="keyword">import</span> org.springframework.security.access.prepost.<span class="type">PreAuthorize</span>;</span>
+<span class="line"><span class="keyword">import</span> org.springframework.stereotype.<span class="type">Component</span>;</span>
+<span class="line"></span>
+<span class="line"><span class="comment">/**</span></span>
+<span class="line"><span class="comment"> * &lt;b&gt;Measurement NGS Validator&lt;/b&gt;</span></span>
+<span class="line"><span class="comment"> *</span></span>
+<span class="line"><span class="comment"> * &lt;p&gt;Validator employed to check the provided user input for a measurement in the ngs domain.</span></span>
+<span class="line"><span class="comment"> * The validator checks the for the provision of mandatory information, and will return a</span></span>
+<span class="line"><span class="comment"> * ValidationResult dependent on the presence or absence of data</span></span>
+<span class="line"><span class="comment"> * &lt;/p&gt;</span></span>
+<span class="line"><span class="comment"> */</span></span>
+<span class="line"><span class="annotation">@Component</span></span>
+<span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="type">MeasurementNGSValidator</span> {</span>
+<span class="line"></span>
+<span class="line">  <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">Logger</span> log = logger(<span class="type">MeasurementNGSValidator</span>.<span class="keyword">class</span>);</span>
+<span class="line">  <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">String</span> <span class="type">MISSING_SAMPLE_ID_REFERENCE</span> = &quot;<span class="type">Sample</span> id: missing sample id reference&quot;;</span>
+<span class="line">  <span class="keyword">protected</span> <span class="keyword">final</span> <span class="type">MeasurementService</span> measurementService;</span>
+<span class="line">  <span class="keyword">protected</span> <span class="keyword">final</span> <span class="type">TerminologyService</span> terminologyService;</span>
+<span class="line">  <span class="keyword">protected</span> <span class="keyword">final</span> <span class="type">ProjectInformationService</span> projectInformationService;</span>
+<span class="line">  <span class="keyword">private</span> <span class="keyword">final</span> <span class="type">SampleInformationService</span> sampleInformationService;</span>
+<span class="line"></span>
+<span class="line">  @<span class="type">Autowired</span></span>
+<span class="line">  <span class="keyword">public</span> <span class="type">MeasurementNGSValidator</span>(<span class="type">SampleInformationService</span> sampleInformationService,</span>
+<span class="line">      <span class="type">TerminologyService</span> terminologyService,</span>
+<span class="line">      <span class="type">ProjectInformationService</span> projectInformationService,</span>
+<span class="line">      <span class="type">MeasurementService</span> measurementService) {</span>
+<span class="line">    <span class="keyword">this</span>.sampleInformationService = <span class="type">Objects</span>.requireNonNull(sampleInformationService);</span>
+<span class="line">    <span class="keyword">this</span>.terminologyService = <span class="type">Objects</span>.requireNonNull(terminologyService);</span>
+<span class="line">    <span class="keyword">this</span>.projectInformationService = <span class="type">Objects</span>.requireNonNull(projectInformationService);</span>
+<span class="line">    <span class="keyword">this</span>.measurementService = <span class="type">Objects</span>.requireNonNull(measurementService);</span>
+<span class="line">  }</span>
+<span class="line"></span>
+<span class="line">  <span class="comment">/**</span></span>
+<span class="line"><span class="comment">   * Given a collection of properties, the validator determines if they mach the expected properties</span></span>
+<span class="line"><span class="comment">   * for a QBiC-defined NGS measurement metadata object.</span></span>
+<span class="line"><span class="comment">   *</span></span>
+<span class="line"><span class="comment">   * @param properties List of string representing property values in the column headers of the NGS</span></span>
+<span class="line"><span class="comment">   *                   Excel sheet</span></span>
+<span class="line"><span class="comment">   * @return boolean indicating if all expected properties of the ngs sheet could be found</span></span>
+<span class="line"><span class="comment">   * @since 1.0.0</span></span>
+<span class="line"><span class="comment">   */</span></span>
+<span class="line">  <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">boolean</span> isNGS(<span class="type">Collection</span>&lt;<span class="type">String</span>&gt; properties) {</span>
+<span class="line">    <span class="keyword">if</span> (properties.isEmpty()) {</span>
+<span class="line">      <span class="keyword">return</span> <span class="keyword">false</span>;</span>
+<span class="line">    }</span>
+<span class="line">    <span class="keyword">if</span> (properties.size() &lt; <span class="type">NGS_PROPERTY</span>.values().length) {</span>
+<span class="line">      log.debug(&quot;<span class="type">Wrong</span> length of property header: &quot; + properties().size());</span>
+<span class="line">      log.debug(&quot;<span class="type">Expected</span>: &quot; + <span class="type">NGS_PROPERTY</span>.values().length);</span>
+<span class="line">      log.debug(&quot;<span class="type">Provided</span>: &quot; + <span class="type">String</span>.join(&quot; - &quot;, properties));</span>
+<span class="line">      <span class="keyword">return</span> <span class="keyword">false</span>;</span>
+<span class="line">    }</span>
+<span class="line">    <span class="keyword">var</span> providedNGSProperties = properties.stream().map(<span class="type">String</span>::toLowerCase).toList();</span>
+<span class="line">    <span class="keyword">var</span> expectedNGSProperties = <span class="type">Arrays</span>.stream(<span class="type">NGS_PROPERTY</span>.values()).map(<span class="type">NGS_PROPERTY</span>::label)</span>
+<span class="line">        .toList();</span>
+<span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> <span class="type">HashSet</span>&lt;&gt;(providedNGSProperties).containsAll(expectedNGSProperties);</span>
+<span class="line">  }</span>
+<span class="line"></span>
+<span class="line">  <span class="keyword">public</span> <span class="keyword">static</span> <span class="type">Collection</span>&lt;<span class="type">String</span>&gt; properties() {</span>
+<span class="line">    <span class="keyword">return</span> <span class="type">Arrays</span>.stream(<span class="type">NGS_PROPERTY</span>.values()).map(<span class="type">NGS_PROPERTY</span>::label).toList();</span>
+<span class="line">  }</span>
+<span class="line"></span>
+<span class="line">  @<span class="type">PreAuthorize</span>(&quot;hasPermission(#projectId, &#x27;life.qbic.projectmanagement.domain.model.project.<span class="type">Project</span>&#x27;, &#x27;<span class="type">WRITE</span>&#x27;)&quot;)</span>
+<span class="line">  <span class="keyword">public</span> <span class="type">ValidationResult</span> validateRegistration(<span class="type">MeasurementRegistrationInformationNGS</span> metadata,</span>
+<span class="line">      <span class="type">String</span> experimentId, <span class="type">ProjectId</span> projectId) {</span>
+<span class="line">    <span class="keyword">var</span> validationPolicy = <span class="keyword">new</span> <span class="type">ValidationPolicy</span>();</span>
+<span class="line">    <span class="keyword">var</span> result = <span class="type">ValidationResult</span>.successful();</span>
+<span class="line">    <span class="keyword">for</span> (<span class="type">String</span> sampleId : metadata.measuredSamples()) {</span>
+<span class="line">      result = result.combine(validationPolicy.validationProjectRelation(sampleId, projectId))</span>
+<span class="line">          .combine(</span>
+<span class="line">              validationPolicy.validationExperimentRelation(sampleId, experimentId, projectId));</span>
+<span class="line">    }</span>
+<span class="line"></span>
+<span class="line">    <span class="keyword">return</span> result.combine(validationPolicy.validateSampleIdsAsString(metadata.measuredSamples()))</span>
+<span class="line">        .combine(validationPolicy.validateMandatoryDataRegistration(metadata))</span>
+<span class="line">        .combine(validationPolicy.validateOrganisation(metadata.organisationId()))</span>
+<span class="line">        .combine(validationPolicy.validateInstrument(metadata.instrumentCURIE()));</span>
+<span class="line">  }</span>
+<span class="line"></span>
+<span class="line">  @<span class="type">PreAuthorize</span>(&quot;hasPermission(#projectId,&#x27;life.qbic.projectmanagement.domain.model.project.<span class="type">Project</span>&#x27;,&#x27;<span class="type">READ</span>&#x27;)&quot;)</span>
+<span class="line">  <span class="keyword">public</span> <span class="type">ValidationResult</span> validateUpdate(<span class="type">MeasurementUpdateInformationNGS</span> metadata,</span>
+<span class="line">      <span class="type">String</span> experimentId, <span class="type">ProjectId</span> projectId) {</span>
+<span class="line">    <span class="keyword">var</span> validationPolicy = <span class="keyword">new</span> <span class="type">ValidationPolicy</span>();</span>
+<span class="line"></span>
+<span class="line">    <span class="keyword">var</span> result = <span class="type">ValidationResult</span>.successful();</span>
+<span class="line">    <span class="keyword">for</span> (<span class="type">String</span> sampleId : metadata.measuredSamples()) {</span>
+<span class="line">      result = result.combine(validationPolicy.validationProjectRelation(sampleId, projectId))</span>
+<span class="line">          .combine(</span>
+<span class="line">              validationPolicy.validationExperimentRelation(sampleId, experimentId, projectId));</span>
+<span class="line">    }</span>
+<span class="line">    <span class="keyword">return</span> result.combine(validationPolicy.validateMeasurementCode(metadata.measurementId()))</span>
+<span class="line">        .combine(validationPolicy.validateMandatoryMetadataDataForUpdate(metadata))</span>
+<span class="line">        .combine(validationPolicy.validateOrganisation(metadata.organisationId()))</span>
+<span class="line">        .combine(validationPolicy.validateInstrument(metadata.instrumentCURIE()));</span>
+<span class="line">  }</span>
+<span class="line"></span>
+<span class="line"></span>
+<span class="line">  <span class="keyword">public</span> <span class="keyword">enum</span> <span class="type">NGS_PROPERTY</span> {</span>
+<span class="line">    <span class="type">QBIC_SAMPLE_ID</span>(&quot;qbic sample id&quot;),</span>
+<span class="line">    <span class="type">SAMPLE_LABEL</span>(&quot;sample name&quot;),</span>
+<span class="line">    <span class="type">ORGANISATION_ID</span>(&quot;organisation id&quot;),</span>
+<span class="line">    <span class="type">FACILITY</span>(&quot;facility&quot;),</span>
+<span class="line">    <span class="type">INSTRUMENT</span>(&quot;instrument&quot;),</span>
+<span class="line">    <span class="type">SEQUENCING_READ_TYPE</span>(&quot;sequencing read type&quot;),</span>
+<span class="line">    <span class="type">LIBRARY_KIT</span>(&quot;library kit&quot;),</span>
+<span class="line">    <span class="type">FLOW_CELL</span>(&quot;flow cell&quot;),</span>
+<span class="line">    <span class="type">SEQUENCING_RUN_PROTOCOL</span>(&quot;sequencing run protocol&quot;),</span>
+<span class="line">    <span class="type">SAMPLE_POOL_GROUP</span>(&quot;sample pool group&quot;),</span>
+<span class="line">    <span class="type">INDEX_I7</span>(&quot;index i7&quot;),</span>
+<span class="line">    <span class="type">INDEX_I5</span>(&quot;index i5&quot;),</span>
+<span class="line">    <span class="type">COMMENT</span>(&quot;comment&quot;);</span>
+<span class="line"></span>
+<span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="type">String</span> label;</span>
+<span class="line"></span>
+<span class="line">    <span class="type">NGS_PROPERTY</span>(<span class="type">String</span> propertyLabel) {</span>
+<span class="line">      <span class="keyword">this</span>.label = propertyLabel;</span>
+<span class="line">    }</span>
+<span class="line"></span>
+<span class="line">    <span class="keyword">public</span> <span class="type">String</span> label() {</span>
+<span class="line">      <span class="keyword">return</span> <span class="keyword">this</span>.label;</span>
+<span class="line">    }</span>
+<span class="line">  }</span>
+<span class="line"></span>
+<span class="line">  <span class="keyword">private</span> <span class="keyword">class</span> <span class="type">ValidationPolicy</span> {</span>
+<span class="line"></span>
+<span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">String</span> <span class="type">UNKNOWN_SAMPLE_MESSAGE</span> = &quot;<span class="type">Unknown</span> sample with sample id \&quot;%s\&quot;&quot;;</span>
+<span class="line"></span>
+<span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">String</span> <span class="type">UNKNOWN_ORGANISATION_ID_MESSAGE</span> = &quot;<span class="type">The</span> organisation <span class="type">ID</span> does not seem to be a <span class="type">ROR</span> <span class="type">ID</span>: \&quot;%s\&quot;&quot;;</span>
+<span class="line"></span>
+<span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">String</span> <span class="type">UNKNOWN_INSTRUMENT_ID</span> = &quot;<span class="type">Unknown</span> instrument id: \&quot;%s\&quot;&quot;;</span>
+<span class="line"></span>
+<span class="line">    // <span class="type">The</span> unique <span class="type">ROR</span> id part of the <span class="type">URL</span> is described in the official documentation:</span>
+<span class="line">    // https://ror.readme.io/docs/ror-identifier-pattern</span>
+<span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">String</span> <span class="type">ROR_ID_REGEX</span> = &quot;^https://ror.org/0[a-z|0-9]{6}[0-9]{2}$&quot;;</span>
+<span class="line"></span>
+<span class="line">    <span class="type">ValidationResult</span> validateMeasurementCode(<span class="type">String</span> measurementCode) {</span>
+<span class="line">      <span class="keyword">var</span> queryMeasurement = measurementService.findNGSMeasurement(measurementCode);</span>
+<span class="line">      <span class="keyword">return</span> queryMeasurement.map(measurement -&gt; <span class="type">ValidationResult</span>.successful()).orElse(</span>
+<span class="line">          <span class="type">ValidationResult</span>.withFailures(</span>
+<span class="line">              <span class="type">List</span>.of(</span>
+<span class="line">                  &quot;<span class="type">Measurement</span> <span class="type">ID</span>: <span class="type">Unknown</span> measurement <span class="keyword">for</span> id &#x27;%s&#x27;&quot;.formatted(measurementCode))));</span>
+<span class="line">    }</span>
+<span class="line"></span>
+<span class="line">    @<span class="type">PreAuthorize</span>(&quot;hasPermission(#projectId,&#x27;life.qbic.projectmanagement.domain.model.project.<span class="type">Project</span>&#x27;,&#x27;<span class="type">READ</span>&#x27;)&quot;)</span>
+<span class="line">    <span class="type">ValidationResult</span> validationProjectRelation(<span class="type">String</span> sampleId, <span class="type">ProjectId</span> projectId) {</span>
+<span class="line">      <span class="keyword">if</span> (sampleId.isBlank()) {</span>
+<span class="line">        <span class="keyword">return</span> <span class="type">ValidationResult</span>.withFailures(</span>
+<span class="line">            <span class="type">List</span>.of(&quot;<span class="type">Missing</span> <span class="type">Sample</span> id: <span class="type">No</span> sample identifier was provided.&quot;));</span>
+<span class="line">      }</span>
+<span class="line">      <span class="type">SampleCode</span> sampleCode = <span class="type">SampleCode</span>.create(sampleId);</span>
+<span class="line">      <span class="keyword">var</span> projectQuery = projectInformationService.find(projectId);</span>
+<span class="line">      <span class="keyword">if</span> (projectQuery.isEmpty()) {</span>
+<span class="line">        log.error(&quot;<span class="type">No</span> project information found <span class="keyword">for</span> projectId: &quot; + projectId);</span>
+<span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="type">ValidationException</span>(&quot;<span class="type">This</span> should not happen, please <span class="keyword">try</span> again.&quot;);</span>
+<span class="line">      }</span>
+<span class="line">      <span class="keyword">var</span> experimentIds = projectQuery.get().experiments();</span>
+<span class="line">      <span class="keyword">var</span> sampleQuery = sampleInformationService.findSampleId(sampleCode).flatMap(</span>
+<span class="line">          sampleIdCodeEntry -&gt; sampleInformationService.findSample(sampleIdCodeEntry.sampleId()));</span>
+<span class="line">      <span class="keyword">if</span> (sampleQuery.isEmpty()) {</span>
+<span class="line">        log.error(&quot;<span class="type">No</span> sample information found <span class="keyword">for</span> sample id: &quot; + sampleCode);</span>
+<span class="line">        <span class="keyword">return</span> <span class="type">ValidationResult</span>.withFailures(</span>
+<span class="line">            <span class="type">List</span>.of(&quot;<span class="type">No</span> sample information found <span class="keyword">for</span> sample id: %s&quot;.formatted(sampleCode.code())));</span>
+<span class="line">      }</span>
+<span class="line">      <span class="keyword">if</span> (experimentIds.contains(sampleQuery.get().experimentId())) {</span>
+<span class="line">        <span class="keyword">return</span> <span class="type">ValidationResult</span>.successful();</span>
+<span class="line">      }</span>
+<span class="line">      <span class="keyword">return</span> <span class="type">ValidationResult</span>.withFailures(</span>
+<span class="line">          <span class="type">List</span>.of(&quot;<span class="type">Sample</span> id does not belong to <span class="keyword">this</span> project: %s&quot;.formatted(sampleCode.code())));</span>
+<span class="line">    }</span>
+<span class="line"></span>
+<span class="line">    @<span class="type">PreAuthorize</span>(&quot;hasPermission(#projectId,&#x27;life.qbic.projectmanagement.domain.model.project.<span class="type">Project</span>&#x27;,&#x27;<span class="type">READ</span>&#x27;)&quot;)</span>
+<span class="line">    <span class="type">ValidationResult</span> validationExperimentRelation(<span class="type">String</span> sampleId, <span class="type">String</span> experimentId,</span>
+<span class="line">        <span class="type">ProjectId</span> projectId) {</span>
+<span class="line">      <span class="keyword">if</span> (sampleId.isBlank()) {</span>
+<span class="line">        <span class="keyword">return</span> <span class="type">ValidationResult</span>.withFailures(</span>
+<span class="line">            <span class="type">List</span>.of(&quot;<span class="type">Missing</span> <span class="type">Sample</span> id: <span class="type">No</span> sample identifier was provided.&quot;));</span>
+<span class="line">      }</span>
+<span class="line">      <span class="type">SampleCode</span> sampleCode = <span class="type">SampleCode</span>.create(sampleId);</span>
+<span class="line"></span>
+<span class="line">      <span class="keyword">boolean</span> sampleContainedInExperiment = sampleInformationService.retrieveSamplesForExperiment(</span>
+<span class="line">          projectId,</span>
+<span class="line">          experimentId).stream().anyMatch(it -&gt; it.sampleCode().equals(sampleCode));</span>
+<span class="line">      <span class="keyword">if</span> (sampleContainedInExperiment) {</span>
+<span class="line">        <span class="keyword">return</span> <span class="type">ValidationResult</span>.successful();</span>
+<span class="line">      }</span>
+<span class="line">      <span class="keyword">return</span> <span class="type">ValidationResult</span>.withFailures(</span>
+<span class="line">          <span class="type">List</span>.of(&quot;<span class="type">Sample</span> id does not belong to <span class="keyword">this</span> experiment: %s&quot;.formatted(sampleCode.code())));</span>
+<span class="line">    }</span>
+<span class="line"></span>
+<span class="line">    <span class="type">ValidationResult</span> validateSampleIdsAsString(<span class="type">Collection</span>&lt;<span class="type">String</span>&gt; sampleIds) {</span>
+<span class="line">      <span class="keyword">var</span> sampleCodes = sampleIds.stream().map(<span class="type">SampleCode</span>::create).toList();</span>
+<span class="line">      <span class="keyword">if</span> (sampleCodes.isEmpty()) {</span>
+<span class="line">        <span class="keyword">return</span> <span class="type">ValidationResult</span>.withFailures(</span>
+<span class="line">            <span class="type">List</span>.of(&quot;<span class="type">A</span> measurement must contain at least one sample reference. <span class="type">Provided</span>: none&quot;));</span>
+<span class="line">      }</span>
+<span class="line">      <span class="type">ValidationResult</span> validationResult = <span class="type">ValidationResult</span>.successful(</span>
+<span class="line">      );</span>
+<span class="line">      <span class="keyword">for</span> (<span class="type">SampleCode</span> sample : sampleCodes) {</span>
+<span class="line">        <span class="type">ValidationResult</span> result;</span>
+<span class="line">        <span class="keyword">var</span> queriedSampleEntry = sampleInformationService.findSampleId(sample);</span>
+<span class="line">        <span class="keyword">if</span> (queriedSampleEntry.isPresent()) {</span>
+<span class="line">          result = <span class="type">ValidationResult</span>.successful();</span>
+<span class="line">        } <span class="keyword">else</span> {</span>
+<span class="line">          result = <span class="type">ValidationResult</span>.withFailures(</span>
+<span class="line">              <span class="type">List</span>.of(<span class="type">UNKNOWN_SAMPLE_MESSAGE</span>.formatted(sample.code())));</span>
+<span class="line">        }</span>
+<span class="line">        validationResult = validationResult.combine(result);</span>
+<span class="line">      }</span>
+<span class="line">      <span class="keyword">return</span> validationResult;</span>
+<span class="line">    }</span>
+<span class="line"></span>
+<span class="line">    <span class="type">ValidationResult</span> validateOrganisation(<span class="type">String</span> organisationId) {</span>
+<span class="line">      <span class="keyword">if</span> (<span class="type">Pattern</span>.compile(<span class="type">ROR_ID_REGEX</span>).matcher(organisationId).find()) {</span>
+<span class="line">        <span class="keyword">return</span> <span class="type">ValidationResult</span>.successful();</span>
+<span class="line">      }</span>
+<span class="line">      <span class="keyword">return</span> <span class="type">ValidationResult</span>.withFailures(</span>
+<span class="line">          <span class="type">List</span>.of(<span class="type">UNKNOWN_ORGANISATION_ID_MESSAGE</span>.formatted(organisationId)));</span>
+<span class="line">    }</span>
+<span class="line"></span>
+<span class="line">    <span class="type">ValidationResult</span> validateInstrument(<span class="type">String</span> instrument) {</span>
+<span class="line">      <span class="keyword">var</span> result = terminologyService.findByCurie(instrument);</span>
+<span class="line">      <span class="keyword">if</span> (result.isPresent()) {</span>
+<span class="line">        <span class="keyword">return</span> <span class="type">ValidationResult</span>.successful();</span>
+<span class="line">      }</span>
+<span class="line">      <span class="keyword">return</span> <span class="type">ValidationResult</span>.withFailures(</span>
+<span class="line">          <span class="type">List</span>.of(<span class="type">UNKNOWN_INSTRUMENT_ID</span>.formatted(instrument)));</span>
+<span class="line">    }</span>
+<span class="line"></span>
+<span class="line">    @<span class="type">Deprecated</span></span>
+<span class="line">    <span class="type">ValidationResult</span> validateMandatoryDataProvided(</span>
+<span class="line">        <span class="type">NGSMeasurementMetadata</span> measurementMetadata) {</span>
+<span class="line">      <span class="keyword">var</span> validation = <span class="type">ValidationResult</span>.successful();</span>
+<span class="line">      <span class="keyword">if</span> (measurementMetadata.sampleCodes().isEmpty()) {</span>
+<span class="line">        validation = validation.combine(</span>
+<span class="line">            <span class="type">ValidationResult</span>.withFailures(</span>
+<span class="line">                <span class="type">List</span>.of(<span class="type">MISSING_SAMPLE_ID_REFERENCE</span>)));</span>
+<span class="line">      } <span class="keyword">else</span> {</span>
+<span class="line">        validation = validation.combine(<span class="type">ValidationResult</span>.successful());</span>
+<span class="line">      }</span>
+<span class="line">      <span class="keyword">if</span> (measurementMetadata.organisationId().isBlank()) {</span>
+<span class="line">        validation = validation.combine(</span>
+<span class="line">            <span class="type">ValidationResult</span>.withFailures(</span>
+<span class="line">                <span class="type">List</span>.of(&quot;<span class="type">Organisation</span>: missing mandatory metadata&quot;)));</span>
+<span class="line">      } <span class="keyword">else</span> {</span>
+<span class="line">        validation = validation.combine(<span class="type">ValidationResult</span>.successful());</span>
+<span class="line">      }</span>
+<span class="line">      <span class="keyword">if</span> (measurementMetadata.instrumentCURI().isBlank()) {</span>
+<span class="line">        validation = validation.combine(</span>
+<span class="line">            <span class="type">ValidationResult</span>.withFailures(</span>
+<span class="line">                <span class="type">List</span>.of(&quot;<span class="type">Instrument</span>: missing mandatory metadata&quot;)));</span>
+<span class="line">      } <span class="keyword">else</span> {</span>
+<span class="line">        validation = validation.combine(<span class="type">ValidationResult</span>.successful());</span>
+<span class="line">      }</span>
+<span class="line">      <span class="keyword">if</span> (measurementMetadata.facility().isBlank()) {</span>
+<span class="line">        validation = validation.combine(</span>
+<span class="line">            <span class="type">ValidationResult</span>.withFailures(</span>
+<span class="line">                <span class="type">List</span>.of(&quot;<span class="type">Facility</span>: missing mandatory metadata&quot;)));</span>
+<span class="line">      } <span class="keyword">else</span> {</span>
+<span class="line">        validation = validation.combine(<span class="type">ValidationResult</span>.successful());</span>
+<span class="line">      }</span>
+<span class="line">      <span class="keyword">if</span> (measurementMetadata.sequencingReadType().isBlank()) {</span>
+<span class="line">        validation = validation.combine(</span>
+<span class="line">            <span class="type">ValidationResult</span>.withFailures(</span>
+<span class="line">                <span class="type">List</span>.of(&quot;<span class="type">Read</span> <span class="type">Type</span>: missing mandatory metadata&quot;)));</span>
+<span class="line">      } <span class="keyword">else</span> {</span>
+<span class="line">        validation = validation.combine(<span class="type">ValidationResult</span>.successful());</span>
+<span class="line">      }</span>
+<span class="line">      <span class="keyword">return</span> validation;</span>
+<span class="line">    }</span>
+<span class="line"></span>
+<span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">boolean</span> anyEntryIsEmpty(<span class="type">List</span>&lt;<span class="type">String</span>&gt; strings) {</span>
+<span class="line">      <span class="keyword">return</span> strings.isEmpty() || strings.stream().anyMatch(<span class="type">String</span>::isBlank);</span>
+<span class="line">    }</span>
+<span class="line"></span>
+<span class="line">    <span class="type">ValidationResult</span> validateMandatoryDataRegistration(</span>
+<span class="line">        <span class="type">MeasurementRegistrationInformationNGS</span> metadata) {</span>
+<span class="line">      <span class="keyword">var</span> validation = <span class="type">ValidationResult</span>.successful();</span>
+<span class="line">      <span class="keyword">if</span> (anyEntryIsEmpty(metadata.measuredSamples())) {</span>
+<span class="line">        validation = validation.combine(</span>
+<span class="line">            <span class="type">ValidationResult</span>.withFailures(</span>
+<span class="line">                <span class="type">List</span>.of(<span class="type">MISSING_SAMPLE_ID_REFERENCE</span>)));</span>
+<span class="line">      } <span class="keyword">else</span> {</span>
+<span class="line">        validation = validation.combine(<span class="type">ValidationResult</span>.successful());</span>
+<span class="line">      }</span>
+<span class="line">      <span class="keyword">if</span> (metadata.organisationId().isBlank()) {</span>
+<span class="line">        validation = validation.combine(</span>
+<span class="line">            <span class="type">ValidationResult</span>.withFailures(</span>
+<span class="line">                <span class="type">List</span>.of(&quot;<span class="type">Organisation</span>: missing mandatory metadata&quot;)));</span>
+<span class="line">      } <span class="keyword">else</span> {</span>
+<span class="line">        validation = validation.combine(<span class="type">ValidationResult</span>.successful());</span>
+<span class="line">      }</span>
+<span class="line">      <span class="keyword">if</span> (metadata.instrumentCURIE().isBlank()) {</span>
+<span class="line">        validation = validation.combine(</span>
+<span class="line">            <span class="type">ValidationResult</span>.withFailures(</span>
+<span class="line">                <span class="type">List</span>.of(&quot;<span class="type">Instrument</span>: missing mandatory metadata&quot;)));</span>
+<span class="line">      } <span class="keyword">else</span> {</span>
+<span class="line">        validation = validation.combine(<span class="type">ValidationResult</span>.successful());</span>
+<span class="line">      }</span>
+<span class="line">      <span class="keyword">if</span> (metadata.facility().isBlank()) {</span>
+<span class="line">        validation = validation.combine(</span>
+<span class="line">            <span class="type">ValidationResult</span>.withFailures(</span>
+<span class="line">                <span class="type">List</span>.of(&quot;<span class="type">Facility</span>: missing mandatory metadata&quot;)));</span>
+<span class="line">      } <span class="keyword">else</span> {</span>
+<span class="line">        validation = validation.combine(<span class="type">ValidationResult</span>.successful());</span>
+<span class="line">      }</span>
+<span class="line">      <span class="keyword">if</span> (metadata.sequencingReadType().isBlank()) {</span>
+<span class="line">        validation = validation.combine(</span>
+<span class="line">            <span class="type">ValidationResult</span>.withFailures(</span>
+<span class="line">                <span class="type">List</span>.of(&quot;<span class="type">Read</span> <span class="type">Type</span>: missing mandatory metadata&quot;)));</span>
+<span class="line">      } <span class="keyword">else</span> {</span>
+<span class="line">        validation = validation.combine(<span class="type">ValidationResult</span>.successful());</span>
+<span class="line">      }</span>
+<span class="line"></span>
+<span class="line">      <span class="keyword">var</span> missingIndices = <span class="keyword">new</span> <span class="type">MissingIndices</span>(() -&gt; metadata);</span>
+<span class="line"></span>
+<span class="line">      validation = validation.combine(missingIndices.execute());</span>
+<span class="line"></span>
+<span class="line">      <span class="keyword">return</span> validation;</span>
+<span class="line">    }</span>
+<span class="line"></span>
+<span class="line">    <span class="type">ValidationResult</span> validateMandatoryMetadataDataForUpdate(</span>
+<span class="line">        <span class="type">MeasurementUpdateInformationNGS</span> metadata) {</span>
+<span class="line">      <span class="keyword">var</span> validation = <span class="type">ValidationResult</span>.successful();</span>
+<span class="line">      <span class="keyword">if</span> (metadata.measurementId().isEmpty()) {</span>
+<span class="line">        validation = validation.combine(<span class="type">ValidationResult</span>.withFailures(</span>
+<span class="line">            <span class="type">List</span>.of(&quot;<span class="type">Measurement</span> id: missing measurement id <span class="keyword">for</span> update&quot;)));</span>
+<span class="line">      } <span class="keyword">else</span> {</span>
+<span class="line">        validation = validation.combine(<span class="type">ValidationResult</span>.successful());</span>
+<span class="line">      }</span>
+<span class="line">      <span class="keyword">if</span> (metadata.organisationId().isBlank()) {</span>
+<span class="line">        validation = validation.combine(</span>
+<span class="line">            <span class="type">ValidationResult</span>.withFailures(<span class="type">List</span>.of(&quot;<span class="type">Organisation</span>: missing mandatory metadata&quot;)));</span>
+<span class="line">      } <span class="keyword">else</span> {</span>
+<span class="line">        validation = validation.combine(<span class="type">ValidationResult</span>.successful());</span>
+<span class="line">      }</span>
+<span class="line">      <span class="keyword">if</span> (metadata.instrumentCURIE().isBlank()) {</span>
+<span class="line">        validation = validation.combine(</span>
+<span class="line">            <span class="type">ValidationResult</span>.withFailures(<span class="type">List</span>.of(&quot;<span class="type">Instrument</span>: missing mandatory metadata&quot;)));</span>
+<span class="line">      } <span class="keyword">else</span> {</span>
+<span class="line">        validation = validation.combine(<span class="type">ValidationResult</span>.successful());</span>
+<span class="line">      }</span>
+<span class="line">      <span class="keyword">if</span> (metadata.facility().isBlank()) {</span>
+<span class="line">        validation = validation.combine(</span>
+<span class="line">            <span class="type">ValidationResult</span>.withFailures(<span class="type">List</span>.of(&quot;<span class="type">Facility</span>: missing mandatory metadata&quot;)));</span>
+<span class="line">      } <span class="keyword">else</span> {</span>
+<span class="line">        validation = validation.combine(<span class="type">ValidationResult</span>.successful());</span>
+<span class="line">      }</span>
+<span class="line">      <span class="keyword">if</span> (metadata.sequencingReadType().isBlank()) {</span>
+<span class="line">        validation = validation.combine(</span>
+<span class="line">            <span class="type">ValidationResult</span>.withFailures(</span>
+<span class="line">                <span class="type">List</span>.of(&quot;<span class="type">Read</span> <span class="type">Type</span>: missing mandatory metadata&quot;)));</span>
+<span class="line">      } <span class="keyword">else</span> {</span>
+<span class="line">        validation = validation.combine(<span class="type">ValidationResult</span>.successful());</span>
+<span class="line">      }</span>
+<span class="line">      <span class="keyword">return</span> validation;</span>
+<span class="line">    }</span>
+<span class="line"></span>
+<span class="line">    @<span class="type">Deprecated</span></span>
+<span class="line">    <span class="type">ValidationResult</span> validateMandatoryDataForUpdate(<span class="type">NGSMeasurementMetadata</span> metadata) {</span>
+<span class="line">      <span class="keyword">var</span> validation = <span class="type">ValidationResult</span>.successful();</span>
+<span class="line">      <span class="keyword">if</span> (metadata.measurementIdentifier().isEmpty()) {</span>
+<span class="line">        validation.combine(<span class="type">ValidationResult</span>.withFailures(</span>
+<span class="line">            <span class="type">List</span>.of(&quot;<span class="type">Measurement</span> id: missing measurement id <span class="keyword">for</span> update&quot;)));</span>
+<span class="line">      } <span class="keyword">else</span> {</span>
+<span class="line">        validation.combine(<span class="type">ValidationResult</span>.successful());</span>
+<span class="line">      }</span>
+<span class="line">      <span class="keyword">if</span> (metadata.organisationId().isBlank()) {</span>
+<span class="line">        validation = validation.combine(</span>
+<span class="line">            <span class="type">ValidationResult</span>.withFailures(<span class="type">List</span>.of(&quot;<span class="type">Organisation</span>: missing mandatory metadata&quot;)));</span>
+<span class="line">      } <span class="keyword">else</span> {</span>
+<span class="line">        validation = validation.combine(<span class="type">ValidationResult</span>.successful());</span>
+<span class="line">      }</span>
+<span class="line">      <span class="keyword">if</span> (metadata.instrumentCURI().isBlank()) {</span>
+<span class="line">        validation = validation.combine(</span>
+<span class="line">            <span class="type">ValidationResult</span>.withFailures(<span class="type">List</span>.of(&quot;<span class="type">Instrument</span>: missing mandatory metadata&quot;)));</span>
+<span class="line">      } <span class="keyword">else</span> {</span>
+<span class="line">        validation = validation.combine(<span class="type">ValidationResult</span>.successful());</span>
+<span class="line">      }</span>
+<span class="line">      <span class="keyword">if</span> (metadata.facility().isBlank()) {</span>
+<span class="line">        validation = validation.combine(</span>
+<span class="line">            <span class="type">ValidationResult</span>.withFailures(<span class="type">List</span>.of(&quot;<span class="type">Facility</span>: missing mandatory meta;data&quot;)));</span>
+<span class="line">      } <span class="keyword">else</span> {</span>
+<span class="line">        validation = validation.combine(<span class="type">ValidationResult</span>.successful());</span>
+<span class="line">      }</span>
+<span class="line">      <span class="keyword">if</span> (metadata.sequencingReadType().isBlank()) {</span>
+<span class="line">        validation = validation.combine(</span>
+<span class="line">            <span class="type">ValidationResult</span>.withFailures(</span>
+<span class="line">                <span class="type">List</span>.of(&quot;<span class="type">Read</span> <span class="type">Type</span>: missing mandatory metadata&quot;)));</span>
+<span class="line">      } <span class="keyword">else</span> {</span>
+<span class="line">        validation = validation.combine(<span class="type">ValidationResult</span>.successful());</span>
+<span class="line">      }</span>
+<span class="line">      <span class="keyword">return</span> validation;</span>
+<span class="line">    }</span>
+<span class="line">  }</span>
+<span class="line">}</span>
+<span class="line"></span></code></pre>
+</div>
+
+</body>
+</html>

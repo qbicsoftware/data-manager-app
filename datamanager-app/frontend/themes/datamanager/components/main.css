@@ -3,8 +3,9 @@
 }
 
 /* Vaadin 25: Hide AppLayout drawer when drawer-opened attribute is not set */
-vaadin-app-layout:not([drawer-opened])::part(drawer) {
-  display: none;
+vaadin-app-layout:not([drawer-opened])::part(drawer),
+vaadin-app-layout:not([drawer-opened]) [part="drawer"] {
+  display: none !important;
 }
 
 #announcements {

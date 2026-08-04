@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/sven1103-agent/opencode-worktree-plugin/schemas/worktree-cleanup-preview.result.schema.json",
+  "title": "worktree_cleanup preview result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "ok",
+    "mode",
+    "default_branch",
+    "base_branch",
+    "base_ref",
+    "groups"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "ok": {
+      "type": "boolean",
+      "const": true
+    },
+    "mode": {
+      "type": "string",
+      "const": "preview"
+    },
+    "default_branch": {
+      "type": "string",
+      "minLength": 1
+    },
+    "base_branch": {
+      "type": "string",
+      "minLength": 1
+    },
+    "base_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "groups": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["safe", "review", "blocked"],
+      "properties": {
+        "safe": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/cleanupItem"
+          }
+        },
+        "review": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/cleanupItem"
+          }
+        },
+        "blocked": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/cleanupItem"
+          }
+        }
+      }
+    },
+    "message": {
+      "type": "string"
+    }
+  },
+  "$defs": {
+    "cleanupItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "branch",
+        "worktree_path",
+        "head",
+        "status",
+        "reason",
+        "detached",
+        "selectable"
+      ],
+      "properties": {
+        "branch": {
+          "type": ["string", "null"]
+        },
+        "worktree_path": {
+          "type": ["string", "null"]
+        },
+        "head": {
+          "type": ["string", "null"]
+        },
+        "status": {
+          "type": ["string", "null"],
+          "enum": ["safe", "review", "blocked", null]
+        },
+        "reason": {
+          "type": ["string", "null"]
+        },
+        "detached": {
+          "type": "boolean"
+        },
+        "selectable": {
+          "type": ["boolean", "null"]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Data Manager — Interview Assignments</title>
+<style>
+  :root {
+    --bg: #f6f8fa;
+    --text: #1f2328;
+    --sidebar-bg: #ffffff;
+    --sidebar-border: #d0d7de;
+    --card-bg: #ffffff;
+    --card-border: #d0d7de;
+    --accent: #0969da;
+    --accent-hover: #0550ae;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+  .layout { display: flex; min-height: 100vh; }
+  .sidebar { width: 300px; background: var(--sidebar-bg); border-right: 1px solid var(--sidebar-border); position: fixed; top: 0; bottom: 0; left: 0; overflow-y: auto; padding: 28px 20px; }
+  .sidebar h2 { margin: 0 0 20px; font-size: 18px; font-weight: 800; }
+  .sidebar nav ul { list-style: none; padding: 0; margin: 0; }
+  .sidebar nav li { margin-bottom: 6px; }
+  .sidebar nav a { display: block; padding: 10px 12px; border-radius: 6px; color: var(--text); text-decoration: none; font-size: 14px; line-height: 1.4; }
+  .sidebar nav a:hover { background: #f3f4f6; }
+  .sidebar .difficulty-easy { color: #1a7f37; font-weight: 600; }
+  .sidebar .difficulty-medium { color: #7a5c00; font-weight: 600; }
+  .sidebar .difficulty-hard { color: #cf222e; font-weight: 600; }
+  .main { margin-left: 300px; flex: 1; padding: 32px 40px; max-width: 1000px; }
+  .hero { margin-bottom: 36px; padding-bottom: 24px; border-bottom: 1px solid var(--sidebar-border); }
+  .hero h1 { margin: 0 0 10px; font-size: 34px; font-weight: 800; letter-spacing: -0.02em; }
+  .hero p { margin: 0 0 8px; color: #656d76; font-size: 17px; }
+  .hero .total-time { display: inline-block; margin-top: 10px; padding: 6px 14px; background: #ddf4ff; color: #0550ae; border-radius: 20px; font-size: 14px; font-weight: 700; }
+  .assignment { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 28px; margin-bottom: 36px; scroll-margin-top: 24px; }
+  .assignment-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+  .assignment-header h2 { margin: 0; font-size: 22px; font-weight: 700; }
+  .badge { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+  .badge-easy { background: #dafbe1; color: #1a7f37; }
+  .badge-easy-medium { background: #ddf4ff; color: #0550ae; }
+  .badge-medium { background: #fff8c5; color: #7a5c00; }
+  .time { color: #656d76; font-size: 13px; font-weight: 500; margin-left: auto; }
+  .context { background: #f6f8fa; border-left: 4px solid var(--accent); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 14px 0; font-size: 14px; color: #24292f; }
+  .hint { background: #fff8c5; border-left: 4px solid #7a5c00; padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: 13px; color: #3d2900; }
+  .hint strong { color: #542d00; }
+  .files { margin: 18px 0; }
+  .files h3 { margin: 0 0 10px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: #656d76; }
+  .file-list { display: flex; flex-wrap: wrap; gap: 8px; }
+  .file-link { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; background: #f6f8fa; border: 1px solid #d0d7de; border-radius: 6px; color: var(--text); text-decoration: none; font-size: 13px; font-weight: 500; transition: background 0.15s, border-color 0.15s; }
+  .file-link:hover { background: #eff2f5; border-color: #bbc0c5; }
+  .file-link .ext { color: #656d76; font-weight: 400; }
+  .questions { margin-top: 18px; }
+  .questions h3 { margin: 0 0 10px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: #656d76; }
+  .questions ol { margin: 0; padding-left: 22px; }
+  .questions li { margin-bottom: 14px; font-size: 15px; }
+  .questions li code { background: rgba(175,184,193,0.2); padding: 2px 5px; border-radius: 4px; font-size: 13px; font-family: ui-monospace,SFMono-Regular,SF Mono,Menlo,Consolas,Liberation Mono,monospace; }
+  @media (max-width: 900px) {
+    .sidebar { display: none; }
+    .main { margin-left: 0; padding: 24px; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <h2>Assignments</h2>
+    <nav>
+      <ul>
+        <li><a href="#assignment-1">1. API Contract Reading <span class="difficulty-easy">● Easy</span></a></li>
+        <li><a href="#assignment-2">2. Validation & Authorization <span class="difficulty-easy">● Easy-Medium</span></a></li>
+        <li><a href="#assignment-3">3. Domain Model & Bug Hunt <span class="difficulty-medium">● Medium</span></a></li>
+      </ul>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <div class="hero">
+      <h1>Data Manager — Interview Assignments</h1>
+      <p>Three short code-reading exercises focused on API contracts, validation, and domain models.<br>No need to navigate the full codebase — every file you need is linked below.</p>
+      <span class="total-time">&#9201; Total: ~50–60 minutes</span>
+      <p style="margin-top:12px; font-size:13px;"><a href="answers.html" style="color:#656d76;">&#128274; Interviewer answers</a></p>
+    </div>
+
+    <!-- Assignment 1 -->
+    <section class="assignment" id="assignment-1">
+      <div class="assignment-header">
+        <h2>1. API Contract Reading</h2>
+        <span class="badge badge-easy">Easy</span>
+        <span class="time">&#9201; 15 min</span>
+      </div>
+      <div class="context">
+        The <code>AsyncProjectService</code> interface defines how the UI communicates with the backend. It uses Java records for requests/responses and reactive types (<code>Mono</code>) for async operations. Your job is to read the contract and understand what a client must provide.
+      </div>
+      <div class="files">
+        <h3>Relevant files</h3>
+        <div class="file-list">
+          <a class="file-link" href="assignment-01-api-contract/service_api.md.html" target="_blank">service_api.md<span class="ext">.html</span></a>
+          <a class="file-link" href="assignment-01-api-contract/AsyncProjectService.java.html" target="_blank">AsyncProjectService.java<span class="ext">.html</span></a>
+        </div>
+      </div>
+      <div class="hint">
+        <strong>Hint:</strong> In <code>AsyncProjectService.java</code>, focus on the <code>ProjectCreationRequest</code> and <code>ProjectCreationResponse</code> records near the top (first ~80 lines). You do not need to read the entire file.
+      </div>
+      <div class="questions">
+        <h3>Questions</h3>
+        <ol>
+          <li>Look at the <code>ProjectCreationRequest</code> record. Which fields are <strong>required</strong> (must not be <code>null</code>) according to the compact canonical constructor? Which field is explicitly allowed to be <code>null</code>?</li>
+          <li>The record provides <code>optionalFundingInformation()</code> as an alternative to the <code>funding()</code> getter. Why is this safer for the caller?</li>
+          <li>Every request and response carries a <code>requestId</code> field. In your own words, why is this useful when the API is asynchronous?</li>
+          <li><code>AsyncProjectService</code> returns <code>Mono&lt;ProjectCreationResponse&gt;</code> instead of <code>ProjectCreationResponse</code> directly. In one or two sentences, explain what <code>Mono</code> means in this context. (You do not need to explain reactive streams in depth — just the client-visible consequence.)</li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- Assignment 2 -->
+    <section class="assignment" id="assignment-2">
+      <div class="assignment-header">
+        <h2>2. Validation & Authorization</h2>
+        <span class="badge badge-easy-medium">Easy-Medium</span>
+        <span class="time">&#9201; 15–20 min</span>
+      </div>
+      <div class="context">
+        Before measurement metadata is saved, it passes through a validation service. This service also guards access with Spring Security annotations. You will read the validation result model and the service façade to understand the flow.
+      </div>
+      <div class="files">
+        <h3>Relevant files</h3>
+        <div class="file-list">
+          <a class="file-link" href="assignment-02-validation-auth/ValidationResult.java.html" target="_blank">ValidationResult.java<span class="ext">.html</span></a>
+          <a class="file-link" href="assignment-02-validation-auth/MeasurementValidationService.java.html" target="_blank">MeasurementValidationService.java<span class="ext">.html</span></a>
+        </div>
+      </div>
+      <div class="hint">
+        <strong>Hint:</strong> Start with <code>ValidationResult.java</code> — it is short and self-contained. Then read <code>MeasurementValidationService.java</code> and notice how it uses <code>ValidationResult</code>.
+      </div>
+      <div class="questions">
+        <h3>Questions</h3>
+        <ol>
+          <li>In <code>ValidationResult</code>, what is the difference between a <strong>failure</strong> and a <strong>warning</strong>? If a validation result contains warnings but no failures, does <code>allPassed()</code> return <code>true</code> or <code>false</code>?</li>
+          <li>How do you create a <code>ValidationResult</code> that represents success? How do you create one that contains a list of failure messages?</li>
+          <li>Look at <code>MeasurementValidationService</code>. It has methods like <code>validateNGS</code>, <code>validatePxp</code>, and <code>validateIP</code>. List two things these three methods have in common (e.g., return type, security annotation, parameter pattern).</li>
+          <li>The annotation <code>@PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")</code> appears on every public method. In plain language, what does this mean for a user who wants to validate measurement data?</li>
+          <li><code>MeasurementValidationService</code> delegates to validator components (e.g., <code>measurementNgsValidator</code>) but does not contain the actual validation rules itself. What is the name of this design pattern, and why is it useful?</li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- Assignment 3 -->
+    <section class="assignment" id="assignment-3">
+      <div class="assignment-header">
+        <h2>3. Domain Model & Bug Hunt</h2>
+        <span class="badge badge-medium">Medium</span>
+        <span class="time">&#9201; 20–25 min</span>
+      </div>
+      <div class="context">
+        <code>NGSMeasurement</code> is a JPA entity that represents a Next-Generation Sequencing measurement. It enforces business rules (e.g., pooled measurements must have indices) and emits domain events. The validator mirrors some of these rules. Your job is to compare the domain object with its validator and spot an actual bug in the codebase.
+      </div>
+      <div class="files">
+        <h3>Relevant files</h3>
+        <div class="file-list">
+          <a class="file-link" href="assignment-03-domain-bug-hunt/NGSMeasurement.java.html" target="_blank">NGSMeasurement.java<span class="ext">.html</span></a>
+          <a class="file-link" href="assignment-03-domain-bug-hunt/MeasurementNGSValidator.java.html" target="_blank">MeasurementNGSValidator.java<span class="ext">.html</span></a>
+        </div>
+      </div>
+      <div class="hint">
+        <strong>Hint:</strong> In <code>MeasurementNGSValidator.java</code>, you only need to look at the <code>NGS_PROPERTY</code> enum and the inner <code>ValidationPolicy</code> class. In <code>NGSMeasurement.java</code>, focus on the factory methods and the setter methods that emit events.
+      </div>
+      <div class="questions">
+        <h3>Questions</h3>
+        <ol>
+          <li><code>NGSMeasurement</code> has two factory methods: <code>createSingleMeasurement</code> and <code>createWithPool</code>. What is the key difference between them in terms of input parameters and business rules?</li>
+          <li>When a pooled measurement is created, what must be true about every entry in <code>specificMeasurementMetadata</code>? What happens if this rule is violated?</li>
+          <li>The <code>NGS_PROPERTY</code> enum lists the column headers expected in an uploaded Excel file. List the five fields that are checked as <strong>mandatory</strong> during registration validation (hint: look at <code>validateMandatoryDataRegistration</code> in the inner <code>ValidationPolicy</code>).</li>
+          <li><strong>Bug hunt:</strong> There is a method annotated with <code>@Deprecated</code> inside <code>ValidationPolicy</code> called <code>validateMandatoryDataForUpdate</code>. Read it carefully. There is a subtle bug in how the validation results are combined. Can you spot it? Explain what goes wrong and how you would fix it.</li>
+          <li>Every time a setter like <code>setMethod(...)</code> or <code>setOrganisation(...)</code> is called, an event is emitted. If a caller sets the method <em>and</em> the organisation in the same transaction, how many <code>MeasurementUpdatedEvent</code> objects are fired? Is this a problem? Why or why not?</li>
+        </ol>
+      </div>
+    </section>
+
+  </main>
+</div>
+</body>
+</html>

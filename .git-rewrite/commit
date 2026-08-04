@@ -1,0 +1,22 @@
+tree eb6a62837b0cb15935c257ed96cff654d235c785
+parent f92e4768d5962520623c2ba8c9fe94e293f4e97d
+author wow-such-code <andreas.friedrich@uni-tuebingen.de> 1686929754 +0200
+committer wow-such-code <andreas.friedrich@uni-tuebingen.de> 1686929754 +0200
+gpgsig -----BEGIN PGP SIGNATURE-----
+ 
+ iQGzBAABCAAdFiEEVERx4XqtfctpRr9+lelwNrA7EesFAmSMgWEACgkQlelwNrA7
+ EevShAv/dLUVPuAvh/mpjp/+c/Q2m3+DsiXScybOH6Wf4cKrvF4nQBiTPETygldi
+ 4ON3aMDbIGub/Bo/gvpzNpfNPbwIa0c8HTtF37WuFzkx/N1eutljZhnDXedmOxHI
+ 9DLq9KGCdTXEsfQGhJIE/I5J2H8omKOrTV3hLZX80iSBpRKJtPIeuS/MHihkUyof
+ +Vn9yetF5DGB/gCeUF65hF6jOQdaWa0FtPHrQ1ip72wr5p5biAoY3q9hwblImyud
+ Y/QUtMZBF+8Mz4Q0Y1Fm0bwsGzYiJ3jSBB4vurMVhmmBgqmklL/rrRDwlflWa4Nu
+ eO+svv+yVa3RgmBX6bLklEvPTCl6WYxQFgx7dqDgQwfQs9m9zk9wAQhQJqSnfZm0
+ Uc6l3ovQyFTrgBNFcI7ZY+qBSQBUuQMG+ZzfzxImM2hLbCz9qJcLP4O0Ahwp584a
+ n4h3gVd4castxu1Kdx+JCtMWx7ZVw9psoTDw0iLrGdy2FrzBiA4jMos1PXEChAAy
+ fsJBjV2e
+ =9CsZ
+ -----END PGP SIGNATURE-----
+
+Revert "create dialog window component and styles, remove unnecessary styling"
+
+This reverts commit f92e4768d5962520623c2ba8c9fe94e293f4e97d.

@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "vaadin": {
+      "transport": "streamable-http",
+      "url": "https://mcp.vaadin.com/docs",
+      "lifecycle": "eager",
+      "requestTimeoutMs": 30000
+    }
+  }
+}

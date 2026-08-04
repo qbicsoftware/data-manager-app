@@ -1,0 +1,5 @@
+{
+  "devDependencies": {
+    "@sven1103/opencode-worktree-workflow": "^0.6.1"
+  }
+}

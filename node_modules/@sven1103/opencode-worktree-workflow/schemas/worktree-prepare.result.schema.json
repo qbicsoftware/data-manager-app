@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/sven1103-agent/opencode-worktree-plugin/schemas/worktree-prepare.result.schema.json",
+  "title": "worktree_prepare result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "ok",
+    "title",
+    "branch",
+    "worktree_path",
+    "default_branch",
+    "base_branch",
+    "base_ref",
+    "base_commit",
+    "created"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "ok": {
+      "type": "boolean",
+      "const": true
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "branch": {
+      "type": "string",
+      "minLength": 1
+    },
+    "worktree_path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "default_branch": {
+      "type": "string",
+      "minLength": 1
+    },
+    "base_branch": {
+      "type": "string",
+      "minLength": 1
+    },
+    "base_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "base_commit": {
+      "type": "string",
+      "minLength": 1
+    },
+    "created": {
+      "type": "boolean",
+      "const": true
+    },
+    "message": {
+      "type": "string"
+    }
+  }
+}
