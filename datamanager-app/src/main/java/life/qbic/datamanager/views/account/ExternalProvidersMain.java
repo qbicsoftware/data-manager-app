@@ -22,6 +22,7 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
@@ -29,6 +30,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import life.qbic.application.commons.time.DateTimeFormat;
 import life.qbic.datamanager.views.UiHandle;
 import life.qbic.datamanager.views.UserMainLayout;
 import life.qbic.datamanager.views.general.Main;
@@ -71,10 +73,7 @@ public class ExternalProvidersMain extends Main
   private static final Logger log = LoggerFactory.logger(
       ExternalProvidersMain.class);
 
-  /** Date format for "since 15 Nov 2024" style. */
-  private static final DateTimeFormatter DATE_FMT =
-      DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
-          .withLocale(Locale.ENGLISH);
+
 
   private final String SECONDARY_COLOR =
       "var(--lumo-secondary-text-color)";
@@ -264,8 +263,8 @@ public class ExternalProvidersMain extends Main
         dateSep.addClassNames("extra-small-body-text");
 
         String dateText = "since "
-            + DATE_FMT.format(
-                LocalDate.ofInstant(status.configuredAt(), ZoneOffset.UTC));
+            + DateTimeFormat.asJavaFormatter(DateTimeFormat.SIMPLE_DATE_SHORT, ZoneId.systemDefault())
+            .format(status.configuredAt());
         var dateSpan = new Span(dateText);
         dateSpan.addClassNames("small-body-text");
         dateSpan.getStyle().set("color", SECONDARY_COLOR);

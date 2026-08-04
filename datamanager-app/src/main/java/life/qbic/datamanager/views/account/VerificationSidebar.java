@@ -410,9 +410,7 @@ public class VerificationSidebar extends Div {
       statusDiv.add(label);
     } else {
       // Invalid or Error
-      VaadinIcon iconSymbol = isError
-          ? VaadinIcon.EXCLAMATION_CIRCLE_O
-          : VaadinIcon.EXCLAMATION_CIRCLE_O;
+      VaadinIcon iconSymbol = VaadinIcon.EXCLAMATION_CIRCLE_O;
       var icon = iconSymbol.create();
       icon.getStyle().set("color", "var(--lumo-error-color)");
       statusDiv.add(icon);
