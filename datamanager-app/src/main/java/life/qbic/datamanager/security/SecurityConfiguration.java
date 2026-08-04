@@ -68,6 +68,11 @@ public class SecurityConfiguration {
         .permitAll()
     );
 
+    http.formLogin(form -> form
+        .loginPage("/login")
+        .permitAll()
+        .failureUrl("/login?error"));
+
     http.oauth2Login(oauth2 ->
         oauth2.loginPage("/login")
             .permitAll()
