@@ -16,7 +16,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import life.qbic.datamanager.views.UiHandle;
 import life.qbic.projectmanagement.application.AuthenticationToUserIdTranslationService;
 import life.qbic.projectmanagement.application.associated_dataset.ExternalCredentialService;
-import life.qbic.projectmanagement.application.associated_dataset.ExternalCredentialService.AddCredentialResult;
 import life.qbic.projectmanagement.application.associated_dataset.ExternalCredentialService.CredentialStatusView;
 import life.qbic.projectmanagement.application.associated_dataset.ExternalCredentialService.InvalidToken;
 import life.qbic.projectmanagement.application.associated_dataset.ExternalCredentialService.Success;

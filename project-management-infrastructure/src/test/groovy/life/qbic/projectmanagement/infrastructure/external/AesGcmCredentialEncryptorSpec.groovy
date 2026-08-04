@@ -1,11 +1,11 @@
 package life.qbic.projectmanagement.infrastructure.external
 
-import java.nio.charset.StandardCharsets
-import java.security.SecureRandom
+import spock.lang.Specification
 
 import javax.crypto.SecretKey
 import javax.crypto.spec.SecretKeySpec
-import spock.lang.Specification
+import java.nio.charset.StandardCharsets
+import java.security.SecureRandom
 
 /**
  * Unit tests for {@link AesGcmCredentialEncryptor}.

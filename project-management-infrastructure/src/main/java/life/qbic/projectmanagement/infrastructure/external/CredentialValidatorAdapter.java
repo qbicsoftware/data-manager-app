@@ -1,5 +1,6 @@
 package life.qbic.projectmanagement.infrastructure.external;
 
+import life.qbic.projectmanagement.application.associated_dataset.CredentialValidationException;
 import life.qbic.projectmanagement.application.associated_dataset.InstanceConfig;
 
 /**

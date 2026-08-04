@@ -39,9 +39,9 @@ public class InvenioRdmCredentialValidatorAdapter implements CredentialValidator
     Objects.requireNonNull(config, "config must not be null");
     Objects.requireNonNull(token, "token must not be null");
 
-    // Copy token — the original is owned by the caller and may be
-    // zeroed before this method returns (it is, in a finally below).
-    // The auth header string is in local scope only.
+    // Copy token to build the auth header string in local scope.
+    // The original token array is zeroed in the finally block per the
+    // CredentialValidatorAdapter contract (ADR-0002 D1).
     char[] tokenCopy = Arrays.copyOf(token, token.length);
     try {
       String authHeader = "Bearer " + new String(tokenCopy);
@@ -69,6 +69,7 @@ public class InvenioRdmCredentialValidatorAdapter implements CredentialValidator
               + " was interrupted", e);
     } finally {
       Arrays.fill(tokenCopy, '\0');
+      Arrays.fill(token, '\0');
     }
   }
 

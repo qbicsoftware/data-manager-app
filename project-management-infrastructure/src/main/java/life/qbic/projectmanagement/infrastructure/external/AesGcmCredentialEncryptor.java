@@ -6,11 +6,11 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
-import java.util.Arrays;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 import life.qbic.projectmanagement.application.associated_dataset.CredentialEncryptor;
+import org.springframework.lang.NonNull;
 
 /**
  * AES-256-GCM implementation of {@link CredentialEncryptor}.
@@ -80,7 +80,7 @@ public class AesGcmCredentialEncryptor implements CredentialEncryptor {
   }
 
   @Override
-  public byte[] encrypt(char[] plaintext) {
+  public byte[] encrypt(@NonNull char[] plaintext) {
     requireNonNull(plaintext, "plaintext must not be null");
 
     byte[] nonce = new byte[GCM_NONCE_BYTES];
