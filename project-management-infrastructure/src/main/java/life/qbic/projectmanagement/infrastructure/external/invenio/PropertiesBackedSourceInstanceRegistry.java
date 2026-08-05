@@ -34,7 +34,8 @@ public class PropertiesBackedSourceInstanceRegistry implements SourceInstanceReg
         .map(e -> new SourceInstanceDescriptor(
             e.id(),
             e.displayName() != null ? e.displayName() : e.id(),
-            e.baseUrl()))
+            e.baseUrl(),
+            SourceType.INVENIO_RDM))
         .toList();
     log.info("Loaded %d InvenioRDM instance(s): %s"
         .formatted(descriptors.size(),
