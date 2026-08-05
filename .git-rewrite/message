@@ -1,3 +1,0 @@
-Revert "create dialog window component and styles, remove unnecessary styling"
-
-This reverts commit f92e4768d5962520623c2ba8c9fe94e293f4e97d.
