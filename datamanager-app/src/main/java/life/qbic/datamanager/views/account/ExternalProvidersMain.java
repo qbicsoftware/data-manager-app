@@ -2,6 +2,7 @@ package life.qbic.datamanager.views.account;
 
 import static java.util.Objects.requireNonNull;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -68,8 +69,6 @@ public class ExternalProvidersMain extends Main
   private static final long serialVersionUID = 6739821508412736524L;
   private static final Logger log = LoggerFactory.logger(
       ExternalProvidersMain.class);
-
-
 
   private static final String SECONDARY_COLOR =
       "var(--lumo-secondary-text-color)";
@@ -178,32 +177,42 @@ public class ExternalProvidersMain extends Main
 
   private Div renderInstanceCard(
       ExternalCredentialService.CredentialStatusView status) {
-    String stateClass;
-    if (!status.configured()) {
-      stateClass = "instance-card--not-connected";
-    } else if (isInvalidated(status)) {
-      stateClass = "instance-card--invalidated";
-    } else {
-      stateClass = "instance-card--connected";
-    }
-
     var card = new Div();
-    card.addClassNames("instance-card", stateClass);
+    card.addClassNames("instance-card", resolveStateClass(status));
 
-    // ── Provider identity ──
-    String name = status.instanceDisplayName();
-    String baseUrl = status.instanceBaseUrl();
+    card.add(buildProviderIdentity(status));
+    card.add(buildActions(status));
+    card.add(buildCardBody(status));
 
-    // Header: name + URL (left), action button (right)
-    var header = new Div();
-    header.addClassNames("instance-card__header");
+    return card;
+  }
 
+  // ── State resolution ───────────────────────────────────────────
+
+  /** Returns the CSS state class for the given credential status. */
+  private String resolveStateClass(
+      ExternalCredentialService.CredentialStatusView status) {
+    if (!status.configured()) {
+      return "instance-card--not-connected";
+    }
+    if (isInvalidated(status)) {
+      return "instance-card--invalidated";
+    }
+    return "instance-card--connected";
+  }
+
+  // ── Header: provider identity ──────────────────────────────────
+
+  /** Builds the provider name + optional URL link. */
+  private Div buildProviderIdentity(
+      ExternalCredentialService.CredentialStatusView status) {
     var identity = new Div();
     identity.addClassNames("instance-card__identity");
 
-    var providerName = new Span(name);
+    var providerName = new Span(status.instanceDisplayName());
     providerName.addClassNames("font-bold", "text-size-l");
 
+    String baseUrl = status.instanceBaseUrl();
     if (baseUrl != null && !baseUrl.isBlank()) {
       String displayUrl = stripTrailingSlash(baseUrl);
       var urlAnchor = new Anchor(baseUrl + "/", displayUrl);
@@ -214,72 +223,96 @@ public class ExternalProvidersMain extends Main
       identity.add(providerName);
     }
 
-    header.add(identity);
+    return identity;
+  }
 
-    // Action buttons (top-right)
+  // ── Header: action buttons ─────────────────────────────────────
+
+  /** Builds the top-right action(s) — single button or button group. */
+  private Component buildActions(
+      ExternalCredentialService.CredentialStatusView status) {
     if (isInvalidated(status)) {
-      // Side-by-side Reconnect + Disconnect for invalid state
       var buttonGroup = new Div();
       buttonGroup.addClassNames("instance-card__action-group");
       buttonGroup.add(buildReconnectButton(status));
       buttonGroup.add(buildDisconnectButton(status));
-      header.add(buttonGroup);
-    } else if (status.configured()) {
-      var actionButton = buildDisconnectButton(status);
-      actionButton.addClassNames("instance-card__action");
-      header.add(actionButton);
-    } else {
-      var actionButton = buildConnectButton(status);
-      actionButton.addClassNames("instance-card__action");
-      header.add(actionButton);
+      return buttonGroup;
     }
-    card.add(header);
+    var button = status.configured()
+        ? buildDisconnectButton(status)
+        : buildConnectButton(status);
+    button.addClassNames("instance-card__action");
+    return button;
+  }
 
-    // Body: status label + date + description
+  // ── Body: status line + description ────────────────────────────
+
+  /** Builds the body row containing status tag, date, and description. */
+  private Div buildCardBody(
+      ExternalCredentialService.CredentialStatusView status) {
     var body = new Div();
     body.addClassNames("instance-card__body");
 
+    body.add(buildStatusLine(status));
+
+    var description = new Paragraph(describeProvider(status, status.instanceDisplayName()));
+    description.addClassNames("instance-card__description");
+    body.add(description);
+
+    return body;
+  }
+
+  // ── Status line ────────────────────────────────────────────────
+
+  /** Builds the status tag and optional "since" date stamp. */
+  private Div buildStatusLine(
+      ExternalCredentialService.CredentialStatusView status) {
     var statusLine = new Div();
     statusLine.addClassNames("instance-card__status-line");
 
-    if (status.configured()) {
-      if (isInvalidated(status)) {
-        var tag = new Tag("Token invalid");
-        tag.setTagColor(TagColor.ERROR);
-        statusLine.add(tag);
-      } else {
-        var tag = new Tag("Connected");
-        tag.setTagColor(TagColor.SUCCESS);
-        statusLine.add(tag);
-      }
-      if (status.configuredAt() != null) {
-        var dateSep = new Span("·");
-        dateSep.getStyle().set("color", "var(--lumo-contrast-30pct)");
-        dateSep.addClassNames("extra-small-body-text");
+    statusLine.add(buildStatusTag(status));
 
-        String dateText = "since "
-            + DateTimeFormat.asJavaFormatter(DateTimeFormat.SIMPLE_DATE_SHORT, ZoneId.systemDefault())
-            .format(status.configuredAt());
-        var dateSpan = new Span(dateText);
-        dateSpan.addClassNames("small-body-text");
-        dateSpan.getStyle().set("color", SECONDARY_COLOR);
+    statusLine.add(buildDateStamp(status).toArray(Component[]::new));
 
-        statusLine.add(dateSep, dateSpan);
-      }
-    } else {
+    return statusLine;
+  }
+
+  /** Creates the status tag matching the current credential state. */
+  private Component buildStatusTag(
+      ExternalCredentialService.CredentialStatusView status) {
+    if (!status.configured()) {
       var tag = new Tag("Not connected");
       tag.setTagColor(TagColor.CONTRAST);
-      statusLine.add(tag);
+      return tag;
     }
+    if (isInvalidated(status)) {
+      var tag = new Tag("Token invalid");
+      tag.setTagColor(TagColor.ERROR);
+      return tag;
+    }
+    var tag = new Tag("Connected");
+    tag.setTagColor(TagColor.SUCCESS);
+    return tag;
+  }
 
-    body.add(statusLine);
+  /** Returns the "· since <date>" components, or an empty list. */
+  private List<Component> buildDateStamp(
+      ExternalCredentialService.CredentialStatusView status) {
+    if (status.configuredAt() == null) {
+      return List.of();
+    }
+    var dateSep = new Span("·");
+    dateSep.getStyle().set("color", "var(--lumo-contrast-30pct)");
+    dateSep.addClassNames("extra-small-body-text");
 
-    var description = new Paragraph(describeProvider(status, name));
-    description.addClassNames("instance-card__description");
-    body.add(description);
-    card.add(body);
+    String dateText = "since "
+        + DateTimeFormat.asJavaFormatter(DateTimeFormat.SIMPLE_DATE_SHORT, ZoneId.systemDefault())
+        .format(status.configuredAt());
+    var dateSpan = new Span(dateText);
+    dateSpan.addClassNames("small-body-text");
+    dateSpan.getStyle().set("color", SECONDARY_COLOR);
 
-    return card;
+    return List.of(dateSep, dateSpan);
   }
 
   // ── Descriptive text per state ─────────────────────────────────

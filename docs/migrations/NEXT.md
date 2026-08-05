@@ -224,10 +224,10 @@ message.
 
    ```bash
    # Generate a 32-byte key and Base64-encode it
-   AES_KEY=$(openssl rand -base64 32)
+   openssl rand -base64 32
    
    # Store in keystore (run once, on one node — the keystore file is shared)
-   echo "$AES_KEY" | keytool -importpass \
+   keytool -importpass \
        -alias external-credential-master-key \
        -keystore /path/to/shared/keystore.p12 \
        -storepass $DATAMANAGER_VAULT_KEY
