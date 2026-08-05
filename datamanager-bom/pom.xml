@@ -227,6 +227,11 @@
             <groupId>commons-validator</groupId>
             <artifactId>commons-validator</artifactId>
           </exclusion>
+          <!-- PGP key revoked, fails verification -->
+          <exclusion>
+            <groupId>com.apicatalog</groupId>
+            <artifactId>titanium-json-ld</artifactId>
+          </exclusion>
         </exclusions>
       </dependency>
       <!-- Source: https://mvnrepository.com/artifact/org.spockframework/spock-bom -->

@@ -30,12 +30,19 @@ io.smallrye:jandex:3.2.0 = badSig
 io.smallrye:jandex:3.2.0:pom  = badSig
 
 # Misc seen in log
-com.ethlo.time:itu:jar:1.7.0 = 0xB286846C341BB72D1E5F85CAB460E7C4ED66826D #https://keyserver.ubuntu.com/pks/lookup?op=vindex&fingerprint=on&search=0xB286846C341BB72D1E5F85CAB460E7C4ED66826D
-com.ethlo.time:itu:pom:1.7.0 = 0xB286846C341BB72D1E5F85CAB460E7C4ED66826D #https://keyserver.ubuntu.com/pks/lookup?op=vindex&fingerprint=on&search=0xB286846C341BB72D1E5F85CAB460E7C4ED66826D
+# jte template engine
+gg.jte:*:* = 0x1D7DC2587E655C72EB4463F2E082500F4BE1F6DD
+
+# itu (ethlo time)
+com.ethlo.time:itu:jar:1.7.0 = 0xB286846C341BB72D1E5F85CAB460E7C4ED66826D
+com.ethlo.time:itu:pom:1.7.0 = 0xB286846C341BB72D1E5F85CAB460E7C4ED66826D
+com.ethlo.time:itu:*:* = 0xB18679A17A21DE79FF9DE8B0636D10E7975B6E6F
 com.github.andrewoma.dexx:collection:jar:0.7 =0x08D55F3D1993D63BF24FE3F008C9559A006FD974 #https://keyserver.ubuntu.com/pks/lookup?op=vindex&fingerprint=on&search=0x08C9559A006FD974
 com.github.andrewoma.dexx:collection:pom:0.7 =0x08D55F3D1993D63BF24FE3F008C9559A006FD974 #https://keyserver.ubuntu.com/pks/lookup?op=vindex&fingerprint=on&search=0x08C9559A006FD974
+# json-compare
 com.github.fslev:json-compare:jar:6.12 = 0xDE81641E4B259D19CA96A45EC876E72938D88080
 com.github.fslev:json-compare:pom:6.12 = 0xDE81641E4B259D19CA96A45EC876E72938D88080
+com.github.fslev:json-compare:*:* = 0x5815EC222883A6717E1E6A3DA22E5FC97CDB6427
 com.github.oshi:oshi-core:jar:6.6.5 = 0x4103C1C3F8E51C6925B5CD346A1E81B00431AB9D
 com.github.oshi:oshi-core:pom:6.6.5 = 0x4103C1C3F8E51C6925B5CD346A1E81B00431AB9D
 com.github.package-url:packageurl-java:jar:1.4.1 = 0x5D283C23D9D9DC2D9C2130E6AADF2C18DCF95764 #https://keyserver.ubuntu.com/pks/lookup?op=vindex&fingerprint=on&search=0x5D283C23D9D9DC2D9C2130E6AADF2C18DCF95764
@@ -44,8 +51,11 @@ com.helger.commons:ph-commons:jar:11.2.0 = 0x670BE7D076A0C89F5F07625AE57428DA9E8
 com.helger.commons:ph-commons:pom:11.2.0 = 0x670BE7D076A0C89F5F07625AE57428DA9E879E7D
 com.hierynomus:asn-one:jar:0.6.0 = 0xB200B4AA914DE0340741F598EBE906E1F4ACA3B7
 com.hierynomus:asn-one:pom:0.6.0 = 0xB200B4AA914DE0340741F598EBE906E1F4ACA3B7
-com.networknt:json-schema-validator:jar:1.0.87 = 0xAEB1E1AEC035C66FA39589D13EFC46EE83C40224 #https://keyserver.ubuntu.com/pks/lookup?op=vindex&fingerprint=on&search=0xAEB1E1AEC035C66FA39589D13EFC46EE83C40224
-com.networknt:json-schema-validator:pom:1.0.87 = 0xAEB1E1AEC035C66FA39589D13EFC46EE83C40224 #https://keyserver.ubuntu.com/pks/lookup?op=vindex&fingerprint=on&search=0xAEB1E1AEC035C66FA39589D13EFC46EE83C40224
+# json-schema-validator (networknt)
+com.networknt:json-schema-validator:jar:1.0.87 = 0xAEB1E1AEC035C66FA39589D13EFC46EE83C40224
+com.networknt:json-schema-validator:pom:1.0.87 = 0xAEB1E1AEC035C66FA39589D13EFC46EE83C40224
+com.networknt:json-schema-validator:*:* = 0xAEB1E1AEC035C66FA39589D13EFC46EE83C40224
+# Nimbus (OAuth2/OIDC)
 com.nimbusds:content-type:jar:2.2 = 0x82F0964816AD7319CB0CCCF93EFD9D223D715E9A
 com.nimbusds:content-type:pom:2.2 = 0x82F0964816AD7319CB0CCCF93EFD9D223D715E9A
 com.nimbusds:lang-tag:jar:1.7 = 0x82F0964816AD7319CB0CCCF93EFD9D223D715E9A
@@ -58,6 +68,7 @@ com.nimbusds:nimbus-jose-jwt:pom:9.37.3=0x82F0964816AD7319CB0CCCF93EFD9D223D715E
 com.nimbusds:nimbus-jose-jwt:pom:9.37.4 = 0x82F0964816AD7319CB0CCCF93EFD9D223D715E9A
 com.nimbusds:oauth2-oidc-sdk:jar:9.43.6 = 0x82F0964816AD7319CB0CCCF93EFD9D223D715E9A
 com.nimbusds:oauth2-oidc-sdk:pom:9.43.6 = 0x82F0964816AD7319CB0CCCF93EFD9D223D715E9A
+com.nimbusds:*:* = 0x82F0964816AD7319CB0CCCF93EFD9D223D715E9A
 de.dentrassi.crypto:pem-keystore:jar:3.0.0 = 0xCAFE8E040FD28E7873171932BBE1070F76B97956
 de.dentrassi.crypto:pem-keystore:pom:3.0.0 = 0xCAFE8E040FD28E7873171932BBE1070F76B97956
 io.github.erdtman:java-json-canonicalization:jar:1.1 = 0x4556208EBE484FBA3984DC3D3D4FA1A9DB2FB4F4  # JJCS.  [oai_citation:15‡Untitled.txt](file-service://file-1UbSKN5j1vX3Pe1FvyAMhb)
@@ -68,25 +79,33 @@ io.methvin:directory-watcher:jar:0.19.0 = 0xAEE8A343247713A5A198640D4D1670765EF9
 io.methvin:directory-watcher:pom:0.19.0 = 0xAEE8A343247713A5A198640D4D1670765EF90EAB
 io.perfmark:perfmark-api:jar:0.27.0 = 0xC6F7D1C804C821F49AF3BFC13AD93C3C677A106E
 io.perfmark:perfmark-api:pom:0.27.0 = 0xC6F7D1C804C821F49AF3BFC13AD93C3C677A106E
+# Swagger
 io.swagger.core.v3:swagger-annotations-jakarta:jar:2.2.32 = 0x3E61D8C230332482009D7F0EDB901B24CAD38BC4
 io.swagger.core.v3:swagger-annotations-jakarta:pom:2.2.32 = 0x3E61D8C230332482009D7F0EDB901B24CAD38BC4
 io.swagger.core.v3:swagger-core-jakarta:jar:2.2.32 = 0x3E61D8C230332482009D7F0EDB901B24CAD38BC4
 io.swagger.core.v3:swagger-core-jakarta:pom:2.2.32 = 0x3E61D8C230332482009D7F0EDB901B24CAD38BC4
 io.swagger.core.v3:swagger-models-jakarta:jar:2.2.32 = 0x3E61D8C230332482009D7F0EDB901B24CAD38BC4
 io.swagger.core.v3:swagger-models-jakarta:pom:2.2.32 = 0x3E61D8C230332482009D7F0EDB901B24CAD38BC4
+io.swagger.core.v3:*:* = 0x3E61D8C230332482009D7F0EDB901B24CAD38BC4
 javax.cache:cache-api:1.1.1 = 0xBE6B997EB563F4898C3C406B8DB9FA0B0718BBF9
 net.engio:mbassador:jar:1.3.2 = 0x5EAF6E9410A71E27B18EB3B90AC90C378C525192
 net.engio:mbassador:pom:1.3.2 =0x5EAF6E9410A71E27B18EB3B90AC90C378C525192
+# zip4j
 net.lingala.zip4j:zip4j:jar:2.11.5 = 0x36F4C680FC3E50E14C90FCBFA0B475EFD9448513
 net.lingala.zip4j:zip4j:pom:2.11.5 = 0x36F4C680FC3E50E14C90FCBFA0B475EFD9448513
+net.lingala.zip4j:*:* = 0x2A35D0FCBF518BC0F8EEBECA414FF73A7737AD60
 org.ehcache:ehcache:3.10.9                         = 0x7FCE178313EAC3BDFC4A75A95E1D8523FE7EAC7B
 org.ehcache:ehcache:3.10.9:pom                     = 0x7FCE178313EAC3BDFC4A75A95E1D8523FE7EAC7B
+org.ehcache:*:* = 0x7FCE178313EAC3BDFC4A75A95E1D8523FE7EAC7B
+# Roaster (Forge)
 org.jboss.forge.roaster:roaster-api:jar:2.30.1.Final = 0x001A438334F162E6AFB27F3BA9F900C1C0FE3ED9
 org.jboss.forge.roaster:roaster-api:pom:2.30.1.Final = 0x001A438334F162E6AFB27F3BA9F900C1C0FE3ED9
 org.jboss.forge.roaster:roaster-jdt:jar:2.30.1.Final = 0x001A438334F162E6AFB27F3BA9F900C1C0FE3ED9
 org.jboss.forge.roaster:roaster-jdt:pom:2.30.1.Final = 0x001A438334F162E6AFB27F3BA9F900C1C0FE3ED9
+org.jboss.forge.roaster:*:* = 0x001A438334F162E6AFB27F3BA9F900C1C0FE3ED9
 org.jctools:jctools-core:jar:4.0.5 = 0x9B5D41D28D8231A341B6713BC8C127A0EC7665D6
 org.jctools:jctools-core:pom:4.0.5 = 0x9B5D41D28D8231A341B6713BC8C127A0EC7665D6
+org.jctools:*:* = 0x9B5D41D28D8231A341B6713BC8C127A0EC7665D6
 org.jetbrains:annotations:jar:13.0 = 0x2E3A1AFFE42B5F53AF19F780BCF4173966770193 #https://keyserver.ubuntu.com/pks/lookup?op=vindex&fingerprint=on&search=0xBCF4173966770193
 org.jetbrains:annotations:pom:13.0 = 0x2E3A1AFFE42B5F53AF19F780BCF4173966770193 #https://keyserver.ubuntu.com/pks/lookup?op=vindex&fingerprint=on&search=0xBCF4173966770193
 org.mariadb.jdbc:mariadb-java-client:3.5.7         = 0x4C470FFFEFC4D3DC59778655CE1A3DD5E3C94F49
@@ -111,10 +130,27 @@ life.qbic.datamanager:*:* = noSig
 
 # accept unsigned (documented exceptions)
 org.jboss.logging:jboss-logging:3.6.1.Final = noSig
+org.jboss.logging:jboss-logging:jar:3.6.3.Final = 0x6D2AF456B8CB597387901C786F29F72839B3A8E7
+org.jboss.logging:jboss-logging:pom:3.6.3.Final = 0x6D2AF456B8CB597387901C786F29F72839B3A8E7
 
+
+# Commons IO, Commons Logging, and Commons Codec
+commons-io:commons-io:jar:2.22.0 = 0xF4DD59C90148BDC52BEB90A4530AA5F25C25011F
+commons-io:commons-io:pom:2.22.0 = 0xF4DD59C90148BDC52BEB90A4530AA5F25C25011F
+commons-logging:commons-logging:jar:1.3.6 = 0xF4DD59C90148BDC52BEB90A4530AA5F25C25011F
+commons-logging:commons-logging:pom:1.3.6 = 0xF4DD59C90148BDC52BEB90A4530AA5F25C25011F
+commons-codec:commons-codec:jar:1.21.0 = 0xF4DD59C90148BDC52BEB90A4530AA5F25C25011F
+commons-codec:commons-codec:pom:1.21.0 = 0xF4DD59C90148BDC52BEB90A4530AA5F25C25011F
 
 # Sigstore (your own plugin/libs)
 dev.sigstore:*:*                     = 0x300b49c14dfa7e0ad9d8515400e008229f5daf37  # sigstore-maven-plugin / sigstore-java.  [oai_citation:13‡Untitled.txt](file-service://file-1UbSKN5j1vX3Pe1FvyAMhb)
+
+# Jackson 3 (tools.jackson.dataformat)
+tools.jackson.dataformat:*:* = 0x28118C070CB22A0175A2E8D43D12CA2AC19F3181
+
+# SnakeYAML Engine
+org.snakeyaml:snakeyaml-engine:jar:3.0.1 = 0x2FC53E6B1F681184F4CCD637F5C81DE10A0B8ECC
+org.snakeyaml:snakeyaml-engine:pom:3.0.1 = 0x2FC53E6B1F681184F4CCD637F5C81DE10A0B8ECC
 
 # GMavenPlus plugin (you use 4.0.1)
 org.codehaus.gmavenplus:*:* = 0x0867FACD3788F7B0BB24CD1FD90C38195BEDB15F
@@ -200,9 +236,11 @@ org.aspectj:*:* = 0xDB5D8331654BFCC24475252F30C4AFF0AF1DADE1
 
 # Hibernate ORM
 org.hibernate.orm:*:* = 0x1452F35849B50750F6A3BBB4B54011358B352F85
+org.hibernate.models:*:* = 0x1452F35849B50750F6A3BBB4B54011358B352F85
 
-# --- Apache ActiveMQ Artemis (many modules in your log) ---
+# Apache ActiveMQ Artemis (many modules in your log)
 org.apache.activemq:*:*      = 0x28417C95E8906D108392822354A43F3254868410
+org.apache.artemis:*:* = 0x3DB8CCBCCF07EE368F7C48D6F41830B875BB8633
 
 org.xmlunit:xmlunit-core:2.10.4 = 0xBC26C53AF531F8B4B3F5930AAFBD3AF8EAFA72DA
 
@@ -214,6 +252,7 @@ org.docx4j.org.apache:*:*      = 0x4F12076DB0F61138303CC361C641C2A9AFA87A3B
 com.apicatalog:*:* = 0x6C3AE02ABF8203EEAC80DC215ACE4C100AABD0E8
 
 edu.kit.datamanager:ro-crate-java:1.1.1 = 0x7F4A46364B8A81FB341BEAA99FA30EAD50347761
+edu.kit.datamanager:ro-crate-java:*:* = 0x7F4A46364B8A81FB341BEAA99FA30EAD50347761
 
 org.seleniumhq.selenium:*:* = 0x81BE0C38ACE8AEDC7735A05F4C2AFF633F3A7223
 
