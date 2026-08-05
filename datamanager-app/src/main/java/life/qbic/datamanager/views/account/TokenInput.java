@@ -1,20 +1,23 @@
 package life.qbic.datamanager.views.account;
 
-import com.vaadin.flow.component.html.Anchor;
-import com.vaadin.flow.component.html.AnchorTarget;
+import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.textfield.PasswordField;
+import life.qbic.datamanager.views.general.InfoBox;
 import life.qbic.datamanager.views.general.dialog.InputValidation;
 import life.qbic.datamanager.views.general.dialog.UserInput;
 
 /**
  * Token input component for the "Add External Provider Token" dialog.
  *
- * <p>Wraps a {@link PasswordField} together with instructional text
- * (instance name, encryption notice, link to the provider's token
- * settings page). Implements {@link UserInput} so the surrounding
+ * <p>Wraps a {@link PasswordField} together with a prominent info callout
+ * that guides the user to create a personal access token on the provider's
+ * settings page, and an encryption notice below the field. Implements
+ * {@link UserInput} so the surrounding
  * {@link life.qbic.datamanager.views.general.dialog.AppDialog} drives
  * validation automatically via {@link #validate()}.</p>
  *
@@ -36,35 +39,52 @@ class TokenInput extends Div implements UserInput {
    * @param instanceDisplayName human-readable instance name (e.g. "Zenodo")
    * @param tokenCreationUrl    URL to the instance's token-settings page,
    *                            or {@code null} when no URL can be derived
-   *                            (the link is then omitted)
+   *                            (the button is then omitted)
    */
   TokenInput(String instanceDisplayName, String tokenCreationUrl) {
     addClassName("token-input");
 
-    var description = new Paragraph(
-        "Paste your personal access token from your "
-            + instanceDisplayName + " account.");
-    description.addClassNames("text-contrast-70pct", "text-size-s");
+    // ── Prominent info callout with CTA button ──
+    // Uses the shared InfoBox component so the visual language is
+    // consistent with the rest of the application. The "Create token"
+    // button opens the provider's token-settings page in a new tab,
+    // making the action one-click and impossible to overlook.
+    var callout = new Div();
+    callout.addClassNames("token-input__callout");
 
+    var infoBox = new InfoBox()
+        .setInfoText("To connect " + instanceDisplayName
+            + ", you need a personal access token from your account.");
+
+    callout.add(infoBox);
+
+    if (tokenCreationUrl != null) {
+      var createTokenButton = new Button(
+          "Create token on " + instanceDisplayName,
+          VaadinIcon.EXTERNAL_LINK.create());
+      createTokenButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+      createTokenButton.addClassName("token-input__create-token-btn");
+      createTokenButton.getElement().setAttribute("theme", "tertiary small");
+      createTokenButton.addClickListener(e -> {
+        UI.getCurrent().getPage().open(tokenCreationUrl, "_blank");
+      });
+      callout.add(createTokenButton);
+    }
+
+    // ── Password field ──
     passwordField = new PasswordField("Personal Access Token");
     passwordField.setPlaceholder("Paste token here");
     passwordField.setRequired(true);
     passwordField.setWidthFull();
 
-    var helpLine = new Div();
-    helpLine.addClassNames("text-size-xs", "text-contrast-60pct");
-    helpLine.add(new Span(
-        "Your token is stored encrypted and used only to access "
-            + "your own restricted datasets. You can create one at: "));
-    if (tokenCreationUrl != null) {
-      helpLine.add(new Anchor(tokenCreationUrl,
-          instanceDisplayName + " token settings", AnchorTarget.BLANK));
-    } else {
-      helpLine.add(new Span(
-          "your " + instanceDisplayName + " account settings."));
-    }
+    // ── Encryption notice (below the field) ──
+    var encryptionNote = new Div();
+    encryptionNote.addClassNames("token-input__encryption-note");
+    encryptionNote.add(VaadinIcon.LOCK.create(),
+        new Span("Your token is stored encrypted and used only to access "
+            + "your own restricted datasets."));
 
-    add(description, passwordField, helpLine);
+    add(callout, passwordField, encryptionNote);
   }
 
   /**

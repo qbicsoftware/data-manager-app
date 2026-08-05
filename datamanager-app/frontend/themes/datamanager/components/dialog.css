@@ -950,3 +950,37 @@ vaadin-upload-file::part(meta){
 .token-loading-overlay .token-loading-hint {
   color: var(--lumo-tertiary-text-color);
 }
+
+/* ── TokenInput callout & encryption note ─────────────────────── */
+
+.token-input__callout {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--lumo-space-m);
+  margin-bottom: var(--lumo-space-m);
+}
+
+.token-input__callout .info-box {
+  flex-grow: 1;
+}
+
+.token-input__create-token-btn {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.token-input__encryption-note {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-xs);
+  margin-top: var(--lumo-space-xs);
+  font-size: var(--lumo-font-size-xs);
+  color: var(--lumo-tertiary-text-color);
+}
+
+.token-input__encryption-note vaadin-icon {
+  font-size: var(--lumo-font-size-s);
+  color: var(--lumo-tertiary-text-color);
+}
