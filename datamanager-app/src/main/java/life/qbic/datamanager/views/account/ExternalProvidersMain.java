@@ -70,9 +70,6 @@ public class ExternalProvidersMain extends Main
   private static final Logger log = LoggerFactory.logger(
       ExternalProvidersMain.class);
 
-  private static final String SECONDARY_COLOR =
-      "var(--lumo-secondary-text-color)";
-
   private final transient ExternalCredentialService credentialService;
   private final transient AuthenticationToUserIdTranslationService userIdTranslator;
 
