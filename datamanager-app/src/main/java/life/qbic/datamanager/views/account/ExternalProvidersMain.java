@@ -306,8 +306,7 @@ public class ExternalProvidersMain extends Main
         + DateTimeFormat.asJavaFormatter(DateTimeFormat.SIMPLE_DATE_SHORT, ZoneId.systemDefault())
         .format(status.configuredAt());
     var dateSpan = new Span(dateText);
-    dateSpan.addClassNames("small-body-text");
-    dateSpan.getStyle().set("color", SECONDARY_COLOR);
+    dateSpan.addClassNames("small-body-text", "secondary-text-color");
 
     return List.of(dateSep, dateSpan);
   }

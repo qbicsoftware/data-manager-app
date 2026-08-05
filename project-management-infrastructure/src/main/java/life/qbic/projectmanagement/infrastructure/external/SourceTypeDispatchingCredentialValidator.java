@@ -12,8 +12,7 @@ import life.qbic.projectmanagement.domain.model.associated_dataset.SourceType;
  * provider-specific adapter based on source type.
  *
  * <p>New providers are added by implementing {@link CredentialValidatorAdapter}
- * and registering the new adapter in the constructor (or via Spring wiring
- * in the configuration module). No changes to the application service,
+ * and registering the new adapter in the constructor. No changes to the application service,
  * port, UI, or database are required.</p>
  *
  * <p>Thread-safe: the adapter map is immutable.</p>
