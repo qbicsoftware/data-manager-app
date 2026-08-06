@@ -64,18 +64,10 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
 
   private static final MimeType OPEN_XML = MimeType.valueOf(
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-  private static final String YOUR_DATA_HAS_BEEN_APPROVED_TEXT = "Your data has been approved";
   private static final String ERROR_CSS = "error";
   private static final String EDIT_THE_SAMPLE_BATCH_METADATA_TEXT = "Edit the sample batch metadata";
   private static final String PENDING_OPERATION_NOTE = "It may take some time for the update to complete";
-  private static final String UPLOADED_ITEM_CSS = "uploaded-item";
-  private static final String FILE_ICON_CSS = "file-icon";
-  private static final String FILE_NAME_CSS = "file-name";
-  private static final String VALIDATION_DISPLAY_BOX_CSS = "validation-display-box";
-  private static final String HEADER_CSS = "header";
-  private static final String SECONDARY_CSS = "secondary";
   private static final Logger log = LoggerFactory.logger(EditSampleBatchDialog.class);
-  private static final int MAX_FILE_SIZE = 25 * 1024 * 1024;
   private final SampleValidationService sampleValidationService;
   private final transient Map<String, List<SampleMetadata>> validatedSampleMetadata;
   private final TextField batchNameField;
