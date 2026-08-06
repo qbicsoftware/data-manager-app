@@ -175,7 +175,6 @@ public class ContentUploadComponent extends Div {
     upload.setI18n(uploadI18N);
 
     UploadHandler handler = event -> {
-      //TODO in vaadin25.1 the upload event has a reject method. use that instead.
       try {
         long fileSize = event.getFileSize();
         //decide how to handle the upload based on filesize
@@ -184,7 +183,9 @@ public class ContentUploadComponent extends Div {
             : UploadHandler.toTempFile(this::process);
         delegateHandler.handleUploadRequest(event);
       } catch (IOException e) {
-        log.warn("Unexpected upload failure: " + e.getMessage());
+        String message = "Unexpected upload failure: " + e.getMessage();
+        log.warn(message);
+        event.reject(message);
         fireEvent(new UnspecificFailedEvent(this, false, e));
       }
     };
@@ -195,11 +196,7 @@ public class ContentUploadComponent extends Div {
       errorArea.setVisible(false);
       errorArea.removeAll();
     });
-    /**
-     * FIXME:
-     *   Please be advised that when even 1 file out of all files is uploaded, no rejection messages are shown.
-     *   This needs to be fixed in vaadin 25.1 where the upload handler/ upload event got necessary methods
-     */
+
     upload.addFileRejectedListener(event ->
     {
       log.warn("Failed to upload " + event.getFileName() +
