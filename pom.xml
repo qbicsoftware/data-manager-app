@@ -242,23 +242,6 @@
         <artifactId>sonar-maven-plugin</artifactId>
         <version>5.2.0.4988</version>
       </plugin>
-      <plugin>
-        <groupId>dev.sigstore</groupId>
-        <artifactId>sigstore-maven-plugin</artifactId>
-        <version>2.0.0</version>
-        <configuration>
-          <skip>${sigstore.skip}</skip>
-        </configuration>
-        <executions>
-          <execution>
-            <id>sigstore-sign</id>
-            <phase>verify</phase>
-            <goals>
-              <goal>sign</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
     </plugins>
   </build>
   <profiles>
@@ -359,6 +342,23 @@
                   <includeBomSerialNumber>true</includeBomSerialNumber>
                   <includeLicenseText>true</includeLicenseText>
                 </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>dev.sigstore</groupId>
+            <artifactId>sigstore-maven-plugin</artifactId>
+            <version>2.0.0</version>
+            <configuration>
+              <skip>${sigstore.skip}</skip>
+            </configuration>
+            <executions>
+              <execution>
+                <id>sigstore-sign</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
               </execution>
             </executions>
           </plugin>
