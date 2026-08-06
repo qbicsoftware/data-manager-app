@@ -48,7 +48,7 @@ public class MeasurementLookup implements NgsMeasurementLookup, PxpMeasurementLo
   public @NonNull Stream<NgsMeasurementLookup.MeasurementInfo> lookupNgsMeasurements(
       @NonNull String projectId,
       int offset, int limit, @NonNull Sort sort,
-      @NonNull NgsMeasurementLookup.MeasurementFilter measurementFilter)
+      NgsMeasurementLookup.@NonNull MeasurementFilter measurementFilter)
       throws NgsMeasurementLookup.SortKeyException {
 
     var invalidSortKeys = sort.stream()
@@ -72,7 +72,7 @@ public class MeasurementLookup implements NgsMeasurementLookup, PxpMeasurementLo
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
   @Override
   public int countNgsMeasurements(@NonNull String projectId,
-      @NonNull NgsMeasurementLookup.MeasurementFilter measurementFilter) {
+      NgsMeasurementLookup.@NonNull MeasurementFilter measurementFilter) {
     var filter = mapToDatabaseFilter(measurementFilter);
     return (int) ngsMeasurementJpaRepository.count(filter.asSpecification());
   }
@@ -83,7 +83,7 @@ public class MeasurementLookup implements NgsMeasurementLookup, PxpMeasurementLo
   public @NonNull Stream<PxpMeasurementLookup.MeasurementInfo> lookupPxpMeasurements(
       @NonNull String projectId, int offset, int limit,
       @NonNull Sort sort,
-      @NonNull PxpMeasurementLookup.MeasurementFilter measurementFilter)
+      PxpMeasurementLookup.@NonNull MeasurementFilter measurementFilter)
       throws PxpMeasurementLookup.SortKeyException {
 
     var invalidSortKeys = sort.stream()
@@ -107,13 +107,13 @@ public class MeasurementLookup implements NgsMeasurementLookup, PxpMeasurementLo
   @Override
   public int countPxpMeasurements(
       @NonNull String projectId,
-      @NonNull PxpMeasurementLookup.MeasurementFilter measurementFilter) {
+      PxpMeasurementLookup.@NonNull MeasurementFilter measurementFilter) {
     var filter = mapToDatabaseFilter(measurementFilter);
     return (int) pxpMeasurementJpaRepository.count(filter.asSpecification());
   }
 
-  private static @NonNull NgsMeasurementJpaRepository.NgsMeasurementFilter mapToDatabaseFilter(
-      @NonNull NgsMeasurementLookup.MeasurementFilter measurementFilter) {
+  private static NgsMeasurementJpaRepository.@NonNull NgsMeasurementFilter mapToDatabaseFilter(
+      NgsMeasurementLookup.@NonNull MeasurementFilter measurementFilter) {
     return NgsMeasurementFilter.forExperiment(measurementFilter.experimentId())
         .anyContaining(measurementFilter.searchTerm())
         .atClientTimeOffset(measurementFilter.timeZoneOffsetMillis(),
@@ -121,7 +121,7 @@ public class MeasurementLookup implements NgsMeasurementLookup, PxpMeasurementLo
   }
 
   private static @NonNull PxpMeasurementFilter mapToDatabaseFilter(
-      @NonNull PxpMeasurementLookup.MeasurementFilter measurementFilter) {
+      PxpMeasurementLookup.@NonNull MeasurementFilter measurementFilter) {
     return PxpMeasurementFilter.forExperiment(measurementFilter.experimentId())
         .anyContaining(measurementFilter.searchTerm())
         .atClientTimeOffset(measurementFilter.timeZoneOffsetMillis(),
@@ -129,7 +129,7 @@ public class MeasurementLookup implements NgsMeasurementLookup, PxpMeasurementLo
   }
 
   private static @NonNull IpMeasurementFilter mapToDatabaseFilter(
-      @NonNull IpMeasurementLookup.MeasurementFilter measurementFilter) {
+      IpMeasurementLookup.@NonNull MeasurementFilter measurementFilter) {
     return IpMeasurementFilter.forExperiment(measurementFilter.experimentId())
         .anyContaining(measurementFilter.searchTerm())
         .atClientTimeOffset(measurementFilter.timeZoneOffsetMillis(),
@@ -177,7 +177,7 @@ public class MeasurementLookup implements NgsMeasurementLookup, PxpMeasurementLo
   public @NonNull Stream<IpMeasurementLookup.MeasurementInfo> lookupIpMeasurements(
       @NonNull String projectId, int offset, int limit,
       @NonNull Sort sort,
-      @NonNull IpMeasurementLookup.MeasurementFilter measurementFilter)
+      IpMeasurementLookup.@NonNull MeasurementFilter measurementFilter)
       throws IpMeasurementLookup.SortKeyException {
 
     var invalidSortKeys = sort.stream()
@@ -200,7 +200,7 @@ public class MeasurementLookup implements NgsMeasurementLookup, PxpMeasurementLo
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
   @Override
   public int countIpMeasurements(@NonNull String projectId,
-      @NonNull IpMeasurementLookup.MeasurementFilter measurementFilter) {
+      IpMeasurementLookup.@NonNull MeasurementFilter measurementFilter) {
     var filter = mapToDatabaseFilter(measurementFilter);
     return (int) ipMeasurementJpaRepository.count(filter.asSpecification());
   }
