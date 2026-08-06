@@ -54,7 +54,7 @@ import life.qbic.projectmanagement.application.measurement.NgsMeasurementLookup.
 import life.qbic.projectmanagement.application.measurement.PxpMeasurementLookup;
 import life.qbic.projectmanagement.application.measurement.PxpMeasurementLookup.MeasurementInfo;
 import life.qbic.projectmanagement.application.measurement.PxpMeasurementLookup.PxpSortKey;
-import org.springframework.lang.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * A component to show detailed information about existing measurements within an experiment.

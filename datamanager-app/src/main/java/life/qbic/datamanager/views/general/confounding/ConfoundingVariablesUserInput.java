@@ -29,7 +29,7 @@ import life.qbic.datamanager.views.general.HasBoundField;
 import life.qbic.datamanager.views.general.dialog.InputValidation;
 import life.qbic.datamanager.views.general.dialog.UserInput;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.VariableReference;
-import org.springframework.lang.NonNull;
+import org.jspecify.annotations.NonNull;
 
 public class ConfoundingVariablesUserInput extends Div implements UserInput {
 

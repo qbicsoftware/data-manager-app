@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 import life.qbic.datamanager.views.general.grid.component.GridConfiguration.ConfiguredGrid;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
-import org.springframework.lang.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * A {@code FilterGrid} is a UI component that decorates a plain Vaadin {@link Grid} with a consistent

@@ -53,7 +53,7 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.RawDatase
 import life.qbic.projectmanagement.application.api.AsyncProjectService.RawDatasetInformationPxP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.SortDirection;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.SortOrder;
-import org.springframework.lang.NonNull;
+import org.jspecify.annotations.NonNull;
 import org.springframework.util.MimeTypeUtils;
 
 /**

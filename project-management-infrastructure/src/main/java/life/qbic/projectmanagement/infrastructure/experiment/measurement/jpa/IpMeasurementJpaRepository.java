@@ -6,13 +6,6 @@ import static life.qbic.projectmanagement.infrastructure.jpa.JpaSpecifications.f
 import static life.qbic.projectmanagement.infrastructure.jpa.JpaSpecifications.jsonContains;
 import static life.qbic.projectmanagement.infrastructure.jpa.JpaSpecifications.propertyContains;
 
-import tools.jackson.core.JsonParser;
-import tools.jackson.core.exc.StreamReadException;
-import tools.jackson.databind.DeserializationContext;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
-import tools.jackson.databind.ValueDeserializer;
-import tools.jackson.databind.json.JsonMapper;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
@@ -30,7 +23,6 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Root;
-import java.io.IOException;
 import java.io.Serializable;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -47,12 +39,17 @@ import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.infrastructure.PreventAnyUpdateEntityListener;
 import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.IpMeasurementJpaRepository.Instrument.InstrumentReadConverter;
 import life.qbic.projectmanagement.infrastructure.experiment.measurement.jpa.IpMeasurementJpaRepository.IpMeasurementInformation;
-
+import org.jspecify.annotations.NonNull;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.repository.PagingAndSortingRepository;
-import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Repository;
+import tools.jackson.core.JsonParser;
+import tools.jackson.core.exc.StreamReadException;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ValueDeserializer;
 
 @Repository
 public interface IpMeasurementJpaRepository extends
@@ -213,16 +210,16 @@ public interface IpMeasurementJpaRepository extends
       public Instrument deserialize(JsonParser jsonParser, DeserializationContext ctxt) {
         JsonNode tree = jsonParser.readValueAsTree();
         String oboId = Optional.ofNullable(tree.get("name"))
-            .map(JsonNode::asText) // e.g. EFO_0008633
+            .map(JsonNode::asString) // e.g. EFO_0008633
             .map(it -> it.replace("_", ":")) // e.g. EFO:0008633
             .orElseThrow(
                 () -> new StreamReadException(jsonParser, "Could not parse instrument oboId."));
         String label = Optional.ofNullable(tree.get("label"))
-            .map(JsonNode::asText)
+            .map(JsonNode::asString)
             .orElseThrow(
                 () -> new StreamReadException(jsonParser, "Could not parse instrument label."));
         String iri = Optional.ofNullable(tree.get("classIri"))
-            .map(JsonNode::asText)
+            .map(JsonNode::asString)
             .orElseThrow(
                 () -> new StreamReadException(jsonParser, "Could not parse instrument iri."));
         return new Instrument(label, oboId, iri);

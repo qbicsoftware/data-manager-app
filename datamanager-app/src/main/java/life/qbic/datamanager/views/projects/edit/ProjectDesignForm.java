@@ -13,7 +13,7 @@ import life.qbic.datamanager.views.general.utils.Constants;
 import life.qbic.datamanager.views.general.utils.Utility;
 import life.qbic.datamanager.views.projects.ProjectInformation;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectDesign;
-import org.springframework.lang.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * <b>Project Design Form</b>

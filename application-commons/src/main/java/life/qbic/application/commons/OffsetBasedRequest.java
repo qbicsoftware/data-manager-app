@@ -1,9 +1,9 @@
 package life.qbic.application.commons;
 
 import java.util.Objects;
+import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.lang.NonNull;
 
 /**
  * Simple implementation of a {@link Pageable} interface that provides offset and limit based

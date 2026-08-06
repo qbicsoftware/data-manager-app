@@ -701,19 +701,6 @@ vaadin-upload-file::part(meta){
   flex-direction: column;
 }
 
-.uploaded-quality-control-items .quality-control-item {
-  border-bottom-color: var(--lumo-contrast-20pct);
-  border-bottom-style: solid;
-  border-width: 1px;
-  font-size: var(--lumo-font-size-s);
-  display: flex;
-  padding-top: var(--lumo-space-m);
-  padding-bottom: var(--lumo-space-s);
-  margin-inline: var(--lumo-space-m);
-  flex-direction: column;
-  row-gap: var(--lumo-space-s);
-}
-
 .uploaded-quality-control-items .quality-control-item .file-name {
   display: inline-flex;
   align-items: center;
@@ -747,6 +734,7 @@ vaadin-upload-file::part(meta){
   flex-direction: column;
 }
 
+.uploaded-quality-control-items .quality-control-item,
 .uploaded-purchase-items .purchase-item {
   border-bottom-color: var(--lumo-contrast-20pct);
   border-bottom-style: solid;
