@@ -98,18 +98,11 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-jackson</artifactId>
     </dependency>
-    <!--    <dependency>-->
-    <!--      <groupId>tools.jackson.core</groupId>-->
-    <!--      <artifactId>jackson-core</artifactId>-->
-    <!--    </dependency>-->
-    <!--    <dependency>-->
-    <!--      <groupId>tools.jackson.core</groupId>-->
-    <!--      <artifactId>jackson-databind</artifactId>-->
-    <!--    </dependency>-->
-    <!--    <dependency>-->
-    <!--      <groupId>tools.jackson.core</groupId>-->
-    <!--      <artifactId>jackson-annotations</artifactId>-->
-    <!--    </dependency>-->
+    <!--    needed for ror creation-->
+    <dependency>
+      <groupId>jakarta.xml.bind</groupId>
+      <artifactId>jakarta.xml.bind-api</artifactId>
+    </dependency>
     <dependency>
       <groupId>org.docx4j</groupId>
       <artifactId>docx4j-openxml-objects</artifactId>
