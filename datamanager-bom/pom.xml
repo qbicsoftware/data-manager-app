@@ -256,8 +256,21 @@
         <artifactId>commons-beanutils</artifactId>
         <version>1.10.1</version>
       </dependency>
-
-
     </dependencies>
   </dependencyManagement>
+  <!--  Needs distributionManagement as it is not a child of the datamanager pom-->
+  <distributionManagement>
+    <repository>
+      <uniqueVersion>true</uniqueVersion>
+      <id>nexus-releases</id>
+      <name>QBiC Releases</name>
+      <url>https://qbic-repo.qbic.uni-tuebingen.de/repository/maven-releases</url>
+    </repository>
+    <snapshotRepository>
+      <uniqueVersion>false</uniqueVersion>
+      <id>nexus-snapshots</id>
+      <name>QBiC Snapshots</name>
+      <url>https://qbic-repo.qbic.uni-tuebingen.de/repository/maven-snapshots</url>
+    </snapshotRepository>
+  </distributionManagement>
 </project>
