@@ -18,7 +18,10 @@ import life.qbic.projectmanagement.domain.model.sample.SampleId;
 public class SampleRegistered extends DomainEvent {
 
   @Serial
-  private static final long serialVersionUID = -1338442721083240618L;
+  private static final long serialVersionUID = 788473395775625302L;
+
+  @JsonProperty("experimentId")
+  private final String experimentId;
 
   @JsonProperty("batchId")
   private final BatchId assignedBatch;
@@ -26,7 +29,8 @@ public class SampleRegistered extends DomainEvent {
   @JsonProperty("sampleId")
   private final SampleId registeredSample;
 
-  private SampleRegistered(BatchId assignedBatch, SampleId registeredSample) {
+  private SampleRegistered(String experimentId, BatchId assignedBatch, SampleId registeredSample) {
+    this.experimentId = Objects.requireNonNull(experimentId);
     this.assignedBatch = Objects.requireNonNull(assignedBatch);
     this.registeredSample = Objects.requireNonNull(registeredSample);
   }
@@ -39,8 +43,9 @@ public class SampleRegistered extends DomainEvent {
    * @return a new instance of this domain event
    * @since 1.0.0
    */
-  public static SampleRegistered create(BatchId assignedBatch, SampleId registeredSample) {
-    return new SampleRegistered(assignedBatch, registeredSample);
+  public static SampleRegistered create(String experimentId, BatchId assignedBatch,
+      SampleId registeredSample) {
+    return new SampleRegistered(experimentId, assignedBatch, registeredSample);
   }
 
   @JsonGetter("assignedBatch")
@@ -51,5 +56,10 @@ public class SampleRegistered extends DomainEvent {
   @JsonGetter("registeredSample")
   public SampleId registeredSample() {
     return this.registeredSample;
+  }
+
+  @JsonGetter("experimentId")
+  public String experimentId() {
+    return experimentId;
   }
 }

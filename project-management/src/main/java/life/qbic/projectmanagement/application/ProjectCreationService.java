@@ -19,7 +19,7 @@ import life.qbic.projectmanagement.domain.model.project.ProjectIntent;
 import life.qbic.projectmanagement.domain.model.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.model.project.ProjectTitle;
 import life.qbic.projectmanagement.domain.service.ProjectDomainService;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 
 /**

@@ -2,7 +2,8 @@ package life.qbic.datamanager.views.account;
 
 import com.vaadin.flow.component.avatar.Avatar;
 import com.vaadin.flow.component.avatar.AvatarGroup;
-import com.vaadin.flow.server.StreamResource;
+import com.vaadin.flow.server.streams.DownloadHandler;
+import com.vaadin.flow.server.streams.DownloadResponse;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import life.qbic.datamanager.views.identicon.IdenticonGenerator;
@@ -19,20 +20,26 @@ public class UserAvatar extends Avatar {
   }
 
   public void setUserId(String userId) {
-    setImageResource(getImageResource(userId));
+    setImageHandler(getDownloadHandler(userId));
   }
 
-  private static StreamResource getImageResource(String name) {
-    return new StreamResource("user-identicon.svg",
-        () -> new ByteArrayInputStream(IdenticonGenerator.generateIdenticonSVG(name).getBytes(
-            StandardCharsets.UTF_8)));
+  private static DownloadHandler getDownloadHandler(String userid) {
+    return DownloadHandler.fromInputStream(event ->
+    {
+      byte[] imageBytes = IdenticonGenerator.generateIdenticonSVG(userid).getBytes(
+          StandardCharsets.UTF_8);
+      return new DownloadResponse(
+          new ByteArrayInputStream(imageBytes),
+          "user-identicon.svg", null, imageBytes.length);
+    });
   }
 
   public static class UserAvatarGroupItem extends AvatarGroup.AvatarGroupItem {
 
     public UserAvatarGroupItem(String userName, String userId) {
+      //new logic -> first more important; image then name -> image; name then image -> name is shown
+      setImageHandler(UserAvatar.getDownloadHandler(userId));
       super.setName(userName);
-      setImageResource(UserAvatar.getImageResource(userId));
     }
   }
 }

@@ -6,7 +6,7 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
-import org.springframework.lang.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * <b>Stepper Display</b>

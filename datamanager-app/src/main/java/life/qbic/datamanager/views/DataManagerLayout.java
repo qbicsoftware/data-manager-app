@@ -6,6 +6,7 @@ import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.RouterLayout;
+import com.vaadin.flow.server.auth.AnonymousAllowed;
 import java.util.Objects;
 import life.qbic.datamanager.announcements.AnnouncementComponent;
 import life.qbic.datamanager.announcements.AnnouncementService;
@@ -18,6 +19,7 @@ import life.qbic.datamanager.views.general.footer.FooterComponentFactory;
  *
  */
 @PageTitle("Data Manager")
+@AnonymousAllowed
 public class DataManagerLayout extends AppLayout implements RouterLayout {
 
   private final Div contentArea;
@@ -34,6 +36,8 @@ public class DataManagerLayout extends AppLayout implements RouterLayout {
     Div mainLayout = new Div(announcementComponent, contentArea, footerComponentFactory.get());
     mainLayout.setId("main-layout");
     setContent(mainLayout);
+    // Vaadin 25: Ensure drawer is closed by default when no content is added
+    setDrawerOpened(false);
   }
 
   /**

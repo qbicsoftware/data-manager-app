@@ -4,6 +4,7 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
+import com.vaadin.flow.component.HasValidation;
 import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.customfield.CustomField;
@@ -12,7 +13,6 @@ import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.shared.HasClientValidation;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
@@ -27,7 +27,7 @@ import life.qbic.projectmanagement.application.contact.OrcidEntry;
 import life.qbic.projectmanagement.application.contact.PersonLookupService;
 
 
-public class ContactField extends CustomField<Contact> implements HasClientValidation {
+public class ContactField extends CustomField<Contact> implements HasValidation {
 
   public static final String GAP_02_CSS = "gap-02";
   private static final String FULL_WIDTH_CSS = "width-full";

@@ -42,7 +42,6 @@ import life.qbic.projectmanagement.application.associated_dataset.AssociatedData
 import life.qbic.projectmanagement.application.associated_dataset.AssociatedDatasetServiceException;
 import life.qbic.projectmanagement.application.associated_dataset.SearchHit;
 import life.qbic.projectmanagement.application.associated_dataset.SourceInstanceDescriptor;
-import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.domain.model.associated_dataset.SourceType;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
@@ -53,7 +52,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 
 /**
  * <b>Connect Dataset Sidebar</b>
@@ -207,7 +205,7 @@ public class ConnectDatasetSidebar extends Div {
       }
       refreshSearchResults();
     });
-    instanceSelector.setOverlayClassName("connect-dataset-sidebar-overlay");
+    instanceSelector.addClassName("connect-dataset-sidebar-overlay");
 
     searchField = new TextField();
     searchField.setPlaceholder("Search by title, DOI, or creator…");
@@ -306,7 +304,7 @@ public class ConnectDatasetSidebar extends Div {
     experimentSelector.setItemLabelGenerator(ExperimentEntry::label);
     experimentSelector.setClearButtonVisible(true);
     experimentSelector.setWidthFull();
-    experimentSelector.setOverlayClassName("connect-dataset-sidebar-overlay");
+    experimentSelector.addClassName("connect-dataset-sidebar-overlay");
 
     selectionCountLabel = new Span();
     selectionCountLabel.addClassName("normal-body-text");

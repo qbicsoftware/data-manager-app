@@ -759,7 +759,7 @@ Colors
 }
 
 .draggable.v-dragged {
-  border: dashed var(1px) var(--border-color-default);
+  border: dashed 1px var(--border-color-default);
 }
 
 .draggable.v-dragged,
@@ -1261,10 +1261,15 @@ vaadin-tab-sheet.filter-grid-tabsheet::part(content) {
   min-height: 0;
 }
 
-vaadin-tab-sheet.filter-grid-tabsheet::part(content) > * {
-  flex: 1 1 auto;
-  min-height: 0;
-}
+/*
+FIXME: minification does no longger allow selectors after pseudo elements
+  SyntaxError: [lightningcss minify] Pseudo-elements like '::before' or '::after' can't be followed by selectors like 'Delim('>')'
+*/
+
+/*vaadin-tab-sheet.filter-grid-tabsheet::part(content) > * {*/
+/*  flex: 1 1 auto;*/
+/*  min-height: 0;*/
+/*}*/
 
 /*endregion*/
 

@@ -2,14 +2,19 @@ package life.qbic.datamanager.configuration;
 
 import life.qbic.projectmanagement.application.associated_dataset.DatasetSource;
 import life.qbic.projectmanagement.application.associated_dataset.SourceInstanceRegistry;
+import life.qbic.projectmanagement.infrastructure.config.JacksonConfig;
 import life.qbic.projectmanagement.infrastructure.external.invenio.InvenioRdmClient;
 import life.qbic.projectmanagement.infrastructure.external.invenio.InvenioRdmClient.InvenioRdmHttpClient;
 import life.qbic.projectmanagement.infrastructure.external.invenio.InvenioRdmDatasetSource;
 import life.qbic.projectmanagement.infrastructure.external.invenio.InvenioRdmProperties;
 import life.qbic.projectmanagement.infrastructure.external.invenio.PropertiesBackedSourceInstanceRegistry;
+import org.jspecify.annotations.NonNull;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Wires up the InvenioRDM integration beans.
@@ -29,12 +34,14 @@ import org.springframework.context.annotation.Configuration;
  * @since 1.12.0
  */
 @Configuration
+@Import(value = JacksonConfig.class)
 @EnableConfigurationProperties(InvenioRdmProperties.class)
 public class InvenioRdmConfiguration {
 
   @Bean
-  public InvenioRdmClient invenioRdmClient() {
-    return new InvenioRdmHttpClient();
+  public InvenioRdmClient invenioRdmClient(
+      @NonNull @Qualifier(value = "nullableFieldsObjectMapper") ObjectMapper objectMapper) {
+    return new InvenioRdmHttpClient(objectMapper);
   }
 
   @Bean

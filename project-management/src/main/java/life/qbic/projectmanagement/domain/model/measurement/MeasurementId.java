@@ -9,7 +9,7 @@ import java.io.Serializable;
 import java.util.Objects;
 import java.util.StringJoiner;
 import java.util.UUID;
-import org.springframework.lang.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * <b>NGSMeasurementMetadata Identifier</b>

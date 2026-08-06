@@ -1,8 +1,9 @@
 package life.qbic.projectmanagement.infrastructure.external.invenio
 
-import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.databind.ObjectMapper
 import spock.lang.Specification
+import tools.jackson.databind.DeserializationFeature
+import tools.jackson.databind.ObjectMapper
+import tools.jackson.databind.json.JsonMapper
 
 /**
  * Unit tests for InvenioRDM v12 response JSON parsing.
@@ -17,8 +18,10 @@ import spock.lang.Specification
  */
 class InvenioRdmClientParsingSpec extends Specification {
 
-  private static final ObjectMapper MAPPER = new ObjectMapper()
-      .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+  private static final ObjectMapper MAPPER = JsonMapper.builder()
+          .disable(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES)
+          .build()
+
 
   // ── Record detail response parsing ──────────────────────────────────
 
@@ -291,12 +294,12 @@ class InvenioRdmClientParsingSpec extends Specification {
     InvenioRdmDatasetSource.community(buildParent(c)) == expected
 
     where:
-    id     | slug            | meta                                           | expected
-    "abc"  | "biology"       | metaWithTitle("Department of Biology")         | "Department of Biology"
-    "abc"  | "biology"       | null                                           | "biology"
-    "abc"  | null            | null                                           | "abc"
-    "abc"  | "biology"       | metaWithTitle("")                              | "biology"
-    "abc"  | null            | metaWithTitle("A Group")                       | "A Group"
+    id    | slug      | meta                                   | expected
+    "abc" | "biology" | metaWithTitle("Department of Biology") | "Department of Biology"
+    "abc" | "biology" | null                                   | "biology"
+    "abc" | null      | null                                   | "abc"
+    "abc" | "biology" | metaWithTitle("")                      | "biology"
+    "abc" | null      | metaWithTitle("A Group")               | "A Group"
   }
 
   private InvenioRdmClient.Parent buildParent(InvenioRdmClient.Community c) {
@@ -351,7 +354,7 @@ class InvenioRdmClientParsingSpec extends Specification {
   def "DOI is extracted from pids.doi.identifier"() {
     given:
     def pids = new InvenioRdmClient.Pids(
-        new InvenioRdmClient.PidEntry("10.57754/FDAT.abc-123"))
+            new InvenioRdmClient.PidEntry("10.57754/FDAT.abc-123"))
 
     expect:
     InvenioRdmDatasetSource.safePid(pids, "fallback-id") == "10.57754/FDAT.abc-123"
@@ -441,7 +444,7 @@ class InvenioRdmClientParsingSpec extends Specification {
 
     when:
     def raw = MAPPER.readValue(json,
-        MAPPER.typeFactory.constructCollectionType(List, InvenioRdmClient.Creator))
+            MAPPER.typeFactory.constructCollectionType(List, InvenioRdmClient.Creator))
 
     then:
     def names = InvenioRdmDatasetSource.resolvedCreators(raw)
@@ -495,7 +498,7 @@ class InvenioRdmClientParsingSpec extends Specification {
   def "valid publication date is parsed"() {
     expect:
     InvenioRdmDatasetSource.parseDateOrToday("2024-07-14") ==
-        java.time.LocalDate.of(2024, 7, 14)
+            java.time.LocalDate.of(2024, 7, 14)
   }
 
   def "null publication date falls back to today"() {
@@ -511,7 +514,7 @@ class InvenioRdmClientParsingSpec extends Specification {
   def "malformed publication date falls back to today"() {
     expect:
     InvenioRdmDatasetSource.parseDateOrToday("not-a-date") ==
-        java.time.LocalDate.now()
+            java.time.LocalDate.now()
   }
 
   // ── Title extraction ────────────────────────────────────────────────
@@ -519,9 +522,9 @@ class InvenioRdmClientParsingSpec extends Specification {
   def "missing hit title falls back to untitled placeholder"() {
     given:
     def h = new InvenioRdmClient.Hit(
-        null, null, new InvenioRdmClient.HitMetadata(
+            null, null, new InvenioRdmClient.HitMetadata(
             null, null, null, null, null),
-        null, null, null, null, null)
+            null, null, null, null, null)
 
     expect:
     InvenioRdmDatasetSource.safeHitTitle(h) == "(untitled record)"
@@ -530,9 +533,9 @@ class InvenioRdmClientParsingSpec extends Specification {
   def "blank record title falls back to untitled placeholder"() {
     given:
     def rec = new InvenioRdmClient.RecordResponse(
-        null, null, new InvenioRdmClient.RecordMetadata(
+            null, null, new InvenioRdmClient.RecordMetadata(
             "   ", null, null, null, null),
-        null, null, false, null, null, null, null)
+            null, null, false, null, null, null, null)
 
     expect:
     InvenioRdmDatasetSource.safeRecordTitle(rec) == "(untitled record)"

@@ -76,7 +76,8 @@ public class ProjectOverviewLookupImplementation implements ProjectOverviewLooku
     Specification<ProjectOverview> filterSpecification = Specification.anyOf(isProjectTitle,
         isProjectCode, isLastModifiedDate, isPrincipalInvestigator, isResponsiblePerson,
         hasNgsMeasurements, hasPxpMeasurements, isInCollaboratorNames);
-    return Specification.where(isBlankSpec)
+    return Specification.<ProjectOverview>unrestricted()
+        .and(isBlankSpec)
         .and(containsProjectId)
         .and(filterSpecification)
         .and(isDistinctSpec);

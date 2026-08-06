@@ -8,6 +8,6 @@
  * 200. This rule, applied via setOverlayClassName(), raises the overlay above the
  * sidebar so the dropdown is actually selectable.
  */
-vaadin-combo-box-overlay.connect-dataset-sidebar-overlay {
-  z-index: 1001 !important;
+vaadin-combo-box-overlay.connect-dataset-sidebar-overlay::part(overlay) {
+  z-index: 1001;
 }

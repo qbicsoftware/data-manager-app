@@ -11,4 +11,9 @@ public interface ByteArrayDownloadStreamProvider extends DownloadStreamProvider 
   default InputStream getStream() {
     return new ByteArrayInputStream(getBytes());
   }
+
+  @Override
+  default String getContentType() {
+    return "application/octet-stream";
+  }
 }

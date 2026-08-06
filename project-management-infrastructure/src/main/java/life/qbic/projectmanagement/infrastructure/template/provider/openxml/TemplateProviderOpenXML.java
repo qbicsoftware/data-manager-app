@@ -253,9 +253,9 @@ public class TemplateProviderOpenXML implements TemplateProvider {
 
   private Workbook forRequest(SampleUpdate req) {
     var info = req.information();
-    var sortedSamples = req.information().samples();
-    sortedSamples.sort(Comparator.comparing(sample -> sample.sampleCode().code(),
-        Comparator.naturalOrder()));
+    var sortedSamples = req.information().samples().stream()
+        .sorted(Comparator.comparing(it -> it.sampleCode().code()))
+        .toList();
     return sampleTemplateFactory.forUpdate(
         sortedSamples,
         info.analysisMethods(),
