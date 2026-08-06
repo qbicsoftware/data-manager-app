@@ -48,4 +48,4 @@ jobs:
       - name: SonarCloud Scan
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }} # Use the token stored in GitHub secrets
-        run: mvn sonar:sonar
+        run: mvn org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
