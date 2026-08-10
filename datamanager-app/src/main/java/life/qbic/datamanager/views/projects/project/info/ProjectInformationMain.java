@@ -42,7 +42,7 @@ import life.qbic.datamanager.views.projects.project.info.QualityControlListCompo
 import life.qbic.datamanager.views.projects.project.info.QualityControlListComponent.DownloadQualityControlEvent;
 import life.qbic.datamanager.views.projects.project.info.QualityControlListComponent.QualityControl;
 import life.qbic.datamanager.views.projects.purchase.UploadPurchaseDialog;
-import life.qbic.datamanager.views.projects.qualityControl.UploadQualityControlDialog;
+import life.qbic.datamanager.views.projects.quality_control.UploadQualityControlDialog;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.AddExperimentToProjectService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
