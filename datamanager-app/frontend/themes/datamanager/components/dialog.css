@@ -276,6 +276,7 @@ Since we want to remove the spacing between the cancel and confirm button we rep
   column-gap: 1rem;
   color: var(--lumo-primary-color)
 }
+
 .experiment-group-dialog .add-new-group-action span {
   cursor: pointer;
 }
@@ -632,7 +633,7 @@ Since we want to remove the spacing between the cancel and confirm button we rep
 }
 
 
-vaadin-upload-file::part(meta){
+vaadin-upload-file::part(meta) {
   font-size: smaller;
 }
 
@@ -866,4 +867,124 @@ vaadin-upload-file::part(meta){
   border: solid var(--lumo-contrast-20pct) 2px;
   border-radius: var(--lumo-border-radius-l);
   padding: var(--lumo-space-m);
+}
+
+/* ─ External Providers: Add Token dialog — loading overlay ───
+ *
+ * The `position: absolute; inset: 0` positions the overlay to exactly
+ * fill the nearest positioned ancestor. We declare `.dialog-app { position:
+ * relative }` in all.css so the AppDialog body slot becomes that ancestor,
+ * meaning `inset: 0` covers the body area without any min-height hacks.
+ *
+ * Note:
+ * Subject to be split into separate concerns, especially if we decide to reuse this overlay
+ * spinner like behaviour in other parts of the application.
+ */
+.token-loading-overlay {
+  position: absolute;
+  inset: 0;
+  background-color: var(--lumo-base-color);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--lumo-space-m);
+}
+
+/*
+ * Pure-CSS four-dots rotating spinner (Spinner II, Temani Afif).
+ * A single grid div with two pseudo-elements; each carries four dots
+ * at the cardinal points. The outer ring (::after, larger dots, slower
+ * animation) and the inner ring (::before, smaller dots, margin-inset,
+ * linear timing) rotate at slightly different rates to produce the
+ * characteristic "four-dots orbit" effect.
+ *
+ * CSS variables allow theming from outside:
+ *   --spinner-outer  (default: Lumo primary color)
+ *   --spinner-inner  (default: secondary teal accent)
+ *
+ * Credit: https://codepen.io/t_afif/pen/yLMXBRL (Spinner #2)
+ */
+.token-loading-overlay .spinner {
+  width: 48px;
+  aspect-ratio: 1;
+  display: grid;
+  --spinner-outer: var(--lumo-primary-color);
+  --spinner-inner: #00acac;
+}
+
+.token-loading-overlay .spinner::after {
+  content: "";
+  grid-area: 1 / 1;
+  --c: radial-gradient(farthest-side, var(--spinner-outer) 92%, #0000);
+  background: var(--c) 50% 0,
+  var(--c) 50% 100%,
+  var(--c) 100% 50%,
+  var(--c) 0 50%;
+  background-size: 12px 12px;
+  background-repeat: no-repeat;
+  animation: token-spin-half 1s infinite;
+}
+
+.token-loading-overlay .spinner::before {
+  content: "";
+  grid-area: 1 / 1;
+  margin: 4px;
+  --c: radial-gradient(farthest-side, var(--spinner-inner) 92%, #0000);
+  background: var(--c) 50% 0,
+  var(--c) 50% 100%,
+  var(--c) 100% 50%,
+  var(--c) 0 50%;
+  background-size: 8px 8px;
+  background-repeat: no-repeat;
+  animation: token-spin-half 1s infinite linear;
+}
+
+@keyframes token-spin-half {
+  100% {
+    transform: rotate(0.5turn);
+  }
+}
+
+.token-loading-overlay .token-loading-label {
+  font-weight: var(--font-weight-medium);
+}
+
+.token-loading-overlay .token-loading-hint {
+  color: var(--lumo-tertiary-text-color);
+}
+
+/* ── TokenInput callout & encryption note ─────────────────────── */
+
+.token-input__callout {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--lumo-space-m);
+  margin-bottom: var(--lumo-space-m);
+}
+
+.token-input__callout .info-box {
+  flex-grow: 1;
+}
+
+.token-input__create-token-btn {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.token-input__encryption-note {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-xs);
+  margin-top: var(--lumo-space-xs);
+  font-size: var(--lumo-font-size-xs);
+  color: var(--lumo-tertiary-text-color);
+}
+
+.token-input__encryption-note vaadin-icon {
+  font-size: var(--lumo-font-size-s);
+  color: var(--lumo-tertiary-text-color);
 }
