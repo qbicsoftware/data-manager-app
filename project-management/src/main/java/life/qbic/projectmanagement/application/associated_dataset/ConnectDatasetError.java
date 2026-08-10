@@ -29,6 +29,19 @@ public enum ConnectDatasetError {
    * actively connected to the project. Prevents duplicate connections
    * to the same logical record.
    */
-  ALREADY_CONNECTED;
+  ALREADY_CONNECTED,
+
+  /**
+   * A valid credential for the source instance is required to connect
+   * this access-restricted dataset. The credential is needed to create
+   * sharable access links for project collaborators.
+   *
+   * <p>Returned when the connecting user has no credential configured
+   * for the instance, or the stored credential has been invalidated
+   * (e.g. token rejected by the provider).</p>
+   *
+   * @since 1.12.0
+   */
+  CREDENTIAL_REQUIRED;
 
 }

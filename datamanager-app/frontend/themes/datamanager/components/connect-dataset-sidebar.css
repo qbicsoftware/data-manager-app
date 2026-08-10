@@ -209,3 +209,87 @@
 .connect-dataset-sidebar .cds-card-title {
   font-weight: var(--font-weight-semi-bold);
 }
+
+/* ── Access filter toggle (segmented button pair) ─────────────────────── */
+
+.connect-dataset-sidebar .cds-toggle-bar {
+  /* gap-00 removes the gap so buttons share a border seamlessly */
+}
+
+.connect-dataset-sidebar .cds-segmented-btn {
+  border-radius: 0;
+  min-width: 0;
+  flex: 1;
+  font-size: var(--lumo-font-size-s);
+  padding: var(--lumo-space-xs) var(--lumo-space-s);
+  /* Inactive state: subtle outlined look */
+  background-color: transparent;
+  color: var(--lumo-secondary-text-color);
+  border: 1px solid var(--lumo-contrast-20pct);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.connect-dataset-sidebar .cds-segmented-btn:first-child {
+  border-radius: var(--lumo-border-radius-m) 0 0 var(--lumo-border-radius-m);
+}
+
+.connect-dataset-sidebar .cds-segmented-btn:last-child {
+  border-radius: 0 var(--lumo-border-radius-m) var(--lumo-border-radius-m) 0;
+  /* Collapse the shared border between the two buttons */
+  margin-left: -1px;
+}
+
+.connect-dataset-sidebar .cds-segmented-btn:hover {
+  background-color: var(--lumo-contrast-5pct);
+}
+
+/* Active state: filled primary colour */
+.connect-dataset-sidebar .cds-segmented-btn--active {
+  background-color: var(--lumo-primary-color);
+  color: var(--lumo-primary-contrast-color);
+  border-color: var(--lumo-primary-color);
+}
+
+.connect-dataset-sidebar .cds-segmented-btn--active:hover {
+  background-color: var(--lumo-primary-color-10);
+}
+
+/* ── Credential banner (search-time, informational) ───────────────────── */
+
+.connect-dataset-sidebar .cds-credential-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-xs);
+  padding: var(--lumo-space-xs) var(--lumo-space-s);
+  border-radius: var(--lumo-border-radius-m);
+  margin-bottom: var(--lumo-space-s);
+  font-size: var(--lumo-font-size-s);
+  line-height: 1.4;
+}
+
+.connect-dataset-sidebar .cds-credential-banner--info {
+  background-color: var(--lumo-primary-color-10);
+  color: var(--lumo-primary-text-color);
+}
+
+.connect-dataset-sidebar .cds-credential-banner--warning {
+  background-color: var(--lumo-error-color-10);
+  color: var(--lumo-error-text-color);
+}
+
+.connect-dataset-sidebar .cds-credential-banner-icon {
+  flex-shrink: 0;
+  font-size: var(--lumo-icon-size-s);
+}
+
+.connect-dataset-sidebar .cds-credential-banner-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.connect-dataset-sidebar .cds-credential-banner-link {
+  flex-shrink: 0;
+  font-size: var(--lumo-font-size-s);
+  white-space: nowrap;
+}

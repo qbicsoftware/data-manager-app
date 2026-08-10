@@ -36,13 +36,16 @@ import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.UiHandle;
 import life.qbic.datamanager.views.general.DataSetTagFactory;
 import life.qbic.datamanager.views.general.DataSetTagFactory.TagType;
+import life.qbic.datamanager.views.general.dialog.AlertDialog;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.identity.api.AuthenticationToUserIdTranslator;
 import life.qbic.projectmanagement.application.associated_dataset.AssociatedDatasetService;
 import life.qbic.projectmanagement.application.associated_dataset.AssociatedDatasetServiceException;
+import life.qbic.projectmanagement.application.associated_dataset.ExternalCredentialService;
 import life.qbic.projectmanagement.application.associated_dataset.SearchHit;
 import life.qbic.projectmanagement.application.associated_dataset.SourceInstanceDescriptor;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
+import life.qbic.projectmanagement.domain.model.associated_dataset.CredentialStatus;
 import life.qbic.projectmanagement.domain.model.associated_dataset.SourceType;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
@@ -85,6 +88,7 @@ public class ConnectDatasetSidebar extends Div {
   private final AssociatedDatasetService associatedDatasetService;
   private final ExperimentInformationService experimentInformationService;
   private final MessageSourceNotificationFactory notificationFactory;
+  private final ExternalCredentialService externalCredentialService;
   private final UiHandle uiHandle = new UiHandle();
   private final AuthenticationToUserIdTranslator authenticationToUserIdTranslator;
 
@@ -128,6 +132,15 @@ public class ConnectDatasetSidebar extends Div {
   private final Div loadingIndicator;
   private final Span loadingMessage = new Span("Searching for datasets...");
   private final Div welcomeMessage;
+
+  // ── Access filter toggle (segmented button pair) ──────────────────
+  private final Button allDatasetsButton;
+  private final Button restrictedOnlyButton;
+  /** null = all datasets, "restricted" = restricted only */
+  private String accessFilter = null;
+
+  // ── Credential banner (search-time, informational) ────────────────
+  private final Div credentialBanner;
 
   /**
    * Gate for the lazy-loading callback.
@@ -175,12 +188,15 @@ public class ConnectDatasetSidebar extends Div {
       AssociatedDatasetService associatedDatasetService,
       ExperimentInformationService experimentInformationService,
       MessageSourceNotificationFactory notificationFactory,
-      AuthenticationToUserIdTranslator authenticationToUserIdTranslator) {
+      AuthenticationToUserIdTranslator authenticationToUserIdTranslator,
+      ExternalCredentialService externalCredentialService) {
     this.associatedDatasetService = associatedDatasetService;
     this.experimentInformationService = experimentInformationService;
     this.notificationFactory = requireNonNull(notificationFactory,
         "notificationFactory must not be null");
     this.authenticationToUserIdTranslator = requireNonNull(authenticationToUserIdTranslator);
+    this.externalCredentialService = requireNonNull(externalCredentialService,
+        "externalCredentialService must not be null");
 
     // Root scope class — all .cds-* CSS rules in connect-dataset-sidebar.css
     // are scoped under this class so they cannot leak into other views.
@@ -201,8 +217,12 @@ public class ConnectDatasetSidebar extends Div {
       // first item — we must NOT treat that auto-selection as a search
       // trigger, or the sidebar would block on InvenioRDM latency.
       if (!searchInitiated) {
+        // Even without a search, update the credential banner if the
+        // restricted filter is active (banner depends on instance).
+        updateCredentialBanner();
         return;
       }
+      updateCredentialBanner();
       refreshSearchResults();
     });
     instanceSelector.setOverlayClassName("connect-dataset-sidebar-overlay");
@@ -318,6 +338,40 @@ public class ConnectDatasetSidebar extends Div {
     connectButton.setEnabled(false);
     connectButton.addClickListener(e -> connectSelectedDatasets());
 
+    // ── Access filter toggle (segmented button pair) ──────────────
+    // Two buttons styled as a segmented control. Clicking one activates
+    // it and deactivates the other. The active button gets a filled
+    // primary style; the inactive one gets a tertiary outline style.
+    allDatasetsButton = new Button("All datasets");
+    allDatasetsButton.addClassName("cds-segmented-btn");
+    allDatasetsButton.addClassName("cds-segmented-btn--active");
+    allDatasetsButton.addClickListener(e -> {
+      if (accessFilter == null) return; // already active
+      accessFilter = null;
+      updateToggleState();
+      updateCredentialBanner();
+      if (searchInitiated) refreshSearchResults();
+    });
+
+    restrictedOnlyButton = new Button("Restricted only");
+    restrictedOnlyButton.addClassName("cds-segmented-btn");
+    restrictedOnlyButton.addClickListener(e -> {
+      if ("restricted".equals(accessFilter)) return; // already active
+      accessFilter = "restricted";
+      updateToggleState();
+      updateCredentialBanner();
+      if (searchInitiated) refreshSearchResults();
+    });
+
+    // ── Credential banner (search-time, informational) ────────────
+    // Shown above the results container when the user selects "Restricted
+    // only" without a valid token. Non-blocking — the search proceeds
+    // regardless, but the banner explains why restricted records may not
+    // appear. Hidden when the filter is "All" or a valid token exists.
+    credentialBanner = new Div();
+    credentialBanner.addClassNames("cds-credential-banner");
+    credentialBanner.getStyle().set("display", "none");
+
     // ── Overlay (semi-transparent backdrop) ──────────────────────────
     // .cds-backdrop carries all visual properties; display toggling stays
     // inline because it represents runtime open/close state, not layout.
@@ -385,6 +439,12 @@ public class ConnectDatasetSidebar extends Div {
     // Clear the flag so the next open() does not fire the grid's
     // automatic first-page fetch against a stale default instance.
     searchInitiated = false;
+    // Reset access filter toggle to default ("All datasets")
+    accessFilter = null;
+    updateToggleState();
+    // Hide credential banner
+    credentialBanner.removeAll();
+    credentialBanner.getStyle().set("display", "none");
     // Reset UI state
     loadingIndicator.getStyle().set("display", "none");
     welcomeMessage.getStyle().set("display", "flex");
@@ -461,7 +521,19 @@ public class ConnectDatasetSidebar extends Div {
     });
 
     searchButtonBar.add(searchButton, clearButton);
-    content.add(searchRow, searchButtonBar);
+
+    // Access filter toggle (segmented button pair) — placed between
+    // the search row and the results container.
+    var toggleBar = new Div();
+    toggleBar.addClassNames("flex-horizontal", "gap-00", "mb-s", "cds-toggle-bar");
+    toggleBar.add(allDatasetsButton, restrictedOnlyButton);
+
+    // Credential banner — shown when "Restricted only" is selected
+    // and the user has no valid token for the selected instance.
+    credentialBanner.addClassNames("cds-credential-banner");
+    credentialBanner.getStyle().set("display", "none");
+
+    content.add(searchRow, searchButtonBar, toggleBar, credentialBanner);
 
     // Results container was already configured with .flex-vertical +
     // .flex-grow + .cds-results in the constructor (see resultsContainer
@@ -589,6 +661,7 @@ public class ConnectDatasetSidebar extends Div {
           SourceType.INVENIO_RDM,
           instance.id(),
           searchTerm.trim().isEmpty() ? null : searchTerm.trim(),
+          accessFilter,  // null = all, "restricted" = restricted only
           0,          // page 0 (zero-indexed)
           100,        // pageSize - load up to 100 results in first fetch
           currentUser
@@ -696,6 +769,39 @@ public class ConnectDatasetSidebar extends Div {
     if (selected.isEmpty()) {
       return;
     }
+
+    // ── Connect-time credential gate (hard block) ─────────────────
+    // If any selected dataset is access-restricted, the user MUST have
+    // a valid credential for the source instance. Without it, the
+    // access link creation needed for project collaborators will fail.
+    boolean hasRestricted = selected.stream().anyMatch(hit -> !hit.isPublic());
+    if (hasRestricted) {
+      CredentialStatus credStatus = externalCredentialService
+          .credentialStatusForInstance(currentUserId(), instance.id());
+      if (credStatus != CredentialStatus.VALID) {
+        String message = credStatus == CredentialStatus.NOT_CONFIGURED
+            ? "A valid access token for " + instance.displayName()
+              + " is required to connect restricted datasets. "
+              + "The token is needed to create access links for "
+              + "project collaborators."
+            : "Your token for " + instance.displayName()
+              + " is invalid. Reconnect to create access links "
+              + "for project collaborators.";
+        String buttonLabel = credStatus == CredentialStatus.NOT_CONFIGURED
+            ? "Configure Token" : "Reconnect";
+        AlertDialog.alert(this)
+            .title("Cannot connect restricted dataset")
+            .message(message)
+            .confirmButton(buttonLabel,
+                () -> UI.getCurrent().getPage()
+                    .open("/external-providers", "_blank"))
+            .cancelButton("Cancel", () -> {})
+            .build()
+            .open();
+        return;
+      }
+    }
+
     var experimentId = experimentSelector.isReadOnly() || experimentSelector.isEmpty()
         ? null
         : experimentSelector.getValue().id();
@@ -857,6 +963,100 @@ public class ConnectDatasetSidebar extends Div {
   }
 
   // ── Helpers ─────────────────────────────────────────────────────────
+
+  /**
+   * Updates the visual state of the segmented button pair to reflect
+   * the current {@link #accessFilter} value. The active button gets
+   * the {@code cds-segmented-btn--active} class; the inactive one
+   * loses it.
+   */
+  private void updateToggleState() {
+    if (accessFilter == null) {
+      allDatasetsButton.addClassName("cds-segmented-btn--active");
+      restrictedOnlyButton.removeClassName("cds-segmented-btn--active");
+    } else {
+      allDatasetsButton.removeClassName("cds-segmented-btn--active");
+      restrictedOnlyButton.addClassName("cds-segmented-btn--active");
+    }
+  }
+
+  /**
+   * Updates the credential banner visibility and content based on
+   * the current access filter and the user's credential status for
+   * the selected instance.
+   *
+   * <p>The banner is shown only when:
+   * <ul>
+   *   <li>The "Restricted only" filter is active, AND</li>
+   *   <li>The user has no valid credential for the selected instance
+   *       (either NOT_CONFIGURED or INVALIDATED).</li>
+   * </ul>
+   *
+   * <p>The banner is informational (non-blocking) — the search
+   * proceeds regardless. Without a token, restricted records simply
+   * won't appear in results.</p>
+   */
+  private void updateCredentialBanner() {
+    if (!"restricted".equals(accessFilter)) {
+      credentialBanner.getStyle().set("display", "none");
+      return;
+    }
+    var instance = instanceSelector.getValue();
+    if (instance == null) {
+      credentialBanner.getStyle().set("display", "none");
+      return;
+    }
+
+    CredentialStatus status;
+    try {
+      status = externalCredentialService.credentialStatusForInstance(
+          currentUserId(), instance.id());
+    } catch (Exception e) {
+      log.error("Failed to check credential status for instance %s"
+          .formatted(instance.id()), e);
+      credentialBanner.getStyle().set("display", "none");
+      return;
+    }
+
+    credentialBanner.removeAll();
+
+    if (status == CredentialStatus.NOT_CONFIGURED) {
+      var icon = VaadinIcon.INFO_CIRCLE.create();
+      icon.addClassName("cds-credential-banner-icon");
+      var text = new Span(
+          "No access token configured for " + instance.displayName()
+          + ". Configure one to search restricted datasets.");
+      text.addClassName("cds-credential-banner-text");
+      var link = new Button("Configure", VaadinIcon.EXTERNAL_LINK.create());
+      link.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+      link.addClassName("cds-credential-banner-link");
+      link.addClickListener(e ->
+          UI.getCurrent().getPage().open("/external-providers", "_blank"));
+      credentialBanner.add(icon, text, link);
+      credentialBanner.addClassName("cds-credential-banner--info");
+      credentialBanner.removeClassName("cds-credential-banner--warning");
+      credentialBanner.getStyle().set("display", "flex");
+    } else if (status == CredentialStatus.INVALIDATED) {
+      var icon = VaadinIcon.WARNING.create();
+      icon.addClassName("cds-credential-banner-icon");
+      var text = new Span(
+          "Your token for " + instance.displayName()
+          + " was rejected. Reconnect to search restricted datasets.");
+      text.addClassName("cds-credential-banner-text");
+      var link = new Button("Reconnect", VaadinIcon.EXTERNAL_LINK.create());
+      link.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+      link.addClassName("cds-credential-banner-link");
+      link.addClickListener(e ->
+          UI.getCurrent().getPage().open("/external-providers", "_blank"));
+      credentialBanner.add(icon, text, link);
+      credentialBanner.removeClassName("cds-credential-banner--info");
+      credentialBanner.addClassName("cds-credential-banner--warning");
+      credentialBanner.getStyle().set("display", "flex");
+    } else {
+      // VALID — no banner needed
+      credentialBanner.getStyle().set("display", "none");
+    }
+  }
 
   /**
    * Resolves a user-friendly message from an async throwable. Walks the

@@ -274,8 +274,26 @@ public interface InvenioRdmClient {
   record SearchParams(
       String query,
       int page,
-      int size
+      int size,
+      /**
+       * Optional access-status filter. {@code null} = no filter (all
+       * records). {@code "restricted"} = only access-restricted records.
+       * {@code "open"} = only publicly accessible records.
+       *
+       * <p>Mapped to the InvenioRDM {@code access.status} search facet
+       * (e.g. {@code q=access.status:restricted AND <userQuery>}).</p>
+       *
+       * @since 1.12.0
+       */
+      String accessFilter
   ) {
+    /**
+     * Backward-compatible constructor — no access filter.
+     */
+    public SearchParams(String query, int page, int size) {
+      this(query, page, size, null);
+    }
+
     public SearchParams {
       if (page < 1) throw new IllegalArgumentException("page must be >= 1 for InvenioRDM API");
       if (size <= 0) throw new IllegalArgumentException("size must be > 0");
@@ -639,12 +657,32 @@ public interface InvenioRdmClient {
           .append("/api/records?page=").append(params.page())
           .append("&size=").append(params.size());
       
-      // When there's a search query, rely on the API's default relevance-based sorting.
-      // When listing records without a query (browsing), sort by newest first.
-      if (params.query() != null && !params.query().isBlank()) {
+      // Build the effective query string, combining the user's free-text
+      // query with the optional access-status filter.
+      //
+      // accessFilter + user query  → "access.status:<filter> AND <userQuery>"
+      // accessFilter + no query    → "access.status:<filter>"
+      // no filter + user query     → "<userQuery>"
+      // no filter + no query       → sort=newest (no q param)
+      String userQuery = (params.query() != null && !params.query().isBlank())
+          ? params.query() : null;
+      String filter = params.accessFilter();
+
+      if (filter != null && userQuery != null) {
+        // Combined: filter + user query
+        sb.append("&q=").append(URLEncoder.encode(
+            "access.status:" + filter + " AND " + userQuery,
+            StandardCharsets.UTF_8));
+      } else if (filter != null) {
+        // Filter only, no user query
+        sb.append("&q=").append(URLEncoder.encode(
+            "access.status:" + filter, StandardCharsets.UTF_8));
+      } else if (userQuery != null) {
+        // User query only, no filter — rely on relevance-based sorting
         sb.append("&q=").append(
-            URLEncoder.encode(params.query(), StandardCharsets.UTF_8));
+            URLEncoder.encode(userQuery, StandardCharsets.UTF_8));
       } else {
+        // No query, no filter — browse by newest
         sb.append("&sort=newest");
       }
       

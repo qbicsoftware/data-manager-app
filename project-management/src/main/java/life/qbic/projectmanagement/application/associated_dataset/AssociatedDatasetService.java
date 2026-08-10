@@ -126,11 +126,48 @@ public class AssociatedDatasetService {
       int page,
       int pageSize,
       String searchingUserId) {
+    return searchDatasets(sourceType, instanceId, query, null,
+        page, pageSize, searchingUserId);
+  }
+
+  /**
+   * Searches an external data source for datasets matching the query,
+   * with an optional access-status filter, returning paginated results.
+   *
+   * <p>The {@code accessFilter} restricts results to records with a
+   * specific access status on the source system. For InvenioRDM,
+   * {@code "restricted"} returns only access-restricted records;
+   * {@code "open"} returns only publicly accessible records;
+   * {@code null} returns all records (no filter).</p>
+   *
+   * @param sourceType      the source system type
+   * @param instanceId      the configured instance identifier
+   * @param query           the free-text search term; blank for "list all"
+   * @param accessFilter    optional access-status filter (e.g. "restricted");
+   *                        {@code null} for no filter
+   * @param page            zero-indexed page number
+   * @param pageSize        results per page
+   * @param searchingUserId the ID of the user performing the search
+   * @return paginated search results
+   * @throws DatasetSourceUnavailableException if the external data repository
+   *         could not be reached
+   * @throws DatasetSourceNotFoundException   if the {@code instanceId} does
+   *         not match any configured repository
+   * @since 1.12.0
+   */
+  public SearchResult searchDatasets(
+      SourceType sourceType,
+      String instanceId,
+      String query,
+      String accessFilter,
+      int page,
+      int pageSize,
+      String searchingUserId) {
     Objects.requireNonNull(sourceType, "sourceType must not be null");
     Objects.requireNonNull(searchingUserId, "searchingUserId must not be null");
     // resolveInstanceConfig propagates DatasetSourceNotFoundException directly
     var config = resolveInstanceConfig(instanceId);
-    var searchQuery = new SearchQuery(query, page, pageSize);
+    var searchQuery = new SearchQuery(query, page, pageSize, accessFilter);
     try {
       return datasetSource.search(searchQuery, config, searchingUserId);
     } catch (AssociatedDatasetServiceException
@@ -212,6 +249,21 @@ public class AssociatedDatasetService {
     if (metadata.isEmpty()) {
       log.warn("Record %s not found on instance %s".formatted(externalHandleValue, instanceId));
       return Result.fromError(ConnectDatasetError.RECORD_NOT_FOUND);
+    }
+
+    // 1a. Credential gate — access-restricted datasets require a valid
+    //     credential on the source instance. Without a valid PAT, the
+    //     access link creation needed for project collaborators will
+    //     fail. Hard-block the connect rather than silently succeeding
+    //     with an unusable connection.
+    if (metadata.get() instanceof InvenioRdmResourceMetadata inv
+        && inv.deriveAccessLevel() == AccessLevel.RESTRICTED) {
+      if (!datasetSource.hasValidCredential(connectedByUserId, config)) {
+        log.warn("Cannot connect restricted dataset %s — no valid credential "
+            + "for user %s on instance %s"
+            .formatted(externalHandleValue, connectedByUserId, instanceId));
+        return Result.fromError(ConnectDatasetError.CREDENTIAL_REQUIRED);
+      }
     }
 
     // 1b. Duplicate check — a dataset with the same PID is already

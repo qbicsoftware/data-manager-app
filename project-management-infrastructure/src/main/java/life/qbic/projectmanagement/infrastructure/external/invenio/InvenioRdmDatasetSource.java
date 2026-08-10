@@ -19,6 +19,7 @@ import life.qbic.projectmanagement.application.associated_dataset.SearchHit;
 import life.qbic.projectmanagement.application.associated_dataset.SearchQuery;
 import life.qbic.projectmanagement.application.associated_dataset.SearchResult;
 import life.qbic.projectmanagement.domain.model.associated_dataset.AccessLevel;
+import life.qbic.projectmanagement.domain.model.associated_dataset.CredentialStatus;
 import life.qbic.projectmanagement.domain.model.associated_dataset.InvenioRdmAccessStatus;
 import life.qbic.projectmanagement.domain.model.associated_dataset.InvenioRdmResourceMetadata;
 import life.qbic.projectmanagement.domain.model.associated_dataset.ResourceMetadata;
@@ -69,7 +70,8 @@ public class InvenioRdmDatasetSource implements DatasetSource {
     // Endpoint uses 1-based page indexing
     int invenioPage = query.page() + 1;
     var params = new InvenioRdmClient.SearchParams(
-        query.effectiveQuery(), invenioPage, query.pageSize());
+        query.effectiveQuery(), invenioPage, query.pageSize(),
+        query.accessFilter());
 
     char[] token = resolveTokenForUser(actingUserId, config.id());
     try {
@@ -120,6 +122,18 @@ public class InvenioRdmDatasetSource implements DatasetSource {
         Arrays.fill(token, '\0');
       }
     }
+  }
+
+  @Override
+  public boolean hasValidCredential(String userId, InstanceConfig config) {
+    if (userId == null || config == null) {
+      return false;
+    }
+    return credentialRepository
+        .findByUserIdAndSourceTypeAndInstanceId(
+            userId, SourceType.INVENIO_RDM, config.id())
+        .map(cred -> cred.getStatus() != CredentialStatus.INVALIDATED)
+        .orElse(false);
   }
 
   /**

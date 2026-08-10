@@ -73,4 +73,24 @@ public interface DatasetSource {
       String externalHandleValue, InstanceConfig config,
       String actingUserId) throws DatasetResolveException;
 
+  /**
+   * Returns whether the given user has a valid (non-invalidated)
+   * credential configured for the specified instance.
+   *
+   * <p>Used by the application service to enforce a hard gate before
+   * connecting access-restricted datasets — access link creation
+   * requires a valid PAT on the source system.</p>
+   *
+   * <p>Returns {@code true} only when a credential exists AND its
+   * status is not {@code INVALIDATED}. No decryption or remote
+   * validation is performed — this is a local presence check.</p>
+   *
+   * @param userId the user to check
+   * @param config the target instance
+   * @return {@code true} if a valid credential exists; {@code false}
+   *         otherwise (no credential or invalidated)
+   * @since 1.12.0
+   */
+  boolean hasValidCredential(String userId, InstanceConfig config);
+
 }

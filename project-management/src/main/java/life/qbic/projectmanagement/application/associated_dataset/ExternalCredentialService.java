@@ -81,6 +81,24 @@ public interface ExternalCredentialService {
    */
   AddCredentialResult validateCredential(String userId, String instanceId);
 
+  /**
+   * Returns the credential status for a specific user and instance.
+   *
+   * <p>This is a local presence/status check — no remote validation
+   * is performed. Returns {@link CredentialStatus#NOT_CONFIGURED}
+   * if no credential exists for the given user/instance pair.</p>
+   *
+   * <p>Used by the UI layer to determine whether to show credential
+   * warnings before search or connect operations on restricted
+   * datasets.</p>
+   *
+   * @param userId     the DM user whose credential to look up
+   * @param instanceId the target instance (e.g. {@code "zenodo"})
+   * @return the credential status; never null
+   * @since 1.12.0
+   */
+  CredentialStatus credentialStatusForInstance(String userId, String instanceId);
+
   // ── Result types ────────────────────────────────────────────────
 
   /**
