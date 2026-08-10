@@ -657,7 +657,7 @@ public class AssociatedDatasetsDemoV2 extends Div {
     instanceSelector.getStyle().set("flex-shrink", "0");
     // Tag the overlay so we can raise its z-index via CSS (the overlay is
     // teleported to <body> at z-index 200, which sits below the sidebar)
-    instanceSelector.setOverlayClassName("connect-dataset-sidebar-overlay");
+    instanceSelector.addClassName("connect-dataset-sidebar-overlay");
     // Auto-update search results when repository selection changes
     instanceSelector.addValueChangeListener(e -> performSidebarSearch());
 

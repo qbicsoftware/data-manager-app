@@ -27,7 +27,7 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.springframework.lang.NonNull;
+import org.jspecify.annotations.NonNull;
 
 public interface WorkbookFactory {
 

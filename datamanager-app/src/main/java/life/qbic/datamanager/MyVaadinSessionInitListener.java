@@ -5,7 +5,6 @@ import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.component.UI;
-import com.vaadin.flow.component.page.Page.ExtendedClientDetailsReceiver;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.server.ServiceDestroyEvent;
 import com.vaadin.flow.server.ServiceInitEvent;
@@ -31,16 +30,13 @@ import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 public class MyVaadinSessionInitListener implements VaadinServiceInitListener {
 
   private static final Logger log = logger(MyVaadinSessionInitListener.class);
-  private final ExtendedClientDetailsReceiver clientDetailsReceiver;
 
   private final AuthenticationContext authenticationContext;
   private final transient UiExceptionHandler uiExceptionHandler;
 
   public MyVaadinSessionInitListener(
-      @Autowired ExtendedClientDetailsReceiver clientDetailsProvider,
       @Autowired UiExceptionHandler uiExceptionHandler,
       @Autowired AuthenticationContext authenticationContext) {
-    this.clientDetailsReceiver = clientDetailsProvider;
     this.uiExceptionHandler = uiExceptionHandler;
     this.authenticationContext = requireNonNull(authenticationContext);
   }
@@ -57,7 +53,6 @@ public class MyVaadinSessionInitListener implements VaadinServiceInitListener {
         initEvent.getUI().getUIId(), initEvent.getUI().getSession().getPushId(),
         initEvent.getUI().getSession().getSession().getId()));
     UI ui = initEvent.getUI();
-    ui.getPage().retrieveExtendedClientDetails(clientDetailsReceiver);
     ui.getSession().setErrorHandler(errorEvent -> uiExceptionHandler.error(errorEvent, ui));
     ui.addBeforeEnterListener(this::ensureCompleteOidcRegistration);
   }

@@ -27,7 +27,7 @@ import life.qbic.projectmanagement.application.VariableValueFormatter;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
 import life.qbic.projectmanagement.domain.model.experiment.VariableName;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * UI input component for defining (or editing) a single {@link ExperimentalGroup}.

@@ -8,7 +8,7 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import java.util.Objects;
 import life.qbic.datamanager.announcements.AnnouncementService.AnnouncementBundle;
-import org.springframework.lang.NonNull;
+import org.jspecify.annotations.NonNull;
 import reactor.core.Disposable;
 
 public class AnnouncementComponent extends Div {

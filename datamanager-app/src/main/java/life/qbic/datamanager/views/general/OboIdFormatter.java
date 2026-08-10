@@ -12,7 +12,7 @@ import life.qbic.projectmanagement.domain.model.OntologyTerm;
 public class OboIdFormatter {
 
   public static String render(OntologyTerm term) {
-    return enforceColonSeparator(term.getOboId());
+    return enforceColonSeparator(term.oboId().toString());
   }
 
   public static String render(String oboId) {

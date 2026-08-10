@@ -21,7 +21,7 @@ import life.qbic.projectmanagement.domain.model.experiment.ExperimentalDesign.Ad
 import life.qbic.projectmanagement.domain.model.experiment.exception.ConditionExistsException;
 import life.qbic.projectmanagement.domain.model.experiment.exception.ExperimentalVariableExistsException;
 import life.qbic.projectmanagement.domain.model.experiment.exception.UnknownExperimentalVariableException;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * <b>Experimental Design</b>

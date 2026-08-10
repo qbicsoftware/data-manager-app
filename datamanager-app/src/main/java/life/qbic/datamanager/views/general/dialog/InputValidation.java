@@ -2,7 +2,7 @@ package life.qbic.datamanager.views.general.dialog;
 
 import java.util.Objects;
 import java.util.StringJoiner;
-import org.springframework.lang.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * <b>Input Validation</b>

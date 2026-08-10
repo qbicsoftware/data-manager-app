@@ -8,6 +8,7 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.RouterLayout;
+import com.vaadin.flow.server.auth.AnonymousAllowed;
 import java.io.Serial;
 import java.util.Objects;
 import life.qbic.datamanager.announcements.AnnouncementService;
@@ -22,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * @since 1.0.0
  */
 @PageTitle("Data Manager")
+@AnonymousAllowed
 public class LandingPageLayout extends DataManagerLayout implements RouterLayout {
 
   @Serial

@@ -79,9 +79,8 @@ public class OntologyComboboxFactory {
   }
 
   private static String ontologyItemFormatted(OntologyTerm ontologyTerm) {
-    String ontologyLinkName = ontologyTerm.getOboId().replace("_", ":");
+    String ontologyLinkName = ontologyTerm.oboId().toString();
     return String.format("%s (%s)", ontologyTerm.getLabel(), ontologyLinkName);
   }
 
 }
-

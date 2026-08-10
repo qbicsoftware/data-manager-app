@@ -13,7 +13,7 @@ import life.qbic.datamanager.views.general.dialog.InputValidation;
 import life.qbic.datamanager.views.general.dialog.UserInput;
 import life.qbic.datamanager.views.projects.ProjectInformation;
 import life.qbic.projectmanagement.application.contact.PersonLookupService;
-import org.springframework.lang.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * <b>Edit Contacts Component</b>
