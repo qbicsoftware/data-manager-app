@@ -18,12 +18,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.FileNameFormatter;
+import life.qbic.datamanager.configuration.UploadConfiguration;
 import life.qbic.datamanager.files.export.download.DownloadStreamProvider;
 import life.qbic.datamanager.files.export.download.WorkbookDownloadStreamProvider;
 import life.qbic.datamanager.files.parsing.converters.ConverterRegistry;
@@ -78,6 +79,7 @@ import life.qbic.projectmanagement.infrastructure.template.provider.openxml.fact
 import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.MimeType;
+import org.springframework.util.MimeTypeUtils;
 import reactor.core.publisher.Flux;
 
 
@@ -116,6 +118,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
 
 
   private final UiHandle uiHandle = new UiHandle();
+  private UploadConfiguration uploadConfiguration;
 
   static class ProjectContext {
 
@@ -147,7 +150,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
       MessageSourceNotificationFactory messageSourceNotificationFactory,
       NgsMeasurementLookup ngsMeasurementLookup,
       PxpMeasurementLookup pxpMeasurementLookup,
-      IpMeasurementLookup ipMeasurementLookup) {
+      IpMeasurementLookup ipMeasurementLookup,
+      UploadConfiguration uploadConfiguration) {
     Objects.requireNonNull(measurementService);
     Objects.requireNonNull(measurementValidationService);
     Objects.requireNonNull(asyncProjectService);
@@ -160,6 +164,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     DownloadComponent measurementTemplateDownload = new DownloadComponent();
     this.registerSamplesDisclaimer = createNoSamplesRegisteredDisclaimer();
     this.noMeasurementDisclaimer = createNoMeasurementDisclaimer();
+    this.uploadConfiguration = Objects.requireNonNull(uploadConfiguration);
     initContent();
 
     addClassName("measurement");
@@ -236,7 +241,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
 
     var upload = new MeasurementUpload(asyncService, context,
         ConverterRegistry.converterFor(
-            MeasurementUpdateInformationNGS.class), messageFactory);
+            MeasurementUpdateInformationNGS.class), messageFactory, uploadConfiguration);
     var uploadComponent = new MeasurementUpdateComponent(templateDownload, upload);
     DialogBody.with(dialog, uploadComponent, uploadComponent);
     dialog.registerCancelAction(dialog::close);
@@ -265,7 +270,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
 
     var upload = new MeasurementUpload(asyncService, context,
         ConverterRegistry.converterFor(
-            MeasurementUpdateInformationPxP.class), messageFactory);
+            MeasurementUpdateInformationPxP.class), messageFactory, uploadConfiguration);
     var uploadComponent = new MeasurementUpdateComponent(templateDownload, upload);
     DialogBody.with(dialog, uploadComponent, uploadComponent);
     dialog.registerCancelAction(dialog::close);
@@ -294,7 +299,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
 
     var upload = new MeasurementUpload(asyncService, context,
         ConverterRegistry.converterFor(
-            MeasurementUpdateInformationIP.class), messageFactory);
+            MeasurementUpdateInformationIP.class), messageFactory,
+        uploadConfiguration);
     var uploadComponent = new MeasurementUpdateComponent(templateDownload, upload);
     DialogBody.with(dialog, uploadComponent, uploadComponent);
     dialog.registerCancelAction(dialog::close);
@@ -374,7 +380,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
       case FAILED -> "Deletion failed. Please try again.";
       case DATA_ATTACHED -> "Data is attached to one or more measurements.";
     };
-    showErrorNotification("Deletion failed", errorMessage);
+    showErrorNotification(errorMessage);
   }
 
   private void handleDeletionSuccessNgs(int count) {
@@ -467,6 +473,16 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
       public InputStream getStream() {
         return digitalObject.content();
       }
+
+      @Override
+      public String getContentType() {
+        return MimeTypeUtils.APPLICATION_OCTET_STREAM_VALUE;
+      }
+
+      @Override
+      public Optional<Long> contentLength() {
+        return Optional.empty();
+      }
     };
     downloadComponent.trigger(downloadStreamProvider);
   }
@@ -516,7 +532,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
 
     var registrationMeasurementUpload = new MeasurementUpload(asyncService, context,
         ConverterRegistry.converterFor(MeasurementRegistrationInformationNGS.class),
-        messageSourceNotificationFactory);
+        messageSourceNotificationFactory, uploadConfiguration);
     var templateComponent = new MeasurementTemplateSelectionComponent(
         Map.ofEntries(
             Map.entry(MeasurementTemplateSelectionComponent.Domain.Genomics,
@@ -526,6 +542,11 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
                     return FileNameFormatter.formatWithVersion("ngs_measurement_registration_sheet",
                         1,
                         "xlsx");
+                  }
+
+                  @Override
+                  public Optional<Long> contentLength() {
+                    return Optional.empty();
                   }
 
                   @Override
@@ -543,6 +564,11 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
                   }
 
                   @Override
+                  public Optional<Long> contentLength() {
+                    return Optional.empty();
+                  }
+
+                  @Override
                   public Workbook getWorkbook() {
                     return ProteomicsWorkbooks.createRegistrationWorkbook();
                   }
@@ -554,6 +580,11 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
                     return FileNameFormatter.formatWithVersion(
                         "immunopeptidomics_measurement_registration_sheet",
                         1, "xlsx");
+                  }
+
+                  @Override
+                  public Optional<Long> contentLength() {
+                    return Optional.empty();
                   }
 
                   @Override
@@ -793,7 +824,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   }
 
   private void processResults(int numberOfSuccesses, int numberOfRequests,
-      Consumer<Integer> onSuccess, IntConsumer onFailure) {
+      IntConsumer onSuccess, IntConsumer onFailure) {
     if (numberOfSuccesses > 0 && numberOfSuccesses == numberOfRequests) {
       // Only successful registrations
       onSuccess.accept(numberOfSuccesses);
@@ -851,8 +882,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     }
   }
 
-  private void showErrorNotification(String title, String description) {
-    ErrorMessage errorMessage = new ErrorMessage(title, description);
+  private void showErrorNotification(String description) {
+    ErrorMessage errorMessage = new ErrorMessage("Deletion failed", description);
     StyledNotification notification = new StyledNotification(errorMessage);
     notification.open();
   }

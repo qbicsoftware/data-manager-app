@@ -4,7 +4,8 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.server.StreamResource;
+import com.vaadin.flow.server.streams.DownloadHandler;
+import com.vaadin.flow.server.streams.DownloadResponse;
 
 /**
  * Landing Page Title and Logo
@@ -33,9 +34,11 @@ public class LandingPageTitleAndLogo extends Div {
   }
 
   private Image getUTLogo() {
-    StreamResource utResource = new StreamResource("university_tuebingen_logo.svg",
-        () -> getClass().getClassLoader().getResourceAsStream(UT_LOGO_PATH));
-    Image utLogo = new Image(utResource, "university_tuebingen_logo");
+    DownloadHandler downloadHandler = DownloadHandler.fromInputStream(event ->
+        new DownloadResponse(getClass().getClassLoader().getResourceAsStream(UT_LOGO_PATH),
+            "university_tuebingen_logo.svg",
+            "image/svg+xml", -1));
+    Image utLogo = new Image(downloadHandler, "university_tuebingen_logo");
     utLogo.addClassName("ut-logo");
     return utLogo;
   }

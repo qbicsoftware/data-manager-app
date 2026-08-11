@@ -38,7 +38,7 @@ import life.qbic.datamanager.views.general.DragDropList;
 import life.qbic.datamanager.views.general.dialog.InputValidation;
 import life.qbic.datamanager.views.general.dialog.UserInput;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.ExperimentalVariablesInput.PasteEvent;
-import org.springframework.lang.NonNull;
+import org.jspecify.annotations.NonNull;
 
 
 class VariableLevelsInput extends Div implements UserInput, CanSnapshot,

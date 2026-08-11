@@ -5,24 +5,38 @@
   <parent>
     <groupId>life.qbic.datamanager</groupId>
     <artifactId>datamanager</artifactId>
-    <version>1.13.0</version>
+    <version>1.15.0</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>application-commons</artifactId>
   <dependencies>
     <dependency>
-      <groupId>org.spockframework</groupId>
-      <artifactId>spock-core</artifactId>
-      <scope>test</scope>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.jspecify</groupId>
+      <artifactId>jspecify</artifactId>
+      <version>1.0.0</version>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.springframework.data</groupId>
       <artifactId>spring-data-commons</artifactId>
     </dependency>
-    <!-- https://mvnrepository.com/artifact/org.springframework.security/spring-security-core -->
     <dependency>
       <groupId>org.springframework.security</groupId>
       <artifactId>spring-security-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.groovy</groupId>
+      <artifactId>groovy</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.spockframework</groupId>
+      <artifactId>spock-core</artifactId>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 </project>

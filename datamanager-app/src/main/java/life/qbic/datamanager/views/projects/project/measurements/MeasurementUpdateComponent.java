@@ -6,6 +6,7 @@ import life.qbic.datamanager.views.general.dialog.DialogSection;
 import life.qbic.datamanager.views.general.dialog.InputValidation;
 import life.qbic.datamanager.views.general.dialog.UserInput;
 import life.qbic.datamanager.views.projects.project.measurements.registration.MeasurementUpload;
+import org.jspecify.annotations.NonNull;
 
 /**
  * <b><class short description - 1 Line!></b>
@@ -17,14 +18,12 @@ import life.qbic.datamanager.views.projects.project.measurements.registration.Me
 public class MeasurementUpdateComponent extends Div implements UserInput {
 
 
-  private final MeasurementTemplateComponent templateComponent;
   private final MeasurementUpload measurementUpload;
 
   public MeasurementUpdateComponent(
       MeasurementTemplateComponent templateComponent,
       MeasurementUpload measurementUpload
   ) {
-    this.templateComponent = Objects.requireNonNull(templateComponent);
     this.measurementUpload = Objects.requireNonNull(measurementUpload);
 
     var templateSection = DialogSection.with("Download Metadata", templateComponent);
@@ -35,6 +34,7 @@ public class MeasurementUpdateComponent extends Div implements UserInput {
   }
 
   @Override
+  @NonNull
   public InputValidation validate() {
     return measurementUpload.validate();
   }

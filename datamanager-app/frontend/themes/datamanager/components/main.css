@@ -2,6 +2,11 @@
   grid-area: content-area;
 }
 
+/* Vaadin 25: Hide AppLayout drawer when drawer-opened attribute is not set */
+vaadin-app-layout:not([drawer-opened])::part(drawer) {
+  display: none;
+}
+
 #announcements {
   grid-area: announcements;
 }

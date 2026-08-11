@@ -2,12 +2,12 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
   <parent>
     <artifactId>datamanager</artifactId>
     <groupId>life.qbic.datamanager</groupId>
-    <version>1.13.0</version>
+    <version>1.15.0</version>
   </parent>
-  <modelVersion>4.0.0</modelVersion>
   <artifactId>subscription-provider</artifactId>
   <dependencies>
     <dependency>
@@ -15,21 +15,24 @@
       <artifactId>subscription-api</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.sun.mail</groupId>
-      <artifactId>jakarta.mail</artifactId>
-    </dependency>
-    <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.angus</groupId>
+      <artifactId>jakarta.mail</artifactId>
+    </dependency>
+    <!-- Test Dependencies-->
+    <dependency>
+      <groupId>org.apache.groovy</groupId>
+      <artifactId>groovy</artifactId>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.spockframework</groupId>
       <artifactId>spock-core</artifactId>
       <scope>test</scope>
     </dependency>
-    <dependency>
-      <groupId>life.qbic.datamanager</groupId>
-      <artifactId>logging</artifactId>
-    </dependency>
   </dependencies>
+
 </project>

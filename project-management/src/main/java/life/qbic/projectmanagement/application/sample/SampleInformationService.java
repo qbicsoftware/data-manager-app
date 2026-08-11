@@ -17,8 +17,8 @@ import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import life.qbic.projectmanagement.domain.repository.SampleRepository;
+import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.lang.NonNull;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
@@ -50,6 +50,7 @@ public class SampleInformationService {
    * @return true if experiments has samples, false if not
    * @deprecated Use {@link SampleInformationService#hasSamples(ProjectId, String)} instead.
    */
+  @Deprecated
   public boolean hasSamples(ExperimentId experimentId) {
     Objects.requireNonNull(experimentId, "experiment id must not be null");
     return sampleRepository.countSamplesWithExperimentId(experimentId) != 0;

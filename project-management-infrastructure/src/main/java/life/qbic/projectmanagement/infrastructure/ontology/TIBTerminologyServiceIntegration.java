@@ -2,10 +2,6 @@ package life.qbic.projectmanagement.infrastructure.ontology;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -29,6 +25,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * <b>TIB Terminology Service</b>
@@ -154,14 +154,14 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
   }
 
   /**
-   * Wraps an {@link JsonProcessingException} with a default message for JSON processing-related
+   * Wraps an {@link tools.jackson.core.JacksonException} with a default message for JSON processing-related
    * exceptions.
    *
    * @param e the exception
    * @return a lookup exception
    * @since 1.4.0
    */
-  private static LookupException wrapProcessingException(JsonProcessingException e) {
+  private static LookupException wrapProcessingException(JacksonException e) {
     return new LookupException("Terminology Term Failure: Cannot process response.", e);
   }
 
@@ -361,9 +361,7 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
    * @since 1.4.0
    */
   private List<TibTerm> parseResponse(HttpResponse<String> response) {
-    ObjectMapper mapper = new ObjectMapper().configure(
-        DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).configure(
-        DeserializationFeature.FAIL_ON_IGNORED_PROPERTIES, false);
+    ObjectMapper mapper = JsonMapper.builder().build();
     try {
       JsonNode node = mapper.readTree(response.body()).at("/response/docs");
       List<TibTerm> terms = new ArrayList<>();
@@ -371,7 +369,7 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
         terms.add(mapper.treeToValue(currentNode, TibTerm.class));
       }
       return terms;
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       throw wrapProcessingException(e);
     }
   }

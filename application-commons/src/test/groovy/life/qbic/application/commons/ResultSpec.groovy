@@ -9,8 +9,8 @@ class ResultSpec extends Specification {
         var result = Result.fromValue(5)
         Result<Integer, String> typedResult = Result.fromValue(5)
         then:
-        result instanceof Result<Integer, ?>
-        typedResult instanceof Result<Integer, String>
+        result.getValue() instanceof Integer
+        typedResult.getValue() instanceof Integer
     }
 
     def "construct from error"() {
@@ -18,7 +18,7 @@ class ResultSpec extends Specification {
         var result = Result.fromError("Oh no!")
         Result<Integer, String> typedResult = Result.fromError("Oh no!")
         then:
-        result instanceof Result<?, Integer>
-        typedResult instanceof Result<Integer, String>
+        result.getError() instanceof String
+        typedResult.getError() instanceof String
     }
 }

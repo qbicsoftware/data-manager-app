@@ -2,7 +2,7 @@ package life.qbic.datamanager.views.general.dialog;
 
 import com.vaadin.flow.component.Component;
 import java.util.Objects;
-import org.springframework.lang.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * <b>Dialog Body</b>

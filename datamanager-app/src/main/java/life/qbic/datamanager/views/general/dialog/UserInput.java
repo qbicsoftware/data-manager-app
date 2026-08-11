@@ -1,6 +1,6 @@
 package life.qbic.datamanager.views.general.dialog;
 
-import org.springframework.lang.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * <b>User Input</b>

@@ -43,7 +43,7 @@ import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
-import org.springframework.lang.NonNull;
+import org.jspecify.annotations.NonNull;
 import org.springframework.util.MimeType;
 import reactor.core.publisher.Mono;
 
@@ -245,6 +245,16 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
                 @Override
                 public InputStream getStream() {
                   return digitalObject.content();
+                }
+
+                @Override
+                public String getContentType() {
+                  return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+                }
+
+                @Override
+                public Optional<Long> contentLength() {
+                  return Optional.empty();
                 }
               });
             }));

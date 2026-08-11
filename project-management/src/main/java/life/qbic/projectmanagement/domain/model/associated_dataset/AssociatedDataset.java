@@ -1,13 +1,10 @@
 package life.qbic.projectmanagement.domain.model.associated_dataset;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
+import jakarta.persistence.Converter;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
@@ -20,6 +17,10 @@ import life.qbic.projectmanagement.domain.model.associated_dataset.event.Associa
 import life.qbic.projectmanagement.domain.model.associated_dataset.event.AssociatedDatasetRemovedEvent;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import org.jspecify.annotations.NonNull;
+import org.springframework.beans.factory.annotation.Qualifier;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Aggregate root for an associated dataset connection.
@@ -369,6 +370,7 @@ public class AssociatedDataset {
 
   // ── JPA AttributeConverters ─────────────────────────────────────────────
 
+  @Converter(autoApply = false)
   static class SourceTypeConverter implements AttributeConverter<SourceType, String> {
     @Override
     public String convertToDatabaseColumn(SourceType attribute) {
@@ -381,6 +383,7 @@ public class AssociatedDataset {
     }
   }
 
+  @Converter(autoApply = false)
   static class ConnectionStateConverter implements AttributeConverter<ConnectionState, String> {
     @Override
     public String convertToDatabaseColumn(ConnectionState attribute) {
@@ -410,24 +413,22 @@ public class AssociatedDataset {
    * to/from a MariaDB JSON blob. Jackson's {@code @JsonTypeInfo} on the
    * interface ensures correct polymorphic type resolution.
    */
+  @Converter(autoApply = false)
   static class ResourceMetadataConverter implements AttributeConverter<ResourceMetadata, String> {
 
-    private static final ObjectMapper MAPPER;
+    private final ObjectMapper mapper;
 
-    static {
-      MAPPER = new ObjectMapper();
-      MAPPER.registerModule(new JavaTimeModule());
-      MAPPER.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    public ResourceMetadataConverter(@NonNull @Qualifier("jacksonJsonMapper") ObjectMapper mapper) {
+      this.mapper = mapper;
     }
-
     @Override
     public String convertToDatabaseColumn(ResourceMetadata attribute) {
       if (attribute == null) {
         return null;
       }
       try {
-        return MAPPER.writeValueAsString(attribute);
-      } catch (JsonProcessingException e) {
+        return mapper.writeValueAsString(attribute);
+      } catch (JacksonException e) {
         throw new IllegalStateException("Failed to serialize ResourceMetadata", e);
       }
     }
@@ -438,8 +439,8 @@ public class AssociatedDataset {
         return null;
       }
       try {
-        return MAPPER.readValue(dbData, ResourceMetadata.class);
-      } catch (JsonProcessingException e) {
+        return mapper.readValue(dbData, ResourceMetadata.class);
+      } catch (JacksonException e) {
         // Surface the offending payload (truncated) to aid diagnosis — a
         // schema drift between what was persisted and what the record
         // accepts is the usual cause, and Jackson's default message

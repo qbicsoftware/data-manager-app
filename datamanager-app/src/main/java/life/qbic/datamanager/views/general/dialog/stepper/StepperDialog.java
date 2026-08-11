@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.general.dialog.AppDialog;
-import org.springframework.lang.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * <b>Stepper Dialog</b>
@@ -32,7 +32,7 @@ public class StepperDialog {
     }
     this.numberOfSteps = steps.size();
     currentStep = 1; // we use a 1-based indexing of steps
-    setCurrentStep(steps.get(0), dialog);
+    setCurrentStep(steps.getFirst(), dialog);
   }
 
   public static StepperDialog create(@NonNull AppDialog dialog, @NonNull List<Step> steps) {

@@ -3,9 +3,6 @@ package life.qbic.projectmanagement.infrastructure.external.invenio;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -18,9 +15,14 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Objects;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
+import org.jspecify.annotations.NonNull;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Low-level HTTP client for the Invenio REST API.
@@ -307,8 +309,8 @@ public interface InvenioRdmClient {
    * Single search hit (v12).
    *
    * <p>In the v12 format ({@code application/vnd.inveniordm.v1+json}),
-   * both Zenodo and FDAT return identical shapes for hits. Access, PIDs,
-   * versions, and community membership are all top-level fields.</p>
+   * both Zenodo and FDAT return identical shapes for hits. Access, PIDs, versions, and community
+   * membership are all top-level fields.</p>
    */
   @JsonIgnoreProperties(ignoreUnknown = true)
   record Hit(
@@ -477,21 +479,20 @@ public interface InvenioRdmClient {
         resolvedTitle = null;
         return;
       }
-      if (node.isTextual()) {
-        resolvedTitle = node.asText();
+      if (node.isString()) {
+        resolvedTitle = node.asString();
         return;
       }
       if (node.isObject()) {
-        if (node.has("en") && node.get("en").isTextual()) {
-          resolvedTitle = node.get("en").asText();
+        if (node.has("en") && node.get("en").isString()) {
+          resolvedTitle = node.get("en").asString();
         } else {
-          var it = node.fields();
-          if (it.hasNext()) {
-            JsonNode val = it.next().getValue();
-            resolvedTitle = val.isTextual() ? val.asText() : null;
-          } else {
-            resolvedTitle = null;
-          }
+          resolvedTitle = node.properties()
+              .stream().map(Entry::getValue)
+              .filter(JsonNode::isString)
+              .findFirst()
+              .map(JsonNode::asString)
+              .orElse(null);
         }
       }
     }
@@ -567,12 +568,11 @@ public interface InvenioRdmClient {
     private static final int HTTP_CONNECT_TIMEOUT_S = 10;
     private static final int HTTP_REQUEST_TIMEOUT_S = 30;
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
-        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-
+    private final ObjectMapper objectMapper;
     private final HttpClient httpClient;
 
-    public InvenioRdmHttpClient() {
+    public InvenioRdmHttpClient(@NonNull ObjectMapper objectMapper) {
+      this.objectMapper = Objects.requireNonNull(objectMapper);
       this.httpClient = HttpClient.newBuilder()
           .version(Version.HTTP_2)
           .followRedirects(Redirect.NORMAL)
@@ -783,8 +783,8 @@ public interface InvenioRdmClient {
 
     private <T> T parseJson(String body, Class<T> type) {
       try {
-        return OBJECT_MAPPER.readValue(body, type);
-      } catch (IOException e) {
+        return objectMapper.readValue(body, type);
+      } catch (JacksonException e) {
         throw new InvenioRdmResponseParsingException(
             "Failed to parse InvenioRDM JSON response as " + type.getSimpleName(),
             e, type, null);

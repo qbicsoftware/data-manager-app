@@ -4,9 +4,6 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -31,6 +28,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * <b>Orcid Service Integration</b>
@@ -93,9 +93,7 @@ public class OrcidServiceIntegration implements PersonSelect {
     try {
       var response = client.send(request, HttpResponse.BodyHandlers.ofString());
       ObjectMapper mapper = new ObjectMapper();
-      try (var parser = mapper.createParser(response.body())) {
-        return parser.readValueAs(AuthResponse.class);
-      }
+      return mapper.readValue(response.body(), AuthResponse.class);
     } catch (IOException | InterruptedException e) {
       if (e instanceof InterruptedException) {
         Thread.currentThread().interrupt();
@@ -103,9 +101,7 @@ public class OrcidServiceIntegration implements PersonSelect {
       log.error("Error sending orcid request", e);
       throw new OrcidServiceIntegration.QueryException("Authentication failed", e);
     }
-
   }
-
   private OrcidEntry convert(OrcidRecord orcidRecord) {
     var emailList = Arrays.stream(orcidRecord.email()).toList();
     if (orcidRecord.orcidID() == null || orcidRecord.orcidID().isEmpty()) {
@@ -175,7 +171,7 @@ public class OrcidServiceIntegration implements PersonSelect {
     JsonNode node;
     try {
       node = mapper.readTree(response.body());
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       log.error(e.getMessage(), e);
       return List.of();
     }
@@ -185,7 +181,7 @@ public class OrcidServiceIntegration implements PersonSelect {
     }
     var value = node.get("expanded-result");
     HttpStatus httpStatus = HttpStatus.resolve(response.statusCode());
-    if (value.isEmpty()) {
+    if (value.isNull()) {
       return List.of();
     }
     if (httpStatus != null && httpStatus.is2xxSuccessful()) {
@@ -195,7 +191,8 @@ public class OrcidServiceIntegration implements PersonSelect {
           .filter(Objects::nonNull)
           .toList();
     } else {
-      log.error("Error getting orcid records due to " + response.statusCode());
+      log.error(
+          "Error getting orcid records due to " + response.statusCode() + ": " + response.body());
       return List.of();
     }
   }
