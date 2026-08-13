@@ -111,6 +111,12 @@
               <pattern>org.slf4j</pattern>
               <shadedPattern>life.qbic.openbis.shaded.org.slf4j</shadedPattern>
             </relocation>
+            <!-- Move the bundled AOP Alliance into a private namespace so it cannot collide with the
+                 org.aopalliance provided by Spring AOP. -->
+            <relocation>
+              <pattern>org.aopalliance</pattern>
+              <shadedPattern>life.qbic.openbis.shaded.org.aopalliance</shadedPattern>
+            </relocation>
           </relocations>
           <transformers>
             <transformer
