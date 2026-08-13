@@ -99,6 +99,12 @@
               <pattern>org.aspectj</pattern>
               <shadedPattern>life.qbic.openbis.shaded.org.aspectj</shadedPattern>
             </relocation>
+            <!-- Move the bundled Eclipse classes (e.g. EclipseLink/ASM helpers) into a private
+                 namespace so they cannot collide with Eclipse/JAXB classes on the classpath. -->
+            <relocation>
+              <pattern>org.eclipse</pattern>
+              <shadedPattern>life.qbic.openbis.shaded.org.eclipse</shadedPattern>
+            </relocation>
           </relocations>
           <transformers>
             <transformer
