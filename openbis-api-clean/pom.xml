@@ -117,6 +117,12 @@
               <pattern>org.aopalliance</pattern>
               <shadedPattern>life.qbic.openbis.shaded.org.aopalliance</shadedPattern>
             </relocation>
+            <!-- Move the bundled old Jackson into a private namespace so it cannot shadow the real
+                 com.fasterxml.jackson pulled in via Spring Boot / ro-crate. -->
+            <relocation>
+              <pattern>com.fasterxml</pattern>
+              <shadedPattern>life.qbic.openbis.shaded.com.fasterxml</shadedPattern>
+            </relocation>
           </relocations>
           <transformers>
             <transformer
