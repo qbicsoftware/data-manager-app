@@ -103,6 +103,11 @@
       </dependency>
       <dependency>
         <groupId>life.qbic.datamanager</groupId>
+        <artifactId>openbis-api-clean</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>life.qbic.datamanager</groupId>
         <artifactId>subscription-api</artifactId>
         <version>${project.version}</version>
       </dependency>
