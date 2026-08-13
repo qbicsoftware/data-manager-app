@@ -20,9 +20,8 @@
       <artifactId>logging</artifactId>
     </dependency>
     <dependency>
-      <groupId>life.qbic</groupId>
-      <artifactId>openbis-api</artifactId>
-      <classifier>r1700646105</classifier>
+      <groupId>life.qbic.datamanager</groupId>
+      <artifactId>openbis-api-clean</artifactId>
     </dependency>
     <dependency>
       <groupId>org.springframework</groupId>
