@@ -97,6 +97,17 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-jackson</artifactId>
     </dependency>
+    <!--
+      ro-crate-java brings jackson-databind with runtime scope only; the module's own code calls
+      into ro-crate-java APIs that expose com.fasterxml.jackson.databind.JsonNode, so jackson-databind
+      must be available on the compile classpath. (Previously this was satisfied by the bundled
+      jackson inside the shaded upstream openbis-api jar; after de-colliding openbis that jackson is
+      no longer on the classpath.)
+    -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+    </dependency>
     <!--    needed for ror creation-->
     <dependency>
       <groupId>jakarta.xml.bind</groupId>
