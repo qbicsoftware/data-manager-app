@@ -87,6 +87,12 @@
               <pattern>org.springframework</pattern>
               <shadedPattern>life.qbic.openbis.shaded.org.springframework</shadedPattern>
             </relocation>
+            <!-- Move the bundled Apache commons/http/etc. into a private namespace so it cannot
+                 shadow the real Apache commons libraries on the classpath. -->
+            <relocation>
+              <pattern>org.apache</pattern>
+              <shadedPattern>life.qbic.openbis.shaded.org.apache</shadedPattern>
+            </relocation>
           </relocations>
           <transformers>
             <transformer
