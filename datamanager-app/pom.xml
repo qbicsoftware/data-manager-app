@@ -257,11 +257,6 @@
       <artifactId>jcl-over-slf4j</artifactId>
     </dependency>
     <dependency>
-      <groupId>life.qbic</groupId>
-      <artifactId>openbis-api</artifactId>
-      <classifier>r1700646105</classifier>
-    </dependency>
-    <dependency>
       <groupId>org.apache.tomcat.embed</groupId>
       <artifactId>tomcat-embed-core</artifactId>
     </dependency>
