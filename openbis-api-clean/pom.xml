@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>life.qbic.datamanager</groupId>
+    <artifactId>datamanager</artifactId>
+    <version>1.15.0</version>
+  </parent>
+
+  <artifactId>openbis-api-clean</artifactId>
+  <name>OpenBIS API (de-collided)</name>
+  <description>
+    Repackaging of the upstream life.qbic:openbis-api shaded uber-jar that relocates bundled
+    third-party packages into a private namespace.
+
+    Rationale: the upstream artifact is a shaded uber-jar that bundles old (2017-era) copies of
+    third-party libraries under the same fully-qualified names as the real runtime dependencies.
+    Depending on classpath ordering these collide with the real libraries. Relocating them to
+    life.qbic.openbis.shaded.* rewrites both the bundled class files and the references inside the
+    openbis client classes, so openbis keeps behaving exactly as before while the real libraries
+    remain the single source of those types at compile time and runtime.
+  </description>
+
+  <dependencies>
+    <!--
+      Input of the relocation only. It is marked optional and removed from the reduced
+      published POM, so consumers never see the upstream shaded jar again - they receive just the
+      relocated openbis classes and rely on the real libraries for third-party types.
+    -->
+    <dependency>
+      <groupId>life.qbic</groupId>
+      <artifactId>openbis-api</artifactId>
+      <version>20.10.7.3</version>
+      <classifier>r1700646105</classifier>
+      <optional>true</optional>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <!--
+        Only build the (initially empty) jar during the compile phase so maven-shade-plugin can
+        relocate the openbis dependency into it, then unpack it into target/classes. The default
+        package-phase 'default-jar' execution is disabled, otherwise it would try to re-create the
+        already-shaded main artifact at package time and fail with
+        "You have to use a classifier to attach supplemental artifacts ...".
+      -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>3.5.0</version>
+        <executions>
+          <execution>
+            <id>default-jar-early</id>
+            <phase>compile</phase>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>default-jar</id>
+            <phase>none</phase>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!--
+        Relocate the bundled third-party packages into a private namespace. Runs during the compile
+        phase so 'mvn compile' and other modules in the same reactor see the relocated classes in
+        target/classes (a package-only shade is invisible to same-reactor consumers).
+      -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>3.6.0</version>
+        <configuration>
+          <createDependencyReducedPom>true</createDependencyReducedPom>
+          <relocations>
+            <!--
+              Move the bundled Spring (compiled against javax.servlet, incl. the
+              org.springframework.web.WebApplicationInitializer that collides with the real Spring
+              Framework 7 / Jakarta version) into a private namespace.
+            -->
+            <relocation>
+              <pattern>org.springframework</pattern>
+              <shadedPattern>life.qbic.openbis.shaded.org.springframework</shadedPattern>
+            </relocation>
+          </relocations>
+          <transformers>
+            <transformer
+              implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+          </transformers>
+        </configuration>
+        <executions>
+          <execution>
+            <id>relocate</id>
+            <phase>compile</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- Unpack the relocated jar into target/classes so same-reactor modules find the classes. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>3.1.0</version>
+        <executions>
+          <execution>
+            <id>unpack-relocated</id>
+            <phase>compile</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target>
+                <unzip src="${project.build.directory}/${project.build.finalName}.jar"
+                  dest="${project.build.outputDirectory}"/>
+              </target>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>
