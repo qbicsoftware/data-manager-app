@@ -93,6 +93,12 @@
               <pattern>org.apache</pattern>
               <shadedPattern>life.qbic.openbis.shaded.org.apache</shadedPattern>
             </relocation>
+            <!-- Move the bundled old AspectJ into a private namespace so it cannot collide with the
+                 real aspectjweaver pulled in via Spring AOP. -->
+            <relocation>
+              <pattern>org.aspectj</pattern>
+              <shadedPattern>life.qbic.openbis.shaded.org.aspectj</shadedPattern>
+            </relocation>
           </relocations>
           <transformers>
             <transformer
