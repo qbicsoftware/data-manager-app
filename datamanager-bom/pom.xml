@@ -23,7 +23,7 @@
     <jobrunr.version>8.7.1</jobrunr.version>
     <shedlock.version>7.7.0</shedlock.version>
     <vaadin.version>25.2.5</vaadin.version>
-    <ro-crate-java.version>1.1.1</ro-crate-java.version>
+    <ro-crate-java.version>2.1.1</ro-crate-java.version>
     <snakeyaml.version>2.5</snakeyaml.version>
 
     <!-- overwritten spring boot properties (need to be set in importing pom as well)-->
