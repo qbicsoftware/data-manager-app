@@ -269,13 +269,65 @@ public interface InvenioRdmClient {
              InvenioRdmResponseParsingException;
 
   /**
+   * Creates a sharable access link for a restricted record.
+   *
+   * <p>Creates a secret link that grants view access to anyone with
+   * the link. Used when connecting restricted datasets so project
+   * collaborators can access the dataset without their own PAT.</p>
+   *
+   * <p>Requires the authenticated user to have permission to manage
+   * access links on the record (typically the record owner).</p>
+   *
+   * @param instanceUrl the base URL of the InvenioRDM instance
+   * @param recordId    the record identifier
+   * @param authHeader  the full Authorization header value
+   *                    (e.g. {@code "Bearer <token>"})
+   * @return the created access link with token
+   * @throws InvenioRdmPermanentException on 4xx (403 = insufficient permissions)
+   * @throws InvenioRdmTransientException on 5xx or network errors after retries
+   * @throws InvenioRdmResponseParsingException if the response cannot be parsed
+   * @since 1.12.0
+   */
+  AccessLinkResponse createAccessLink(String instanceUrl, String recordId,
+      String authHeader)
+      throws InvenioRdmPermanentException, InvenioRdmTransientException,
+             InvenioRdmResponseParsingException;
+
+  /**
+   * Response from creating an access link.
+   */
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  record AccessLinkResponse(
+      @JsonProperty("id") String id,
+      @JsonProperty("token") String token
+  ) {}
+
+  /**
    * Parameters for a search request. All nullable fields are optional.
    */
   record SearchParams(
       String query,
       int page,
-      int size
+      int size,
+      /**
+       * Optional access-status filter. {@code null} = no filter (all
+       * records). {@code "restricted"} = only access-restricted records.
+       * {@code "open"} = only publicly accessible records.
+       *
+       * <p>Mapped to the InvenioRDM {@code access.status} search facet
+       * (e.g. {@code q=access.status:restricted AND <userQuery>}).</p>
+       *
+       * @since 1.12.0
+       */
+      String accessFilter
   ) {
+    /**
+     * Backward-compatible constructor — no access filter.
+     */
+    public SearchParams(String query, int page, int size) {
+      this(query, page, size, null);
+    }
+
     public SearchParams {
       if (page < 1) throw new IllegalArgumentException("page must be >= 1 for InvenioRDM API");
       if (size <= 0) throw new IllegalArgumentException("size must be > 0");
@@ -632,6 +684,23 @@ public interface InvenioRdmClient {
       return parseJson(body, AuthenticatedUserResponse.class);
     }
 
+    @Override
+    public AccessLinkResponse createAccessLink(String instanceUrl,
+        String recordId, String authHeader)
+        throws InvenioRdmPermanentException, InvenioRdmTransientException,
+               InvenioRdmResponseParsingException {
+      Objects.requireNonNull(instanceUrl, "instanceUrl must not be null");
+      Objects.requireNonNull(recordId, "recordId must not be null");
+      Objects.requireNonNull(authHeader, "authHeader must not be null");
+
+      String url = normalizeBaseUrl(instanceUrl) + "/api/records/"
+          + URLEncoder.encode(recordId, StandardCharsets.UTF_8)
+          + "/access/links";
+      String body = postWithRetry(url, authHeader,
+          "{\"permission\": \"view\"}", "create access link");
+      return parseJson(body, AccessLinkResponse.class);
+    }
+
     // ── Internals ───────────────────────────────────────────────────
 
     private String buildSearchUrl(String instanceUrl, SearchParams params) {
@@ -639,12 +708,32 @@ public interface InvenioRdmClient {
           .append("/api/records?page=").append(params.page())
           .append("&size=").append(params.size());
       
-      // When there's a search query, rely on the API's default relevance-based sorting.
-      // When listing records without a query (browsing), sort by newest first.
-      if (params.query() != null && !params.query().isBlank()) {
+      // Build the effective query string, combining the user's free-text
+      // query with the optional access-status filter.
+      //
+      // accessFilter + user query  → "access.status:<filter> AND <userQuery>"
+      // accessFilter + no query    → "access.status:<filter>"
+      // no filter + user query     → "<userQuery>"
+      // no filter + no query       → sort=newest (no q param)
+      String userQuery = (params.query() != null && !params.query().isBlank())
+          ? params.query() : null;
+      String filter = params.accessFilter();
+
+      if (filter != null && userQuery != null) {
+        // Combined: filter + user query
+        sb.append("&q=").append(URLEncoder.encode(
+            "access.status:" + filter + " AND " + userQuery,
+            StandardCharsets.UTF_8));
+      } else if (filter != null) {
+        // Filter only, no user query
+        sb.append("&q=").append(URLEncoder.encode(
+            "access.status:" + filter, StandardCharsets.UTF_8));
+      } else if (userQuery != null) {
+        // User query only, no filter — rely on relevance-based sorting
         sb.append("&q=").append(
-            URLEncoder.encode(params.query(), StandardCharsets.UTF_8));
+            URLEncoder.encode(userQuery, StandardCharsets.UTF_8));
       } else {
+        // No query, no filter — browse by newest
         sb.append("&sort=newest");
       }
       
@@ -670,6 +759,88 @@ public interface InvenioRdmClient {
               .header("Accept", "application/vnd.inveniordm.v1+json")
               .timeout(Duration.ofSeconds(HTTP_REQUEST_TIMEOUT_S))
               .GET();
+          if (authHeader != null) {
+            requestBuilder.header("Authorization", authHeader);
+          }
+          HttpResponse<String> response = httpClient.send(
+              requestBuilder.build(), BodyHandlers.ofString());
+
+          int status = response.statusCode();
+
+          // Success
+          if (isSuccess(status)) {
+            return response.body();
+          }
+
+          // Permanent failure: 4xx (except 429) — don't retry
+          if (isClientError(status) && !isTooManyRequests(status)) {
+            throw new InvenioRdmPermanentException(
+                "InvenioRDM request failed (%s) with status %d. URL: %s"
+                    .formatted(operationName, status, url),
+                status, url);
+          }
+
+          // Transient: 5xx or 429 — retry with Retry-After honouring
+          lastStatus = status;
+          if (currentAttempt < MAX_ATTEMPTS) {
+            long waitMs = status == 429
+                ? parseRetryAfter(response, backoffMs)
+                : backoffMs;
+            log.warn("InvenioRDM transient failure (%s), status=%d, retrying in %dms (attempt %d/%d)"
+                .formatted(operationName, status, waitMs, currentAttempt, MAX_ATTEMPTS));
+            sleep(waitMs);
+            backoffMs = Math.min(backoffMs * 2, MAX_BACKOFF_MS);
+            retryCount++;
+            continue;
+          }
+
+          // Exhausted retries on transient
+          throw new InvenioRdmTransientException(
+              "InvenioRDM request failed (%s) with status %d after %d attempts. URL: %s"
+                  .formatted(operationName, status, MAX_ATTEMPTS, url),
+              status, MAX_ATTEMPTS, null, url);
+
+        } catch (IOException e) {
+          lastIo = e;
+          if (currentAttempt < MAX_ATTEMPTS) {
+            log.warn("InvenioRDM I/O error (%s): %s, retrying in %dms (attempt %d/%d)"
+                .formatted(operationName, e.getMessage(), backoffMs, currentAttempt, MAX_ATTEMPTS));
+            sleep(backoffMs);
+            backoffMs = Math.min(backoffMs * 2, MAX_BACKOFF_MS);
+            retryCount++;
+          }
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+          throw new InvenioRdmInterruptedException(
+              "InvenioRDM request interrupted (%s)".formatted(operationName),
+              e, url);
+        }
+      }
+
+      throw new InvenioRdmTransientException(
+          "InvenioRDM request failed (%s) after %d attempts. Last status=%s, last error=%s. URL: %s"
+              .formatted(operationName, MAX_ATTEMPTS, lastStatus,
+                  lastIo == null ? "n/a" : lastIo.getMessage(), url),
+          lastStatus != null ? lastStatus : -1, MAX_ATTEMPTS, lastIo, url);
+    }
+
+    private String postWithRetry(String url, String authHeader, String body,
+        String operationName)
+        throws InvenioRdmPermanentException, InvenioRdmTransientException {
+      int retryCount = 0;
+      long backoffMs = INITIAL_BACKOFF_MS;
+      IOException lastIo = null;
+      Integer lastStatus = null;
+
+      while (retryCount < MAX_ATTEMPTS) {
+        int currentAttempt = retryCount + 1;
+        try {
+          var requestBuilder = HttpRequest.newBuilder()
+              .uri(URI.create(url))
+              .header("Accept", "application/vnd.inveniordm.v1+json")
+              .header("Content-Type", "application/json")
+              .timeout(Duration.ofSeconds(HTTP_REQUEST_TIMEOUT_S))
+              .POST(HttpRequest.BodyPublishers.ofString(body));
           if (authHeader != null) {
             requestBuilder.header("Authorization", authHeader);
           }

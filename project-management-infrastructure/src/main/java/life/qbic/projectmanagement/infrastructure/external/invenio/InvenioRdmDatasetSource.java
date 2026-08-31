@@ -14,11 +14,13 @@ import life.qbic.projectmanagement.application.associated_dataset.CredentialEncr
 import life.qbic.projectmanagement.application.associated_dataset.DatasetResolveException;
 import life.qbic.projectmanagement.application.associated_dataset.DatasetSearchException;
 import life.qbic.projectmanagement.application.associated_dataset.DatasetSource;
+import life.qbic.projectmanagement.application.associated_dataset.AccessLinkCreationException;
 import life.qbic.projectmanagement.application.associated_dataset.InstanceConfig;
 import life.qbic.projectmanagement.application.associated_dataset.SearchHit;
 import life.qbic.projectmanagement.application.associated_dataset.SearchQuery;
 import life.qbic.projectmanagement.application.associated_dataset.SearchResult;
 import life.qbic.projectmanagement.domain.model.associated_dataset.AccessLevel;
+import life.qbic.projectmanagement.domain.model.associated_dataset.CredentialStatus;
 import life.qbic.projectmanagement.domain.model.associated_dataset.InvenioRdmAccessStatus;
 import life.qbic.projectmanagement.domain.model.associated_dataset.InvenioRdmResourceMetadata;
 import life.qbic.projectmanagement.domain.model.associated_dataset.ResourceMetadata;
@@ -69,7 +71,8 @@ public class InvenioRdmDatasetSource implements DatasetSource {
     // Endpoint uses 1-based page indexing
     int invenioPage = query.page() + 1;
     var params = new InvenioRdmClient.SearchParams(
-        query.effectiveQuery(), invenioPage, query.pageSize());
+        query.effectiveQuery(), invenioPage, query.pageSize(),
+        query.accessFilter());
 
     char[] token = resolveTokenForUser(actingUserId, config.id());
     try {
@@ -115,6 +118,57 @@ public class InvenioRdmDatasetSource implements DatasetSource {
       log.error("Failed to resolve record %s on %s"
           .formatted(externalHandleValue, config.displayName()));
       throw new DatasetResolveException("Failed to resolve metadata record", e);
+    } finally {
+      if (token != null) {
+        Arrays.fill(token, '\0');
+      }
+    }
+  }
+
+  @Override
+  public boolean hasValidCredential(String userId, InstanceConfig config) {
+    if (userId == null || config == null) {
+      return false;
+    }
+    return credentialRepository
+        .findByUserIdAndSourceTypeAndInstanceId(
+            userId, SourceType.INVENIO_RDM, config.id())
+        .map(cred -> cred.getStatus() != CredentialStatus.INVALIDATED)
+        .orElse(false);
+  }
+
+  @Override
+  public String createAccessLink(String externalHandleValue,
+      InstanceConfig config, String actingUserId)
+      throws AccessLinkCreationException {
+    if (externalHandleValue == null || config == null || actingUserId == null) {
+      throw new IllegalArgumentException("Arguments must not be null");
+    }
+
+    char[] token = resolveTokenForUser(actingUserId, config.id());
+    if (token == null) {
+      throw new AccessLinkCreationException(
+          "No valid credential available for user " + actingUserId
+          + " on instance " + config.id());
+    }
+
+    try {
+      String authHeader = "Bearer " + new String(token);
+      var accessLink = client.createAccessLink(config.baseUrl(),
+          externalHandleValue, authHeader);
+      return config.baseUrl() + "/records/" + externalHandleValue
+          + "?token=" + accessLink.token();
+    } catch (InvenioRdmClient.InvenioRdmPermanentException e) {
+      if (e.getStatusCode() == 403) {
+        throw new AccessLinkCreationException(
+            "You do not have permission to create a shareable link for this dataset. "
+            + "Only the dataset owner can create access links.", e);
+      }
+      throw new AccessLinkCreationException(
+          "Failed to create access link: " + e.getMessage(), e);
+    } catch (InvenioRdmClient.InvenioRdmException e) {
+      throw new AccessLinkCreationException(
+          "Failed to create access link: " + e.getMessage(), e);
     } finally {
       if (token != null) {
         Arrays.fill(token, '\0');

@@ -73,4 +73,50 @@ public interface DatasetSource {
       String externalHandleValue, InstanceConfig config,
       String actingUserId) throws DatasetResolveException;
 
+  /**
+   * Returns whether the given user has a valid (non-invalidated)
+   * credential configured for the specified instance.
+   *
+   * <p>Used by the application service to enforce a hard gate before
+   * connecting access-restricted datasets — access link creation
+   * requires a valid PAT on the source system.</p>
+   *
+   * <p>Returns {@code true} only when a credential exists AND its
+   * status is not {@code INVALIDATED}. No decryption or remote
+   * validation is performed — this is a local presence check.</p>
+   *
+   * @param userId the user to check
+   * @param config the target instance
+   * @return {@code true} if a valid credential exists; {@code false}
+   *         otherwise (no credential or invalidated)
+   * @since 1.12.0
+   */
+  boolean hasValidCredential(String userId, InstanceConfig config);
+
+  /**
+   * Creates a sharable access link for a restricted record on the
+   * source system, on behalf of the given user.
+   *
+   * <p>Used when connecting restricted datasets: the access link
+   * allows project collaborators to view the dataset without
+   * needing their own PAT. The link is stored in the dataset's
+   * metadata snapshot.</p>
+   *
+   * <p>Requires the user to have permission to manage access links
+   * on the record (typically the record owner). If the user lacks
+   * permission, the implementation throws
+   * {@link AccessLinkCreationException}.</p>
+   *
+   * @param externalHandleValue the source-specific identifier for the
+   *                            record (e.g. Zenodo record ID, DOI)
+   * @param config              the target instance
+   * @param actingUserId        the ID of the user performing the action
+   * @return the full access link URL (full record URL + ?token=<access-token>)
+   * @throws AccessLinkCreationException if the link cannot be created
+   *         (permission denied, network error, etc.)
+   * @since 1.12.0
+   */
+  String createAccessLink(String externalHandleValue, InstanceConfig config,
+      String actingUserId) throws AccessLinkCreationException;
+
 }

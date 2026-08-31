@@ -126,11 +126,48 @@ public class AssociatedDatasetService {
       int page,
       int pageSize,
       String searchingUserId) {
+    return searchDatasets(sourceType, instanceId, query, null,
+        page, pageSize, searchingUserId);
+  }
+
+  /**
+   * Searches an external data source for datasets matching the query,
+   * with an optional access-status filter, returning paginated results.
+   *
+   * <p>The {@code accessFilter} restricts results to records with a
+   * specific access status on the source system. For InvenioRDM,
+   * {@code "restricted"} returns only access-restricted records;
+   * {@code "open"} returns only publicly accessible records;
+   * {@code null} returns all records (no filter).</p>
+   *
+   * @param sourceType      the source system type
+   * @param instanceId      the configured instance identifier
+   * @param query           the free-text search term; blank for "list all"
+   * @param accessFilter    optional access-status filter (e.g. "restricted");
+   *                        {@code null} for no filter
+   * @param page            zero-indexed page number
+   * @param pageSize        results per page
+   * @param searchingUserId the ID of the user performing the search
+   * @return paginated search results
+   * @throws DatasetSourceUnavailableException if the external data repository
+   *         could not be reached
+   * @throws DatasetSourceNotFoundException   if the {@code instanceId} does
+   *         not match any configured repository
+   * @since 1.12.0
+   */
+  public SearchResult searchDatasets(
+      SourceType sourceType,
+      String instanceId,
+      String query,
+      String accessFilter,
+      int page,
+      int pageSize,
+      String searchingUserId) {
     Objects.requireNonNull(sourceType, "sourceType must not be null");
     Objects.requireNonNull(searchingUserId, "searchingUserId must not be null");
     // resolveInstanceConfig propagates DatasetSourceNotFoundException directly
     var config = resolveInstanceConfig(instanceId);
-    var searchQuery = new SearchQuery(query, page, pageSize);
+    var searchQuery = new SearchQuery(query, page, pageSize, accessFilter);
     try {
       return datasetSource.search(searchQuery, config, searchingUserId);
     } catch (AssociatedDatasetServiceException
@@ -214,25 +251,57 @@ public class AssociatedDatasetService {
       return Result.fromError(ConnectDatasetError.RECORD_NOT_FOUND);
     }
 
+    // 1a. Credential gate — access-restricted datasets require a valid
+    //     credential on the source instance. Without a valid PAT, the
+    //     access link creation needed for project collaborators will
+    //     fail. Hard-block the connect rather than silently succeeding
+    //     with an unusable connection.
+    ResourceMetadata finalMetadata = metadata.get();
+    if (finalMetadata instanceof InvenioRdmResourceMetadata inv
+        && inv.deriveAccessLevel() == AccessLevel.RESTRICTED) {
+      if (!datasetSource.hasValidCredential(connectedByUserId, config)) {
+        log.warn("Cannot connect restricted dataset %s — no valid credential "
+            + "for user %s on instance %s"
+            .formatted(externalHandleValue, connectedByUserId, instanceId));
+        return Result.fromError(ConnectDatasetError.CREDENTIAL_REQUIRED);
+      }
+
+      // Create sharable access link for project collaborators
+      try {
+        String accessLinkUrl = datasetSource.createAccessLink(
+            externalHandleValue, config, connectedByUserId);
+        // Update metadata with the access link
+        finalMetadata = new InvenioRdmResourceMetadata(
+            inv.title(), inv.pid(), inv.version(), accessLinkUrl,
+            inv.resourceProvider(), inv.creators(), inv.resourceType(),
+            inv.community(), inv.publicationDate(), inv.description(),
+            inv.recordAccess(), inv.fileAccess());
+      } catch (AccessLinkCreationException e) {
+        log.error("Failed to create access link for restricted dataset %s on instance %s"
+            .formatted(externalHandleValue, instanceId), e);
+        return Result.fromError(ConnectDatasetError.ACCESS_LINK_CREATION_FAILED);
+      }
+    }
+
     // 1b. Duplicate check — a dataset with the same PID is already
     //     connected to this project. PID is the dedup key because it is
     //     globally unique and persistent by design (DOI/PID).
     boolean alreadyConnected;
     try {
       alreadyConnected = associatedDatasetRepository.isActiveConnectionPresent(
-          projectId, metadata.get().pid());
+          projectId, finalMetadata.pid());
     } catch (Exception e) {
       // Persistence/query failures (schema mismatch, table unavailable, etc.)
       // must not silently swallow the connect attempt — log the cause so
       // it surfaces in the application log rather than disappearing into
       // the reactive pipeline's onErrorResume catch-all.
       log.error("Duplicate-check query failed for project %s / PID %s"
-          .formatted(projectId, metadata.get().pid()), e);
+          .formatted(projectId, finalMetadata.pid()), e);
       return Result.fromError(ConnectDatasetError.CONNECT_FAILED);
     }
     if (alreadyConnected) {
       log.info("Dataset with PID %s is already connected to project %s — skipping"
-          .formatted(metadata.get().pid(), projectId));
+          .formatted(finalMetadata.pid(), projectId));
       return Result.fromError(ConnectDatasetError.ALREADY_CONNECTED);
     }
 
@@ -252,7 +321,7 @@ public class AssociatedDatasetService {
           projectId,
           sourceType,
           new ExternalHandle(externalHandleValue),
-          metadata.get(),
+          finalMetadata,
           connectedByUserId,
           experimentId);
     } catch (Exception e) {

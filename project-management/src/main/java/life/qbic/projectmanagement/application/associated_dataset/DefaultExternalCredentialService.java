@@ -213,4 +213,17 @@ public class DefaultExternalCredentialService implements ExternalCredentialServi
         .toList();
   }
 
+  @Override
+  public CredentialStatus credentialStatusForInstance(String userId,
+      String instanceId) {
+    requireNonNull(userId, "userId must not be null");
+    requireNonNull(instanceId, "instanceId must not be null");
+    return instanceRegistry.find(instanceId)
+        .flatMap(inst -> credentialRepository
+            .findByUserIdAndSourceTypeAndInstanceId(
+                userId, inst.sourceType(), instanceId)
+            .map(UserExternalCredential::getStatus))
+        .orElse(CredentialStatus.NOT_CONFIGURED);
+  }
+
 }

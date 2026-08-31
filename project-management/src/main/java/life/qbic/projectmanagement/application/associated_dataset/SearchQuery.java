@@ -20,8 +20,28 @@ public record SearchQuery(
     int page,
 
     /** Number of results per page. */
-    int pageSize
+    int pageSize,
+
+    /**
+     * Optional access-status filter for the external source.
+     * {@code null} means no filter (return all records).
+     * {@code "restricted"} returns only access-restricted records.
+     * {@code "open"} returns only publicly accessible records.
+     *
+     * <p>For InvenioRDM, this maps to the {@code access.status}
+     * search facet (e.g. {@code q=access.status:restricted}).</p>
+     *
+     * @since 1.12.0
+     */
+    String accessFilter
 ) {
+
+  /**
+   * Backward-compatible constructor — no access filter (returns all records).
+   */
+  public SearchQuery(String query, int page, int pageSize) {
+    this(query, page, pageSize, null);
+  }
 
   public SearchQuery {
     if (page < 0) {
@@ -41,9 +61,23 @@ public record SearchQuery(
   }
 
   /**
-   * Convenience factory for a "list all" query (blank search term).
+   * Convenience factory for a "list all" query (blank search term,
+   * no access filter).
    */
   public static SearchQuery listAll(int page, int pageSize) {
-    return new SearchQuery("", page, pageSize);
+    return new SearchQuery("", page, pageSize, null);
+  }
+
+  /**
+   * Convenience factory for a "list all" query filtered by access
+   * status.
+   *
+   * @param page         zero-indexed page number
+   * @param pageSize     results per page
+   * @param accessFilter the access-status filter (e.g. "restricted")
+   */
+  public static SearchQuery listAll(int page, int pageSize,
+      String accessFilter) {
+    return new SearchQuery("", page, pageSize, accessFilter);
   }
 }

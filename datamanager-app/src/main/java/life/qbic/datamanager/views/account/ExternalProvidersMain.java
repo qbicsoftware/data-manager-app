@@ -177,8 +177,16 @@ public class ExternalProvidersMain extends Main
     var card = new Div();
     card.addClassNames("instance-card", resolveStateClass(status));
 
-    card.add(buildProviderIdentity(status));
-    card.add(buildActions(status));
+    // Header row: provider identity (left) + action button (right).
+    // The CSS .instance-card__header uses flex + justify-content: space-between
+    // to position them; without this wrapper the card's column flex-direction
+    // stacks them vertically (pre-existing layout bug).
+    var header = new Div();
+    header.addClassNames("instance-card__header");
+    header.add(buildProviderIdentity(status));
+    header.add(buildActions(status));
+    card.add(header);
+
     card.add(buildCardBody(status));
 
     return card;
