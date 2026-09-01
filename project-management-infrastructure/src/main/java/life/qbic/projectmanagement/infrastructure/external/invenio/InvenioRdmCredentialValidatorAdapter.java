@@ -44,14 +44,15 @@ public class InvenioRdmCredentialValidatorAdapter implements CredentialValidator
     Objects.requireNonNull(config, "config must not be null");
     Objects.requireNonNull(token, "token must not be null");
 
-    // Copy token to build the auth header string in local scope.
-    // Only the copy is zeroed in the finally block — the caller owns
-    // the original token array and is responsible for zeroing it
-    // after all operations (validation + encryption) are complete.
+    // Copy token to hand the client, which composes the bearer header
+    // internally (ADR-0002 D1 — the token is never converted to a
+    // standalone immutable String in this adapter). Only the copy is
+    // zeroed in the finally block — the caller owns the original token
+    // array and is responsible for zeroing it after all operations
+    // (validation + encryption) are complete.
     char[] tokenCopy = Arrays.copyOf(token, token.length);
     try {
-      String authHeader = "Bearer " + new String(tokenCopy);
-      client.getAuthenticatedUser(config.baseUrl(), authHeader);
+      client.getAuthenticatedUser(config.baseUrl(), tokenCopy);
       // 200 response → token is valid
       return true;
     } catch (InvenioRdmClient.InvenioRdmPermanentException e) {

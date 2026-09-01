@@ -233,9 +233,9 @@ class InvenioRdmCredentialValidatorAdapterSpec extends Specification {
         e.message.contains("status 404")
     }
 
-    // ── Auth header construction ─────────────────────────────────────
+    // ── Bearer token pass-through ──────────────────────────────────
 
-    def "passes Bearer auth header to client"() {
+    def "passes the bearer token array to the client"() {
         given:
         def client = Mock(InvenioRdmClient)
         def adapter = new InvenioRdmCredentialValidatorAdapter(client)
@@ -245,7 +245,9 @@ class InvenioRdmCredentialValidatorAdapterSpec extends Specification {
         adapter.validate(CONFIG, token)
 
         then:
-        1 * client.getAuthenticatedUser(CONFIG.baseUrl(), "Bearer my-token-123") >>
+        1 * client.getAuthenticatedUser(
+            CONFIG.baseUrl(),
+            { char[] t -> new String(t) == 'my-token-123' }) >>
             new InvenioRdmClient.AuthenticatedUserResponse("1", "user", "u@e.org")
     }
 

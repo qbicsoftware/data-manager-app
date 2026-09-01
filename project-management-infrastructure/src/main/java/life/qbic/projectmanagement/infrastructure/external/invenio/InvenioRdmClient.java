@@ -17,6 +17,7 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.logging.api.Logger;
@@ -193,19 +194,26 @@ public interface InvenioRdmClient {
              InvenioRdmResponseParsingException;
 
   /**
-   * Search for records with an optional Authorization header.
+   * Search for records with an optional bearer token.
+   *
+   * <p>Per ADR-0002 D1, the token is carried as a {@code char[]} so that
+   * callers can zero it after use; it must never be converted to an
+   * immutable {@code String}. The client composes the
+   * {@code Authorization: Bearer <token>} header internally, immediately
+   * before sending the request.</p>
    *
    * @param instanceUrl the base URL of the InvenioRDM instance
    * @param params      search parameters (query, page, size)
-   * @param authHeader  the full Authorization header value (e.g.
-   *                    {@code "Bearer <token>"}), or {@code null} for
-   *                    unauthenticated (public) access
+   * @param token       the plaintext bearer token as a {@code char[]},
+   *                    or {@code null} for unauthenticated (public)
+   *                    access. The client does <em>not</em> zero this
+   *                    array.
    * @return search results containing matching records
    * @throws InvenioRdmPermanentException on 4xx
    * @throws InvenioRdmTransientException on transient errors after retries
    */
   SearchResultResponse search(String instanceUrl, SearchParams params,
-      String authHeader)
+      char[] token)
       throws InvenioRdmPermanentException, InvenioRdmTransientException;
 
   /**
@@ -225,19 +233,26 @@ public interface InvenioRdmClient {
              InvenioRdmResponseParsingException;
 
   /**
-   * Retrieve a single record by its ID, with an optional Authorization header.
+   * Retrieve a single record by its ID, with an optional bearer token.
+   *
+   * <p>Per ADR-0002 D1, the token is carried as a {@code char[]} so that
+   * callers can zero it after use; it must never be converted to an
+   * immutable {@code String}. The client composes the
+   * {@code Authorization: Bearer <token>} header internally, immediately
+   * before sending the request.</p>
    *
    * @param instanceUrl the base URL of the InvenioRDM instance
    * @param recordId    the record identifier
-   * @param authHeader  the full Authorization header value (e.g.
-   *                    {@code "Bearer <token>"}), or {@code null} for
-   *                    unauthenticated (public) access
+   * @param token       the plaintext bearer token as a {@code char[]},
+   *                    or {@code null} for unauthenticated (public)
+   *                    access. The client does <em>not</em> zero this
+   *                    array.
    * @return the record details
    * @throws InvenioRdmPermanentException on 4xx
    * @throws InvenioRdmTransientException on transient errors after retries
    */
   RecordResponse getRecord(String instanceUrl, String recordId,
-      String authHeader)
+      char[] token)
       throws InvenioRdmPermanentException, InvenioRdmTransientException;
 
   /**
@@ -257,15 +272,20 @@ public interface InvenioRdmClient {
    * display values for informational/log purposes only — validation
    * succeeds based purely on the 200 status.</p>
    *
+   * <p>Per ADR-0002 D1, the token is carried as a {@code char[]} so that
+   * callers can zero it after use; it must never be converted to an
+   * immutable {@code String}. The client composes the
+   * {@code Authorization: Bearer <token>} header internally, immediately
+   * before sending the request.</p>
+   *
    * @param instanceUrl the base URL of the InvenioRDM instance
-   * @param authHeader  the full Authorization header value
-   *                    (e.g. {@code "Bearer <token>"})
+   * @param token       the plaintext bearer token as a {@code char[]}
    * @return authenticated user response
    * @throws InvenioRdmPermanentException on 4xx (401 = invalid token)
    * @throws InvenioRdmTransientException on 5xx or network errors after retries
    * @throws InvenioRdmResponseParsingException if the response cannot be parsed
    */
-  AuthenticatedUserResponse getAuthenticatedUser(String instanceUrl, String authHeader)
+  AuthenticatedUserResponse getAuthenticatedUser(String instanceUrl, char[] token)
       throws InvenioRdmPermanentException, InvenioRdmTransientException,
              InvenioRdmResponseParsingException;
 
@@ -279,10 +299,15 @@ public interface InvenioRdmClient {
    * <p>Requires the authenticated user to have permission to manage
    * access links on the record (typically the record owner).</p>
    *
+   * <p>Per ADR-0002 D1, the token is carried as a {@code char[]} so that
+   * callers can zero it after use; it must never be converted to an
+   * immutable {@code String}. The client composes the
+   * {@code Authorization: Bearer <token>} header internally, immediately
+   * before sending the request.</p>
+   *
    * @param instanceUrl the base URL of the InvenioRDM instance
    * @param recordId    the record identifier
-   * @param authHeader  the full Authorization header value
-   *                    (e.g. {@code "Bearer <token>"})
+   * @param token       the plaintext bearer token as a {@code char[]}
    * @return the created access link with token
    * @throws InvenioRdmPermanentException on 4xx (403 = insufficient permissions)
    * @throws InvenioRdmTransientException on 5xx or network errors after retries
@@ -290,7 +315,7 @@ public interface InvenioRdmClient {
    * @since 1.12.0
    */
   AccessLinkResponse createAccessLink(String instanceUrl, String recordId,
-      String authHeader)
+      char[] token)
       throws InvenioRdmPermanentException, InvenioRdmTransientException,
              InvenioRdmResponseParsingException;
 
@@ -309,8 +334,7 @@ public interface InvenioRdmClient {
    * @param instanceUrl the base URL of the InvenioRDM instance
    * @param recordId    the record identifier the link belongs to
    * @param linkId      the access link id to delete
-   * @param authHeader  the full Authorization header value
-   *                    (e.g. {@code "Bearer <token>"})
+   * @param token       the plaintext bearer token as a {@code char[]}
    * @return {@code true} if a link was actually deleted; {@code false} if
    *         the link was already absent (404) and nothing changed
    * @throws InvenioRdmPermanentException on other 4xx (403 = insufficient permissions)
@@ -318,7 +342,7 @@ public interface InvenioRdmClient {
    * @since 1.12.0
    */
   boolean revokeAccessLink(String instanceUrl, String recordId, String linkId,
-      String authHeader)
+      char[] token)
       throws InvenioRdmPermanentException, InvenioRdmTransientException;
 
   /**
@@ -680,13 +704,13 @@ public interface InvenioRdmClient {
 
     @Override
     public SearchResultResponse search(String instanceUrl, SearchParams params,
-        String authHeader)
+        char[] token)
         throws InvenioRdmPermanentException, InvenioRdmTransientException {
       Objects.requireNonNull(instanceUrl, "instanceUrl must not be null");
       Objects.requireNonNull(params, "params must not be null");
 
       String url = buildSearchUrl(instanceUrl, params);
-      String body = getWithRetry(url, authHeader, "search records");
+      String body = getWithRetry(url, bearerHeader(token), "search records");
       return parseJson(body, SearchResultResponse.class);
     }
 
@@ -699,62 +723,62 @@ public interface InvenioRdmClient {
 
     @Override
     public RecordResponse getRecord(String instanceUrl, String recordId,
-        String authHeader)
+        char[] token)
         throws InvenioRdmPermanentException, InvenioRdmTransientException {
       Objects.requireNonNull(instanceUrl, "instanceUrl must not be null");
       Objects.requireNonNull(recordId, "recordId must not be null");
 
       String url = normalizeBaseUrl(instanceUrl) + "/api/records/"
           + URLEncoder.encode(recordId, StandardCharsets.UTF_8);
-      String body = getWithRetry(url, authHeader, "get record " + recordId);
+      String body = getWithRetry(url, bearerHeader(token), "get record " + recordId);
       return parseJson(body, RecordResponse.class);
     }
 
     @Override
     public AuthenticatedUserResponse getAuthenticatedUser(
-        String instanceUrl, String authHeader)
+        String instanceUrl, char[] token)
         throws InvenioRdmPermanentException, InvenioRdmTransientException,
                InvenioRdmResponseParsingException {
       Objects.requireNonNull(instanceUrl, "instanceUrl must not be null");
-      Objects.requireNonNull(authHeader, "authHeader must not be null");
+      Objects.requireNonNull(token, "token must not be null");
 
       String url = normalizeBaseUrl(instanceUrl) + "/api/users";
-      String body = getWithRetry(url, authHeader, "get authenticated user");
+      String body = getWithRetry(url, bearerHeader(token), "get authenticated user");
       return parseJson(body, AuthenticatedUserResponse.class);
     }
 
     @Override
     public AccessLinkResponse createAccessLink(String instanceUrl,
-        String recordId, String authHeader)
+        String recordId, char[] token)
         throws InvenioRdmPermanentException, InvenioRdmTransientException,
                InvenioRdmResponseParsingException {
       Objects.requireNonNull(instanceUrl, "instanceUrl must not be null");
       Objects.requireNonNull(recordId, "recordId must not be null");
-      Objects.requireNonNull(authHeader, "authHeader must not be null");
+      Objects.requireNonNull(token, "token must not be null");
 
       String url = normalizeBaseUrl(instanceUrl) + "/api/records/"
           + URLEncoder.encode(recordId, StandardCharsets.UTF_8)
           + "/access/links";
-      String body = postWithRetry(url, authHeader,
+      String body = postWithRetry(url, bearerHeader(token),
           "{\"permission\": \"view\"}", "create access link");
       return parseJson(body, AccessLinkResponse.class);
     }
 
     @Override
     public boolean revokeAccessLink(String instanceUrl, String recordId,
-        String linkId, String authHeader)
+        String linkId, char[] token)
         throws InvenioRdmPermanentException, InvenioRdmTransientException {
       Objects.requireNonNull(instanceUrl, "instanceUrl must not be null");
       Objects.requireNonNull(recordId, "recordId must not be null");
       Objects.requireNonNull(linkId, "linkId must not be null");
-      Objects.requireNonNull(authHeader, "authHeader must not be null");
+      Objects.requireNonNull(token, "token must not be null");
 
       String url = normalizeBaseUrl(instanceUrl) + "/api/records/"
           + URLEncoder.encode(recordId, StandardCharsets.UTF_8)
           + "/access/links/"
           + URLEncoder.encode(linkId, StandardCharsets.UTF_8);
       // 404 (link already absent) is treated as success by deleteWithRetry.
-      return deleteWithRetry(url, authHeader, "revoke access link");
+      return deleteWithRetry(url, bearerHeader(token), "revoke access link");
     }
 
     // ── Internals ───────────────────────────────────────────────────
@@ -798,6 +822,39 @@ public interface InvenioRdmClient {
 
     private String normalizeBaseUrl(String url) {
       return url.endsWith("/") ? url.substring(0, url.length() - 1) : url;
+    }
+
+    /**
+     * Composes the {@code Authorization: Bearer <token>} header value from
+     * a {@code char[]} bearer token without materialising the token as an
+     * immutable, interned {@code String} of its own.
+     *
+     * <p>The literal prefix and the token are copied into a single
+     * contiguous {@code char[]} and converted to exactly one short-lived
+     * (non-interned) {@code String}; the temporary buffer is zeroed before
+     * returning. The caller's token {@code char[]} is <em>not</em>
+     * modified.</p>
+     *
+     * <p>This honours ADR-0002 D1 (decryption boundary): the plaintext
+     * token is never kept as a standalone, unresettable {@code String}
+     * anywhere in the call path.</p>
+     *
+     * @param token the plaintext bearer token, or {@code null} for
+     *              unauthenticated (public) access
+     * @return the full header value (e.g. {@code "Bearer <token>"}), or
+     *         {@code null} when {@code token} is {@code null}
+     */
+    private static String bearerHeader(char[] token) {
+      if (token == null) {
+        return null;
+      }
+      char[] prefix = "Bearer ".toCharArray();
+      char[] combined = new char[prefix.length + token.length];
+      System.arraycopy(prefix, 0, combined, 0, prefix.length);
+      System.arraycopy(token, 0, combined, prefix.length, token.length);
+      String header = new String(combined);
+      Arrays.fill(combined, '\0');
+      return header;
     }
 
     private String getWithRetry(String url, String authHeader, String operationName)

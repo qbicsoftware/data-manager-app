@@ -78,9 +78,7 @@ public class InvenioRdmDatasetSource implements DatasetSource {
 
     char[] token = resolveTokenForUser(actingUserId, config.id());
     try {
-      String authHeader = token != null
-          ? "Bearer " + new String(token) : null;
-      var response = client.search(config.baseUrl(), params, authHeader);
+      var response = client.search(config.baseUrl(), params, token);
       List<SearchHit> hits = mapSearchHits(response, config.displayName());
       return new SearchResult(hits, response.hits().total(),
           query.page(), query.pageSize());
@@ -105,10 +103,8 @@ public class InvenioRdmDatasetSource implements DatasetSource {
 
     char[] token = resolveTokenForUser(actingUserId, config.id());
     try {
-      String authHeader = token != null
-          ? "Bearer " + new String(token) : null;
       var invenioRecord = client.getRecord(config.baseUrl(),
-          externalHandleValue, authHeader);
+          externalHandleValue, token);
       InvenioRdmResourceMetadata metadata = mapRecordToResourceMetadata(
           invenioRecord, config.displayName());
       return Optional.of(metadata);
@@ -155,9 +151,8 @@ public class InvenioRdmDatasetSource implements DatasetSource {
     }
 
     try {
-      String authHeader = "Bearer " + new String(token);
       var accessLink = client.createAccessLink(config.baseUrl(),
-          externalHandleValue, authHeader);
+          externalHandleValue, token);
       String url = config.baseUrl() + "/records/" + externalHandleValue
           + "?token=" + accessLink.token();
       return new CreatedAccessLink(url, accessLink.id());
@@ -196,9 +191,8 @@ public class InvenioRdmDatasetSource implements DatasetSource {
     }
 
     try {
-      String authHeader = "Bearer " + new String(token);
       client.revokeAccessLink(config.baseUrl(), externalHandleValue,
-          accessLinkId, authHeader);
+          accessLinkId, token);
     } catch (InvenioRdmClient.InvenioRdmPermanentException e) {
       throw new AccessLinkRevocationException(
           "Failed to revoke access link " + accessLinkId + ": "

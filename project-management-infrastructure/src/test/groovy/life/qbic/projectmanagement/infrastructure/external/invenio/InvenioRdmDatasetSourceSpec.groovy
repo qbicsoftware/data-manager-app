@@ -84,7 +84,7 @@ class InvenioRdmDatasetSourceSpec extends Specification {
     given: "a source with a mock client that captures the SearchParams"
     def capturedParams = new Object() { InvenioRdmClient.SearchParams value }
     def mockClient = Mock(InvenioRdmClient) {
-      search(_, _, _) >> { String url, InvenioRdmClient.SearchParams params, String auth ->
+      search(_, _, _) >> { String url, InvenioRdmClient.SearchParams params, char[] auth ->
         capturedParams.value = params
         // Return a minimal valid response
         return new InvenioRdmClient.SearchResultResponse(
@@ -114,7 +114,7 @@ class InvenioRdmDatasetSourceSpec extends Specification {
     given:
     def capturedParams = new Object() { InvenioRdmClient.SearchParams value }
     def mockClient = Mock(InvenioRdmClient) {
-      search(_, _, _) >> { String url, InvenioRdmClient.SearchParams params, String auth ->
+      search(_, _, _) >> { String url, InvenioRdmClient.SearchParams params, char[] auth ->
         capturedParams.value = params
         return new InvenioRdmClient.SearchResultResponse(
             new InvenioRdmClient.SearchResultResponse.Hits(0, []))
@@ -199,7 +199,7 @@ class InvenioRdmDatasetSourceSpec extends Specification {
 
     then:
     1 * mockClient.revokeAccessLink("https://zenodo.org", "abc-123",
-        "link-id", "Bearer pat-token")
+        "link-id", { char[] t -> new String(t) == 'pat-token' })
   }
 
   def "revokeAccessLink throws when no credential is configured"() {
