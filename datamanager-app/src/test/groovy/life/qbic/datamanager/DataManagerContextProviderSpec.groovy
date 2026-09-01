@@ -35,6 +35,45 @@ class DataManagerContextProviderSpec extends Specification {
         provider.urlToProject("QABCD001") == "https://data-manager.example.com:8443/projects/QABCD001/info"
     }
 
+    def "preserves the context path for an absolute project endpoint"() {
+        given:
+        def provider = new DataManagerContextProvider(PROTOCOL, HOST, -1, contextPath, PROJECT_ENDPOINT, SAMPLES_ENDPOINT)
+
+        expect:
+        provider.urlToProject("QABCD001") == expected
+
+        where:
+        contextPath | expected
+        ""          | "https://data-manager.example.com/projects/QABCD001/info"
+        "foobar"    | "https://data-manager.example.com/foobar/projects/QABCD001/info"
+    }
+
+    def "preserves the context path for a relative project endpoint"() {
+        given:
+        def provider = new DataManagerContextProvider(PROTOCOL, HOST, -1, contextPath, "projects/%s/info", SAMPLES_ENDPOINT)
+
+        expect:
+        provider.urlToProject("QABCD001") == expected
+
+        where:
+        contextPath | expected
+        ""          | "https://data-manager.example.com/projects/QABCD001/info"
+        "foobar"    | "https://data-manager.example.com/foobar/projects/QABCD001/info"
+    }
+
+    def "preserves the context path for the sample page endpoint"() {
+        given:
+        def provider = new DataManagerContextProvider(PROTOCOL, HOST, -1, contextPath, PROJECT_ENDPOINT, SAMPLES_ENDPOINT)
+
+        expect:
+        provider.urlToSamplePage("QABCD001", "E12345") == expected
+
+        where:
+        contextPath | expected
+        ""          | "https://data-manager.example.com/projects/QABCD001/experiments/E12345/samples"
+        "foobar"    | "https://data-manager.example.com/foobar/projects/QABCD001/experiments/E12345/samples"
+    }
+
     private static DataManagerContextProvider providerWithPort(int port) {
         return new DataManagerContextProvider(
                 PROTOCOL,

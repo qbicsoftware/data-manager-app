@@ -41,11 +41,14 @@ public class DataManagerContextProvider implements AppContextProvider {
     this.projectInfoEndpoint = projectEndpoint;
     this.samplesEndpoint = samplesEndpoint;
     try {
+      // The base path must end in a slash so that relative endpoint paths are resolved
+      // relative to it and keep the context path prefix.
+      String basePath = contextPath.isEmpty() ? "/" : "/" + contextPath + "/";
       URI baseUri = UriComponentsBuilder.newInstance()
           .scheme(protocol)
           .host(host)
           .port(port)
-          .path("/" + contextPath)
+          .path(basePath)
           .build()
           .toUri();
       baseUrlApplication = baseUri.toURL();
@@ -57,7 +60,8 @@ public class DataManagerContextProvider implements AppContextProvider {
   @Override
   public String urlToProject(String projectId) {
     try {
-      return baseUrlApplication.toURI().resolve(projectInfoEndpoint.formatted(projectId))
+      return baseUrlApplication.toURI()
+          .resolve(stripLeadingSlashes(projectInfoEndpoint.formatted(projectId)))
           .toURL()
           .toExternalForm();
     } catch (MalformedURLException | URISyntaxException e) {
@@ -68,11 +72,20 @@ public class DataManagerContextProvider implements AppContextProvider {
   @Override
   public String urlToSamplePage(String projectId, String experimentId) {
     try {
-      return baseUrlApplication.toURI().resolve(samplesEndpoint.formatted(projectId, experimentId))
+      return baseUrlApplication.toURI()
+          .resolve(stripLeadingSlashes(samplesEndpoint.formatted(projectId, experimentId)))
           .toURL()
           .toExternalForm();
     } catch (MalformedURLException | URISyntaxException e) {
       throw new ApplicationException("Data Manager context creation failed.", e);
     }
+  }
+
+  private static String stripLeadingSlashes(String path) {
+    int start = 0;
+    while (start < path.length() && path.charAt(start) == '/') {
+      start++;
+    }
+    return path.substring(start);
   }
 }
