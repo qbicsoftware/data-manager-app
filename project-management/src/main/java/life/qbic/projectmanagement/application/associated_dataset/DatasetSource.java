@@ -111,12 +111,43 @@ public interface DatasetSource {
    *                            record (e.g. Zenodo record ID, DOI)
    * @param config              the target instance
    * @param actingUserId        the ID of the user performing the action
-   * @return the full access link URL (full record URL + ?token=<access-token>)
+   * @return the created link, carrying both the full access-link URL
+   *         (record URL + ?token=<access-token>) and the source-system
+   *         link id needed to {@linkplain #revokeAccessLink revoke} it
+   *         later (or null id if the source does not expose one)
    * @throws AccessLinkCreationException if the link cannot be created
    *         (permission denied, network error, etc.)
    * @since 1.12.0
    */
-  String createAccessLink(String externalHandleValue, InstanceConfig config,
+  CreatedAccessLink createAccessLink(String externalHandleValue, InstanceConfig config,
       String actingUserId) throws AccessLinkCreationException;
+
+  /**
+   * Revokes (deletes) a previously created sharable access link on the
+   * source system, on behalf of the given user.
+   *
+   * <p>Used to clean up an access link that was created during a connect
+   * but which is no longer wanted: either the connect failed and was
+   * rolled back, or the connection was subsequently removed from the
+   * application. Revocation targets the link's {@code id} (not the token
+   * embedded in the link URL), as returned by
+   * {@link #createAccessLink} and stored on the metadata snapshot.</p>
+   *
+   * <p>Revoking an already-revoked (or never-created) link is treated as
+   * success — the desired end state (no active link) is already reached —
+   * so implementations must not throw for an absent link.</p>
+   *
+   * @param accessLinkId     the access link id on the source system
+   * @param externalHandleValue the source-specific record identifier the
+   *                            link belongs to (e.g. record ID)
+   * @param config           the target instance
+   * @param actingUserId     the ID of the user performing the action
+   * @throws AccessLinkRevocationException if the link cannot be revoked
+   *         (network error, server error, permission denied, etc.)
+   * @since 1.12.0
+   */
+  void revokeAccessLink(String accessLinkId, String externalHandleValue,
+      InstanceConfig config, String actingUserId)
+      throws AccessLinkRevocationException;
 
 }

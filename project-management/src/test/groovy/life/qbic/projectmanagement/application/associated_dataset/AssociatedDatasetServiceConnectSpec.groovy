@@ -67,6 +67,8 @@ class AssociatedDatasetServiceConnectSpec extends Specification {
     def source = Mock(DatasetSource) {
       resolveMetadata("ext-1", config, userId) >> Optional.of(restrictedMetadata)
       hasValidCredential(userId, config) >> true
+      createAccessLink("ext-1", config, userId) >> new CreatedAccessLink(
+          "https://zenodo.org/records/12345?token=abc", "link-123")
     }
     def repository = Mock(AssociatedDatasetRepository) {
       isActiveConnectionPresent(projectId, _) >> false
@@ -88,6 +90,79 @@ class AssociatedDatasetServiceConnectSpec extends Specification {
 
     then:
     result instanceof Result.Value
+  }
+
+  def "connectDataset revokes the access link when persistence fails after creation"() {
+    given:
+    def projectId = ProjectId.parse(VALID_PROJECT_ID)
+    def userId = "user-1"
+    def config = new InstanceConfig("zenodo", "Zenodo", "https://zenodo.org")
+    def restrictedMetadata = createMetadata(InvenioRdmAccessStatus.RESTRICTED, InvenioRdmAccessStatus.RESTRICTED)
+
+    def source = Mock(DatasetSource) {
+      resolveMetadata("ext-1", config, userId) >> Optional.of(restrictedMetadata)
+      hasValidCredential(userId, config) >> true
+      createAccessLink("ext-1", config, userId) >> new CreatedAccessLink(
+          "https://zenodo.org/records/12345?token=abc", "link-rollback")
+    }
+    def repository = Mock(AssociatedDatasetRepository) {
+      isActiveConnectionPresent(projectId, _) >> false
+      save(_) >> { throw new RuntimeException("DB down") }
+    }
+    def registry = Mock(SourceInstanceRegistry) {
+      find("zenodo") >> Optional.of(
+          new SourceInstanceDescriptor("zenodo", "Zenodo",
+              "https://zenodo.org", SourceType.INVENIO_RDM))
+    }
+    def service = createService(source, repository, registry)
+
+    LocalDomainEventDispatcher.instance().reset()
+
+    when:
+    def result = service.connectDataset(
+        projectId, SourceType.INVENIO_RDM, "zenodo",
+        "ext-1", null, userId)
+
+    then:
+    result instanceof Result.Error
+    result.getError() == ConnectDatasetError.CONNECT_FAILED
+    // The freshly-created access link must be rolled back so it does not
+    // leak as an unused, orphaned shareable link on the source.
+    1 * source.revokeAccessLink("link-rollback", "ext-1", config, userId)
+  }
+
+  def "connectDataset does not revoke anything when no link was created"() {
+    given:
+    def projectId = ProjectId.parse(VALID_PROJECT_ID)
+    def userId = "user-1"
+    def config = new InstanceConfig("zenodo", "Zenodo", "https://zenodo.org")
+    def publicMetadata = createMetadata(InvenioRdmAccessStatus.PUBLIC, InvenioRdmAccessStatus.PUBLIC)
+
+    def source = Mock(DatasetSource) {
+      resolveMetadata("ext-1", config, userId) >> Optional.of(publicMetadata)
+    }
+    def repository = Mock(AssociatedDatasetRepository) {
+      isActiveConnectionPresent(projectId, _) >> false
+      save(_) >> { throw new RuntimeException("DB down") }
+    }
+    def registry = Mock(SourceInstanceRegistry) {
+      find("zenodo") >> Optional.of(
+          new SourceInstanceDescriptor("zenodo", "Zenodo",
+              "https://zenodo.org", SourceType.INVENIO_RDM))
+    }
+    def service = createService(source, repository, registry)
+
+    LocalDomainEventDispatcher.instance().reset()
+
+    when:
+    def result = service.connectDataset(
+        projectId, SourceType.INVENIO_RDM, "zenodo",
+        "ext-1", null, userId)
+
+    then:
+    result instanceof Result.Error
+    result.getError() == ConnectDatasetError.CONNECT_FAILED
+    0 * source.revokeAccessLink(_, _, _, _)
   }
 
   def "connectDataset returns CREDENTIAL_REQUIRED for restricted dataset without credential"() {
@@ -119,6 +194,44 @@ class AssociatedDatasetServiceConnectSpec extends Specification {
     result.getError() == ConnectDatasetError.CREDENTIAL_REQUIRED
     // Duplicate check and save are never reached
     0 * repository.isActiveConnectionPresent(_, _)
+    0 * repository.save(_)
+  }
+
+  def "connectDataset does not create an access link for an already-connected restricted dataset"() {
+    given:
+    def projectId = ProjectId.parse(VALID_PROJECT_ID)
+    def userId = "user-1"
+    def config = new InstanceConfig("zenodo", "Zenodo", "https://zenodo.org")
+    def restrictedMetadata = createMetadata(InvenioRdmAccessStatus.RESTRICTED, InvenioRdmAccessStatus.RESTRICTED)
+
+    def source = Mock(DatasetSource) {
+      resolveMetadata("ext-1", config, userId) >> Optional.of(restrictedMetadata)
+    }
+    def repository = Mock(AssociatedDatasetRepository) {
+      // Dataset with the same PID is already connected to the project
+      isActiveConnectionPresent(projectId, "10.1234/test") >> true
+    }
+    def registry = Mock(SourceInstanceRegistry) {
+      find("zenodo") >> Optional.of(
+          new SourceInstanceDescriptor("zenodo", "Zenodo",
+              "https://zenodo.org", SourceType.INVENIO_RDM))
+    }
+    def service = createService(source, repository, registry)
+
+    when:
+    def result = service.connectDataset(
+        projectId, SourceType.INVENIO_RDM, "zenodo",
+        "ext-1", null, userId)
+
+    then:
+    result instanceof Result.Error
+    result.getError() == ConnectDatasetError.ALREADY_CONNECTED
+    // The duplicate check short-circuits before the credential gate /
+    // access link creation, so neither is ever reached for an
+    // already-connected dataset — otherwise an orphaned access link would
+    // be created on the source system and never used.
+    0 * source.hasValidCredential(_, _)
+    0 * source.createAccessLink(_, _, _)
     0 * repository.save(_)
   }
 

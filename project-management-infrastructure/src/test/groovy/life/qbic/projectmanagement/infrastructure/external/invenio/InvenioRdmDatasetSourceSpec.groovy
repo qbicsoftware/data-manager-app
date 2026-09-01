@@ -139,7 +139,7 @@ class InvenioRdmDatasetSourceSpec extends Specification {
 
   // ── createAccessLink ────────────────────────────────────────────
 
-  def "createAccessLink builds full record URL with access token query param"() {
+  def "createAccessLink builds full record URL and carries the link id"() {
     given:
     def accessToken = "secret-token-123"
     def mockClient = Mock(InvenioRdmClient) {
@@ -155,9 +155,12 @@ class InvenioRdmDatasetSourceSpec extends Specification {
     }
     def source = new InvenioRdmDatasetSource(mockClient, credentialRepo, encryptor)
 
-    expect:
-    source.createAccessLink("abc-123", CONFIG, USER_ID)
-        == "https://zenodo.org/records/abc-123?token=secret-token-123"
+    when:
+    def link = source.createAccessLink("abc-123", CONFIG, USER_ID)
+
+    then:
+    link.url() == "https://zenodo.org/records/abc-123?token=secret-token-123"
+    link.linkId() == "link-id"
   }
 
   def "createAccessLink throws when no credential is configured"() {
@@ -174,6 +177,44 @@ class InvenioRdmDatasetSourceSpec extends Specification {
 
     then:
     thrown(life.qbic.projectmanagement.application.associated_dataset.AccessLinkCreationException)
+  }
+
+  // ── revokeAccessLink ───────────────────────────────────────────────
+
+  def "revokeAccessLink delegates to the client with the record and link id"() {
+    given:
+    def mockClient = Mock(InvenioRdmClient)
+    def credentialRepo = Mock(UserExternalCredentialRepository) {
+      findByUserIdAndSourceTypeAndInstanceId(USER_ID, SourceType.INVENIO_RDM, INSTANCE_ID) >>
+          Optional.of(createCredential(CredentialStatus.VALID))
+    }
+    def encryptor = Mock(CredentialEncryptor) {
+      decrypt(_) >> "pat-token".toCharArray()
+    }
+    def source = new InvenioRdmDatasetSource(mockClient, credentialRepo, encryptor)
+
+    when:
+    source.revokeAccessLink("link-id", "abc-123", CONFIG, USER_ID)
+
+    then:
+    1 * mockClient.revokeAccessLink("https://zenodo.org", "abc-123",
+        "link-id", "Bearer pat-token")
+  }
+
+  def "revokeAccessLink throws when no credential is configured"() {
+    given:
+    def credentialRepo = Mock(UserExternalCredentialRepository) {
+      findByUserIdAndSourceTypeAndInstanceId(USER_ID, SourceType.INVENIO_RDM, INSTANCE_ID) >>
+          Optional.empty()
+    }
+    def source = new InvenioRdmDatasetSource(
+        Mock(InvenioRdmClient), credentialRepo, Mock(CredentialEncryptor))
+
+    when:
+    source.revokeAccessLink("link-id", "abc-123", CONFIG, USER_ID)
+
+    then:
+    thrown(life.qbic.projectmanagement.application.associated_dataset.AccessLinkRevocationException)
   }
 
   // ── Helpers ──────────────────────────────────────────────────────

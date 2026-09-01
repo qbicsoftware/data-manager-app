@@ -10,11 +10,13 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.application.associated_dataset.AccessLinkCreationException;
+import life.qbic.projectmanagement.application.associated_dataset.AccessLinkRevocationException;
+import life.qbic.projectmanagement.application.associated_dataset.CreatedAccessLink;
 import life.qbic.projectmanagement.application.associated_dataset.CredentialEncryptor;
 import life.qbic.projectmanagement.application.associated_dataset.DatasetResolveException;
 import life.qbic.projectmanagement.application.associated_dataset.DatasetSearchException;
 import life.qbic.projectmanagement.application.associated_dataset.DatasetSource;
-import life.qbic.projectmanagement.application.associated_dataset.AccessLinkCreationException;
 import life.qbic.projectmanagement.application.associated_dataset.InstanceConfig;
 import life.qbic.projectmanagement.application.associated_dataset.SearchHit;
 import life.qbic.projectmanagement.application.associated_dataset.SearchQuery;
@@ -138,7 +140,7 @@ public class InvenioRdmDatasetSource implements DatasetSource {
   }
 
   @Override
-  public String createAccessLink(String externalHandleValue,
+  public CreatedAccessLink createAccessLink(String externalHandleValue,
       InstanceConfig config, String actingUserId)
       throws AccessLinkCreationException {
     if (externalHandleValue == null || config == null || actingUserId == null) {
@@ -156,8 +158,9 @@ public class InvenioRdmDatasetSource implements DatasetSource {
       String authHeader = "Bearer " + new String(token);
       var accessLink = client.createAccessLink(config.baseUrl(),
           externalHandleValue, authHeader);
-      return config.baseUrl() + "/records/" + externalHandleValue
+      String url = config.baseUrl() + "/records/" + externalHandleValue
           + "?token=" + accessLink.token();
+      return new CreatedAccessLink(url, accessLink.id());
     } catch (InvenioRdmClient.InvenioRdmPermanentException e) {
       if (e.getStatusCode() == 403) {
         throw new AccessLinkCreationException(
@@ -169,6 +172,41 @@ public class InvenioRdmDatasetSource implements DatasetSource {
     } catch (InvenioRdmClient.InvenioRdmException e) {
       throw new AccessLinkCreationException(
           "Failed to create access link: " + e.getMessage(), e);
+    } finally {
+      if (token != null) {
+        Arrays.fill(token, '\0');
+      }
+    }
+  }
+
+  @Override
+  public void revokeAccessLink(String accessLinkId, String externalHandleValue,
+      InstanceConfig config, String actingUserId)
+      throws AccessLinkRevocationException {
+    if (accessLinkId == null || externalHandleValue == null
+        || config == null || actingUserId == null) {
+      throw new IllegalArgumentException("Arguments must not be null");
+    }
+
+    char[] token = resolveTokenForUser(actingUserId, config.id());
+    if (token == null) {
+      throw new AccessLinkRevocationException(
+          "No valid credential available for user " + actingUserId
+          + " on instance " + config.id());
+    }
+
+    try {
+      String authHeader = "Bearer " + new String(token);
+      client.revokeAccessLink(config.baseUrl(), externalHandleValue,
+          accessLinkId, authHeader);
+    } catch (InvenioRdmClient.InvenioRdmPermanentException e) {
+      throw new AccessLinkRevocationException(
+          "Failed to revoke access link " + accessLinkId + ": "
+          + e.getMessage(), e);
+    } catch (InvenioRdmClient.InvenioRdmException e) {
+      throw new AccessLinkRevocationException(
+          "Failed to revoke access link " + accessLinkId + ": "
+          + e.getMessage(), e);
     } finally {
       if (token != null) {
         Arrays.fill(token, '\0');

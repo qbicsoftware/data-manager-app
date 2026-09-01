@@ -294,6 +294,33 @@ public interface InvenioRdmClient {
              InvenioRdmResponseParsingException;
 
   /**
+   * Revokes (deletes) a previously created shareable access link.
+   *
+   * <p>Issues {@code DELETE /api/records/{recordId}/access/links/{linkId}}
+   * on the source system so that previously shared view access is
+   * withdrawn. Used when a connect attempt is rolled back or a connection
+   * is removed from the application.</p>
+   *
+   * <p>Revoking an already-revoked link is treated as success: a 404 for
+   * an absent link id does not throw, because the desired end state (no
+   * active link) is already reached.</p>
+   *
+   * @param instanceUrl the base URL of the InvenioRDM instance
+   * @param recordId    the record identifier the link belongs to
+   * @param linkId      the access link id to delete
+   * @param authHeader  the full Authorization header value
+   *                    (e.g. {@code "Bearer <token>"})
+   * @return {@code true} if a link was actually deleted; {@code false} if
+   *         the link was already absent (404) and nothing changed
+   * @throws InvenioRdmPermanentException on other 4xx (403 = insufficient permissions)
+   * @throws InvenioRdmTransientException on 5xx or network errors after retries
+   * @since 1.12.0
+   */
+  boolean revokeAccessLink(String instanceUrl, String recordId, String linkId,
+      String authHeader)
+      throws InvenioRdmPermanentException, InvenioRdmTransientException;
+
+  /**
    * Response from creating an access link.
    */
   @JsonIgnoreProperties(ignoreUnknown = true)
@@ -701,6 +728,23 @@ public interface InvenioRdmClient {
       return parseJson(body, AccessLinkResponse.class);
     }
 
+    @Override
+    public boolean revokeAccessLink(String instanceUrl, String recordId,
+        String linkId, String authHeader)
+        throws InvenioRdmPermanentException, InvenioRdmTransientException {
+      Objects.requireNonNull(instanceUrl, "instanceUrl must not be null");
+      Objects.requireNonNull(recordId, "recordId must not be null");
+      Objects.requireNonNull(linkId, "linkId must not be null");
+      Objects.requireNonNull(authHeader, "authHeader must not be null");
+
+      String url = normalizeBaseUrl(instanceUrl) + "/api/records/"
+          + URLEncoder.encode(recordId, StandardCharsets.UTF_8)
+          + "/access/links/"
+          + URLEncoder.encode(linkId, StandardCharsets.UTF_8);
+      // 404 (link already absent) is treated as success by deleteWithRetry.
+      return deleteWithRetry(url, authHeader, "revoke access link");
+    }
+
     // ── Internals ───────────────────────────────────────────────────
 
     private String buildSearchUrl(String instanceUrl, SearchParams params) {
@@ -852,6 +896,112 @@ public interface InvenioRdmClient {
           // Success
           if (isSuccess(status)) {
             return response.body();
+          }
+
+          // Permanent failure: 4xx (except 429) — don't retry
+          if (isClientError(status) && !isTooManyRequests(status)) {
+            throw new InvenioRdmPermanentException(
+                "InvenioRDM request failed (%s) with status %d. URL: %s"
+                    .formatted(operationName, status, url),
+                status, url);
+          }
+
+          // Transient: 5xx or 429 — retry with Retry-After honouring
+          lastStatus = status;
+          if (currentAttempt < MAX_ATTEMPTS) {
+            long waitMs = status == 429
+                ? parseRetryAfter(response, backoffMs)
+                : backoffMs;
+            log.warn("InvenioRDM transient failure (%s), status=%d, retrying in %dms (attempt %d/%d)"
+                .formatted(operationName, status, waitMs, currentAttempt, MAX_ATTEMPTS));
+            sleep(waitMs);
+            backoffMs = Math.min(backoffMs * 2, MAX_BACKOFF_MS);
+            retryCount++;
+            continue;
+          }
+
+          // Exhausted retries on transient
+          throw new InvenioRdmTransientException(
+              "InvenioRDM request failed (%s) with status %d after %d attempts. URL: %s"
+                  .formatted(operationName, status, MAX_ATTEMPTS, url),
+              status, MAX_ATTEMPTS, null, url);
+
+        } catch (IOException e) {
+          lastIo = e;
+          if (currentAttempt < MAX_ATTEMPTS) {
+            log.warn("InvenioRDM I/O error (%s): %s, retrying in %dms (attempt %d/%d)"
+                .formatted(operationName, e.getMessage(), backoffMs, currentAttempt, MAX_ATTEMPTS));
+            sleep(backoffMs);
+            backoffMs = Math.min(backoffMs * 2, MAX_BACKOFF_MS);
+            retryCount++;
+          }
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+          throw new InvenioRdmInterruptedException(
+              "InvenioRDM request interrupted (%s)".formatted(operationName),
+              e, url);
+        }
+      }
+
+      throw new InvenioRdmTransientException(
+          "InvenioRDM request failed (%s) after %d attempts. Last status=%s, last error=%s. URL: %s"
+              .formatted(operationName, MAX_ATTEMPTS, lastStatus,
+                  lastIo == null ? "n/a" : lastIo.getMessage(), url),
+          lastStatus != null ? lastStatus : -1, MAX_ATTEMPTS, lastIo, url);
+    }
+
+    /**
+     * Issues a {@code DELETE} request with the same retry semantics as
+     * {@link #postWithRetry}.
+     *
+     * <p>A 2xx success returns {@code true}. A 404 Not Found — the target
+     * resource is already absent, e.g. an access link that was already
+     * revoked — is treated as success and returns {@code false} (nothing
+     * was deleted because nothing existed). Other 4xx (except 429) are
+     * permanent failures; 5xx and 429 are retried.</p>
+     *
+     * @param url           the full request URL
+     * @param authHeader    the Authorization header value or {@code null}
+     * @param operationName a human-readable label for logging
+     * @return {@code true} if the resource was deleted; {@code false} if
+     *         it was already absent (404)
+     * @throws InvenioRdmPermanentException on non-404 client errors (except 429)
+     * @throws InvenioRdmTransientException on 5xx or network errors after retries
+     */
+    private boolean deleteWithRetry(String url, String authHeader,
+        String operationName)
+        throws InvenioRdmPermanentException, InvenioRdmTransientException {
+      int retryCount = 0;
+      long backoffMs = INITIAL_BACKOFF_MS;
+      IOException lastIo = null;
+      Integer lastStatus = null;
+
+      while (retryCount < MAX_ATTEMPTS) {
+        int currentAttempt = retryCount + 1;
+        try {
+          var requestBuilder = HttpRequest.newBuilder()
+              .uri(URI.create(url))
+              .header("Accept", "application/vnd.inveniordm.v1+json")
+              .timeout(Duration.ofSeconds(HTTP_REQUEST_TIMEOUT_S))
+              .DELETE();
+          if (authHeader != null) {
+            requestBuilder.header("Authorization", authHeader);
+          }
+          HttpResponse<String> response = httpClient.send(
+              requestBuilder.build(), BodyHandlers.ofString());
+
+          int status = response.statusCode();
+
+          // Success
+          if (isSuccess(status)) {
+            return true;
+          }
+
+          // Already absent — treat as success, nothing was deleted
+          if (status == 404) {
+            log.info("%s: resource already absent (404), nothing to delete"
+                .formatted(operationName));
+            return false;
           }
 
           // Permanent failure: 4xx (except 429) — don't retry
