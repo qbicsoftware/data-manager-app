@@ -5,7 +5,7 @@
   <parent>
     <artifactId>datamanager</artifactId>
     <groupId>life.qbic.datamanager</groupId>
-    <version>1.15.0</version>
+    <version>1.15.1</version>
   </parent>
   <artifactId>project-management</artifactId>
   <name>project-management-domain</name>
