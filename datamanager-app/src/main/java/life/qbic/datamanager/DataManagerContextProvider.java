@@ -8,6 +8,7 @@ import life.qbic.application.commons.ApplicationException;
 import life.qbic.projectmanagement.application.AppContextProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.web.util.UriComponentsBuilder;
 
 /**
  * <b>Data Manager context provider</b>
@@ -34,10 +35,14 @@ public class DataManagerContextProvider implements AppContextProvider {
     this.projectInfoEndpoint = projectEndpoint;
     this.samplesEndpoint = samplesEndpoint;
     try {
-
-      String portPart = port >= 0 ? ":" + port : "";
-      baseUrlApplication = URI.create(protocol + "://" + host + portPart + "/" + contextPath)
-          .toURL();
+      URI baseUri = UriComponentsBuilder.newInstance()
+          .scheme(protocol)
+          .host(host)
+          .port(port)
+          .path("/" + contextPath)
+          .build()
+          .toUri();
+      baseUrlApplication = baseUri.toURL();
     } catch (MalformedURLException e) {
       throw new ApplicationException("Initialization of context provider failed.", e);
     }
