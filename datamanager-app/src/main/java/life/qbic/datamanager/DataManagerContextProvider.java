@@ -25,6 +25,12 @@ public class DataManagerContextProvider implements AppContextProvider {
   private final URL baseUrlApplication;
   private final String samplesEndpoint;
 
+  /**
+   * Creates a context provider for the Data Manager application.
+   * <p>
+   * The {@code port} must be -1 when no port is required, in which case it is treated as "no
+   * port" and omitted automatically when constructing links.
+   */
   public DataManagerContextProvider(
       @Value("${service.host.protocol}") String protocol,
       @Value("${service.host.name}") String host,
