@@ -34,7 +34,9 @@ public class DataManagerContextProvider implements AppContextProvider {
     this.projectInfoEndpoint = projectEndpoint;
     this.samplesEndpoint = samplesEndpoint;
     try {
-      baseUrlApplication = URI.create(protocol + "://" + host + ":" + port + "/" + contextPath)
+
+      String portPart = port >= 0 ? ":" + port : "";
+      baseUrlApplication = URI.create(protocol + "://" + host + portPart + "/" + contextPath)
           .toURL();
     } catch (MalformedURLException e) {
       throw new ApplicationException("Initialization of context provider failed.", e);
