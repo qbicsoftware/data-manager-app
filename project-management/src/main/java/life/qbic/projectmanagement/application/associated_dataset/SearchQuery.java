@@ -25,15 +25,17 @@ public record SearchQuery(
     /**
      * Optional access-status filter for the external source.
      * {@code null} means no filter (return all records).
-     * {@code "restricted"} returns only access-restricted records.
-     * {@code "open"} returns only publicly accessible records.
+     * {@link DatasetAccessFilter#RESTRICTED} returns only
+     * access-restricted records; {@link DatasetAccessFilter#PUBLIC}
+     * returns only publicly accessible records.
      *
-     * <p>For InvenioRDM, this maps to the {@code access.status}
-     * search facet (e.g. {@code q=access.status:restricted}).</p>
+     * <p>Source-neutral: the port must not know how any particular source
+     * encodes this; translation to a source-specific wire value happens in
+     * the source adapter.</p>
      *
      * @since 1.12.0
      */
-    String accessFilter
+    DatasetAccessFilter accessFilter
 ) {
 
   /**
@@ -74,10 +76,10 @@ public record SearchQuery(
    *
    * @param page         zero-indexed page number
    * @param pageSize     results per page
-   * @param accessFilter the access-status filter (e.g. "restricted")
+   * @param accessFilter the access-status filter, or {@code null} for none
    */
   public static SearchQuery listAll(int page, int pageSize,
-      String accessFilter) {
+      DatasetAccessFilter accessFilter) {
     return new SearchQuery("", page, pageSize, accessFilter);
   }
 }

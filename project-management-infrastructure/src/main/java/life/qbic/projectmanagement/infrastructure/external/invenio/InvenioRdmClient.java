@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Objects;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
+import life.qbic.projectmanagement.application.associated_dataset.DatasetAccessFilter;
 
 /**
  * Low-level HTTP client for the Invenio REST API.
@@ -338,16 +339,27 @@ public interface InvenioRdmClient {
       int size,
       /**
        * Optional access-status filter. {@code null} = no filter (all
-       * records). {@code "restricted"} = only access-restricted records.
-       * {@code "open"} = only publicly accessible records.
-       *
-       * <p>Mapped to the InvenioRDM {@code access.status} search facet
-       * (e.g. {@code q=access.status:restricted AND <userQuery>}).</p>
+       * records). The neutral {@link DatasetAccessFilter} is translated to
+       * the InvenioRDM {@code access.status} search facet value by
+       * {@link #accessFilterWireValue()}. This keeps the abstract
+       * {@link DatasetSource} port free of InvenioRDM vocabulary.
        *
        * @since 1.12.0
        */
-      String accessFilter
+      DatasetAccessFilter accessFilter
   ) {
+
+    /**
+     * Translates the neutral access filter into the InvenioRDM wire
+     * facet value used in {@code q=access.status:<value>}, or {@code null}
+     * when no filter is set.
+     *
+     * @return the wire facet value (e.g. {@code "restricted"},
+     *         {@code "open"}), or {@code null} for no filter
+     */
+    public String accessFilterWireValue() {
+      return accessFilter == null ? null : accessFilter.toSourceValue();
+    }
     /**
      * Backward-compatible constructor — no access filter.
      */
@@ -761,7 +773,7 @@ public interface InvenioRdmClient {
       // no filter + no query       → sort=newest (no q param)
       String userQuery = (params.query() != null && !params.query().isBlank())
           ? params.query() : null;
-      String filter = params.accessFilter();
+      String filter = params.accessFilterWireValue();
 
       if (filter != null && userQuery != null) {
         // Combined: filter + user query

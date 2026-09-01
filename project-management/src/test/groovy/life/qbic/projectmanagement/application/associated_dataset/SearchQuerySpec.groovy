@@ -25,10 +25,10 @@ class SearchQuerySpec extends Specification {
 
   def "full constructor preserves accessFilter value"() {
     when:
-    def query = new SearchQuery("proteomics", 0, 10, "restricted")
+    def query = new SearchQuery("proteomics", 0, 10, DatasetAccessFilter.RESTRICTED)
 
     then:
-    query.accessFilter() == "restricted"
+    query.accessFilter() == DatasetAccessFilter.RESTRICTED
   }
 
   def "full constructor accepts null accessFilter"() {
@@ -41,7 +41,7 @@ class SearchQuerySpec extends Specification {
 
   def "effectiveQuery returns empty string for null query"() {
     given:
-    def query = new SearchQuery(null, 0, 10, "restricted")
+    def query = new SearchQuery(null, 0, 10, DatasetAccessFilter.RESTRICTED)
 
     expect:
     query.effectiveQuery() == ""
@@ -49,7 +49,7 @@ class SearchQuerySpec extends Specification {
 
   def "effectiveQuery returns empty string for blank query"() {
     given:
-    def query = new SearchQuery("   ", 0, 10, "restricted")
+    def query = new SearchQuery("   ", 0, 10, DatasetAccessFilter.RESTRICTED)
 
     expect:
     query.effectiveQuery() == ""
@@ -57,7 +57,7 @@ class SearchQuerySpec extends Specification {
 
   def "effectiveQuery returns query as-is when non-blank"() {
     given:
-    def query = new SearchQuery("proteomics", 0, 10, "restricted")
+    def query = new SearchQuery("proteomics", 0, 10, DatasetAccessFilter.RESTRICTED)
 
     expect:
     query.effectiveQuery() == "proteomics"
@@ -76,13 +76,13 @@ class SearchQuerySpec extends Specification {
 
   def "listAll factory with accessFilter creates filtered query"() {
     when:
-    def query = SearchQuery.listAll(0, 25, "restricted")
+    def query = SearchQuery.listAll(0, 25, DatasetAccessFilter.RESTRICTED)
 
     then:
     query.query() == ""
     query.page() == 0
     query.pageSize() == 25
-    query.accessFilter() == "restricted"
+    query.accessFilter() == DatasetAccessFilter.RESTRICTED
   }
 
   def "constructor rejects negative page"() {
@@ -103,7 +103,7 @@ class SearchQuerySpec extends Specification {
 
   def "constructor with accessFilter rejects negative page"() {
     when:
-    new SearchQuery("test", -1, 10, "restricted")
+    new SearchQuery("test", -1, 10, DatasetAccessFilter.RESTRICTED)
 
     then:
     thrown(IllegalArgumentException)

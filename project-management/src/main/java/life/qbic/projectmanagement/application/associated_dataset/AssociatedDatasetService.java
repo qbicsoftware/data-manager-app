@@ -135,16 +135,18 @@ public class AssociatedDatasetService {
    * with an optional access-status filter, returning paginated results.
    *
    * <p>The {@code accessFilter} restricts results to records with a
-   * specific access status on the source system. For InvenioRDM,
-   * {@code "restricted"} returns only access-restricted records;
-   * {@code "open"} returns only publicly accessible records;
-   * {@code null} returns all records (no filter).</p>
+   * specific access status on the source system.
+   * {@link DatasetAccessFilter#RESTRICTED} returns only access-restricted
+   * records; {@link DatasetAccessFilter#PUBLIC} returns only publicly
+   * accessible records; {@code null} returns all records (no filter).
+   * The filter is source-neutral — translation to a source-specific wire
+   * term happens in the source adapter.</p>
    *
    * @param sourceType      the source system type
    * @param instanceId      the configured instance identifier
    * @param query           the free-text search term; blank for "list all"
-   * @param accessFilter    optional access-status filter (e.g. "restricted");
-   *                        {@code null} for no filter
+   * @param accessFilter    optional access-status filter, or {@code null}
+   *                        for no filter
    * @param page            zero-indexed page number
    * @param pageSize        results per page
    * @param searchingUserId the ID of the user performing the search
@@ -159,7 +161,7 @@ public class AssociatedDatasetService {
       SourceType sourceType,
       String instanceId,
       String query,
-      String accessFilter,
+      DatasetAccessFilter accessFilter,
       int page,
       int pageSize,
       String searchingUserId) {

@@ -41,6 +41,7 @@ import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactor
 import life.qbic.identity.api.AuthenticationToUserIdTranslator;
 import life.qbic.projectmanagement.application.associated_dataset.AssociatedDatasetService;
 import life.qbic.projectmanagement.application.associated_dataset.AssociatedDatasetServiceException;
+import life.qbic.projectmanagement.application.associated_dataset.DatasetAccessFilter;
 import life.qbic.projectmanagement.application.associated_dataset.ExternalCredentialService;
 import life.qbic.projectmanagement.application.associated_dataset.SearchHit;
 import life.qbic.projectmanagement.application.associated_dataset.SourceInstanceDescriptor;
@@ -136,8 +137,8 @@ public class ConnectDatasetSidebar extends Div {
   // ── Access filter toggle (segmented button pair) ──────────────────
   private final Button allDatasetsButton;
   private final Button restrictedOnlyButton;
-  /** null = all datasets, "restricted" = restricted only */
-  private String accessFilter = null;
+  /** null = all datasets, RESTRICTED = restricted only */
+  private DatasetAccessFilter accessFilter = null;
 
   // ── Credential banner (search-time, informational) ────────────────
   // Shown when the user has no valid provider connection for the selected
@@ -364,8 +365,8 @@ public class ConnectDatasetSidebar extends Div {
     restrictedOnlyButton = new Button("Restricted only");
     restrictedOnlyButton.addClassName("cds-segmented-btn");
     restrictedOnlyButton.addClickListener(e -> {
-      if ("restricted".equals(accessFilter)) return; // already active
-      accessFilter = "restricted";
+      if (DatasetAccessFilter.RESTRICTED.equals(accessFilter)) return; // already active
+      accessFilter = DatasetAccessFilter.RESTRICTED;
       updateToggleState();
       if (searchInitiated) refreshSearchResults();
     });
@@ -685,7 +686,7 @@ public class ConnectDatasetSidebar extends Div {
           SourceType.INVENIO_RDM,
           instance.id(),
           searchTerm.trim().isEmpty() ? null : searchTerm.trim(),
-          accessFilter,  // null = all, "restricted" = restricted only
+          accessFilter,  // null = all, DatasetAccessFilter.RESTRICTED = restricted only
           0,          // page 0 (zero-indexed)
           100,        // pageSize - load up to 100 results in first fetch
           currentUser
@@ -1046,9 +1047,9 @@ public class ConnectDatasetSidebar extends Div {
 
   /**
    * Updates the visual state of the segmented button pair to reflect
-   * the current {@link #accessFilter} value. The active button gets
-   * the {@code cds-segmented-btn--active} class; the inactive one
-   * loses it.
+   * the current {@link #accessFilter} value (a {@link DatasetAccessFilter},
+   * or null for all datasets). The active button gets the
+   * {@code cds-segmented-btn--active} class; the inactive one loses it.
    */
   private void updateToggleState() {
     if (accessFilter == null) {

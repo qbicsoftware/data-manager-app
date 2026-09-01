@@ -278,12 +278,12 @@ class AssociatedDatasetServiceConnectSpec extends Specification {
 
     when:
     service.searchDatasets(SourceType.INVENIO_RDM, "zenodo",
-        "proteomics", "restricted", 0, 10, "user-1")
+        "proteomics", DatasetAccessFilter.RESTRICTED, 0, 10, "user-1")
 
     then:
     1 * source.search({ SearchQuery q ->
       q.effectiveQuery() == "proteomics" &&
-      q.accessFilter() == "restricted" &&
+      q.accessFilter() == DatasetAccessFilter.RESTRICTED &&
       q.page() == 0 &&
       q.pageSize() == 10
     }, _, "user-1") >> expectedResult

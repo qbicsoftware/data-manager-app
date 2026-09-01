@@ -1,6 +1,7 @@
 package life.qbic.projectmanagement.infrastructure.external.invenio
 
 import life.qbic.projectmanagement.application.associated_dataset.CredentialEncryptor
+import life.qbic.projectmanagement.application.associated_dataset.DatasetAccessFilter
 import life.qbic.projectmanagement.application.associated_dataset.InstanceConfig
 import life.qbic.projectmanagement.application.associated_dataset.SearchQuery
 import life.qbic.projectmanagement.domain.model.associated_dataset.CredentialStatus
@@ -98,14 +99,14 @@ class InvenioRdmDatasetSourceSpec extends Specification {
         credentialRepo,
         Mock(CredentialEncryptor))
 
-    def query = new SearchQuery("proteomics", 0, 10, "restricted")
+    def query = new SearchQuery("proteomics", 0, 10, DatasetAccessFilter.RESTRICTED)
 
     when:
     source.search(query, CONFIG, USER_ID)
 
     then:
     capturedParams.value != null
-    capturedParams.value.accessFilter() == "restricted"
+    capturedParams.value.accessFilter() == DatasetAccessFilter.RESTRICTED
     capturedParams.value.query() == "proteomics"
   }
 
