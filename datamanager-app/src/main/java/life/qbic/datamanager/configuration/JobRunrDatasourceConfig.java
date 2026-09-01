@@ -16,7 +16,7 @@ import org.springframework.context.annotation.Configuration;
 public class JobRunrDatasourceConfig {
 
   @Bean(name = "jobRunrDatasourceProperties")
-  @ConfigurationProperties("org.jobrunr.database.datasource")
+  @ConfigurationProperties("jobrunr.database.datasource")
   public DataSourceProperties dataSourceProperties() {
     return new DataSourceProperties();
   }
