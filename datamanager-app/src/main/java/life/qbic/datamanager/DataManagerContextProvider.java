@@ -42,8 +42,10 @@ public class DataManagerContextProvider implements AppContextProvider {
     this.samplesEndpoint = samplesEndpoint;
     try {
       // The base path must end in a slash so that relative endpoint paths are resolved
-      // relative to it and keep the context path prefix.
-      String basePath = contextPath.isEmpty() ? "/" : "/" + contextPath + "/";
+      // relative to it and keep the context path prefix. The context path is normalized to
+      // a single leading and trailing slash regardless of how it is configured.
+      String normalized = contextPath.replaceAll("^/+", "").replaceAll("/+$", "");
+      String basePath = normalized.isEmpty() ? "/" : "/" + normalized + "/";
       URI baseUri = UriComponentsBuilder.newInstance()
           .scheme(protocol)
           .host(host)

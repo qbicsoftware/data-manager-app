@@ -45,7 +45,10 @@ class DataManagerContextProviderSpec extends Specification {
         where:
         contextPath | expected
         ""          | "https://data-manager.example.com/projects/QABCD001/info"
-        "foobar"    | "https://data-manager.example.com/foobar/projects/QABCD001/info"
+        "/"         | "https://data-manager.example.com/projects/QABCD001/info"
+        "dev"       | "https://data-manager.example.com/dev/projects/QABCD001/info"
+        "/dev"      | "https://data-manager.example.com/dev/projects/QABCD001/info"
+        "dev/"      | "https://data-manager.example.com/dev/projects/QABCD001/info"
     }
 
     def "preserves the context path for a relative project endpoint"() {
@@ -58,7 +61,10 @@ class DataManagerContextProviderSpec extends Specification {
         where:
         contextPath | expected
         ""          | "https://data-manager.example.com/projects/QABCD001/info"
-        "foobar"    | "https://data-manager.example.com/foobar/projects/QABCD001/info"
+        "/"         | "https://data-manager.example.com/projects/QABCD001/info"
+        "dev"       | "https://data-manager.example.com/dev/projects/QABCD001/info"
+        "/dev"      | "https://data-manager.example.com/dev/projects/QABCD001/info"
+        "dev/"      | "https://data-manager.example.com/dev/projects/QABCD001/info"
     }
 
     def "preserves the context path for the sample page endpoint"() {
@@ -71,7 +77,10 @@ class DataManagerContextProviderSpec extends Specification {
         where:
         contextPath | expected
         ""          | "https://data-manager.example.com/projects/QABCD001/experiments/E12345/samples"
-        "foobar"    | "https://data-manager.example.com/foobar/projects/QABCD001/experiments/E12345/samples"
+        "/"         | "https://data-manager.example.com/projects/QABCD001/experiments/E12345/samples"
+        "dev"       | "https://data-manager.example.com/dev/projects/QABCD001/experiments/E12345/samples"
+        "/dev"      | "https://data-manager.example.com/dev/projects/QABCD001/experiments/E12345/samples"
+        "dev/"      | "https://data-manager.example.com/dev/projects/QABCD001/experiments/E12345/samples"
     }
 
     private static DataManagerContextProvider providerWithPort(int port) {
