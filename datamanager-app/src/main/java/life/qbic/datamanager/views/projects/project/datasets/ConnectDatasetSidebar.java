@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -94,6 +95,15 @@ public class ConnectDatasetSidebar extends Div {
   private final AuthenticationToUserIdTranslator authenticationToUserIdTranslator;
 
   /**
+   * One-time registration that releases this sidebar's cache and flow state
+   * when the owning Vaadin {@code UI} is detached (session end). Kept so it
+   * can be removed in {@link #close()} on UI reuse. Plain field (not
+   * static): every sidebar/session owns its own binding, so no state leaks
+   * across sessions.
+   */
+  private Registration detachRegistration;
+
+  /**
    * Clamp a title to {@code maxLines} lines with a CSS ellipsis.
    * The full title is exposed as a native HTML {@code title} attribute so hovering reveals
    * it even when truncated.
@@ -154,39 +164,30 @@ public class ConnectDatasetSidebar extends Div {
   private final Map<String, String> cardErrors = new HashMap<>();
 
   /**
-   * Gate for the lazy-loading callback.
+   * Holds the search/connect control state, bound to this Vaadin UI instance.
    *
-   * <p>Vaadin calls {@link #fetchPage(Query)} automatically whenever the
-   * grid first renders (to fill initially-visible rows) or when it needs
-   * a page during scroll. If the sidebar is being opened (the grid was
-   * just attached to the UI), this automatic first-page fetch would fire
-   * an HTTP call against InvenioRDM from the same Vaadin response that
-   * is supposed to reveal the sidebar — making the open action appear
-   * to freeze.
-   *
-   * <p>To keep {@code open()} instant, the flag is cleared in
-   * {@link #close()} and set to {@code true} only when the user has
-   * explicitly triggered a search (by clicking Search, pressing Enter,
-   * or clearing the field). Until then, {@code fetchPage} returns an
-   * empty stream. After the first explicit search the gate stays open
-   * for the lifetime of that sidebar session, so scrolling still loads
-   * follow-up pages lazily.
-   *
-   * <p>This does not affect AC3 ("Paginated results when no query") —
-   * the user's very first search can be with an empty term.
+   * <p>Instance-scoped only: the holder dies together with the containing
+   * {@code UI}, so no search state — and thus no cached results — can outlive
+   * the Vaadin session. It keeps two orthogonal facts:
+   * <ul>
+   *   <li><b>{@code initiated}</b> — sticky {@code true} once the user has
+   *       explicitly triggered a search (gates the lazy-loading grid provider
+   *       so opening the sidebar never fires an HTTP call). Reset on
+   *       {@code open()} / {@code close()}.</li>
+   *   <li><b>{@code inProgress}</b> — {@code true} only while an async search
+   *       or connect is in flight (disables controls and guards against
+   *       duplicate concurrent searches).</li>
+   * </ul>
    */
-  private volatile boolean searchInitiated = false;
-
-  /**
-   * Tracks whether a search is currently in progress (async HTTP fetch).
-   * Used to disable controls and prevent duplicate requests.
-   */
-  private volatile boolean searchInProgress = false;
+  private final SearchFlowState state = new SearchFlowState();
 
   /**
    * Cached search results from the most recent successful search.
    * Populated by the background thread in {@link #refreshSearchResults()},
    * then sliced on-demand by {@link #fetchPage(Query)} for virtual scrolling.
+   *
+   * <p>Instance-scoped (session-scoped): cleared on close so results never leak
+   * across Vaadin sessions or sidebar reuse.</p>
    */
   private final List<SearchHit> cachedResults = new ArrayList<>();
 
@@ -230,7 +231,7 @@ public class ConnectDatasetSidebar extends Div {
       // explicit search. During open(), loadInstances() auto-selects the
       // first item — we must NOT treat that auto-selection as a search
       // trigger, or the sidebar would block on InvenioRDM latency.
-      if (!searchInitiated) {
+      if (!state.hasSearched()) {
         return;
       }
       refreshSearchResults();
@@ -359,7 +360,7 @@ public class ConnectDatasetSidebar extends Div {
       if (accessFilter == null) return; // already active
       accessFilter = null;
       updateToggleState();
-      if (searchInitiated) refreshSearchResults();
+      if (state.hasSearched()) refreshSearchResults();
     });
 
     restrictedOnlyButton = new Button("Restricted only");
@@ -368,7 +369,7 @@ public class ConnectDatasetSidebar extends Div {
       if (DatasetAccessFilter.RESTRICTED.equals(accessFilter)) return; // already active
       accessFilter = DatasetAccessFilter.RESTRICTED;
       updateToggleState();
-      if (searchInitiated) refreshSearchResults();
+      if (state.hasSearched()) refreshSearchResults();
     });
 
     //  Credential banner (search-time, informational) ────────────
@@ -426,10 +427,21 @@ public class ConnectDatasetSidebar extends Div {
 
   public void open() {
     // Bind UI context for async operations
-    uiHandle.bind(UI.getCurrent());
-    
+    UI ui = UI.getCurrent();
+    uiHandle.bind(ui);
+
+    // Tie the sidebar's lifetime to the Vaadin session: when the UI is
+    // detached (browser closed, page navigated away, session expired) this
+    // component — and with it the search cache and flow state — is released.
+    // Registering a one-time detach listener here guarantees no in-flight
+    // async work or cached results are retained beyond the session. The
+    // listener is removed in close() so it does not accumulate on reuse.
+    if (this.detachRegistration == null) {
+      this.detachRegistration = ui.addDetachListener(e -> disposeOnDetach());
+    }
+
     // Reset UI state to ensure welcome message is visible
-    searchInitiated = false;
+    state.reset();
     loadingIndicator.getStyle().set("display", "none");
     welcomeMessage.getStyle().set("display", "flex");
     resultsGrid.getDataProvider().refreshAll();
@@ -443,22 +455,28 @@ public class ConnectDatasetSidebar extends Div {
     overlay.getStyle().set("display", "block");
     panel.getStyle().set("display", "block");
     // We intentionally do NOT trigger any fetch here. The grid's lazy-
-    // loading data provider is gated by {@link #searchInitiated} — until
-    // the user clicks Search / presses Enter / clicks Clear, fetchPage()
+    // loading data provider is gated by {@link SearchFlowState#hasSearched()} —
+    // until the user clicks Search / presses Enter / clicks Clear, fetchPage()
     // returns an empty stream without making an HTTP call. That is what
     // keeps this method non-blocking even when InvenioRDM has high
     // latency.
   }
 
   public void close() {
+    // Release the UI-detach binding on explicit close so the listener is not
+    // re-registered every time the sidebar is reopened in the same session.
+    if (detachRegistration != null) {
+      detachRegistration.remove();
+      detachRegistration = null;
+    }
     overlay.getStyle().set("display", "none");
     panel.getStyle().set("display", "none");
     resultsGrid.deselectAll();
     selectionCountLabel.setText("");
     connectButton.setEnabled(false);
-    // Clear the flag so the next open() does not fire the grid's
+    // Reset the flow state so the next open() does not fire the grid's
     // automatic first-page fetch against a stale default instance.
-    searchInitiated = false;
+    state.reset();
     // Reset access filter toggle to default ("All datasets")
     accessFilter = null;
     updateToggleState();
@@ -482,6 +500,23 @@ public class ConnectDatasetSidebar extends Div {
   public Registration addDatasetsConnectedListener(
       ComponentEventListener<DatasetsConnectedEvent> listener) {
     return addListener(DatasetsConnectedEvent.class, listener);
+  }
+
+  /**
+   * Releases this sidebar's session-bound state when the owning Vaadin
+   * {@code UI} is detached (browser closed / navigated away / session
+   * expired). This is the guard that prevents a VaadinSession leak: no
+   * cached search results or flow state outlives the {@code UI} instance,
+   * and any in-flight async {@link UiHandle} callbacks are safely dropped
+   * once the weak UI reference is detached.
+   */
+  private void disposeOnDetach() {
+    state.reset();
+    synchronized (cachedResults) {
+      cachedResults.clear();
+    }
+    cardErrors.clear();
+    detachRegistration = null;
   }
 
   // ── Internal build ──────────────────────────────────────────────────
@@ -659,12 +694,12 @@ public class ConnectDatasetSidebar extends Div {
    */
   private void refreshSearchResults() {
     // Prevent duplicate concurrent searches
-    if (searchInProgress) {
+    if (state.isInProgress()) {
       return;
     }
 
     // Mark that user has initiated at least one search (for fetchPage guard)
-    searchInitiated = true;
+    state.markInitiated();
 
     // Clear any previous card errors when starting a new search
     cardErrors.clear();
@@ -729,7 +764,7 @@ public class ConnectDatasetSidebar extends Div {
    * Enables or disables all search controls during async search.
    */
   private void setControlsEnabled(boolean enabled) {
-    searchInProgress = !enabled;
+    state.setInProgress(!enabled);
     searchButton.setEnabled(enabled);
     searchField.setEnabled(enabled);
     instanceSelector.setEnabled(enabled);
@@ -753,7 +788,7 @@ public class ConnectDatasetSidebar extends Div {
     int limit = query.getLimit();
 
     // Guard: until the user has initiated at least one search, return empty
-    if (!searchInitiated) {
+    if (!state.hasSearched()) {
       return Stream.empty();
     }
 
@@ -903,6 +938,9 @@ public class ConnectDatasetSidebar extends Div {
   private void onBatchFinished(int successCount, int failureCount,
       int alreadyConnectedCount, int credentialErrorCount,
       int accessLinkErrorCount) {
+    ConnectResultSummary summary = new ConnectResultSummary(
+        successCount, failureCount, alreadyConnectedCount,
+        credentialErrorCount, accessLinkErrorCount);
     uiHandle.onUiAndPush(() -> {
       try {
         // Hide spinner and restore controls
@@ -913,37 +951,17 @@ public class ConnectDatasetSidebar extends Div {
         // If every connection attempt succeeded, close the sidebar.
         // Otherwise keep it open so inline errors on failed cards
         // (credential/access-link failures) stay visible.
-        if (failureCount == 0) {
+        if (summary.hadNoFailures()) {
           close();
         } else {
           // Refresh the grid to show inline errors on failed cards
           resultsGrid.getDataProvider().refreshAll();
         }
 
-        // Show toast with results
-        if (successCount > 0) {
-          notificationFactory.toast("dataset.connected.success",
-              new Object[]{successCount}, getLocale()).open();
-          fireEvent(new DatasetsConnectedEvent(this));
-        }
-        if (alreadyConnectedCount > 0) {
-          notificationFactory.toast("dataset.connected.already",
-              new Object[]{alreadyConnectedCount}, getLocale()).open();
-        }
-        if (credentialErrorCount > 0) {
-          notificationFactory.toast("dataset.connected.credential.required",
-              new Object[]{credentialErrorCount}, getLocale()).open();
-        }
-        if (accessLinkErrorCount > 0) {
-          notificationFactory.toast("dataset.connected.access.link.failed",
-              new Object[]{accessLinkErrorCount}, getLocale()).open();
-        }
-        // Generic failure toast for other failures (not credential or access link)
-        int otherFailures = failureCount - credentialErrorCount - accessLinkErrorCount;
-        if (otherFailures > 0) {
-          notificationFactory.toast("dataset.connected.failure",
-              new Object[]{otherFailures}, getLocale()).open();
-        }
+        // Surface per-category toasts, and notify the parent view to refresh
+        // whenever at least one dataset was connected.
+        summary.showNotifications(notificationFactory, getLocale(),
+            () -> fireEvent(new DatasetsConnectedEvent(this)));
       } catch (Exception e) {
         log.error("Exception in onBatchFinished", e);
       }
@@ -1026,23 +1044,35 @@ public class ConnectDatasetSidebar extends Div {
   // ── Helpers ─────────────────────────────────────────────────────────
 
   /**
+   * Resolves the provider-connection status for the currently selected
+   * repository instance, shared by the credential check ({@link #hasValidPat()})
+   * and the credential banner ({@link #updateCredentialBanner()}).
+   *
+   * <p>Returns empty when no instance is selected or the lookup fails, so
+   * callers can treat "unknown" and "no connection" consistently.</p>
+   */
+  private Optional<CredentialStatus> resolveCredentialStatus() {
+    var instance = instanceSelector.getValue();
+    if (instance == null) {
+      return Optional.empty();
+    }
+    try {
+      return Optional.of(externalCredentialService.credentialStatusForInstance(
+          currentUserId(), instance.id()));
+    } catch (Exception e) {
+      log.error("Failed to check credential status for instance {}", instance.id(), e);
+      return Optional.empty();
+    }
+  }
+
+  /**
    * Checks if the current user has a valid provider connection for the selected instance.
    *
    * @return true if user has a valid provider connection, false otherwise
    */
   private boolean hasValidPat() {
-    var instance = instanceSelector.getValue();
-    if (instance == null) {
-      return false;
-    }
-    try {
-      CredentialStatus status = externalCredentialService.credentialStatusForInstance(
-          currentUserId(), instance.id());
-      return status == CredentialStatus.VALID;
-    } catch (Exception e) {
-      log.error("Failed to check credential status", e);
-      return false;
-    }
+    return resolveCredentialStatus().map(status -> status == CredentialStatus.VALID)
+        .orElse(false);
   }
 
   /**
@@ -1075,23 +1105,17 @@ public class ConnectDatasetSidebar extends Div {
    */
   private void updateCredentialBanner() {
     var instance = instanceSelector.getValue();
-    if (instance == null) {
-      credentialBanner.getStyle().set("display", "none");
-      return;
-    }
-
-    CredentialStatus status;
-    try {
-      status = externalCredentialService.credentialStatusForInstance(
-          currentUserId(), instance.id());
-    } catch (Exception e) {
-      log.error("Failed to check credential status for instance %s"
-          .formatted(instance.id()), e);
-      credentialBanner.getStyle().set("display", "none");
-      return;
-    }
-
+    // No instance selected, lookup failed, or the connection is VALID: hide the
+    // banner. Only NOT_CONFIGURED / INVALIDATED states render a banner.
+    var status = resolveCredentialStatus()
+        .filter(s -> s != CredentialStatus.VALID)
+        .orElse(null);
     credentialBanner.removeAll();
+
+    if (instance == null || status == null) {
+      credentialBanner.getStyle().set("display", "none");
+      return;
+    }
 
     if (status == CredentialStatus.NOT_CONFIGURED) {
       var icon = VaadinIcon.INFO_CIRCLE.create();
@@ -1103,7 +1127,6 @@ public class ConnectDatasetSidebar extends Div {
       credentialBanner.add(icon, text, configureConnectionButton);
       credentialBanner.addClassName("cds-credential-banner--info");
       credentialBanner.removeClassName("cds-credential-banner--warning");
-      credentialBanner.getStyle().set("display", "flex");
     } else if (status == CredentialStatus.INVALIDATED) {
       var icon = VaadinIcon.WARNING.create();
       icon.addClassName("cds-credential-banner-icon");
@@ -1114,11 +1137,8 @@ public class ConnectDatasetSidebar extends Div {
       credentialBanner.add(icon, text, configureConnectionButton);
       credentialBanner.removeClassName("cds-credential-banner--info");
       credentialBanner.addClassName("cds-credential-banner--warning");
-      credentialBanner.getStyle().set("display", "flex");
-    } else {
-      // VALID — no banner needed
-      credentialBanner.getStyle().set("display", "none");
     }
+    credentialBanner.getStyle().set("display", "flex");
   }
 
   /**
@@ -1157,7 +1177,97 @@ public class ConnectDatasetSidebar extends Div {
     }
   }
 
+  /**
+   * Encapsulates the search/connect control flags of the sidebar.
+   *
+   * <p>Instance-scoped and owned by the sidebar, so its lifetime is bounded by
+   * the containing Vaadin {@code UI} session — it can never retain cached
+   * results or a stale UI after the session is closed.</p>
+   */
+  private static final class SearchFlowState {
+
+    /** Sticky {@code true} once the user has explicitly triggered a search. */
+    private volatile boolean initiated = false;
+    /** {@code true} only while an async search/connect is in flight. */
+    private volatile boolean inProgress = false;
+
+    /** {@code true} when the user has triggered at least one search. */
+    boolean hasSearched() {
+      return initiated;
+    }
+
+    /** Record that the user triggered the first search. Sticky until reset. */
+    void markInitiated() {
+      this.initiated = true;
+    }
+
+    void setInProgress(boolean inProgress) {
+      this.inProgress = inProgress;
+    }
+
+    boolean isInProgress() {
+      return inProgress;
+    }
+
+    /** Back to a fresh-session state (used on {@code open()} and {@code close()}). */
+    void reset() {
+      this.initiated = false;
+      this.inProgress = false;
+    }
+  }
+
   // ── Custom event ────────────────────────────────────────────────────
+
+  /**
+   * Immutable accounting of a connect-batch outcome, plus the policy for
+   * which toasts to surface. Pure data/decision object (no Vaadin state), so
+   * it can be unit-tested in isolation and keeps {@link #onBatchFinished}
+   * free of toast-selection logic.
+   */
+  record ConnectResultSummary(
+      int successCount,
+      int failureCount,
+      int alreadyConnectedCount,
+      int credentialErrorCount,
+      int accessLinkErrorCount) {
+
+    /** {@code true} when every connection attempt succeeded. */
+    boolean hadNoFailures() {
+      return failureCount == 0;
+    }
+
+    /**
+     * Opens one toast per affected category and invokes {@code onSuccess}
+     * (used to dispatch {@link DatasetsConnectedEvent}) when datasets were
+     * actually connected.
+     */
+    void showNotifications(MessageSourceNotificationFactory factory, Locale locale,
+        Runnable onSuccess) {
+      if (successCount > 0) {
+        factory.toast("dataset.connected.success",
+            new Object[]{successCount}, locale).open();
+        onSuccess.run();
+      }
+      if (alreadyConnectedCount > 0) {
+        factory.toast("dataset.connected.already",
+            new Object[]{alreadyConnectedCount}, locale).open();
+      }
+      if (credentialErrorCount > 0) {
+        factory.toast("dataset.connected.credential.required",
+            new Object[]{credentialErrorCount}, locale).open();
+      }
+      if (accessLinkErrorCount > 0) {
+        factory.toast("dataset.connected.access.link.failed",
+            new Object[]{accessLinkErrorCount}, locale).open();
+      }
+      // Generic failure toast for other failures (not credential or access link)
+      int otherFailures = failureCount - credentialErrorCount - accessLinkErrorCount;
+      if (otherFailures > 0) {
+        factory.toast("dataset.connected.failure",
+            new Object[]{otherFailures}, locale).open();
+      }
+    }
+  }
 
   /**
    * Fired when one or more datasets have been successfully connected to
