@@ -50,9 +50,7 @@ import life.qbic.projectmanagement.application.experiment.ExperimentInformationS
 import life.qbic.projectmanagement.domain.model.associated_dataset.CredentialStatus;
 import life.qbic.projectmanagement.domain.model.associated_dataset.SourceType;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
-import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
-import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.context.SecurityContext;
@@ -420,9 +418,7 @@ public class ConnectDatasetSidebar extends Div {
 
   public void setContext(Context context) {
     this.context = context;
-    if (context != null && context.projectId().isPresent()) {
-      loadInstances();
-    }
+    currentProjectId().ifPresent(ignored -> loadInstances());
   }
 
   public void open() {
@@ -449,9 +445,7 @@ public class ConnectDatasetSidebar extends Div {
     
     loadInstances();
     // Load experiments asynchronously to avoid blocking
-    if (context != null && context.projectId().isPresent()) {
-      loadExperimentsAsync();
-    }
+    currentProjectId().ifPresent(ignored -> loadExperimentsAsync());
     overlay.getStyle().set("display", "block");
     panel.getStyle().set("display", "block");
     // We intentionally do NOT trigger any fetch here. The grid's lazy-
@@ -646,10 +640,10 @@ public class ConnectDatasetSidebar extends Div {
    * when the experiment query is slow.
    */
   private void loadExperimentsAsync() {
-    if (context == null || context.projectId().isEmpty() || experimentInformationService == null) {
+    var projectId = currentProjectId().orElse(null);
+    if (projectId == null || experimentInformationService == null) {
       return;
     }
-    ProjectId projectId = context.projectId().orElseThrow();
 
     // Capture security context on the main thread for propagation to the async thread
     // This is critical because Spring Security checks happen in the async thread
@@ -820,10 +814,10 @@ public class ConnectDatasetSidebar extends Div {
   // ── Connect confirmation ────────────────────────────────────────────
 
   private void connectSelectedDatasets() {
-    if (context == null || context.projectId().isEmpty()) {
+    var projectId = currentProjectId().orElse(null);
+    if (projectId == null) {
       return;
     }
-    ProjectId projectId = context.projectId().orElseThrow();
     var instance = instanceSelector.getValue();
     var selected = new ArrayList<>(resultsGrid.getSelectedItems());
     if (selected.isEmpty()) {
@@ -1044,6 +1038,20 @@ public class ConnectDatasetSidebar extends Div {
   // ── Helpers ─────────────────────────────────────────────────────────
 
   /**
+   * The project this sidebar is operating on, if one is in scope.
+   *
+   * <p>Centralises the repeated {@code context != null && context.projectId().isPresent()}
+   * null/emptiness checks that were spread across the search, experiment-loading and
+   * connect flows into a single accessor.</p>
+   */
+  private Optional<ProjectId> currentProjectId() {
+    if (context == null) {
+      return Optional.empty();
+    }
+    return context.projectId();
+  }
+
+  /**
    * Resolves the provider-connection status for the currently selected
    * repository instance, shared by the credential check ({@link #hasValidPat()})
    * and the credential banner ({@link #updateCredentialBanner()}).
@@ -1169,14 +1177,6 @@ public class ConnectDatasetSidebar extends Div {
     });
   }
 
-  /** A lightweight record mapping an ExperimentId to its display name. */
-  record ExperimentEntry(ExperimentId id, String label) {
-    @Override
-    public @NonNull String toString() {
-      return label;
-    }
-  }
-
   /**
    * Encapsulates the search/connect control flags of the sidebar.
    *
@@ -1216,7 +1216,7 @@ public class ConnectDatasetSidebar extends Div {
     }
   }
 
-  // ── Custom event ────────────────────────────────────────────────────
+  // ── Connect-batch result ──────────────────────────────────────────────
 
   /**
    * Immutable accounting of a connect-batch outcome, plus the policy for
@@ -1266,22 +1266,6 @@ public class ConnectDatasetSidebar extends Div {
         factory.toast("dataset.connected.failure",
             new Object[]{otherFailures}, locale).open();
       }
-    }
-  }
-
-  /**
-   * Fired when one or more datasets have been successfully connected to
-   * the project. The parent view refreshes its connected-resources grid
-   * in response.
-   */
-  public static class DatasetsConnectedEvent
-      extends com.vaadin.flow.component.ComponentEvent<ConnectDatasetSidebar> {
-
-    @Serial
-    private static final long serialVersionUID = 1L;
-
-    public DatasetsConnectedEvent(ConnectDatasetSidebar source) {
-      super(source, false);
     }
   }
 }
