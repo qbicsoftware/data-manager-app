@@ -763,6 +763,8 @@ public class ConnectDatasetSidebar extends Div {
     searchButton.setEnabled(enabled);
     searchField.setEnabled(enabled);
     instanceSelector.setEnabled(enabled);
+    allDatasetsButton.setEnabled(enabled);
+    restrictedOnlyButton.setEnabled(enabled);
   }
 
   /**
