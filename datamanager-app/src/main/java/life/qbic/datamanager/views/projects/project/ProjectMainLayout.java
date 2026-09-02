@@ -11,6 +11,7 @@ import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.spring.security.AuthenticationContext;
+import jakarta.annotation.security.PermitAll;
 import life.qbic.datamanager.announcements.AnnouncementService;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
@@ -39,6 +40,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  *
  */
 @PageTitle("Data Manager")
+@PermitAll
 public class ProjectMainLayout extends DataManagerLayout implements BeforeEnterObserver {
 
   private static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
@@ -131,5 +133,7 @@ public class ProjectMainLayout extends DataManagerLayout implements BeforeEnterO
     drawerTitle.addClassName("project-navigation-drawer-title");
     addToDrawer(drawerTitle, projectSideNavigationComponent);
     setPrimarySection(Section.DRAWER);
+    // Vaadin 25: Open drawer by default when navigating to a project
+    setDrawerOpened(true);
   }
 }

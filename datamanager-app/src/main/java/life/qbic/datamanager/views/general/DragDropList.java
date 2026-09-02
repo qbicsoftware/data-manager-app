@@ -81,14 +81,22 @@ public class DragDropList<T extends Component> extends Composite<Div> {
 
       return dropAfter.addDropListener(
           it -> listener.onComponentEvent(new DropEvent<>(this, it.isFromClient(),
-              it.getEffectAllowed().getClientPropertyValue())));
+              it.getEffectAllowed().getClientPropertyValue(),
+              it.getClientX(),
+              it.getClientY(),
+              it.getOffsetX(),
+              it.getOffsetY())));
     }
 
     public Registration addDropBeforeListener(
         ComponentEventListener<DropEvent<DragDropItem<T>>> listener) {
       return dropBefore.addDropListener(
           it -> listener.onComponentEvent(new DropEvent<>(this, it.isFromClient(),
-              it.getEffectAllowed().getClientPropertyValue())));
+              it.getEffectAllowed().getClientPropertyValue(),
+              it.getClientX(),
+              it.getClientY(),
+              it.getOffsetX(),
+              it.getOffsetY())));
     }
 
     public void setDropActive(boolean dropActive) {

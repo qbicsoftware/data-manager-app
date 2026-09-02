@@ -11,8 +11,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
 import life.qbic.application.commons.time.DateTimeFormat;
+import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Sort;
-import org.springframework.lang.NonNull;
 
 public interface PxpMeasurementLookup {
 

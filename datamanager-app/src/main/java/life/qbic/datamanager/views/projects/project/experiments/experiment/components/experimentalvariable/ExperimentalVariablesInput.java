@@ -29,8 +29,8 @@ import life.qbic.datamanager.views.general.dialog.UserInput;
 import life.qbic.datamanager.views.general.icon.IconFactory;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.VariableChange.VariableDeleted;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.VariableRow.InvalidChangesException;
-import org.springframework.lang.NonNull;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 public class ExperimentalVariablesInput extends Composite<Div> implements UserInput, CanSnapshot {
 

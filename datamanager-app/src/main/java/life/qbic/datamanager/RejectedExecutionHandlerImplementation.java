@@ -35,7 +35,7 @@ public class RejectedExecutionHandlerImplementation implements RejectedExecution
   public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
     try {
       log.debug(
-          "Thread " + Thread.currentThread().getId() + " rejected, because the queue was full.");
+          "Thread " + Thread.currentThread().threadId() + " rejected, because the queue was full.");
       executor.getQueue().put(r);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();

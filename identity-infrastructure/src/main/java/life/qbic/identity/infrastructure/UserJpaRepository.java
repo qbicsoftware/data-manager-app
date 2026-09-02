@@ -84,7 +84,8 @@ public class UserJpaRepository implements UserDataStorage {
             isOidc,
             isOidcIssuer
         );
-    return Specification.where(isBlankSpec)
+    return Specification.<User>unrestricted()
+        .and(isBlankSpec)
         .and(filterSpecification)
         .and(isActiveSpec);
   }

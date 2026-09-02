@@ -1,8 +1,9 @@
 package life.qbic.datamanager;
 
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.file.Paths;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.projectmanagement.application.AppContextProvider;
 import org.springframework.beans.factory.annotation.Value;
@@ -33,7 +34,8 @@ public class DataManagerContextProvider implements AppContextProvider {
     this.projectInfoEndpoint = projectEndpoint;
     this.samplesEndpoint = samplesEndpoint;
     try {
-      baseUrlApplication = new URL(protocol, host, port, contextPath);
+      baseUrlApplication = URI.create(protocol + "://" + host + ":" + port + "/" + contextPath)
+          .toURL();
     } catch (MalformedURLException e) {
       throw new ApplicationException("Initialization of context provider failed.", e);
     }
@@ -42,10 +44,10 @@ public class DataManagerContextProvider implements AppContextProvider {
   @Override
   public String urlToProject(String projectId) {
     try {
-      return new URL(baseUrlApplication,
-          Paths.get(baseUrlApplication.getPath(), projectInfoEndpoint.formatted(projectId))
-              .toString()).toExternalForm();
-    } catch (MalformedURLException e) {
+      return baseUrlApplication.toURI().resolve(projectInfoEndpoint.formatted(projectId))
+          .toURL()
+          .toExternalForm();
+    } catch (MalformedURLException | URISyntaxException e) {
       throw new ApplicationException("Data Manager context creation failed.", e);
     }
   }
@@ -53,11 +55,10 @@ public class DataManagerContextProvider implements AppContextProvider {
   @Override
   public String urlToSamplePage(String projectId, String experimentId) {
     try {
-      return new URL(baseUrlApplication,
-          Paths.get(baseUrlApplication.getPath(),
-                  samplesEndpoint.formatted(projectId, experimentId))
-              .toString()).toExternalForm();
-    } catch (MalformedURLException e) {
+      return baseUrlApplication.toURI().resolve(samplesEndpoint.formatted(projectId, experimentId))
+          .toURL()
+          .toExternalForm();
+    } catch (MalformedURLException | URISyntaxException e) {
       throw new ApplicationException("Data Manager context creation failed.", e);
     }
   }

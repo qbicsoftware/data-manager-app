@@ -3,6 +3,7 @@ package life.qbic.datamanager.views;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.spring.security.AuthenticationContext;
+import jakarta.annotation.security.PermitAll;
 import java.util.Objects;
 import life.qbic.datamanager.announcements.AnnouncementService;
 import life.qbic.datamanager.views.account.PersonalAccessTokenMain;
@@ -20,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * @since 1.0.0
  */
 @PageTitle("Data Manager")
+@PermitAll
 public class UserMainLayout extends DataManagerLayout {
 
   public UserMainLayout(@Autowired AuthenticationContext authenticationContext,

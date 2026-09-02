@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 import life.qbic.datamanager.views.general.grid.component.GridConfiguration.ConfiguredGrid;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
-import org.springframework.lang.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * A {@code FilterGrid} is a UI component that decorates a plain Vaadin {@link Grid} with a consistent
@@ -384,7 +384,7 @@ public final class FilterGrid<T, F> extends Div {
     checkboxGroup.addThemeVariants(CheckboxGroupVariant.LUMO_VERTICAL);
 
     checkboxGroup.addClassNames("flex-vertical");
-    subMenu.add(checkboxGroup);
+    subMenu.addComponent(checkboxGroup);
     primaryGridControls.add(searchField, selectionDisplay, spacer, secondaryActionGroup,
         visualSeparator, showHideMenu);
 

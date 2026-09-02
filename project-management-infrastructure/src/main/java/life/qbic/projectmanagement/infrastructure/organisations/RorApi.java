@@ -1,9 +1,6 @@
 package life.qbic.projectmanagement.infrastructure.organisations;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -19,7 +16,9 @@ import java.util.Objects;
 import java.util.Optional;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
-import org.eclipse.jetty.http.HttpStatus;
+import org.springframework.http.HttpStatus;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * API for research organisation registry. ROR (https://ror.org/)
@@ -155,11 +154,9 @@ public interface RorApi {
 
     private Optional<RorEntry> parseJson(String json) {
       try {
-        RorEntry rorEntry = new ObjectMapper().configure(
-                DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-            .readValue(json, RorEntryV2.class);
+        RorEntry rorEntry = JsonMapper.builder().build().readValue(json, RorEntryV2.class);
         return Optional.of(rorEntry);
-      } catch (JsonProcessingException e) {
+      } catch (JacksonException e) {
         log.error("Could not parse response from ROR.", e);
         return Optional.empty();
       }
@@ -229,7 +226,7 @@ public interface RorApi {
         throw new RorRequestException(e);
       }
 
-      if (result.statusCode() == HttpStatus.NOT_FOUND_404) {
+      if (result.statusCode() == HttpStatus.NOT_FOUND.value()) {
         log.warn("Organisation not found for " + request.uri());
         return RorResponse.empty();
       }

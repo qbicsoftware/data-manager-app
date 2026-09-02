@@ -13,7 +13,7 @@ import life.qbic.datamanager.views.general.dialog.InputValidation;
 import life.qbic.datamanager.views.general.dialog.UserInput;
 import life.qbic.datamanager.views.projects.ProjectInformation;
 import life.qbic.projectmanagement.application.contact.PersonLookupService;
-import org.springframework.lang.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * <b>Edit Contacts Component</b>
@@ -24,9 +24,9 @@ import org.springframework.lang.NonNull;
  */
 public class EditContactsComponent extends FormLayout implements UserInput {
 
-  private transient BoundContactField managerBinding;
-  private transient BoundContactField investigatorBinding;
-  private transient BoundContactField projectResponsibleBinding;
+  private final transient BoundContactField managerBinding;
+  private final transient BoundContactField investigatorBinding;
+  private final transient BoundContactField projectResponsibleBinding;
 
   public EditContactsComponent(ProjectInformation projectInformation, Contact currentUser,
       PersonLookupService personLookupService) {

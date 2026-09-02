@@ -234,7 +234,7 @@ public class ConnectDatasetSidebar extends Div {
       }
       refreshSearchResults();
     });
-    instanceSelector.setOverlayClassName("connect-dataset-sidebar-overlay");
+    instanceSelector.addClassName("connect-dataset-sidebar-overlay");
 
     searchField = new TextField();
     searchField.setPlaceholder("Search by title, DOI, or creator…");
@@ -333,7 +333,7 @@ public class ConnectDatasetSidebar extends Div {
     experimentSelector.setItemLabelGenerator(ExperimentEntry::label);
     experimentSelector.setClearButtonVisible(true);
     experimentSelector.setWidthFull();
-    experimentSelector.setOverlayClassName("connect-dataset-sidebar-overlay");
+    experimentSelector.addClassName("connect-dataset-sidebar-overlay");
 
     selectionCountLabel = new Span();
     selectionCountLabel.addClassName("normal-body-text");

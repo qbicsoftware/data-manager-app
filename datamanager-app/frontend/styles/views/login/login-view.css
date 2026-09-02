@@ -6,6 +6,14 @@
   min-width: 300px;
 }
 
-#login-form vaadin-login-form-wrapper::part(form) {
+/* Vaadin 25: vaadin-login-form-wrapper was removed; form part is now directly on vaadin-login-form */
+#login-form::part(form) {
   padding: 0;
+}
+
+/* Restore compact input field styling to match Vaadin 24 appearance */
+#login-form vaadin-text-field,
+#login-form vaadin-password-field {
+  --vaadin-field-default-width: 100%;
+  margin-bottom: 0;
 }

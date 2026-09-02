@@ -1,7 +1,5 @@
 package life.qbic.identity.infrastructure.broadcasting;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Objects;
 import life.qbic.identity.application.communication.broadcasting.EventHub;
 import life.qbic.identity.application.communication.broadcasting.IntegrationEvent;
@@ -9,6 +7,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Component;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * <b>Message Dispatcher</b>
@@ -36,7 +36,7 @@ public class MessageDispatcher implements EventHub {
     ObjectMapper mapper = new ObjectMapper();
     try {
       jmsTemplate.convertAndSend(IDENTITY_TOPIC, mapper.writeValueAsString(event));
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       throw new RuntimeException("Event broadcasting failed!", e);
     }
   }

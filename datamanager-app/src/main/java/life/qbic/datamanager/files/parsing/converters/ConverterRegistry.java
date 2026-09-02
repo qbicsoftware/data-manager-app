@@ -1,5 +1,6 @@
 package life.qbic.datamanager.files.parsing.converters;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationIP;
@@ -10,7 +11,6 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.Measureme
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationPxP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.SampleRegistrationInformation;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.SampleUpdateInformation;
-import org.apache.commons.collections.map.HashedMap;
 
 /**
  * Converter Factory for creating {@link MetadataConverterV2} instances.
@@ -34,7 +34,7 @@ import org.apache.commons.collections.map.HashedMap;
 public class ConverterRegistry {
 
   // Registry with suppliers
-  private static final Map<Class<?>, Supplier<? extends MetadataConverterV2<?>>> registry = new HashedMap();
+  private static final Map<Class<?>, Supplier<? extends MetadataConverterV2<?>>> registry = new HashMap<>();
 
   static {
     // Registration of matching classes and suppliers (e.g., constructors)

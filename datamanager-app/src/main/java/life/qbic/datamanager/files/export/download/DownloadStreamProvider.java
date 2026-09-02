@@ -1,6 +1,7 @@
 package life.qbic.datamanager.files.export.download;
 
 import java.io.InputStream;
+import java.util.Optional;
 
 public interface DownloadStreamProvider {
 
@@ -8,4 +9,7 @@ public interface DownloadStreamProvider {
 
   InputStream getStream();
 
+  String getContentType();
+
+  Optional<Long> contentLength();
 }

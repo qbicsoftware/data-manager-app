@@ -34,7 +34,7 @@ import life.qbic.projectmanagement.domain.model.associated_dataset.event.Associa
 import life.qbic.projectmanagement.domain.model.associated_dataset.repository.AssociatedDatasetRepository;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;

@@ -2,14 +2,14 @@ package life.qbic.projectmanagement.infrastructure.communication;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.communication.broadcasting.IntegrationEvent;
 import life.qbic.projectmanagement.application.communication.broadcasting.MessageRouter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.stereotype.Component;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * <b>Message Consumer</b>
@@ -42,7 +42,7 @@ public class MessageConsumer {
     var objectMapper = new ObjectMapper();
     try {
       return objectMapper.readValue(content, IntegrationEvent.class);
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       log.error("Json to object mapping failed!", e);
       throw new IllegalArgumentException("Content does not seem to be an integration event.");
     }

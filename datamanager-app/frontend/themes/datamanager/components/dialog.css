@@ -495,6 +495,16 @@ Since we want to remove the spacing between the cancel and confirm button we rep
   width: 100%;
 }
 
+.upload-component .restrictions:has(:only-child) {
+  justify-content: flex-end;
+}
+
+.upload-component .upload-component-error {
+  font-size: smaller;
+  color: var(--lumo-error-color);
+  padding: var(--lumo-space-xs);
+}
+
 .measurement-upload-dialog .upload-items-display .uploaded-items-section .section-title {
   color: var(--lumo-secondary-text-color);
   font-size: var(--lumo-font-size-s);
@@ -515,8 +525,7 @@ Since we want to remove the spacing between the cancel and confirm button we rep
 }
 
 .measurement-upload-dialog .upload-items-display .uploaded-measurement-items .measurement-item,
-.register-samples-dialog .uploaded-items-section .uploaded-item,
-.edit-samples-dialog .uploaded-items-section .uploaded-item {
+.uploaded-items-section .uploaded-item {
   font-size: var(--lumo-font-size-s);
   display: flex;
   padding-top: var(--lumo-space-m);
@@ -693,19 +702,6 @@ vaadin-upload-file::part(meta) {
   flex-direction: column;
 }
 
-.uploaded-quality-control-items .quality-control-item {
-  border-bottom-color: var(--lumo-contrast-20pct);
-  border-bottom-style: solid;
-  border-width: 1px;
-  font-size: var(--lumo-font-size-s);
-  display: flex;
-  padding-top: var(--lumo-space-m);
-  padding-bottom: var(--lumo-space-s);
-  margin-inline: var(--lumo-space-m);
-  flex-direction: column;
-  row-gap: var(--lumo-space-s);
-}
-
 .uploaded-quality-control-items .quality-control-item .file-name {
   display: inline-flex;
   align-items: center;
@@ -739,6 +735,7 @@ vaadin-upload-file::part(meta) {
   flex-direction: column;
 }
 
+.uploaded-quality-control-items .quality-control-item,
 .uploaded-purchase-items .purchase-item {
   border-bottom-color: var(--lumo-contrast-20pct);
   border-bottom-style: solid;

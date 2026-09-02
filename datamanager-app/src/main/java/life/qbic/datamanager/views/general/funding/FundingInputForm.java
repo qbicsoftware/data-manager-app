@@ -7,7 +7,7 @@ import java.util.Optional;
 import life.qbic.datamanager.views.general.HasBoundField;
 import life.qbic.datamanager.views.general.dialog.InputValidation;
 import life.qbic.datamanager.views.general.dialog.UserInput;
-import org.springframework.lang.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * <b>Funding Input Form</b>
