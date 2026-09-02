@@ -3,6 +3,8 @@ package life.qbic.projectmanagement.domain.model.associated_dataset
 import spock.lang.Specification
 import tools.jackson.databind.ObjectMapper
 
+import java.time.LocalDate
+
 /**
  * Regression coverage for the {@code resource_metadata} JSON column.
  *
@@ -60,10 +62,9 @@ class InvenioRdmResourceMetadataJsonSpec extends Specification {
   def "current-schema JSON round-trips correctly"() {
     given: "a freshly constructed record (current schema, no embargoUntil)"
     def fresh = new InvenioRdmResourceMetadata(
-        "Test", "10.5281/zenodo.999", "v2", "https://zenodo.org/records/999",
-        "Zenodo", ["Smith, Alice"], "Dataset", null,
-        java.time.LocalDate.of(2025, 6, 1), null,
-        InvenioRdmAccessStatus.PUBLIC, InvenioRdmAccessStatus.PUBLIC)
+            "Test", "10.5281/zenodo.999", "v2", "https://zenodo.org/records/999",
+            "Zenodo", ["Smith, Alice"], "Dataset", null, LocalDate.of(2025, 6, 1), null,
+            InvenioRdmAccessStatus.PUBLIC, InvenioRdmAccessStatus.PUBLIC)
 
     when: "serialized to JSON then deserialized back via the polymorphic interface"
     def json = mapper.writeValueAsString(fresh)

@@ -24,9 +24,9 @@ import org.jspecify.annotations.NonNull;
  */
 public class EditContactsComponent extends FormLayout implements UserInput {
 
-  private transient BoundContactField managerBinding;
-  private transient BoundContactField investigatorBinding;
-  private transient BoundContactField projectResponsibleBinding;
+  private final transient BoundContactField managerBinding;
+  private final transient BoundContactField investigatorBinding;
+  private final transient BoundContactField projectResponsibleBinding;
 
   public EditContactsComponent(ProjectInformation projectInformation, Contact currentUser,
       PersonLookupService personLookupService) {

@@ -13,7 +13,6 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.util.List;
-import life.qbic.application.commons.Result;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.UiHandle;
@@ -27,6 +26,7 @@ import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.associated_dataset.AssociatedDatasetService;
 import life.qbic.projectmanagement.application.associated_dataset.ConnectedDatasetView;
+import life.qbic.projectmanagement.application.associated_dataset.ExternalCredentialService;
 import life.qbic.projectmanagement.application.associated_dataset.RemoveDatasetError;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -61,6 +61,7 @@ public class ConnectedDatasetsMain extends Main implements BeforeEnterObserver {
   private final transient ExperimentInformationService experimentInformationService;
   private final transient UserPermissions userPermissions;
   private final transient MessageSourceNotificationFactory notificationFactory;
+  private final transient ExternalCredentialService externalCredentialService;
 
   private final ConnectedResourcesComponent connectedResourcesComponent;
   private final AuthenticationToUserIdTranslator authenticationToUserIdTranslator;
@@ -75,7 +76,8 @@ public class ConnectedDatasetsMain extends Main implements BeforeEnterObserver {
       ExperimentInformationService experimentInformationService,
       UserPermissions userPermissions,
       MessageSourceNotificationFactory notificationFactory,
-      AuthenticationToUserIdTranslator authenticationToUserIdTranslator
+      AuthenticationToUserIdTranslator authenticationToUserIdTranslator,
+      ExternalCredentialService externalCredentialService
       ) {
     this.associatedDatasetService = requireNonNull(associatedDatasetService,
         "associatedDatasetService must not be null");
@@ -86,6 +88,8 @@ public class ConnectedDatasetsMain extends Main implements BeforeEnterObserver {
     this.notificationFactory = requireNonNull(notificationFactory,
         "notificationFactory must not be null");
     this.authenticationToUserIdTranslator = requireNonNull(authenticationToUserIdTranslator);
+    this.externalCredentialService = requireNonNull(externalCredentialService,
+        "externalCredentialService must not be null");
 
     addClassName("project");
     addClassName("datasets");
@@ -255,7 +259,8 @@ public class ConnectedDatasetsMain extends Main implements BeforeEnterObserver {
           associatedDatasetService,
           experimentInformationService,
           notificationFactory,
-          authenticationToUserIdTranslator);
+          authenticationToUserIdTranslator,
+          externalCredentialService);
       connectDatasetSidebar.setContext(context);
       connectDatasetSidebar.addDatasetsConnectedListener(
           e -> connectedResourcesComponent.refresh());
