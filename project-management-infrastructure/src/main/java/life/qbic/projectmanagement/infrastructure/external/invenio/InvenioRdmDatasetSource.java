@@ -10,6 +10,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.application.associated_dataset.AccessLinkCreationException;
+import life.qbic.projectmanagement.application.associated_dataset.AccessLinkRevocationException;
+import life.qbic.projectmanagement.application.associated_dataset.CreatedAccessLink;
 import life.qbic.projectmanagement.application.associated_dataset.CredentialEncryptor;
 import life.qbic.projectmanagement.application.associated_dataset.DatasetResolveException;
 import life.qbic.projectmanagement.application.associated_dataset.DatasetSearchException;
@@ -19,6 +22,7 @@ import life.qbic.projectmanagement.application.associated_dataset.SearchHit;
 import life.qbic.projectmanagement.application.associated_dataset.SearchQuery;
 import life.qbic.projectmanagement.application.associated_dataset.SearchResult;
 import life.qbic.projectmanagement.domain.model.associated_dataset.AccessLevel;
+import life.qbic.projectmanagement.domain.model.associated_dataset.CredentialStatus;
 import life.qbic.projectmanagement.domain.model.associated_dataset.InvenioRdmAccessStatus;
 import life.qbic.projectmanagement.domain.model.associated_dataset.InvenioRdmResourceMetadata;
 import life.qbic.projectmanagement.domain.model.associated_dataset.ResourceMetadata;
@@ -69,13 +73,12 @@ public class InvenioRdmDatasetSource implements DatasetSource {
     // Endpoint uses 1-based page indexing
     int invenioPage = query.page() + 1;
     var params = new InvenioRdmClient.SearchParams(
-        query.effectiveQuery(), invenioPage, query.pageSize());
+        query.effectiveQuery(), invenioPage, query.pageSize(),
+        query.accessFilter());
 
     char[] token = resolveTokenForUser(actingUserId, config.id());
     try {
-      String authHeader = token != null
-          ? "Bearer " + new String(token) : null;
-      var response = client.search(config.baseUrl(), params, authHeader);
+      var response = client.search(config.baseUrl(), params, token);
       List<SearchHit> hits = mapSearchHits(response, config.displayName());
       return new SearchResult(hits, response.hits().total(),
           query.page(), query.pageSize());
@@ -100,10 +103,8 @@ public class InvenioRdmDatasetSource implements DatasetSource {
 
     char[] token = resolveTokenForUser(actingUserId, config.id());
     try {
-      String authHeader = token != null
-          ? "Bearer " + new String(token) : null;
       var invenioRecord = client.getRecord(config.baseUrl(),
-          externalHandleValue, authHeader);
+          externalHandleValue, token);
       InvenioRdmResourceMetadata metadata = mapRecordToResourceMetadata(
           invenioRecord, config.displayName());
       return Optional.of(metadata);
@@ -115,6 +116,91 @@ public class InvenioRdmDatasetSource implements DatasetSource {
       log.error("Failed to resolve record %s on %s"
           .formatted(externalHandleValue, config.displayName()));
       throw new DatasetResolveException("Failed to resolve metadata record", e);
+    } finally {
+      if (token != null) {
+        Arrays.fill(token, '\0');
+      }
+    }
+  }
+
+  @Override
+  public boolean hasValidCredential(String userId, InstanceConfig config) {
+    if (userId == null || config == null) {
+      return false;
+    }
+    return credentialRepository
+        .findByUserIdAndSourceTypeAndInstanceId(
+            userId, SourceType.INVENIO_RDM, config.id())
+        .map(cred -> cred.getStatus() != CredentialStatus.INVALIDATED)
+        .orElse(false);
+  }
+
+  @Override
+  public CreatedAccessLink createAccessLink(String externalHandleValue,
+      InstanceConfig config, String actingUserId)
+      throws AccessLinkCreationException {
+    if (externalHandleValue == null || config == null || actingUserId == null) {
+      throw new IllegalArgumentException("Arguments must not be null");
+    }
+
+    char[] token = resolveTokenForUser(actingUserId, config.id());
+    if (token == null) {
+      throw new AccessLinkCreationException(
+          "No valid credential available for user " + actingUserId
+          + " on instance " + config.id());
+    }
+
+    try {
+      var accessLink = client.createAccessLink(config.baseUrl(),
+          externalHandleValue, token);
+      String url = config.baseUrl() + "/records/" + externalHandleValue
+          + "?token=" + accessLink.token();
+      return new CreatedAccessLink(url, accessLink.id());
+    } catch (InvenioRdmClient.InvenioRdmPermanentException e) {
+      if (e.getStatusCode() == 403) {
+        throw new AccessLinkCreationException(
+            "You do not have permission to create a shareable link for this dataset. "
+            + "Only the dataset owner can create access links.", e);
+      }
+      throw new AccessLinkCreationException(
+          "Failed to create access link: " + e.getMessage(), e);
+    } catch (InvenioRdmClient.InvenioRdmException e) {
+      throw new AccessLinkCreationException(
+          "Failed to create access link: " + e.getMessage(), e);
+    } finally {
+      if (token != null) {
+        Arrays.fill(token, '\0');
+      }
+    }
+  }
+
+  @Override
+  public void revokeAccessLink(String accessLinkId, String externalHandleValue,
+      InstanceConfig config, String actingUserId)
+      throws AccessLinkRevocationException {
+    if (accessLinkId == null || externalHandleValue == null
+        || config == null || actingUserId == null) {
+      throw new IllegalArgumentException("Arguments must not be null");
+    }
+
+    char[] token = resolveTokenForUser(actingUserId, config.id());
+    if (token == null) {
+      throw new AccessLinkRevocationException(
+          "No valid credential available for user " + actingUserId
+          + " on instance " + config.id());
+    }
+
+    try {
+      client.revokeAccessLink(config.baseUrl(), externalHandleValue,
+          accessLinkId, token);
+    } catch (InvenioRdmClient.InvenioRdmPermanentException e) {
+      throw new AccessLinkRevocationException(
+          "Failed to revoke access link " + accessLinkId + ": "
+          + e.getMessage(), e);
+    } catch (InvenioRdmClient.InvenioRdmException e) {
+      throw new AccessLinkRevocationException(
+          "Failed to revoke access link " + accessLinkId + ": "
+          + e.getMessage(), e);
     } finally {
       if (token != null) {
         Arrays.fill(token, '\0');

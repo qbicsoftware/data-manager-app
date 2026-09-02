@@ -148,6 +148,65 @@ class AssociatedDatasetServiceRemoveSpec extends Specification {
     thrown(NullPointerException)
   }
 
+  def "removeDataset revokes the access link of a restricted dataset with a persisted link id"() {
+    given:
+    def datasetId = AssociatedDatasetId.create()
+    def projectId = ProjectId.parse(VALID_PROJECT_ID)
+    def userId = "user-1"
+    def dataset = createRestrictedDatasetWithLink(
+        datasetId, projectId, userId, "link-123", "zenodo", "ext-1")
+    def repository = Mock(AssociatedDatasetRepository) {
+      findById(datasetId) >> Optional.of(dataset)
+      save(_) >> { }
+    }
+    def config = new InstanceConfig("zenodo", "Zenodo", "https://zenodo.org")
+    def registry = Mock(SourceInstanceRegistry) {
+      find("zenodo") >> Optional.of(
+          new SourceInstanceDescriptor("zenodo", "Zenodo",
+              "https://zenodo.org", SourceType.INVENIO_RDM))
+    }
+    def source = Mock(DatasetSource)
+    def service = new AssociatedDatasetService(
+        source, repository, registry,
+        Mock(ProjectInformationService), Mock(UserInformationService),
+        Mock(ExperimentInformationService))
+
+    LocalDomainEventDispatcher.instance().reset()
+
+    when:
+    def result = service.removeDataset(datasetId.value(), userId)
+
+    then:
+    result instanceof Result.Value
+    1 * source.revokeAccessLink("link-123", "ext-1", config, userId)
+  }
+
+  def "removeDataset does not revoke when no access link id was persisted"() {
+    given:
+    def datasetId = AssociatedDatasetId.create()
+    def projectId = ProjectId.parse(VALID_PROJECT_ID)
+    def userId = "user-1"
+    def dataset = createConnectedDataset(datasetId, projectId, userId) // public, no link
+    def repository = Mock(AssociatedDatasetRepository) {
+      findById(datasetId) >> Optional.of(dataset)
+      save(_) >> { }
+    }
+    def source = Mock(DatasetSource)
+    def service = new AssociatedDatasetService(
+        source, repository, Mock(SourceInstanceRegistry),
+        Mock(ProjectInformationService), Mock(UserInformationService),
+        Mock(ExperimentInformationService))
+
+    LocalDomainEventDispatcher.instance().reset()
+
+    when:
+    def result = service.removeDataset(datasetId.value(), userId)
+
+    then:
+    result instanceof Result.Value
+    0 * source.revokeAccessLink(_, _, _, _)
+  }
+
   private AssociatedDatasetService createServiceWithEmptyRepo() {
     def repository = Mock(AssociatedDatasetRepository) {
       findById(_) >> Optional.empty()
@@ -168,6 +227,21 @@ class AssociatedDatasetServiceRemoveSpec extends Specification {
             "Zenodo", [], "Dataset", "QBiC",
             java.time.LocalDate.of(2025, 1, 15), null,
             InvenioRdmAccessStatus.PUBLIC, InvenioRdmAccessStatus.PUBLIC),
+        connectedBy, null)
+  }
+
+  private static AssociatedDataset createRestrictedDatasetWithLink(
+      AssociatedDatasetId id, ProjectId projectId, String connectedBy,
+      String linkId, String instanceId, String externalHandle) {
+    new AssociatedDataset(
+        id, projectId, SourceType.INVENIO_RDM, new ExternalHandle(externalHandle),
+        new InvenioRdmResourceMetadata(
+            "Restricted Dataset", "10.1234/rstr", "v1",
+            "https://zenodo.org/records/" + externalHandle + "?token=abc",
+            "Zenodo", [], "Dataset", "QBiC",
+            java.time.LocalDate.of(2025, 1, 15), null,
+            InvenioRdmAccessStatus.RESTRICTED, InvenioRdmAccessStatus.RESTRICTED,
+            instanceId, linkId),
         connectedBy, null)
   }
 }

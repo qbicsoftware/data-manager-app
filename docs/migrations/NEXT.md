@@ -28,6 +28,61 @@ with apply / verify / rollback detail.
 
 ---
 
+## Application properties changes
+
+This release adds a third, optional InvenioRDM instance (the **FDAT Sandbox**) to
+`application.properties`, in addition to the `zenodo` and `fdat` instances already
+shipped since v1.13.0/[FEAT-DATSET-05](https://github.com/qbicsoftware/data-manager-app/issues/1471).
+The instance is used to test connecting access-restricted datasets against the
+sandbox (`https://dev.fdat.uni-tuebingen.de`) before affecting the production FDAT
+instance.
+
+No schema migration is associated with this entry. It is a **purely additive,
+optional configuration change** with a non-breaking default — see the operator
+action below.
+
+### New default instance
+
+The default `application.properties` now ships with three pre-configured instances:
+
+```properties
+# ── InvenioRDM instances ────────────────────────────────────────
+qbic.external-service.invenio-rdm.instances[0].id=zenodo
+qbic.external-service.invenio-rdm.instances[0].display-name=Zenodo
+qbic.external-service.invenio-rdm.instances[0].base-url=https://zenodo.org
+qbic.external-service.invenio-rdm.instances[0].api-version=12
+
+qbic.external-service.invenio-rdm.instances[1].id=fdat
+qbic.external-service.invenio-rdm.instances[1].display-name=FDAT
+qbic.external-service.invenio-rdm.instances[1].base-url=https://fdat.uni-tuebingen.de
+qbic.external-service.invenio-rdm.instances[1].api-version=12
+
+qbic.external-service.invenio-rdm.instances[2].id=fdat-sandbox
+qbic.external-service.invenio-rdm.instances[2].display-name=FDAT Sandbox
+qbic.external-service.invenio-rdm.instances[2].base-url=https://dev.fdat.uni-tuebingen.de
+qbic.external-service.invenio-rdm.instances[2].api-version=12
+```
+
+### Operator action
+
+1. **If you use the shipped default `application.properties`**: no action is
+   required for this release — the FDAT Sandbox instance is included. You can
+   remove the `instances[2]` entries if you do not want the sandbox offered in
+   the credentials / connect-dataset UI (the application will stop offering it).
+2. **If you externalise configuration** (environment variables, a profile
+   override): add the `instances[2]` entries above to expose the sandbox, or
+   leave them out to keep only `zenodo` + `fdat`.
+3. There is **no database migration** required for the FDAT Sandbox instance —
+   this is configuration only.
+4. **Restart** the application after changing the configuration.
+
+> **Note:** Adding or removing an instance is a config change + redeploy; users
+> cannot add arbitrary URLs via the UI. See the
+> [`InvenioRdmProperties`](../../project-management-infrastructure/src/main/java/life/qbic/projectmanagement/infrastructure/external/invenio/InvenioRdmProperties.java)
+> binding for the JSON/indexed-key shape.
+
+---
+
 ## Migration #1: `associated_dataset` table
 
 | Field | Value |

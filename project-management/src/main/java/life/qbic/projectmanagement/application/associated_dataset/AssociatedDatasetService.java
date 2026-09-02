@@ -126,11 +126,50 @@ public class AssociatedDatasetService {
       int page,
       int pageSize,
       String searchingUserId) {
+    return searchDatasets(sourceType, instanceId, query, null,
+        page, pageSize, searchingUserId);
+  }
+
+  /**
+   * Searches an external data source for datasets matching the query,
+   * with an optional access-status filter, returning paginated results.
+   *
+   * <p>The {@code accessFilter} restricts results to records with a
+   * specific access status on the source system.
+   * {@link DatasetAccessFilter#RESTRICTED} returns only access-restricted
+   * records; {@link DatasetAccessFilter#PUBLIC} returns only publicly
+   * accessible records; {@code null} returns all records (no filter).
+   * The filter is source-neutral — translation to a source-specific wire
+   * term happens in the source adapter.</p>
+   *
+   * @param sourceType      the source system type
+   * @param instanceId      the configured instance identifier
+   * @param query           the free-text search term; blank for "list all"
+   * @param accessFilter    optional access-status filter, or {@code null}
+   *                        for no filter
+   * @param page            zero-indexed page number
+   * @param pageSize        results per page
+   * @param searchingUserId the ID of the user performing the search
+   * @return paginated search results
+   * @throws DatasetSourceUnavailableException if the external data repository
+   *         could not be reached
+   * @throws DatasetSourceNotFoundException   if the {@code instanceId} does
+   *         not match any configured repository
+   * @since 1.12.0
+   */
+  public SearchResult searchDatasets(
+      SourceType sourceType,
+      String instanceId,
+      String query,
+      DatasetAccessFilter accessFilter,
+      int page,
+      int pageSize,
+      String searchingUserId) {
     Objects.requireNonNull(sourceType, "sourceType must not be null");
     Objects.requireNonNull(searchingUserId, "searchingUserId must not be null");
     // resolveInstanceConfig propagates DatasetSourceNotFoundException directly
     var config = resolveInstanceConfig(instanceId);
-    var searchQuery = new SearchQuery(query, page, pageSize);
+    var searchQuery = new SearchQuery(query, page, pageSize, accessFilter);
     try {
       return datasetSource.search(searchQuery, config, searchingUserId);
     } catch (AssociatedDatasetServiceException
@@ -214,26 +253,71 @@ public class AssociatedDatasetService {
       return Result.fromError(ConnectDatasetError.RECORD_NOT_FOUND);
     }
 
-    // 1b. Duplicate check — a dataset with the same PID is already
+    // 1a. Duplicate check — a dataset with the same PID is already
     //     connected to this project. PID is the dedup key because it is
     //     globally unique and persistent by design (DOI/PID).
+    //     This check must happen BEFORE any access link creation: for an
+    //     already-connected dataset we short-circuit here without having
+    //     provisioned a new access link on the source system that would
+    //     otherwise go unused (an orphaned link).
+    ResourceMetadata finalMetadata = metadata.get();
     boolean alreadyConnected;
     try {
       alreadyConnected = associatedDatasetRepository.isActiveConnectionPresent(
-          projectId, metadata.get().pid());
+          projectId, finalMetadata.pid());
     } catch (Exception e) {
       // Persistence/query failures (schema mismatch, table unavailable, etc.)
       // must not silently swallow the connect attempt — log the cause so
       // it surfaces in the application log rather than disappearing into
       // the reactive pipeline's onErrorResume catch-all.
       log.error("Duplicate-check query failed for project %s / PID %s"
-          .formatted(projectId, metadata.get().pid()), e);
+          .formatted(projectId, finalMetadata.pid()), e);
       return Result.fromError(ConnectDatasetError.CONNECT_FAILED);
     }
     if (alreadyConnected) {
       log.info("Dataset with PID %s is already connected to project %s — skipping"
-          .formatted(metadata.get().pid(), projectId));
+          .formatted(finalMetadata.pid(), projectId));
       return Result.fromError(ConnectDatasetError.ALREADY_CONNECTED);
+    }
+
+    // 1b. Credential gate — access-restricted datasets require a valid
+    //     credential on the source instance. Without a valid PAT, the
+    //     access link creation needed for project collaborators will
+    //     fail. Hard-block the connect rather than silently succeeding
+    //     with an unusable connection.
+    //
+    //     The created access link (and its link id, needed to revoke it)
+    //     is kept in scope for the rest of the connect so that, if a
+    //     subsequent step fails, the link is rolled back (revoked) instead
+    //     of leaking an orphaned, unused shareable link on the source.
+    CreatedAccessLink createdAccessLink = null;
+    if (finalMetadata instanceof InvenioRdmResourceMetadata inv
+        && inv.deriveAccessLevel() == AccessLevel.RESTRICTED) {
+      if (!datasetSource.hasValidCredential(connectedByUserId, config)) {
+        log.warn("Cannot connect restricted dataset %s — no valid credential "
+            + "for user %s on instance %s"
+            .formatted(externalHandleValue, connectedByUserId, instanceId));
+        return Result.fromError(ConnectDatasetError.CREDENTIAL_REQUIRED);
+      }
+
+      // Create sharable access link for project collaborators
+      try {
+        CreatedAccessLink link = datasetSource.createAccessLink(
+            externalHandleValue, config, connectedByUserId);
+        createdAccessLink = link;
+        // Update metadata with the instance, access link, and link id
+        // (the id is needed to revoke the link later).
+        finalMetadata = new InvenioRdmResourceMetadata(
+            inv.title(), inv.pid(), inv.version(), link.url(),
+            inv.resourceProvider(), inv.creators(), inv.resourceType(),
+            inv.community(), inv.publicationDate(), inv.description(),
+            inv.recordAccess(), inv.fileAccess(),
+            instanceId, link.linkId());
+      } catch (AccessLinkCreationException e) {
+        log.error("Failed to create access link for restricted dataset %s on instance %s"
+            .formatted(externalHandleValue, instanceId), e);
+        return Result.fromError(ConnectDatasetError.ACCESS_LINK_CREATION_FAILED);
+      }
     }
 
     // 2. Set up local event dispatcher to cache events emitted during the
@@ -252,11 +336,13 @@ public class AssociatedDatasetService {
           projectId,
           sourceType,
           new ExternalHandle(externalHandleValue),
-          metadata.get(),
+          finalMetadata,
           connectedByUserId,
           experimentId);
     } catch (Exception e) {
       log.error("Failed to create associated dataset aggregate", e);
+      revokeAccessLinkIfCreated(createdAccessLink, externalHandleValue, config,
+          connectedByUserId);
       return Result.fromError(ConnectDatasetError.CONNECT_FAILED);
     }
 
@@ -265,6 +351,8 @@ public class AssociatedDatasetService {
       associatedDatasetRepository.save(dataset);
     } catch (Exception e) {
       log.error("Failed to persist associated dataset for project %s".formatted(projectId), e);
+      revokeAccessLinkIfCreated(createdAccessLink, externalHandleValue, config,
+          connectedByUserId);
       return Result.fromError(ConnectDatasetError.CONNECT_FAILED);
     }
 
@@ -473,6 +561,13 @@ public class AssociatedDatasetService {
           .formatted(associatedDatasetIdStr), e);
       return Result.fromError(RemoveDatasetError.REMOVAL_FAILED);
     }
+
+    // 5a. Best-effort revocation of the shareable access link (if the
+    //     removed connection had created one on the source, e.g. a
+    //     restricted InvenioRDM dataset). The removal must not fail if
+    //     the external revoke fails — the local soft-delete stays
+    //     authoritative and the failure is logged for manual clean-up.
+    revokeAccessLinkIfPresent(dataset, removedByUserId);
 
     // 6. Forward cached events to the global dispatcher — same best-effort
     //    semantics as connectDataset(): failure here is logged but does not
@@ -698,6 +793,79 @@ public class AssociatedDatasetService {
   }
 
   // ── Internals ───────────────────────────────────────────────────────────
+
+  /**
+   * Best-effort, non-blocking access-link revocation used to roll back a
+   * created access link when a connect attempt fails after the link has
+   * been created. Never fails the caller: revocation failures are logged
+   * loudly so operators can clean up the orphaned link manually, but the
+   * primary connect error is always surfaced unchanged.
+   *
+   * <p>No-op when no link was created ({@code null}) or when the source
+   * did not expose a link id (see {@link CreatedAccessLink#linkId()}).</p>
+   *
+   * @param createdAccessLink the created link, or null if none was created
+   * @param externalHandleValue the record identifier the link belongs to
+   * @param config             the target instance
+   * @param actingUserId       the user who performed the connect
+   */
+  private void revokeAccessLinkIfCreated(
+      @Nullable CreatedAccessLink createdAccessLink,
+      String externalHandleValue,
+      InstanceConfig config,
+      String actingUserId) {
+    if (createdAccessLink == null || createdAccessLink.linkId() == null) {
+      return;
+    }
+    try {
+      datasetSource.revokeAccessLink(createdAccessLink.linkId(),
+          externalHandleValue, config, actingUserId);
+      log.info("Revoked access link {} on instance {} after failed connect"
+          .formatted(createdAccessLink.linkId(), config.id()));
+    } catch (Exception e) {
+      // Never mask the primary connect failure. Log so operators can
+      // revoke the orphaned link manually.
+      log.error("Failed to revoke access link {} on instance {} after a "
+              + "failed connect; the link may be orphaned and needs manual clean-up"
+              .formatted(createdAccessLink.linkId(), config.id()), e);
+    }
+  }
+
+  /**
+   * Best-effort access-link revocation when a dataset connection is
+   * removed through {@link #removeDataset}. Never fails the removal: a
+   * revocation failure is logged loudly so the link can be cleaned up
+   * manually, but the local soft-delete must remain authoritative.
+   *
+   * <p>Skips datasets with no access link id — public datasets and legacy
+   * connections created before the link id was persisted.</p>
+   */
+  private void revokeAccessLinkIfPresent(AssociatedDataset dataset,
+      String actingUserId) {
+    ResourceMetadata metadata = dataset.resourceMetadata();
+    if (!(metadata instanceof InvenioRdmResourceMetadata inv)
+        || inv.accessLinkId() == null || inv.instanceId() == null) {
+      return;
+    }
+    InstanceConfig config;
+    try {
+      config = resolveInstanceConfig(inv.instanceId());
+    } catch (Exception e) {
+      log.error("Cannot resolve instance config to revoke access link {} for "
+          + "dataset {}".formatted(inv.accessLinkId(), dataset.id()), e);
+      return;
+    }
+    try {
+      datasetSource.revokeAccessLink(inv.accessLinkId(),
+          dataset.externalHandle().value(), config, actingUserId);
+      log.info("Revoked access link {} on instance {} for removed dataset {}"
+          .formatted(inv.accessLinkId(), config.id(), dataset.id()));
+    } catch (Exception e) {
+      log.error("Failed to revoke access link {} for removed dataset {}; "
+              + "the link may need manual clean-up"
+              .formatted(inv.accessLinkId(), dataset.id()), e);
+    }
+  }
 
   private InstanceConfig resolveInstanceConfig(String instanceId) {
     var descriptor = sourceInstanceRegistry.find(instanceId)
