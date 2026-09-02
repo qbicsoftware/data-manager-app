@@ -1,0 +1,376 @@
+# =============================================================================
+# Data Manager Application — Distribution Template
+# =============================================================================
+#
+# This is the SINGLE SOURCE OF TRUTH for application configuration.
+# All values are specified directly in this file. No environment variables
+# are used.
+#
+# IMPORTANT: Before deploying, review every <CHANGE_ME> placeholder and
+# replace it with the actual value for your environment.
+#
+# See https://docs.spring.io/spring-boot/docs/current/reference/html/application-properties.html
+# =============================================================================
+
+
+###############################################################################
+### Logging ###################################################################
+###############################################################################
+
+logging.level.root=info
+logging.level.org.springframework.security=info
+logging.level.life.qbic=info
+logging.level.life.qbic.datamanager=info
+logging.level.life.qbic.projectmanagement.application.authorization.acl=debug
+logging.file.path=./logs
+
+###############################################################################
+### Security / Vault ##########################################################
+###############################################################################
+
+# NOTE: The current DataManagerVault code reads these as environment variable
+# NAMES and resolves them via System.getenv(). To use direct values, the vault
+# code must be updated to read the property values directly instead of treating
+# them as env-var names. See DataManagerVault.java.
+#
+# Once the code is updated, change the property keys from:
+#   qbic.security.vault.key.env        → qbic.security.vault.key
+#   qbic.security.vault.entry.password.env → qbic.security.vault.entry.password
+# and provide the actual secret values below.
+
+qbic.security.vault.key.env=DATAMANAGER_VAULT_KEY
+qbic.security.vault.path=keystore.p12
+qbic.security.vault.entry.password.env=DATAMANAGER_VAULT_ENTRY_PASSWORD
+
+# Dedicated master AES-256 key alias for encrypting user external-provider
+# credentials (FEAT-DATSET-14, ADR-0002 S2). The key material itself lives in
+# the PKCS12 keystore (deployed at startup); this property names the alias.
+# Distinct from the OpenBIS vault entries.
+qbic.security.vault.external-credential.key-alias=external-credential-master-key
+
+###############################################################################
+### Datasources ###############################################################
+###############################################################################
+# Using Spring (Boot), you can provide multiple datasources. Each datasource
+# can be configured by properties in this file.
+# When configuring a datasource with transaction management and JPA
+# repositories, keep in mind that you need a base package for every entity
+# manager. Thus, using multiple datasources with JPA and thus multiple
+# entitymanagers requires you to separate your database entity classes into
+# separate packages.
+
+### Finance datasource
+qbic.finance.datasource.url=jdbc:mariadb://<CHANGE_ME_HOST>:<CHANGE_ME_PORT>/<CHANGE_ME_DB_NAME>
+qbic.finance.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+qbic.finance.datasource.username=<CHANGE_ME>
+qbic.finance.datasource.password=<CHANGE_ME>
+qbic.finance.datasource.ddl-auto=none
+
+### Data-management datasource
+qbic.data-management.datasource.url=jdbc:mariadb://<CHANGE_ME_HOST>:<CHANGE_ME_PORT>/<CHANGE_ME_DB_NAME>
+qbic.data-management.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+qbic.data-management.datasource.username=<CHANGE_ME>
+qbic.data-management.datasource.password=<CHANGE_ME>
+qbic.data-management.datasource.ddl-auto=none
+
+### Hikari connection pool (data-management)
+qbic.data-management.datasource.hikari.maximum-pool-size=20
+qbic.data-management.datasource.hikari.minimum-idle=5
+qbic.data-management.datasource.hikari.connection-timeout=15000
+qbic.data-management.datasource.hikari.validation-timeout=3000
+qbic.data-management.datasource.hikari.max-lifetime=1700000
+qbic.data-management.datasource.hikari.keepalive-time=300000
+
+# Hikari debug logging (set to TRACE for diagnostics)
+logging.level.com.zaxxer.hikari=INFO
+
+### Hibernate (default datasource)
+spring.jpa.database=mysql
+# Set to true only for debugging — not recommended in production
+spring.jpa.show-sql=false
+spring.jpa.properties.hibernate.show_sql=false
+spring.jpa.properties.hibernate.format_sql=false
+logging.level.org.hibernate.orm.jdbc.bind=error
+
+# H2 console (disabled in production)
+spring.h2.console.enabled=false
+
+# Close session on request finish
+# https://www.baeldung.com/spring-open-session-in-view
+spring.jpa.open-in-view=false
+spring.jpa.hibernate.naming.implicit-strategy=org.hibernate.boot.model.naming.ImplicitNamingStrategyLegacyJpaImpl
+spring.jpa.hibernate.naming.physical-strategy=org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+# Force Hibernate to use MariaDBDialect for proper pessimistic lockout
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MariaDBDialect
+
+### JobRunr datasource
+jobrunr.database.datasource=jobRunrDatasource
+jobrunr.database.datasource.url=jdbc:mariadb://<CHANGE_ME_HOST>:<CHANGE_ME_PORT>/<CHANGE_ME_DB_NAME>
+jobrunr.database.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+jobrunr.database.datasource.username=<CHANGE_ME>
+jobrunr.database.datasource.password=<CHANGE_ME>
+
+###############################################################################
+### JobRunr ###################################################################
+###############################################################################
+# Background job processing. Dashboard is available at the configured port.
+jobrunr.background-job-server.enabled=true
+jobrunr.dashboard.enabled=true
+jobrunr.dashboard.port=8000
+
+###############################################################################
+### Server ####################################################################
+###############################################################################
+
+server.port=8080
+server.servlet.context-path=
+
+###############################################################################
+### Email Configuration #######################################################
+###############################################################################
+# The application sends emails for confirmations, notifications, etc.
+# Configure your SMTP server below.
+
+spring.mail.username=<CHANGE_ME>
+spring.mail.password=<CHANGE_ME>
+spring.mail.host=<CHANGE_ME>
+spring.mail.default-encoding=UTF-8
+spring.mail.port=587
+
+### Service host information (used for constructing links in emails)
+service.host.name=<CHANGE_ME>
+service.host.protocol=https
+# Default -1 means "no port" — the port part is omitted automatically
+# when constructing links (see DataManagerContextProvider).
+service.host.port=-1
+
+# Path to an existing directory on the host's file system where
+# the application creates temporary directories (e.g. for download assets)
+service.host.temp.dir=./tmp
+
+###############################################################################
+### OpenBIS Configuration #####################################################
+###############################################################################
+
+openbis.user.name=<CHANGE_ME>
+openbis.user.password=<CHANGE_ME>
+openbis.datasource.as.url=<CHANGE_ME>
+openbis.datasource.dss.url=<CHANGE_ME>
+
+###############################################################################
+### Vaadin Configuration ######################################################
+###############################################################################
+# See https://vaadin.com/docs/latest/flow/configuration/properties#properties
+
+vaadin.productionMode=true
+vaadin.allowed-packages=com.vaadin,org.vaadin,dev.hilla,life.qbic
+# Launch the default browser when starting in development mode
+vaadin.launch-browser=false
+# Session lock check strategy: "log" for development, "throw" for stricter checks
+vaadin.sessionLockCheckStrategy=log
+
+###############################################################################
+### Routing ###################################################################
+###############################################################################
+
+# Route for mail confirmation consumption
+routing.email-confirmation.endpoint=/login
+routing.email-confirmation.confirmation-parameter=confirm-email
+
+# Route for password reset
+routing.password-reset.endpoint=/registration/new-password
+routing.password-reset.reset-parameter=user-id
+
+# Route to project resources
+routing.projects.endpoint=/projects
+routing.projects.info.endpoint=/projects/%s/info
+routing.projects.samples.enpoint=/projects/%s/experiments/%s/samples
+routing.registration.oidc.orcid.endpoint=/register/oidc
+routing.registration.error.pending-email-verification=/register/pending-email-confirmation
+
+###############################################################################
+### OAuth2 / ORCID ############################################################
+###############################################################################
+
+spring.http.client.factory=jdk
+
+spring.security.oauth2.client.registration.orcid.client-name=orcid
+spring.security.oauth2.client.registration.orcid.client-id=<CHANGE_ME>
+spring.security.oauth2.client.registration.orcid.client-secret=<CHANGE_ME>
+spring.security.oauth2.client.registration.orcid.authorization-grant-type=authorization_code
+spring.security.oauth2.client.registration.orcid.redirect-uri={baseUrl}/login/oauth2/code/orcid
+spring.security.oauth2.client.registration.orcid.scope[0]=openid
+
+# ORCID endpoints — switch between sandbox and production as needed
+# Sandbox:
+spring.security.oauth2.client.provider.orcid.authorization-uri=https://sandbox.orcid.org/oauth/authorize
+spring.security.oauth2.client.provider.orcid.token-uri=https://sandbox.orcid.org/oauth/token
+spring.security.oauth2.client.provider.orcid.user-info-uri=https://sandbox.orcid.org/oauth/userinfo
+spring.security.oauth2.client.provider.orcid.user-name-attribute=sub
+spring.security.oauth2.client.provider.orcid.jwk-set-uri=https://sandbox.orcid.org/oauth/jwks
+# Production (uncomment to switch):
+#spring.security.oauth2.client.provider.orcid.authorization-uri=https://orcid.org/oauth/authorize
+#spring.security.oauth2.client.provider.orcid.token-uri=https://orcid.org/oauth/token
+#spring.security.oauth2.client.provider.orcid.user-info-uri=https://orcid.org/oauth/userinfo
+#spring.security.oauth2.client.provider.orcid.user-name-attribute=sub
+#spring.security.oauth2.client.provider.orcid.jwk-set-uri=https://orcid.org/.well-known/jwks
+
+### ORCID person search
+qbic.external-service.person-search.orcid.base-uri=https://pub.sandbox.orcid.org/v3.0
+qbic.external-service.person-search.orcid.client-id=${spring.security.oauth2.client.registration.orcid.client-id}
+qbic.external-service.person-search.orcid.client-secret=${spring.security.oauth2.client.registration.orcid.client-secret}
+qbic.external-service.person-search.orcid.token-uri=${spring.security.oauth2.client.provider.orcid.token-uri}
+qbic.external-service.person-search.orcid.extended-search-uri=${qbic.external-service.person-search.orcid.base-uri}/expanded-search
+qbic.external-service.person-search.orcid.scope=/read-public
+qbic.external-service.person-search.orcid.grant-type=client_credentials
+qbic.external-service.person-search.orcid.issuer=https://orcid.org
+
+### ROR organisation search
+qbic.external-service.organisation-search.ror.organisation-api-endpoint=https://api.ror.org/v2/organizations/
+# Client ID needs to be requested — see https://ror.readme.io/docs/client-id
+qbic.external-service.organisation-search.ror.client-id=<CHANGE_ME>
+
+###############################################################################
+### ActiveMQ Artemis ##########################################################
+###############################################################################
+# ActiveMQ Artemis is used as a global message broker handling
+# integration events across bounded contexts.
+
+spring.artemis.mode=<CHANGE_ME>
+spring.artemis.broker-url=<CHANGE_ME>
+spring.artemis.user=<CHANGE_ME>
+spring.artemis.password=<CHANGE_ME>
+
+# Enable publish-subscribe pattern (globally).
+# The default pattern is pub-sub, not point-to-point.
+spring.jms.pub-sub-domain=true
+
+# Topic for identity events
+qbic.broadcasting.identity.topic=User
+
+###############################################################################
+### File Upload ###############################################################
+###############################################################################
+# Upload file size configuration.
+# Currently 16 MiB due to mediumblob specification in database (mebibyte, base-2).
+
+spring.servlet.multipart.max-file-size=16777216
+spring.servlet.multipart.fileSizeThreshold=16MB
+spring.servlet.multipart.max-request-size=16MB
+qbic.upload.in-memory-limit=5MB
+qbic.upload.max-file-size=25MB
+
+###############################################################################
+### Session Handling ##########################################################
+###############################################################################
+# Session closes at: server.servlet.session.timeout + 3*vaadin.heartbeatInterval + 0-1min
+# See https://mvysny.github.io/vaadin-session-timeout/
+
+server.servlet.session.timeout=30m
+vaadin.closeIdleSessions=true
+# Heartbeat interval in seconds
+vaadin.heartbeatInterval=60
+
+### Session cookie
+server.servlet.session.cookie.max-age=30m
+server.servlet.session.cookie.secure=true
+server.servlet.session.cookie.domain=<CHANGE_ME>
+server.servlet.session.cookie.same-site=lax
+
+###############################################################################
+### Dev Tools #################################################################
+###############################################################################
+# Disable in production deployments
+spring.devtools.livereload.enabled=true
+spring.devtools.restart.enabled=true
+
+###############################################################################
+### Miscellaneous #############################################################
+###############################################################################
+
+spring.mustache.check-template-location=false
+
+# EHCache used by Spring Security ACL to cache ACEs
+spring.cache.jcache.config=classpath:ehcache3.xml
+
+# Announcements
+announcement.initial-delay=0s
+announcement.refresh-interval=2h
+
+###############################################################################
+### Token Generation ##########################################################
+###############################################################################
+# Salt for access token hashing — use a long, random value
+qbic.access-token.salt=<CHANGE_ME>
+# Number of PBKDF2 iterations for token hashing
+qbic.access-token.iteration-count=100000
+
+###############################################################################
+### Data Server / Download ####################################################
+###############################################################################
+
+server.download.api.measurement.url=<CHANGE_ME>
+
+###############################################################################
+### External Links and Contacts ###############################################
+###############################################################################
+
+qbic.communication.data-manager.source-code.url=https://github.com/qbicsoftware/data-manager-app
+qbic.communication.documentation.url=https://qbicsoftware.github.io/research-data-management/
+qbic.communication.contact.email=<CHANGE_ME>
+qbic.communication.contact.subject=Data Management Question
+qbic.communication.api.url=<CHANGE_ME>
+
+###############################################################################
+### Terminology Service (TIB) #################################################
+###############################################################################
+
+terminology.service.tib.endpoint.select=/api/select
+terminology.service.tib.api.url=https://api.terminology.tib.eu
+terminology.service.tib.endpoint.search=/api/search
+# Maximum number of entries in the local terminology lookup cache
+terminology.service.cache.size=10000
+
+###############################################################################
+### Message Providers (i18n) ##################################################
+###############################################################################
+
+spring.messages.encoding=UTF-8
+spring.messages.cache-duration=1s
+spring.messages.fallback-to-system-locale=true
+spring.messages.basename=messages.error-messages, messages.toast-notifications, messages.dialog-notifications, messages.dialog-messages
+# Single quotes must be escaped: ' → ''
+# See https://www.mscharhag.com/java/resource-bundle-single-quote-escaping
+spring.messages.always-use-message-format=true
+
+###############################################################################
+### Raw Data Sync #############################################################
+###############################################################################
+# Batch size for each remote sync query iteration.
+# Reduce (e.g. to 200) during large backlog re-syncs to lower database lock contention.
+qbic.sync.raw-data.batch-size=1000
+# Maximum wall-clock duration in milliseconds for a single scheduled sync job.
+# Must remain smaller than the ShedLock lockAtMostFor value (currently PT40S = 40000ms).
+qbic.sync.raw-data.max-duration-ms=10000
+
+###############################################################################
+### InvenioRDM Instances ######################################################
+###############################################################################
+# Admin-configured; adding a new instance is a config change + redeploy.
+# The api-version field is reserved for future per-instance adapter dispatch
+# (currently unused; defaults to version 12 of the Invenio REST API spec).
+
+qbic.external-service.invenio-rdm.instances[0].id=zenodo
+qbic.external-service.invenio-rdm.instances[0].display-name=Zenodo
+qbic.external-service.invenio-rdm.instances[0].base-url=https://zenodo.org
+qbic.external-service.invenio-rdm.instances[0].api-version=12
+
+qbic.external-service.invenio-rdm.instances[1].id=fdat
+qbic.external-service.invenio-rdm.instances[1].display-name=FDAT
+qbic.external-service.invenio-rdm.instances[1].base-url=https://fdat.uni-tuebingen.de
+qbic.external-service.invenio-rdm.instances[1].api-version=12
+
+qbic.external-service.invenio-rdm.instances[2].id=fdat-sandbox
+qbic.external-service.invenio-rdm.instances[2].display-name=FDAT Sandbox
+qbic.external-service.invenio-rdm.instances[2].base-url=https://dev.fdat.uni-tuebingen.de
+qbic.external-service.invenio-rdm.instances[2].api-version=12
