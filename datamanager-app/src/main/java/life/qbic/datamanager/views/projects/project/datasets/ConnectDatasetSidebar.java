@@ -444,6 +444,7 @@ public class ConnectDatasetSidebar extends Div {
     setControlsEnabled(true);
     
     loadInstances();
+    updateCredentialBanner();
     // Load experiments asynchronously to avoid blocking
     currentProjectId().ifPresent(ignored -> loadExperimentsAsync());
     overlay.getStyle().set("display", "block");
@@ -824,6 +825,11 @@ public class ConnectDatasetSidebar extends Div {
       return;
     }
 
+    // Re-evaluate credential status before the gate check so the
+    // banner reflects the current state (e.g. after the user configured
+    // the provider in the External Providers tab while the sidebar was open).
+    updateCredentialBanner();
+
     // ── Pre-connect provider connection check ─────────────────────
     // If any selected dataset is access-restricted, check if user has
     // a valid provider connection
@@ -1119,6 +1125,7 @@ public class ConnectDatasetSidebar extends Div {
         .filter(s -> s != CredentialStatus.VALID)
         .orElse(null);
     credentialBanner.removeAll();
+    credentialBanner.removeClassName("cds-credential-banner--highlighted");
 
     if (instance == null || status == null) {
       credentialBanner.getStyle().set("display", "none");
