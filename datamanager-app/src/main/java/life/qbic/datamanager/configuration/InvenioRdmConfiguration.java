@@ -131,6 +131,7 @@ public class InvenioRdmConfiguration {
   }
 
 
+  @Bean
   public ExternalCredentialService externalCredentialService(
       ExternalCredentialValidator validator,
       UserExternalCredentialRepository credentialRepository,
