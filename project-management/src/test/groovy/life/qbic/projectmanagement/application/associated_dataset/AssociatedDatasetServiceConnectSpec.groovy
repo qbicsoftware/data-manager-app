@@ -192,8 +192,10 @@ class AssociatedDatasetServiceConnectSpec extends Specification {
     then:
     result instanceof Result.Error
     result.getError() == ConnectDatasetError.CREDENTIAL_REQUIRED
-    // Duplicate check and save are never reached
-    0 * repository.isActiveConnectionPresent(_, _)
+    // The duplicate check (1a) runs before the credential gate (1b), so the PID
+    // is always checked even when credentials are missing. The save is never
+    // reached because the credential gate returns early.
+    1 * repository.isActiveConnectionPresent(_, _)
     0 * repository.save(_)
   }
 
