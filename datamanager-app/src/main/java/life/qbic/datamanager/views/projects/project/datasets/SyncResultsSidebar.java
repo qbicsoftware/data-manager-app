@@ -185,6 +185,11 @@ public class SyncResultsSidebar extends Div {
     }
 
     renderRows(datasets);
+    // Reset the summary counters — the sidebar instance is reused across
+    // triggers, so totals from a previous sync must not leak into the next.
+    updated = 0;
+    upToDate = 0;
+    failed = 0;
     summaryLabel.getStyle().set("color", SECONDARY_COLOR);
     summaryLabel.setText("Syncing %d dataset%s…".formatted(
         datasets.size(), datasets.size() == 1 ? "" : "s"));
