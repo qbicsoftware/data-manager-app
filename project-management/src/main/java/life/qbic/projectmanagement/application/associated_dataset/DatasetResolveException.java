@@ -29,7 +29,7 @@ import life.qbic.application.commons.ApplicationException;
  *
  * @since 1.12.0
  */
-public final class DatasetResolveException extends ApplicationException {
+public class DatasetResolveException extends ApplicationException {
 
   @Serial
   private static final long serialVersionUID = 1L;

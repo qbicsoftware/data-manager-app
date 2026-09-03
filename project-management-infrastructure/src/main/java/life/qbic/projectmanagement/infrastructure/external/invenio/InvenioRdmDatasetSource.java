@@ -14,10 +14,12 @@ import life.qbic.projectmanagement.application.associated_dataset.AccessLinkCrea
 import life.qbic.projectmanagement.application.associated_dataset.AccessLinkRevocationException;
 import life.qbic.projectmanagement.application.associated_dataset.CreatedAccessLink;
 import life.qbic.projectmanagement.application.associated_dataset.CredentialEncryptor;
+import life.qbic.projectmanagement.application.associated_dataset.DatasetAccessDeniedException;
 import life.qbic.projectmanagement.application.associated_dataset.DatasetResolveException;
 import life.qbic.projectmanagement.application.associated_dataset.DatasetSearchException;
 import life.qbic.projectmanagement.application.associated_dataset.DatasetSource;
 import life.qbic.projectmanagement.application.associated_dataset.InstanceConfig;
+import life.qbic.projectmanagement.application.associated_dataset.ResolvedRecord;
 import life.qbic.projectmanagement.application.associated_dataset.SearchHit;
 import life.qbic.projectmanagement.application.associated_dataset.SearchQuery;
 import life.qbic.projectmanagement.application.associated_dataset.SearchResult;
@@ -121,6 +123,72 @@ public class InvenioRdmDatasetSource implements DatasetSource {
         Arrays.fill(token, '\0');
       }
     }
+  }
+
+  @Override
+  public Optional<ResolvedRecord> resolveLatest(
+      String externalHandleValue, InstanceConfig config,
+      String actingUserId) throws DatasetResolveException {
+    Objects.requireNonNull(externalHandleValue,
+        "externalHandleValue must not be null");
+    Objects.requireNonNull(config, "config must not be null");
+
+    char[] token = resolveTokenForUser(actingUserId, config.id());
+    try {
+      var record = client.getRecord(config.baseUrl(), externalHandleValue, token);
+      // Version-following (ADR-0005 V1): if the connected record is no
+      // longer the latest published version, resolve the concept (parent)
+      // recid — GET /records/{parentId} redirects (302) to the latest
+      // record, which the HTTP client follows transparently.
+      if (!isLatest(record)) {
+        String parentId = parentRecid(record);
+        if (parentId != null && !parentId.isBlank()) {
+          record = client.getRecord(config.baseUrl(), parentId, token);
+        }
+      }
+      InvenioRdmResourceMetadata metadata = mapRecordToResourceMetadata(
+          record, config.displayName());
+      return Optional.of(new ResolvedRecord(metadata, record.id()));
+    } catch (InvenioRdmClient.InvenioRdmPermanentException pe) {
+      if (pe.getStatusCode() == 404) {
+        return Optional.empty();
+      }
+      if (pe.getStatusCode() == 401 || pe.getStatusCode() == 403) {
+        // Access/credential problem — application layer maps this to
+        // CREDENTIAL_REQUIRED / CREDENTIAL_INSUFFICIENT (ADR-0005 A1).
+        log.error("Access denied resolving latest version of record {} on {}"
+            .formatted(externalHandleValue, config.displayName()));
+        throw new DatasetAccessDeniedException(
+            "Access denied to record " + externalHandleValue, pe);
+      }
+      log.error("Failed to resolve latest version of record {} on {}"
+          .formatted(externalHandleValue, config.displayName()));
+      throw new DatasetResolveException("Failed to resolve latest record", pe);
+    } catch (InvenioRdmClient.InvenioRdmException e) {
+      log.error("Failed to resolve latest version of record {} on {}"
+          .formatted(externalHandleValue, config.displayName()), e);
+      throw new DatasetResolveException("Failed to resolve latest record", e);
+    } finally {
+      if (token != null) {
+        Arrays.fill(token, '\0');
+      }
+    }
+  }
+
+  /**
+   * Whether the given record is the latest published version
+   * ({@code versions.is_latest}, v12). Missing version info is treated
+   * as "assume latest" — there is nothing to follow in that case.
+   */
+  private static boolean isLatest(InvenioRdmClient.RecordResponse record) {
+    return record.versions() == null || record.versions().isLatest();
+  }
+
+  /**
+   * The concept (parent) recid of a record, or null when absent.
+   */
+  private static String parentRecid(InvenioRdmClient.RecordResponse record) {
+    return record.parent() != null ? record.parent().id() : null;
   }
 
   @Override
@@ -283,6 +351,7 @@ public class InvenioRdmDatasetSource implements DatasetSource {
     String version = versionString(rec.versions());
     String accessLink = selfHtmlLink(rec.links());
     String community = community(rec.parent());
+    String parentHandle = rec.parent() != null ? rec.parent().id() : null;
 
     // v12 access block lives at the response top level.
     InvenioRdmAccessStatus recordAccess = recordAccessStatus(rec.access());
@@ -293,7 +362,8 @@ public class InvenioRdmDatasetSource implements DatasetSource {
         resourceProvider, creators, resourceType,
         community,
         publicationDate, description,
-        recordAccess, fileAccess
+        recordAccess, fileAccess,
+        null, null, parentHandle
     );
   }
 

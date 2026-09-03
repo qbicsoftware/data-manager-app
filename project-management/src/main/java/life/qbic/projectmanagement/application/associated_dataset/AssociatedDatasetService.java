@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.Result;
 import life.qbic.domain.concepts.DomainEvent;
@@ -31,6 +32,7 @@ import life.qbic.projectmanagement.domain.model.associated_dataset.ResourceMetad
 import life.qbic.projectmanagement.domain.model.associated_dataset.SourceType;
 import life.qbic.projectmanagement.domain.model.associated_dataset.event.AssociatedDatasetConnectedEvent;
 import life.qbic.projectmanagement.domain.model.associated_dataset.event.AssociatedDatasetRemovedEvent;
+import life.qbic.projectmanagement.domain.model.associated_dataset.event.AssociatedDatasetsSyncedEvent;
 import life.qbic.projectmanagement.domain.model.associated_dataset.repository.AssociatedDatasetRepository;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
@@ -291,32 +293,43 @@ public class AssociatedDatasetService {
     //     subsequent step fails, the link is rolled back (revoked) instead
     //     of leaking an orphaned, unused shareable link on the source.
     CreatedAccessLink createdAccessLink = null;
-    if (finalMetadata instanceof InvenioRdmResourceMetadata inv
-        && inv.deriveAccessLevel() == AccessLevel.RESTRICTED) {
-      if (!datasetSource.hasValidCredential(connectedByUserId, config)) {
-        log.warn("Cannot connect restricted dataset %s — no valid credential "
-            + "for user %s on instance %s"
-            .formatted(externalHandleValue, connectedByUserId, instanceId));
-        return Result.fromError(ConnectDatasetError.CREDENTIAL_REQUIRED);
-      }
+    if (finalMetadata instanceof InvenioRdmResourceMetadata inv) {
+      if (inv.deriveAccessLevel() == AccessLevel.RESTRICTED) {
+        if (!datasetSource.hasValidCredential(connectedByUserId, config)) {
+          log.warn("Cannot connect restricted dataset %s — no valid credential "
+              + "for user %s on instance %s"
+              .formatted(externalHandleValue, connectedByUserId, instanceId));
+          return Result.fromError(ConnectDatasetError.CREDENTIAL_REQUIRED);
+        }
 
-      // Create sharable access link for project collaborators
-      try {
-        CreatedAccessLink link = datasetSource.createAccessLink(
-            externalHandleValue, config, connectedByUserId);
-        createdAccessLink = link;
-        // Update metadata with the instance, access link, and link id
-        // (the id is needed to revoke the link later).
+        // Create sharable access link for project collaborators
+        try {
+          CreatedAccessLink link = datasetSource.createAccessLink(
+              externalHandleValue, config, connectedByUserId);
+          createdAccessLink = link;
+          // Update metadata with the instance, access link, and link id
+          // (the id is needed to revoke the link later).
+          finalMetadata = new InvenioRdmResourceMetadata(
+              inv.title(), inv.pid(), inv.version(), link.url(),
+              inv.resourceProvider(), inv.creators(), inv.resourceType(),
+              inv.community(), inv.publicationDate(), inv.description(),
+              inv.recordAccess(), inv.fileAccess(),
+              instanceId, link.linkId(), inv.parentHandle());
+        } catch (AccessLinkCreationException e) {
+          log.error("Failed to create access link for restricted dataset %s on instance %s"
+              .formatted(externalHandleValue, instanceId), e);
+          return Result.fromError(ConnectDatasetError.ACCESS_LINK_CREATION_FAILED);
+        }
+      } else {
+        // Persist the instance id on public connections as well so that a
+        // later sync can resolve the source instance without heuristics
+        // (ADR-0005). The access link fields stay empty for public records.
         finalMetadata = new InvenioRdmResourceMetadata(
-            inv.title(), inv.pid(), inv.version(), link.url(),
+            inv.title(), inv.pid(), inv.version(), inv.accessLink(),
             inv.resourceProvider(), inv.creators(), inv.resourceType(),
             inv.community(), inv.publicationDate(), inv.description(),
             inv.recordAccess(), inv.fileAccess(),
-            instanceId, link.linkId());
-      } catch (AccessLinkCreationException e) {
-        log.error("Failed to create access link for restricted dataset %s on instance %s"
-            .formatted(externalHandleValue, instanceId), e);
-        return Result.fromError(ConnectDatasetError.ACCESS_LINK_CREATION_FAILED);
+            instanceId, null, inv.parentHandle());
       }
     }
 
@@ -620,6 +633,341 @@ public class AssociatedDatasetService {
         });
   }
 
+  // ── Sync connected datasets ────────────────────────────────────────────
+
+  /**
+   * Synchronises the given connected datasets of a project with their
+   * source instances (DATSET-04/08, ADR-0005).
+   *
+   * <p>Each dataset is processed on a bounded-elastic worker thread with
+   * bounded parallelism (matching the connect flow) and a per-request
+   * timeout. Responses are emitted in insertion order so the caller can
+   * map them back to the requested rows.</p>
+   *
+   * <p>Requires {@code WRITE} permission on the project (story ACs — a
+   * sync updates the project's linked snapshot; amends ADR-0003 §5).</p>
+   *
+   * <p>After the trigger completes, a single
+   * {@link AssociatedDatasetsSyncedEvent} is dispatched — only when at
+   * least one dataset was actually updated — so the notification
+   * directive can send one combined email to the project members
+   * (ADR-0005 N1).</p>
+   *
+   * @param projectId the project the datasets belong to
+   * @param datasetIds the connections to sync (may be a single id)
+   * @param userId    the invoking user — the only identity whose
+   *                  credentials are used (never-borrow-credentials)
+   * @return per-dataset outcomes in request order
+   */
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
+  public Flux<SyncDatasetResponse> syncDatasets(
+      ProjectId projectId, List<AssociatedDatasetId> datasetIds, String userId) {
+    Objects.requireNonNull(projectId, "projectId must not be null");
+    Objects.requireNonNull(datasetIds, "datasetIds must not be null");
+    Objects.requireNonNull(userId, "userId must not be null");
+
+    SecurityContext securityContext = SecurityContextHolder.getContext();
+    List<SyncDatasetResponse> updated = new CopyOnWriteArrayList<>();
+    return Flux.fromIterable(datasetIds)
+        .flatMapSequential(id -> Mono.fromCallable(() ->
+                syncDatasetCore(projectId, id, userId))
+            // Propagate the caller's SecurityContext to the worker thread
+            // so Spring Security `@PreAuthorize` on the public method
+            // resolves correctly.
+            .contextWrite(ReactiveSecurityContextUtils.reactiveSecurity(securityContext))
+            .subscribeOn(Schedulers.boundedElastic())
+            .timeout(PER_REQUEST_TIMEOUT)
+            .onErrorResume(Throwable.class, t -> {
+              // Safety net: any exception escaping syncDatasetCore is
+              // converted into SYNC_FAILED so the caller can tally
+              // partial failures.
+              log.error("Async sync pipeline failed for dataset %s: %s"
+                  .formatted(id.value(), t.getMessage()), t);
+              return Mono.just(SyncDatasetResponse.failed(id, SyncDatasetError.SYNC_FAILED));
+            }), BOUNDED_PARALLELISM)
+        .doOnNext(response -> {
+          if (response.status() == SyncDatasetResponse.SyncStatus.UPDATED) {
+            updated.add(response);
+          }
+        })
+        .doOnComplete(() -> emitSyncSummaryEvent(projectId, userId, updated));
+  }
+
+  /**
+   * Blocking sync of one dataset (runs on a worker thread via
+   * {@link #syncDatasets}).
+   */
+  private SyncDatasetResponse syncDatasetCore(
+      ProjectId projectId, AssociatedDatasetId datasetId, String userId) {
+
+    // 1. Load the connection
+    Optional<AssociatedDataset> foundOpt;
+    try {
+      foundOpt = associatedDatasetRepository.findById(datasetId);
+    } catch (Exception e) {
+      log.error("Sync lookup failed for dataset %s".formatted(datasetId.value()), e);
+      return SyncDatasetResponse.failed(datasetId, SyncDatasetError.SYNC_FAILED);
+    }
+    if (foundOpt.isEmpty() || !foundOpt.get().isConnected()) {
+      return SyncDatasetResponse.failed(datasetId, SyncDatasetError.DATASET_NOT_FOUND);
+    }
+    var dataset = foundOpt.get();
+
+    // 2. Resolve the instance this dataset belongs to
+    InstanceConfig config;
+    try {
+      config = resolveInstanceConfigForDataset(dataset);
+    } catch (DatasetSourceNotFoundException e) {
+      log.warn("Cannot sync dataset %s — no configured instance matches"
+          .formatted(datasetId.value()));
+      return SyncDatasetResponse.failed(datasetId, SyncDatasetError.SYNC_FAILED);
+    }
+
+    ResourceMetadata storedMetadata = dataset.resourceMetadata();
+    boolean storedRestricted = storedMetadata instanceof InvenioRdmResourceMetadata inv
+        && inv.deriveAccessLevel() == AccessLevel.RESTRICTED;
+
+    // 3. Short-circuit: metadata-restricted record without a usable
+    //    credential (ADR-0005 A1 — deterministic, no HTTP call needed)
+    if (storedRestricted && !datasetSource.hasValidCredential(userId, config)) {
+      log.info("Sync of restricted dataset %s skipped — no valid credential for user %s on instance %s"
+          .formatted(datasetId.value(), userId, config.id()));
+      return SyncDatasetResponse.failed(datasetId, SyncDatasetError.CREDENTIAL_REQUIRED);
+    }
+
+    // 4. Resolve the latest state (follows the version chain)
+    Optional<ResolvedRecord> resolvedOpt;
+    try {
+      resolvedOpt = datasetSource.resolveLatest(
+          dataset.externalHandle().value(), config, userId);
+    } catch (DatasetAccessDeniedException e) {
+      boolean hasCredential = datasetSource.hasValidCredential(userId, config);
+      return SyncDatasetResponse.failed(datasetId, hasCredential
+          ? SyncDatasetError.CREDENTIAL_INSUFFICIENT
+          : SyncDatasetError.CREDENTIAL_REQUIRED);
+    } catch (DatasetResolveException e) {
+      log.error("Sync resolve failed for dataset %s".formatted(datasetId.value()), e);
+      return SyncDatasetResponse.failed(datasetId, SyncDatasetError.SYNC_FAILED);
+    }
+    if (resolvedOpt.isEmpty()) {
+      return SyncDatasetResponse.failed(datasetId, SyncDatasetError.RECORD_NOT_FOUND);
+    }
+    ResolvedRecord resolved = resolvedOpt.get();
+    if (!(resolved.metadata() instanceof InvenioRdmResourceMetadata latestMetadata)) {
+      log.error("Sync produced unsupported metadata type for dataset %s"
+          .formatted(datasetId.value()));
+      return SyncDatasetResponse.failed(datasetId, SyncDatasetError.SYNC_FAILED);
+    }
+
+    // 5. Did the record move? (new version / new record id)
+    String storedVersion = storedMetadata.version();
+    boolean versionChanged = !Objects.equals(storedVersion, latestMetadata.version());
+    boolean handleChanged = !Objects.equals(
+        resolved.externalHandleValue(), dataset.externalHandle().value());
+    boolean recordChanged = versionChanged || handleChanged;
+
+    // 6. Duplicate guard: another active connection already carries the
+    //    target version's PID — do not create a duplicate (plan §Edge cases)
+    if (recordChanged && !Objects.equals(latestMetadata.pid(), storedMetadata.pid())
+        && associatedDatasetRepository.isActiveConnectionPresent(projectId, latestMetadata.pid())) {
+      log.info("Sync of dataset %s skipped — a connection to version %s "
+          + "already exists in project %s"
+          .formatted(datasetId.value(), latestMetadata.pid(), projectId.value()));
+      return SyncDatasetResponse.failed(datasetId, SyncDatasetError.ALREADY_CONNECTED);
+    }
+
+    // 7. Access-link refresh for restricted version bumps — hard gate
+    //    (ADR-0005 L1): the new version only commits if a fresh sharable
+    //    link could be created on the latest record.
+    CreatedAccessLink refreshedLink = null;
+    if (recordChanged && latestMetadata.deriveAccessLevel() == AccessLevel.RESTRICTED) {
+      try {
+        refreshedLink = datasetSource.createAccessLink(
+            resolved.externalHandleValue(), config, userId);
+      } catch (AccessLinkCreationException e) {
+        log.error("Sync of restricted dataset %s failed — cannot refresh the access link on the new version"
+            .formatted(datasetId.value()), e);
+        return SyncDatasetResponse.failed(datasetId, SyncDatasetError.ACCESS_LINK_REFRESH_FAILED);
+      }
+    }
+
+    // 8. Build the candidate snapshot with correct runtime fields
+    //    (instance id, access link, parent handle — see ADR-0005)
+    InvenioRdmResourceMetadata candidate =
+        buildCandidate(storedMetadata, latestMetadata, recordChanged, refreshedLink, config);
+
+    // 9. Apply + persist. No domain event is emitted by the aggregate
+    //    mutation — the summary event is emitted per trigger (step 10).
+    String oldHandle = dataset.externalHandle().value();
+    AssociatedDataset.SyncChange change;
+    try {
+      change = dataset.sync(candidate);
+      if (handleChanged) {
+        dataset.updateExternalHandle(new ExternalHandle(resolved.externalHandleValue()));
+      }
+      associatedDatasetRepository.save(dataset);
+    } catch (Exception e) {
+      log.error("Sync persist failed for dataset %s".formatted(datasetId.value()), e);
+      // Integrity rollback: the new access link must not linger unused.
+      if (refreshedLink != null && refreshedLink.linkId() != null) {
+        revokeAccessLinkBestEffort(refreshedLink.linkId(),
+            resolved.externalHandleValue(), config, userId);
+      }
+      return SyncDatasetResponse.failed(datasetId, SyncDatasetError.SYNC_FAILED);
+    }
+
+    // 10. Post-commit: revoke the stale access link of the previous
+    //     version (best-effort; failures are logged, not blocking).
+    if (refreshedLink != null && storedMetadata instanceof InvenioRdmResourceMetadata invStored
+        && invStored.accessLinkId() != null) {
+      revokeAccessLinkBestEffort(invStored.accessLinkId(), oldHandle, config, userId);
+    }
+
+    if (!change.metadataChanged()) {
+      return SyncDatasetResponse.upToDate(datasetId);
+    }
+    return SyncDatasetResponse.updated(
+        datasetId, change.previousVersion(), change.newVersion(),
+        change.accessStatusChanged(), dataset.title(), dataset.pid());
+  }
+
+  /**
+   * Builds the candidate snapshot for a sync, carrying the runtime fields
+   * that are <em>connection-local</em> rather than source facts:
+   * instance id, access link (identity/id), and parent handle.
+   *
+   * <ul>
+   *   <li>Record unchanged: preserve the stored runtime fields verbatim so
+   *       a no-op sync compares equal and is not misreported as updated.</li>
+   *   <li>Record changed: adopt the fresh metadata, replace the access link
+   *       (restricted → newly created link; public → new record's self
+   *       link), and keep the instance id (the dataset stays on its
+   *       instance).</li>
+   * </ul>
+   */
+  private InvenioRdmResourceMetadata buildCandidate(
+      ResourceMetadata storedMetadata,
+      InvenioRdmResourceMetadata latest,
+      boolean recordChanged,
+      @Nullable CreatedAccessLink refreshedLink,
+      InstanceConfig config) {
+
+    boolean restrictedLatest = latest.deriveAccessLevel() == AccessLevel.RESTRICTED;
+    String preservedInstanceId = null;
+    String preservedLink = null;
+    String preservedLinkId = null;
+    String preservedParentHandle = null;
+    if (storedMetadata instanceof InvenioRdmResourceMetadata invStored) {
+      preservedInstanceId = invStored.instanceId();
+      preservedLink = invStored.accessLink();
+      preservedLinkId = invStored.accessLinkId();
+      preservedParentHandle = invStored.parentHandle();
+    }
+
+    if (!recordChanged) {
+      // Same record — keep the stored runtime fields (preserve equality
+      // so a no-op is detected by the aggregate diff).
+      String parentHandle = preservedParentHandle != null
+          ? preservedParentHandle : latest.parentHandle();
+      return new InvenioRdmResourceMetadata(
+          latest.title(), latest.pid(), latest.version(), preservedLink,
+          latest.resourceProvider(), latest.creators(), latest.resourceType(),
+          latest.community(), latest.publicationDate(), latest.description(),
+          latest.recordAccess(), latest.fileAccess(),
+          preservedInstanceId, preservedLinkId, parentHandle);
+    }
+
+    if (restrictedLatest && refreshedLink != null) {
+      // New version of a restricted record — fresh access link.
+      return new InvenioRdmResourceMetadata(
+          latest.title(), latest.pid(), latest.version(), refreshedLink.url(),
+          latest.resourceProvider(), latest.creators(), latest.resourceType(),
+          latest.community(), latest.publicationDate(), latest.description(),
+          latest.recordAccess(), latest.fileAccess(),
+          config.id(), refreshedLink.linkId(), latest.parentHandle());
+    }
+
+    // New version of a public record (or restricted without a stored link
+    // path) — self link of the newest record; no access link id.
+    return new InvenioRdmResourceMetadata(
+        latest.title(), latest.pid(), latest.version(), latest.accessLink(),
+        latest.resourceProvider(), latest.creators(), latest.resourceType(),
+        latest.community(), latest.publicationDate(), latest.description(),
+        latest.recordAccess(), latest.fileAccess(),
+        config.id(), null, latest.parentHandle());
+  }
+
+  /**
+   * Dispatches one {@link AssociatedDatasetsSyncedEvent} after a sync
+   * trigger, only when at least one dataset was actually updated
+   * (ADR-0005 N1 — no emails for no-op syncs or failures). A dispatch
+   * failure is logged but never fails the sync itself.
+   */
+  private void emitSyncSummaryEvent(
+      ProjectId projectId, String userId, List<SyncDatasetResponse> updated) {
+    if (updated.isEmpty()) {
+      return;
+    }
+    List<AssociatedDatasetsSyncedEvent.UpdatedRecord> records = updated.stream()
+        .map(response -> new AssociatedDatasetsSyncedEvent.UpdatedRecord(
+            response.datasetId(), response.title(), response.pid(),
+            response.previousVersion(), response.newVersion(), response.accessStatusChanged()))
+        .toList();
+    var event = AssociatedDatasetsSyncedEvent.create(projectId, userId, records);
+    try {
+      DomainEventDispatcher.instance().dispatch(event);
+    } catch (Exception e) {
+      log.warn("Failed dispatching sync summary event for project %s: %s"
+          .formatted(projectId.value(), e.getMessage()));
+    }
+  }
+
+  /**
+   * Resolves the {@link InstanceConfig} a dataset belongs to. Primary
+   * source: the instance id persisted on the metadata snapshot. Legacy
+   * rows without an instance id fall back to matching the record's
+   * access link against the configured instance base URLs.
+   */
+  private InstanceConfig resolveInstanceConfigForDataset(AssociatedDataset dataset) {
+    if (dataset.resourceMetadata() instanceof InvenioRdmResourceMetadata inv
+        && inv.instanceId() != null && !inv.instanceId().isBlank()) {
+      return resolveInstanceConfig(inv.instanceId());
+    }
+    // Legacy fallback: best URL match
+    String accessLink = dataset.resourceMetadata() instanceof InvenioRdmResourceMetadata inv
+        ? inv.accessLink() : null;
+    if (accessLink != null && !accessLink.isBlank()) {
+      for (SourceInstanceDescriptor descriptor :
+          sourceInstanceRegistry.findBySourceType(SourceType.INVENIO_RDM)) {
+        if (accessLink.startsWith(descriptor.baseUrl())) {
+          return descriptor.toInstanceConfig();
+        }
+      }
+    }
+    throw new DatasetSourceNotFoundException();
+  }
+
+  /**
+   * Best-effort access-link revocation for sync lifecycle (stale link
+   * after a version bump, or rollback of a freshly created link after a
+   * persistence failure). Never throws — failures are logged so operators
+   * can clean up orphaned links manually.
+   */
+  private void revokeAccessLinkBestEffort(
+      String accessLinkId, String externalHandleValue,
+      InstanceConfig config, String actingUserId) {
+    try {
+      datasetSource.revokeAccessLink(accessLinkId, externalHandleValue, config, actingUserId);
+      log.info("Revoked access link {} on instance {} (sync lifecycle)"
+          .formatted(accessLinkId, config.id()));
+    } catch (Exception e) {
+      log.error("Failed to revoke access link {} on instance {} during sync; "
+              + "the link may need manual clean-up"
+              .formatted(accessLinkId, config.id()), e);
+    }
+  }
+
   // ── List connected datasets ─────────────────────────────────────────────
 
   /**
@@ -772,6 +1120,7 @@ public class AssociatedDatasetService {
         ds.connectedBy(),
         displayName,
         ds.connectedOn(),
+        ds.lastSyncedAt().orElse(null),
         ds.experimentId().map(ExperimentId::value).orElse(null),
         expDisplay,
         ds.sourceType().name()

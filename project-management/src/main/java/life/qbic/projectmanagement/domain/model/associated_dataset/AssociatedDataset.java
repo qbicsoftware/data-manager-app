@@ -230,10 +230,70 @@ public class AssociatedDataset {
    * @since 1.12.0
    */
   public void updateMetadata(ResourceMetadata metadata) {
+    sync(metadata);
+  }
+
+  /**
+   * Applies a metadata snapshot obtained by synchronising with the source
+   * system (DATSET-04/08, ADR-0005) and reports what changed.
+   *
+   * <p>Computes the change information <em>before</em> applying, so the
+   * caller can decide whether the sync actually updated the connection
+   * (and thus whether a notification is due). {@code lastSyncedAt} is
+   * updated whenever this method is invoked, regardless of whether the
+   * metadata itself changed.</p>
+   *
+   * @param metadata the latest metadata snapshot from the source
+   * @return the computed change information
+   * @since 1.13.0
+   */
+  public SyncChange sync(ResourceMetadata metadata) {
     Objects.requireNonNull(metadata, "metadata must not be null");
+    String previousVersion = this.version;
+    AccessLevel previousAccessLevel = this.accessLevel;
+    boolean metadataChanged = !Objects.equals(this.resourceMetadata, metadata);
     applyMetadata(metadata);
     this.lastSyncedAt = Instant.now();
+    boolean versionChanged = !Objects.equals(previousVersion, this.version);
+    boolean accessStatusChanged = previousAccessLevel != this.accessLevel;
+    return new SyncChange(versionChanged, accessStatusChanged, metadataChanged,
+        previousVersion, this.version);
   }
+
+  /**
+   * Moves the connection's external handle to a new record identifier.
+   *
+   * <p>Used by sync (ADR-0005): when a new version of the dataset is
+   * published, InvenioRDM creates a new record with a new recid. The
+   * connection follows the latest version, so the handle is updated to
+   * the new record's identifier after the sync committed.</p>
+   *
+   * @param externalHandle the new record identifier
+   * @throws NullPointerException if {@code externalHandle} is null
+   * @since 1.13.0
+   */
+  public void updateExternalHandle(ExternalHandle externalHandle) {
+    Objects.requireNonNull(externalHandle, "externalHandle must not be null");
+    this.externalHandle = externalHandle.value();
+  }
+
+  /**
+   * Outcome of a sync: what changed when applying a fresh metadata
+   * snapshot (see {@link #sync(ResourceMetadata)}).
+   *
+   * @param versionChanged     whether the version string changed
+   * @param accessStatusChanged whether the coarse access level changed
+   * @param metadataChanged    whether the full metadata snapshot differs
+   * @param previousVersion    the version string before the update, or null
+   * @param newVersion         the version string after the update, or null
+   * @since 1.13.0
+   */
+  public record SyncChange(
+      boolean versionChanged,
+      boolean accessStatusChanged,
+      boolean metadataChanged,
+      String previousVersion,
+      String newVersion) {}
 
   // ── Accessors ───────────────────────────────────────────────────────────
 
@@ -277,6 +337,15 @@ public class AssociatedDataset {
    */
   public String pid() {
     return pid;
+  }
+
+  /**
+   * High-priority universal column: version string of the dataset on the
+   * source (e.g. "v1"), extracted from {@link #resourceMetadata()} for
+   * efficient SQL sort/filter (ADR-0001).
+   */
+  public String version() {
+    return version;
   }
 
   public String connectedBy() {

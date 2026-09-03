@@ -1,5 +1,8 @@
 package life.qbic.projectmanagement.application;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 /**
  * <b>Messages</b>
  *
@@ -126,5 +129,68 @@ public class Messages {
 
         %s
         """, fullNameUser, projectTitle, datasetTitle, datasetPid, projectUri);
+  }
+
+  /**
+   * A pre-formatted message that informs a project collaborator that one
+   * or more connected datasets in a project were updated by a sync
+   * (DATSET-04/08, ADR-0005 N1).
+   *
+   * <p>One email is sent per sync trigger with <em>all</em> updated
+   * records listed — never one email per record — to avoid flooding
+   * members when several versions are updated in the same trigger.</p>
+   *
+   * @param fullNameUser    the full name of the recipient
+   * @param projectTitle    the title of the project the datasets were updated in
+   * @param updatedDatasets pre-rendered lines, one per updated record
+   *                        (see {@link #updatedRecordLine})
+   * @param projectUri      a resolvable URL to the project in Data Manager
+   * @return the filled out template message
+   * @since 1.13.0
+   */
+  public static String datasetsSyncedToProject(String fullNameUser, String projectTitle,
+      List<String> updatedDatasets, String projectUri) {
+    String lines = updatedDatasets.stream()
+        .map(line -> "  - " + line)
+        .collect(Collectors.joining("\n"));
+    return String.format("""
+        Dear %s,
+
+        the following connected dataset(s) in the project '%s' have been updated:
+
+        %s
+
+        Please open the project to see the updated datasets:
+
+        %s
+        """, fullNameUser, projectTitle, lines, projectUri);
+  }
+
+  /**
+   * Renders one record line for the combined dataset-sync email.
+   *
+   * @param title              the record title
+   * @param pid                the persistent identifier (DOI)
+   * @param previousVersion    version before the sync, or null
+   * @param newVersion         version after the sync, or null
+   * @param accessStatusChanged whether the access level changed
+   *                            (e.g. embargo lifted or added)
+   * @return a single human-readable line, e.g.
+   *         {@code "My dataset (10.5281/zenodo.123): v1 → v2 (access status changed)"}
+   * @since 1.13.0
+   */
+  public static String updatedRecordLine(
+      String title, String pid, String previousVersion, String newVersion,
+      boolean accessStatusChanged) {
+    String versionPart;
+    if (previousVersion != null && newVersion != null && !previousVersion.equals(newVersion)) {
+      versionPart = previousVersion + " → " + newVersion;
+    } else if (newVersion != null) {
+      versionPart = newVersion;
+    } else {
+      versionPart = "—";
+    }
+    String accessNote = accessStatusChanged ? " (access status changed)" : "";
+    return title + " (" + pid + "): " + versionPart + accessNote;
   }
 }

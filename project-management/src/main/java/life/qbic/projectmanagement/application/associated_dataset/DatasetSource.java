@@ -74,6 +74,39 @@ public interface DatasetSource {
       String actingUserId) throws DatasetResolveException;
 
   /**
+   * Resolves the current/latest state of the record identified by the
+   * given handle, on behalf of the given user.
+   *
+   * <p>Used when synchronising a connected dataset (DATSET-04/08,
+   * ADR-0005). Unlike {@link #resolveMetadata}, which returns the record
+   * under the given handle as-is, this method follows version chains:
+   * for versioned sources the returned {@link ResolvedRecord} carries the
+   * metadata of the <em>latest published version</em> together with the
+   * record identifier it was fetched from.</p>
+   *
+   * <p>Credential handling is identical to {@link #resolveMetadata}
+   * (ADR-0002 D1: token resolved in the adapter scope and zeroed after
+   * use). Access failures must be reported as
+   * {@link DatasetAccessDeniedException} so the application layer can
+   * distinguish "no usable credential" from "credential lacks access".</p>
+   *
+   * @param externalHandleValue the source-specific identifier to start
+   *                            resolution from (e.g. the connected record)
+   * @param config              the target instance
+   * @param actingUserId        the ID of the user performing the sync
+   * @return the latest record's metadata + effective handle, or empty if
+   *         the record (and its version chain) no longer exists
+   * @throws DatasetAccessDeniedException if access to the record is
+   *         denied (HTTP 401/403)
+   * @throws DatasetResolveException      for other resolve failures
+   *         (network error, rate limit, server error, …)
+   * @since 1.13.0
+   */
+  Optional<ResolvedRecord> resolveLatest(
+      String externalHandleValue, InstanceConfig config,
+      String actingUserId) throws DatasetResolveException;
+
+  /**
    * Returns whether the given user has a valid (non-invalidated)
    * credential configured for the specified instance.
    *

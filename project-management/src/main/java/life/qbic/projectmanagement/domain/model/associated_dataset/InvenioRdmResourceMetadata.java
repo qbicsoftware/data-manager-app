@@ -88,7 +88,24 @@ public record InvenioRdmResourceMetadata(
      * this field existed deserialize to {@code null} and are simply skipped
      * by revocation.</p>
      */
-    String accessLinkId
+    String accessLinkId,
+    /**
+     * The InvenioRDM concept (parent) record identifier of the dataset,
+     * or null.
+     *
+     * <p>InvenioRDM publishes every version as a new record sharing one
+     * concept (parent) record. Resolving the parent recid via
+     * {@code GET /records/{parentId}} always yields the latest published
+     * version (HTTP 302 → latest record). Sync (FEAT-DATSET-04/08) uses
+     * this handle to follow version chains; see ADR-0005.</p>
+     *
+     * <p>Nullable and optional: legacy rows written before this field
+     * existed deserialize to {@code null} and resolve the parent from the
+     * stored record on their first sync.</p>
+     *
+     * @since 1.13.0
+     */
+    String parentHandle
 
 ) implements ResourceMetadata {
 
@@ -129,8 +146,51 @@ public record InvenioRdmResourceMetadata(
       InvenioRdmAccessStatus fileAccess) {
     this(title, pid, version, accessLink, resourceProvider, creators,
         resourceType, community, publicationDate, description,
-        recordAccess, fileAccess, null, null);
+        recordAccess, fileAccess, null, null, null);
   }
+
+  /**
+   * Backward-compatible constructor with link-lifecycle fields but without
+   * a parent handle (legacy schema / test helpers). Delegates with
+   * {@code parentHandle} unset ({@code null}).
+   *
+   * @param title            record title
+   * @param pid              persistent identifier
+   * @param version          version string or null
+   * @param accessLink       access URL or null
+   * @param resourceProvider display name of the instance
+   * @param creators         creator names (nullable → empty)
+   * @param resourceType     resource type or null
+   * @param community        community or null
+   * @param publicationDate  publication date (never null)
+   * @param description      abstract or null
+   * @param recordAccess     record access status (never null)
+   * @param fileAccess       file access status (never null)
+   * @param instanceId       the configured source instance, or null
+   * @param accessLinkId     the access-link id, or null
+   * @since 1.12.0 (extended 1.13.0)
+   */
+  public InvenioRdmResourceMetadata(
+      String title,
+      String pid,
+      String version,
+      String accessLink,
+      String resourceProvider,
+      List<String> creators,
+      String resourceType,
+      String community,
+      LocalDate publicationDate,
+      String description,
+      InvenioRdmAccessStatus recordAccess,
+      InvenioRdmAccessStatus fileAccess,
+      String instanceId,
+      String accessLinkId) {
+    this(title, pid, version, accessLink, resourceProvider, creators,
+        resourceType, community, publicationDate, description,
+        recordAccess, fileAccess, instanceId, accessLinkId, null);
+  }
+
+
 
   public InvenioRdmResourceMetadata {
     Objects.requireNonNull(title, "title must not be null");

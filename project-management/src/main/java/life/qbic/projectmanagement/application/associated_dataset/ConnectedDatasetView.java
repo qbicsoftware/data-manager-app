@@ -92,6 +92,14 @@ public record ConnectedDatasetView(
     Instant connectedOn,
 
     /**
+     * Timestamp of the last successful synchronisation with the source
+     * instance, or null if the dataset was never synced (DATSET-04/08).
+     *
+     * @since 1.13.0
+     */
+    Instant lastSyncedAt,
+
+    /**
      * Raw experiment ID (UUID string), or null if no experiment is linked.
      * Use as an opaque identifier; prefer {@link #experimentName} for display.
      */

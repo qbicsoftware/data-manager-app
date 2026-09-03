@@ -56,6 +56,7 @@ Where `NNNN` is a zero-padded, four-digit sequential number assigned in creation
 | [0002](0002-invenio-rdm-api-client-credentials.md) | InvenioRDM API client design and external credential security | approved | 2026-07-13 |
 | [0003](0003-connection-lifecycle-stewardship.md) | Dataset connection lifecycle and data stewardship | approved | 2026-07-13 |
 | [0004](0004-fair-signposting-deferred.md) | FAIR Signposting integration deferred | approved | 2026-07-13 |
+| [0005](0005-associated-datasets-sync-semantics.md) | Associated dataset synchronisation semantics | approved | 2026-07-15 |
 
 *Update this table whenever a new ADR is added.*
 

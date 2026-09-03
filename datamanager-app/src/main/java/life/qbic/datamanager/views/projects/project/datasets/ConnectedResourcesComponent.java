@@ -53,9 +53,9 @@ import life.qbic.projectmanagement.application.associated_dataset.ConnectedDatas
  * layer (never domain entities directly). User and experiment display names
  * are already resolved by the service — this component renders them as-is.</p>
  *
- * <p>Per FEAT-DATSET-01 this component <b>does not</b> render per-row actions
- * (Sync, Remove) — those belong to later stories (FEAT-DATSET-04 and
- * beyond).</p>
+ * <p>Per FEAT-DATSET-04/08 this component renders write-gated per-row
+ * actions: <b>Sync</b> (synchronise one dataset with its source) and
+ * <b>Remove</b>, plus a <b>Sync All</b> action-bar button.</p>
  *
  * @since 1.12.0
  */
@@ -73,6 +73,7 @@ public class ConnectedResourcesComponent extends Div {
   private final Section section;
   private final Div cardsContainer;
   private final Button connectButton;
+  private final Button syncAllButton;
 
   private Context context;
 
@@ -88,7 +89,13 @@ public class ConnectedResourcesComponent extends Div {
     connectButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     connectButton.addClickListener(e -> fireConnectDatasetsClick());
 
-    var actionBar = new ActionBar(connectButton);
+    syncAllButton = new Button("Sync All", VaadinIcon.REFRESH.create());
+    syncAllButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+    syncAllButton.getElement().setAttribute("title",
+        "Synchronise all connected datasets with their source instances");
+    syncAllButton.addClickListener(e -> fireSyncAllDatasetsClick());
+
+    var actionBar = new ActionBar(connectButton, syncAllButton);
 
     var note = new SectionNote(
         "External datasets connected to this project and its experiments. "
@@ -125,6 +132,7 @@ public class ConnectedResourcesComponent extends Div {
   /** Controls whether the "Remove" button is rendered on each card. */
   public void setWriteAllowed(boolean writeAllowed) {
     this.writeAllowed = writeAllowed;
+    syncAllButton.setVisible(writeAllowed);
   }
 
   /** Reloads connected datasets and re-renders the content area. */
@@ -170,6 +178,30 @@ public class ConnectedResourcesComponent extends Div {
   public Registration addRemoveDatasetClickListener(
       ComponentEventListener<RemoveDatasetClickEvent> listener) {
     return addListener(RemoveDatasetClickEvent.class, listener);
+  }
+
+  /**
+   * Registers a listener invoked when the "Sync All" action-bar button
+   * is clicked.
+   *
+   * @since 1.13.0
+   */
+  public Registration addSyncAllDatasetsClickListener(
+      ComponentEventListener<SyncAllDatasetsClickEvent> listener) {
+    return addListener(SyncAllDatasetsClickEvent.class, listener);
+  }
+
+  /**
+   * Registers a listener invoked when the "Sync" button on a dataset
+   * card is clicked. Listener receives the aggregate ID of the clicked
+   * dataset. Only fires when {@link #setWriteAllowed(boolean)} is
+   * {@code true}.
+   *
+   * @since 1.13.0
+   */
+  public Registration addSyncDatasetClickListener(
+      ComponentEventListener<SyncDatasetClickEvent> listener) {
+    return addListener(SyncDatasetClickEvent.class, listener);
   }
 
   // ── Empty state ─────────────────────────────────────────────────────
@@ -273,8 +305,15 @@ public class ConnectedResourcesComponent extends Div {
       headerRow.add(dateSpan);
     }
 
-    // Remove button (write-access only, right-aligned as a primary action).
+    // Sync + Remove buttons (write-access only, right-aligned).
     if (writeAllowed) {
+      var syncButton = new Button(VaadinIcon.REFRESH.create());
+      syncButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+      syncButton.getElement().setAttribute("title", "Synchronise this dataset with its source");
+      syncButton.getElement().setAttribute("aria-label", "Synchronise dataset");
+      syncButton.addClickListener(e -> fireSyncDatasetClick(view.id()));
+      headerRow.add(syncButton);
+
       var removeButton = new Button(VaadinIcon.TRASH.create());
       removeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE,
           ButtonVariant.LUMO_ERROR);
@@ -497,6 +536,14 @@ public class ConnectedResourcesComponent extends Div {
     fireEvent(new ConnectDatasetsClickEvent(this));
   }
 
+  private void fireSyncAllDatasetsClick() {
+    fireEvent(new SyncAllDatasetsClickEvent(this));
+  }
+
+  private void fireSyncDatasetClick(String datasetId) {
+    fireEvent(new SyncDatasetClickEvent(this, datasetId));
+  }
+
   private void fireRemoveDatasetClick(String datasetId) {
     fireEvent(new RemoveDatasetClickEvent(this, datasetId));
   }
@@ -537,6 +584,47 @@ public class ConnectedResourcesComponent extends Div {
     }
 
     /** Aggregate ID (UUID string) of the dataset to remove. */
+    public String getDatasetId() {
+      return datasetId;
+    }
+  }
+
+  /**
+   * Custom event fired when the "Sync All" action-bar button is clicked.
+   *
+   * @since 1.13.0
+   */
+  public static class SyncAllDatasetsClickEvent
+      extends com.vaadin.flow.component.ComponentEvent<ConnectedResourcesComponent> {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
+
+    public SyncAllDatasetsClickEvent(ConnectedResourcesComponent source) {
+      super(source, false);
+    }
+  }
+
+  /**
+   * Custom event fired when the "Sync" button on a dataset card is
+   * clicked. Carries the aggregate ID of the dataset to synchronise.
+   *
+   * @since 1.13.0
+   */
+  public static class SyncDatasetClickEvent
+      extends com.vaadin.flow.component.ComponentEvent<ConnectedResourcesComponent> {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
+
+    private final String datasetId;
+
+    public SyncDatasetClickEvent(ConnectedResourcesComponent source, String datasetId) {
+      super(source, false);
+      this.datasetId = datasetId;
+    }
+
+    /** Aggregate ID (UUID string) of the dataset to synchronise. */
     public String getDatasetId() {
       return datasetId;
     }
