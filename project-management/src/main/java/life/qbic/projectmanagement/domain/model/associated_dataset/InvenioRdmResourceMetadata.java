@@ -53,14 +53,84 @@ public record InvenioRdmResourceMetadata(
     /** A short description or abstract, or null. */
     String description,
 
-    // --- Access detail fields (InvenioRDM-specific two-dimension model) ---
+    // --- Access detail and link-lifecycle fields ---
 
     /** Access status of the record's metadata. Never null. */
     InvenioRdmAccessStatus recordAccess,
     /** Access status of the record's files. Never null. */
-    InvenioRdmAccessStatus fileAccess
+    InvenioRdmAccessStatus fileAccess,
+    /**
+     * The configured source-instance identifier (e.g. {@code "zenodo"}),
+     * or null.
+     *
+     * <p>Stores which configured instance the dataset came from so the
+     * connection can be resolved and any created access link revoked later
+     * (e.g. cleanup on removal) without a separate persisted column. Set
+     * at connect time for connections that created a revocable access link.</p>
+     *
+     * <p>Nullable and optional; legacy rows and public datasets leave it
+     * null.</p>
+     */
+    String instanceId,
+    /**
+     * The identity of the shareable access link created on the source
+     * system for this restricted dataset, or null.
+     *
+     * <p>This is the external link {@code id} returned by InvenioRDM when
+     * creating an access link ({@code AccessLinkResponse.id}). It is stored
+     * so the link can be revoked (deleted) again on the source system when
+     * the connection is removed or a connect attempt is rolled back. It is
+     * <strong>not</strong> the token embedded in {@link #accessLink()} — it
+     * targets the DELETE {@code /access/links/{id}} endpoint.</p>
+     *
+     * <p>Nullable and optional: only set for access-restricted datasets
+     * connected with a created access link. Legacy rows written before
+     * this field existed deserialize to {@code null} and are simply skipped
+     * by revocation.</p>
+     */
+    String accessLinkId
 
 ) implements ResourceMetadata {
+
+  /**
+   * Backward-compatible constructor leaving {@code instanceId} and
+   * {@code accessLinkId} unset (both null).
+   *
+   * <p>Keeps existing call sites (and persisted {@code resource_metadata}
+   * rows deserialized by Jackson's canonical constructor) working without
+   * supplying link-lifecycle information. Connections created this way are
+   * simply skipped by access-link revocation.</p>
+   *
+   * @param title            record title
+   * @param pid              persistent identifier
+   * @param version          version string or null
+   * @param accessLink       access URL or null
+   * @param resourceProvider display name of the instance
+   * @param creators         creator names (nullable → empty)
+   * @param resourceType     resource type or null
+   * @param community        community or null
+   * @param publicationDate  publication date (never null)
+   * @param description      abstract or null
+   * @param recordAccess     record access status (never null)
+   * @param fileAccess       file access status (never null)
+   */
+  public InvenioRdmResourceMetadata(
+      String title,
+      String pid,
+      String version,
+      String accessLink,
+      String resourceProvider,
+      List<String> creators,
+      String resourceType,
+      String community,
+      LocalDate publicationDate,
+      String description,
+      InvenioRdmAccessStatus recordAccess,
+      InvenioRdmAccessStatus fileAccess) {
+    this(title, pid, version, accessLink, resourceProvider, creators,
+        resourceType, community, publicationDate, description,
+        recordAccess, fileAccess, null, null);
+  }
 
   public InvenioRdmResourceMetadata {
     Objects.requireNonNull(title, "title must not be null");

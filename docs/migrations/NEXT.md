@@ -1,6 +1,6 @@
 # Migration: Next release
 
-**Current pom version:** TBD  
+**Current pom version:** 1.15.2  
 **Target release version:** TBD *(renamed to `released/v<version>.md` at release cut)*  
 **Status:** under development
 
@@ -21,6 +21,17 @@ For the migration documentation structure, see [`README.md`](README.md).
 
 | # | Script | Description | Risk |
 |---|---|---|---|
+|   |   |   |   |
+
+Each row links to its incremental script. The sections below expand each entry
+with apply / verify / rollback detail.
+
+---
+
+## Application properties changes
+
+*Document any new, removed, or renamed `application.properties` entries here.
+If there are none this release, delete this section.*
 
 ---
 

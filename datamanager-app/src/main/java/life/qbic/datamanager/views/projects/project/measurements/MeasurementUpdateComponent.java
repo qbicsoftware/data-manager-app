@@ -6,6 +6,7 @@ import life.qbic.datamanager.views.general.dialog.DialogSection;
 import life.qbic.datamanager.views.general.dialog.InputValidation;
 import life.qbic.datamanager.views.general.dialog.UserInput;
 import life.qbic.datamanager.views.projects.project.measurements.registration.MeasurementUpload;
+import org.jspecify.annotations.NonNull;
 
 /**
  * <b><class short description - 1 Line!></b>
@@ -33,6 +34,7 @@ public class MeasurementUpdateComponent extends Div implements UserInput {
   }
 
   @Override
+  @NonNull
   public InputValidation validate() {
     return measurementUpload.validate();
   }

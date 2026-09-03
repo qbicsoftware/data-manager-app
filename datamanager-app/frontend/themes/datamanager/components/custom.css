@@ -22,6 +22,7 @@
 @import "virtuallist.css";
 @import "toast.css";
 @import "grid-templates.css";
+@import "verification-sidebar.css";
 
 vaadin-avatar-group vaadin-avatar,
 .user-avatar {

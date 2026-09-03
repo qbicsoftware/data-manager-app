@@ -1,0 +1,187 @@
+/* ── Verification Sidebar ────── */
+
+.verification-sidebar {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  pointer-events: none;
+}
+
+/* Backdrop */
+
+.verification-sidebar .vs-backdrop {
+  position: absolute;
+  inset: 0;
+  background-color: var(--lumo-shade-20pct);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.verification-sidebar.vs-open .vs-backdrop {
+  pointer-events: auto;
+  opacity: 1;
+}
+
+/* Slide-in panel */
+
+.verification-sidebar .vs-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 480px;
+  max-width: 90vw;
+  background-color: var(--lumo-base-color);
+  box-shadow: var(--lumo-box-shadow-l);
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  pointer-events: auto;
+}
+
+/* Layout: Header / Content / Footer */
+
+.verification-sidebar .vs-body {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+}
+
+.verification-sidebar .vs-header {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+  flex-shrink: 0;
+  padding: var(--lumo-space-m) var(--lumo-space-l);
+  border-bottom: 1px solid var(--lumo-contrast-10pct);
+}
+
+.verification-sidebar .vs-title {
+  flex-grow: 1;
+}
+
+.verification-sidebar .vs-content {
+  flex-grow: 1;
+  flex-direction: column;
+  display: flex;
+  overflow-y: auto;
+  padding: var(--lumo-space-l);
+  min-height: 0;
+  gap: var(--lumo-space-s);
+}
+
+.verification-sidebar .vs-footer {
+  flex-shrink: 0;
+  border-top: 1px solid var(--lumo-contrast-10pct);
+  padding: var(--lumo-space-m) var(--lumo-space-l);
+}
+
+/* Provider rows */
+
+.verification-sidebar .vs-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--lumo-space-m);
+  padding: var(--lumo-space-s) var(--lumo-space-m);
+  border: 1px solid var(--lumo-contrast-10pct);
+  border-radius: var(--lumo-border-radius-m);
+  background-color: var(--lumo-base-color);
+}
+
+.verification-sidebar .vs-row--valid {
+  border-left: 4px solid var(--lumo-success-color);
+}
+
+.verification-sidebar .vs-row--invalid {
+  border-left: 4px solid var(--lumo-error-color);
+}
+
+.verification-sidebar .vs-row--pending {
+  border-left: 4px solid var(--lumo-contrast-20pct);
+}
+
+/* Skipped row — provider has no token; no validation is attempted.
+   Dashed left accent visually separates it from rows that actually
+   went through the verification pipeline. */
+
+.verification-sidebar .vs-row--skipped {
+  border-left: 4px dashed var(--lumo-contrast-10pct);
+  background-color: var(--lumo-contrast-5pct);
+}
+
+.verification-sidebar .vs-status--skipped {
+  color: var(--lumo-tertiary-text-color);
+  opacity: 0.7;
+}
+
+/* Status-label variants — keep the message visually tied to its icon. */
+
+.verification-sidebar .vs-status-label--pending {
+  color: var(--lumo-tertiary-text-color);
+}
+
+.verification-sidebar .vs-status-label--valid {
+  color: var(--lumo-success-text-color);
+  font-weight: 500;
+}
+
+.verification-sidebar .vs-status-label--invalid {
+  color: var(--lumo-error-text-color);
+  font-weight: 500;
+}
+
+/* Reason shown below the provider name for invalid rows. */
+
+.verification-sidebar .vs-invalid-reason {
+  display: block;
+  color: var(--lumo-tertiary-text-color);
+  font-size: var(--lumo-font-size-xs);
+  margin-top: 2px;
+}
+
+.verification-sidebar .vs-row__identity {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.verification-sidebar .vs-row__name {
+  font-weight: 600;
+}
+
+.verification-sidebar .vs-row__status {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-xs);
+}
+
+.verification-sidebar .vs-spinner {
+  width: 1.2em;
+  height: 1.2em;
+  border: 2px solid var(--lumo-contrast-20pct);
+  border-top-color: var(--lumo-primary-color);
+  border-radius: 50%;
+  animation: vs-spin 0.8s linear infinite;
+}
+
+@keyframes vs-spin {
+  to { transform: rotate(360deg); }
+}
+
+.verification-sidebar .vs-row__actions {
+  display: flex;
+  gap: var(--lumo-space-xs);
+  flex-shrink: 0;
+}
+
+/* Inline Reconnect link — tertiary, so it doesn't compete with
+   the Reconnect button on the main-view card. */
+
+.verification-sidebar .vs-reconnect-link {
+  font-size: var(--lumo-font-size-s);
+}

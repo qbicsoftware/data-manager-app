@@ -1,10 +1,7 @@
 package life.qbic.projectmanagement.application.associated_dataset;
 
-import life.qbic.application.commons.ApplicationException;
-import life.qbic.application.commons.ApplicationException.ErrorCode;
-import life.qbic.application.commons.ApplicationException.ErrorParameters;
-
 import java.io.Serial;
+import life.qbic.application.commons.ApplicationException;
 
 /**
  * Thrown by {@link DatasetSource} when a metadata resolve operation fails
