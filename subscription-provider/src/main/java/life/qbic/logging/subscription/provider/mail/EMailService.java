@@ -12,6 +12,7 @@ import jakarta.mail.Transport;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
 import java.util.Properties;
+import life.qbic.logging.subscription.provider.mail.property.MailProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,45 +24,35 @@ import org.slf4j.LoggerFactory;
  *
  * @since 1.0.0
  */
-public class EMailService implements MailService {
+public class EMailService {
 
   private static final Logger log = LoggerFactory.getLogger(EMailService.class);
 
   private final Session session;
 
-  private static final String MAIL_SMTP_HOST = "mail.smtp.host";
-
-  private static final String MAIL_SMTP_PORT = "mail.smtp.port";
-
-  private static final String MAIL_SMTP_AUTH = "mail.smtp.auth";
-
-  private static final String MAIL_SMTP_STARTTLS_ENABLE = "mail.smtp.starttls.enable";
-
-  private static final String MAIL_SMTP_PASSWORD = "mail.smtp.password";
-
-  private static final String MAIL_SMTP_USERNAME = "mail.smtp.user";
-
-  public static MailService create(Properties properties) {
-    requireNonNull(properties.getProperty(MAIL_SMTP_HOST));
-    requireNonNull(properties.getProperty(MAIL_SMTP_PORT));
-    requireNonNull(properties.getProperty(MAIL_SMTP_USERNAME));
-    requireNonNull(properties.getProperty(MAIL_SMTP_PASSWORD));
-    requireNonNull(properties.getProperty(MAIL_SMTP_AUTH));
-    requireNonNull(properties.getProperty(MAIL_SMTP_STARTTLS_ENABLE));
-    return new EMailService(properties);
-  }
-
-  private EMailService(Properties props) {
-    session = Session.getInstance(props, new Authenticator() {
+  public EMailService(MailProperties properties) {
+    requireNonNull(properties.getHost(), "E-mail host must not be null");
+    requireNonNull(properties.getUsername(), "E-mail username must not be null");
+    requireNonNull(properties.getPassword(), "E-mail password must not be null");
+    session = Session.getInstance(toJavaMailProperties(properties), new Authenticator() {
       @Override
       protected PasswordAuthentication getPasswordAuthentication() {
-        return new PasswordAuthentication(props.getProperty(MAIL_SMTP_USERNAME),
-            props.getProperty(MAIL_SMTP_PASSWORD));
+        return new PasswordAuthentication(properties.getUsername(), properties.getPassword());
       }
     });
   }
 
-  @Override
+  private static Properties toJavaMailProperties(MailProperties properties) {
+    Properties props = new Properties();
+    props.put("mail.smtp.host", properties.getHost());
+    props.put("mail.smtp.port", properties.getPort());
+    props.put("mail.smtp.username", properties.getUsername());
+    props.put("mail.smtp.password", properties.getPassword());
+    props.put("mail.smtp.auth", properties.isSmtpAuth());
+    props.put("mail.smtp.starttls.enable", properties.isStartTls());
+    return props;
+  }
+
   public void send(String subject, String message, String sender, String recipient) {
     try {
       Message msg = new MimeMessage(session);

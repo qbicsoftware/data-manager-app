@@ -1,24 +1,19 @@
 package life.qbic.logging.subscription.provider;
 
-import static java.util.Objects.requireNonNull;
-
-import java.io.IOException;
 import life.qbic.logging.subscription.api.LogLevel;
 import life.qbic.logging.subscription.api.LogMessage;
 import life.qbic.logging.subscription.api.Subscriber;
 import life.qbic.logging.subscription.provider.mail.MailService;
-import life.qbic.logging.subscription.provider.mail.property.MailPropertyLoader;
+import life.qbic.logging.subscription.provider.mail.property.MailProperties;
+import org.springframework.stereotype.Component;
 
 /**
  * Example mail on error {@link Subscriber} implementation.
  *
  * @since 1.0.0
  */
+@Component
 public class MailOnErrorSubscriber implements Subscriber {
-
-  private static final String NOTIFICATION_MAIL_SENDER = "notification.mail.sender";
-
-  private static final String NOTIFICATION_MAIL_RECIPIENT = "notification.mail.recipient";
 
   private final String sender;
 
@@ -26,11 +21,10 @@ public class MailOnErrorSubscriber implements Subscriber {
 
   private final MailService emailService;
 
-  public MailOnErrorSubscriber() throws IOException {
-    var props = MailPropertyLoader.create().load();
-    sender = requireNonNull(props.getProperty(NOTIFICATION_MAIL_SENDER));
-    recipient = requireNonNull(props.getProperty(NOTIFICATION_MAIL_RECIPIENT));
-    emailService = MailService.instance();
+  public MailOnErrorSubscriber(MailProperties properties, MailService emailService) {
+    this.sender = properties.getSender();
+    this.recipient = properties.getRecipient();
+    this.emailService = emailService;
   }
 
   @Override

@@ -1,8 +1,7 @@
 package life.qbic.logging.subscription.provider.mail;
 
-import java.io.IOException;
-import java.util.Properties;
-import life.qbic.logging.subscription.provider.mail.property.MailPropertyLoader;
+import life.qbic.logging.subscription.provider.mail.property.MailProperties;
+import org.springframework.stereotype.Component;
 
 /**
  * <b>Mail Service</b>
@@ -11,19 +10,16 @@ import life.qbic.logging.subscription.provider.mail.property.MailPropertyLoader;
  *
  * @since 1.0.0
  */
-public interface MailService {
+@Component
+public class MailService {
 
-  static MailService instance() {
-    Properties props;
-    try {
-      props = MailPropertyLoader.create().load();
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-    return EMailService.create(props);
+  private final EMailService emailService;
+
+  public MailService(MailProperties properties) {
+    this.emailService = new EMailService(properties);
   }
 
-  void send(String subject, String message, String sender, String recipient);
-
-
+  public void send(String subject, String message, String sender, String recipient) {
+    emailService.send(subject, message, sender, recipient);
+  }
 }
