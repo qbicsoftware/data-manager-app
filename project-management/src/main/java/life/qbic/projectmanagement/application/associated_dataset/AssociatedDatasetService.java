@@ -866,16 +866,17 @@ public class AssociatedDatasetService {
     }
 
     if (!recordChanged) {
-      // Same record — keep the stored runtime fields (preserve equality
-      // so a no-op is detected by the aggregate diff).
-      String parentHandle = preservedParentHandle != null
-          ? preservedParentHandle : latest.parentHandle();
+      // Same record — keep the stored runtime fields verbatim so a no-op
+      // sync compares equal and is reported as UP_TO_DATE. This includes a
+      // null parent handle on legacy connections: the parent handle is only
+      // adopted when a real version change commits (else the first sync of
+      // legacy rows would falsely count as "updated").
       return new InvenioRdmResourceMetadata(
           latest.title(), latest.pid(), latest.version(), preservedLink,
           latest.resourceProvider(), latest.creators(), latest.resourceType(),
           latest.community(), latest.publicationDate(), latest.description(),
           latest.recordAccess(), latest.fileAccess(),
-          preservedInstanceId, preservedLinkId, parentHandle);
+          preservedInstanceId, preservedLinkId, preservedParentHandle);
     }
 
     if (restrictedLatest && refreshedLink != null) {

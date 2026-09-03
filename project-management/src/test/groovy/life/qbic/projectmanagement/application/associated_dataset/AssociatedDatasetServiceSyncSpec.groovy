@@ -111,7 +111,9 @@ class AssociatedDatasetServiceSyncSpec extends Specification {
       AssociatedDatasetRepository repository,
       SourceInstanceRegistry registry = [
           find: { id -> Optional.of(new SourceInstanceDescriptor("zenodo", "Zenodo",
-              "https://zenodo.org", SourceType.INVENIO_RDM)) }
+              "https://zenodo.org", SourceType.INVENIO_RDM)) },
+          findBySourceType: { st -> [new SourceInstanceDescriptor("zenodo", "Zenodo",
+              "https://zenodo.org", SourceType.INVENIO_RDM)] }
       ] as SourceInstanceRegistry) {
     // The sync path never queries these collaborators; they only need to
     // satisfy the (NonNull) constructor. Map coercion cannot stub concrete
@@ -194,6 +196,44 @@ class AssociatedDatasetServiceSyncSpec extends Specification {
     then:
     response.status() == SyncDatasetResponse.SyncStatus.UP_TO_DATE
     saved != null
+    SYNCED_EVENTS.isEmpty()
+  }
+
+  def "first sync of a legacy connection (no parent handle stored) is still UP_TO_DATE"() {
+    given: "a legacy public connection without parentHandle or instanceId"
+    def legacy = new InvenioRdmResourceMetadata(
+        "Public Dataset", "10.5281/zenodo.1", "v1",
+        "https://zenodo.org/records/111", "Zenodo", [], "Dataset", null,
+        LocalDate.of(2025, 1, 1), null,
+        InvenioRdmAccessStatus.PUBLIC, InvenioRdmAccessStatus.PUBLIC,
+        null, null, null)
+    def dataset = connected(legacy)
+    and: "the source now reports the same record but exposes the concept recid"
+    def resolved = new ResolvedRecord(new InvenioRdmResourceMetadata(
+        "Public Dataset", "10.5281/zenodo.1", "v1",
+        "https://zenodo.org/records/111", "Zenodo", [], "Dataset", null,
+        LocalDate.of(2025, 1, 1), null,
+        InvenioRdmAccessStatus.PUBLIC, InvenioRdmAccessStatus.PUBLIC,
+        null, null, "parent-1"), "111")
+    def source = [
+        resolveLatest: { handle, cfg, user -> Optional.of(resolved) },
+        hasValidCredential: { u, cfg -> false }
+    ] as DatasetSource
+    AssociatedDataset saved
+    def repository = [
+        findById: { id -> Optional.of(dataset) },
+        save: { ds -> saved = ds },
+        isActiveConnectionPresent: { p, pid -> false }
+    ] as AssociatedDatasetRepository
+    def service = createService(source, repository)
+
+    when:
+    def response = runSync(service, dataset)
+
+    then:
+    response.status() == SyncDatasetResponse.SyncStatus.UP_TO_DATE
+    saved != null
+    (saved.resourceMetadata() as InvenioRdmResourceMetadata).parentHandle() == null
     SYNCED_EVENTS.isEmpty()
   }
 
