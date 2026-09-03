@@ -6,8 +6,8 @@ import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.RouterLayout;
-import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.server.VaadinSession;
+import com.vaadin.flow.server.auth.AnonymousAllowed;
 import java.util.Objects;
 import life.qbic.datamanager.announcements.AnnouncementComponent;
 import life.qbic.datamanager.announcements.AnnouncementService;
@@ -38,7 +38,7 @@ public class DataManagerLayout extends AppLayout implements RouterLayout {
     // Add content area and footer to the main layout
     Div mainLayout = new Div(announcementComponent, contentArea, footerComponentFactory.get());
     mainLayout.setId("main-layout");
-    consistDrawerStateBetweenLayouts();
+    persistDrawerStateBetweenLayouts();
     setContent(mainLayout);
     // Vaadin 25: Ensure drawer is closed by default when no content is added
     setDrawerOpened(false);
@@ -63,7 +63,7 @@ public class DataManagerLayout extends AppLayout implements RouterLayout {
    * {@link life.qbic.datamanager.views.projects.project.ProjectMainLayout},
    * {@link life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout}
    */
-  public void consistDrawerStateBetweenLayouts(){
+  public void persistDrawerStateBetweenLayouts() {
     Boolean wasOpen = (Boolean) VaadinSession.getCurrent()
         .getAttribute(DRAWER_STATE_KEY);
     if (wasOpen != null) {
