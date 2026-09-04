@@ -137,18 +137,6 @@ spring.mail.host=<CHANGE_ME>
 spring.mail.default-encoding=UTF-8
 spring.mail.port=587
 
-# Mail configuration for the logging subscription provider (MailOnErrorSubscriber).
-# Bound from the application properties via MailProperties
-# (@ConfigurationProperties, prefix 'qbic.logging.mail').
-qbic.logging.mail.host=<CHANGE_ME>
-qbic.logging.mail.port=587
-qbic.logging.mail.username=<CHANGE_ME>
-qbic.logging.mail.password=<CHANGE_ME>
-qbic.logging.mail.smtp-auth=true
-qbic.logging.mail.start-tls=true
-qbic.logging.mail.sender=no-reply@qbic.life
-qbic.logging.mail.recipient=<CHANGE_ME>
-
 # Prefix applied to the subject of developer error notification emails (logback SMTPAppender).
 # Useful to identify which instance sent the email when multiple instances run concurrently.
 qbic.logging.error.subject-prefix=[Data Manager]

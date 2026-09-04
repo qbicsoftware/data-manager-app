@@ -114,8 +114,13 @@ OLD .[#red].> [SMTP server] : unwired, not used
   subclassing the appender.
 * `SMTPAppender` sends synchronously on the logging thread when it triggers; a slow or unreachable
   SMTP server can stall the logging path (mitigated by errors being rare).
-* The dormant `subscription-provider` module (and its `qbic.logging.mail.*` properties) remain in
-  the codebase unless explicitly retired, leaving a second, unused SMTP stack until it is deleted.
+
+> **Follow-up (2026-09-04):** the dormant `subscription-provider` module — which hosted
+> `MailOnErrorSubscriber` and the unused `qbic.logging.mail.*` raw-Jakarta-Mail stack — was
+> **removed**. It was not on the `datamanager-app` classpath and the logback appender made it
+> redundant. The `qbic.logging.mail.*` properties were deleted from `application.properties` and
+> the distribution template accordingly. The `subscrition-api` interfaces remain (still used by
+> the `logging` module's publisher fan-out).
 
 ## Pros and Cons of the Options
 
