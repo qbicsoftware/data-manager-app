@@ -38,8 +38,6 @@ import reactor.core.publisher.Mono;
  */
 public class MeasurementTemplateComponent extends Div {
 
-  private final MessageSourceNotificationFactory messageFactory;
-
   private final DownloadComponent downloadComponent;
   private final Supplier<String> projectIdSupplier;
 
@@ -54,7 +52,6 @@ public class MeasurementTemplateComponent extends Div {
     requireNonNull(templateMono);
     requireNonNull(messageFactory);
     requireNonNull(projectIdSupplier);
-    this.messageFactory = messageFactory;
     this.downloadComponent = new DownloadComponent();
     this.projectIdSupplier = projectIdSupplier;
 

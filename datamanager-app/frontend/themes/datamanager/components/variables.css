@@ -42,11 +42,11 @@ First some general property definitions
   --shade-color-20pct: hsla(214, 53%, 23%, 0.16);
   --shade-color-30pct: hsla(214, 50%, 22%, 0.26);
   --shade-color-40pct: hsla(214, 47%, 21%, 0.38);
-  --shade-color-50pct: hsla(214, 45%, 20%, 0.52);
+  --shade-color-50pct: #8d97a4;
   --shade-color-60pct: hsla(214, 43%, 19%, 0.6);
   --shade-color-70pct: hsla(214, 42%, 18%, 0.69);
   --shade-color-80pct: hsla(214, 41%, 17%, 0.83);
-  --shade-color-90pct: hsla(214, 40%, 16%, 0.94);
+  --shade-color-90pct: #263446;
   --shade-color: hsl(214, 35%, 15%);
 
   --success-color: rgba(21, 193, 93, 1);
@@ -58,8 +58,8 @@ First some general property definitions
   --primary-color-10pct: hsla(214, 100%, 48%, 0.2);
   --primary-color-20pct: hsla(214, 100%, 48%, 0.2);
   --primary-contrast-color: rgb(255, 255, 255);
-  --primary-text-color: hsl(214, 100%, 43%);
-  --secondary-text-color: hsla(214, 42%, 18%, 0.69);
+  --primary-text-color: #1676f3;
+  --secondary-text-color: var(--shade-color-50pct);
   --tertiary-text-color: hsla(214, 45%, 20%, 0.52);
 
   /*Semantic text-color variables */

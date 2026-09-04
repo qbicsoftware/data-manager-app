@@ -5,10 +5,15 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.application.associated_dataset.AccessLinkCreationException;
+import life.qbic.projectmanagement.application.associated_dataset.AccessLinkRevocationException;
+import life.qbic.projectmanagement.application.associated_dataset.CreatedAccessLink;
+import life.qbic.projectmanagement.application.associated_dataset.CredentialEncryptor;
 import life.qbic.projectmanagement.application.associated_dataset.DatasetResolveException;
 import life.qbic.projectmanagement.application.associated_dataset.DatasetSearchException;
 import life.qbic.projectmanagement.application.associated_dataset.DatasetSource;
@@ -17,9 +22,12 @@ import life.qbic.projectmanagement.application.associated_dataset.SearchHit;
 import life.qbic.projectmanagement.application.associated_dataset.SearchQuery;
 import life.qbic.projectmanagement.application.associated_dataset.SearchResult;
 import life.qbic.projectmanagement.domain.model.associated_dataset.AccessLevel;
+import life.qbic.projectmanagement.domain.model.associated_dataset.CredentialStatus;
 import life.qbic.projectmanagement.domain.model.associated_dataset.InvenioRdmAccessStatus;
 import life.qbic.projectmanagement.domain.model.associated_dataset.InvenioRdmResourceMetadata;
 import life.qbic.projectmanagement.domain.model.associated_dataset.ResourceMetadata;
+import life.qbic.projectmanagement.domain.model.associated_dataset.SourceType;
+import life.qbic.projectmanagement.domain.model.associated_dataset.repository.UserExternalCredentialRepository;
 
 /**
  * Infrastructure adapter implementing the {@link DatasetSource} port for
@@ -41,9 +49,17 @@ public class InvenioRdmDatasetSource implements DatasetSource {
   private static final Logger log = logger(InvenioRdmDatasetSource.class);
 
   private final InvenioRdmClient client;
+  private final UserExternalCredentialRepository credentialRepository;
+  private final CredentialEncryptor encryptor;
 
-  public InvenioRdmDatasetSource(InvenioRdmClient client) {
+  public InvenioRdmDatasetSource(InvenioRdmClient client,
+      UserExternalCredentialRepository credentialRepository,
+      CredentialEncryptor encryptor) {
     this.client = Objects.requireNonNull(client, "client must not be null");
+    this.credentialRepository = Objects.requireNonNull(credentialRepository,
+        "credentialRepository must not be null");
+    this.encryptor = Objects.requireNonNull(encryptor,
+        "encryptor must not be null");
   }
 
   // ── Port implementation ─────────────────────────────────────────────
@@ -57,17 +73,23 @@ public class InvenioRdmDatasetSource implements DatasetSource {
     // Endpoint uses 1-based page indexing
     int invenioPage = query.page() + 1;
     var params = new InvenioRdmClient.SearchParams(
-        query.effectiveQuery(), invenioPage, query.pageSize());
+        query.effectiveQuery(), invenioPage, query.pageSize(),
+        query.accessFilter());
 
+    char[] token = resolveTokenForUser(actingUserId, config.id());
     try {
-      var response = client.search(config.baseUrl(), params);
+      var response = client.search(config.baseUrl(), params, token);
       List<SearchHit> hits = mapSearchHits(response, config.displayName());
-      return new SearchResult(hits, response.hits().total(), query.page(),
-          query.pageSize());
+      return new SearchResult(hits, response.hits().total(),
+          query.page(), query.pageSize());
     } catch (InvenioRdmClient.InvenioRdmException e) {
       log.error("Search failed on %s for query '%s'".formatted(
           config.displayName(), query.effectiveQuery()));
       throw new DatasetSearchException("Search failed", e);
+    } finally {
+      if (token != null) {
+        Arrays.fill(token, '\0');
+      }
     }
   }
 
@@ -79,8 +101,10 @@ public class InvenioRdmDatasetSource implements DatasetSource {
         "externalHandleValue must not be null");
     Objects.requireNonNull(config, "config must not be null");
 
+    char[] token = resolveTokenForUser(actingUserId, config.id());
     try {
-      var invenioRecord = client.getRecord(config.baseUrl(), externalHandleValue);
+      var invenioRecord = client.getRecord(config.baseUrl(),
+          externalHandleValue, token);
       InvenioRdmResourceMetadata metadata = mapRecordToResourceMetadata(
           invenioRecord, config.displayName());
       return Optional.of(metadata);
@@ -92,7 +116,116 @@ public class InvenioRdmDatasetSource implements DatasetSource {
       log.error("Failed to resolve record %s on %s"
           .formatted(externalHandleValue, config.displayName()));
       throw new DatasetResolveException("Failed to resolve metadata record", e);
+    } finally {
+      if (token != null) {
+        Arrays.fill(token, '\0');
+      }
     }
+  }
+
+  @Override
+  public boolean hasValidCredential(String userId, InstanceConfig config) {
+    if (userId == null || config == null) {
+      return false;
+    }
+    return credentialRepository
+        .findByUserIdAndSourceTypeAndInstanceId(
+            userId, SourceType.INVENIO_RDM, config.id())
+        .map(cred -> cred.getStatus() != CredentialStatus.INVALIDATED)
+        .orElse(false);
+  }
+
+  @Override
+  public CreatedAccessLink createAccessLink(String externalHandleValue,
+      InstanceConfig config, String actingUserId)
+      throws AccessLinkCreationException {
+    if (externalHandleValue == null || config == null || actingUserId == null) {
+      throw new IllegalArgumentException("Arguments must not be null");
+    }
+
+    char[] token = resolveTokenForUser(actingUserId, config.id());
+    if (token == null) {
+      throw new AccessLinkCreationException(
+          "No valid credential available for user " + actingUserId
+          + " on instance " + config.id());
+    }
+
+    try {
+      var accessLink = client.createAccessLink(config.baseUrl(),
+          externalHandleValue, token);
+      String url = config.baseUrl() + "/records/" + externalHandleValue
+          + "?token=" + accessLink.token();
+      return new CreatedAccessLink(url, accessLink.id());
+    } catch (InvenioRdmClient.InvenioRdmPermanentException e) {
+      if (e.getStatusCode() == 403) {
+        throw new AccessLinkCreationException(
+            "You do not have permission to create a shareable link for this dataset. "
+            + "Only the dataset owner can create access links.", e);
+      }
+      throw new AccessLinkCreationException(
+          "Failed to create access link: " + e.getMessage(), e);
+    } catch (InvenioRdmClient.InvenioRdmException e) {
+      throw new AccessLinkCreationException(
+          "Failed to create access link: " + e.getMessage(), e);
+    } finally {
+      if (token != null) {
+        Arrays.fill(token, '\0');
+      }
+    }
+  }
+
+  @Override
+  public void revokeAccessLink(String accessLinkId, String externalHandleValue,
+      InstanceConfig config, String actingUserId)
+      throws AccessLinkRevocationException {
+    if (accessLinkId == null || externalHandleValue == null
+        || config == null || actingUserId == null) {
+      throw new IllegalArgumentException("Arguments must not be null");
+    }
+
+    char[] token = resolveTokenForUser(actingUserId, config.id());
+    if (token == null) {
+      throw new AccessLinkRevocationException(
+          "No valid credential available for user " + actingUserId
+          + " on instance " + config.id());
+    }
+
+    try {
+      client.revokeAccessLink(config.baseUrl(), externalHandleValue,
+          accessLinkId, token);
+    } catch (InvenioRdmClient.InvenioRdmPermanentException e) {
+      throw new AccessLinkRevocationException(
+          "Failed to revoke access link " + accessLinkId + ": "
+          + e.getMessage(), e);
+    } catch (InvenioRdmClient.InvenioRdmException e) {
+      throw new AccessLinkRevocationException(
+          "Failed to revoke access link " + accessLinkId + ": "
+          + e.getMessage(), e);
+    } finally {
+      if (token != null) {
+        Arrays.fill(token, '\0');
+      }
+    }
+  }
+
+  /**
+   * Resolves the decrypted user token for the given user and
+   * InvenioRDM instance, or returns {@code null} if no credential
+   * is configured.
+   *
+   * <p>The returned {@code char[]} <strong>MUST</strong> be zeroed
+   * by the caller in a {@code finally} block
+   * (ADR-0002 D1 decryption boundary).</p>
+   */
+  private char[] resolveTokenForUser(String userId, String instanceId) {
+    if (userId == null) {
+      return null;
+    }
+    return credentialRepository
+        .findByUserIdAndSourceTypeAndInstanceId(
+            userId, SourceType.INVENIO_RDM, instanceId)
+        .map(cred -> encryptor.decrypt(cred.getEncryptedToken()))
+        .orElse(null);
   }
 
   // ── Mapping: v12 response → DTO ─────────────────────────────────────

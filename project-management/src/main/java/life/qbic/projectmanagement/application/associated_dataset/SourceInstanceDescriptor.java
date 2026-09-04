@@ -1,6 +1,7 @@
 package life.qbic.projectmanagement.application.associated_dataset;
 
 import java.util.Objects;
+import life.qbic.projectmanagement.domain.model.associated_dataset.SourceType;
 
 /**
  * Configuration descriptor for one available external data source instance,
@@ -13,6 +14,10 @@ import java.util.Objects;
  * infrastructure adapter resolves per-user credentials from secure storage
  * when making external API calls.</p>
  *
+ * <p>The {@code sourceType} field identifies which provider handles this
+ * instance, enabling source-type dispatching in the composite credential
+ * validator and the dataset source port.</p>
+ *
  * <p>Admin-controlled: adding or changing instances is a config change +
  * deploy (ADR-0002 I2).</p>
  *
@@ -21,13 +26,15 @@ import java.util.Objects;
 public record SourceInstanceDescriptor(
     String id,
     String displayName,
-    String baseUrl
+    String baseUrl,
+    SourceType sourceType
 ) {
 
   public SourceInstanceDescriptor {
     Objects.requireNonNull(id, "id must not be null");
     Objects.requireNonNull(displayName, "displayName must not be null");
     Objects.requireNonNull(baseUrl, "baseUrl must not be null");
+    Objects.requireNonNull(sourceType, "sourceType must not be null");
   }
 
   /**

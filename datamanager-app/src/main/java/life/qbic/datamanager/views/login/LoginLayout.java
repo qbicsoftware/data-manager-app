@@ -55,9 +55,7 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
   private final String emailConfirmationParameter;
   public VerticalLayout notificationLayout;
   private VerticalLayout contentLayout;
-  private H2 title;
   private ConfigurableLoginForm loginForm;
-  private Div registrationSection;
   private final transient IdentityService identityService;
 
   public LoginLayout(@Autowired LoginHandler loginHandler,
@@ -78,9 +76,9 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
     contentLayout = new VerticalLayout();
     createNotificationLayout();
     createLoginForm();
-    registrationSection = initRegistrationSection(contextPath);
+    Div registrationSection = initRegistrationSection(contextPath);
     registrationSection.addClassName("registration-section");
-    title = new H2("Log in");
+    H2 title = new H2("Log in");
     contentLayout.add(title, notificationLayout, loginForm, registrationSection);
     add(contentLayout);
   }
@@ -215,7 +213,7 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
       showInvalidCredentialsError();
     }
     if (queryParams.containsKey(emailConfirmationParameter)) {
-      String userId = queryParams.get(emailConfirmationParameter).iterator().next();
+      String userId = queryParams.get(emailConfirmationParameter).getFirst();
       try {
         identityService.confirmUserEmail(userId);
         onEmailConfirmationSuccess();
@@ -241,9 +239,8 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
 
   private static class LoginCard extends Span {
 
-    private final Span text = new Span();
-
     public LoginCard(Image logo, String description, String url) {
+      Span text = new Span();
       text.setText(description);
       text.addClassName("text");
       add(logo, text);

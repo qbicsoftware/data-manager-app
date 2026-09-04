@@ -75,6 +75,7 @@ public class ProjectOverviewLookupImplementation implements ProjectOverviewLooku
         filter);
     Specification<ProjectOverview> filterSpecification = Specification.anyOf(isProjectTitle,
         isProjectCode, isLastModifiedDate, isPrincipalInvestigator, isResponsiblePerson,
+        isProjectManager,
         hasNgsMeasurements, hasPxpMeasurements, isInCollaboratorNames);
     return Specification.<ProjectOverview>unrestricted()
         .and(isBlankSpec)
@@ -139,7 +140,7 @@ public class ProjectOverviewLookupImplementation implements ProjectOverviewLooku
 
     public static Specification<ProjectOverview> isProjectManager(String filter) {
       return (root, query, builder) ->
-          builder.like(root.get("projectManagerFullName").as(String.class), "%" + filter + "%");
+          builder.like(root.get("projectManagerName").as(String.class), "%" + filter + "%");
     }
 
     public static Specification<ProjectOverview> isProjectResponsible(String filter) {

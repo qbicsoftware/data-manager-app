@@ -1261,15 +1261,6 @@ vaadin-tab-sheet.filter-grid-tabsheet::part(content) {
   min-height: 0;
 }
 
-/*
-FIXME: minification does no longger allow selectors after pseudo elements
-  SyntaxError: [lightningcss minify] Pseudo-elements like '::before' or '::after' can't be followed by selectors like 'Delim('>')'
-*/
-
-/*vaadin-tab-sheet.filter-grid-tabsheet::part(content) > * {*/
-/*  flex: 1 1 auto;*/
-/*  min-height: 0;*/
-/*}*/
 
 /*endregion*/
 
@@ -1545,3 +1536,113 @@ states, and modal-like overlays that sit inside a flex container.
   justify-content: center;
 }
 /*endregion*/
+
+/* ── External Providers card styling ────── */
+
+/* Give the page breathing room — the .main grid has no
+   inherent padding, so we add it here. */
+.external-providers {
+  padding: var(--lumo-space-l);
+}
+
+.external-providers .external-providers__content {
+  max-width: 800px;
+}
+
+.external-providers .instance-card {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--lumo-border-radius-m);
+  background-color: var(--lumo-base-color);
+  border: 1px solid var(--lumo-contrast-20pct);
+  border-left-width: 8px;
+  overflow: hidden;
+}
+
+.external-providers .instance-card + .instance-card {
+  margin-top: var(--lumo-space-m);
+}
+
+.external-providers .instance-card--connected {
+  border-left-color: var(--lumo-success-color);
+}
+
+.external-providers .instance-card--not-connected {
+  border-left-color: var(--lumo-contrast-30pct);
+}
+
+.external-providers .instance-card--invalidated {
+  border-left-color: var(--lumo-error-color);
+}
+
+.external-providers .instance-card__header {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--lumo-space-m);
+  padding: var(--lumo-space-l) var(--lumo-space-l) 0 var(--lumo-space-l);
+}
+
+.external-providers .instance-card__identity {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.external-providers .instance-card__action {
+  flex-shrink: 0;
+}
+
+.external-providers .instance-card__url {
+  color: var(--lumo-primary-text-color);
+  text-decoration: none;
+}
+
+.external-providers .instance-card__url:hover {
+  text-decoration: underline;
+}
+
+.external-providers .instance-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+  padding: var(--lumo-space-m) var(--lumo-space-l) var(--lumo-space-l) var(--lumo-space-l);
+}
+
+.external-providers .instance-card__status-line {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+}
+
+.external-providers .instance-card__description {
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-s);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.external-providers .security-note {
+  color: var(--lumo-tertiary-text-color);
+  font-size: var(--lumo-font-size-xs);
+  font-style: italic;
+}
+
+/* Toolbar — right-aligned with heading */
+
+.external-providers .external-providers__toolbar {
+  display: flex;
+  justify-content: flex-end;
+  padding: var(--lumo-space-m) 0 var(--lumo-space-l) 0;
+}
+
+/* Button group for side-by-side Reconnect + Disconnect */
+
+.external-providers .instance-card__action-group {
+  display: flex;
+  gap: var(--lumo-space-xs);
+  flex-shrink: 0;
+}

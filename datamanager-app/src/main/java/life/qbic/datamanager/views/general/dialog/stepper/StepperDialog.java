@@ -32,7 +32,7 @@ public class StepperDialog {
     }
     this.numberOfSteps = steps.size();
     currentStep = 1; // we use a 1-based indexing of steps
-    setCurrentStep(steps.get(0), dialog);
+    setCurrentStep(steps.getFirst(), dialog);
   }
 
   public static StepperDialog create(@NonNull AppDialog dialog, @NonNull List<Step> steps) {

@@ -56,7 +56,7 @@ public class SecurityConfiguration {
   }
 
   @Bean
-  public SecurityFilterChain vaadinSecurityFilterChain(HttpSecurity http) throws Exception {
+  public SecurityFilterChain vaadinSecurityFilterChain(HttpSecurity http) {
     http.requestCache(c -> c.requestCache(defaultRequestCache));
 
     http.authorizeHttpRequests(v -> v
