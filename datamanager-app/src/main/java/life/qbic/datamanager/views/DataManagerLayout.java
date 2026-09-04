@@ -66,10 +66,7 @@ public class DataManagerLayout extends AppLayout implements RouterLayout {
   public void persistDrawerStateBetweenLayouts() {
     Boolean wasOpen = (Boolean) VaadinSession.getCurrent()
         .getAttribute(DRAWER_STATE_KEY);
-    if (wasOpen != null) {
-      setDrawerOpened(wasOpen);
-    }
-    setDrawerOpened(wasOpen == null || wasOpen); // default true/open
+    setDrawerOpened(wasOpen == null || wasOpen);
     getElement().addPropertyChangeListener(DRAWER_STATE_KEY, event -> VaadinSession.getCurrent().setAttribute(DRAWER_STATE_KEY, isDrawerOpened()));
   }
 }
