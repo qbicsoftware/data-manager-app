@@ -1,0 +1,115 @@
+/* ────────────────────────────────────────────────────────────────────────────
+ * Sync Results Sidebar
+ *
+ * All styles are scoped under the .sync-results-sidebar root class so they
+ * cannot leak into other components. Layout and spacing that can be
+ * expressed with Lumo utility classes are applied via addClassName() in the
+ * Java view; this file contains only panel chrome and the spinner.
+ *
+ * Hierarchy (see SyncResultsSidebar.java):
+ *   .sync-results-sidebar          ← root Div (the sidebar itself)
+ *     .srs-backdrop                 semi-transparent overlay behind panel
+ *     .srs-panel                    the sliding panel
+ *       .srs-body                   full-height flex column
+ *         .srs-header               top bar with title + close button
+ *         .srs-summary              summary line (x updated · y up to date · …)
+ *         .srs-rows                 scrollable row list
+ *           .srs-row                one dataset row
+ *             .srs-spinner          inline spinner while syncing
+ *         .srs-footer               credential hint + Done button
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+/* ── Backdrop (behind the panel) ─────────────────────────────────────────── */
+
+.sync-results-sidebar .srs-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.3);
+  z-index: 999;
+}
+
+/* ── Panel ───────────────────────────────────────────────────────────────── */
+
+.sync-results-sidebar .srs-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: min(55%, 720px);
+  min-width: 460px;
+  max-width: 100vw;
+  height: 100%;
+  background-color: var(--lumo-base-color);
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.12);
+  z-index: 1000;
+  box-sizing: border-box;
+}
+
+/* ── Body (full-height flex column inside panel) ─────────────────────────── */
+
+.sync-results-sidebar .srs-body {
+  height: 100%;
+  box-sizing: border-box;
+}
+
+/* ── Header (title + close button) ───────────────────────────────────────── */
+
+.sync-results-sidebar .srs-header {
+  padding: var(--lumo-space-m) var(--lumo-space-l);
+  border-bottom: 1px solid var(--lumo-contrast-10pct);
+}
+
+/* ── Summary line ────────────────────────────────────────────────────────── */
+
+.sync-results-sidebar .srs-summary {
+  padding: var(--lumo-space-m) var(--lumo-space-l);
+  border-bottom: 1px solid var(--lumo-contrast-10pct);
+  background-color: var(--lumo-contrast-5pct);
+}
+
+/* ── Rows (scrollable) ───────────────────────────────────────────────────── */
+
+.sync-results-sidebar .srs-rows {
+  flex-grow: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--lumo-space-m) var(--lumo-space-l);
+  gap: var(--lumo-space-m);
+}
+
+.sync-results-sidebar .srs-row {
+  border: 1px solid var(--lumo-contrast-10pct);
+  border-radius: 6px;
+  padding: var(--lumo-space-m);
+  background-color: var(--lumo-base-color);
+}
+
+/* ── Inline spinner (small ring, centered) ──────────────────────────────── */
+
+.sync-results-sidebar .srs-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--lumo-contrast-20pct);
+  border-top-color: var(--lumo-primary-color);
+  border-radius: 50%;
+  animation: srs-spin 0.8s linear infinite;
+  box-sizing: border-box;
+}
+
+@keyframes srs-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── Footer (credential hint + Done) ─────────────────────────────────────── */
+
+.sync-results-sidebar .srs-footer {
+  padding: var(--lumo-space-m) var(--lumo-space-l);
+  border-top: 1px solid var(--lumo-contrast-10pct);
+  background-color: var(--lumo-base-color);
+}
+
+.sync-results-sidebar .srs-credentials-hint {
+  color: var(--lumo-warning-text-color);
+  max-width: 340px;
+}
