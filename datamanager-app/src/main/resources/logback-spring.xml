@@ -4,6 +4,13 @@
   <springProperty scope="context" name="LOGS" source="logging.file.path"/>
   <springProperty scope="context" name="LOG_LEVEL_ROOT" source="logging.level.root"/>
 
+  <springProperty scope="context" name="MAIL_HOST" source="spring.mail.host"/>
+  <springProperty scope="context" name="MAIL_PORT" source="spring.mail.port"/>
+  <springProperty scope="context" name="MAIL_USER" source="spring.mail.username"/>
+  <springProperty scope="context" name="MAIL_PASSWORD" source="spring.mail.password"/>
+  <springProperty scope="context" name="ERROR_RECIPIENT" source="qbic.logging.error.recipient"/>
+  <springProperty scope="context" name="ERROR_SUBJECT_PREFIX" source="qbic.logging.error.subject-prefix"/>
+
   <appender name="Console"
     class="ch.qos.logback.core.ConsoleAppender">
     <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
@@ -30,6 +37,29 @@
     </encoder>
   </appender>
 
+  <!-- Sends an email to the configured developer recipients whenever an ERROR
+       is logged. SMTP settings are read from spring.mail.* so the logback config
+       stays in sync with application.properties. The subject prefix
+       (qbic.logging.error.subject-prefix) identifies the sending instance. -->
+  <appender name="EmailOnError"
+    class="ch.qos.logback.classic.net.SMTPAppender">
+    <smtpHost>${MAIL_HOST}</smtpHost>
+    <smtpPort>${MAIL_PORT}</smtpPort>
+    <username>${MAIL_USER}</username>
+    <password>${MAIL_PASSWORD}</password>
+    <to>${ERROR_RECIPIENT}</to>
+    <from>no-reply@qbic.uni-tuebingen.de</from>
+    <subject>${ERROR_SUBJECT_PREFIX} - %logger{20} - %m</subject>
+    <layout class="ch.qos.logback.classic.PatternLayout">
+      <pattern>%d{ISO8601} %-5level [%t] %logger{36}: %msg%n%throwable</pattern>
+    </layout>
+    <filter class="ch.qos.logback.classic.filter.LevelFilter">
+      <level>ERROR</level>
+      <onMatch>ACCEPT</onMatch>
+      <onMismatch>DENY</onMismatch>
+    </filter>
+  </appender>
+
   <root>
     <appender-ref ref="RollingFile"/>
     <appender-ref ref="Console"/>
@@ -38,6 +68,7 @@
   <logger name="life.qbic" additivity="false">
     <appender-ref ref="RollingFile"/>
     <appender-ref ref="Console"/>
+    <appender-ref ref="EmailOnError"/>
   </logger>
 
 </configuration>

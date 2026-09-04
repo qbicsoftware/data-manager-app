@@ -137,6 +137,12 @@ spring.mail.host=<CHANGE_ME>
 spring.mail.default-encoding=UTF-8
 spring.mail.port=587
 
+# Prefix applied to the subject of developer error notification emails (logback SMTPAppender).
+# Useful to identify which instance sent the email when multiple instances run concurrently.
+qbic.logging.error.subject-prefix=[Data Manager]
+# Recipient(s) of developer error notification emails (logback SMTPAppender). Comma-separated list.
+qbic.logging.error.recipient=<CHANGE_ME>
+
 ### Service host information (used for constructing links in emails)
 service.host.name=<CHANGE_ME>
 service.host.protocol=https

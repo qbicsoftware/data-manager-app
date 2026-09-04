@@ -5,7 +5,6 @@ import jakarta.activation.DataSource;
 import jakarta.mail.BodyPart;
 import jakarta.mail.MessagingException;
 import jakarta.mail.Multipart;
-import jakarta.mail.Transport;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeBodyPart;
 import jakarta.mail.internet.MimeMessage;
@@ -18,6 +17,7 @@ import java.util.Objects;
 import life.qbic.identity.application.communication.CommunicationException;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
+import org.springframework.mail.javamail.JavaMailSender;
 
 
 /**
@@ -38,10 +38,10 @@ public class EmailServiceProvider {
             
       Your QBiC team
       """;
-  private final MailServerConfiguration mailServerConfiguration;
+  private final JavaMailSender mailSender;
 
-  public EmailServiceProvider(MailServerConfiguration mailServerConfiguration) {
-    this.mailServerConfiguration = Objects.requireNonNull(mailServerConfiguration);
+  public EmailServiceProvider(JavaMailSender mailSender) {
+    this.mailSender = Objects.requireNonNull(mailSender);
   }
 
   private static Content combineMessageWithRegards(
@@ -53,7 +53,7 @@ public class EmailServiceProvider {
       throws EmailSubmissionException {
     try {
       var message = setupMessage(subject, recipient, content);
-      Transport.send(message);
+      mailSender.send(message);
       log.debug(
           "Sending email with subject %s to %s".formatted(subject.value(), recipient.address()));
     } catch (MessagingException e) {
@@ -66,7 +66,7 @@ public class EmailServiceProvider {
       throws EmailSubmissionException {
     try {
       var message = setupMessageWithAttachment(subject, recipient, content, attachment);
-      Transport.send(message);
+      mailSender.send(message);
       log.debug(
           "Sending email with subject %s to %s".formatted(subject.value(), recipient.address()));
     } catch (MessagingException e) {
@@ -82,7 +82,7 @@ public class EmailServiceProvider {
       Subject subject,
       Recipient recipient)
       throws MessagingException {
-    var message = this.mailServerConfiguration.mimeMessage();
+    var message = this.mailSender.createMimeMessage();
     message.setFrom(new InternetAddress(NO_REPLY_ADDRESS));
     message.setRecipient(RecipientType.TO, new InternetAddress(recipient.address()));
     message.setSubject(subject.value());

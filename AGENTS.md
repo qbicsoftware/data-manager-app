@@ -438,7 +438,6 @@ data-manager-app/
 ├── finances-api/                  # Finances API interfaces
 ├── finances-infrastructure/       # Finances JPA repositories
 ├── subscription-api/              # Subscription/notification API interfaces
-└── subscription-provider/         # Email subscription provider (SMTP via Spring Mail)
 ```
 
 **Key architectural principle:** Domain-Driven Design (DDD) with explicit bounded contexts
