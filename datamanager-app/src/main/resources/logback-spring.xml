@@ -3,6 +3,7 @@
 
   <springProperty scope="context" name="LOGS" source="logging.file.path"/>
   <springProperty scope="context" name="LOG_LEVEL_ROOT" source="logging.level.root"/>
+  <springProperty scope="context" name="LOG_MAX_HISTORY" source="logging.file.max-history" defaultValue="60"/>
 
   <springProperty scope="context" name="MAIL_HOST" source="spring.mail.host"/>
   <springProperty scope="context" name="MAIL_PORT" source="spring.mail.port"/>
@@ -34,6 +35,7 @@
       <fileNamePattern>${LOGS}/archived/spring-boot-logger-%d{yyyy-MM-dd}.%i.log
       </fileNamePattern>
       <maxFileSize>10MB</maxFileSize>
+      <maxHistory>${LOG_MAX_HISTORY}</maxHistory>
     </rollingPolicy>
     <encoder
       class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">

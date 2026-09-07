@@ -23,6 +23,7 @@ logging.level.life.qbic=info
 logging.level.life.qbic.datamanager=info
 logging.level.life.qbic.projectmanagement.application.authorization.acl=debug
 logging.file.path=./logs
+logging.file.max-history=60
 
 ###############################################################################
 ### Security / Vault ##########################################################
