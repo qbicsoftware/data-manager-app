@@ -11,6 +11,10 @@
   <springProperty scope="context" name="ERROR_RECIPIENT" source="qbic.logging.error.recipient"/>
   <springProperty scope="context" name="ERROR_SUBJECT_PREFIX" source="qbic.logging.error.subject-prefix"/>
 
+  <!-- Custom conversion word rendering only the exception class name (no message/stack trace). -->
+  <conversionRule conversionWord="errorClass"
+    class="life.qbic.datamanager.logging.ErrorClassConverter"/>
+
   <appender name="Console"
     class="ch.qos.logback.core.ConsoleAppender">
     <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
@@ -40,7 +44,13 @@
   <!-- Sends an email to the configured developer recipients whenever an ERROR
        is logged. SMTP settings are read from spring.mail.* so the logback config
        stays in sync with application.properties. The subject prefix
-       (qbic.logging.error.subject-prefix) identifies the sending instance. -->
+       (qbic.logging.error.subject-prefix) identifies the sending instance.
+
+       For data protection (DSGVO/GDPR) the email carries only the time and the
+       exception class (via the 'errorClass' conversion word), never the log
+       message or stack trace. Developers must consult the on-premises log file
+       for details, so no personal data is added to the email transmission.
+       See ADR-0005. -->
   <appender name="EmailOnError"
     class="ch.qos.logback.classic.net.SMTPAppender">
     <smtpHost>${MAIL_HOST}</smtpHost>
@@ -49,9 +59,9 @@
     <password>${MAIL_PASSWORD}</password>
     <to>${ERROR_RECIPIENT}</to>
     <from>no-reply@qbic.uni-tuebingen.de</from>
-    <subject>${ERROR_SUBJECT_PREFIX} - %logger{20} - %m</subject>
+    <subject>${ERROR_SUBJECT_PREFIX} - ERROR</subject>
     <layout class="ch.qos.logback.classic.PatternLayout">
-      <pattern>%d{ISO8601} %-5level [%t] %logger{36}: %msg%n%throwable</pattern>
+      <pattern>%d{ISO8601} - ERROR: %errorClass</pattern>
     </layout>
     <filter class="ch.qos.logback.classic.filter.LevelFilter">
       <level>ERROR</level>

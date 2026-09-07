@@ -60,6 +60,9 @@ Concretely, the design:
   instances can set a distinct prefix per instance and tell which instance sent which email.
 * The developer recipient list is configurable via `qbic.logging.error.recipient`.
 * A `LevelFilter` restricts the appender to `ERROR` level.
+* To avoid exposing personal data, the email carries **only the time and the exception class**
+  (via a custom `errorClass` conversion word) — never the log message or stack trace. Full
+  details stay in the on-premises log file.
 * The dormant `subscription-provider` module and the `qbic.logging.mail.*` raw-Jakarta-Mail
   stack remain **unwired**.
 
