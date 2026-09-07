@@ -7,7 +7,7 @@ import java.io.Serial;
  * when the source system denies access to the record (HTTP 401/403).
  *
  * <p>Distinguishes <em>access/credential</em> failures from transient
- * infrastructure failures during sync (ADR-0005): the application layer
+ * infrastructure failures during sync (ADR-0006): the application layer
  * maps this to {@link SyncDatasetError#CREDENTIAL_REQUIRED} (no usable
  * credential configured) or {@link SyncDatasetError#CREDENTIAL_INSUFFICIENT}
  * (a credential exists but does not grant access to the record). A record

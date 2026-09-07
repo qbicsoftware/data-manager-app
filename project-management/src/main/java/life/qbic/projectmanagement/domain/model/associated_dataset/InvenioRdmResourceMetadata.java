@@ -97,7 +97,7 @@ public record InvenioRdmResourceMetadata(
      * concept (parent) record. Resolving the parent recid via
      * {@code GET /records/{parentId}} always yields the latest published
      * version (HTTP 302 → latest record). Sync (FEAT-DATSET-04/08) uses
-     * this handle to follow version chains; see ADR-0005.</p>
+     * this handle to follow version chains; see ADR-0006.</p>
      *
      * <p>Nullable and optional: legacy rows written before this field
      * existed deserialize to {@code null} and resolve the parent from the

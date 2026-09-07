@@ -1,4 +1,4 @@
-# 0005 — Associated dataset synchronisation semantics
+# 0006 — Associated dataset synchronisation semantics
 
 * Status: accepted
 * Deciders: project team (via architecture interview on #1470 / #1474)

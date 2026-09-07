@@ -11,7 +11,7 @@ import life.qbic.projectmanagement.domain.model.project.ProjectId;
 /**
  * Domain event emitted once per sync trigger (single dataset or Sync All)
  * after at least one connected dataset was updated with fresh metadata
- * from the source platform (DATSET-04/08, ADR-0005).
+ * from the source platform (DATSET-04/08, ADR-0006).
  *
  * <p>Carries the list of records that were actually updated so the
  * notification directive can send <em>one</em> combined email per project

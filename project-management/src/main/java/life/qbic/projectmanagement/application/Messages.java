@@ -134,7 +134,7 @@ public class Messages {
   /**
    * A pre-formatted message that informs a project collaborator that one
    * or more connected datasets in a project were updated by a sync
-   * (DATSET-04/08, ADR-0005 N1).
+   * (DATSET-04/08, ADR-0006 N1).
    *
    * <p>One email is sent per sync trigger with <em>all</em> updated
    * records listed — never one email per record — to avoid flooding

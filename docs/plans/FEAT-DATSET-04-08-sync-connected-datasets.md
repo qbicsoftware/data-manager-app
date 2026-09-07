@@ -3,7 +3,7 @@
 > **Stories:** [#1470](https://github.com/qbicsoftware/data-manager-app/issues/1470) (FEAT-DATSET-04, open) · [#1474](https://github.com/qbicsoftware/data-manager-app/issues/1474) (FEAT-DATSET-08, restricted)
 > **Parent Feature:** [#1466](https://github.com/qbicsoftware/data-manager-app/issues/1466) (FEAT-DATASET-CONNECTION)
 > **Requirement:** `DATA-R-05` (Connected-Dataset Synchronisation) — see Requirement ID Note below
-> **ADR references:** [ADR-0001](../adr/0001-associated-datasets-domain-model.md), [ADR-0002](../adr/0002-invenio-rdm-api-client-credentials.md), [ADR-0003](../adr/0003-connection-lifecycle-stewardship.md), [ADR-0005 (draft)](../adr/0005-associated-datasets-sync-semantics.md)
+> **ADR references:** [ADR-0001](../adr/0001-associated-datasets-domain-model.md), [ADR-0002](../adr/0002-invenio-rdm-api-client-credentials.md), [ADR-0003](../adr/0003-connection-lifecycle-stewardship.md), [ADR-0006 (draft)](../adr/0006-associated-datasets-sync-semantics.md)
 
 ---
 
@@ -39,7 +39,7 @@ is tracked as a governance item, not a blocker.
 
 ## Locked Design Decisions (from the architecture interview)
 
-1. **Version-following (ADR-0005 §Decision 1):** sync does not just re-fetch the stored record. It
+1. **Version-following (ADR-0006 §Decision 1):** sync does not just re-fetch the stored record. It
    resolves the *latest published version* via the InvenioRDM concept (parent) recid:
    - Adapter: `GET /api/records/{handle}` → if `versions.is_latest == true`, return as-is; otherwise
      `GET /api/records/{parent.id}` — the client already follows the `302` (`Redirect.NORMAL`), so this
@@ -49,7 +49,7 @@ is tracked as a governance item, not a blocker.
    - Verified against the live Zenodo API: `GET /api/records/{conceptRecid}` → `302 → /api/records/{latestRecid}`.
 2. **Permission — WRITE on the project** for Sync and Sync All (per the story ACs). This *amends*
    ADR-0003 §5, which listed sync as `READ`. Rationale (decider): in Data Manager, sync mutates the
-   project's linked snapshot — a write operation. Recorded in ADR-0005.
+   project's linked snapshot — a write operation. Recorded in ADR-0006.
 3. **Never-borrow-credentials (ADR-0002/0003):** every sync uses the **invoking user's own** token.
    Public-metadata records sync without a token (verified: anonymous `GET` on public-metadata/restricted-files
    records returns 200). A metadata-restricted record without a configured credential is short-circuited
@@ -254,12 +254,12 @@ Already present and reusable:
 
 ## Governance Items (require human decision/approval)
 
-1. **ADR-0005 (draft):** approve/amend — records version-following, WRITE permission amendment to
+1. **ADR-0006 (draft):** approve/amend — records version-following, WRITE permission amendment to
    ADR-0003 §5, access-link hard-fail integrity, combined per-trigger summary email (supersedes the
    ADR-0003 sync audience mapping), per-record attempt semantics.
 2. **Requirements registry:** stories cite `DATA-R-02` (stale proposal ID) → update issues to `DATA-R-05`.
    Decide whether to add `COMM-R-01` (Project Change Notifications) for the shipped email behavior
    (requires human approval + dedicated PR per AGENTS.md §12 / Requirement Edits).
-3. **ADR index (`docs/adr/README.md`):** add the approved ADR-0005 row (only after approval — this plan
+3. **ADR index (`docs/adr/README.md`):** add the approved ADR-0006 row (only after approval — this plan
    references it as draft).
 4. **Story issue updates:** add implementation notes / link tasks to #1470 and #1474 by their stable IDs.

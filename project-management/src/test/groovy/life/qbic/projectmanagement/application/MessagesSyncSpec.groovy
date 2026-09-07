@@ -4,7 +4,7 @@ import spock.lang.Specification
 
 /**
  * Unit tests for the combined dataset-sync email templates
- * (DATSET-04/08, ADR-0005 N1).
+ * (DATSET-04/08, ADR-0006 N1).
  *
  * @since 1.13.0
  */

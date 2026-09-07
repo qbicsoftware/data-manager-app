@@ -2,7 +2,7 @@ package life.qbic.projectmanagement.application.associated_dataset;
 
 /**
  * Error codes for synchronising a connected dataset with its source
- * instance (DATSET-04/08, ADR-0005).
+ * instance (DATSET-04/08, ADR-0006).
  *
  * @since 1.13.0
  */
@@ -36,7 +36,7 @@ public enum SyncDatasetError {
   /**
    * A restricted dataset moved to a new version, but the shareable
    * access link could not be created on the latest record. Per
-   * ADR-0005 (L1) the sync fails atomically — only the record owner can
+   * ADR-0006 (L1) the sync fails atomically — only the record owner can
    * refresh the access link.
    */
   ACCESS_LINK_REFRESH_FAILED,

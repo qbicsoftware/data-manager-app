@@ -23,7 +23,7 @@ import spock.lang.Specification
 
 /**
  * Unit tests for {@link AssociatedDatasetService#syncDatasets} —
- * dataset synchronisation (DATSET-04/08, ADR-0005).
+ * dataset synchronisation (DATSET-04/08, ADR-0006).
  *
  * <p>Stubs are hand-rolled Groovy interface coercions (no Spock
  * {@code Mock()}) so the spec runs without the Mockito mock maker.</p>

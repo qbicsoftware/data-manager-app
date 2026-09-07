@@ -9,7 +9,7 @@ import life.qbic.projectmanagement.application.policy.directive.InformProjectCol
  * <b>Policy: Associated Datasets Synced</b>
  *
  * <p>Business policy that needs to be executed after a sync trigger
- * updated one or more connected datasets (DATSET-04/08, ADR-0005).
+ * updated one or more connected datasets (DATSET-04/08, ADR-0006).
  * Currently wires the email notification directive that informs every
  * collaborator (except the actor) with a single combined email listing
  * the updated records.</p>

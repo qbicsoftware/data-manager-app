@@ -33,7 +33,7 @@ import org.springframework.stereotype.Component;
  *
  * <p>After a sync trigger updated one or more connected datasets, every
  * collaborator on that project is notified with a <em>single combined
- * email</em> listing all updated records (ADR-0005 N1). The actor who
+ * email</em> listing all updated records (ADR-0006 N1). The actor who
  * triggered the sync is deliberately excluded so they do not receive a
  * self-notification (they see the sync results sidecar instead).</p>
  *

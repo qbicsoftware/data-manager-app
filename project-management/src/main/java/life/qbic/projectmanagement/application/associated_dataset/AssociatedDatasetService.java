@@ -323,7 +323,7 @@ public class AssociatedDatasetService {
       } else {
         // Persist the instance id on public connections as well so that a
         // later sync can resolve the source instance without heuristics
-        // (ADR-0005). The access link fields stay empty for public records.
+        // (ADR-0006). The access link fields stay empty for public records.
         finalMetadata = new InvenioRdmResourceMetadata(
             inv.title(), inv.pid(), inv.version(), inv.accessLink(),
             inv.resourceProvider(), inv.creators(), inv.resourceType(),
@@ -637,7 +637,7 @@ public class AssociatedDatasetService {
 
   /**
    * Synchronises the given connected datasets of a project with their
-   * source instances (DATSET-04/08, ADR-0005).
+   * source instances (DATSET-04/08, ADR-0006).
    *
    * <p>Each dataset is processed on a bounded-elastic worker thread with
    * bounded parallelism (matching the connect flow) and a per-request
@@ -651,7 +651,7 @@ public class AssociatedDatasetService {
    * {@link AssociatedDatasetsSyncedEvent} is dispatched — only when at
    * least one dataset was actually updated — so the notification
    * directive can send one combined email to the project members
-   * (ADR-0005 N1).</p>
+   * (ADR-0006 N1).</p>
    *
    * @param projectId the project the datasets belong to
    * @param datasetIds the connections to sync (may be a single id)
@@ -729,7 +729,7 @@ public class AssociatedDatasetService {
         && inv.deriveAccessLevel() == AccessLevel.RESTRICTED;
 
     // 3. Short-circuit: metadata-restricted record without a usable
-    //    credential (ADR-0005 A1 — deterministic, no HTTP call needed)
+    //    credential (ADR-0006 A1 — deterministic, no HTTP call needed)
     if (storedRestricted && !datasetSource.hasValidCredential(userId, config)) {
       log.info("Sync of restricted dataset %s skipped — no valid credential for user %s on instance %s"
           .formatted(datasetId.value(), userId, config.id()));
@@ -778,7 +778,7 @@ public class AssociatedDatasetService {
     }
 
     // 7. Access-link refresh for restricted version bumps — hard gate
-    //    (ADR-0005 L1): the new version only commits if a fresh sharable
+    //    (ADR-0006 L1): the new version only commits if a fresh sharable
     //    link could be created on the latest record.
     CreatedAccessLink refreshedLink = null;
     if (recordChanged && latestMetadata.deriveAccessLevel() == AccessLevel.RESTRICTED) {
@@ -793,7 +793,7 @@ public class AssociatedDatasetService {
     }
 
     // 8. Build the candidate snapshot with correct runtime fields
-    //    (instance id, access link, parent handle — see ADR-0005)
+    //    (instance id, access link, parent handle — see ADR-0006)
     InvenioRdmResourceMetadata candidate =
         buildCandidate(storedMetadata, latestMetadata, recordChanged, refreshedLink, config);
 
@@ -902,7 +902,7 @@ public class AssociatedDatasetService {
   /**
    * Dispatches one {@link AssociatedDatasetsSyncedEvent} after a sync
    * trigger, only when at least one dataset was actually updated
-   * (ADR-0005 N1 — no emails for no-op syncs or failures). A dispatch
+   * (ADR-0006 N1 — no emails for no-op syncs or failures). A dispatch
    * failure is logged but never fails the sync itself.
    */
   private void emitSyncSummaryEvent(

@@ -6,7 +6,7 @@ import spock.lang.Specification
 
 /**
  * Unit tests for {@link AssociatedDataset#sync(ResourceMetadata)} — the
- * change-diff used by dataset synchronisation (DATSET-04/08, ADR-0005).
+ * change-diff used by dataset synchronisation (DATSET-04/08, ADR-0006).
  *
  * @since 1.13.0
  */

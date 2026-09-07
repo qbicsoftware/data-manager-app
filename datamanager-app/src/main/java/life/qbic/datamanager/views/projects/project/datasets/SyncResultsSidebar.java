@@ -44,7 +44,7 @@ import reactor.core.Disposable;
  *       owner, record no longer exists, …).</li>
  * </ul>
  *
- * <p>Per ADR-0005 (A1) per-record access is only known after the HTTP
+ * <p>Per ADR-0006 (A1) per-record access is only known after the HTTP
  * call — rows therefore resolve live; only the "provider not configured"
  * case for metadata-restricted records is short-circuited locally.</p>
  *

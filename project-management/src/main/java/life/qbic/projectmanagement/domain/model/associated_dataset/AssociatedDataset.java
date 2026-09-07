@@ -235,7 +235,7 @@ public class AssociatedDataset {
 
   /**
    * Applies a metadata snapshot obtained by synchronising with the source
-   * system (DATSET-04/08, ADR-0005) and reports what changed.
+   * system (DATSET-04/08, ADR-0006) and reports what changed.
    *
    * <p>Computes the change information <em>before</em> applying, so the
    * caller can decide whether the sync actually updated the connection
@@ -263,7 +263,7 @@ public class AssociatedDataset {
   /**
    * Moves the connection's external handle to a new record identifier.
    *
-   * <p>Used by sync (ADR-0005): when a new version of the dataset is
+   * <p>Used by sync (ADR-0006): when a new version of the dataset is
    * published, InvenioRDM creates a new record with a new recid. The
    * connection follows the latest version, so the handle is updated to
    * the new record's identifier after the sync committed.</p>

@@ -11,7 +11,7 @@ import life.qbic.projectmanagement.domain.model.associated_dataset.ResourceMetad
  * <em>effective</em> external handle. For versioned sources (InvenioRDM)
  * the effective handle may differ from the handle the caller resolved —
  * when a new version was published the latest record lives under a new
- * record id — and the connection must follow it (ADR-0005).</p>
+ * record id — and the connection must follow it (ADR-0006).</p>
  *
  * @param metadata            the latest metadata snapshot
  * @param externalHandleValue the record identifier the snapshot was

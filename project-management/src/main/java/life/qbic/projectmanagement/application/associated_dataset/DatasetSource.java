@@ -78,7 +78,7 @@ public interface DatasetSource {
    * given handle, on behalf of the given user.
    *
    * <p>Used when synchronising a connected dataset (DATSET-04/08,
-   * ADR-0005). Unlike {@link #resolveMetadata}, which returns the record
+   * ADR-0006). Unlike {@link #resolveMetadata}, which returns the record
    * under the given handle as-is, this method follows version chains:
    * for versioned sources the returned {@link ResolvedRecord} carries the
    * metadata of the <em>latest published version</em> together with the

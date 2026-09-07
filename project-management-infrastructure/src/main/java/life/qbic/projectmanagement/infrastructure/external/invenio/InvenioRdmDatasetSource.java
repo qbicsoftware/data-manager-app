@@ -136,7 +136,7 @@ public class InvenioRdmDatasetSource implements DatasetSource {
     char[] token = resolveTokenForUser(actingUserId, config.id());
     try {
       var record = client.getRecord(config.baseUrl(), externalHandleValue, token);
-      // Version-following (ADR-0005 V1): if the connected record is no
+      // Version-following (ADR-0006 V1): if the connected record is no
       // longer the latest published version, resolve the concept (parent)
       // recid — GET /records/{parentId} redirects (302) to the latest
       // record, which the HTTP client follows transparently.
@@ -155,7 +155,7 @@ public class InvenioRdmDatasetSource implements DatasetSource {
       }
       if (pe.getStatusCode() == 401 || pe.getStatusCode() == 403) {
         // Access/credential problem — application layer maps this to
-        // CREDENTIAL_REQUIRED / CREDENTIAL_INSUFFICIENT (ADR-0005 A1).
+        // CREDENTIAL_REQUIRED / CREDENTIAL_INSUFFICIENT (ADR-0006 A1).
         log.error("Access denied resolving latest version of record {} on {}"
             .formatted(externalHandleValue, config.displayName()));
         throw new DatasetAccessDeniedException(

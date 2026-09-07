@@ -14,7 +14,7 @@ import spock.lang.Specification
 /**
  * Unit tests for {@link InvenioRdmDatasetSource#resolveLatest} — the
  * version-following resolution used by dataset synchronisation
- * (DATSET-04/08, ADR-0005 V1).
+ * (DATSET-04/08, ADR-0006 V1).
  *
  * <p>Hand-rolled Groovy interface coercions are used instead of Spock
  * {@code Mock()} so the spec runs without the Mockito mock maker.</p>
