@@ -194,6 +194,37 @@
   border-top: 1px solid var(--lumo-contrast-10pct);
 }
 
+/* ── Responsive hardening ──────────────────────────────────────────────── */
+
+/*
+ * The project-wide .flex-vertical utility class sets flex-wrap: wrap. In a
+ * column flex container with a definite height that is too short for all
+ * children (small / short viewports), flex line breaking ignores flex-shrink
+ * and wraps the overflowing items into a SECOND column laid out along the
+ * cross axis — i.e. the footer gets rendered to the RIGHT of the results
+ * grid. Forcing nowrap on every vertical flex chain of the sidebar keeps the
+ * header / scrollable-content / footer stack intact; overflow is handled by
+ * the scrollable content area (.cds-content) instead of wrapping.
+ */
+.connect-dataset-sidebar .cds-body,
+.connect-dataset-sidebar .cds-content,
+.connect-dataset-sidebar .cds-results,
+.connect-dataset-sidebar .cds-footer {
+  flex-wrap: nowrap;
+}
+
+/*
+ * On viewports narrower than the panel's min-width (460px) CSS min-width
+ * clamps max-width, so the panel would stick out past the left edge of the
+ * screen. Let it reclaim the full viewport width instead.
+ */
+@media only screen and (max-width: 460px) {
+  .connect-dataset-sidebar .cds-panel {
+    min-width: 0;
+    width: 100vw;
+  }
+}
+
 /* ── Search-result card ─────────────────────────────────────────────────── */
 
 .connect-dataset-sidebar .cds-card {
