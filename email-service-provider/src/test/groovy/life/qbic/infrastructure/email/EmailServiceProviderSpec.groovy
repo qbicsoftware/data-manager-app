@@ -4,6 +4,7 @@ import jakarta.mail.Multipart
 import jakarta.mail.Session
 import jakarta.mail.internet.MimeBodyPart
 import jakarta.mail.internet.MimeMessage
+import life.qbic.identity.application.communication.CommunicationException
 import org.springframework.mail.javamail.JavaMailSender
 import spock.lang.Specification
 
@@ -80,6 +81,53 @@ class EmailServiceProviderSpec extends Specification {
         attachmentPart.fileName == "report.txt"
         attachmentPart.dataHandler.contentType == "application/octet-stream"
         attachmentContent(attachmentPart) == "report payload"
+    }
+
+    def "rejects a null JavaMailSender"() {
+        when:
+        new EmailServiceProvider(null)
+
+        then:
+        thrown(NullPointerException)
+    }
+
+    def "throws a CommunicationException when sending a plain text email fails"() {
+        given:
+        def mailSender = Mock(JavaMailSender)
+        mailSender.createMimeMessage() >> new MimeMessage((Session) null)
+
+        def provider = new EmailServiceProvider(mailSender)
+
+        when:
+        // an invalid recipient address makes InternetAddress throw an AddressException
+        // (a MessagingException) while the message is being assembled
+        provider.send(
+                new Subject("Test subject"),
+                new Recipient("Jane Doe", "not a valid address"),
+                new Content("Hello there"))
+
+        then:
+        def e = thrown(CommunicationException)
+        e.message == "Notification of recipient failed!"
+    }
+
+    def "throws a CommunicationException when sending an email with an attachment fails"() {
+        given:
+        def mailSender = Mock(JavaMailSender)
+        mailSender.createMimeMessage() >> new MimeMessage((Session) null)
+
+        def provider = new EmailServiceProvider(mailSender)
+
+        when:
+        provider.send(
+                new Subject("Test subject"),
+                new Recipient("Jane Doe", "not a valid address"),
+                new Content("Hello there"),
+                new Attachment("report.txt", "report payload"))
+
+        then:
+        def e = thrown(CommunicationException)
+        e.message == "Notification of recipient failed!"
     }
 
     private static String attachmentContent(MimeBodyPart part) {
