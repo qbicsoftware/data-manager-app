@@ -1,7 +1,7 @@
 # Strategy — User Groups for Project Sharing
 
 > **Status:** Draft — open for review (docs-only PR, no code changes, no requirement changes)
-> **Date:** 2025-07-15
+> **Date:** 2026-09-07
 > **Scope:** Investigation of the current user & access management capabilities and a proposed
 > strategy to introduce *user groups* so projects can be shared with a group of people instead of
 > assigning them manually, one by one.
