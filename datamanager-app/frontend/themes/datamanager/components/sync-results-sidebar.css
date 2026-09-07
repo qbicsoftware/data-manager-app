@@ -49,6 +49,8 @@
 .sync-results-sidebar .srs-body {
   height: 100%;
   box-sizing: border-box;
+  overflow: hidden;
+  flex-wrap: nowrap;
 }
 
 /* ── Header (title + close button) ───────────────────────────────────────── */
@@ -56,6 +58,8 @@
 .sync-results-sidebar .srs-header {
   padding: var(--lumo-space-m) var(--lumo-space-l);
   border-bottom: 1px solid var(--lumo-contrast-10pct);
+  flex-shrink: 0;
+  flex-wrap: nowrap;
 }
 
 /* ── Summary line ────────────────────────────────────────────────────────── */
@@ -64,6 +68,7 @@
   padding: var(--lumo-space-m) var(--lumo-space-l);
   border-bottom: 1px solid var(--lumo-contrast-10pct);
   background-color: var(--lumo-contrast-5pct);
+  flex-shrink: 0;
 }
 
 /* ── Rows (scrollable) ───────────────────────────────────────────────────── */
@@ -74,13 +79,43 @@
   overflow-y: auto;
   padding: var(--lumo-space-m) var(--lumo-space-l);
   gap: var(--lumo-space-m);
+  flex-shrink: 1;
+  flex-wrap: nowrap;
 }
 
 .sync-results-sidebar .srs-row {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
   border: 1px solid var(--lumo-contrast-10pct);
   border-radius: 6px;
   padding: var(--lumo-space-m);
   background-color: var(--lumo-base-color);
+  gap: var(--lumo-space-s);
+}
+
+.sync-results-sidebar .srs-row-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+  width: 100%;
+}
+
+.sync-results-sidebar .srs-status-row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  min-width: 0;
+  gap: var(--lumo-space-s);
+}
+
+.sync-results-sidebar .srs-status-text {
+  overflow-wrap: break-word;
+  word-break: break-word;
+  min-width: 0;
+  flex: 1;
 }
 
 /* ── Inline spinner (small ring, centered) ──────────────────────────────── */
@@ -107,6 +142,8 @@
   padding: var(--lumo-space-m) var(--lumo-space-l);
   border-top: 1px solid var(--lumo-contrast-10pct);
   background-color: var(--lumo-base-color);
+  flex-shrink: 0;
+  flex-wrap: nowrap;
 }
 
 .sync-results-sidebar .srs-credentials-hint {

@@ -146,7 +146,7 @@ public class SyncResultsSidebar extends Div {
 
     var footer = new Div();
     footer.addClassNames("srs-footer", "flex-horizontal", "items-center", "gap-03");
-    var doneButton = new Button("Done", VaadinIcon.CHECK.create());
+    var doneButton = new Button("Close", VaadinIcon.CLOSE.create());
     doneButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     doneButton.addClickListener(e -> close());
     var footerSpacer = new Div();
@@ -285,18 +285,19 @@ public class SyncResultsSidebar extends Div {
       row.addClassNames("srs-row");
 
       var titleSpan = new Span(view.title());
-      titleSpan.addClassName("normal-body-text");
+      titleSpan.addClassNames("normal-body-text", "srs-row-title");
       titleSpan.getStyle().set("font-weight", "600");
       titleSpan.getElement().setAttribute("title", view.title());
 
       var statusRow = new Div();
-      statusRow.addClassNames("flex-horizontal", "items-center", "gap-02");
+      statusRow.addClassName("srs-status-row");
 
       var spinner = new Div();
       spinner.addClassName("srs-spinner");
+      spinner.getStyle().set("flex-shrink", "0");
 
       var statusText = new Span("Syncing…");
-      statusText.addClassName("extra-small-body-text");
+      statusText.addClassNames("extra-small-body-text", "srs-status-text");
       statusText.getStyle().set("color", SECONDARY_COLOR);
 
       statusRow.add(spinner, statusText);
