@@ -3,6 +3,7 @@
 
   <springProperty scope="context" name="LOGS" source="logging.file.path"/>
   <springProperty scope="context" name="LOG_LEVEL_ROOT" source="logging.level.root"/>
+  <springProperty scope="context" name="LOG_MAX_HISTORY" source="logging.file.max-history" defaultValue="60"/>
 
   <appender name="Console"
     class="ch.qos.logback.core.ConsoleAppender">
@@ -23,6 +24,7 @@
       <fileNamePattern>${LOGS}/archived/spring-boot-logger-%d{yyyy-MM-dd}.%i.log
       </fileNamePattern>
       <maxFileSize>10MB</maxFileSize>
+      <maxHistory>${LOG_MAX_HISTORY}</maxHistory>
     </rollingPolicy>
     <encoder
       class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
