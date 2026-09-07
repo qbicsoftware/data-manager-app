@@ -1332,11 +1332,16 @@ Older stuff -
   align-items: center;
 }
 
+.actionbar {
+  display: flex;
+  gap: var(--lumo-space-s);
+  align-items: center;
+}
+
 .section-title {
   font-weight: bold;
   color: var(--secondary-text-color);
   margin-bottom: 0.5rem;
-  width: 100%;
 }
 
 
