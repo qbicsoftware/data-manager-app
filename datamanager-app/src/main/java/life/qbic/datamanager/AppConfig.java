@@ -85,6 +85,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.mail.javamail.JavaMailSender;
 import reactor.core.scheduler.Scheduler;
 
 /**
@@ -395,13 +396,8 @@ public class AppConfig {
   }
 
   @Bean
-  public EmailServiceProvider emailProvider(@Value("${spring.mail.host}") String host,
-      @Value("${spring.mail.port}") int port, @Value("${spring.mail.username}") String mailUserName,
-      @Value("${spring.mail.password}") String mailUserPassword) {
-    var mailServerConfiguration = new life.qbic.infrastructure.email.MailServerConfiguration(
-        host, port,
-        mailUserName, mailUserPassword);
-    return new EmailServiceProvider(mailServerConfiguration);
+  public EmailServiceProvider emailProvider(JavaMailSender mailSender) {
+    return new EmailServiceProvider(mailSender);
   }
 
   @Bean
