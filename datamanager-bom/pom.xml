@@ -108,11 +108,6 @@
       </dependency>
       <dependency>
         <groupId>life.qbic.datamanager</groupId>
-        <artifactId>subscription-provider</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>life.qbic.datamanager</groupId>
         <artifactId>datamanager-app</artifactId>
         <version>${project.version}</version>
       </dependency>
