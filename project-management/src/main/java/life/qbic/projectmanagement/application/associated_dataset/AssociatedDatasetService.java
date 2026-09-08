@@ -676,7 +676,13 @@ public class AssociatedDatasetService {
     SecurityContext securityContext = SecurityContextHolder.getContext();
     List<SyncDatasetResponse> updated = new CopyOnWriteArrayList<>();
     return Flux.fromIterable(datasetIds)
-        .flatMapSequential(id -> Mono.fromCallable(() ->
+        // flatMap (not flatMapSequential) — emits each SyncDatasetResponse
+        // as soon as its per-dataset Mono completes, regardless of input
+        // order. The UI maps responses to sidebar rows by datasetId, so
+        // arrival order does not matter. Using flatMapSequential would
+        // buffer fast-completing results until slower earlier items
+        // finish, making parallel sync appear sequential to the user.
+        .flatMap(id -> Mono.fromCallable(() ->
                 syncDatasetCore(projectId, id, userId))
             // Bridge the caller's SecurityContext from the Reactor context
             // to the ThreadLocal of the boundedElastic worker thread so
