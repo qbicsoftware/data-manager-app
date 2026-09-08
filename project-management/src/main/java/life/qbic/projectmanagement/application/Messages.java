@@ -176,7 +176,7 @@ public class Messages {
    * @param accessStatusChanged whether the access level changed
    *                            (e.g. embargo lifted or added)
    * @return a single human-readable line, e.g.
-   *         {@code "My dataset (10.5281/zenodo.123): v1 → v2 (access status changed)"}
+   *         {@code "My dataset (10.5281/zenodo.123): v1 -> v2 (access status changed)"}
    * @since 1.13.0
    */
   public static String updatedRecordLine(
@@ -184,11 +184,14 @@ public class Messages {
       boolean accessStatusChanged) {
     String versionPart;
     if (previousVersion != null && newVersion != null && !previousVersion.equals(newVersion)) {
-      versionPart = previousVersion + " → " + newVersion;
+      // ASCII arrow (not Unicode →) — this string is serialized into
+      // JobRunr's jobAsJson column which may not support multi-byte chars.
+      versionPart = previousVersion + " -> " + newVersion;
     } else if (newVersion != null) {
       versionPart = newVersion;
     } else {
-      versionPart = "—";
+      // ASCII dash (not Unicode —) for the same JobRunr charset reason.
+      versionPart = "-";
     }
     String accessNote = accessStatusChanged ? " (access status changed)" : "";
     return title + " (" + pid + "): " + versionPart + accessNote;

@@ -13,19 +13,19 @@ class MessagesSyncSpec extends Specification {
   def "updatedRecordLine renders version progression"() {
     expect:
     Messages.updatedRecordLine("My Dataset", "10.5281/zenodo.1", "v1", "v2", false)
-        == "My Dataset (10.5281/zenodo.1): v1 → v2"
+        == "My Dataset (10.5281/zenodo.1): v1 -> v2"
   }
 
   def "updatedRecordLine annotates access status changes"() {
     expect:
     Messages.updatedRecordLine("My Dataset", "10.5281/zenodo.1", "v1", "v2", true)
-        == "My Dataset (10.5281/zenodo.1): v1 → v2 (access status changed)"
+        == "My Dataset (10.5281/zenodo.1): v1 -> v2 (access status changed)"
   }
 
   def "updatedRecordLine handles missing versions"() {
     expect:
     Messages.updatedRecordLine("My Dataset", "10.5281/zenodo.1", null, null, false)
-        == "My Dataset (10.5281/zenodo.1): —"
+        == "My Dataset (10.5281/zenodo.1): -"
   }
 
   def "datasetsSyncedToProject lists all updated records in one message"() {
@@ -42,8 +42,8 @@ class MessagesSyncSpec extends Specification {
     then:
     message.contains("Dear Grace Hopper")
     message.contains("in the project 'My Project'")
-    message.contains("A (10.5281/zenodo.a): v1 → v2")
-    message.contains("B (10.5281/zenodo.b): v2 → v3 (access status changed)")
+    message.contains("A (10.5281/zenodo.a): v1 -> v2")
+    message.contains("B (10.5281/zenodo.b): v2 -> v3 (access status changed)")
     message.contains("https://datamanager.example/projects/1")
   }
 }
