@@ -83,7 +83,7 @@ public class Messages {
    * @param projectTitle the title of the project the dataset was connected to
    * @param datasetTitle the human-readable title of the connected dataset
    * @param datasetPid   the persistent identifier (PID / DOI) of the dataset
-   * @param projectUri   a resolvable URL to the project in Data Manager
+   * @param projectUri   a resolvable URL to the project's datasets page in Data Manager
    * @return the filled out template message
    * @since 1.12.0
    */
@@ -111,7 +111,7 @@ public class Messages {
    * @param projectTitle the title of the project the dataset was removed from
    * @param datasetTitle the human-readable title of the dataset connection
    * @param datasetPid   the persistent identifier (PID / DOI) of the dataset
-   * @param projectUri   a resolvable URL to the project in Data Manager
+   * @param projectUri   a resolvable URL to the project's datasets page in Data Manager
    * @return the filled out template message
    * @since 1.12.0
    */
@@ -144,7 +144,7 @@ public class Messages {
    * @param projectTitle    the title of the project the datasets were updated in
    * @param updatedDatasets pre-rendered lines, one per updated record
    *                        (see {@link #updatedRecordLine})
-   * @param projectUri      a resolvable URL to the project in Data Manager
+   * @param projectUri      a resolvable URL to the project's datasets page in Data Manager
    * @return the filled out template message
    * @since 1.13.0
    */

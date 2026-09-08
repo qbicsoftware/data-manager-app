@@ -85,7 +85,10 @@ public class InformProjectCollaboratorsAboutDatasetRemoval
         .orElseThrow(() -> new DirectiveExecutionException(
             "Project not found: " + event.projectId()));
 
-    String projectUrl = appContextProvider.urlToProject(event.projectId().value());
+    // The dataset notification emails link straight into the project's
+    // datasets view — not the project info page — so members reach the
+    // connected/updated datasets directly.
+    String projectUrl = appContextProvider.urlToDatasets(event.projectId().value());
     String actorId = event.actorUserId();
 
     List<RecipientInfo> recipients = resolveRecipientsExcludingActor(event.projectId(), actorId);
