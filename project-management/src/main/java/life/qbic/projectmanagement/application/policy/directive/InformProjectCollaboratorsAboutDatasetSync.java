@@ -18,7 +18,7 @@ import life.qbic.projectmanagement.application.communication.Content;
 import life.qbic.projectmanagement.application.communication.EmailService;
 import life.qbic.projectmanagement.application.communication.Recipient;
 import life.qbic.projectmanagement.application.communication.Subject;
-import life.qbic.projectmanagement.domain.model.associated_dataset.event.AssociatedDatasetRemovedEvent;
+import life.qbic.projectmanagement.domain.model.associated_dataset.event.AssociatedDatasetsSyncedEvent;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.project.ProjectIntent;
@@ -29,23 +29,26 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Component;
 
 /**
- * <b>Directive: Inform project collaborators about dataset connection removal</b>
+ * <b>Directive: Inform project collaborators about a dataset sync</b>
  *
- * <p>After a user removes a dataset connection from a project, every other
- * collaborator on that project is notified by email. The actor who performed
- * the removal is deliberately excluded so they do not receive a
- * self-notification.</p>
+ * <p>After a sync trigger updated one or more connected datasets, every
+ * collaborator on that project is notified with a <em>single combined
+ * email</em> listing all updated records (ADR-0006 N1). The actor who
+ * triggered the sync is deliberately excluded so they do not receive a
+ * self-notification (they see the sync results sidecar instead).</p>
  *
- * <p>The actual email send runs inside a JobRunr background job so the
- * domain-event handler does not block on SMTP latency (ADR-0002 §12).</p>
+ * <p>The event is only emitted when at least one record actually changed;
+ * no-op syncs and failures never reach this directive. The actual email
+ * send runs inside a JobRunr background job so the domain-event handler
+ * does not block on SMTP latency.</p>
  *
- * @since 1.12.0
+ * @since 1.13.0
  */
 @Component
-public class InformProjectCollaboratorsAboutDatasetRemoval
-    implements DomainEventSubscriber<AssociatedDatasetRemovedEvent> {
+public class InformProjectCollaboratorsAboutDatasetSync
+    implements DomainEventSubscriber<AssociatedDatasetsSyncedEvent> {
 
-  private static final Logger log = logger(InformProjectCollaboratorsAboutDatasetRemoval.class);
+  private static final Logger log = logger(InformProjectCollaboratorsAboutDatasetSync.class);
 
   private final EmailService emailService;
   private final ProjectAccessService projectAccessService;
@@ -54,7 +57,7 @@ public class InformProjectCollaboratorsAboutDatasetRemoval
   private final AppContextProvider appContextProvider;
   private final JobScheduler jobScheduler;
 
-  public InformProjectCollaboratorsAboutDatasetRemoval(
+  public InformProjectCollaboratorsAboutDatasetSync(
       EmailService emailService,
       ProjectAccessService projectAccessService,
       UserInformationService userInformationService,
@@ -71,13 +74,13 @@ public class InformProjectCollaboratorsAboutDatasetRemoval
 
   @Override
   public Class<? extends DomainEvent> subscribedToEventType() {
-    return AssociatedDatasetRemovedEvent.class;
+    return AssociatedDatasetsSyncedEvent.class;
   }
 
   @Override
   @PreAuthorize(
       "hasPermission(#event.projectId(), 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
-  public void handleEvent(AssociatedDatasetRemovedEvent event) {
+  public void handleEvent(AssociatedDatasetsSyncedEvent event) {
     String projectTitle = projectInformationService.find(event.projectId())
         .map(Project::getProjectIntent)
         .map(ProjectIntent::projectTitle)
@@ -91,9 +94,17 @@ public class InformProjectCollaboratorsAboutDatasetRemoval
     String projectUrl = appContextProvider.urlToDatasets(event.projectId().value());
     String actorId = event.actorUserId();
 
+    // Flatten the updated records into pre-rendered lines so the JobRunr
+    // job only carries plain strings (no domain types across serialization).
+    List<String> updatedRecordLines = event.updatedRecords().stream()
+        .map(record -> Messages.updatedRecordLine(
+            record.title(), record.pid(), record.previousVersion(),
+            record.newVersion(), record.accessStatusChanged()))
+        .toList();
+
     List<RecipientInfo> recipients = resolveRecipientsExcludingActor(event.projectId(), actorId);
     if (recipients.isEmpty()) {
-      log.info("No collaborators to notify for dataset removal on project %s".formatted(
+      log.info("No collaborators to notify for dataset sync on project %s".formatted(
           event.projectId()));
       return;
     }
@@ -101,15 +112,14 @@ public class InformProjectCollaboratorsAboutDatasetRemoval
     for (RecipientInfo recipient : recipients) {
       jobScheduler.enqueue(
           () -> notifyRecipient(recipient.email, recipient.fullName,
-              recipient.fullName, projectTitle, event.datasetTitle(), event.datasetPid(),
-              projectUrl));
+              recipient.fullName, projectTitle, updatedRecordLines, projectUrl));
     }
   }
 
   /**
    * Resolves all collaborators on the project, filtering out the actor
-   * who performed the removal. Silently skips users whose profile
-   * cannot be resolved (e.g. a deleted user account).
+   * who triggered the sync. Silently skips users whose profile cannot be
+   * resolved (e.g. a deleted user account).
    */
   private List<RecipientInfo> resolveRecipientsExcludingActor(ProjectId projectId, String actorId) {
     List<RecipientInfo> recipients = new ArrayList<>();
@@ -126,18 +136,17 @@ public class InformProjectCollaboratorsAboutDatasetRemoval
     return recipients;
   }
 
-  @Job(name = "Notify collaborator about dataset removal on project %3 for dataset %4")
+  @Job(name = "Notify collaborator about dataset sync on project %3")
   public void notifyRecipient(
       String emailAddress,
       String fullName,
       String addressee,
       String projectTitle,
-      String datasetTitle,
-      String datasetPid,
+      List<String> updatedRecordLines,
       String projectUrl) {
-    var subject = new Subject("Dataset connection removed from project");
-    var message = Messages.datasetRemovedFromProject(
-        addressee, projectTitle, datasetTitle, datasetPid, projectUrl);
+    var subject = new Subject("Connected datasets updated in project");
+    var message = Messages.datasetsSyncedToProject(
+        addressee, projectTitle, updatedRecordLines, projectUrl);
     emailService.send(subject,
         new Recipient(emailAddress, fullName),
         new Content(message));

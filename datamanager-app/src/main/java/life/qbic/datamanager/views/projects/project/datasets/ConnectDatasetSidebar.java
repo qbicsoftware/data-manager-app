@@ -222,6 +222,13 @@ public class ConnectDatasetSidebar extends Div {
     instanceSelector.setPlaceholder("Select repository…");
     instanceSelector.setItemLabelGenerator(SourceInstanceDescriptor::displayName);
     instanceSelector.addValueChangeListener(e -> {
+      // Switching the repository invalidates the current selection: the
+      // selected search results belong to the previously chosen provider.
+      // Reset the grid selection so users can only keep selections for the
+      // currently selected repository. The selection listener takes care of
+      // updating the count label and disabling the connect button.
+      resetResultsForInstanceChange();
+
       // Always update the credential banner when instance changes
       updateCredentialBanner();
 
@@ -812,6 +819,30 @@ public class ConnectDatasetSidebar extends Div {
       selectionCountLabel.getStyle().remove("display");
     }
     connectButton.setEnabled(count > 0);
+  }
+
+  /**
+   * Clears any selection and cached search results that belong to a
+   * previously selected repository.
+   *
+   * <p>Called when the user switches the repository in the instance
+   * selector, so selections (and stale hits) can never carry over to the
+   * newly selected provider. Implemented as an instance method (rather than
+   * inline in the value-change listener) because the grid is a blank final
+   * field assigned later in the constructor — a direct field reference from
+   * the listener lambda would be rejected by javac's definite-assignment
+   * check.</p>
+   */
+  private void resetResultsForInstanceChange() {
+    resultsGrid.deselectAll();
+
+    // Drop the cached results of the previous provider immediately so no
+    // stale hits are rendered while a search for the new provider is in
+    // flight (or if the user never triggers one).
+    synchronized (cachedResults) {
+      cachedResults.clear();
+    }
+    resultsGrid.getDataProvider().refreshAll();
   }
 
   // ── Connect confirmation ────────────────────────────────────────────

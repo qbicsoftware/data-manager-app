@@ -21,6 +21,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 public class DataManagerContextProvider implements AppContextProvider {
 
   private final String projectInfoEndpoint;
+  private final String projectDatasetsEndpoint;
 
   private final URL baseUrlApplication;
   private final String samplesEndpoint;
@@ -37,8 +38,10 @@ public class DataManagerContextProvider implements AppContextProvider {
       @Value("${service.host.port}") int port,
       @Value("${server.servlet.context-path}") String contextPath,
       @Value("${routing.projects.info.endpoint}") String projectEndpoint,
+      @Value("${routing.projects.datasets.endpoint}") String projectDatasetsEndpoint,
       @Value("${routing.projects.samples.enpoint}") String samplesEndpoint) {
     this.projectInfoEndpoint = projectEndpoint;
+    this.projectDatasetsEndpoint = projectDatasetsEndpoint;
     this.samplesEndpoint = samplesEndpoint;
     try {
       // The base path must end in a slash so that relative endpoint paths are resolved
@@ -76,6 +79,18 @@ public class DataManagerContextProvider implements AppContextProvider {
     try {
       return baseUrlApplication.toURI()
           .resolve(stripLeadingSlashes(samplesEndpoint.formatted(projectId, experimentId)))
+          .toURL()
+          .toExternalForm();
+    } catch (MalformedURLException | URISyntaxException e) {
+      throw new ApplicationException("Data Manager context creation failed.", e);
+    }
+  }
+
+  @Override
+  public String urlToDatasets(String projectId) {
+    try {
+      return baseUrlApplication.toURI()
+          .resolve(stripLeadingSlashes(projectDatasetsEndpoint.formatted(projectId)))
           .toURL()
           .toExternalForm();
     } catch (MalformedURLException | URISyntaxException e) {

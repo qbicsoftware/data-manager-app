@@ -18,6 +18,16 @@ public interface AppContextProvider {
    */
 
   String urlToProject(String projectId);
+
+  /**
+   * Returns a resolvable URL to the target project's datasets page.
+   *
+   * @param projectId the project id
+   * @return a fully resolvable URL
+   * @since 1.13.0
+   */
+  String urlToDatasets(String projectId);
+
   /**
    * Returns a resolvable URL to the target project's sample page resource in the application.
    *
