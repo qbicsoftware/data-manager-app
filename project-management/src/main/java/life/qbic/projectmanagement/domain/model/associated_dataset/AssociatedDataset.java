@@ -18,6 +18,7 @@ import life.qbic.projectmanagement.domain.model.associated_dataset.event.Associa
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Qualifier;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
@@ -292,8 +293,8 @@ public class AssociatedDataset {
       boolean versionChanged,
       boolean accessStatusChanged,
       boolean metadataChanged,
-      String previousVersion,
-      String newVersion) {}
+      @Nullable String previousVersion,
+      @Nullable String newVersion) {}
 
   // ── Accessors ───────────────────────────────────────────────────────────
 

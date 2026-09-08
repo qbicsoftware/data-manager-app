@@ -379,10 +379,11 @@ public class AssociatedDatasetService {
       domainEventsCache.forEach(
           domainEvent -> DomainEventDispatcher.instance().dispatch(domainEvent));
     } catch (Exception e) {
-      log.warn("Event dispatch failed while forwarding domain event "
-          + "after dataset connection on project %s; the connection ".formatted(projectId)
+      log.warn(("Event dispatch failed while forwarding domain event "
+          + "after dataset connection on project %s; the connection "
           + "itself succeeded, but collaborators may not have been "
-          + "notified: %s".formatted(e.getMessage()));
+          + "notified: %s")
+          .formatted(projectId, e.getMessage()));
     }
 
     log.info("Dataset %s connected to project %s by user %s"
@@ -449,11 +450,13 @@ public class AssociatedDatasetService {
                result.fold(value -> value, error -> null),
                result.fold(value -> null, error -> error));
          })
-        // Propagate caller's SecurityContext to the boundedElastic worker
-        // thread so Spring Security `@PreAuthorize` on connectDataset
-        // resolves correctly.
-        .contextWrite(ReactiveSecurityContextUtils.reactiveSecurity(securityContext))
+        // Bridge the caller's SecurityContext from the Reactor context to
+        // the ThreadLocal of the boundedElastic worker thread so Spring
+        // Security `@PreAuthorize` on connectDataset resolves correctly
+        // (same idiom as AsyncProjectServiceImpl).
+        .as(ReactiveSecurityContextUtils::applySecurityContext)
         .subscribeOn(Schedulers.boundedElastic())
+        .contextWrite(ReactiveSecurityContextUtils.reactiveSecurity(securityContext))
         .timeout(PER_REQUEST_TIMEOUT)
         .onErrorResume(Throwable.class, t -> {
           // Safety net: any exception escaping connectDataset() (schema
@@ -589,9 +592,10 @@ public class AssociatedDatasetService {
       domainEventsCache.forEach(
           domainEvent -> DomainEventDispatcher.instance().dispatch(domainEvent));
     } catch (Exception e) {
-      log.warn("Event dispatch failed while forwarding removal domain event "
-          + "after dataset removal on project %s; the removal itself succeeded, ".formatted(dataset.projectId())
-          + "but collaborators may not have been notified: %s".formatted(e.getMessage()));
+      log.warn(("Event dispatch failed while forwarding removal domain event "
+          + "after dataset removal on project %s; the removal itself succeeded, "
+          + "but collaborators may not have been notified: %s")
+          .formatted(dataset.projectId(), e.getMessage()));
     }
 
     log.info("Dataset %s removed from project %s by user %s"
@@ -615,11 +619,13 @@ public class AssociatedDatasetService {
       String associatedDatasetId, String removedByUserId) {
     SecurityContext securityContext = SecurityContextHolder.getContext();
     return Mono.fromCallable(() -> removeDataset(associatedDatasetId, removedByUserId))
-        // Propagate the caller's SecurityContext to the boundedElastic
-        // worker thread so Spring Security {@code @PreAuthorize} on
-        // removeDataset resolves correctly.
-        .contextWrite(ReactiveSecurityContextUtils.reactiveSecurity(securityContext))
+        // Bridge the caller's SecurityContext from the Reactor context to
+        // the ThreadLocal of the boundedElastic worker thread so Spring
+        // Security {@code @PreAuthorize} on removeDataset resolves
+        // correctly (same idiom as AsyncProjectServiceImpl).
+        .as(ReactiveSecurityContextUtils::applySecurityContext)
         .subscribeOn(Schedulers.boundedElastic())
+        .contextWrite(ReactiveSecurityContextUtils.reactiveSecurity(securityContext))
         .onErrorResume(Throwable.class, t -> {
           // Safety net: any exception escaping removeDataset() (schema
           // errors, unexpected runtime exceptions, timeouts) is converted
@@ -672,11 +678,13 @@ public class AssociatedDatasetService {
     return Flux.fromIterable(datasetIds)
         .flatMapSequential(id -> Mono.fromCallable(() ->
                 syncDatasetCore(projectId, id, userId))
-            // Propagate the caller's SecurityContext to the worker thread
-            // so Spring Security `@PreAuthorize` on the public method
-            // resolves correctly.
-            .contextWrite(ReactiveSecurityContextUtils.reactiveSecurity(securityContext))
+            // Bridge the caller's SecurityContext from the Reactor context
+            // to the ThreadLocal of the boundedElastic worker thread so
+            // Spring Security `@PreAuthorize` evaluations inside the sync
+            // pipeline resolve correctly (same idiom as AsyncProjectServiceImpl).
+            .as(ReactiveSecurityContextUtils::applySecurityContext)
             .subscribeOn(Schedulers.boundedElastic())
+            .contextWrite(ReactiveSecurityContextUtils.reactiveSecurity(securityContext))
             .timeout(PER_REQUEST_TIMEOUT)
             .onErrorResume(Throwable.class, t -> {
               // Safety net: any exception escaping syncDatasetCore is
@@ -691,7 +699,16 @@ public class AssociatedDatasetService {
             updated.add(response);
           }
         })
-        .doOnComplete(() -> emitSyncSummaryEvent(projectId, userId, updated));
+        // Dispatch the summary event as a terminal stream segment (instead of
+        // a doOnComplete callback): concatWith subscribes this mono on the
+        // thread that completes the main flux — a boundedElastic worker —
+        // where the applySecurityContext bridge then restores the caller's
+        // SecurityContext onto that thread's ThreadLocal before the
+        // notification directive's @PreAuthorize'd services run.
+        .concatWith(ReactiveSecurityContextUtils.applySecurityContext(
+                Mono.fromRunnable(() -> emitSyncSummaryEvent(projectId, userId, updated)))
+            .contextWrite(ReactiveSecurityContextUtils.reactiveSecurity(securityContext))
+            .cast(SyncDatasetResponse.class));
   }
 
   /**
@@ -771,8 +788,8 @@ public class AssociatedDatasetService {
     //    target version's PID — do not create a duplicate (plan §Edge cases)
     if (recordChanged && !Objects.equals(latestMetadata.pid(), storedMetadata.pid())
         && associatedDatasetRepository.isActiveConnectionPresent(projectId, latestMetadata.pid())) {
-      log.info("Sync of dataset %s skipped — a connection to version %s "
-          + "already exists in project %s"
+      log.info(("Sync of dataset %s skipped — a connection to version %s "
+          + "already exists in project %s")
           .formatted(datasetId.value(), latestMetadata.pid(), projectId.value()));
       return SyncDatasetResponse.failed(datasetId, SyncDatasetError.ALREADY_CONNECTED);
     }
@@ -960,12 +977,12 @@ public class AssociatedDatasetService {
       InstanceConfig config, String actingUserId) {
     try {
       datasetSource.revokeAccessLink(accessLinkId, externalHandleValue, config, actingUserId);
-      log.info("Revoked access link {} on instance {} (sync lifecycle)"
+      log.info("Revoked access link %s on instance %s (sync lifecycle)"
           .formatted(accessLinkId, config.id()));
     } catch (Exception e) {
-      log.error("Failed to revoke access link {} on instance {} during sync; "
-              + "the link may need manual clean-up"
-              .formatted(accessLinkId, config.id()), e);
+      log.error(("Failed to revoke access link %s on instance %s during sync; "
+          + "the link may need manual clean-up")
+          .formatted(accessLinkId, config.id()), e);
     }
   }
 
@@ -1170,14 +1187,14 @@ public class AssociatedDatasetService {
     try {
       datasetSource.revokeAccessLink(createdAccessLink.linkId(),
           externalHandleValue, config, actingUserId);
-      log.info("Revoked access link {} on instance {} after failed connect"
+      log.info("Revoked access link %s on instance %s after failed connect"
           .formatted(createdAccessLink.linkId(), config.id()));
     } catch (Exception e) {
       // Never mask the primary connect failure. Log so operators can
       // revoke the orphaned link manually.
-      log.error("Failed to revoke access link {} on instance {} after a "
-              + "failed connect; the link may be orphaned and needs manual clean-up"
-              .formatted(createdAccessLink.linkId(), config.id()), e);
+      log.error(("Failed to revoke access link %s on instance %s after a "
+          + "failed connect; the link may be orphaned and needs manual clean-up")
+          .formatted(createdAccessLink.linkId(), config.id()), e);
     }
   }
 
@@ -1201,19 +1218,20 @@ public class AssociatedDatasetService {
     try {
       config = resolveInstanceConfig(inv.instanceId());
     } catch (Exception e) {
-      log.error("Cannot resolve instance config to revoke access link {} for "
-          + "dataset {}".formatted(inv.accessLinkId(), dataset.id()), e);
+      log.error(("Cannot resolve instance config to revoke access link %s for "
+          + "dataset %s")
+          .formatted(inv.accessLinkId(), dataset.id()), e);
       return;
     }
     try {
       datasetSource.revokeAccessLink(inv.accessLinkId(),
           dataset.externalHandle().value(), config, actingUserId);
-      log.info("Revoked access link {} on instance {} for removed dataset {}"
+      log.info("Revoked access link %s on instance %s for removed dataset %s"
           .formatted(inv.accessLinkId(), config.id(), dataset.id()));
     } catch (Exception e) {
-      log.error("Failed to revoke access link {} for removed dataset {}; "
-              + "the link may need manual clean-up"
-              .formatted(inv.accessLinkId(), dataset.id()), e);
+      log.error(("Failed to revoke access link %s for removed dataset %s; "
+          + "the link may need manual clean-up")
+          .formatted(inv.accessLinkId(), dataset.id()), e);
     }
   }
 
