@@ -2,7 +2,6 @@ package life.qbic.projectmanagement.application.associated_dataset;
 
 import static java.util.Objects.requireNonNull;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -394,7 +393,6 @@ public class AssociatedDatasetService {
 
   // ── Reactive (non-blocking) connect ─────────────────────────────────────
 
-  private static final Duration PER_REQUEST_TIMEOUT = Duration.ofSeconds(30);
   private static final int BOUNDED_PARALLELISM = 3;
 
   /**
@@ -662,9 +660,17 @@ public class AssociatedDatasetService {
    * source instances (DATSET-04/08, ADR-0006).
    *
    * <p>Each dataset is processed on a bounded-elastic worker thread with
-   * bounded parallelism (matching the connect flow) and a per-request
-   * timeout. Responses are emitted in insertion order so the caller can
-   * map them back to the requested rows.</p>
+   * bounded parallelism (matching the connect flow). Responses are
+   * emitted as each per-dataset sync completes (completion order, not
+   * request order) — every {@link SyncDatasetResponse} carries its own
+   * {@code datasetId}, so callers map responses to rows by ID.</p>
+   *
+   * <p>There is no reactive {@code timeout} on the pipeline: a timeout
+   * cannot cancel the underlying blocking {@link #syncDatasetCore} and
+   * would create a race where the UI reports SYNC_FAILED while the sync
+   * continues and persists an updated snapshot afterwards. The external
+   * HTTP client already bounds every call, so each sync completes within
+   * a known upper bound and the UI always receives the true outcome.</p>
    *
    * <p>Requires {@code WRITE} permission on the project (story ACs — a
    * sync updates the project's linked snapshot; amends ADR-0003 §5).</p>
@@ -707,7 +713,10 @@ public class AssociatedDatasetService {
             .as(ReactiveSecurityContextUtils::applySecurityContext)
             .subscribeOn(Schedulers.boundedElastic())
             .contextWrite(ReactiveSecurityContextUtils.reactiveSecurity(securityContext))
-            .timeout(PER_REQUEST_TIMEOUT)
+            // No .timeout(...) here — see method javadoc: a reactive
+            // timeout cannot cancel the underlying blocking sync and
+            // would create a race where the UI reports failure but the
+            // snapshot is updated once the blocking call completes.
             .onErrorResume(Throwable.class, t -> {
               // Safety net: any exception escaping syncDatasetCore is
               // converted into SYNC_FAILED so the caller can tally
