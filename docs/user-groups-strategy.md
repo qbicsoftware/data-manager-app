@@ -100,10 +100,10 @@ management and group-based sharing. Everything else builds on proven paths.
 | Internal group roles | **OWNER** (only the ad-hoc creator; appoints/removes managers), **MANAGER** (adds/removes regular members; org groups: rename/describe), **MEMBER**. For org groups the QBiC admin acts as owner-equivalent |
 | Governance | Org groups: admins manage membership. Ad-hoc groups: fully self-service — creator becomes owner; manager can add/remove members; members can self-remove; an empty ad-hoc group is auto-dissolved; a manager leaving is offered an explicit, guarded *transfer-or-dissolve* choice |
 | Sharing | Anyone with project *change-access* can share a group onto a project. Grant level: READ / WRITE / ADMIN — **never OWNER** |
-| Visibility | Group names + descriptions are **public** (searchable) and **unique** (case-insensitive). Memberships are visible only to group members and QBiC admins |
+| Visibility | Group names, descriptions, and memberships are visible to all users. Group names are **unique** (case-insensitive). As part of the DPA, users are informed beforehand that their ORCID, username, and Full Name are visible to other users |
 | Sensitive data | No project flag; transparency via notifications (see §5.3) |
 | Notifications | Email only members who **newly gain** access (deduplicated); digest on joining a group with existing grants; revocation email on removal; dissolution email listing affected projects; project admins informed about membership changes on groups shared with their projects; role-level changes are audit-log-only |
-| Project cards | Show group *names* only — never expanded member lists (view is readable by any project member) |
+| Project cards | Show group *names* on project cards (compact view; the card area is shared real estate) |
 
 ---
 
@@ -119,9 +119,8 @@ mirroring the `identity` module layout. Rationale:
 - Provides a clean `user-groups-api` facade consumed by `AuthorityService` (project-management)
   and the UI (datamanager-app), following the established `identity-api` pattern.
 
-Lighter alternative: model groups inside `project-management` next to `Role`/`UserRole` (fewer
-modules, less clean separation). Both options add Maven modules → **human approval required
-per AGENTS.md §12**, and the decision merits an ADR.
+This adds Maven modules → **human approval required per AGENTS.md §12**, and the decision
+merits an ADR.
 
 ### 4.2 Conceptual data model
 
@@ -143,7 +142,7 @@ per AGENTS.md §12**, and the decision merits an ADR.
 2. **Sharing:** reuse `addAuthorityAccess(projectId, "GROUP_<id>", role)` with validation blocking
    OWNER. `removeAuthorityAccess` / `changeAuthorityAccess` cover revoke and role change.
 3. **Listing:** extend `listCollaborators()` (or add `listSharedGroups()`) to surface authority
-   ACEs in the UI (name, description, member count; member list only for group members).
+   ACEs in the UI (name, description, member count, member list).
 4. **Effective-access query (new):** needed for notification dedupe and member-count display —
    "has member X effective access (direct ACE, via group, or via role) to project P?" Implemented
    as a batch query against `acl_entry` / `acl_sid` for the member's sid set.
@@ -163,8 +162,8 @@ Follow the existing pattern (`ProjectAccessGranted` → `ProjectAccessGrantedPol
 ### 4.5 UI surface
 
 1. **Project Access page** (`ProjectAccessComponent`) — two sections: **People** (current grid,
-   unchanged) and **Groups** (grid of shared groups + grant role; edit/remove; member names only
-   for group members — privacy rule enforced in UI).
+   unchanged) and **Groups** (grid of shared groups + grant role; edit/remove; member list visible
+   to all users).
 2. **Share dialog** (`AddCollaboratorToProjectDialog`) — "Add people or groups": a group tab with a
    searchable dropdown over public group names + role selection, same flow as adding a person.
 3. **My Groups view** (user-facing, in the account area) — groups I belong to with my role;
@@ -173,8 +172,8 @@ Follow the existing pattern (`ProjectAccessGranted` → `ProjectAccessGrantedPol
 4. **Admin Groups view** (QBiC admins) — org group CRUD: create, assign managers, manage
    membership, rename, dissolve; full directory of all groups; read-only oversight of ad-hoc
    groups.
-5. **Project cards** (overview) — show group names the project is shared with; never expand
-   members. Rebuild the `project_userinfo` / `project_overview` SQL views accordingly.
+5. **Project cards** (overview) — show group names the project is shared with. Rebuild the
+   `project_userinfo` / `project_overview` SQL views accordingly.
 
 ### 4.6 Revocation semantics — *known trade-off to document*
 
@@ -194,8 +193,8 @@ Recommendation: (a) now; revisit if auditors object.
 
 ### 5.1 Leakage
 
-- Memberships are members-only (name + description are public); member lists must never be exposed
-  in READ-visible views (`project_overview` shows group names only).
+- As part of the DPA, users are informed beforehand that their ORCID, username, and Full Name are
+  visible to other users. Group names, descriptions, and memberships are therefore not restricted.
 - The share dialog context already requires project `change-access`; `listCollaborators` requires
   ADMINISTRATION — who-has-access stays privileged.
 
