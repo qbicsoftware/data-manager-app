@@ -92,6 +92,48 @@ class AssociatedDatasetServiceConnectSpec extends Specification {
     result instanceof Result.Value
   }
 
+  def "connectDataset does not persist a snapshot when access link creation fails"() {
+    given:
+    def projectId = ProjectId.parse(VALID_PROJECT_ID)
+    def userId = "user-1"
+    def config = new InstanceConfig("zenodo", "Zenodo", "https://zenodo.org")
+    def restrictedMetadata = createMetadata(InvenioRdmAccessStatus.RESTRICTED, InvenioRdmAccessStatus.RESTRICTED)
+
+    def source = Mock(DatasetSource) {
+      resolveMetadata("ext-1", config, userId) >> Optional.of(restrictedMetadata)
+      hasValidCredential(userId, config) >> true
+      createAccessLink("ext-1", config, userId) >> {
+        throw new AccessLinkCreationException(
+            "Only the dataset owner can create access links")
+      }
+    }
+    def repository = Mock(AssociatedDatasetRepository) {
+      isActiveConnectionPresent(projectId, _) >> false
+    }
+    def registry = Mock(SourceInstanceRegistry) {
+      find("zenodo") >> Optional.of(
+          new SourceInstanceDescriptor("zenodo", "Zenodo",
+              "https://zenodo.org", SourceType.INVENIO_RDM))
+    }
+    def service = createService(source, repository, registry)
+
+    LocalDomainEventDispatcher.instance().reset()
+
+    when:
+    def result = service.connectDataset(
+        projectId, SourceType.INVENIO_RDM, "zenodo",
+        "ext-1", null, userId)
+
+    then:
+    result instanceof Result.Error
+    result.getError() == ConnectDatasetError.ACCESS_LINK_CREATION_FAILED
+    // Invariant: a failed connect must never create a connection. The
+    // access-link step is a hard gate — the aggregate is neither created
+    // nor persisted, and nothing was created on the source to revoke.
+    0 * repository.save(_)
+    0 * source.revokeAccessLink(_, _, _, _)
+  }
+
   def "connectDataset revokes the access link when persistence fails after creation"() {
     given:
     def projectId = ProjectId.parse(VALID_PROJECT_ID)

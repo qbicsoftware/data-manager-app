@@ -426,12 +426,25 @@ public class AssociatedDatasetService {
 
   /**
    * Reactive counterpart of {@link #connectDataset}. Runs the blocking
-   * call on a {@link Schedulers#boundedElastic()} worker thread, with a
-   * per-request 30s timeout. Errors (including timeout and network
-   * exceptions) are wrapped into a
-   * {@link ConnectDatasetError#CONNECT_FAILED} so the reactive stream
-   * never terminates in {@code onError} — enabling the UI to tally
-   * partial successes and failures independently.
+   * call on a {@link Schedulers#boundedElastic()} worker thread so the
+   * UI thread never blocks on HTTP/JPA work.
+   *
+   * <p>There is deliberately <em>no</em> reactive {@code timeout} on this
+   * pipeline: the blocking {@link #connectDataset} (HTTP + JPA) cannot be
+   * cancelled by a Reactor timeout or {@code Disposable}. A timeout would
+   * emit a failure to the UI while the underlying call keeps running and
+   * may {@code save()} the connection afterwards — violating the
+   * invariant that a failed connect must never persist a connection, and
+   * producing the confusing "failure reported, connection appears later"
+   * behaviour. The external HTTP client already bounds every call
+   * (connect/request timeouts, bounded retries), so a connect completes
+   * within a known upper bound and the UI always receives the true
+   * outcome.</p>
+   *
+   * <p>Errors (network exceptions, unexpected runtime exceptions) are
+   * wrapped into a {@link ConnectDatasetError#CONNECT_FAILED} so the
+   * reactive stream never terminates in {@code onError} — enabling the
+   * UI to tally partial successes and failures independently.</p>
    */
   @PreAuthorize(
       "hasPermission(#request.projectId(), 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
@@ -457,11 +470,14 @@ public class AssociatedDatasetService {
         .as(ReactiveSecurityContextUtils::applySecurityContext)
         .subscribeOn(Schedulers.boundedElastic())
         .contextWrite(ReactiveSecurityContextUtils.reactiveSecurity(securityContext))
-        .timeout(PER_REQUEST_TIMEOUT)
+        // No .timeout(...) here — see javadoc: a reactive timeout cannot
+        // cancel the underlying blocking connect and would create a race
+        // where the UI reports failure but the connection is persisted
+        // once the blocking call completes.
         .onErrorResume(Throwable.class, t -> {
           // Safety net: any exception escaping connectDataset() (schema
-          // errors, unexpected runtime exceptions, timeouts) is converted
-          // into CONNECT_FAILED so the caller can tally partial failures.
+          // errors, unexpected runtime exceptions) is converted into
+          // CONNECT_FAILED so the caller can tally partial failures.
           // The log.error here is critical — without it, uncaught errors
           // become silent failures that the user can only see as a
           // generic toast with no entry in the application log.
