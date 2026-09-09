@@ -68,6 +68,60 @@
   min-height: 0;
 }
 
+/* -- Settings section blueprint (single settings page layout) -- */
+
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+  width: 100%;
+  max-width: 1000px;
+}
+
+.settings-section__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--lumo-space-m);
+}
+
+.settings-section__titles {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-xs);
+  min-width: 0;
+}
+
+.settings-section__title {
+  margin: 0;
+  font-size: var(--lumo-font-size-l);
+  font-weight: 600;
+  color: var(--lumo-header-text-color);
+}
+
+.settings-section__description {
+  margin: 0;
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-s);
+}
+
+.settings-section__actions {
+  flex-shrink: 0;
+}
+
+.settings-section__content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+}
+
+/* The settings hub + section blueprint provide the page spacing; neutralize the base
+   page-area padding/gap so all settings sections share a uniform look. */
+.settings-main-layout .page-area {
+  padding: 0;
+  gap: 0;
+}
+
 /* -- Settings aside: navigation -- */
 
 .settings-navigation-component {

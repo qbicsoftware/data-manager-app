@@ -31,6 +31,7 @@ import java.util.List;
 import life.qbic.datamanager.views.general.CopyToClipBoardComponent;
 import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.PageArea;
+import life.qbic.datamanager.views.settings.SettingsSection;
 import life.qbic.identity.api.PersonalAccessToken;
 import life.qbic.identity.api.RawToken;
 
@@ -57,18 +58,23 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
 
   public PersonalAccessTokenComponent() {
     addClassName("personal-access-token-component");
-    addComponentAsFirst(generateHeader());
-    add(generateDescription());
+
+    SettingsSection section = new SettingsSection(TITLE, generateDescription());
+    Button generateTokenButton = new Button("Generate new token");
+    generateTokenButton.addClickListener(
+        event -> fireEvent(new AddTokenEvent(this, event.isFromClient())));
+    section.addAction(generateTokenButton);
+
     Div personalAccessTokenContainer = new Div();
     noTokensRegisteredDisclaimer = createNoTokensRegisteredDisclaimer();
-    add(noTokensRegisteredDisclaimer);
     personalAccessTokenContainer.add(createdTokenLayout, personalAccessTokens);
-    add(personalAccessTokenContainer);
-    createNoTokensRegisteredDisclaimer();
     personalAccessTokenContainer.addClassName("personal-access-token-container");
     personalAccessTokens.setRenderer(showEncryptedPersonalAccessTokenRenderer());
     personalAccessTokens.addClassName("personal-access-token-list");
     createdTokenLayout.addClassName("show-created-personal-access-token-layout");
+
+    section.addContent(noTokensRegisteredDisclaimer, personalAccessTokenContainer);
+    add(section);
     updateUI();
   }
 
@@ -118,20 +124,6 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
     createdPersonalAccessTokenDetails.setToken(rawTokenText);
     createdTokenLayout.add(createdPersonalAccessTokenDetails);
     updateUI();
-  }
-
-  private Span generateHeader() {
-    Span title = new Span(TITLE);
-    title.addClassName("title");
-    Span buttonBar = new Span();
-    buttonBar.addClassName("buttons");
-    Button generateTokenButton = new Button("Generate new token");
-    buttonBar.add(generateTokenButton);
-    generateTokenButton.addClickListener(
-        event -> fireEvent(new AddTokenEvent(this, event.isFromClient())));
-    Span header = new Span(title, buttonBar);
-    header.addClassName("header");
-    return header;
   }
 
   private Div generateDescription() {

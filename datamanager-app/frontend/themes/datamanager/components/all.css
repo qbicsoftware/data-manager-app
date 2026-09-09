@@ -1546,12 +1546,6 @@ states, and modal-like overlays that sit inside a flex container.
 
 /* ── External Providers card styling ────── */
 
-/* The settings hub layout provides the page padding; the content only
-   caps its width so cards do not grow indefinitely on wide screens. */
-.external-providers .external-providers__content {
-  max-width: 1000px;
-}
-
 .external-providers .instance-card {
   display: flex;
   flex-direction: column;
@@ -1560,10 +1554,6 @@ states, and modal-like overlays that sit inside a flex container.
   border: 1px solid var(--lumo-contrast-20pct);
   border-left-width: 8px;
   overflow: hidden;
-}
-
-.external-providers .instance-card + .instance-card {
-  margin-top: var(--lumo-space-m);
 }
 
 .external-providers .instance-card--connected {

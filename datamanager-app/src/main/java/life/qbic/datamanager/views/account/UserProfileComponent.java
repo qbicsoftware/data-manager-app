@@ -31,6 +31,7 @@ import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.oidc.OidcType;
 import life.qbic.datamanager.views.projects.project.access.UserAvatarWithNameComponent;
+import life.qbic.datamanager.views.settings.SettingsSection;
 import life.qbic.identity.api.UserInfo;
 import life.qbic.identity.application.user.IdentityService;
 import life.qbic.identity.application.user.IdentityService.EmptyUserNameException;
@@ -55,6 +56,7 @@ public class UserProfileComponent extends PageArea implements Serializable {
   private final transient IdentityService identityService;
   private final Location currentLocation;
   private UserDetailsCard userDetailsCard;
+  private SettingsSection section;
 
   public UserProfileComponent(IdentityService identityService,
       UserInfo userInfo,
@@ -62,9 +64,6 @@ public class UserProfileComponent extends PageArea implements Serializable {
     this.identityService = requireNonNull(identityService,
         "identity service cannot be null");
     this.currentLocation = requireNonNull(currentLocation);
-    Span title = new Span(TITLE);
-    addComponentAsFirst(title);
-    title.addClassName("title");
     addClassName("user-profile-component");
     this.setVisible(false);
     this.showForUser(userInfo);
@@ -72,11 +71,13 @@ public class UserProfileComponent extends PageArea implements Serializable {
 
   private void showForUser(UserInfo userInfo) {
     requireNonNull(userInfo, "userInfo must not be null");
-    if (nonNull(userDetailsCard)) {
-      remove(userDetailsCard);
+    if (nonNull(section)) {
+      remove(section);
     }
+    section = new SettingsSection(TITLE);
     userDetailsCard = new UserDetailsCard(userInfo, OidcLinkController.ENDPOINT_LINK_ORCID);
-    add(userDetailsCard);
+    section.addContent(userDetailsCard);
+    add(section);
     this.setVisible(true);
   }
 
@@ -201,7 +202,7 @@ public class UserProfileComponent extends PageArea implements Serializable {
     public UserDetailsCard(UserInfo userInfo, String orcidLinkingEndpoint) {
       this.orcidLinkingEndpoint = requireNonNull(orcidLinkingEndpoint);
       this.userInfo = requireNonNull(userInfo, "userInfo must not be null");
-      addClassNames("flex-horizontal", "gap-03", "fixed-width-1000px", "padding-10");
+      addClassNames("flex-horizontal", "gap-03", "padding-10");
 
       UserAvatar userAvatar = new UserAvatar();
       userAvatar.setName(userInfo.platformUserName());
