@@ -86,9 +86,11 @@ The ACL layer is already group-ready:
 3. `@PreAuthorize("hasPermission(...)")` evaluation (`QbicPermissionEvaluator`) works generically
    for any authority present in the authentication.
 
-The missing pieces are: a **group concept** (aggregate + membership + role hierarchy), **injecting
-`GROUP_<id>` authorities into the runtime authentication**, and the **UI surface** for group
-management and group-based sharing. Everything else builds on proven paths.
+The missing pieces are: a **group concept** (aggregate + membership + role hierarchy), a **way to
+surface `GROUP_<id>` in ACL evaluation** — either as login-scoped authorities (§4.3 Option A) or,
+recommended, as SIDs derived live at evaluation time via a custom `SidRetrievalStrategy` on the
+permission evaluator (§4.3 Option B) — and the **UI surface** for group management and group-based
+sharing. Everything else builds on proven paths.
 
 ---
 
@@ -135,10 +137,40 @@ merits an ADR.
 
 ### 4.3 Authorization plumbing
 
-1. **Authority injection (the crux):** extend `AuthorityService.getAuthoritiesByUserId()` to also
-   emit `GROUP_<id>` for all group memberships. Both login flows (`UserDetailsServiceImpl`,
-   `OidcUserDetailsService`) call this method, so local and OIDC users automatically carry group
-   authorities. Spring ACL evaluation and project listing then work unchanged.
+1. **Grant propagation mechanism.** The group grants (ACEs keyed by `GrantedAuthoritySid`,
+   `sid = "GROUP_<id>"`) must become visible to ACL evaluation *and* to project listing. Two
+   mechanisms exist; the PO-approved **live rollout** requirement (access takes effect
+   immediately when a member is added to a group shared with a project) decides between them:
+
+   - **Option A — login-scoped authority injection (original plan).** Extend
+     `AuthorityService.getAuthoritiesByUserId()` to also emit `GROUP_<id>` for all active group
+     memberships. Both login flows (`UserDetailsServiceImpl`, `OidcUserDetailsService`) call this
+     method, so local and OIDC users automatically carry group authorities; ACL evaluation and
+     project listing then work unchanged. *Trade-off:* the login snapshot makes membership
+     changes effective only at next login / session expiry (§4.6) — not live without adding
+     per-request freshness machinery.
+   - **Option B — evaluation-time SID derivation (recommended; the "adjust the permission
+     evaluator" alternative).** Groups are *never* written into the runtime authentication. A
+     custom `SidRetrievalStrategy` (wrapping `SidRetrievalStrategyImpl`) is wired onto
+     `QbicPermissionEvaluator` via `AclPermissionEvaluator.setSidRetrievalStrategy(...)` (bean in
+     `AclSecurityConfiguration`). On every `hasPermission(...)` call it appends
+     `GrantedAuthoritySid("GROUP_<id>")` for the caller's live memberships, resolved through a
+     `user-groups-api` facade (e.g. `listGroupSidsForUser(userId)`). Both
+     `@PreAuthorize("hasPermission(...)")` (method security) and `UserPermissionsImpl` (UI
+     gating) funnel through this bean, so grant **and** revoke are effective at the next
+     permission check — no session machinery, no authority cache to invalidate; the Spring ACL
+     cache stays valid because it is keyed by `ObjectIdentity` and `isGranted` re-evaluates the
+     freshly derived SIDs per call.
+     *Companion change (required):* `ProjectInformationService.retrieveAccessibleProjectIdsForUser()`
+     reads `authentication.getAuthorities()` directly, so it must additionally union the user's
+     group SIDs via the same facade — otherwise group-granted projects pass `hasPermission(READ)`
+     but never appear in the project overview.
+     *Constraint:* under Option B, group-aware checks must route through `hasPermission(...)` / the
+     listing helper; `hasRole` and view-level authority checks do not see groups.
+
+   Recommendation: **Option B** — it satisfies live rollout (grant and revocation) natively,
+   keeps the database as the single source of truth at decision time, and avoids the
+   session/context pitfalls of per-request freshness (§4.6).
 2. **Sharing:** reuse `addAuthorityAccess(projectId, "GROUP_<id>", role)` with validation blocking
    OWNER. `removeAuthorityAccess` / `changeAuthorityAccess` cover revoke and role change.
 3. **Listing:** extend `listCollaborators()` (or add `listSharedGroups()`) to surface authority
@@ -175,17 +207,32 @@ Follow the existing pattern (`ProjectAccessGranted` → `ProjectAccessGrantedPol
 5. **Project cards** (overview) — show group names the project is shared with. Rebuild the
    `project_userinfo` / `project_overview` SQL views accordingly.
 
-### 4.6 Revocation semantics — *known trade-off to document*
+### 4.6 Revocation semantics
 
-Authorities are captured at login, so membership changes take effect at **next login / session
-expiry**. This matches today's behaviour for role changes (also login-scoped). Options:
+- **Under Option A** (login-scoped authority injection), authorities are captured at login, so
+  membership changes take effect at **next login / session expiry** — matching today's behaviour
+  for role changes. If a live effect is nevertheless required there, the fallbacks are:
 
-- (a) Accept and document (recommended — no session infrastructure exists today).
-- (b) Broadcast a session-invalidation event on sensitive membership changes (no Spring Session
-  today — heavier).
-- (c) Per-request authority freshness for critical paths.
+  - (b) Broadcast a session-invalidation event on sensitive membership changes (no Spring Session
+    today — heavier).
+  - (c) Per-request authority freshness: a `OncePerRequestFilter` registered after
+    `SecurityContextHolderFilter` in `SecurityConfiguration.vaadinSecurityFilterChain(...)` that
+    re-resolves `AuthorityService.getAuthoritiesByUserId()` on every request. Vaadin constraint
+    (verified in `VaadinAwareSecurityContextHolderStrategy`, vaadin-spring 25.x): `setContext(...)`
+    writes **only the ThreadLocal**, while `getContext()` prefers the SecurityContext stored in the
+    HTTP session — the filter must therefore **mutate** `SecurityContextHolder.getContext()
+    .setAuthentication(...)` (and skip writes when the authority set is unchanged), otherwise the
+    refresh does not persist and every round-trip dirties the shared session object. Cost:
+    per-request recomputation (mitigate with EHCache + `GroupMembershipChanged` invalidation over
+    Artemis) and a second authority source of truth to keep consistent.
 
-Recommendation: (a) now; revisit if auditors object.
+- **Under Option B** (evaluation-time SID derivation, recommended), the database is consulted at
+  every permission check, so there is **no staleness window at all** — revocation is effective at
+  the next `hasPermission(...)` / listing evaluation, for Vaadin and REST requests alike, without
+  any session or filter machinery.
+
+Recommendation: Option B (§4.3); no session invalidation and no per-request freshness filter are
+required.
 
 ---
 
@@ -203,7 +250,8 @@ Recommendation: (a) now; revisit if auditors object.
 Org groups are a force multiplier: one membership mistake silently grants/revokes access on every
 project shared with the group. Mitigations baked into the design:
 
-1. Instant revocation (authority-based) + loud emails on removal.
+1. Instant revocation — under §4.3 Option B effective at the next permission check, under Option
+   A at next login (§4.6) — plus loud emails on removal.
 2. Project admins notified on membership changes of shared groups.
 3. Groups can never be OWNER; a group grant caps at ADMIN.
 4. Dissolution shows affected projects before confirming; ACEs cleaned up.
@@ -248,6 +296,10 @@ No flag/restriction on sensitive projects; transparency through the notification
 - Group size limits / group count limits per user.
 - Manager demotion path (owner action only).
 - Whether org groups pre-seed with any project grants at rollout.
+- Verify the `PrincipalSid` derivation for OIDC logins: `SidRetrievalStrategyImpl` builds the
+  user's principal SID from `authentication.getName()` (the OIDC user's name), while ACLs are
+  keyed on the QBiC user id — confirm OIDC users actually match on the QBiC user id today before
+  groups build on top.
 
 ---
 
@@ -259,7 +311,9 @@ No flag/restriction on sensitive projects; transparency through the notification
 - `project-management/.../application/authorization/authorities/AuthorityService.java`
 - `project-management/.../application/ProjectInformationService.java` (`retrieveAccessibleProjectIdsForUser`)
 - `project-management-infrastructure/.../project/ProjectRepositoryImpl.java`
-- `datamanager-app/.../security/AclSecurityConfiguration.java`, `UserPermissionsImpl.java`
+- `datamanager-app/.../security/AclSecurityConfiguration.java`, `SecurityConfiguration.java`,
+  `UserPermissionsImpl.java`
+- `project-management/.../application/authorization/acl/QbicPermissionEvaluator.java`
 - `datamanager-app/.../views/projects/project/access/ProjectAccessComponent.java`, `AddCollaboratorToProjectDialog.java`
 - `project-management/.../application/policy/directive/InformUserAboutGrantedAccess.java`
 - `sql/complete-schema.sql` (ACL tables, `project_userinfo` view)
