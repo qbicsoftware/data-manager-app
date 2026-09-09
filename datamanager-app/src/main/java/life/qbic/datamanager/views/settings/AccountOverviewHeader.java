@@ -11,7 +11,7 @@ import life.qbic.identity.api.UserInfo;
  * Account Overview Header
  * <p>
  * Displays the identity of the currently logged-in user above the settings navigation: the user's
- * avatar, platform user name, full name and a short hint that the shown settings belong to the
+ * avatar, full name, platform user name and a short hint that the shown settings belong to the
  * user's account.
  */
 public class AccountOverviewHeader extends Div {
@@ -32,7 +32,7 @@ public class AccountOverviewHeader extends Div {
     Span hint = new Span("Your account settings");
     hint.addClassNames("text-s", "text-tertiary");
 
-    Div nameBlock = new Div(userName, fullName, hint);
+    Div nameBlock = new Div(fullName, userName, hint);
     nameBlock.addClassName("settings-account-overview__names");
 
     add(userAvatar, nameBlock);
