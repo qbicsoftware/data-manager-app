@@ -11,7 +11,7 @@
     "announcements announcements"
     "aside-area content-area"
     "data-manager-footer data-manager-footer";
-  grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
+  grid-template-columns: minmax(240px, 280px) minmax(0, 1fr);
   grid-template-rows: auto minmax(0, 1fr) auto;
 }
 
@@ -19,7 +19,7 @@
 .settings-main-layout #aside-area {
   grid-area: aside-area;
   box-sizing: border-box;
-  padding: var(--lumo-space-l) var(--lumo-space-s);
+  padding: var(--lumo-space-l);
   border-right: 1px solid var(--lumo-contrast-10pct);
   align-self: start;
   position: sticky;
@@ -30,9 +30,36 @@
 .settings-main-layout #content-area {
   grid-area: content-area;
   box-sizing: border-box;
-  padding: var(--lumo-space-l);
+  padding: var(--lumo-space-l) var(--lumo-space-xl);
   min-width: 0;
   min-height: 0;
+}
+
+/* -- Settings aside: account overview + navigation -- */
+
+.settings-aside {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-l);
+}
+
+.settings-account-overview {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--lumo-space-m);
+  padding-bottom: var(--lumo-space-m);
+  border-bottom: 1px solid var(--lumo-contrast-10pct);
+}
+
+.settings-account-overview__avatar {
+  --vaadin-avatar-size: 3.5rem;
+}
+
+.settings-account-overview__names {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-xs);
+  min-width: 0;
 }
 
 /* -- Settings navigation (vertical tabs) -- */
@@ -51,6 +78,7 @@
   width: 100%;
   justify-content: flex-start;
   --vaadin-tab-padding: var(--lumo-space-s) var(--lumo-space-m);
+  --vaadin-tab-gap: var(--lumo-space-m);
   --vaadin-tab-border-radius: var(--lumo-border-radius-m);
   box-sizing: border-box;
 }
@@ -84,6 +112,5 @@
     position: static;
     border-right: none;
     border-bottom: 1px solid var(--lumo-contrast-10pct);
-    padding-bottom: var(--lumo-space-m);
   }
 }
