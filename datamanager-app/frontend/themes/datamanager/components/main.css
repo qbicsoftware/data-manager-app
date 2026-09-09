@@ -12,7 +12,7 @@ vaadin-app-layout:not([drawer-opened])::part(drawer) {
 }
 
 #main-layout {
-  height: 100%;
+  min-height: 100%;
   /*Default design of components is too big for smaller screens*/
   zoom: 90%;
 }

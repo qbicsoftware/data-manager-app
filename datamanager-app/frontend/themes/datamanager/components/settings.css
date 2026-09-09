@@ -26,7 +26,8 @@
 }
 
 /* Two-column main area: persistent settings navigation on the left, section page on the right.
-   The account overview header and the announcements span both columns. */
+   The account overview header and the announcements span both columns. The content row is
+   content-sized (max-content) so tall sections push the footer down instead of overlapping it. */
 .settings-main-layout #main-layout {
   grid-template-areas:
     "announcements announcements"
@@ -34,7 +35,7 @@
     "aside-area content-area"
     "data-manager-footer data-manager-footer";
   grid-template-columns: minmax(240px, 280px) minmax(0, 1fr);
-  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto max-content auto;
 }
 
 .settings-main-layout #content-header {
@@ -111,7 +112,7 @@
       "content-area content-area"
       "data-manager-footer data-manager-footer";
     grid-template-columns: 1fr;
-    grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+    grid-template-rows: auto auto max-content max-content auto;
   }
 
   .settings-main-layout #aside-area {
