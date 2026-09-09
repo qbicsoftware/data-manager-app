@@ -48,19 +48,21 @@ public class SettingsMainLayout extends DataManagerLayout implements BeforeEnter
     this.userIdTranslator = requireNonNull(userIdTranslator,
         "userIdTranslator must not be null");
     Objects.requireNonNull(authenticationContext);
-    Span navBarTitle = new Span("Settings");
-    navBarTitle.setClassName("navbar-title");
-    DataManagerMenu dataManagerMenu = new DataManagerMenu(authenticationContext);
-    addToNavbar(navBarTitle, dataManagerMenu);
+    Div settingsNavbar = new Div();
+    settingsNavbar.addClassName("settings-main-layout-navbar-container");
+    settingsNavbar.add(createTitleBar(authenticationContext),
+        new AccountOverviewHeader(loadCurrentUser()));
+    addToNavbar(settingsNavbar);
     addClassName("settings-main-layout");
-    setAside(buildAside());
+    setAside(settingsNavigationComponent);
   }
 
-  private Div buildAside() {
-    Div aside = new Div();
-    aside.addClassName("settings-aside");
-    aside.add(new AccountOverviewHeader(loadCurrentUser()), settingsNavigationComponent);
-    return aside;
+  private Span createTitleBar(AuthenticationContext authenticationContext) {
+    Span navBarTitle = new Span("Settings");
+    navBarTitle.setClassName("navbar-title");
+    Span titleBar = new Span(navBarTitle, new DataManagerMenu(authenticationContext));
+    titleBar.addClassName("settings-main-layout-navbar");
+    return titleBar;
   }
 
   private UserInfo loadCurrentUser() {

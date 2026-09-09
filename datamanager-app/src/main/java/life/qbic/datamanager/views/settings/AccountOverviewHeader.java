@@ -10,9 +10,9 @@ import life.qbic.identity.api.UserInfo;
 /**
  * Account Overview Header
  * <p>
- * Displays the identity of the currently logged-in user above the settings navigation: the user's
- * avatar, full name, platform user name and a short hint that the shown settings belong to the
- * user's account.
+ * Displays the identity of the currently logged-in user in a full-width top bar above the
+ * settings sections: the user's avatar, full name, platform user name and a short hint that the
+ * shown settings belong to the user's account.
  */
 public class AccountOverviewHeader extends Div {
 

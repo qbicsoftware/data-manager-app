@@ -4,6 +4,45 @@
   padding-inline: var(--lumo-space-m);
 }
 
+/* Two-row navbar: title + user menu on the first row, account overview as a full-width
+   top bar above the settings sections on the second row. */
+.settings-main-layout-navbar-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.settings-main-layout-navbar {
+  display: inline-flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding-right: var(--lumo-space-m);
+}
+
+/* Account overview top bar: left-aligned so it visually sits above the settings menu */
+.settings-main-layout .settings-account-overview {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-m);
+  box-sizing: border-box;
+  width: 100%;
+  padding: var(--lumo-space-s) var(--lumo-space-m);
+  background-color: var(--lumo-base-color);
+  border-bottom: 1px solid var(--lumo-contrast-10pct);
+}
+
+.settings-account-overview__avatar {
+  --vaadin-avatar-size: 3.5rem;
+}
+
+.settings-account-overview__names {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-xs);
+  min-width: 0;
+}
+
 /* Two-column main area: persistent settings navigation on the left, section page on the right.
    Announcements and footer span both columns. */
 .settings-main-layout #main-layout {
@@ -35,34 +74,7 @@
   min-height: 0;
 }
 
-/* -- Settings aside: account overview + navigation -- */
-
-.settings-aside {
-  display: flex;
-  flex-direction: column;
-  gap: var(--lumo-space-l);
-}
-
-.settings-account-overview {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--lumo-space-m);
-  padding-bottom: var(--lumo-space-m);
-  border-bottom: 1px solid var(--lumo-contrast-10pct);
-}
-
-.settings-account-overview__avatar {
-  --vaadin-avatar-size: 3.5rem;
-}
-
-.settings-account-overview__names {
-  display: flex;
-  flex-direction: column;
-  gap: var(--lumo-space-xs);
-  min-width: 0;
-}
-
-/* -- Settings navigation (vertical tabs) -- */
+/* -- Settings aside: navigation -- */
 
 .settings-navigation-component {
   width: 100%;
