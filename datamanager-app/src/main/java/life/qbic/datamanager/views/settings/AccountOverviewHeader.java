@@ -25,10 +25,10 @@ public class AccountOverviewHeader extends Div {
     userAvatar.setName(userInfo.platformUserName());
     userAvatar.addClassName("settings-account-overview__avatar");
 
-    Span userName = new Span(userInfo.platformUserName());
-    userName.addClassName("font-bold");
     Span fullName = new Span(userInfo.fullName());
-    fullName.addClassNames("text-s", "text-secondary");
+    fullName.addClassName("font-bold");
+    Span userName = new Span(userInfo.platformUserName());
+    userName.addClassNames("text-s", "text-secondary");
     Span hint = new Span("Your account settings");
     hint.addClassNames("text-s", "text-tertiary");
 
