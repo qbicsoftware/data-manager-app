@@ -7,9 +7,7 @@
     "content-area"
     "data-manager-footer";
   grid-template-columns: 1fr;
-  /* The footer flows right after the content (regular website footer) and is never pinned to
-     the viewport bottom. min-height on #main-layout keeps pages at least viewport-tall. */
-  grid-template-rows: auto max-content auto;
+  grid-template-rows: auto minmax(max-content, 0.95fr) minmax(min-content, 0.05fr);
 }
 
 .main.project-overview {
