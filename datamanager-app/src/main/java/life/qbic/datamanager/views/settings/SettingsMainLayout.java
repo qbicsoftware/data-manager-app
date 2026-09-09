@@ -2,7 +2,6 @@ package life.qbic.datamanager.views.settings;
 
 import static java.util.Objects.requireNonNull;
 
-import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
@@ -48,21 +47,13 @@ public class SettingsMainLayout extends DataManagerLayout implements BeforeEnter
     this.userIdTranslator = requireNonNull(userIdTranslator,
         "userIdTranslator must not be null");
     Objects.requireNonNull(authenticationContext);
-    Div settingsNavbar = new Div();
-    settingsNavbar.addClassName("settings-main-layout-navbar-container");
-    settingsNavbar.add(createTitleBar(authenticationContext),
-        new AccountOverviewHeader(loadCurrentUser()));
-    addToNavbar(settingsNavbar);
-    addClassName("settings-main-layout");
-    setAside(settingsNavigationComponent);
-  }
-
-  private Span createTitleBar(AuthenticationContext authenticationContext) {
     Span navBarTitle = new Span("Settings");
     navBarTitle.setClassName("navbar-title");
-    Span titleBar = new Span(navBarTitle, new DataManagerMenu(authenticationContext));
-    titleBar.addClassName("settings-main-layout-navbar");
-    return titleBar;
+    DataManagerMenu dataManagerMenu = new DataManagerMenu(authenticationContext);
+    addToNavbar(navBarTitle, dataManagerMenu);
+    addClassName("settings-main-layout");
+    setAside(settingsNavigationComponent);
+    setContentHeader(new AccountOverviewHeader(loadCurrentUser()));
   }
 
   private UserInfo loadCurrentUser() {

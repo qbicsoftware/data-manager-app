@@ -25,6 +25,7 @@ public class DataManagerLayout extends AppLayout implements RouterLayout {
 
   private final Div contentArea;
   private final Div asideArea;
+  private final Div contentHeaderArea;
 
   private static final String DRAWER_STATE_KEY = "drawerOpened";
 
@@ -39,15 +40,34 @@ public class DataManagerLayout extends AppLayout implements RouterLayout {
     asideArea = new Div();
     asideArea.setId("aside-area");
     asideArea.setVisible(false);
+    // Optional full-width header at the top of the content area. Hidden unless populated.
+    contentHeaderArea = new Div();
+    contentHeaderArea.setId("content-header");
+    contentHeaderArea.setVisible(false);
     AnnouncementComponent announcementComponent = new AnnouncementComponent(announcementService);
     // Add content area and footer to the main layout
-    Div mainLayout = new Div(asideArea, announcementComponent, contentArea,
+    Div mainLayout = new Div(asideArea, announcementComponent, contentHeaderArea, contentArea,
         footerComponentFactory.get());
     mainLayout.setId("main-layout");
     persistDrawerStateBetweenLayouts();
     setContent(mainLayout);
     // Vaadin 25: Ensure drawer is closed by default when no content is added
     setDrawerOpened(false);
+  }
+
+  /**
+   * Populates the optional full-width header rendered at the top of the content area,
+   * below the announcements banner and above the routed content and aside column.
+   * <p>
+   * The header is hidden by default and only becomes visible once a component is set.
+   *
+   * @param header the component to show as content header, must not be {@code null}
+   */
+  protected void setContentHeader(Component header) {
+    Objects.requireNonNull(header, "header must not be null");
+    contentHeaderArea.removeAll();
+    contentHeaderArea.add(header);
+    contentHeaderArea.setVisible(true);
   }
 
   /**
