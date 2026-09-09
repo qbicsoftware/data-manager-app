@@ -1618,12 +1618,6 @@ states, and modal-like overlays that sit inside a flex container.
   margin: 0;
 }
 
-.external-providers .security-note {
-  color: var(--lumo-tertiary-text-color);
-  font-size: var(--lumo-font-size-xs);
-  font-style: italic;
-}
-
 /* Toolbar — right-aligned with heading */
 
 .external-providers .external-providers__toolbar {

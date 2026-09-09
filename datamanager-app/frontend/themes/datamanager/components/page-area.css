@@ -280,95 +280,144 @@
   color: var(--lumo-tertiary-text-color);
 }
 
+/* ── Personal Access Token page ── */
+
 .personal-access-token-component {
-  row-gap: var(--lumo-space-l);
   display: flex;
+  flex-direction: column;
+  row-gap: var(--lumo-space-l);
 }
 
-.personal-access-token-component .header {
-  justify-content: space-between;
-  display: inline-flex;
-}
-
-.personal-access-token-component .header .buttons {
-  column-gap: var(--spacing-03);
-  display: inline-flex;
-}
-
+/* Description block */
 .personal-access-token-component .description {
   display: flex;
   flex-direction: column;
-  row-gap: var(--lumo-space-m);
+  row-gap: var(--lumo-space-s);
 }
 
+.personal-access-token-component .description p {
+  margin: 0;
+}
+
+/* Token list container — fills available width */
 .personal-access-token-component .personal-access-token-container {
-  width: 60%;
-  height: 60%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
 }
 
 .personal-access-token-component .personal-access-token-container .personal-access-token-list {
-  border: 1px solid var(--lumo-contrast-20pct);
-}
-
-.personal-access-token-component .personal-access-token-container .show-created-personal-access-token-details {
   display: flex;
   flex-direction: column;
-  row-gap: var(--spacing-03);
+  gap: var(--lumo-space-s);
+}
+
+/* ── Token card ── */
+
+.pat-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
   padding: var(--lumo-space-m);
   border: 1px solid var(--lumo-contrast-20pct);
+  border-radius: var(--lumo-border-radius-m);
+}
+
+.pat-card--expired {
+  border-left: 3px solid var(--lumo-error-color);
+  opacity: 0.85;
+}
+
+.pat-card--active {
+  border-left: 3px solid var(--lumo-success-color);
+}
+
+.pat-card__header {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-m);
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.pat-card__description {
+  font-weight: 600;
+  font-size: var(--lumo-font-size-m);
+  color: var(--lumo-body-text-color);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pat-card__meta {
+  display: flex;
+  gap: var(--lumo-space-l);
+  flex-wrap: wrap;
+}
+
+.pat-card__date-item {
+  font-size: var(--lumo-font-size-s);
+  color: var(--lumo-secondary-text-color);
+}
+
+/* ── Created-token banner ── */
+
+.personal-access-token-component .personal-access-token-container .show-created-personal-access-token-layout {
   width: 100%;
 }
 
-.personal-access-token-component .personal-access-token-container .show-created-personal-access-token-layout {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.personal-access-token-component .personal-access-token-container .show-created-personal-access-token-details .copy-disclaimer {
-  display: inline-flex;
-  column-gap: var(--spacing-03);
-  font-size: var(--lumo-font-size-s);
-  align-items: center;
-}
-
-.personal-access-token-component .personal-access-token-container .show-created-personal-access-token-details .token-text {
-  display: inline-flex;
-  column-gap: var(--spacing-03);
-  align-items: center;
-}
-
-.personal-access-token-component .personal-access-token-container .show-encrypted-personal-access-token-details {
+.show-created-personal-access-token-details {
   display: flex;
   flex-direction: column;
-  row-gap: var(--lumo-space-m);
+  gap: var(--lumo-space-m);
+  padding: var(--lumo-space-l);
+  border: 2px solid var(--lumo-primary-color);
+  border-radius: var(--lumo-border-radius-m);
+  background: var(--lumo-primary-color-5pct);
 }
 
-.personal-access-token-component .personal-access-token-container .show-encrypted-personal-access-token-details .copy-disclaimer {
+.created-token__warning {
   display: inline-flex;
-  column-gap: var(--spacing-03);
   align-items: center;
-
+  gap: var(--lumo-space-xs);
+  font-size: var(--lumo-font-size-s);
+  font-weight: 600;
+  color: var(--lumo-primary-text-color);
 }
 
-.personal-access-token-component .personal-access-token-container .show-encrypted-personal-access-token-details .expiration-date {
-  display: inline-flex;
-  column-gap: var(--spacing-03);
-  align-items: center;
-}
-
-.personal-access-token-component .personal-access-token-container .show-encrypted-personal-access-token-details .token-text {
-  display: inline-flex;
-  column-gap: var(--spacing-03);
-  align-items: center;
-}
-
-.personal-access-token-component .personal-access-token-container .show-encrypted-personal-access-token-layout {
+.created-token__value-row {
   display: flex;
-  padding: var(--lumo-space-m);
-  border-bottom: 1px solid var(--lumo-contrast-20pct);
-  justify-content: space-between;
   align-items: center;
+  gap: var(--lumo-space-m);
+  padding: var(--lumo-space-m);
+  background: var(--lumo-base-color);
+  border: 1px solid var(--lumo-contrast-20pct);
+  border-radius: var(--lumo-border-radius-s);
+  overflow-x: auto;
+}
+
+.created-token__value {
+  font-family: monospace;
+  font-size: var(--lumo-font-size-m);
+  word-break: break-all;
+  flex: 1;
+}
+
+.created-token__status {
+  font-size: var(--lumo-font-size-s);
+  color: var(--lumo-secondary-text-color);
+  min-height: 1.2em;
+}
+
+/* ── Token creation form (in dialog) ── */
+
+.pat-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
 }
 
 .project-access-component {

@@ -28,6 +28,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import life.qbic.application.commons.time.DateTimeFormat;
 import life.qbic.datamanager.views.UiHandle;
+import life.qbic.datamanager.views.general.ContextNote;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.Tag.TagColor;
@@ -124,11 +125,9 @@ public class ExternalProvidersMain extends Main
             + "these instances to your Data Manager projects.");
 
     // ─ Security reassurance ─
-    var securityNote = new Span(
-        "Tokens are encrypted at rest and never shared with third parties. You can disconnect "
-            + "at any time.");
-    securityNote.addClassName("security-note");
-    section.addContent(securityNote);
+    section.addContent(new ContextNote(
+        "Tokens are encrypted at rest and never shared with third parties. You can disconnect at any time.",
+        VaadinIcon.LOCK.create()));
 
     // ── Toolbar (Verify connections) ──
     var toolbar = new Div();
