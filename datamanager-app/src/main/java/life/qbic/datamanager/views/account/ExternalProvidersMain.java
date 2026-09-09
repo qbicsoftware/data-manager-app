@@ -17,6 +17,7 @@ import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
+import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
@@ -28,7 +29,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import life.qbic.application.commons.time.DateTimeFormat;
 import life.qbic.datamanager.views.UiHandle;
-import life.qbic.datamanager.views.UserMainLayout;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.Tag.TagColor;
@@ -37,6 +37,7 @@ import life.qbic.datamanager.views.general.dialog.AppDialog;
 import life.qbic.datamanager.views.general.dialog.DialogBody;
 import life.qbic.datamanager.views.general.dialog.DialogFooter;
 import life.qbic.datamanager.views.general.dialog.DialogHeader;
+import life.qbic.datamanager.views.settings.SettingsMainLayout;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.AuthenticationToUserIdTranslationService;
@@ -58,10 +59,11 @@ import org.springframework.security.core.context.SecurityContextHolder;
  *
  * @since 1.12.0
  */
-@Route(value = "external-providers", layout = UserMainLayout.class)
+@Route(value = "settings/external-providers", layout = SettingsMainLayout.class)
 @SpringComponent
 @UIScope
 @PermitAll
+@PageTitle("Settings · External Providers")
 public class ExternalProvidersMain extends Main
     implements BeforeEnterObserver {
 

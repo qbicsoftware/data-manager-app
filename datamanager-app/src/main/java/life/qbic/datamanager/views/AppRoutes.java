@@ -118,8 +118,18 @@ public class AppRoutes {
     public static final String DATASETS = "projects/%s/datasets";
 
     /**
-     * The profile page that displays information for the currently logged-in user
+     * The settings page that displays information for the currently logged-in user
      */
-    public static final String PROFILE = "profile";
+    public static final String PROFILE = "settings/profile";
+
+    /**
+     * Settings section to manage personal access tokens
+     */
+    public static final String SETTINGS_API_TOKENS = "settings/api-tokens";
+
+    /**
+     * Settings section to manage credentials for external data source instances
+     */
+    public static final String SETTINGS_EXTERNAL_PROVIDERS = "settings/external-providers";
   }
 }

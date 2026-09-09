@@ -7,6 +7,7 @@ import com.vaadin.flow.router.AfterNavigationEvent;
 import com.vaadin.flow.router.AfterNavigationObserver;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
+import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.QueryParameters;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
@@ -15,12 +16,12 @@ import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
-import life.qbic.datamanager.views.UserMainLayout;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.identity.application.user.IdentityService;
 import life.qbic.identity.domain.model.UserId;
+import life.qbic.datamanager.views.settings.SettingsMainLayout;
 import life.qbic.projectmanagement.application.AuthenticationToUserIdTranslationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -34,10 +35,11 @@ import org.springframework.security.core.context.SecurityContextHolder;
  * {@link life.qbic.identity.api.UserInfo} and change his Username via the provided UI elements
  */
 
-@Route(value = "profile", layout = UserMainLayout.class)
+@Route(value = "settings/profile", layout = SettingsMainLayout.class)
 @SpringComponent
 @UIScope
 @PermitAll
+@PageTitle("Settings · Profile")
 public class UserProfileMain extends Main implements BeforeEnterObserver, AfterNavigationObserver {
 
   @Serial

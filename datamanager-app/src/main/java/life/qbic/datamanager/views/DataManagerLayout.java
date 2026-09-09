@@ -24,6 +24,7 @@ import life.qbic.datamanager.views.general.footer.FooterComponentFactory;
 public class DataManagerLayout extends AppLayout implements RouterLayout {
 
   private final Div contentArea;
+  private final Div asideArea;
 
   private static final String DRAWER_STATE_KEY = "drawerOpened";
 
@@ -34,14 +35,34 @@ public class DataManagerLayout extends AppLayout implements RouterLayout {
     // Create content area
     contentArea = new Div();
     contentArea.setId("content-area");
+    // Optional persistent aside column (e.g. a settings navigation). Hidden unless populated.
+    asideArea = new Div();
+    asideArea.setId("aside-area");
+    asideArea.setVisible(false);
     AnnouncementComponent announcementComponent = new AnnouncementComponent(announcementService);
     // Add content area and footer to the main layout
-    Div mainLayout = new Div(announcementComponent, contentArea, footerComponentFactory.get());
+    Div mainLayout = new Div(asideArea, announcementComponent, contentArea,
+        footerComponentFactory.get());
     mainLayout.setId("main-layout");
     persistDrawerStateBetweenLayouts();
     setContent(mainLayout);
     // Vaadin 25: Ensure drawer is closed by default when no content is added
     setDrawerOpened(false);
+  }
+
+  /**
+   * Populates the optional aside column that is rendered to the left of the routed content area.
+   * <p>
+   * The aside is hidden by default and only becomes visible once a component is set. Layouts that
+   * want to display a persistent side navigation (e.g. a settings hub) can call this method.
+   *
+   * @param aside the component to show in the aside column, must not be {@code null}
+   */
+  protected void setAside(Component aside) {
+    Objects.requireNonNull(aside, "aside must not be null");
+    asideArea.removeAll();
+    asideArea.add(aside);
+    asideArea.setVisible(true);
   }
 
   /**

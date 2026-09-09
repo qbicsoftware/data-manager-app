@@ -1,0 +1,89 @@
+/* -- Settings Hub (GitHub-style master-detail layout) -- */
+
+.settings-main-layout::part(navbar) {
+  padding-inline: var(--lumo-space-m);
+}
+
+/* Two-column main area: persistent settings navigation on the left, section page on the right.
+   Announcements and footer span both columns. */
+.settings-main-layout #main-layout {
+  grid-template-areas:
+    "announcements announcements"
+    "aside-area content-area"
+    "data-manager-footer data-manager-footer";
+  grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+
+/* The aside is a fixed, non-collapsible column (GitHub-style) */
+.settings-main-layout #aside-area {
+  grid-area: aside-area;
+  box-sizing: border-box;
+  padding: var(--lumo-space-l) var(--lumo-space-s);
+  border-right: 1px solid var(--lumo-contrast-10pct);
+  align-self: start;
+  position: sticky;
+  top: 0;
+  min-height: 0;
+}
+
+.settings-main-layout #content-area {
+  grid-area: content-area;
+  box-sizing: border-box;
+  padding: var(--lumo-space-l);
+  min-width: 0;
+  min-height: 0;
+}
+
+/* -- Settings navigation (vertical tabs) -- */
+
+.settings-navigation-component {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.settings-navigation-tabs {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.settings-navigation-tabs vaadin-tab {
+  width: 100%;
+  justify-content: flex-start;
+  --vaadin-tab-padding: var(--lumo-space-s) var(--lumo-space-m);
+  --vaadin-tab-border-radius: var(--lumo-border-radius-m);
+  box-sizing: border-box;
+}
+
+.settings-navigation-tabs vaadin-tab:hover {
+  --vaadin-tab-background: var(--lumo-contrast-5pct);
+}
+
+.settings-navigation-tabs vaadin-tab[selected] {
+  --vaadin-tab-background: var(--lumo-primary-color-10pct);
+  --vaadin-tab-text-color: var(--lumo-primary-text-color);
+}
+
+.settings-navigation-tabs vaadin-tab[selected] vaadin-icon {
+  color: var(--lumo-primary-text-color);
+}
+
+/* Stack the navigation above the content on narrow screens */
+@media (max-width: 900px) {
+  .settings-main-layout #main-layout {
+    grid-template-areas:
+      "announcements announcements"
+      "aside-area aside-area"
+      "content-area content-area"
+      "data-manager-footer data-manager-footer";
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+  }
+
+  .settings-main-layout #aside-area {
+    position: static;
+    border-right: none;
+    border-bottom: 1px solid var(--lumo-contrast-10pct);
+    padding-bottom: var(--lumo-space-m);
+  }
+}
