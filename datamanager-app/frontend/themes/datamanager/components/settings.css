@@ -5,7 +5,9 @@
 }
 
 /* Account overview bar at the top of the content area (below navbar + announcements),
-   spanning the full settings width and left-aligned so it visually sits above the menu. */
+   spanning the full settings width and left-aligned so it visually sits above the menu.
+   Its left padding matches the aside/menu gutter so title and menu items align on an
+   invisible vertical line. */
 .settings-main-layout .settings-account-overview {
   display: flex;
   align-items: center;
@@ -38,17 +40,19 @@
 .settings-main-layout #content-header {
   grid-area: content-header;
   box-sizing: border-box;
-  padding: var(--lumo-space-s) var(--lumo-space-m);
+  padding: var(--lumo-space-s) var(--lumo-space-m) var(--lumo-space-s) var(--lumo-space-xl);
   background-color: var(--lumo-base-color);
-  border-bottom: 1px solid var(--lumo-contrast-10pct);
 }
 
-/* The aside is a fixed, non-collapsible column (GitHub-style) */
+/* The aside is a fixed, non-collapsible column (GitHub-style). No border: separation comes from
+   the shared gutters. Left gutter is (--lumo-space-l) here; combined with the tabs' own left
+   padding (--lumo-space-m, see below) menu items start at --lumo-space-xl, which is exactly the
+   left inset of the content header and content area — so title, section titles and menu items
+   align on one invisible vertical line. */
 .settings-main-layout #aside-area {
   grid-area: aside-area;
   box-sizing: border-box;
   padding: var(--lumo-space-l);
-  border-right: 1px solid var(--lumo-contrast-10pct);
   align-self: start;
   position: sticky;
   top: 0;
@@ -112,7 +116,6 @@
 
   .settings-main-layout #aside-area {
     position: static;
-    border-right: none;
-    border-bottom: 1px solid var(--lumo-contrast-10pct);
+    padding-inline: var(--lumo-space-l);
   }
 }
