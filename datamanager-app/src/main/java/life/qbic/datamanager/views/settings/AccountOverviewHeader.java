@@ -2,6 +2,7 @@ package life.qbic.datamanager.views.settings;
 
 import static java.util.Objects.requireNonNull;
 
+import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import life.qbic.datamanager.views.account.UserAvatar;
@@ -27,12 +28,13 @@ public class AccountOverviewHeader extends Div {
 
     Span fullName = new Span(userInfo.fullName());
     fullName.addClassName("font-bold");
-    Span userName = new Span(userInfo.platformUserName());
+    Span userName = new Span("(" + userInfo.platformUserName() + ")");
     userName.addClassNames("text-s", "text-secondary");
+    Span nameLine = new Span(fullName, new Text(" "), userName);
     Span hint = new Span("Your account settings");
     hint.addClassNames("text-s", "text-tertiary");
 
-    Div nameBlock = new Div(fullName, userName, hint);
+    Div nameBlock = new Div(nameLine, hint);
     nameBlock.addClassName("settings-account-overview__names");
 
     add(userAvatar, nameBlock);
