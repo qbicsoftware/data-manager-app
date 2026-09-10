@@ -1,8 +1,17 @@
 @import "variables.css";
 
+/*
+ * Temporary stopgap: several views below cap the main content row with
+ * percentage/fraction row sizes (e.g. minmax(min-content, 90%)). On short
+ * viewports (reduced height) that collapses grids to a few rows tall.
+ * Floors below are min content-aware cold stops so the page scrolls
+ * instead of squashing grids. REMOVE once pagination replaces endless
+ * scrolling in data grids.
+ */
+
 .main.project-overview {
   grid-template-columns: 1fr;
-  grid-template-rows: 0.1fr 0.9fr;
+  grid-template-rows: minmax(min-content, 0.1fr) minmax(60vh, 0.9fr);
   grid-template-areas:
     "."
     "projectcollection";
@@ -10,7 +19,7 @@
 
 .main.raw-data {
   grid-template-columns: minmax(min-content, 80%) minmax(min-content, 20%);
-  grid-template-rows: minmax(min-content, 10%) minmax(90%, 100%);
+  grid-template-rows: minmax(min-content, 10%) minmax(60vh, 1fr);
   grid-template-areas:
     ". rawdatadownloadinformation"
     "rawdatadetails rawdatadownloadinformation";
@@ -18,7 +27,7 @@
 
 .main.sample {
   grid-template-columns: minmax(min-content, 50%) minmax(min-content, 50%);
-  grid-template-rows: minmax(min-content, 25%) minmax(min-content, 70%);
+  grid-template-rows: minmax(min-content, 25%) minmax(60vh, 1fr);
   grid-template-areas:
     ". batchdetails"
     "sampledetails sampledetails";
@@ -26,14 +35,14 @@
 
 .main.experiment {
   grid-template-columns: 1fr;
-  grid-template-rows: 1fr;
+  grid-template-rows: minmax(60vh, 1fr);
   grid-template-areas:
     "experimentdetails";
 }
 
 .main.measurement {
   grid-template-columns: 100%;
-  grid-template-rows: minmax(min-content, 10%) minmax(90%, 100%);
+  grid-template-rows: minmax(min-content, 10%) minmax(60vh, 1fr);
   grid-template-areas:
     "."
     "measurementdetails";
@@ -89,7 +98,7 @@
     grid-template-columns: minmax(min-content, 1fr);
     grid-template-areas:
     "experimentdetails";
-    grid-template-rows: minmax(min-content, 1fr);
+    grid-template-rows: minmax(60vh, 1fr);
   }
 
   .main.measurement {
@@ -97,7 +106,7 @@
     grid-template-areas:
     "."
     "measurementdetails";
-    grid-template-rows: minmax(min-content, 10%) minmax(90%, 100%);
+    grid-template-rows: minmax(min-content, 10%) minmax(60vh, 1fr);
   }
 
   .main.project {
@@ -116,7 +125,7 @@
     "."
     "rawdatadownloadinformation"
     "rawdatadetails";
-    grid-template-rows: minmax(min-content, 20%) minmax(min-content, 20%) minmax(min-content, 60%);
+    grid-template-rows: minmax(min-content, 20%) minmax(min-content, 20%) minmax(60vh, 1fr);
   }
 
   .main.sample {
@@ -125,6 +134,6 @@
     "."
     "batchdetails"
     "sampledetails";
-    grid-template-rows: minmax(min-content, 20%) minmax(min-content, 20%) minmax(min-content, 60%);
+    grid-template-rows: minmax(min-content, 20%) minmax(min-content, 20%) minmax(60vh, 1fr);
   }
 }
