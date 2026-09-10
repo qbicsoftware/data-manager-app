@@ -69,11 +69,20 @@
   grid-template-areas: "datasets-content";
 }
 
+/*
+ * Ontology lookup main: the grid-area name in the legacy CSS never matched any
+ * component (class `ontology-lookup-component` vs area `ontologylookupcomponent`),
+ * so the grid-template degraded to auto. With #main-layout now a flex column,
+ * we make the container itself a flex box and let the child grow.
+ */
 .main.ontology-lookup-main {
-  grid-template-columns: auto;
-  grid-template-rows: auto;
-  grid-template-areas:
-    "ontologylookupcomponent"
+  display: flex;
+  flex-direction: column;
+  min-height: 60vh;
+}
+
+.main.ontology-lookup-main > * {
+  flex: 1 1 auto;
 }
 
 .main.user-profile {
