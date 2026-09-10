@@ -1,0 +1,85 @@
+@import "variables.css";
+
+/****************************************
+
+Application footer (FooterComponent)
+
+Semantic <footer> with grouped <nav> landmarks and a copyright bar.
+Layout: link groups wrap on narrow viewports and stack vertically on
+very small screens. The footer itself is kept at the bottom of short
+pages by the flex column layout of #main-layout (see main.css).
+
+*****************************************/
+
+.app-footer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+  padding: var(--lumo-space-l) var(--lumo-space-xl) var(--lumo-space-m);
+  border-top: 1px solid var(--lumo-contrast-10pct);
+  background-color: var(--lumo-contrast-5pct);
+  font-size: var(--lumo-font-size-s);
+}
+
+.app-footer .app-footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-04) var(--spacing-06);
+}
+
+.app-footer .app-footer-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-xs);
+  min-width: 10em;
+}
+
+.app-footer .app-footer-heading {
+  margin: 0 0 var(--lumo-space-xs) 0;
+  font-size: var(--lumo-font-size-xs);
+  font-weight: var(--font-weight-semi-bold, 600);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--lumo-secondary-text-color);
+}
+
+.app-footer .app-footer-group a {
+  color: var(--lumo-secondary-text-color);
+  text-decoration: none;
+  /* Comfortable click/tap target */
+  padding: var(--lumo-space-xxs, 2px) 0;
+}
+
+.app-footer .app-footer-group a:hover {
+  color: var(--lumo-primary-text-color);
+  text-decoration: underline;
+}
+
+.app-footer .app-footer-group a:focus-visible {
+  outline: 2px solid var(--lumo-primary-color);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.app-footer .app-footer-bottom {
+  padding-top: var(--lumo-space-s);
+  border-top: 1px solid var(--lumo-contrast-10pct);
+  color: var(--lumo-tertiary-text-color);
+  font-size: var(--lumo-font-size-xs);
+}
+
+/* Small screens: stack the link groups full-width */
+@media only screen and (max-width: 600px) {
+  .app-footer {
+    padding: var(--spacing-04);
+  }
+
+  .app-footer .app-footer-links {
+    flex-direction: column;
+    gap: var(--spacing-04);
+  }
+
+  .app-footer .app-footer-group {
+    min-width: 0;
+  }
+}

@@ -1,5 +1,7 @@
+/* Sticky footer pattern: the content area grows to fill the viewport, so the
+   footer sits at the bottom on short pages and follows the content on long pages. */
 #content-area {
-  grid-area: content-area;
+  flex: 1 0 auto;
 }
 
 /* Vaadin 25: Hide AppLayout drawer when drawer-opened attribute is not set */
@@ -7,11 +9,9 @@ vaadin-app-layout:not([drawer-opened])::part(drawer) {
   display: none;
 }
 
-#announcements {
-  grid-area: announcements;
-}
-
 #main-layout {
+  display: flex;
+  flex-direction: column;
   height: 100%;
   /*Default design of components is too big for smaller screens*/
   zoom: 90%;
@@ -51,16 +51,6 @@ vaadin-app-layout:not([drawer-opened])::part(drawer) {
 .landing-page-layout .landing-page-title-and-logo .ut-logo {
   height: 2.5em;
   margin-bottom: var(--lumo-space-xl);
-}
-
-#data-manager-footer {
-  display: inline-flex;
-  column-gap: var(--lumo-space-l);
-  border-top: thin solid var(--lumo-contrast-10pct);
-  padding-inline: var(--lumo-space-m);
-  padding-bottom: var(--spacing-03);
-  padding-top: var(--spacing-03);
-  grid-area: data-manager-footer;
 }
 
 .main {
