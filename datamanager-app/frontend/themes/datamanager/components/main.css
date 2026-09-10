@@ -354,6 +354,8 @@ vaadin-app-layout:not([drawer-opened])::part(drawer) {
 
 .main.sample .sample-details-component {
   grid-area: sampledetails;
+  height: 100%;
+  min-height: 0;
 }
 
 .main.reset-password {
