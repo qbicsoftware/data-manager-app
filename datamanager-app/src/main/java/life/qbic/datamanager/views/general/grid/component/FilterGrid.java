@@ -150,7 +150,7 @@ public final class FilterGrid<T, F> extends Div {
     //construct filter Grid component
     var primaryGridControls = getPrimaryGridControls(configuredGrid.getColumns());
     add(primaryGridControls, configuredGrid);
-    addClassNames("flex-vertical", "gap-03", "height-full", "width-full");
+    addClassNames("flex-vertical", "gap-03", "height-full", "width-full", "filter-grid");
 
     forwardGridSelectionEvents();
     //update the filter

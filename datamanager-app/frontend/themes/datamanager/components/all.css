@@ -1046,7 +1046,6 @@ Icons
 .flex-vertical {
   display: flex;
   flex-direction: column;
-  flex-wrap: wrap;
 }
 
 .white-space-nowrap {

@@ -581,7 +581,12 @@
 }
 
 .sample-details-component .sample-grid {
-  height: 100%;
+  min-height: 0;
+}
+
+/* FilterGrid must shrink within flex containers to prevent overflow.
+   Without min-height: 0, the grid expands beyond its container bounds. */
+.filter-grid {
   min-height: 0;
 }
 
