@@ -310,7 +310,7 @@
 .personal-access-token-component .personal-access-token-container .personal-access-token-list {
   display: flex;
   flex-direction: column;
-  gap: var(--lumo-space-s);
+  gap: var(--lumo-space-m);
 }
 
 /* ── Token card ── */
@@ -350,6 +350,19 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.pat-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+}
+
+.pat-card__status-line {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-m);
+  flex-wrap: wrap;
 }
 
 .pat-card__meta {

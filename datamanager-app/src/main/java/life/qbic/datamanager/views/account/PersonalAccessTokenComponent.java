@@ -14,9 +14,6 @@ import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.virtuallist.VirtualList;
-import com.vaadin.flow.data.provider.Query;
-import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import com.vaadin.flow.theme.lumo.LumoUtility.IconSize;
@@ -59,7 +56,7 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
   private static final String TITLE = "Personal Access Tokens";
   private final Disclaimer noTokensRegisteredDisclaimer;
   private final Div createdTokenLayout = new Div();
-  private final VirtualList<PersonalAccessTokenFrontendBean> personalAccessTokens = new VirtualList<>();
+  private final Div personalAccessTokens = new Div();
 
   public PersonalAccessTokenComponent() {
     addClassName("personal-access-token-component");
@@ -82,7 +79,6 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
     noTokensRegisteredDisclaimer = createNoTokensRegisteredDisclaimer();
     personalAccessTokenContainer.add(createdTokenLayout, personalAccessTokens);
     personalAccessTokenContainer.addClassName("personal-access-token-container");
-    personalAccessTokens.setRenderer(buildTokenCardRenderer());
     personalAccessTokens.addClassName("personal-access-token-list");
     createdTokenLayout.addClassName("show-created-personal-access-token-layout");
 
@@ -91,43 +87,51 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
     updateUI();
   }
 
-  // ── Token card renderer ────────────────────────────────────────
+  // ── Token card rendering ──────────────────────────────────────
 
-  private ComponentRenderer<Component, PersonalAccessTokenFrontendBean> buildTokenCardRenderer() {
-    return new ComponentRenderer<>(bean -> {
-      var card = new Div();
-      card.addClassName("pat-card");
-      card.addClassName(bean.expired() ? "pat-card--expired" : "pat-card--active");
+  private Div buildTokenCard(PersonalAccessTokenFrontendBean bean) {
+    var card = new Div();
+    card.addClassName("pat-card");
+    card.addClassName(bean.expired() ? "pat-card--expired" : "pat-card--active");
 
-      // Header row: description + status tag + revoke button
-      var header = new Div();
-      header.addClassName("pat-card__header");
+    // Header row: description (left) + revoke button (right)
+    var header = new Div();
+    header.addClassName("pat-card__header");
 
-      var description = new Span(bean.tokenDescription());
-      description.addClassName("pat-card__description");
+    var description = new Span(bean.tokenDescription());
+    description.addClassName("pat-card__description");
 
-      var statusTag = bean.expired()
-          ? createStatusTag("Expired", TagColor.ERROR)
-          : createStatusTag("Active", TagColor.SUCCESS);
+    var statusTag = bean.expired()
+        ? createStatusTag("Expired", TagColor.ERROR)
+        : createStatusTag("Active", TagColor.SUCCESS);
 
-      var revokeButton = new Button("Revoke", VaadinIcon.TRASH.create());
-      revokeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE,
-          ButtonVariant.LUMO_ERROR);
-      revokeButton.addClickListener(event -> fireEvent(
-          new DeleteTokenEvent(this, event.isFromClient(), bean.tokenId())));
+    var revokeButton = new Button("Revoke", VaadinIcon.TRASH.create());
+    revokeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE,
+        ButtonVariant.LUMO_ERROR);
+    revokeButton.addClickListener(event -> fireEvent(
+        new DeleteTokenEvent(this, event.isFromClient(), bean.tokenId())));
 
-      header.add(description, statusTag, revokeButton);
-      card.add(header);
+    header.add(description, revokeButton);
+    card.add(header);
 
-      // Metadata row: created + expires
-      var meta = new Div();
-      meta.addClassName("pat-card__meta");
-      meta.add(buildDateItem("Created", bean.createdAt()));
-      meta.add(buildDateItem("Expires", bean.expirationInstant()));
-      card.add(meta);
+    // Body: status tag on its own line, creation/expiry dates below
+    var body = new Div();
+    body.addClassName("pat-card__body");
 
-      return card;
-    });
+    var statusLine = new Div();
+    statusLine.addClassName("pat-card__status-line");
+    statusLine.add(statusTag);
+    body.add(statusLine);
+
+    var meta = new Div();
+    meta.addClassName("pat-card__meta");
+    meta.add(buildDateItem("Created", bean.createdAt()));
+    meta.add(buildDateSeparator());
+    meta.add(buildDateItem("Expires", bean.expirationInstant()));
+    body.add(meta);
+    card.add(body);
+
+    return card;
   }
 
   private Tag createStatusTag(String label, TagColor color) {
@@ -144,6 +148,13 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
         .format(instant);
     span.setText(prefix + " " + formatted);
     return span;
+  }
+
+  private Span buildDateSeparator() {
+    var sep = new Span("·");
+    sep.getStyle().set("color", "var(--lumo-contrast-30pct)");
+    sep.addClassName("extra-small-body-text");
+    return sep;
   }
 
   // ── Created-token banner ───────────────────────────────────────
@@ -193,8 +204,7 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
    * {@link PersonalAccessTokenComponent}
    *
    * @param personalAccessTokenFrontendBeans Collection of {@link PersonalAccessTokenFrontendBean}
-   *                                         for the logged-in user to be displayed within
-   *                                         {@link VirtualList} the component
+   *                                         for the logged-in user to be displayed
    */
   public void setTokens(
       Collection<PersonalAccessTokenFrontendBean> personalAccessTokenFrontendBeans) {
@@ -204,13 +214,13 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
                 Instant::compareTo)
             .reversed())
         .toList();
-    personalAccessTokens.setItems(sortedTokenList);
+    personalAccessTokens.removeAll();
+    sortedTokenList.forEach(bean -> personalAccessTokens.add(buildTokenCard(bean)));
     updateUI();
   }
 
   private void updateUI() {
-    boolean userHasTokens = !personalAccessTokens.getDataProvider().fetch(new Query<>()).toList()
-        .isEmpty();
+    boolean userHasTokens = personalAccessTokens.getChildren().findAny().isPresent();
     boolean userCreatedToken = createdTokenLayout.getChildren().findAny().isPresent();
     personalAccessTokens.setVisible(userHasTokens);
     createdTokenLayout.setVisible(userCreatedToken);
@@ -221,7 +231,7 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
    * Sets the provided {@link RawToken} within the {@link PersonalAccessTokenComponent}
    * <p>
    * This method is used to show a newly generated Token to the user on Top of the
-   * {@link VirtualList} within the component
+   * token list within the component
    *
    * @param rawToken The {@link RawToken} to be displayed to the user
    */
@@ -304,17 +314,12 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
     }
 
     public static PersonalAccessTokenFrontendBean from(PersonalAccessToken pat) {
-      Instant now = Instant.now();
-      Instant expiration = pat.expiration();
-      // Derive creation date: expiration minus the remaining duration
-      Duration remaining = Duration.between(now, expiration);
-      Instant createdAt = expiration.minus(
-          Duration.ofDays(Math.max(0, remaining.toDays())));
+      Instant createdAt = pat.creationDate();
       return new PersonalAccessTokenFrontendBean(
           pat.tokenId(),
           pat.description(),
           createdAt.truncatedTo(ChronoUnit.SECONDS),
-          expiration,
+          pat.expiration(),
           pat.expired());
     }
 
