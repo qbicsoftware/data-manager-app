@@ -67,13 +67,16 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
     SettingsSection section = new SettingsSection(TITLE, buildDescription());
 
     // Security reassurance
-    section.addContent(new ContextNote(
-        "Tokens are stored encrypted and grant API access to your data — treat them like passwords."));
+    var securityNote = new ContextNote(
+        "Tokens are stored encrypted and grant API access to your data — treat them like passwords.");
+    securityNote.addClassName("context-note--compact");
+    section.addContent(securityNote);
 
     Button generateTokenButton = new Button("Generate new token");
     generateTokenButton.addClassName("primary");
     generateTokenButton.addClickListener(
         event -> fireEvent(new AddTokenEvent(this, event.isFromClient())));
+    section.addAction(generateTokenButton);
 
     Div personalAccessTokenContainer = new Div();
     noTokensRegisteredDisclaimer = createNoTokensRegisteredDisclaimer();
@@ -83,7 +86,7 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
     personalAccessTokens.addClassName("personal-access-token-list");
     createdTokenLayout.addClassName("show-created-personal-access-token-layout");
 
-    section.addContent(noTokensRegisteredDisclaimer, generateTokenButton, personalAccessTokenContainer);
+    section.addContent(noTokensRegisteredDisclaimer, personalAccessTokenContainer);
     add(section);
     updateUI();
   }

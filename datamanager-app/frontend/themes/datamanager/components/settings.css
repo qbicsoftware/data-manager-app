@@ -4,6 +4,10 @@
   padding-inline: var(--lumo-space-m);
 }
 
+.settings-main-layout .navbar-title {
+  font-size: var(--lumo-font-size-l);
+}
+
 /* Account overview bar at the top of the content area (below navbar + announcements),
    spanning the full settings width and left-aligned so it visually sits above the menu.
    Its left padding matches the aside/menu gutter so title and menu items align on an
@@ -41,7 +45,7 @@
 .settings-main-layout #content-header {
   grid-area: content-header;
   box-sizing: border-box;
-  padding: var(--lumo-space-s) var(--lumo-space-m) var(--lumo-space-s) var(--lumo-space-xl);
+  padding: var(--lumo-space-m) var(--lumo-space-m) var(--lumo-space-s) var(--lumo-space-xl);
   background-color: var(--lumo-base-color);
 }
 
@@ -58,6 +62,8 @@
   position: sticky;
   top: 0;
   min-height: 0;
+  background-color: var(--lumo-base-color);
+  z-index: 1;
 }
 
 .settings-main-layout #content-area {
@@ -94,7 +100,7 @@
 
 .settings-section__title {
   margin: 0;
-  font-size: var(--lumo-font-size-l);
+  font-size: var(--lumo-font-size-xl);
   font-weight: 600;
   color: var(--lumo-header-text-color);
 }
@@ -137,10 +143,16 @@
 .settings-navigation-tabs vaadin-tab {
   width: 100%;
   justify-content: flex-start;
-  --vaadin-tab-padding: var(--lumo-space-s) var(--lumo-space-m);
-  --vaadin-tab-gap: var(--lumo-space-m);
+  --vaadin-tab-padding: var(--lumo-space-m) var(--lumo-space-m);
   --vaadin-tab-border-radius: var(--lumo-border-radius-m);
   box-sizing: border-box;
+}
+
+/* Gap between icon and text inside each tab's RouterLink */
+.settings-navigation-tabs vaadin-tab a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lumo-space-m);
 }
 
 .settings-navigation-tabs vaadin-tab:hover {
@@ -156,8 +168,8 @@
   color: var(--lumo-primary-text-color);
 }
 
-/* Stack the navigation above the content on narrow screens */
-@media (max-width: 900px) {
+/* Adjust spacing on narrow screens */
+@media (max-width: 1024px) {
   .settings-main-layout #main-layout {
     grid-template-areas:
       "announcements announcements"
@@ -171,6 +183,6 @@
 
   .settings-main-layout #aside-area {
     position: static;
-    padding-inline: var(--lumo-space-l);
+    padding: var(--lumo-space-m) var(--lumo-space-l) var(--lumo-space-s) var(--lumo-space-l);
   }
 }

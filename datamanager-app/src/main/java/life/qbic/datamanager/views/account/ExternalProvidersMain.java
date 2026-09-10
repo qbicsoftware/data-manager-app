@@ -125,15 +125,15 @@ public class ExternalProvidersMain extends Main
             + "these instances to your Data Manager projects.");
 
     // ─ Security reassurance ─
-    section.addContent(new ContextNote(
+    var securityNote = new ContextNote(
         "Tokens are encrypted at rest and never shared with third parties. You can disconnect at any time.",
-        VaadinIcon.LOCK.create()));
+        VaadinIcon.LOCK.create());
+    securityNote.addClassName("context-note--compact");
+    section.addContent(securityNote);
 
-    // ── Toolbar (Verify connections) ──
-    var toolbar = new Div();
-    toolbar.addClassNames("external-providers__toolbar");
+    // ── Action: Verify connections (right-aligned in header) ──
     var verifyButton = new Button("Verify connections", VaadinIcon.REFRESH.create());
-    verifyButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+    verifyButton.addClassName("primary");
     verifyButton.addClickListener(e -> {
       // If sidebar is open, refresh; otherwise open it
       if (isSidebarOpen()) {
@@ -142,8 +142,7 @@ public class ExternalProvidersMain extends Main
         verificationSidebar.open();
       }
     });
-    toolbar.add(verifyButton);
-    section.addContent(toolbar);
+    section.addAction(verifyButton);
 
     // ── Instance list (AC-1, AC-2) ──
     // TODO: Consider incremental DOM updates instead of full re-render
