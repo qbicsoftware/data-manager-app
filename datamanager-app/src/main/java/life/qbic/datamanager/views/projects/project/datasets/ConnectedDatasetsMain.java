@@ -66,6 +66,7 @@ public class ConnectedDatasetsMain extends Main implements BeforeEnterObserver {
   private final ConnectedResourcesComponent connectedResourcesComponent;
   private final AuthenticationToUserIdTranslator authenticationToUserIdTranslator;
   private ConnectDatasetSidebar connectDatasetSidebar;
+  private SyncResultsSidebar syncResultsSidebar;
 
   private Context context = new Context();
   private final UiHandle uiHandle = new UiHandle();
@@ -97,6 +98,9 @@ public class ConnectedDatasetsMain extends Main implements BeforeEnterObserver {
     connectedResourcesComponent.addConnectDatasetsClickListener(e -> openConnectSidebar());
     connectedResourcesComponent.addRemoveDatasetClickListener(
         e -> onRemoveDataset(e.getDatasetId()));
+    connectedResourcesComponent.addSyncDatasetClickListener(
+        e -> onSyncDatasets(List.of(e.getDatasetId())));
+    connectedResourcesComponent.addSyncAllDatasetsClickListener(e -> onSyncAllDatasets());
     add(connectedResourcesComponent);
   }
 
@@ -267,5 +271,51 @@ public class ConnectedDatasetsMain extends Main implements BeforeEnterObserver {
       add(connectDatasetSidebar);
     }
     connectDatasetSidebar.open();
+  }
+
+  // ── Sync flow ────────────────────────────────────────────────────
+
+  /**
+   * Drives a sync trigger for the given dataset connections: opens the
+   * {@link SyncResultsSidebar}, starts the reactive sync, and refreshes
+   * the card list when the trigger completes.
+   */
+  private void onSyncDatasets(List<String> datasetIds) {
+    if (context.projectId().isEmpty() || datasetIds.isEmpty()) {
+      return;
+    }
+    var projectId = context.projectId().orElseThrow();
+    List<ConnectedDatasetView> views = associatedDatasetService.listConnectedDatasetViews(projectId)
+        .stream()
+        .filter(view -> datasetIds.contains(view.id()))
+        .toList();
+    if (views.isEmpty()) {
+      return;
+    }
+    var userId = resolveCurrentUserId();
+    ensureSyncSidebar().startSync(projectId, views, userId);
+  }
+
+  private void onSyncAllDatasets() {
+    if (context.projectId().isEmpty()) {
+      return;
+    }
+    var projectId = context.projectId().orElseThrow();
+    List<ConnectedDatasetView> views = associatedDatasetService.listConnectedDatasetViews(projectId);
+    if (views.isEmpty()) {
+      return;
+    }
+    var userId = resolveCurrentUserId();
+    ensureSyncSidebar().startSync(projectId, views, userId);
+  }
+
+  private SyncResultsSidebar ensureSyncSidebar() {
+    if (syncResultsSidebar == null) {
+      syncResultsSidebar = new SyncResultsSidebar(associatedDatasetService);
+      syncResultsSidebar.addDatasetsSyncedListener(
+          e -> connectedResourcesComponent.refresh());
+      add(syncResultsSidebar);
+    }
+    return syncResultsSidebar;
   }
 }

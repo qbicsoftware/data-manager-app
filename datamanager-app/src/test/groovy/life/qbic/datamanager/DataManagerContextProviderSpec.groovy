@@ -8,6 +8,7 @@ class DataManagerContextProviderSpec extends Specification {
     private static final String HOST = "data-manager.example.com"
     private static final String CONTEXT_PATH = ""
     private static final String PROJECT_ENDPOINT = "/projects/%s/info"
+    private static final String DATASETS_ENDPOINT = "/projects/%s/datasets"
     private static final String SAMPLES_ENDPOINT = "/projects/%s/experiments/%s/samples"
 
     def "builds base url without port when no port is specified"() {
@@ -37,7 +38,7 @@ class DataManagerContextProviderSpec extends Specification {
 
     def "preserves the context path for an absolute project endpoint"() {
         given:
-        def provider = new DataManagerContextProvider(PROTOCOL, HOST, -1, contextPath, PROJECT_ENDPOINT, SAMPLES_ENDPOINT)
+        def provider = new DataManagerContextProvider(PROTOCOL, HOST, -1, contextPath, PROJECT_ENDPOINT, DATASETS_ENDPOINT, SAMPLES_ENDPOINT)
 
         expect:
         provider.urlToProject("QABCD001") == expected
@@ -53,7 +54,7 @@ class DataManagerContextProviderSpec extends Specification {
 
     def "preserves the context path for a relative project endpoint"() {
         given:
-        def provider = new DataManagerContextProvider(PROTOCOL, HOST, -1, contextPath, "projects/%s/info", SAMPLES_ENDPOINT)
+        def provider = new DataManagerContextProvider(PROTOCOL, HOST, -1, contextPath, "projects/%s/info", DATASETS_ENDPOINT, SAMPLES_ENDPOINT)
 
         expect:
         provider.urlToProject("QABCD001") == expected
@@ -67,9 +68,41 @@ class DataManagerContextProviderSpec extends Specification {
         "dev/"      | "https://data-manager.example.com/dev/projects/QABCD001/info"
     }
 
+    def "builds base url without port for the datasets page when no port is specified"() {
+        given:
+        def provider = providerWithPort(-1)
+
+        expect:
+        provider.urlToDatasets("QABCD001") == "https://data-manager.example.com/projects/QABCD001/datasets"
+    }
+
+    def "builds base url with port for the datasets page when a port is specified"() {
+        given:
+        def provider = providerWithPort(8443)
+
+        expect:
+        provider.urlToDatasets("QABCD001") == "https://data-manager.example.com:8443/projects/QABCD001/datasets"
+    }
+
+    def "preserves the context path for the datasets page endpoint"() {
+        given:
+        def provider = new DataManagerContextProvider(PROTOCOL, HOST, -1, contextPath, PROJECT_ENDPOINT, DATASETS_ENDPOINT, SAMPLES_ENDPOINT)
+
+        expect:
+        provider.urlToDatasets("QABCD001") == expected
+
+        where:
+        contextPath | expected
+        ""          | "https://data-manager.example.com/projects/QABCD001/datasets"
+        "/"         | "https://data-manager.example.com/projects/QABCD001/datasets"
+        "dev"       | "https://data-manager.example.com/dev/projects/QABCD001/datasets"
+        "/dev"      | "https://data-manager.example.com/dev/projects/QABCD001/datasets"
+        "dev/"      | "https://data-manager.example.com/dev/projects/QABCD001/datasets"
+    }
+
     def "preserves the context path for the sample page endpoint"() {
         given:
-        def provider = new DataManagerContextProvider(PROTOCOL, HOST, -1, contextPath, PROJECT_ENDPOINT, SAMPLES_ENDPOINT)
+        def provider = new DataManagerContextProvider(PROTOCOL, HOST, -1, contextPath, PROJECT_ENDPOINT, DATASETS_ENDPOINT, SAMPLES_ENDPOINT)
 
         expect:
         provider.urlToSamplePage("QABCD001", "E12345") == expected
@@ -90,6 +123,7 @@ class DataManagerContextProviderSpec extends Specification {
                 port,
                 CONTEXT_PATH,
                 PROJECT_ENDPOINT,
+                DATASETS_ENDPOINT,
                 SAMPLES_ENDPOINT)
     }
 }

@@ -33,6 +33,36 @@ with apply / verify / rollback detail.
 *Document any new, removed, or renamed `application.properties` entries here.
 If there are none this release, delete this section.*
 
+### New routing property for the datasets view
+
+This release adds a new routing property used by the dataset notification
+emails (dataset connected / updated / removed):
+
+```properties
+# Route to the project's connected-datasets view (used by dataset notification emails)
+routing.projects.datasets.endpoint=/projects/%s/datasets
+```
+
+The emails previously linked to the project info page via
+`routing.projects.info.endpoint` (`/projects/%s/info`); they now link straight
+into the project's datasets view (`/projects/%s/datasets`, matching the
+`projects/:projectId?/datasets` Vaadin route).
+
+**This is a purely additive, non-breaking configuration change** — the
+`/projects/%s/info` property continues to be used for the project-access-grant
+email and is unchanged. The new property ships with the default value above
+and does not require an environment variable or secret.
+
+**Operator action:**
+
+1. Add the property above to your `application.properties` (or copy the
+   updated `application.properties.template`).
+2. Restart the application.
+3. Verify a dataset connect/sync/removal notification email links to
+   `…/projects/<project-id>/datasets` instead of `…/projects/<project-id>/info`.
+
+No schema migration is associated with this entry.
+
 ---
 
 ## Migration #<next>: <title>

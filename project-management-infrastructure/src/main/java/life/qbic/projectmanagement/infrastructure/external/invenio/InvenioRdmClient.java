@@ -469,14 +469,24 @@ public interface InvenioRdmClient {
   ) {}
 
   /**
-   * Parent block (v12). Community membership is at
-   * {@code parent.communities.entries}, where each entry carries the
-   * community {@code slug} and {@code metadata.title}.
+   * Parent block (v12). {@code id} is the concept (parent) recid —
+   * resolving it yields the latest published version of the record;
+   * community membership is at {@code parent.communities.entries}.
    */
   @JsonIgnoreProperties(ignoreUnknown = true)
   record Parent(
+      @JsonProperty("id") String id,
       @JsonProperty("communities") ParentCommunities communities
-  ) {}
+  ) {
+
+    /**
+     * Backward-compatible constructor without the concept recid (legacy
+     * tests / call sites); delegates with {@code id = null}.
+     */
+    Parent(ParentCommunities communities) {
+      this(null, communities);
+    }
+  }
 
   @JsonIgnoreProperties(ignoreUnknown = true)
   record ParentCommunities(
