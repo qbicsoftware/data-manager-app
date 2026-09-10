@@ -186,3 +186,116 @@
     padding: var(--lumo-space-m) var(--lumo-space-l) var(--lumo-space-s) var(--lumo-space-l);
   }
 }
+
+/* -- Profile section: card-based layout -- */
+
+.profile-info-card {
+  border: 1px solid var(--lumo-contrast-20pct);
+  border-radius: var(--lumo-border-radius-m);
+  padding: var(--lumo-space-l);
+  background-color: var(--lumo-base-color);
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-l);
+}
+
+.profile-info-card--linked-accounts {
+  gap: var(--lumo-space-m);
+}
+
+.profile-info-card__header {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-m);
+}
+
+.profile-info-card__avatar {
+  --vaadin-avatar-size: 3.5rem;
+}
+
+.profile-info-card__name {
+  font-size: var(--lumo-font-size-l);
+  font-weight: 600;
+  color: var(--lumo-header-text-color);
+}
+
+.profile-info-card__subheader {
+  font-size: var(--lumo-font-size-s);
+  font-weight: 600;
+  color: var(--lumo-secondary-text-color);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.profile-info-card__details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+}
+
+/* Inline-editable field (reusable component) */
+.inline-editable-field {
+  display: flex;
+  align-items: baseline;
+  gap: var(--lumo-space-m);
+}
+
+.inline-editable-field__label {
+  font-weight: 600;
+  color: var(--lumo-header-text-color);
+  min-width: 6rem;
+  flex-shrink: 0;
+}
+
+.inline-editable-field__value-area {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-xs);
+  flex-wrap: wrap;
+}
+
+.inline-editable-field__edit-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-xs);
+}
+
+.inline-editable-field__value {
+  color: var(--lumo-body-text-color);
+}
+
+.inline-editable-field__edit-btn {
+  padding: 0;
+  min-height: var(--lumo-size-s);
+}
+
+.inline-editable-field__edit-field {
+  min-width: 18rem;
+  max-width: 24rem;
+}
+
+/* Display mode: no width cap — the field sizes to its content (inline width in ch set
+   from Java). Min-width only guards against collapsing on very short values. */
+.inline-editable-field__edit-field[readonly] {
+  min-width: 6rem;
+  max-width: none;
+}
+
+/* Read-only (display) state: clean underline instead of Lumo's default dashed outline */
+.inline-editable-field__edit-field[readonly]::part(input-field) {
+  background-color: transparent;
+  box-shadow: inset 0 -1px 0 var(--lumo-contrast-30pct);
+}
+
+.inline-editable-field__edit-field[readonly]::part(input-field)::after {
+  border: none;
+}
+
+/* Editable (edit) state: look like a regular input field with a subtle highlight */
+.inline-editable-field__edit-field:not([readonly])::part(input-field) {
+  background-color: var(--lumo-base-color);
+}
+
+.inline-editable-field__edit-field--active {
+  --vaadin-input-field-border-color: var(--lumo-primary-color);
+}

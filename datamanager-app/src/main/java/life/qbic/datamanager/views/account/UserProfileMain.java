@@ -18,10 +18,11 @@ import java.util.ArrayList;
 import java.util.List;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
+import life.qbic.datamanager.views.settings.SettingsMainLayout;
+import life.qbic.datamanager.views.settings.SettingsSection;
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.identity.application.user.IdentityService;
 import life.qbic.identity.domain.model.UserId;
-import life.qbic.datamanager.views.settings.SettingsMainLayout;
 import life.qbic.projectmanagement.application.AuthenticationToUserIdTranslationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -51,6 +52,7 @@ public class UserProfileMain extends Main implements BeforeEnterObserver, AfterN
   private final transient List<ParameterProcessor> parameterProcessors = new ArrayList<>();
   private final transient MessageSourceNotificationFactory messageFactory;
   private UserProfileComponent profileComponent;
+  private SettingsSection section;
 
 
   public UserProfileMain(
@@ -79,11 +81,15 @@ public class UserProfileMain extends Main implements BeforeEnterObserver, AfterN
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     var userId = userIdTranslator.translateToUserId(authentication).orElseThrow();
     var userInfo = userInformationService.findById(userId).orElseThrow();
-    if (nonNull(profileComponent)) {
-      remove(profileComponent);
+    if (nonNull(section)) {
+      remove(section);
     }
     profileComponent = new UserProfileComponent(identityService, userInfo, event.getLocation());
-    add(profileComponent);
+
+    section = new SettingsSection("Profile",
+        "Manage your personal information and linked accounts.");
+    section.addContent(profileComponent);
+    add(section);
   }
 
   private void processRequestParams(QueryParameters parameters) {

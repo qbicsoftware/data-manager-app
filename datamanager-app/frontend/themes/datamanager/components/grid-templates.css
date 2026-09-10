@@ -77,12 +77,7 @@
     "ontologylookupcomponent"
 }
 
-.main.user-profile {
-  grid-template-columns: minmax(min-content, auto);
-  grid-template-rows: minmax(min-content, auto);
-  grid-template-areas:
-    "user-profile-component"
-}
+/* .main.user-profile grid removed — profile now uses SettingsSection layout */
 
 
 .grid-experimental-variable-input {

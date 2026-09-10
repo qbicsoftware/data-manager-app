@@ -620,72 +620,7 @@
   color: var(--lumo-secondary-text-color);
 }
 
-.user-profile-component {
-  display: flex;
-  flex-direction: column;
-  row-gap: var(--lumo-space-xl);
-}
-
-.user-profile-component .user-details-card {
-  display: flex;
-  flex-direction: row;
-  column-gap: 5rem;
-  background-color: var(--lumo-base-color);
-  border: black;
-  border-radius: var(--lumo-border-radius-m);
-  box-shadow: var(--lumo-box-shadow-s);
-  box-sizing: border-box;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.user-profile-component .change-name {
-  color: var(--lumo-primary-text-color);
-  cursor: pointer;
-  width: fit-content;
-}
-
-.user-profile-component .user-details-card .details {
-  display: flex;
-  flex-direction: column;
-}
-
-.user-profile-component .user-details-card .detail {
-  display: flex;
-  flex-direction: column;
-  row-gap: var(--lumo-space-m);
-}
-
-.user-profile-component .user-details-card .avatar-with-name {
-  display: flex;
-  flex-direction: column;
-  row-gap: var(--lumo-space-l);
-  column-gap: initial;
-}
-
-.user-profile-component .user-details-card .user-avatar {
-  height: 5rem;
-  width: 5rem;
-}
-
-.user-profile-component .user-details-card .linked-account {
-  display: inline-flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  border: 2px dotted black;
-  border-radius: var(--lumo-border-radius-m);
-  box-sizing: border-box;
-  padding: var(--lumo-space-m);
-  column-gap: var(--lumo-space-xl);
-}
-
-.user-profile-component .user-details-card .linked-account .logo-with-text {
-  display: inline-flex;
-  flex-direction: row;
-  align-items: center;
-  column-gap: var(--lumo-space-s);
-}
+/* Profile styles moved to settings.css */
 
 /*
  * Datasets view: Connected Resources section.

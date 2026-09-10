@@ -398,16 +398,7 @@ Since we want to remove the spacing between the cancel and confirm button we rep
   align-items: baseline;
 }
 
-.change-user-details-dialog::part(overlay) {
-  min-width: fit-content;
-  min-height: fit-content;
-  width: 50%;
-  height: 50%;
-}
-
-.change-user-details-dialog .change-user-name {
-  width: 100%;
-}
+/* ChangeUserDetailsDialog removed — inline editing in profile */
 
 .measurement-pooled-samples-dialog::part(overlay) {
   min-width: 50vw;
