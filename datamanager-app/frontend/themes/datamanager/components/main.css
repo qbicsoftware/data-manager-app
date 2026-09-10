@@ -205,9 +205,10 @@ vaadin-app-layout:not([drawer-opened])::part(drawer) {
   column-gap: var(--spacing-03);
 }
 
-.main.ontology-lookup-component {
-  grid-area: ontologylookupcomponent;
-}
+/* The legacy grid-area name never matched any area in the parent grid and was
+ * removed together with the broken parent grid-template. The component now
+ * stretches via flex from .main.ontology-lookup-main (grid-templates.css).
+ */
 
 .main.project .page-area {
   border: 1px solid;
