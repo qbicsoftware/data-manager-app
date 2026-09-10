@@ -120,9 +120,8 @@ public class ExternalProvidersMain extends Main
     content.removeAll();
 
     SettingsSection section = new SettingsSection("External Providers",
-        "Connect your personal access tokens to enable access to access-restricted datasets "
-            + "on external instances. Once connected, you can link restricted datasets from "
-            + "these instances to your Data Manager projects.");
+        "Connect external data providers with your account. Once connected, you can search "
+            + "and link restricted datasets from these instances to your Data Manager projects.");
 
     // ─ Security reassurance ─
     var securityNote = new ContextNote(
