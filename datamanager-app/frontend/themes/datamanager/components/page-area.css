@@ -325,12 +325,12 @@
 }
 
 .pat-card--expired {
-  border-left: 3px solid var(--lumo-error-color);
+  border-left: 8px solid var(--lumo-error-color);
   opacity: 0.85;
 }
 
 .pat-card--active {
-  border-left: 3px solid var(--lumo-success-color);
+  border-left: 8px solid var(--lumo-success-color);
 }
 
 .pat-card__header {
