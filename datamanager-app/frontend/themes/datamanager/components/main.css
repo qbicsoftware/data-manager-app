@@ -354,7 +354,9 @@ vaadin-app-layout:not([drawer-opened])::part(drawer) {
 
 .main.sample .sample-details-component {
   grid-area: sampledetails;
-  height: 100%;
+  /* Grid items stretch to fill their area by default; an explicit height: 100%
+     would re-introduce the percentage-resolution trap that broke the grid
+     on short viewports. min-height: 0 allows shrinking within the track. */
   min-height: 0;
 }
 

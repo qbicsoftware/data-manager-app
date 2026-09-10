@@ -567,16 +567,19 @@
 .sample-details-component {
   display: flex;
   flex-direction: column;
-  height: 100%;
   min-height: 0;
   margin-bottom: var(--lumo-space-m);
 }
 
-/* Fill the tab sheet and its grid so rows cannot escape the layout when the
-   viewport shrinks (grid items default to min-height:auto and refuse to
-   shrink, which breaks Vaadin Grid's internal virtualizer offsets). */
+/* Fill the tab sheet and its grid via flex so rows cannot escape the layout
+   when the viewport shrinks. The component itself is a grid item: no explicit
+   height (grid items stretch), just min-height: 0 to allow shrinking. */
 .sample-details-component vaadin-tab-sheet.filter-grid-tabsheet,
-.sample-details-component vaadin-tab-panel,
+.sample-details-component vaadin-tab-panel {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
 .sample-details-component .sample-grid {
   height: 100%;
   min-height: 0;
