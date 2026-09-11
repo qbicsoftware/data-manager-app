@@ -232,22 +232,41 @@ vaadin-app-layout:not([drawer-opened])::part(drawer) {
   grid-area: qualitycontrollist;
 }
 
+/* Slim hero row: the greeting and the description share one baseline and wrap
+   only on narrow screens, so the welcome text keeps the grid row above the
+   project collection as small as possible (the freed space goes to the grid). */
 .main.project-overview .title-and-description {
-  padding: var(--lumo-space-m);
-  flex-direction: column;
+  padding: var(--spacing-03) var(--lumo-space-m);
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: baseline;
   display: flex;
   gap: var(--spacing-03);
-  white-space: pre-line;
+  white-space: normal;
 }
 
 .main.project-overview .project-overview-title {
   font-weight: bold;
   color: var(--lumo-secondary-text-color);
-  font-size: var(--lumo-font-size-xxl);
-  margin-bottom: 0.5rem;
+  font-size: var(--lumo-font-size-xl);
+  margin-bottom: 0;
 }
 
-.main .project-overview .project-collection-component {
+/* Users without project access yet get a roomier welcome screen: the
+   onboarding copy is stacked below the greeting again and the title reverts
+   to the full page-title size, since there is no project list competing for
+   vertical space below. */
+.main.project-overview .title-and-description.detailed-welcome {
+  flex-direction: column;
+  align-items: flex-start;
+  padding: var(--lumo-space-m);
+}
+
+.main.project-overview .title-and-description.detailed-welcome .project-overview-title {
+  font-size: var(--lumo-font-size-xxl);
+}
+
+.main.project-overview .project-collection-component {
   grid-area: projectcollection;
 }
 

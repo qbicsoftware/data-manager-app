@@ -403,7 +403,12 @@
 }
 
 .project-collection-component {
-  height: 100%;
+  /* Grid items stretch to fill their track by default; an explicit height: 100%
+     hit the percentage-resolution trap (same as .sample-details-component) and
+     let the projects list paint over the footer on short viewports. min-height: 0
+     allows the component to shrink inside the track, while the 60vh floor of the
+     collection track (grid-templates.css) keeps the list tall enough. */
+  min-height: 0;
   /*Necessary since we currently don't distinguish
   borders if only one component was provided within a main area*/
   border-top: none;
@@ -422,7 +427,12 @@
 }
 
 .project-collection-component .project-grid {
-  height: 100%;
+  /* Fill the remaining height of the flex column and shrink (min-height: 0)
+     instead of growing beyond it, mirroring the sample/measurement grid
+     pattern: the Vaadin grid keeps its internal scrollbar within the 60vh
+     floor of the collection track instead of escaping over the footer. */
+  flex: 1 1 auto;
+  min-height: 0;
   margin-top: var(--lumo-space-s);
 }
 

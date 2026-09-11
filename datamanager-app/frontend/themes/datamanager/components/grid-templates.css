@@ -11,10 +11,18 @@
 
 .main.project-overview {
   grid-template-columns: 1fr;
-  grid-template-rows: minmax(min-content, 0.1fr) minmax(60vh, 0.9fr);
+  grid-template-rows: minmax(min-content, 0.1fr) minmax(100vh, 0.9fr);
   grid-template-areas:
     "."
     "projectcollection";
+}
+
+/* Recurring users see no welcome hero (.no-welcome): collapse the two-row
+   template into the single collection row so the projects list gets the full
+   height (100vh minimum) instead of leaving an empty title row. */
+.main.project-overview.no-welcome {
+  grid-template-rows: minmax(100vh, 1fr);
+  grid-template-areas: "projectcollection";
 }
 
 .main.raw-data {
