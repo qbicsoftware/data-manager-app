@@ -1,0 +1,338 @@
+/* -- Settings Hub (GitHub-style master-detail layout) -- */
+
+.settings-main-layout::part(navbar) {
+  padding-inline: var(--lumo-space-m);
+}
+
+.settings-main-layout .navbar-title {
+  font-size: var(--lumo-font-size-l);
+}
+
+/* Account overview bar at the top of the content area (below navbar + announcements),
+   spanning the full settings width and left-aligned so it visually sits above the menu.
+   Its left padding matches the aside/menu gutter so title and menu items align on an
+   invisible vertical line. */
+.settings-main-layout .settings-account-overview {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-m);
+}
+
+.settings-account-overview__avatar {
+  --vaadin-avatar-size: 3.5rem;
+}
+
+.settings-account-overview__names {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-xs);
+  min-width: 0;
+}
+
+/* Two-column main area: persistent settings navigation on the left, section page on the right.
+   The account overview header and the announcements span both columns. The content row keeps a
+   max-content minimum so tall sections grow the row instead of overlapping the footer.
+   display: grid must be set explicitly: the base #main-layout rule uses flex column (footer
+   redesign), so the grid template below would otherwise be ignored and aside + content would
+   stack vertically. */
+.settings-main-layout #main-layout {
+  display: grid;
+  grid-template-areas:
+    "announcements announcements"
+    "content-header content-header"
+    "aside-area content-area"
+    "data-manager-footer data-manager-footer";
+  grid-template-columns: minmax(240px, 280px) minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(max-content, 0.95fr) minmax(min-content, 0.05fr);
+}
+
+/* Announcement banner and application footer span both columns. Both elements auto-place into
+   the first free grid cells without an explicit assignment (the redesigned footer is a semantic
+   <footer> with class .app-footer; the old #data-manager-footer id no longer exists), which
+   would put the footer into the top row. */
+.settings-main-layout #announcements {
+  grid-area: announcements;
+}
+
+.settings-main-layout .app-footer {
+  grid-area: data-manager-footer;
+}
+
+.settings-main-layout #content-header {
+  grid-area: content-header;
+  box-sizing: border-box;
+  padding: var(--lumo-space-m) var(--lumo-space-m) var(--lumo-space-s) var(--lumo-space-xl);
+  background-color: var(--lumo-base-color);
+}
+
+/* The aside is a fixed, non-collapsible column (GitHub-style). No border: separation comes from
+   the shared gutters. Left gutter is (--lumo-space-l) here; combined with the tabs' own left
+   padding (--lumo-space-m, see below) menu items start at --lumo-space-xl, which is exactly the
+   left inset of the content header and content area — so title, section titles and menu items
+   align on one invisible vertical line. */
+.settings-main-layout #aside-area {
+  grid-area: aside-area;
+  box-sizing: border-box;
+  padding: var(--lumo-space-l);
+  align-self: start;
+  position: sticky;
+  top: 0;
+  min-height: 0;
+  background-color: var(--lumo-base-color);
+  z-index: 1;
+}
+
+.settings-main-layout #content-area {
+  grid-area: content-area;
+  box-sizing: border-box;
+  padding: var(--lumo-space-l) var(--lumo-space-xl);
+  min-width: 0;
+  min-height: 0;
+}
+
+/* -- Settings section blueprint (single settings page layout) -- */
+
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+  width: 100%;
+  max-width: 1000px;
+}
+
+.settings-section__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--lumo-space-m);
+}
+
+.settings-section__titles {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-xs);
+  min-width: 0;
+}
+
+.settings-section__title {
+  margin: 0;
+  font-size: var(--lumo-font-size-xl);
+  font-weight: 600;
+  color: var(--lumo-header-text-color);
+}
+
+.settings-section__description {
+  margin: 0;
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-s);
+}
+
+.settings-section__actions {
+  flex-shrink: 0;
+}
+
+.settings-section__content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+}
+
+/* The settings hub + section blueprint provide the page spacing; neutralize the base
+   page-area padding/gap so all settings sections share a uniform look. */
+.settings-main-layout .page-area {
+  padding: 0;
+  gap: 0;
+}
+
+/* -- Settings aside: navigation -- */
+
+.settings-navigation-component {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.settings-navigation-tabs {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.settings-navigation-tabs vaadin-tab {
+  width: 100%;
+  justify-content: flex-start;
+  --vaadin-tab-padding: var(--lumo-space-m) var(--lumo-space-m);
+  --vaadin-tab-border-radius: var(--lumo-border-radius-m);
+  box-sizing: border-box;
+}
+
+/* Gap between icon and text inside each tab's RouterLink */
+.settings-navigation-tabs vaadin-tab a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lumo-space-m);
+}
+
+.settings-navigation-tabs vaadin-tab:hover {
+  --vaadin-tab-background: var(--lumo-contrast-5pct);
+}
+
+.settings-navigation-tabs vaadin-tab[selected] {
+  --vaadin-tab-background: var(--lumo-primary-color-10pct);
+  --vaadin-tab-text-color: var(--lumo-primary-text-color);
+}
+
+.settings-navigation-tabs vaadin-tab[selected] vaadin-icon {
+  color: var(--lumo-primary-text-color);
+}
+
+/* Adjust spacing on narrow screens */
+@media (max-width: 1024px) {
+  .settings-main-layout #main-layout {
+    /* The base rule sets height: 100% (viewport). In the stacked layout this caps the grid at
+       the viewport height: overflowing rows paint over the footer instead of pushing it down
+       and growing the scrollable page. Grow freely (auto), but keep short pages stretched so
+       the footer still sits at the bottom (min-height: 100%). Desktop keeps height: 100%
+       because its 95fr/5fr rows need a definite size. */
+    height: auto;
+    min-height: 100%;
+    grid-template-areas:
+      "announcements announcements"
+      "content-header content-header"
+      "aside-area aside-area"
+      "content-area content-area"
+      "data-manager-footer data-manager-footer";
+    grid-template-columns: 1fr;
+    /* All rows size to their content. The desktop 95fr/5fr split must not apply here: with the
+       menu stacked above the content, a height-constrained 95fr row clips the settings content
+       instead of letting the page grow and pushing the footer below the fold. Note: 'none' is
+       invalid for grid-template-rows and leaves the desktop rows intact — use 'auto'. */
+    grid-template-rows: auto;
+  }
+
+  .settings-main-layout #aside-area {
+    position: static;
+    /* In the stacked layout the aside must size with its row. As a sticky, start-aligned item
+       it does not stretch the track, so on short screens it overflows the row and paints over
+       the footer below. */
+    align-self: stretch;
+    padding: var(--lumo-space-m) var(--lumo-space-l) var(--lumo-space-s) var(--lumo-space-l);
+  }
+}
+
+/* -- Settings groups: flat semantic grouping within a settings section -- */
+/* Groups are separated by a subheading and whitespace only — no card chrome. */
+
+.settings-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+}
+
+.settings-group__title {
+  margin: 0;
+  font-size: var(--lumo-font-size-s);
+  font-weight: 600;
+  color: var(--lumo-secondary-text-color);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Larger gap between consecutive groups than between rows within a group */
+.settings-group + .settings-group {
+  margin-top: var(--lumo-space-l);
+  padding-top: var(--lumo-space-l);
+  border-top: 1px solid var(--lumo-contrast-10pct);
+}
+
+/* Linked accounts empty state */
+.link-account-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--lumo-space-m);
+}
+
+.link-account-block__explanation {
+  margin: 0;
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-s);
+  max-width: 60ch;
+}
+
+/* Inline-editable field (reusable component) */
+.inline-editable-field {
+  display: flex;
+  align-items: baseline;
+  gap: var(--lumo-space-m);
+}
+
+.inline-editable-field__label {
+  font-weight: 600;
+  color: var(--lumo-header-text-color);
+  min-width: 6rem;
+  flex-shrink: 0;
+}
+
+.inline-editable-field__value-area {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-xs);
+  flex-wrap: wrap;
+}
+
+.inline-editable-field__edit-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-xs);
+}
+
+.inline-editable-field__value {
+  color: var(--lumo-body-text-color);
+}
+
+.inline-editable-field__edit-btn {
+  padding: 0;
+  min-height: var(--lumo-size-s);
+}
+
+/* Same min-width in display and edit mode, so entering edit mode never changes the field's
+   width — the only visual change is the primary focus ring. */
+.inline-editable-field__edit-field {
+  min-width: 12rem;
+  max-width: 24rem;
+  /* Disable Lumo's default dashed border for readonly fields. Lumo keys it off the [readonly]
+     attribute, which only reflects after the web component upgrades — causing the field to gain
+     a dashed border after the first edit cycle that it did not have on page load. */
+  --vaadin-input-field-readonly-border: none;
+}
+
+/* Display mode: no width cap — the field sizes to its content (inline width in ch set
+   from Java). */
+.inline-editable-field__edit-field[readonly] {
+  max-width: none;
+}
+
+/* Display and edit mode share the same standard Lumo input look (contrasting background), so
+   the field always reads as editable and switching modes never changes its appearance except
+   for the primary focus ring below. Keying this off the --active class instead of the [readonly]
+   attribute also avoids a first-render flash: the server sets readonly as a property, which only
+   reflects to the attribute after the web component upgrades. */
+.inline-editable-field__edit-field::part(input-field) {
+  background-color: var(--lumo-contrast-5pct);
+}
+
+/* Strong primary outline while editing so users immediately see where they are.
+   Uses the box-shadow ring technique (like Lumo's focus ring) since the input-field part
+   has no visible border by default in this theme. */
+.inline-editable-field__edit-field--active::part(input-field) {
+  box-shadow:
+    inset 0 0 0 2px var(--lumo-primary-color-50pct),
+    0 0 0 3px var(--lumo-primary-color-10pct);
+}
+
+/* Full-strength primary ring once the field actually has focus. Vaadin sets the `focused`
+   attribute on the text field host, which is more reliable than :focus-within across browsers. */
+.inline-editable-field__edit-field--active[focused]::part(input-field) {
+  box-shadow:
+    inset 0 0 0 2px var(--lumo-primary-color),
+    0 0 0 3px var(--lumo-primary-color-10pct);
+}

@@ -1543,17 +1543,13 @@ states, and modal-like overlays that sit inside a flex container.
 }
 /*endregion*/
 
+/* Context note — compact variant reduces gap to the next sibling
+   (e.g. between the security reassurance and the first card). */
+.context-note--compact {
+  margin-bottom: calc(var(--lumo-space-s) - var(--lumo-space-m));
+}
+
 /* ── External Providers card styling ────── */
-
-/* Give the page breathing room — the .main grid has no
-   inherent padding, so we add it here. */
-.external-providers {
-  padding: var(--lumo-space-l);
-}
-
-.external-providers .external-providers__content {
-  max-width: 800px;
-}
 
 .external-providers .instance-card {
   display: flex;
@@ -1563,10 +1559,6 @@ states, and modal-like overlays that sit inside a flex container.
   border: 1px solid var(--lumo-contrast-20pct);
   border-left-width: 8px;
   overflow: hidden;
-}
-
-.external-providers .instance-card + .instance-card {
-  margin-top: var(--lumo-space-m);
 }
 
 .external-providers .instance-card--connected {
@@ -1615,7 +1607,7 @@ states, and modal-like overlays that sit inside a flex container.
   display: flex;
   flex-direction: column;
   gap: var(--lumo-space-s);
-  padding: var(--lumo-space-m) var(--lumo-space-l) var(--lumo-space-l) var(--lumo-space-l);
+  padding: var(--lumo-space-s) var(--lumo-space-l) var(--lumo-space-l) var(--lumo-space-l);
 }
 
 .external-providers .instance-card__status-line {
@@ -1629,20 +1621,6 @@ states, and modal-like overlays that sit inside a flex container.
   font-size: var(--lumo-font-size-s);
   line-height: 1.5;
   margin: 0;
-}
-
-.external-providers .security-note {
-  color: var(--lumo-tertiary-text-color);
-  font-size: var(--lumo-font-size-xs);
-  font-style: italic;
-}
-
-/* Toolbar — right-aligned with heading */
-
-.external-providers .external-providers__toolbar {
-  display: flex;
-  justify-content: flex-end;
-  padding: var(--lumo-space-m) 0 var(--lumo-space-l) 0;
 }
 
 /* Button group for side-by-side Reconnect + Disconnect */

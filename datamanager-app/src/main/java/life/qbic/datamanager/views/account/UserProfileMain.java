@@ -7,6 +7,7 @@ import com.vaadin.flow.router.AfterNavigationEvent;
 import com.vaadin.flow.router.AfterNavigationObserver;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
+import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.QueryParameters;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
@@ -15,9 +16,10 @@ import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
-import life.qbic.datamanager.views.UserMainLayout;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
+import life.qbic.datamanager.views.settings.SettingsMainLayout;
+import life.qbic.datamanager.views.settings.SettingsSection;
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.identity.application.user.IdentityService;
 import life.qbic.identity.domain.model.UserId;
@@ -34,10 +36,11 @@ import org.springframework.security.core.context.SecurityContextHolder;
  * {@link life.qbic.identity.api.UserInfo} and change his Username via the provided UI elements
  */
 
-@Route(value = "profile", layout = UserMainLayout.class)
+@Route(value = "settings/profile", layout = SettingsMainLayout.class)
 @SpringComponent
 @UIScope
 @PermitAll
+@PageTitle("Settings · Profile")
 public class UserProfileMain extends Main implements BeforeEnterObserver, AfterNavigationObserver {
 
   @Serial
@@ -49,6 +52,7 @@ public class UserProfileMain extends Main implements BeforeEnterObserver, AfterN
   private final transient List<ParameterProcessor> parameterProcessors = new ArrayList<>();
   private final transient MessageSourceNotificationFactory messageFactory;
   private UserProfileComponent profileComponent;
+  private SettingsSection section;
 
 
   public UserProfileMain(
@@ -77,11 +81,30 @@ public class UserProfileMain extends Main implements BeforeEnterObserver, AfterN
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     var userId = userIdTranslator.translateToUserId(authentication).orElseThrow();
     var userInfo = userInformationService.findById(userId).orElseThrow();
-    if (nonNull(profileComponent)) {
-      remove(profileComponent);
+    if (nonNull(section)) {
+      remove(section);
     }
-    profileComponent = new UserProfileComponent(identityService, userInfo, event.getLocation());
-    add(profileComponent);
+    profileComponent = new UserProfileComponent(identityService, userInfo, event.getLocation(),
+        this::onUsernameChanged);
+
+    section = new SettingsSection("Profile",
+        "Manage your personal information and linked accounts.");
+    section.addContent(profileComponent);
+    add(section);
+  }
+
+  /**
+   * Refreshes the account overview header in the surrounding settings layout in place, so a
+   * username change is reflected everywhere without a full page reload.
+   */
+  private void onUsernameChanged(String newUserName) {
+    getUI().ifPresent(ui -> ui.getChildren()
+        .filter(SettingsMainLayout.class::isInstance)
+        .map(SettingsMainLayout.class::cast)
+        .findFirst()
+        .ifPresent(SettingsMainLayout::refreshAccountOverview));
+    messageFactory.toast("profile.username.change.success", new Object[]{newUserName},
+        getLocale()).open();
   }
 
   private void processRequestParams(QueryParameters parameters) {
