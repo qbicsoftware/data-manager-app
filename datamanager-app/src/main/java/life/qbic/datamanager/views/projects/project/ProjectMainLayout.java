@@ -17,7 +17,7 @@ import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.DataManagerLayout;
 import life.qbic.datamanager.views.general.DataManagerMenu;
-import life.qbic.datamanager.views.general.footer.FooterComponentFactory;
+import life.qbic.datamanager.views.general.footer.FooterComponent;
 import life.qbic.datamanager.views.navigation.ProjectSideNavigationComponent;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
@@ -59,11 +59,11 @@ public class ProjectMainLayout extends DataManagerLayout implements BeforeEnterO
       @Autowired AddExperimentToProjectService addExperimentToProjectService,
       @Autowired UserPermissions userPermissions,
       @Autowired SpeciesLookupService speciesLookupService,
-      @Autowired FooterComponentFactory footerComponentFactory,
+      @Autowired FooterComponent footerComponent,
       @Autowired TerminologyService terminologyService,
       @Autowired MessageSourceNotificationFactory messageSourceNotificationFactory,
       @Autowired AnnouncementService announcementService) {
-    super(requireNonNull(footerComponentFactory), announcementService);
+    super(requireNonNull(footerComponent), announcementService);
     requireNonNull(authenticationContext);
     requireNonNull(userInformationService);
     requireNonNull(projectInformationService);

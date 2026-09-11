@@ -13,6 +13,7 @@ import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
@@ -32,10 +33,8 @@ import life.qbic.datamanager.views.projects.create.ExperimentalInformationLayout
 import life.qbic.datamanager.views.projects.create.ProjectDesignLayout.ProjectDesign;
 import life.qbic.datamanager.views.projects.overview.components.ProjectCollectionComponent;
 import life.qbic.finances.api.FinanceService;
-import life.qbic.identity.api.UserInformationService;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.AddExperimentToProjectService;
-import life.qbic.projectmanagement.application.AuthenticationToUserIdTranslationService;
 import life.qbic.projectmanagement.application.ProjectCreationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.FundingInformation;
@@ -68,8 +67,6 @@ public class ProjectOverviewMain extends Main {
   private final transient FinanceService financeService;
   private final transient SpeciesLookupService ontologyTermInformationService;
   private final transient AddExperimentToProjectService addExperimentToProjectService;
-  private final transient UserInformationService userInformationService;
-  private final transient AuthenticationToUserIdTranslationService userIdTranslator;
   private final transient MessageSourceNotificationFactory messageSourceNotificationFactory;
 
   public ProjectOverviewMain(@Autowired ProjectCollectionComponent projectCollectionComponent,
@@ -78,8 +75,6 @@ public class ProjectOverviewMain extends Main {
       SpeciesLookupService ontologyTermInformationService,
       PersonLookupService personLookupService,
       AddExperimentToProjectService addExperimentToProjectService,
-      UserInformationService userInformationService,
-      AuthenticationToUserIdTranslationService userIdTranslator,
       TerminologyService terminologyService,
       MessageSourceNotificationFactory messageSourceNotificationFactory) {
     this.projectCollectionComponent = requireNonNull(projectCollectionComponent,
@@ -95,12 +90,9 @@ public class ProjectOverviewMain extends Main {
         "ontology term information service can not be null");
     this.addExperimentToProjectService = requireNonNull(addExperimentToProjectService,
         "add experiment to project service cannot be null");
-    this.userInformationService = requireNonNull(userInformationService,
-        "user information service can not be null");
-    this.userIdTranslator = requireNonNull(userIdTranslator, "userIdTranslator must not be null");
     requireNonNull(terminologyService, "terminologyService must not be null");
 
-    addTitleAndDescription();
+    addWelcomeText();
     add(projectCollectionComponent);
     this.projectCollectionComponent.addCreateClickedListener(projectCreationClickedEvent -> {
       AddProjectDialog addProjectDialog = new AddProjectDialog(this.projectInformationService,
@@ -138,14 +130,19 @@ public class ProjectOverviewMain extends Main {
     };
   }
 
-  private void addTitleAndDescription() {
+  private void addWelcomeText() {
+    // Recurring users do not need a welcome text: it only consumes the vertical
+    // space the projects list needs. The grid collapses to the single
+    // collection row via the .no-welcome class. Only users without project
+    // access yet see the onboarding welcome screen.
+    if (hasAccessibleProjects()) {
+      addClassName("no-welcome");
+      return;
+    }
     Div titleAndDescription = new Div();
     titleAndDescription.addClassName("title-and-description");
-    var authentication = SecurityContextHolder.getContext().getAuthentication();
-    var userId = userIdTranslator.translateToUserId(authentication).orElseThrow();
-    var user = userInformationService.findById(userId).orElseThrow();
-    Span title = new Span(
-        String.format("Welcome Back %s!", user.platformUserName()));
+    titleAndDescription.addClassName("detailed-welcome");
+    Span title = new Span("Welcome to the Data Manager!");
     title.addClassNames("project-overview-title");
     Span descriptionStart = new Span(
         "Manage all your scientific data in one place with the Data Manager. You can access our ");
@@ -153,12 +150,23 @@ public class ProjectOverviewMain extends Main {
         "https://qbicsoftware.github.io/research-data-management/",
         "documentation", AnchorTarget.BLANK);
     Span descriptionEnd = new Span(
-        " and learn more about using the Data Manager.\n"
-            + "Start by creating a new project or continue working on an already existing project.");
+        " and learn more about using the Data Manager.");
     Div description = new Div(descriptionStart, descriptionLinkToDoc, descriptionEnd);
     description.addClassName("description");
     titleAndDescription.add(title, description);
     add(titleAndDescription);
+  }
+
+  /**
+   * Checks whether the current user can access at least one project.
+   *
+   * <p>Reuses the same access-rights lookup as the project collection grid: the
+   * query is limited to a single result, so it stays cheap.</p>
+   *
+   * @return true if the current user has access to at least one project
+   */
+  private boolean hasAccessibleProjects() {
+    return !projectInformationService.queryOverview("", 0, 1, List.of()).isEmpty();
   }
 
   private boolean isOfferSearchAllowed() {

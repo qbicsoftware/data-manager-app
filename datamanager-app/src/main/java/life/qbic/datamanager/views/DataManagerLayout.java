@@ -11,7 +11,7 @@ import com.vaadin.flow.server.auth.AnonymousAllowed;
 import java.util.Objects;
 import life.qbic.datamanager.announcements.AnnouncementComponent;
 import life.qbic.datamanager.announcements.AnnouncementService;
-import life.qbic.datamanager.views.general.footer.FooterComponentFactory;
+import life.qbic.datamanager.views.general.footer.FooterComponent;
 
 /**
  * <b>Data Manager Layout</b>
@@ -27,16 +27,16 @@ public class DataManagerLayout extends AppLayout implements RouterLayout {
 
   private static final String DRAWER_STATE_KEY = "drawerOpened";
 
-  protected DataManagerLayout(FooterComponentFactory footerComponentFactory,
+  protected DataManagerLayout(FooterComponent footerComponent,
       AnnouncementService announcementService) {
-    Objects.requireNonNull(footerComponentFactory);
+    Objects.requireNonNull(footerComponent);
     setId("data-manager-layout");
     // Create content area
     contentArea = new Div();
     contentArea.setId("content-area");
     AnnouncementComponent announcementComponent = new AnnouncementComponent(announcementService);
     // Add content area and footer to the main layout
-    Div mainLayout = new Div(announcementComponent, contentArea, footerComponentFactory.get());
+    Div mainLayout = new Div(announcementComponent, contentArea, footerComponent);
     mainLayout.setId("main-layout");
     persistDrawerStateBetweenLayouts();
     setContent(mainLayout);

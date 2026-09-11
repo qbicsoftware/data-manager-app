@@ -53,6 +53,9 @@ public class ProjectCollectionComponent extends PageArea {
 
   @Serial
   private static final long serialVersionUID = 8579375312838977742L;
+  private static final String EMPTY_PROJECT_COLLECTION_MESSAGE =
+      "You don't have any projects yet. Start by creating your first project.";
+  private static final String EMPTY_SEARCH_RESULT_MESSAGE = "No projects found.";
   final TextField projectSearchField = new TextField();
   final Grid<ProjectOverview> projectGrid = new Grid<>(ProjectOverview.class, false);
   final Button createProjectButton = new Button("Create");
@@ -114,8 +117,13 @@ public class ProjectCollectionComponent extends PageArea {
     projectSearchField.setValueChangeMode(ValueChangeMode.LAZY);
     projectSearchField.addValueChangeListener(event -> {
       projectOverviewFilter = event.getValue().trim();
+      boolean isSearching = !event.getValue().isBlank();
       projectOverviewGridLazyDataView.refreshAll();
-      showSearchResult(!event.getValue().isBlank());
+      // The onboarding text is only correct for an empty collection; a search
+      // without matches must not claim that no projects exist at all.
+      projectGrid.setEmptyStateText(isSearching ? EMPTY_SEARCH_RESULT_MESSAGE
+          : EMPTY_PROJECT_COLLECTION_MESSAGE);
+      showSearchResult(isSearching);
     });
   }
 
@@ -128,6 +136,9 @@ public class ProjectCollectionComponent extends PageArea {
     projectGrid.addComponentColumn(ProjectOverviewItem::new);
     projectGrid.addThemeVariants(GridVariant.LUMO_NO_BORDER, GridVariant.LUMO_NO_ROW_BORDERS);
     projectGrid.addClassName("project-grid");
+    // Completes the welcome screen for users without projects; swapped for a
+    // search-specific message while a filter is active (see configureSearch).
+    projectGrid.setEmptyStateText(EMPTY_PROJECT_COLLECTION_MESSAGE);
     add(projectGrid);
   }
 
