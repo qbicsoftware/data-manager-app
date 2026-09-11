@@ -187,6 +187,13 @@
 /* Adjust spacing on narrow screens */
 @media (max-width: 1024px) {
   .settings-main-layout #main-layout {
+    /* The base rule sets height: 100% (viewport). In the stacked layout this caps the grid at
+       the viewport height: overflowing rows paint over the footer instead of pushing it down
+       and growing the scrollable page. Grow freely (auto), but keep short pages stretched so
+       the footer still sits at the bottom (min-height: 100%). Desktop keeps height: 100%
+       because its 95fr/5fr rows need a definite size. */
+    height: auto;
+    min-height: 100%;
     grid-template-areas:
       "announcements announcements"
       "content-header content-header"
@@ -194,11 +201,19 @@
       "content-area content-area"
       "data-manager-footer data-manager-footer";
     grid-template-columns: 1fr;
-    grid-template-rows: auto auto auto minmax(max-content, 0.95fr) minmax(min-content, 0.05fr);
+    /* All rows size to their content. The desktop 95fr/5fr split must not apply here: with the
+       menu stacked above the content, a height-constrained 95fr row clips the settings content
+       instead of letting the page grow and pushing the footer below the fold. Note: 'none' is
+       invalid for grid-template-rows and leaves the desktop rows intact — use 'auto'. */
+    grid-template-rows: auto;
   }
 
   .settings-main-layout #aside-area {
     position: static;
+    /* In the stacked layout the aside must size with its row. As a sticky, start-aligned item
+       it does not stretch the track, so on short screens it overflows the row and paints over
+       the footer below. */
+    align-self: stretch;
     padding: var(--lumo-space-m) var(--lumo-space-l) var(--lumo-space-s) var(--lumo-space-l);
   }
 }
