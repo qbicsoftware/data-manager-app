@@ -31,8 +31,12 @@
 
 /* Two-column main area: persistent settings navigation on the left, section page on the right.
    The account overview header and the announcements span both columns. The content row keeps a
-   max-content minimum so tall sections grow the row instead of overlapping the footer. */
+   max-content minimum so tall sections grow the row instead of overlapping the footer.
+   display: grid must be set explicitly: the base #main-layout rule uses flex column (footer
+   redesign), so the grid template below would otherwise be ignored and aside + content would
+   stack vertically. */
 .settings-main-layout #main-layout {
+  display: grid;
   grid-template-areas:
     "announcements announcements"
     "content-header content-header"
