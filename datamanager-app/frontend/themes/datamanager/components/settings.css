@@ -187,39 +187,17 @@
   }
 }
 
-/* -- Profile section: card-based layout -- */
+/* -- Settings groups: flat semantic grouping within a settings section -- */
+/* Groups are separated by a subheading and whitespace only — no card chrome. */
 
-.profile-info-card {
-  border: 1px solid var(--lumo-contrast-20pct);
-  border-radius: var(--lumo-border-radius-m);
-  padding: var(--lumo-space-l);
-  background-color: var(--lumo-base-color);
+.settings-group {
   display: flex;
   flex-direction: column;
-  gap: var(--lumo-space-l);
-}
-
-.profile-info-card--linked-accounts {
   gap: var(--lumo-space-m);
 }
 
-.profile-info-card__header {
-  display: flex;
-  align-items: center;
-  gap: var(--lumo-space-m);
-}
-
-.profile-info-card__avatar {
-  --vaadin-avatar-size: 3.5rem;
-}
-
-.profile-info-card__name {
-  font-size: var(--lumo-font-size-l);
-  font-weight: 600;
-  color: var(--lumo-header-text-color);
-}
-
-.profile-info-card__subheader {
+.settings-group__title {
+  margin: 0;
   font-size: var(--lumo-font-size-s);
   font-weight: 600;
   color: var(--lumo-secondary-text-color);
@@ -227,10 +205,26 @@
   letter-spacing: 0.05em;
 }
 
-.profile-info-card__details {
+/* Larger gap between consecutive groups than between rows within a group */
+.settings-group + .settings-group {
+  margin-top: var(--lumo-space-l);
+  padding-top: var(--lumo-space-l);
+  border-top: 1px solid var(--lumo-contrast-10pct);
+}
+
+/* Linked accounts empty state */
+.link-account-block {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: var(--lumo-space-m);
+}
+
+.link-account-block__explanation {
+  margin: 0;
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-s);
+  max-width: 60ch;
 }
 
 /* Inline-editable field (reusable component) */
@@ -269,33 +263,45 @@
   min-height: var(--lumo-size-s);
 }
 
+/* Same min-width in display and edit mode, so entering edit mode never changes the field's
+   width — the only visual change is the primary focus ring. */
 .inline-editable-field__edit-field {
-  min-width: 18rem;
+  min-width: 12rem;
   max-width: 24rem;
+  /* Disable Lumo's default dashed border for readonly fields. Lumo keys it off the [readonly]
+     attribute, which only reflects after the web component upgrades — causing the field to gain
+     a dashed border after the first edit cycle that it did not have on page load. */
+  --vaadin-input-field-readonly-border: none;
 }
 
 /* Display mode: no width cap — the field sizes to its content (inline width in ch set
-   from Java). Min-width only guards against collapsing on very short values. */
+   from Java). */
 .inline-editable-field__edit-field[readonly] {
-  min-width: 6rem;
   max-width: none;
 }
 
-/* Read-only (display) state: clean underline instead of Lumo's default dashed outline */
-.inline-editable-field__edit-field[readonly]::part(input-field) {
-  background-color: transparent;
-  box-shadow: inset 0 -1px 0 var(--lumo-contrast-30pct);
+/* Display and edit mode share the same standard Lumo input look (contrasting background), so
+   the field always reads as editable and switching modes never changes its appearance except
+   for the primary focus ring below. Keying this off the --active class instead of the [readonly]
+   attribute also avoids a first-render flash: the server sets readonly as a property, which only
+   reflects to the attribute after the web component upgrades. */
+.inline-editable-field__edit-field::part(input-field) {
+  background-color: var(--lumo-contrast-5pct);
 }
 
-.inline-editable-field__edit-field[readonly]::part(input-field)::after {
-  border: none;
+/* Strong primary outline while editing so users immediately see where they are.
+   Uses the box-shadow ring technique (like Lumo's focus ring) since the input-field part
+   has no visible border by default in this theme. */
+.inline-editable-field__edit-field--active::part(input-field) {
+  box-shadow:
+    inset 0 0 0 2px var(--lumo-primary-color-50pct),
+    0 0 0 3px var(--lumo-primary-color-10pct);
 }
 
-/* Editable (edit) state: look like a regular input field with a subtle highlight */
-.inline-editable-field__edit-field:not([readonly])::part(input-field) {
-  background-color: var(--lumo-base-color);
-}
-
-.inline-editable-field__edit-field--active {
-  --vaadin-input-field-border-color: var(--lumo-primary-color);
+/* Full-strength primary ring once the field actually has focus. Vaadin sets the `focused`
+   attribute on the text field host, which is more reliable than :focus-within across browsers. */
+.inline-editable-field__edit-field--active[focused]::part(input-field) {
+  box-shadow:
+    inset 0 0 0 2px var(--lumo-primary-color),
+    0 0 0 3px var(--lumo-primary-color-10pct);
 }

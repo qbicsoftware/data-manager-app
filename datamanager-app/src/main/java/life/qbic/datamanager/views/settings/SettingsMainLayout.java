@@ -56,6 +56,15 @@ public class SettingsMainLayout extends DataManagerLayout implements BeforeEnter
     setContentHeader(new AccountOverviewHeader(loadCurrentUser()));
   }
 
+  /**
+   * Reloads the current user's information and re-renders the account overview header in place.
+   * Call this after account data shown in the header (e.g. the username) has changed, so the
+   * header stays consistent without a page reload.
+   */
+  public void refreshAccountOverview() {
+    setContentHeader(new AccountOverviewHeader(loadCurrentUser()));
+  }
+
   private UserInfo loadCurrentUser() {
     var authentication = SecurityContextHolder.getContext().getAuthentication();
     var userId = userIdTranslator.translateToUserId(authentication).orElseThrow();

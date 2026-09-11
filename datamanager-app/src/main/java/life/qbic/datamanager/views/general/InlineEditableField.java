@@ -20,8 +20,9 @@ import java.io.Serial;
  * A reusable label–value row that supports three states:
  * <ul>
  *   <li><b>Display mode</b> — shows the current value with an optional edit button.</li>
- *   <li><b>Edit mode</b> — shows a text field with Save/Cancel buttons.
- *       Enter triggers save, Escape triggers cancel.</li>
+ *   <li><b>Edit mode</b> — entered by clicking into the field or via the edit button; both
+ *       behave identically. Shows Save/Cancel buttons; Enter triggers save, Escape triggers
+ *       cancel. Edit mode is only left explicitly, never on blur.</li>
  *   <li><b>Read-only mode</b> — shows the value without any edit affordance.
  *       Used when the user lacks permission to modify the field.</li>
  * </ul>
@@ -60,11 +61,13 @@ public class InlineEditableField extends Div {
     this.editField = new TextField();
     this.editField.setValue(this.currentValue);
     this.editField.setReadOnly(true);
-    // Select all text as soon as the field gains focus (native Vaadin behavior)
-    this.editField.setAutoselect(true);
     this.editField.addClassName("inline-editable-field__edit-field");
+    // Clicking into the field enters edit mode, exactly like the edit button — both entry
+    // points must behave identically. There is deliberately NO blur listener: a blur-triggered
+    // revert races with the Save/Cancel buttons (the blur fires before the click, hiding the
+    // controls and swallowing the click) and causes jarring width/style changes when the user
+    // tabs away. Edit mode is left explicitly via Save (Enter/check) or Cancel (Escape/close).
     this.editField.addFocusListener(e -> startEdit());
-    this.editField.addBlurListener(e -> revertToDisplay());
     this.editField.addKeyDownListener(Key.ENTER, e -> triggerSave());
     this.editField.addKeyDownListener(Key.ESCAPE, e -> triggerCancel());
 
@@ -195,13 +198,12 @@ public class InlineEditableField extends Div {
     editing = true;
     clearError();
     editField.setReadOnly(false);
-    // Switch to the comfortable typing box (CSS min/max width)
-    editField.setWidth(null);
+    // Keep the content-sized width: resetting it here would make the field jump to a different
+    // width on entering edit mode. The CSS min-width keeps short values comfortably editable.
     editField.getElement().removeAttribute("title");
     editField.addClassName("inline-editable-field__edit-field--active");
     editButton.setVisible(false);
     editControls.setVisible(true);
-    // Re-trigger focus now that the field is editable so autoselect kicks in
     editField.focus();
   }
 

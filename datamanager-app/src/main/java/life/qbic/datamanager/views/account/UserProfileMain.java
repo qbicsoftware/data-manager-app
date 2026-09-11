@@ -84,12 +84,27 @@ public class UserProfileMain extends Main implements BeforeEnterObserver, AfterN
     if (nonNull(section)) {
       remove(section);
     }
-    profileComponent = new UserProfileComponent(identityService, userInfo, event.getLocation());
+    profileComponent = new UserProfileComponent(identityService, userInfo, event.getLocation(),
+        this::onUsernameChanged);
 
     section = new SettingsSection("Profile",
         "Manage your personal information and linked accounts.");
     section.addContent(profileComponent);
     add(section);
+  }
+
+  /**
+   * Refreshes the account overview header in the surrounding settings layout in place, so a
+   * username change is reflected everywhere without a full page reload.
+   */
+  private void onUsernameChanged(String newUserName) {
+    getUI().ifPresent(ui -> ui.getChildren()
+        .filter(SettingsMainLayout.class::isInstance)
+        .map(SettingsMainLayout.class::cast)
+        .findFirst()
+        .ifPresent(SettingsMainLayout::refreshAccountOverview));
+    messageFactory.toast("profile.username.change.success", new Object[]{newUserName},
+        getLocale()).open();
   }
 
   private void processRequestParams(QueryParameters parameters) {
