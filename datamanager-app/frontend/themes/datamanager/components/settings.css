@@ -46,6 +46,18 @@
   grid-template-rows: auto auto minmax(max-content, 0.95fr) minmax(min-content, 0.05fr);
 }
 
+/* Announcement banner and application footer span both columns. Both elements auto-place into
+   the first free grid cells without an explicit assignment (the redesigned footer is a semantic
+   <footer> with class .app-footer; the old #data-manager-footer id no longer exists), which
+   would put the footer into the top row. */
+.settings-main-layout #announcements {
+  grid-area: announcements;
+}
+
+.settings-main-layout .app-footer {
+  grid-area: data-manager-footer;
+}
+
 .settings-main-layout #content-header {
   grid-area: content-header;
   box-sizing: border-box;
