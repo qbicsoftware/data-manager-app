@@ -11,7 +11,7 @@ import java.util.Objects;
 import life.qbic.datamanager.announcements.AnnouncementService;
 import life.qbic.datamanager.views.DataManagerLayout;
 import life.qbic.datamanager.views.general.DataManagerMenu;
-import life.qbic.datamanager.views.general.footer.FooterComponentFactory;
+import life.qbic.datamanager.views.general.footer.FooterComponent;
 import life.qbic.identity.api.UserInfo;
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.projectmanagement.application.AuthenticationToUserIdTranslationService;
@@ -39,9 +39,9 @@ public class SettingsMainLayout extends DataManagerLayout implements BeforeEnter
   public SettingsMainLayout(@Autowired AuthenticationContext authenticationContext,
       @Autowired UserInformationService userInformationService,
       @Autowired AuthenticationToUserIdTranslationService userIdTranslator,
-      @Autowired FooterComponentFactory footerComponentFactory,
+      @Autowired FooterComponent footerComponent,
       @Autowired AnnouncementService announcementService) {
-    super(requireNonNull(footerComponentFactory), announcementService);
+    super(requireNonNull(footerComponent), announcementService);
     this.userInformationService = requireNonNull(userInformationService,
         "userInformationService must not be null");
     this.userIdTranslator = requireNonNull(userIdTranslator,
