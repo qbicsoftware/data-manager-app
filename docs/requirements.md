@@ -437,6 +437,7 @@ _No requirements defined yet._
 ### Features
 
 - `FEAT-PAGINATED-LISTS` — Explicit, paginated display of large entity collections (projects, samples, measurements, raw datasets) with cross-page selection for bulk actions and URL-restorable list state.
+- `FEAT-PINNED-PROJECTS` — User-curated pinned projects that give quick access to the projects a user is actively working on, without searching.
 
 ### Functional Requirements
 
@@ -469,6 +470,16 @@ Native web behaviour allows users to bookmark, share, and navigate back to a pre
 
 **Source:**
 Stakeholder request (UX review of list behaviour).
+
+#### USER-R-04: Pinned-Project Quick Access
+
+The system shall let an authenticated user mark a small, self-selected subset of the projects they have access to as their pinned projects, and shall present that subset to the user as their entry point to project work. Pinned projects are private to and controlled by that user alone, and pinning a project shall never grant or reveal access to project data the user is not entitled to see.
+
+**Rationale:**
+Users who maintain many projects pay a search cost every time they return to the platform, even though they repeatedly work on only a handful of them. A user-curated short list removes that recurring cost. Curation is required because "the projects I am active in" is a judgement the user makes — it reflects current personal relevance that no system-derived signal, such as recent modification or membership, can express: a project that has been untouched for months may still be central to a user's work. This supports the project-manager need for quick overviews of important projects and the researcher need to avoid manual tasks that slow down scientific work.
+
+**Source:**
+PRD §2 Users & primary use cases — Persona 1 (Anna Becker, Project Manager: quick overviews of important project updates) and Persona 2 (Dr. Jonas Weber, Researcher: frustrated when excessive manual tasks slow down actual scientific progress); stakeholder request.
 
 ### Non-Functional Requirements
 
