@@ -465,12 +465,6 @@
 }
 
 .project-collection-component {
-  /* Grid items stretch to fill their track by default; an explicit height: 100%
-     hit the percentage-resolution trap (same as .sample-details-component) and
-     let the projects list paint over the footer on short viewports. min-height: 0
-     allows the component to shrink inside the track, while the 60vh floor of the
-     collection track (grid-templates.css) keeps the list tall enough. */
-  min-height: 0;
   /*Necessary since we currently don't distinguish
   borders if only one component was provided within a main area*/
   border-top: none;
@@ -478,28 +472,42 @@
 
 .project-collection-component .header {
   display: flex;
-  column-gap: var(--lumo-space-xl);
   flex-direction: column;
+  gap: var(--lumo-space-m);
+}
+
+.project-collection-component .title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
 }
 
 .project-collection-component .controls {
   display: flex;
-  align-content: space-between;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 1rem;
 }
 
-.project-collection-component .project-grid {
-  /* Fill the remaining height of the flex column and shrink (min-height: 0)
-     instead of growing beyond it, mirroring the sample/measurement grid
-     pattern: the Vaadin grid keeps its internal scrollbar within the 60vh
-     floor of the collection track instead of escaping over the footer. */
-  flex: 1 1 auto;
-  min-height: 0;
-  margin-top: var(--lumo-space-s);
+.project-collection-component .search-field {
+  min-width: 20rem;
 }
 
-.project-collection-component .project-grid vaadin-grid-cell-content {
-  padding: var(--lumo-space-xs);
+.project-collection-component .project-card-grid {
+  /* One card per row (preserved from the pre-pagination list look): cards span
+     the full collection width, stack vertically with a consistent gap and
+     adapt their width to the viewport without an embedded scroll container
+     (USER-NFR-01). */
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--lumo-space-m);
+  margin-top: var(--lumo-space-m);
+}
+
+.project-collection-component .empty-state {
+  color: var(--lumo-secondary-text-color);
+  padding: var(--lumo-space-l) 0;
 }
 
 .project-collection-component .project-overview-item,
@@ -520,14 +528,13 @@
  * spacing between cards). The card body RouterLink inside it provides only
  * padding and the content flow; the footer RouterLink (when present) shares
  * the same rounded shape with a subtle top-border divider.
- */
+ * Within the responsive .project-card-grid the inter-card spacing comes from
+ * the grid gap, so the wrapper margins are zeroed there. */
 .project-card-wrapper {
   border: black;
   border-radius: var(--lumo-border-radius-m);
   box-shadow: var(--lumo-box-shadow-s);
   overflow: hidden;
-  margin-bottom: var(--lumo-space-s);
-  margin-top: var(--lumo-space-s);
   display: flex;
   flex-direction: column;
 }

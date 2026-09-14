@@ -7,13 +7,16 @@ import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.page.History.HistoryStateChangeEvent;
+import com.vaadin.flow.component.UI;
+import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
@@ -24,6 +27,8 @@ import life.qbic.datamanager.views.UserMainLayout;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.general.contact.Contact;
 import life.qbic.datamanager.views.general.funding.FundingEntry;
+import life.qbic.datamanager.views.general.pagination.ListState;
+import life.qbic.datamanager.views.general.pagination.ListStateCodec;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.projects.create.AddProjectDialog;
@@ -32,6 +37,7 @@ import life.qbic.datamanager.views.projects.create.AddProjectDialog.ProjectCreat
 import life.qbic.datamanager.views.projects.create.ExperimentalInformationLayout.ExperimentalInformation;
 import life.qbic.datamanager.views.projects.create.ProjectDesignLayout.ProjectDesign;
 import life.qbic.datamanager.views.projects.overview.components.ProjectCollectionComponent;
+import life.qbic.datamanager.views.projects.overview.components.ProjectOverviewSortOption;
 import life.qbic.finances.api.FinanceService;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.AddExperimentToProjectService;
@@ -56,7 +62,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 @PageTitle("Project Overview")
 @Route(value = ProjectRoutes.PROJECTS, layout = UserMainLayout.class)
 @PermitAll
-public class ProjectOverviewMain extends Main {
+public class ProjectOverviewMain extends Main implements BeforeEnterObserver {
 
   @Serial
   private static final long serialVersionUID = 4625607082710157069L;
@@ -132,11 +138,9 @@ public class ProjectOverviewMain extends Main {
 
   private void addWelcomeText() {
     // Recurring users do not need a welcome text: it only consumes the vertical
-    // space the projects list needs. The grid collapses to the single
-    // collection row via the .no-welcome class. Only users without project
-    // access yet see the onboarding welcome screen.
+    // space the projects list needs. Only users without project access yet see
+    // the onboarding welcome screen.
     if (hasAccessibleProjects()) {
-      addClassName("no-welcome");
       return;
     }
     Div titleAndDescription = new Div();
@@ -160,13 +164,42 @@ public class ProjectOverviewMain extends Main {
   /**
    * Checks whether the current user can access at least one project.
    *
-   * <p>Reuses the same access-rights lookup as the project collection grid: the
-   * query is limited to a single result, so it stays cheap.</p>
+   * <p>Reuses the same access-rights lookup as the project overview queries: the
+   * count is restricted to the user's accessible projects, so it stays cheap.</p>
    *
    * @return true if the current user has access to at least one project
    */
   private boolean hasAccessibleProjects() {
-    return !projectInformationService.queryOverview("", 0, 1, List.of()).isEmpty();
+    return projectInformationService.countOverview("") > 0;
+  }
+
+  /**
+   * Seeds the paginated project collection from the URL on page load/reload and registers the
+   * browser-history handler so that back/forward navigation restores previous list states
+   * (USER-R-03).
+   */
+  @Override
+  public void beforeEnter(BeforeEnterEvent event) {
+    UI.getCurrent().getPage().getHistory()
+        .setHistoryStateChangeHandler(this::onHistoryStateChange);
+    ListState state = ListStateCodec.parse(event.getLocation().getQueryParameters(),
+        ProjectOverviewSortOption.defaultSort(), ProjectOverviewSortOption.allowedSortOrders());
+    projectCollectionComponent.applyExternalState(state);
+  }
+
+  /**
+   * Re-applies the list state when the browser history changes (back/forward or router-link
+   * navigation). State changes triggered by the view itself are ignored because they are applied
+   * directly by the component and never fire a history change event server-side.
+   */
+  private void onHistoryStateChange(HistoryStateChangeEvent event) {
+    if (!ProjectRoutes.PROJECTS.equals(event.getLocation().getPath())) {
+      // navigation to a different view (e.g. a project card router link) — not our list
+      return;
+    }
+    ListState state = ListStateCodec.parse(event.getLocation().getQueryParameters(),
+        ProjectOverviewSortOption.defaultSort(), ProjectOverviewSortOption.allowedSortOrders());
+    projectCollectionComponent.applyExternalState(state);
   }
 
   private boolean isOfferSearchAllowed() {

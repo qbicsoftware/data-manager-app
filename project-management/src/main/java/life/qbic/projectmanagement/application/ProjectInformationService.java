@@ -72,8 +72,27 @@ public class ProjectInformationService {
   public List<ProjectOverview> queryOverview(String filter, int offset, int limit,
       List<SortOrder> sortOrders) {
     var accessibleProjectIds = retrieveAccessibleProjectIdsForUser();
+    if (accessibleProjectIds.isEmpty()) {
+      return new ArrayList<>();
+    }
     return projectOverviewLookup.query(filter, offset, limit,
         sortOrders, accessibleProjectIds);
+  }
+
+  /**
+   * Counts the number of {@link ProjectOverview}s the user can access that match the provided
+   * filter. Used to compute the total for the paginated project overview pager.
+   *
+   * @param filter the results' project title will be applied with this filter
+   * @return the total number of matching, accessible project overviews
+   * @since 1.12.0
+   */
+  public long countOverview(String filter) {
+    var accessibleProjectIds = retrieveAccessibleProjectIdsForUser();
+    if (accessibleProjectIds.isEmpty()) {
+      return 0;
+    }
+    return projectOverviewLookup.count(filter, accessibleProjectIds);
   }
 
   /* @PostFilter() annotation is not possible for acl secured objects in a paginated context, for more details see:

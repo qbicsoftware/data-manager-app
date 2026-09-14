@@ -266,9 +266,12 @@ vaadin-app-layout:not([drawer-opened])::part(drawer) {
   font-size: var(--lumo-font-size-xxl);
 }
 
-.main.project-overview .project-collection-component {
-  grid-area: projectcollection;
-}
+/* The project collection is auto-placed into the single 1fr column of
+   .main.project-overview (grid-templates.css) and stretches to full width.
+   The former `grid-area: projectcollection` was removed together with the
+   two-row grid-template that named it; an orphaned grid-area reference would
+   resolve into an auto-sized implicit column and shrink the collection to its
+   content width (cards skewed towards the screen centre). */
 
 
 .main.raw-data .page-area {

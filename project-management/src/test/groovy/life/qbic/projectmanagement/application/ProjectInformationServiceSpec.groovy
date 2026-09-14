@@ -5,6 +5,9 @@ import life.qbic.projectmanagement.application.api.ProjectOverviewLookup
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService
 import life.qbic.projectmanagement.domain.model.project.*
 import life.qbic.projectmanagement.domain.repository.ProjectRepository
+import org.springframework.security.core.Authentication
+import org.springframework.security.core.authority.SimpleGrantedAuthority
+import org.springframework.security.core.context.SecurityContextHolder
 import spock.lang.Specification
 
 class ProjectInformationServiceSpec extends Specification {
@@ -14,6 +17,10 @@ class ProjectInformationServiceSpec extends Specification {
     ProjectAccessService projectAccessService = Mock()
     AuthenticationToUserIdTranslator authenticationToUserIdTranslator = Mock()
     ProjectInformationService projectInformationService = new ProjectInformationService(projectPreviewLookup, projectRepository, projectAccessService, authenticationToUserIdTranslator)
+
+    def cleanup() {
+        SecurityContextHolder.clearContext()
+    }
 
     def project = setupProject()
 
@@ -100,6 +107,41 @@ class ProjectInformationServiceSpec extends Specification {
         1 * projectRepository.update(project)
     }
 
+
+    def "Counting accessible project overviews delegates to the lookup with combined user and role project ids"() {
+        given: "an authenticated user with a user id and one authority"
+        def userId = "user-1"
+        def projectIdA = ProjectId.parse("0270ce7f-4092-40e3-9c4c-ce7adb688bf5")
+        def projectIdB = ProjectId.parse("1270ce7f-4092-40e3-9c4c-ce7adb688bf6")
+        def roleProjectId = ProjectId.parse("2270ce7f-4092-40e3-9c4c-ce7adb688bf7")
+        projectAccessService.getAccessibleProjectsForSid(userId) >> [projectIdA, projectIdB]
+        projectAccessService.getAccessibleProjectsForSid("ROLE_EXAMPLE") >> [roleProjectId, projectIdA]
+        authenticationToUserIdTranslator.translateToUserId(_ as Authentication) >> Optional.of(userId)
+        Authentication authentication = Mock()
+        authentication.authorities >> [new SimpleGrantedAuthority("ROLE_EXAMPLE")]
+        SecurityContextHolder.getContext().setAuthentication(authentication)
+
+        when:
+        long result = projectInformationService.countOverview("cancer")
+
+        then: "the lookup is called with the filter and the deduplicated accessible project ids"
+        1 * projectPreviewLookup.count("cancer", [projectIdA, projectIdB, roleProjectId]) >> 17
+        and:
+        result == 17
+    }
+
+    def "Counting project overviews returns 0 when no authenticated user is present"() {
+        given: "no user id can be translated from the authentication"
+        authenticationToUserIdTranslator.translateToUserId(_ as Authentication) >> Optional.empty()
+        SecurityContextHolder.getContext().setAuthentication(Mock(Authentication))
+
+        when:
+        long result = projectInformationService.countOverview("cancer")
+
+        then: "the lookup is never queried and zero is returned"
+        0 * projectPreviewLookup.count(_ as String, _ as Collection)
+        result == 0
+    }
 
     private static Project setupProject() {
         ProjectId projectId = ProjectId.parse("0270ce7f-4092-40e3-9c4c-ce7adb688bf5")
