@@ -1,18 +1,26 @@
 package life.qbic.datamanager.views.projects.overview.components;
 
+import static life.qbic.datamanager.views.projects.overview.components.ProjectOverviewSortOption.CODE_ASC;
+import static life.qbic.datamanager.views.projects.overview.components.ProjectOverviewSortOption.CODE_DESC;
+import static life.qbic.datamanager.views.projects.overview.components.ProjectOverviewSortOption.LAST_MODIFIED_ASC;
+import static life.qbic.datamanager.views.projects.overview.components.ProjectOverviewSortOption.LAST_MODIFIED_DESC;
+import static life.qbic.datamanager.views.projects.overview.components.ProjectOverviewSortOption.TITLE_ASC;
+import static life.qbic.datamanager.views.projects.overview.components.ProjectOverviewSortOption.TITLE_DESC;
+
 import com.vaadin.flow.component.ComponentEventListener;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.avatar.AvatarGroup;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.grid.Grid;
-import com.vaadin.flow.component.grid.Grid.SelectionMode;
-import com.vaadin.flow.component.grid.GridVariant;
-import com.vaadin.flow.component.grid.dataview.GridLazyDataView;
+import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.contextmenu.ContextMenu;
+import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Hr;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.textfield.TextField;
-import com.vaadin.flow.data.provider.SortDirection;
 import com.vaadin.flow.data.value.ValueChangeMode;
+import com.vaadin.flow.router.Location;
 import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.spring.annotation.RouteScope;
@@ -23,14 +31,17 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.application.commons.time.DateTimeFormat;
+import life.qbic.datamanager.views.AppRoutes.ProjectRoutes;
 import life.qbic.datamanager.views.account.UserAvatar.UserAvatarGroupItem;
 import life.qbic.datamanager.views.general.Card;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.Tag.TagColor;
+import life.qbic.datamanager.views.general.pagination.ListState;
+import life.qbic.datamanager.views.general.pagination.ListStateCodec;
+import life.qbic.datamanager.views.general.pagination.PaginationBar;
 import life.qbic.datamanager.views.projects.project.datasets.ConnectedDatasetsMain;
 import life.qbic.datamanager.views.projects.project.info.ProjectInformationMain;
 import life.qbic.projectmanagement.application.ProjectInformationService;
@@ -40,12 +51,16 @@ import org.springframework.stereotype.Component;
 /**
  * <b>Project Collection</b>
  * <p>
- * A component that displays cards showing the content of accessible
- * {@link ProjectOverview for the logged-in user.
+ * A component that displays paginated cards showing the content of accessible
+ * {@link ProjectOverview} for the logged-in user. The cards are rendered in a responsive grid
+ * without an embedded scroll container (USER-NFR-01); navigation happens through an explicit pager
+ * with a visible total count (USER-R-01) and the list state is mirrored into the browser URL
+ * (USER-R-03).
  * <p>
  * The component also fires {@link ProjectCreationSubmitEvent} to all registered listeners, if a
  * user has the intend to create a new project.
  *
+ * @since 1.0.0
  */
 @Component
 @RouteScope
@@ -56,90 +71,291 @@ public class ProjectCollectionComponent extends PageArea {
   private static final String EMPTY_PROJECT_COLLECTION_MESSAGE =
       "You don't have any projects yet. Start by creating your first project.";
   private static final String EMPTY_SEARCH_RESULT_MESSAGE = "No projects found.";
+  /**
+   * Deterministic tie-break key appended to every sort order so offset/limit pagination never
+   * duplicates or drops items across page boundaries (ADR-0007). Only consulted when the primary
+   * sort attributes are exactly equal.
+   */
+  private static final SortOrder SORT_TIE_BREAKER = new SortOrder("projectCode", false);
   final TextField projectSearchField = new TextField();
-  final Grid<ProjectOverview> projectGrid = new Grid<>(ProjectOverview.class, false);
-  final Button createProjectButton = new Button("Create");
+  final Button sortButton = new Button();
+  final ContextMenu sortMenu = new ContextMenu(sortButton);
+  final Button createProjectButton = new Button("Create project");
+  final Div projectCards = new Div();
+  /** Full pager below the list (info + numbered window + prev/next + page size). */
+  final PaginationBar paginationBar = new PaginationBar(ListStateCodec.ALLOWED_PAGE_SIZES,
+      ListStateCodec.DEFAULT_PAGE_SIZE, "projects");
   private final Div header = new Div();
+  private final Span emptyStateMessage = new Span();
   private final transient ProjectInformationService projectInformationService;
-  private final Span searchResultInfo = new Span();
-  private String projectOverviewFilter = "";
-  private GridLazyDataView<ProjectOverview> projectOverviewGridLazyDataView;
+  /**
+   * The currently applied list state; {@code null} until the first list state has been applied
+   * (initial page load), which guarantees the initial load is never skipped as "unchanged".
+   */
+  private ListState listState;
 
   public ProjectCollectionComponent(ProjectInformationService projectInformationService) {
     this.projectInformationService = Objects.requireNonNull(projectInformationService,
         "Project information service cannot be null");
     layoutComponent();
-    createLazyProjectView();
     configureSearch();
+    configureSortButton();
     configureProjectCreationButton();
+    configurePagination();
   }
 
   private void initHeader() {
     header.addClassName("header");
-    Span title = new Span("My Projects");
+    // Title row: title on the left, Create button on the far right
+    Div titleRow = new Div();
+    titleRow.addClassName("title-row");
+    Span title = new Span("My Research Projects");
     title.addClassName("title");
     createProjectButton.addClassName("primary");
+    titleRow.add(title, createProjectButton);
+    // Controls row: search + sort dropdown
     projectSearchField.setPlaceholder("Search");
     projectSearchField.setClearButtonVisible(true);
     projectSearchField.setSuffixComponent(VaadinIcon.SEARCH.create());
     projectSearchField.addClassNames("search-field");
-    Span controls = new Span(projectSearchField, createProjectButton);
+    configureSortButton();
+    Span controls = new Span(projectSearchField, sortButton);
     controls.addClassName("controls");
-    header.add(title, controls);
+    header.add(titleRow, controls);
     add(header);
-  }
-
-  private void initSearchResultInfo() {
-    searchResultInfo.addClassName("secondary");
-    add(searchResultInfo);
   }
 
   private void layoutComponent() {
     addClassNames("project-collection-component");
     initHeader();
-    initSearchResultInfo();
-    layoutGrid();
+    layoutCards();
+    layoutEmptyState();
+    add(paginationBar);
   }
 
-  private void createLazyProjectView() {
-    projectOverviewGridLazyDataView = projectGrid.setItems(query -> {
-      List<SortOrder> sortOrders = query.getSortOrders().stream().map(
-              it -> new SortOrder(it.getSorted(), it.getDirection().equals(SortDirection.DESCENDING)))
-          .collect(Collectors.toList());
-      // if no order is provided by the grid order by last modified (the least priority)
-      sortOrders.add(SortOrder.of("lastModified").descending());
-      return projectInformationService.queryOverview(projectOverviewFilter, query.getOffset(),
-          query.getLimit(), List.copyOf(sortOrders)).stream();
-    });
+  private void layoutCards() {
+    projectCards.addClassName("project-card-grid");
+    add(projectCards);
+  }
+
+  private void layoutEmptyState() {
+    emptyStateMessage.addClassName("empty-state");
+    emptyStateMessage.setVisible(false);
+    add(emptyStateMessage);
   }
 
   private void configureSearch() {
     projectSearchField.setValueChangeMode(ValueChangeMode.LAZY);
     projectSearchField.addValueChangeListener(event -> {
-      projectOverviewFilter = event.getValue().trim();
-      boolean isSearching = !event.getValue().isBlank();
-      projectOverviewGridLazyDataView.refreshAll();
-      // The onboarding text is only correct for an empty collection; a search
-      // without matches must not claim that no projects exist at all.
-      projectGrid.setEmptyStateText(isSearching ? EMPTY_SEARCH_RESULT_MESSAGE
-          : EMPTY_PROJECT_COLLECTION_MESSAGE);
-      showSearchResult(isSearching);
+      String filter = event.getValue().trim();
+      if (filter.equals(listState.filter())) {
+        return;
+      }
+      // A search always resets paging to the first page so the result set is shown from its start.
+      applyStateAtUrl(listState.withFilter(filter).withPage(1), HistoryMode.REPLACE);
     });
+  }
+
+  private void configureSortButton() {
+    sortButton.addClassName("sort-button");
+    sortButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+    sortButton.setIcon(VaadinIcon.SORT.create());
+    sortButton.setText("Sort");
+    sortButton.setAriaLabel("Sort options");
+    sortMenu.setOpenOnClick(true);
+    sortMenu.removeAll();
+
+    // Group: Last modified
+    MenuItem lastModifiedDesc = sortMenu.addItem("Last modified (newest first)");
+    lastModifiedDesc.setCheckable(true);
+    lastModifiedDesc.addClickListener(event -> {
+      if (!LAST_MODIFIED_DESC.toSortOrder().equals(listState.sort())) {
+        applyStateAtUrl(listState.withSort(LAST_MODIFIED_DESC.toSortOrder()).withPage(1), HistoryMode.PUSH);
+      }
+    });
+
+    MenuItem lastModifiedAsc = sortMenu.addItem("Last modified (oldest first)");
+    lastModifiedAsc.setCheckable(true);
+    lastModifiedAsc.addClickListener(event -> {
+      if (!LAST_MODIFIED_ASC.toSortOrder().equals(listState.sort())) {
+        applyStateAtUrl(listState.withSort(LAST_MODIFIED_ASC.toSortOrder()).withPage(1), HistoryMode.PUSH);
+      }
+    });
+
+    // Divider
+    sortMenu.addSeparator();
+
+    // Group: Project title
+    MenuItem titleAsc = sortMenu.addItem("Project title (A–Z)");
+    titleAsc.setCheckable(true);
+    titleAsc.addClickListener(event -> {
+      if (!TITLE_ASC.toSortOrder().equals(listState.sort())) {
+        applyStateAtUrl(listState.withSort(TITLE_ASC.toSortOrder()).withPage(1), HistoryMode.PUSH);
+      }
+    });
+
+    MenuItem titleDesc = sortMenu.addItem("Project title (Z–A)");
+    titleDesc.setCheckable(true);
+    titleDesc.addClickListener(event -> {
+      if (!TITLE_DESC.toSortOrder().equals(listState.sort())) {
+        applyStateAtUrl(listState.withSort(TITLE_DESC.toSortOrder()).withPage(1), HistoryMode.PUSH);
+      }
+    });
+
+    // Divider
+    sortMenu.addSeparator();
+
+    // Group: Project code
+    MenuItem codeAsc = sortMenu.addItem("Project code (A–Z)");
+    codeAsc.setCheckable(true);
+    codeAsc.addClickListener(event -> {
+      if (!CODE_ASC.toSortOrder().equals(listState.sort())) {
+        applyStateAtUrl(listState.withSort(CODE_ASC.toSortOrder()).withPage(1), HistoryMode.PUSH);
+      }
+    });
+
+    MenuItem codeDesc = sortMenu.addItem("Project code (Z–A)");
+    codeDesc.setCheckable(true);
+    codeDesc.addClickListener(event -> {
+      if (!CODE_DESC.toSortOrder().equals(listState.sort())) {
+        applyStateAtUrl(listState.withSort(CODE_DESC.toSortOrder()).withPage(1), HistoryMode.PUSH);
+      }
+    });
+
+    updateSortCheckmarks();
+  }
+
+  private void updateSortCheckmarks() {
+    if (listState == null) {
+      return;
+    }
+    SortOrder currentSort = listState.sort();
+    sortMenu.getChildren().forEach(component -> {
+      if (component instanceof MenuItem item) {
+        String text = item.getText();
+        ProjectOverviewSortOption option = findOptionByText(text);
+        if (option != null) {
+          item.setChecked(option.toSortOrder().equals(currentSort));
+        }
+      }
+    });
+  }
+
+  private ProjectOverviewSortOption findOptionByText(String text) {
+    for (ProjectOverviewSortOption option : ProjectOverviewSortOption.values()) {
+      if (option.label().equals(text)) {
+        return option;
+      }
+    }
+    return null;
+  }
+
+  private void configurePagination() {
+    paginationBar.addChangeListener(this::applyPaginationChange);
+  }
+
+  /**
+   * Applies a page or page-size change requested from the pagination bar; the bar is kept in sync
+   * by {@link #loadPage(ListState)}, which reports the applied state back to it.
+   */
+  private void applyPaginationChange(PaginationBar.ChangeEvent event) {
+    if (event.getPageSize() != listState.pageSize()) {
+      applyStateAtUrl(listState.withPageSize(event.getPageSize()), HistoryMode.PUSH);
+    } else if (event.getPage() != listState.page()) {
+      applyStateAtUrl(listState.withPage(event.getPage()), HistoryMode.PUSH);
+    }
   }
 
   private void configureProjectCreationButton() {
     createProjectButton.addClickListener(listener -> fireCreateClickedEvent());
   }
 
-  private void layoutGrid() {
-    projectGrid.setSelectionMode(SelectionMode.NONE);
-    projectGrid.addComponentColumn(ProjectOverviewItem::new);
-    projectGrid.addThemeVariants(GridVariant.LUMO_NO_BORDER, GridVariant.LUMO_NO_ROW_BORDERS);
-    projectGrid.addClassName("project-grid");
-    // Completes the welcome screen for users without projects; swapped for a
-    // search-specific message while a filter is active (see configureSearch).
-    projectGrid.setEmptyStateText(EMPTY_PROJECT_COLLECTION_MESSAGE);
-    add(projectGrid);
+  /**
+   * Applies an externally provided list state (initial page load, reload, browser back/forward or a
+   * shared link) without touching the browser URL.
+   *
+   * @param state the list state parsed from the current URL
+   */
+  public void applyExternalState(ListState state) {
+    if (state.equals(listState)) {
+      return;
+    }
+    loadPage(state);
+    syncControls(listState);
+  }
+
+  /**
+   * Applies a user-initiated state change and mirrors the applied state into the browser URL.
+   */
+  private void applyStateAtUrl(ListState state, HistoryMode mode) {
+    loadPage(state);
+    syncControls(listState);
+    writeUrl(listState, mode);
+  }
+
+  /**
+   * Loads the current page of project overviews for the given state and renders it. When the
+   * requested page lies beyond the last page (e.g. after a filter reduced the result set), the page
+   * is clamped to the last valid page.
+   */
+  private void loadPage(ListState state) {
+    List<SortOrder> sortOrders = new ArrayList<>();
+    sortOrders.add(state.sort());
+    sortOrders.add(SORT_TIE_BREAKER);
+    List<ProjectOverview> overviews = projectInformationService.queryOverview(state.filter(),
+        (state.page() - 1) * state.pageSize(), state.pageSize(), sortOrders);
+    long total = projectInformationService.countOverview(state.filter());
+    int totalPages = Math.max(1, (int) Math.ceil((double) total / state.pageSize()));
+    int page = Math.min(state.page(), totalPages);
+    if (page != state.page()) {
+      // bounded recursion: the clamped page is always within range, so this branch runs at most once
+      ListState clampedState = state.withPage(page);
+      this.listState = clampedState;
+      loadPage(clampedState);
+      return;
+    }
+    this.listState = state;
+    renderCards(overviews);
+    paginationBar.setListState(page, total, state.pageSize());
+    // The pager stays hidden for an empty result set (the empty-state message covers that case).
+    paginationBar.setVisible(total > 0);
+    renderEmptyState(overviews.isEmpty(), state.filter().isBlank());
+  }
+
+  private void renderCards(List<ProjectOverview> overviews) {
+    projectCards.removeAll();
+    overviews.forEach(overview -> projectCards.add(new ProjectOverviewItem(overview)));
+  }
+
+  private void renderEmptyState(boolean isEmpty, boolean noActiveFilter) {
+    if (isEmpty) {
+      // The onboarding text is only correct for an empty collection; a search without matches must
+      // not claim that no projects exist at all.
+      emptyStateMessage.setText(
+          noActiveFilter ? EMPTY_PROJECT_COLLECTION_MESSAGE : EMPTY_SEARCH_RESULT_MESSAGE);
+    }
+    emptyStateMessage.setVisible(isEmpty);
+  }
+
+  private void syncControls(ListState state) {
+    if (!Objects.equals(projectSearchField.getValue().trim(), state.filter())) {
+      projectSearchField.setValue(state.filter());
+    }
+    updateSortCheckmarks();
+  }
+
+  private void writeUrl(ListState state, HistoryMode mode) {
+    UI ui = UI.getCurrent();
+    if (ui == null) {
+      return;
+    }
+    Location location = new Location(ProjectRoutes.PROJECTS,
+        ListStateCodec.toQueryParameters(state));
+    if (mode == HistoryMode.PUSH) {
+      ui.getPage().getHistory().pushState(null, location);
+    } else {
+      ui.getPage().getHistory().replaceState(null, location);
+    }
   }
 
   private void fireCreateClickedEvent() {
@@ -159,23 +375,29 @@ public class ProjectCollectionComponent extends PageArea {
     addListener(ProjectCreationSubmitEvent.class, listener);
   }
 
+  /**
+   * Reloads the current page with the current list state (e.g. after a project was created).
+   */
   public void refresh() {
-    projectGrid.getDataProvider().refreshAll();
-  }
-
-  private void showSearchResult(boolean isVisible) {
-    searchResultInfo.setVisible(isVisible);
-    searchResultInfo.setText(
-        "%s projects found".formatted(projectOverviewGridLazyDataView.getItems().count()));
+    loadPage(listState);
   }
 
   /**
-   * Resets the value within the searchField, which in turn resets the grid. Additionally, hides the
-   * entire section so the result span is only shown when the user is actively searching for an
-   * ontology
+   * Resets the search filter and returns to the first page, mirroring the applied state into the
+   * URL. Used after a project was created so the new project becomes visible.
    */
   public void resetSearch() {
-    projectSearchField.setValue("");
+    applyStateAtUrl(listState.withFilter("").withPage(1), HistoryMode.REPLACE);
+  }
+
+  /**
+   * Distinguishes how a list state change is mirrored into the browser history: page-level
+   * navigation pushes a new history entry (back/forward steps through list states), while search
+   * typing replaces the current entry to avoid history spam.
+   */
+  private enum HistoryMode {
+    PUSH,
+    REPLACE
   }
 
   /**
@@ -377,7 +599,7 @@ public class ProjectCollectionComponent extends PageArea {
       chevron.addClassName("flex-shrink-0");
       content.add(chevron);
 
-      // ─ Wrap in RouterLink (native <a> semantics) ─────────────
+      // ── Wrap in RouterLink (native <a> semantics) ─────────────
       // Anchored to the per-project datasets route already registered
       // for ConnectedDatasetsMain.
       var link = new RouterLink("", ConnectedDatasetsMain.class,
