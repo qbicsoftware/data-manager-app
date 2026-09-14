@@ -7,10 +7,13 @@ import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.page.History;
 import com.vaadin.flow.component.page.History.HistoryStateChangeEvent;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
+import com.vaadin.flow.router.BeforeLeaveEvent;
+import com.vaadin.flow.router.BeforeLeaveObserver;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.PermitAll;
@@ -62,7 +65,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 @PageTitle("Project Overview")
 @Route(value = ProjectRoutes.PROJECTS, layout = UserMainLayout.class)
 @PermitAll
-public class ProjectOverviewMain extends Main implements BeforeEnterObserver {
+public class ProjectOverviewMain extends Main implements BeforeEnterObserver, BeforeLeaveObserver {
 
   @Serial
   private static final long serialVersionUID = 4625607082710157069L;
@@ -73,6 +76,18 @@ public class ProjectOverviewMain extends Main implements BeforeEnterObserver {
   private final transient FinanceService financeService;
   private final transient SpeciesLookupService ontologyTermInformationService;
   private final transient AddExperimentToProjectService addExperimentToProjectService;
+  /**
+   * The framework's own history state change handler, captured before this view installs its own.
+   *
+   * <p>{@link History#setHistoryStateChangeHandler(History.HistoryStateChangeHandler)} allows a
+   * single handler per UI and Vaadin uses that one handler to perform router navigation — it is
+   * invoked for browser back/forward <b>and</b> for every {@code RouterLink} click. Replacing it
+   * without chaining therefore swallows all navigation out of this view, which is why the captured
+   * handler is restored on leave and delegated to for foreign locations.
+   */
+  private History.HistoryStateChangeHandler routerHistoryStateChangeHandler;
+  /** Stable identity for this view's handler, so re-entry does not chain the view onto itself. */
+  private final History.HistoryStateChangeHandler listStateHistoryHandler = this::onHistoryStateChange;
   private final transient MessageSourceNotificationFactory messageSourceNotificationFactory;
 
   public ProjectOverviewMain(@Autowired ProjectCollectionComponent projectCollectionComponent,
@@ -180,11 +195,30 @@ public class ProjectOverviewMain extends Main implements BeforeEnterObserver {
    */
   @Override
   public void beforeEnter(BeforeEnterEvent event) {
-    UI.getCurrent().getPage().getHistory()
-        .setHistoryStateChangeHandler(this::onHistoryStateChange);
+    History history = UI.getCurrent().getPage().getHistory();
+    History.HistoryStateChangeHandler currentHandler = history.getHistoryStateChangeHandler();
+    if (currentHandler != listStateHistoryHandler) {
+      // Remember what to hand back on leave; on re-entry without a leave (e.g. a reroute) the
+      // previously captured router handler must not be overwritten by this view's own handler.
+      routerHistoryStateChangeHandler = currentHandler;
+    }
+    history.setHistoryStateChangeHandler(listStateHistoryHandler);
     ListState state = ListStateCodec.parse(event.getLocation().getQueryParameters(),
         ProjectOverviewSortOption.defaultSort(), ProjectOverviewSortOption.allowedSortOrders());
     projectCollectionComponent.applyExternalState(state);
+  }
+
+  /**
+   * Gives the history state change handler back to the router when this view is left.
+   *
+   * <p>Without this, the handler registered in {@link #beforeEnter(BeforeEnterEvent)} stays
+   * installed for the whole UI and every later navigation — link clicks included — is delivered to
+   * this view instead of to the router.
+   */
+  @Override
+  public void beforeLeave(BeforeLeaveEvent event) {
+    getUI().ifPresent(ui -> ui.getPage().getHistory()
+        .setHistoryStateChangeHandler(routerHistoryStateChangeHandler));
   }
 
   /**
@@ -194,7 +228,11 @@ public class ProjectOverviewMain extends Main implements BeforeEnterObserver {
    */
   private void onHistoryStateChange(HistoryStateChangeEvent event) {
     if (!ProjectRoutes.PROJECTS.equals(event.getLocation().getPath())) {
-      // navigation to a different view (e.g. a project card router link) — not our list
+      // Not our list (e.g. a project card router link): the event belongs to the router, so it is
+      // passed to the handler this view replaced instead of being dropped.
+      if (routerHistoryStateChangeHandler != null) {
+        routerHistoryStateChangeHandler.onHistoryStateChange(event);
+      }
       return;
     }
     ListState state = ListStateCodec.parse(event.getLocation().getQueryParameters(),
