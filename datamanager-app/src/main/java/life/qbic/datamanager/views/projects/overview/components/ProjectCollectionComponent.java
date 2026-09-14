@@ -109,7 +109,7 @@ public class ProjectCollectionComponent extends PageArea {
     // Title row: title on the left, Create button on the far right
     Div titleRow = new Div();
     titleRow.addClassName("title-row");
-    Span title = new Span("My Projects");
+    Span title = new Span("My Research Projects");
     title.addClassName("title");
     createProjectButton.addClassName("primary");
     titleRow.add(title, createProjectButton);
