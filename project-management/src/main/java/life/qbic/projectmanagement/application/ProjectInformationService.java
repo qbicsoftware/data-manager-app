@@ -95,6 +95,22 @@ public class ProjectInformationService {
     return projectOverviewLookup.count(filter, accessibleProjectIds);
   }
 
+  /**
+   * Returns the ids of all projects the currently authenticated user (and their authorities) can
+   * access.
+   *
+   * <p>Exposed so that other access-restricted project queries — such as the pinned-project lookup —
+   * resolve visibility through exactly the same rule as the project overview, instead of duplicating
+   * the ACL sid/authority resolution. Callers must still restrict their queries to the returned ids;
+   * the ids alone disclose nothing.
+   *
+   * @return accessible project ids, empty if the user can access no project
+   * @since 1.12.0
+   */
+  public List<ProjectId> findAccessibleProjectIds() {
+    return retrieveAccessibleProjectIdsForUser();
+  }
+
   /* @PostFilter() annotation is not possible for acl secured objects in a paginated context, for more details see:
      https://github.com/spring-projects/spring-security/issues/2629
      therefore the list of accessible projectIds for the user have to be retrieved beforehand

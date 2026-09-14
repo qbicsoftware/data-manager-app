@@ -21,7 +21,7 @@ For the migration documentation structure, see [`README.md`](README.md).
 
 | # | Script | Description | Risk |
 |---|---|---|---|
-|   |   |   |   |
+| 1 | [`create-pinned-projects.sql`](../../sql/migrations/create-pinned-projects.sql) | Create `pinned_projects` table holding per-user pinned-project associations | low (additive, new empty table) |
 
 Each row links to its incremental script. The sections below expand each entry
 with apply / verify / rollback detail.
@@ -62,6 +62,75 @@ and does not require an environment variable or secret.
    `…/projects/<project-id>/datasets` instead of `…/projects/<project-id>/info`.
 
 No schema migration is associated with this entry.
+
+---
+
+## Migration #1: Create the `pinned_projects` table
+
+| Field | Value |
+|---|---|
+| **Story** | [FEAT-PINNED-01](../features.md#feat-pinned-01--pin-projects-for-quick-access-on-the-project-overview) — tracked in `docs/features.md`, no GitHub issue |
+| **Feature** | `FEAT-PINNED-PROJECTS` · requirement `USER-R-04` |
+| **ADRs** | [ADR-0008](../adr/0008-pinned-projects-as-user-preferences.md) |
+| **Scope** | new table |
+| **Script** | `sql/migrations/create-pinned-projects.sql` |
+| **Target datasource** | `data_management` |
+
+### What it does
+
+Creates `pinned_projects`, one row per (user, project) pair the user pinned for quick access on the
+project overview. The row carries the pin timestamp (the shortlist is ordered newest pin first) and
+a write-once snapshot of the project code and title, which exists only so that a pin whose project
+the user can no longer read stays recognisable and removable — see ADR-0008.
+
+`userId` is a bare `varchar(255)` with **no** foreign key to `users`, following the existing
+`personal_access_tokens.userId` precedent, so `project-management` gains no schema dependency on the
+`identity` context. `projectId` references `projects_datamanager(projectId)` with
+`ON DELETE CASCADE`, so project deletion cannot leave orphan pins.
+
+### Pre-flight
+
+```sql
+-- The referenced table must exist; it always does in this schema.
+SHOW TABLES FROM data_management LIKE 'projects_datamanager';
+
+-- Expect 0 rows: the migration is idempotent, but a non-zero count means it was already applied.
+SELECT COUNT(*) FROM information_schema.tables
+ WHERE table_schema = 'data_management' AND table_name = 'pinned_projects';
+```
+
+### Apply
+
+```bash
+mysql -u <user> -h <host> -P <port> data_management \
+    < sql/migrations/create-pinned-projects.sql
+```
+
+### Verify
+
+```sql
+SHOW CREATE TABLE data_management.pinned_projects\G
+-- Expect: PRIMARY KEY (userId, projectId),
+--         KEY idx_pinned_projects_user_pinned_at (userId, pinnedAt),
+--         fk_pinned_projects_project → projects_datamanager(projectId) ON DELETE CASCADE
+
+SELECT COUNT(*) FROM data_management.pinned_projects; -- 0 until users start pinning
+```
+
+### Rollback
+
+```sql
+-- Destroys user shortlists only; no project data is affected.
+DROP TABLE IF EXISTS data_management.pinned_projects;
+```
+
+### Operator notes
+
+- Safe to run while the application is live: a new, empty table is created and no existing object is
+  locked or altered.
+- The application must not start with the new code before the migration is applied; the pinned-project
+  row is read on every project overview render and fails with “table not found” otherwise.
+- No backfill: pins are created by users in the UI.
 
 ---
 

@@ -349,4 +349,80 @@ Data stewards are power users with access to potentially hundreds of projects. D
 
 ---
 
+### FEAT-PINNED-PROJECTS
+
+| Field | Value |
+|---|---|
+| **Description** | User-curated pinned projects: a small personal shortlist of the projects a user is actively working on, presented as the entry point to project work, so that returning to frequently used projects no longer requires a search |
+| **PRD Section** | §2 Users & primary use cases — Persona 1 (Anna Becker, Project Manager) and Persona 2 (Dr. Jonas Weber, Researcher) |
+| **Requirements** | `USER-R-04` |
+| **GitHub Feature** | — (tracked in this document only; see Notes & Context of FEAT-PINNED-01) |
+| **Status** | 🟡 In Progress |
+
+**Why curation, not derivation**
+
+"The projects I am active in" is a judgement only the user can make. A project that has had no
+recorded change for months can still be central to a user's work, while a project that was edited
+yesterday may be finished for them. Recency, membership and role-based signals therefore produce a
+list that is right most of the time and wrong exactly when it matters. The Feature accepts a small
+curation cost (one click per project, once) in exchange for a shortlist that is correct by
+definition, and keeps the set deliberately small so it stays a shortlist rather than a second copy
+of the project list.
+
+---
+
+### Stories
+
+#### FEAT-PINNED-01 — Pin Projects for Quick Access on the Project Overview
+
+| Field | Value |
+|---|---|
+| **Requirement IDs** | `USER-R-04` |
+| **Status** | 🟡 In Progress |
+| **GitHub** | — |
+
+**User Story**
+
+> As a researcher or project manager who maintains many projects, I want to pin the few projects I
+> am currently working on, so that I can open them straight away from the project overview instead
+> of searching for them every time.
+
+**Acceptance Criteria**
+
+- Given a project card in the project overview, When the user activates the pin control on that card, Then the project is added to that user's pinned projects and appears in the pinned-project row above the list controls.
+- Given a project is already pinned by the user, When they view the project overview or a project card, Then the pin control indicates the pinned state, and activating it removes the pin and the project leaves the pinned-project row.
+- Given a user who has pinned five projects, When they attempt to pin a sixth, Then no pin is created and the user is told that five is the limit and that an existing pin must be removed first.
+- Given a user with several pinned projects, When the pinned-project row is rendered, Then the projects appear most recently pinned first.
+- Given a user's pins, When any of them is rendered, Then the displayed project code, title and measurement types for accessible projects come from the same live data used by the project list, and no pin is ever visible to anyone but its owner.
+- Given a pinned project the user can no longer access, When the pinned-project row is rendered, Then a placeholder is shown carrying only the project code and title recorded when the project was pinned, together with an indication that access is no longer available, and no other project data is displayed.
+- Given a placeholder for a project the user cannot access, When the user unpins it, Then the pin is removed without requiring project access and the freed place can be used for another pin.
+- Given a pinned project the user has never been able to access or has lost access to, When any pinned-project data is read, Then no project title, contact, sample, measurement or dataset information is disclosed beyond the label recorded at pin time by that same user.
+- Given the pinned-project row is shown, When the user searches, changes the sort order or moves to another page of the project list, Then the row stays in place and unchanged; when the user has no pins the row is not shown at all.
+- Given a pinned project that also appears in the current page of the project list, When the overview is rendered, Then it is displayed in both places and the pager total still matches the number of projects matching the current filter.
+- Given a narrow viewport, When the pinned-project row is rendered, Then the pinned items reflow to fewer columns without trapping the native page scroll in an embedded scroll container (USER-NFR-01).
+- Given a user who has pinned projects, When they return to the overview in a later session or from another device, Then the same projects are still pinned for that user.
+
+**Notes & Context**
+
+- The limit of five pinned projects is a fixed product parameter for this story, chosen to keep the
+  row to one line on a normal desktop viewport. It is not part of `USER-R-04` and may become a
+  per-user preference later.
+- A pinned project is intentionally allowed to appear twice (in the row and in the list below).
+  Suppressing it in the list would change the meaning of the overview count and the page-boundary
+  behaviour established in `ADR-0007`, which is a worse trade than a duplicated card.
+- Pins are stored as an application-layer user preference, not as project state: pinning must not
+  alter `Project#lastModified`, because that value is the default sort key of the very list this
+  story speeds up. See [ADR-0008](adr/0008-pinned-projects-as-user-preferences.md).
+- Deferred, not part of this story: pinning from the project detail view; a global pinned-project
+  switcher in the application navigation (the natural next step, reusing the same service); an
+  automatically derived "recently visited" list; bulk pinning through cross-page selection
+  (`USER-R-02`).
+- Traceability deviation: this Feature and Story are tracked in this document only, without GitHub
+  Feature/Story issues, so the `**GitHub Feature**` and `**GitHub**` fields carry `—`. The task
+  breakdown lives in [`docs/plans/FEAT-PINNED-01-implementation-plan.md`](plans/FEAT-PINNED-01-implementation-plan.md).
+  `AGENTS.md` §0/§11 were deliberately left unchanged; the deviation is recorded in the
+  implementation pull request description.
+
+---
+
 *Last updated: 2026-09-14*

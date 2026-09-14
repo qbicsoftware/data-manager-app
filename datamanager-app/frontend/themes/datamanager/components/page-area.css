@@ -537,6 +537,127 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  /* Anchor for the absolutely positioned pin toggle, which sits in a reserved
+   * right-hand gutter of the card body (see .project-card-pin-toggle). */
+  position: relative;
+}
+
+/* ---------------------------------------------------------------------------
+ * Pin toggle on the overview cards (FEAT-PINNED-01).
+ *
+ * The toggle is a sibling of the card-body RouterLink, so it owns its own click
+ * target and cannot trigger navigation. The card body reserves a right gutter so
+ * the star never covers the title or the measurement tags, which both wrap.
+ * --------------------------------------------------------------------------- */
+.project-collection-component .project-overview-item {
+  padding-right: calc(var(--lumo-space-l) + 3rem);
+}
+
+.project-card-pin-toggle {
+  position: absolute;
+  top: var(--lumo-space-m);
+  right: var(--lumo-space-m);
+  z-index: 1;
+  color: var(--lumo-secondary-text-color);
+}
+
+.project-card-pin-toggle.is-pinned,
+.project-card-pin-toggle:hover {
+  color: var(--lumo-primary-text-color);
+}
+
+/* ---------------------------------------------------------------------------
+ * Pinned-project quick-access row (USER-R-04).
+ *
+ * Rendered above the title and the list controls, so it reads as a personal
+ * toolbar rather than as part of the result list. Cards are compact on purpose:
+ * the overview cards are full-width and tall, and five of them would push the
+ * actual list below the fold — which would defeat the point of the feature.
+ * --------------------------------------------------------------------------- */
+.pinned-projects {
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--lumo-space-s);
+  padding-bottom: var(--lumo-space-m);
+  margin-bottom: var(--lumo-space-m);
+  border-bottom: 1px solid var(--lumo-contrast-10pct);
+}
+
+.pinned-projects-title {
+  font-size: var(--lumo-font-size-s);
+  font-weight: 600;
+  color: var(--lumo-secondary-text-color);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* auto-fit keeps the row on one line on a desktop viewport (up to five cards) and
+ * reflows to fewer columns — eventually one — as the viewport narrows, without an
+ * embedded scroll container (USER-NFR-01). */
+.pinned-projects-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: var(--lumo-space-s);
+}
+
+.pinned-project-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--lumo-border-radius-m);
+  box-shadow: var(--lumo-box-shadow-s);
+  background-color: var(--lumo-base-color);
+  overflow: hidden;
+  min-width: 0;
+}
+
+.pinned-project-card.no-access {
+  box-shadow: none;
+  border: 1px dashed var(--lumo-contrast-30pct);
+}
+
+.pinned-project-card-body {
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--lumo-space-xs);
+  box-sizing: border-box;
+  padding: var(--lumo-space-s) calc(var(--lumo-space-s) + 2.5rem) var(--lumo-space-s) var(--lumo-space-s);
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.pinned-project-card.no-access .pinned-project-card-body {
+  cursor: default;
+}
+
+.pinned-project-title {
+  font-weight: 600;
+  font-size: var(--lumo-font-size-s);
+  color: var(--lumo-body-text-color);
+  /* Long project titles must not widen the card or push the other pins into a
+   * second row: truncate and keep the full label available via title/tooltip. */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pinned-project-secondary,
+.pinned-project-hint {
+  font-size: var(--lumo-font-size-xs);
+  color: var(--lumo-secondary-text-color);
+}
+
+.pinned-project-hint {
+  font-style: italic;
+}
+
+.pinned-project-toggle {
+  position: absolute;
+  top: var(--lumo-space-xs);
+  right: var(--lumo-space-xs);
+  color: var(--lumo-primary-text-color);
 }
 
 .project-collection-component .project-overview-item .header {
