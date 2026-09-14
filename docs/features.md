@@ -225,4 +225,128 @@ Where:
 
 ---
 
-*Last updated: 2026-06-15*
+### FEAT-PAGINATED-LISTS
+
+| Field | Value |
+|---|---|
+| **Description** | Explicit, paginated display of all large entity collections (projects, samples, measurements, raw datasets), replacing scroll-loaded (endless scrolling) lists, with cross-page selection for bulk actions and URL-restorable list state |
+| **PRD Section** | — (UX-driven change; no dedicated PRD section yet) |
+| **Requirements** | `USER-R-01`, `USER-R-02`, `USER-R-03`, `USER-NFR-01` |
+| **GitHub Feature** | [#1536](https://github.com/qbicsoftware/data-manager-app/issues/1536) |
+| **Status** | 🔴 Open |
+
+**Persona Constraint — Data Steward Scale**
+
+Data stewards are power users with access to potentially hundreds of projects. Design decisions for this Feature must hold at that scale: search and sorting (not page-by-page browsing) are the primary discovery mechanisms; a page-size selector serves power users; and the pager must always communicate location and total (e.g. "Page 3 of 21 — 500 projects").
+
+---
+
+### Stories
+
+#### FEAT-PAG-LIST-01 — Paginated Project Overview with Responsive Card Layout
+
+| Field | Value |
+|---|---|
+| **Requirement IDs** | `USER-R-01`, `USER-R-03`, `USER-NFR-01` |
+| **Status** | 🔴 Open |
+| **GitHub** | [#1537](https://github.com/qbicsoftware/data-manager-app/issues/1537) |
+
+**User Story**
+
+> As a data steward with access to several hundred projects, I want to browse the project overview as a paginated, responsive card layout, so that I can navigate my projects reliably with native browser behaviour on any screen size.
+
+**Acceptance Criteria**
+
+- Given a user on the project overview with more projects than the page size, When the list is displayed, Then page navigation controls and the total project count are shown and only the current page is rendered.
+- Given a user navigates to another page, changes the page size, searches, or changes the sort order, When the list updates, Then the URL reflects the list state and the browser back/forward buttons restore previous states.
+- Given a user on a small screen, When viewing the project overview, Then the card layout adapts to the viewport width and the page scrolls natively without an embedded scroll container.
+- Given a user enters a search term or changes the sort order, When the list updates, Then paging resets to the first page and the total count reflects the active filter.
+- Given a steward with access to hundreds of projects, When they choose a larger page size (e.g. 24/48/96), Then the overview renders that many project cards per page.
+- Given a user sorts by a project attribute (e.g. title, project code, last modified), When the sort is applied, Then the project cards are ordered accordingly across pages.
+
+**Notes & Context**
+
+- The current implementation uses a Vaadin `Grid` with a single component column purely as a lazy-loading card container (`ProjectCollectionComponent`). The Grid provides no used table features here and prevents responsive multi-column card reflow; the story explicitly allows replacing it with a non-Grid card layout.
+- Default sort remains `lastModified` descending so stewards land on their most relevant projects.
+- A count query for the project overview does not exist yet and must be added for the pager total.
+
+---
+
+#### FEAT-PAG-LIST-02 — Paginated Sample List with Cross-Page Selection
+
+| Field | Value |
+|---|---|
+| **Requirement IDs** | `USER-R-01`, `USER-R-02`, `USER-R-03` |
+| **Status** | 🔴 Open |
+| **GitHub** | [#1540](https://github.com/qbicsoftware/data-manager-app/issues/1540) |
+
+**User Story**
+
+> As a project member, I want to browse samples in a paginated list and keep my selection while navigating pages, so that I can export exactly the samples I need for offline metadata editing.
+
+**Acceptance Criteria**
+
+- Given a user on the sample list of an experiment, When the samples exceed the page size, Then page navigation controls and the total sample count are shown and only the current page is rendered.
+- Given a user has selected samples on one page, When they navigate to another page, Then the selection is preserved and the number of selected samples remains visible.
+- Given a user has samples selected across multiple pages, When they trigger the metadata export, Then the export contains exactly the selected samples.
+- Given a user changes page, filter, or sort, When the list updates, Then the URL reflects the list state and browser back/forward restores previous states.
+
+**Notes & Context**
+
+- Selection must be modelled as a set of sample identifiers owned by the view component, not via the Vaadin Grid selection model, so it survives page switches without holding full item object graphs in the session.
+- The header select-all checkbox applies to the current page and must communicate this honestly; whether a "select all N matching the filter" action is added is an open product decision.
+- Whether selection survives a search/filter change (current behaviour: yes) is an open product decision to resolve during refinement.
+
+---
+
+#### FEAT-PAG-LIST-03 — Paginated Measurement Lists with Cross-Page Selection
+
+| Field | Value |
+|---|---|
+| **Requirement IDs** | `USER-R-01`, `USER-R-02`, `USER-R-03` |
+| **Status** | 🔴 Open |
+| **GitHub** | [#1539](https://github.com/qbicsoftware/data-manager-app/issues/1539) |
+
+**User Story**
+
+> As a project member, I want to browse proteomics, genomics, and immunopeptidomics measurements in paginated lists and keep my selection while navigating pages, so that I can export, edit, or delete exactly the measurements I targeted.
+
+**Acceptance Criteria**
+
+- Given a user on any measurement tab (NGS, PxP, IP), When the measurements exceed the page size, Then page navigation controls and the total measurement count are shown and only the current page is rendered.
+- Given a user has selected measurements on one page, When they navigate to another page, Then the selection is preserved and the number of selected measurements remains visible.
+- Given a user has measurements selected across multiple pages, When they trigger export, edit, or deletion, Then the action applies to exactly the selected measurements.
+- Given a user triggers a deletion, When the confirmation is shown, Then the number of affected measurements across all pages is communicated before the deletion is executed.
+
+**Notes & Context**
+
+- All bulk actions already reduce the selection to measurement IDs before calling the service layer, so an identifier-based selection model requires no service API changes.
+- A review step or "show selected only" option before destructive actions is a candidate UX improvement to evaluate during refinement.
+
+---
+
+#### FEAT-PAG-LIST-04 — Paginated Raw Dataset Lists with Cross-Page Selection
+
+| Field | Value |
+|---|---|
+| **Requirement IDs** | `USER-R-01`, `USER-R-02`, `USER-R-03` |
+| **Status** | 🔴 Open |
+| **GitHub** | [#1538](https://github.com/qbicsoftware/data-manager-app/issues/1538) |
+
+**User Story**
+
+> As a project member, I want to browse raw datasets in paginated lists and keep my selection while navigating pages, so that I can export dataset download URLs for exactly the datasets I need.
+
+**Acceptance Criteria**
+
+- Given a user on any raw data tab (NGS, PxP, IP), When the datasets exceed the page size, Then page navigation controls and the total dataset count are shown and only the current page is rendered.
+- Given a user has selected datasets on one page, When they navigate to another page, Then the selection is preserved and the number of selected datasets remains visible.
+- Given a user has datasets selected across multiple pages, When they trigger the dataset URL export, Then the export contains exactly the selected datasets.
+
+**Notes & Context**
+
+- The URL export already reduces the selection to measurement IDs before generating the file, so an identifier-based selection model requires no service API changes.
+
+---
+
+*Last updated: 2026-09-14*

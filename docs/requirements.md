@@ -436,15 +436,51 @@ _No requirements defined yet._
 
 ### Features
 
-_No features defined yet._
+- `FEAT-PAGINATED-LISTS` — Explicit, paginated display of large entity collections (projects, samples, measurements, raw datasets) with cross-page selection for bulk actions and URL-restorable list state.
 
 ### Functional Requirements
 
-_No requirements defined yet._
+#### USER-R-01: Paginated List Display
+
+The system shall display large entity collections (projects, samples, measurements, raw datasets) as explicitly paginated lists with a bounded page size, page navigation controls, and the total number of matching items. Continuous scroll-loading (endless scrolling) shall not be used for these lists.
+
+**Rationale:**
+Scroll-loaded lists replace the native page scroll with an embedded scroll container, which breaks native browser behaviour (find-in-page, scroll position, back/forward navigation) and behaves unreliably on small screens. Explicit pagination restores predictable, location-aware navigation. Power users such as data stewards can have access to several hundred projects and need reliable orientation when working with large collections.
+
+**Source:**
+Stakeholder request (UX review of list behaviour); PRD user personas (data steward).
+
+#### USER-R-02: Cross-Page Selection for Bulk Actions
+
+The system shall preserve item selections in paginated lists when the user navigates between pages, and bulk actions (export, edit, deletion) shall be applicable to the full selection across pages. The number of currently selected items shall be visible regardless of the page displayed.
+
+**Rationale:**
+Core workflows depend on targeting specific items scattered across a large collection: users download selected items' metadata for offline editing and perform targeted deletions. Without cross-page selection, pagination would force users to process one page at a time, breaking these workflows for collections of hundreds of items.
+
+**Source:**
+Stakeholder request; established bulk-action workflows for samples, measurements, and raw datasets.
+
+#### USER-R-03: List View State in the URL
+
+The system shall reflect the current page, page size, filter, and sort order of paginated lists in the browser URL, so that list views are restorable via browser history (back/forward) and shareable as links.
+
+**Rationale:**
+Native web behaviour allows users to bookmark, share, and navigate back to a previously seen list state. Scroll-loaded lists cannot provide this; explicit pagination makes it achievable at negligible additional cost and is a primary motivation for the change.
+
+**Source:**
+Stakeholder request (UX review of list behaviour).
 
 ### Non-Functional Requirements
 
-_No requirements defined yet._
+#### USER-NFR-01: Responsive List Rendering
+
+Paginated lists shall remain fully usable on small screens (tablets, phones) without trapping the native page scroll inside an embedded scroll container, and shall adapt their layout to the available viewport width.
+
+**Rationale:**
+Embedded scroll containers in scroll-loaded lists have proven unreliable on smaller screens. Users increasingly access the application on mobile devices; list views are the primary navigation surface and must degrade gracefully.
+
+**Source:**
+Stakeholder request (UX review of list behaviour).
 
 ### Constraints
 
