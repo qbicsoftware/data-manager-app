@@ -58,6 +58,7 @@ Where `NNNN` is a zero-padded, four-digit sequential number assigned in creation
 | [0004](0004-fair-signposting-deferred.md) | FAIR Signposting integration deferred | approved | 2026-07-13 |
 | [0005](0005-developer-email-error-notifications.md) | Developer email notifications for log errors | approved | 2026-09-04 |
 | [0006](0006-associated-datasets-sync-semantics.md) | Associated dataset synchronisation semantics | approved | 2026-07-15 |
+| [0007](0007-paginated-lists-and-list-state.md) | Paginated lists with URL-restorable list state | accepted | 2026-09-14 |
 
 *Update this table whenever a new ADR is added.*
 

@@ -1,28 +1,17 @@
 @import "variables.css";
 
 /*
- * Temporary stopgap: several views below cap the main content row with
- * percentage/fraction row sizes (e.g. minmax(min-content, 90%)). On short
- * viewports (reduced height) that collapses grids to a few rows tall.
- * Floors below are min content-aware cold stops so the page scrolls
- * instead of squashing grids. REMOVE once pagination replaces endless
- * scrolling in data grids.
+ * The project overview scrolls natively with the page: its CSS grid only
+ * aligns the single paginated collection and applies no height floors or
+ * embedded scroll containers (see ADR-0007, USER-NFR-01).
+ * The stopgap floors below still apply to the remaining endless-scrolling
+ * grids (raw data, sample, measurement, ...) until pagination replaces
+ * them as well (FEAT-PAG-LIST-02..04).
  */
 
 .main.project-overview {
   grid-template-columns: 1fr;
-  grid-template-rows: minmax(min-content, 0.1fr) minmax(100vh, 0.9fr);
-  grid-template-areas:
-    "."
-    "projectcollection";
-}
-
-/* Recurring users see no welcome hero (.no-welcome): collapse the two-row
-   template into the single collection row so the projects list gets the full
-   height (100vh minimum) instead of leaving an empty title row. */
-.main.project-overview.no-welcome {
-  grid-template-rows: minmax(100vh, 1fr);
-  grid-template-areas: "projectcollection";
+  grid-template-rows: auto;
 }
 
 .main.raw-data {
