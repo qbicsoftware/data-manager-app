@@ -17,6 +17,7 @@ import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Hr;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.value.ValueChangeMode;
@@ -42,10 +43,15 @@ import life.qbic.datamanager.views.general.Tag.TagColor;
 import life.qbic.datamanager.views.general.pagination.ListState;
 import life.qbic.datamanager.views.general.pagination.ListStateCodec;
 import life.qbic.datamanager.views.general.pagination.PaginationBar;
+import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
+import life.qbic.datamanager.views.projects.overview.components.PinnedProjectsComponent.ToggleHandler;
 import life.qbic.datamanager.views.projects.project.datasets.ConnectedDatasetsMain;
 import life.qbic.datamanager.views.projects.project.info.ProjectInformationMain;
+import life.qbic.projectmanagement.application.PinnedProjectService;
+import life.qbic.projectmanagement.application.PinnedProjectService.PinOutcome;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectOverview;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.stereotype.Component;
 
 /**
@@ -89,14 +95,34 @@ public class ProjectCollectionComponent extends PageArea {
   private final Span emptyStateMessage = new Span();
   private final transient ProjectInformationService projectInformationService;
   /**
+   * The user's quick-access shortlist, rendered above the list controls. Owned here because the
+   * overview cards and the shortlist share one pin toggle handler and must stay in sync.
+   */
+  private final PinnedProjectsComponent pinnedProjectsComponent;
+  private final transient PinnedProjectService pinnedProjectService;
+  private final transient MessageSourceNotificationFactory notificationFactory;
+  /**
+   * The overviews rendered on the current page; reused to re-render the card toggle states after a pin
+   * change without querying the project list again.
+   */
+  private List<ProjectOverview> currentOverviews = List.of();
+  /**
    * The currently applied list state; {@code null} until the first list state has been applied
    * (initial page load), which guarantees the initial load is never skipped as "unchanged".
    */
   private ListState listState;
 
-  public ProjectCollectionComponent(ProjectInformationService projectInformationService) {
+  public ProjectCollectionComponent(ProjectInformationService projectInformationService,
+      PinnedProjectService pinnedProjectService,
+      MessageSourceNotificationFactory notificationFactory) {
     this.projectInformationService = Objects.requireNonNull(projectInformationService,
         "Project information service cannot be null");
+    this.pinnedProjectService = Objects.requireNonNull(pinnedProjectService,
+        "pinnedProjectService cannot be null");
+    this.notificationFactory = Objects.requireNonNull(notificationFactory,
+        "notificationFactory cannot be null");
+    this.pinnedProjectsComponent = new PinnedProjectsComponent(
+        pinnedProjectService::findPinnedProjects, this::handlePinToggle);
     layoutComponent();
     configureSearch();
     configureSortButton();
@@ -121,7 +147,9 @@ public class ProjectCollectionComponent extends PageArea {
     configureSortButton();
     Span controls = new Span(projectSearchField, sortButton);
     controls.addClassName("controls");
-    header.add(titleRow, controls);
+    // The shortlist is the first child of the header, i.e. above the title and the search controls:
+    // it is a personal toolbar, not part of the filtered result set (FEAT-PINNED-01).
+    header.add(pinnedProjectsComponent, titleRow, controls);
     add(header);
   }
 
@@ -323,8 +351,30 @@ public class ProjectCollectionComponent extends PageArea {
   }
 
   private void renderCards(List<ProjectOverview> overviews) {
+    this.currentOverviews = overviews;
+    var pinnedProjectIds = pinnedProjectsComponent.pinnedProjectIds();
     projectCards.removeAll();
-    overviews.forEach(overview -> projectCards.add(new ProjectOverviewItem(overview)));
+    overviews.forEach(overview -> projectCards.add(
+        new ProjectOverviewItem(overview, pinnedProjectIds.contains(overview.projectId()),
+            this::handlePinToggle)));
+  }
+
+  /**
+   * Applies a pin toggle coming from either the shortlist or an overview card, then re-renders both.
+   *
+   * <p>The expected failure paths are returned outcomes, not exceptions. Only the limit needs a user
+   * message: the user must learn the rule and how to work around it, because the alternative —
+   * silently dropping an existing pin — would remove something the user asked for.
+   */
+  private void handlePinToggle(ProjectId projectId, boolean pin) {
+    PinOutcome outcome =
+        pin ? pinnedProjectService.pin(projectId) : pinnedProjectService.unpin(projectId);
+    if (outcome == PinOutcome.LIMIT_REACHED) {
+      notificationFactory.toast("project.pinned.limit",
+          new Object[]{PinnedProjectService.MAX_PINNED_PROJECTS}, getLocale()).open();
+    }
+    pinnedProjectsComponent.refresh();
+    renderCards(currentOverviews);
   }
 
   private void renderEmptyState(boolean isEmpty, boolean noActiveFilter) {
@@ -435,8 +485,10 @@ public class ProjectCollectionComponent extends PageArea {
     private final AvatarGroup usersWithAccess = new AvatarGroup();
     private final transient ProjectOverview projectOverview;
 
-    public ProjectOverviewItem(ProjectOverview projectOverview) {
+    public ProjectOverviewItem(ProjectOverview projectOverview, boolean pinned,
+        ToggleHandler toggleHandler) {
       this.projectOverview = Objects.requireNonNull(projectOverview);
+      Objects.requireNonNull(toggleHandler);
       // Both RouterLinks (card body + footer) must share a single parent so they render
       // as one unified card. Using a wrapper Div prevents event propagation between
       // clicks on the footer and clicks on the card body.
@@ -444,7 +496,30 @@ public class ProjectCollectionComponent extends PageArea {
       wrapper.addClassName("project-card-wrapper");
       wrapper.add(projectInfoLink());
       attachDatasetFooter(wrapper);
+      wrapper.add(buildPinToggle(pinned, toggleHandler));
       add(wrapper);
+    }
+
+    /**
+     * Builds the pin toggle for this card.
+     *
+     * <p>The toggle is a sibling of the card-body {@link RouterLink} inside the card wrapper, not a
+     * child of it, so clicking the star cannot also fire the navigation to the project. The filled
+     * star both indicates the pinned state and offers the unpin action.</p>
+     */
+    private Button buildPinToggle(boolean pinned, ToggleHandler toggleHandler) {
+      var button = new Button(new Icon(pinned ? VaadinIcon.STAR : VaadinIcon.STAR_O));
+      button.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE, ButtonVariant.LUMO_SMALL);
+      button.addClassName("project-card-pin-toggle");
+      if (pinned) {
+        button.addClassName("is-pinned");
+      }
+      var action = "%s %s".formatted(pinned ? "Unpin" : "Pin", projectOverview.projectCode());
+      button.getElement().setAttribute("aria-label", action);
+      button.getElement().setAttribute("title", action);
+      button.addClickListener(
+          event -> toggleHandler.onToggle(projectOverview.projectId(), !pinned));
+      return button;
     }
 
     /**
