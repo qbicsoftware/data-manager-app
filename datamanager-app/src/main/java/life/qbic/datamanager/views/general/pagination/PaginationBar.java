@@ -3,10 +3,11 @@ package life.qbic.datamanager.views.general.pagination;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.contextmenu.ContextMenu;
+import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.select.Select;
 import java.io.Serial;
 import java.util.List;
 import java.util.Objects;
@@ -31,9 +32,12 @@ public class PaginationBar extends Div {
 
   private final List<Integer> allowedPageSizes;
   private final boolean showPageNumbers;
+  private final String itemLabel;
   private final Span infoLabel = new Span();
   private final Div pageButtons = new Div();
-  private final Select<Integer> pageSizeSelect;
+  private final Button pageSizeButton;
+  private final ContextMenu pageSizeMenu;
+  private int currentPageSize;
   private final Button previousButton;
   private final Button nextButton;
 
@@ -78,6 +82,7 @@ public class PaginationBar extends Div {
     }
     this.allowedPageSizes = List.copyOf(allowedPageSizes);
     this.showPageNumbers = showPageNumbers;
+    this.itemLabel = itemLabel;
     addClassName("pagination-bar");
 
     previousButton = new Button(VaadinIcon.CHEVRON_LEFT.create());
@@ -97,19 +102,20 @@ public class PaginationBar extends Div {
       navigation.addComponentAtIndex(1, pageButtons);
     }
 
-    pageSizeSelect = new Select<>();
-    pageSizeSelect.setItems(allowedPageSizes);
-    pageSizeSelect.setValue(defaultPageSize);
-    pageSizeSelect.setLabel("Items per page");
-    pageSizeSelect.addValueChangeListener(event -> {
-      if (updating || event.getValue() == null) {
-        return;
-      }
-      fireChange(currentPage, event.getValue());
+    pageSizeButton = new Button(formatPageSizeLabel(defaultPageSize));
+    pageSizeButton.addClassName("pagination-page-size");
+    pageSizeButton.setAriaLabel("Items per page");
+    currentPageSize = defaultPageSize;
+
+    pageSizeMenu = new ContextMenu(pageSizeButton);
+    pageSizeMenu.setOpenOnClick(true);
+    allowedPageSizes.forEach(size -> {
+      MenuItem item = pageSizeMenu.addItem(String.valueOf(size));
+      item.addClickListener(event -> fireChange(currentPage, size));
     });
 
     infoLabel.addClassName("pagination-info");
-    Div controls = new Div(infoLabel, pageSizeSelect);
+    Div controls = new Div(infoLabel, pageSizeButton);
     controls.addClassName("pagination-controls");
 
     add(navigation, controls);
@@ -130,8 +136,9 @@ public class PaginationBar extends Div {
       this.totalPages = Math.max(1,
           (int) Math.ceil((double) this.totalItems / pageSize));
       this.currentPage = Math.max(1, Math.min(page, totalPages));
-      if (!Objects.equals(pageSizeSelect.getValue(), pageSize)) {
-        pageSizeSelect.setValue(pageSize);
+      if (pageSize != currentPageSize) {
+        currentPageSize = pageSize;
+        pageSizeButton.setText(formatPageSizeLabel(pageSize));
       }
       render();
     } finally {
@@ -150,8 +157,11 @@ public class PaginationBar extends Div {
   }
 
   private int pageSize() {
-    Integer value = pageSizeSelect.getValue();
-    return value == null ? ListStateCodec.DEFAULT_PAGE_SIZE : value;
+    return currentPageSize;
+  }
+
+  private static String formatPageSizeLabel(int size) {
+    return size + " per page";
   }
 
   private void fireChange(int page, int pageSize) {
@@ -160,8 +170,7 @@ public class PaginationBar extends Div {
 
   private void render() {
     infoLabel.setText(
-        "Page %d of %d — %d %s".formatted(currentPage, totalPages, totalItems,
-            totalItems == 1 ? "item" : "items"));
+        "Page %d of %d — %d %s".formatted(currentPage, totalPages, totalItems, itemLabel));
     renderPageButtons();
   }
 

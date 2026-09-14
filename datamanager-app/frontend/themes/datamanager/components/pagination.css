@@ -3,16 +3,13 @@
 .pagination-bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   flex-wrap: wrap;
-  gap: var(--lumo-space-s) var(--lumo-space-l);
+  gap: 1rem;
   margin-top: var(--lumo-space-m);
 }
 
 .pagination-bar .pagination-navigation {
-  display: flex;
-  align-items: center;
-  gap: var(--lumo-space-xs);
+  display: contents;
 }
 
 .pagination-bar .pagination-pages {
@@ -45,7 +42,10 @@
 }
 
 .pagination-bar .pagination-controls {
-  display: flex;
-  align-items: center;
-  gap: var(--lumo-space-m);
+  display: contents;
+}
+
+.pagination-bar .pagination-page-size {
+  min-width: 8rem;
+  justify-content: space-between;
 }

@@ -1,13 +1,23 @@
 package life.qbic.datamanager.views.projects.overview.components;
 
+import static life.qbic.datamanager.views.projects.overview.components.ProjectOverviewSortOption.CODE_ASC;
+import static life.qbic.datamanager.views.projects.overview.components.ProjectOverviewSortOption.CODE_DESC;
+import static life.qbic.datamanager.views.projects.overview.components.ProjectOverviewSortOption.LAST_MODIFIED_ASC;
+import static life.qbic.datamanager.views.projects.overview.components.ProjectOverviewSortOption.LAST_MODIFIED_DESC;
+import static life.qbic.datamanager.views.projects.overview.components.ProjectOverviewSortOption.TITLE_ASC;
+import static life.qbic.datamanager.views.projects.overview.components.ProjectOverviewSortOption.TITLE_DESC;
+
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.avatar.AvatarGroup;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.contextmenu.ContextMenu;
+import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Hr;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.Location;
@@ -68,15 +78,10 @@ public class ProjectCollectionComponent extends PageArea {
    */
   private static final SortOrder SORT_TIE_BREAKER = new SortOrder("projectCode", false);
   final TextField projectSearchField = new TextField();
-  final Select<ProjectOverviewSortOption> projectSort = new Select<>();
-  final Button createProjectButton = new Button("Create");
+  final Button sortButton = new Button();
+  final ContextMenu sortMenu = new ContextMenu(sortButton);
+  final Button createProjectButton = new Button("Create project");
   final Div projectCards = new Div();
-  /**
-   * Compact pager above the list (info + prev/next + page size) so stewards see the location and
-   * total upfront and can jump pages without scrolling; hidden while only one page exists.
-   */
-  final PaginationBar topPaginationBar = new PaginationBar(ListStateCodec.ALLOWED_PAGE_SIZES,
-      ListStateCodec.DEFAULT_PAGE_SIZE, "projects", false);
   /** Full pager below the list (info + numbered window + prev/next + page size). */
   final PaginationBar paginationBar = new PaginationBar(ListStateCodec.ALLOWED_PAGE_SIZES,
       ListStateCodec.DEFAULT_PAGE_SIZE, "projects");
@@ -94,32 +99,35 @@ public class ProjectCollectionComponent extends PageArea {
         "Project information service cannot be null");
     layoutComponent();
     configureSearch();
-    configureSort();
+    configureSortButton();
     configureProjectCreationButton();
     configurePagination();
   }
 
   private void initHeader() {
     header.addClassName("header");
+    // Title row: title on the left, Create button on the far right
+    Div titleRow = new Div();
+    titleRow.addClassName("title-row");
     Span title = new Span("My Projects");
     title.addClassName("title");
     createProjectButton.addClassName("primary");
+    titleRow.add(title, createProjectButton);
+    // Controls row: search + sort dropdown
     projectSearchField.setPlaceholder("Search");
     projectSearchField.setClearButtonVisible(true);
     projectSearchField.setSuffixComponent(VaadinIcon.SEARCH.create());
     projectSearchField.addClassNames("search-field");
-    projectSort.setLabel("Sort by");
-    projectSort.setItemLabelGenerator(ProjectOverviewSortOption::label);
-    Span controls = new Span(projectSearchField, projectSort, createProjectButton);
+    configureSortButton();
+    Span controls = new Span(projectSearchField, sortButton);
     controls.addClassName("controls");
-    header.add(title, controls);
+    header.add(titleRow, controls);
     add(header);
   }
 
   private void layoutComponent() {
     addClassNames("project-collection-component");
     initHeader();
-    add(topPaginationBar);
     layoutCards();
     layoutEmptyState();
     add(paginationBar);
@@ -148,27 +156,107 @@ public class ProjectCollectionComponent extends PageArea {
     });
   }
 
-  private void configureSort() {
-    projectSort.setItems(ProjectOverviewSortOption.values());
-    projectSort.setValue(ProjectOverviewSortOption.LAST_MODIFIED_DESC);
-    projectSort.addValueChangeListener(event -> {
-      ProjectOverviewSortOption option = event.getValue();
-      if (option == null || option.toSortOrder().equals(listState.sort())) {
-        return;
+  private void configureSortButton() {
+    sortButton.addClassName("sort-button");
+    sortButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+    sortButton.setIcon(VaadinIcon.SORT.create());
+    sortButton.setText("Sort");
+    sortButton.setAriaLabel("Sort options");
+    sortMenu.setOpenOnClick(true);
+    sortMenu.removeAll();
+
+    // Group: Last modified
+    MenuItem lastModifiedDesc = sortMenu.addItem("Last modified (newest first)");
+    lastModifiedDesc.setCheckable(true);
+    lastModifiedDesc.addClickListener(event -> {
+      if (!LAST_MODIFIED_DESC.toSortOrder().equals(listState.sort())) {
+        applyStateAtUrl(listState.withSort(LAST_MODIFIED_DESC.toSortOrder()).withPage(1), HistoryMode.PUSH);
       }
-      // A sort change resets paging to the first page (acceptance criteria FEAT-PAG-LIST-01).
-      applyStateAtUrl(listState.withSort(option.toSortOrder()).withPage(1), HistoryMode.PUSH);
     });
+
+    MenuItem lastModifiedAsc = sortMenu.addItem("Last modified (oldest first)");
+    lastModifiedAsc.setCheckable(true);
+    lastModifiedAsc.addClickListener(event -> {
+      if (!LAST_MODIFIED_ASC.toSortOrder().equals(listState.sort())) {
+        applyStateAtUrl(listState.withSort(LAST_MODIFIED_ASC.toSortOrder()).withPage(1), HistoryMode.PUSH);
+      }
+    });
+
+    // Divider
+    sortMenu.addSeparator();
+
+    // Group: Project title
+    MenuItem titleAsc = sortMenu.addItem("Project title (A–Z)");
+    titleAsc.setCheckable(true);
+    titleAsc.addClickListener(event -> {
+      if (!TITLE_ASC.toSortOrder().equals(listState.sort())) {
+        applyStateAtUrl(listState.withSort(TITLE_ASC.toSortOrder()).withPage(1), HistoryMode.PUSH);
+      }
+    });
+
+    MenuItem titleDesc = sortMenu.addItem("Project title (Z–A)");
+    titleDesc.setCheckable(true);
+    titleDesc.addClickListener(event -> {
+      if (!TITLE_DESC.toSortOrder().equals(listState.sort())) {
+        applyStateAtUrl(listState.withSort(TITLE_DESC.toSortOrder()).withPage(1), HistoryMode.PUSH);
+      }
+    });
+
+    // Divider
+    sortMenu.addSeparator();
+
+    // Group: Project code
+    MenuItem codeAsc = sortMenu.addItem("Project code (A–Z)");
+    codeAsc.setCheckable(true);
+    codeAsc.addClickListener(event -> {
+      if (!CODE_ASC.toSortOrder().equals(listState.sort())) {
+        applyStateAtUrl(listState.withSort(CODE_ASC.toSortOrder()).withPage(1), HistoryMode.PUSH);
+      }
+    });
+
+    MenuItem codeDesc = sortMenu.addItem("Project code (Z–A)");
+    codeDesc.setCheckable(true);
+    codeDesc.addClickListener(event -> {
+      if (!CODE_DESC.toSortOrder().equals(listState.sort())) {
+        applyStateAtUrl(listState.withSort(CODE_DESC.toSortOrder()).withPage(1), HistoryMode.PUSH);
+      }
+    });
+
+    updateSortCheckmarks();
+  }
+
+  private void updateSortCheckmarks() {
+    if (listState == null) {
+      return;
+    }
+    SortOrder currentSort = listState.sort();
+    sortMenu.getChildren().forEach(component -> {
+      if (component instanceof MenuItem item) {
+        String text = item.getText();
+        ProjectOverviewSortOption option = findOptionByText(text);
+        if (option != null) {
+          item.setChecked(option.toSortOrder().equals(currentSort));
+        }
+      }
+    });
+  }
+
+  private ProjectOverviewSortOption findOptionByText(String text) {
+    for (ProjectOverviewSortOption option : ProjectOverviewSortOption.values()) {
+      if (option.label().equals(text)) {
+        return option;
+      }
+    }
+    return null;
   }
 
   private void configurePagination() {
     paginationBar.addChangeListener(this::applyPaginationChange);
-    topPaginationBar.addChangeListener(this::applyPaginationChange);
   }
 
   /**
-   * Applies a page or page-size change requested from either pager; both bars are kept in sync by
-   * {@link #loadPage(ListState)}, which reports the applied state back to them.
+   * Applies a page or page-size change requested from the pagination bar; the bar is kept in sync
+   * by {@link #loadPage(ListState)}, which reports the applied state back to it.
    */
   private void applyPaginationChange(PaginationBar.ChangeEvent event) {
     if (event.getPageSize() != listState.pageSize()) {
@@ -229,11 +317,8 @@ public class ProjectCollectionComponent extends PageArea {
     this.listState = state;
     renderCards(overviews);
     paginationBar.setListState(page, total, state.pageSize());
-    topPaginationBar.setListState(page, total, state.pageSize());
-    // The compact top pager is only useful once there is more than one page; both pagers stay
-    // hidden for an empty result set (the empty-state message covers that case).
+    // The pager stays hidden for an empty result set (the empty-state message covers that case).
     paginationBar.setVisible(total > 0);
-    topPaginationBar.setVisible(totalPages > 1);
     renderEmptyState(overviews.isEmpty(), state.filter().isBlank());
   }
 
@@ -256,10 +341,7 @@ public class ProjectCollectionComponent extends PageArea {
     if (!Objects.equals(projectSearchField.getValue().trim(), state.filter())) {
       projectSearchField.setValue(state.filter());
     }
-    ProjectOverviewSortOption option = ProjectOverviewSortOption.fromSortOrder(state.sort());
-    if (!Objects.equals(projectSort.getValue(), option)) {
-      projectSort.setValue(option);
-    }
+    updateSortCheckmarks();
   }
 
   private void writeUrl(ListState state, HistoryMode mode) {

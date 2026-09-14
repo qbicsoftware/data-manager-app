@@ -472,16 +472,26 @@
 
 .project-collection-component .header {
   display: flex;
-  column-gap: var(--lumo-space-xl);
   flex-direction: column;
+  gap: var(--lumo-space-m);
+}
+
+.project-collection-component .title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
 }
 
 .project-collection-component .controls {
   display: flex;
   flex-wrap: wrap;
-  align-content: space-between;
   align-items: center;
   gap: 1rem;
+}
+
+.project-collection-component .search-field {
+  min-width: 20rem;
 }
 
 .project-collection-component .project-card-grid {

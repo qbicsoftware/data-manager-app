@@ -15,6 +15,7 @@ import life.qbic.application.commons.SortOrder;
 public enum ProjectOverviewSortOption {
 
   LAST_MODIFIED_DESC("Last modified (newest first)", "lastModified", true),
+  LAST_MODIFIED_ASC("Last modified (oldest first)", "lastModified", false),
   TITLE_ASC("Project title (A–Z)", "projectTitle", false),
   TITLE_DESC("Project title (Z–A)", "projectTitle", true),
   CODE_ASC("Project code (A–Z)", "projectCode", false),

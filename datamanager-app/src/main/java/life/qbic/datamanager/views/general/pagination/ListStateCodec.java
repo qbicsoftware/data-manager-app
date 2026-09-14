@@ -18,7 +18,7 @@ import life.qbic.application.commons.SortOrder;
 public final class ListStateCodec {
 
   /** Default number of items rendered per page. */
-  public static final int DEFAULT_PAGE_SIZE = 24;
+  public static final int DEFAULT_PAGE_SIZE = 12;
 
   /** Page sizes offered to the user via the pager. */
   public static final List<Integer> ALLOWED_PAGE_SIZES = List.of(12, 24, 48, 96);
