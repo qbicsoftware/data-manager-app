@@ -375,6 +375,20 @@ CREATE TABLE IF NOT EXISTS `personal_access_tokens`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS `pinned_projects`
+(
+    `userId`               varchar(255) NOT NULL,
+    `projectId`            varchar(255) NOT NULL,
+    `pinnedAt`             datetime(6)  NOT NULL,
+    `projectCodeSnapshot`  varchar(255)  DEFAULT NULL,
+    `projectTitleSnapshot` varchar(255)  DEFAULT NULL,
+    PRIMARY KEY (`userId`, `projectId`),
+    KEY `idx_pinned_projects_user_pinned_at` (`userId`, `pinnedAt`),
+    CONSTRAINT `fk_pinned_projects_project` FOREIGN KEY (`projectId`) REFERENCES `projects_datamanager` (`projectId`) ON DELETE CASCADE
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS `projects_offers`
 (
     `projectIdentifier` varchar(255) NOT NULL,
