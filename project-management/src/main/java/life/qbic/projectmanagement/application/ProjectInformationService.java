@@ -72,6 +72,9 @@ public class ProjectInformationService {
   public List<ProjectOverview> queryOverview(String filter, int offset, int limit,
       List<SortOrder> sortOrders) {
     var accessibleProjectIds = retrieveAccessibleProjectIdsForUser();
+    if (accessibleProjectIds.isEmpty()) {
+      return new ArrayList<>();
+    }
     return projectOverviewLookup.query(filter, offset, limit,
         sortOrders, accessibleProjectIds);
   }
@@ -86,6 +89,9 @@ public class ProjectInformationService {
    */
   public long countOverview(String filter) {
     var accessibleProjectIds = retrieveAccessibleProjectIdsForUser();
+    if (accessibleProjectIds.isEmpty()) {
+      return 0;
+    }
     return projectOverviewLookup.count(filter, accessibleProjectIds);
   }
 
