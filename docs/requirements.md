@@ -189,7 +189,9 @@ The system shall allow authorised users to register samples directly within an e
 Removing the explicit batch as a required registration step simplifies the sample registration workflow: users no longer need to define a batch entity before registering samples. Samples remain grouped within an experiment for contextual organisation, while the optional batch label preserves familiarity and backwards compatibility for existing data and downstream tooling.
 
 **Source:**
-PRD §3 — Sample registration; Issue [FEAT-SAMBAT-01 #1549](https://github.com/qbicsoftware/data-manager-app/issues/1549); [ADR-0008](adr/0008-remove-explicit-sample-batch-from-data-model.md)
+PRD §3 — Sample registration; Issue [FEAT-SAMBAT-01 #1549](https://github.com/qbicsoftware/data-manager-app/issues/1549); Stakeholder request [Incorporate Batch definition during Sample Sheet upload/edit template #1330](https://github.com/qbicsoftware/data-manager-app/issues/1330); [ADR-0008](adr/0008-remove-explicit-sample-batch-from-data-model.md)
+
+> **Open question:** whether the `batch` column is mandatory or optional is undecided. Issue #1330 assumes it is mandatory, while this requirement currently states it is optional. Pending Product Owner confirmation.
 
 #### SAMPLE-R-02: Sample–Project and Sample–Experiment Association
 
@@ -203,13 +205,13 @@ PRD §3 — Sample registration; Issue [FEAT-SAMBAT-02 #1550](https://github.com
 
 #### SAMPLE-R-03: Backwards-Compatible Batch Property and Data Preservation
 
-The system shall preserve existing sample batch information during the removal of the explicit batch entity. Each existing sample shall retain its batch name as a free-text `batch` property, and batch-related metadata (creation/modification dates) shall be carried forward onto the sample. The migration shall transfer existing data to the new schema without loss.
+The system shall preserve existing sample batch information during the removal of the explicit batch entity. Each existing sample shall retain its batch name as a free-text `batch` property, and batch-related metadata (creation/modification dates) shall be carried forward onto the sample. The samples view shall display the registration and modification date for each sample. The migration shall transfer existing data to the new schema without loss.
 
 **Rationale:**
-Removing the explicit batch must not lose historical sample grouping or metadata. Preserving the batch name as a property on each sample keeps the information available to users and downstream consumers, and carrying the batch dates forward maintains data fidelity for existing samples. The pilot flag is no longer needed and is dropped.
+Removing the explicit batch must not lose historical sample grouping or metadata. Preserving the batch name as a property on each sample keeps the information available to users and downstream consumers, and carrying the batch dates forward maintains data fidelity for existing samples. Displaying the registration and modification date per sample gives users visibility into when each sample was created and last changed. The pilot flag is no longer needed and is dropped.
 
 **Source:**
-Issue [FEAT-SAMBAT-03 #1551](https://github.com/qbicsoftware/data-manager-app/issues/1551); [ADR-0008](adr/0008-remove-explicit-sample-batch-from-data-model.md); [ADR-0009](adr/0009-stop-the-world-migration-of-sample-batch-removal.md)
+Issue [FEAT-SAMBAT-03 #1551](https://github.com/qbicsoftware/data-manager-app/issues/1551); Stakeholder request [Incorporate Batch definition during Sample Sheet upload/edit template #1330](https://github.com/qbicsoftware/data-manager-app/issues/1330); [ADR-0008](adr/0008-remove-explicit-sample-batch-from-data-model.md); [ADR-0009](adr/0009-stop-the-world-migration-of-sample-batch-removal.md)
 
 #### SAMPLE-R-04: Removal of the Explicit Batch and Samples-Only Management
 
@@ -219,7 +221,7 @@ The system shall no longer expose the explicit sample batch as a first-class ent
 Once the batch is no longer a first-class entity, exposing batch grids and batch dialogs would be confusing and inconsistent with the simplified data model. Presenting samples directly, with batch as an optional property, gives users a coherent, samples-only experience. Registration and editing via Excel mirror the established measurement workflows (see MEASUREMENT-R-01 and MEASUREMENT-R-02), ensuring a consistent bulk-data entry experience, while select-then-edit/delete gives users precise control over which samples are affected.
 
 **Source:**
-Issue [FEAT-SAMBAT-04 #1552](https://github.com/qbicsoftware/data-manager-app/issues/1552); [ADR-0008](adr/0008-remove-explicit-sample-batch-from-data-model.md)
+Issue [FEAT-SAMBAT-04 #1552](https://github.com/qbicsoftware/data-manager-app/issues/1552); Stakeholder request [Incorporate Batch definition during Sample Sheet upload/edit template #1330](https://github.com/qbicsoftware/data-manager-app/issues/1330); [ADR-0008](adr/0008-remove-explicit-sample-batch-from-data-model.md)
 
 ### Non-Functional Requirements
 
