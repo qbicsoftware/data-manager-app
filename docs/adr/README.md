@@ -59,8 +59,6 @@ Where `NNNN` is a zero-padded, four-digit sequential number assigned in creation
 | [0005](0005-developer-email-error-notifications.md) | Developer email notifications for log errors | approved | 2026-09-04 |
 | [0006](0006-associated-datasets-sync-semantics.md) | Associated dataset synchronisation semantics | approved | 2026-07-15 |
 | [0007](0007-paginated-lists-and-list-state.md) | Paginated lists with URL-restorable list state | accepted | 2026-09-14 |
-| [0008](0008-remove-explicit-sample-batch-from-data-model.md) | Remove the explicit sample batch from the data model | proposed | 2026-09-15 |
-| [0009](0009-stop-the-world-migration-of-sample-batch-removal.md) | Stop-the-world migration for the sample batch removal | proposed | 2026-09-15 |
 
 *Update this table whenever a new ADR is added.*
 
