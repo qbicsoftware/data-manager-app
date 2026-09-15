@@ -183,15 +183,13 @@ _No features defined yet._
 
 #### SAMPLE-R-01: Direct Sample Registration within an Experiment
 
-The system shall allow authorised users to register samples directly within an experiment of a project without first creating an explicit sample batch. A sample shall always belong to exactly one experiment. The batch is optional: a sample may carry a free-text `batch` label, but the label shall not be a prerequisite for registration.
+The system shall allow authorised users to register samples directly within an experiment of a project without first creating an explicit sample batch. A sample shall always belong to exactly one experiment. Each sample shall carry a mandatory free-text `batch` label provided as a distinct column in the registration spreadsheet.
 
 **Rationale:**
-Removing the explicit batch as a required registration step simplifies the sample registration workflow: users no longer need to define a batch entity before registering samples. Samples remain grouped within an experiment for contextual organisation, while the optional batch label preserves familiarity and backwards compatibility for existing data and downstream tooling.
+Removing the explicit batch as a required registration step simplifies the sample registration workflow: users no longer need to define a batch entity before registering samples. Samples remain grouped within an experiment for contextual organisation. The mandatory batch label (per Product Owner) preserves grouping and backwards compatibility with existing data and downstream tooling, and is provided directly in the registration spreadsheet.
 
 **Source:**
 PRD §3 — Sample registration; Issue [FEAT-SAMBAT-01 #1549](https://github.com/qbicsoftware/data-manager-app/issues/1549); Stakeholder request [Incorporate Batch definition during Sample Sheet upload/edit template #1330](https://github.com/qbicsoftware/data-manager-app/issues/1330); [ADR-0008](adr/0008-remove-explicit-sample-batch-from-data-model.md)
-
-> **Open question:** whether the `batch` column is mandatory or optional is undecided. Issue #1330 assumes it is mandatory, while this requirement currently states it is optional. Pending Product Owner confirmation.
 
 #### SAMPLE-R-02: Sample–Project and Sample–Experiment Association
 
@@ -215,10 +213,10 @@ Issue [FEAT-SAMBAT-03 #1551](https://github.com/qbicsoftware/data-manager-app/is
 
 #### SAMPLE-R-04: Removal of the Explicit Batch and Samples-Only Management
 
-The system shall no longer expose the explicit sample batch as a first-class entity in the sample management workflow. Samples shall be registered directly within an experiment via an Excel spreadsheet. Editing shall also be Excel-based: the user shall select samples in the grid, download a pre-filled template containing the selected samples' current values, modify editable fields, and re-upload to apply changes. Deletion shall operate on a multi-selection: the user selects the corresponding samples in the grid and deletes them in one action. The samples view shall present samples directly, showing the batch (if present) as a sample property, and shall not offer batch-specific actions such as creating, editing, or deleting a batch.
+The system shall no longer expose the explicit sample batch as a first-class entity in the sample management workflow. Samples shall be registered directly within an experiment via an Excel spreadsheet, with the batch name as a mandatory column. Editing shall also be Excel-based: the user shall select samples in the grid, download a pre-filled template containing the selected samples' current values, modify editable fields, and re-upload to apply changes. Deletion shall operate on a multi-selection: the user selects the corresponding samples in the grid and deletes them in one action. The samples view shall present samples directly, showing the batch as a sample property, and shall not offer batch-specific actions such as creating, editing, or deleting a batch.
 
 **Rationale:**
-Once the batch is no longer a first-class entity, exposing batch grids and batch dialogs would be confusing and inconsistent with the simplified data model. Presenting samples directly, with batch as an optional property, gives users a coherent, samples-only experience. Registration and editing via Excel mirror the established measurement workflows (see MEASUREMENT-R-01 and MEASUREMENT-R-02), ensuring a consistent bulk-data entry experience, while select-then-edit/delete gives users precise control over which samples are affected.
+Once the batch is no longer a first-class entity, exposing batch grids and batch dialogs would be confusing and inconsistent with the simplified data model. Presenting samples directly, with batch as a per-sample property, gives users a coherent, samples-only experience. Registration and editing via Excel mirror the established measurement workflows (see MEASUREMENT-R-01 and MEASUREMENT-R-02), ensuring a consistent bulk-data entry experience, while select-then-edit/delete gives users precise control over which samples are affected.
 
 **Source:**
 Issue [FEAT-SAMBAT-04 #1552](https://github.com/qbicsoftware/data-manager-app/issues/1552); Stakeholder request [Incorporate Batch definition during Sample Sheet upload/edit template #1330](https://github.com/qbicsoftware/data-manager-app/issues/1330); [ADR-0008](adr/0008-remove-explicit-sample-batch-from-data-model.md)

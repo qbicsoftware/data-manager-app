@@ -24,16 +24,15 @@ model; the strategy for migrating existing data is captured separately in
 
 ## Decision Drivers
 
-* **SAMPLE-R-01:** samples are registered directly within an experiment; the batch is optional and not a
-  registration prerequisite. *(Whether the batch column is mandatory or optional is an open question —
-  issue #1330 assumes mandatory; see SAMPLE-R-01.)*
+* **SAMPLE-R-01:** samples are registered directly within an experiment; the batch is a mandatory
+  free-text column in the registration spreadsheet (confirmed by the Product Owner).
 * **SAMPLE-R-02:** every sample is directly associated with both its project and its experiment, so
   project-wide sample queries avoid a transitive lookup through the experiment hierarchy.
 * **SAMPLE-R-03:** existing batch information is preserved — the batch name and the creation/modification
   dates carry forward onto the sample, and the samples view shows the registration and modification date
   per sample. The pilot flag is not needed and is dropped.
 * **SAMPLE-R-04:** the explicit batch is no longer exposed in the registration workflow; the UI presents
-  samples only, with batch as an optional property.
+  samples only, with batch as a per-sample property.
 * The batch currently provides no domain behaviour beyond grouping labels and a pilot marker (which is no
   longer needed); removing the entity reduces schema and orchestration complexity.
 * Existing downstream tooling and historical data reference the batch name; a free-text `batch` property
@@ -82,8 +81,8 @@ Chosen: **M1 + P1.**
    samples to it — that pre-step and the batch-scoped operations are removed).
 4. **UI becomes samples-only, with edit/delete like measurements.** Remove `BatchDetailsComponent`,
    `RegisterSampleBatchDialog`, `EditSampleBatchDialog`, and the batch event listeners in
-   `SampleInformationMain`. The sample grid shows `batch` and the per-sample registration/modification
-   dates as columns (sortable/filterable) when present. Editing mirrors the measurement workflow: the
+   `SampleInformationMain`. The sample grid shows the mandatory `batch` column and the per-sample
+   registration/modification dates (sortable/filterable). Editing mirrors the measurement workflow: the
    user selects samples in the grid, downloads a pre-filled template with their current values, modifies
    editable fields, and re-uploads to apply changes. Deletion operates on a multi-selection: the user
    selects the corresponding samples and deletes them in one action.
