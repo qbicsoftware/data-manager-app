@@ -181,7 +181,45 @@ _No features defined yet._
 
 ### Functional Requirements
 
-_No requirements defined yet._
+#### SAMPLE-R-01: Direct Sample Registration within an Experiment
+
+The system shall allow authorised users to register samples directly within an experiment of a project without first creating an explicit sample batch. A sample shall always belong to exactly one experiment. The batch is optional: a sample may carry a free-text `batch` label, but the label shall not be a prerequisite for registration.
+
+**Rationale:**
+Removing the explicit batch as a required registration step simplifies the sample registration workflow: users no longer need to define a batch entity before registering samples. Samples remain grouped within an experiment for contextual organisation, while the optional batch label preserves familiarity and backwards compatibility for existing data and downstream tooling.
+
+**Source:**
+PRD §3 — Sample registration; Issue [FEAT-SAMBAT-01 #1549](https://github.com/qbicsoftware/data-manager-app/issues/1549); [ADR-0008](adr/0008-remove-explicit-sample-batch-from-data-model.md)
+
+#### SAMPLE-R-02: Sample–Project and Sample–Experiment Association
+
+The system shall associate every sample with both the project and the experiment it belongs to. The sample shall store a direct reference to its owning project (`project_id`) in addition to the existing experiment association, so that queries fetching all samples for a project do not require a transitive lookup through the experiment hierarchy.
+
+**Rationale:**
+Directly associating samples with their project and experiment makes project-wide sample queries efficient and keeps the association explicit in the data model. The `project_id` reference is denormalised for query optimisation; samples are still registered within an experiment.
+
+**Source:**
+PRD §3 — Sample registration; Issue [FEAT-SAMBAT-02 #1550](https://github.com/qbicsoftware/data-manager-app/issues/1550); [ADR-0008](adr/0008-remove-explicit-sample-batch-from-data-model.md)
+
+#### SAMPLE-R-03: Backwards-Compatible Batch Property and Data Preservation
+
+The system shall preserve existing sample batch information during the removal of the explicit batch entity. Each existing sample shall retain its batch name as a free-text `batch` property, and batch-related metadata (creation/modification dates) shall be carried forward onto the sample. The migration shall transfer existing data to the new schema without loss.
+
+**Rationale:**
+Removing the explicit batch must not lose historical sample grouping or metadata. Preserving the batch name as a property on each sample keeps the information available to users and downstream consumers, and carrying the batch dates forward maintains data fidelity for existing samples. The pilot flag is no longer needed and is dropped.
+
+**Source:**
+Issue [FEAT-SAMBAT-03 #1551](https://github.com/qbicsoftware/data-manager-app/issues/1551); [ADR-0008](adr/0008-remove-explicit-sample-batch-from-data-model.md); [ADR-0009](adr/0009-stop-the-world-migration-of-sample-batch-removal.md)
+
+#### SAMPLE-R-04: Removal of the Explicit Batch from the Registration Workflow
+
+The system shall no longer expose the explicit sample batch as a first-class entity in the registration workflow. The samples view shall present samples directly, showing the batch (if present) as a sample property, and shall not offer batch-specific actions such as creating, editing, or deleting a batch.
+
+**Rationale:**
+Once the batch is no longer a first-class entity, exposing batch grids and batch dialogs would be confusing and inconsistent with the simplified data model. Presenting samples directly, with batch as an optional property, gives users a coherent, samples-only experience.
+
+**Source:**
+Issue [FEAT-SAMBAT-04 #1552](https://github.com/qbicsoftware/data-manager-app/issues/1552); [ADR-0008](adr/0008-remove-explicit-sample-batch-from-data-model.md)
 
 ### Non-Functional Requirements
 
