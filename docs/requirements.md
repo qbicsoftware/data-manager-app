@@ -211,12 +211,12 @@ Removing the explicit batch must not lose historical sample grouping or metadata
 **Source:**
 Issue [FEAT-SAMBAT-03 #1551](https://github.com/qbicsoftware/data-manager-app/issues/1551); [ADR-0008](adr/0008-remove-explicit-sample-batch-from-data-model.md); [ADR-0009](adr/0009-stop-the-world-migration-of-sample-batch-removal.md)
 
-#### SAMPLE-R-04: Removal of the Explicit Batch from the Registration Workflow
+#### SAMPLE-R-04: Removal of the Explicit Batch and Samples-Only Management
 
-The system shall no longer expose the explicit sample batch as a first-class entity in the registration workflow. The samples view shall present samples directly, showing the batch (if present) as a sample property, and shall not offer batch-specific actions such as creating, editing, or deleting a batch.
+The system shall no longer expose the explicit sample batch as a first-class entity in the sample management workflow. Samples shall be registered directly within an experiment via an Excel spreadsheet. Editing shall also be Excel-based: the user shall select samples in the grid, download a pre-filled template containing the selected samples' current values, modify editable fields, and re-upload to apply changes. Deletion shall operate on a multi-selection: the user selects the corresponding samples in the grid and deletes them in one action. The samples view shall present samples directly, showing the batch (if present) as a sample property, and shall not offer batch-specific actions such as creating, editing, or deleting a batch.
 
 **Rationale:**
-Once the batch is no longer a first-class entity, exposing batch grids and batch dialogs would be confusing and inconsistent with the simplified data model. Presenting samples directly, with batch as an optional property, gives users a coherent, samples-only experience.
+Once the batch is no longer a first-class entity, exposing batch grids and batch dialogs would be confusing and inconsistent with the simplified data model. Presenting samples directly, with batch as an optional property, gives users a coherent, samples-only experience. Registration and editing via Excel mirror the established measurement workflows (see MEASUREMENT-R-01 and MEASUREMENT-R-02), ensuring a consistent bulk-data entry experience, while select-then-edit/delete gives users precise control over which samples are affected.
 
 **Source:**
 Issue [FEAT-SAMBAT-04 #1552](https://github.com/qbicsoftware/data-manager-app/issues/1552); [ADR-0008](adr/0008-remove-explicit-sample-batch-from-data-model.md)

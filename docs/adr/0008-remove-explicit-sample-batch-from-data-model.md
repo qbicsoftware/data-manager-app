@@ -72,13 +72,17 @@ Chosen: **M1 + P1.**
    is backfilled from each sample's experiment during migration (see ADR-0009). This denormalised
    association lets project-wide sample queries resolve directly instead of joining through
    `experiment → project`.
-3. **Registration within an experiment.** Samples are still registered within an experiment
-   (unchanged); only the explicit batch-creation step is removed from the registration flow
-   (`SampleRegistrationServiceV2` currently creates a batch before samples and adds samples to it —
-   that pre-step and the batch-scoped edit/delete operations are removed).
-4. **UI becomes samples-only.** Remove `BatchDetailsComponent`, `RegisterSampleBatchDialog`,
-   `EditSampleBatchDialog`, and the batch event listeners in `SampleInformationMain`. The sample grid
-   shows `batch` as a column (sortable/filterable) when present.
+3. **Registration within an experiment via Excel.** Samples are still registered within an experiment
+   (unchanged) using an Excel spreadsheet; only the explicit batch-creation step is removed from the
+   registration flow (`SampleRegistrationServiceV2` currently creates a batch before samples and adds
+   samples to it — that pre-step and the batch-scoped operations are removed).
+4. **UI becomes samples-only, with edit/delete like measurements.** Remove `BatchDetailsComponent`,
+   `RegisterSampleBatchDialog`, `EditSampleBatchDialog`, and the batch event listeners in
+   `SampleInformationMain`. The sample grid shows `batch` as a column (sortable/filterable) when
+   present. Editing mirrors the measurement workflow: the user selects samples in the grid, downloads a
+   pre-filled template with their current values, modifies editable fields, and re-uploads to apply
+   changes. Deletion operates on a multi-selection: the user selects the corresponding samples and
+   deletes them in one action.
 
 ### Positive Consequences
 
