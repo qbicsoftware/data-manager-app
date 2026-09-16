@@ -1,0 +1,45 @@
+/* Paginated measurement lists (FEAT-PAG-LIST-03, ADR-0008). */
+
+.measurement-tab-pagination {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+}
+
+.measurement-tab-pagination .measurement-tab-sheet {
+  flex: 1;
+  min-height: 0;
+}
+
+.measurement-tab-pagination .measurement-tab-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+  padding: 0 var(--lumo-space-m);
+}
+
+.measurement-tab-pagination .measurement-tab-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--lumo-space-s);
+}
+
+.measurement-tab-pagination .measurement-search {
+  flex: 1;
+  min-width: 12rem;
+}
+
+.measurement-tab-pagination .measurement-selection-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-m);
+  padding: var(--lumo-space-s) var(--lumo-space-m);
+  border-top: 1px solid var(--lumo-contrast-10pct);
+}
+
+.measurement-tab-pagination .measurement-selection-count {
+  color: var(--lumo-primary-text-color);
+  font-weight: 600;
+}
