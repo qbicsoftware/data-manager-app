@@ -32,6 +32,7 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -291,7 +292,19 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     ListState state = tabPagination.listState().stateOf(domain);
     // keep the selection display attached to the active tab
     tabPagination.setSelection(selectionFor(domain));
+    syncSearchField(domain, state.filter());
     loadAndRender(domain, state);
+  }
+
+  private void syncSearchField(MeasurementDomain domain, String filter) {
+    TextField field = switch (domain) {
+      case NGS -> ngsSearchField;
+      case PXP -> pxpSearchField;
+      case IP -> ipSearchField;
+    };
+    if (!Objects.equals(field.getValue(), filter)) {
+      field.setValue(filter == null ? "" : filter);
+    }
   }
 
   private void loadAndRender(MeasurementDomain domain, ListState state) {
