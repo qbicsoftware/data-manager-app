@@ -176,6 +176,14 @@ public class Sample {
     this.assignedBatch = assignedBatch;
   }
 
+  public void setBatch(String batch) {
+    this.batch = batch;
+  }
+
+  public void setProjectId(ProjectId projectId) {
+    this.projectId = projectId;
+  }
+
   public void setExperimentalGroupId(Long experimentalGroupId) {
     this.experimentalGroupId = experimentalGroupId;
   }

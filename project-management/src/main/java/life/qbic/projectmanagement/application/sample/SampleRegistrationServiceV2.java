@@ -120,7 +120,7 @@ public class SampleRegistrationServiceV2 {
     }
     var batchId = result.getValue();
     try {
-      var registeredSamples = registerSamples(sampleMetadata, batchId, projectId);
+      var registeredSamples = registerSamples(sampleMetadata, batchId, batchLabel, projectId);
       for (Entry<Sample, SampleMetadata> registeredSample : registeredSamples.entrySet()) {
         Map<VariableReference, String> levels = registeredSample.getValue().confoundingVariables()
             .entrySet().stream()
@@ -220,13 +220,13 @@ public class SampleRegistrationServiceV2 {
   }
 
   private Map<Sample, SampleMetadata> registerSamples(Collection<SampleMetadata> sampleMetadata,
-      BatchId batchId,
+      BatchId batchId, String batchLabel,
       ProjectId projectId)
       throws RegistrationException {
     var samplesToRegister = new HashMap<Sample, SampleMetadata>();
     var sampleCodes = generateSampleCodes(sampleMetadata.size(), projectId).iterator();
     for (SampleMetadata metadata : sampleMetadata) {
-      Sample sample = buildSample(metadata, batchId, sampleCodes.next());
+      Sample sample = buildSample(metadata, batchId, batchLabel, projectId, sampleCodes.next());
       samplesToRegister.put(sample, metadata);
     }
     var registeredSamples = new HashMap<Sample, SampleMetadata>();
@@ -240,13 +240,17 @@ public class SampleRegistrationServiceV2 {
     return registeredSamples;
   }
 
-  private Sample buildSample(SampleMetadata sample, BatchId batchId, SampleCode sampleCode) {
+  private Sample buildSample(SampleMetadata sample, BatchId batchId, String batchLabel,
+      ProjectId projectId, SampleCode sampleCode) {
     var sampleOrigin = SampleOrigin.create(sample.species(), sample.specimen(), sample.analyte());
-    return Sample.create(sampleCode,
+    Sample builtSample = Sample.create(sampleCode,
         new life.qbic.projectmanagement.domain.model.sample.SampleRegistrationRequest(
             sample.sampleName(), sample.biologicalReplicate(), batchId,
             ExperimentId.parse(sample.experimentId()), sample.experimentalGroupId(), sampleOrigin,
             sample.analysisToBePerformed(), sample.comment()));
+    builtSample.setBatch(batchLabel);
+    builtSample.setProjectId(projectId);
+    return builtSample;
   }
 
   private List<SampleCode> generateSampleCodes(int amount, ProjectId projectId) {
