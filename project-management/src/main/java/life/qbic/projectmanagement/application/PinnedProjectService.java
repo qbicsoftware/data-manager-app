@@ -47,8 +47,11 @@ public class PinnedProjectService {
    * Upper bound of pins one user may hold. The bound is a product parameter, not a requirement
    * detail: it keeps the curated set a shortlist. Pins of projects the user can no longer read count
    * towards the bound, because they stay visible and therefore stay removable.
+   *
+   * <p>Six allows a balanced 3×2 (or 2×3) grid on desktop while staying a shortlist; five would
+   * force an uneven wrap on the row's default layout (FEAT-PINNED-01).
    */
-  public static final int MAX_PINNED_PROJECTS = 5;
+  public static final int MAX_PINNED_PROJECTS = 6;
 
   private static final Logger log = LoggerFactory.logger(PinnedProjectService.class);
   /** Deterministic ordering for the overview lookup of the intersected pinned projects. */
@@ -100,6 +103,15 @@ public class PinnedProjectService {
           overview != null ? PinnedProjectView.liveOf(pin, overview) : PinnedProjectView.placeholderOf(
               pin));
     }
+    // Defensive re-sort: the store already returns newest-first via `ORDER BY
+    // pinnedAt DESC`, but sorting here again with full Instant precision keeps the
+    // contract ("most recently pinned first") correct even if a deployed database
+    // column or migration stores coarser precision (e.g. a plain `datetime` table
+    // instead of `datetime(6)`), where several pins could share one timestamp and
+    // the database tie-break alone would decide the order. The sort is stable, so
+    // equal timestamps keep the database order.
+    views.sort(
+        java.util.Comparator.comparing(PinnedProjectView::pinnedAt).reversed());
     return views;
   }
 

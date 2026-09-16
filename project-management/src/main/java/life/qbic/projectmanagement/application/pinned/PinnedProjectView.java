@@ -87,4 +87,11 @@ public record PinnedProjectView(ProjectId projectId,
   public long ipMeasurementCount() {
     return overview == null ? 0 : overview.ipMeasurementCount();
   }
+
+  /**
+   * @return the live last-modified instant of an accessible pin, {@code null} for a revoked pin
+   */
+  public Instant lastModified() {
+    return overview == null ? null : overview.lastModified();
+  }
 }

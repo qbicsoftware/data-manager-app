@@ -2,25 +2,30 @@ package life.qbic.datamanager.views.projects.overview.components;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.contextmenu.ContextMenu;
+import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.router.RouterLink;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.time.DateTimeFormat;
+import life.qbic.datamanager.views.general.ProjectCodeBadge;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.Tag.TagColor;
 import life.qbic.datamanager.views.projects.overview.components.ProjectCollectionComponent.MeasurementType;
 import life.qbic.datamanager.views.projects.project.info.ProjectInformationMain;
+import life.qbic.projectmanagement.application.PinnedProjectService;
 import life.qbic.projectmanagement.application.pinned.PinnedProjectView;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 
@@ -53,6 +58,10 @@ public class PinnedProjectsComponent extends Div {
   private final Div cards = new Div();
   private final transient Supplier<List<PinnedProjectView>> pinnedProjectsSupplier;
   private final transient ToggleHandler toggleHandler;
+  /** The unpin action per pinned project, rebuilt on every refresh. Kept as {@link Runnable}s so
+   * unit tests (and future programmatic triggers) can invoke the unpin action without simulating
+   * browser menu interaction. */
+  private final transient Map<ProjectId, Runnable> unpinActions = new LinkedHashMap<>();
   private List<PinnedProjectView> pinnedProjects = List.of();
 
   /**
@@ -81,8 +90,30 @@ public class PinnedProjectsComponent extends Div {
   public final void refresh() {
     pinnedProjects = pinnedProjectsSupplier.get();
     cards.removeAll();
+    unpinActions.clear();
     pinnedProjects.forEach(this::addCard);
     setVisible(!pinnedProjects.isEmpty());
+    updateCountIndicator();
+  }
+
+  /**
+   * Updates the title to show the current pin count and remaining slots, and applies a count-based
+   * class to the cards container so the grid uses the matching column layout.
+   */
+  private void updateCountIndicator() {
+    int count = pinnedProjects.size();
+    int remaining = PinnedProjectService.MAX_PINNED_PROJECTS - count;
+    getChildren().forEach(child -> {
+      if (child instanceof Span span && span.getClassNames().contains("pinned-projects-title")) {
+        if (remaining > 0) {
+          span.setText("Pinned projects (%d/%d)".formatted(count, PinnedProjectService.MAX_PINNED_PROJECTS));
+        } else {
+          span.setText("Pinned projects (%d/%d — full)".formatted(count, PinnedProjectService.MAX_PINNED_PROJECTS));
+        }
+      }
+    });
+    cards.getClassNames().removeIf(c -> c.startsWith("pinned-count-"));
+    cards.addClassName("pinned-count-%d".formatted(count));
   }
 
   /**
@@ -135,7 +166,7 @@ public class PinnedProjectsComponent extends Div {
     link.addClassName("pinned-project-card-body");
     link.add(buildTitleLine(pinnedProject));
     link.add(buildMeasurementTags(pinnedProject));
-    link.add(buildPinnedLine(pinnedProject.pinnedAt()));
+    link.add(buildLastModifiedLine(pinnedProject));
     return link;
   }
 
@@ -148,7 +179,7 @@ public class PinnedProjectsComponent extends Div {
     var tags = new Span(noAccess);
     tags.addClassName("tag-collection");
     body.add(tags);
-    body.add(buildPinnedLine(pinnedProject.pinnedAt()));
+    body.add(buildPinnedAtLine(pinnedProject.pinnedAt()));
     var hint = new Span("You no longer have access to this project.");
     hint.addClassName("pinned-project-hint");
     body.add(hint);
@@ -156,12 +187,13 @@ public class PinnedProjectsComponent extends Div {
   }
 
   private Span buildTitleLine(PinnedProjectView pinnedProject) {
-    var label = "%s - %s".formatted(pinnedProject.projectCode(), pinnedProject.projectTitle());
-    var title = new Span(label);
+    var title = new Span();
+    title.add(new ProjectCodeBadge(pinnedProject.projectCode()));
+    title.add(new Span(" " + pinnedProject.projectTitle()));
     title.addClassName("pinned-project-title");
     // The visible text is truncated by CSS; the full label stays available on hover and to
     // assistive technology.
-    title.setTitle(label);
+    title.setTitle("%s - %s".formatted(pinnedProject.projectCode(), pinnedProject.projectTitle()));
     return title;
   }
 
@@ -190,7 +222,28 @@ public class PinnedProjectsComponent extends Div {
     return tag;
   }
 
-  private Span buildPinnedLine(Instant pinnedAt) {
+  /**
+   * The last-modified line for an accessible pin. This is more actionable than the pin date: it
+   * tells the user whether anything has changed in the project since they last looked, which is the
+   * primary reason to revisit a pinned project.
+   */
+  private Span buildLastModifiedLine(PinnedProjectView pinnedProject) {
+    Instant lastModified = pinnedProject.lastModified();
+    if (lastModified == null) {
+      return new Span();
+    }
+    var formatted = DateTimeFormat.asJavaFormatter(DateTimeFormat.SIMPLE_DATE_SHORT,
+        ZoneId.systemDefault()).format(lastModified);
+    var label = new Span("Modified %s".formatted(formatted));
+    label.addClassName("pinned-project-secondary");
+    return label;
+  }
+
+  /**
+   * The pin-date line, shown only for revoked pins where no live project data is available. For
+   * accessible pins the last-modified date replaces this — see {@link #buildLastModifiedLine}.
+   */
+  private Span buildPinnedAtLine(Instant pinnedAt) {
     var formatted = DateTimeFormat.asJavaFormatter(DateTimeFormat.SIMPLE_DATE_SHORT,
         ZoneId.systemDefault()).format(pinnedAt);
     var label = new Span("Pinned on %s".formatted(formatted));
@@ -199,16 +252,23 @@ public class PinnedProjectsComponent extends Div {
   }
 
   /**
-   * The unpin control. Rendered for every pin, including revoked ones, because a pin its owner cannot
-   * remove would hold one of the bounded places forever (ADR-0008).
+   * The unpin control. Rendered as a kebab menu for every pin, including revoked ones, because a
+   * pin its owner cannot remove would hold one of the bounded places forever (ADR-0008).
    */
   private Button buildToggleButton(PinnedProjectView pinnedProject) {
-    var button = new Button(new Icon(VaadinIcon.STAR));
+    var button = new Button(VaadinIcon.ELLIPSIS_DOTS_H.create());
     button.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE, ButtonVariant.LUMO_SMALL);
-    button.getElement().setAttribute("aria-label", "Unpin %s".formatted(pinnedProject.projectCode()));
-    button.getElement().setAttribute("title", "Unpin this project");
+    button.getElement().setAttribute("aria-label", "Options for pinned project %s".formatted(pinnedProject.projectCode()));
+    button.getElement().setAttribute("title", "Options");
     button.addClassName("pinned-project-toggle");
-    button.addClickListener(event -> toggleHandler.onToggle(pinnedProject.projectId(), false));
+
+    var menu = new ContextMenu(button);
+    menu.setOpenOnClick(true);
+    var unpinItem = menu.addItem("Unpin project");
+    unpinItem.addClickListener(event -> toggleHandler.onToggle(pinnedProject.projectId(), false));
+    unpinActions.put(pinnedProject.projectId(),
+        () -> toggleHandler.onToggle(pinnedProject.projectId(), false));
+
     return button;
   }
 }

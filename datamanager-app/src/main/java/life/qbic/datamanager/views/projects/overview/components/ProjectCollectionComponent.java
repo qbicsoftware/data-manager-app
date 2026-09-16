@@ -38,6 +38,7 @@ import life.qbic.datamanager.views.AppRoutes.ProjectRoutes;
 import life.qbic.datamanager.views.account.UserAvatar.UserAvatarGroupItem;
 import life.qbic.datamanager.views.general.Card;
 import life.qbic.datamanager.views.general.PageArea;
+import life.qbic.datamanager.views.general.ProjectCodeBadge;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.Tag.TagColor;
 import life.qbic.datamanager.views.general.pagination.ListState;
@@ -494,32 +495,49 @@ public class ProjectCollectionComponent extends PageArea {
       // clicks on the footer and clicks on the card body.
       var wrapper = new Div();
       wrapper.addClassName("project-card-wrapper");
-      wrapper.add(projectInfoLink());
+      wrapper.add(projectInfoLink(pinned));
       attachDatasetFooter(wrapper);
-      wrapper.add(buildPinToggle(pinned, toggleHandler));
+      wrapper.add(buildTopRightControl(pinned, toggleHandler));
       add(wrapper);
     }
 
     /**
-     * Builds the pin toggle for this card.
+     * Builds the top-right control for this card.
      *
-     * <p>The toggle is a sibling of the card-body {@link RouterLink} inside the card wrapper, not a
-     * child of it, so clicking the star cannot also fire the navigation to the project. The filled
-     * star both indicates the pinned state and offers the unpin action.</p>
+     * <p><b>Pinned/Unpinned:</b> every card shows the same kebab menu button in the top-right.
+     * The menu contains "Pin project" or "Unpin project" depending on state, so users have one
+     * consistent, easy-to-aim control for both actions. A small inline pin icon next to the
+     * project code badge marks pinned cards at a glance.</p>
+     *
+     * <p>The control is a sibling of the card-body {@link RouterLink} inside the card wrapper,
+     * not a child of it, so clicking it cannot also fire navigation to the project.</p>
      */
-    private Button buildPinToggle(boolean pinned, ToggleHandler toggleHandler) {
-      var button = new Button(new Icon(pinned ? VaadinIcon.STAR : VaadinIcon.STAR_O));
-      button.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE, ButtonVariant.LUMO_SMALL);
-      button.addClassName("project-card-pin-toggle");
+    private com.vaadin.flow.component.Component buildTopRightControl(boolean pinned, ToggleHandler toggleHandler) {
+      var topRight = new Div();
+      topRight.addClassName("project-card-top-right");
+
       if (pinned) {
-        button.addClassName("is-pinned");
+        // Small pin indicator left of the kebab menu, so a pinned project is recognisable
+        // at a glance without opening the menu. Clicking it opens the menu as well.
+        var pinIcon = VaadinIcon.PIN.create();
+        pinIcon.addClassName("project-card-pin-indicator");
+        topRight.add(pinIcon);
       }
-      var action = "%s %s".formatted(pinned ? "Unpin" : "Pin", projectOverview.projectCode());
-      button.getElement().setAttribute("aria-label", action);
-      button.getElement().setAttribute("title", action);
-      button.addClickListener(
-          event -> toggleHandler.onToggle(projectOverview.projectId(), !pinned));
-      return button;
+
+      var menuButton = new Button(VaadinIcon.ELLIPSIS_DOTS_H.create());
+      menuButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE, ButtonVariant.LUMO_SMALL);
+      menuButton.addClassName("project-card-menu-toggle");
+      menuButton.getElement().setAttribute("aria-label", "Project options for %s".formatted(projectOverview.projectCode()));
+      menuButton.getElement().setAttribute("title", "Project options");
+
+      var menu = new ContextMenu(menuButton);
+      menu.setOpenOnClick(true);
+      String actionLabel = pinned ? "Unpin project" : "Pin project";
+      var actionItem = menu.addItem(actionLabel);
+      actionItem.addClickListener(event -> toggleHandler.onToggle(projectOverview.projectId(), !pinned));
+
+      topRight.add(menuButton);
+      return topRight;
     }
 
     /**
@@ -534,12 +552,12 @@ public class ProjectCollectionComponent extends PageArea {
      * existing page-area.css card styles (shadow, border-radius, padding) apply to it
      * directly.</p>
      */
-    private RouterLink projectInfoLink() {
+    private RouterLink projectInfoLink(boolean pinned) {
       var link = new RouterLink("", ProjectInformationMain.class,
           new RouteParameters(PROJECT_ID_ROUTE_PARAMETER, projectOverview.projectId().value()));
       link.addClassName("project-overview-item");
 
-      link.add(createHeader(projectOverview.projectCode(), projectOverview.projectTitle()));
+      link.add(createHeader(projectOverview.projectCode(), projectOverview.projectTitle(), pinned));
 
       Instant instant = projectOverview.lastModified();
       Span lastModified = new Span(
@@ -729,8 +747,10 @@ public class ProjectCollectionComponent extends PageArea {
       return base;
     }
 
-    private Span createHeader(String projectCode, String projectTitle) {
-      Span title = new Span(String.format("%s - %s", projectCode, projectTitle));
+    private Span createHeader(String projectCode, String projectTitle, boolean pinned) {
+      Span title = new Span();
+      title.add(new ProjectCodeBadge(projectCode));
+      title.add(new Span(" " + projectTitle));
       title.addClassName("project-overview-item-title");
       tags.addClassNames("tag-collection");
       Span header = new Span(title, tags);

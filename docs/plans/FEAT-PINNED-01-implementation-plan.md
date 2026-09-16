@@ -14,14 +14,14 @@ This file is the task breakdown for the story. It exists because the story is tr
 
 ## 1. Scope
 
-A user can pin up to five of the projects they have access to. The pins render as a personal
+A user can pin up to six of the projects they have access to. The pins render as a personal
 quick-access row at the top of the project overview, above the title and the search controls, and
 survive reloads and sessions. Pinning never touches project data; unpinning works even when the
 pinned project became unreadable.
 
 Out of scope for this story: pinning from the project detail view, a global pinned-project switcher
 in the navigation, an automatically derived "recently visited" list, bulk pinning through cross-page
-selection, and making the cap of five configurable.
+selection, and making the cap configurable.
 
 ---
 
@@ -31,9 +31,9 @@ selection, and making the cap of five configurable.
 |---|---|---|
 | Curated vs derived shortlist | user-curated; recency and membership cannot express personal relevance | `USER-R-04` rationale |
 | Where the row renders | above the overview title and list controls, i.e. a toolbar, not part of the result set | story AC |
-| Row size and order | at most 5 pins, newest pin first, no manual reordering | story AC, `PinnedProjectService.MAX_PINNED_PROJECTS` |
+| Row size and order | at most 6 pins, newest pin first, no manual reordering | story AC, `PinnedProjectService.MAX_PINNED_PROJECTS` |
 | Storage | `pinned_projects` table, application-layer preference; **not** `Project` aggregate state | ADR-0008 |
-| Unreadable pins | rendered as a placeholder using a write-once label snapshot; still consume one of the five places; still removable without project access | ADR-0008 |
+| Unreadable pins | rendered as a placeholder using a write-once label snapshot; still consume one of the six places; still removable without project access | ADR-0008 |
 | Interaction with search/sort/paging | row is independent of the list state and never enters the URL | story AC; keeps `ADR-0007` semantics intact |
 | Duplicates | a pinned project may appear both in the row and in the list below | story AC |
 | Overflow | reject with a message; never evict a pin the user created | story AC |
@@ -54,7 +54,7 @@ selection, and making the cap of five configurable.
 ### T2 — Application service (`project-management`)
 
 - [x] `PinnedProjectService` with `findPinnedProjects()`, `pin(ProjectId)`, `unpin(ProjectId)`.
-- [x] Cap of `MAX_PINNED_PROJECTS = 5` enforced on **stored rows**, so an unreadable pin cannot strand
+- [x] Cap of `MAX_PINNED_PROJECTS = 6` enforced on **stored rows**, so an unreadable pin cannot strand
   a place.
 - [x] Pinning resolves the label through the access-restricted overview lookup and rejects projects the
   user cannot read; unpinning performs no project access check (ADR-0008).
@@ -93,7 +93,7 @@ selection, and making the cap of five configurable.
   `./mvnw -Pdevelopment -pl project-management,project-management-infrastructure,datamanager-app -am test`
   → BUILD SUCCESS (project-management, infrastructure and app modules green).
 - [ ] Manual pass on a running instance (`./mvnw spring-boot:run -pl datamanager-app -Pdevelopment`):
-  pin 5, try a 6th, unpin one, reload, resize to a phone viewport, and verify a pin whose access was
+  pin 6, try a 7th, unpin one, reload, resize to a phone viewport, and verify a pin whose access was
   revoked renders as a placeholder that can still be removed. Requires a database with
   `pinned_projects` applied.
 

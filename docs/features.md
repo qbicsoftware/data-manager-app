@@ -391,7 +391,7 @@ of the project list.
 
 - Given a project card in the project overview, When the user activates the pin control on that card, Then the project is added to that user's pinned projects and appears in the pinned-project row above the list controls.
 - Given a project is already pinned by the user, When they view the project overview or a project card, Then the pin control indicates the pinned state, and activating it removes the pin and the project leaves the pinned-project row.
-- Given a user who has pinned five projects, When they attempt to pin a sixth, Then no pin is created and the user is told that five is the limit and that an existing pin must be removed first.
+- Given a user who has pinned six projects, When they attempt to pin a seventh, Then no pin is created and the user is told that six is the limit and that an existing pin must be removed first.
 - Given a user with several pinned projects, When the pinned-project row is rendered, Then the projects appear most recently pinned first.
 - Given a user's pins, When any of them is rendered, Then the displayed project code, title and measurement types for accessible projects come from the same live data used by the project list, and no pin is ever visible to anyone but its owner.
 - Given a pinned project the user can no longer access, When the pinned-project row is rendered, Then a placeholder is shown carrying only the project code and title recorded when the project was pinned, together with an indication that access is no longer available, and no other project data is displayed.
@@ -404,8 +404,9 @@ of the project list.
 
 **Notes & Context**
 
-- The limit of five pinned projects is a fixed product parameter for this story, chosen to keep the
-  row to one line on a normal desktop viewport. It is not part of `USER-R-04` and may become a
+- The limit of six pinned projects is a fixed product parameter for this story: the limit keeps
+  the set a shortlist, and six allows a balanced 3×2 grid on desktop so five pins wrap into an
+  even 3+2 layout instead of a cramped single row. It is not part of `USER-R-04` and may become a
   per-user preference later.
 - A pinned project is intentionally allowed to appear twice (in the row and in the list below).
   Suppressing it in the list would change the meaning of the overview count and the page-boundary

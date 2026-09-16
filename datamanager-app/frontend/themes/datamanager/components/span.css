@@ -214,3 +214,19 @@ span.inline {
   background-color: #FFF3CC;
   color: #A68500;
 }
+
+/* Project code badge — monospace identifier rendered next to a project title.
+ * Subtle enough not to compete with measurement tags, but visually distinct
+ * from normal text so users learn to scan for it as a code (same convention
+ * as GitHub issue keys, Jira IDs, GitLab commit hashes). */
+.project-code-badge {
+  font-family: var(--lumo-font-family-monospace, "Source Code Pro for Powerline", monospace);
+  font-size: var(--lumo-font-size-xs);
+  font-weight: 500;
+  padding: 0.15em 0.4em;
+  background-color: var(--lumo-contrast-5pct);
+  border-radius: var(--lumo-border-radius-s);
+  color: var(--lumo-secondary-text-color);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}

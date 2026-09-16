@@ -511,8 +511,14 @@
 }
 
 .project-collection-component .project-overview-item,
-.project-collection-component .project-overview-item:hover {
+.project-collection-component .project-overview-item *,
+a.project-collection-component .project-overview-item,
+a.project-collection-component .project-overview-item:hover {
+  text-decoration: none;
   box-sizing: border-box;
+}
+
+.project-collection-component .project-overview-item {
   display: flex;
   flex-direction: column;
   flex-wrap: wrap;
@@ -521,7 +527,11 @@
   text-overflow: ellipsis;
   white-space: normal;
   cursor: pointer;
-  text-decoration: none
+  transition: background-color 150ms ease;
+}
+
+.project-collection-component .project-overview-item:hover {
+  background-color: var(--lumo-contrast-5pct);
 }
 
 /* The wrapper now owns the card's visual styling (shadow, rounded corners,
@@ -566,6 +576,52 @@
   color: var(--lumo-primary-text-color);
 }
 
+/* Top-right corner of an overview card: a pinned indicator (when pinned) and the
+ * kebab menu button. Positioned absolutely; the pin icon sits left of the kebab. */
+.project-card-top-right {
+  position: absolute;
+  top: var(--lumo-space-m);
+  right: var(--lumo-space-m);
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  column-gap: var(--lumo-space-xs);
+}
+
+.project-card-pin-indicator {
+  color: var(--lumo-primary-color);
+  font-size: var(--lumo-font-size-xs);
+  /* A touch smaller than the kebab icon so the action stays the primary target. */
+}
+
+/* GitHub-style action button: transparent with no border, sized by padding so the
+ * whole box is a comfortable click target. Hover only changes color/background —
+ * no size change, no visual clutter when idle.
+ *
+ * Lumo details that shape this: for tertiary-inline buttons Lumo sets
+ * `background: transparent !important` on the host and `display: none` on the
+ * ::before/::after pseudo-elements, so neither a background nor pseudo-element
+ * hover style can win. The hover background is therefore painted with an inset
+ * box-shadow ring, which does not touch either of those surfaces. */
+.project-card-menu-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--lumo-secondary-text-color);
+  padding: var(--lumo-space-xs);
+  min-width: 2rem;
+  min-height: 2rem;
+  border-radius: var(--lumo-border-radius-s);
+  transition:
+    color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.project-card-menu-toggle:hover {
+  color: var(--lumo-primary-text-color);
+  box-shadow: inset 0 0 0 2rem var(--lumo-contrast-10pct);
+}
+
 /* ---------------------------------------------------------------------------
  * Pinned-project quick-access row (USER-R-04).
  *
@@ -591,13 +647,51 @@
   letter-spacing: 0.04em;
 }
 
-/* auto-fit keeps the row on one line on a desktop viewport (up to five cards) and
- * reflows to fewer columns — eventually one — as the viewport narrows, without an
- * embedded scroll container (USER-NFR-01). */
+/* Per-count grid layouts (1-6 pins). Cards keep a readable minimum width (16rem)
+ * and every multi-card layout stretches to the full container width via 1fr. A
+ * single card is capped at 50% of the container — exactly the width that card
+ * would have when two are in one row — so it never spans the whole page.
+ *
+ * Column counts: 1-3 stay on one row, 4 wraps into a 2×2 grid, 5 wraps to 3+2 and
+ * 6 fills a balanced 3×2 grid. Wrapping happens sooner than before (USER-NFR-01). */
 .pinned-projects-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
   gap: var(--lumo-space-s);
+}
+
+.pinned-count-1 {
+  grid-template-columns: minmax(16rem, 50%);
+}
+
+.pinned-count-2,
+.pinned-count-4 {
+  grid-template-columns: repeat(2, minmax(16rem, 1fr));
+}
+
+.pinned-count-3,
+.pinned-count-5,
+.pinned-count-6 {
+  grid-template-columns: repeat(3, minmax(16rem, 1fr));
+}
+
+/* Narrow viewports: drop three-across layouts to two-across first, then everything
+ * to a single column, so cards wrap instead of overflowing. */
+@media (max-width: 50rem) {
+  .pinned-count-3,
+  .pinned-count-5,
+  .pinned-count-6 {
+    grid-template-columns: repeat(2, minmax(16rem, 1fr));
+  }
+}
+
+@media (max-width: 34rem) {
+  .pinned-count-2,
+  .pinned-count-3,
+  .pinned-count-4,
+  .pinned-count-5,
+  .pinned-count-6 {
+    grid-template-columns: minmax(16rem, 1fr);
+  }
 }
 
 .pinned-project-card {
@@ -605,31 +699,47 @@
   display: flex;
   flex-direction: column;
   border-radius: var(--lumo-border-radius-m);
-  box-shadow: var(--lumo-box-shadow-s);
+  border: 1px solid var(--lumo-contrast-20pct);
   background-color: var(--lumo-base-color);
   overflow: hidden;
   min-width: 0;
 }
 
 .pinned-project-card.no-access {
-  box-shadow: none;
-  border: 1px dashed var(--lumo-contrast-30pct);
+  border-style: dashed;
+  border-color: var(--lumo-contrast-30pct);
+}
+
+.pinned-project-card-body,
+.pinned-project-card-body *,
+a.pinned-project-card-body,
+a.pinned-project-card-body:hover {
+  text-decoration: none;
+  box-sizing: border-box;
 }
 
 .pinned-project-card-body {
   display: flex;
   flex-direction: column;
   row-gap: var(--lumo-space-xs);
-  box-sizing: border-box;
   padding: var(--lumo-space-s) calc(var(--lumo-space-s) + 2.5rem) var(--lumo-space-s) var(--lumo-space-s);
-  text-decoration: none;
   color: inherit;
   cursor: pointer;
   min-width: 0;
+  flex: 1;
+  transition: background-color 150ms ease;
+}
+
+.pinned-project-card-body:hover {
+  background-color: var(--lumo-contrast-5pct);
 }
 
 .pinned-project-card.no-access .pinned-project-card-body {
   cursor: default;
+}
+
+.pinned-project-card.no-access .pinned-project-card-body:hover {
+  background-color: transparent;
 }
 
 .pinned-project-title {
@@ -649,16 +759,41 @@
   color: var(--lumo-secondary-text-color);
 }
 
+/* Push the modified date to the bottom of the card so it aligns across all
+ * pinned cards, regardless of whether measurement tags are present above it. */
+.pinned-project-card-body .pinned-project-secondary {
+  margin-top: auto;
+}
+
 .pinned-project-hint {
   font-style: italic;
 }
 
+/* GitHub-style action button (see .project-card-menu-toggle): transparent,
+ * padded hit area, background-only hover painted via inset box-shadow ring,
+ * because Lumo's tertiary-inline hides the ::before/::after surfaces. */
 .pinned-project-toggle {
   position: absolute;
   top: var(--lumo-space-xs);
   right: var(--lumo-space-xs);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   color: var(--lumo-primary-text-color);
+  padding: var(--lumo-space-xs);
+  min-width: 2rem;
+  min-height: 2rem;
+  border-radius: var(--lumo-border-radius-s);
+  transition:
+    color 150ms ease,
+    box-shadow 150ms ease;
 }
+
+.pinned-project-toggle:hover {
+  box-shadow: inset 0 0 0 2rem var(--lumo-contrast-10pct);
+}
+
+
 
 .project-collection-component .project-overview-item .header {
   display: inline-flex;

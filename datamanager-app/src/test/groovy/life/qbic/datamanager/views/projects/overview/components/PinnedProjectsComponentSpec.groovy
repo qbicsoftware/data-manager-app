@@ -77,7 +77,8 @@ class PinnedProjectsComponentSpec extends Specification {
     then: "the card is not a link and shows only the pin-time label"
     def card = renderedCards()[0]
     cardChildren(card).every { !(it instanceof RouterLink) }
-    textOf(card).contains("2024_001 - Title captured when pinned")
+    textOf(card).contains("2024_001")
+    textOf(card).contains("Title captured when pinned")
     textOf(card).toLowerCase().contains("no longer have access")
 
     and: "the marker class makes the placeholder recognisable to the theme"
@@ -91,7 +92,7 @@ class PinnedProjectsComponentSpec extends Specification {
 
     when:
     component.refresh()
-    unpinButtonOf(renderedCards()[0]).click()
+    clickUnpin(renderedCards()[0])
 
     then: "the unpin is delegated as a removal, without any project access"
     toggleCalls == [[projectId: lost, pin: false]]
@@ -119,8 +120,13 @@ class PinnedProjectsComponentSpec extends Specification {
     card.children.toList() as List<Component>
   }
 
-  private static Button unpinButtonOf(Div card) {
-    cardChildren(card).find { it instanceof Button } as Button
+  private void clickUnpin(Div card) {
+    // The unpin action now lives in the context menu attached to the kebab button.
+    // Reaching it through the component's registered actions keeps the test on the
+    // server side without simulating browser menu interaction.
+    List<Button> buttons = cardChildren(card).findAll { it instanceof Button }
+    assert buttons.size() == 1
+    component.@unpinActions.values().first().run()
   }
 
   private static String textOf(Component component) {

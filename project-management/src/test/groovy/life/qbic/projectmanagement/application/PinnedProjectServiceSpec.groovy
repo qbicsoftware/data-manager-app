@@ -209,6 +209,25 @@ class PinnedProjectServiceSpec extends Specification {
     outcome == PinnedProjectService.PinOutcome.NO_ACTIVE_USER
   }
 
+  def "sorts pins most recently pinned first even when the store returns them unordered"() {
+    given: "the store returns pins newest last (e.g. a deployed column with coarse precision)"
+    def oldest = ProjectId.create()
+    def middle = ProjectId.create()
+    def newest = ProjectId.create()
+    authenticateUser()
+    pinnedProjectStore.findByUserId(USER_ID) >> [
+        pin(oldest, Instant.parse("2026-01-01T00:00:00Z")),
+        pin(middle, Instant.parse("2026-01-02T00:00:00Z")),
+        pin(newest, Instant.parse("2026-01-03T00:00:00Z"))]
+    projectAccessService.getAccessibleProjectsForSid(USER_ID) >> []
+
+    when:
+    def result = pinnedProjectService.findPinnedProjects()
+
+    then: "the views are returned newest first regardless of the store order"
+    result*.projectId() == [newest, middle, oldest]
+  }
+
   private void authenticateUser() {
     authentication.getAuthorities() >> []
     userIdTranslator.translateToUserId(authentication) >> Optional.of(USER_ID)
