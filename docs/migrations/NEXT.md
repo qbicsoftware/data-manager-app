@@ -21,7 +21,8 @@ For the migration documentation structure, see [`README.md`](README.md).
 
 | # | Script | Description | Risk |
 |---|---|---|---|
-|   |   |   |   |
+| 1 | [`add-sample-batch-property-and-project-association.sql`](../../sql/migrations/add-sample-batch-property-and-project-association.sql) | Add `batch`, `project_id`, `registrationTime`, `lastModified` to `sample` and backfill from legacy `sample_batches` (additive) | Low (non-destructive) |
+| 2 | [`finalize-sample-batch-removal.sql`](../../sql/migrations/finalize-sample-batch-removal.sql) | Add `project_id` FK, drop `sample.assigned_batch_id`, drop legacy `sample_batches`/`sample_batches_sampleid` (stop-the-world) | High (destructive) |
 
 Each row links to its incremental script. The sections below expand each entry
 with apply / verify / rollback detail.
@@ -62,6 +63,183 @@ and does not require an environment variable or secret.
    `…/projects/<project-id>/datasets` instead of `…/projects/<project-id>/info`.
 
 No schema migration is associated with this entry.
+
+---
+
+## Migration #1: Sample batch property and project association (additive)
+
+| Field | Value |
+|---|---|
+| **Story** | [FEAT-SAMBAT-01 #1549](https://github.com/qbicsoftware/data-manager-app/issues/1549), [FEAT-SAMBAT-02 #1550](https://github.com/qbicsoftware/data-manager-app/issues/1550), [FEAT-SAMBAT-03 #1551](https://github.com/qbicsoftware/data-manager-app/issues/1551) |
+| **Feature** | [FEAT-SAMPLE-BATCH-REMOVAL #1548](https://github.com/qbicsoftware/data-manager-app/issues/1548) |
+| **ADRs** | none (ADRs 0008/0009 were removed as too implementation-specific) |
+| **Scope** | alter `sample` (add columns + backfill) |
+| **Script** | `sql/migrations/add-sample-batch-property-and-project-association.sql` |
+| **Target datasource** | `data_management` |
+
+### What it does
+
+Removes the explicit sample batch from the data model by moving the batch name
+onto each sample and introducing a direct project association (SAMPLE-R-01,
+SAMPLE-R-02, SAMPLE-R-03). This script **adds** the new columns to `sample` and
+backfills them from the legacy `sample_batches` tables:
+
+- `sample.batch` ← `sample_batches.batchLabel`
+- `sample.registrationTime` ← `sample_batches.createdOn`
+- `sample.lastModified` ← `sample_batches.lastModified`
+- `sample.project_id` ← derived from `sample.experiment_id` via
+  `experiments_datamanager.project`
+
+It is **non-destructive**: the legacy `sample_batches`/`sample_batches_sampleid`
+tables and `sample.assigned_batch_id` are **kept in place**. This is deliberate
+because the database is shared with the test system and other nodes are running.
+
+**This script must be applied before migration #2.** `project_id` is added as a
+plain column here; the real FK constraint is added by migration #2 at release.
+
+### Pre-flight
+
+```sql
+-- Confirm the legacy tables and columns exist before applying.
+SHOW TABLES LIKE 'sample_batches%';
+SELECT COLUMN_NAME FROM information_schema.COLUMNS
+ WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'sample'
+   AND COLUMN_NAME IN ('batch','project_id','registrationTime','lastModified','assigned_batch_id');
+```
+
+### Apply
+
+```bash
+mysql -u <user> -h <host> -P <port> data_management \
+    < sql/migrations/add-sample-batch-property-and-project-association.sql
+```
+
+### Verify
+
+```sql
+SELECT
+    COUNT(*) AS total_samples,
+    SUM(s.batch IS NULL)                       AS samples_without_batch,
+    SUM(s.project_id IS NULL)                  AS samples_without_project,
+    SUM(s.registrationTime IS NULL)            AS samples_without_registration_time
+FROM `sample` s;
+-- Expect samples_without_batch / _project / _registration_time to be low or 0.
+-- Investigate any sample that still has a batch (assigned_batch_id IS NOT NULL)
+-- but a NULL backfilled value, before proceeding to migration #2.
+```
+
+### Rollback
+
+This migration is additive and non-destructive. To roll back, simply drop the
+added columns (or leave them; they are unused until the new code is deployed):
+
+```sql
+ALTER TABLE `sample` DROP COLUMN `batch`;
+ALTER TABLE `sample` DROP COLUMN `project_id`;
+ALTER TABLE `sample` DROP COLUMN `registrationTime`;
+ALTER TABLE `sample` DROP COLUMN `lastModified`;
+```
+
+### Operator notes
+
+- **No downtime required** for this migration — it is additive and safe to run
+  while nodes are up.
+- **Batch name uniqueness:** before this migration, confirm whether any
+  experiment has two distinct batches with the same `batchLabel`. Duplicate
+  names within one experiment would produce indistinguishable samples by name
+  after migration. See the duplicate-name check queries.
+- Migration #2 (finalize) must run only after this one, at the stop-the-world
+  window.
+
+---
+
+## Migration #2: Finalize sample batch removal (stop-the-world, destructive)
+
+| Field | Value |
+|---|---|
+| **Story** | [FEAT-SAMBAT-03 #1551](https://github.com/qbicsoftware/data-manager-app/issues/1551) |
+| **Feature** | [FEAT-SAMPLE-BATCH-REMOVAL #1548](https://github.com/qbicsoftware/data-manager-app/issues/1548) |
+| **ADRs** | none (ADRs 0008/0009 were removed as too implementation-specific) |
+| **Scope** | alter `sample` (FK + drop column) and drop legacy tables |
+| **Script** | `sql/migrations/finalize-sample-batch-removal.sql` |
+| **Target datasource** | `data_management` |
+
+### What it does
+
+Completes the sample batch removal (SAMPLE-R-02, SAMPLE-R-03) after migration
+#1 has populated the new columns. It:
+
+- adds the real FK constraint on `sample.project_id` →
+  `projects_datamanager(projectId)`;
+- drops the obsolete `sample.assigned_batch_id` column;
+- drops the legacy `sample_batches` and `sample_batches_sampleid` tables.
+
+**Destructive — run only during the coordinated stop-the-world downtime
+window**, after all nodes have been shut down and after migration #1 has been
+applied and verified.
+
+### Pre-flight
+
+```sql
+-- Refuse to proceed unless the additive backfill ran and the new columns exist.
+SELECT COLUMN_NAME FROM information_schema.COLUMNS
+ WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'sample'
+   AND COLUMN_NAME IN ('batch','project_id','registrationTime','lastModified');
+
+-- Confirm no sample that HAS a batch is missing a backfilled value.
+SELECT COUNT(*) AS samples_missing_backfilled_values
+FROM `sample` s
+JOIN `sample_batches` sb ON sb.id = s.assigned_batch_id
+WHERE s.assigned_batch_id IS NOT NULL
+  AND (s.`batch` IS NULL OR s.`registrationTime` IS NULL OR s.`lastModified` IS NULL);
+-- Expect 0. If > 0, STOP: investigate before running this script.
+```
+
+### Apply
+
+```bash
+# All nodes must be down. The script opens a transaction; review the verify
+# output, then COMMIT (or ROLLBACK).
+mysql -u <user> -h <host> -P <port> data_management \
+    < sql/migrations/finalize-sample-batch-removal.sql
+# then, in the client:
+COMMIT;   # or ROLLBACK;
+```
+
+### Verify
+
+```sql
+-- Expect zero legacy batch tables.
+SHOW TABLES LIKE 'sample_batches%';
+
+-- Expect batch, project_id, registrationTime, lastModified present and
+-- assigned_batch_id absent.
+SELECT COLUMN_NAME FROM information_schema.COLUMNS
+ WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'sample'
+   AND COLUMN_NAME IN ('batch','project_id','registrationTime','lastModified','assigned_batch_id');
+
+-- Expect the FK constraint is present.
+SELECT CONSTRAINT_NAME FROM information_schema.TABLE_CONSTRAINTS
+ WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'sample'
+   AND CONSTRAINT_TYPE = 'FOREIGN KEY';
+```
+
+### Rollback
+
+**Not safely reversible.** The legacy `sample_batches`/`sample_batches_sampleid`
+tables and `sample.assigned_batch_id` are dropped; recreate from a database
+backup taken before this migration. Ensure a backup exists before applying.
+
+### Operator notes
+
+- **Full downtime required:** all nodes must be down before applying; bring
+  them back up together.
+- **Requires a backup** of the `data_management` database taken immediately
+  before this migration (it is destructive).
+- **Must run after migration #1.** Verify the pre-flight counts are clean before
+  applying.
+- New code (sample batch removal release) must be deployed together with this
+  migration so the application never runs against a mismatched schema.
 
 ---
 

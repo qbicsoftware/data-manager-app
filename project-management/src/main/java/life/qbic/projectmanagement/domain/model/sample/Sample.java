@@ -7,6 +7,7 @@ import jakarta.persistence.Convert;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
+import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 import life.qbic.domain.concepts.LocalDomainEventDispatcher;
@@ -14,6 +15,7 @@ import life.qbic.projectmanagement.application.batch.SampleUpdateRequest;
 import life.qbic.projectmanagement.domain.model.batch.Batch;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.event.SampleRegistered;
 import life.qbic.projectmanagement.domain.model.sample.event.SampleUpdated;
 
@@ -23,8 +25,9 @@ import life.qbic.projectmanagement.domain.model.sample.event.SampleUpdated;
  * A sample represents the physical sample from an experiment that has been collected and needs to
  * be prepared for measurement in one of QBiC's partner facilities.
  * <p>
- * A sample needs to be registered and assigned to one existing sample {@link Batch}, before it can
- * be prepared for shipment to the measurement facility.
+ * A sample is registered directly within an experiment of a project and carries a free-text batch
+ * label for grouping and backwards compatibility. The legacy batch reference is retained during the
+ * transition until the explicit batch entity is removed.
  *
  * @since 1.0.0
  */
@@ -34,6 +37,13 @@ public class Sample {
   @Embedded
   @AttributeOverride(name = "uuid", column = @Column(name = "assigned_batch_id"))
   private BatchId assignedBatch;
+
+  @Column(name = "batch")
+  private String batch;
+
+  @Embedded
+  @AttributeOverride(name = "projectId", column = @Column(name = "project_id"))
+  private ProjectId projectId;
 
   @Embedded
   @AttributeOverride(name = "uuid", column = @Column(name = "experiment_id"))
@@ -47,6 +57,12 @@ public class Sample {
   private String biologicalReplicate;
   private String comment;
 
+  @Column(name = "registrationTime")
+  private Instant registrationTime;
+
+  @Column(name = "lastModified")
+  private Instant lastModified;
+
   @Column(name = "analysis_method")
   @Convert(converter = AnalysisMethodConverter.class)
   private AnalysisMethod analysisMethod;
@@ -57,10 +73,10 @@ public class Sample {
   @Embedded
   private SampleOrigin sampleOrigin;
 
-  private Sample(SampleId id, SampleCode sampleCode, BatchId assignedBatch, String label,
-      String biologicalReplicate, ExperimentId experimentId, Long experimentalGroupId,
-      SampleOrigin sampleOrigin,
-      AnalysisMethod analysisMethod, String comment) {
+  private Sample(SampleId id, SampleCode sampleCode, BatchId assignedBatch, String batch,
+      ProjectId projectId, String label, String biologicalReplicate, ExperimentId experimentId,
+      Long experimentalGroupId, SampleOrigin sampleOrigin, AnalysisMethod analysisMethod,
+      String comment) {
     this.id = id;
     this.sampleCode = Objects.requireNonNull(sampleCode);
     this.label = label;
@@ -69,8 +85,12 @@ public class Sample {
     this.experimentalGroupId = experimentalGroupId;
     this.sampleOrigin = sampleOrigin;
     this.assignedBatch = assignedBatch;
+    this.batch = batch;
+    this.projectId = projectId;
     this.analysisMethod = analysisMethod;
     this.comment = comment;
+    this.registrationTime = Instant.now();
+    this.lastModified = this.registrationTime;
     emitCreatedEvent();
   }
 
@@ -89,6 +109,7 @@ public class Sample {
     Objects.requireNonNull(sampleRegistrationRequest);
     SampleId sampleId = SampleId.create();
     return new Sample(sampleId, sampleCode, sampleRegistrationRequest.assignedBatch(),
+        null, null,
         sampleRegistrationRequest.label(), sampleRegistrationRequest.biologicalReplicate(),
         sampleRegistrationRequest.experimentId(), sampleRegistrationRequest.experimentalGroupId(),
         sampleRegistrationRequest.sampleOrigin(),
@@ -99,8 +120,24 @@ public class Sample {
     return this.experimentId;
   }
 
+  public ProjectId projectId() {
+    return this.projectId;
+  }
+
   public BatchId assignedBatch() {
     return this.assignedBatch;
+  }
+
+  public String batch() {
+    return this.batch;
+  }
+
+  public Instant registrationTime() {
+    return this.registrationTime;
+  }
+
+  public Instant lastModified() {
+    return this.lastModified;
   }
 
   public SampleId sampleId() {
@@ -171,6 +208,7 @@ public class Sample {
         sampleInfo.sampleInformation().specimen(), sampleInfo.sampleInformation().analyte()));
     setComment(sampleInfo.sampleInformation().comment());
     setExperimentalGroupId(sampleInfo.sampleInformation().experimentalGroup().id());
+    this.lastModified = Instant.now();
     emitUpdatedEvent();
   }
 
@@ -196,7 +234,7 @@ public class Sample {
   }
 
   private void emitCreatedEvent() {
-    var createdEvent = SampleRegistered.create(this.experimentId.value(), this.assignedBatch(),
+    var createdEvent = SampleRegistered.create(this.experimentId.value(), this.assignedBatch,
         this.id);
     LocalDomainEventDispatcher.instance().dispatch(createdEvent);
   }
