@@ -10,22 +10,26 @@ import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.Grid.MultiSortPriority;
+import com.vaadin.flow.component.grid.Grid.Column;
 import com.vaadin.flow.component.grid.GridSortOrder;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.AnchorTarget;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.data.provider.CallbackDataProvider.CountCallback;
-import com.vaadin.flow.data.provider.CallbackDataProvider.FetchCallback;
+import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.provider.SortDirection;
+import com.vaadin.flow.data.selection.MultiSelectionEvent;
+import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.server.streams.DownloadHandler;
 import com.vaadin.flow.shared.Registration;
-import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 import java.io.Serializable;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -34,6 +38,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.application.commons.SortOrder;
 import life.qbic.application.commons.time.DateTimeFormat;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.PageArea;
@@ -42,22 +47,39 @@ import life.qbic.datamanager.views.general.dialog.DialogBody;
 import life.qbic.datamanager.views.general.dialog.DialogFooter;
 import life.qbic.datamanager.views.general.dialog.DialogHeader;
 import life.qbic.datamanager.views.general.dialog.DialogSection;
-import life.qbic.datamanager.views.general.grid.component.FilterGrid;
-import life.qbic.datamanager.views.general.grid.component.FilterGridConfigurations;
-import life.qbic.datamanager.views.general.grid.component.FilterGridTab;
-import life.qbic.datamanager.views.general.grid.component.FilterGridTabSheet;
+import life.qbic.datamanager.views.general.pagination.ListState;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
+import life.qbic.datamanager.views.projects.project.measurements.pagination.MeasurementDomain;
+import life.qbic.datamanager.views.projects.project.measurements.pagination.MeasurementListState;
+import life.qbic.datamanager.views.projects.project.measurements.pagination.MeasurementSelection;
+import life.qbic.datamanager.views.projects.project.measurements.pagination.MeasurementSort;
+import life.qbic.datamanager.views.projects.project.measurements.pagination.MeasurementTabPagination;
+import life.qbic.datamanager.views.projects.project.measurements.pagination.MeasurementTabPagination.RefreshRequestedEvent;
 import life.qbic.projectmanagement.application.measurement.IpMeasurementLookup;
 import life.qbic.projectmanagement.application.measurement.NgsMeasurementLookup;
-import life.qbic.projectmanagement.application.measurement.NgsMeasurementLookup.MeasurementFilter;
 import life.qbic.projectmanagement.application.measurement.NgsMeasurementLookup.NgsSortKey;
 import life.qbic.projectmanagement.application.measurement.PxpMeasurementLookup;
 import life.qbic.projectmanagement.application.measurement.PxpMeasurementLookup.MeasurementInfo;
 import life.qbic.projectmanagement.application.measurement.PxpMeasurementLookup.PxpSortKey;
 import org.jspecify.annotations.NonNull;
+import org.springframework.data.domain.Sort;
 
 /**
- * A component to show detailed information about existing measurements within an experiment.
+ * A component to show detailed information about existing measurements within an experiment
+ * (ADR-0008, USER-R-01/-R-02/-R-03).
+ *
+ * <p>The three measurement domains (genomics / proteomics / immunopeptidomics) are shown as
+ * paginated in-memory grids inside a {@link MeasurementTabPagination}: only the current page is
+ * fetched and rendered, a shared pager reports location and total, and a view-owned
+ * {@link MeasurementSelection} of measurement IDs survives page, filter, and sort changes.
+ * Bulk actions (export / edit / delete) apply to the full cross-page selection. The "Select all
+ * N matching the active filter" action resolves all matching measurement IDs in backend storage
+ * (ADR-0008, A1).</p>
+ *
+ * <p>List state (active tab + per-tab page/size/filter/sort) is owned by the container
+ * ({@link MeasurementTabPagination}) and mirrored into the browser URL; this component only
+ * performs the lookups, keeps the selections, and fires the same measurement events as before to
+ * {@link MeasurementMain}.</p>
  */
 public class MeasurementDetailsComponent extends PageArea implements Serializable {
 
@@ -68,31 +90,35 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   private final AtomicInteger clientTimeZoneOffset = new AtomicInteger(0);
   private final MessageSourceNotificationFactory messageFactory;
 
-  private final FilterGridTabSheet tabSheet;
-  private final SearchTermFilter ngsSearchTermFilter = SearchTermFilter.empty();
-  private final SearchTermFilter pxpSearchTermFilter = SearchTermFilter.empty();
-  private final SearchTermFilter ipSearchTermFilter = SearchTermFilter.empty();
+  private final MeasurementTabPagination tabPagination;
+  private final Grid<NgsMeasurementLookup.MeasurementInfo> ngsGrid = createNgsGrid();
+  private final Grid<MeasurementInfo> pxpGrid = createPxpGrid();
+  private final Grid<IpMeasurementLookup.MeasurementInfo> ipGrid = createIpGrid();
+  private final TextField ngsSearchField = searchField();
+  private final TextField pxpSearchField = searchField();
+  private final TextField ipSearchField = searchField();
+  private final Button ngsSelectAllButton = new Button("Select all matching filter");
+  private final Button pxpSelectAllButton = new Button("Select all matching filter");
+  private final Button ipSelectAllButton = new Button("Select all matching filter");
+  private final Button ngsEditButton = new Button("Edit");
+  private final Button ngsDeleteButton = new Button("Delete");
+  private final Button pxpEditButton = new Button("Edit");
+  private final Button pxpDeleteButton = new Button("Delete");
+  private final Button ipEditButton = new Button("Edit");
+  private final Button ipDeleteButton = new Button("Delete");
+  private final MeasurementSelection ngsSelection = new MeasurementSelection(() -> updateSelectionBar());
+  private final MeasurementSelection pxpSelection = new MeasurementSelection(() -> updateSelectionBar());
+  private final MeasurementSelection ipSelection = new MeasurementSelection(() -> updateSelectionBar());
 
   private final transient NgsMeasurementLookup ngsMeasurementLookup;
   private final transient PxpMeasurementLookup pxpMeasurementLookup;
   private final transient IpMeasurementLookup ipMeasurementLookup;
-  private FilterGrid<NgsMeasurementLookup.MeasurementInfo, SearchTermFilter> filterGridNgs;
-  private FilterGrid<MeasurementInfo, SearchTermFilter> filterGridPxp;
-  private FilterGrid<IpMeasurementLookup.MeasurementInfo, SearchTermFilter> filterGridIp;
 
-  /**
-   * A filter containing a search term
-   *
-   * @param searchTerm
-   */
-  record SearchTermFilter(String searchTerm) implements Serializable {
+  private Context context;
 
-    static SearchTermFilter empty() {
-      return new SearchTermFilter("");
-    }
-
-    public SearchTermFilter replaceWith(String searchTerm) {
-      return new SearchTermFilter(searchTerm);
+  private void updateSelectionBar() {
+    if (tabPagination != null) {
+      tabPagination.updateSelectionBar();
     }
   }
 
@@ -122,267 +148,462 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     this.ipMeasurementLookup = requireNonNull(ipMeasurementLookup);
     addClassNames("measurement-details-component", "height-full", "width-full");
 
-    //setup tab sheet
-    tabSheet = new FilterGridTabSheet();
-    tabSheet.showPrimaryFeatureButton();
-    tabSheet.setCaptionPrimaryAction("Register Measurements");
-    tabSheet.showPrimaryFeatureButton();
-    tabSheet.setCaptionFeatureAction("Export");
-    add(tabSheet);
+    tabPagination = new MeasurementTabPagination();
+    tabPagination.addTab("Genomics", MeasurementDomain.NGS, ngsTabContent());
+    tabPagination.addTab("Proteomics", MeasurementDomain.PXP, pxpTabContent());
+    tabPagination.addTab("Immunopeptidomics", MeasurementDomain.IP, ipTabContent());
+    tabPagination.setSelection(ngsSelection);
+    tabPagination.addRefreshRequestedListener(this::onRefreshRequested);
+    add(tabPagination);
+
+    configureSearch(ngsSearchField, MeasurementDomain.NGS);
+    configureSearch(pxpSearchField, MeasurementDomain.PXP);
+    configureSearch(ipSearchField, MeasurementDomain.IP);
+    configureSortListener(ngsGrid, MeasurementDomain.NGS);
+    configureSortListener(pxpGrid, MeasurementDomain.PXP);
+    configureSortListener(ipGrid, MeasurementDomain.IP);
+    configureSelectionReconciliation(ngsGrid, ngsSelection, MeasurementDomain.NGS);
+    configureSelectionReconciliation(pxpGrid, pxpSelection, MeasurementDomain.PXP);
+    configureSelectionReconciliation(ipGrid, ipSelection, MeasurementDomain.IP);
+
+    // register buttons wiring (fires the same events as the old implementation)
+    ngsEditButton.addClickListener(clicked -> fireEditRequested(MeasurementDomain.NGS,
+        ngsSelection, NgsMeasurementEditRequested::new));
+    ngsDeleteButton.addClickListener(clicked -> fireDeletionRequested(MeasurementDomain.NGS,
+        ngsSelection, NgsMeasurementDeletionRequested::new));
+    pxpEditButton.addClickListener(clicked -> fireEditRequested(MeasurementDomain.PXP,
+        pxpSelection, PxpMeasurementEditRequested::new));
+    pxpDeleteButton.addClickListener(clicked -> fireDeletionRequested(MeasurementDomain.PXP,
+        pxpSelection, PxpMeasurementDeletionRequested::new));
+    ipEditButton.addClickListener(clicked -> fireEditRequested(MeasurementDomain.IP,
+        ipSelection, IpMeasurementEditRequested::new));
+    ipDeleteButton.addClickListener(clicked -> fireDeletionRequested(MeasurementDomain.IP,
+        ipSelection, IpMeasurementDeletionRequested::new));
+  }
+
+  // ---- tab content ---------------------------------------------------------
+
+  private Component ngsTabContent() {
+    return tabContent(ngsGrid, ngsSearchField, ngsSelectAllButton, ngsEditButton, ngsDeleteButton,
+        MeasurementDomain.NGS, this::exportNgs);
+  }
+
+  private Component pxpTabContent() {
+    return tabContent(pxpGrid, pxpSearchField, pxpSelectAllButton, pxpEditButton, pxpDeleteButton,
+        MeasurementDomain.PXP, this::exportPxp);
+  }
+
+  private Component ipTabContent() {
+    return tabContent(ipGrid, ipSearchField, ipSelectAllButton, ipEditButton, ipDeleteButton,
+        MeasurementDomain.IP, this::exportIp);
+  }
+
+  private Component tabContent(Grid<?> grid, TextField searchField, Button selectAll,
+      Button editButton, Button deleteButton, MeasurementDomain domain, Runnable exporter) {
+    Div toolbar = new Div();
+    toolbar.addClassName("measurement-tab-toolbar");
+    searchField.addClassName("measurement-search");
+    selectAll.addClassName("measurement-select-all");
+    selectAll.addClickListener(clicked -> selectAllMatching(domain));
+    Button exportButton = new Button("Export");
+    exportButton.addClassName("measurement-export");
+    exportButton.addClickListener(clicked -> exporter.run());
+    toolbar.add(searchField, selectAll, exportButton, editButton, deleteButton);
+
+    Div content = new Div();
+    content.addClassName("measurement-tab-content");
+    content.add(toolbar, grid);
+    return content;
+  }
+
+  private void configureSearch(TextField field, MeasurementDomain domain) {
+    field.setPlaceholder("Search Measurements");
+    field.setClearButtonVisible(true);
+    field.setValueChangeMode(ValueChangeMode.LAZY);
+    field.addValueChangeListener(event -> tabPagination.applySearch(domain, event.getValue()));
+  }
+
+  private void configureSortListener(Grid<?> grid, MeasurementDomain domain) {
+    grid.setMultiSort(false);
+    grid.addSortListener(event -> {
+      List<GridSortOrder<?>> orders = (List<GridSortOrder<?>>) (List<?>) grid.getSortOrder();
+      if (orders.isEmpty()) {
+        return;
+      }
+      GridSortOrder<?> order = orders.get(0);
+      String property = sortPropertyOf(order);
+      if (property == null || property.isBlank()) {
+        return;
+      }
+      boolean descending = order.getDirection() == SortDirection.DESCENDING;
+      SortOrder sortOrder = new SortOrder(property, descending);
+      if (!MeasurementSort.allowedSortOrders(domain).contains(sortOrder)) {
+        return;
+      }
+      tabPagination.applySort(domain, sortOrder);
+    });
+  }
+
+  private static String sortPropertyOf(GridSortOrder<?> order) {
+    if (order.getSorted() == null) {
+      return null;
+    }
+    Column<?> column = (Column<?>) order.getSorted();
+    // The Column exposes its sort properties only via the sort-order provider; the first
+    // QuerySortOrder returned for the clicked direction carries the property name.
+    return column.getSortOrder(order.getDirection())
+        .findFirst()
+        .map(querySortOrder -> querySortOrder.getSorted())
+        .orElse(null);
+  }
+
+  private void configureSelectionReconciliation(Grid<?> grid, MeasurementSelection selection,
+      MeasurementDomain domain) {
+    grid.setSelectionMode(Grid.SelectionMode.MULTI);
+    // client changes -> update the ID set (only for rows on the current page)
+    @SuppressWarnings("unchecked")
+    Grid<Object> objectGrid = (Grid<Object>) grid;
+    objectGrid.addSelectionListener(event -> {
+      MultiSelectionEvent<Grid<Object>, Object> multi = (MultiSelectionEvent<Grid<Object>, Object>) event;
+      Set<Object> added = multi.getAddedSelection();
+      Set<Object> removed = multi.getRemovedSelection();
+      added.forEach(item -> selection.select(measurementIdOf(domain, item)));
+      removed.forEach(item -> selection.deselect(measurementIdOf(domain, item)));
+      tabPagination.updateSelectionBar();
+    });
+  }
+
+  private static String measurementIdOf(MeasurementDomain domain, Object item) {
+    return switch (domain) {
+      case NGS -> ((NgsMeasurementLookup.MeasurementInfo) item).measurementId();
+      case PXP -> ((MeasurementInfo) item).measurementId();
+      case IP -> ((IpMeasurementLookup.MeasurementInfo) item).measurementId();
+    };
+  }
+
+  // ---- page loading / refresh -----------------------------------------------
+
+  private void onRefreshRequested(RefreshRequestedEvent event) {
+    MeasurementDomain domain = event.domain();
+    if (context == null) {
+      return;
+    }
+    ListState state = tabPagination.listState().stateOf(domain);
+    // keep the selection display attached to the active tab
+    tabPagination.setSelection(selectionFor(domain));
+    loadAndRender(domain, state);
+  }
+
+  private void loadAndRender(MeasurementDomain domain, ListState state) {
+    String experimentId = context.experimentId().orElseThrow().value();
+    String projectId = context.projectId().orElseThrow().value();
+    Sort sort = MeasurementSort.toSpringDataSort(state.sort(), domain);
+    int offset = (state.page() - 1) * state.pageSize();
+    int limit = state.pageSize();
+    String searchTerm = state.filter();
+    switch (domain) {
+      case NGS -> {
+        NgsMeasurementLookup.MeasurementFilter filter =
+            NgsMeasurementLookup.MeasurementFilter.forExperiment(experimentId)
+                .withSearch(searchTerm, clientTimeZoneOffset.get(),
+                    MEASUREMENT_REGISTRATION_DATE_TIME_FORMAT);
+        int total = ngsMeasurementLookup.countNgsMeasurements(projectId, filter);
+        List<NgsMeasurementLookup.MeasurementInfo> page = ngsMeasurementLookup
+            .lookupNgsMeasurements(projectId, offset, limit, sort, filter).toList();
+        renderPage(ngsGrid, page, total, state, MeasurementDomain.NGS);
+      }
+      case PXP -> {
+        PxpMeasurementLookup.MeasurementFilter filter =
+            PxpMeasurementLookup.MeasurementFilter.forExperiment(experimentId)
+                .withSearch(searchTerm, clientTimeZoneOffset.get(),
+                    MEASUREMENT_REGISTRATION_DATE_TIME_FORMAT);
+        int total = pxpMeasurementLookup.countPxpMeasurements(projectId, filter);
+        List<MeasurementInfo> page = pxpMeasurementLookup
+            .lookupPxpMeasurements(projectId, offset, limit, sort, filter).toList();
+        renderPage(pxpGrid, page, total, state, MeasurementDomain.PXP);
+      }
+      case IP -> {
+        IpMeasurementLookup.MeasurementFilter filter =
+            IpMeasurementLookup.MeasurementFilter.forExperiment(experimentId)
+                .withSearch(searchTerm, clientTimeZoneOffset.get(),
+                    MEASUREMENT_REGISTRATION_DATE_TIME_FORMAT);
+        int total = ipMeasurementLookup.countIpMeasurements(projectId, filter);
+        List<IpMeasurementLookup.MeasurementInfo> page = ipMeasurementLookup
+            .lookupIpMeasurements(projectId, offset, limit, sort, filter).toList();
+        renderPage(ipGrid, page, total, state, MeasurementDomain.IP);
+      }
+    }
+  }
+
+  private <T> void renderPage(Grid<T> grid, List<T> page, int total, ListState state,
+      MeasurementDomain domain) {
+    int totalPages = Math.max(1, (int) Math.ceil((double) total / state.pageSize()));
+    int pageToRender = Math.min(state.page(), totalPages);
+    if (pageToRender != state.page()) {
+      // the requested page lies beyond the last valid page (filter/deletion shrank the result
+      // set); re-fetch the clamped page once
+      refreshClamped(domain, pageToRender);
+      return;
+    }
+    grid.setItems(page);
+    reconcileSelection(grid, selectionFor(domain), domain);
+    tabPagination.onPageLoaded(domain, pageToRender, total);
+    updateSelectAllLabel(domain, total);
+  }
+
+  private void updateSelectAllLabel(MeasurementDomain domain, int matchingCount) {
+    Button button = switch (domain) {
+      case NGS -> ngsSelectAllButton;
+      case PXP -> pxpSelectAllButton;
+      case IP -> ipSelectAllButton;
+    };
+    button.setText("Select all %d matching filter".formatted(matchingCount));
+  }
+
+  private void refreshClamped(MeasurementDomain domain, int clampedPage) {
+    ListState current = tabPagination.listState().stateOf(domain);
+    ListState clamped = current.withPage(clampedPage);
+    tabPagination.applyListState(domain, clamped);
+    loadAndRender(domain, clamped);
+  }
+
+  @SuppressWarnings("unchecked")
+  private <T> void reconcileSelection(Grid<T> grid, MeasurementSelection selection,
+      MeasurementDomain domain) {
+    grid.getGenericDataView().getItems().toList().forEach(item -> {
+      String id = measurementIdOf(domain, item);
+      if (selection.contains(id)) {
+        grid.select(item);
+      } else {
+        grid.deselect(item);
+      }
+    });
+  }
+
+  // ---- selection helpers ----------------------------------------------------
+
+  private MeasurementSelection selectionFor(MeasurementDomain domain) {
+    return switch (domain) {
+      case NGS -> ngsSelection;
+      case PXP -> pxpSelection;
+      case IP -> ipSelection;
+    };
+  }
+
+  private void selectAllMatching(MeasurementDomain domain) {
+    if (context == null) {
+      return;
+    }
+    ListState state = tabPagination.listState().stateOf(domain);
+    String projectId = context.projectId().orElseThrow().value();
+    String experimentId = context.experimentId().orElseThrow().value();
+    String searchTerm = state.filter();
+    Sort sort = MeasurementSort.toSpringDataSort(state.sort(), domain);
+    List<String> ids = switch (domain) {
+      case NGS -> {
+        NgsMeasurementLookup.MeasurementFilter filter =
+            NgsMeasurementLookup.MeasurementFilter.forExperiment(experimentId)
+                .withSearch(searchTerm, clientTimeZoneOffset.get(),
+                    MEASUREMENT_REGISTRATION_DATE_TIME_FORMAT);
+        int total = ngsMeasurementLookup.countNgsMeasurements(projectId, filter);
+        yield ngsMeasurementLookup.lookupNgsMeasurements(projectId, 0, total, sort, filter)
+            .map(NgsMeasurementLookup.MeasurementInfo::measurementId).toList();
+      }
+      case PXP -> {
+        PxpMeasurementLookup.MeasurementFilter filter =
+            PxpMeasurementLookup.MeasurementFilter.forExperiment(experimentId)
+                .withSearch(searchTerm, clientTimeZoneOffset.get(),
+                    MEASUREMENT_REGISTRATION_DATE_TIME_FORMAT);
+        int total = pxpMeasurementLookup.countPxpMeasurements(projectId, filter);
+        yield pxpMeasurementLookup.lookupPxpMeasurements(projectId, 0, total, sort, filter)
+            .map(PxpMeasurementLookup.MeasurementInfo::measurementId).toList();
+      }
+      case IP -> {
+        IpMeasurementLookup.MeasurementFilter filter =
+            IpMeasurementLookup.MeasurementFilter.forExperiment(experimentId)
+                .withSearch(searchTerm, clientTimeZoneOffset.get(),
+                    MEASUREMENT_REGISTRATION_DATE_TIME_FORMAT);
+        int total = ipMeasurementLookup.countIpMeasurements(projectId, filter);
+        yield ipMeasurementLookup.lookupIpMeasurements(projectId, 0, total, sort, filter)
+            .map(IpMeasurementLookup.MeasurementInfo::measurementId).toList();
+      }
+    };
+    selectionFor(domain).select(Set.copyOf(ids));
+    // visually reconcile only the current page; the rest stay selected 'invisibly'
+    Grid<?> grid = switch (domain) {
+      case NGS -> ngsGrid;
+      case PXP -> pxpGrid;
+      case IP -> ipGrid;
+    };
+    reconcileSelection(grid, selectionFor(domain), domain);
+    tabPagination.updateSelectionBar();
+  }
+
+  // ---- actions --------------------------------------------------------------
+
+  private interface IdEventFactory<T extends ComponentEvent<MeasurementDetailsComponent>> {
+    T create(List<String> ids, MeasurementDetailsComponent source, boolean fromClient);
+  }
+
+  private void fireEditRequested(MeasurementDomain domain, MeasurementSelection selection,
+      IdEventFactory<?> factory) {
+    List<String> ids = idsOf(selection);
+    if (ids.isEmpty()) {
+      displayMissingSelectionNote();
+      return;
+    }
+    switch (domain) {
+      case NGS -> fireEvent((NgsMeasurementEditRequested) factory.create(ids, this, true));
+      case PXP -> fireEvent((PxpMeasurementEditRequested) factory.create(ids, this, true));
+      case IP -> fireEvent((IpMeasurementEditRequested) factory.create(ids, this, true));
+    }
+  }
+
+  private void fireDeletionRequested(MeasurementDomain domain, MeasurementSelection selection,
+      IdEventFactory<?> factory) {
+    List<String> ids = idsOf(selection);
+    if (ids.isEmpty()) {
+      displayMissingSelectionNote();
+      return;
+    }
+    switch (domain) {
+      case NGS -> fireEvent((NgsMeasurementDeletionRequested) factory.create(ids, this, true));
+      case PXP -> fireEvent((PxpMeasurementDeletionRequested) factory.create(ids, this, true));
+      case IP -> fireEvent((IpMeasurementDeletionRequested) factory.create(ids, this, true));
+    }
+  }
+
+  private static List<String> idsOf(MeasurementSelection selection) {
+    List<String> ids = new ArrayList<>(selection.selectedIds());
+    return ids;
+  }
+
+  private void exportNgs() {
+    List<String> ids = idsOf(ngsSelection);
+    if (ids.isEmpty()) {
+      displayMissingSelectionNote();
+      return;
+    }
+    fireEvent(new NgsMeasurementExportRequested(ids, this, true));
+  }
+
+  private void exportPxp() {
+    List<String> ids = idsOf(pxpSelection);
+    if (ids.isEmpty()) {
+      displayMissingSelectionNote();
+      return;
+    }
+    fireEvent(new PxpMeasurementExportRequested(ids, this, true));
+  }
+
+  private void exportIp() {
+    List<String> ids = idsOf(ipSelection);
+    if (ids.isEmpty()) {
+      displayMissingSelectionNote();
+      return;
+    }
+    fireEvent(new IpMeasurementExportRequested(ids, this, true));
   }
 
   /**
-   * Refreshes the genomics grid.
+   * Removes the given measurement IDs from the corresponding domain selection (after successful
+   * deletion).
    */
-  public void refreshNgs() {
-    Optional.ofNullable(filterGridNgs)
-        .ifPresent(FilterGrid::refreshAll);
+  public void removeFromSelection(MeasurementDomain domain, Set<String> ids) {
+    selectionFor(domain).deselect(ids);
+    tabPagination.updateSelectionBar();
   }
 
-  /**
-   * Refreshes the proteomics grid.
-   */
-  public void refreshPxp() {
-    Optional.ofNullable(filterGridPxp)
-        .ifPresent(FilterGrid::refreshAll);
-  }
+  // ---- context --------------------------------------------------------------
 
   /**
-   * Refreshes the immunopeptidomics grid.
-   */
-  public void refreshIp() {
-    Optional.ofNullable(filterGridIp)
-        .ifPresent(FilterGrid::refreshAll);
-  }
-
-  /**
-   * Sets the context of the component and refreshes the view to display updated information.
-   *
-   * @param context the context for this component
+   * Sets the context of the component. The tab layout is built once; changing the context only
+   * re-fetches the active tab's page. When the experiment changes, per-tab state is reset and the
+   * tabs are re-hidden/showed according to whether measurements exist.
    */
   public void setContext(Context context) {
     validateContext(context);
+    boolean sameExperiment = this.context != null
+        && this.context.experimentId().isPresent()
+        && context.experimentId().isPresent()
+        && this.context.experimentId().get().equals(context.experimentId().get())
+        && this.context.projectId().isPresent()
+        && context.projectId().isPresent()
+        && this.context.projectId().get().equals(context.projectId().get());
+    this.context = context;
+    if (!sameExperiment) {
+      // reset per-tab state to defaults on a new experiment
+      MeasurementListState defaults = MeasurementListState.defaultWith(MeasurementDomain.NGS);
+      tabPagination.applyExternalState(defaults);
+    } else {
+      tabPagination.refreshActiveTab();
+    }
+    refreshTabVisibility();
+  }
+
+  private void refreshTabVisibility() {
     String projectId = context.projectId().orElseThrow().value();
     String experimentId = context.experimentId().orElseThrow().value();
+    tabPagination.setTabVisible(MeasurementDomain.NGS,
+        ngsMeasurementLookup.countNgsMeasurements(projectId,
+            NgsMeasurementLookup.MeasurementFilter.forExperiment(experimentId)) > 0);
+    tabPagination.setTabVisible(MeasurementDomain.PXP,
+        pxpMeasurementLookup.countPxpMeasurements(projectId,
+            PxpMeasurementLookup.MeasurementFilter.forExperiment(experimentId)) > 0);
+    tabPagination.setTabVisible(MeasurementDomain.IP,
+        ipMeasurementLookup.countIpMeasurements(projectId,
+            IpMeasurementLookup.MeasurementFilter.forExperiment(experimentId)) > 0);
+  }
 
-    //add corresponding tabs in a defined order
-    tabSheet.removeAllTabs();
-    if (ngsMeasurementsExist(projectId, experimentId)) {
-      filterGridNgs = filterGridNgs(createNgsGrid(), projectId, experimentId);
-      addNgsTab(tabSheet, 0, "Genomics", filterGridNgs);
+  /**
+   * Refreshes the genomics grid (re-fetches the current page).
+   */
+  public void refreshNgs() {
+    refreshDomain(MeasurementDomain.NGS);
+  }
+
+  /**
+   * Refreshes the proteomics grid (re-fetches the current page).
+   */
+  public void refreshPxp() {
+    refreshDomain(MeasurementDomain.PXP);
+  }
+
+  /**
+   * Refreshes the immunopeptidomics grid (re-fetches the current page).
+   */
+  public void refreshIp() {
+    refreshDomain(MeasurementDomain.IP);
+  }
+
+  private void refreshDomain(MeasurementDomain domain) {
+    if (context != null) {
+      loadAndRender(domain, tabPagination.listState().stateOf(domain));
+      refreshTabVisibility();
     }
-    if (pxpMeasurementsExist(projectId, experimentId)) {
-      filterGridPxp = filterGridPxp(createPxpGrid(), projectId, experimentId);
-      addPxpTab(tabSheet, 1, "Proteomics", filterGridPxp);
-    }
-    if (ipMeasurementsExist(projectId, experimentId)) {
-      filterGridIp = filterGridIp(createIpGrid(), projectId, experimentId);
-      addIpTab(tabSheet, 2, "Immunopeptidomics", filterGridIp);
-    }
   }
 
-  private boolean pxpMeasurementsExist(String projectId, String experimentId) {
-    return pxpMeasurementLookup.countPxpMeasurements(projectId,
-        PxpMeasurementLookup.MeasurementFilter.forExperiment(experimentId)) > 0;
+  /**
+   * @return the pagination container, so the route view can drive URL parsing/history.
+   */
+  public MeasurementTabPagination getTabPagination() {
+    return tabPagination;
   }
 
-  private boolean ngsMeasurementsExist(String projectId, String experimentId) {
-    return ngsMeasurementLookup.countNgsMeasurements(projectId,
-        MeasurementFilter.forExperiment(experimentId)) > 0;
+  /**
+   * Delegates the route base path to the container so it can mirror the list state into the URL.
+   */
+  public void setBasePath(String basePath) {
+    tabPagination.setBasePath(basePath);
   }
 
-  private boolean ipMeasurementsExist(String projectId, String experimentId) {
-    return ipMeasurementLookup.countIpMeasurements(projectId,
-        IpMeasurementLookup.MeasurementFilter.forExperiment(experimentId)) > 0;
+  private static TextField searchField() {
+    TextField field = new TextField();
+    field.setSuffixComponent(VaadinIcon.SEARCH.create());
+    return field;
   }
 
-  private void addPxpTab(FilterGridTabSheet tabSheet, int index, String name,
-      FilterGrid<MeasurementInfo, SearchTermFilter> filterGrid) {
-    var pxpTab = new FilterGridTab<>(name, filterGrid);
-    tabSheet.addTab(index, pxpTab);
-    tabSheet.addPrimaryAction(pxpTab,
-        tab -> fireEvent(new PxpMeasurementRegistrationRequested(this, true)));
-    tabSheet.addFeatureAction(pxpTab,
-        tab -> {
-          List<String> selectedMeasurementIds = tab.filterGrid().selectedElements()
-              .stream()
-              .map(MeasurementInfo::measurementId)
-              .distinct()
-              .toList();
-          if (selectedMeasurementIds.isEmpty()) {
-            displayMissingSelectionNote();
-            return;
-          }
-          fireEvent(new PxpMeasurementExportRequested(selectedMeasurementIds, this, true));
-        });
-  }
-
-  private void addNgsTab(FilterGridTabSheet tabSheet, int index, String name,
-      FilterGrid<NgsMeasurementLookup.MeasurementInfo, SearchTermFilter> filterGrid) {
-    var ngsTab = new FilterGridTab<>(name, filterGrid);
-    tabSheet.addTab(index, ngsTab);
-    tabSheet.addPrimaryAction(ngsTab,
-        tab -> fireEvent(new NgsMeasurementRegistrationRequested(this, true)));
-    tabSheet.addFeatureAction(ngsTab,
-        tab -> {
-          List<String> selectedMeasurementIds = tab.filterGrid().selectedElements()
-              .stream()
-              .map(NgsMeasurementLookup.MeasurementInfo::measurementId)
-              .distinct()
-              .toList();
-          if (selectedMeasurementIds.isEmpty()) {
-            displayMissingSelectionNote();
-            return;
-          }
-          fireEvent(new NgsMeasurementExportRequested(selectedMeasurementIds, this, true));
-        });
-  }
-
-  private FilterGrid<NgsMeasurementLookup.MeasurementInfo, SearchTermFilter> filterGridNgs(
-      Grid<NgsMeasurementLookup.MeasurementInfo> ngsGrid, String projectId,
-      String experimentId) {
-    FetchCallback<NgsMeasurementLookup.MeasurementInfo, SearchTermFilter> fetchCallback = query ->
-    {
-      String searchTerm = query.getFilter().map(SearchTermFilter::searchTerm).orElse("");
-      return ngsMeasurementLookup.lookupNgsMeasurements(
-          projectId, query.getOffset(), query.getLimit(),
-          VaadinSpringDataHelpers.toSpringDataSort(query),
-          MeasurementFilter.forExperiment(experimentId)
-              .withSearch(searchTerm, clientTimeZoneOffset.get(),
-                  MEASUREMENT_REGISTRATION_DATE_TIME_FORMAT));
-    };
-    CountCallback<NgsMeasurementLookup.MeasurementInfo, SearchTermFilter> countCallback = query ->
-    {
-      String searchTerm = query.getFilter().map(SearchTermFilter::searchTerm).orElse("");
-      return ngsMeasurementLookup.countNgsMeasurements(projectId,
-          MeasurementFilter.forExperiment(experimentId)
-              .withSearch(searchTerm, clientTimeZoneOffset.get(),
-                  MEASUREMENT_REGISTRATION_DATE_TIME_FORMAT));
-    };
-    var ngsGridConfiguration = FilterGridConfigurations.lazy(
-        fetchCallback,
-        countCallback);
-    var filterGrid = FilterGrid.create(
-        NgsMeasurementLookup.MeasurementInfo.class,
-        SearchTermFilter.class,
-        ngsGridConfiguration.applyConfiguration(ngsGrid),
-        this::getNgsSearchTermFilter,
-        (searchTerm, filter) -> filter.replaceWith(searchTerm));
-
-    filterGrid.itemDisplayLabel("measurement");
-    filterGrid.searchFieldPlaceholder("Search Measurements");
-    var editNgsButton = new Button("Edit");
-    editNgsButton.addClickListener(clicked -> {
-      Set<NgsMeasurementLookup.MeasurementInfo> selectedMeasurements = filterGrid.selectedElements();
-      List<String> selectedMeasurementIds = selectedMeasurements
-          .stream()
-          .map(NgsMeasurementLookup.MeasurementInfo::measurementId)
-          .distinct()
-          .toList();
-      if (selectedMeasurementIds.isEmpty()) {
-        displayMissingSelectionNote();
-        return;
-      }
-      fireEvent(new NgsMeasurementEditRequested(selectedMeasurementIds, this, true));
-    });
-
-    var deleteNgsButton = new Button("Delete");
-    deleteNgsButton.addClickListener(clicked -> {
-      Set<NgsMeasurementLookup.MeasurementInfo> selectedMeasurements = filterGrid.selectedElements();
-      List<String> selectedMeasurementIds = selectedMeasurements
-          .stream()
-          .map(NgsMeasurementLookup.MeasurementInfo::measurementId)
-          .distinct()
-          .toList();
-      if (selectedMeasurementIds.isEmpty()) {
-        displayMissingSelectionNote();
-        return;
-      }
-      fireEvent(new NgsMeasurementDeletionRequested(selectedMeasurementIds, this, true));
-    });
-    filterGrid.setSecondaryActionGroup(deleteNgsButton, editNgsButton);
-    return filterGrid;
-  }
-
-  private FilterGrid<MeasurementInfo, SearchTermFilter> filterGridPxp(
-      Grid<MeasurementInfo> pxpGrid, String projectId, String experimentId) {
-    FetchCallback<MeasurementInfo, SearchTermFilter> fetchCallback = query -> {
-      String searchTerm = query.getFilter().map(SearchTermFilter::searchTerm)
-          .orElse("");
-      return pxpMeasurementLookup.lookupPxpMeasurements(
-          projectId, query.getOffset(), query.getLimit(),
-          VaadinSpringDataHelpers.toSpringDataSort(query),
-          PxpMeasurementLookup.MeasurementFilter.forExperiment(experimentId)
-              .withSearch(searchTerm, clientTimeZoneOffset.get(),
-                  MEASUREMENT_REGISTRATION_DATE_TIME_FORMAT));
-    };
-
-    CountCallback<MeasurementInfo, SearchTermFilter> countCallback = query -> {
-      var searchTerm = query.getFilter().map(SearchTermFilter::searchTerm)
-          .orElse("");
-      return pxpMeasurementLookup.countPxpMeasurements(projectId,
-          PxpMeasurementLookup.MeasurementFilter.forExperiment(experimentId)
-              .withSearch(searchTerm, clientTimeZoneOffset.get(),
-                  MEASUREMENT_REGISTRATION_DATE_TIME_FORMAT));
-    };
-
-    var configuration = FilterGridConfigurations.lazy(fetchCallback, countCallback);
-
-    var filterGrid = FilterGrid.create(
-        MeasurementInfo.class,
-        SearchTermFilter.class,
-        configuration.applyConfiguration(pxpGrid),
-        this::getPxpSearchTermFilter,
-        (searchTerm, filter) -> filter.replaceWith(searchTerm));
-
-    filterGrid.itemDisplayLabel("measurement");
-    filterGrid.searchFieldPlaceholder("Search Measurements");
-    var editPxpButton = new Button("Edit");
-    editPxpButton.addClickListener(clicked -> {
-      Set<MeasurementInfo> selectedMeasurements = filterGrid.selectedElements();
-      List<String> selectedMeasurementIds = selectedMeasurements
-          .stream()
-          .map(MeasurementInfo::measurementId)
-          .distinct()
-          .toList();
-      if (selectedMeasurementIds.isEmpty()) {
-        displayMissingSelectionNote();
-        return;
-      }
-      fireEvent(new PxpMeasurementEditRequested(selectedMeasurementIds, this, true));
-    });
-
-    var deletePxpButton = new Button("Delete");
-    deletePxpButton.addClickListener(clicked -> {
-      Set<MeasurementInfo> selectedMeasurements = filterGrid.selectedElements();
-      List<String> selectedMeasurementIds = selectedMeasurements
-          .stream()
-          .map(MeasurementInfo::measurementId)
-          .distinct()
-          .toList();
-      if (selectedMeasurementIds.isEmpty()) {
-        displayMissingSelectionNote();
-        return;
-      }
-      fireEvent(new PxpMeasurementDeletionRequested(selectedMeasurementIds, this, true));
-    });
-    filterGrid.setSecondaryActionGroup(deletePxpButton, editPxpButton);
-    return filterGrid;
-  }
-
-
-  SearchTermFilter getNgsSearchTermFilter() {
-    return this.ngsSearchTermFilter;
-  }
-
-  SearchTermFilter getPxpSearchTermFilter() {
-    return pxpSearchTermFilter;
-  }
-
-  SearchTermFilter getIpSearchTermFilter() {
-    return ipSearchTermFilter;
-  }
-
+  // ==== the following are carried over unchanged from the previous implementation ====
 
   private Grid<NgsMeasurementLookup.MeasurementInfo> createNgsGrid() {
     var ngsGrid = new Grid<NgsMeasurementLookup.MeasurementInfo>();
@@ -576,92 +797,6 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     return pxpGrid;
   }
 
-  private void addIpTab(FilterGridTabSheet tabSheet, int index, String name,
-      FilterGrid<IpMeasurementLookup.MeasurementInfo, SearchTermFilter> filterGrid) {
-    var ipTab = new FilterGridTab<>(name, filterGrid);
-    tabSheet.addTab(index, ipTab);
-    tabSheet.addPrimaryAction(ipTab,
-        tab -> fireEvent(new IpMeasurementRegistrationRequested(this, true)));
-    tabSheet.addFeatureAction(ipTab,
-        tab -> {
-          List<String> selectedMeasurementIds = tab.filterGrid().selectedElements()
-              .stream()
-              .map(IpMeasurementLookup.MeasurementInfo::measurementId)
-              .distinct()
-              .toList();
-          if (selectedMeasurementIds.isEmpty()) {
-            displayMissingSelectionNote();
-            return;
-          }
-          fireEvent(new IpMeasurementExportRequested(selectedMeasurementIds, this, true));
-        });
-    // Edit and Delete buttons are already set up in filterGridIp()
-  }
-
-  private FilterGrid<IpMeasurementLookup.MeasurementInfo, SearchTermFilter> filterGridIp(
-      Grid<IpMeasurementLookup.MeasurementInfo> ipGrid, String projectId, String experimentId) {
-    FetchCallback<IpMeasurementLookup.MeasurementInfo, SearchTermFilter> fetchCallback = query -> {
-      String searchTerm = query.getFilter().map(SearchTermFilter::searchTerm).orElse("");
-      return ipMeasurementLookup.lookupIpMeasurements(
-          projectId, query.getOffset(), query.getLimit(),
-          VaadinSpringDataHelpers.toSpringDataSort(query),
-          IpMeasurementLookup.MeasurementFilter.forExperiment(experimentId)
-              .withSearch(searchTerm, clientTimeZoneOffset.get(),
-                  MEASUREMENT_REGISTRATION_DATE_TIME_FORMAT));
-    };
-
-    CountCallback<IpMeasurementLookup.MeasurementInfo, SearchTermFilter> countCallback = query -> {
-      String searchTerm = query.getFilter().map(SearchTermFilter::searchTerm).orElse("");
-      return ipMeasurementLookup.countIpMeasurements(projectId,
-          IpMeasurementLookup.MeasurementFilter.forExperiment(experimentId)
-              .withSearch(searchTerm, clientTimeZoneOffset.get(),
-                  MEASUREMENT_REGISTRATION_DATE_TIME_FORMAT));
-    };
-
-    var configuration = FilterGridConfigurations.lazy(fetchCallback, countCallback);
-
-    var filterGrid = FilterGrid.create(
-        IpMeasurementLookup.MeasurementInfo.class,
-        SearchTermFilter.class,
-        configuration.applyConfiguration(ipGrid),
-        this::getIpSearchTermFilter,
-        (searchTerm, filter) -> filter.replaceWith(searchTerm));
-
-    filterGrid.itemDisplayLabel("measurement");
-    filterGrid.searchFieldPlaceholder("Search Measurements");
-    var editIpButton = new Button("Edit");
-    editIpButton.addClickListener(clicked -> {
-      Set<IpMeasurementLookup.MeasurementInfo> selectedMeasurements = filterGrid.selectedElements();
-      List<String> selectedMeasurementIds = selectedMeasurements
-          .stream()
-          .map(IpMeasurementLookup.MeasurementInfo::measurementId)
-          .distinct()
-          .toList();
-      if (selectedMeasurementIds.isEmpty()) {
-        displayMissingSelectionNote();
-        return;
-      }
-      fireEvent(new IpMeasurementEditRequested(selectedMeasurementIds, this, true));
-    });
-
-    var deleteIpButton = new Button("Delete");
-    deleteIpButton.addClickListener(clicked -> {
-      Set<IpMeasurementLookup.MeasurementInfo> selectedMeasurements = filterGrid.selectedElements();
-      List<String> selectedMeasurementIds = selectedMeasurements
-          .stream()
-          .map(IpMeasurementLookup.MeasurementInfo::measurementId)
-          .distinct()
-          .toList();
-      if (selectedMeasurementIds.isEmpty()) {
-        displayMissingSelectionNote();
-        return;
-      }
-      fireEvent(new IpMeasurementDeletionRequested(selectedMeasurementIds, this, true));
-    });
-    filterGrid.setSecondaryActionGroup(deleteIpButton, editIpButton);
-    return filterGrid;
-  }
-
   private Grid<IpMeasurementLookup.MeasurementInfo> createIpGrid() {
     var ipGrid = new Grid<IpMeasurementLookup.MeasurementInfo>();
     ipGrid.setMultiSort(true, MultiSortPriority.APPEND, true);
@@ -823,6 +958,8 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     ipGrid.sort(GridSortOrder.asc(measurementIdColumn).build());
     return ipGrid;
   }
+
+  // rendering helpers (unchanged)
 
   private static Component renderSamplesIp(IpMeasurementLookup.MeasurementInfo measurementInfo,
       Function<IpMeasurementLookup.SampleInfo, String> singleSampleConverter) {
@@ -987,7 +1124,6 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     dialog.open();
   }
 
-
   private void validateContext(Context context) throws ContextValidationException {
     if (isNull(context)) {
       throw new ContextValidationException("Context cannot be null");
@@ -1010,18 +1146,11 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         .open();
   }
 
+  // ===== event classes (unchanged contract) =====
 
   public static class NgsMeasurementRegistrationRequested extends
       ComponentEvent<MeasurementDetailsComponent> {
 
-    /**
-     * Creates a new event using the given source and indicator whether the event originated from
-     * the client side or the server side.
-     *
-     * @param source     the source component
-     * @param fromClient <code>true</code> if the event originated from the client
-     *                   side, <code>false</code> otherwise
-     */
     public NgsMeasurementRegistrationRequested(MeasurementDetailsComponent source,
         boolean fromClient) {
       super(source, fromClient);
@@ -1038,14 +1167,6 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
 
     private final List<String> measurementIds;
 
-    /**
-     * Creates a new event using the given source and indicator whether the event originated from
-     * the client side or the server side.
-     *
-     * @param source     the source component
-     * @param fromClient <code>true</code> if the event originated from the client
-     *                   side, <code>false</code> otherwise
-     */
     public NgsMeasurementEditRequested(List<String> measurementIds,
         MeasurementDetailsComponent source, boolean fromClient) {
       super(source, fromClient);
@@ -1067,14 +1188,6 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
 
     private final List<String> measurementIds;
 
-    /**
-     * Creates a new event using the given source and indicator whether the event originated from
-     * the client side or the server side.
-     *
-     * @param source     the source component
-     * @param fromClient <code>true</code> if the event originated from the client
-     *                   side, <code>false</code> otherwise
-     */
     public NgsMeasurementExportRequested(List<String> measurementIds,
         MeasurementDetailsComponent source, boolean fromClient) {
       super(source, fromClient);
@@ -1096,17 +1209,8 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
 
     private final List<String> measurementIds;
 
-    /**
-     * Creates a new event using the given source and indicator whether the event originated from
-     * the client side or the server side.
-     *
-     * @param source     the source component
-     * @param fromClient <code>true</code> if the event originated from the client
-     *                   side, <code>false</code> otherwise
-     */
     public NgsMeasurementDeletionRequested(List<String> measurementIds,
-        MeasurementDetailsComponent source,
-        boolean fromClient) {
+        MeasurementDetailsComponent source, boolean fromClient) {
       super(source, fromClient);
       this.measurementIds = measurementIds.stream().toList();
     }
@@ -1121,18 +1225,9 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     return addListener(NgsMeasurementDeletionRequested.class, listener);
   }
 
-
   public static class PxpMeasurementRegistrationRequested extends
       ComponentEvent<MeasurementDetailsComponent> {
 
-    /**
-     * Creates a new event using the given source and indicator whether the event originated from
-     * the client side or the server side.
-     *
-     * @param source     the source component
-     * @param fromClient <code>true</code> if the event originated from the client
-     *                   side, <code>false</code> otherwise
-     */
     public PxpMeasurementRegistrationRequested(MeasurementDetailsComponent source,
         boolean fromClient) {
       super(source, fromClient);
@@ -1149,14 +1244,6 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
 
     private final List<String> measurementIds;
 
-    /**
-     * Creates a new event using the given source and indicator whether the event originated from
-     * the client side or the server side.
-     *
-     * @param source     the source component
-     * @param fromClient <code>true</code> if the event originated from the client
-     *                   side, <code>false</code> otherwise
-     */
     public PxpMeasurementEditRequested(List<String> measurementIds,
         MeasurementDetailsComponent source, boolean fromClient) {
       super(source, fromClient);
@@ -1178,14 +1265,6 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
 
     private final List<String> measurementIds;
 
-    /**
-     * Creates a new event using the given source and indicator whether the event originated from
-     * the client side or the server side.
-     *
-     * @param source     the source component
-     * @param fromClient <code>true</code> if the event originated from the client
-     *                   side, <code>false</code> otherwise
-     */
     public PxpMeasurementExportRequested(List<String> measurementIds,
         MeasurementDetailsComponent source, boolean fromClient) {
       super(source, fromClient);
@@ -1207,17 +1286,8 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
 
     private final List<String> measurementIds;
 
-    /**
-     * Creates a new event using the given source and indicator whether the event originated from
-     * the client side or the server side.
-     *
-     * @param source     the source component
-     * @param fromClient <code>true</code> if the event originated from the client
-     *                   side, <code>false</code> otherwise
-     */
     public PxpMeasurementDeletionRequested(List<String> measurementIds,
-        MeasurementDetailsComponent source,
-        boolean fromClient) {
+        MeasurementDetailsComponent source, boolean fromClient) {
       super(source, fromClient);
       this.measurementIds = measurementIds.stream().toList();
     }
@@ -1251,14 +1321,6 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
 
     private final List<String> measurementIds;
 
-    /**
-     * Creates a new event using the given source and indicator whether the event originated from
-     * the client side or the server side.
-     *
-     * @param source     the source component
-     * @param fromClient <code>true</code> if the event originated from the client
-     *                   side, <code>false</code> otherwise
-     */
     public IpMeasurementEditRequested(List<String> measurementIds,
         MeasurementDetailsComponent source, boolean fromClient) {
       super(source, fromClient);
@@ -1281,8 +1343,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     private final List<String> measurementIds;
 
     public IpMeasurementDeletionRequested(List<String> measurementIds,
-        MeasurementDetailsComponent source,
-        boolean fromClient) {
+        MeasurementDetailsComponent source, boolean fromClient) {
       super(source, fromClient);
       this.measurementIds = measurementIds.stream().toList();
     }
@@ -1317,5 +1378,4 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
       ComponentEventListener<IpMeasurementExportRequested> listener) {
     return addListener(IpMeasurementExportRequested.class, listener);
   }
-
 }

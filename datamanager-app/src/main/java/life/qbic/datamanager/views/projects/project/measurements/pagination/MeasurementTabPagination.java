@@ -1,12 +1,20 @@
 package life.qbic.datamanager.views.projects.project.measurements.pagination;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEventListener;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabSheet;
+import com.vaadin.flow.router.Location;
 import java.io.Serial;
+import java.util.EnumMap;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import life.qbic.application.commons.SortOrder;
 import life.qbic.datamanager.views.general.pagination.ListState;
 import life.qbic.datamanager.views.general.pagination.ListStateCodec;
 import life.qbic.datamanager.views.general.pagination.PaginationBar;
@@ -17,14 +25,17 @@ import life.qbic.datamanager.views.general.pagination.PaginationBar;
  * <p>Hosts three tabs (NGS / PxP / IP), each rendering its current page as an in-memory grid,
  * a single shared {@link PaginationBar} that reflects the active tab's page, and a shared
  * selection display with a "Clear selection" affordance. The component is a pure view
- * coordinator: it never queries data itself — the owning view wires {@link PageChangeListener}
- * and {@link RefreshListener} callbacks that perform the lookup and report back via
+ * coordinator: it never queries data itself — the owning view wires a
+ * {@link RefreshRequestedEvent} listener that performs the lookup and reports back via
  * {@link #onPageLoaded(MeasurementDomain, int, long)}.</p>
  *
- * <p>The tab sheet is rendered statically (all three tabs always present) so per-tab grid/state
- * survives tab switching without re-rendering; tab visibility is controlled by the owning view
- * through {@link #setTabVisible(MeasurementDomain, boolean)} (an experiment without measurements
- * of a domain hides that tab).</p>
+ * <p>The container owns the list state ({@link MeasurementListState}) and mirrors it into the
+ * browser URL (ADR-0008, USER-R-03): {@code pushState} for page/page-size/sort changes,
+ * {@code replaceState} for debounced search input and tab switches. The route base path is
+ * injected by the route view via {@link #setBasePath(String)} so the container can build
+ * complete locations; the route view additionally owns the History-API handler plumbing
+ * (beforeEnter/beforeLeave) and calls {@link #applyExternalState(MeasurementListState)} when the
+ * browser history changes (back/forward, shared links).</p>
  *
  * @since 1.12.0
  */
@@ -40,10 +51,11 @@ public class MeasurementTabPagination extends Div {
   private final Span selectionDisplay = new Span();
   private final Button clearSelectionButton = new Button("Clear selection");
   private final Div selectionContainer = new Div();
+  private final Map<MeasurementDomain, Tab> tabsByDomain = new EnumMap<>(MeasurementDomain.class);
   private MeasurementListState listState = MeasurementListState.defaultWith(MeasurementDomain.NGS);
-  private int ngsTotal;
-  private int pxpTotal;
-  private int ipTotal;
+  private MeasurementSelection selection;
+  private String basePath;
+  private boolean suppressTabSwitchEvents;
 
   public MeasurementTabPagination() {
     addClassName("measurement-tab-pagination");
@@ -51,6 +63,15 @@ public class MeasurementTabPagination extends Div {
     configureSelectionBar();
     add(tabSheet, selectionContainer, paginationBar);
     configurePagination();
+    configureTabSwitching();
+  }
+
+  /**
+   * Sets the route base path the container mirrors into the URL (e.g.
+   * {@code projects/PROJECT-1/experiments/E-1/measurements}).
+   */
+  public void setBasePath(String basePath) {
+    this.basePath = Objects.requireNonNull(basePath, "basePath must not be null");
   }
 
   private void configureSelectionBar() {
@@ -62,45 +83,88 @@ public class MeasurementTabPagination extends Div {
     selectionContainer.setVisible(false);
   }
 
+  private void configureTabSwitching() {
+    tabSheet.addSelectedChangeListener(event -> {
+      if (suppressTabSwitchEvents) {
+        return;
+      }
+      Tab selected = event.getSelectedTab();
+      if (selected == null) {
+        return;
+      }
+      domainOf(selected).ifPresent(newTab -> {
+        if (newTab == listState.activeTab()) {
+          return;
+        }
+        listState = listState.withTab(newTab, listState.stateOf(newTab));
+        writeUrl(false);
+        fireEvent(new RefreshRequestedEvent(this, newTab));
+      });
+    });
+  }
+
+  private Optional<MeasurementDomain> domainOf(Tab tab) {
+    for (Map.Entry<MeasurementDomain, Tab> entry : tabsByDomain.entrySet()) {
+      if (entry.getValue() == tab) {
+        return Optional.of(entry.getKey());
+      }
+    }
+    return Optional.empty();
+  }
+
+  /**
+   * Registers a tab with its grid content. The tab label is provided by the caller.
+   */
+  public void addTab(String label, MeasurementDomain domain, Component content) {
+    tabsByDomain.put(domain, tabSheet.add(label, content));
+  }
+
   private void configurePagination() {
-    paginationBar.addChangeListener(this::onPaginationChanged);
-  }
-
-  private void onPaginationChanged(PaginationBar.ChangeEvent event) {
-    ListState current = listState.activeState();
-    ListState requested;
-    if (event.getPageSize() != current.pageSize()) {
-      requested = current.withPageSize(event.getPageSize());
-    } else if (event.getPage() != current.page()) {
-      requested = current.withPage(event.getPage());
-    } else {
-      return;
-    }
-    changeListState(requested);
-  }
-
-  /**
-   * Requests a page/page-size change for the active tab and forwards it to the owning view.
-   */
-  private void changeListState(ListState requested) {
-    ListState previous = listState.activeState();
-    if (previous.equals(requested)) {
-      return;
-    }
-    listState = listState.withState(listState.activeTab(), requested);
-    fireEvent(new PageChangeEvent(this, true, requested));
+    paginationBar.addChangeListener(event -> {
+      ListState current = listState.activeState();
+      ListState requested;
+      if (event.getPageSize() != current.pageSize()) {
+        requested = current.withPageSize(event.getPageSize());
+      } else if (event.getPage() != current.page()) {
+        requested = current.withPage(event.getPage());
+      } else {
+        return;
+      }
+      if (requested.equals(current)) {
+        return;
+      }
+      listState = listState.withState(listState.activeTab(), requested);
+      writeUrl(true);
+      fireEvent(new RefreshRequestedEvent(this, listState.activeTab()));
+    });
   }
 
   /**
-   * Registers the listener notified whenever the user requests a page/page-size change on the
-   * active tab.
+   * Applies a search term to the given tab: resets to page 1 and replaces the URL entry
+   * (debounced search must not spam history).
    */
-  public void addPageChangeListener(ComponentEventListener<PageChangeEvent> listener) {
-    addListener(PageChangeEvent.class, listener);
+  public void applySearch(MeasurementDomain domain, String searchTerm) {
+    ListState current = listState.stateOf(domain);
+    String term = searchTerm == null ? "" : searchTerm.trim();
+    if (term.equals(current.filter())) {
+      return;
+    }
+    listState = listState.withState(domain, current.withFilter(term).withPage(1));
+    writeUrl(false);
+    fireEvent(new RefreshRequestedEvent(this, domain));
   }
 
-  public void fireRefreshRequested(MeasurementDomain domain) {
-    listState = listState.withTab(domain, listState.stateOf(domain));
+  /**
+   * Applies a sort order to the given tab: resets to page 1 and pushes a new history entry.
+   */
+  public void applySort(MeasurementDomain domain, SortOrder sortOrder) {
+    ListState current = listState.stateOf(domain);
+    Objects.requireNonNull(sortOrder, "sortOrder must not be null");
+    if (sortOrder.equals(current.sort())) {
+      return;
+    }
+    listState = listState.withState(domain, current.withSort(sortOrder).withPage(1));
+    writeUrl(true);
     fireEvent(new RefreshRequestedEvent(this, domain));
   }
 
@@ -111,14 +175,14 @@ public class MeasurementTabPagination extends Div {
   /**
    * Reports the loaded page of a tab back to the container so the pager and the total can be
    * updated.
+   *
+   * @param domain     the tab that was loaded
+   * @param page       the (possibly clamped) page that was rendered, 1-based
+   * @param totalItems the total number of measurements matching the tab's active filter
    */
   public void onPageLoaded(MeasurementDomain domain, int page, long totalItems) {
-    this.listState = listState.withState(domain, listState.stateOf(domain).withPage(page));
-    switch (domain) {
-      case NGS -> ngsTotal = (int) totalItems;
-      case PXP -> pxpTotal = (int) totalItems;
-      case IP -> ipTotal = (int) totalItems;
-    }
+    ListState current = listState.stateOf(domain);
+    this.listState = listState.withState(domain, current.withPage(page));
     if (domain == activeTab()) {
       paginationBar.setListState(page, totalItems, listState.activeState().pageSize());
       paginationBar.setVisible(totalItems > 0);
@@ -127,29 +191,68 @@ public class MeasurementTabPagination extends Div {
   }
 
   /**
-   * Applies an externally provided state (initial load, URL back/forward, shared link).
+   * Applies an externally provided state (initial load, URL back/forward, shared link) and asks
+   * the owning view to re-fetch the active tab's page.
    */
   public void applyExternalState(MeasurementListState state) {
     this.listState = state;
+    suppressTabSwitchEvents = true;
+    try {
+      selectTabForActiveDomain();
+    } finally {
+      suppressTabSwitchEvents = false;
+    }
     refreshActiveTab();
     updateSelectionBar();
   }
 
+  private void selectTabForActiveDomain() {
+    Tab tab = tabsByDomain.get(listState.activeTab());
+    if (tab != null && tabSheet.getSelectedTab() != tab) {
+      tabSheet.setSelectedTab(tab);
+    }
+  }
+
   /**
-   * The active tab's current list state.
+   * Asks the owning view to re-fetch the currently active tab's page (used after a context
+   * change and on initial/external state application).
+   */
+  public void refreshActiveTab() {
+    fireEvent(new RefreshRequestedEvent(this, listState.activeTab()));
+  }
+
+  /**
+   * The container's complete list state (active tab + per-tab states).
    */
   public MeasurementListState listState() {
     return listState;
+  }
+
+  /**
+   * Applies a new list state for one domain without touching the URL (used when the rendered
+   * page was clamped after a filter or deletion shrank the result set).
+   */
+  public void applyListState(MeasurementDomain domain, ListState newState) {
+    this.listState = listState.withState(domain, newState);
   }
 
   public MeasurementDomain activeTab() {
     return listState.activeTab();
   }
 
+  /**
+   * Programmatically switches the active tab (without writing a new history entry).
+   */
   public void setActiveTab(MeasurementDomain domain) {
     if (domain != listState.activeTab()) {
       listState = listState.withTab(domain, listState.stateOf(domain));
-      refreshActiveTab();
+      suppressTabSwitchEvents = true;
+      try {
+        selectTabForActiveDomain();
+      } finally {
+        suppressTabSwitchEvents = false;
+      }
+      fireEvent(new RefreshRequestedEvent(this, domain));
     }
   }
 
@@ -157,45 +260,49 @@ public class MeasurementTabPagination extends Div {
    * Hides/shows a tab (an experiment without measurements of a domain hides its tab).
    */
   public void setTabVisible(MeasurementDomain domain, boolean visible) {
-    String label = switch (domain) {
-      case NGS -> "Genomics";
-      case PXP -> "Proteomics";
-      case IP -> "Immunopeptidomics";
-    };
-    for (int i = 0; i < tabSheet.getTabCount(); i++) {
-      com.vaadin.flow.component.tabs.Tab tab = tabSheet.getTabAt(i);
-      if (label.equals(tab.getLabel())) {
-        tab.setVisible(visible);
-      }
+    Tab tab = tabsByDomain.get(domain);
+    if (tab != null) {
+      tab.setVisible(visible);
     }
   }
 
-  // ---- internal helpers -----------------------------------------------------
-
-  private void refreshActiveTab() {
-    fireEvent(new RefreshRequestedEvent(this, activeTab()));
+  private void writeUrl(boolean push) {
+    if (basePath == null) {
+      return;
+    }
+    UI ui = UI.getCurrent();
+    if (ui == null) {
+      return;
+    }
+    Location location = new Location(basePath, MeasurementListStateCodec.toQueryParameters(listState));
+    if (push) {
+      ui.getPage().getHistory().pushState(null, location);
+    } else {
+      ui.getPage().getHistory().replaceState(null, location);
+    }
   }
 
-  private void updateSelectionBar() {
-    selectionContainer.setVisible(selectionCount() > 0);
-    selectionDisplay.setText(selectionCount() == 1
-        ? "1 measurement is selected"
-        : "%d measurements are selected".formatted(selectionCount()));
-  }
+  // ---- selection -----------------------------------------------------------
 
-  private int selectionCount() {
-    return getSelection() != null ? getSelection().count() : 0;
-  }
-
-  // The owning view sets the selection via setSelection; this component only displays its count.
-  private MeasurementSelection selection;
-
+  /**
+   * Attaches the selection whose count is displayed. The owning view switches this on tab
+   * changes; the container reacts to {@link MeasurementSelection} mutations via
+   * {@link #updateSelectionBar()}.
+   */
   public void setSelection(MeasurementSelection selection) {
-    this.selection = Objects.requireNonNull(selection);
+    this.selection = Objects.requireNonNull(selection, "selection must not be null");
+    updateSelectionBar();
   }
 
-  private MeasurementSelection getSelection() {
-    return selection;
+  /**
+   * Re-renders the selection count from the attached selection.
+   */
+  public void updateSelectionBar() {
+    int count = selection == null ? 0 : selection.count();
+    selectionContainer.setVisible(count > 0);
+    selectionDisplay.setText(count == 1
+        ? "1 measurement is selected"
+        : "%d measurements are selected".formatted(count));
   }
 
   private void clearSelection() {
@@ -204,24 +311,7 @@ public class MeasurementTabPagination extends Div {
     }
   }
 
-  /** Fired when the user requests a page/page-size change on the active tab. */
-  public static class PageChangeEvent extends com.vaadin.flow.component.ComponentEvent<MeasurementTabPagination> {
-
-    @Serial
-    private static final long serialVersionUID = 1L;
-    private final ListState requested;
-
-    public PageChangeEvent(MeasurementTabPagination source, boolean fromClient, ListState requested) {
-      super(source, fromClient);
-      this.requested = Objects.requireNonNull(requested);
-    }
-
-    public ListState requested() {
-      return requested;
-    }
-  }
-
-  /** Fired when the active tab needs to be re-rendered (initial load, back/forward, tab switch). */
+  /** Fired when the active tab needs to be re-rendered (initial load, back/forward, paging, search, sort, tab switch). */
   public static class RefreshRequestedEvent extends
       com.vaadin.flow.component.ComponentEvent<MeasurementTabPagination> {
 

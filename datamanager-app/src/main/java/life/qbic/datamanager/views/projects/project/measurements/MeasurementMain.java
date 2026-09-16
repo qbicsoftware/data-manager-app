@@ -5,8 +5,13 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.page.History;
+import com.vaadin.flow.component.page.History.HistoryStateChangeEvent;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
+import com.vaadin.flow.router.BeforeLeaveEvent;
+import com.vaadin.flow.router.BeforeLeaveObserver;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.VaadinSession;
 import jakarta.annotation.security.PermitAll;
@@ -45,6 +50,9 @@ import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactor
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
+import life.qbic.datamanager.views.projects.project.measurements.pagination.MeasurementDomain;
+import life.qbic.datamanager.views.projects.project.measurements.pagination.MeasurementListState;
+import life.qbic.datamanager.views.projects.project.measurements.pagination.MeasurementListStateCodec;
 import life.qbic.datamanager.views.projects.project.measurements.processor.ProcessorRegistry;
 import life.qbic.datamanager.views.projects.project.measurements.registration.MeasurementUpload;
 import life.qbic.logging.api.Logger;
@@ -92,7 +100,7 @@ import reactor.core.publisher.Flux;
  */
 @Route(value = "projects/:projectId?/experiments/:experimentId?/measurements", layout = ExperimentMainLayout.class)
 @PermitAll
-public class MeasurementMain extends Main implements BeforeEnterObserver {
+public class MeasurementMain extends Main implements BeforeEnterObserver, BeforeLeaveObserver {
 
   @Serial
   private static final long serialVersionUID = 3778218989387044758L;
@@ -102,6 +110,13 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
   private final MeasurementDetailsComponent measurementDetailsComponent;
+  /**
+   * The framework's own history state change handler, captured before this view installs its own
+   * (same pattern as {@code ProjectOverviewMain}).
+   */
+  private History.HistoryStateChangeHandler routerHistoryStateChangeHandler;
+  private final History.HistoryStateChangeHandler listStateHistoryHandler = this::onHistoryStateChange;
+
 
   private final Disclaimer registerSamplesDisclaimer;
   private final transient SampleInformationService sampleInformationService;
@@ -358,21 +373,21 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     var result = measurementService.deleteNgsMeasurements(context.projectId().orElseThrow(),
         measurementIds);
     result.onError(this::handleDeletionError);
-    result.onValue(ignored -> handleDeletionSuccessNgs(measurementIds.size()));
+    result.onValue(ignored -> handleDeletionSuccessNgs(measurementIds));
   }
 
   private void deletePxpMeasurements(Set<String> measurementIds) {
     var result = measurementService.deletePxpMeasurements(context.projectId().orElseThrow(),
         measurementIds);
     result.onError(this::handleDeletionError);
-    result.onValue(ignored -> handleDeletionSuccessPxp(measurementIds.size()));
+    result.onValue(ignored -> handleDeletionSuccessPxp(measurementIds));
   }
 
   private void deleteIpMeasurements(Set<String> measurementIds) {
     var result = measurementService.deleteIpMeasurements(context.projectId().orElseThrow(),
         measurementIds);
     result.onError(this::handleDeletionError);
-    result.onValue(ignored -> handleDeletionSuccessIp(measurementIds.size()));
+    result.onValue(ignored -> handleDeletionSuccessIp(measurementIds));
   }
 
   private void handleDeletionError(MeasurementDeletionException error) {
@@ -383,20 +398,23 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     showErrorNotification(errorMessage);
   }
 
-  private void handleDeletionSuccessNgs(int count) {
-    displayDeletionSuccess(count);
+  private void handleDeletionSuccessNgs(Set<String> measurementIds) {
+    displayDeletionSuccess(measurementIds.size());
+    measurementDetailsComponent.removeFromSelection(MeasurementDomain.NGS, measurementIds);
     updateComponentVisibility();
     measurementDetailsComponent.refreshNgs();
   }
 
-  private void handleDeletionSuccessPxp(int count) {
-    displayDeletionSuccess(count);
+  private void handleDeletionSuccessPxp(Set<String> measurementIds) {
+    displayDeletionSuccess(measurementIds.size());
+    measurementDetailsComponent.removeFromSelection(MeasurementDomain.PXP, measurementIds);
     updateComponentVisibility();
     measurementDetailsComponent.refreshPxp();
   }
 
-  private void handleDeletionSuccessIp(int count) {
-    displayDeletionSuccess(count);
+  private void handleDeletionSuccessIp(Set<String> measurementIds) {
+    displayDeletionSuccess(measurementIds.size());
+    measurementDetailsComponent.removeFromSelection(MeasurementDomain.IP, measurementIds);
     updateComponentVisibility();
     measurementDetailsComponent.refreshIp();
   }
@@ -909,10 +927,63 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     }
     ExperimentId parsedExperimentId = ExperimentId.parse(experimentId);
     this.context = context.with(parsedExperimentId);
+
+    // URL list-state synchronisation (USER-R-03, ADR-0008): capture the router handler, install
+    // our own, and seed the container from the URL on direct load / reload / shared links.
+    History history = UI.getCurrent().getPage().getHistory();
+    History.HistoryStateChangeHandler currentHandler = history.getHistoryStateChangeHandler();
+    if (currentHandler != listStateHistoryHandler) {
+      routerHistoryStateChangeHandler = currentHandler;
+    }
+    history.setHistoryStateChangeHandler(listStateHistoryHandler);
+    String basePath = String.format(ProjectRoutes.MEASUREMENTS, projectID, experimentId);
+    measurementDetailsComponent.setBasePath(basePath);
+    MeasurementListState urlState = MeasurementListStateCodec.parse(
+        event.getLocation().getQueryParameters(),
+        measurementDetailsComponent.getTabPagination().listState());
+
     reloadMeasurements();
+    measurementDetailsComponent.getTabPagination().applyExternalState(urlState);
+
     asyncService.getProjectCode(context.projectId().orElseThrow().value())
         .doOnSuccess(projectCode -> projectContext.setProjectId(projectCode.value()))
         .subscribe();
+  }
+
+  /**
+   * Gives the history state change handler back to the router when this view is left.
+   */
+  @Override
+  public void beforeLeave(BeforeLeaveEvent event) {
+    getUI().ifPresent(ui -> ui.getPage().getHistory()
+        .setHistoryStateChangeHandler(routerHistoryStateChangeHandler));
+  }
+
+  /**
+   * Re-applies the list state when the browser history changes (back/forward or router-link
+   * navigation). Non-measurement locations are delegated back to the router handler.
+   */
+  private void onHistoryStateChange(HistoryStateChangeEvent event) {
+    String expectedPath = currentMeasurementsPath();
+    if (expectedPath == null || !expectedPath.equals(event.getLocation().getPath())) {
+      if (routerHistoryStateChangeHandler != null) {
+        routerHistoryStateChangeHandler.onHistoryStateChange(event);
+      }
+      return;
+    }
+    MeasurementListState urlState = MeasurementListStateCodec.parse(
+        event.getLocation().getQueryParameters(),
+        measurementDetailsComponent.getTabPagination().listState());
+    measurementDetailsComponent.getTabPagination().applyExternalState(urlState);
+  }
+
+  private String currentMeasurementsPath() {
+    if (context == null || context.projectId().isEmpty() || context.experimentId().isEmpty()) {
+      return null;
+    }
+    return String.format(ProjectRoutes.MEASUREMENTS,
+        context.projectId().orElseThrow().value(),
+        context.experimentId().orElseThrow().value());
   }
 
   private void updateComponentVisibility() {
