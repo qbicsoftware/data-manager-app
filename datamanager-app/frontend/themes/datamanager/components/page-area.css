@@ -771,7 +771,8 @@ a.pinned-project-card-body:hover {
 
 /* GitHub-style action button (see .project-card-menu-toggle): transparent,
  * padded hit area, background-only hover painted via inset box-shadow ring,
- * because Lumo's tertiary-inline hides the ::before/::after surfaces. */
+ * because Lumo's tertiary-inline hides the ::before/::after surfaces.
+ * Idle color matches the project-card kebab (.project-card-menu-toggle). */
 .pinned-project-toggle {
   position: absolute;
   top: var(--lumo-space-xs);
@@ -779,7 +780,7 @@ a.pinned-project-card-body:hover {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--lumo-primary-text-color);
+  color: var(--lumo-secondary-text-color);
   padding: var(--lumo-space-xs);
   min-width: 2rem;
   min-height: 2rem;
@@ -790,6 +791,7 @@ a.pinned-project-card-body:hover {
 }
 
 .pinned-project-toggle:hover {
+  color: var(--lumo-primary-text-color);
   box-shadow: inset 0 0 0 2rem var(--lumo-contrast-10pct);
 }
 
