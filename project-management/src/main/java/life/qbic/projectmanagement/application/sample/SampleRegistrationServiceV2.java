@@ -51,19 +51,22 @@ public class SampleRegistrationServiceV2 {
   private final DeletionService deletionService;
   private final ConfoundingVariableService confoundingVariableService;
   private final SampleValidationService validationService;
+  private final SampleRegistrationNotificationService notificationService;
 
   @Autowired
   public SampleRegistrationServiceV2(
       SampleRepository sampleRepository,
       SampleCodeService sampleCodeService,
       DeletionService deletionService, ConfoundingVariableService confoundingVariableService,
-      SampleValidationService validationService
+      SampleValidationService validationService,
+      SampleRegistrationNotificationService notificationService
   ) {
     this.sampleRepository = Objects.requireNonNull(sampleRepository);
     this.sampleCodeService = Objects.requireNonNull(sampleCodeService);
     this.deletionService = Objects.requireNonNull(deletionService);
     this.confoundingVariableService = Objects.requireNonNull(confoundingVariableService);
     this.validationService = Objects.requireNonNull(validationService);
+    this.notificationService = Objects.requireNonNull(notificationService);
   }
 
 
@@ -119,6 +122,13 @@ public class SampleRegistrationServiceV2 {
         confoundingVariableService.setVariableLevelsForSample(projectId.value(),
             experiment,
             sampleReference, levels);
+      }
+      try {
+        notificationService.notifyCollaborators(projectId, experiment.id(),
+            registeredSamples.size());
+      } catch (RuntimeException notificationError) {
+        log.error("Could not notify project collaborators about sample registration.",
+            notificationError);
       }
     } catch (RuntimeException e) {
       log.error(e.getMessage(), e);
