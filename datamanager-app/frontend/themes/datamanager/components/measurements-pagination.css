@@ -38,25 +38,17 @@
   min-width: 12rem;
 }
 
-/* UX F2: sticky to the viewport bottom so the selection count stays visible while the
-   full-height grid scrolls under native page scroll (USER-R-02: count must always be visible).
-   App palette only (components/variables.css).
-   Two states: at its natural resting position (page bottom) the bar is quiet — plain white
-   like the page background. While it actually floats over scrolled grid rows the JS toggles
-   .is-floating: an opaque primary tint (color-mix over white) is enough to set it apart. */
+/* UX F2: sticky to the top of the content area so the selection count and its actions are
+   at eye level while the full-height grid scrolls (USER-R-02: count must always be visible).
+   App palette only (components/variables.css): opaque primary tint, no border/shadow/radius. */
 .measurement-tab-pagination .measurement-selection-bar {
   display: flex;
   align-items: center;
   gap: var(--lumo-space-s);
   padding: var(--lumo-space-s) var(--lumo-space-m);
   position: sticky;
-  bottom: 0;
+  top: 0;
   z-index: 1;
-  background: var(--primary-contrast-color);
-  transition: background-color 120ms ease;
-}
-
-.measurement-tab-pagination .measurement-selection-bar.is-floating {
   background: var(--primary-contrast-color);
   background: color-mix(in srgb, var(--primary-color) 6%, var(--primary-contrast-color));
 }
@@ -67,15 +59,21 @@
   height: var(--lumo-icon-size-m);
 }
 
-/* 1px sentinel after the sticky bar; while it is intersecting the bar is at its resting
-   position, once it scrolls out of view the bar is floating */
-.measurement-tab-pagination .measurement-sticky-sentinel {
-  height: 1px;
-}
-
 .measurement-tab-pagination .measurement-selection-count {
   color: var(--body-text-color);
   font-weight: 700;
+}
+
+/* Gmail-style inline context action, only shown while the selection is partial */
+.measurement-tab-pagination .measurement-select-all-results {
+  margin-left: var(--lumo-space-s);
+  padding: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--button-text-color);
+  font-weight: 600;
+  font-size: inherit;
 }
 
 .measurement-tab-pagination .measurement-clear-selection {

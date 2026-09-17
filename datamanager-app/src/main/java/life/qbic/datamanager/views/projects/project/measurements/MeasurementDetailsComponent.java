@@ -106,9 +106,6 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   private final TextField ngsSearchField = searchField();
   private final TextField pxpSearchField = searchField();
   private final TextField ipSearchField = searchField();
-  private final Button ngsSelectAllButton = new Button("Select all matching filter");
-  private final Button pxpSelectAllButton = new Button("Select all matching filter");
-  private final Button ipSelectAllButton = new Button("Select all matching filter");
   private final Button ngsEditButton = new Button("Edit");
   private final Button ngsDeleteButton = new Button("Delete");
   private final Button pxpEditButton = new Button("Edit");
@@ -202,6 +199,8 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     tabPagination.setSelection(ngsSelection);
     tabPagination.addRefreshRequestedListener(this::onRefreshRequested);
     tabPagination.addSelectionClearedListener(event -> reconcileAllGrids());
+    tabPagination.addSelectAllResultsListener(
+        event -> selectAllMatching(event.domain()));
     add(tabPagination);
 
     configureSearch(ngsSearchField, MeasurementDomain.NGS);
@@ -235,27 +234,25 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   // ---- tab content ---------------------------------------------------------
 
   private Component ngsTabContent() {
-    return tabContent(ngsGrid, ngsSearchField, ngsSelectAllButton, ngsEditButton, ngsDeleteButton,
+    return tabContent(ngsGrid, ngsSearchField, ngsEditButton, ngsDeleteButton,
         MeasurementDomain.NGS, this::exportNgs);
   }
 
   private Component pxpTabContent() {
-    return tabContent(pxpGrid, pxpSearchField, pxpSelectAllButton, pxpEditButton, pxpDeleteButton,
+    return tabContent(pxpGrid, pxpSearchField, pxpEditButton, pxpDeleteButton,
         MeasurementDomain.PXP, this::exportPxp);
   }
 
   private Component ipTabContent() {
-    return tabContent(ipGrid, ipSearchField, ipSelectAllButton, ipEditButton, ipDeleteButton,
+    return tabContent(ipGrid, ipSearchField, ipEditButton, ipDeleteButton,
         MeasurementDomain.IP, this::exportIp);
   }
 
-  private <T> Component tabContent(Grid<T> grid, TextField searchField, Button selectAll,
-      Button editButton, Button deleteButton, MeasurementDomain domain, Runnable exporter) {
+  private <T> Component tabContent(Grid<T> grid, TextField searchField, Button editButton,
+      Button deleteButton, MeasurementDomain domain, Runnable exporter) {
     Div toolbar = new Div();
     toolbar.addClassName("measurement-tab-toolbar");
     searchField.addClassName("measurement-search");
-    selectAll.addClassName("measurement-select-all");
-    selectAll.addClickListener(clicked -> selectAllMatching(domain));
     Button exportButton = new Button("Export", VaadinIcon.DOWNLOAD.create());
     exportButton.addClassName("measurement-export");
     // UX F5: visual hierarchy — export is the primary bulk action, delete is destructive
@@ -265,7 +262,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
     exportButtons.put(domain, exportButton);
     exportButton.addClickListener(clicked -> exporter.run());
-    toolbar.add(searchField, selectAll, exportButton, editButton, deleteButton);
+    toolbar.add(searchField, exportButton, editButton, deleteButton);
 
     Div toolbarRight = new Div();
     toolbarRight.addClassName("measurement-tab-toolbar-right");
@@ -512,17 +509,8 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     }
     reconcileSelection(grid, selectionFor(domain), domain);
     tabPagination.onPageLoaded(domain, pageToRender, total);
-    updateSelectAllLabel(domain, total);
   }
 
-  private void updateSelectAllLabel(MeasurementDomain domain, int matchingCount) {
-    Button button = switch (domain) {
-      case NGS -> ngsSelectAllButton;
-      case PXP -> pxpSelectAllButton;
-      case IP -> ipSelectAllButton;
-    };
-    button.setText("Select all %d matching filter".formatted(matchingCount));
-  }
 
   private void refreshClamped(MeasurementDomain domain, int clampedPage) {
     ListState current = tabPagination.listState().stateOf(domain);
