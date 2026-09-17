@@ -5,6 +5,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.page.History;
 import com.vaadin.flow.component.page.History.HistoryStateChangeEvent;
 import com.vaadin.flow.component.UI;
@@ -241,7 +242,16 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
     // the misleading "Register Measurements" copy
     titleField.setText("View Measurements");
     titleField.addClassNames("title");
-    content.add(titleField);
+    // global primary action in the header, top right (as in the original design):
+    // registration is a top-level capability, not per-tab
+    Button registerButton = new Button("Register Measurements", VaadinIcon.PLUS.create());
+    registerButton.addClassName("button-bar");
+    registerButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    registerButton.addClickListener(clicked -> openRegistrationDialog());
+    registerMeasurementButtons.add(registerButton);
+    Div header = new Div(titleField, registerButton);
+    header.addClassName("measurement-main-header");
+    content.add(header);
     initRawDataAvailableInfo();
     add(content);
     content.addClassName("measurement-main-content");

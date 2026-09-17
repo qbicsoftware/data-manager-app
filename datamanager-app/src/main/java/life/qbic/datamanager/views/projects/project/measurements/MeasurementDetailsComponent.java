@@ -112,10 +112,6 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   private final Button pxpDeleteButton = new Button("Delete");
   private final Button ipEditButton = new Button("Edit");
   private final Button ipDeleteButton = new Button("Delete");
-  private final Button ngsRegisterButton = new Button("Register", VaadinIcon.PLUS.create());
-  private final Button pxpRegisterButton = new Button("Register", VaadinIcon.PLUS.create());
-  private final Button ipRegisterButton = new Button("Register", VaadinIcon.PLUS.create());
-  private final Map<MeasurementDomain, Button> registerButtons = new EnumMap<>(MeasurementDomain.class);
   private final Map<MeasurementDomain, Button> exportButtons = new EnumMap<>(MeasurementDomain.class);
   private final Map<MeasurementDomain, Div> emptyStates = new EnumMap<>(MeasurementDomain.class);
   private final MeasurementSelection ngsSelection = new MeasurementSelection(() -> updateSelectionBar());
@@ -149,12 +145,6 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
       Button editButton, Button deleteButton) {
     editButton.setVisible(writeAccess);
     deleteButton.setVisible(writeAccess);
-    Button registerButton = registerButtons.get(domain);
-    if (registerButton != null) {
-      // registration is a mutation: only offered to users with write access, and it does
-      // not depend on the current selection
-      registerButton.setVisible(writeAccess);
-    }
     boolean hasSelection = selection.count() > 0;
     editButton.setEnabled(hasSelection);
     deleteButton.setEnabled(hasSelection);
@@ -241,41 +231,30 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         ipSelection, IpMeasurementEditRequested::new));
     ipDeleteButton.addClickListener(clicked -> fireDeletionRequested(MeasurementDomain.IP,
         ipSelection, IpMeasurementDeletionRequested::new));
-    // registration affordance (restored: the original TabSheet had a primary "Register
-    // Measurements" button that was lost in the pagination refactor; each tab toolbar now
-    // carries one, firing the per-domain registration event the view maps to the dialog)
-    ngsRegisterButton.addClickListener(clicked ->
-        fireEvent(new NgsMeasurementRegistrationRequested(this, true)));
-    pxpRegisterButton.addClickListener(clicked ->
-        fireEvent(new PxpMeasurementRegistrationRequested(this, true)));
-    ipRegisterButton.addClickListener(clicked ->
-        fireEvent(new IpMeasurementRegistrationRequested(this, true)));
   }
 
   // ---- tab content ---------------------------------------------------------
 
   private Component ngsTabContent() {
-    return tabContent(ngsGrid, ngsSearchField, ngsEditButton, ngsDeleteButton, ngsRegisterButton,
+    return tabContent(ngsGrid, ngsSearchField, ngsEditButton, ngsDeleteButton,
         MeasurementDomain.NGS, this::exportNgs);
   }
 
   private Component pxpTabContent() {
-    return tabContent(pxpGrid, pxpSearchField, pxpEditButton, pxpDeleteButton, pxpRegisterButton,
+    return tabContent(pxpGrid, pxpSearchField, pxpEditButton, pxpDeleteButton,
         MeasurementDomain.PXP, this::exportPxp);
   }
 
   private Component ipTabContent() {
-    return tabContent(ipGrid, ipSearchField, ipEditButton, ipDeleteButton, ipRegisterButton,
+    return tabContent(ipGrid, ipSearchField, ipEditButton, ipDeleteButton,
         MeasurementDomain.IP, this::exportIp);
   }
 
   private <T> Component tabContent(Grid<T> grid, TextField searchField, Button editButton,
-      Button deleteButton, Button registerButton, MeasurementDomain domain, Runnable exporter) {
+      Button deleteButton, MeasurementDomain domain, Runnable exporter) {
     Div toolbar = new Div();
     toolbar.addClassName("measurement-tab-toolbar");
     searchField.addClassName("measurement-search");
-    // registration is a mutation: register buttons follow write access like edit/delete
-    registerButtons.put(domain, registerButton);
     Button exportButton = new Button("Export", VaadinIcon.DOWNLOAD.create());
     exportButton.addClassName("measurement-export");
     // UX F5: visual hierarchy — export is the primary bulk action, delete is destructive
@@ -285,7 +264,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
     exportButtons.put(domain, exportButton);
     exportButton.addClickListener(clicked -> exporter.run());
-    toolbar.add(searchField, registerButton, exportButton, editButton, deleteButton);
+    toolbar.add(searchField, exportButton, editButton, deleteButton);
 
     Div toolbarRight = new Div();
     toolbarRight.addClassName("measurement-tab-toolbar-right");
