@@ -15,7 +15,8 @@ public enum InformationColumn implements Column {
   SPECIES("Species", 5, true),
   SPECIMEN("Specimen", 6, true),
   ANALYTE("Analyte", 7, true),
-  COMMENT("Comment", 8, false),
+  BATCH("Batch", 8, false),
+  COMMENT("Comment", 9, false),
   ;
 
 
@@ -43,6 +44,9 @@ public enum InformationColumn implements Column {
         case SPECIMEN -> new Helper("Enumeration, Select a value from the dropdown", """
             Name of the biological material from which the analytes would be extracted.
             Note: The values in the dropdown are the predefined values from the experimental design.""");
+        case BATCH -> new Helper("Free text, e.g. 2023-01-31", """
+            The batch the sample belongs to.
+            A batch groups samples that were processed together.""");
         case COMMENT -> new Helper("Free text", "Notes about the sample. (Max 500 characters)");
       };
     }

@@ -25,7 +25,8 @@ public enum EditColumn implements Column {
   SPECIES("Species", 5, false, true),
   SPECIMEN("Specimen", 6, false, true),
   ANALYTE("Analyte", 7, false, true),
-  COMMENT("Comment", 8, false, false);
+  BATCH("Batch", 8, false, true),
+  COMMENT("Comment", 9, false, false);
 
   private static final ExampleProvider exampleProvider = column -> {
     if (column instanceof EditColumn editColumn) {
@@ -51,6 +52,9 @@ public enum EditColumn implements Column {
         case SPECIMEN -> new Helper("Enumeration, Select a value from the dropdown", """
             Name of the biological material from which the analytes would be extracted.
             Note: The values in the dropdown are the predefined values from the experimental design.""");
+        case BATCH -> new Helper("Free text, e.g. 2023-01-31", """
+            The batch the sample belongs to.
+            A batch groups samples that were processed together.""");
         case COMMENT -> new Helper("Free text", "Notes about the sample. (Max 500 characters)");
       };
     }

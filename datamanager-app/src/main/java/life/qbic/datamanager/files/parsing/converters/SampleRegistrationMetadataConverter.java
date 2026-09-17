@@ -35,6 +35,7 @@ public class SampleRegistrationMetadataConverter implements
       var species = parsingResult.getValueOrDefault(i, RegisterColumn.SPECIES.headerName(), "");
       var analyte = parsingResult.getValueOrDefault(i, RegisterColumn.ANALYTE.headerName(), "");
       var specimen = parsingResult.getValueOrDefault(i, RegisterColumn.SPECIMEN.headerName(), "");
+      var batch = parsingResult.getValueOrDefault(i, RegisterColumn.BATCH.headerName(), "");
       var comment = parsingResult.getValueOrDefault(i, RegisterColumn.COMMENT.headerName(), "");
 
       var sanitizedHeaderNames = RegisterColumn.headerNames().stream()
@@ -62,7 +63,8 @@ public class SampleRegistrationMetadataConverter implements
           analyte,
           analysisMethod,
           comment,
-          confoundingVariables
+          confoundingVariables,
+          batch
       ));
     }
     return result;

@@ -26,7 +26,8 @@ public record SampleMetadata(
     OntologyTerm analyte,
     String comment,
     Map<ConfoundingVariableInformation, String> confoundingVariables,
-    String experimentId
+    String experimentId,
+    String batch
 ) {
 
   public static SampleMetadata createNew(String sampleName,
@@ -38,10 +39,11 @@ public record SampleMetadata(
       OntologyTerm analyte,
       String comment,
       Map<ConfoundingVariableInformation, String> confoundingVariables,
-      String experimentId) {
+      String experimentId,
+      String batch) {
     return new SampleMetadata(null, "", sampleName, analysisToBePerformed, biologicalReplicate,
         experimentalGroupId, species, specimen, analyte, comment, confoundingVariables,
-        experimentId);
+        experimentId, batch);
   }
 
   public static SampleMetadata createUpdate(SampleId sampleId,
@@ -55,11 +57,12 @@ public record SampleMetadata(
       OntologyTerm analyte,
       String comment,
       Map<ConfoundingVariableInformation, String> confoundingVariables,
-      String experimentId) {
+      String experimentId,
+      String batch) {
     return new SampleMetadata(sampleId, sampleCode, sampleName, analysisToBePerformed,
         biologicalReplicate, experimentalGroupId, species, specimen, analyte, comment,
         confoundingVariables,
-        experimentId);
+        experimentId, batch);
   }
 
   public static SampleMetadata addSampleId(SampleId id, SampleMetadata sampleMetadata) {
@@ -69,7 +72,8 @@ public record SampleMetadata(
         sampleMetadata.experimentalGroupId, sampleMetadata.species, sampleMetadata.specimen,
         sampleMetadata.analyte, sampleMetadata.comment,
         sampleMetadata.confoundingVariables,
-        sampleMetadata.experimentId
+        sampleMetadata.experimentId,
+        sampleMetadata.batch
     );
   }
 

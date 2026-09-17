@@ -69,7 +69,7 @@ public class SampleRegistrationServiceV2 {
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public CompletableFuture<Void> registerSamples(Collection<SampleRegistrationInformation> requests,
-      ProjectId projectId, String batchName,
+      ProjectId projectId,
       ExperimentReference experimentReference) throws RegistrationException {
 
     var validationResults = requests.stream().map(request -> validationService.validateNewSample(
@@ -82,6 +82,7 @@ public class SampleRegistrationServiceV2 {
         request.analysisMethod(),
         request.comment(),
         request.confoundingVariables(),
+        request.batch(),
         experimentReference.id(),
         projectId.value())
     ).toList();
@@ -96,7 +97,7 @@ public class SampleRegistrationServiceV2 {
 
     var metadata = validationResults.stream().map(ValidationResultWithPayload::payload).toList();
 
-    return registerSamplesFromMetadata(metadata, projectId, batchName, experimentReference);
+    return registerSamplesFromMetadata(metadata, projectId, experimentReference);
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
@@ -104,10 +105,10 @@ public class SampleRegistrationServiceV2 {
   @Transactional
   public CompletableFuture<Void> registerSamplesFromMetadata(
       Collection<SampleMetadata> sampleMetadata,
-      ProjectId projectId, String batchLabel, ExperimentReference experiment)
+      ProjectId projectId, ExperimentReference experiment)
       throws RegistrationException {
     try {
-      var registeredSamples = registerSamples(sampleMetadata, batchLabel, projectId);
+      var registeredSamples = registerSamples(sampleMetadata, projectId);
       for (Entry<Sample, SampleMetadata> registeredSample : registeredSamples.entrySet()) {
         Map<VariableReference, String> levels = registeredSample.getValue().confoundingVariables()
             .entrySet().stream()
@@ -173,6 +174,7 @@ public class SampleRegistrationServiceV2 {
       sampleForUpdate.setBiologicalReplicate(sampleMetadata.biologicalReplicate());
       sampleForUpdate.setExperimentalGroupId(sampleMetadata.experimentalGroupId());
       sampleForUpdate.setComment(sampleMetadata.comment());
+      sampleForUpdate.setBatch(sampleMetadata.batch());
       samplesToUpdate.put(sampleForUpdate, SampleMetadata.createUpdate(
           sampleMetadata.sampleId(),
           sampleMetadata.sampleCode(),
@@ -185,20 +187,20 @@ public class SampleRegistrationServiceV2 {
           sampleMetadata.analyte(),
           sampleMetadata.comment(),
           sampleMetadata.confoundingVariables(),
-          sampleMetadata.experimentId()
+          sampleMetadata.experimentId(),
+          sampleMetadata.batch()
       ));
     }
     return samplesToUpdate;
   }
 
   private Map<Sample, SampleMetadata> registerSamples(Collection<SampleMetadata> sampleMetadata,
-      String batchLabel,
       ProjectId projectId)
       throws RegistrationException {
     var samplesToRegister = new HashMap<Sample, SampleMetadata>();
     var sampleCodes = generateSampleCodes(sampleMetadata.size(), projectId).iterator();
     for (SampleMetadata metadata : sampleMetadata) {
-      Sample sample = buildSample(metadata, batchLabel, projectId, sampleCodes.next());
+      Sample sample = buildSample(metadata, projectId, sampleCodes.next());
       samplesToRegister.put(sample, metadata);
     }
     var registeredSamples = new HashMap<Sample, SampleMetadata>();
@@ -212,12 +214,12 @@ public class SampleRegistrationServiceV2 {
     return registeredSamples;
   }
 
-  private Sample buildSample(SampleMetadata sample, String batchLabel, ProjectId projectId,
+  private Sample buildSample(SampleMetadata sample, ProjectId projectId,
       SampleCode sampleCode) {
     var sampleOrigin = SampleOrigin.create(sample.species(), sample.specimen(), sample.analyte());
     return Sample.create(sampleCode,
         new SampleRegistrationRequest(
-            sample.sampleName(), sample.biologicalReplicate(), batchLabel, projectId,
+            sample.sampleName(), sample.biologicalReplicate(), sample.batch(), projectId,
             ExperimentId.parse(sample.experimentId()), sample.experimentalGroupId(), sampleOrigin,
             sample.analysisToBePerformed(), sample.comment()));
   }

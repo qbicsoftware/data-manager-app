@@ -1,5 +1,8 @@
 package life.qbic.datamanager.views.projects.project.samples;
 
+import com.vaadin.flow.component.ComponentEvent;
+import com.vaadin.flow.component.ComponentEventListener;
+import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridSortOrder;
 import com.vaadin.flow.component.html.Div;
@@ -7,6 +10,7 @@ import com.vaadin.flow.data.provider.CallbackDataProvider.CountCallback;
 import com.vaadin.flow.data.provider.CallbackDataProvider.FetchCallback;
 import com.vaadin.flow.data.provider.QuerySortOrder;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
+import com.vaadin.flow.shared.Registration;
 import java.io.InputStream;
 import java.io.Serial;
 import java.io.Serializable;
@@ -38,7 +42,6 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.SamplePre
 import life.qbic.projectmanagement.application.api.AsyncProjectService.SortDirection;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.SortOrder;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
-import life.qbic.projectmanagement.domain.model.batch.Batch;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
@@ -51,9 +54,9 @@ import reactor.core.publisher.Mono;
  * Sample Details Component
  * <p>
  * Component embedded within the {@link SampleInformationMain}. It allows the user to see the
- * information associated for all {@link Batch} and {@link Sample} of each
- * {@link Experiment within a {@link Project} Additionally it enables the user to register new
- * {@link Batch} and {@link Sample} via the contained
+ * information associated for all {@link Sample} of each {@link Experiment} within a
+ * {@link Project} Additionally it enables the user to register and edit {@link Sample} via the
+ * contained
  * {@link
  * life.qbic.datamanager.views.projects.project.samples.registration.batch.RegisterSampleBatchDialog}.
  */
@@ -98,7 +101,8 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
 
     filterTabSheet.setCaptionPrimaryAction("Register Samples");
     filterTabSheet.setCaptionFeatureAction("Export");
-    filterTabSheet.hidePrimaryActionButton();
+    filterTabSheet.addPrimaryAction(filterTab,
+        tab -> fireEvent(new SampleRegistrationRequested(this, true)));
 
     filterTabSheet.addFeatureAction(filterTab, tab -> {
       var grid = tab.filterGrid();
@@ -298,6 +302,24 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
 
     filterGrid.searchFieldPlaceholder("Search samples");
     filterGrid.itemDisplayLabel("sample");
+
+    var editButton = new Button("Edit");
+    editButton.addClickListener(clicked -> fireEvent(new SampleEditRequested(this, true)));
+
+    var deleteButton = new Button("Delete");
+    deleteButton.addClickListener(clicked -> {
+      var selectedSamples = filterGrid.selectedElements();
+      if (selectedSamples.isEmpty()) {
+        messageFactory.toast("sample.no-sample-selected", new Object[]{}, getLocale()).open();
+        return;
+      }
+      var selectedSampleIds = selectedSamples.stream()
+          .map(SamplePreview::sampleId)
+          .distinct()
+          .toList();
+      fireEvent(new SampleDeletionRequested(selectedSampleIds, this, true));
+    });
+    filterGrid.setSecondaryActionGroup(deleteButton, editButton);
     return filterGrid;
   }
 
@@ -371,6 +393,93 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
 
     String value() {
       return value;
+    }
+  }
+
+  /**
+   * Register a {@link ComponentEventListener} that gets informed with a
+   * {@link SampleRegistrationRequested} as soon as a user wants to register samples.
+   *
+   * @param listener a listener on the sample registration trigger
+   */
+  public Registration addSampleRegistrationListener(
+      ComponentEventListener<SampleRegistrationRequested> listener) {
+    return addListener(SampleRegistrationRequested.class, listener);
+  }
+
+  /**
+   * Register a {@link ComponentEventListener} that gets informed with a {@link SampleEditRequested}
+   * as soon as a user wants to edit samples.
+   *
+   * @param listener a listener on the sample edit trigger
+   */
+  public Registration addSampleEditListener(ComponentEventListener<SampleEditRequested> listener) {
+    return addListener(SampleEditRequested.class, listener);
+  }
+
+  /**
+   * Register a {@link ComponentEventListener} that gets informed with a
+   * {@link SampleDeletionRequested} as soon as a user wants to delete selected samples.
+   *
+   * @param listener a listener on the sample deletion trigger
+   */
+  public Registration addSampleDeletionListener(
+      ComponentEventListener<SampleDeletionRequested> listener) {
+    return addListener(SampleDeletionRequested.class, listener);
+  }
+
+  /**
+   * <b>Sample Registration Requested</b>
+   *
+   * <p>Indicates that a user wants to register samples within the {@link SampleDetailsComponent} of
+   * a project.</p>
+   */
+  public static class SampleRegistrationRequested extends ComponentEvent<SampleDetailsComponent> {
+
+    @Serial
+    private static final long serialVersionUID = 8039568599366236205L;
+
+    public SampleRegistrationRequested(SampleDetailsComponent source, boolean fromClient) {
+      super(source, fromClient);
+    }
+  }
+
+  /**
+   * <b>Sample Edit Requested</b>
+   *
+   * <p>Indicates that a user wants to edit the samples within the {@link SampleDetailsComponent} of
+   * a project.</p>
+   */
+  public static class SampleEditRequested extends ComponentEvent<SampleDetailsComponent> {
+
+    @Serial
+    private static final long serialVersionUID = -2696352875376621564L;
+
+    public SampleEditRequested(SampleDetailsComponent source, boolean fromClient) {
+      super(source, fromClient);
+    }
+  }
+
+  /**
+   * <b>Sample Deletion Requested</b>
+   *
+   * <p>Indicates that a user wants to delete the selected samples within the
+   * {@link SampleDetailsComponent} of a project.</p>
+   */
+  public static class SampleDeletionRequested extends ComponentEvent<SampleDetailsComponent> {
+
+    @Serial
+    private static final long serialVersionUID = 3051871590996074855L;
+    private final List<SampleId> sampleIds;
+
+    public SampleDeletionRequested(List<SampleId> sampleIds, SampleDetailsComponent source,
+        boolean fromClient) {
+      super(source, fromClient);
+      this.sampleIds = sampleIds;
+    }
+
+    public List<SampleId> sampleIds() {
+      return sampleIds;
     }
   }
 }

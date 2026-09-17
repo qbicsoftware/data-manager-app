@@ -2014,10 +2014,11 @@ public interface AsyncProjectService {
    * @param analyte              the String representation of an analyte with CURIE
    * @param analysisMethod       the String representation of the analysis method
    * @param comment              a users comment
-   * @param confoundingVariables confounding variables with as a {@link java.util.HashMap}
-   *                             representation
-   * @since 1.10.0
-   */
+* @param confoundingVariables confounding variables with as a {@link java.util.HashMap}
+    *                             representation
+    * @param batch               the batch label of the sample
+    * @since 1.10.0
+    */
   record SampleRegistrationInformation(
       String sampleName,
       String biologicalReplicate,
@@ -2027,7 +2028,8 @@ public interface AsyncProjectService {
       String analyte,
       String analysisMethod,
       String comment,
-      Map<String, String> confoundingVariables
+      Map<String, String> confoundingVariables,
+      String batch
   ) implements ValidationRequestBody {
 
   }
@@ -2044,10 +2046,11 @@ public interface AsyncProjectService {
    * @param analyte              the String representation of an analyte with CURIE
    * @param analysisMethod       the String representation of the analysis method
    * @param comment              a users comment
-   * @param confoundingVariables confounding variables with as a {@link java.util.HashMap}
-   *                             representation
-   * @since 1.10.0
-   */
+* @param confoundingVariables confounding variables with as a {@link java.util.HashMap}
+    *                             representation
+    * @param batch               the batch label of the sample
+    * @since 1.10.0
+    */
   record SampleUpdateInformation(
       String sampleCode,
       String sampleName,
@@ -2058,7 +2061,8 @@ public interface AsyncProjectService {
       String analyte,
       String analysisMethod,
       String comment,
-      Map<String, String> confoundingVariables
+      Map<String, String> confoundingVariables,
+      String batch
   ) implements ValidationRequestBody {
 
   }

@@ -54,6 +54,7 @@ public class SampleValidationService {
         information.analysisMethod(),
         information.comment(),
         information.confoundingVariables(),
+        information.batch(),
         experimentId,
         projectId.value());
   }
@@ -70,6 +71,7 @@ public class SampleValidationService {
         information.analysisMethod(),
         information.comment(),
         information.confoundingVariables(),
+        information.batch(),
         experimentId,
         projectId.value());
   }
@@ -85,6 +87,7 @@ public class SampleValidationService {
       String analysisMethod,
       String comment,
       Map<String, String> confoundingVariables,
+      String batch,
       String experimentId,
       String projectId) {
     return sampleValidation.validateNewSample(sampleName,
@@ -96,6 +99,7 @@ public class SampleValidationService {
         analysisMethod,
         comment,
         confoundingVariables,
+        batch,
         experimentId,
         projectId);
   }
@@ -112,6 +116,7 @@ public class SampleValidationService {
       String analysisMethod,
       String comment,
       Map<String, String> confoundingVariables,
+      String batch,
       String experimentId,
       String projectId) {
     return sampleValidation.validateExistingSample(sampleCode,
@@ -124,6 +129,7 @@ public class SampleValidationService {
         analysisMethod,
         comment,
         confoundingVariables,
+        batch,
         experimentId,
         projectId);
   }
@@ -140,6 +146,7 @@ public class SampleValidationService {
       String analysisMethod,
       String comment,
       Map<String, String> confoundingVariables,
+      String batch,
       String experimentId,
       String projectId) {
     return CompletableFuture.completedFuture(
@@ -152,6 +159,7 @@ public class SampleValidationService {
             analysisMethod,
             comment,
             confoundingVariables,
+            batch,
             experimentId,
             projectId));
   }
@@ -169,6 +177,7 @@ public class SampleValidationService {
       String analysisMethod,
       String comment,
       Map<String, String> confoundingVariables,
+      String batch,
       String experimentId,
       String projectId) {
     return CompletableFuture.completedFuture(
@@ -182,6 +191,7 @@ public class SampleValidationService {
             analysisMethod,
             comment,
             confoundingVariables,
+            batch,
             experimentId,
             projectId));
   }
