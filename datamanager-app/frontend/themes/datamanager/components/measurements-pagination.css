@@ -47,6 +47,21 @@
   min-width: 12rem;
 }
 
+/* Explicit focus behaviour on the tab search fields: users must see the field is active.
+   App palette only (variables.css) — a visible focus ring matching the primary color. */
+.measurement-tab-pagination .measurement-search::part(input-field) {
+  transition: box-shadow 120ms ease, background-color 120ms ease;
+}
+
+.measurement-tab-pagination .measurement-search:focus-within::part(input-field) {
+  background-color: var(--primary-color-10pct);
+  box-shadow: 0 0 0 2px var(--primary-color) inset;
+}
+
+.measurement-tab-pagination .measurement-search:focus-within [part='suffix'] vaadin-icon {
+  color: var(--primary-color);
+}
+
 /* UX F2: sticky to the top of the content area so the selection count and its actions are
    at eye level while the full-height grid scrolls (USER-R-02: count must always be visible).
    App palette only (components/variables.css): opaque primary tint, no border/shadow/radius. */
