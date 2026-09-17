@@ -8,6 +8,8 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.checkbox.CheckboxGroup;
+import com.vaadin.flow.component.checkbox.CheckboxGroupVariant;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.Grid.MultiSortPriority;
 import com.vaadin.flow.component.grid.Grid.Column;
@@ -18,6 +20,7 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.provider.SortDirection;
 import com.vaadin.flow.data.selection.MultiSelectionEvent;
@@ -38,6 +41,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.application.commons.time.DateTimeFormat;
@@ -199,7 +203,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         MeasurementDomain.IP, this::exportIp);
   }
 
-  private Component tabContent(Grid<?> grid, TextField searchField, Button selectAll,
+  private <T> Component tabContent(Grid<T> grid, TextField searchField, Button selectAll,
       Button editButton, Button deleteButton, MeasurementDomain domain, Runnable exporter) {
     Div toolbar = new Div();
     toolbar.addClassName("measurement-tab-toolbar");
@@ -211,10 +215,51 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     exportButton.addClickListener(clicked -> exporter.run());
     toolbar.add(searchField, selectAll, exportButton, editButton, deleteButton);
 
+    Div toolbarRight = new Div();
+    toolbarRight.addClassName("measurement-tab-toolbar-right");
+    // Show/Hide Columns: a per-tab menu over the grid's columns. Kept from the original
+    // FilterGrid implementation — one of the most-used features for table-heavy users.
+    toolbarRight.add(showHideColumnsMenu(grid));
+    toolbar.add(toolbarRight);
+
     Div content = new Div();
     content.addClassName("measurement-tab-content");
     content.add(toolbar, grid);
     return content;
+  }
+
+  /**
+   * Builds a "Show/Hide Columns" menu bar over the given grid's columns.
+   * <p>
+   * Each grid column is represented by a checkbox (checked = visible) labelled with its header
+   * text. Toggling a checkbox shows/hides the column immediately. This replicates the widely
+   * used control from the previous {@code FilterGrid}-based measurement view.
+   */
+  private static <T> MenuBar showHideColumnsMenu(Grid<T> grid) {
+    MenuBar menuBar = new MenuBar();
+    var menuItem = menuBar.addItem("Show/Hide Columns");
+    var subMenu = menuItem.getSubMenu();
+
+    CheckboxGroup<Column<T>> checkboxGroup = new CheckboxGroup<>();
+    checkboxGroup.setItemLabelGenerator(Column::getHeaderText);
+    List<Column<T>> columns = grid.getColumns();
+    checkboxGroup.setItems(columns);
+    checkboxGroup.setValue(columns.stream()
+        .filter(Column::isVisible)
+        .collect(Collectors.toSet()));
+    checkboxGroup.addThemeVariants(CheckboxGroupVariant.LUMO_VERTICAL);
+    checkboxGroup.addClassNames("flex-vertical");
+    // prevent the menu-bar from handling the click (which would close the submenu)
+    checkboxGroup.getElement().executeJs(
+        "this.addEventListener('click', e => e.stopPropagation());");
+    checkboxGroup.addValueChangeListener(event -> {
+      Set<Column<T>> selected = event.getValue();
+      for (Column<T> column : columns) {
+        column.setVisible(selected.contains(column));
+      }
+    });
+    subMenu.addComponent(checkboxGroup);
+    return menuBar;
   }
 
   private void configureSearch(TextField field, MeasurementDomain domain) {

@@ -26,6 +26,13 @@
   gap: var(--lumo-space-s);
 }
 
+.measurement-tab-pagination .measurement-tab-toolbar .measurement-tab-toolbar-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+}
+
 .measurement-tab-pagination .measurement-search {
   flex: 1;
   min-width: 12rem;
