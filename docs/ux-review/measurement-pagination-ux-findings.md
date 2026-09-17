@@ -101,8 +101,9 @@ backend `withSearch` covers multiple columns; a partial hint would mislead.
 Filter → 0 results: pager hides, grid renders a blank area; no "clear search" affordance.
 Tab with no measurements: blank grid, no onboarding hint.
 
-**Status:** 🔴 Open (needs design decision: inline empt-state component vs. grid
-`emptyStateComponent`; recommend separate small task).
+**Status:** 🟢 Done (per-tab empty-state Div in `MeasurementDetailsComponent`; distinguishes
+"No measurements registered yet" from "No measurements match '<filter>'"; grid hidden while
+empty).
 
 ---
 
@@ -119,15 +120,16 @@ unfiltered `count{...}Measurements` lookups on every refresh in
 ### F10 — Page-size selector affordance
 "12 per page" is a button + ContextMenu without a visible dropdown cue.
 
-**Status:** 🔴 Open (recommend replacing with labelled `Select` in `PaginationBar` — shared
-component change, affects projects overview too).
+**Status:** 🟢 Done (`PaginationBar` now uses `Select<Integer>` with label "Items per page";
+shared component — the project overview pager benefits as well).
 
 ---
 
 ### F11 — Title/nav mismatch
 Workflow step says "View Measurements"; page heading says "Register Measurements".
 
-**Status:** 🔴 Open (copy change, needs PO sign-off on terminology).
+**Status:** 🟢 Done (page title renamed to "View Measurements", aligning with the workflow
+step label).
 
 ---
 
@@ -146,9 +148,9 @@ Users with read-project scope (ACL `READ` only) were offered Edit/Delete.
 hides (not just disables) Edit/Delete when the scope is missing. Defaults to fail-closed
 (hidden) until write access is confirmed.
 
-**Status:** 🟢 Done. Registration/upload (`MeasurementUpload`, metadata update dialogs) is
-also a mutation path — out of scope of this fix; gating it requires restructuring the
-registration component. Flag for PO/architecture before broadening (new task). 
+**Status:** 🟢 Done, extended: registration is gated too — `openRegistrationDialog()` checks
+`editProject` (fail-closed notification) and the "Register Measurements" button is hidden for
+read-only scope in `updateComponentVisibility()`.
 
 ---
 

@@ -56,3 +56,11 @@
   color: var(--lumo-primary-text-color);
   font-weight: 600;
 }
+
+/* UX F8: explicit empty state shown instead of a blank grid region */
+.measurement-tab-pagination .measurement-empty-state {
+  padding: var(--lumo-space-l) var(--lumo-space-m);
+  color: var(--lumo-secondary-text-color);
+  border: 1px dashed var(--lumo-contrast-30pct);
+  border-radius: var(--lumo-border-radius-m);
+}

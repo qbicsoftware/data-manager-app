@@ -116,6 +116,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   private final Button ipEditButton = new Button("Edit");
   private final Button ipDeleteButton = new Button("Delete");
   private final Map<MeasurementDomain, Button> exportButtons = new EnumMap<>(MeasurementDomain.class);
+  private final Map<MeasurementDomain, Div> emptyStates = new EnumMap<>(MeasurementDomain.class);
   private final MeasurementSelection ngsSelection = new MeasurementSelection(() -> updateSelectionBar());
   private final MeasurementSelection pxpSelection = new MeasurementSelection(() -> updateSelectionBar());
   private final MeasurementSelection ipSelection = new MeasurementSelection(() -> updateSelectionBar());
@@ -272,9 +273,15 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     toolbarRight.add(showHideColumnsMenu(grid));
     toolbar.add(toolbarRight);
 
+    // UX F8: explicit empty-state message instead of a blank grid region
+    Div emptyState = new Div();
+    emptyState.addClassName("measurement-empty-state");
+    emptyState.setVisible(false);
+    emptyStates.put(domain, emptyState);
+
     Div content = new Div();
     content.addClassName("measurement-tab-content");
-    content.add(toolbar, grid);
+    content.add(toolbar, emptyState, grid);
     return content;
   }
 
@@ -489,6 +496,19 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     // the user continues reading from the top instead of staying at the previous scroll offset.
     grid.getElement().executeJs(
         "requestAnimationFrame(() => this.scrollIntoView({block: 'start'}))");
+    // UX F8: render an explicit empty state distinguishing "nothing registered" from
+    // "filter matched nothing" instead of leaving a blank grid region.
+    Div emptyState = emptyStates.get(domain);
+    boolean noResults = total == 0;
+    emptyState.setVisible(noResults);
+    grid.setVisible(!noResults);
+    if (noResults) {
+      String filter = state.filter();
+      boolean hasFilter = filter != null && !filter.isBlank();
+      emptyState.setText(hasFilter
+          ? "No measurements match '" + filter + "'. Clear the search to see all measurements."
+          : "No measurements registered yet.");
+    }
     reconcileSelection(grid, selectionFor(domain), domain);
     tabPagination.onPageLoaded(domain, pageToRender, total);
     updateSelectAllLabel(domain, total);

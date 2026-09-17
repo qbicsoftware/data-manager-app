@@ -237,7 +237,9 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
 
   private void initContent() {
     Span titleField = new Span();
-    titleField.setText("Register Measurements");
+    // UX F11: page title aligned with the workflow step ("View Measurements") instead of
+    // the misleading "Register Measurements" copy
+    titleField.setText("View Measurements");
     titleField.addClassNames("title");
     content.add(titleField);
     initRawDataAvailableInfo();
@@ -520,6 +522,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
     return noSamplesRegisteredDisclaimer;
   }
 
+  private final List<Button> registerMeasurementButtons = new ArrayList<>();
+
   private Div createNoMeasurementDisclaimer() {
     Div disclaimer = new Div();
     Span disclaimerTitle = new Span("Manage your measurement metadata");
@@ -540,13 +544,23 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
     disclaimer.add(availableTemplatesInfo);
     Button registerMeasurements = new Button("Register Measurements");
     registerMeasurements.addClassName("primary");
-    disclaimer.add(registerMeasurements);
     registerMeasurements.addClickListener(event -> openRegistrationDialog());
+    registerMeasurementButtons.add(registerMeasurements);
+    disclaimer.add(registerMeasurements);
     disclaimer.addClassName("no-measurements-registered-disclaimer");
     return disclaimer;
   }
 
   private void openRegistrationDialog() {
+    // ACL gate: registration is a mutation; never open for read-only project scope
+    boolean canWrite = context != null
+        && context.projectId().map(userPermissions::editProject).orElse(false);
+    if (!canWrite) {
+      ErrorMessage errorMessage = new ErrorMessage("Missing permissions",
+          "You need write access to this project to register measurements.");
+      new StyledNotification(errorMessage).open();
+      return;
+    }
     AppDialog measurementDialog;
     measurementDialog = AppDialog.medium();
     DialogHeader.with(measurementDialog, "Register measurements");
@@ -993,6 +1007,9 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
   private void updateComponentVisibility() {
     ExperimentId currentExperimentId = context.experimentId().orElseThrow();
     ProjectId projectId = context.projectId().orElseThrow();
+    // ACL: hide (not just guard) the registration affordances for read-only project scope
+    boolean canWrite = userPermissions.editProject(projectId);
+    registerMeasurementButtons.forEach(button -> button.setVisible(canWrite));
     if (!sampleInformationService.hasSamples(projectId,
         currentExperimentId.value())) {
       showRegisterSamplesDisclaimer();
