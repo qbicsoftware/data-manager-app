@@ -33,6 +33,7 @@ import life.qbic.datamanager.configuration.UploadConfiguration;
 import life.qbic.datamanager.files.export.download.DownloadStreamProvider;
 import life.qbic.datamanager.files.export.download.WorkbookDownloadStreamProvider;
 import life.qbic.datamanager.files.parsing.converters.ConverterRegistry;
+import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.AppRoutes.ProjectRoutes;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.UiHandle;
@@ -130,6 +131,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
   private final MessageSourceNotificationFactory messageSourceNotificationFactory;
   private transient Context context;
   private final ProjectContext projectContext;
+  private final UserPermissions userPermissions;
 
 
   private final UiHandle uiHandle = new UiHandle();
@@ -161,6 +163,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
       @Autowired MeasurementService measurementService,
       @Autowired MeasurementValidationService measurementValidationService,
       @Autowired AsyncProjectService asyncProjectService,
+      @Autowired UserPermissions userPermissions,
       MessageSourceNotificationFactory messageFactory,
       MessageSourceNotificationFactory messageSourceNotificationFactory,
       NgsMeasurementLookup ngsMeasurementLookup,
@@ -170,6 +173,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
     Objects.requireNonNull(measurementService);
     Objects.requireNonNull(measurementValidationService);
     Objects.requireNonNull(asyncProjectService);
+    this.userPermissions = Objects.requireNonNull(userPermissions);
     this.messageFactory = Objects.requireNonNull(messageFactory);
     this.measurementService = measurementService;
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
@@ -1019,6 +1023,10 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
     noMeasurementDisclaimer.setVisible(false);
     registerSamplesDisclaimer.setVisible(false);
     content.setVisible(true);
+    // edit capabilities (edit/delete) follow the caller's ACL scope on this project;
+    // read-only users must never be offered mutation actions in the first place
+    measurementDetailsComponent.setWriteAccess(
+        userPermissions.editProject(context.projectId().orElseThrow()));
     measurementDetailsComponent.setContext(context);
     measurementDetailsComponent.setVisible(true);
   }

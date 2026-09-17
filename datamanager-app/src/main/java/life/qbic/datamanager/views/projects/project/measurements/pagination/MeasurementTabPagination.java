@@ -56,6 +56,8 @@ public class MeasurementTabPagination extends Div {
   private MeasurementSelection selection;
   private String basePath;
   private boolean suppressTabSwitchEvents;
+  private long totalItemsActive;
+
 
   public MeasurementTabPagination() {
     addClassName("measurement-tab-pagination");
@@ -117,6 +119,16 @@ public class MeasurementTabPagination extends Div {
    */
   public void addTab(String label, MeasurementDomain domain, Component content) {
     tabsByDomain.put(domain, tabSheet.add(label, content));
+  }
+
+  /**
+   * Updates a tab's label (e.g. appending a count badge). No-op if the domain was not added.
+   */
+  public void setTabLabel(MeasurementDomain domain, String label) {
+    Tab tab = tabsByDomain.get(domain);
+    if (tab != null) {
+      tab.setLabel(label);
+    }
   }
 
   private void configurePagination() {
@@ -184,6 +196,7 @@ public class MeasurementTabPagination extends Div {
     ListState current = listState.stateOf(domain);
     this.listState = listState.withState(domain, current.withPage(page));
     if (domain == activeTab()) {
+      this.totalItemsActive = totalItems;
       paginationBar.setListState(page, totalItems, listState.activeState().pageSize());
       paginationBar.setVisible(totalItems > 0);
     }
@@ -291,6 +304,8 @@ public class MeasurementTabPagination extends Div {
    */
   public void setSelection(MeasurementSelection selection) {
     this.selection = Objects.requireNonNull(selection, "selection must not be null");
+    // a new selection scope is attached; do not compare it against the previous tab's total
+    this.totalItemsActive = 0;
     updateSelectionBar();
   }
 
@@ -300,6 +315,14 @@ public class MeasurementTabPagination extends Div {
   public void updateSelectionBar() {
     int count = selection == null ? 0 : selection.count();
     selectionContainer.setVisible(count > 0);
+    // UX F1: scope disambiguation — when the selection covers the whole filtered result set,
+    // say so explicitly instead of showing a bare count next to "Page 1 of N".
+    if (count > 0 && count == totalItemsActive) {
+      selectionDisplay.setText(count == 1
+          ? "The single measurement matching the filter is selected"
+          : "All %d measurements matching the filter are selected".formatted(count));
+      return;
+    }
     selectionDisplay.setText(count == 1
         ? "1 measurement is selected"
         : "%d measurements are selected".formatted(count));

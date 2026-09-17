@@ -38,12 +38,18 @@
   min-width: 12rem;
 }
 
+/* UX F2: sticky to the viewport bottom so the selection count stays visible while the
+   full-height grid scrolls under native page scroll (USER-R-02: count must always be visible). */
 .measurement-tab-pagination .measurement-selection-bar {
   display: flex;
   align-items: center;
   gap: var(--lumo-space-m);
   padding: var(--lumo-space-s) var(--lumo-space-m);
   border-top: 1px solid var(--lumo-contrast-10pct);
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  background: var(--lumo-base-color);
 }
 
 .measurement-tab-pagination .measurement-selection-count {

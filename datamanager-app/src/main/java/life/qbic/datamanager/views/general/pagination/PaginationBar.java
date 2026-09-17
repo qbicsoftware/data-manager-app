@@ -169,8 +169,9 @@ public class PaginationBar extends Div {
   }
 
   private void render() {
+    // UX F7: lead with the total count; the page location is secondary information.
     infoLabel.setText(
-        "Page %d of %d — %d %s".formatted(currentPage, totalPages, totalItems, itemLabel));
+        "%d %s · Page %d of %d".formatted(totalItems, itemLabel, currentPage, totalPages));
     renderPageButtons();
   }
 

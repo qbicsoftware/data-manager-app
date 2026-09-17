@@ -8,6 +8,7 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.CheckboxGroup;
 import com.vaadin.flow.component.checkbox.CheckboxGroupVariant;
 import com.vaadin.flow.component.grid.Grid;
@@ -35,7 +36,9 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -112,6 +115,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   private final Button pxpDeleteButton = new Button("Delete");
   private final Button ipEditButton = new Button("Edit");
   private final Button ipDeleteButton = new Button("Delete");
+  private final Map<MeasurementDomain, Button> exportButtons = new EnumMap<>(MeasurementDomain.class);
   private final MeasurementSelection ngsSelection = new MeasurementSelection(() -> updateSelectionBar());
   private final MeasurementSelection pxpSelection = new MeasurementSelection(() -> updateSelectionBar());
   private final MeasurementSelection ipSelection = new MeasurementSelection(() -> updateSelectionBar());
@@ -120,12 +124,45 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   private final transient PxpMeasurementLookup pxpMeasurementLookup;
   private final transient IpMeasurementLookup ipMeasurementLookup;
 
+  private static final Map<MeasurementDomain, String> TAB_LABELS = Map.of(
+      MeasurementDomain.NGS, "Genomics",
+      MeasurementDomain.PXP, "Proteomics",
+      MeasurementDomain.IP, "Immunopeptidomics");
+
   private Context context;
 
   private void updateSelectionBar() {
     if (tabPagination != null) {
       tabPagination.updateSelectionBar();
     }
+    updateActionButtons(MeasurementDomain.NGS, ngsSelection, ngsEditButton, ngsDeleteButton);
+    updateActionButtons(MeasurementDomain.PXP, pxpSelection, pxpEditButton, pxpDeleteButton);
+    updateActionButtons(MeasurementDomain.IP, ipSelection, ipEditButton, ipDeleteButton);
+  }
+
+  // fail-closed: mutation actions hidden until the owning view confirms ACL write scope
+  private boolean writeAccess = false;
+
+  private void updateActionButtons(MeasurementDomain domain, MeasurementSelection selection,
+      Button editButton, Button deleteButton) {
+    editButton.setVisible(writeAccess);
+    deleteButton.setVisible(writeAccess);
+    boolean hasSelection = selection.count() > 0;
+    editButton.setEnabled(hasSelection);
+    deleteButton.setEnabled(hasSelection);
+    Button exportButton = exportButtons.get(domain);
+    if (exportButton != null) {
+      exportButton.setEnabled(hasSelection);
+    }
+  }
+
+  /**
+   * Applies the caller's ACL scope: when {@code false}, Edit/Delete are hidden for users
+   * with read-only project scope (they must never be offered mutation actions).
+   */
+  public void setWriteAccess(boolean writeAccess) {
+    this.writeAccess = writeAccess;
+    updateSelectionBar();
   }
 
   @Override
@@ -155,9 +192,12 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     addClassNames("measurement-details-component", "width-full");
 
     tabPagination = new MeasurementTabPagination();
-    tabPagination.addTab("Genomics", MeasurementDomain.NGS, ngsTabContent());
-    tabPagination.addTab("Proteomics", MeasurementDomain.PXP, pxpTabContent());
-    tabPagination.addTab("Immunopeptidomics", MeasurementDomain.IP, ipTabContent());
+    tabPagination.addTab(TAB_LABELS.get(MeasurementDomain.NGS), MeasurementDomain.NGS,
+        ngsTabContent());
+    tabPagination.addTab(TAB_LABELS.get(MeasurementDomain.PXP), MeasurementDomain.PXP,
+        pxpTabContent());
+    tabPagination.addTab(TAB_LABELS.get(MeasurementDomain.IP), MeasurementDomain.IP,
+        ipTabContent());
     tabPagination.setSelection(ngsSelection);
     tabPagination.addRefreshRequestedListener(this::onRefreshRequested);
     add(tabPagination);
@@ -171,6 +211,9 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     configureSelectionReconciliation(ngsGrid, ngsSelection, MeasurementDomain.NGS);
     configureSelectionReconciliation(pxpGrid, pxpSelection, MeasurementDomain.PXP);
     configureSelectionReconciliation(ipGrid, ipSelection, MeasurementDomain.IP);
+
+    // UX F4: bulk actions start disabled — no selection exists yet
+    updateSelectionBar();
 
     // register buttons wiring (fires the same events as the old implementation)
     ngsEditButton.addClickListener(clicked -> fireEditRequested(MeasurementDomain.NGS,
@@ -211,8 +254,14 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     searchField.addClassName("measurement-search");
     selectAll.addClassName("measurement-select-all");
     selectAll.addClickListener(clicked -> selectAllMatching(domain));
-    Button exportButton = new Button("Export");
+    Button exportButton = new Button("Export", VaadinIcon.DOWNLOAD.create());
     exportButton.addClassName("measurement-export");
+    // UX F5: visual hierarchy — export is the primary bulk action, delete is destructive
+    exportButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    editButton.setIcon(VaadinIcon.EDIT.create());
+    deleteButton.setIcon(VaadinIcon.TRASH.create());
+    deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
+    exportButtons.put(domain, exportButton);
     exportButton.addClickListener(clicked -> exporter.run());
     toolbar.add(searchField, selectAll, exportButton, editButton, deleteButton);
 
@@ -238,7 +287,10 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
    */
   private static <T> MenuBar showHideColumnsMenu(Grid<T> grid) {
     MenuBar menuBar = new MenuBar();
-    var menuItem = menuBar.addItem("Show/Hide Columns");
+    // UX F5: chevron suffix signals "opens a menu", distinguishing it from action buttons
+    Span itemContent = new Span(new Span("Show/Hide Columns"),
+        VaadinIcon.CHEVRON_DOWN.create());
+    var menuItem = menuBar.addItem(itemContent);
     var subMenu = menuItem.getSubMenu();
 
     CheckboxGroup<Column<T>> checkboxGroup = new CheckboxGroup<>();
@@ -340,11 +392,30 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     if (context == null) {
       return;
     }
+    updateTabCounts();
     ListState state = tabPagination.listState().stateOf(domain);
     // keep the selection display attached to the active tab
     tabPagination.setSelection(selectionFor(domain));
     syncSearchField(domain, state.filter());
     loadAndRender(domain, state);
+  }
+
+  // UX F9: per-tab totals as label badges so users see which domains hold measurements
+  // without switching tabs (unfiltered counts; filter state is per-tab and would churn labels).
+  private void updateTabCounts() {
+    String experimentId = context.experimentId().orElseThrow().value();
+    String projectId = context.projectId().orElseThrow().value();
+    for (MeasurementDomain domain : MeasurementDomain.values()) {
+      long total = switch (domain) {
+        case NGS -> ngsMeasurementLookup.countNgsMeasurements(projectId,
+            NgsMeasurementLookup.MeasurementFilter.forExperiment(experimentId));
+        case PXP -> pxpMeasurementLookup.countPxpMeasurements(projectId,
+            PxpMeasurementLookup.MeasurementFilter.forExperiment(experimentId));
+        case IP -> ipMeasurementLookup.countIpMeasurements(projectId,
+            IpMeasurementLookup.MeasurementFilter.forExperiment(experimentId));
+      };
+      tabPagination.setTabLabel(domain, "%s (%d)".formatted(TAB_LABELS.get(domain), total));
+    }
   }
 
   private void syncSearchField(MeasurementDomain domain, String filter) {
@@ -414,6 +485,10 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     // their natural height (no internal scroll container) so the whole configured page size is
     // visible and the native page scroll handles overflow.
     grid.setAllRowsVisible(true);
+    // UX F3: after a page/sort/tab re-render, bring the grid's top back into the viewport so
+    // the user continues reading from the top instead of staying at the previous scroll offset.
+    grid.getElement().executeJs(
+        "requestAnimationFrame(() => this.scrollIntoView({block: 'start'}))");
     reconcileSelection(grid, selectionFor(domain), domain);
     tabPagination.onPageLoaded(domain, pageToRender, total);
     updateSelectAllLabel(domain, total);
@@ -668,6 +743,8 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   private static TextField searchField() {
     TextField field = new TextField();
     field.setSuffixComponent(VaadinIcon.SEARCH.create());
+    // UX F6: placeholder-only inputs are inaccessible; provide a programmatic label
+    field.getElement().setAttribute("aria-label", "Search measurements");
     return field;
   }
 
