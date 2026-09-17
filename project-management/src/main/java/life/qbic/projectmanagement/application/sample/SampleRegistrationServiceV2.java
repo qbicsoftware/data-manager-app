@@ -166,15 +166,16 @@ public class SampleRegistrationServiceV2 {
     var samplesToUpdate = new HashMap<Sample, SampleMetadata>();
     for (SampleMetadata sampleMetadata : sampleMetadataList) {
       var sampleForUpdate = samples.get(sampleMetadata.sampleCode());
-      sampleForUpdate.setLabel(sampleMetadata.sampleName());
-      sampleForUpdate.setAnalysisMethod(sampleMetadata.analysisToBePerformed());
-      var sampleOrigin = SampleOrigin.create(sampleMetadata.species(), sampleMetadata.specimen(),
-          sampleMetadata.analyte());
-      sampleForUpdate.setSampleOrigin(sampleOrigin);
-      sampleForUpdate.setBiologicalReplicate(sampleMetadata.biologicalReplicate());
-      sampleForUpdate.setExperimentalGroupId(sampleMetadata.experimentalGroupId());
-      sampleForUpdate.setComment(sampleMetadata.comment());
-      sampleForUpdate.setBatch(sampleMetadata.batch());
+      sampleForUpdate.update(
+          sampleMetadata.sampleName(),
+          sampleMetadata.biologicalReplicate(),
+          sampleMetadata.analysisToBePerformed(),
+          sampleMetadata.species(),
+          sampleMetadata.specimen(),
+          sampleMetadata.analyte(),
+          sampleMetadata.comment(),
+          sampleMetadata.experimentalGroupId(),
+          sampleMetadata.batch());
       samplesToUpdate.put(sampleForUpdate, SampleMetadata.createUpdate(
           sampleMetadata.sampleId(),
           sampleMetadata.sampleCode(),

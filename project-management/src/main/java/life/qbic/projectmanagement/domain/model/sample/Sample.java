@@ -11,7 +11,7 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 import life.qbic.domain.concepts.LocalDomainEventDispatcher;
-import life.qbic.projectmanagement.application.batch.SampleUpdateRequest;
+import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.event.SampleRegistered;
@@ -191,14 +191,16 @@ public class Sample {
     this.sampleOrigin = sampleOrigin;
   }
 
-  public void update(SampleUpdateRequest sampleInfo) {
-    setLabel(sampleInfo.sampleInformation().sampleName());
-    setBiologicalReplicate(sampleInfo.sampleInformation().biologicalReplicate());
-    setAnalysisMethod(sampleInfo.sampleInformation().analysisMethod());
-    setSampleOrigin(SampleOrigin.create(sampleInfo.sampleInformation().species(),
-        sampleInfo.sampleInformation().specimen(), sampleInfo.sampleInformation().analyte()));
-    setComment(sampleInfo.sampleInformation().comment());
-    setExperimentalGroupId(sampleInfo.sampleInformation().experimentalGroup().id());
+  public void update(String label, String biologicalReplicate, AnalysisMethod analysisMethod,
+      OntologyTerm species, OntologyTerm specimen, OntologyTerm analyte,
+      String comment, Long experimentalGroupId, String batch) {
+    setLabel(label);
+    setBiologicalReplicate(biologicalReplicate);
+    setAnalysisMethod(analysisMethod);
+    setSampleOrigin(SampleOrigin.create(species, specimen, analyte));
+    setComment(comment);
+    setExperimentalGroupId(experimentalGroupId);
+    setBatch(batch);
     this.lastModified = Instant.now();
     emitUpdatedEvent();
   }
