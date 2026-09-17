@@ -54,6 +54,9 @@ public class MeasurementTabPagination extends Div {
   private final Span selectionDisplay = new Span();
   private final Button clearSelectionButton = new Button("Clear selection");
   private final Div selectionContainer = new Div();
+  // 1px sentinel below the sticky bar: while it is visible in the viewport the bar rests at
+  // its natural position (page bottom) — otherwise the bar is floating over scrolled rows
+  private final Div stickySentinel = new Div();
   private final Map<MeasurementDomain, Tab> tabsByDomain = new EnumMap<>(MeasurementDomain.class);
   private MeasurementListState listState = MeasurementListState.defaultWith(MeasurementDomain.NGS);
   private MeasurementSelection selection;
@@ -66,9 +69,10 @@ public class MeasurementTabPagination extends Div {
     addClassName("measurement-tab-pagination");
     tabSheet.addClassName("measurement-tab-sheet");
     configureSelectionBar();
-    add(tabSheet, selectionContainer, paginationBar);
+    add(tabSheet, selectionContainer, paginationBar, stickySentinel);
     configurePagination();
     configureTabSwitching();
+    trackStickyState();
   }
 
   /**
@@ -87,6 +91,29 @@ public class MeasurementTabPagination extends Div {
     selectionContainer.addClassName("measurement-selection-bar");
     selectionContainer.add(selectionIcon, selectionDisplay, clearSelectionButton);
     selectionContainer.setVisible(false);
+  }
+
+  /**
+   * Toggles {@code is-floating} on the sticky selection bar whenever it actually overlaps
+   * scrolled grid rows, via an IntersectionObserver on the trailing sentinel: at the page
+   * bottom the bar rests (default styling), while scrolling mid-list it floats (elevated).
+   */
+  private void trackStickyState() {
+    stickySentinel.addClassName("measurement-sticky-sentinel");
+    getElement().executeJs(
+        """
+            const sentinel = $0;
+            const bar = $1;
+            if (!sentinel.__dmStickyObserver) {
+              sentinel.__dmStickyObserver = true;
+              new IntersectionObserver(entries => {
+                entries.forEach(entry => {
+                  bar.classList.toggle('is-floating', !entry.isIntersecting);
+                });
+              }, { threshold: 0 }).observe(sentinel);
+            }
+            """,
+        stickySentinel.getElement(), selectionContainer.getElement());
   }
 
   private void configureTabSwitching() {

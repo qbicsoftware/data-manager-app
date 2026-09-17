@@ -40,8 +40,10 @@
 
 /* UX F2: sticky to the viewport bottom so the selection count stays visible while the
    full-height grid scrolls under native page scroll (USER-R-02: count must always be visible).
-   App palette only (components/variables.css): opaque white surface + primary accent +
-   elevation shadow, so the bar is unmistakable AND readable over scrolled grid rows. */
+   App palette only (components/variables.css).
+   Two states: at its natural resting position (page bottom) the bar is quiet — slightly
+   tinted surface, no shadow, no accent border. While it actually floats over scrolled grid
+   rows the JS toggles .is-floating: elevated shadow, accent border, slightly stronger tint. */
 .measurement-tab-pagination .measurement-selection-bar {
   display: flex;
   align-items: center;
@@ -50,7 +52,12 @@
   position: sticky;
   bottom: 0;
   z-index: 1;
-  background: var(--primary-contrast-color);
+  background: var(--background-color-5pct);
+  transition: box-shadow 120ms ease, background-color 120ms ease, border-color 120ms ease;
+}
+
+.measurement-tab-pagination .measurement-selection-bar.is-floating {
+  background: var(--background-color-10pct);
   border-top: 2px solid var(--primary-color);
   box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.12);
   border-radius: var(--lumo-border-radius-m) var(--lumo-border-radius-m) 0 0;
@@ -60,6 +67,12 @@
   color: var(--primary-color);
   width: var(--lumo-icon-size-m);
   height: var(--lumo-icon-size-m);
+}
+
+/* 1px sentinel after the sticky bar; while it is intersecting the bar is at its resting
+   position, once it scrolls out of view the bar is floating */
+.measurement-tab-pagination .measurement-sticky-sentinel {
+  height: 1px;
 }
 
 .measurement-tab-pagination .measurement-selection-count {
