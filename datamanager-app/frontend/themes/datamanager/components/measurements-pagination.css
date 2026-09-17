@@ -42,9 +42,8 @@
    full-height grid scrolls under native page scroll (USER-R-02: count must always be visible).
    App palette only (components/variables.css).
    Two states: at its natural resting position (page bottom) the bar is quiet — plain white
-   like the page background, no shadow, no accent border. While it actually floats over
-   scrolled grid rows the JS toggles .is-floating: opaque primary tint (color-mix over white),
-   accent border and elevation shadow. */
+   like the page background. While it actually floats over scrolled grid rows the JS toggles
+   .is-floating: an opaque primary tint (color-mix over white) is enough to set it apart. */
 .measurement-tab-pagination .measurement-selection-bar {
   display: flex;
   align-items: center;
@@ -54,15 +53,12 @@
   bottom: 0;
   z-index: 1;
   background: var(--primary-contrast-color);
-  transition: box-shadow 120ms ease, background-color 120ms ease, border-color 120ms ease;
+  transition: background-color 120ms ease;
 }
 
 .measurement-tab-pagination .measurement-selection-bar.is-floating {
   background: var(--primary-contrast-color);
   background: color-mix(in srgb, var(--primary-color) 6%, var(--primary-contrast-color));
-  border-top: 2px solid var(--primary-color);
-  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.12);
-  border-radius: var(--lumo-border-radius-m) var(--lumo-border-radius-m) 0 0;
 }
 
 .measurement-tab-pagination .measurement-selection-icon {
@@ -83,7 +79,9 @@
 }
 
 .measurement-tab-pagination .measurement-clear-selection {
-  margin-left: auto;
+  /* sits directly after the count text — the selection action is on the left, so the
+     close-by clear affordance reduces mouse travel */
+  margin-left: var(--lumo-space-s);
   color: var(--button-text-color);
   font-weight: 600;
 }
