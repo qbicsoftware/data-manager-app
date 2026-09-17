@@ -39,21 +39,38 @@
 }
 
 /* UX F2: sticky to the viewport bottom so the selection count stays visible while the
-   full-height grid scrolls under native page scroll (USER-R-02: count must always be visible). */
+   full-height grid scrolls under native page scroll (USER-R-02: count must always be visible).
+   Deliberately high-contrast so its appearance is unmistakable (tinted background,
+   pronounced top border, elevation shadow, icon + bold count). */
 .measurement-tab-pagination .measurement-selection-bar {
   display: flex;
   align-items: center;
-  gap: var(--lumo-space-m);
+  gap: var(--lumo-space-s);
   padding: var(--lumo-space-s) var(--lumo-space-m);
-  border-top: 1px solid var(--lumo-contrast-10pct);
   position: sticky;
   bottom: 0;
   z-index: 1;
-  background: var(--lumo-base-color);
+  background: var(--lumo-primary-color-10pct);
+  border-top: 2px solid var(--lumo-primary-color);
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.12);
+  border-radius: var(--lumo-border-radius-m) var(--lumo-border-radius-m) 0 0;
+}
+
+.measurement-tab-pagination .measurement-selection-icon {
+  color: var(--lumo-primary-color);
+  width: var(--lumo-icon-size-m);
+  height: var(--lumo-icon-size-m);
 }
 
 .measurement-tab-pagination .measurement-selection-count {
   color: var(--lumo-primary-text-color);
+  font-weight: 700;
+  font-size: var(--lumo-font-size-m);
+}
+
+.measurement-tab-pagination .measurement-clear-selection {
+  margin-left: auto;
+  color: var(--lumo-primary-color);
   font-weight: 600;
 }
 

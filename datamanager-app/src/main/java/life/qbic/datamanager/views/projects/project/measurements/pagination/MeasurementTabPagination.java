@@ -6,6 +6,8 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.router.Location;
@@ -48,6 +50,7 @@ public class MeasurementTabPagination extends Div {
   private final PaginationBar paginationBar =
       new PaginationBar(ListStateCodec.ALLOWED_PAGE_SIZES, ListStateCodec.DEFAULT_PAGE_SIZE,
           "measurements");
+  private final Icon selectionIcon = VaadinIcon.CHECK_SQUARE_O.create();
   private final Span selectionDisplay = new Span();
   private final Button clearSelectionButton = new Button("Clear selection");
   private final Div selectionContainer = new Div();
@@ -77,11 +80,12 @@ public class MeasurementTabPagination extends Div {
   }
 
   private void configureSelectionBar() {
+    selectionIcon.addClassName("measurement-selection-icon");
     selectionDisplay.addClassName("measurement-selection-count");
     clearSelectionButton.addClassName("measurement-clear-selection");
     clearSelectionButton.addClickListener(event -> clearSelection());
     selectionContainer.addClassName("measurement-selection-bar");
-    selectionContainer.add(selectionDisplay, clearSelectionButton);
+    selectionContainer.add(selectionIcon, selectionDisplay, clearSelectionButton);
     selectionContainer.setVisible(false);
   }
 
