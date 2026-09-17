@@ -3,13 +3,13 @@
 .measurement-tab-pagination {
   display: flex;
   flex-direction: column;
-  height: 100%;
   width: 100%;
 }
 
 .measurement-tab-pagination .measurement-tab-sheet {
-  flex: 1;
-  min-height: 0;
+  /* Sizes to its content; the grids render all rows of the current page and the
+     native page scroll handles overflow (no embedded scroll container, USER-NFR-01). */
+  flex: none;
 }
 
 .measurement-tab-pagination .measurement-tab-content {

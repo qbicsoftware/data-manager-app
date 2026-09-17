@@ -152,7 +152,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     this.ngsMeasurementLookup = requireNonNull(ngsMeasurementLookup);
     this.pxpMeasurementLookup = requireNonNull(pxpMeasurementLookup);
     this.ipMeasurementLookup = requireNonNull(ipMeasurementLookup);
-    addClassNames("measurement-details-component", "height-full", "width-full");
+    addClassNames("measurement-details-component", "width-full");
 
     tabPagination = new MeasurementTabPagination();
     tabPagination.addTab("Genomics", MeasurementDomain.NGS, ngsTabContent());
