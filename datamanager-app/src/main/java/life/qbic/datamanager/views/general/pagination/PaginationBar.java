@@ -106,7 +106,9 @@ public class PaginationBar extends Div {
     pageSizeSelect.addClassName("pagination-page-size");
     pageSizeSelect.setItems(allowedPageSizes);
     pageSizeSelect.setValue(defaultPageSize);
-    pageSizeSelect.setLabel("Items per page");
+    // visible labels render above the Select box and break the flex-row alignment; use an
+    // accessible name without occupying visual space
+    pageSizeSelect.getElement().setAttribute("aria-label", "Items per page");
     currentPageSize = defaultPageSize;
     pageSizeSelect.addValueChangeListener(event -> {
       if (updating || event.getValue() == null) {
