@@ -26,9 +26,7 @@ public enum EditColumn implements Column {
   SPECIES("Species", 6, false, true),
   SPECIMEN("Specimen", 7, false, true),
   ANALYTE("Analyte", 8, false, true),
-  REGISTRATION_TIME("Registration time", 9, true, false),
-  MODIFICATION_TIME("Modification time", 10, true, false),
-  COMMENT("Comment", 11, false, false);
+  COMMENT("Comment", 9, false, false);
 
   private static final ExampleProvider exampleProvider = column -> {
     if (column instanceof EditColumn editColumn) {
@@ -57,10 +55,6 @@ public enum EditColumn implements Column {
         case BATCH -> new Helper("Free text, e.g. 2023-01-31", """
             The batch the sample belongs to.
             A batch groups samples that were processed together.""");
-        case REGISTRATION_TIME -> new Helper("System-set, read-only", """
-            The date and time the sample was registered. Set by the system, not editable.""");
-        case MODIFICATION_TIME -> new Helper("System-set, read-only", """
-            The date and time the sample was last modified. Updated by the system, not editable.""");
         case COMMENT -> new Helper("Free text", "Notes about the sample. (Max 500 characters)");
       };
     }

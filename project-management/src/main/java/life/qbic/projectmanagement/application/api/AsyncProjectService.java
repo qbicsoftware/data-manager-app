@@ -1465,7 +1465,9 @@ public interface AsyncProjectService {
     ANALYTE,
     COMMENT,
     SPECIMEN,
-    ANALYSIS_METHOD
+    ANALYSIS_METHOD,
+    REGISTRATION_TIME,
+    MODIFICATION_TIME
   }
 
 

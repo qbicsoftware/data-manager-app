@@ -9,6 +9,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import java.time.Instant;
 import java.util.Objects;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
@@ -36,6 +37,12 @@ public class SamplePreview {
   private SampleId sampleId;
   @Column(name = "batch")
   private String batchLabel;
+
+  @Column(name = "registrationTime")
+  private Instant registrationTime;
+
+  @Column(name = "lastModified")
+  private Instant lastModified;
 
   @Column(name = "label")
   private String sampleName;
@@ -133,6 +140,14 @@ public class SamplePreview {
 
   public String batchLabel() {
     return batchLabel;
+  }
+
+  public Instant registrationTime() {
+    return registrationTime;
+  }
+
+  public Instant lastModified() {
+    return lastModified;
   }
 
   public String sampleName() {

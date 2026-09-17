@@ -437,12 +437,13 @@ Data stewards are power users with access to potentially hundreds of projects. D
 - Given existing samples with an assigned batch, When the migration is complete, Then each sample retains its batch name as a free-text `batch` property.
 - Given the batch table is removed, When the batch is referenced, Then the batch name is still available from the sample via the `batch` property.
 - Given a sample grid is displayed, When the grid renders, Then the registration and modification date are shown for each sample.
-- Given an edit or information template is generated, When the template is displayed, Then the registration time and last-modified time columns are present but read-only (system-set, not editable by the user).
+- Given the registration and modification dates, When they are displayed, Then they are shown in the sample grid (not in the Excel registration/edit templates), are system-set, and are not editable by the user.
 - Given a sample is edited, When the edit is applied, Then the last-modified time is updated by the system (not by the user).
 
 **Notes & Context**
 
-- Edit and information template column order: QBiC Sample Id → Sample Name → Analysis to be performed → Biological Replicate → **Batch** → Condition → Species → Specimen → Analyte → **Registration time** → **Modification time** → Comment. The `Batch` column sits after *Biological Replicate* and before *Condition*; `Registration time` and `Modification time` are directly in front of *Comment* and are read-only. The registration template does NOT include the time columns.
+- The registration and modification times are system-managed audit values shown in the sample grid (registration and modification date columns). They are NOT present in the Excel registration or edit templates (the Product Owner confirmed they are unnecessary in the spreadsheets because they are system-managed).
+- Edit and information template column order: QBiC Sample Id → Sample Name → Analysis to be performed → Biological Replicate → **Batch** → Condition → Species → Specimen → Analyte → Comment. The `Batch` column sits after *Biological Replicate* and before *Condition*; the templates do NOT include registration/modification time columns.
 - Stop-the-world migration: the additive migration (`add-sample-batch-property-and-project-association.sql`) preserves data and is applied; the production migration (`finalize-sample-batch-removal.sql`) drops the legacy `sample_batches`/`sample_batches_sampleid` tables.
 
 **Tasks**
@@ -477,7 +478,7 @@ Data stewards are power users with access to potentially hundreds of projects. D
 **Notes & Context**
 
 - The samples-only view mirrors the measurement workflow: Register (primary action), Export (feature action), and Edit/Delete (secondary actions) operate on the sample grid. Deletion uses `deletionService.deleteSamples`.
-- Sample templates use the column order described under FEAT-SAMBAT-01 and FEAT-SAMBAT-03 (Batch after Biological Replicate; registration/modification time directly before Comment in edit/information templates).
+- Sample templates use the column order described under FEAT-SAMBAT-01 (Batch after Biological Replicate). Registration and modification times are shown in the sample grid, not in the Excel templates.
 
 **Tasks**
 
