@@ -49,10 +49,3 @@
 .pagination-bar .pagination-page-size {
   width: 8rem;
 }
-
-/* visible inline label for the page-size Select (screen readers use the select's aria-label) */
-.pagination-bar .pagination-page-size-label {
-  color: var(--lumo-secondary-text-color);
-  font-size: var(--lumo-font-size-s);
-  white-space: nowrap;
-}

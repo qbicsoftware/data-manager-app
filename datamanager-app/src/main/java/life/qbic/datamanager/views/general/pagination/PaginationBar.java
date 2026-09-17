@@ -106,8 +106,10 @@ public class PaginationBar extends Div {
     pageSizeSelect.addClassName("pagination-page-size");
     pageSizeSelect.setItems(allowedPageSizes);
     pageSizeSelect.setValue(defaultPageSize);
-    // visible labels render above the Select box and break the flex-row alignment; use an
-    // accessible name without occupying visual space
+    // self-describing control: the box and dropdown items read "12 per page", so no extra
+    // label is needed that would break the flex-row alignment; the aria-label keeps the
+    // accessible name explicit
+    pageSizeSelect.setItemLabelGenerator(size -> size + " per page");
     pageSizeSelect.getElement().setAttribute("aria-label", "Items per page");
     currentPageSize = defaultPageSize;
     pageSizeSelect.addValueChangeListener(event -> {
@@ -117,14 +119,8 @@ public class PaginationBar extends Div {
       fireChange(currentPage, event.getValue());
     });
 
-    // visible inline label for sighted users (aria-hidden: the accessible name is provided
-    // by the select's aria-label); avoids Vaadin Select's stacked label that breaks alignment
-    Span pageSizeLabel = new Span("Items per page");
-    pageSizeLabel.addClassName("pagination-page-size-label");
-    pageSizeLabel.getElement().setAttribute("aria-hidden", "true");
-
     infoLabel.addClassName("pagination-info");
-    Div controls = new Div(infoLabel, pageSizeLabel, pageSizeSelect);
+    Div controls = new Div(infoLabel, pageSizeSelect);
     controls.addClassName("pagination-controls");
 
     add(navigation, controls);
