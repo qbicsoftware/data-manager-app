@@ -15,7 +15,7 @@ class MeasurementListStateSpec extends Specification {
         then:
         state.activeTab() == MeasurementDomain.NGS
         state.activeState().page() == 1
-        state.activeState().pageSize() == 12
+        state.activeState().pageSize() == MeasurementListStateDefaults.DEFAULT_PAGE_SIZE
         state.activeState().filter() == ""
         state.activeState().sort() == DEFAULT_SORT
     }

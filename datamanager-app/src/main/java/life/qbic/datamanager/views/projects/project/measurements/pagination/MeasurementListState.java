@@ -41,8 +41,7 @@ public record MeasurementListState(
    *         default sort {@code registeredAt desc})
    */
   public static ListState defaultStateFor(MeasurementDomain domain) {
-    return new ListState(1,
-        life.qbic.datamanager.views.general.pagination.ListStateCodec.DEFAULT_PAGE_SIZE, "",
+    return new ListState(1, MeasurementListStateDefaults.DEFAULT_PAGE_SIZE, "",
         MeasurementSort.DEFAULT);
   }
 

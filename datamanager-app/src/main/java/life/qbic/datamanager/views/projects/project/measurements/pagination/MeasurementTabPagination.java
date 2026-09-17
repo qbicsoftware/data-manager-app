@@ -55,8 +55,8 @@ public class MeasurementTabPagination extends Div {
   private final Div contentArea = new Div();
   private final Map<MeasurementDomain, Component> contentByDomain = new EnumMap<>(MeasurementDomain.class);
   private final PaginationBar paginationBar =
-      new PaginationBar(ListStateCodec.ALLOWED_PAGE_SIZES, ListStateCodec.DEFAULT_PAGE_SIZE,
-          "measurements");
+      new PaginationBar(ListStateCodec.ALLOWED_PAGE_SIZES,
+          MeasurementListStateDefaults.DEFAULT_PAGE_SIZE, "measurements");
   private final Icon selectionIcon = VaadinIcon.CHECK_SQUARE_O.create();
   private final Span selectionDisplay = new Span();
   private final Button clearSelectionButton = new Button("Clear selection");

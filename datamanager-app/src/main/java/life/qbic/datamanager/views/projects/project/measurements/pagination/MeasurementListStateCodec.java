@@ -43,9 +43,12 @@ public final class MeasurementListStateCodec {
         parameters.getSingleParameter(TAB_PARAMETER).orElse(null));
     SortOrder defaultSort = MeasurementSort.DEFAULT;
     ListState activeState = switch (activeTab) {
-      case NGS -> ListStateCodec.parse(parameters, defaultSort, MeasurementSort.NGS_SORTS);
-      case PXP -> ListStateCodec.parse(parameters, defaultSort, MeasurementSort.PXP_SORTS);
-      case IP -> ListStateCodec.parse(parameters, defaultSort, MeasurementSort.IP_SORTS);
+      case NGS -> ListStateCodec.parse(parameters, defaultSort, MeasurementSort.NGS_SORTS,
+          MeasurementListStateDefaults.DEFAULT_PAGE_SIZE);
+      case PXP -> ListStateCodec.parse(parameters, defaultSort, MeasurementSort.PXP_SORTS,
+          MeasurementListStateDefaults.DEFAULT_PAGE_SIZE);
+      case IP -> ListStateCodec.parse(parameters, defaultSort, MeasurementSort.IP_SORTS,
+          MeasurementListStateDefaults.DEFAULT_PAGE_SIZE);
     };
     return current.withTab(activeTab, activeState);
   }

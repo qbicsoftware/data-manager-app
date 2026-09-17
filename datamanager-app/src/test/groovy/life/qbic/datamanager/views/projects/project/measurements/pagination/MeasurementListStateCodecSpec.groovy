@@ -2,7 +2,6 @@ package life.qbic.datamanager.views.projects.project.measurements.pagination
 
 import com.vaadin.flow.router.QueryParameters
 import life.qbic.datamanager.views.general.pagination.ListState
-import life.qbic.datamanager.views.general.pagination.ListStateCodec
 import life.qbic.application.commons.SortOrder
 import spock.lang.Specification
 
@@ -20,7 +19,7 @@ class MeasurementListStateCodecSpec extends Specification {
         then:
         state.activeTab() == MeasurementDomain.NGS
         state.activeState().page() == 1
-        state.activeState().pageSize() == ListStateCodec.DEFAULT_PAGE_SIZE
+        state.activeState().pageSize() == MeasurementListStateDefaults.DEFAULT_PAGE_SIZE
         state.activeState().filter() == ""
         state.activeState().sort() == DEFAULT_SORT
     }
@@ -68,7 +67,7 @@ class MeasurementListStateCodecSpec extends Specification {
 
         then:
         state.stateOf(MeasurementDomain.PXP).page() == 1
-        state.stateOf(MeasurementDomain.PXP).pageSize() == ListStateCodec.DEFAULT_PAGE_SIZE
+        state.stateOf(MeasurementDomain.PXP).pageSize() == MeasurementListStateDefaults.DEFAULT_PAGE_SIZE
         state.stateOf(MeasurementDomain.PXP).sort() == DEFAULT_SORT
     }
 
