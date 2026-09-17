@@ -77,6 +77,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   private final DownloadComponent downloadComponent = new DownloadComponent();
 
   private final AtomicReference<String> clientTimeZone = new AtomicReference<>("UTC");
+  private FilterGrid<SamplePreview, ?> filterGrid;
 
   public SampleDetailsComponent(
       @NonNull AsyncProjectService asyncProjectService,
@@ -90,7 +91,12 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     addAttachListener(event -> {
       uiHandle.bind(event.getUI());
       event.getUI().getPage().getExtendedClientDetails().refresh(
-          receiver -> clientTimeZone.set(receiver.getTimeZoneId()));
+          receiver -> {
+            clientTimeZone.set(receiver.getTimeZoneId());
+            if (filterGrid != null) {
+              filterGrid.refreshAll();
+            }
+          });
     });
 
     addDetachListener(ignored -> uiHandle.unbind());
@@ -103,7 +109,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
 
     var multiSelectGrid = createSamplePreviewGrid();
 
-    var filterGrid = createFilterGrid(multiSelectGrid, projectId, experimentId);
+    filterGrid = createFilterGrid(multiSelectGrid, projectId, experimentId);
 
     var filterTab = new FilterGridTab<>("Samples", filterGrid);
     var filterTabSheet = new FilterGridTabSheet();
