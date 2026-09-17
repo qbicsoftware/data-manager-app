@@ -73,6 +73,7 @@ public class MeasurementTabPagination extends Div {
     add(tabSheet, paginationBar);
     configurePagination();
     configureTabSwitching();
+    trackStickyState();
   }
 
   /**
@@ -143,7 +144,88 @@ public class MeasurementTabPagination extends Div {
    * Call once after all tabs have been added.
    */
   public void attachSelectionBar() {
-    attachSelectionBarTo(tabSheet.getSelectedTab());
+    Tab tab = tabSheet.getSelectedTab();
+    if (tab == null && !tabsByDomain.isEmpty()) {
+      // before the TabSheet is attached the selection is not initialised; fall back to
+      // the first registered tab
+      tab = tabsByDomain.entrySet().iterator().next().getValue();
+    }
+    attachSelectionBarTo(tab);
+  }
+
+  /**
+   * Pins the selection bar below the app navbar while it would otherwise scroll out of view.
+   * Uses a JS fallback (position: fixed with a runtime-measured navbar offset) because the
+   * Vaadin TabSheet shadow DOM traps position: sticky; CSS sticky remains as enhancement.
+   */
+  /**
+   * Pins the selection bar below the app navbar once the natural under-search position would
+   * scroll out of view. Vaadin's TabSheet shadow DOM traps position: sticky, so this uses a
+   * JS fallback with position: fixed and a runtime-measured navbar offset; a spacer keeps the
+   * layout from jumping. CSS sticky remains as a progressive enhancement for other contexts.
+   */
+  private void trackStickyState() {
+    getElement().executeJs(
+        """
+            const bar = $0;
+            if (bar.__dmPinned) return;
+            bar.__dmPinned = true;
+
+            const navbarBottom = () => {
+              const layout = document.getElementById('data-manager-layout');
+              const navbar = layout?.shadowRoot?.querySelector('[part~="navbar"]');
+              return navbar ? navbar.getBoundingClientRect().bottom : 0;
+            };
+            const spacer = document.createElement('div');
+            spacer.style.display = 'none';
+
+            const scroll = () => {
+              // natural in-flow top of the bar (its own current viewport top)
+              const naturalTop = bar.getBoundingClientRect().top;
+              const pin = navbarBottom();
+              if (naturalTop < pin && !bar.__dmPinnedActive) {
+                // switch to fixed: reserve space, pin at navbar bottom + small gap
+                spacer.style.height = bar.offsetHeight + 'px';
+                spacer.style.display = '';
+                bar.parentElement.insertBefore(spacer, bar);
+                bar.style.position = 'fixed';
+                bar.style.top = pin + 'px';
+                bar.style.left = bar.getBoundingClientRect().left + 'px';
+                bar.style.width = bar.getBoundingClientRect().width + 'px';
+                bar.classList.add('is-floating');
+                bar.__dmPinnedActive = true;
+              } else if (naturalTop >= pin && bar.__dmPinnedActive) {
+                spacer.remove();
+                bar.style.position = '';
+                bar.style.top = '';
+                bar.style.left = '';
+                bar.style.width = '';
+                bar.classList.remove('is-floating');
+                bar.__dmPinnedActive = false;
+              }
+            };
+
+            // bind to every plausible scroller: window, the AppLayout wrapper, and the
+            // Vaadin shadow content part (AppLayout may scroll internally)
+            const scrollers = [window];
+            const layout = document.getElementById('data-manager-layout');
+            if (layout) {
+              scrollers.push(layout);
+              const shadow = layout.shadowRoot;
+              if (shadow) {
+                shadow.querySelectorAll('*').forEach(el => {
+                  if (el.scrollHeight > el.clientHeight &&
+                      /(auto|scroll)/.test(getComputedStyle(el).overflowY)) {
+                    scrollers.push(el);
+                  }
+                });
+              }
+            }
+            scrollers.forEach(el => el.addEventListener('scroll', scroll, { passive: true }));
+            window.addEventListener('resize', scroll, { passive: true });
+            scroll();
+            """,
+        selectionContainer.getElement());
   }
 
   /**
@@ -154,7 +236,7 @@ public class MeasurementTabPagination extends Div {
     if (tab == null) {
       return;
     }
-    Component content = tab.getChildren().findFirst().orElse(null);
+    Component content = tabSheet.getComponent(tab);
     if (content == null) {
       return;
     }

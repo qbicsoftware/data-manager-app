@@ -53,11 +53,17 @@
   align-items: center;
   gap: var(--lumo-space-s);
   padding: var(--lumo-space-s) var(--lumo-space-m);
+  /* progressive enhancement: plain sticky; the JS fallback does the real pinning */
   position: sticky;
   top: 0;
   z-index: 1;
   background: var(--primary-contrast-color);
   background: color-mix(in srgb, var(--primary-color) 6%, var(--primary-contrast-color));
+}
+
+/* pinned state toggled by the JS fallback in trackStickyState */
+.measurement-tab-pagination .measurement-selection-bar.is-floating {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
 }
 
 .measurement-tab-pagination .measurement-selection-icon {
