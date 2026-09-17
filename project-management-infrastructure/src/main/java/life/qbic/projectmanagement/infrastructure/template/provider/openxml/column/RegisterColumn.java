@@ -21,11 +21,11 @@ public enum RegisterColumn implements Column {
   SAMPLE_NAME("Sample Name", 0, false, true),
   ANALYSIS("Analysis to be performed", 1, false, true),
   BIOLOGICAL_REPLICATE("Biological Replicate", 2, false, false),
-  CONDITION("Condition", 3, false, true),
-  SPECIES("Species", 4, false, true),
-  SPECIMEN("Specimen", 5, false, true),
-  ANALYTE("Analyte", 6, false, true),
-  BATCH("Batch", 7, false, true),
+  BATCH("Batch", 3, false, true),
+  CONDITION("Condition", 4, false, true),
+  SPECIES("Species", 5, false, true),
+  SPECIMEN("Specimen", 6, false, true),
+  ANALYTE("Analyte", 7, false, true),
   COMMENT("Comment", 8, false, false);
 
   private static final ExampleProvider exampleProvider = column -> {

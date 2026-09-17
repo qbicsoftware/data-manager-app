@@ -177,6 +177,8 @@ class SampleUpdateFactory implements WorkbookFactory {
           case ANALYTE -> PropertyConversion.toString(sample.sampleOrigin().getAnalyte());
           case SPECIMEN -> PropertyConversion.toString(sample.sampleOrigin().getSpecimen());
           case BATCH -> sample.batch();
+          case REGISTRATION_TIME -> formatInstant(sample.registrationTime());
+          case MODIFICATION_TIME -> formatInstant(sample.lastModified());
           case COMMENT -> sample.comment().orElse(null);
         };
       } else if (column instanceof ConfoundingVariableColumn confoundingVariableColumn) {
@@ -198,5 +200,14 @@ class SampleUpdateFactory implements WorkbookFactory {
       }
     }
 
+  }
+
+  private static String formatInstant(java.time.Instant instant) {
+    if (instant == null) {
+      return null;
+    }
+    return java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+        .withZone(java.time.ZoneId.systemDefault())
+        .format(instant);
   }
 }

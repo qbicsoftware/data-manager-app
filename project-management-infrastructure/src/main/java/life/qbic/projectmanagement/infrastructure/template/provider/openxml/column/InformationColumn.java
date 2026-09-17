@@ -12,12 +12,14 @@ public enum InformationColumn implements Column {
   SAMPLE_NAME("Sample Name", 1, true),
   ANALYSIS("Analysis to be performed", 2, true),
   BIOLOGICAL_REPLICATE("Biological Replicate", 3, false),
-  CONDITION("Condition", 4, true),
-  SPECIES("Species", 5, true),
-  SPECIMEN("Specimen", 6, true),
-  ANALYTE("Analyte", 7, true),
-  BATCH("Batch", 8, false),
-  COMMENT("Comment", 9, false),
+  BATCH("Batch", 4, false),
+  CONDITION("Condition", 5, true),
+  SPECIES("Species", 6, true),
+  SPECIMEN("Specimen", 7, true),
+  ANALYTE("Analyte", 8, true),
+  REGISTRATION_TIME("Registration time", 9, false),
+  MODIFICATION_TIME("Modification time", 10, false),
+  COMMENT("Comment", 11, false),
   ;
 
 
@@ -48,6 +50,10 @@ public enum InformationColumn implements Column {
         case BATCH -> new Helper("Free text, e.g. 2023-01-31", """
             The batch the sample belongs to.
             A batch groups samples that were processed together.""");
+        case REGISTRATION_TIME -> new Helper("System-set, read-only", """
+            The date and time the sample was registered. Set by the system, not editable.""");
+        case MODIFICATION_TIME -> new Helper("System-set, read-only", """
+            The date and time the sample was last modified. Updated by the system, not editable.""");
         case COMMENT -> new Helper("Free text", "Notes about the sample. (Max 500 characters)");
       };
     }
