@@ -12,6 +12,13 @@
   flex: none;
 }
 
+/* Vaadin 24 TabSheet content part defaults to overflow:auto, which traps position:sticky
+   inside the tab (the selection bar would never float over the page scroll). The sticky
+   bar must stick to the page scroll container instead, so the sheet must not clip. */
+.measurement-tab-pagination .measurement-tab-sheet::part(content) {
+  overflow: visible;
+}
+
 .measurement-tab-pagination .measurement-tab-content {
   display: flex;
   flex-direction: column;
