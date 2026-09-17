@@ -41,9 +41,10 @@
 /* UX F2: sticky to the viewport bottom so the selection count stays visible while the
    full-height grid scrolls under native page scroll (USER-R-02: count must always be visible).
    App palette only (components/variables.css).
-   Two states: at its natural resting position (page bottom) the bar is quiet — slightly
-   tinted surface, no shadow, no accent border. While it actually floats over scrolled grid
-   rows the JS toggles .is-floating: elevated shadow, accent border, slightly stronger tint. */
+   Two states: at its natural resting position (page bottom) the bar is quiet — plain white
+   like the page background, no shadow, no accent border. While it actually floats over
+   scrolled grid rows the JS toggles .is-floating: opaque primary tint (color-mix over white),
+   accent border and elevation shadow. */
 .measurement-tab-pagination .measurement-selection-bar {
   display: flex;
   align-items: center;
@@ -52,12 +53,13 @@
   position: sticky;
   bottom: 0;
   z-index: 1;
-  background: var(--background-color-5pct);
+  background: var(--primary-contrast-color);
   transition: box-shadow 120ms ease, background-color 120ms ease, border-color 120ms ease;
 }
 
 .measurement-tab-pagination .measurement-selection-bar.is-floating {
-  background: var(--background-color-10pct);
+  background: var(--primary-contrast-color);
+  background: color-mix(in srgb, var(--primary-color) 6%, var(--primary-contrast-color));
   border-top: 2px solid var(--primary-color);
   box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.12);
   border-radius: var(--lumo-border-radius-m) var(--lumo-border-radius-m) 0 0;
