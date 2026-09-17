@@ -6,20 +6,17 @@
   width: 100%;
 }
 
-.measurement-tab-pagination .measurement-tab-sheet {
-  /* Sizes to its content; the grids render all rows of the current page and the
-     native page scroll handles overflow (no embedded scroll container, USER-NFR-01). */
+/* Tabs strip (plain vaadin-tabs — no self-scrolling panel, unlike TabSheet) */
+.measurement-tab-pagination .measurement-tabs {
   flex: none;
 }
 
-/* Vaadin 24's vaadin-tab-sheet :host sets `overflow: auto !important; contain: paint`,
-   making the whole sheet its own scroll/clip context. That traps position:sticky inside
-   the tab (the selection bar would only stick to the sheet, never over the page scroll).
-   The sheet must hand overflow back to the page: override both with !important (also
-   removing `contain: paint` so sticky can escape the paint containment). */
-.measurement-tab-pagination .measurement-tab-sheet {
-  overflow: visible !important;
-  contain: none;
+/* Plain content host sized to its content: the grids render all rows of the current page
+   and the native page scroll handles overflow (no embedded scroll container, USER-NFR-01).
+   This container is ours, so position:sticky descendants stick to the page scroll. */
+.measurement-tab-pagination .measurement-content-area {
+  display: flex;
+  flex-direction: column;
 }
 
 .measurement-tab-pagination .measurement-tab-content {

@@ -9,7 +9,7 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.tabs.Tab;
-import com.vaadin.flow.component.tabs.TabSheet;
+import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.dom.Element;
 import com.vaadin.flow.router.Location;
 import java.io.Serial;
@@ -47,7 +47,13 @@ public class MeasurementTabPagination extends Div {
   @Serial
   private static final long serialVersionUID = 1L;
 
-  private final TabSheet tabSheet = new TabSheet();
+  // Vaadin: Tabs is meant for in-place navigation without a self-scrolling panel; TabSheet
+  // wraps panels in overflow:auto hosts (its documented 'scrollable panels' purpose), which
+  // traps position:sticky. We use the plain Tabs strip + our own content area (sized to
+  // content, page-scrolls), so the sticky selection bar works without fighting the platform.
+  private final Tabs tabs = new Tabs();
+  private final Div contentArea = new Div();
+  private final Map<MeasurementDomain, Component> contentByDomain = new EnumMap<>(MeasurementDomain.class);
   private final PaginationBar paginationBar =
       new PaginationBar(ListStateCodec.ALLOWED_PAGE_SIZES, ListStateCodec.DEFAULT_PAGE_SIZE,
           "measurements");
@@ -66,11 +72,10 @@ public class MeasurementTabPagination extends Div {
 
   public MeasurementTabPagination() {
     addClassName("measurement-tab-pagination");
-    tabSheet.addClassName("measurement-tab-sheet");
+    tabs.addClassName("measurement-tabs");
+    contentArea.addClassName("measurement-content-area");
     configureSelectionBar();
-    // selection bar sits above the grid (sticky top) so its information and actions are at
-    // the user's eye level when working from the toolbar actions
-    add(tabSheet, paginationBar);
+    add(tabs, contentArea, paginationBar);
     configurePagination();
     configureTabSwitching();
   }
@@ -101,13 +106,13 @@ public class MeasurementTabPagination extends Div {
 
 
   private void configureTabSwitching() {
-    tabSheet.addSelectedChangeListener(event -> {
+    tabs.addSelectedChangeListener(event -> {
       Tab selected = event.getSelectedTab();
       if (selected == null) {
         return;
       }
-      // keep the selection bar attached to the selected tab's content (under its search row)
-      attachSelectionBarTo(selected);
+      // show only the selected tab's content; keep the selection bar under its search row
+      domainOf(selected).ifPresent(this::showOnly);
       if (suppressTabSwitchEvents) {
         return;
       }
@@ -120,6 +125,12 @@ public class MeasurementTabPagination extends Div {
         fireEvent(new RefreshRequestedEvent(this, newTab));
       });
     });
+  }
+
+  private void showOnly(MeasurementDomain domain) {
+    for (Map.Entry<MeasurementDomain, Component> entry : contentByDomain.entrySet()) {
+      entry.getValue().setVisible(entry.getKey() == domain);
+    }
   }
 
   private Optional<MeasurementDomain> domainOf(Tab tab) {
@@ -135,7 +146,11 @@ public class MeasurementTabPagination extends Div {
    * Registers a tab with its grid content. The tab label is provided by the caller.
    */
   public void addTab(String label, MeasurementDomain domain, Component content) {
-    tabsByDomain.put(domain, tabSheet.add(label, content));
+    Tab tab = new Tab(label);
+    tabs.add(tab);
+    contentByDomain.put(domain, content);
+    tabsByDomain.put(domain, tab);
+    contentArea.add(content);
   }
 
   /**
@@ -143,38 +158,31 @@ public class MeasurementTabPagination extends Div {
    * Call once after all tabs have been added.
    */
   public void attachSelectionBar() {
-    Tab tab = tabSheet.getSelectedTab();
+    Tab tab = tabs.getSelectedTab();
     if (tab == null && !tabsByDomain.isEmpty()) {
-      // before the TabSheet is attached the selection is not initialised; fall back to
-      // the first registered tab
+      // before the Tabs are attached the selection is not initialised; fall back to the
+      // first registered tab
       tab = tabsByDomain.entrySet().iterator().next().getValue();
     }
     attachSelectionBarTo(tab);
   }
 
   /**
-   * Pins the selection bar below the app navbar while it would otherwise scroll out of view.
-   * Uses a JS fallback (position: fixed with a runtime-measured navbar offset) because the
-   * Vaadin TabSheet shadow DOM traps position: sticky; CSS sticky remains as enhancement.
-
-
-  /**
    * Re-parents the shared selection bar into the given tab's content so it is shown and
    * sticks below that tab's search/toolbar row (F2: visible + eye level, minimal travel).
    */
   private void attachSelectionBarTo(Tab tab) {
-    if (tab == null) {
-      return;
-    }
-    Component content = tabSheet.getComponent(tab);
-    if (content == null) {
-      return;
-    }
-    Element contentElement = content.getElement();
-    selectionContainer.getElement().removeFromParent();
-    // insert after the toolbar row (index 0), i.e. directly under the search row
-    int insertAt = Math.min(1, contentElement.getChildCount());
-    contentElement.insertChild(insertAt, selectionContainer.getElement());
+    domainOf(tab).ifPresent(domain -> {
+      Component content = contentByDomain.get(domain);
+      if (content == null) {
+        return;
+      }
+      Element contentElement = content.getElement();
+      selectionContainer.getElement().removeFromParent();
+      // insert after the toolbar row (index 0), i.e. directly under the search row
+      int insertAt = Math.min(1, contentElement.getChildCount());
+      contentElement.insertChild(insertAt, selectionContainer.getElement());
+    });
   }
 
   /**
@@ -294,8 +302,8 @@ public class MeasurementTabPagination extends Div {
 
   private void selectTabForActiveDomain() {
     Tab tab = tabsByDomain.get(listState.activeTab());
-    if (tab != null && tabSheet.getSelectedTab() != tab) {
-      tabSheet.setSelectedTab(tab);
+    if (tab != null && tabs.getSelectedTab() != tab) {
+      tabs.setSelectedTab(tab);
     }
   }
 
