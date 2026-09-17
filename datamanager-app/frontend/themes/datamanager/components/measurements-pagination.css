@@ -50,7 +50,10 @@
   position: sticky;
   bottom: 0;
   z-index: 1;
-  background: var(--lumo-primary-color-10pct);
+  /* opaque tint: mixing the translucent primary token into the opaque base color keeps the
+     tint while guaranteeing readability over scrolled grid rows (fallback for older browsers) */
+  background: var(--lumo-base-color);
+  background: color-mix(in srgb, var(--lumo-primary-color) 5%, var(--lumo-base-color));
   border-top: 2px solid var(--lumo-primary-color);
   box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.12);
   border-radius: var(--lumo-border-radius-m) var(--lumo-border-radius-m) 0 0;
