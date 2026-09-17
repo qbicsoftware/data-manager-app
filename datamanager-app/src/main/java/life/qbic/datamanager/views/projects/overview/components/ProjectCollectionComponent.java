@@ -17,6 +17,7 @@ import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Hr;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.value.ValueChangeMode;
@@ -37,15 +38,21 @@ import life.qbic.datamanager.views.AppRoutes.ProjectRoutes;
 import life.qbic.datamanager.views.account.UserAvatar.UserAvatarGroupItem;
 import life.qbic.datamanager.views.general.Card;
 import life.qbic.datamanager.views.general.PageArea;
+import life.qbic.datamanager.views.general.ProjectCodeBadge;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.Tag.TagColor;
 import life.qbic.datamanager.views.general.pagination.ListState;
 import life.qbic.datamanager.views.general.pagination.ListStateCodec;
 import life.qbic.datamanager.views.general.pagination.PaginationBar;
+import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
+import life.qbic.datamanager.views.projects.overview.components.PinnedProjectsComponent.ToggleHandler;
 import life.qbic.datamanager.views.projects.project.datasets.ConnectedDatasetsMain;
 import life.qbic.datamanager.views.projects.project.info.ProjectInformationMain;
+import life.qbic.projectmanagement.application.PinnedProjectService;
+import life.qbic.projectmanagement.application.PinnedProjectService.PinOutcome;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectOverview;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.stereotype.Component;
 
 /**
@@ -89,14 +96,34 @@ public class ProjectCollectionComponent extends PageArea {
   private final Span emptyStateMessage = new Span();
   private final transient ProjectInformationService projectInformationService;
   /**
+   * The user's quick-access shortlist, rendered above the list controls. Owned here because the
+   * overview cards and the shortlist share one pin toggle handler and must stay in sync.
+   */
+  private final PinnedProjectsComponent pinnedProjectsComponent;
+  private final transient PinnedProjectService pinnedProjectService;
+  private final transient MessageSourceNotificationFactory notificationFactory;
+  /**
+   * The overviews rendered on the current page; reused to re-render the card toggle states after a pin
+   * change without querying the project list again.
+   */
+  private List<ProjectOverview> currentOverviews = List.of();
+  /**
    * The currently applied list state; {@code null} until the first list state has been applied
    * (initial page load), which guarantees the initial load is never skipped as "unchanged".
    */
   private ListState listState;
 
-  public ProjectCollectionComponent(ProjectInformationService projectInformationService) {
+  public ProjectCollectionComponent(ProjectInformationService projectInformationService,
+      PinnedProjectService pinnedProjectService,
+      MessageSourceNotificationFactory notificationFactory) {
     this.projectInformationService = Objects.requireNonNull(projectInformationService,
         "Project information service cannot be null");
+    this.pinnedProjectService = Objects.requireNonNull(pinnedProjectService,
+        "pinnedProjectService cannot be null");
+    this.notificationFactory = Objects.requireNonNull(notificationFactory,
+        "notificationFactory cannot be null");
+    this.pinnedProjectsComponent = new PinnedProjectsComponent(
+        pinnedProjectService::findPinnedProjects, this::handlePinToggle);
     layoutComponent();
     configureSearch();
     configureSortButton();
@@ -121,7 +148,9 @@ public class ProjectCollectionComponent extends PageArea {
     configureSortButton();
     Span controls = new Span(projectSearchField, sortButton);
     controls.addClassName("controls");
-    header.add(titleRow, controls);
+    // The shortlist is the first child of the header, i.e. above the title and the search controls:
+    // it is a personal toolbar, not part of the filtered result set (FEAT-PINNED-01).
+    header.add(pinnedProjectsComponent, titleRow, controls);
     add(header);
   }
 
@@ -323,8 +352,30 @@ public class ProjectCollectionComponent extends PageArea {
   }
 
   private void renderCards(List<ProjectOverview> overviews) {
+    this.currentOverviews = overviews;
+    var pinnedProjectIds = pinnedProjectsComponent.pinnedProjectIds();
     projectCards.removeAll();
-    overviews.forEach(overview -> projectCards.add(new ProjectOverviewItem(overview)));
+    overviews.forEach(overview -> projectCards.add(
+        new ProjectOverviewItem(overview, pinnedProjectIds.contains(overview.projectId()),
+            this::handlePinToggle)));
+  }
+
+  /**
+   * Applies a pin toggle coming from either the shortlist or an overview card, then re-renders both.
+   *
+   * <p>The expected failure paths are returned outcomes, not exceptions. Only the limit needs a user
+   * message: the user must learn the rule and how to work around it, because the alternative —
+   * silently dropping an existing pin — would remove something the user asked for.
+   */
+  private void handlePinToggle(ProjectId projectId, boolean pin) {
+    PinOutcome outcome =
+        pin ? pinnedProjectService.pin(projectId) : pinnedProjectService.unpin(projectId);
+    if (outcome == PinOutcome.LIMIT_REACHED) {
+      notificationFactory.toast("project.pinned.limit",
+          new Object[]{PinnedProjectService.MAX_PINNED_PROJECTS}, getLocale()).open();
+    }
+    pinnedProjectsComponent.refresh();
+    renderCards(currentOverviews);
   }
 
   private void renderEmptyState(boolean isEmpty, boolean noActiveFilter) {
@@ -435,16 +486,58 @@ public class ProjectCollectionComponent extends PageArea {
     private final AvatarGroup usersWithAccess = new AvatarGroup();
     private final transient ProjectOverview projectOverview;
 
-    public ProjectOverviewItem(ProjectOverview projectOverview) {
+    public ProjectOverviewItem(ProjectOverview projectOverview, boolean pinned,
+        ToggleHandler toggleHandler) {
       this.projectOverview = Objects.requireNonNull(projectOverview);
+      Objects.requireNonNull(toggleHandler);
       // Both RouterLinks (card body + footer) must share a single parent so they render
       // as one unified card. Using a wrapper Div prevents event propagation between
       // clicks on the footer and clicks on the card body.
       var wrapper = new Div();
       wrapper.addClassName("project-card-wrapper");
-      wrapper.add(projectInfoLink());
+      wrapper.add(projectInfoLink(pinned));
       attachDatasetFooter(wrapper);
+      wrapper.add(buildTopRightControl(pinned, toggleHandler));
       add(wrapper);
+    }
+
+    /**
+     * Builds the top-right control for this card.
+     *
+     * <p><b>Pinned/Unpinned:</b> every card shows the same kebab menu button in the top-right.
+     * The menu contains "Pin project" or "Unpin project" depending on state, so users have one
+     * consistent, easy-to-aim control for both actions. A small inline pin icon next to the
+     * project code badge marks pinned cards at a glance.</p>
+     *
+     * <p>The control is a sibling of the card-body {@link RouterLink} inside the card wrapper,
+     * not a child of it, so clicking it cannot also fire navigation to the project.</p>
+     */
+    private com.vaadin.flow.component.Component buildTopRightControl(boolean pinned, ToggleHandler toggleHandler) {
+      var topRight = new Div();
+      topRight.addClassName("project-card-top-right");
+
+      if (pinned) {
+        // Small pin indicator left of the kebab menu, so a pinned project is recognisable
+        // at a glance without opening the menu. Clicking it opens the menu as well.
+        var pinIcon = VaadinIcon.PIN.create();
+        pinIcon.addClassName("project-card-pin-indicator");
+        topRight.add(pinIcon);
+      }
+
+      var menuButton = new Button(VaadinIcon.ELLIPSIS_DOTS_H.create());
+      menuButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE, ButtonVariant.LUMO_SMALL);
+      menuButton.addClassName("project-card-menu-toggle");
+      menuButton.getElement().setAttribute("aria-label", "Project options for %s".formatted(projectOverview.projectCode()));
+      menuButton.getElement().setAttribute("title", "Project options");
+
+      var menu = new ContextMenu(menuButton);
+      menu.setOpenOnClick(true);
+      String actionLabel = pinned ? "Unpin project" : "Pin project";
+      var actionItem = menu.addItem(actionLabel);
+      actionItem.addClickListener(event -> toggleHandler.onToggle(projectOverview.projectId(), !pinned));
+
+      topRight.add(menuButton);
+      return topRight;
     }
 
     /**
@@ -459,12 +552,12 @@ public class ProjectCollectionComponent extends PageArea {
      * existing page-area.css card styles (shadow, border-radius, padding) apply to it
      * directly.</p>
      */
-    private RouterLink projectInfoLink() {
+    private RouterLink projectInfoLink(boolean pinned) {
       var link = new RouterLink("", ProjectInformationMain.class,
           new RouteParameters(PROJECT_ID_ROUTE_PARAMETER, projectOverview.projectId().value()));
       link.addClassName("project-overview-item");
 
-      link.add(createHeader(projectOverview.projectCode(), projectOverview.projectTitle()));
+      link.add(createHeader(projectOverview.projectCode(), projectOverview.projectTitle(), pinned));
 
       Instant instant = projectOverview.lastModified();
       Span lastModified = new Span(
@@ -654,8 +747,10 @@ public class ProjectCollectionComponent extends PageArea {
       return base;
     }
 
-    private Span createHeader(String projectCode, String projectTitle) {
-      Span title = new Span(String.format("%s - %s", projectCode, projectTitle));
+    private Span createHeader(String projectCode, String projectTitle, boolean pinned) {
+      Span title = new Span();
+      title.add(new ProjectCodeBadge(projectCode));
+      title.add(new Span(" " + projectTitle));
       title.addClassName("project-overview-item-title");
       tags.addClassNames("tag-collection");
       Span header = new Span(title, tags);
