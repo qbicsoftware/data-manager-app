@@ -12,11 +12,14 @@
   flex: none;
 }
 
-/* Vaadin 24 TabSheet content part defaults to overflow:auto, which traps position:sticky
-   inside the tab (the selection bar would never float over the page scroll). The sticky
-   bar must stick to the page scroll container instead, so the sheet must not clip. */
-.measurement-tab-pagination .measurement-tab-sheet::part(content) {
-  overflow: visible;
+/* Vaadin 24's vaadin-tab-sheet :host sets `overflow: auto !important; contain: paint`,
+   making the whole sheet its own scroll/clip context. That traps position:sticky inside
+   the tab (the selection bar would only stick to the sheet, never over the page scroll).
+   The sheet must hand overflow back to the page: override both with !important (also
+   removing `contain: paint` so sticky can escape the paint containment). */
+.measurement-tab-pagination .measurement-tab-sheet {
+  overflow: visible !important;
+  contain: none;
 }
 
 .measurement-tab-pagination .measurement-tab-content {
@@ -61,10 +64,7 @@
   background: color-mix(in srgb, var(--primary-color) 6%, var(--primary-contrast-color));
 }
 
-/* pinned state toggled by the JS fallback in trackStickyState */
-.measurement-tab-pagination .measurement-selection-bar.is-floating {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
-}
+
 
 .measurement-tab-pagination .measurement-selection-icon {
   color: var(--primary-color);
