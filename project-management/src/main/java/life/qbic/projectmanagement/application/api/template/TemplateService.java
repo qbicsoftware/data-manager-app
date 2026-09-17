@@ -11,7 +11,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import life.qbic.logging.api.Logger;
@@ -86,10 +85,6 @@ public class TemplateService {
     this.confVariableService = confVariableService;
     this.templateProvider = Objects.requireNonNull(templateProvider);
     this.measurementService = Objects.requireNonNull(measurementService);
-  }
-
-  private static Predicate<Sample> isInBatch(String targetBatchId) {
-    return sample -> sample.assignedBatch().value().equals(targetBatchId);
   }
 
   /**
@@ -169,7 +164,7 @@ public class TemplateService {
    */
   @PreAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
-  public DigitalObject sampleUpdateTemplate(String projectId, String experimentId, String batchId,
+  public DigitalObject sampleUpdateTemplate(String projectId, String experimentId,
       MimeType type) {
     if (!isSupportedMimeType(type)) {
       throw new UnsupportedMimeTypeException(UNSUPPORTED_MIME_TYPE + type);
@@ -177,8 +172,7 @@ public class TemplateService {
     return generateSampleUpdateTemplate(
         experimentSupplier(projectId, experimentId),
         projectId,
-        experimentId,
-        batchId);
+        experimentId);
   }
 
   @PreAuthorize(
@@ -410,20 +404,18 @@ public class TemplateService {
   private DigitalObject generateSampleUpdateTemplate(
       Supplier<Experiment> experimentSupplier,
       String projectId,
-      String experimentId,
-      String batchId) {
+      String experimentId) {
     var experiment = experimentSupplier.get();
     var sampleBasic = querySampleBasicInfo(experiment, projectId, experimentId);
     var sampleExtension = querySampleExtension(experiment, projectId, experimentId);
-    var samplesInBatch = sampleExtension.samples().stream().filter(isInBatch(batchId))
-        .toList();
-    if (samplesInBatch.isEmpty()) {
+    var samples = sampleExtension.samples();
+    if (samples.isEmpty()) {
       log.warn("No samples found for experiment during template generation: " + experimentId);
     }
 
     return templateProvider.getTemplate(new SampleUpdate(
         new SampleInformation(
-            samplesInBatch,
+            samples,
             sampleBasic.analysisMethods(),
             sampleBasic.conditions(),
             sampleBasic.analytes(),

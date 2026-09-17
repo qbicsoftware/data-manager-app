@@ -13,7 +13,6 @@ import life.qbic.domain.concepts.LocalDomainEventDispatcher;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.batch.SampleUpdateRequest;
-import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.project.event.ProjectChanged;
@@ -110,20 +109,20 @@ public class SampleDomainService {
         domainEvent -> DomainEventDispatcher.instance().dispatch(domainEvent));
   }
 
-  public void deleteSamples(Project project, BatchId batchId, Collection<SampleId> samples) {
+  public void deleteSamples(Project project, Collection<SampleId> samples) {
     Objects.requireNonNull(samples);
     samples.forEach(
         sampleId -> confoundingVariableLevelRepository.deleteAllForSample(project.getId().value(),
             sampleId.value()));
     sampleRepository.deleteAll(project, samples);
-    samples.forEach(sampleId -> dispatchSuccessfulSampleDeletion(sampleId, batchId));
+    samples.forEach(this::dispatchSuccessfulSampleDeletion);
     if(!samples.isEmpty()) {
       dispatchProjectChangedUponSampleDeletion(project.getId());
     }
   }
 
-  private void dispatchSuccessfulSampleDeletion(SampleId sampleId, BatchId batchId) {
-    SampleDeleted sampleDeleted = SampleDeleted.create(batchId, sampleId);
+  private void dispatchSuccessfulSampleDeletion(SampleId sampleId) {
+    SampleDeleted sampleDeleted = SampleDeleted.create(sampleId);
     DomainEventDispatcher.instance().dispatch(sampleDeleted);
   }
 

@@ -8,7 +8,6 @@ import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.ApplicationException.ErrorParameters;
-import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
@@ -121,10 +120,10 @@ public class SampleRepositoryImpl implements SampleRepository {
   }
 
   @Override
-  public List<Sample> findSamplesByBatchId(
-      BatchId batchId) {
-    Objects.requireNonNull(batchId, "batchId must not be null");
-    return sampleJpaRepository.findAllByAssignedBatch(batchId);
+  public List<Sample> findSamplesByProjectId(
+      ProjectId projectId) {
+    Objects.requireNonNull(projectId, "projectId must not be null");
+    return sampleJpaRepository.findAllByProjectId(projectId);
   }
 
   @Transactional

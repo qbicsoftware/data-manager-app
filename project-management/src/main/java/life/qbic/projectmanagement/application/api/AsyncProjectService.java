@@ -1516,7 +1516,7 @@ public interface AsyncProjectService {
    * @throws RequestFailedException in case the request cannot be executed
    * @since 1.10.0
    */
-  Flux<Sample> getSamplesForBatch(String projectId, String batchId) throws RequestFailedException;
+  Flux<Sample> getSamplesForProject(String projectId) throws RequestFailedException;
 
   /**
    * Finds the sample for a given sample ID.
@@ -1676,7 +1676,7 @@ public interface AsyncProjectService {
    * @since 1.10.0
    */
   Mono<DigitalObject> sampleUpdateTemplate(String projectId, String experimentId,
-      String batchId, MimeType mimeType);
+      MimeType mimeType);
 
   /**
    * Requests sample information in a desired {@link MimeType}.
