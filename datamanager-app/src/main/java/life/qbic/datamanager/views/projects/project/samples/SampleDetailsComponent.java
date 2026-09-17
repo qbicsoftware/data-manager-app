@@ -342,7 +342,18 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     filterGrid.itemDisplayLabel("sample");
 
     var editButton = new Button("Edit");
-    editButton.addClickListener(clicked -> fireEvent(new SampleEditRequested(this, true)));
+    editButton.addClickListener(clicked -> {
+      var selectedSamples = filterGrid.selectedElements();
+      if (selectedSamples.isEmpty()) {
+        messageFactory.toast("sample.no-sample-selected", new Object[]{}, getLocale()).open();
+        return;
+      }
+      var selectedSampleIds = selectedSamples.stream()
+          .map(SamplePreview::sampleId)
+          .distinct()
+          .toList();
+      fireEvent(new SampleEditRequested(selectedSampleIds, this, true));
+    });
 
     var deleteButton = new Button("Delete");
     deleteButton.addClickListener(clicked -> {
@@ -496,9 +507,16 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
 
     @Serial
     private static final long serialVersionUID = -2696352875376621564L;
+    private final List<SampleId> sampleIds;
 
-    public SampleEditRequested(SampleDetailsComponent source, boolean fromClient) {
+    public SampleEditRequested(List<SampleId> sampleIds, SampleDetailsComponent source,
+        boolean fromClient) {
       super(source, fromClient);
+      this.sampleIds = sampleIds;
+    }
+
+    public List<SampleId> sampleIds() {
+      return sampleIds;
     }
   }
 

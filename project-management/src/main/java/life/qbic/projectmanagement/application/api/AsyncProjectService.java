@@ -1681,6 +1681,27 @@ public interface AsyncProjectService {
       MimeType mimeType);
 
   /**
+   * Requests a sample update template in a desired {@link MimeType}, scoped to the provided
+   * sample ids.
+   * <p>
+   * If the mime type is not supported, a {@link UnsupportedMimeTypeException} will be provided as
+   * {@link Mono#error(Throwable)}.
+   *
+   * @param projectId    the project ID of the project the template should be created for
+   * @param experimentId the experiment ID of the experiment the template should be created for
+   * @param sampleIds    a set of sample ids of the samples that should be contained in the template
+   * @param mimeType     the mime type the digital object should be
+   * @return a {@link Mono} with a {@link DigitalObject} providing the requested template
+   * @throws AccessDeniedException        if the user has insufficient rights
+   * @throws RequestFailedException       if the request cannot be executed
+   * @throws UnsupportedMimeTypeException if the service cannot provide the requested
+   *                                      {@link MimeType}
+   * @since 1.12.0
+   */
+  Mono<DigitalObject> sampleUpdateTemplate(String projectId, String experimentId,
+      Set<String> sampleIds, MimeType mimeType);
+
+  /**
    * Requests sample information in a desired {@link MimeType}.
    * <p>
    * If the mime type is not supported, a {@link UnsupportedMimeTypeException} will be provided as

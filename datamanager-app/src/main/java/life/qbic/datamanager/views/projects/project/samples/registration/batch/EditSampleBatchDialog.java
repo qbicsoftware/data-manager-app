@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import life.qbic.application.commons.ApplicationException;
@@ -79,6 +80,7 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
 
   public EditSampleBatchDialog(AsyncProjectService service,
       MessageSourceNotificationFactory messageFactory,
+      Set<String> sampleIds,
       String experimentId,
       String projectId,
       String projectCode,
@@ -104,6 +106,7 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
     addClassName("edit-samples-dialog");
 
     Div downloadMetadataSection = setupDownloadMetadataSection(service,
+        sampleIds,
         experimentId,
         projectId, projectCode);
 
@@ -149,13 +152,14 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
 
 
   private Div setupDownloadMetadataSection(AsyncProjectService service,
+      Set<String> sampleIds,
       String experimentId,
       String projectId, String projectCode) {
     Button downloadTemplate = new Button("Download metadata template");
     downloadTemplate.addClassName("download-metadata-button");
     downloadTemplate.addClickListener(
         buttonClickEvent -> service.sampleUpdateTemplate(projectId, experimentId,
-            OPEN_XML).doOnSuccess(resource ->
+            sampleIds, OPEN_XML).doOnSuccess(resource ->
             triggerDownload(resource,
                 FileNameFormatter.formatWithTimestampedSimple(LocalDate.now(), projectCode,
                     "sample metadata update template",

@@ -177,6 +177,20 @@ public class TemplateService {
 
   @PreAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
+  public DigitalObject sampleUpdateTemplate(String projectId, String experimentId,
+      Set<String> sampleIds, MimeType type) {
+    if (!isSupportedMimeType(type)) {
+      throw new UnsupportedMimeTypeException(UNSUPPORTED_MIME_TYPE + type);
+    }
+    return generateSampleUpdateTemplate(
+        experimentSupplier(projectId, experimentId),
+        projectId,
+        experimentId,
+        sampleIds);
+  }
+
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
   public DigitalObject measurementUpdateTemplatePxP(String projectId, List<String> measurementIds, MimeType type) {
     if (!isSupportedMimeType(type)) {
       throw new UnsupportedMimeTypeException(UNSUPPORTED_MIME_TYPE + type);
@@ -411,6 +425,34 @@ public class TemplateService {
     var samples = sampleExtension.samples();
     if (samples.isEmpty()) {
       log.warn("No samples found for experiment during template generation: " + experimentId);
+    }
+
+    return templateProvider.getTemplate(new SampleUpdate(
+        new SampleInformation(
+            samples,
+            sampleBasic.analysisMethods(),
+            sampleBasic.conditions(),
+            sampleBasic.analytes(),
+            sampleBasic.species(),
+            sampleBasic.specimen(),
+            sampleExtension.experimentalGroups(),
+            sampleBasic.confoundingVariables(),
+            sampleExtension.confoundingVariableLevels())
+    ));
+  }
+
+  private DigitalObject generateSampleUpdateTemplate(
+      Supplier<Experiment> experimentSupplier,
+      String projectId,
+      String experimentId,
+      Set<String> sampleIds) {
+    var experiment = experimentSupplier.get();
+    var sampleBasic = querySampleBasicInfo(experiment, projectId, experimentId);
+    var sampleExtension = querySampleExtensionById(experiment, projectId, experimentId, sampleIds);
+    var samples = sampleExtension.samples();
+    if (samples.isEmpty()) {
+      log.warn("No samples found for the provided sample ids during template generation: "
+          + experimentId);
     }
 
     return templateProvider.getTemplate(new SampleUpdate(

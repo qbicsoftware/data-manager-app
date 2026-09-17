@@ -17,6 +17,7 @@ import java.io.Serial;
 import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.configuration.UploadConfiguration;
 import life.qbic.datamanager.views.AppRoutes.ProjectRoutes;
@@ -49,6 +50,7 @@ import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
+import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -266,7 +268,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
 
   }
 
-  private void onEditSamplesClicked() {
+  private void onEditSamplesClicked(SampleEditRequested editRequest) {
     ProjectId projectId = context.projectId().orElseThrow();
     ExperimentId experimentId = context.experimentId().orElseThrow();
 
@@ -278,8 +280,12 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     }
     ProjectOverview projectOverview = projectInformationService.findOverview(projectId)
         .orElseThrow();
+    var sampleIds = editRequest.sampleIds().stream()
+        .map(SampleId::value)
+        .collect(Collectors.toSet());
     var editSampleBatchDialog = new EditSampleBatchDialog(
         asyncProjectService, messageFactory,
+        sampleIds,
         experimentId.value(),
         projectId.value(),
         projectOverview.projectCode(),
@@ -437,7 +443,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     remove(sampleDetailsComponent);
     var sampleDetails = new SampleDetailsComponent(asyncProjectService, messageFactory, context);
     sampleDetails.addSampleRegistrationListener(ignored -> onRegisterBatchClicked());
-    sampleDetails.addSampleEditListener(ignored -> onEditSamplesClicked());
+    sampleDetails.addSampleEditListener(this::onEditSamplesClicked);
     sampleDetails.addSampleDeletionListener(this::onDeleteSamplesClicked);
     sampleDetailsComponent = sampleDetails;
     add(sampleDetailsComponent);
