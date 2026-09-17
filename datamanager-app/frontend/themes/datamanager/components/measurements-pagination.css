@@ -6,9 +6,15 @@
   width: 100%;
 }
 
-/* Tabs strip (plain vaadin-tabs — no self-scrolling panel, unlike TabSheet) */
+/* Tabs strip (plain vaadin-tabs — no self-scrolling panel, unlike TabSheet).
+   vaadin-tabs :host defaults to justify-content: center, which makes the strip
+   recentre whenever the visible tab count / content width changes (e.g. when a
+   filter leaves a single visible result). Anchor tabs to the start so the tab
+   position is independent of the number of available results. */
 .measurement-tab-pagination .measurement-tabs {
   flex: none;
+  justify-content: flex-start;
+  flex-grow: 0;
 }
 
 /* Plain content host sized to its content: the grids render all rows of the current page
