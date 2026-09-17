@@ -1,18 +1,13 @@
 package life.qbic.datamanager.views.account;
 
-import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
-import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.html.Anchor;
-import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
@@ -42,10 +37,10 @@ import life.qbic.identity.api.RawToken;
 /**
  * Personal Access Token Component
  * <p>
- * This {@link PageArea} allows the user to manage personal access tokens. Each token is rendered
- * as a card showing its description, status badge, creation and expiration dates. The user can
- * revoke tokens and create new ones. After creation the raw token value is shown once with a
- * prominent copy action.
+ * This {@link PageArea} allows the user to manage personal access tokens. Each token is rendered as
+ * a card showing its description, status badge, creation and expiration dates. The user can revoke
+ * tokens and create new ones. After creation the raw token value is shown once with a prominent
+ * copy action.
  */
 @SpringComponent
 @UIScope
@@ -74,6 +69,11 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
     generateTokenButton.addClickListener(
         event -> fireEvent(new AddTokenEvent(this, event.isFromClient())));
     section.addAction(generateTokenButton);
+    Button removeExpiredTokensButton = new Button("Remove expired tokens");
+    removeExpiredTokensButton.addClassName("secondary");
+    section.addAction(removeExpiredTokensButton);
+    removeExpiredTokensButton.addClickListener(
+        event -> fireEvent(new DeleteAllExpiredTokensEvent(this, event.isFromClient())));
 
     Div personalAccessTokenContainer = new Div();
     noTokensRegisteredDisclaimer = createNoTokensRegisteredDisclaimer();
@@ -179,7 +179,8 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
     description.add(intro);
 
     var warning = new InfoBox()
-        .setInfoText("Do not share your personal access tokens with anyone you don't want to access your files.");
+        .setInfoText(
+            "Do not share your personal access tokens with anyone you don't want to access your files.");
     description.add(warning);
 
     return description;
@@ -230,8 +231,8 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
   /**
    * Sets the provided {@link RawToken} within the {@link PersonalAccessTokenComponent}
    * <p>
-   * This method is used to show a newly generated Token to the user on Top of the
-   * token list within the component
+   * This method is used to show a newly generated Token to the user on Top of the token list within
+   * the component
    *
    * @param rawToken The {@link RawToken} to be displayed to the user
    */
@@ -245,6 +246,10 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
 
   public void addDeleteTokenListener(ComponentEventListener<DeleteTokenEvent> deleteTokenListener) {
     addListener(DeleteTokenEvent.class, deleteTokenListener);
+  }
+
+  public void addDeleteAllExpiredTokensListener(ComponentEventListener<DeleteAllExpiredTokensEvent> deleteAllExpiredTokensListener) {
+    addListener(DeleteAllExpiredTokensEvent.class, deleteAllExpiredTokensListener);
   }
 
   // ── Events ─────────────────────────────────────────────────────
@@ -288,76 +293,61 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
     }
   }
 
+  /**
+   * <b>Delete All Expired Tokens Clicked</b>
+   *
+   * <p>Indicates that a user wants to delete all expired {@link PersonalAccessToken}
+   * within the {@link PersonalAccessTokenComponent}</p>
+   */
+  public static class DeleteAllExpiredTokensEvent extends
+      ComponentEvent<PersonalAccessTokenComponent> {
+
+    @Serial
+    private static final long serialVersionUID = 5303581981248150518L;
+
+    public DeleteAllExpiredTokensEvent(PersonalAccessTokenComponent source, boolean fromClient) {
+      super(source, fromClient);
+    }
+
+  }
+
   // ── Frontend Bean ──────────────────────────────────────────────
 
   /**
-   * Immutable frontend representation of a {@link PersonalAccessToken}.
-   * <p>
-   * Stores the actual {@link Instant} values for creation and expiration so that
-   * display formatting is stable and does not drift with each render.
-   */
-  public static class PersonalAccessTokenFrontendBean {
-
-    private final String tokenId;
-    private final String tokenDescription;
-    private final Instant expirationInstant;
-    private final Instant createdAt;
-    private final boolean expired;
-
-    public PersonalAccessTokenFrontendBean(String tokenId, String tokenDescription,
-        Instant createdAt, Instant expirationInstant, boolean expired) {
-      this.tokenId = tokenId;
-      this.tokenDescription = tokenDescription;
-      this.createdAt = createdAt;
-      this.expirationInstant = expirationInstant;
-      this.expired = expired;
-    }
+     * Immutable frontend representation of a {@link PersonalAccessToken}.
+     * <p>
+     * Stores the actual {@link Instant} values for creation and expiration so that display formatting
+     * is stable and does not drift with each render.
+     */
+    public record PersonalAccessTokenFrontendBean(String tokenId, String tokenDescription,
+                                                  Instant createdAt, Instant expirationInstant,
+                                                  boolean expired) {
 
     public static PersonalAccessTokenFrontendBean from(PersonalAccessToken pat) {
-      Instant createdAt = pat.creationDate();
-      return new PersonalAccessTokenFrontendBean(
-          pat.tokenId(),
-          pat.description(),
-          createdAt.truncatedTo(ChronoUnit.SECONDS),
-          pat.expiration(),
-          pat.expired());
-    }
+        Instant createdAt = pat.creationDate();
+        return new PersonalAccessTokenFrontendBean(
+            pat.tokenId(),
+            pat.description(),
+            createdAt.truncatedTo(ChronoUnit.SECONDS),
+            pat.expiration(),
+            pat.expired());
+      }
 
-    public String tokenId() {
-      return tokenId;
+      /**
+       * Returns the token's lifetime as a {@link Duration}, computed from creation to expiration.
+       * Useful for passing to the service layer which expects a duration rather than an absolute
+       * instant.
+       */
+      public Duration expirationDuration() {
+        return Duration.between(createdAt, expirationInstant);
+      }
     }
-
-    public String tokenDescription() {
-      return tokenDescription;
-    }
-
-    public Instant expirationInstant() {
-      return expirationInstant;
-    }
-
-    public Instant createdAt() {
-      return createdAt;
-    }
-
-    public boolean expired() {
-      return expired;
-    }
-
-    /**
-     * Returns the token's lifetime as a {@link Duration}, computed from
-     * creation to expiration. Useful for passing to the service layer
-     * which expects a duration rather than an absolute instant.
-     */
-    public Duration expirationDuration() {
-      return Duration.between(createdAt, expirationInstant);
-    }
-  }
 
   // ── Created Token Details ──────────────────────────────────────
 
   /**
-   * Prominent banner showing the raw token value once after creation, with a
-   * large copy button and a clear warning that the value won't be shown again.
+   * Prominent banner showing the raw token value once after creation, with a large copy button and
+   * a clear warning that the value won't be shown again.
    */
   private static class CreatedPersonalAccessTokenDetails extends Div {
 

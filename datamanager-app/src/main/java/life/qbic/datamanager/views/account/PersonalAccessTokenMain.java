@@ -15,6 +15,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import life.qbic.datamanager.views.account.PersonalAccessTokenComponent.AddTokenEvent;
+import life.qbic.datamanager.views.account.PersonalAccessTokenComponent.DeleteAllExpiredTokensEvent;
 import life.qbic.datamanager.views.account.PersonalAccessTokenComponent.DeleteTokenEvent;
 import life.qbic.datamanager.views.account.PersonalAccessTokenComponent.PersonalAccessTokenFrontendBean;
 import life.qbic.datamanager.views.general.Main;
@@ -68,6 +69,7 @@ public class PersonalAccessTokenMain extends Main implements BeforeEnterObserver
     add(personalAccessTokenComponent);
     personalAccessTokenComponent.addTokenListener(this::onAddTokenClicked);
     personalAccessTokenComponent.addDeleteTokenListener(this::onDeleteTokenClicked);
+    personalAccessTokenComponent.addDeleteAllExpiredTokensListener(this::onDeleteAllExpiredTokenClicked);
     log.debug(String.format(
         "New instance for %s(#%s) created with %s(#%s)",
         this.getClass().getSimpleName(), System.identityHashCode(this),
@@ -89,6 +91,27 @@ public class PersonalAccessTokenMain extends Main implements BeforeEnterObserver
           personalAccessTokenService.delete(deleteTokenEvent.tokenId(), userId);
           loadGeneratedPersonalAccessTokens();
         }).open();
+  }
+
+  private void onDeleteAllExpiredTokenClicked(DeleteAllExpiredTokensEvent deleteAllExpiredTokenEvents) {
+    var userId = userIdTranslator.translateToUserId(
+            SecurityContextHolder.getContext().getAuthentication())
+        .orElseThrow();
+    var accessTokens = personalAccessTokenService.findAll(userId);
+    var expiredTokens= accessTokens.stream().filter(PersonalAccessToken::expired).toList();
+    var expiredTokenIds= expiredTokens.stream().map(PersonalAccessToken::tokenId).toList();
+    var expiredTokenNames= expiredTokens.stream().map(PersonalAccessToken::description).toList();
+    AlertDialog.danger(this,
+        "Remove all Expired Tokens",
+        "The following expired tokens will be removed" +
+        expiredTokenNames,
+        "Remove Tokens",
+        "Keep tokens",
+        () -> {
+          expiredTokenIds.forEach(expiredTokenId -> personalAccessTokenService.delete(expiredTokenId, userId));
+          loadGeneratedPersonalAccessTokens();
+        }).open();
+
   }
 
   private void onAddTokenClicked(AddTokenEvent addTokenEvent) {
