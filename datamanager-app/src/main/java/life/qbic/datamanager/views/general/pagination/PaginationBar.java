@@ -117,8 +117,14 @@ public class PaginationBar extends Div {
       fireChange(currentPage, event.getValue());
     });
 
+    // visible inline label for sighted users (aria-hidden: the accessible name is provided
+    // by the select's aria-label); avoids Vaadin Select's stacked label that breaks alignment
+    Span pageSizeLabel = new Span("Items per page");
+    pageSizeLabel.addClassName("pagination-page-size-label");
+    pageSizeLabel.getElement().setAttribute("aria-hidden", "true");
+
     infoLabel.addClassName("pagination-info");
-    Div controls = new Div(infoLabel, pageSizeSelect);
+    Div controls = new Div(infoLabel, pageSizeLabel, pageSizeSelect);
     controls.addClassName("pagination-controls");
 
     add(navigation, controls);
