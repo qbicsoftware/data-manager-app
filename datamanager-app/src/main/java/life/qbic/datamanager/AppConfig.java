@@ -31,7 +31,6 @@ import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.api.SampleCodeService;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
 import life.qbic.projectmanagement.application.authorization.authorities.AuthorityService;
-import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
 import life.qbic.projectmanagement.application.communication.broadcasting.MessageRouter;
 import life.qbic.projectmanagement.application.concurrent.ElasticScheduler;
 import life.qbic.projectmanagement.application.concurrent.VirtualThreadScheduler;
@@ -40,7 +39,6 @@ import life.qbic.projectmanagement.application.measurement.MeasurementLookupServ
 import life.qbic.projectmanagement.application.policy.AssociatedDatasetConnectedPolicy;
 import life.qbic.projectmanagement.application.policy.AssociatedDatasetRemovedPolicy;
 import life.qbic.projectmanagement.application.policy.AssociatedDatasetsSyncedPolicy;
-import life.qbic.projectmanagement.application.policy.BatchRegisteredPolicy;
 import life.qbic.projectmanagement.application.policy.ExperimentCreatedPolicy;
 import life.qbic.projectmanagement.application.policy.ExperimentUpdatedPolicy;
 import life.qbic.projectmanagement.application.policy.MeasurementCreatedPolicy;
@@ -50,18 +48,12 @@ import life.qbic.projectmanagement.application.policy.ProjectAccessGrantedPolicy
 import life.qbic.projectmanagement.application.policy.ProjectChangedPolicy;
 import life.qbic.projectmanagement.application.policy.ProjectRegisteredPolicy;
 import life.qbic.projectmanagement.application.policy.QCAddedPolicy;
-import life.qbic.projectmanagement.application.policy.SampleDeletedPolicy;
 import life.qbic.projectmanagement.application.policy.SampleRegisteredPolicy;
-import life.qbic.projectmanagement.application.policy.directive.AddSampleToBatch;
 import life.qbic.projectmanagement.application.policy.directive.CreateNewSampleStatisticsEntry;
-import life.qbic.projectmanagement.application.policy.directive.DeleteSampleFromBatch;
 import life.qbic.projectmanagement.application.policy.directive.InformProjectCollaboratorsAboutDatasetConnection;
 import life.qbic.projectmanagement.application.policy.directive.InformProjectCollaboratorsAboutDatasetRemoval;
 import life.qbic.projectmanagement.application.policy.directive.InformProjectCollaboratorsAboutDatasetSync;
 import life.qbic.projectmanagement.application.policy.directive.InformUserAboutGrantedAccess;
-import life.qbic.projectmanagement.application.policy.directive.InformUsersAboutBatchRegistration;
-import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponBatchCreation;
-import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponBatchUpdate;
 import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponDeletionEvent;
 import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponExperimentCreation;
 import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponExperimentUpdate;
@@ -70,7 +62,6 @@ import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUpo
 import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponPurchaseCreation;
 import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponQCCreation;
 import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponSampleCreation;
-import life.qbic.projectmanagement.application.policy.integration.BatchUpdatedPolicy;
 import life.qbic.projectmanagement.application.policy.integration.UserActivated;
 import life.qbic.projectmanagement.application.purchase.ProjectPurchaseService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
@@ -208,25 +199,6 @@ public class AppConfig {
   Section starts below
   */
   @Bean
-  public BatchRegisteredPolicy batchRegisteredPolicy(
-      life.qbic.projectmanagement.application.communication.EmailService emailService,
-      ProjectAccessService accessService, ProjectInformationService projectInformationService,
-      UserInformationService userInformationService, AppContextProvider appContextProvider,
-      JobScheduler jobScheduler) {
-    var informUsers = new InformUsersAboutBatchRegistration(emailService, accessService,
-        userInformationService, appContextProvider, jobScheduler);
-    var updateProject = new UpdateProjectUponBatchCreation(projectInformationService, jobScheduler);
-    return new BatchRegisteredPolicy(informUsers, updateProject);
-  }
-
-  @Bean
-  public BatchUpdatedPolicy batchUpdatedPolicy(
-      ProjectInformationService projectInformationService, JobScheduler jobScheduler) {
-    var updateProject = new UpdateProjectUponBatchUpdate(projectInformationService, jobScheduler);
-    return new BatchUpdatedPolicy(updateProject);
-  }
-
-  @Bean
   public ProjectAccessGrantedPolicy projectAccessGrantedPolicy(
       life.qbic.projectmanagement.application.communication.EmailService emailService,
       JobScheduler jobScheduler, UserInformationService userInformationService,
@@ -251,21 +223,12 @@ public class AppConfig {
 
   @Bean
   public SampleRegisteredPolicy sampleRegisteredPolicy(
-      BatchRegistrationService batchRegistrationService,
       SampleInformationService sampleInformationService,
       ExperimentInformationService experimentInformationService,
       ProjectInformationService projectInformationService, JobScheduler jobScheduler) {
-    var addSampleToBatch = new AddSampleToBatch(batchRegistrationService, jobScheduler);
     var updateProject = new UpdateProjectUponSampleCreation(sampleInformationService,
         experimentInformationService, projectInformationService, jobScheduler);
-    return new SampleRegisteredPolicy(addSampleToBatch, updateProject);
-  }
-
-  @Bean
-  public SampleDeletedPolicy sampleDeletedPolicy(BatchRegistrationService batchRegistrationService,
-      JobScheduler jobScheduler) {
-    var deleteSampleFromBatch = new DeleteSampleFromBatch(batchRegistrationService, jobScheduler);
-    return new SampleDeletedPolicy(deleteSampleFromBatch);
+    return new SampleRegisteredPolicy(updateProject);
   }
 
   @Bean
