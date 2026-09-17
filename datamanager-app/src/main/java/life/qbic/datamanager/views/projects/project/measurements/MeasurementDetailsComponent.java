@@ -196,6 +196,8 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         pxpTabContent());
     tabPagination.addTab(TAB_LABELS.get(MeasurementDomain.IP), MeasurementDomain.IP,
         ipTabContent());
+    // UX F2: selection bar lives under the search/toolbar row of the active tab
+    tabPagination.attachSelectionBar();
     tabPagination.setSelection(ngsSelection);
     tabPagination.addRefreshRequestedListener(this::onRefreshRequested);
     tabPagination.addSelectionClearedListener(event -> reconcileAllGrids());

@@ -10,6 +10,7 @@ import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabSheet;
+import com.vaadin.flow.dom.Element;
 import com.vaadin.flow.router.Location;
 import java.io.Serial;
 import java.util.EnumMap;
@@ -69,7 +70,7 @@ public class MeasurementTabPagination extends Div {
     configureSelectionBar();
     // selection bar sits above the grid (sticky top) so its information and actions are at
     // the user's eye level when working from the toolbar actions
-    add(selectionContainer, tabSheet, paginationBar);
+    add(tabSheet, paginationBar);
     configurePagination();
     configureTabSwitching();
   }
@@ -101,11 +102,13 @@ public class MeasurementTabPagination extends Div {
 
   private void configureTabSwitching() {
     tabSheet.addSelectedChangeListener(event -> {
-      if (suppressTabSwitchEvents) {
-        return;
-      }
       Tab selected = event.getSelectedTab();
       if (selected == null) {
+        return;
+      }
+      // keep the selection bar attached to the selected tab's content (under its search row)
+      attachSelectionBarTo(selected);
+      if (suppressTabSwitchEvents) {
         return;
       }
       domainOf(selected).ifPresent(newTab -> {
@@ -133,6 +136,41 @@ public class MeasurementTabPagination extends Div {
    */
   public void addTab(String label, MeasurementDomain domain, Component content) {
     tabsByDomain.put(domain, tabSheet.add(label, content));
+  }
+
+  /**
+   * Places the selection bar below the search/toolbar row of the currently active tab.
+   * Call once after all tabs have been added.
+   */
+  public void attachSelectionBar() {
+    attachSelectionBarTo(tabSheet.getSelectedTab());
+  }
+
+  /**
+   * Re-parents the shared selection bar into the given tab's content so it is shown and
+   * sticks below that tab's search/toolbar row (F2: visible + eye level, minimal travel).
+   */
+  private void attachSelectionBarTo(Tab tab) {
+    if (tab == null) {
+      return;
+    }
+    Component content = tab.getChildren().findFirst().orElse(null);
+    if (content == null) {
+      return;
+    }
+    Element contentElement = content.getElement();
+    selectionContainer.getElement().removeFromParent();
+    // insert after the toolbar row (index 0), i.e. directly under the search row
+    int insertAt = Math.min(1, contentElement.getChildCount());
+    contentElement.insertChild(insertAt, selectionContainer.getElement());
+  }
+
+  /**
+   * The selection bar component (count, Clear, Gmail-style select-all). It is re-parented
+   * into the active tab's content; exposed for the owning view if further wiring is needed.
+   */
+  public Div selectionBar() {
+    return selectionContainer;
   }
 
   /**
