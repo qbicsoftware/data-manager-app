@@ -20,7 +20,7 @@ import java.util.Objects;
  * @param projectCode display code; live for accessible pins, snapshot for revoked ones
  * @param projectTitle display title; live for accessible pins, snapshot for revoked ones
  * @param overview the live overview for accessible pins, {@code null} for revoked ones
- * @since 1.12.0
+ * @since 1.19.0
  */
 public record PinnedProjectView(ProjectId projectId,
                                 Instant pinnedAt,

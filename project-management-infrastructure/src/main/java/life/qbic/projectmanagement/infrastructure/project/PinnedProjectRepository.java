@@ -15,7 +15,7 @@ import org.springframework.data.repository.query.Param;
  * ({@link PinnedProjectId}); property-path derived queries over an embedded id are brittle and would
  * silently depend on method naming.
  *
- * @since 1.12.0
+ * @since 1.19.0
  */
 public interface PinnedProjectRepository extends
     JpaRepository<PinnedProject, PinnedProjectId> {

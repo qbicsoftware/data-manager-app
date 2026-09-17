@@ -13,7 +13,7 @@ import life.qbic.projectmanagement.domain.model.project.ProjectId;
  * their own places, even when the pinned project became unreadable (ADR-0008). Access control is
  * enforced by {@link PinnedProjectService}, not by this port.
  *
- * @since 1.12.0
+ * @since 1.19.0
  */
 public interface PinnedProjectStore {
 

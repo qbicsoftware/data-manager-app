@@ -14,7 +14,7 @@ import java.util.Objects;
  * {@code ProjectId}, because a pin is not project state and must survive the loss of read access to
  * the referenced project (see ADR-0008).
  *
- * @since 1.12.0
+ * @since 1.19.0
  */
 @Embeddable
 public class PinnedProjectId implements Serializable {

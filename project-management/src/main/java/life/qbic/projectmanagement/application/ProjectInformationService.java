@@ -105,7 +105,7 @@ public class ProjectInformationService {
    * the ids alone disclose nothing.
    *
    * @return accessible project ids, empty if the user can access no project
-   * @since 1.12.0
+   * @since 1.19.0
    */
   public List<ProjectId> findAccessibleProjectIds() {
     return retrieveAccessibleProjectIdsForUser();

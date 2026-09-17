@@ -13,7 +13,7 @@ import java.util.Objects;
  * keys and similar codes. It is intentionally less prominent than a {@link Tag} so it does not
  * compete with measurement-type or status tags on the same card.
  *
- * @since 1.12.0
+ * @since 1.19.0
  */
 public class ProjectCodeBadge extends Span {
 

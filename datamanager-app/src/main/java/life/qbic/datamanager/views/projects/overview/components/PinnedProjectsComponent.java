@@ -49,7 +49,7 @@ import life.qbic.projectmanagement.domain.model.project.ProjectId;
  * {@link RouterLink}, never a descendant, so a toggle click cannot also trigger navigation — the same
  * topology the project cards use for their dataset footer.
  *
- * @since 1.12.0
+ * @since 1.19.0
  */
 public class PinnedProjectsComponent extends Div {
 
@@ -131,7 +131,7 @@ public class PinnedProjectsComponent extends Div {
   /**
    * Handles a pin toggle coming from this row.
    *
-   * @since 1.12.0
+   * @since 1.19.0
    */
   @FunctionalInterface
   public interface ToggleHandler {

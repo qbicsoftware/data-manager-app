@@ -18,7 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
  * Performs no access control of any kind. Callers decide who may pin what; this class only reads and
  * writes the calling user's own rows (ADR-0008).
  *
- * @since 1.12.0
+ * @since 1.19.0
  */
 @Component
 @Scope("singleton")

@@ -38,7 +38,7 @@ import org.springframework.transaction.annotation.Transactional;
  *   become a channel for project data the user is not entitled to see.</li>
  * </ul>
  *
- * @since 1.12.0
+ * @since 1.19.0
  */
 @Service
 public class PinnedProjectService {
@@ -236,7 +236,7 @@ public class PinnedProjectService {
    * Outcome of a pinning or unpinning request. Expected failure paths are return values, not
    * exceptions (see {@code ExceptionHandling.md}).
    *
-   * @since 1.12.0
+   * @since 1.19.0
    */
   public enum PinOutcome {
     /** The pin was created. */

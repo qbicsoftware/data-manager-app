@@ -21,7 +21,7 @@ import life.qbic.projectmanagement.domain.model.project.ProjectId;
  * read can still be recognised and removed by its owner. They must never be used to render a pin for
  * a project the user <i>can</i> read, and must never be exported or indexed.
  *
- * @since 1.12.0
+ * @since 1.19.0
  */
 @Entity
 @Table(name = "pinned_projects")
