@@ -13,10 +13,12 @@
 
 /* Plain content host sized to its content: the grids render all rows of the current page
    and the native page scroll handles overflow (no embedded scroll container, USER-NFR-01).
-   This container is ours, so position:sticky descendants stick to the page scroll. */
+   This container is ours, so position:sticky descendants stick to the page scroll.
+   The gap adds breathing room between the tab strip above and the search toolbar below. */
 .measurement-tab-pagination .measurement-content-area {
   display: flex;
   flex-direction: column;
+  gap: var(--lumo-space-m);
 }
 
 .measurement-tab-pagination .measurement-tab-content {
