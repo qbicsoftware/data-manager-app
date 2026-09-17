@@ -13,6 +13,7 @@ import com.vaadin.flow.component.checkbox.CheckboxGroupVariant;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.Grid.MultiSortPriority;
 import com.vaadin.flow.component.grid.Grid.Column;
+import com.vaadin.flow.component.grid.GridMultiSelectionModel;
 import com.vaadin.flow.component.grid.GridSortOrder;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.AnchorTarget;
@@ -306,6 +307,11 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   private void configureSelectionReconciliation(Grid<?> grid, MeasurementSelection selection,
       MeasurementDomain domain) {
     grid.setSelectionMode(Grid.SelectionMode.MULTI);
+    // Freeze the selection (checkbox) column so the user always sees the selection state when
+    // scrolling horizontally (same as the frozen QBiC Measurement ID column).
+    if (grid.getSelectionModel() instanceof GridMultiSelectionModel<?> multiSelectionModel) {
+      multiSelectionModel.setSelectionColumnFrozen(true);
+    }
     // client changes -> update the ID set (only for rows on the current page)
     @SuppressWarnings("unchecked")
     Grid<Object> objectGrid = (Grid<Object>) grid;
@@ -404,6 +410,10 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
       return;
     }
     grid.setItems(page);
+    // With explicit pagination the grid shows exactly the current page; render all its rows at
+    // their natural height (no internal scroll container) so the whole configured page size is
+    // visible and the native page scroll handles overflow.
+    grid.setAllRowsVisible(true);
     reconcileSelection(grid, selectionFor(domain), domain);
     tabPagination.onPageLoaded(domain, pageToRender, total);
     updateSelectAllLabel(domain, total);
