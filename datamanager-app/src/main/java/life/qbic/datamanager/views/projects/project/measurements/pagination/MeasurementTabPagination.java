@@ -335,6 +335,29 @@ public class MeasurementTabPagination extends Div {
   private void clearSelection() {
     if (selection != null) {
       selection.clear();
+      // the grid rows are owned by the view; let it reconcile the newly empty selection
+      fireEvent(new SelectionClearedEvent(this));
+    }
+  }
+
+  /**
+   * Fired after the user cleared the selection; the owning view reconciles its grids so
+   * the row checkboxes reflect the empty selection.
+   */
+  public void addSelectionClearedListener(
+      ComponentEventListener<SelectionClearedEvent> listener) {
+    addListener(SelectionClearedEvent.class, listener);
+  }
+
+  /** Fired when the user clears the selection via the "Clear selection" affordance. */
+  public static class SelectionClearedEvent extends
+      com.vaadin.flow.component.ComponentEvent<MeasurementTabPagination> {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
+
+    public SelectionClearedEvent(MeasurementTabPagination source) {
+      super(source, false);
     }
   }
 

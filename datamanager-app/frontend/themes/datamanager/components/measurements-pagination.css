@@ -40,8 +40,8 @@
 
 /* UX F2: sticky to the viewport bottom so the selection count stays visible while the
    full-height grid scrolls under native page scroll (USER-R-02: count must always be visible).
-   Deliberately high-contrast so its appearance is unmistakable (tinted background,
-   pronounced top border, elevation shadow, icon + bold count). */
+   App palette only (components/variables.css): opaque white surface + primary accent +
+   elevation shadow, so the bar is unmistakable AND readable over scrolled grid rows. */
 .measurement-tab-pagination .measurement-selection-bar {
   display: flex;
   align-items: center;
@@ -50,30 +50,26 @@
   position: sticky;
   bottom: 0;
   z-index: 1;
-  /* opaque tint: mixing the translucent primary token into the opaque base color keeps the
-     tint while guaranteeing readability over scrolled grid rows (fallback for older browsers) */
-  background: var(--lumo-base-color);
-  background: color-mix(in srgb, var(--lumo-primary-color) 5%, var(--lumo-base-color));
-  border-top: 2px solid var(--lumo-primary-color);
+  background: var(--primary-contrast-color);
+  border-top: 2px solid var(--primary-color);
   box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.12);
   border-radius: var(--lumo-border-radius-m) var(--lumo-border-radius-m) 0 0;
 }
 
 .measurement-tab-pagination .measurement-selection-icon {
-  color: var(--lumo-primary-color);
+  color: var(--primary-color);
   width: var(--lumo-icon-size-m);
   height: var(--lumo-icon-size-m);
 }
 
 .measurement-tab-pagination .measurement-selection-count {
-  color: var(--lumo-primary-text-color);
+  color: var(--body-text-color);
   font-weight: 700;
-  font-size: var(--lumo-font-size-m);
 }
 
 .measurement-tab-pagination .measurement-clear-selection {
   margin-left: auto;
-  color: var(--lumo-primary-color);
+  color: var(--button-text-color);
   font-weight: 600;
 }
 

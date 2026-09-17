@@ -201,6 +201,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         ipTabContent());
     tabPagination.setSelection(ngsSelection);
     tabPagination.addRefreshRequestedListener(this::onRefreshRequested);
+    tabPagination.addSelectionClearedListener(event -> reconcileAllGrids());
     add(tabPagination);
 
     configureSearch(ngsSearchField, MeasurementDomain.NGS);
@@ -541,6 +542,16 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         grid.deselect(item);
       }
     });
+  }
+
+  /**
+   * Reconciles every grid's visible rows against its tab selection (used after the user
+   * cleared the selection so row checkboxes reflect the empty selection).
+   */
+  private void reconcileAllGrids() {
+    reconcileSelection(ngsGrid, ngsSelection, MeasurementDomain.NGS);
+    reconcileSelection(pxpGrid, pxpSelection, MeasurementDomain.PXP);
+    reconcileSelection(ipGrid, ipSelection, MeasurementDomain.IP);
   }
 
   // ---- selection helpers ----------------------------------------------------
