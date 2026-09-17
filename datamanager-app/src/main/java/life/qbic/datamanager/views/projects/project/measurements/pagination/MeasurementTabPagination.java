@@ -165,6 +165,9 @@ public class MeasurementTabPagination extends Div {
       tab = tabsByDomain.entrySet().iterator().next().getValue();
     }
     attachSelectionBarTo(tab);
+    // no selection-change event fires on initial mount; ensure only the active tab's
+    // content is visible so the inactive grids do not stack below the page
+    domainOf(tab).ifPresent(this::showOnly);
   }
 
   /**
@@ -302,8 +305,15 @@ public class MeasurementTabPagination extends Div {
 
   private void selectTabForActiveDomain() {
     Tab tab = tabsByDomain.get(listState.activeTab());
-    if (tab != null && tabs.getSelectedTab() != tab) {
+    if (tab == null) {
+      return;
+    }
+    if (tabs.getSelectedTab() != tab) {
       tabs.setSelectedTab(tab);
+    } else {
+      // already selected (e.g. external state with same tab): no event fires, so make
+      // sure the visibility reflects the desired active tab anyway
+      showOnly(listState.activeTab());
     }
   }
 
