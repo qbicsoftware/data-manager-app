@@ -590,6 +590,13 @@ Since we want to remove the spacing between the cancel and confirm button we rep
   align-items: center;
 }
 
+.personal-access-token-remove-expired-tokens-dialog-body {
+  display: flex;
+  gap: var(--lumo-space-s);
+  flex-direction: column;
+}
+
+
 .project-information-dialog::part(overlay) {
   width: 66vw;
 }
