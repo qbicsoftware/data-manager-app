@@ -70,6 +70,8 @@ public class SampleRegistrationServiceV2 {
   }
 
 
+  @Async
+  @Transactional
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public CompletableFuture<Void> registerSamples(Collection<SampleRegistrationInformation> requests,
       ProjectId projectId,
