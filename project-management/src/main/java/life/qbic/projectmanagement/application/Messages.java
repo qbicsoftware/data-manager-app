@@ -34,15 +34,12 @@ public class Messages {
     return String.format("""
         Dear %s,
 
-        %d new sample(s) have been added to the project:
+        We're happy to inform you that %d samples have been registered within your project %s.
 
-        '%s'
+        Each newly registered sample has also been assigned a unique, persistent identifier within
+        the data manager, with which you can track its progress going forward.
 
-        Sample information and QBiC identifiers have been added to the Data Manager.
-        These identifiers uniquely characterize each added sample. They will be used to attach data
-        for each of the samples, as soon as it has been measured and uploaded.
-
-        Please click the link below to access the sample information after login:
+        Please click the link below to access detailed information for the registered samples:
 
         %s
         """, fullNameUser, sampleCount, projectTitle, sampleUri);
