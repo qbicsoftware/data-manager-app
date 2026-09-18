@@ -3,6 +3,7 @@ package life.qbic.projectmanagement.application;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Collection;
+import java.util.concurrent.CompletableFuture;
 import life.qbic.application.commons.Result;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
@@ -12,6 +13,7 @@ import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import life.qbic.projectmanagement.domain.service.SampleDomainService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -81,6 +83,27 @@ public class DeletionService {
       throw new IllegalArgumentException("Could not find project " + projectId);
     }
     sampleDomainService.deleteSamples(project.get(), samplesCollection);
+  }
+
+  /**
+   * Asynchronously deletes the provided samples. Intended for UI-driven deletions so the user
+   * interface is not blocked while the deletion runs in the background.
+   *
+   * @param projectId        the project the samples belong to
+   * @param samplesCollection the samples to delete
+   * @return a future that completes when the deletion is done
+   * @since 1.14.0
+   */
+  @Async
+  @Transactional
+  public CompletableFuture<Void> deleteSamplesAsync(ProjectId projectId,
+      Collection<SampleId> samplesCollection) {
+    var project = projectInformationService.find(projectId);
+    if (project.isEmpty()) {
+      throw new IllegalArgumentException("Could not find project " + projectId);
+    }
+    sampleDomainService.deleteSamples(project.get(), samplesCollection);
+    return CompletableFuture.completedFuture(null);
   }
 
   /**

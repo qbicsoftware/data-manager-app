@@ -351,9 +351,29 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
 
   private void deleteSamples(SampleDeletionRequested deletionRequest) {
     var projectId = context.projectId().orElseThrow();
-    deletionService.deleteSamples(projectId, deletionRequest.sampleIds());
-    displayDeletionSuccess(deletionRequest.sampleIds().size());
-    setBatchAndSampleInformation();
+    var pendingToast = notificationFactory.pendingTaskToast("task.in-progress",
+        new Object[]{"Sample deletion for %d samples".formatted(deletionRequest.sampleIds().size())},
+        getLocale());
+    pendingToast.open();
+
+    CompletableFuture<Void> deletionTask = deletionService.deleteSamplesAsync(projectId,
+            deletionRequest.sampleIds())
+        .orTimeout(5, TimeUnit.MINUTES);
+    deletionTask
+        .thenRun(() -> getUI().ifPresent(ui -> ui.access(() -> {
+          pendingToast.close();
+          displayDeletionSuccess(deletionRequest.sampleIds().size());
+          setBatchAndSampleInformation();
+        })))
+        .exceptionally(e -> {
+          log.error("Sample deletion failed", e);
+          getUI().ifPresent(ui -> ui.access(() -> {
+            pendingToast.close();
+            notificationFactory.toast("task.failed",
+                new Object[]{"Sample deletion"}, getLocale()).open();
+          }));
+          return null;
+        });
   }
 
   private void onDeleteSamplesClicked(SampleDeletionRequested deletionRequest) {
