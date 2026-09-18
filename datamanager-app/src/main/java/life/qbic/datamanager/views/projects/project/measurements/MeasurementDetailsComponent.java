@@ -302,7 +302,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
 
     CheckboxGroup<Column<T>> checkboxGroup = new CheckboxGroup<>();
     checkboxGroup.setItemLabelGenerator(Column::getHeaderText);
-    List<Column<T>> columns = grid.getColumns();
+    List<Column<T>> columns = showableColumns(grid);
     checkboxGroup.setItems(columns);
     checkboxGroup.setValue(columns.stream()
         .filter(Column::isVisible)
@@ -320,6 +320,17 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     });
     subMenu.addComponent(checkboxGroup);
     return menuBar;
+  }
+
+  /**
+   * The columns offered in the Show/Hide Columns menu: every column with a header label.
+   * The multi-select checkbox column is a {@link Column} too but has no header text; without
+   * this filter it would render as an empty first entry in the menu.
+   */
+  static <T> List<Column<T>> showableColumns(Grid<T> grid) {
+    return grid.getColumns().stream()
+        .filter(column -> column.getHeaderText() != null && !column.getHeaderText().isBlank())
+        .toList();
   }
 
   private void configureSearch(TextField field, MeasurementDomain domain) {

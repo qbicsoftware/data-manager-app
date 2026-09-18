@@ -114,4 +114,19 @@ class MeasurementDetailsGridColumnsSpec extends Specification {
         comparator.compare(a, b) < 0
         comparator.compare(b, a) > 0
     }
+
+    def "showable columns exclude header-less columns (e.g. the multi-select checkbox column)"() {
+        given: "a grid whose columns all carry headers, plus one header-less column"
+        def grid = new Grid<String>()
+        grid.addColumn({ it }).setHeader("Name")
+        grid.addColumn({ it }).setHeader("Facility")
+        def headerless = grid.addColumn({ it })
+        headerless.setHeader((String) null)
+
+        when:
+        def showable = MeasurementDetailsComponent.showableColumns(grid)
+
+        then:
+        showable*.getHeaderText() == ["Name", "Facility"]
+    }
 }
