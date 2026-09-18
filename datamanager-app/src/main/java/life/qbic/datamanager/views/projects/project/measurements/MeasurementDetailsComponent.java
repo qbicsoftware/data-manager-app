@@ -755,6 +755,22 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   }
 
   /**
+   * Test seam: exposes the grids so specs can pin column configuration (comparators, sort keys)
+   * without a running UI. Package-private, not part of the public API.
+   */
+  Grid<NgsMeasurementLookup.MeasurementInfo> ngsGrid() {
+    return ngsGrid;
+  }
+
+  Grid<MeasurementInfo> pxpGrid() {
+    return pxpGrid;
+  }
+
+  Grid<IpMeasurementLookup.MeasurementInfo> ipGrid() {
+    return ipGrid;
+  }
+
+  /**
    * Delegates the route base path to the container so it can mirror the list state into the URL.
    */
   public void setBasePath(String basePath) {
@@ -785,7 +801,8 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     ngsGrid.addColumn(NgsMeasurementLookup.MeasurementInfo::measurementName)
         .setHeader("Measurement Name")
         .setSortProperty(NgsSortKey.MEASUREMENT_NAME.sortKey())
-        .setComparator(Comparator.comparing(NgsMeasurementLookup.MeasurementInfo::measurementCode))
+        .setComparator(Comparator.comparing(NgsMeasurementLookup.MeasurementInfo::measurementName,
+            Comparator.nullsLast(String::compareTo)))
         .setAutoWidth(true)
         .setResizable(true);
     ngsGrid.addComponentColumn(measurementInfo -> renderSamplesNgs(measurementInfo,
@@ -872,7 +889,8 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     pxpGrid.addColumn(PxpMeasurementLookup.MeasurementInfo::measurementName)
         .setHeader("Measurement Name")
         .setSortProperty(PxpSortKey.MEASUREMENT_NAME.sortKey())
-        .setComparator(Comparator.comparing(PxpMeasurementLookup.MeasurementInfo::measurementCode))
+        .setComparator(Comparator.comparing(PxpMeasurementLookup.MeasurementInfo::measurementName,
+            Comparator.nullsLast(String::compareTo)))
         .setAutoWidth(true)
         .setResizable(true);
     pxpGrid.addComponentColumn(measurementInfo -> renderSamplesPxp(measurementInfo,
@@ -977,8 +995,8 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     ipGrid.addColumn(IpMeasurementLookup.MeasurementInfo::measurementName)
         .setHeader("Measurement Name")
         .setSortProperty(IpMeasurementLookup.IpSortKey.MEASUREMENT_NAME.sortKey())
-        .setComparator(
-            Comparator.comparing(IpMeasurementLookup.MeasurementInfo::measurementCode))
+        .setComparator(Comparator.comparing(IpMeasurementLookup.MeasurementInfo::measurementName,
+            Comparator.nullsLast(String::compareTo)))
         .setAutoWidth(true)
         .setResizable(true);
     ipGrid.addComponentColumn(measurementInfo -> renderSamplesIp(measurementInfo,

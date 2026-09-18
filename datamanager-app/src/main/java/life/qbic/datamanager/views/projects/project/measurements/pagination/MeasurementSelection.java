@@ -1,7 +1,6 @@
 package life.qbic.datamanager.views.projects.project.measurements.pagination;
 
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -98,7 +97,6 @@ public final class MeasurementSelection {
 
   private void notifyChange() {
     if (changeListener != null) {
-      Objects.requireNonNull(changeListener);
       changeListener.run();
     }
   }
