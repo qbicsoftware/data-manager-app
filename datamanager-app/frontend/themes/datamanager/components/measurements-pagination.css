@@ -39,6 +39,8 @@
   align-items: center;
   flex-wrap: wrap;
   gap: var(--lumo-space-s);
+  /* breathing room between the tab labels above and the toolbar below */
+  padding-top: var(--spacing-02);
 }
 
 .measurement-tab-pagination .measurement-tab-toolbar .measurement-tab-toolbar-right {
