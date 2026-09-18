@@ -113,6 +113,10 @@ public class MeasurementTabPagination extends Div {
       }
       // show only the selected tab's content; keep the selection bar under its search row
       domainOf(selected).ifPresent(this::showOnly);
+      // The selection bar is a single shared component that is re-parented into the active
+      // tab's content; on every tab switch it must follow into the newly selected tab, or it
+      // stays inside the previous (hidden) tab's content and becomes invisible.
+      attachSelectionBarTo(selected);
       if (suppressTabSwitchEvents) {
         return;
       }
@@ -317,6 +321,10 @@ public class MeasurementTabPagination extends Div {
       // sure the visibility reflects the desired active tab anyway
       showOnly(listState.activeTab());
     }
+    // The selection bar is a single shared component re-parented into the active tab's
+    // content. Cover the programmatic paths (initial/URL state application, visibility
+    // fallback) that don't fire a selection-change event.
+    attachSelectionBarTo(tab);
   }
 
   /**

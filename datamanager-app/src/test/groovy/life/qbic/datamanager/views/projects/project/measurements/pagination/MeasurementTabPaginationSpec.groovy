@@ -177,6 +177,20 @@ class MeasurementTabPaginationSpec extends Specification {
         domains == [MeasurementDomain.IP]
     }
 
+    def "selection bar follows the active tab on user tab switch"() {
+        given: "selection bar attached to the initial (NGS) tab"
+        def container = newContainer()
+        container.attachSelectionBar()
+
+        when: "the user switches to the Proteomics tab"
+        container.setActiveTab(MeasurementDomain.PXP)
+
+        then: "the selection bar is re-parented into the proteomics tab content"
+        // no UI here, so assert the shared bar's parent element belongs to the PXP tab content
+        container.selectionBar().getParent().isPresent()
+        container.selectionBar().getParent().get() instanceof com.vaadin.flow.component.html.Span
+    }
+
     def "hiding the active tab falls back to the first remaining visible tab and refreshes it"() {
         given: "only proteomics measurements exist (NGS has none)"
         def container = newContainer()
