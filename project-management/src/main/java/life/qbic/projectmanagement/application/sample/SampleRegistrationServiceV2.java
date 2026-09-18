@@ -112,8 +112,9 @@ public class SampleRegistrationServiceV2 {
       Collection<SampleMetadata> sampleMetadata,
       ProjectId projectId, ExperimentReference experiment)
       throws RegistrationException {
+    Map<Sample, SampleMetadata> registeredSamples = Map.of();
     try {
-      var registeredSamples = registerSamples(sampleMetadata, projectId);
+      registeredSamples = registerSamples(sampleMetadata, projectId);
       for (Entry<Sample, SampleMetadata> registeredSample : registeredSamples.entrySet()) {
         Map<VariableReference, String> levels = registeredSample.getValue().confoundingVariables()
             .entrySet().stream()
@@ -135,7 +136,7 @@ public class SampleRegistrationServiceV2 {
     } catch (RuntimeException e) {
       log.error(e.getMessage(), e);
       deletionService.deleteSamples(projectId,
-          sampleMetadata.stream().map(SampleMetadata::sampleId).toList());
+          registeredSamples.keySet().stream().map(Sample::sampleId).toList());
       throw e;
     }
     return CompletableFuture.completedFuture(null);
