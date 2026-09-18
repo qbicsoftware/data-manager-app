@@ -225,14 +225,14 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
         .setAutoWidth(true)
         .setResizable(true);
     sampleGrid.addColumn(preview -> formatTime(preview.registrationTime(),
-            DateTimeFormat.ISO_LOCAL_DATE_TIME_WHITESPACE_SEPARATED))
+            DateTimeFormat.SIMPLE_DATE_TIME_SHORT))
         .setHeader("Registration time")
         .setSortProperty(UiSortKey.REGISTRATION_TIME.value())
         .setComparator(SamplePreview::registrationTime)
         .setAutoWidth(true)
         .setResizable(true);
     sampleGrid.addColumn(preview -> formatTime(preview.lastModified(),
-            DateTimeFormat.ISO_LOCAL_DATE_TIME_WHITESPACE_SEPARATED))
+            DateTimeFormat.SIMPLE_DATE_TIME_SHORT))
         .setHeader("Modification time")
         .setSortProperty(UiSortKey.MODIFICATION_TIME.value())
         .setComparator(SamplePreview::lastModified)
