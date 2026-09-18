@@ -25,7 +25,7 @@ import org.springframework.stereotype.Component;
  * Notifies the collaborators of a project about newly registered samples via email. One email is
  * sent per project collaborator, scheduled asynchronously through JobRunr.
  *
- * @since 1.14.0
+ * @since 1.17.0
  */
 @Component
 public class SampleRegistrationNotificationService {
@@ -58,7 +58,7 @@ public class SampleRegistrationNotificationService {
    * @param projectId    the project the samples were registered in
    * @param experimentId the experiment the samples were registered in
    * @param sampleCount  the number of samples that were registered
-   * @since 1.14.0
+   * @since 1.17.0
    */
   public void notifyCollaborators(ProjectId projectId, String experimentId,
       int sampleCount) {

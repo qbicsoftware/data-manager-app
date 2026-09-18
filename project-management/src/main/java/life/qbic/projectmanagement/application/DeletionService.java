@@ -92,7 +92,7 @@ public class DeletionService {
    * @param projectId        the project the samples belong to
    * @param samplesCollection the samples to delete
    * @return a future that completes when the deletion is done
-   * @since 1.14.0
+   * @since 1.17.0
    */
   @Async
   @Transactional

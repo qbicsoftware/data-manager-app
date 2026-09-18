@@ -1696,7 +1696,7 @@ public interface AsyncProjectService {
    * @throws RequestFailedException       if the request cannot be executed
    * @throws UnsupportedMimeTypeException if the service cannot provide the requested
    *                                      {@link MimeType}
-   * @since 1.12.0
+   * @since 1.17.0
    */
   Mono<DigitalObject> sampleUpdateTemplate(String projectId, String experimentId,
       Set<String> sampleIds, MimeType mimeType);
