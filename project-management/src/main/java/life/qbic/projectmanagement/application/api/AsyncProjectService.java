@@ -1465,7 +1465,9 @@ public interface AsyncProjectService {
     ANALYTE,
     COMMENT,
     SPECIMEN,
-    ANALYSIS_METHOD
+    ANALYSIS_METHOD,
+    REGISTRATION_TIME,
+    MODIFICATION_TIME
   }
 
 
@@ -1516,7 +1518,7 @@ public interface AsyncProjectService {
    * @throws RequestFailedException in case the request cannot be executed
    * @since 1.10.0
    */
-  Flux<Sample> getSamplesForBatch(String projectId, String batchId) throws RequestFailedException;
+  Flux<Sample> getSamplesForProject(String projectId) throws RequestFailedException;
 
   /**
    * Finds the sample for a given sample ID.
@@ -1676,7 +1678,28 @@ public interface AsyncProjectService {
    * @since 1.10.0
    */
   Mono<DigitalObject> sampleUpdateTemplate(String projectId, String experimentId,
-      String batchId, MimeType mimeType);
+      MimeType mimeType);
+
+  /**
+   * Requests a sample update template in a desired {@link MimeType}, scoped to the provided
+   * sample ids.
+   * <p>
+   * If the mime type is not supported, a {@link UnsupportedMimeTypeException} will be provided as
+   * {@link Mono#error(Throwable)}.
+   *
+   * @param projectId    the project ID of the project the template should be created for
+   * @param experimentId the experiment ID of the experiment the template should be created for
+   * @param sampleIds    a set of sample ids of the samples that should be contained in the template
+   * @param mimeType     the mime type the digital object should be
+   * @return a {@link Mono} with a {@link DigitalObject} providing the requested template
+   * @throws AccessDeniedException        if the user has insufficient rights
+   * @throws RequestFailedException       if the request cannot be executed
+   * @throws UnsupportedMimeTypeException if the service cannot provide the requested
+   *                                      {@link MimeType}
+   * @since 1.17.0
+   */
+  Mono<DigitalObject> sampleUpdateTemplate(String projectId, String experimentId,
+      Set<String> sampleIds, MimeType mimeType);
 
   /**
    * Requests sample information in a desired {@link MimeType}.
@@ -2014,10 +2037,11 @@ public interface AsyncProjectService {
    * @param analyte              the String representation of an analyte with CURIE
    * @param analysisMethod       the String representation of the analysis method
    * @param comment              a users comment
-   * @param confoundingVariables confounding variables with as a {@link java.util.HashMap}
-   *                             representation
-   * @since 1.10.0
-   */
+* @param confoundingVariables confounding variables with as a {@link java.util.HashMap}
+    *                             representation
+    * @param batch               the batch label of the sample
+    * @since 1.10.0
+    */
   record SampleRegistrationInformation(
       String sampleName,
       String biologicalReplicate,
@@ -2027,7 +2051,8 @@ public interface AsyncProjectService {
       String analyte,
       String analysisMethod,
       String comment,
-      Map<String, String> confoundingVariables
+      Map<String, String> confoundingVariables,
+      String batch
   ) implements ValidationRequestBody {
 
   }
@@ -2044,10 +2069,11 @@ public interface AsyncProjectService {
    * @param analyte              the String representation of an analyte with CURIE
    * @param analysisMethod       the String representation of the analysis method
    * @param comment              a users comment
-   * @param confoundingVariables confounding variables with as a {@link java.util.HashMap}
-   *                             representation
-   * @since 1.10.0
-   */
+* @param confoundingVariables confounding variables with as a {@link java.util.HashMap}
+    *                             representation
+    * @param batch               the batch label of the sample
+    * @since 1.10.0
+    */
   record SampleUpdateInformation(
       String sampleCode,
       String sampleName,
@@ -2058,7 +2084,8 @@ public interface AsyncProjectService {
       String analyte,
       String analysisMethod,
       String comment,
-      Map<String, String> confoundingVariables
+      Map<String, String> confoundingVariables,
+      String batch
   ) implements ValidationRequestBody {
 
   }

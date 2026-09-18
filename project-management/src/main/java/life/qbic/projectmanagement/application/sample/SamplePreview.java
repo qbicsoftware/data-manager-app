@@ -9,9 +9,9 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import java.time.Instant;
 import java.util.Objects;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
-import life.qbic.projectmanagement.domain.model.batch.Batch;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
@@ -19,7 +19,6 @@ import life.qbic.projectmanagement.domain.model.sample.AnalysisMethod;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
-import org.hibernate.annotations.Formula;
 
 /**
  * An amalgamation of information stored in {@link Experiment} and {@link Sample}
@@ -36,8 +35,14 @@ public class SamplePreview {
   @EmbeddedId
   @Column(name = "sample_id")
   private SampleId sampleId;
-  @Formula("(select sample_batches.batchLabel from sample_batches where sample_batches.id = assigned_batch_id)")
+  @Column(name = "batch")
   private String batchLabel;
+
+  @Column(name = "registrationTime")
+  private Instant registrationTime;
+
+  @Column(name = "lastModified")
+  private Instant lastModified;
 
   @Column(name = "label")
   private String sampleName;
@@ -94,8 +99,7 @@ public class SamplePreview {
    * @param experimentId        the {@link ExperimentId} of the associated experiment
    * @param sampleId            the {@link SampleId} from which this preview was created
    * @param sampleCode          the {@link SampleCode} associated with this SamplePreview
-   * @param batchLabel          the label of the {@link Batch} which contains the {@link Sample}
-   *                            associated with this preview
+   * @param batchLabel          the batch label of the {@link Sample} associated with this preview
    * @param sampleName          the name of the {@link Sample} associated with this preview
    * @param biologicalReplicate optional identifier of the patient or organism a {@link Sample}
    *                            was taken of. Used to group biological replicates
@@ -136,6 +140,14 @@ public class SamplePreview {
 
   public String batchLabel() {
     return batchLabel;
+  }
+
+  public Instant registrationTime() {
+    return registrationTime;
+  }
+
+  public Instant lastModified() {
+    return lastModified;
   }
 
   public String sampleName() {

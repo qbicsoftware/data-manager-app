@@ -10,7 +10,6 @@ import life.qbic.application.commons.SortOrder;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.SamplePreviewFilter;
-import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
@@ -82,6 +81,11 @@ public class SampleInformationService {
     return sampleRepository.findSamplesByExperimentId(ExperimentId.parse(experimentId));
   }
 
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
+  public Collection<Sample> retrieveSamplesForProject(ProjectId projectId) {
+    return sampleRepository.findSamplesByProjectId(projectId);
+  }
+
   /**
    * @deprecated Use {@link #retrieveSamplesByIds(ProjectId, Collection)} instead.
    */
@@ -93,21 +97,6 @@ public class SampleInformationService {
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
   public List<Sample> retrieveSamplesByIds(ProjectId projectId, Collection<SampleId> sampleIds) {
     return sampleRepository.findSamplesBySampleId(sampleIds.stream().toList());
-  }
-
-  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
-  public List<Sample> retrieveSampleForBatch(ProjectId projectId, String batchId) {
-    return sampleRepository.findSamplesByBatchId(BatchId.parse(batchId));
-  }
-
-  /**
-   * @deprecated Use {@link SampleInformationService#retrieveSampleForBatch(ProjectId, String)}
-   * instead.
-   */
-  @Deprecated(since = "1.10.0", forRemoval = true)
-  public List<Sample> retrieveSamplesForBatch(BatchId batchId) {
-    Objects.requireNonNull(batchId, "batch id must not be null");
-    return sampleRepository.findSamplesByBatchId(batchId);
   }
 
   /**

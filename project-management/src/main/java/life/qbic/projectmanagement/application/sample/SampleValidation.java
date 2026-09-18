@@ -94,6 +94,7 @@ public class SampleValidation {
    * @param analyte             the analyte that was extracted from the specimen
    * @param analysisMethod      the method applied on the analyte
    * @param comment             the comment associated with the sample
+   * @param batch               the batch label of the sample
    * @param experimentId        the experiment id of the experiment the sample belongs to
    * @param projectId           the project id of project the experiment belongs to
    * @return the report of the validation
@@ -108,6 +109,7 @@ public class SampleValidation {
       String analysisMethod,
       String comment,
       Map<String, String> confoundingVariables,
+      String batch,
       String experimentId,
       String projectId) {
 
@@ -130,6 +132,7 @@ public class SampleValidation {
         comment,
         experimentalGroupLookupTable,
         confoundingVariables,
+        batch,
         experimentId, projectId);
   }
 
@@ -144,6 +147,7 @@ public class SampleValidation {
       String comment,
       Map<String, ExperimentalGroup> experimentalGroupLookupTable,
       Map<String, String> confoundingVariables,
+      String batch,
       String experimentId,
       String projectId) {
 
@@ -156,6 +160,7 @@ public class SampleValidation {
     var analyteValidation = validateAnalyte(analyte);
     var confoundingVariableValidation = validateConfoundingVariableLevels(confoundingVariables,
         new ExperimentReference(experimentId), projectId);
+    var batchValidation = validateBatch(batch);
 
     ValidationResult combinedValidationResult = ValidationResult.successful()
         .combine(sampleNameValidation.validationResult())
@@ -164,7 +169,8 @@ public class SampleValidation {
         .combine(speciesValidation.validationResult())
         .combine(specimenValidation.validationResult())
         .combine(analyteValidation.validationResult())
-        .combine(confoundingVariableValidation.validationResult());
+        .combine(confoundingVariableValidation.validationResult())
+        .combine(batchValidation.validationResult());
 
     var metadata = combinedValidationResult.containsFailures()
         ? null
@@ -178,7 +184,8 @@ public class SampleValidation {
             analyteValidation.payload(),
             comment,
             confoundingVariableValidation.payload(),
-            experimentId);
+            experimentId,
+            batchValidation.payload());
     return new ValidationResultWithPayload<>(combinedValidationResult, metadata);
   }
 
@@ -188,6 +195,14 @@ public class SampleValidation {
           ValidationResult.withFailures(List.of("Missing sample name")), null);
     }
     return new ValidationResultWithPayload<>(ValidationResult.successful(), sampleName);
+  }
+
+  private ValidationResultWithPayload<String> validateBatch(String batch) {
+    if (isNull(batch) || batch.isBlank()) {
+      return new ValidationResultWithPayload<>(
+          ValidationResult.withFailures(List.of("Missing batch")), null);
+    }
+    return new ValidationResultWithPayload<>(ValidationResult.successful(), batch);
   }
 
   private ValidationResultWithPayload<Long> validateExperimentalGroupForCondition(String condition,
@@ -335,6 +350,7 @@ public class SampleValidation {
    * @param analyte              the analyte that was extracted from the specimen
    * @param analysisMethod       the method applied on the analyte
    * @param confoundingVariables
+   * @param batch               the batch label of the sample
    * @param experimentId         the experiment the sample belongs to
    * @param projectId            the project the sample belongs to
    * @return a {@link ValidationResult} with detailed information about the validation
@@ -350,6 +366,7 @@ public class SampleValidation {
       String analysisMethod,
       String comment,
       Map<String, String> confoundingVariables,
+      String batch,
       String experimentId,
       String projectId) {
 
@@ -373,6 +390,7 @@ public class SampleValidation {
     var analyteValidation = validateAnalyte(analyte);
     var confoundingVariableValidation = validateConfoundingVariableLevels(confoundingVariables,
         new ExperimentReference(experimentId), projectId);
+    var batchValidation = validateBatch(batch);
 
     ValidationResult combinedValidationResult = ValidationResult.successful()
         .combine(sampleIdValidation.validationResult())
@@ -382,7 +400,8 @@ public class SampleValidation {
         .combine(speciesValidation.validationResult())
         .combine(specimenValidation.validationResult())
         .combine(analyteValidation.validationResult())
-        .combine(confoundingVariableValidation.validationResult());
+        .combine(confoundingVariableValidation.validationResult())
+        .combine(batchValidation.validationResult());
 
     var metadata = combinedValidationResult.containsFailures()
         ? null
@@ -398,7 +417,8 @@ public class SampleValidation {
             analyteValidation.payload(),
             comment,
             confoundingVariableValidation.payload(),
-            experimentId);
+            experimentId,
+            batchValidation.payload());
     return new ValidationResultWithPayload<>(combinedValidationResult, metadata);
   }
 

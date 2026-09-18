@@ -350,6 +350,147 @@ Data stewards are power users with access to potentially hundreds of projects. D
 
 ---
 
+### FEAT-SAMPLE-BATCH-REMOVAL
+
+| Field | Value |
+|---|---|
+| **Description** | Remove the explicit sample batch entity: samples are registered directly within an experiment, carry a mandatory free-text `batch` label and a denormalised `project_id`, and are managed via a samples-only UI (Excel registration/edit, multi-select delete) |
+| **PRD Section** | §3 Scope — Sample registration |
+| **Requirements** | `SAMPLE-R-01`, `SAMPLE-R-02`, `SAMPLE-R-03`, `SAMPLE-R-04` |
+| **GitHub Feature** | [#1548](https://github.com/qbicsoftware/data-manager-app/issues/1548) |
+
+#### FEAT-SAMBAT-01 — Register Samples Directly in a Project
+
+| Field | Value |
+|---|---|
+| **Requirement IDs** | `SAMPLE-R-01` |
+| **Status** | 🟢 Done |
+| **GitHub** | [#1549](https://github.com/qbicsoftware/data-manager-app/issues/1549) |
+
+**User Story**
+
+> As a project owner, I want to register samples directly in a project (grouped under an experiment) without first creating an explicit sample batch, so that sample registration no longer requires an intermediate batch step.
+
+**Acceptance Criteria**
+
+- Given a user has write access to a project with an experiment, When they register samples in that experiment, Then they upload sample metadata via an Excel spreadsheet directly and do NOT need to create an explicit sample batch first.
+- Given samples are registered in an experiment, When the registration completes, Then the samples are associated with the project and the experiment.
+- Given a sample is registered, When the sample is persisted, Then it carries a mandatory free-text `batch` label (a distinct column in the registration spreadsheet).
+- Given a registration spreadsheet is submitted without a batch value for a row, When the validation runs, Then the sample is rejected with a validation error.
+
+**Notes & Context**
+
+- Registration template column order: Sample Name → Analysis to be performed → Biological Replicate → **Batch** → Condition → Species → Specimen → Analyte → Comment. The `Batch` column sits after *Biological Replicate* and before *Condition*. The registration template does NOT include registration/modification time columns (they are system-set).
+
+**Tasks**
+
+| # | Title | Status | GitHub |
+|---|---|---|---|
+| — | Register samples directly in a project (remove batch-creation step) | 🟢 Done | [#1549](https://github.com/qbicsoftware/data-manager-app/issues/1549) |
+
+---
+
+#### FEAT-SAMBAT-02 — Associate Samples with Project and Experiment
+
+| Field | Value |
+|---|---|
+| **Requirement IDs** | `SAMPLE-R-02` |
+| **Status** | 🟢 Done |
+| **GitHub** | [#1550](https://github.com/qbicsoftware/data-manager-app/issues/1550) |
+
+**User Story**
+
+> As a system/API consumer, I want every sample to be directly associated with its project and experiment, so that queries fetching all samples for a project avoid an extra transitive lookup through the experiment.
+
+**Acceptance Criteria**
+
+- Given a sample is registered, When it is persisted, Then it is directly associated with both the project and the experiment.
+- Given a project with multiple experiments, When all samples for that project are requested, Then the query resolves them without a transitive lookup through the experiment hierarchy.
+- Given existing samples in the database, When the association is introduced, Then they are backfilled with the correct project association derived from their experiment.
+- Given the schema is updated, When the migration runs, Then the sample table carries a `project_id` column referencing the project.
+
+**Notes & Context**
+
+- The `project_id` association is a denormalised column on `sample` for query optimisation; it is backfilled from the sample's experiment by the migration. `Sample` exposes `projectId()`, and project-wide sample queries use `findSamplesByProjectId`.
+
+**Tasks**
+
+| # | Title | Status | GitHub |
+|---|---|---|---|
+| — | Add denormalised `project_id` association and backfill | 🟢 Done | [#1550](https://github.com/qbicsoftware/data-manager-app/issues/1550) |
+
+---
+
+#### FEAT-SAMBAT-03 — Backwards-Compatible Batch Property and Data Migration
+
+| Field | Value |
+|---|---|
+| **Requirement IDs** | `SAMPLE-R-03` |
+| **Status** | 🟢 Done |
+| **GitHub** | [#1551](https://github.com/qbicsoftware/data-manager-app/issues/1551) |
+
+**User Story**
+
+> As a system operator, I want existing sample data and downstream consumers to keep working after the removal of the explicit batch, so that no data is lost during the migration.
+
+**Acceptance Criteria**
+
+- Given existing samples with an assigned batch, When the migration is complete, Then each sample retains its batch name as a free-text `batch` property.
+- Given the batch table is removed, When the batch is referenced, Then the batch name is still available from the sample via the `batch` property.
+- Given a sample grid is displayed, When the grid renders, Then the registration and modification date are shown for each sample.
+- Given the registration and modification dates, When they are displayed, Then they are shown in the sample grid (not in the Excel registration/edit templates), are system-set, and are not editable by the user.
+- Given a sample is edited, When the edit is applied, Then the last-modified time is updated by the system (not by the user).
+
+**Notes & Context**
+
+- The registration and modification times are system-managed audit values shown in the sample grid (registration and modification date columns). They are NOT present in the Excel registration or edit templates (the Product Owner confirmed they are unnecessary in the spreadsheets because they are system-managed).
+- Edit and information template column order: QBiC Sample Id → Sample Name → Analysis to be performed → Biological Replicate → **Batch** → Condition → Species → Specimen → Analyte → Comment. The `Batch` column sits after *Biological Replicate* and before *Condition*; the templates do NOT include registration/modification time columns.
+- Stop-the-world migration: the additive migration (`add-sample-batch-property-and-project-association.sql`) preserves data and is applied; the production migration (`finalize-sample-batch-removal.sql`) drops the legacy `sample_batches`/`sample_batches_sampleid` tables.
+
+**Tasks**
+
+| # | Title | Status | GitHub |
+|---|---|---|---|
+| — | Preserve batch property and dates; apply migration | 🟢 Done | [#1551](https://github.com/qbicsoftware/data-manager-app/issues/1551) |
+
+---
+
+#### FEAT-SAMBAT-04 — Samples-Only UI (Remove Batch Grid and Batch Dialogs)
+
+| Field | Value |
+|---|---|
+| **Requirement IDs** | `SAMPLE-R-04` |
+| **Status** | 🟢 Done |
+| **GitHub** | [#1552](https://github.com/qbicsoftware/data-manager-app/issues/1552) |
+
+**User Story**
+
+> As a user managing samples in a project, I want a samples-only view where samples can be registered, edited, and deleted directly (without the explicit batch concept), so that I manage samples in the same bulk, Excel-based way I manage measurements.
+
+**Acceptance Criteria**
+
+- Given a user navigates to the samples section of a project/experiment, When the view loads, Then no batch grid is displayed.
+- Given a user registers samples, When they start registration, Then they upload sample metadata via an Excel spreadsheet directly (no separate batch-name dialog).
+- Given a sample grid is displayed, When the grid renders, Then the `batch` value is shown as a column on the sample.
+- Given a user edits samples, When they trigger edit, Then they download a pre-filled Excel template containing the current sample values, modify editable fields, and re-upload to apply changes.
+- Given a user deletes samples, When they select the corresponding samples in the grid, Then the selected samples are deleted in one action.
+- Given the batch concept is removed from the UI, When the view is shown, Then no batch-specific actions (create/edit/delete batch) are available.
+
+**Notes & Context**
+
+- The samples-only view mirrors the measurement workflow: Register (primary action), Export (feature action), and Edit/Delete (secondary actions) operate on the sample grid. Deletion uses `deletionService.deleteSamples`.
+- Sample templates use the column order described under FEAT-SAMBAT-01 (Batch after Biological Replicate). Registration and modification times are shown in the sample grid, not in the Excel templates.
+
+**Tasks**
+
+| # | Title | Status | GitHub |
+|---|---|---|---|
+| — | Samples-only UI (remove batch grid and batch dialogs) | 🟢 Done | [#1552](https://github.com/qbicsoftware/data-manager-app/issues/1552) |
+
+---
+
+---
+
 ### FEAT-PINNED-PROJECTS
 
 | Field | Value |
@@ -427,4 +568,4 @@ of the project list.
 
 ---
 
-*Last updated: 2026-09-14*
+*Last updated: 2026-09-17*

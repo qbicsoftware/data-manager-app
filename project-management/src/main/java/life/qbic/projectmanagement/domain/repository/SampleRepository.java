@@ -3,7 +3,6 @@ package life.qbic.projectmanagement.domain.repository;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
@@ -35,7 +34,7 @@ public interface SampleRepository {
 
   Collection<Sample> findSamplesByExperimentId(ExperimentId experimentId);
 
-  List<Sample> findSamplesByBatchId(BatchId batchId);
+  List<Sample> findSamplesByProjectId(ProjectId projectId);
 
   void updateAll(Project project, Collection<Sample> updatedSamples);
 
