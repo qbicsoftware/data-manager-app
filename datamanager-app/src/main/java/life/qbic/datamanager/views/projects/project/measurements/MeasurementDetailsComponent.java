@@ -26,6 +26,7 @@ import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.provider.SortDirection;
 import com.vaadin.flow.data.selection.MultiSelectionEvent;
+import com.vaadin.flow.data.selection.SelectionListener;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.server.streams.DownloadHandler;
 import com.vaadin.flow.shared.Registration;
@@ -389,17 +390,36 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     if (grid.getSelectionModel() instanceof GridMultiSelectionModel<?> multiSelectionModel) {
       multiSelectionModel.setSelectionColumnFrozen(true);
     }
-    // client changes -> update the ID set (only for rows on the current page)
     @SuppressWarnings("unchecked")
     Grid<Object> objectGrid = (Grid<Object>) grid;
-    objectGrid.addSelectionListener(event -> {
-      MultiSelectionEvent<Grid<Object>, Object> multi = (MultiSelectionEvent<Grid<Object>, Object>) event;
+    objectGrid.addSelectionListener(createSelectionReconciliationListener(objectGrid, selection,
+        domain));
+  }
+
+  /**
+   * Builds the selection listener that translates grid row selection changes into the
+   * identifier-based {@link MeasurementSelection}.
+   *
+   * <p>Only client-side changes are translated (USER-R-02, ADR-0009): the selection is a
+   * cross-page, cross-tab view-owned set, and server-side selection events are fired by
+   * Vaadin itself whenever a new page is written to the grid via {@code setItems} (the data
+   * provider change deselects every row). Translating those synthetic events would purge
+   * every selected measurement that is not on the newly rendered page — the rows are
+   * reconciled with the identifier set afterwards by {@link #reconcileSelection} instead.</p>
+   */
+  static SelectionListener<Grid<Object>, Object> createSelectionReconciliationListener(
+      Grid<Object> grid, MeasurementSelection selection, MeasurementDomain domain) {
+    return event -> {
+      if (!event.isFromClient()) {
+        return;
+      }
+      MultiSelectionEvent<Grid<Object>, Object> multi =
+          (MultiSelectionEvent<Grid<Object>, Object>) event;
       Set<Object> added = multi.getAddedSelection();
       Set<Object> removed = multi.getRemovedSelection();
       added.forEach(item -> selection.select(measurementIdOf(domain, item)));
       removed.forEach(item -> selection.deselect(measurementIdOf(domain, item)));
-      tabPagination.updateSelectionBar();
-    });
+    };
   }
 
   private static String measurementIdOf(MeasurementDomain domain, Object item) {
