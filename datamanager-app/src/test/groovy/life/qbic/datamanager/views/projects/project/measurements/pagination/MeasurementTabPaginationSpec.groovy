@@ -77,6 +77,48 @@ class MeasurementTabPaginationSpec extends Specification {
         container.listState().stateOf(MeasurementDomain.PXP).page() == 1
     }
 
+    def "search does not request scrolling the grid top into view"() {
+        given:
+        def container = newContainer()
+        def scrollRequests = []
+        container.addRefreshRequestedListener(
+            event -> scrollRequests << event.scrollGridTopIntoView())
+
+        when:
+        container.applySearch(MeasurementDomain.NGS, "cancer")
+
+        then:
+        scrollRequests == [false]
+    }
+
+    def "sort does not request scrolling the grid top into view"() {
+        given:
+        def container = newContainer()
+        def scrollRequests = []
+        container.addRefreshRequestedListener(
+            event -> scrollRequests << event.scrollGridTopIntoView())
+
+        when:
+        container.applySort(MeasurementDomain.NGS, new SortOrder("facility", true))
+
+        then:
+        scrollRequests == [false]
+    }
+
+    def "external state application does not request scrolling the grid top into view"() {
+        given:
+        def container = newContainer()
+        def scrollRequests = []
+        container.addRefreshRequestedListener(
+            event -> scrollRequests << event.scrollGridTopIntoView())
+
+        when: "a shared link / back-forward restores the URL state"
+        container.applyExternalState(MeasurementListState.defaultWith(MeasurementDomain.PXP))
+
+        then:
+        scrollRequests == [false]
+    }
+
     def "applying the same search term again is a no-op"() {
         given:
         def container = newContainer()

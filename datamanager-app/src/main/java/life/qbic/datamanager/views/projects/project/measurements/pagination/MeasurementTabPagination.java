@@ -222,7 +222,9 @@ public class MeasurementTabPagination extends Div {
       }
       listState = listState.withState(listState.activeTab(), requested);
       writeUrl(true);
-      fireEvent(new RefreshRequestedEvent(this, listState.activeTab()));
+      // pager-driven change: the pager sits below the grid, so after paging the viewport is
+      // left at the bottom; ask the view to bring the grid top back into view (UX F3).
+      fireEvent(new RefreshRequestedEvent(this, listState.activeTab(), true));
     });
   }
 
@@ -484,14 +486,33 @@ public class MeasurementTabPagination extends Div {
     @Serial
     private static final long serialVersionUID = 1L;
     private final MeasurementDomain domain;
+    private final boolean scrollGridTopIntoView;
 
     public RefreshRequestedEvent(MeasurementTabPagination source, MeasurementDomain domain) {
+      this(source, domain, false);
+    }
+
+    /**
+     * @param scrollGridTopIntoView whether the owning view should scroll the rendered grid's
+     *                              top into viewport after the refetch. Only pager-driven
+     *                              page/page-size changes request this (the pager sits below
+     *                              the grid, so after paging the user is left at the bottom);
+     *                              search/sort/tab actions are triggered at the top and must
+     *                              not yank the viewport.
+     */
+    public RefreshRequestedEvent(MeasurementTabPagination source, MeasurementDomain domain,
+        boolean scrollGridTopIntoView) {
       super(source, false);
       this.domain = Objects.requireNonNull(domain);
+      this.scrollGridTopIntoView = scrollGridTopIntoView;
     }
 
     public MeasurementDomain domain() {
       return domain;
+    }
+
+    public boolean scrollGridTopIntoView() {
+      return scrollGridTopIntoView;
     }
   }
 }

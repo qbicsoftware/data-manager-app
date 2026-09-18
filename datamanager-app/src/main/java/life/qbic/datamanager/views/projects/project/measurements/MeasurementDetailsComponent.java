@@ -404,7 +404,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     // keep the selection display attached to the active tab
     tabPagination.setSelection(selectionFor(domain));
     syncSearchField(domain, state.filter());
-    loadAndRender(domain, state);
+    loadAndRender(domain, state, event.scrollGridTopIntoView());
   }
 
   // UX F9: per-tab totals as label badges so users see which domains hold measurements
@@ -436,7 +436,8 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     }
   }
 
-  private void loadAndRender(MeasurementDomain domain, ListState state) {
+  private void loadAndRender(MeasurementDomain domain, ListState state,
+      boolean scrollGridTopIntoView) {
     String experimentId = context.experimentId().orElseThrow().value();
     String projectId = context.projectId().orElseThrow().value();
     Sort sort = MeasurementSort.toSpringDataSort(state.sort(), domain);
@@ -452,7 +453,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         int total = ngsMeasurementLookup.countNgsMeasurements(projectId, filter);
         List<NgsMeasurementLookup.MeasurementInfo> page = ngsMeasurementLookup
             .lookupNgsMeasurements(projectId, offset, limit, sort, filter).toList();
-        renderPage(ngsGrid, page, total, state, MeasurementDomain.NGS);
+        renderPage(ngsGrid, page, total, state, MeasurementDomain.NGS, scrollGridTopIntoView);
       }
       case PXP -> {
         PxpMeasurementLookup.MeasurementFilter filter =
@@ -462,7 +463,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         int total = pxpMeasurementLookup.countPxpMeasurements(projectId, filter);
         List<MeasurementInfo> page = pxpMeasurementLookup
             .lookupPxpMeasurements(projectId, offset, limit, sort, filter).toList();
-        renderPage(pxpGrid, page, total, state, MeasurementDomain.PXP);
+        renderPage(pxpGrid, page, total, state, MeasurementDomain.PXP, scrollGridTopIntoView);
       }
       case IP -> {
         IpMeasurementLookup.MeasurementFilter filter =
@@ -472,19 +473,19 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         int total = ipMeasurementLookup.countIpMeasurements(projectId, filter);
         List<IpMeasurementLookup.MeasurementInfo> page = ipMeasurementLookup
             .lookupIpMeasurements(projectId, offset, limit, sort, filter).toList();
-        renderPage(ipGrid, page, total, state, MeasurementDomain.IP);
+        renderPage(ipGrid, page, total, state, MeasurementDomain.IP, scrollGridTopIntoView);
       }
     }
   }
 
   private <T> void renderPage(Grid<T> grid, List<T> page, int total, ListState state,
-      MeasurementDomain domain) {
+      MeasurementDomain domain, boolean scrollGridTopIntoView) {
     int totalPages = Math.max(1, (int) Math.ceil((double) total / state.pageSize()));
     int pageToRender = Math.min(state.page(), totalPages);
     if (pageToRender != state.page()) {
       // the requested page lies beyond the last valid page (filter/deletion shrank the result
       // set); re-fetch the clamped page once
-      refreshClamped(domain, pageToRender);
+      refreshClamped(domain, pageToRender, scrollGridTopIntoView);
       return;
     }
     grid.setItems(page);
@@ -492,10 +493,13 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     // their natural height (no internal scroll container) so the whole configured page size is
     // visible and the native page scroll handles overflow.
     grid.setAllRowsVisible(true);
-    // UX F3: after a page/sort/tab re-render, bring the grid's top back into the viewport so
-    // the user continues reading from the top instead of staying at the previous scroll offset.
-    grid.getElement().executeJs(
-        "requestAnimationFrame(() => this.scrollIntoView({block: 'start'}))");
+    // UX F3: only for pager-driven page/page-size changes (the pager sits below the grid, so
+    // after paging the viewport is left at the bottom) bring the grid's top back into view.
+    // Search/sort/tab actions are triggered at the top and must not yank the viewport.
+    if (scrollGridTopIntoView) {
+      grid.getElement().executeJs(
+          "requestAnimationFrame(() => this.scrollIntoView({block: 'start'}))");
+    }
     // UX F8: render an explicit empty state distinguishing "nothing registered" from
     // "filter matched nothing" instead of leaving a blank grid region.
     Div emptyState = emptyStates.get(domain);
@@ -514,11 +518,12 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   }
 
 
-  private void refreshClamped(MeasurementDomain domain, int clampedPage) {
+  private void refreshClamped(MeasurementDomain domain, int clampedPage,
+      boolean scrollGridTopIntoView) {
     ListState current = tabPagination.listState().stateOf(domain);
     ListState clamped = current.withPage(clampedPage);
     tabPagination.applyListState(domain, clamped);
-    loadAndRender(domain, clamped);
+    loadAndRender(domain, clamped, scrollGridTopIntoView);
   }
 
   @SuppressWarnings("unchecked")
@@ -742,7 +747,8 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
 
   private void refreshDomain(MeasurementDomain domain) {
     if (context != null) {
-      loadAndRender(domain, tabPagination.listState().stateOf(domain));
+      // deletion/registration reloads keep the current viewport; no forced scroll
+      loadAndRender(domain, tabPagination.listState().stateOf(domain), false);
       refreshTabVisibility();
     }
   }
