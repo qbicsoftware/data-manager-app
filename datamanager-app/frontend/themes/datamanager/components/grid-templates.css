@@ -12,6 +12,10 @@
 .main.project-overview {
   grid-template-columns: 1fr;
   grid-template-rows: auto;
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
 }
 
 .main.raw-data {
