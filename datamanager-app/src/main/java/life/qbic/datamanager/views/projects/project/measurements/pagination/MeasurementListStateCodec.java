@@ -21,7 +21,7 @@ import life.qbic.datamanager.views.general.pagination.ListStateCodec;
  * <p>Serialisation writes the active tab and its list state; the inactive tabs' states are not
  * part of the URL (deliberate: one URL describes one view).</p>
  *
- * @since 1.12.0
+ * @since 1.19.0
  */
 public final class MeasurementListStateCodec {
 

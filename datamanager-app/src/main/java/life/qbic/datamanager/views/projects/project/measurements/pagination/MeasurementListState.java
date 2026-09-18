@@ -14,7 +14,7 @@ import life.qbic.datamanager.views.general.pagination.ListState;
  * @param ngsState    the list state of the genomics tab
  * @param pxpState    the list state of the proteomics tab
  * @param ipState     the list state of the immunopeptidomics tab
- * @since 1.12.0
+ * @since 1.19.0
  */
 public record MeasurementListState(
     MeasurementDomain activeTab,

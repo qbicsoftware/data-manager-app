@@ -15,7 +15,7 @@ import java.util.Set;
  * <p>The model is deliberately free of UI and services, so it can be unit-tested and reused by
  * the raw-data and sample lists (FEAT-PAG-LIST-02/04).</p>
  *
- * @since 1.12.0
+ * @since 1.19.0
  */
 public final class MeasurementSelection {
 

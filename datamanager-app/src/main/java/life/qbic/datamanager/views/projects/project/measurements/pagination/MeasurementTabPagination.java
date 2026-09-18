@@ -40,7 +40,7 @@ import life.qbic.datamanager.views.general.pagination.PaginationBar;
  * (beforeEnter/beforeLeave) and calls {@link #applyExternalState(MeasurementListState)} when the
  * browser history changes (back/forward, shared links).</p>
  *
- * @since 1.12.0
+ * @since 1.19.0
  */
 public class MeasurementTabPagination extends Div {
 

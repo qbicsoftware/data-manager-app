@@ -4,7 +4,7 @@ package life.qbic.datamanager.views.projects.project.measurements.pagination;
  * The measurement domains displayed as paginated lists, mirroring the {@code tab} query
  * parameter of the measurements route ({@code tab=ngs|pxp|ip}).
  *
- * @since 1.12.0
+ * @since 1.19.0
  */
 public enum MeasurementDomain {
   NGS("ngs"),

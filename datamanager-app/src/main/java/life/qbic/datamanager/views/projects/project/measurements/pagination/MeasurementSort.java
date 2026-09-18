@@ -18,7 +18,7 @@ import org.springframework.data.domain.Sort;
  * {@code measurementCode ASC} tie-break so offset/limit pagination never duplicates or drops
  * items across page boundaries.</p>
  *
- * @since 1.12.0
+ * @since 1.19.0
  */
 public final class MeasurementSort {
 
