@@ -12,19 +12,15 @@ import life.qbic.domain.concepts.DomainEventSubscriber;
 import life.qbic.domain.concepts.LocalDomainEventDispatcher;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
-import life.qbic.projectmanagement.application.batch.SampleUpdateRequest;
-import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.project.event.ProjectChanged;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
-import life.qbic.projectmanagement.domain.model.sample.SampleOrigin;
 import life.qbic.projectmanagement.domain.model.sample.SampleRegistrationRequest;
 import life.qbic.projectmanagement.domain.model.sample.event.SampleDeleted;
 import life.qbic.projectmanagement.domain.model.sample.event.SampleRegistered;
-import life.qbic.projectmanagement.domain.model.sample.event.SampleUpdated;
 import life.qbic.projectmanagement.domain.repository.ConfoundingVariableLevelRepository;
 import life.qbic.projectmanagement.domain.repository.SampleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -81,49 +77,20 @@ public class SampleDomainService {
     return Result.fromValue(registeredSamples);
   }
 
-  public void updateSamples(Project project, Collection<SampleUpdateRequest> updatedSamples) {
-    Objects.requireNonNull(updatedSamples);
-
-    List<DomainEvent> domainEventsCache = new ArrayList<>();
-    var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
-    localDomainEventDispatcher.reset();
-    localDomainEventDispatcher.subscribe(
-        new SampleUpdatedDomainEventSubscriber(domainEventsCache));
-
-    List<SampleId> sampleIds = updatedSamples.stream().map(SampleUpdateRequest::sampleId).toList();
-    Collection<Sample> samplesToUpdate = sampleRepository.findSamplesBySampleId(sampleIds);
-    for (Sample sample : samplesToUpdate) {
-      var sampleInfo = updatedSamples.stream()
-          .filter(sampleUpdateRequest -> sampleUpdateRequest.sampleId().equals(sample.sampleId()))
-          .findFirst().orElseThrow();
-      sample.setLabel(sampleInfo.sampleInformation().sampleName());
-      sample.setBiologicalReplicate(sampleInfo.sampleInformation().biologicalReplicate());
-      sample.setAnalysisMethod(sampleInfo.sampleInformation().analysisMethod());
-      sample.setSampleOrigin(SampleOrigin.create(sampleInfo.sampleInformation().species(),
-          sampleInfo.sampleInformation().specimen(), sampleInfo.sampleInformation().analyte()));
-      sample.setComment(sampleInfo.sampleInformation().comment());
-      sample.setExperimentalGroupId(sampleInfo.sampleInformation().experimentalGroup().id());
-      sample.update(sampleInfo);
-    }
-    sampleRepository.updateAll(project, samplesToUpdate);
-    domainEventsCache.forEach(
-        domainEvent -> DomainEventDispatcher.instance().dispatch(domainEvent));
-  }
-
-  public void deleteSamples(Project project, BatchId batchId, Collection<SampleId> samples) {
+  public void deleteSamples(Project project, Collection<SampleId> samples) {
     Objects.requireNonNull(samples);
     samples.forEach(
         sampleId -> confoundingVariableLevelRepository.deleteAllForSample(project.getId().value(),
             sampleId.value()));
     sampleRepository.deleteAll(project, samples);
-    samples.forEach(sampleId -> dispatchSuccessfulSampleDeletion(sampleId, batchId));
+    samples.forEach(this::dispatchSuccessfulSampleDeletion);
     if(!samples.isEmpty()) {
       dispatchProjectChangedUponSampleDeletion(project.getId());
     }
   }
 
-  private void dispatchSuccessfulSampleDeletion(SampleId sampleId, BatchId batchId) {
-    SampleDeleted sampleDeleted = SampleDeleted.create(batchId, sampleId);
+  private void dispatchSuccessfulSampleDeletion(SampleId sampleId) {
+    SampleDeleted sampleDeleted = SampleDeleted.create(sampleId);
     DomainEventDispatcher.instance().dispatch(sampleDeleted);
   }
 
@@ -143,21 +110,6 @@ public class SampleDomainService {
    */
   public enum ResponseCode {
     REGISTRATION_FAILED, DELETION_FAILED, DATA_ATTACHED_TO_SAMPLES, UPDATE_FAILED
-  }
-
-  public record SampleUpdatedDomainEventSubscriber(
-      List<DomainEvent> domainEventsCache) implements
-      DomainEventSubscriber<DomainEvent> {
-
-    @Override
-    public Class<? extends DomainEvent> subscribedToEventType() {
-      return SampleUpdated.class;
-    }
-
-    @Override
-    public void handleEvent(DomainEvent event) {
-      domainEventsCache.add(event);
-    }
   }
 
   public record SampleCreatedDomainEventSubscriber(

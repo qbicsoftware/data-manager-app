@@ -47,14 +47,26 @@ public class ProjectOverviewLookupImplementation implements ProjectOverviewLooku
     }).toList();
     Specification<ProjectOverview> filterSpecification = generateProjectOverviewSpecification(
         projectIds, filter);
-    return projectOverviewRepository.findAll(filterSpecification,
+    // We are only interested in unique overviews (the view is one row per project, but the
+    // distinct guard protects against any legacy query duplication).
+    Specification<ProjectOverview> querySpecification = filterSpecification.and(
+        ProjectOverviewSpec.isDistinct());
+    return projectOverviewRepository.findAll(querySpecification,
         new OffsetBasedRequest(offset, limit, Sort.by(orders))).getContent();
+  }
+
+  @Override
+  public long count(String filter, Collection<ProjectId> projectIds) {
+    Specification<ProjectOverview> filterSpecification = generateProjectOverviewSpecification(
+        projectIds, filter);
+    // The project_overview view yields exactly one row per project, so a plain count equals a
+    // count(distinct); skipping the distinct predicate avoids JPA count-distinct quirks.
+    return projectOverviewRepository.count(filterSpecification);
   }
 
   private Specification<ProjectOverview> generateProjectOverviewSpecification(
       Collection<ProjectId> projectIds, String filter) {
     Specification<ProjectOverview> isBlankSpec = ProjectOverviewSpec.isBlank(filter);
-    Specification<ProjectOverview> isDistinctSpec = ProjectOverviewSpec.isDistinct();
     Specification<ProjectOverview> containsProjectId = ProjectOverviewSpec.containsProjectId(
         projectIds);
     Specification<ProjectOverview> isProjectTitle = ProjectOverviewSpec.isProjectTitle(filter);
@@ -80,8 +92,7 @@ public class ProjectOverviewLookupImplementation implements ProjectOverviewLooku
     return Specification.<ProjectOverview>unrestricted()
         .and(isBlankSpec)
         .and(containsProjectId)
-        .and(filterSpecification)
-        .and(isDistinctSpec);
+        .and(filterSpecification);
   }
 
   private static class ProjectOverviewSpec {

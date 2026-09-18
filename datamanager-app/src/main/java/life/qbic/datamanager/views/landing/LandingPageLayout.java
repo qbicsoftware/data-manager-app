@@ -14,7 +14,7 @@ import java.util.Objects;
 import life.qbic.datamanager.announcements.AnnouncementService;
 import life.qbic.datamanager.views.DataManagerLayout;
 import life.qbic.datamanager.views.LandingPageTitleAndLogo;
-import life.qbic.datamanager.views.general.footer.FooterComponentFactory;
+import life.qbic.datamanager.views.general.footer.FooterComponent;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -34,10 +34,10 @@ public class LandingPageLayout extends DataManagerLayout implements RouterLayout
   private Button register;
 
   public LandingPageLayout(@Autowired LandingPageHandlerInterface handlerInterface,
-      @Autowired FooterComponentFactory footerComponentFactory,
+      @Autowired FooterComponent footerComponent,
       @Autowired AnnouncementService announcementService) {
 
-    super(Objects.requireNonNull(footerComponentFactory), announcementService);
+    super(Objects.requireNonNull(footerComponent), announcementService);
     Objects.requireNonNull(handlerInterface);
     addClassName("landing-page-layout");
     //CSS class hosting the background image for all our landing pages

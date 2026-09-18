@@ -7,13 +7,13 @@ import jakarta.persistence.Convert;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
+import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 import life.qbic.domain.concepts.LocalDomainEventDispatcher;
-import life.qbic.projectmanagement.application.batch.SampleUpdateRequest;
-import life.qbic.projectmanagement.domain.model.batch.Batch;
-import life.qbic.projectmanagement.domain.model.batch.BatchId;
+import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.event.SampleRegistered;
 import life.qbic.projectmanagement.domain.model.sample.event.SampleUpdated;
 
@@ -23,17 +23,20 @@ import life.qbic.projectmanagement.domain.model.sample.event.SampleUpdated;
  * A sample represents the physical sample from an experiment that has been collected and needs to
  * be prepared for measurement in one of QBiC's partner facilities.
  * <p>
- * A sample needs to be registered and assigned to one existing sample {@link Batch}, before it can
- * be prepared for shipment to the measurement facility.
+ * A sample is registered directly within an experiment of a project and carries a free-text batch
+ * label for grouping and backwards compatibility.
  *
  * @since 1.0.0
  */
 @Entity(name = "sample")
 public class Sample {
 
+  @Column(name = "batch")
+  private String batch;
+
   @Embedded
-  @AttributeOverride(name = "uuid", column = @Column(name = "assigned_batch_id"))
-  private BatchId assignedBatch;
+  @AttributeOverride(name = "projectId", column = @Column(name = "project_id"))
+  private ProjectId projectId;
 
   @Embedded
   @AttributeOverride(name = "uuid", column = @Column(name = "experiment_id"))
@@ -47,6 +50,12 @@ public class Sample {
   private String biologicalReplicate;
   private String comment;
 
+  @Column(name = "registrationTime")
+  private Instant registrationTime;
+
+  @Column(name = "lastModified")
+  private Instant lastModified;
+
   @Column(name = "analysis_method")
   @Convert(converter = AnalysisMethodConverter.class)
   private AnalysisMethod analysisMethod;
@@ -57,10 +66,9 @@ public class Sample {
   @Embedded
   private SampleOrigin sampleOrigin;
 
-  private Sample(SampleId id, SampleCode sampleCode, BatchId assignedBatch, String label,
-      String biologicalReplicate, ExperimentId experimentId, Long experimentalGroupId,
-      SampleOrigin sampleOrigin,
-      AnalysisMethod analysisMethod, String comment) {
+  private Sample(SampleId id, SampleCode sampleCode, String batch, ProjectId projectId,
+      String label, String biologicalReplicate, ExperimentId experimentId, Long experimentalGroupId,
+      SampleOrigin sampleOrigin, AnalysisMethod analysisMethod, String comment) {
     this.id = id;
     this.sampleCode = Objects.requireNonNull(sampleCode);
     this.label = label;
@@ -68,9 +76,12 @@ public class Sample {
     this.experimentId = experimentId;
     this.experimentalGroupId = experimentalGroupId;
     this.sampleOrigin = sampleOrigin;
-    this.assignedBatch = assignedBatch;
+    this.batch = batch;
+    this.projectId = projectId;
     this.analysisMethod = analysisMethod;
     this.comment = comment;
+    this.registrationTime = Instant.now();
+    this.lastModified = this.registrationTime;
     emitCreatedEvent();
   }
 
@@ -88,8 +99,9 @@ public class Sample {
       SampleRegistrationRequest sampleRegistrationRequest) {
     Objects.requireNonNull(sampleRegistrationRequest);
     SampleId sampleId = SampleId.create();
-    return new Sample(sampleId, sampleCode, sampleRegistrationRequest.assignedBatch(),
-        sampleRegistrationRequest.label(), sampleRegistrationRequest.biologicalReplicate(),
+    return new Sample(sampleId, sampleCode, sampleRegistrationRequest.batch(),
+        sampleRegistrationRequest.projectId(), sampleRegistrationRequest.label(),
+        sampleRegistrationRequest.biologicalReplicate(),
         sampleRegistrationRequest.experimentId(), sampleRegistrationRequest.experimentalGroupId(),
         sampleRegistrationRequest.sampleOrigin(),
         sampleRegistrationRequest.analysisMethod(), sampleRegistrationRequest.comment());
@@ -99,8 +111,20 @@ public class Sample {
     return this.experimentId;
   }
 
-  public BatchId assignedBatch() {
-    return this.assignedBatch;
+  public ProjectId projectId() {
+    return this.projectId;
+  }
+
+  public String batch() {
+    return this.batch;
+  }
+
+  public Instant registrationTime() {
+    return this.registrationTime;
+  }
+
+  public Instant lastModified() {
+    return this.lastModified;
   }
 
   public SampleId sampleId() {
@@ -135,8 +159,12 @@ public class Sample {
     return this.analysisMethod;
   }
 
-  public void setAssignedBatch(BatchId assignedBatch) {
-    this.assignedBatch = assignedBatch;
+  public void setBatch(String batch) {
+    this.batch = batch;
+  }
+
+  public void setProjectId(ProjectId projectId) {
+    this.projectId = projectId;
   }
 
   public void setExperimentalGroupId(Long experimentalGroupId) {
@@ -163,14 +191,17 @@ public class Sample {
     this.sampleOrigin = sampleOrigin;
   }
 
-  public void update(SampleUpdateRequest sampleInfo) {
-    setLabel(sampleInfo.sampleInformation().sampleName());
-    setBiologicalReplicate(sampleInfo.sampleInformation().biologicalReplicate());
-    setAnalysisMethod(sampleInfo.sampleInformation().analysisMethod());
-    setSampleOrigin(SampleOrigin.create(sampleInfo.sampleInformation().species(),
-        sampleInfo.sampleInformation().specimen(), sampleInfo.sampleInformation().analyte()));
-    setComment(sampleInfo.sampleInformation().comment());
-    setExperimentalGroupId(sampleInfo.sampleInformation().experimentalGroup().id());
+  public void update(String label, String biologicalReplicate, AnalysisMethod analysisMethod,
+      OntologyTerm species, OntologyTerm specimen, OntologyTerm analyte,
+      String comment, Long experimentalGroupId, String batch) {
+    setLabel(label);
+    setBiologicalReplicate(biologicalReplicate);
+    setAnalysisMethod(analysisMethod);
+    setSampleOrigin(SampleOrigin.create(species, specimen, analyte));
+    setComment(comment);
+    setExperimentalGroupId(experimentalGroupId);
+    setBatch(batch);
+    this.lastModified = Instant.now();
     emitUpdatedEvent();
   }
 
@@ -196,7 +227,7 @@ public class Sample {
   }
 
   private void emitCreatedEvent() {
-    var createdEvent = SampleRegistered.create(this.experimentId.value(), this.assignedBatch(),
+    var createdEvent = SampleRegistered.create(this.projectId.value(), this.experimentId.value(),
         this.id);
     LocalDomainEventDispatcher.instance().dispatch(createdEvent);
   }

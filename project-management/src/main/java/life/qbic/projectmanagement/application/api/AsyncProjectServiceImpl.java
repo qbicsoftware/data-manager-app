@@ -692,10 +692,18 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   @Override
-  public Flux<Sample> getSamplesForBatch(String projectId, String batchId)
+  public Flux<Sample> getSamplesForProject(String projectId)
       throws RequestFailedException {
-    // TODO implement
-    throw new RuntimeException("Not yet implemented");
+    SecurityContext securityContext = SecurityContextHolder.getContext();
+    return applySecurityContextMany(Flux.defer(() -> fetchSamplesForProject(projectId)))
+        .subscribeOn(scheduler)
+        .contextWrite(reactiveSecurity(securityContext));
+  }
+
+  // disclaimer: no security context, no scheduler applied
+  private Flux<Sample> fetchSamplesForProject(String projectId) {
+    return Flux.fromIterable(
+        sampleInfoService.retrieveSamplesForProject(ProjectId.parse(projectId)));
   }
 
   @Override
@@ -769,11 +777,22 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
 
   @Override
   public Mono<DigitalObject> sampleUpdateTemplate(String projectId, String experimentId,
-      String batchId, MimeType mimeType) {
+      MimeType mimeType) {
     SecurityContext securityContext = SecurityContextHolder.getContext();
     return applySecurityContext(Mono.fromCallable(
-        () -> templateService.sampleUpdateTemplate(projectId, experimentId, batchId,
+        () -> templateService.sampleUpdateTemplate(projectId, experimentId,
             mimeType))).subscribeOn(scheduler).contextWrite(reactiveSecurity(securityContext));
+  }
+
+  @Override
+  public Mono<DigitalObject> sampleUpdateTemplate(String projectId, String experimentId,
+      Set<String> sampleIds, MimeType mimeType) {
+    SecurityContext securityContext = SecurityContextHolder.getContext();
+    return applySecurityContext(Mono.fromCallable(
+        () -> templateService.sampleUpdateTemplate(projectId, experimentId, sampleIds,
+            mimeType)))
+        .subscribeOn(scheduler)
+        .contextWrite(reactiveSecurity(securityContext));
   }
 
   @Override

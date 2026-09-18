@@ -9,6 +9,7 @@
 @import "connect-dataset-sidebar.css";
 @import "sync-results-sidebar.css";
 @import "div.css";
+@import "footer.css";
 @import "image.css";
 @import "info.css";
 @import "icon.css";
@@ -16,12 +17,15 @@
 @import "navbar.css";
 @import "navigation-drawer.css";
 @import "page-area.css";
+@import "settings.css";
 @import "span.css";
 @import "spreadsheet.css";
 @import "toggle-button.css";
 @import "vaadin-custom.css";
 @import "virtuallist.css";
 @import "toast.css";
+@import "pagination.css";
+@import "measurements-pagination.css";
 @import "grid-templates.css";
 @import "verification-sidebar.css";
 

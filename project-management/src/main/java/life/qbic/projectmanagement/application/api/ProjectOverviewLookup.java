@@ -32,4 +32,15 @@ public interface ProjectOverviewLookup {
   List<ProjectOverview> query(String filter, int offset, int limit, List<SortOrder> sortOrders,
       Collection<ProjectId> projectIds);
 
+  /**
+   * Counts the number of overviews matching the provided filter, restricted to the provided
+   * project ids (access control).
+   *
+   * @param filter     the results' project title will be applied with this filter
+   * @param projectIds the projectIds to which the user has access to
+   * @return the total number of matching overviews
+   * @since 1.12.0
+   */
+  long count(String filter, Collection<ProjectId> projectIds);
+
 }

@@ -105,6 +105,8 @@ public class SamplePreviewJpaRepository implements SamplePreviewLookup {
     samplePreviewSortKeys.put(SamplePreviewSortKey.ANALYTE, "analyte");
     samplePreviewSortKeys.put(SamplePreviewSortKey.ANALYSIS_METHOD, "analysisMethod");
     samplePreviewSortKeys.put(SamplePreviewSortKey.COMMENT, "comment");
+    samplePreviewSortKeys.put(SamplePreviewSortKey.REGISTRATION_TIME, "registrationTime");
+    samplePreviewSortKeys.put(SamplePreviewSortKey.MODIFICATION_TIME, "lastModified");
   }
 
   private static Order fromAPItoJpaSamplePreview(

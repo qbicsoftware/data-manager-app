@@ -11,7 +11,6 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.progressbar.ProgressBar;
-import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.shared.Registration;
 import java.io.IOException;
 import java.io.InputStream;
@@ -23,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import life.qbic.application.commons.ApplicationException;
@@ -50,7 +50,6 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.AccessDen
 import life.qbic.projectmanagement.application.api.fair.DigitalObject;
 import life.qbic.projectmanagement.application.sample.SampleMetadata;
 import life.qbic.projectmanagement.application.sample.SampleValidationService;
-import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.MimeType;
@@ -70,7 +69,6 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
   private static final Logger log = LoggerFactory.logger(EditSampleBatchDialog.class);
   private final SampleValidationService sampleValidationService;
   private final transient Map<String, List<SampleMetadata>> validatedSampleMetadata;
-  private final TextField batchNameField;
   private final Div initialView;
   private final Div inProgressView;
   private final Div failedView;
@@ -82,8 +80,7 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
 
   public EditSampleBatchDialog(AsyncProjectService service,
       MessageSourceNotificationFactory messageFactory,
-      BatchId batchId,
-      String batchName,
+      Set<String> sampleIds,
       String experimentId,
       String projectId,
       String projectCode,
@@ -107,14 +104,9 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
     succeededView.addClassName("succeeded-view");
 
     addClassName("edit-samples-dialog");
-    batchNameField = new TextField("Batch name");
-    batchNameField.setRequired(true);
-    batchNameField.setErrorMessage("Please provide a name for your batch.");
-    batchNameField.setValue(batchName);
-    batchNameField.setPlaceholder("Please enter a name for your batch");
-    batchNameField.addClassName("batch-name-field");
 
-    Div downloadMetadataSection = setupDownloadMetadataSection(service, batchId.value(),
+    Div downloadMetadataSection = setupDownloadMetadataSection(service,
+        sampleIds,
         experimentId,
         projectId, projectCode);
 
@@ -142,7 +134,7 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
     Div uploadSection = new Div(uploadTheSampleDataTitle, contentUploadComponent, uploadDisplay);
     uploadSection.addClassName("upload-section");
     uploadSection.addClassName("section-with-title");
-    initialView.add(batchNameField, downloadMetadataSection, uploadSection);
+    initialView.add(downloadMetadataSection, uploadSection);
     initialView.setVisible(true);
     inProgressView.setVisible(false);
     failedView.setVisible(false);
@@ -160,14 +152,14 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
 
 
   private Div setupDownloadMetadataSection(AsyncProjectService service,
-      String batchId,
+      Set<String> sampleIds,
       String experimentId,
       String projectId, String projectCode) {
     Button downloadTemplate = new Button("Download metadata template");
     downloadTemplate.addClassName("download-metadata-button");
     downloadTemplate.addClickListener(
-        buttonClickEvent -> service.sampleUpdateTemplate(projectId, experimentId, batchId,
-            OPEN_XML).doOnSuccess(resource ->
+        buttonClickEvent -> service.sampleUpdateTemplate(projectId, experimentId,
+            sampleIds, OPEN_XML).doOnSuccess(resource ->
             triggerDownload(resource,
                 FileNameFormatter.formatWithTimestampedSimple(LocalDate.now(), projectCode,
                     "sample metadata update template",
@@ -247,18 +239,7 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
 
   @Override
   protected void onConfirmClicked(ClickEvent<Button> clickEvent) {
-    if (batchNameField.isInvalid()) {
-      // once the user focused the batch name field at least once, the setRequired(true) validation is applied.
-      batchNameField.focus();
-      return;
-    }
-    if (batchNameField.isEmpty()) {
-      // if the user never focused the name field, no validation took place. Thus, the need to double-check here.
-      batchNameField.setInvalid(true);
-      batchNameField.focus();
-      return;
-    }
-    fireEvent(new ConfirmEvent(this, clickEvent.isFromClient(), batchNameField.getValue(),
+    fireEvent(new ConfirmEvent(this, clickEvent.isFromClient(),
         validatedSampleMetadata.values()
             .stream().flatMap(Collection::stream)
             .distinct().toList()));
@@ -448,6 +429,7 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
                         info.analysisMethod(),
                         info.comment(),
                         info.confoundingVariables(),
+                        info.batch(),
                         experimentId, projectId);
                   })
               .orTimeout(1, TimeUnit.MINUTES))
@@ -499,7 +481,6 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
 
   public static class ConfirmEvent extends ComponentEvent<EditSampleBatchDialog> {
 
-    private final String batchName;
     private final transient List<SampleMetadata> validatedSampleMetadata;
 
     /**
@@ -509,23 +490,16 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
      * @param source                  the source component
      * @param fromClient              <code>true</code> if the event originated from the client
      *                                side, <code>false</code> otherwise
-     * @param batchName               the name of the batch
      * @param validatedSampleMetadata a list of validated sample metadata
      */
     public ConfirmEvent(EditSampleBatchDialog source, boolean fromClient,
-        String batchName,
         List<SampleMetadata> validatedSampleMetadata) {
       super(source, fromClient);
-      this.batchName = batchName;
       this.validatedSampleMetadata = validatedSampleMetadata;
     }
 
     public List<SampleMetadata> validatedSampleMetadata() {
       return validatedSampleMetadata;
-    }
-
-    public String batchName() {
-      return batchName;
     }
   }
 

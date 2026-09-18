@@ -33,6 +33,7 @@ public class SampleUpdateMetadataConverter implements MetadataConverterV2<Sample
       var species = parsingResult.getValueOrDefault(i, EditColumn.SPECIES.headerName(), "");
       var analyte = parsingResult.getValueOrDefault(i, EditColumn.ANALYTE.headerName(), "");
       var specimen = parsingResult.getValueOrDefault(i, EditColumn.SPECIMEN.headerName(), "");
+      var batch = parsingResult.getValueOrDefault(i, EditColumn.BATCH.headerName(), "");
       var comment = parsingResult.getValueOrDefault(i, EditColumn.COMMENT.headerName(), "");
 
       var sanitizedHeaderNames = EditColumn.headerNames().stream()
@@ -61,7 +62,8 @@ public class SampleUpdateMetadataConverter implements MetadataConverterV2<Sample
           analyte,
           analysisMethod,
           comment,
-          confoundingVariables
+          confoundingVariables,
+          batch
       ));
     }
     return convertedElements;

@@ -181,7 +181,45 @@ _No features defined yet._
 
 ### Functional Requirements
 
-_No requirements defined yet._
+#### SAMPLE-R-01: Direct Sample Registration within an Experiment
+
+The system shall allow authorised users to register samples directly within an experiment of a project without first creating an explicit sample batch. A sample shall always belong to exactly one experiment. Each sample shall carry a mandatory free-text `batch` label provided as a distinct column in the registration spreadsheet.
+
+**Rationale:**
+Removing the explicit batch as a required registration step simplifies the sample registration workflow: users no longer need to define a batch entity before registering samples. Samples remain grouped within an experiment for contextual organisation. The mandatory batch label (per Product Owner) preserves grouping and backwards compatibility with existing data and downstream tooling, and is provided directly in the registration spreadsheet.
+
+**Source:**
+PRD §3 — Sample registration; Issue [FEAT-SAMBAT-01 #1549](https://github.com/qbicsoftware/data-manager-app/issues/1549); Stakeholder request [Incorporate Batch definition during Sample Sheet upload/edit template #1330](https://github.com/qbicsoftware/data-manager-app/issues/1330)
+
+#### SAMPLE-R-02: Sample–Project and Sample–Experiment Association
+
+The system shall associate every sample with both the project and the experiment it belongs to. The sample shall store a direct reference to its owning project (`project_id`) in addition to the existing experiment association, so that queries fetching all samples for a project do not require a transitive lookup through the experiment hierarchy.
+
+**Rationale:**
+Directly associating samples with their project and experiment makes project-wide sample queries efficient and keeps the association explicit in the data model. The `project_id` reference is denormalised for query optimisation; samples are still registered within an experiment.
+
+**Source:**
+PRD §3 — Sample registration; Issue [FEAT-SAMBAT-02 #1550](https://github.com/qbicsoftware/data-manager-app/issues/1550)
+
+#### SAMPLE-R-03: Backwards-Compatible Batch Property and Data Preservation
+
+The system shall preserve existing sample batch information during the removal of the explicit batch entity. Each existing sample shall retain its batch name as a free-text `batch` property, and batch-related metadata (creation/modification dates) shall be carried forward onto the sample. The samples view shall display the registration and modification date for each sample. The registration and modification dates shall be set by the system and shall not be editable via the Excel registration or edit templates. The migration shall transfer existing data to the new schema without loss.
+
+**Rationale:**
+Removing the explicit batch must not lose historical sample grouping or metadata. Preserving the batch name as a property on each sample keeps the information available to users and downstream consumers, and carrying the batch dates forward maintains data fidelity for existing samples. Displaying the registration and modification date per sample gives users visibility into when each sample was created and last changed. These dates are system-managed audit values rather than user-supplied sample metadata, so they are set by the system and excluded from the editable template columns. The pilot flag is no longer needed and is dropped.
+
+**Source:**
+Issue [FEAT-SAMBAT-03 #1551](https://github.com/qbicsoftware/data-manager-app/issues/1551); Stakeholder request [Incorporate Batch definition during Sample Sheet upload/edit template #1330](https://github.com/qbicsoftware/data-manager-app/issues/1330)
+
+#### SAMPLE-R-04: Removal of the Explicit Batch and Samples-Only Management
+
+The system shall no longer expose the explicit sample batch as a first-class entity in the sample management workflow. Samples shall be registered directly within an experiment via an Excel spreadsheet, with the batch name as a mandatory column. Editing shall also be Excel-based: the user shall select samples in the grid, download a pre-filled template containing the selected samples' current values, modify editable fields, and re-upload to apply changes. Deletion shall operate on a multi-selection: the user selects the corresponding samples in the grid and deletes them in one action. The samples view shall present samples directly, showing the batch as a sample property, and shall not offer batch-specific actions such as creating, editing, or deleting a batch.
+
+**Rationale:**
+Once the batch is no longer a first-class entity, exposing batch grids and batch dialogs would be confusing and inconsistent with the simplified data model. Presenting samples directly, with batch as a per-sample property, gives users a coherent, samples-only experience. Registration and editing via Excel mirror the established measurement workflows (see MEASUREMENT-R-01 and MEASUREMENT-R-02), ensuring a consistent bulk-data entry experience, while select-then-edit/delete gives users precise control over which samples are affected.
+
+**Source:**
+Issue [FEAT-SAMBAT-04 #1552](https://github.com/qbicsoftware/data-manager-app/issues/1552); Stakeholder request [Incorporate Batch definition during Sample Sheet upload/edit template #1330](https://github.com/qbicsoftware/data-manager-app/issues/1330)
 
 ### Non-Functional Requirements
 
@@ -436,15 +474,62 @@ _No requirements defined yet._
 
 ### Features
 
-_No features defined yet._
+- `FEAT-PAGINATED-LISTS` — Explicit, paginated display of large entity collections (projects, samples, measurements, raw datasets) with cross-page selection for bulk actions and URL-restorable list state.
+- `FEAT-PINNED-PROJECTS` — User-curated pinned projects that give quick access to the projects a user is actively working on, without searching.
 
 ### Functional Requirements
 
-_No requirements defined yet._
+#### USER-R-01: Paginated List Display
+
+The system shall display large entity collections (projects, samples, measurements, raw datasets) as explicitly paginated lists with a bounded page size, page navigation controls, and the total number of matching items. Continuous scroll-loading (endless scrolling) shall not be used for these lists.
+
+**Rationale:**
+Scroll-loaded lists replace the native page scroll with an embedded scroll container, which breaks native browser behaviour (find-in-page, scroll position, back/forward navigation) and behaves unreliably on small screens. Explicit pagination restores predictable, location-aware navigation. Power users such as data stewards can have access to several hundred projects and need reliable orientation when working with large collections.
+
+**Source:**
+Stakeholder request (UX review of list behaviour); PRD user personas (data steward).
+
+#### USER-R-02: Cross-Page Selection for Bulk Actions
+
+The system shall preserve item selections in paginated lists when the user navigates between pages, and bulk actions (export, edit, deletion) shall be applicable to the full selection across pages. The number of currently selected items shall be visible regardless of the page displayed.
+
+**Rationale:**
+Core workflows depend on targeting specific items scattered across a large collection: users download selected items' metadata for offline editing and perform targeted deletions. Without cross-page selection, pagination would force users to process one page at a time, breaking these workflows for collections of hundreds of items.
+
+**Source:**
+Stakeholder request; established bulk-action workflows for samples, measurements, and raw datasets.
+
+#### USER-R-03: List View State in the URL
+
+The system shall reflect the current page, page size, filter, and sort order of paginated lists in the browser URL, so that list views are restorable via browser history (back/forward) and shareable as links.
+
+**Rationale:**
+Native web behaviour allows users to bookmark, share, and navigate back to a previously seen list state. Scroll-loaded lists cannot provide this; explicit pagination makes it achievable at negligible additional cost and is a primary motivation for the change.
+
+**Source:**
+Stakeholder request (UX review of list behaviour).
+
+#### USER-R-04: Pinned-Project Quick Access
+
+The system shall let an authenticated user mark a small, self-selected subset of the projects they have access to as their pinned projects, and shall present that subset to the user as their entry point to project work. Pinned projects are private to and controlled by that user alone, and pinning a project shall never grant or reveal access to project data the user is not entitled to see.
+
+**Rationale:**
+Users who maintain many projects pay a search cost every time they return to the platform, even though they repeatedly work on only a handful of them. A user-curated short list removes that recurring cost. Curation is required because "the projects I am active in" is a judgement the user makes — it reflects current personal relevance that no system-derived signal, such as recent modification or membership, can express: a project that has been untouched for months may still be central to a user's work. This supports the project-manager need for quick overviews of important projects and the researcher need to avoid manual tasks that slow down scientific work.
+
+**Source:**
+PRD §2 Users & primary use cases — Persona 1 (Anna Becker, Project Manager: quick overviews of important project updates) and Persona 2 (Dr. Jonas Weber, Researcher: frustrated when excessive manual tasks slow down actual scientific progress); stakeholder request.
 
 ### Non-Functional Requirements
 
-_No requirements defined yet._
+#### USER-NFR-01: Responsive List Rendering
+
+Paginated lists shall remain fully usable on small screens (tablets, phones) without trapping the native page scroll inside an embedded scroll container, and shall adapt their layout to the available viewport width.
+
+**Rationale:**
+Embedded scroll containers in scroll-loaded lists have proven unreliable on smaller screens. Users increasingly access the application on mobile devices; list views are the primary navigation surface and must degrade gracefully.
+
+**Source:**
+Stakeholder request (UX review of list behaviour).
 
 ### Constraints
 

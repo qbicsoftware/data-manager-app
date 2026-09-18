@@ -1,0 +1,51 @@
+/* Pagination bar — explicit, page-based list navigation (USER-R-01, ADR-0007). */
+
+.pagination-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: var(--lumo-space-m);
+}
+
+.pagination-bar .pagination-navigation {
+  display: contents;
+}
+
+.pagination-bar .pagination-pages {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-xs);
+  flex-wrap: wrap;
+}
+
+.pagination-bar .pagination-page {
+  min-width: 2.25em;
+  justify-content: center;
+  padding: 0 var(--lumo-space-xs);
+}
+
+.pagination-bar .pagination-page.current {
+  font-weight: bold;
+  background: var(--lumo-primary-color);
+  color: var(--lumo-primary-contrast-color);
+}
+
+.pagination-bar .pagination-ellipsis {
+  color: var(--lumo-tertiary-text-color);
+  padding: 0 var(--lumo-space-xs);
+}
+
+.pagination-bar .pagination-info {
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-s);
+}
+
+.pagination-bar .pagination-controls {
+  display: contents;
+}
+
+/* page-size Select (UX F10): keep a stable width so the bar does not jump between sizes */
+.pagination-bar .pagination-page-size {
+  width: 8rem;
+}

@@ -1,18 +1,27 @@
 package life.qbic.datamanager.views.projects.overview.components;
 
+import static life.qbic.datamanager.views.projects.overview.components.ProjectOverviewSortOption.CODE_ASC;
+import static life.qbic.datamanager.views.projects.overview.components.ProjectOverviewSortOption.CODE_DESC;
+import static life.qbic.datamanager.views.projects.overview.components.ProjectOverviewSortOption.LAST_MODIFIED_ASC;
+import static life.qbic.datamanager.views.projects.overview.components.ProjectOverviewSortOption.LAST_MODIFIED_DESC;
+import static life.qbic.datamanager.views.projects.overview.components.ProjectOverviewSortOption.TITLE_ASC;
+import static life.qbic.datamanager.views.projects.overview.components.ProjectOverviewSortOption.TITLE_DESC;
+
 import com.vaadin.flow.component.ComponentEventListener;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.avatar.AvatarGroup;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.grid.Grid;
-import com.vaadin.flow.component.grid.Grid.SelectionMode;
-import com.vaadin.flow.component.grid.GridVariant;
-import com.vaadin.flow.component.grid.dataview.GridLazyDataView;
+import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.contextmenu.ContextMenu;
+import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Hr;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.textfield.TextField;
-import com.vaadin.flow.data.provider.SortDirection;
 import com.vaadin.flow.data.value.ValueChangeMode;
+import com.vaadin.flow.router.Location;
 import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.spring.annotation.RouteScope;
@@ -23,29 +32,42 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.application.commons.time.DateTimeFormat;
+import life.qbic.datamanager.views.AppRoutes.ProjectRoutes;
 import life.qbic.datamanager.views.account.UserAvatar.UserAvatarGroupItem;
 import life.qbic.datamanager.views.general.Card;
 import life.qbic.datamanager.views.general.PageArea;
+import life.qbic.datamanager.views.general.ProjectCodeBadge;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.Tag.TagColor;
+import life.qbic.datamanager.views.general.pagination.ListState;
+import life.qbic.datamanager.views.general.pagination.ListStateCodec;
+import life.qbic.datamanager.views.general.pagination.PaginationBar;
+import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
+import life.qbic.datamanager.views.projects.overview.components.PinnedProjectsComponent.ToggleHandler;
 import life.qbic.datamanager.views.projects.project.datasets.ConnectedDatasetsMain;
 import life.qbic.datamanager.views.projects.project.info.ProjectInformationMain;
+import life.qbic.projectmanagement.application.PinnedProjectService;
+import life.qbic.projectmanagement.application.PinnedProjectService.PinOutcome;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectOverview;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.stereotype.Component;
 
 /**
  * <b>Project Collection</b>
  * <p>
- * A component that displays cards showing the content of accessible
- * {@link ProjectOverview for the logged-in user.
+ * A component that displays paginated cards showing the content of accessible
+ * {@link ProjectOverview} for the logged-in user. The cards are rendered in a responsive grid
+ * without an embedded scroll container (USER-NFR-01); navigation happens through an explicit pager
+ * with a visible total count (USER-R-01) and the list state is mirrored into the browser URL
+ * (USER-R-03).
  * <p>
  * The component also fires {@link ProjectCreationSubmitEvent} to all registered listeners, if a
  * user has the intend to create a new project.
  *
+ * @since 1.0.0
  */
 @Component
 @RouteScope
@@ -53,82 +75,338 @@ public class ProjectCollectionComponent extends PageArea {
 
   @Serial
   private static final long serialVersionUID = 8579375312838977742L;
+  private static final String EMPTY_PROJECT_COLLECTION_MESSAGE =
+      "You don't have any projects yet. Start by creating your first project.";
+  private static final String EMPTY_SEARCH_RESULT_MESSAGE = "No projects found.";
+  /**
+   * Deterministic tie-break key appended to every sort order so offset/limit pagination never
+   * duplicates or drops items across page boundaries (ADR-0007). Only consulted when the primary
+   * sort attributes are exactly equal.
+   */
+  private static final SortOrder SORT_TIE_BREAKER = new SortOrder("projectCode", false);
   final TextField projectSearchField = new TextField();
-  final Grid<ProjectOverview> projectGrid = new Grid<>(ProjectOverview.class, false);
-  final Button createProjectButton = new Button("Create");
+  final Button sortButton = new Button();
+  final ContextMenu sortMenu = new ContextMenu(sortButton);
+  final Button createProjectButton = new Button("Create project");
+  final Div projectCards = new Div();
+  /** Full pager below the list (info + numbered window + prev/next + page size). */
+  final PaginationBar paginationBar = new PaginationBar(ListStateCodec.ALLOWED_PAGE_SIZES,
+      ListStateCodec.DEFAULT_PAGE_SIZE, "projects");
   private final Div header = new Div();
+  private final Span emptyStateMessage = new Span();
   private final transient ProjectInformationService projectInformationService;
-  private final Span searchResultInfo = new Span();
-  private String projectOverviewFilter = "";
-  private GridLazyDataView<ProjectOverview> projectOverviewGridLazyDataView;
+  /**
+   * The user's quick-access shortlist, rendered above the list controls. Owned here because the
+   * overview cards and the shortlist share one pin toggle handler and must stay in sync.
+   */
+  private final PinnedProjectsComponent pinnedProjectsComponent;
+  private final transient PinnedProjectService pinnedProjectService;
+  private final transient MessageSourceNotificationFactory notificationFactory;
+  /**
+   * The overviews rendered on the current page; reused to re-render the card toggle states after a pin
+   * change without querying the project list again.
+   */
+  private List<ProjectOverview> currentOverviews = List.of();
+  /**
+   * The currently applied list state; {@code null} until the first list state has been applied
+   * (initial page load), which guarantees the initial load is never skipped as "unchanged".
+   */
+  private ListState listState;
 
-  public ProjectCollectionComponent(ProjectInformationService projectInformationService) {
+  public ProjectCollectionComponent(ProjectInformationService projectInformationService,
+      PinnedProjectService pinnedProjectService,
+      MessageSourceNotificationFactory notificationFactory) {
     this.projectInformationService = Objects.requireNonNull(projectInformationService,
         "Project information service cannot be null");
+    this.pinnedProjectService = Objects.requireNonNull(pinnedProjectService,
+        "pinnedProjectService cannot be null");
+    this.notificationFactory = Objects.requireNonNull(notificationFactory,
+        "notificationFactory cannot be null");
+    this.pinnedProjectsComponent = new PinnedProjectsComponent(
+        pinnedProjectService::findPinnedProjects, this::handlePinToggle);
     layoutComponent();
-    createLazyProjectView();
     configureSearch();
+    configureSortButton();
     configureProjectCreationButton();
+    configurePagination();
   }
 
   private void initHeader() {
     header.addClassName("header");
-    Span title = new Span("My Projects");
+    // Title row: title on the left, Create button on the far right
+    Div titleRow = new Div();
+    titleRow.addClassName("title-row");
+    Span title = new Span("My Research Projects");
     title.addClassName("title");
     createProjectButton.addClassName("primary");
+    titleRow.add(title, createProjectButton);
+    // Controls row: search + sort dropdown
     projectSearchField.setPlaceholder("Search");
     projectSearchField.setClearButtonVisible(true);
     projectSearchField.setSuffixComponent(VaadinIcon.SEARCH.create());
     projectSearchField.addClassNames("search-field");
-    Span controls = new Span(projectSearchField, createProjectButton);
+    configureSortButton();
+    Span controls = new Span(projectSearchField, sortButton);
     controls.addClassName("controls");
-    header.add(title, controls);
+    // The shortlist is the first child of the header, i.e. above the title and the search controls:
+    // it is a personal toolbar, not part of the filtered result set (FEAT-PINNED-01).
+    header.add(pinnedProjectsComponent, titleRow, controls);
     add(header);
-  }
-
-  private void initSearchResultInfo() {
-    searchResultInfo.addClassName("secondary");
-    add(searchResultInfo);
   }
 
   private void layoutComponent() {
     addClassNames("project-collection-component");
     initHeader();
-    initSearchResultInfo();
-    layoutGrid();
+    layoutCards();
+    layoutEmptyState();
+    add(paginationBar);
   }
 
-  private void createLazyProjectView() {
-    projectOverviewGridLazyDataView = projectGrid.setItems(query -> {
-      List<SortOrder> sortOrders = query.getSortOrders().stream().map(
-              it -> new SortOrder(it.getSorted(), it.getDirection().equals(SortDirection.DESCENDING)))
-          .collect(Collectors.toList());
-      // if no order is provided by the grid order by last modified (the least priority)
-      sortOrders.add(SortOrder.of("lastModified").descending());
-      return projectInformationService.queryOverview(projectOverviewFilter, query.getOffset(),
-          query.getLimit(), List.copyOf(sortOrders)).stream();
-    });
+  private void layoutCards() {
+    projectCards.addClassName("project-card-grid");
+    add(projectCards);
+  }
+
+  private void layoutEmptyState() {
+    emptyStateMessage.addClassName("empty-state");
+    emptyStateMessage.setVisible(false);
+    add(emptyStateMessage);
   }
 
   private void configureSearch() {
     projectSearchField.setValueChangeMode(ValueChangeMode.LAZY);
     projectSearchField.addValueChangeListener(event -> {
-      projectOverviewFilter = event.getValue().trim();
-      projectOverviewGridLazyDataView.refreshAll();
-      showSearchResult(!event.getValue().isBlank());
+      String filter = event.getValue().trim();
+      if (filter.equals(listState.filter())) {
+        return;
+      }
+      // A search always resets paging to the first page so the result set is shown from its start.
+      applyStateAtUrl(listState.withFilter(filter).withPage(1), HistoryMode.REPLACE);
     });
+  }
+
+  private void configureSortButton() {
+    sortButton.addClassName("sort-button");
+    sortButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+    sortButton.setIcon(VaadinIcon.SORT.create());
+    sortButton.setText("Sort");
+    sortButton.setAriaLabel("Sort options");
+    sortMenu.setOpenOnClick(true);
+    sortMenu.removeAll();
+
+    // Group: Last modified
+    MenuItem lastModifiedDesc = sortMenu.addItem("Last modified (newest first)");
+    lastModifiedDesc.setCheckable(true);
+    lastModifiedDesc.addClickListener(event -> {
+      if (!LAST_MODIFIED_DESC.toSortOrder().equals(listState.sort())) {
+        applyStateAtUrl(listState.withSort(LAST_MODIFIED_DESC.toSortOrder()).withPage(1), HistoryMode.PUSH);
+      }
+    });
+
+    MenuItem lastModifiedAsc = sortMenu.addItem("Last modified (oldest first)");
+    lastModifiedAsc.setCheckable(true);
+    lastModifiedAsc.addClickListener(event -> {
+      if (!LAST_MODIFIED_ASC.toSortOrder().equals(listState.sort())) {
+        applyStateAtUrl(listState.withSort(LAST_MODIFIED_ASC.toSortOrder()).withPage(1), HistoryMode.PUSH);
+      }
+    });
+
+    // Divider
+    sortMenu.addSeparator();
+
+    // Group: Project title
+    MenuItem titleAsc = sortMenu.addItem("Project title (A–Z)");
+    titleAsc.setCheckable(true);
+    titleAsc.addClickListener(event -> {
+      if (!TITLE_ASC.toSortOrder().equals(listState.sort())) {
+        applyStateAtUrl(listState.withSort(TITLE_ASC.toSortOrder()).withPage(1), HistoryMode.PUSH);
+      }
+    });
+
+    MenuItem titleDesc = sortMenu.addItem("Project title (Z–A)");
+    titleDesc.setCheckable(true);
+    titleDesc.addClickListener(event -> {
+      if (!TITLE_DESC.toSortOrder().equals(listState.sort())) {
+        applyStateAtUrl(listState.withSort(TITLE_DESC.toSortOrder()).withPage(1), HistoryMode.PUSH);
+      }
+    });
+
+    // Divider
+    sortMenu.addSeparator();
+
+    // Group: Project code
+    MenuItem codeAsc = sortMenu.addItem("Project code (A–Z)");
+    codeAsc.setCheckable(true);
+    codeAsc.addClickListener(event -> {
+      if (!CODE_ASC.toSortOrder().equals(listState.sort())) {
+        applyStateAtUrl(listState.withSort(CODE_ASC.toSortOrder()).withPage(1), HistoryMode.PUSH);
+      }
+    });
+
+    MenuItem codeDesc = sortMenu.addItem("Project code (Z–A)");
+    codeDesc.setCheckable(true);
+    codeDesc.addClickListener(event -> {
+      if (!CODE_DESC.toSortOrder().equals(listState.sort())) {
+        applyStateAtUrl(listState.withSort(CODE_DESC.toSortOrder()).withPage(1), HistoryMode.PUSH);
+      }
+    });
+
+    updateSortCheckmarks();
+  }
+
+  private void updateSortCheckmarks() {
+    if (listState == null) {
+      return;
+    }
+    SortOrder currentSort = listState.sort();
+    sortMenu.getChildren().forEach(component -> {
+      if (component instanceof MenuItem item) {
+        String text = item.getText();
+        ProjectOverviewSortOption option = findOptionByText(text);
+        if (option != null) {
+          item.setChecked(option.toSortOrder().equals(currentSort));
+        }
+      }
+    });
+  }
+
+  private ProjectOverviewSortOption findOptionByText(String text) {
+    for (ProjectOverviewSortOption option : ProjectOverviewSortOption.values()) {
+      if (option.label().equals(text)) {
+        return option;
+      }
+    }
+    return null;
+  }
+
+  private void configurePagination() {
+    paginationBar.addChangeListener(this::applyPaginationChange);
+  }
+
+  /**
+   * Applies a page or page-size change requested from the pagination bar; the bar is kept in sync
+   * by {@link #loadPage(ListState)}, which reports the applied state back to it.
+   */
+  private void applyPaginationChange(PaginationBar.ChangeEvent event) {
+    if (event.getPageSize() != listState.pageSize()) {
+      applyStateAtUrl(listState.withPageSize(event.getPageSize()), HistoryMode.PUSH);
+    } else if (event.getPage() != listState.page()) {
+      applyStateAtUrl(listState.withPage(event.getPage()), HistoryMode.PUSH);
+    }
   }
 
   private void configureProjectCreationButton() {
     createProjectButton.addClickListener(listener -> fireCreateClickedEvent());
   }
 
-  private void layoutGrid() {
-    projectGrid.setSelectionMode(SelectionMode.NONE);
-    projectGrid.addComponentColumn(ProjectOverviewItem::new);
-    projectGrid.addThemeVariants(GridVariant.LUMO_NO_BORDER, GridVariant.LUMO_NO_ROW_BORDERS);
-    projectGrid.addClassName("project-grid");
-    add(projectGrid);
+  /**
+   * Applies an externally provided list state (initial page load, reload, browser back/forward or a
+   * shared link) without touching the browser URL.
+   *
+   * @param state the list state parsed from the current URL
+   */
+  public void applyExternalState(ListState state) {
+    if (state.equals(listState)) {
+      return;
+    }
+    loadPage(state);
+    syncControls(listState);
+  }
+
+  /**
+   * Applies a user-initiated state change and mirrors the applied state into the browser URL.
+   */
+  private void applyStateAtUrl(ListState state, HistoryMode mode) {
+    loadPage(state);
+    syncControls(listState);
+    writeUrl(listState, mode);
+  }
+
+  /**
+   * Loads the current page of project overviews for the given state and renders it. When the
+   * requested page lies beyond the last page (e.g. after a filter reduced the result set), the page
+   * is clamped to the last valid page.
+   */
+  private void loadPage(ListState state) {
+    List<SortOrder> sortOrders = new ArrayList<>();
+    sortOrders.add(state.sort());
+    sortOrders.add(SORT_TIE_BREAKER);
+    List<ProjectOverview> overviews = projectInformationService.queryOverview(state.filter(),
+        (state.page() - 1) * state.pageSize(), state.pageSize(), sortOrders);
+    long total = projectInformationService.countOverview(state.filter());
+    int totalPages = Math.max(1, (int) Math.ceil((double) total / state.pageSize()));
+    int page = Math.min(state.page(), totalPages);
+    if (page != state.page()) {
+      // bounded recursion: the clamped page is always within range, so this branch runs at most once
+      ListState clampedState = state.withPage(page);
+      this.listState = clampedState;
+      loadPage(clampedState);
+      return;
+    }
+    this.listState = state;
+    renderCards(overviews);
+    paginationBar.setListState(page, total, state.pageSize());
+    // The pager stays hidden for an empty result set (the empty-state message covers that case).
+    paginationBar.setVisible(total > 0);
+    renderEmptyState(overviews.isEmpty(), state.filter().isBlank());
+  }
+
+  private void renderCards(List<ProjectOverview> overviews) {
+    this.currentOverviews = overviews;
+    var pinnedProjectIds = pinnedProjectsComponent.pinnedProjectIds();
+    projectCards.removeAll();
+    overviews.forEach(overview -> projectCards.add(
+        new ProjectOverviewItem(overview, pinnedProjectIds.contains(overview.projectId()),
+            this::handlePinToggle)));
+  }
+
+  /**
+   * Applies a pin toggle coming from either the shortlist or an overview card, then re-renders both.
+   *
+   * <p>The expected failure paths are returned outcomes, not exceptions. Only the limit needs a user
+   * message: the user must learn the rule and how to work around it, because the alternative —
+   * silently dropping an existing pin — would remove something the user asked for.
+   */
+  private void handlePinToggle(ProjectId projectId, boolean pin) {
+    PinOutcome outcome =
+        pin ? pinnedProjectService.pin(projectId) : pinnedProjectService.unpin(projectId);
+    if (outcome == PinOutcome.LIMIT_REACHED) {
+      notificationFactory.toast("project.pinned.limit",
+          new Object[]{PinnedProjectService.MAX_PINNED_PROJECTS}, getLocale()).open();
+    }
+    pinnedProjectsComponent.refresh();
+    renderCards(currentOverviews);
+  }
+
+  private void renderEmptyState(boolean isEmpty, boolean noActiveFilter) {
+    if (isEmpty) {
+      // The onboarding text is only correct for an empty collection; a search without matches must
+      // not claim that no projects exist at all.
+      emptyStateMessage.setText(
+          noActiveFilter ? EMPTY_PROJECT_COLLECTION_MESSAGE : EMPTY_SEARCH_RESULT_MESSAGE);
+    }
+    emptyStateMessage.setVisible(isEmpty);
+  }
+
+  private void syncControls(ListState state) {
+    if (!Objects.equals(projectSearchField.getValue().trim(), state.filter())) {
+      projectSearchField.setValue(state.filter());
+    }
+    updateSortCheckmarks();
+  }
+
+  private void writeUrl(ListState state, HistoryMode mode) {
+    UI ui = UI.getCurrent();
+    if (ui == null) {
+      return;
+    }
+    Location location = new Location(ProjectRoutes.PROJECTS,
+        ListStateCodec.toQueryParameters(state));
+    if (mode == HistoryMode.PUSH) {
+      ui.getPage().getHistory().pushState(null, location);
+    } else {
+      ui.getPage().getHistory().replaceState(null, location);
+    }
   }
 
   private void fireCreateClickedEvent() {
@@ -148,23 +426,29 @@ public class ProjectCollectionComponent extends PageArea {
     addListener(ProjectCreationSubmitEvent.class, listener);
   }
 
+  /**
+   * Reloads the current page with the current list state (e.g. after a project was created).
+   */
   public void refresh() {
-    projectGrid.getDataProvider().refreshAll();
-  }
-
-  private void showSearchResult(boolean isVisible) {
-    searchResultInfo.setVisible(isVisible);
-    searchResultInfo.setText(
-        "%s projects found".formatted(projectOverviewGridLazyDataView.getItems().count()));
+    loadPage(listState);
   }
 
   /**
-   * Resets the value within the searchField, which in turn resets the grid. Additionally, hides the
-   * entire section so the result span is only shown when the user is actively searching for an
-   * ontology
+   * Resets the search filter and returns to the first page, mirroring the applied state into the
+   * URL. Used after a project was created so the new project becomes visible.
    */
   public void resetSearch() {
-    projectSearchField.setValue("");
+    applyStateAtUrl(listState.withFilter("").withPage(1), HistoryMode.REPLACE);
+  }
+
+  /**
+   * Distinguishes how a list state change is mirrored into the browser history: page-level
+   * navigation pushes a new history entry (back/forward steps through list states), while search
+   * typing replaces the current entry to avoid history spam.
+   */
+  private enum HistoryMode {
+    PUSH,
+    REPLACE
   }
 
   /**
@@ -202,16 +486,58 @@ public class ProjectCollectionComponent extends PageArea {
     private final AvatarGroup usersWithAccess = new AvatarGroup();
     private final transient ProjectOverview projectOverview;
 
-    public ProjectOverviewItem(ProjectOverview projectOverview) {
+    public ProjectOverviewItem(ProjectOverview projectOverview, boolean pinned,
+        ToggleHandler toggleHandler) {
       this.projectOverview = Objects.requireNonNull(projectOverview);
+      Objects.requireNonNull(toggleHandler);
       // Both RouterLinks (card body + footer) must share a single parent so they render
       // as one unified card. Using a wrapper Div prevents event propagation between
       // clicks on the footer and clicks on the card body.
       var wrapper = new Div();
       wrapper.addClassName("project-card-wrapper");
-      wrapper.add(projectInfoLink());
+      wrapper.add(projectInfoLink(pinned));
       attachDatasetFooter(wrapper);
+      wrapper.add(buildTopRightControl(pinned, toggleHandler));
       add(wrapper);
+    }
+
+    /**
+     * Builds the top-right control for this card.
+     *
+     * <p><b>Pinned/Unpinned:</b> every card shows the same kebab menu button in the top-right.
+     * The menu contains "Pin project" or "Unpin project" depending on state, so users have one
+     * consistent, easy-to-aim control for both actions. A small inline pin icon next to the
+     * project code badge marks pinned cards at a glance.</p>
+     *
+     * <p>The control is a sibling of the card-body {@link RouterLink} inside the card wrapper,
+     * not a child of it, so clicking it cannot also fire navigation to the project.</p>
+     */
+    private com.vaadin.flow.component.Component buildTopRightControl(boolean pinned, ToggleHandler toggleHandler) {
+      var topRight = new Div();
+      topRight.addClassName("project-card-top-right");
+
+      if (pinned) {
+        // Small pin indicator left of the kebab menu, so a pinned project is recognisable
+        // at a glance without opening the menu. Clicking it opens the menu as well.
+        var pinIcon = VaadinIcon.PIN.create();
+        pinIcon.addClassName("project-card-pin-indicator");
+        topRight.add(pinIcon);
+      }
+
+      var menuButton = new Button(VaadinIcon.ELLIPSIS_DOTS_H.create());
+      menuButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE, ButtonVariant.LUMO_SMALL);
+      menuButton.addClassName("project-card-menu-toggle");
+      menuButton.getElement().setAttribute("aria-label", "Project options for %s".formatted(projectOverview.projectCode()));
+      menuButton.getElement().setAttribute("title", "Project options");
+
+      var menu = new ContextMenu(menuButton);
+      menu.setOpenOnClick(true);
+      String actionLabel = pinned ? "Unpin project" : "Pin project";
+      var actionItem = menu.addItem(actionLabel);
+      actionItem.addClickListener(event -> toggleHandler.onToggle(projectOverview.projectId(), !pinned));
+
+      topRight.add(menuButton);
+      return topRight;
     }
 
     /**
@@ -226,12 +552,12 @@ public class ProjectCollectionComponent extends PageArea {
      * existing page-area.css card styles (shadow, border-radius, padding) apply to it
      * directly.</p>
      */
-    private RouterLink projectInfoLink() {
+    private RouterLink projectInfoLink(boolean pinned) {
       var link = new RouterLink("", ProjectInformationMain.class,
           new RouteParameters(PROJECT_ID_ROUTE_PARAMETER, projectOverview.projectId().value()));
       link.addClassName("project-overview-item");
 
-      link.add(createHeader(projectOverview.projectCode(), projectOverview.projectTitle()));
+      link.add(createHeader(projectOverview.projectCode(), projectOverview.projectTitle(), pinned));
 
       Instant instant = projectOverview.lastModified();
       Span lastModified = new Span(
@@ -366,7 +692,7 @@ public class ProjectCollectionComponent extends PageArea {
       chevron.addClassName("flex-shrink-0");
       content.add(chevron);
 
-      // ─ Wrap in RouterLink (native <a> semantics) ─────────────
+      // ── Wrap in RouterLink (native <a> semantics) ─────────────
       // Anchored to the per-project datasets route already registered
       // for ConnectedDatasetsMain.
       var link = new RouterLink("", ConnectedDatasetsMain.class,
@@ -421,8 +747,10 @@ public class ProjectCollectionComponent extends PageArea {
       return base;
     }
 
-    private Span createHeader(String projectCode, String projectTitle) {
-      Span title = new Span(String.format("%s - %s", projectCode, projectTitle));
+    private Span createHeader(String projectCode, String projectTitle, boolean pinned) {
+      Span title = new Span();
+      title.add(new ProjectCodeBadge(projectCode));
+      title.add(new Span(" " + projectTitle));
       title.addClassName("project-overview-item-title");
       tags.addClassNames("tag-collection");
       Span header = new Span(title, tags);

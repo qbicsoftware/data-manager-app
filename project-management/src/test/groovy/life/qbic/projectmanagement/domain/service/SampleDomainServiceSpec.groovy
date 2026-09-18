@@ -1,11 +1,9 @@
 package life.qbic.projectmanagement.domain.service
 
-
 import life.qbic.domain.concepts.DomainEvent
 import life.qbic.domain.concepts.DomainEventDispatcher
 import life.qbic.domain.concepts.DomainEventSubscriber
 import life.qbic.projectmanagement.domain.model.OntologyTerm
-import life.qbic.projectmanagement.domain.model.batch.BatchId
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId
 import life.qbic.projectmanagement.domain.model.project.*
 import life.qbic.projectmanagement.domain.model.sample.*
@@ -24,12 +22,14 @@ class SampleDomainServiceSpec extends Specification {
 
     def "When a sample has been successfully registered, a sample registered event is dispatched"() {
         given:
-        Sample testSample = Sample.create(SampleCode.create("test"), new SampleRegistrationRequest("test sample", "patient 1", BatchId.create(), ExperimentId.create(), 1L, new SampleOrigin(new OntologyTerm(), new OntologyTerm(), new OntologyTerm()), AnalysisMethod.WES, ""))
+        ProjectId projectId = ProjectId.create()
+        ExperimentId experimentId = ExperimentId.create()
+        SampleRegistrationRequest request = new SampleRegistrationRequest("test sample", "patient 1", "batch 1", projectId, experimentId, 1L, new SampleOrigin(new OntologyTerm(), new OntologyTerm(), new OntologyTerm()), AnalysisMethod.WES, "")
+        Sample testSample = Sample.create(SampleCode.create("test"), request)
         Contact who = new Contact()
         Project project = Project.create(new ProjectIntent(new ProjectTitle("a title"), new ProjectObjective("an objective")), new ProjectCode("QABCD"), who, who, who)
         Map<SampleCode, SampleRegistrationRequest> sampleCodesToRegistrationRequests = new HashMap<>()
-        SampleRegistrationRequest sampleRegistrationRequest = new SampleRegistrationRequest("test sample", "patient 1", BatchId.create(), ExperimentId.create(), 1L, new SampleOrigin(new OntologyTerm(), new OntologyTerm(), new OntologyTerm()), AnalysisMethod.WES, "")
-        sampleCodesToRegistrationRequests.put(SampleCode.create("test"), sampleRegistrationRequest)
+        sampleCodesToRegistrationRequests.put(SampleCode.create("test"), request)
 
         and:
         SampleRepository testRepo = Mock(SampleRepository)
@@ -41,8 +41,6 @@ class SampleDomainServiceSpec extends Specification {
 
             SampleId sampleIdOfEvent
 
-            BatchId batchIdOfEvent
-
             @Override
             Class<? extends DomainEvent> subscribedToEventType() {
                 SampleRegistered.class
@@ -51,7 +49,6 @@ class SampleDomainServiceSpec extends Specification {
             @Override
             void handleEvent(SampleRegistered event) {
                 this.sampleIdOfEvent = event.registeredSample()
-                this.batchIdOfEvent = event.assignedBatch()
             }
         }
         DomainEventDispatcher.instance().subscribe(sampleRegistered)
@@ -61,7 +58,7 @@ class SampleDomainServiceSpec extends Specification {
         println(a)
         then:
 
-        sampleRegistered.batchIdOfEvent.equals(sampleRegistrationRequest.assignedBatch())
+        sampleRegistered.sampleIdOfEvent != null
         SampleId.parse(sampleRegistered.sampleIdOfEvent.value())
         notThrown(IllegalArgumentException)
     }

@@ -1,37 +1,95 @@
 package life.qbic.datamanager.views.general.footer;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.AnchorTarget;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Footer;
-import com.vaadin.flow.router.ParentLayout;
-import life.qbic.datamanager.views.DataManagerLayout;
+import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.html.Nav;
+import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.router.RouterLink;
+import com.vaadin.flow.spring.annotation.SpringComponent;
+import java.time.Year;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.context.annotation.Scope;
 
 /**
- * Footer Component
+ * The application footer shown on every page of the data manager.
  * <p>
- * Basic Footer Component routing the user to main components with additional information legal or
- * otherwise such as {@link LegalNotice} and {@link DataPrivacyAgreement}
+ * The footer follows common web best practices:
+ * <ul>
+ *   <li>Semantic markup: a {@code <footer>} element containing labelled
+ *   {@code <nav>} landmarks, one per link group, so assistive technologies can
+ *   announce and navigate them.</li>
+ *   <li>Internal routes ({@link LegalNotice}, {@link DataPrivacyAgreement}) use
+ *   {@link RouterLink}s, enabling client-side navigation in the same tab.</li>
+ *   <li>External links open in a new tab with {@code rel="noopener noreferrer"}.</li>
+ *   <li>A copyright attribution bar closes the footer.</li>
+ * </ul>
+ * <p>
+ * The component is prototype-scoped: a Vaadin component instance must not be shared
+ * between layouts, so every layout receives its own instance from Spring. No
+ * hand-written factory is required.
  */
-@ParentLayout(DataManagerLayout.class)
-//@SessionScope
+@SpringComponent
+@Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class FooterComponent extends Footer {
 
-  FooterComponent(
-      String sourceCodeUrl,
-      String documentationUrl,
-      String apiUrl,
-      String contactEmail,
-      String contactSubject,
-      String legalNoticeHref,
-      String dataPrivacyAgreementHref) {
-    setId("data-manager-footer");
+  public FooterComponent(
+      @Value("${qbic.communication.data-manager.source-code.url}") String sourceCodeUrl,
+      @Value("${qbic.communication.documentation.url}") String documentationUrl,
+      @Value("${qbic.communication.api.url}") String apiUrl,
+      @Value("${qbic.communication.contact.email}") String contactEmail,
+      @Value("${qbic.communication.contact.subject}") String contactSubject) {
+    addClassName("app-footer");
 
-    add(new Anchor(dataPrivacyAgreementHref, "Data Privacy Agreement", AnchorTarget.BLANK),
-        new Anchor(legalNoticeHref, "Legal Notice", AnchorTarget.BLANK),
-        new Anchor(documentationUrl, "Documentation", AnchorTarget.BLANK),
-        new Anchor(apiUrl, "API", AnchorTarget.BLANK),
-        new Anchor(sourceCodeUrl, "Source", AnchorTarget.BLANK),
-        new Anchor("mailto:" + contactEmail.strip() + "?subject=" + contactSubject.strip(),
-            "Contact"));
+    Div linkGroups = new Div(
+        linkGroup("Legal",
+            new RouterLink("Data Privacy Agreement", DataPrivacyAgreement.class),
+            new RouterLink("Legal Notice", LegalNotice.class)),
+        linkGroup("Resources",
+            externalLink(documentationUrl, "Documentation"),
+            externalLink(apiUrl, "API"),
+            externalLink(sourceCodeUrl, "Source Code")),
+        linkGroup("Contact",
+            contactLink(contactEmail, contactSubject)));
+    linkGroups.addClassName("app-footer-links");
+
+    Div bottomBar = new Div(
+        new Span("© %s QBiC – Quantitative Biology Center, University of Tübingen"
+            .formatted(Year.now())));
+    bottomBar.addClassName("app-footer-bottom");
+
+    add(linkGroups, bottomBar);
+  }
+
+  /**
+   * Creates a labelled navigation landmark with a heading and the given links.
+   */
+  private static Nav linkGroup(String label, Component... links) {
+    H2 heading = new H2(label);
+    heading.addClassName("app-footer-heading");
+    Nav nav = new Nav();
+    nav.add(heading);
+    nav.add(links);
+    nav.addClassName("app-footer-group");
+    nav.getElement().setAttribute("aria-label", label);
+    return nav;
+  }
+
+  /**
+   * Creates an external link that opens in a new tab, hardened against tab-napping.
+   */
+  private static Anchor externalLink(String url, String text) {
+    Anchor anchor = new Anchor(url, text, AnchorTarget.BLANK);
+    anchor.getElement().setAttribute("rel", "noopener noreferrer");
+    return anchor;
+  }
+
+  private static Anchor contactLink(String email, String subject) {
+    String address = email.strip();
+    return new Anchor("mailto:%s?subject=%s".formatted(address, subject.strip()), address);
   }
 }

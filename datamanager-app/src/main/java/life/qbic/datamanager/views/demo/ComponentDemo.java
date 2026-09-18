@@ -646,8 +646,8 @@ public class ComponentDemo extends Div {
       }).thenRunAsync(() -> {
         ui.access(() -> {
             toast.close();
-            var success = messageFactory.toast("sample-batch.registered.success",
-                new Object[]{"Registration Batch #1"}, getLocale());
+            var success = messageFactory.toast("sample.registered.success",
+                new Object[]{}, getLocale());
             success.open();
           });
       });

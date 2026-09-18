@@ -9,7 +9,6 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -17,6 +16,7 @@ import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
+import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
@@ -28,7 +28,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import life.qbic.application.commons.time.DateTimeFormat;
 import life.qbic.datamanager.views.UiHandle;
-import life.qbic.datamanager.views.UserMainLayout;
+import life.qbic.datamanager.views.general.ContextNote;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.Tag.TagColor;
@@ -37,6 +37,8 @@ import life.qbic.datamanager.views.general.dialog.AppDialog;
 import life.qbic.datamanager.views.general.dialog.DialogBody;
 import life.qbic.datamanager.views.general.dialog.DialogFooter;
 import life.qbic.datamanager.views.general.dialog.DialogHeader;
+import life.qbic.datamanager.views.settings.SettingsMainLayout;
+import life.qbic.datamanager.views.settings.SettingsSection;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.AuthenticationToUserIdTranslationService;
@@ -58,10 +60,11 @@ import org.springframework.security.core.context.SecurityContextHolder;
  *
  * @since 1.12.0
  */
-@Route(value = "external-providers", layout = UserMainLayout.class)
+@Route(value = "settings/external-providers", layout = SettingsMainLayout.class)
 @SpringComponent
 @UIScope
 @PermitAll
+@PageTitle("Settings · External Providers")
 public class ExternalProvidersMain extends Main
     implements BeforeEnterObserver {
 
@@ -103,7 +106,6 @@ public class ExternalProvidersMain extends Main
         e -> renderContent());
 
     addClassName("external-providers");
-    content.addClassNames("external-providers__content");
     add(content, verificationSidebar);
   }
 
@@ -117,31 +119,20 @@ public class ExternalProvidersMain extends Main
   private void renderContent() {
     content.removeAll();
 
-    // ── Heading & benefit text (AC-6) ──
-    var heading = new H2("External Providers");
-    heading.addClassNames("font-semibold", "text-size-l", "m-0");
-
-    var benefit = new Paragraph(
-        "Connect your personal access tokens to enable access to "
-            + "access-restricted datasets on external instances. Once "
-            + "connected, you can link restricted datasets from these "
-            + "instances to your Data Manager projects.");
-    benefit.addClassNames("text-contrast-70pct", "text-size-s",
-        "mt-xs", "mb-s");
+    SettingsSection section = new SettingsSection("External Providers",
+        "Connect external data providers with your account. Once connected, you can search "
+            + "and link restricted datasets from these instances to your Data Manager projects.");
 
     // ─ Security reassurance ─
-    var securityNote = new Span(
-        "Tokens are encrypted at rest and never shared with third "
-            + "parties. You can disconnect at any time.");
-    securityNote.addClassNames("security-note", "mb-m");
+    var securityNote = new ContextNote(
+        "Tokens are encrypted at rest and never shared with third parties. You can disconnect at any time.",
+        VaadinIcon.LOCK.create());
+    securityNote.addClassName("context-note--compact");
+    section.addContent(securityNote);
 
-    content.add(heading, benefit, securityNote);
-
-    // ── Toolbar (Verify connections) ──
-    var toolbar = new Div();
-    toolbar.addClassNames("external-providers__toolbar");
+    // ── Action: Verify connections (right-aligned in header) ──
     var verifyButton = new Button("Verify connections", VaadinIcon.REFRESH.create());
-    verifyButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+    verifyButton.addClassName("primary");
     verifyButton.addClickListener(e -> {
       // If sidebar is open, refresh; otherwise open it
       if (isSidebarOpen()) {
@@ -150,8 +141,7 @@ public class ExternalProvidersMain extends Main
         verificationSidebar.open();
       }
     });
-    toolbar.add(verifyButton);
-    content.add(toolbar);
+    section.addAction(verifyButton);
 
     // ── Instance list (AC-1, AC-2) ──
     // TODO: Consider incremental DOM updates instead of full re-render
@@ -159,15 +149,17 @@ public class ExternalProvidersMain extends Main
         credentialService.listCredentialStatuses(userId());
 
     if (statuses.isEmpty()) {
-      content.add(new Paragraph(
+      section.addContent(new Paragraph(
           "No external data source instances are currently configured. "
               + "Contact your administrator to add instances."));
+      content.add(section);
       return;
     }
 
     for (var status : statuses) {
-      content.add(renderInstanceCard(status));
+      section.addContent(renderInstanceCard(status));
     }
+    content.add(section);
   }
 
   // ── Card rendering ─────────────────────────────────────────────
