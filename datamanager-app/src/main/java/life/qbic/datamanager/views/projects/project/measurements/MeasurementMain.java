@@ -88,9 +88,11 @@ import life.qbic.projectmanagement.infrastructure.template.provider.openxml.fact
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.ProteomicsWorkbooks;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 
 /**
@@ -108,7 +110,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
   private static final long serialVersionUID = 3778218989387044758L;
   private static final Logger log = LoggerFactory.logger(MeasurementMain.class);
 
-  public static final String UPDATE_MEASUREMENT_DESCRIPTION = "Please download your measurement metadata in order to edit it. You can modify the properties in the sheet and upload it below to save the changes.";
+  public static final String UPDATE_MEASUREMENT_DESCRIPTION = "Export the measurement metadata you want to edit. You can modify the properties in the sheet and upload it below to save the changes.";
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
   private final MeasurementDetailsComponent measurementDetailsComponent;
@@ -129,6 +131,9 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
   private final DownloadComponent downloadComponent;
   private final transient MessageSourceNotificationFactory messageFactory;
   private final AsyncProjectService asyncService;
+  private final transient NgsMeasurementLookup ngsMeasurementLookup;
+  private final transient PxpMeasurementLookup pxpMeasurementLookup;
+  private final transient IpMeasurementLookup ipMeasurementLookup;
   private final MessageSourceNotificationFactory messageSourceNotificationFactory;
   private transient Context context;
   private final ProjectContext projectContext;
@@ -177,6 +182,9 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
     this.userPermissions = Objects.requireNonNull(userPermissions);
     this.messageFactory = Objects.requireNonNull(messageFactory);
     this.measurementService = measurementService;
+    this.ngsMeasurementLookup = Objects.requireNonNull(ngsMeasurementLookup);
+    this.pxpMeasurementLookup = Objects.requireNonNull(pxpMeasurementLookup);
+    this.ipMeasurementLookup = Objects.requireNonNull(ipMeasurementLookup);
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
     this.asyncService = asyncProjectService;
     this.projectContext = new ProjectContext();
@@ -204,7 +212,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
     measurementDetailsComponent.addNgsRegisterListener(
         registrationRequest -> openRegistrationDialog());
     measurementDetailsComponent.addNgsEditListener(
-        editRequest -> ngsEditDialog(editRequest.measurementIds()).open());
+        editRequest -> editDialog(MeasurementDomain.NGS).open());
     measurementDetailsComponent.addNgsExportListener(
         exportRequest -> downloadNGSMetadata(exportRequest.measurementIds()));
     measurementDetailsComponent.addNgsDeletionListener(
@@ -214,7 +222,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
     measurementDetailsComponent.addPxpRegisterListener(
         registrationRequest -> openRegistrationDialog());
     measurementDetailsComponent.addPxpEditListener(
-        editRequest -> pxpEditDialog(editRequest.measurementIds()).open());
+        editRequest -> editDialog(MeasurementDomain.PXP).open());
     measurementDetailsComponent.addPxpExportListener(
         exportRequest -> downloadProteomicsMetadata(exportRequest.measurementIds()));
     measurementDetailsComponent.addPxpDeletionListener(
@@ -224,7 +232,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
     measurementDetailsComponent.addIpRegisterListener(
         registrationRequest -> openRegistrationDialog());
     measurementDetailsComponent.addIpEditListener(
-        editRequest -> ipEditDialog(editRequest.measurementIds()).open());
+        editRequest -> editDialog(MeasurementDomain.IP).open());
     measurementDetailsComponent.addIpExportListener(
         exportRequest -> downloadIPMetadata(exportRequest.measurementIds()));
     measurementDetailsComponent.addIpDeletionListener(
@@ -258,22 +266,34 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
   }
 
 
+  /**
+   * Opens the measurement edit dialog for the given domain. The dialog is scope-agnostic towards
+   * the (session-only) row selection: updates are identified per row via the measurement ID in the
+   * uploaded sheet, so the dialog always offers to download the edit template for <em>all</em>
+   * measurements of the active domain in the current experiment. When a selection exists, it is
+   * additionally offered as a convenience to download a smaller, targeted template for exactly the
+   * selected measurements.
+   */
+  private AppDialog editDialog(MeasurementDomain domain) {
+    List<String> selectedMeasurementIds = List.copyOf(
+        measurementDetailsComponent.selectedMeasurementIds(domain));
+    return switch (domain) {
+      case NGS -> ngsEditDialog(selectedMeasurementIds);
+      case PXP -> pxpEditDialog(selectedMeasurementIds);
+      case IP -> ipEditDialog(selectedMeasurementIds);
+    };
+  }
+
   private AppDialog ngsEditDialog(List<String> selectedMeasurementIds) {
-    var dialog = AppDialog.medium();
-    DialogHeader.with(dialog, "Edit Measurements");
-    DialogFooter.with(dialog, "Cancel", "Update");
-    var templateDownload = new MeasurementTemplateComponent(
-        UPDATE_MEASUREMENT_DESCRIPTION,
-        "Download Metadata",
-        asyncService.measurementUpdateNGS(context.projectId().orElseThrow().value(),
-            selectedMeasurementIds, OPEN_XML),
-        messageFactory,
-        projectContext::projectId);
+    var dialog = AppDialog.large();
+    DialogHeader.with(dialog, "Edit Genomics Measurements");
+    DialogFooter.with(dialog, "Cancel", "Edit Genomics Measurements");
 
     var upload = new MeasurementUpload(asyncService, context,
         ConverterRegistry.converterFor(
             MeasurementUpdateInformationNGS.class), messageFactory, uploadConfiguration);
-    var uploadComponent = new MeasurementUpdateComponent(templateDownload, upload);
+    var uploadComponent = new MeasurementUpdateComponent(
+        buildTemplateSection(MeasurementDomain.NGS, selectedMeasurementIds), upload);
     DialogBody.with(dialog, uploadComponent, uploadComponent);
     dialog.registerCancelAction(dialog::close);
     dialog.registerConfirmAction(() -> {
@@ -288,21 +308,15 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
   }
 
   private AppDialog pxpEditDialog(List<String> selectedMeasurementIds) {
-    var dialog = AppDialog.medium();
-    DialogHeader.with(dialog, "Edit Measurements");
-    DialogFooter.with(dialog, "Cancel", "Update");
-    var templateDownload = new MeasurementTemplateComponent(
-        UPDATE_MEASUREMENT_DESCRIPTION,
-        "Download Metadata",
-        asyncService.measurementUpdatePxP(context.projectId().orElseThrow().value(),
-            selectedMeasurementIds, OPEN_XML),
-        messageFactory,
-        projectContext::projectId);
+    var dialog = AppDialog.large();
+    DialogHeader.with(dialog, "Edit Proteomics Measurements");
+    DialogFooter.with(dialog, "Cancel", "Edit Proteomics Measurements");
 
     var upload = new MeasurementUpload(asyncService, context,
         ConverterRegistry.converterFor(
             MeasurementUpdateInformationPxP.class), messageFactory, uploadConfiguration);
-    var uploadComponent = new MeasurementUpdateComponent(templateDownload, upload);
+    var uploadComponent = new MeasurementUpdateComponent(
+        buildTemplateSection(MeasurementDomain.PXP, selectedMeasurementIds), upload);
     DialogBody.with(dialog, uploadComponent, uploadComponent);
     dialog.registerCancelAction(dialog::close);
     dialog.registerConfirmAction(() -> {
@@ -317,22 +331,16 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
   }
 
   private AppDialog ipEditDialog(List<String> selectedMeasurementIds) {
-    var dialog = AppDialog.medium();
-    DialogHeader.with(dialog, "Edit Measurements");
-    DialogFooter.with(dialog, "Cancel", "Update");
-    var templateDownload = new MeasurementTemplateComponent(
-        UPDATE_MEASUREMENT_DESCRIPTION,
-        "Download Metadata",
-        asyncService.measurementUpdateIP(context.projectId().orElseThrow().value(),
-            selectedMeasurementIds, OPEN_XML),
-        messageFactory,
-        projectContext::projectId);
+    var dialog = AppDialog.large();
+    DialogHeader.with(dialog, "Edit Immunopeptidomics Measurements");
+    DialogFooter.with(dialog, "Cancel", "Edit Immunopeptidomics Measurements");
 
     var upload = new MeasurementUpload(asyncService, context,
         ConverterRegistry.converterFor(
             MeasurementUpdateInformationIP.class), messageFactory,
         uploadConfiguration);
-    var uploadComponent = new MeasurementUpdateComponent(templateDownload, upload);
+    var uploadComponent = new MeasurementUpdateComponent(
+        buildTemplateSection(MeasurementDomain.IP, selectedMeasurementIds), upload);
     DialogBody.with(dialog, uploadComponent, uploadComponent);
     dialog.registerCancelAction(dialog::close);
     dialog.registerConfirmAction(() -> {
@@ -344,6 +352,109 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
       }
     });
     return dialog;
+  }
+
+  /**
+   * Builds the "Export Metadata" section of an edit dialog for the given domain.
+   * <p>
+   * The section always offers to export the edit template for <em>all</em> measurements of the
+   * domain in the current experiment (the baseline that rescues users whose session selection was
+   * lost), and, when a selection exists, an additional convenience button to export only the
+   * selected measurements. Both buttons state their scope explicitly in the label, so the user
+   * knows exactly what they will export without hunting.
+   */
+  private MeasurementTemplateComponent buildTemplateSection(MeasurementDomain domain,
+      List<String> selectedMeasurementIds) {
+    String projectId = context.projectId().orElseThrow().value();
+    String experimentId = context.experimentId().orElseThrow().value();
+    String domainLabel = domainLabel(domain);
+    // The "export all" template mono is lazy: measurement IDs are resolved only when the user
+    // clicks the button, so opening the dialog stays instant and the workbook reflects
+    // the current state of the experiment at export time.
+    Mono<DigitalObject> allMeasurementsTemplate = Mono.defer(() -> {
+      List<String> allIds = allMeasurementIds(domain, projectId, experimentId);
+      return switch (domain) {
+        case NGS -> asyncService.measurementUpdateNGS(projectId, allIds, OPEN_XML);
+        case PXP -> asyncService.measurementUpdatePxP(projectId, allIds, OPEN_XML);
+        case IP -> asyncService.measurementUpdateIP(projectId, allIds, OPEN_XML);
+      };
+    });
+    MeasurementTemplateComponent template = new MeasurementTemplateComponent(
+        UPDATE_MEASUREMENT_DESCRIPTION,
+        "Export all " + domainLabel + " measurements",
+        allMeasurementsTemplate,
+        messageFactory,
+        projectContext::projectId);
+    if (!selectedMeasurementIds.isEmpty()) {
+      // the selected set is already resolved (dialog-open time); just wrap it in a deferred
+      // mono so the service call happens on click
+      template.addTemplateExport(
+          "Export selected (%d)".formatted(selectedMeasurementIds.size()),
+          Mono.defer(() -> switch (domain) {
+            case NGS -> asyncService.measurementUpdateNGS(projectId, selectedMeasurementIds,
+                OPEN_XML);
+            case PXP -> asyncService.measurementUpdatePxP(projectId, selectedMeasurementIds,
+                OPEN_XML);
+            case IP -> asyncService.measurementUpdateIP(projectId, selectedMeasurementIds,
+                OPEN_XML);
+          }));
+    }
+    return template;
+  }
+
+  private static String domainLabel(MeasurementDomain domain) {
+    return switch (domain) {
+      case NGS -> "genomics";
+      case PXP -> "proteomics";
+      case IP -> "immunopeptidomics";
+    };
+  }
+
+  /**
+   * Resolves all measurement IDs of the given domain within the current experiment. The blank
+   * search term matches every measurement of the experiment (the search filter is an
+   * <code>anyContaining</code> predicate that is skipped for blank terms).
+   */
+  private List<String> allMeasurementIds(MeasurementDomain domain, String projectId,
+      String experimentId) {
+    return switch (domain) {
+      case NGS -> ngsMeasurementIds(projectId, experimentId);
+      case PXP -> pxpMeasurementIds(projectId, experimentId);
+      case IP -> ipMeasurementIds(projectId, experimentId);
+    };
+  }
+
+  private List<String> ngsMeasurementIds(String projectId, String experimentId) {
+    NgsMeasurementLookup.MeasurementFilter filter =
+        NgsMeasurementLookup.MeasurementFilter.forExperiment(experimentId);
+    int total = ngsMeasurementLookup.countNgsMeasurements(projectId, filter);
+    return ngsMeasurementLookup.lookupNgsMeasurements(projectId, 0, total, sortForExport(), filter)
+        .map(NgsMeasurementLookup.MeasurementInfo::measurementId).toList();
+  }
+
+  private List<String> pxpMeasurementIds(String projectId, String experimentId) {
+    PxpMeasurementLookup.MeasurementFilter filter =
+        PxpMeasurementLookup.MeasurementFilter.forExperiment(experimentId);
+    int total = pxpMeasurementLookup.countPxpMeasurements(projectId, filter);
+    return pxpMeasurementLookup.lookupPxpMeasurements(projectId, 0, total, sortForExport(), filter)
+        .map(PxpMeasurementLookup.MeasurementInfo::measurementId).toList();
+  }
+
+  private List<String> ipMeasurementIds(String projectId, String experimentId) {
+    IpMeasurementLookup.MeasurementFilter filter =
+        IpMeasurementLookup.MeasurementFilter.forExperiment(experimentId);
+    int total = ipMeasurementLookup.countIpMeasurements(projectId, filter);
+    return ipMeasurementLookup.lookupIpMeasurements(projectId, 0, total, sortForExport(), filter)
+        .map(IpMeasurementLookup.MeasurementInfo::measurementId).toList();
+  }
+
+  /**
+   * A stable sort order for resolving all measurement IDs of a domain. Sorting is only needed to
+   * guarantee a deterministic workbook row order; an unsorted lookup would also return every
+   * measurement of the experiment.
+   */
+  private static Sort sortForExport() {
+    return Sort.unsorted();
   }
 
   private void handlePxpDeletionRequest(Set<String> measurementIds) {

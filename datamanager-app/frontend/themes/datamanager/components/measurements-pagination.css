@@ -34,6 +34,17 @@
   padding: 0 var(--lumo-space-m);
 }
 
+/* UX: the paginated grids render all rows of the current page at natural height
+   (setAllRowsVisible, no inner vertical scroll container — ADR-0007/0009). With a
+   single row the grid is only header+1 row tall, and the wide NGS/IP column sets
+   force a horizontal scrollbar that overlaps the row. Give the grid a minimum
+   height that fits the header, one full row, and the horizontal scrollbar, so the
+   single-entry case never clips content. Larger page sizes are untouched (the grid
+   grows with its rows). */
+.measurement-tab-pagination .measurement-tab-content vaadin-grid {
+  min-height: 12rem;
+}
+
 .measurement-tab-pagination .measurement-tab-toolbar {
   display: flex;
   align-items: center;
@@ -126,4 +137,13 @@
   color: var(--lumo-secondary-text-color);
   border: 1px dashed var(--lumo-contrast-30pct);
   border-radius: var(--lumo-border-radius-m);
+}
+/* Edit-measurements dialog: the template export scope actions ("Export all …" /
+   "Export selected (N)") sit side by side instead of stacking, so the two scopes
+   read as one deliberate choice, not a hierarchy of steps. */
+.measurement-template-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lumo-space-s);
+  align-items: center;
 }

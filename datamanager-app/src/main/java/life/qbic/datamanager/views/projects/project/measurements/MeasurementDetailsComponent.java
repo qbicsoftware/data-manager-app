@@ -145,8 +145,10 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
       Button editButton, Button deleteButton) {
     editButton.setVisible(writeAccess);
     deleteButton.setVisible(writeAccess);
+    // The edit dialog is scope-agnostic towards the selection: it offers to download the
+    // template for all measurements of the domain, so it must stay enabled even without one.
+    editButton.setEnabled(writeAccess);
     boolean hasSelection = selection.count() > 0;
-    editButton.setEnabled(hasSelection);
     deleteButton.setEnabled(hasSelection);
     Button exportButton = exportButtons.get(domain);
     if (exportButton != null) {
@@ -215,7 +217,9 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     configureSelectionReconciliation(pxpGrid, pxpSelection, MeasurementDomain.PXP);
     configureSelectionReconciliation(ipGrid, ipSelection, MeasurementDomain.IP);
 
-    // UX F4: bulk actions start disabled — no selection exists yet
+    // UX F4: bulk actions start disabled — no selection exists yet. The Edit action is the
+    // exception: its dialog offers to download the template for all measurements of the domain,
+    // decoupling editing from the session-only selection.
     updateSelectionBar();
 
     // register buttons wiring (fires the same events as the old implementation)
@@ -260,6 +264,9 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     // UX F5: visual hierarchy — export is the primary bulk action, delete is destructive
     exportButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     editButton.setIcon(VaadinIcon.EDIT.create());
+    // UX: the edit dialog is not gated on a selection (the uploaded sheet identifies the
+    // measurements per row), so the toolbar Edit button is always enabled for write access.
+    editButton.setEnabled(writeAccess);
     deleteButton.setIcon(VaadinIcon.TRASH.create());
     deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
     exportButtons.put(domain, exportButton);
@@ -628,10 +635,10 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   private void fireEditRequested(MeasurementDomain domain, MeasurementSelection selection,
       IdEventFactory<?> factory) {
     List<String> ids = idsOf(selection);
-    if (ids.isEmpty()) {
-      displayMissingSelectionNote();
-      return;
-    }
+    // The edit dialog is scope-agnostic towards the (session-only) row selection: updates are
+    // identified per row via the measurement ID in the uploaded sheet. The dialog always offers
+    // to download the template for all measurements of the domain in the current experiment; the
+    // selection (if any) is only a convenience to download a smaller, targeted template.
     switch (domain) {
       case NGS -> fireEvent((NgsMeasurementEditRequested) factory.create(ids, this, true));
       case PXP -> fireEvent((PxpMeasurementEditRequested) factory.create(ids, this, true));
@@ -692,6 +699,13 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   public void removeFromSelection(MeasurementDomain domain, Set<String> ids) {
     selectionFor(domain).deselect(ids);
     tabPagination.updateSelectionBar();
+  }
+
+  /**
+   * @return a copy of the currently selected measurement IDs for the given domain (may be empty)
+   */
+  public List<String> selectedMeasurementIds(MeasurementDomain domain) {
+    return new ArrayList<>(selectionFor(domain).selectedIds());
   }
 
   // ---- context --------------------------------------------------------------

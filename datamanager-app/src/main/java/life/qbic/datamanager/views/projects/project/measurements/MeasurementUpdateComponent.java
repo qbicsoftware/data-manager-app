@@ -26,7 +26,7 @@ public class MeasurementUpdateComponent extends Div implements UserInput {
   ) {
     this.measurementUpload = Objects.requireNonNull(measurementUpload);
 
-    var templateSection = DialogSection.with("Download Metadata", templateComponent);
+    var templateSection = DialogSection.with("Export Metadata", templateComponent);
 
     add(templateSection);
     add(measurementUpload);

@@ -176,4 +176,55 @@ class MeasurementTabPaginationSpec extends Specification {
         container.activeTab() == MeasurementDomain.IP
         domains == [MeasurementDomain.IP]
     }
+
+    def "hiding the active tab falls back to the first remaining visible tab and refreshes it"() {
+        given: "only proteomics measurements exist (NGS has none)"
+        def container = newContainer()
+        def refreshes = []
+        container.addRefreshRequestedListener(event -> refreshes << event.domain())
+
+        when: "the owning view hides the NGS tab because it has no measurements"
+        container.setTabVisible(MeasurementDomain.NGS, false)
+
+        then: "the active tab moves to the first still-visible tab (PXP) and refreshes it"
+        container.activeTab() == MeasurementDomain.PXP
+        refreshes == [MeasurementDomain.PXP]
+
+        when: "the fallback target tab is hidden too (only IP remains)"
+        container.setTabVisible(MeasurementDomain.PXP, false)
+
+        then: "the active tab moves to the last visible one and refreshes it"
+        container.activeTab() == MeasurementDomain.IP
+        refreshes == [MeasurementDomain.PXP, MeasurementDomain.IP]
+    }
+
+    def "hiding a non-active tab does not change the active tab"() {
+        given:
+        def container = newContainer()
+        def refreshes = []
+        container.addRefreshRequestedListener(event -> refreshes << event.domain())
+
+        when:
+        container.setTabVisible(MeasurementDomain.IP, false)
+
+        then:
+        container.activeTab() == MeasurementDomain.NGS
+        refreshes == []
+    }
+
+    def "hiding the last visible tab leaves the active tab at the last fallback target"() {
+        given: "all tabs start visible, active is NGS"
+        def container = newContainer()
+        def refreshes = []
+        container.addRefreshRequestedListener(event -> refreshes << event.domain())
+
+        when: "hide all three (NGS first)"
+        container.setTabVisible(MeasurementDomain.NGS, false)
+        container.setTabVisible(MeasurementDomain.PXP, false)
+        container.setTabVisible(MeasurementDomain.IP, false)
+
+        then: "the active tab falls through NGS→PXP→IP and stays at the last fallback target"
+        container.activeTab() == MeasurementDomain.IP
+        refreshes == [MeasurementDomain.PXP, MeasurementDomain.IP]
+    }
 }

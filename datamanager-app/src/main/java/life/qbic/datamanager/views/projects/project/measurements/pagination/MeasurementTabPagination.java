@@ -364,12 +364,25 @@ public class MeasurementTabPagination extends Div {
 
   /**
    * Hides/shows a tab (an experiment without measurements of a domain hides its tab).
+   * <p>If the currently active tab is being hidden, the selection is automatically moved to the
+   * first remaining visible tab (in registration order NGS → PxP → IP), so the view never ends
+   * up showing an empty hidden tab while other tabs contain measurements.</p>
    */
   public void setTabVisible(MeasurementDomain domain, boolean visible) {
     Tab tab = tabsByDomain.get(domain);
     if (tab != null) {
       tab.setVisible(visible);
     }
+    if (!visible && domain == listState.activeTab()) {
+      firstVisibleDomain().ifPresent(this::setActiveTab);
+    }
+  }
+
+  private Optional<MeasurementDomain> firstVisibleDomain() {
+    return tabsByDomain.entrySet().stream()
+        .filter(entry -> entry.getValue().isVisible())
+        .map(Map.Entry::getKey)
+        .findFirst();
   }
 
   private void writeUrl(boolean push) {
