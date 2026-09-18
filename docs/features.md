@@ -304,7 +304,7 @@ Data stewards are power users with access to potentially hundreds of projects. D
 | Field | Value |
 |---|---|
 | **Requirement IDs** | `USER-R-01`, `USER-R-02`, `USER-R-03` |
-| **Status** | 🔴 Open |
+| **Status** | 🟡 In Progress |
 | **GitHub** | [#1539](https://github.com/qbicsoftware/data-manager-app/issues/1539) |
 
 **User Story**
@@ -322,6 +322,7 @@ Data stewards are power users with access to potentially hundreds of projects. D
 
 - All bulk actions already reduce the selection to measurement IDs before calling the service layer, so an identifier-based selection model requires no service API changes.
 - A review step or "show selected only" option before destructive actions is a candidate UX improvement to evaluate during refinement.
+- **Product decision (recorded on #1536 during refinement):** "select all" means **all measurements matching the active filter in backend storage**, so a full metadata export across pages always works. The selection snapshot **survives page, filter, and sort changes**; a "Clear selection" affordance accompanies the count label. Paginated measurement grids are single-sort (the URL carries one sort parameter). See [ADR-0009](adr/0009-paginated-measurement-lists-and-selection.md).
 
 ---
 

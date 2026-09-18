@@ -17,7 +17,7 @@ if [[ "${1:-}" == "--prod" ]]; then
 fi
 
 echo "==> Compiling project..."
-./mvnw compile -pl datamanager-app -q
+./mvnw compile -pl datamanager-app -am
 
 echo "==> Building Vaadin frontend..."
 if $PROD; then
