@@ -154,4 +154,27 @@ class PaginatedGridSpec extends Specification {
         paginated.listState().page() == 1
         paginated.listState().filter() == "x"
     }
+
+    def "controlled mode does not auto-load on attach and does not render toolbar or pager"() {
+        given:
+        def items = (1..30).collect { new Item("id-$it") }
+        def loader = new FakeLoader(items)
+        def grid = new Grid<Item>()
+        grid.addColumn({ it.id })
+        def paginated = new PaginatedGrid<>(grid, loader, { it.id }, "item", DEFAULT_SORT,
+            false, false, false)
+
+        expect: "no page is loaded and no internal controls are rendered"
+        loader.loadCount == 0
+        !paginated.getChildren()
+            .anyMatch { c -> c.class.simpleName == "PaginationBar"
+                || c.class.simpleName == "TextField" }
+
+        when: "the owning view drives the state explicitly"
+        paginated.setListState(new ListState(2, 10, "", DEFAULT_SORT))
+
+        then: "the page is loaded exactly as in standalone mode"
+        loader.loadCount == 1
+        paginated.grid().getGenericDataView().getItems().toList()*.id == (11..20).collect { "id-$it" }
+    }
 }

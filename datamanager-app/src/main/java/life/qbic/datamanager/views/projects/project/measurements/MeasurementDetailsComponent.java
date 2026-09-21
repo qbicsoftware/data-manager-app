@@ -58,6 +58,7 @@ import life.qbic.datamanager.views.general.dialog.DialogFooter;
 import life.qbic.datamanager.views.general.dialog.DialogHeader;
 import life.qbic.datamanager.views.general.dialog.DialogSection;
 import life.qbic.datamanager.views.general.pagination.ListState;
+import life.qbic.datamanager.views.general.pagination.PaginatedGrid;
 import life.qbic.datamanager.views.general.pagination.Selection;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.projects.project.measurements.pagination.MeasurementDomain;
@@ -102,6 +103,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
 
   private final MeasurementTabPagination tabPagination;
   private final Grid<NgsMeasurementLookup.MeasurementInfo> ngsGrid = createNgsGrid();
+  private final PaginatedGrid<NgsMeasurementLookup.MeasurementInfo> ngsPaginatedGrid;
   private final Grid<MeasurementInfo> pxpGrid = createPxpGrid();
   private final Grid<IpMeasurementLookup.MeasurementInfo> ipGrid = createIpGrid();
   private final TextField ngsSearchField = searchField();
@@ -192,6 +194,18 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     this.ipMeasurementLookup = requireNonNull(ipMeasurementLookup);
     addClassNames("measurement-details-component", "width-full");
 
+    // Scaffold (FEAT-PAG-LIST-03): the NGS grid is wrapped in a reusable PaginatedGrid. It is
+    // driven externally — its own toolbar and pager are suppressed and the shared pager/selection
+    // bar of the tab container stay authoritative — so it only owns page loading, clamping and the
+    // empty state for the NGS tab. PxP and IP still use the legacy manual path until replicated.
+    ngsPaginatedGrid = new PaginatedGrid<>(ngsGrid, this::loadNgsPage,
+        NgsMeasurementLookup.MeasurementInfo::measurementId, "measurement",
+        MeasurementSort.DEFAULT, false, false, false);
+    ngsPaginatedGrid.addPageLoadedListener(event -> {
+      applySelectionToGrid(ngsGrid, ngsSelection, MeasurementDomain.NGS);
+      tabPagination.onPageLoaded(MeasurementDomain.NGS, event.getPage(), event.getTotal());
+    });
+
     tabPagination = new MeasurementTabPagination();
     tabPagination.addTab(TAB_LABELS.get(MeasurementDomain.NGS), MeasurementDomain.NGS,
         ngsTabContent());
@@ -242,21 +256,22 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
 
   private Component ngsTabContent() {
     return tabContent(ngsGrid, ngsSearchField, ngsEditButton, ngsDeleteButton,
-        MeasurementDomain.NGS, this::exportNgs);
+        MeasurementDomain.NGS, this::exportNgs, ngsPaginatedGrid, false);
   }
 
   private Component pxpTabContent() {
     return tabContent(pxpGrid, pxpSearchField, pxpEditButton, pxpDeleteButton,
-        MeasurementDomain.PXP, this::exportPxp);
+        MeasurementDomain.PXP, this::exportPxp, pxpGrid, true);
   }
 
   private Component ipTabContent() {
     return tabContent(ipGrid, ipSearchField, ipEditButton, ipDeleteButton,
-        MeasurementDomain.IP, this::exportIp);
+        MeasurementDomain.IP, this::exportIp, ipGrid, true);
   }
 
   private <T> Component tabContent(Grid<T> grid, TextField searchField, Button editButton,
-      Button deleteButton, MeasurementDomain domain, Runnable exporter) {
+      Button deleteButton, MeasurementDomain domain, Runnable exporter, Component body,
+      boolean withEmptyState) {
     Div toolbar = new Div();
     toolbar.addClassName("measurement-tab-toolbar");
     searchField.addClassName("measurement-search");
@@ -281,15 +296,19 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     toolbarRight.add(showHideColumnsMenu(grid));
     toolbar.add(toolbarRight);
 
-    // UX F8: explicit empty-state message instead of a blank grid region
-    Div emptyState = new Div();
-    emptyState.addClassName("measurement-empty-state");
-    emptyState.setVisible(false);
-    emptyStates.put(domain, emptyState);
-
     Div content = new Div();
     content.addClassName("measurement-tab-content");
-    content.add(toolbar, emptyState, grid);
+    content.add(toolbar);
+    // UX F8: explicit empty-state message instead of a blank grid region. The reusable
+    // PaginatedGrid owns its own empty state, so callers that render one pass withEmptyState.
+    if (withEmptyState) {
+      Div emptyState = new Div();
+      emptyState.addClassName("measurement-empty-state");
+      emptyState.setVisible(false);
+      emptyStates.put(domain, emptyState);
+      content.add(emptyState);
+    }
+    content.add(body);
     return content;
   }
 
@@ -484,14 +503,16 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     String searchTerm = state.filter();
     switch (domain) {
       case NGS -> {
-        NgsMeasurementLookup.MeasurementFilter filter =
-            NgsMeasurementLookup.MeasurementFilter.forExperiment(experimentId)
-                .withSearch(searchTerm, clientTimeZoneOffset.get(),
-                    MEASUREMENT_REGISTRATION_DATE_TIME_FORMAT);
-        int total = ngsMeasurementLookup.countNgsMeasurements(projectId, filter);
-        List<NgsMeasurementLookup.MeasurementInfo> page = ngsMeasurementLookup
-            .lookupNgsMeasurements(projectId, offset, limit, sort, filter).toList();
-        renderPage(ngsGrid, page, total, state, MeasurementDomain.NGS, scrollGridTopIntoView);
+        // The NGS grid is scaffolded onto the reusable PaginatedGrid, which owns page loading,
+        // clamping and the empty state; the PageLoadedEvent listener then reports the rendered
+        // page back to the shared pager and reconciles the NGS selection.
+        ngsPaginatedGrid.setListState(state);
+        // UX F3: only for pager-driven page/page-size changes (the pager sits below the grid, so
+        // after paging the viewport is left at the bottom) bring the grid's top back into view.
+        if (scrollGridTopIntoView) {
+          ngsGrid.getElement().executeJs(
+              "requestAnimationFrame(() => this.scrollIntoView({block: 'start'}))");
+        }
       }
       case PXP -> {
         PxpMeasurementLookup.MeasurementFilter filter =
@@ -514,6 +535,27 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         renderPage(ipGrid, page, total, state, MeasurementDomain.IP, scrollGridTopIntoView);
       }
     }
+  }
+
+  /**
+   * Loads a single NGS page for the reusable {@link PaginatedGrid} (the {@code PageLoader} of the
+   * NGS grid). Performs the same backend lookup as the legacy manual path and returns the page
+   * items together with the total count of measurements matching the active filter.
+   */
+  private PaginatedGrid.Page<NgsMeasurementLookup.MeasurementInfo> loadNgsPage(ListState state) {
+    String experimentId = context.experimentId().orElseThrow().value();
+    String projectId = context.projectId().orElseThrow().value();
+    Sort sort = MeasurementSort.toSpringDataSort(state.sort(), MeasurementDomain.NGS);
+    int offset = (state.page() - 1) * state.pageSize();
+    int limit = state.pageSize();
+    NgsMeasurementLookup.MeasurementFilter filter =
+        NgsMeasurementLookup.MeasurementFilter.forExperiment(experimentId)
+            .withSearch(state.filter(), clientTimeZoneOffset.get(),
+                MEASUREMENT_REGISTRATION_DATE_TIME_FORMAT);
+    int total = ngsMeasurementLookup.countNgsMeasurements(projectId, filter);
+    List<NgsMeasurementLookup.MeasurementInfo> page = ngsMeasurementLookup
+        .lookupNgsMeasurements(projectId, offset, limit, sort, filter).toList();
+    return new PaginatedGrid.Page<>(page, total);
   }
 
   private <T> void renderPage(Grid<T> grid, List<T> page, int total, ListState state,

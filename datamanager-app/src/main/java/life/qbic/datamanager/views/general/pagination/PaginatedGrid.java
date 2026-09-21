@@ -56,6 +56,8 @@ public class PaginatedGrid<T> extends Div {
   private final Div emptyState = new Div();
   private ListState listState;
   private final String itemLabel;
+  private final boolean showToolbar;
+  private final boolean showPager;
   private boolean initialLoadDone;
 
   /**
@@ -106,6 +108,38 @@ public class PaginatedGrid<T> extends Div {
    */
   public PaginatedGrid(Grid<T> grid, PageLoader<T> pageLoader, Function<T, String> idExtractor,
       String itemLabel, SortOrder defaultSort) {
+    this(grid, pageLoader, idExtractor, itemLabel, defaultSort, true, true, true);
+  }
+
+  /**
+   * Creates a paginated grid wrapping the given, already column-configured grid.
+   *
+   * <p>By default the component renders its own toolbar (search field, selection display and clear
+   * button) and its own {@link PaginationBar} and wires its own sort listener. For lists that
+   * already own those controls — e.g. a view with a single shared pager and selection bar across
+   * several tabs — the toolbar can be suppressed via {@code showToolbar}; the component then only
+   * renders the grid and the empty state and becomes <em>externally controlled</em>: it wires no
+   * search, selection, sort or paging listener, and the owning view drives {@link ListState}
+   * through {@link #setListState(ListState)} / {@link #applyExternalState(ListState)} and reads
+   * the rendered page back via {@link #addPageLoadedListener}. {@code showPager} additionally
+   * hides the internal {@link PaginationBar} while still listening to it.</p>
+   *
+   * @param grid        the grid to decorate; its selection mode is set to MULTI by this component
+   * @param pageLoader  loads the current page for a list state (see {@link PageLoader})
+   * @param idExtractor maps a row to the identifier used for cross-page selection
+   * @param itemLabel   the label of the counted items, e.g. "samples" (used by the pager and the
+   *                    selection display)
+   * @param defaultSort the fallback sort order, used until the user changes the sort
+   * @param showToolbar whether to render the component's own search field, selection display and
+   *                    sort handling; {@code false} makes the component externally controlled
+   * @param showPager   whether to render the component's own {@link PaginationBar}
+   * @param autoLoadOnAttach whether to load the first page automatically when the component is
+   *                         attached; set to {@code false} when an external owner drives
+   *                         {@link ListState} and triggers the load explicitly
+   */
+  public PaginatedGrid(Grid<T> grid, PageLoader<T> pageLoader, Function<T, String> idExtractor,
+      String itemLabel, SortOrder defaultSort, boolean showToolbar, boolean showPager,
+      boolean autoLoadOnAttach) {
     this.grid = Objects.requireNonNull(grid, "grid must not be null");
     this.pageLoader = Objects.requireNonNull(pageLoader, "pageLoader must not be null");
     this.idExtractor = Objects.requireNonNull(idExtractor, "idExtractor must not be null");
@@ -115,28 +149,46 @@ public class PaginatedGrid<T> extends Div {
     this.paginationBar = new PaginationBar(ListStateCodec.ALLOWED_PAGE_SIZES,
         ListStateCodec.DEFAULT_PAGE_SIZE, itemLabel);
     this.selection = new Selection(this::updateSelectionDisplay);
+    this.showToolbar = showToolbar;
+    this.showPager = showPager;
 
     configureGrid();
-    configureSearch();
-    configureSort();
-    configureSelection();
-    configurePagination();
+    if (showToolbar) {
+      configureSearch();
+      configureSelection();
+      // In controlled mode (toolbar suppressed) the owning view also owns sorting, paging and
+      // selection: it drives the list state through setListState/applyExternalState and reads the
+      // page back via PageLoadedEvent. Wiring our own sort listener would update only our private
+      // ListState, silently diverging from the view's authoritative state (e.g. the browser URL).
+      configureSort();
+    }
+    if (showPager) {
+      configurePagination();
+    }
 
     addClassNames("paginated-grid", "flex-vertical", "gap-03", "width-full");
-    Div toolbar = new Div(searchField, selectionDisplay, clearSelectionButton);
-    toolbar.addClassName("paginated-grid-toolbar");
     emptyState.addClassName("paginated-grid-empty-state");
     emptyState.setVisible(false);
-    add(toolbar, grid, emptyState, paginationBar);
+    if (showToolbar) {
+      Div toolbar = new Div(searchField, selectionDisplay, clearSelectionButton);
+      toolbar.addClassName("paginated-grid-toolbar");
+      add(toolbar);
+    }
+    add(grid, emptyState);
+    if (showPager) {
+      add(paginationBar);
+    }
 
     // Load the first page when the component is attached, so the grid shows data immediately
     // without the owning view having to trigger an explicit refresh.
-    addAttachListener(event -> {
-      if (!initialLoadDone) {
-        initialLoadDone = true;
-        setListState(listState);
-      }
-    });
+    if (autoLoadOnAttach) {
+      addAttachListener(event -> {
+        if (!initialLoadDone) {
+          initialLoadDone = true;
+          setListState(listState);
+        }
+      });
+    }
   }
 
   private void configureGrid() {
@@ -255,7 +307,9 @@ public class PaginatedGrid<T> extends Div {
     renderEmptyState(page.items().isEmpty(), !state.filter().isBlank());
     paginationBar.setListState(pageToRender, page.total(), state.pageSize());
     paginationBar.setVisible(page.total() > 0);
-    applySelectionToGrid();
+    if (showToolbar) {
+      applySelectionToGrid();
+    }
     updateSelectionDisplay();
     fireEvent(new PageLoadedEvent(this, pageToRender, page.total()));
   }
@@ -332,7 +386,9 @@ public class PaginatedGrid<T> extends Div {
    */
   public void select(Set<String> ids) {
     selection.select(ids);
-    applySelectionToGrid();
+    if (showToolbar) {
+      applySelectionToGrid();
+    }
     updateSelectionDisplay();
   }
 
@@ -342,7 +398,9 @@ public class PaginatedGrid<T> extends Div {
    */
   public void deselect(Set<String> ids) {
     selection.deselect(ids);
-    applySelectionToGrid();
+    if (showToolbar) {
+      applySelectionToGrid();
+    }
     updateSelectionDisplay();
   }
 
