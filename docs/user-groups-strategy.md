@@ -224,6 +224,14 @@ merits an ADR.
   so no special sid seeding is needed.
   *Note:* an alternative is a dedicated custom `GroupSid` (§4.3 Alternative); the recommended
   `GrantedAuthoritySid` representation keeps Spring ACL's persistence/lookup unchanged.
+- **Group deletion is a hard dependency of the stable-id rule.** Because ACEs and the caller's
+  check-time SIDs are keyed on the stable group *id*, deleting a group must **clean up every trace
+  of that id**: (a) remove all ACEs referencing `GROUP_<id>` from `acl_entry` (via
+  `removeAuthorityAccess` for each project the group is shared with — do **not** leave orphaned ACEs,
+  as the group's `GrantedAuthoritySid` would otherwise remain resolvable), and (b) remove all
+  `group_membership` rows for the group. Deleting a group is therefore only complete once no ACE and
+  no membership references the id any more; reusing a deleted group's id for a new group would
+  otherwise silently resurrect old grants.
 - **No ACL objects for groups themselves** — group *management* permissions (owner/manager actions,
   admin oversight) are enforced in the application layer via membership roles + `ROLE_ADMIN`
   checks. Spring ACL remains exclusively on `Project` objects.
@@ -401,7 +409,9 @@ project shared with the group. Mitigations baked into the design:
    removal.
 2. Project admins notified on membership changes of shared groups.
 3. Groups can never be OWNER; a group grant caps at ADMIN.
-4. Dissolution shows affected projects before confirming; ACEs cleaned up.
+4. Dissolution shows affected projects before confirming; **all** ACEs for the group are removed and
+   the group's `group_membership` rows are cleaned up (§4.2), so no orphaned grant or membership
+   survives.
 5. Audit events for every group operation (existing event → policy → directive pattern).
 6. Disabled users lose access at the login gate (no extra work).
 
