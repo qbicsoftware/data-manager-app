@@ -21,6 +21,7 @@ import life.qbic.application.commons.SortOrder;
 import life.qbic.datamanager.views.general.pagination.ListState;
 import life.qbic.datamanager.views.general.pagination.ListStateCodec;
 import life.qbic.datamanager.views.general.pagination.PaginationBar;
+import life.qbic.datamanager.views.general.pagination.Selection;
 
 /**
  * A paginated, tabbed measurement list container (ADR-0008, USER-R-01/-R-02/-R-03).
@@ -64,7 +65,7 @@ public class MeasurementTabPagination extends Div {
   private final Div selectionContainer = new Div();
   private final Map<MeasurementDomain, Tab> tabsByDomain = new EnumMap<>(MeasurementDomain.class);
   private MeasurementListState listState = MeasurementListState.defaultWith(MeasurementDomain.NGS);
-  private MeasurementSelection selection;
+  private Selection selection;
   private String basePath;
   private boolean suppressTabSwitchEvents;
   private long totalItemsActive;
@@ -413,10 +414,10 @@ public class MeasurementTabPagination extends Div {
 
   /**
    * Attaches the selection whose count is displayed. The owning view switches this on tab
-   * changes; the container reacts to {@link MeasurementSelection} mutations via
+   * changes; the container reacts to {@link Selection} mutations via
    * {@link #updateSelectionBar()}.
    */
-  public void setSelection(MeasurementSelection selection) {
+  public void setSelection(Selection selection) {
     this.selection = Objects.requireNonNull(selection, "selection must not be null");
     // a new selection scope is attached; do not compare it against the previous tab's total
     this.totalItemsActive = 0;

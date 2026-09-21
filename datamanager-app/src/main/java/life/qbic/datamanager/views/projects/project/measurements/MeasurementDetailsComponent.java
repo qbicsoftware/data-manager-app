@@ -58,10 +58,10 @@ import life.qbic.datamanager.views.general.dialog.DialogFooter;
 import life.qbic.datamanager.views.general.dialog.DialogHeader;
 import life.qbic.datamanager.views.general.dialog.DialogSection;
 import life.qbic.datamanager.views.general.pagination.ListState;
+import life.qbic.datamanager.views.general.pagination.Selection;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.projects.project.measurements.pagination.MeasurementDomain;
 import life.qbic.datamanager.views.projects.project.measurements.pagination.MeasurementListState;
-import life.qbic.datamanager.views.projects.project.measurements.pagination.MeasurementSelection;
 import life.qbic.datamanager.views.projects.project.measurements.pagination.MeasurementSort;
 import life.qbic.datamanager.views.projects.project.measurements.pagination.MeasurementTabPagination;
 import life.qbic.datamanager.views.projects.project.measurements.pagination.MeasurementTabPagination.RefreshRequestedEvent;
@@ -81,7 +81,7 @@ import org.springframework.data.domain.Sort;
  * <p>The three measurement domains (genomics / proteomics / immunopeptidomics) are shown as
  * paginated in-memory grids inside a {@link MeasurementTabPagination}: only the current page is
  * fetched and rendered, a shared pager reports location and total, and a view-owned
- * {@link MeasurementSelection} of measurement IDs survives page, filter, and sort changes.
+ * {@link Selection} of measurement IDs survives page, filter, and sort changes.
  * Bulk actions (export / edit / delete) apply to the full cross-page selection. The "Select all
  * N matching the active filter" action resolves all matching measurement IDs in backend storage
  * (ADR-0008, A1).</p>
@@ -115,9 +115,9 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   private final Button ipDeleteButton = new Button("Delete");
   private final Map<MeasurementDomain, Button> exportButtons = new EnumMap<>(MeasurementDomain.class);
   private final Map<MeasurementDomain, Div> emptyStates = new EnumMap<>(MeasurementDomain.class);
-  private final MeasurementSelection ngsSelection = new MeasurementSelection(() -> updateSelectionBar());
-  private final MeasurementSelection pxpSelection = new MeasurementSelection(() -> updateSelectionBar());
-  private final MeasurementSelection ipSelection = new MeasurementSelection(() -> updateSelectionBar());
+  private final Selection ngsSelection = new Selection(() -> updateSelectionBar());
+  private final Selection pxpSelection = new Selection(() -> updateSelectionBar());
+  private final Selection ipSelection = new Selection(() -> updateSelectionBar());
 
   private final transient NgsMeasurementLookup ngsMeasurementLookup;
   private final transient PxpMeasurementLookup pxpMeasurementLookup;
@@ -142,7 +142,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   // fail-closed: mutation actions hidden until the owning view confirms ACL write scope
   private boolean writeAccess = false;
 
-  private void updateActionButtons(MeasurementDomain domain, MeasurementSelection selection,
+  private void updateActionButtons(MeasurementDomain domain, Selection selection,
       Button editButton, Button deleteButton) {
     editButton.setVisible(writeAccess);
     deleteButton.setVisible(writeAccess);
@@ -382,7 +382,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         .orElse(null);
   }
 
-  private void configureSelectionReconciliation(Grid<?> grid, MeasurementSelection selection,
+  private void configureSelectionReconciliation(Grid<?> grid, Selection selection,
       MeasurementDomain domain) {
     grid.setSelectionMode(Grid.SelectionMode.MULTI);
     // Freeze the selection (checkbox) column so the user always sees the selection state when
@@ -398,7 +398,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
 
   /**
    * Builds the selection listener that translates grid row selection changes into the
-   * identifier-based {@link MeasurementSelection}.
+   * identifier-based {@link Selection}.
    *
    * <p>Only client-side changes are translated (USER-R-02, ADR-0009): the selection is a
    * cross-page, cross-tab view-owned set, and server-side selection events are fired by
@@ -408,7 +408,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
    * reconciled with the identifier set afterwards by {@link #reconcileSelection} instead.</p>
    */
   static SelectionListener<Grid<Object>, Object> createSelectionReconciliationListener(
-      Grid<Object> grid, MeasurementSelection selection, MeasurementDomain domain) {
+      Grid<Object> grid, Selection selection, MeasurementDomain domain) {
     return event -> {
       if (!event.isFromClient()) {
         return;
@@ -565,7 +565,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   }
 
   @SuppressWarnings("unchecked")
-  private <T> void reconcileSelection(Grid<T> grid, MeasurementSelection selection,
+  private <T> void reconcileSelection(Grid<T> grid, Selection selection,
       MeasurementDomain domain) {
     grid.getGenericDataView().getItems().toList().forEach(item -> {
       String id = measurementIdOf(domain, item);
@@ -589,7 +589,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
 
   // ---- selection helpers ----------------------------------------------------
 
-  private MeasurementSelection selectionFor(MeasurementDomain domain) {
+  private Selection selectionFor(MeasurementDomain domain) {
     return switch (domain) {
       case NGS -> ngsSelection;
       case PXP -> pxpSelection;
@@ -652,7 +652,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     T create(List<String> ids, MeasurementDetailsComponent source, boolean fromClient);
   }
 
-  private void fireEditRequested(MeasurementDomain domain, MeasurementSelection selection,
+  private void fireEditRequested(MeasurementDomain domain, Selection selection,
       IdEventFactory<?> factory) {
     List<String> ids = idsOf(selection);
     // The edit dialog is scope-agnostic towards the (session-only) row selection: updates are
@@ -666,7 +666,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     }
   }
 
-  private void fireDeletionRequested(MeasurementDomain domain, MeasurementSelection selection,
+  private void fireDeletionRequested(MeasurementDomain domain, Selection selection,
       IdEventFactory<?> factory) {
     List<String> ids = idsOf(selection);
     if (ids.isEmpty()) {
@@ -680,7 +680,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     }
   }
 
-  private static List<String> idsOf(MeasurementSelection selection) {
+  private static List<String> idsOf(Selection selection) {
     List<String> ids = new ArrayList<>(selection.selectedIds());
     return ids;
   }
