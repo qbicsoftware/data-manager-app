@@ -34,6 +34,89 @@ extend them with **user groups** that can be shared onto projects like a single 
 
 ---
 
+## 1a. What this is about — user groups at a glance
+
+This section explains the core concepts and how they map to project access, so the rest of the
+document is easier to follow. The details live in §3 (decisions), §4 (architecture) and the
+glossary.
+
+### Two separate "role" worlds
+
+The strategy introduces a *new* concept (groups) on top of the *existing* project-access model.
+It helps to think of them as two independent role systems that touch at exactly one point:
+
+| | **World 1: inside a group** (new) | **World 2: on a project** (existing) |
+|---|---|---|
+| Roles | Group **OWNER** / **MANAGER** / **MEMBER** | Project **OWNER** / **ADMIN** / **WRITE** / **READ** |
+| Decides | what you may do *to the group* (appoint managers, add/remove members, dissolve) | what you may do *in the project* (view, edit, manage access, own) |
+| Stored in | `group_membership` (application table, new) | ACL (`acl_sid` / `acl_entry` / `acl_object_identity`) |
+
+> They share the word "OWNER" but are unrelated: a *group* OWNER manages a group; a *project*
+> OWNER owns a project. Having one does not imply the other.
+
+### Group roles (World 1 — what you can do to a group)
+
+| Group role | Can do | Assigned by |
+|---|---|---|
+| **OWNER** | appoint/remove managers, dissolve the group | ad-hoc: the creator; org groups: **no OWNER row** — the QBiC admin acts as owner-equivalent |
+| **MANAGER** | add/remove regular members, rename/describe the group | the owner (or QBiC admin for org groups) |
+| **MEMBER** | be in the group, self-remove | a manager/owner |
+
+"I am manager of the NGS-lab group" means I can add/remove people *in that group* — it says
+nothing about any project.
+
+### Project roles (World 2 — what you can do on a project)
+
+These are the existing project access levels (ACL):
+
+| Project role | Meaning |
+|---|---|
+| **READ** | view project data |
+| **WRITE** | view + edit project data |
+| **ADMIN** | READ + WRITE + manage project access (add/remove people, share groups) |
+| **OWNER** | the ACL object owner — the most privileged level; never granted to groups |
+
+### The bridge: sharing a group onto a project
+
+A group is *shared* onto a project by granting the **group itself** a project role
+(**READ / WRITE / ADMIN — never OWNER**). Every member of the group then gets that project role
+immediately, as if they had been added one by one:
+
+```text
+             you are MEMBER of the group ──┐
+                                          ├──► you now have WRITE on Project X
+  group is shared onto Project X at WRITE ┘
+```
+
+One share replaces adding all members individually — the whole point of the feature.
+
+### Effective access — how your project access is composed
+
+Your actual access to a project is the **maximal** of three independent sources:
+
+1. **Directly granted to *you*** (you were added by name as READ/WRITE/ADMIN/OWNER)
+2. **Via groups** (every group you belong to that is shared onto the project)
+3. **Via the system role** (e.g. `ROLE_ADMIN` for QBiC admins, `ROLE_PROJECT_MANAGER`)
+
+Grant/revoke via a group change takes effect at the **next authorization check** (live rollout,
+§4.6) with a bounded cross-node delay — see the revocation NFR (§4.6).
+
+### Who can see what (visibility policy)
+
+| Data | Visible to |
+|---|---|
+| Group **name** + **description** | all users (discoverability) |
+| Group **member list** / member counts | **only members of that group**; plus project access-administration holders (project ADMIN/OWNER) and QBiC admins for groups shared on their project; **not** exposed to non-members |
+| Who has access to a project (direct + groups) | project access-administration holders; plain READ collaborators see the direct People list (unchanged) but only group names, not members |
+| Whether they are in a group | themselves only; membership is **not** visible to others by any signal (incl. no member counts) |
+| System roles (`ROLE_*`) | not exposed as group data at all |
+
+**Design rule:** *group members are not exposed to non-members* (settled decision, §5.1). Group
+names/descriptions remain public so groups can be found and shared; membership details are private
+to the group and to the people who need to manage access.
+
+---
+
 ## 2. Current State Analysis
 
 ### 2.1 User management (identity context)
@@ -102,12 +185,12 @@ sharing. Everything else builds on proven paths.
 | Aspect | Decision |
 |---|---|
 | Group types | **Org groups** (admin-created and pre-seeded, e.g. NGS labs; membership admin-managed) and **ad-hoc groups** (self-service user feature; no admins involved) |
-| Internal group roles | **OWNER** (only the ad-hoc creator; appoints/removes managers), **MANAGER** (adds/removes regular members; org groups: rename/describe), **MEMBER**. For org groups the QBiC admin acts as owner-equivalent |
-| Governance | Org groups: admins manage membership. Ad-hoc groups: fully self-service — creator becomes owner; manager can add/remove members; members can self-remove; an empty ad-hoc group is auto-dissolved; a manager leaving is offered an explicit, guarded *transfer-or-dissolve* choice |
+| Internal group roles | **OWNER** (only the ad-hoc creator; appoints/removes managers), **MANAGER** (adds/removes regular members; org groups: rename/describe), **MEMBER**. For org groups the **QBiC admin acts as owner-equivalent** — org groups have **no OWNER membership row**; governance is app-level via the system role `ROLE_ADMIN` |
+| Governance | Org groups: membership is **admin-managed**; QBiC admins act as owner-equivalent (no OWNER membership row, no transfer-or-dissolve needed). Ad-hoc groups: fully self-service — creator becomes owner; manager can add/remove members; members can self-remove; an empty ad-hoc group is auto-dissolved; a manager leaving is offered an explicit, guarded *transfer-or-dissolve* choice |
 | Sharing | Anyone with project *change-access* can share a group onto a project. Grant level: READ / WRITE / ADMIN — **never OWNER** |
-| Visibility | Group names, descriptions, and memberships are visible to all users. Group names are **unique** (case-insensitive). As part of the DPA, users are informed beforehand that their ORCID, username, and Full Name are visible to other users |
+| Visibility | Group names and descriptions are visible to all users (discoverability). **Group members are not exposed to non-members** — only members of a group (and QBiC admins for oversight) can see its member list, including member counts. Group names are **unique** (case-insensitive). As part of the DPA, users are informed beforehand that their ORCID, username, and Full Name are visible to other users |
 | Sensitive data | No project flag; transparency via notifications (see §5.3) |
-| Notifications | Email only members who **newly gain** access (deduplicated); digest on joining a group with existing grants; revocation email on removal; dissolution email listing affected projects; project admins informed about membership changes on groups shared with their projects; role-level changes are audit-log-only |
+| Notifications | Email only members who **newly gain** access (deduplicated); digest on joining a group with existing grants; revocation email on removal; dissolution email listing affected projects; project owners/admins (project ADMIN/OWNER role holders) informed about membership changes on groups shared with their projects; role-level changes are audit-log-only |
 | Project cards | Show group *names* on project cards (compact view; the card area is shared real estate) |
 
 ---
@@ -130,7 +213,9 @@ merits an ADR.
 ### 4.2 Conceptual data model
 
 - `user_group(id, name unique-ci, description, type [ORG | ADHOC], status, created_by, created_at)`
-- `group_membership(group_id, user_id, role [OWNER | MANAGER | MEMBER], joined_at)`
+- `group_membership(group_id, user_id, role [OWNER | MANAGER | MEMBER], joined_at)` — `OWNER`
+  applies to **ad-hoc** groups only (the creator). **Org groups have no OWNER row**: the QBiC
+  admin (system role `ROLE_ADMIN`) acts as owner-equivalent at the application layer.
 - ACL SID representation: a **`GrantedAuthoritySid("GROUP_" + groupId)`**, stored with
   `principal = false`. The prefix avoids collisions with `ROLE_*` and user ids under the `acl_sid`
   unique key, and keying on the stable group *id* (rather than the display name) keeps ACEs valid
@@ -166,10 +251,18 @@ of this section.
    `MutableAclService`, and `MethodSecurityExpressionHandler` beans stay **unchanged** (plain
    `BasicLookupStrategy` + `JdbcMutableAclService`).
 
-2. **Sharing (write path):** reuse the existing `addAuthorityAccess(projectId, "GROUP_<id>", role)`
+2. **Sharing (write path):** reuse `addAuthorityAccess(projectId, "GROUP_<id>", role)`
    (`ProjectAccessServiceImpl`), which already accepts an authority string and builds a
-   `GrantedAuthoritySid`. Add validation blocking `ProjectRole.OWNER` (groups cap at ADMIN).
-   `removeAuthorityAccess` / `changeAuthorityAccess` cover revoke and role change with no change.
+   `GrantedAuthoritySid`. Enforce a **service-wide invariant**: *no non-principal SID may ever
+   become the ACL owner.* `ProjectRole.OWNER` must be rejected in **both** `addAuthorityAccess`
+   and `changeAuthorityAccess` (both currently call `setOwner(authoritySid)` —
+   `ProjectAccessServiceImpl:233, 293`), and `removeCollaborator`/`changeRole` must refuse
+   operations that degrade the owner's effective access. Because groups ride as
+   `GrantedAuthoritySid`s (type-identical to `ROLE_*` authorities), a group-scoped block is
+   unenforceable at the ACL layer — the guard must apply to *all* authority values at the
+   service boundary. Principal-SID ownership (via `addCollaborator`/`changeRole`) is untouched;
+   production impact is nil since current authority call sites grant ADMIN only.
+   `removeAuthorityAccess` / `changeAuthorityAccess` then cover revoke and role change.
 
 3. **Project listing — companion change (required):**
    `ProjectInformationService.retrieveAccessibleProjectIdsForUser()` already unions
@@ -179,8 +272,8 @@ of this section.
    `hasPermission(READ)` but never appear in the project overview.
 
 4. **Listing / UI:** extend `listCollaborators()` (or add `listSharedGroups()`) to surface
-   `GrantedAuthoritySid`s whose authority starts with `GROUP_` (group name, description, member
-   count, member list). `listCollaborators()` currently filters to `PrincipalSid`, so a group
+   `GrantedAuthoritySid`s whose authority starts with `GROUP_` (group name, description).
+   `listCollaborators()` currently filters to `PrincipalSid`, so a group
    branch must be added.
 
 5. **Effective-access query (new):** needed for notification dedupe and member-count display —
@@ -221,9 +314,11 @@ b. **Write path — `GroupAwareJdbcMutableAclService`** (extends `JdbcMutableAcl
    `createOrRetrieveSidPrimaryKey(Sid, boolean)` to persist a `GroupSid` as a non-principal SID.
    Without it, the default throws `IllegalArgumentException: Unsupported implementation of Sid`.
 c. **Read path — custom `LookupStrategy` implementation** (not a `BasicLookupStrategy` subclass):
-   `BasicLookupStrategy` explicitly *does not support subclassing* (class Javadoc) and its SID
-   reconstruction (`createSid(boolean, String)`) is a `protected` detail outside the `LookupStrategy`
-   interface. A custom `LookupStrategy` must run the ACL/ACE SQL and reconstruct each stored SID
+   `BasicLookupStrategy` does not *support* subclassing — its class Javadoc warns the class "is
+   likely to change in future releases" — and, decisively, its `readAclsById` method is `final`,
+   so a subclass **cannot override the read path**; SID reconstruction (`protected createSid`) is
+   thus not reachable for group types through `BasicLookupStrategy`. A custom `LookupStrategy`
+   must run the ACL/ACE SQL and reconstruct each stored SID
    string as a `GroupSid` (resolved lazily) instead of a `GrantedAuthoritySid`; the official ACL
    reference notes `AclService` delegates retrieval to a `LookupStrategy` and supports custom
    implementations. Without this, a stored group SID is read back as a `GrantedAuthoritySid`, which
@@ -245,15 +340,17 @@ Follow the existing pattern (`ProjectAccessGranted` → `ProjectAccessGrantedPol
 - `GroupSharedWithProject` — email every member who *newly* gains effective access (dedupe computed
   via the effective-access query *before* the ACE is written).
 - `GroupMembershipChanged` — digest to the new member ("you can now access: X, Y, Z"); notify
-  project admins of affected projects.
+  the project owners/admins (project ADMIN/OWNER role holders) of affected projects.
 - `MemberRemovedFromGroup` — revocation email to the removed user; in-app notice to group managers.
-- `GroupDissolved` — email former members + admins of affected projects, listing the projects.
+- `GroupDissolved` — email former members + the project owners/admins of affected projects,
+  listing the projects.
 
 ### 4.5 UI surface
 
 1. **Project Access page** (`ProjectAccessComponent`) — two sections: **People** (current grid,
-   unchanged) and **Groups** (grid of shared groups + grant role; edit/remove; member list visible
-   to all users).
+   unchanged) and **Groups** (grid of shared groups + grant role; edit/remove; members visible
+   only to group members, project access-administration holders (project ADMIN/OWNER), and QBiC
+   admins — non-members see group name + description only).
 2. **Share dialog** (`AddCollaboratorToProjectDialog`) — "Add people or groups": a group tab with a
    searchable dropdown over public group names + role selection, same flow as adding a person.
 3. **My Groups view** (user-facing, in the account area) — groups I belong to with my role;
@@ -267,12 +364,15 @@ Follow the existing pattern (`ProjectAccessGranted` → `ProjectAccessGrantedPol
 
 ### 4.6 Revocation semantics
 
-Because `GroupAwareSidRetrievalStrategy` derives the caller's group SIDs (`GrantedAuthoritySid("GROUP_<id>")`) on every permission check (§4.3), revocation is effective at the **next `hasPermission(...)` / listing evaluation** — with no session invalidation or per-request freshness filter. This supersedes the login-scoped authority-injection alternative (which would inject group SIDs into the `Authentication` at login, deferring changes to next login / session expiry and requiring session-invalidation or per-request-authority machinery).
+Because `GroupAwareSidRetrievalStrategy` derives the caller's group SIDs (`GrantedAuthoritySid("GROUP_<id>")`) on every permission check (§4.3), **membership-level** grant and revocation are effective at the next `hasPermission(...)` / listing evaluation on the executing instance — with no session invalidation or per-request freshness filter. This supersedes the login-scoped authority-injection alternative (which would inject group SIDs into the `Authentication` at login, deferring changes to next login / session expiry and requiring session-invalidation or per-request-authority machinery).
 
-Caching the membership lookup is **optional and up to the implementation** (e.g. keyed by user id,
-as in the glossary). If caching is added, care must be taken that group-membership changes do not
-lead to **stale cache entries** — i.e. every `addMember`/`removeMember` must evict the affected
-user's entries so the change is reflected at the next check.
+**Multi-instance caveat (must be addressed):** the `acl_cache` is a **process-local EHCache with a 600s TTL** (`ehcache3.xml`) and no eviction code exists today; `JdbcMutableAclService.updateAcl` evicts the cache **only on the executing node**. In the project's multi-instance context (ShedLock HA, `AGENTS.md`), a *group-ACE* grant/revoke can therefore stay effective on other nodes for up to the TTL unless evicted. Mitigations, chosen per the revocation NFR below:
+
+- **v1 default:** no per-user membership cache (membership read from DB per check); evict the `acl_cache` on every group-grant/group-revoke write (either directly or via a broadcast mechanism such as an Artemis/JMS topic).
+- **or:** accept and *document* a bounded staleness window per node.
+- **or:** single-node deployment confirmation (then the 600s window is irrelevant).
+
+**Revocation NFR (goes into the requirements PR, not optional prose):** “When a user's group membership or a group's project grant is revoked, the change must take effect at the next authorization decision for the affected user, with a maximum observed propagation delay of **60s** across all deployed instances.” **X = 60s (confirmed by the product owner).** The chosen mechanism (per-node next-check, eviction-on-write, or broadcast eviction) and the resulting documented staleness window must be recorded in the ADR and asserted by P2 integration tests.
 
 ---
 
@@ -281,9 +381,16 @@ user's entries so the change is reflected at the next check.
 ### 5.1 Leakage
 
 - As part of the DPA, users are informed beforehand that their ORCID, username, and Full Name are
-  visible to other users. Group names, descriptions, and memberships are therefore not restricted.
-- The share dialog context already requires project `change-access`; `listCollaborators` requires
-  ADMINISTRATION — who-has-access stays privileged.
+  visible to other users. Group names and descriptions are visible to all (discoverability);
+  **group members are not exposed to non-members** — only group members, project
+  access-administration holders (project ADMIN/OWNER on the project), and QBiC admins see the
+  member list.
+- The share dialog context already requires project `change-access`; `listCollaborators` is
+  guarded at **READ** (`@PreAuthorize(hasPermission(..., 'READ'))` in
+  `ProjectAccessServiceImpl`) — any project collaborator can already see who has direct access
+  today. Adding a Groups section must therefore **not widen** that surface: share/revoke/role-edit
+  stays ADMINISTRATION, and non-members see group names + descriptions only (no member roster,
+  no member counts) on READ-graded surfaces.
 
 ### 5.2 Blast radius
 
@@ -332,14 +439,16 @@ No flag/restriction on sensitive projects; transparency through the notification
 
 ## 8. Open Items (no decision needed yet)
 
-- Org-group "owner" semantics: admin acts as owner-equivalent (recommended).
+- Org-group "owner" semantics: **resolved** — the QBiC/instance admin (system role `ROLE_ADMIN`) is
+  the owner-equivalent of org groups; org groups have **no OWNER membership row** and governance is
+  app-level via `ROLE_ADMIN` (no transfer-or-dissolve for org groups).
 - Group size limits / group count limits per user.
 - Manager demotion path (owner action only).
 - Whether org groups pre-seed with any project grants at rollout.
-- Verify the `PrincipalSid` derivation for OIDC logins: `SidRetrievalStrategyImpl` builds the
-  user's principal SID from `authentication.getName()` (the OIDC user's name), while ACLs are
-  keyed on the QBiC user id — confirm OIDC users actually match on the QBiC user id today before
-  groups build on top.
+- ~~Verify the `PrincipalSid` derivation for OIDC logins~~ — **resolved**: `QbicOidcUser.getName()`
+  is overridden to return the QBiC user id (`QbicOidcUser.java`, "needed for ACL permission
+  checks"), so `authentication.getName()` — and the `PrincipalSid` built from it — matches the
+  QBiC user id for both local and OIDC logins (see glossary §2).
 
 ---
 

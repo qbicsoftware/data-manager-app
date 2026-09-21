@@ -138,9 +138,10 @@ A `JdbcMutableAclService` subclass that knows how to *persist* a `GroupSid`.
 A custom `LookupStrategy` implementation that *reconstructs* a `GroupSid` when reading it back
 from storage.
 - **Notes:** Must be a **custom `LookupStrategy` implementation**, not a `BasicLookupStrategy`
-  subclass — `BasicLookupStrategy` explicitly *does not support subclassing* (class Javadoc:
-  "This class does not support subclassing ... subclassing is unsupported"), and its SID
-  reconstruction is a `protected` detail outside the `LookupStrategy` interface. Without it, a
+  subclass — `BasicLookupStrategy` does not *support* subclassing (its class Javadoc warns the
+  class "is likely to change in future releases") and, decisively, its `readAclsById` method is
+  `final`, so a subclass cannot override the read path; SID reconstruction (`protected createSid`)
+  is thus not reachable for group types through `BasicLookupStrategy`. Without it, a
   stored group SID is read back as a `GrantedAuthoritySid`, which never `.equals()` a `GroupSid`
   → access silently denied. Resolves group SIDs lazily so groups created after startup are
   recognised. (The official ACL reference notes `AclService` delegates retrieval to a
