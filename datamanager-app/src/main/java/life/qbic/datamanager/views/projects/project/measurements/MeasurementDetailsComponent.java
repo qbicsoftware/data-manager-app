@@ -203,7 +203,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     tabPagination.attachSelectionBar();
     tabPagination.setSelection(ngsSelection);
     tabPagination.addRefreshRequestedListener(this::onRefreshRequested);
-    tabPagination.addSelectionClearedListener(event -> reconcileAllGrids());
+    tabPagination.addSelectionClearedListener(event -> applySelectionToAllGrids());
     tabPagination.addSelectAllResultsListener(
         event -> selectAllMatching(event.domain()));
     add(tabPagination);
@@ -405,7 +405,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
    * Vaadin itself whenever a new page is written to the grid via {@code setItems} (the data
    * provider change deselects every row). Translating those synthetic events would purge
    * every selected measurement that is not on the newly rendered page — the rows are
-   * reconciled with the identifier set afterwards by {@link #reconcileSelection} instead.</p>
+   * reconciled with the identifier set afterwards by {@link #applySelectionToGrid} instead.</p>
    */
   static SelectionListener<Grid<Object>, Object> createSelectionReconciliationListener(
       Grid<Object> grid, Selection selection, MeasurementDomain domain) {
@@ -551,7 +551,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
           ? "No measurements match '" + filter + "'. Clear the search to see all measurements."
           : "No measurements registered yet.");
     }
-    reconcileSelection(grid, selectionFor(domain), domain);
+    applySelectionToGrid(grid, selectionFor(domain), domain);
     tabPagination.onPageLoaded(domain, pageToRender, total);
   }
 
@@ -565,7 +565,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   }
 
   @SuppressWarnings("unchecked")
-  private <T> void reconcileSelection(Grid<T> grid, Selection selection,
+  private <T> void applySelectionToGrid(Grid<T> grid, Selection selection,
       MeasurementDomain domain) {
     grid.getGenericDataView().getItems().toList().forEach(item -> {
       String id = measurementIdOf(domain, item);
@@ -578,13 +578,13 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   }
 
   /**
-   * Reconciles every grid's visible rows against its tab selection (used after the user
+   * Applies every grid's visible rows against its tab selection (used after the user
    * cleared the selection so row checkboxes reflect the empty selection).
    */
-  private void reconcileAllGrids() {
-    reconcileSelection(ngsGrid, ngsSelection, MeasurementDomain.NGS);
-    reconcileSelection(pxpGrid, pxpSelection, MeasurementDomain.PXP);
-    reconcileSelection(ipGrid, ipSelection, MeasurementDomain.IP);
+  private void applySelectionToAllGrids() {
+    applySelectionToGrid(ngsGrid, ngsSelection, MeasurementDomain.NGS);
+    applySelectionToGrid(pxpGrid, pxpSelection, MeasurementDomain.PXP);
+    applySelectionToGrid(ipGrid, ipSelection, MeasurementDomain.IP);
   }
 
   // ---- selection helpers ----------------------------------------------------
@@ -642,7 +642,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
       case PXP -> pxpGrid;
       case IP -> ipGrid;
     };
-    reconcileSelection(grid, selectionFor(domain), domain);
+    applySelectionToGrid(grid, selectionFor(domain), domain);
     tabPagination.updateSelectionBar();
   }
 

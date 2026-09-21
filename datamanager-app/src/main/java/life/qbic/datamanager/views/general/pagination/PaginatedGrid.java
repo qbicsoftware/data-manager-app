@@ -195,7 +195,7 @@ public class PaginatedGrid<T> extends Div {
     objectGrid.addSelectionListener(this::onGridSelectionChanged);
     clearSelectionButton.addClickListener(event -> {
       selection.clear();
-      reconcileSelection();
+      applySelectionToGrid();
     });
   }
 
@@ -204,7 +204,7 @@ public class PaginatedGrid<T> extends Div {
    * client-side changes are translated (ADR-0009): server-side events fired by Vaadin when a new
    * page is written via {@code setItems} would otherwise purge every selected identifier that is
    * not on the newly rendered page. The rows are reconciled against the identifier set afterwards
-   * by {@link #reconcileSelection}.
+   * by {@link #applySelectionToGrid}.
    */
   private void onGridSelectionChanged(SelectionEvent<Grid<Object>, Object> event) {
     if (!event.isFromClient()) {
@@ -221,7 +221,7 @@ public class PaginatedGrid<T> extends Div {
       ListState current = listState;
       ListState requested;
       if (event.getPageSize() != current.pageSize()) {
-        requested = current.withPageSize(event.getPageSize());
+        requested = current.withPageSize(event.getPageSize()).withPage(1);
       } else {
         requested = current.withPage(event.getPage());
       }
@@ -250,12 +250,12 @@ public class PaginatedGrid<T> extends Div {
       setListState(this.listState);
       return;
     }
-    this.listState = state;
+    this.listState = state.withPage(pageToRender);
     grid.setItems(page.items());
     renderEmptyState(page.items().isEmpty(), !state.filter().isBlank());
     paginationBar.setListState(pageToRender, page.total(), state.pageSize());
     paginationBar.setVisible(page.total() > 0);
-    reconcileSelection();
+    applySelectionToGrid();
     updateSelectionDisplay();
     fireEvent(new PageLoadedEvent(this, pageToRender, page.total()));
   }
@@ -271,10 +271,10 @@ public class PaginatedGrid<T> extends Div {
   }
 
   /**
-   * Reconciles the grid's visible rows against the identifier-based {@link Selection} so that
+   * Applies the identifier-based {@link Selection} to the grid's visible rows so that
    * checkboxes reflect the cross-page selection on the current page.
    */
-  private void reconcileSelection() {
+  private void applySelectionToGrid() {
     grid.getGenericDataView().getItems().forEach(item -> {
       if (selection.contains(idExtractor.apply(item))) {
         grid.select(item);
@@ -332,7 +332,7 @@ public class PaginatedGrid<T> extends Div {
    */
   public void select(Set<String> ids) {
     selection.select(ids);
-    reconcileSelection();
+    applySelectionToGrid();
     updateSelectionDisplay();
   }
 
@@ -342,7 +342,7 @@ public class PaginatedGrid<T> extends Div {
    */
   public void deselect(Set<String> ids) {
     selection.deselect(ids);
-    reconcileSelection();
+    applySelectionToGrid();
     updateSelectionDisplay();
   }
 
@@ -399,7 +399,7 @@ public class PaginatedGrid<T> extends Div {
     private final long total;
 
     public PageLoadedEvent(PaginatedGrid<?> source, int page, long total) {
-      super(source, true);
+      super(source, false);
       this.page = page;
       this.total = total;
     }
@@ -421,7 +421,7 @@ public class PaginatedGrid<T> extends Div {
     private final Set<String> selectedIds;
 
     public SelectionChangeEvent(PaginatedGrid<?> source, Set<String> selectedIds) {
-      super(source, true);
+      super(source, false);
       this.selectedIds = Set.copyOf(selectedIds);
     }
 
