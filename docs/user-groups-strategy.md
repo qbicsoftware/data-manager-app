@@ -90,10 +90,10 @@ The ACL layer is already group-ready:
    for any authority present in the authentication.
 
 The missing pieces are: a **group concept** (aggregate + membership + role hierarchy), a **way to
-surface `GroupSid`s in ACL evaluation** — a dedicated custom `Sid` (with the four coordinated
-customizations of §4.3) whose SIDs are derived live at evaluation time via a custom
-`SidRetrievalStrategy` on the permission evaluator — and the **UI surface** for group management
-and group-based sharing. Everything else builds on proven paths.
+surface group SIDs in ACL evaluation** — `GrantedAuthoritySid("GROUP_<id>")` derived live at
+evaluation time via a custom `SidRetrievalStrategy` on the permission evaluator (see §4.3), plus
+the companion project-listing change — and the **UI surface** for group management and group-based
+sharing. Everything else builds on proven paths.
 
 ---
 
@@ -131,84 +131,111 @@ merits an ADR.
 
 - `user_group(id, name unique-ci, description, type [ORG | ADHOC], status, created_by, created_at)`
 - `group_membership(group_id, user_id, role [OWNER | MANAGER | MEMBER], joined_at)`
-- ACL SID representation: a **dedicated `GroupSid`** implementing `Sid`, whose *string identity* is
-  `sid = "GROUP_" + groupId`, stored with `principal = false`. The prefix avoids collisions with
-  `ROLE_*` and user ids under the `acl_sid` unique key, and keying on the stable group *id* (rather
-  than the display name) keeps ACEs valid across group renames. The human-readable group *name* is
-  kept separately for display purposes only — it is never used as the SID string.
-  `JdbcMutableAclService` auto-creates sid rows on ACE insert, so no special sid seeding is needed.
+- ACL SID representation: a **`GrantedAuthoritySid("GROUP_" + groupId)`**, stored with
+  `principal = false`. The prefix avoids collisions with `ROLE_*` and user ids under the `acl_sid`
+  unique key, and keying on the stable group *id* (rather than the display name) keeps ACEs valid
+  across group renames. The human-readable group *name* is kept separately for display purposes only
+  — it is never used as the SID string. `JdbcMutableAclService` auto-creates sid rows on ACE insert,
+  so no special sid seeding is needed.
+  *Note:* an alternative is a dedicated custom `GroupSid` (§4.3 Alternative); the recommended
+  `GrantedAuthoritySid` representation keeps Spring ACL's persistence/lookup unchanged.
 - **No ACL objects for groups themselves** — group *management* permissions (owner/manager actions,
   admin oversight) are enforced in the application layer via membership roles + `ROLE_ADMIN`
   checks. Spring ACL remains exclusively on `Project` objects.
 
 ### 4.3 Authorization plumbing
 
-Groups are represented in the ACL by a **dedicated `GroupSid`** (a custom `Sid`), not by reusing
-`GrantedAuthoritySid`. This keeps groups conceptually distinct from roles/authorities and avoids
-any ambiguity between a group id and a `ROLE_*` string. Because Spring Security's ACL persistence
-and lookup only understand `PrincipalSid` and `GrantedAuthoritySid` by default, a custom `Sid`
-requires **four coordinated customizations** to work end to end:
+Groups are represented in the ACL by **`GrantedAuthoritySid("GROUP_<id>")`**, i.e. they ride as a
+Spring authority-SID with a reserved `GROUP_` prefix. This is the **recommended** approach because
+it keeps Spring Security ACL's persistence and lookup completely unchanged — only the check-time SID
+derivation is customized. A dedicated custom `GroupSid` is documented as an alternative at the end
+of this section.
 
-a. **`GroupSid`** (`datamanager-app/.../security/GroupSid.java`) — implements `Sid`, with
-   `equals`/`hashCode` based on the group id, and a `toString` returning the persisted SID string
-   `"GROUP_<id>"`.
-b. **Write path — `GroupAwareJdbcMutableAclService`** (extends `JdbcMutableAclService`): overrides
-   `createOrRetrieveSidPrimaryKey(Sid, boolean)` so a `GroupSid` is persisted as a non-principal
-   SID string. Without this, the default throws `IllegalArgumentException: Unsupported
-   implementation of Sid`.
-c. **Read path — `GroupAwareBasicLookupStrategy`** (extends `BasicLookupStrategy`): overrides
-   `createSid(boolean, String)` to reconstruct a stored SID string as a `GroupSid` (resolved
-   lazily via a `GroupService::allGroupSids`-style lookup) instead of the default
-   `GrantedAuthoritySid`. Without this, a stored group SID is read back as a
-   `GrantedAuthoritySid`, which never `.equals()` a `GroupSid`, so access is always denied.
-d. **Check-time retrieval — `GroupAwareSidRetrievalStrategy`** (implements `SidRetrievalStrategy`):
-   returns the caller's `PrincipalSid` + `GrantedAuthoritySid`s **plus** a `GroupSid` per live group
-   membership, resolved through a `user-groups-api` facade (e.g. `listGroupSidsForUser(userId)`).
+**Recommended approach — `GrantedAuthoritySid` + a single `SidRetrievalStrategy`**
 
-Wiring in `AclSecurityConfiguration`:
+1. **Check-time retrieval — `GroupAwareSidRetrievalStrategy`** (implements `SidRetrievalStrategy`,
+   `datamanager-app/.../security/GroupAwareSidRetrievalStrategy.java`): returns the caller's
+   default SIDs (`PrincipalSid` + a `GrantedAuthoritySid` per authority) **plus** one
+   `GrantedAuthoritySid("GROUP_<id>")` per live group membership, resolved through a
+   `user-groups-api` facade (e.g. `listGroupSidsForUser(userId)`). This is the *only* Spring ACL
+   extension point required. `SidRetrievalStrategy` is an interface designed for this; `AclPermissionEvaluator`
+   exposes `setSidRetrievalStrategy(...)`.
 
-- The bean graph becomes `AclCache → LookupStrategy (GroupAwareBasicLookupStrategy) →
-  MutableAclService (GroupAwareJdbcMutableAclService) → AclPermissionEvaluator (QbicPermissionEvaluator)
-  → DefaultMethodSecurityExpressionHandler`. The `MethodSecurityExpressionHandler` must register the
-  evaluator via `setPermissionEvaluator(...)` — without it Spring silently uses the built-in
-  `DenyAllPermissionEvaluator` and every request is denied (already done today).
-- The two group-aware subclasses are wired in where the current config builds `BasicLookupStrategy`
-  and `JdbcMutableAclService`.
-- **Database identity queries:** `JdbcMutableAclService`'s default identity query is HSQLDB-only;
-  the current code already overrides both `classIdentityQuery` and `sidIdentityQuery` to
-  `SELECT @@IDENTITY` for MySQL (`ProjectAccessServiceImpl`). The group-aware subclass must preserve
-  this.
+   Wiring in `AclSecurityConfiguration`: add a `GroupAwareSidRetrievalStrategy` bean and call
+   `setSidRetrievalStrategy(...)` on the `QbicPermissionEvaluator` bean. The `LookupStrategy`,
+   `MutableAclService`, and `MethodSecurityExpressionHandler` beans stay **unchanged** (plain
+   `BasicLookupStrategy` + `JdbcMutableAclService`).
+
+2. **Sharing (write path):** reuse the existing `addAuthorityAccess(projectId, "GROUP_<id>", role)`
+   (`ProjectAccessServiceImpl`), which already accepts an authority string and builds a
+   `GrantedAuthoritySid`. Add validation blocking `ProjectRole.OWNER` (groups cap at ADMIN).
+   `removeAuthorityAccess` / `changeAuthorityAccess` cover revoke and role change with no change.
+
+3. **Project listing — companion change (required):**
+   `ProjectInformationService.retrieveAccessibleProjectIdsForUser()` already unions
+   `authentication.getAuthorities()` into the accessible-project set, but groups are *not* in the
+   `Authentication` (they are derived live, not injected at login). It must additionally union the
+   user's group SIDs via the same `user-groups-api` facade — otherwise group-granted projects pass
+   `hasPermission(READ)` but never appear in the project overview.
+
+4. **Listing / UI:** extend `listCollaborators()` (or add `listSharedGroups()`) to surface
+   `GrantedAuthoritySid`s whose authority starts with `GROUP_` (group name, description, member
+   count, member list). `listCollaborators()` currently filters to `PrincipalSid`, so a group
+   branch must be added.
+
+5. **Effective-access query (new):** needed for notification dedupe and member-count display —
+   "has member X effective access (direct ACE, via group, or via role) to project P?" Implemented
+   as a batch query against `acl_entry` / `acl_sid` for the member's sid set (including the
+   member's `GROUP_<id>` authorities).
 
 **Check-time behaviour (live rollout):** because `GroupAwareSidRetrievalStrategy` derives the
-caller's `GroupSid`s from the database on every `hasPermission(...)` call, grant **and** revocation
+caller's group SIDs from the database on every `hasPermission(...)` call, grant **and** revocation
 are effective at the next permission check — for `@PreAuthorize("hasPermission(...)")` (method
 security) and `UserPermissionsImpl` (UI gating) alike. No session machinery, no authority cache to
 invalidate; the Spring ACL cache stays valid because it is keyed by `ObjectIdentity`, while
 `isGranted` re-evaluates the freshly derived SIDs per call.
 
-- *Freshness / concurrency:* membership is read through a `@Cacheable` facade
-  (`GroupService.groupNamesForUser`-style); every `addMember`/`removeMember` must `evictCache`
-  so membership changes are seen on the next check. The read path resolves `GroupSid`s lazily (not
-  at bean construction), so groups created after startup are still recognised.
+- *Freshness / concurrency:* membership is read through a `@Cacheable` facade; every
+  `addMember`/`removeMember` must evict the affected user's entries so membership changes are seen
+  on the next check. Group SIDs are resolved lazily (not at bean construction), so groups created
+  after startup are still recognised.
 - *Constraint:* group-aware checks must route through `hasPermission(...)` / the listing helper;
-  `hasRole` and view-level authority checks do not see groups.
-- *Key caveat:* the `GroupSid` string must match exactly between (a) the persisted ACE SID and
-  (b) what the retrieval strategy produces for a member — a mismatch silently denies access.
-  Using the stable group *id* (not the display name) as the SID string avoids breakage on renames.
+  `hasRole` and view-level authority checks do not see groups (groups are not in the
+  `Authentication`).
+- *Key caveat:* the `"GROUP_<id>"` string must match exactly between (a) the persisted ACE SID and
+  (b) what the retrieval strategy produces for a member — a mismatch silently denies access. Using
+  the stable group *id* (not the display name) as the SID string avoids breakage on renames.
+- *Collision guard:* since groups ride as `GrantedAuthoritySid`s, the only thing separating them
+  from real roles is the `GROUP_` prefix **convention** (no type distinguishes them). `AuthorityService`
+  must never emit a `GROUP_...` authority, and no role should be named with the prefix.
 
-1. **Sharing:** reuse `addAuthorityAccess(projectId, groupSid, role)` with validation blocking
-   OWNER. `removeAuthorityAccess` / `changeAuthorityAccess` cover revoke and role change. The
-   `GroupSid` instance is derived from the group id at the call site.
-2. **Listing:** extend `listCollaborators()` (or add `listSharedGroups()`) to surface group ACEs
-   in the UI (group name, description, member count, member list).
-   *Companion change (required):* `ProjectInformationService.retrieveAccessibleProjectIdsForUser()`
-   reads `authentication.getAuthorities()` directly, so it must additionally union the user's
-   group SIDs via the same `user-groups-api` facade — otherwise group-granted projects pass
-   `hasPermission(READ)` but never appear in the project overview.
-3. **Effective-access query (new):** needed for notification dedupe and member-count display —
-   "has member X effective access (direct ACE, via group, or via role) to project P?" Implemented
-   as a batch query against `acl_entry` / `acl_sid` for the member's sid set (including
-   `GroupSid`s for the member's memberships).
+**Alternative — dedicated custom `GroupSid`**
+
+If groups must be kept structurally distinct from authorities, a custom `GroupSid implements Sid`
+can be used instead. Spring ACL persistence/lookup only understand `PrincipalSid` and
+`GrantedAuthoritySid` by default, so this requires **four coordinated customizations**:
+
+a. **`GroupSid`** — a custom `Sid` with `equals`/`hashCode` on the group id and a `toString`
+   returning `"GROUP_<id>"`.
+b. **Write path — `GroupAwareJdbcMutableAclService`** (extends `JdbcMutableAclService`): overrides
+   `createOrRetrieveSidPrimaryKey(Sid, boolean)` to persist a `GroupSid` as a non-principal SID.
+   Without it, the default throws `IllegalArgumentException: Unsupported implementation of Sid`.
+c. **Read path — custom `LookupStrategy` implementation** (not a `BasicLookupStrategy` subclass):
+   `BasicLookupStrategy` explicitly *does not support subclassing* (class Javadoc) and its SID
+   reconstruction (`createSid(boolean, String)`) is a `protected` detail outside the `LookupStrategy`
+   interface. A custom `LookupStrategy` must run the ACL/ACE SQL and reconstruct each stored SID
+   string as a `GroupSid` (resolved lazily) instead of a `GrantedAuthoritySid`; the official ACL
+   reference notes `AclService` delegates retrieval to a `LookupStrategy` and supports custom
+   implementations. Without this, a stored group SID is read back as a `GrantedAuthoritySid`, which
+   never `.equals()` a `GroupSid`, so access is always denied.
+d. **Check-time retrieval — `GroupAwareSidRetrievalStrategy`** — as in the recommended approach, but
+   producing `GroupSid`s instead of `GrantedAuthoritySid`s.
+
+The custom `GroupSid` buys a *structural* type distinction and makes the `GROUP_` prefix collision
+guard unnecessary, but it requires re-implementing the read-path lookup (owning the ACL/ACE SQL and
+assembly) — a real cost and risk. **Trade-off:** the `GrantedAuthoritySid` route is materially
+simpler and uses fully supported Spring ACL extension points; it only loses the strict conceptual
+separation of groups from roles.
 
 ### 4.4 Notifications (event → policy → directive)
 
@@ -240,11 +267,7 @@ Follow the existing pattern (`ProjectAccessGranted` → `ProjectAccessGrantedPol
 
 ### 4.6 Revocation semantics
 
-Because `GroupAwareSidRetrievalStrategy` derives the caller's `GroupSid`s on every permission
-check (§4.3), revocation is effective at the **next `hasPermission(...)` / listing evaluation** —
-with no session invalidation or per-request freshness filter. This supersedes the login-scoped
-authority-injection alternative (which would defer changes to next login / session expiry and
-require session-invalidation or per-request-authority machinery).
+Because `GroupAwareSidRetrievalStrategy` derives the caller's group SIDs (`GrantedAuthoritySid("GROUP_<id>")`) on every permission check (§4.3), revocation is effective at the **next `hasPermission(...)` / listing evaluation** — with no session invalidation or per-request freshness filter. This supersedes the login-scoped authority-injection alternative (which would inject group SIDs into the `Authentication` at login, deferring changes to next login / session expiry and requiring session-invalidation or per-request-authority machinery).
 
 Caching the membership lookup is **optional and up to the implementation** (e.g. keyed by user id,
 as in the glossary). If caching is added, care must be taken that group-membership changes do not
@@ -286,8 +309,8 @@ No flag/restriction on sensitive projects; transparency through the notification
 1. **Requirements first:** this is new system capability → new requirement entries in
    `docs/requirements.md` (proposed new domain, e.g. `GROUP-*` or `ACCESS-*`), as a **dedicated PR
    with human approval** — never bundled with implementation.
-2. **ADR(s):** bounded-context placement + custom-`GroupSid` ACL approach — ADR creation requires
-   human confirmation (MADR template at `docs/adr/templates/`).
+2. **ADR(s):** bounded-context placement + `GrantedAuthoritySid`-based grant approach — ADR
+   creation requires human confirmation (MADR template at `docs/adr/templates/`).
 3. **Feature / Stories / Tasks:** `FEAT-<SLUG>` feature first, then stories with stable IDs
    recorded in `docs/features.md` (draft → approved lifecycle), then tasks.
 4. **Schema migrations** under `docs/migrations/` + `sql/` per existing convention.
@@ -300,7 +323,7 @@ No flag/restriction on sensitive projects; transparency through the notification
 |---|---|
 | **P0 — Governance** | Requirements PR, ADR(s), Feature + Stories |
 | **P1 — Domain** | `user-groups` module: aggregate, membership, role hierarchy & policies (auto-dissolve, transfer-or-dissolve guard, unique names), JPA + migrations |
-| **P2 — Authorization** | `GroupSid` + the four ACL customizations (write/read/check-time), share/list groups via ACL, effective-access query, OWNER block |
+| **P2 — Authorization** | `GroupAwareSidRetrievalStrategy` (adds `GrantedAuthoritySid("GROUP_<id>")` at check time), share/list groups via ACL, effective-access query, OWNER block |
 | **P3 — Notifications** | Events + policies + email directives with dedupe/digests |
 | **P4 — UI** | My Groups, Admin Groups, access-page Groups section, share-dialog group tab, project-card view rebuild |
 | **P5 — Ops** | Org-group seeding, Spock specs + integration tests, audit logging, docs |
@@ -330,10 +353,7 @@ No flag/restriction on sensitive projects; transparency through the notification
 - `project-management-infrastructure/.../project/ProjectRepositoryImpl.java`
 - `datamanager-app/.../security/AclSecurityConfiguration.java`, `SecurityConfiguration.java`,
   `UserPermissionsImpl.java`
-- `datamanager-app/.../security/GroupSid.java`,
-  `datamanager-app/.../security/GroupAwareJdbcMutableAclService.java`,
-  `datamanager-app/.../security/GroupAwareBasicLookupStrategy.java`,
-  `datamanager-app/.../security/GroupAwareSidRetrievalStrategy.java` (proposed)
+- `datamanager-app/.../security/GroupAwareSidRetrievalStrategy.java` (proposed; recommended path)
 - `project-management/.../application/authorization/acl/QbicPermissionEvaluator.java`
 - `datamanager-app/.../views/projects/project/access/ProjectAccessComponent.java`, `AddCollaboratorToProjectDialog.java`
 - `project-management/.../application/policy/directive/InformUserAboutGrantedAccess.java`
