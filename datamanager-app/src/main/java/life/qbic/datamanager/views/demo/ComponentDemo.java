@@ -277,7 +277,7 @@ public class ComponentDemo extends Div {
 
   private PaginatedGrid.Page<Person> loadPersonsPage(ListState state) {
     String filter = state.filter().toLowerCase();
-    var matching = examples.stream()
+    var matching = DEMO_PERSONS.stream()
         .filter(person -> filter.isBlank() || String.join(" ",
             person.firstName(), person.lastName()).toLowerCase().contains(filter))
         .sorted((a, b) -> compareBySort(a, b, state))
@@ -297,6 +297,27 @@ public class ComponentDemo extends Div {
       default -> a.lastName().compareToIgnoreCase(b.lastName());
     };
     return descending ? -result : result;
+  }
+
+  /**
+   * A larger dummy dataset for the {@link PaginatedGrid} demo, generated once so there is enough
+   * data to make paging, search and the page-size selector visible.
+   */
+  private static final List<Person> DEMO_PERSONS = demoPersons();
+
+  private static List<Person> demoPersons() {
+    var names = List.of("Ava", "Ben", "Chloe", "Diego", "Ella", "Felix", "Grace", "Hugo", "Iris",
+        "Jonas", "Lena", "Milo", "Nora", "Oscar", "Pia", "Quinn", "Rosa", "Sam", "Thea", "Umar");
+    var surnames = List.of("Smith", "Muller", "Tanaka", "Garcia", "Dubois", "Andersen", "Petrov",
+        "Nguyen", "Rossi", "Kowalski", "Rahman", "Patel", "O'Connor", "Schneider", "Al-Sayed");
+    var persons = new ArrayList<Person>();
+    int id = 1;
+    for (String surname : surnames) {
+      for (String name : names) {
+        persons.add(new Person(name, surname, 18 + (id++ * 7) % 45));
+      }
+    }
+    return persons;
   }
 
   static List<Person> examples = new ArrayList<>();

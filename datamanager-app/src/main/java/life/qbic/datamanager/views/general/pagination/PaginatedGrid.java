@@ -56,6 +56,7 @@ public class PaginatedGrid<T> extends Div {
   private final Div emptyState = new Div();
   private ListState listState;
   private final String itemLabel;
+  private boolean initialLoadDone;
 
   /**
    * Loads a single page of items for a list state.
@@ -127,6 +128,15 @@ public class PaginatedGrid<T> extends Div {
     emptyState.addClassName("paginated-grid-empty-state");
     emptyState.setVisible(false);
     add(toolbar, grid, emptyState, paginationBar);
+
+    // Load the first page when the component is attached, so the grid shows data immediately
+    // without the owning view having to trigger an explicit refresh.
+    addAttachListener(event -> {
+      if (!initialLoadDone) {
+        initialLoadDone = true;
+        setListState(listState);
+      }
+    });
   }
 
   private void configureGrid() {
