@@ -936,6 +936,15 @@ a.pinned-project-card-body:hover {
   color: var(--lumo-secondary-text-color);
 }
 
+/* Actions bar (Register Samples / Export / Edit / Delete) above the paginated sample grid. */
+.sample-details-component .sample-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--lumo-space-s);
+  padding-bottom: var(--lumo-space-s);
+}
+
 /* Profile styles moved to settings.css */
 
 /*

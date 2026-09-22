@@ -3,12 +3,11 @@ package life.qbic.datamanager.views.projects.project.samples;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridSortOrder;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.data.provider.CallbackDataProvider.CountCallback;
-import com.vaadin.flow.data.provider.CallbackDataProvider.FetchCallback;
-import com.vaadin.flow.data.provider.QuerySortOrder;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.shared.Registration;
 import java.io.InputStream;
@@ -17,15 +16,11 @@ import java.io.Serializable;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.Arrays;
-import java.util.EnumMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.FileNameFormatter;
 import life.qbic.application.commons.time.DateTimeFormat;
@@ -35,16 +30,11 @@ import life.qbic.datamanager.views.UiHandle;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.download.DownloadComponent;
-import life.qbic.datamanager.views.general.grid.component.FilterGrid;
-import life.qbic.datamanager.views.general.grid.component.FilterGridConfigurations;
-import life.qbic.datamanager.views.general.grid.component.FilterGridTab;
-import life.qbic.datamanager.views.general.grid.component.FilterGridTabSheet;
+import life.qbic.datamanager.views.general.pagination.ListState;
+import life.qbic.datamanager.views.general.pagination.PaginatedGrid;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.SamplePreviewFilter;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.SamplePreviewSortKey;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.SortDirection;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.SortOrder;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.project.Project;
@@ -52,7 +42,6 @@ import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import org.jspecify.annotations.NonNull;
 import org.springframework.util.MimeType;
-import reactor.core.publisher.Mono;
 
 /**
  * Sample Details Component
@@ -63,8 +52,13 @@ import reactor.core.publisher.Mono;
  * contained
  * {@link
  * life.qbic.datamanager.views.projects.project.samples.registration.batch.RegisterSampleBatchDialog}.
+ * <p>
+ * The sample list is rendered by a reusable {@link PaginatedGrid} (FEAT-PAG-LIST-02): only the
+ * current page is fetched and rendered, a pager reports location and total, and an identifier-based
+ * cross-page {@link life.qbic.datamanager.views.general.pagination.Selection} of sample IDs survives
+ * page, filter, and sort changes. Bulk actions (export / edit / delete) apply to the full cross-page
+ * selection. The list state is mirrored into the browser URL by the owning route view (USER-R-03).
  */
-
 public class SampleDetailsComponent extends PageArea implements Serializable {
 
   @Serial
@@ -77,7 +71,13 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   private final DownloadComponent downloadComponent = new DownloadComponent();
 
   private final AtomicReference<String> clientTimeZone = new AtomicReference<>("UTC");
-  private FilterGrid<SamplePreview, ?> filterGrid;
+  private PaginatedGrid<SamplePreview> paginatedGrid;
+  private String projectId;
+  private String experimentId;
+  private String projectCode;
+  private final Button exportButton = new Button("Export", VaadinIcon.DOWNLOAD.create());
+  private final Button editButton = new Button("Edit", VaadinIcon.EDIT.create());
+  private final Button deleteButton = new Button("Delete", VaadinIcon.TRASH.create());
 
   public SampleDetailsComponent(
       @NonNull AsyncProjectService asyncProjectService,
@@ -85,6 +85,9 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
       @NonNull Context context) {
     this.messageFactory = Objects.requireNonNull(messageFactory);
     this.asyncProjectService = Objects.requireNonNull(asyncProjectService);
+    this.projectId = context.projectId().orElseThrow().value();
+    this.experimentId = context.experimentId().orElseThrow().value();
+    this.projectCode = context.projectCode().orElseThrow();
     add(downloadComponent);
     addClassNames("sample-details-component", "sample-details-content");
 
@@ -93,51 +96,84 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
       event.getUI().getPage().getExtendedClientDetails().refresh(
           receiver -> {
             clientTimeZone.set(receiver.getTimeZoneId());
-            if (filterGrid != null) {
-              filterGrid.refreshAll();
-            }
           });
     });
 
     addDetachListener(ignored -> uiHandle.unbind());
 
-    Objects.requireNonNull(context);
+    Grid<SamplePreview> sampleGrid = createSamplePreviewGrid();
+    paginatedGrid = new PaginatedGrid<>(sampleGrid, this::loadPage,
+        preview -> preview.sampleId().value(), "sample", SampleSort.DEFAULT);
+    paginatedGrid.setSearchPlaceholder("Search samples");
+    paginatedGrid.addSelectionChangeListener(
+        event -> updateActionButtons());
+    paginatedGrid.addClassNames("width-full");
 
-    var projectId = context.projectId().orElseThrow().value();
-    var experimentId = context.experimentId().orElseThrow().value();
-    var projectCode = context.projectCode().orElseThrow();
+    Div actions = createActionsBar();
+    add(actions, paginatedGrid);
 
-    var multiSelectGrid = createSamplePreviewGrid();
+    updateActionButtons();
+  }
 
-    filterGrid = createFilterGrid(multiSelectGrid, projectId, experimentId);
+  private Div createActionsBar() {
+    Button registerButton = new Button("Register Samples", VaadinIcon.PLUS.create());
+    registerButton.addClassName("button-color-primary");
+    registerButton.addClickListener(clicked -> fireEvent(new SampleRegistrationRequested(this, true)));
 
-    var filterTab = new FilterGridTab<>("Samples", filterGrid);
-    var filterTabSheet = new FilterGridTabSheet();
-    filterTabSheet.addTab(filterTab);
+    exportButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    exportButton.addClickListener(clicked -> onExportClicked());
 
-    filterTabSheet.setCaptionPrimaryAction("Register Samples");
-    filterTabSheet.setCaptionFeatureAction("Export");
-    filterTabSheet.addPrimaryAction(filterTab,
-        tab -> fireEvent(new SampleRegistrationRequested(this, true)));
+    editButton.addClickListener(clicked -> onEditClicked());
 
-    filterTabSheet.addFeatureAction(filterTab, tab -> {
-      var grid = tab.filterGrid();
-      var selectedSamples = grid.selectedElements();
-      if (selectedSamples.isEmpty()) {
-        messageFactory.toast("sample.no-sample-selected", new Object[]{}, getLocale())
-            .open();
-        return;
-      }
-      triggerSampleMetadataDownload(selectedSamples, projectId, experimentId,
-          projectCode);
-    });
+    deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
+    deleteButton.addClickListener(clicked -> onDeleteClicked());
 
-    add(filterTabSheet);
+    Div actions = new Div(registerButton, exportButton, editButton, deleteButton);
+    actions.addClassName("sample-actions");
+    return actions;
+  }
 
-    // Update sample counter badge
-    asyncProjectService.countSamples(projectId, experimentId)
-        .onErrorResume(error -> Mono.just(0))
-        .subscribe(count -> uiHandle.onUiAndPush(() -> filterTab.setItemCount(count)));
+  private void updateActionButtons() {
+    boolean hasSelection = paginatedGrid.selectedIds().size() > 0;
+    exportButton.setEnabled(hasSelection);
+    editButton.setEnabled(hasSelection);
+    deleteButton.setEnabled(hasSelection);
+  }
+
+  private void onExportClicked() {
+    Set<String> selectedSampleIds = paginatedGrid.selectedIds();
+    if (selectedSampleIds.isEmpty()) {
+      messageFactory.toast("sample.no-sample-selected", new Object[]{}, getLocale())
+          .open();
+      return;
+    }
+    triggerSampleMetadataDownload(selectedSampleIds, projectId, experimentId, projectCode);
+  }
+
+  private void onEditClicked() {
+    List<SampleId> selectedSampleIds = selectedSampleIds().stream()
+        .toList();
+    if (selectedSampleIds.isEmpty()) {
+      messageFactory.toast("sample.no-sample-selected", new Object[]{}, getLocale()).open();
+      return;
+    }
+    fireEvent(new SampleEditRequested(selectedSampleIds, this, true));
+  }
+
+  private void onDeleteClicked() {
+    List<SampleId> selectedSampleIds = selectedSampleIds().stream()
+        .toList();
+    if (selectedSampleIds.isEmpty()) {
+      messageFactory.toast("sample.no-sample-selected", new Object[]{}, getLocale()).open();
+      return;
+    }
+    fireEvent(new SampleDeletionRequested(selectedSampleIds, this, true));
+  }
+
+  private Set<SampleId> selectedSampleIds() {
+    return paginatedGrid.selectedIds().stream()
+        .map(SampleId::parse)
+        .collect(Collectors.toSet());
   }
 
   private static ComponentRenderer<Div, SamplePreview> createConditionRenderer() {
@@ -172,7 +208,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     Grid<SamplePreview> sampleGrid = new Grid<>();
     var sampleIdColumn = sampleGrid.addColumn(SamplePreview::sampleCode)
         .setHeader("Sample ID")
-        .setSortProperty(UiSortKey.SAMPLE_ID.value())
+        .setSortProperty("sampleId")
         .setComparator(SamplePreview::sampleCode)
         .setAutoWidth(true)
         .setFlexGrow(0)
@@ -180,67 +216,67 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
         .setFrozen(true);
     sampleGrid.addColumn(SamplePreview::sampleName)
         .setHeader("Sample Name")
-        .setSortProperty(UiSortKey.SAMPLE_NAME.value())
+        .setSortProperty("sampleName")
         .setTooltipGenerator(SamplePreview::sampleName)
         .setAutoWidth(true)
         .setResizable(true);
     sampleGrid.addColumn(SamplePreview::biologicalReplicate)
         .setHeader("Biological Replicate")
-        .setSortProperty(UiSortKey.BIOLOGICAL_REPLICATE.value())
+        .setSortProperty("biologicalReplicate")
         .setTooltipGenerator(SamplePreview::biologicalReplicate)
         .setAutoWidth(true)
         .setResizable(true);
     sampleGrid.addColumn(SamplePreview::batchLabel)
         .setHeader("Batch")
-        .setSortProperty(UiSortKey.BATCH.value())
+        .setSortProperty("batch")
         .setTooltipGenerator(SamplePreview::batchLabel)
         .setAutoWidth(true)
         .setResizable(true);
     sampleGrid.addColumn(createConditionRenderer())
         .setHeader("Condition")
-        .setSortProperty(UiSortKey.CONDITION.value())
+        .setSortProperty("condition")
         .setAutoWidth(true)
         .setResizable(true);
     sampleGrid.addColumn(preview -> preview.species().getLabel())
         .setHeader("Species")
-        .setSortProperty(UiSortKey.SPECIES.value())
+        .setSortProperty("species")
         .setTooltipGenerator(preview -> preview.species().formatted())
         .setAutoWidth(true)
         .setResizable(true);
     sampleGrid.addColumn(preview -> preview.specimen().getLabel())
         .setHeader("Specimen")
-        .setSortProperty(UiSortKey.SPECIMEN.value())
+        .setSortProperty("specimen")
         .setTooltipGenerator(preview -> preview.specimen().formatted())
         .setAutoWidth(true);
     sampleGrid.addColumn(preview -> preview.analyte().getLabel())
         .setHeader("Analyte")
-        .setSortProperty(UiSortKey.ANALYTE.value())
+        .setSortProperty("analyte")
         .setTooltipGenerator(preview -> preview.analyte().formatted())
         .setAutoWidth(true)
         .setResizable(true);
     sampleGrid.addColumn(preview -> preview.analysisMethod().label())
         .setHeader("Analysis to Perform")
-        .setSortProperty(UiSortKey.ANALYSIS_METHOD.value())
+        .setSortProperty("analysisMethod")
         .setTooltipGenerator(samplePreview -> samplePreview.analysisMethod().label())
         .setAutoWidth(true)
         .setResizable(true);
     sampleGrid.addColumn(preview -> formatTime(preview.registrationTime(),
             DateTimeFormat.SIMPLE_DATE_TIME_SHORT))
         .setHeader("Registration time")
-        .setSortProperty(UiSortKey.REGISTRATION_TIME.value())
+        .setSortProperty("registrationTime")
         .setComparator(SamplePreview::registrationTime)
         .setAutoWidth(true)
         .setResizable(true);
     sampleGrid.addColumn(preview -> formatTime(preview.lastModified(),
             DateTimeFormat.SIMPLE_DATE_TIME_SHORT))
         .setHeader("Modification time")
-        .setSortProperty(UiSortKey.MODIFICATION_TIME.value())
+        .setSortProperty("lastModified")
         .setComparator(SamplePreview::lastModified)
         .setAutoWidth(true)
         .setResizable(true);
     sampleGrid.addColumn(SamplePreview::comment)
         .setHeader("Comment")
-        .setSortProperty(UiSortKey.COMMENT.value())
+        .setSortProperty("comment")
         .setTooltipGenerator(SamplePreview::comment)
         .setAutoWidth(true)
         .setResizable(true);
@@ -258,24 +294,49 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
         .format(instant);
   }
 
+  /**
+   * Loads a single page of samples for the {@link PaginatedGrid}. Translates the list state into
+   * the backend lookup and returns the page items together with the total count of samples matching
+   * the active filter.
+   */
+  private PaginatedGrid.Page<SamplePreview> loadPage(ListState state) {
+    int offset = (state.page() - 1) * state.pageSize();
+    int limit = state.pageSize();
+    // The backend applies the sort orders as given, so append the deterministic sample-code
+    // tie-break to keep offset/limit pagination stable across page boundaries (equal sort values
+    // would otherwise duplicate or drop rows).
+    List<life.qbic.projectmanagement.application.api.AsyncProjectService.SortOrder<AsyncProjectService.SamplePreviewSortKey>> sortOrders =
+        new java.util.ArrayList<>();
+    sortOrders.add(SampleSort.toApiSortOrder(state.sort()));
+    if (!state.sort().propertyName().equals("sampleId")) {
+      sortOrders.add(new life.qbic.projectmanagement.application.api.AsyncProjectService.SortOrder<>(
+          AsyncProjectService.SamplePreviewSortKey.SAMPLE_ID,
+          life.qbic.projectmanagement.application.api.AsyncProjectService.SortDirection.ASC));
+    }
+    SamplePreviewFilter filter = new SamplePreviewFilter(state.filter(), sortOrders);
+    int total = asyncProjectService.countSamples(projectId, experimentId, filter).blockOptional()
+        .orElse(0);
+    List<SamplePreview> page = asyncProjectService.getSamplePreviews(projectId, experimentId,
+            offset, limit, filter)
+        .collectList().blockOptional().orElse(List.of());
+    return new PaginatedGrid.Page<>(page, total);
+  }
+
   private void triggerSampleMetadataDownload(
-      @NonNull Set<SamplePreview> samplePreviews,
+      @NonNull Set<String> sampleIds,
       String projectId,
       String experimentId,
       String projectCode) {
 
     var pendingTaskToast = messageFactory.pendingTaskToast("sample.fetching-metadata",
-        new Object[]{samplePreviews.size()}, getLocale());
+        new Object[]{sampleIds.size()}, getLocale());
     pendingTaskToast.open();
-    asyncProjectService.sampleInformationTemplate(projectId, experimentId, samplePreviews.stream()
-                .map(SamplePreview::sampleId)
-                .map(SampleId::value).
-                collect(Collectors.toSet()),
+    asyncProjectService.sampleInformationTemplate(projectId, experimentId, sampleIds,
             MimeType.valueOf("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
         .subscribe(digitalObject -> uiHandle
             .onUiAndPush(() -> {
               pendingTaskToast.close();
-              messageFactory.toast("sample.metadata-fetched", new Object[]{samplePreviews.size()},
+              messageFactory.toast("sample.metadata-fetched", new Object[]{sampleIds.size()},
                   getLocale()).open();
               downloadComponent.trigger(new DownloadStreamProvider() {
                 @Override
@@ -302,151 +363,42 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
             }));
   }
 
-
-  private FilterGrid<SamplePreview, ?> createFilterGrid(
-      Grid<SamplePreview> multiSelectGrid,
-      String projectId,
-      String experimentId) {
-
-    FetchCallback<SamplePreview, String> fetchCallback = query -> {
-      var filter = query.getFilter().orElse("");
-      var sortOrders = sortOrdersToApi(query.getSortOrders());
-      var sampleFilter = new SamplePreviewFilter(filter, sortOrders);
-
-      var offset = query.getOffset();
-      var limit = query.getLimit();
-
-      return asyncProjectService.getSamplePreviews(projectId, experimentId, offset, limit,
-              sampleFilter)
-          .collectList().blockOptional().orElse(List.of()).stream();
-    };
-
-    CountCallback<SamplePreview, String> countCallback = query -> {
-      var filter = query.getFilter().orElse("");
-      var sortOrders = sortOrdersToApi(query.getSortOrders());
-      var sampleFilter = new SamplePreviewFilter(filter, sortOrders);
-
-      return asyncProjectService.countSamples(projectId, experimentId, sampleFilter).blockOptional()
-          .orElse(0);
-    };
-
-    var gridConfiguration = FilterGridConfigurations.lazy(fetchCallback, countCallback);
-    FilterGrid<SamplePreview, String> filterGrid = FilterGrid.create(
-        SamplePreview.class,
-        String.class,
-        gridConfiguration.applyConfiguration(multiSelectGrid),
-        () -> "",
-        (searchTerm, oldFilter) -> searchTerm);
-
-    filterGrid.searchFieldPlaceholder("Search samples");
-    filterGrid.itemDisplayLabel("sample");
-
-    var editButton = new Button("Edit");
-    editButton.addClickListener(clicked -> {
-      var selectedSamples = filterGrid.selectedElements();
-      if (selectedSamples.isEmpty()) {
-        messageFactory.toast("sample.no-sample-selected", new Object[]{}, getLocale()).open();
-        return;
-      }
-      var selectedSampleIds = selectedSamples.stream()
-          .map(SamplePreview::sampleId)
-          .distinct()
-          .toList();
-      fireEvent(new SampleEditRequested(selectedSampleIds, this, true));
-    });
-
-    var deleteButton = new Button("Delete");
-    deleteButton.addClickListener(clicked -> {
-      var selectedSamples = filterGrid.selectedElements();
-      if (selectedSamples.isEmpty()) {
-        messageFactory.toast("sample.no-sample-selected", new Object[]{}, getLocale()).open();
-        return;
-      }
-      var selectedSampleIds = selectedSamples.stream()
-          .map(SamplePreview::sampleId)
-          .distinct()
-          .toList();
-      fireEvent(new SampleDeletionRequested(selectedSampleIds, this, true));
-    });
-    filterGrid.setSecondaryActionGroup(deleteButton, editButton);
-    return filterGrid;
+  /**
+   * Applies an externally provided list state (initial load, URL back/forward, shared link) and
+   * reloads the page.
+   */
+  public void applyExternalState(ListState state) {
+    paginatedGrid.applyExternalState(state);
   }
 
-  private static List<SortOrder<SamplePreviewSortKey>> sortOrdersToApi(
-      List<com.vaadin.flow.data.provider.QuerySortOrder> uiSortOrders)
-      throws IllegalArgumentException {
-    return uiSortOrders.stream()
-        .map(SampleDetailsComponent::sortOrdersToApi)
-        .toList();
+  /**
+   * Reloads the current page with the current list state (e.g. after registration, edit or
+   * deletion).
+   */
+  public void refresh() {
+    paginatedGrid.refresh();
   }
 
-  private static SortOrder<SamplePreviewSortKey> sortOrdersToApi(QuerySortOrder uiSortOrder)
-      throws IllegalArgumentException {
-    var uiSortKeyValue = uiSortOrder.getSorted();
-    var uiSortKey = UiSortKey.from(uiSortKeyValue).orElseThrow(
-        () -> new IllegalArgumentException("No ui sort key provided for value: " + uiSortKeyValue));
-    var apiKey = SORT_KEY_MAP.get(uiSortKey);
-    if (apiKey == null) {
-      throw new IllegalArgumentException("No api key provided for value: " + uiSortKey);
-    }
-    return new SortOrder<>(apiKey, sortDirectionToApi(uiSortOrder.getDirection()));
+  /**
+   * @return the currently applied list state
+   */
+  public ListState listState() {
+    return paginatedGrid.listState();
   }
 
-  private static SortDirection sortDirectionToApi(
-      com.vaadin.flow.data.provider.SortDirection uiSortDirection) {
-    return uiSortDirection == com.vaadin.flow.data.provider.SortDirection.ASCENDING
-        ? SortDirection.ASC : SortDirection.DESC;
+  /**
+   * Registers a listener notified whenever a page is loaded, so the owning route view can mirror
+   * the list state into the URL.
+   */
+  public void addPageLoadedListener(ComponentEventListener<PaginatedGrid.PageLoadedEvent> listener) {
+    paginatedGrid.addPageLoadedListener(listener);
   }
 
-  private static final Map<UiSortKey, SamplePreviewSortKey> SORT_KEY_MAP = new EnumMap<>(
-      UiSortKey.class);
-
-  static {
-    SORT_KEY_MAP.put(UiSortKey.SAMPLE_ID, SamplePreviewSortKey.SAMPLE_ID);
-    SORT_KEY_MAP.put(UiSortKey.SAMPLE_NAME, SamplePreviewSortKey.SAMPLE_NAME);
-    SORT_KEY_MAP.put(UiSortKey.BIOLOGICAL_REPLICATE, SamplePreviewSortKey.BIOLOGICAL_REPLICATE);
-    SORT_KEY_MAP.put(UiSortKey.BATCH, SamplePreviewSortKey.BATCH);
-    SORT_KEY_MAP.put(UiSortKey.CONDITION, SamplePreviewSortKey.CONDITION);
-    SORT_KEY_MAP.put(UiSortKey.SPECIES, SamplePreviewSortKey.SPECIES);
-    SORT_KEY_MAP.put(UiSortKey.SPECIMEN, SamplePreviewSortKey.SPECIMEN);
-    SORT_KEY_MAP.put(UiSortKey.ANALYTE, SamplePreviewSortKey.ANALYTE);
-    SORT_KEY_MAP.put(UiSortKey.ANALYSIS_METHOD, SamplePreviewSortKey.ANALYSIS_METHOD);
-    SORT_KEY_MAP.put(UiSortKey.COMMENT, SamplePreviewSortKey.COMMENT);
-    SORT_KEY_MAP.put(UiSortKey.REGISTRATION_TIME, SamplePreviewSortKey.REGISTRATION_TIME);
-    SORT_KEY_MAP.put(UiSortKey.MODIFICATION_TIME, SamplePreviewSortKey.MODIFICATION_TIME);
-  }
-
-  private enum UiSortKey {
-    SAMPLE_ID("sampleId"),
-    SAMPLE_NAME("sampleName"),
-    BIOLOGICAL_REPLICATE("biologicalReplicate"),
-    BATCH("batch"),
-    CONDITION("condition"),
-    SPECIES("species"),
-    SPECIMEN("specimen"),
-    ANALYTE("analyte"),
-    ANALYSIS_METHOD("analysisMethod"),
-    COMMENT("comment"),
-    REGISTRATION_TIME("registrationTime"),
-    MODIFICATION_TIME("lastModified");
-
-
-    private static final Map<String, UiSortKey> LOOKUP = Arrays.stream(UiSortKey.values()).collect(
-        Collectors.toMap(UiSortKey::value, Function.identity()));
-
-    private final String value;
-
-    UiSortKey(String value) {
-      this.value = value;
-    }
-
-    static Optional<UiSortKey> from(String value) {
-      return Optional.ofNullable(LOOKUP.getOrDefault(value, null));
-    }
-
-    String value() {
-      return value;
-    }
+  /**
+   * @return the wrapped {@link PaginatedGrid}
+   */
+  public PaginatedGrid<SamplePreview> paginatedGrid() {
+    return paginatedGrid;
   }
 
   /**

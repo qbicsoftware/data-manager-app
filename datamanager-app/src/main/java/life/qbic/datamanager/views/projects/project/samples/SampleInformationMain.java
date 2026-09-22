@@ -7,8 +7,13 @@ import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.page.History;
+import com.vaadin.flow.component.page.History.HistoryStateChangeEvent;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
+import com.vaadin.flow.router.BeforeLeaveEvent;
+import com.vaadin.flow.router.BeforeLeaveObserver;
+import com.vaadin.flow.router.Location;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
@@ -27,6 +32,8 @@ import life.qbic.datamanager.views.general.DisclaimerConfirmedEvent;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.general.dialog.AlertDialog;
 import life.qbic.datamanager.views.general.download.DownloadComponent;
+import life.qbic.datamanager.views.general.pagination.ListState;
+import life.qbic.datamanager.views.general.pagination.ListStateCodec;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
 import life.qbic.datamanager.views.projects.project.samples.SampleDetailsComponent.SampleDeletionRequested;
@@ -65,10 +72,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 @SpringComponent
 @UIScope
 @PermitAll
-public class SampleInformationMain extends Main implements BeforeEnterObserver {
+public class SampleInformationMain extends Main implements BeforeEnterObserver, BeforeLeaveObserver {
 
   @Serial
   private static final long serialVersionUID = 3778218989387044758L;
+
+  /**
+   * The framework's own history state change handler, captured before this view installs its own
+   * (same pattern as {@code MeasurementMain}).
+   */
+  private History.HistoryStateChangeHandler routerHistoryStateChangeHandler;
+  private final History.HistoryStateChangeHandler listStateHistoryHandler = this::onHistoryStateChange;
+  private String basePath;
+  private boolean suppressUrlWrite;
 
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
@@ -412,7 +428,84 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
         .map(ProjectCode::value)
         .orElse(null));
 
-    setBatchAndSampleInformation();
+    // URL list-state synchronisation (USER-R-03, FEAT-PAG-LIST-02): capture the router handler,
+    // install our own, and seed the list from the URL on direct load / reload / shared links.
+    History history = UI.getCurrent().getPage().getHistory();
+    History.HistoryStateChangeHandler currentHandler = history.getHistoryStateChangeHandler();
+    if (currentHandler != listStateHistoryHandler) {
+      routerHistoryStateChangeHandler = currentHandler;
+    }
+    history.setHistoryStateChangeHandler(listStateHistoryHandler);
+    basePath = String.format(ProjectRoutes.SAMPLES, projectID, experimentId);
+
+    // Building the component auto-loads the default list state and would mirror it into the URL;
+    // suppress that initial write until the URL state has been applied so a reloaded or shared
+    // link is restored exactly, not overwritten by the defaults.
+    suppressUrlWrite = true;
+    try {
+      setBatchAndSampleInformation();
+      if (sampleDetailsComponent instanceof SampleDetailsComponent sampleDetails) {
+        ListState urlState = ListStateCodec.parse(event.getLocation().getQueryParameters(),
+            SampleSort.DEFAULT, SampleSort.allowedSortOrders());
+        sampleDetails.applyExternalState(urlState);
+      }
+    } finally {
+      suppressUrlWrite = false;
+    }
+  }
+
+  /**
+   * Gives the history state change handler back to the router when this view is left.
+   */
+  @Override
+  public void beforeLeave(BeforeLeaveEvent event) {
+    getUI().ifPresent(ui -> ui.getPage().getHistory()
+        .setHistoryStateChangeHandler(routerHistoryStateChangeHandler));
+  }
+
+  /**
+   * Re-applies the list state when the browser history changes (back/forward or router-link
+   * navigation). Non-sample locations are delegated back to the router handler.
+   */
+  private void onHistoryStateChange(HistoryStateChangeEvent event) {
+    String expectedPath = currentSamplesPath();
+    if (expectedPath == null || !expectedPath.equals(event.getLocation().getPath())) {
+      if (routerHistoryStateChangeHandler != null) {
+        routerHistoryStateChangeHandler.onHistoryStateChange(event);
+      }
+      return;
+    }
+    if (sampleDetailsComponent instanceof SampleDetailsComponent sampleDetails) {
+      suppressUrlWrite = true;
+      try {
+        ListState urlState = ListStateCodec.parse(event.getLocation().getQueryParameters(),
+            SampleSort.DEFAULT, SampleSort.allowedSortOrders());
+        sampleDetails.applyExternalState(urlState);
+      } finally {
+        suppressUrlWrite = false;
+      }
+    }
+  }
+
+  private String currentSamplesPath() {
+    if (context == null || context.projectId().isEmpty() || context.experimentId().isEmpty()) {
+      return null;
+    }
+    return String.format(ProjectRoutes.SAMPLES,
+        context.projectId().orElseThrow().value(),
+        context.experimentId().orElseThrow().value());
+  }
+
+  private void writeUrl(ListState state) {
+    if (basePath == null || suppressUrlWrite) {
+      return;
+    }
+    UI ui = UI.getCurrent();
+    if (ui == null) {
+      return;
+    }
+    Location location = new Location(basePath, ListStateCodec.toQueryParameters(state));
+    ui.getPage().getHistory().pushState(null, location);
   }
 
   private void setBatchAndSampleInformation() {
@@ -465,6 +558,13 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     sampleDetails.addSampleRegistrationListener(ignored -> onRegisterBatchClicked());
     sampleDetails.addSampleEditListener(this::onEditSamplesClicked);
     sampleDetails.addSampleDeletionListener(this::onDeleteSamplesClicked);
+    // Mirror the list state into the URL whenever a page is loaded (page/filter/sort change),
+    // so the list is restorable and shareable (USER-R-03, FEAT-PAG-LIST-02).
+    sampleDetails.addPageLoadedListener(event -> {
+      if (sampleDetailsComponent instanceof SampleDetailsComponent component) {
+        writeUrl(component.listState());
+      }
+    });
     sampleDetailsComponent = sampleDetails;
     add(sampleDetailsComponent);
   }
