@@ -936,13 +936,56 @@ a.pinned-project-card-body:hover {
   color: var(--lumo-secondary-text-color);
 }
 
-/* Actions bar (Register Samples / Export / Edit / Delete) above the paginated sample grid. */
-.sample-details-component .sample-actions {
+/* Toolbar row: search field and action buttons (Register / Export / Edit / Delete) sit side by
+   side, with the Show/Hide Columns menu pushed to the right — matching the measurement lists. */
+.sample-details-component .sample-toolbar {
   display: flex;
+  align-items: center;
   flex-wrap: wrap;
+  gap: var(--lumo-space-s);
+  padding-top: var(--spacing-02);
+}
+
+.sample-details-component .sample-toolbar .sample-toolbar-right {
+  margin-left: auto;
+  display: flex;
   align-items: center;
   gap: var(--lumo-space-s);
-  padding-bottom: var(--lumo-space-s);
+}
+
+.sample-details-component .sample-search {
+  flex: 1;
+  min-width: 12rem;
+}
+
+.sample-details-component .sample-search:focus-within::part(input-field) {
+  background-color: var(--primary-color-10pct);
+  box-shadow: 0 0 0 2px var(--primary-color) inset;
+}
+
+.sample-details-component .sample-search:focus-within [part='suffix'] vaadin-icon {
+  color: var(--primary-color);
+}
+
+/* Selection bar: count and clear action, shown only while a cross-page selection exists. */
+.sample-details-component .sample-selection-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+  padding: var(--lumo-space-s) var(--lumo-space-m);
+  background: var(--primary-contrast-color);
+  background: color-mix(in srgb, var(--primary-color) 6%, var(--primary-contrast-color));
+}
+
+.sample-details-component .sample-selection-count {
+  color: var(--body-text-color);
+  font-weight: 700;
+}
+
+.sample-details-component .sample-clear-selection {
+  margin-left: var(--lumo-space-s);
+  color: var(--button-text-color);
+  font-weight: 600;
 }
 
 /* Profile styles moved to settings.css */

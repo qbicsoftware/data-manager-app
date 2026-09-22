@@ -4,11 +4,21 @@ import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.checkbox.CheckboxGroup;
+import com.vaadin.flow.component.checkbox.CheckboxGroupVariant;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.grid.Grid.Column;
 import com.vaadin.flow.component.grid.GridSortOrder;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.menubar.MenuBar;
+import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.provider.QuerySortOrder;
+import com.vaadin.flow.data.provider.SortDirection;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
+import com.vaadin.flow.data.selection.MultiSelectionEvent;
+import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.shared.Registration;
 import java.io.InputStream;
 import java.io.Serial;
@@ -31,7 +41,9 @@ import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.download.DownloadComponent;
 import life.qbic.datamanager.views.general.pagination.ListState;
+import life.qbic.datamanager.views.general.pagination.ListStateCodec;
 import life.qbic.datamanager.views.general.pagination.PaginatedGrid;
+import life.qbic.datamanager.views.general.pagination.PaginationBar;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.SamplePreviewFilter;
@@ -56,8 +68,11 @@ import org.springframework.util.MimeType;
  * The sample list is rendered by a reusable {@link PaginatedGrid} (FEAT-PAG-LIST-02): only the
  * current page is fetched and rendered, a pager reports location and total, and an identifier-based
  * cross-page {@link life.qbic.datamanager.views.general.pagination.Selection} of sample IDs survives
- * page, filter, and sort changes. Bulk actions (export / edit / delete) apply to the full cross-page
- * selection. The list state is mirrored into the browser URL by the owning route view (USER-R-03).
+ * page, filter, and sort changes. The component drives the grid in externally-controlled mode so the
+ * search field, the action buttons, and the selection bar share one toolbar row next to the search
+ * field (matching the measurement lists). Bulk actions (export / edit / delete) apply to the full
+ * cross-page selection. The list state is mirrored into the browser URL by the owning route view
+ * (USER-R-03).
  */
 public class SampleDetailsComponent extends PageArea implements Serializable {
 
@@ -75,6 +90,13 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   private String projectId;
   private String experimentId;
   private String projectCode;
+  private final TextField searchField = new TextField();
+  private final Span selectionDisplay = new Span();
+  private final Button clearSelectionButton = new Button("Clear selection");
+  private final PaginationBar paginationBar =
+      new PaginationBar(ListStateCodec.ALLOWED_PAGE_SIZES, ListStateCodec.DEFAULT_PAGE_SIZE,
+          "samples");
+  private final Button registerButton = new Button("Register Samples", VaadinIcon.PLUS.create());
   private final Button exportButton = new Button("Export", VaadinIcon.DOWNLOAD.create());
   private final Button editButton = new Button("Edit", VaadinIcon.EDIT.create());
   private final Button deleteButton = new Button("Delete", VaadinIcon.TRASH.create());
@@ -102,21 +124,138 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     addDetachListener(ignored -> uiHandle.unbind());
 
     Grid<SamplePreview> sampleGrid = createSamplePreviewGrid();
+    // Externally controlled mode: the owning component builds its own toolbar (search + actions),
+    // selection bar and pager so all controls sit in one row next to the search field, matching
+    // the measurement lists. The grid still owns page loading, clamping and the empty state.
     paginatedGrid = new PaginatedGrid<>(sampleGrid, this::loadPage,
-        preview -> preview.sampleId().value(), "sample", SampleSort.DEFAULT);
-    paginatedGrid.setSearchPlaceholder("Search samples");
-    paginatedGrid.addSelectionChangeListener(
-        event -> updateActionButtons());
+        preview -> preview.sampleId().value(), "sample", SampleSort.DEFAULT, false, false, false);
     paginatedGrid.addClassNames("width-full");
 
-    Div actions = createActionsBar();
-    add(actions, paginatedGrid);
+    configureSearch();
+    configureSort(sampleGrid);
+    configureSelectionReconciliation(sampleGrid);
+    configureSelectionBar();
+    configureActions();
+    configurePagination();
 
-    updateActionButtons();
+    paginatedGrid.addPageLoadedListener(event -> {
+      paginationBar.setListState(event.getPage(), event.getTotal(),
+          paginatedGrid.listState().pageSize());
+      paginationBar.setVisible(event.getTotal() > 0);
+      applySelectionToGrid();
+      updateSelectionBar();
+    });
+    paginatedGrid.addSelectionChangeListener(event -> updateSelectionBar());
+
+    Div toolbar = createToolbar(sampleGrid);
+    Div selectionBar = createSelectionBar();
+    add(toolbar, selectionBar, paginatedGrid, paginationBar);
+
+    updateSelectionBar();
   }
 
-  private Div createActionsBar() {
-    Button registerButton = new Button("Register Samples", VaadinIcon.PLUS.create());
+  private Div createToolbar(Grid<SamplePreview> grid) {
+    searchField.addClassName("sample-search");
+    Div toolbar = new Div(searchField, registerButton, exportButton, editButton, deleteButton);
+    toolbar.addClassName("sample-toolbar");
+    Div toolbarRight = new Div();
+    toolbarRight.addClassName("sample-toolbar-right");
+    toolbarRight.add(showHideColumnsMenu(grid));
+    toolbar.add(toolbarRight);
+    return toolbar;
+  }
+
+  private Div createSelectionBar() {
+    selectionDisplay.addClassName("sample-selection-count");
+    clearSelectionButton.addClassName("sample-clear-selection");
+    Div selectionBar = new Div(selectionDisplay, clearSelectionButton);
+    selectionBar.addClassName("sample-selection-bar");
+    selectionBar.setVisible(false);
+    return selectionBar;
+  }
+
+  private void configureSearch() {
+    searchField.setPlaceholder("Search samples");
+    searchField.setSuffixComponent(VaadinIcon.SEARCH.create());
+    searchField.setClearButtonVisible(true);
+    searchField.setValueChangeMode(ValueChangeMode.LAZY);
+    searchField.addValueChangeListener(event -> {
+      String filter = event.getValue() == null ? "" : event.getValue().trim();
+      if (filter.equals(paginatedGrid.listState().filter())) {
+        return;
+      }
+      paginatedGrid.setListState(paginatedGrid.listState().withFilter(filter).withPage(1));
+    });
+  }
+
+  private void configureSort(Grid<SamplePreview> grid) {
+    grid.setMultiSort(false);
+    grid.addSortListener(event -> {
+      List<GridSortOrder<SamplePreview>> orders = grid.getSortOrder();
+      if (orders.isEmpty()) {
+        return;
+      }
+      GridSortOrder<SamplePreview> order = orders.get(0);
+      String property = sortPropertyOf(order);
+      if (property == null || property.isBlank()) {
+        return;
+      }
+      boolean descending = order.getDirection() == SortDirection.DESCENDING;
+      life.qbic.application.commons.SortOrder sortOrder =
+          new life.qbic.application.commons.SortOrder(property, descending);
+      if (!SampleSort.allowedSortOrders().contains(sortOrder)) {
+        return;
+      }
+      ListState current = paginatedGrid.listState();
+      if (sortOrder.equals(current.sort())) {
+        return;
+      }
+      paginatedGrid.setListState(current.withSort(sortOrder).withPage(1));
+    });
+  }
+
+  private static String sortPropertyOf(GridSortOrder<?> order) {
+    if (order.getSorted() == null) {
+      return null;
+    }
+    Column<?> column = (Column<?>) order.getSorted();
+    return column.getSortOrder(order.getDirection())
+        .findFirst()
+        .map(QuerySortOrder::getSorted)
+        .orElse(null);
+  }
+
+  /**
+   * Translates grid row selection changes into the identifier-based cross-page {@link Selection}.
+   * Only client-side changes are translated (ADR-0009): the grid is driven externally, so the
+   * PaginatedGrid does not wire its own reconciliation; server-side deselection events Vaadin fires
+   * when a new page is written must not purge off-page selections — the rows are reconciled against
+   * the identifier set by {@link #applySelectionToGrid} on every page load instead.
+   */
+  private void configureSelectionReconciliation(Grid<?> grid) {
+    @SuppressWarnings("unchecked")
+    Grid<Object> objectGrid = (Grid<Object>) grid;
+    objectGrid.addSelectionListener(event -> {
+      if (!event.isFromClient()) {
+        return;
+      }
+      MultiSelectionEvent<Grid<Object>, Object> multi =
+          (MultiSelectionEvent<Grid<Object>, Object>) event;
+      multi.getAddedSelection().forEach(item -> paginatedGrid.select(
+          Set.of(((SamplePreview) item).sampleId().value())));
+      multi.getRemovedSelection().forEach(item -> paginatedGrid.deselect(
+          Set.of(((SamplePreview) item).sampleId().value())));
+    });
+  }
+
+  private void configureSelectionBar() {
+    clearSelectionButton.addClickListener(ignored -> {
+      paginatedGrid.deselect(Set.copyOf(paginatedGrid.selectedIds()));
+      applySelectionToGrid();
+    });
+  }
+
+  private void configureActions() {
     registerButton.addClassName("button-color-primary");
     registerButton.addClickListener(clicked -> fireEvent(new SampleRegistrationRequested(this, true)));
 
@@ -127,10 +266,63 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
 
     deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
     deleteButton.addClickListener(clicked -> onDeleteClicked());
+  }
 
-    Div actions = new Div(registerButton, exportButton, editButton, deleteButton);
-    actions.addClassName("sample-actions");
-    return actions;
+  private void configurePagination() {
+    paginationBar.addChangeListener(event -> {
+      ListState current = paginatedGrid.listState();
+      ListState requested;
+      if (event.getPageSize() != current.pageSize()) {
+        requested = current.withPageSize(event.getPageSize()).withPage(1);
+      } else {
+        requested = current.withPage(event.getPage());
+      }
+      if (requested.equals(current)) {
+        return;
+      }
+      paginatedGrid.setListState(requested);
+    });
+  }
+
+  /**
+   * Builds a "Show/Hide Columns" menu over the given grid's columns, matching the control on the
+   * measurement lists.
+   */
+  private static <T> MenuBar showHideColumnsMenu(Grid<T> grid) {
+    MenuBar menuBar = new MenuBar();
+    Span itemContent = new Span(new Span("Show/Hide Columns"), VaadinIcon.CHEVRON_DOWN.create());
+    var menuItem = menuBar.addItem(itemContent);
+    var subMenu = menuItem.getSubMenu();
+    CheckboxGroup<Column<T>> checkboxGroup = new CheckboxGroup<>();
+    checkboxGroup.setItemLabelGenerator(Column::getHeaderText);
+    List<Column<T>> columns = grid.getColumns().stream()
+        .filter(column -> column.getHeaderText() != null && !column.getHeaderText().isBlank())
+        .toList();
+    checkboxGroup.setItems(columns);
+    checkboxGroup.setValue(columns.stream().filter(Column::isVisible).collect(Collectors.toSet()));
+    checkboxGroup.addThemeVariants(CheckboxGroupVariant.LUMO_VERTICAL);
+    checkboxGroup.addClassNames("flex-vertical");
+    checkboxGroup.getElement().executeJs(
+        "this.addEventListener('click', e => e.stopPropagation());");
+    checkboxGroup.addValueChangeListener(event -> {
+      Set<Column<T>> selected = event.getValue();
+      for (Column<T> column : columns) {
+        column.setVisible(selected.contains(column));
+      }
+    });
+    subMenu.addComponent(checkboxGroup);
+    return menuBar;
+  }
+
+  private void updateSelectionBar() {
+    int count = paginatedGrid.selectedIds().size();
+    boolean hasSelection = count > 0;
+    selectionDisplay.setText(hasSelection
+        ? "%d sample%s selected".formatted(count, count == 1 ? "" : "s")
+        : "");
+    selectionDisplay.setVisible(hasSelection);
+    clearSelectionButton.setVisible(hasSelection);
+    updateActionButtons();
   }
 
   private void updateActionButtons() {
@@ -138,6 +330,16 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     exportButton.setEnabled(hasSelection);
     editButton.setEnabled(hasSelection);
     deleteButton.setEnabled(hasSelection);
+  }
+
+  private void applySelectionToGrid() {
+    paginatedGrid.grid().getGenericDataView().getItems().forEach(item -> {
+      if (paginatedGrid.selectedIds().contains(item.sampleId().value())) {
+        paginatedGrid.grid().select(item);
+      } else {
+        paginatedGrid.grid().deselect(item);
+      }
+    });
   }
 
   private void onExportClicked() {
@@ -365,10 +567,18 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
 
   /**
    * Applies an externally provided list state (initial load, URL back/forward, shared link) and
-   * reloads the page.
+   * reloads the page. The search field is kept in sync so it reflects the restored filter.
    */
   public void applyExternalState(ListState state) {
     paginatedGrid.applyExternalState(state);
+    syncSearchField(state.filter());
+  }
+
+  private void syncSearchField(String filter) {
+    String value = filter == null ? "" : filter;
+    if (!Objects.equals(searchField.getValue(), value)) {
+      searchField.setValue(value);
+    }
   }
 
   /**
