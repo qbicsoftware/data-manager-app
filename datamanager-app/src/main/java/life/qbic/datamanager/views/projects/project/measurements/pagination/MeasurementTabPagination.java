@@ -343,14 +343,6 @@ public class MeasurementTabPagination extends Div {
     return listState;
   }
 
-  /**
-   * Applies a new list state for one domain without touching the URL (used when the rendered
-   * page was clamped after a filter or deletion shrank the result set).
-   */
-  public void applyListState(MeasurementDomain domain, ListState newState) {
-    this.listState = listState.withState(domain, newState);
-  }
-
   public MeasurementDomain activeTab() {
     return listState.activeTab();
   }
