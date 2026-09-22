@@ -2,6 +2,7 @@ package life.qbic.datamanager.views.settings;
 
 import static java.util.Objects.nonNull;
 
+import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
@@ -79,6 +80,11 @@ public class MyGroupsMain extends Main implements BeforeEnterObserver {
         this::onLeaveGroupRequested);
     myGroupsComponent.refresh();
     section.addContent(myGroupsComponent);
+    Button newGroupButton = new Button("New group");
+    newGroupButton.setClassName("my-groups__new-group");
+    newGroupButton.addClickListener(click ->
+        com.vaadin.flow.component.UI.getCurrent().navigate(NewGroupMain.class));
+    section.addAction(newGroupButton);
     add(section);
   }
 
