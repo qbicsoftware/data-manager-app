@@ -132,4 +132,19 @@ public class AppRoutes {
      */
     public static final String SETTINGS_EXTERNAL_PROVIDERS = "settings/external-providers";
   }
+
+  public static class GroupsRoutes {
+
+    private GroupsRoutes() {}
+
+    /**
+     * Path to the settings section listing the groups a user belongs to.
+     */
+    public static final String MY_GROUPS = "settings/groups";
+
+    /**
+     * Path to the page to create a new ad-hoc group.
+     */
+    public static final String NEW_GROUP = "settings/groups/new";
+  }
 }
