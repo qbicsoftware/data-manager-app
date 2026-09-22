@@ -17,6 +17,7 @@ import life.qbic.usergroups.domain.registry.DomainRegistry;
 import life.qbic.usergroups.domain.repository.GroupRepository;
 import life.qbic.usergroups.domain.service.GroupDomainService;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * <b>Group application service</b>
@@ -67,14 +68,19 @@ public class GroupService {
    * rejects the second write and the resulting {@link DataIntegrityViolationException} is mapped
    * to the same user-friendly error — the raw exception is never leaked to the caller.</p>
    *
+   * <p>This method is transactional: the duplicate check, the store, the reload and the
+   * projection mapping all run inside a single transaction so no lazy collection of a detached
+   * entity is ever touched outside a transaction.</p>
+   *
    * @param creatorUserId the user id of the authenticated creator; must not be blank
    * @param name          the desired group name (validated by {@link GroupName})
    * @param description   the desired group description (may be empty)
-   * @return a result wrapping the created {@link UserGroup}, or an error if the name is already
-   * taken (case-insensitive) or the creator id is invalid
+   * @return a result wrapping the created {@link GroupInfoProjection}, or an error if the name is
+   * already taken (case-insensitive) or the creator id is invalid
    * @since 1.17.0
    */
-  public Result<UserGroup, ApplicationException> createAdHocGroup(
+  @Transactional
+  public Result<GroupInfoProjection, ApplicationException> createAdHocGroup(
       String creatorUserId, GroupName name, GroupDescription description) {
     if (creatorUserId == null || creatorUserId.isBlank()) {
       return Result.fromError(new ApplicationException(
@@ -105,7 +111,8 @@ public class GroupService {
     }
 
     Optional<UserGroup> created = groupRepository.findById(groupId);
-    return created.<Result<UserGroup, ApplicationException>>map(Result::fromValue)
+    return created.<Result<GroupInfoProjection, ApplicationException>>map(
+            group -> Result.fromValue(toInfoProjection(group)))
         .orElseGet(() -> Result.fromError(new ApplicationException(
             "Group creation failed.", ErrorCode.SERVICE_FAILED, ErrorParameters.empty())));
   }
@@ -119,6 +126,7 @@ public class GroupService {
    * @return the caller's active group memberships, including the caller's role inside each group
    * @since 1.17.0
    */
+  @Transactional(readOnly = true)
   public List<GroupMembershipProjection> listMyGroups(String userId) {
     if (userId == null || userId.isBlank()) {
       return List.of();
@@ -136,6 +144,7 @@ public class GroupService {
    * @return a list of group info projections of all active groups
    * @since 1.17.0
    */
+  @Transactional(readOnly = true)
   public List<GroupInfoProjection> listPublicDirectory() {
     return groupRepository.findAllActive().stream().map(this::toInfoProjection).toList();
   }
@@ -150,6 +159,7 @@ public class GroupService {
    * @return a group info projection if the group exists and is active, else empty
    * @since 1.17.0
    */
+  @Transactional(readOnly = true)
   public Optional<GroupInfoProjection> findGroupById(String groupId) {
     GroupId parsedId;
     try {
@@ -173,6 +183,7 @@ public class GroupService {
    * @return {@code true} if the name is not in use by any group, {@code false} otherwise
    * @since 1.17.0
    */
+  @Transactional(readOnly = true)
   public boolean isGroupNameAvailable(String name) {
     if (name == null || name.isBlank()) {
       return false;
@@ -198,6 +209,7 @@ public class GroupService {
    * the user is not a member
    * @since 1.17.0
    */
+  @Transactional
   public Result<Void, ApplicationException> removeMembership(String groupId, String userId) {
     GroupId parsedId;
     try {
@@ -239,7 +251,7 @@ public class GroupService {
     return Result.fromValue(null);
   }
 
-  private Result<UserGroup, ApplicationException> duplicateNameError(String name) {
+  private Result<GroupInfoProjection, ApplicationException> duplicateNameError(String name) {
     return Result.fromError(new ApplicationException(
         String.format(DUPLICATE_NAME_MESSAGE, name), ErrorCode.DUPLICATE_GROUP_NAME,
         ErrorParameters.of(name)));

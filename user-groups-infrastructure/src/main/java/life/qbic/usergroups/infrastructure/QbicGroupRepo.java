@@ -59,7 +59,7 @@ public interface QbicGroupRepo extends JpaRepository<UserGroup, GroupId> {
    * @return the matching groups
    * @since 1.17.0
    */
-  @Query("SELECT DISTINCT g FROM UserGroup g JOIN g.memberships m "
+  @Query("SELECT DISTINCT g FROM UserGroup g JOIN FETCH g.memberships m "
       + "WHERE m.id.userId = :userId AND g.status = :status")
   List<UserGroup> findByMemberAndStatus(@Param("userId") String userId,
       @Param("status") GroupStatus status);

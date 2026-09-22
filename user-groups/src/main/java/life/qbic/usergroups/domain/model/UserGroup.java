@@ -260,7 +260,6 @@ public class UserGroup implements Serializable {
         ", status=" + status +
         ", createdBy='" + createdBy + '\'' +
         ", createdAt=" + createdAt +
-        ", members=" + memberships.size() +
         '}';
   }
 }

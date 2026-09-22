@@ -12,6 +12,7 @@ import life.qbic.usergroups.domain.model.GroupRole
 import life.qbic.usergroups.domain.model.GroupStatus
 import life.qbic.usergroups.domain.model.GroupType
 import life.qbic.usergroups.domain.model.UserGroup
+import life.qbic.usergroups.application.GroupInfoProjection
 import life.qbic.usergroups.domain.registry.DomainRegistry
 import life.qbic.usergroups.domain.repository.GroupDataStorage
 import life.qbic.usergroups.domain.repository.GroupRepository
@@ -61,21 +62,20 @@ class GroupServiceSpec extends Specification {
     String creator = "creator-user"
 
     when:
-    Result<UserGroup, ApplicationException> result = service.createAdHocGroup(creator, NAME, DESC)
+    Result<GroupInfoProjection, ApplicationException> result =
+        service.createAdHocGroup(creator, NAME, DESC)
 
-    then: "the result contains the created group"
+    then: "the result contains the created group as a projection"
     result.isValue()
     def group = result.getValue()
-    group.id() != null
-    group.name() == NAME
-    group.type() == GroupType.ADHOC
-    group.status() == GroupStatus.ACTIVE
-    group.createdBy() == creator
+    group.groupId() != null
+    group.groupName() == NAME
+    group.groupType() == GroupType.ADHOC
 
-    and: "the creator holds the OWNER role"
-    group.memberships().size() == 1
-    group.memberships().get(0).userId() == creator
-    group.memberships().get(0).role() == GroupRole.OWNER
+    and: "the creator's OWNER membership is observable via my-groups"
+    def myGroups = service.listMyGroups(creator)
+    myGroups.size() == 1
+    myGroups.get(0).myRole() == GroupRole.OWNER
   }
 
   def "Creating a group with an already used name is rejected with the exact uniqueness message"() {
@@ -83,7 +83,7 @@ class GroupServiceSpec extends Specification {
     service.createAdHocGroup("creator-user", NAME, DESC)
 
     when: "a second group with the exact same name is created"
-    Result<UserGroup, ApplicationException> result =
+    Result<GroupInfoProjection, ApplicationException> result =
         service.createAdHocGroup("other-user", NAME, DESC)
 
     then: "an error with the duplicate name code and exact message is returned"
@@ -101,7 +101,7 @@ class GroupServiceSpec extends Specification {
     service.createAdHocGroup("creator-user", NAME, DESC)
 
     when: "a group with 'ngs lab' (different case) is created"
-    Result<UserGroup, ApplicationException> result =
+    Result<GroupInfoProjection, ApplicationException> result =
         service.createAdHocGroup("other-user", GroupName.from("ngs lab"), DESC)
 
     then: "the creation is rejected with the duplicate name code"
@@ -127,7 +127,7 @@ class GroupServiceSpec extends Specification {
     GroupService racingService = new GroupService(racingRepository)
 
     when:
-    Result<UserGroup, ApplicationException> result =
+    Result<GroupInfoProjection, ApplicationException> result =
         racingService.createAdHocGroup("creator-user", GroupName.from("Brand New Name"), DESC)
 
     then: "a friendly duplicate-name error is returned"
@@ -139,7 +139,7 @@ class GroupServiceSpec extends Specification {
 
   def "Creating a group with a blank creator user id is rejected"() {
     when:
-    Result<UserGroup, ApplicationException> result =
+    Result<GroupInfoProjection, ApplicationException> result =
         service.createAdHocGroup("  ", NAME, DESC)
 
     then:
@@ -168,13 +168,14 @@ class GroupServiceSpec extends Specification {
     String creator = "researcher-1"
 
     when: "the user creates an ad-hoc group with a unique name and description"
-    Result<UserGroup, ApplicationException> result =
+    Result<GroupInfoProjection, ApplicationException> result =
         service.createAdHocGroup(creator, GroupName.from("Collab Team"),
             GroupDescription.from("Assembled collaboration team"))
 
-    then: "the group is created and the creator is OWNER"
+    then: "the group is created (projection) and the creator is OWNER"
     result.isValue()
-    result.getValue().memberships().get(0).role() == GroupRole.OWNER
+    result.getValue().groupType() == GroupType.ADHOC
+    service.listMyGroups(creator).get(0).myRole() == GroupRole.OWNER
 
     and: "the group appears in the public directory"
     service.listPublicDirectory()*.groupName() == [GroupName.from("Collab Team")]
@@ -188,7 +189,7 @@ class GroupServiceSpec extends Specification {
   def "An ad-hoc group that becomes empty is dissolved and disappears from directory and my-groups (AC c)"() {
     given: "an ad-hoc group owned by a single user"
     String solo = "solo-user"
-    String groupId = service.createAdHocGroup(solo, NAME, DESC).getValue().id().get()
+    String groupId = service.createAdHocGroup(solo, NAME, DESC).getValue().groupId().get()
     service.listPublicDirectory().size() == 1
     service.listMyGroups(solo).size() == 1
 
@@ -228,9 +229,9 @@ class GroupServiceSpec extends Specification {
 
   def "removeMembership of the last member dissolves the group"() {
     given: "a group with a single member (the owner)"
-    Result<UserGroup, ApplicationException> created =
+    Result<GroupInfoProjection, ApplicationException> created =
         service.createAdHocGroup("solo-user", NAME, DESC)
-    String groupId = created.getValue().id().get()
+    String groupId = created.getValue().groupId().get()
 
     when:
     Result<Void, ApplicationException> result = service.removeMembership(groupId, "solo-user")
@@ -259,8 +260,9 @@ class GroupServiceSpec extends Specification {
 
   def "removeMembership by a non-member fails with an error"() {
     given: "a group owned by alice"
-    Result<UserGroup, ApplicationException> created = service.createAdHocGroup("alice", NAME, DESC)
-    String groupId = created.getValue().id().get()
+    Result<GroupInfoProjection, ApplicationException> created =
+        service.createAdHocGroup("alice", NAME, DESC)
+    String groupId = created.getValue().groupId().get()
 
     when: "a non-member attempts to remove themselves"
     Result<Void, ApplicationException> result = service.removeMembership(groupId, "not-a-member")
