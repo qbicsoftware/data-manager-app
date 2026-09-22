@@ -95,6 +95,18 @@
     </dependency>
     <dependency>
       <groupId>life.qbic.datamanager</groupId>
+      <artifactId>user-groups</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>life.qbic.datamanager</groupId>
+      <artifactId>user-groups-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>life.qbic.datamanager</groupId>
+      <artifactId>user-groups-infrastructure</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>life.qbic.datamanager</groupId>
       <artifactId>finances-api</artifactId>
     </dependency>
     <dependency>
