@@ -33,7 +33,8 @@ class MeasurementDetailsUrlStateSpec extends Specification {
         def messages = new MessageSourceNotificationFactory(messageSource)
         def ngs = Stub(NgsMeasurementLookup) {
             countNgsMeasurements(_, _) >> 1000
-            lookupNgsMeasurements(_, _, _, _, _) >> Stream.empty()
+            // a fresh stream per call: loadNgsPage consumes it via toList() on every page load
+            lookupNgsMeasurements(_, _, _, _, _) >> { Stream.empty() }
         }
         return new MeasurementDetailsComponent(messages, ngs,
                 Stub(PxpMeasurementLookup),
