@@ -122,9 +122,12 @@
   gap: var(--lumo-space-m);
 }
 
+/* Legacy rule centred the (full-width) TabSheet. With the paginated measurement lists
+   the component is a scroll-sized column; centring makes the whole block recentre when
+   few results shrink it. Anchor to the start so position is independent of result count. */
 .measurement-details-component {
-  justify-content: center;
-  align-items: center;
+  justify-content: flex-start;
+  align-items: flex-start;
 }
 
 .measurement-details-component .measurement-tabsheet {

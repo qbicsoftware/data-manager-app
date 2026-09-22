@@ -9,7 +9,6 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.progressbar.ProgressBar;
-import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.shared.Registration;
 import java.io.IOException;
 import java.io.InputStream;
@@ -57,7 +56,6 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
   private static final MimeType OPEN_XML = MimeType.valueOf(
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
   private final Map<String, List<SampleRegistrationInformation>> validatedSampleMetadata;
-  private final TextField batchNameField;
   private static final Logger log = LoggerFactory.logger(RegisterSampleBatchDialog.class);
   private static final int MAX_FILE_SIZE = 25 * 1024 * 1024;
   private final Div initialView;
@@ -92,11 +90,6 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
     succeededView.addClassName("succeeded-view");
 
     addClassName("register-samples-dialog");
-    batchNameField = new TextField("Batch name");
-    batchNameField.addClassName("batch-name-field");
-    batchNameField.setRequired(true);
-    batchNameField.setErrorMessage("Please provide a name for your batch.");
-    batchNameField.setPlaceholder("Please enter a name for your batch");
 
     Div downloadMetadataSection = setupDownloadMetadataSection(service, experimentId,
         projectId, projectCode);
@@ -127,7 +120,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
     Div uploadSection = new Div(uploadTheSampleDataTitle, contentUploadComponent, uploadDisplay);
     uploadSection.addClassName("upload-section");
     uploadSection.addClassName("section-with-title");
-    initialView.add(batchNameField, downloadMetadataSection, uploadSection);
+    initialView.add(downloadMetadataSection, uploadSection);
     initialView.setVisible(true);
     inProgressView.setVisible(false);
     failedView.setVisible(false);
@@ -176,7 +169,8 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
         information.analyte(),
         information.analysisMethod(),
         information.comment(),
-        information.confoundingVariables()
+        information.confoundingVariables(),
+        information.batch()
     );
   }
 
@@ -331,17 +325,6 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
 
   @Override
   protected void onConfirmClicked(ClickEvent<Button> clickEvent) {
-    if (batchNameField.isInvalid()) {
-      // once the user focused the batch name field at least once, the setRequired(true) validation is applied.
-      batchNameField.focus();
-      return;
-    }
-    if (batchNameField.isEmpty() || batchNameField.getValue().isBlank()) {
-      // if the user never focused the name field, no validation took place. Thus, the need to double-check here.
-      batchNameField.setInvalid(true);
-      batchNameField.focus();
-      return;
-    }
     if (validatedSampleMetadata.isEmpty()) {
       // nothing to do
       return;
@@ -350,8 +333,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
         .flatMap(List::stream)
         .distinct()
         .toList();
-    fireEvent(new ConfirmEvent(this, clickEvent.isFromClient(),
-        batchNameField.getValue(), allValidatedData));
+    fireEvent(new ConfirmEvent(this, clickEvent.isFromClient(), allValidatedData));
   }
 
   @Override
@@ -361,7 +343,6 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
 
   public static class ConfirmEvent extends ComponentEvent<RegisterSampleBatchDialog> {
 
-    private final String batchName;
     private final List<SampleRegistrationInformation> validatedSampleMetadata;
 
 
@@ -372,23 +353,16 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
      * @param source                  the source component
      * @param fromClient              <code>true</code> if the event originated from the client
      *                                side, <code>false</code> otherwise
-     * @param batchName               the name of the batch
      * @param registrations a list of validated sample metadata
      */
     public ConfirmEvent(RegisterSampleBatchDialog source, boolean fromClient,
-        String batchName,
         List<SampleRegistrationInformation> registrations) {
       super(source, fromClient);
-      this.batchName = batchName;
       this.validatedSampleMetadata = registrations;
     }
 
     public List<SampleRegistrationInformation> validatedSampleMetadata() {
       return Collections.unmodifiableList(validatedSampleMetadata);
-    }
-
-    public String batchName() {
-      return batchName;
     }
   }
 

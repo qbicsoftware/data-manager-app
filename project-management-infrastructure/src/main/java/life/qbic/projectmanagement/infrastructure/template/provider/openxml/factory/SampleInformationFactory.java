@@ -141,6 +141,7 @@ class SampleInformationFactory implements WorkbookFactory {
               PropertyConversion.toString(sample.sampleOrigin().getAnalyte());
           case InformationColumn.SPECIMEN ->
               PropertyConversion.toString(sample.sampleOrigin().getSpecimen());
+          case InformationColumn.BATCH -> sample.batch();
           case InformationColumn.COMMENT -> sample.comment().orElse(null);
         };
       } else if (column instanceof ConfoundingVariableColumn confoundingVariableColumn) {

@@ -17,7 +17,7 @@ import life.qbic.application.commons.SortOrder;
  */
 public final class ListStateCodec {
 
-  /** Default number of items rendered per page. */
+  /** Default number of items rendered per page for lists that do not override it. */
   public static final int DEFAULT_PAGE_SIZE = 12;
 
   /** Page sizes offered to the user via the pager. */
@@ -41,6 +41,16 @@ public final class ListStateCodec {
    */
   public static ListState parse(QueryParameters parameters, SortOrder defaultSort,
       List<SortOrder> allowedSorts) {
+    return parse(parameters, defaultSort, allowedSorts, DEFAULT_PAGE_SIZE);
+  }
+
+  /**
+   * Parses a list state from URL query parameters like {@link #parse(QueryParameters, SortOrder,
+   * List)}, but with an explicit default page size so concrete lists can deviate from
+   * {@link #DEFAULT_PAGE_SIZE} (the measurements view defaults to 24, project overview to 12).
+   */
+  public static ListState parse(QueryParameters parameters, SortOrder defaultSort,
+      List<SortOrder> allowedSorts, int defaultPageSize) {
     int page = parameters.getSingleParameter(PAGE_PARAMETER)
         .flatMap(ListStateCodec::parseInt)
         .filter(candidate -> candidate > 0)
@@ -48,7 +58,7 @@ public final class ListStateCodec {
     int pageSize = parameters.getSingleParameter(PAGE_SIZE_PARAMETER)
         .flatMap(ListStateCodec::parseInt)
         .filter(ALLOWED_PAGE_SIZES::contains)
-        .orElse(DEFAULT_PAGE_SIZE);
+        .orElse(defaultPageSize);
     String filter = parameters.getSingleParameter(FILTER_PARAMETER).orElse("");
     SortOrder sort = parameters.getSingleParameter(SORT_PARAMETER)
         .map(ListStateCodec::parseSort)

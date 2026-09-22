@@ -1,12 +1,12 @@
 @import "variables.css";
 
 /*
- * The project overview scrolls natively with the page: its CSS grid only
- * aligns the single paginated collection and applies no height floors or
- * embedded scroll containers (see ADR-0007, USER-NFR-01).
+ * The project overview and the measurement lists scroll natively with the page:
+ * their CSS grids only align the paginated components and apply no height floors
+ * or embedded scroll containers (see ADR-0007, ADR-0009; USER-NFR-01).
  * The stopgap floors below still apply to the remaining endless-scrolling
- * grids (raw data, sample, measurement, ...) until pagination replaces
- * them as well (FEAT-PAG-LIST-02..04).
+ * grids (raw data, sample) until pagination replaces them as well
+ * (FEAT-PAG-LIST-02..04).
  */
 
 .main.project-overview {
@@ -43,7 +43,7 @@
 
 .main.measurement {
   grid-template-columns: 100%;
-  grid-template-rows: minmax(min-content, 10%) minmax(60vh, 1fr);
+  grid-template-rows: minmax(min-content, 10%) auto;
   grid-template-areas:
     "."
     "measurementdetails";
@@ -111,7 +111,7 @@
     grid-template-areas:
     "."
     "measurementdetails";
-    grid-template-rows: minmax(min-content, 10%) minmax(60vh, 1fr);
+    grid-template-rows: minmax(min-content, 10%) auto;
   }
 
   .main.project {

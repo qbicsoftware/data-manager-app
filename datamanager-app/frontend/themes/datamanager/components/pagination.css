@@ -45,7 +45,7 @@
   display: contents;
 }
 
+/* page-size Select (UX F10): keep a stable width so the bar does not jump between sizes */
 .pagination-bar .pagination-page-size {
-  min-width: 8rem;
-  justify-content: space-between;
+  width: 8rem;
 }

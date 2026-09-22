@@ -49,6 +49,12 @@ public enum DateTimeFormat {
    */
   SIMPLE_DATE_TIME,
   /**
+   * A compact date-time representation. E.g. {@code 11 Feb 2026 11:12}
+   * <p>
+   * Format: {@code <day> <month_name> <year> <hour>:<minute>}
+   */
+  SIMPLE_DATE_TIME_SHORT,
+  /**
    * The ISO-8601 date format without an offset, such as '2011-12-03'.
    * <p>
    * Format: {@code <year>-<month>-<day>}
@@ -88,6 +94,8 @@ public enum DateTimeFormat {
       case SIMPLE_DATE_SHORT -> DateTimeFormatter.ofPattern("d MMM yyyy").withZone(zoneId);
       case SIMPLE_DATE_TIME -> DateTimeFormatter.ofPattern("EEEE, dd LLLL yyyy HH:mm:ss").withZone(
           zoneId);
+      case SIMPLE_DATE_TIME_SHORT -> DateTimeFormatter.ofPattern("d MMM yyyy HH:mm").withZone(
+          zoneId);
     };
   }
 
@@ -105,6 +113,7 @@ public enum DateTimeFormat {
       case SIMPLE_DATE -> "%W, %d %M %Y";
       case SIMPLE_DATE_SHORT -> "%d %M %Y";
       case SIMPLE_DATE_TIME -> "%W, %d %M %Y %T";
+      case SIMPLE_DATE_TIME_SHORT -> "%d %M %Y %H:%i";
       case ISO_LOCAL_DATE -> "%Y-%m-%d";
       case ISO_LOCAL_DATE_TIME -> "%Y-%m-%dT%T";
       case ISO_LOCAL_DATE_TIME_WHITESPACE_SEPARATED -> "%Y-%m-%d %T";

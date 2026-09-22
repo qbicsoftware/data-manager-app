@@ -1,5 +1,8 @@
 package life.qbic.datamanager.views.projects.project.samples;
 
+import com.vaadin.flow.component.ComponentEvent;
+import com.vaadin.flow.component.ComponentEventListener;
+import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridSortOrder;
 import com.vaadin.flow.component.html.Div;
@@ -7,10 +10,13 @@ import com.vaadin.flow.data.provider.CallbackDataProvider.CountCallback;
 import com.vaadin.flow.data.provider.CallbackDataProvider.FetchCallback;
 import com.vaadin.flow.data.provider.QuerySortOrder;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
+import com.vaadin.flow.shared.Registration;
 import java.io.InputStream;
 import java.io.Serial;
 import java.io.Serializable;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.List;
@@ -18,9 +24,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.FileNameFormatter;
+import life.qbic.application.commons.time.DateTimeFormat;
 import life.qbic.datamanager.files.export.download.DownloadStreamProvider;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.UiHandle;
@@ -38,7 +46,6 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.SamplePre
 import life.qbic.projectmanagement.application.api.AsyncProjectService.SortDirection;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.SortOrder;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
-import life.qbic.projectmanagement.domain.model.batch.Batch;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
@@ -51,9 +58,9 @@ import reactor.core.publisher.Mono;
  * Sample Details Component
  * <p>
  * Component embedded within the {@link SampleInformationMain}. It allows the user to see the
- * information associated for all {@link Batch} and {@link Sample} of each
- * {@link Experiment within a {@link Project} Additionally it enables the user to register new
- * {@link Batch} and {@link Sample} via the contained
+ * information associated for all {@link Sample} of each {@link Experiment} within a
+ * {@link Project} Additionally it enables the user to register and edit {@link Sample} via the
+ * contained
  * {@link
  * life.qbic.datamanager.views.projects.project.samples.registration.batch.RegisterSampleBatchDialog}.
  */
@@ -69,6 +76,9 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
 
   private final DownloadComponent downloadComponent = new DownloadComponent();
 
+  private final AtomicReference<String> clientTimeZone = new AtomicReference<>("UTC");
+  private FilterGrid<SamplePreview, ?> filterGrid;
+
   public SampleDetailsComponent(
       @NonNull AsyncProjectService asyncProjectService,
       @NonNull MessageSourceNotificationFactory messageFactory,
@@ -78,7 +88,16 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     add(downloadComponent);
     addClassNames("sample-details-component", "sample-details-content");
 
-    addAttachListener(event -> uiHandle.bind(event.getUI()));
+    addAttachListener(event -> {
+      uiHandle.bind(event.getUI());
+      event.getUI().getPage().getExtendedClientDetails().refresh(
+          receiver -> {
+            clientTimeZone.set(receiver.getTimeZoneId());
+            if (filterGrid != null) {
+              filterGrid.refreshAll();
+            }
+          });
+    });
 
     addDetachListener(ignored -> uiHandle.unbind());
 
@@ -90,7 +109,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
 
     var multiSelectGrid = createSamplePreviewGrid();
 
-    var filterGrid = createFilterGrid(multiSelectGrid, projectId, experimentId);
+    filterGrid = createFilterGrid(multiSelectGrid, projectId, experimentId);
 
     var filterTab = new FilterGridTab<>("Samples", filterGrid);
     var filterTabSheet = new FilterGridTabSheet();
@@ -98,7 +117,8 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
 
     filterTabSheet.setCaptionPrimaryAction("Register Samples");
     filterTabSheet.setCaptionFeatureAction("Export");
-    filterTabSheet.hidePrimaryActionButton();
+    filterTabSheet.addPrimaryAction(filterTab,
+        tab -> fireEvent(new SampleRegistrationRequested(this, true)));
 
     filterTabSheet.addFeatureAction(filterTab, tab -> {
       var grid = tab.filterGrid();
@@ -148,7 +168,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     return tagCollection;
   }
 
-  private static Grid<SamplePreview> createSamplePreviewGrid() {
+  private Grid<SamplePreview> createSamplePreviewGrid() {
     Grid<SamplePreview> sampleGrid = new Grid<>();
     var sampleIdColumn = sampleGrid.addColumn(SamplePreview::sampleCode)
         .setHeader("Sample ID")
@@ -204,6 +224,20 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
         .setTooltipGenerator(samplePreview -> samplePreview.analysisMethod().label())
         .setAutoWidth(true)
         .setResizable(true);
+    sampleGrid.addColumn(preview -> formatTime(preview.registrationTime(),
+            DateTimeFormat.SIMPLE_DATE_TIME_SHORT))
+        .setHeader("Registration time")
+        .setSortProperty(UiSortKey.REGISTRATION_TIME.value())
+        .setComparator(SamplePreview::registrationTime)
+        .setAutoWidth(true)
+        .setResizable(true);
+    sampleGrid.addColumn(preview -> formatTime(preview.lastModified(),
+            DateTimeFormat.SIMPLE_DATE_TIME_SHORT))
+        .setHeader("Modification time")
+        .setSortProperty(UiSortKey.MODIFICATION_TIME.value())
+        .setComparator(SamplePreview::lastModified)
+        .setAutoWidth(true)
+        .setResizable(true);
     sampleGrid.addColumn(SamplePreview::comment)
         .setHeader("Comment")
         .setSortProperty(UiSortKey.COMMENT.value())
@@ -214,6 +248,14 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     sampleGrid.setColumnReorderingAllowed(true);
     sampleGrid.sort(GridSortOrder.asc(sampleIdColumn).build());
     return sampleGrid;
+  }
+
+  private String formatTime(Instant instant, DateTimeFormat dateTimeFormat) {
+    if (instant == null) {
+      return "";
+    }
+    return DateTimeFormat.asJavaFormatter(dateTimeFormat, ZoneId.of(clientTimeZone.get()))
+        .format(instant);
   }
 
   private void triggerSampleMetadataDownload(
@@ -298,6 +340,35 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
 
     filterGrid.searchFieldPlaceholder("Search samples");
     filterGrid.itemDisplayLabel("sample");
+
+    var editButton = new Button("Edit");
+    editButton.addClickListener(clicked -> {
+      var selectedSamples = filterGrid.selectedElements();
+      if (selectedSamples.isEmpty()) {
+        messageFactory.toast("sample.no-sample-selected", new Object[]{}, getLocale()).open();
+        return;
+      }
+      var selectedSampleIds = selectedSamples.stream()
+          .map(SamplePreview::sampleId)
+          .distinct()
+          .toList();
+      fireEvent(new SampleEditRequested(selectedSampleIds, this, true));
+    });
+
+    var deleteButton = new Button("Delete");
+    deleteButton.addClickListener(clicked -> {
+      var selectedSamples = filterGrid.selectedElements();
+      if (selectedSamples.isEmpty()) {
+        messageFactory.toast("sample.no-sample-selected", new Object[]{}, getLocale()).open();
+        return;
+      }
+      var selectedSampleIds = selectedSamples.stream()
+          .map(SamplePreview::sampleId)
+          .distinct()
+          .toList();
+      fireEvent(new SampleDeletionRequested(selectedSampleIds, this, true));
+    });
+    filterGrid.setSecondaryActionGroup(deleteButton, editButton);
     return filterGrid;
   }
 
@@ -341,6 +412,8 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     SORT_KEY_MAP.put(UiSortKey.ANALYTE, SamplePreviewSortKey.ANALYTE);
     SORT_KEY_MAP.put(UiSortKey.ANALYSIS_METHOD, SamplePreviewSortKey.ANALYSIS_METHOD);
     SORT_KEY_MAP.put(UiSortKey.COMMENT, SamplePreviewSortKey.COMMENT);
+    SORT_KEY_MAP.put(UiSortKey.REGISTRATION_TIME, SamplePreviewSortKey.REGISTRATION_TIME);
+    SORT_KEY_MAP.put(UiSortKey.MODIFICATION_TIME, SamplePreviewSortKey.MODIFICATION_TIME);
   }
 
   private enum UiSortKey {
@@ -353,7 +426,9 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     SPECIMEN("specimen"),
     ANALYTE("analyte"),
     ANALYSIS_METHOD("analysisMethod"),
-    COMMENT("comment");
+    COMMENT("comment"),
+    REGISTRATION_TIME("registrationTime"),
+    MODIFICATION_TIME("lastModified");
 
 
     private static final Map<String, UiSortKey> LOOKUP = Arrays.stream(UiSortKey.values()).collect(
@@ -371,6 +446,100 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
 
     String value() {
       return value;
+    }
+  }
+
+  /**
+   * Register a {@link ComponentEventListener} that gets informed with a
+   * {@link SampleRegistrationRequested} as soon as a user wants to register samples.
+   *
+   * @param listener a listener on the sample registration trigger
+   */
+  public Registration addSampleRegistrationListener(
+      ComponentEventListener<SampleRegistrationRequested> listener) {
+    return addListener(SampleRegistrationRequested.class, listener);
+  }
+
+  /**
+   * Register a {@link ComponentEventListener} that gets informed with a {@link SampleEditRequested}
+   * as soon as a user wants to edit samples.
+   *
+   * @param listener a listener on the sample edit trigger
+   */
+  public Registration addSampleEditListener(ComponentEventListener<SampleEditRequested> listener) {
+    return addListener(SampleEditRequested.class, listener);
+  }
+
+  /**
+   * Register a {@link ComponentEventListener} that gets informed with a
+   * {@link SampleDeletionRequested} as soon as a user wants to delete selected samples.
+   *
+   * @param listener a listener on the sample deletion trigger
+   */
+  public Registration addSampleDeletionListener(
+      ComponentEventListener<SampleDeletionRequested> listener) {
+    return addListener(SampleDeletionRequested.class, listener);
+  }
+
+  /**
+   * <b>Sample Registration Requested</b>
+   *
+   * <p>Indicates that a user wants to register samples within the {@link SampleDetailsComponent} of
+   * a project.</p>
+   */
+  public static class SampleRegistrationRequested extends ComponentEvent<SampleDetailsComponent> {
+
+    @Serial
+    private static final long serialVersionUID = 8039568599366236205L;
+
+    public SampleRegistrationRequested(SampleDetailsComponent source, boolean fromClient) {
+      super(source, fromClient);
+    }
+  }
+
+  /**
+   * <b>Sample Edit Requested</b>
+   *
+   * <p>Indicates that a user wants to edit the samples within the {@link SampleDetailsComponent} of
+   * a project.</p>
+   */
+  public static class SampleEditRequested extends ComponentEvent<SampleDetailsComponent> {
+
+    @Serial
+    private static final long serialVersionUID = -2696352875376621564L;
+    private final List<SampleId> sampleIds;
+
+    public SampleEditRequested(List<SampleId> sampleIds, SampleDetailsComponent source,
+        boolean fromClient) {
+      super(source, fromClient);
+      this.sampleIds = sampleIds;
+    }
+
+    public List<SampleId> sampleIds() {
+      return sampleIds;
+    }
+  }
+
+  /**
+   * <b>Sample Deletion Requested</b>
+   *
+   * <p>Indicates that a user wants to delete the selected samples within the
+   * {@link SampleDetailsComponent} of a project.</p>
+   */
+  public static class SampleDeletionRequested extends ComponentEvent<SampleDetailsComponent> {
+
+    @Serial
+    private static final long serialVersionUID = 3051871590996074855L;
+    private final List<SampleId> sampleIds;
+
+    public SampleDeletionRequested(List<SampleId> sampleIds, SampleDetailsComponent source,
+        boolean fromClient) {
+      super(source, fromClient);
+      this.sampleIds = sampleIds;
+    }
+
+    public List<SampleId> sampleIds() {
+      return sampleIds;
     }
   }
 }

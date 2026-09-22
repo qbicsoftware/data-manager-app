@@ -11,11 +11,12 @@ public enum InformationColumn implements Column {
   SAMPLE_NAME("Sample Name", 1, true),
   ANALYSIS("Analysis to be performed", 2, true),
   BIOLOGICAL_REPLICATE("Biological Replicate", 3, false),
-  CONDITION("Condition", 4, true),
-  SPECIES("Species", 5, true),
-  SPECIMEN("Specimen", 6, true),
-  ANALYTE("Analyte", 7, true),
-  COMMENT("Comment", 8, false),
+  BATCH("Batch", 4, false),
+  CONDITION("Condition", 5, true),
+  SPECIES("Species", 6, true),
+  SPECIMEN("Specimen", 7, true),
+  ANALYTE("Analyte", 8, true),
+  COMMENT("Comment", 9, false),
   ;
 
 
@@ -43,6 +44,9 @@ public enum InformationColumn implements Column {
         case SPECIMEN -> new Helper("Enumeration, Select a value from the dropdown", """
             Name of the biological material from which the analytes would be extracted.
             Note: The values in the dropdown are the predefined values from the experimental design.""");
+        case BATCH -> new Helper("Free text, e.g. Batch1, CohortA, Collection_1", """
+            A defined group of samples that are intended to be processed together
+            or were collected under the same experimental conditions.""");
         case COMMENT -> new Helper("Free text", "Notes about the sample. (Max 500 characters)");
       };
     }

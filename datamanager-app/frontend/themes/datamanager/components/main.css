@@ -169,6 +169,14 @@ vaadin-app-layout:not([drawer-opened])::part(drawer) {
   justify-content: space-between;
 }
 
+.main.measurement .measurement-main-content .measurement-main-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  column-gap: var(--lumo-space-m);
+}
+
 .main.measurement .measurement-main-content .title {
   font-weight: bold;
   color: var(--lumo-secondary-text-color);

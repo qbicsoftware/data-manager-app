@@ -3,11 +3,10 @@ package life.qbic.datamanager.views.general.pagination;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.contextmenu.ContextMenu;
-import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.select.Select;
 import java.io.Serial;
 import java.util.List;
 import java.util.Objects;
@@ -35,8 +34,7 @@ public class PaginationBar extends Div {
   private final String itemLabel;
   private final Span infoLabel = new Span();
   private final Div pageButtons = new Div();
-  private final Button pageSizeButton;
-  private final ContextMenu pageSizeMenu;
+  private final Select<Integer> pageSizeSelect;
   private int currentPageSize;
   private final Button previousButton;
   private final Button nextButton;
@@ -102,20 +100,27 @@ public class PaginationBar extends Div {
       navigation.addComponentAtIndex(1, pageButtons);
     }
 
-    pageSizeButton = new Button(formatPageSizeLabel(defaultPageSize));
-    pageSizeButton.addClassName("pagination-page-size");
-    pageSizeButton.setAriaLabel("Items per page");
+    // UX F10: a real Select for the page size — visible dropdown affordance, proper
+    // label, and correct keyboard/screen-reader semantics (was Button + ContextMenu).
+    pageSizeSelect = new Select<>();
+    pageSizeSelect.addClassName("pagination-page-size");
+    pageSizeSelect.setItems(allowedPageSizes);
+    pageSizeSelect.setValue(defaultPageSize);
+    // self-describing control: the box and dropdown items read "12 per page", so no extra
+    // label is needed that would break the flex-row alignment; the aria-label keeps the
+    // accessible name explicit
+    pageSizeSelect.setItemLabelGenerator(size -> size + " per page");
+    pageSizeSelect.getElement().setAttribute("aria-label", "Items per page");
     currentPageSize = defaultPageSize;
-
-    pageSizeMenu = new ContextMenu(pageSizeButton);
-    pageSizeMenu.setOpenOnClick(true);
-    allowedPageSizes.forEach(size -> {
-      MenuItem item = pageSizeMenu.addItem(String.valueOf(size));
-      item.addClickListener(event -> fireChange(currentPage, size));
+    pageSizeSelect.addValueChangeListener(event -> {
+      if (updating || event.getValue() == null) {
+        return;
+      }
+      fireChange(currentPage, event.getValue());
     });
 
     infoLabel.addClassName("pagination-info");
-    Div controls = new Div(infoLabel, pageSizeButton);
+    Div controls = new Div(infoLabel, pageSizeSelect);
     controls.addClassName("pagination-controls");
 
     add(navigation, controls);
@@ -138,7 +143,7 @@ public class PaginationBar extends Div {
       this.currentPage = Math.max(1, Math.min(page, totalPages));
       if (pageSize != currentPageSize) {
         currentPageSize = pageSize;
-        pageSizeButton.setText(formatPageSizeLabel(pageSize));
+        pageSizeSelect.setValue(pageSize);
       }
       render();
     } finally {
@@ -160,17 +165,14 @@ public class PaginationBar extends Div {
     return currentPageSize;
   }
 
-  private static String formatPageSizeLabel(int size) {
-    return size + " per page";
-  }
-
   private void fireChange(int page, int pageSize) {
     fireEvent(new ChangeEvent(this, true, page, pageSize));
   }
 
   private void render() {
+    // UX F7: lead with the total count; the page location is secondary information.
     infoLabel.setText(
-        "Page %d of %d — %d %s".formatted(currentPage, totalPages, totalItems, itemLabel));
+        "%d %s · Page %d of %d".formatted(totalItems, itemLabel, currentPage, totalPages));
     renderPageButtons();
   }
 
