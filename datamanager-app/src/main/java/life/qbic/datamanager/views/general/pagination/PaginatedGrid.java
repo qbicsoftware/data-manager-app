@@ -57,7 +57,6 @@ public class PaginatedGrid<T> extends Div {
   private ListState listState;
   private final String itemLabel;
   private final boolean showToolbar;
-  private final boolean showPager;
   private boolean initialLoadDone;
 
   /**
@@ -150,7 +149,6 @@ public class PaginatedGrid<T> extends Div {
         ListStateCodec.DEFAULT_PAGE_SIZE, itemLabel);
     this.selection = new Selection(this::updateSelectionDisplay);
     this.showToolbar = showToolbar;
-    this.showPager = showPager;
 
     configureGrid();
     if (showToolbar) {
