@@ -252,18 +252,18 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     updateSelectionBar();
 
     // register buttons wiring (fires the same events as the old implementation)
-    ngsEditButton.addClickListener(clicked -> fireEditRequested(MeasurementDomain.NGS,
-        ngsSelection, NgsMeasurementEditRequested::new));
-    ngsDeleteButton.addClickListener(clicked -> fireDeletionRequested(MeasurementDomain.NGS,
-        ngsSelection, NgsMeasurementDeletionRequested::new));
-    pxpEditButton.addClickListener(clicked -> fireEditRequested(MeasurementDomain.PXP,
-        pxpSelection, PxpMeasurementEditRequested::new));
-    pxpDeleteButton.addClickListener(clicked -> fireDeletionRequested(MeasurementDomain.PXP,
-        pxpSelection, PxpMeasurementDeletionRequested::new));
-    ipEditButton.addClickListener(clicked -> fireEditRequested(MeasurementDomain.IP,
-        ipSelection, IpMeasurementEditRequested::new));
-    ipDeleteButton.addClickListener(clicked -> fireDeletionRequested(MeasurementDomain.IP,
-        ipSelection, IpMeasurementDeletionRequested::new));
+    ngsEditButton.addClickListener(
+        clicked -> fireEditRequested(ngsSelection, NgsMeasurementEditRequested::new));
+    ngsDeleteButton.addClickListener(
+        clicked -> fireDeletionRequested(ngsSelection, NgsMeasurementDeletionRequested::new));
+    pxpEditButton.addClickListener(
+        clicked -> fireEditRequested(pxpSelection, PxpMeasurementEditRequested::new));
+    pxpDeleteButton.addClickListener(
+        clicked -> fireDeletionRequested(pxpSelection, PxpMeasurementDeletionRequested::new));
+    ipEditButton.addClickListener(
+        clicked -> fireEditRequested(ipSelection, IpMeasurementEditRequested::new));
+    ipDeleteButton.addClickListener(
+        clicked -> fireDeletionRequested(ipSelection, IpMeasurementDeletionRequested::new));
   }
 
   // ---- tab content ---------------------------------------------------------
@@ -683,32 +683,24 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     T create(List<String> ids, MeasurementDetailsComponent source, boolean fromClient);
   }
 
-  private void fireEditRequested(MeasurementDomain domain, Selection selection,
+  private void fireEditRequested(Selection selection,
       IdEventFactory<?> factory) {
     List<String> ids = idsOf(selection);
     // The edit dialog is scope-agnostic towards the (session-only) row selection: updates are
     // identified per row via the measurement ID in the uploaded sheet. The dialog always offers
     // to download the template for all measurements of the domain in the current experiment; the
     // selection (if any) is only a convenience to download a smaller, targeted template.
-    switch (domain) {
-      case NGS -> fireEvent((NgsMeasurementEditRequested) factory.create(ids, this, true));
-      case PXP -> fireEvent((PxpMeasurementEditRequested) factory.create(ids, this, true));
-      case IP -> fireEvent((IpMeasurementEditRequested) factory.create(ids, this, true));
-    }
+    fireEvent(factory.create(ids, this, true));
   }
 
-  private void fireDeletionRequested(MeasurementDomain domain, Selection selection,
-      IdEventFactory<?> factory) {
+  private void fireDeletionRequested(Selection selection, IdEventFactory<?> factory) {
     List<String> ids = idsOf(selection);
     if (ids.isEmpty()) {
       displayMissingSelectionNote();
       return;
     }
-    switch (domain) {
-      case NGS -> fireEvent((NgsMeasurementDeletionRequested) factory.create(ids, this, true));
-      case PXP -> fireEvent((PxpMeasurementDeletionRequested) factory.create(ids, this, true));
-      case IP -> fireEvent((IpMeasurementDeletionRequested) factory.create(ids, this, true));
-    }
+    fireEvent(factory.create(ids, this, true));
+
   }
 
   private static List<String> idsOf(Selection selection) {
