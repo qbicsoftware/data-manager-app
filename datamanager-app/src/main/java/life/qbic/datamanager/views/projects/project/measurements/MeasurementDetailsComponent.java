@@ -12,8 +12,8 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.CheckboxGroup;
 import com.vaadin.flow.component.checkbox.CheckboxGroupVariant;
 import com.vaadin.flow.component.grid.Grid;
-import com.vaadin.flow.component.grid.Grid.MultiSortPriority;
 import com.vaadin.flow.component.grid.Grid.Column;
+import com.vaadin.flow.component.grid.Grid.MultiSortPriority;
 import com.vaadin.flow.component.grid.GridMultiSelectionModel;
 import com.vaadin.flow.component.grid.GridSortOrder;
 import com.vaadin.flow.component.html.Anchor;
@@ -41,7 +41,6 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -194,6 +193,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     this.pxpMeasurementLookup = requireNonNull(pxpMeasurementLookup);
     this.ipMeasurementLookup = requireNonNull(ipMeasurementLookup);
     addClassNames("measurement-details-component", "width-full");
+    tabPagination = new MeasurementTabPagination();
 
     // The three measurement grids are wrapped in the reusable PaginatedGrid (FEAT-PAG-LIST-03).
     // They are driven externally — their own toolbar and pager are suppressed and the shared
@@ -221,7 +221,6 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
       tabPagination.onPageLoaded(MeasurementDomain.IP, event.getPage(), event.getTotal());
     });
 
-    tabPagination = new MeasurementTabPagination();
     tabPagination.addTab(TAB_LABELS.get(MeasurementDomain.NGS), MeasurementDomain.NGS,
         ngsTabContent());
     tabPagination.addTab(TAB_LABELS.get(MeasurementDomain.PXP), MeasurementDomain.PXP,
