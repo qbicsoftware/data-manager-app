@@ -229,14 +229,22 @@ public class MyGroupsComponent extends Div implements Serializable {
   }
 
   private static Span buildTypeBadge(GroupType type) {
-    return new Span(type == GroupType.ORG ? "Org" : "Ad-hoc");
+    Span badge = new Span(type == GroupType.ORG ? "Org" : "Ad-hoc");
+    badge.addClassName("my-groups-badge");
+    badge.addClassName(
+        type == GroupType.ORG ? "my-groups-badge--type-org" : "my-groups-badge--type-adhoc");
+    return badge;
   }
 
   private static Span buildRoleBadge(GroupRole role) {
-    return switch (role) {
-      case OWNER -> new Span("Owner");
-      case MANAGER -> new Span("Manager");
-      case MEMBER -> new Span("Member");
+    String roleClass = switch (role) {
+      case OWNER, MANAGER -> "my-groups-badge--role-owner";
+      case MEMBER -> "my-groups-badge--role-member";
     };
+    Span badge = new Span(role == GroupRole.OWNER ? "Owner"
+        : role == GroupRole.MANAGER ? "Manager" : "Member");
+    badge.addClassName("my-groups-badge");
+    badge.addClassName(roleClass);
+    return badge;
   }
 }
