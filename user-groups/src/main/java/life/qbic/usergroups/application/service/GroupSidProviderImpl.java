@@ -16,7 +16,7 @@ import life.qbic.usergroups.application.GroupService;
  * the stable group id (never the display name), so persisted ACEs stay valid across group
  * renames.</p>
  *
- * @since 1.17.0
+ * @since 1.19.0
  */
 public class GroupSidProviderImpl implements GroupSidProvider {
 

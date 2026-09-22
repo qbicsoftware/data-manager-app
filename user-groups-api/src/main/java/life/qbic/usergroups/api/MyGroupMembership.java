@@ -13,7 +13,7 @@ import java.io.Serializable;
  * @param groupDescription the group's description, may be {@code null} if none was set
  * @param groupType        the group type (ORG / ADHOC)
  * @param myRole           the caller's role inside the group (OWNER / MANAGER / MEMBER)
- * @since 1.17.0
+ * @since 1.19.0
  */
 public record MyGroupMembership(String groupId, String groupName, String groupDescription,
                                 GroupType groupType, GroupRole myRole) implements Serializable {

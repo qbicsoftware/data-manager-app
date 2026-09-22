@@ -25,7 +25,7 @@ import java.util.Objects;
  * memberships is owned by the {@link UserGroup} aggregate and mapped via a unidirectional
  * {@code @OneToMany} with {@code orphanRemoval}.
  *
- * @since 1.0.0
+ * @since 1.19.0
  */
 @Entity
 @Table(name = "group_membership")
@@ -72,7 +72,7 @@ public class GroupMembership implements Serializable {
    * @param role     the role inside the group
    * @param joinedAt when the user joined
    * @return the new membership
-   * @since 1.0.0
+   * @since 1.19.0
    */
   public static GroupMembership create(GroupId groupId, String userId, GroupRole role,
       Instant joinedAt) {
@@ -84,7 +84,7 @@ public class GroupMembership implements Serializable {
    * {@link UserGroup} to keep the bidirectional association consistent).
    *
    * @param group the owning group
-   * @since 1.0.0
+   * @since 1.19.0
    */
   void attachTo(UserGroup group) {
     this.group = group;
@@ -93,7 +93,7 @@ public class GroupMembership implements Serializable {
   /**
    * Detaches this membership from its owning group (package-private).
    *
-   * @since 1.0.0
+   * @since 1.19.0
    */
   void detach() {
     this.group = null;

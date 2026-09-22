@@ -38,7 +38,7 @@ import org.springframework.transaction.annotation.Transactional;
  *   layer)</li>
  * </ul>
  *
- * @since 1.17.0
+ * @since 1.19.0
  */
 public class GroupService {
 
@@ -77,7 +77,7 @@ public class GroupService {
    * @param description   the desired group description (may be empty)
    * @return a result wrapping the created {@link GroupInfoProjection}, or an error if the name is
    * already taken (case-insensitive) or the creator id is invalid
-   * @since 1.17.0
+   * @since 1.19.0
    */
   @Transactional
   public Result<GroupInfoProjection, ApplicationException> createAdHocGroup(
@@ -124,7 +124,7 @@ public class GroupService {
    *
    * @param userId the user id to list memberships for
    * @return the caller's active group memberships, including the caller's role inside each group
-   * @since 1.17.0
+   * @since 1.19.0
    */
   @Transactional(readOnly = true)
   public List<GroupMembershipProjection> listMyGroups(String userId) {
@@ -142,7 +142,7 @@ public class GroupService {
    * (visibility policy: group members are not exposed to non-members).
    *
    * @return a list of group info projections of all active groups
-   * @since 1.17.0
+   * @since 1.19.0
    */
   @Transactional(readOnly = true)
   public List<GroupInfoProjection> listPublicDirectory() {
@@ -157,7 +157,7 @@ public class GroupService {
    *
    * @param groupId the group id to look up
    * @return a group info projection if the group exists and is active, else empty
-   * @since 1.17.0
+   * @since 1.19.0
    */
   @Transactional(readOnly = true)
   public Optional<GroupInfoProjection> findGroupById(String groupId) {
@@ -181,7 +181,7 @@ public class GroupService {
    *
    * @param name the desired group name
    * @return {@code true} if the name is not in use by any group, {@code false} otherwise
-   * @since 1.17.0
+   * @since 1.19.0
    */
   @Transactional(readOnly = true)
   public boolean isGroupNameAvailable(String name) {
@@ -207,7 +207,7 @@ public class GroupService {
    * @param userId  the id of the user to remove
    * @return a {@link Result} with no value on success, or an error if the group does not exist or
    * the user is not a member
-   * @since 1.17.0
+   * @since 1.19.0
    */
   @Transactional
   public Result<Void, ApplicationException> removeMembership(String groupId, String userId) {

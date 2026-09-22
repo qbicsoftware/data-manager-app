@@ -25,7 +25,7 @@ import org.springframework.stereotype.Component;
  * storage (e.g. the unique index on {@code user_group.name}) are deliberately <b>not</b> caught
  * here — the application layer maps them to a user-friendly duplicate-name error.
  *
- * @since 1.17.0
+ * @since 1.19.0
  */
 @Component
 public class GroupJpaRepository implements GroupDataStorage {

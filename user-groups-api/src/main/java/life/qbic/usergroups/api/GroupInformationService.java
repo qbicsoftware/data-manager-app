@@ -15,7 +15,7 @@ import java.util.Optional;
  * membership information is never exposed here — {@link #listMyGroups(String)} only ever returns
  * the <em>caller's own</em> memberships.</p>
  *
- * @since 1.17.0
+ * @since 1.19.0
  */
 public interface GroupInformationService {
 
@@ -25,7 +25,7 @@ public interface GroupInformationService {
    * @param groupId the group id to look up
    * @return the group information, or an empty {@link Optional} if no group with the given id
    * exists or the group is no longer active
-   * @since 1.17.0
+   * @since 1.19.0
    */
   Optional<GroupInfo> findGroupById(String groupId);
 
@@ -36,7 +36,7 @@ public interface GroupInformationService {
    * membership information.</p>
    *
    * @return a list of active {@link GroupInfo} entries
-   * @since 1.17.0
+   * @since 1.19.0
    */
   List<GroupInfo> listPublicDirectory();
 
@@ -48,7 +48,7 @@ public interface GroupInformationService {
    *
    * @param userId the user id to list memberships for
    * @return the caller's active group memberships including their role inside each group
-   * @since 1.17.0
+   * @since 1.19.0
    */
   List<MyGroupMembership> listMyGroups(String userId);
 
@@ -61,7 +61,7 @@ public interface GroupInformationService {
    * @param name the desired group name
    * @return {@code true} if the name is still available, {@code false} if it is in use by another
    * group
-   * @since 1.17.0
+   * @since 1.19.0
    */
   boolean isGroupNameAvailable(String name);
 }

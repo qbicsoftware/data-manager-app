@@ -15,7 +15,7 @@ import life.qbic.usergroups.domain.model.UserGroup;
  * application layer obtains a {@link GroupRepository} instance via
  * {@link #getInstance(GroupDataStorage)}.
  *
- * @since 1.0.0
+ * @since 1.19.0
  */
 public class GroupRepository implements Serializable {
 
@@ -37,7 +37,7 @@ public class GroupRepository implements Serializable {
    * @param dataStorage an implementation of {@link GroupDataStorage}, handling the low level
    *                    persistence layer access.
    * @return a Singleton instance of a group repository.
-   * @since 1.0.0
+   * @since 1.19.0
    */
   public static GroupRepository getInstance(GroupDataStorage dataStorage) {
     if (instance == null) {
@@ -51,7 +51,7 @@ public class GroupRepository implements Serializable {
    *
    * @param groupId the group id, e.g. obtained from the caller
    * @return the group if present in the repository, else an {@link Optional#empty()}.
-   * @since 1.0.0
+   * @since 1.19.0
    */
   public Optional<UserGroup> findById(GroupId groupId) {
     return dataStorage.findById(groupId);
@@ -62,7 +62,7 @@ public class GroupRepository implements Serializable {
    *
    * @param name the group name to search for
    * @return the group if present, else an {@link Optional#empty()}.
-   * @since 1.0.0
+   * @since 1.19.0
    */
   public Optional<UserGroup> findByNameIgnoreCase(GroupName name) {
     return dataStorage.findByNameIgnoreCase(name.value());
@@ -72,7 +72,7 @@ public class GroupRepository implements Serializable {
    * Retrieves all active groups within the user groups context.
    *
    * @return list of {@link UserGroup} objects with their status set to {@code ACTIVE}
-   * @since 1.0.0
+   * @since 1.19.0
    */
   public List<UserGroup> findAllActive() {
     return dataStorage.findAllActive();
@@ -83,7 +83,7 @@ public class GroupRepository implements Serializable {
    *
    * @param userId the user id to match memberships for
    * @return list of active {@link UserGroup} objects the user belongs to
-   * @since 1.0.0
+   * @since 1.19.0
    */
   public List<UserGroup> findActiveGroupsByUserId(String userId) {
     return dataStorage.findActiveGroupsByUserId(userId);
@@ -96,7 +96,7 @@ public class GroupRepository implements Serializable {
    *
    * @param group the group to store
    * @throws GroupStorageException if the group could not be stored
-   * @since 1.0.0
+   * @since 1.19.0
    */
   public void store(UserGroup group) throws GroupStorageException {
     try {
@@ -109,7 +109,7 @@ public class GroupRepository implements Serializable {
   /**
    * Indicates a failure to persist a {@link UserGroup}.
    *
-   * @since 1.0.0
+   * @since 1.19.0
    */
   public static class GroupStorageException extends RuntimeException {
 

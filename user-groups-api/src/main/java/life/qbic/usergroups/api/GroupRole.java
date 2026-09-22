@@ -13,7 +13,7 @@ package life.qbic.usergroups.api;
  * <p>{@link #OWNER} applies to ad-hoc groups only (the creator). Org groups have <b>no</b> OWNER
  * membership row; the QBiC admin acts as owner-equivalent at the application layer.</p>
  *
- * @since 1.17.0
+ * @since 1.19.0
  */
 public enum GroupRole {
   /** May appoint/remove managers and dissolve the group. Ad-hoc groups only. */

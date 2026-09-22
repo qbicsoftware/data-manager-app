@@ -11,7 +11,7 @@ import life.qbic.usergroups.domain.model.GroupName;
  * identity context's {@code FullNameConverter}.
  * </p>
  *
- * @since 1.0.0
+ * @since 1.19.0
  */
 public class GroupNameConverter implements AttributeConverter<GroupName, String> {
 

@@ -9,7 +9,7 @@ package life.qbic.usergroups.domain.model;
  * {@link #DISSOLVED} and all memberships are purged. Rows are never deleted for ad-hoc
  * auto-dissolve.
  *
- * @since 1.0.0
+ * @since 1.19.0
  */
 public enum GroupStatus {
   /** The group is live and can be shared, joined and managed. */

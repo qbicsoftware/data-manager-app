@@ -9,7 +9,7 @@ import life.qbic.usergroups.domain.service.GroupDomainService;
  * <p>Provides access to registered domain services of the user groups context. Mirrors the
  * identity context's {@code DomainRegistry}.</p>
  *
- * @since 1.0.0
+ * @since 1.19.0
  */
 public class DomainRegistry {
 
@@ -34,7 +34,7 @@ public class DomainRegistry {
    * <p>Successive calls will overwrite the previously registered service reference.</p>
    *
    * @param aGroupDomainService a group domain service
-   * @since 1.0.0
+   * @since 1.19.0
    */
   public void registerService(GroupDomainService aGroupDomainService) {
     groupDomainService = aGroupDomainService;
@@ -44,7 +44,7 @@ public class DomainRegistry {
    * Queries for a registered {@link GroupDomainService}.
    *
    * @return a registered service, or {@link Optional#empty()} if none is registered.
-   * @since 1.0.0
+   * @since 1.19.0
    */
   public Optional<GroupDomainService> groupDomainService() {
     return Optional.ofNullable(groupDomainService);

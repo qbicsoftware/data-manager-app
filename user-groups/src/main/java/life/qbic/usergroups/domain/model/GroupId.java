@@ -14,7 +14,7 @@ import java.util.UUID;
  * <p>Mirrors {@code life.qbic.identity.domain.model.UserId}: UUID-backed, usable as an
  * {@code @EmbeddedId}.
  *
- * @since 1.0.0
+ * @since 1.19.0
  */
 public class GroupId implements Serializable {
 
@@ -32,7 +32,7 @@ public class GroupId implements Serializable {
    * Creates a new random group id.
    *
    * @return a group id
-   * @since 1.0.0
+   * @since 1.19.0
    */
   public static GroupId create() {
     return new GroupId(UUID.randomUUID());
@@ -45,7 +45,7 @@ public class GroupId implements Serializable {
    *
    * @param s a group id String
    * @return an instance of a new group id object
-   * @since 1.0.0
+   * @since 1.19.0
    */
   public static GroupId from(String s) throws IllegalArgumentException {
     try {
@@ -64,7 +64,7 @@ public class GroupId implements Serializable {
    * Queries the String value of the group id.
    *
    * @return the group id value
-   * @since 1.0.0
+   * @since 1.19.0
    */
   public String get() {
     return value;

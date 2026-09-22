@@ -12,7 +12,7 @@ import java.util.Objects;
  * Composite primary key of a {@link GroupMembership}: the pair {@code (groupId, userId)}. Each
  * user holds exactly one membership per group.
  *
- * @since 1.0.0
+ * @since 1.19.0
  */
 @Embeddable
 public class GroupMembershipId implements Serializable {

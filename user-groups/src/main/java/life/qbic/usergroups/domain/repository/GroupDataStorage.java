@@ -15,7 +15,7 @@ import life.qbic.usergroups.domain.model.UserGroup;
  * (JPA) is provided by the {@code user-groups-infrastructure} module and injected via the
  * singleton {@link GroupRepository}.
  *
- * @since 1.0.0
+ * @since 1.19.0
  */
 public interface GroupDataStorage {
 
@@ -24,7 +24,7 @@ public interface GroupDataStorage {
    * group (the aggregate is identified by its stable {@link GroupId}).
    *
    * @param group the group to store
-   * @since 1.0.0
+   * @since 1.19.0
    */
   void save(UserGroup group);
 
@@ -33,7 +33,7 @@ public interface GroupDataStorage {
    *
    * @param id the group id to search for a matching entry in the storage
    * @return the group, or {@link Optional#empty()} if no group with the provided id was found
-   * @since 1.0.0
+   * @since 1.19.0
    */
   Optional<UserGroup> findById(GroupId id);
 
@@ -46,7 +46,7 @@ public interface GroupDataStorage {
    *
    * @param name the group name to search for (case-insensitive)
    * @return the matching group, or {@link Optional#empty()} if no group with this name exists
-   * @since 1.0.0
+   * @since 1.19.0
    */
   Optional<UserGroup> findByNameIgnoreCase(String name);
 
@@ -56,7 +56,7 @@ public interface GroupDataStorage {
    * <p>Used by the public directory: dissolved groups never appear.
    *
    * @return a list of active {@link UserGroup} entries
-   * @since 1.0.0
+   * @since 1.19.0
    */
   List<UserGroup> findAllActive();
 
@@ -68,7 +68,7 @@ public interface GroupDataStorage {
    *
    * @param userId the user id to match memberships for
    * @return a list of active {@link UserGroup} entries the user belongs to
-   * @since 1.0.0
+   * @since 1.19.0
    */
   List<UserGroup> findActiveGroupsByUserId(String userId);
 

@@ -35,7 +35,7 @@ import life.qbic.usergroups.domain.model.translation.GroupNameConverter;
  * dissolved by setting the status to {@link GroupStatus#DISSOLVED} and purging all memberships.
  * The {@code user_group} row itself is never deleted.
  *
- * @since 1.0.0
+ * @since 1.19.0
  */
 @Entity
 @Table(name = "user_group")
@@ -100,7 +100,7 @@ public class UserGroup implements Serializable {
    * @param createdAt     the creation timestamp
    * @return the new ad-hoc group
    * @throws IllegalArgumentException if the creator user id is null or blank
-   * @since 1.0.0
+   * @since 1.19.0
    */
   public static UserGroup createAdHoc(GroupId id, GroupName name, GroupDescription description,
       String creatorUserId, Instant createdAt) {
@@ -129,7 +129,7 @@ public class UserGroup implements Serializable {
    *
    * @param userId the user id to remove
    * @return {@code true} if the group was dissolved as a result of this removal
-   * @since 1.0.0
+   * @since 1.19.0
    */
   public boolean removeMembership(String userId) {
     GroupMembership membership = findMembership(userId);
@@ -161,7 +161,7 @@ public class UserGroup implements Serializable {
    * @param userId   the user id to add
    * @param role     the role inside the group
    * @param joinedAt the join timestamp
-   * @since 1.0.0
+   * @since 1.19.0
    */
   void addMember(String userId, GroupRole role, Instant joinedAt) {
     if (status == GroupStatus.DISSOLVED) {
@@ -179,7 +179,7 @@ public class UserGroup implements Serializable {
    * Dissolves this group (soft): marks it {@link GroupStatus#DISSOLVED} and purges all
    * memberships. The row is kept for traceability.
    *
-   * @since 1.0.0
+   * @since 1.19.0
    */
   public void dissolve() {
     if (status == GroupStatus.DISSOLVED) {
@@ -224,7 +224,7 @@ public class UserGroup implements Serializable {
    * Returns the membership roster of this group.
    *
    * @return immutable view of the memberships
-   * @since 1.0.0
+   * @since 1.19.0
    */
   public List<GroupMembership> memberships() {
     return Collections.unmodifiableList(memberships);

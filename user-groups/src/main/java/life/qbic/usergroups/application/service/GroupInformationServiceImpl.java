@@ -23,7 +23,7 @@ import life.qbic.usergroups.application.GroupService;
  * and type only. Membership data is only ever returned for the requesting user themselves (my
  * groups).</p>
  *
- * @since 1.17.0
+ * @since 1.19.0
  */
 public class GroupInformationServiceImpl implements GroupInformationService {
 

@@ -14,7 +14,7 @@ import java.util.Objects;
  * repository/application layer against the case-insensitive database collation
  * ({@code utf8mb4_unicode_ci}).
  *
- * @since 1.0.0
+ * @since 1.19.0
  */
 public class GroupName implements Serializable {
 
@@ -31,7 +31,7 @@ public class GroupName implements Serializable {
    * @param s the group name String representation
    * @return the group name
    * @throws GroupNameValidationException if the name is blank or longer than 80 characters
-   * @since 1.0.0
+   * @since 1.19.0
    */
   public static GroupName from(String s) {
     if (s != null) {
@@ -55,7 +55,7 @@ public class GroupName implements Serializable {
    * Queries the group name String representation.
    *
    * @return the group name as String
-   * @since 1.0.0
+   * @since 1.19.0
    */
   public String value() {
     return value;

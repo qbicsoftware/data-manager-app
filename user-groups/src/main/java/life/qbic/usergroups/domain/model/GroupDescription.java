@@ -12,7 +12,7 @@ import java.util.Optional;
  *
  * <p>The description is optional (may be null/empty) and limited to 500 characters.
  *
- * @since 1.0.0
+ * @since 1.19.0
  */
 public class GroupDescription implements Serializable {
 
@@ -29,7 +29,7 @@ public class GroupDescription implements Serializable {
    * @param s the description String; may be {@code null} or blank for "no description"
    * @return the group description
    * @throws GroupDescriptionValidationException if the description exceeds 500 characters
-   * @since 1.0.0
+   * @since 1.19.0
    */
   public static GroupDescription from(String s) {
     if (s == null || s.isBlank()) {
@@ -51,7 +51,7 @@ public class GroupDescription implements Serializable {
    * Queries the group description String representation.
    *
    * @return the description as String, or an empty {@link Optional} if none was set
-   * @since 1.0.0
+   * @since 1.19.0
    */
   public Optional<String> value() {
     return Optional.ofNullable(value);

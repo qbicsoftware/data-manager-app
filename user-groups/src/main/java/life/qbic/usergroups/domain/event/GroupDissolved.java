@@ -13,7 +13,7 @@ import life.qbic.usergroups.domain.model.GroupType;
  * removed and the group was dissolved (soft dissolve: the group row is kept, its status becomes
  * {@code DISSOLVED} and all memberships are purged).
  *
- * @since 1.0.0
+ * @since 1.19.0
  */
 public class GroupDissolved extends DomainEvent {
 
@@ -41,7 +41,7 @@ public class GroupDissolved extends DomainEvent {
    * @param type              the type of the dissolved group
    * @param triggeredByUserId the user id of the user whose removal dissolved the group
    * @return the new event
-   * @since 1.0.0
+   * @since 1.19.0
    */
   public static GroupDissolved create(String groupId, String name, GroupType type,
       String triggeredByUserId) {

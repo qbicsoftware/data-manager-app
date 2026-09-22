@@ -12,7 +12,7 @@ import life.qbic.usergroups.domain.model.GroupType;
  * <p>Published by the {@code GroupDomainService} after a group has been successfully stored.
  * Carries the group identity, its name, its type and the id of the creating user.
  *
- * @since 1.0.0
+ * @since 1.19.0
  */
 public class GroupCreated extends DomainEvent {
 
@@ -40,7 +40,7 @@ public class GroupCreated extends DomainEvent {
    * @param type          the type of the created group
    * @param creatorUserId the user id of the creating user
    * @return the new event
-   * @since 1.0.0
+   * @since 1.19.0
    */
   public static GroupCreated create(String groupId, String name, GroupType type,
       String creatorUserId) {

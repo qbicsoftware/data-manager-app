@@ -14,7 +14,7 @@ import java.util.List;
  * id (never the display name), so ACEs stay valid across group renames. Only <em>active</em>
  * memberships produce sids — dissolved groups never grant access.</p>
  *
- * @since 1.17.0
+ * @since 1.19.0
  */
 public interface GroupSidProvider {
 
@@ -31,7 +31,7 @@ public interface GroupSidProvider {
    *
    * @param userId the user id to resolve group sids for
    * @return a list of {@code "GROUP_<groupId>"} strings, one per active membership
-   * @since 1.17.0
+   * @since 1.19.0
    */
   List<String> listGroupSidsForUser(String userId);
 }

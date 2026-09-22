@@ -13,7 +13,7 @@ import java.io.Serializable;
  * @param name        the group's display name
  * @param description the group's description, may be {@code null} if none was set
  * @param type        the group type (ORG / ADHOC)
- * @since 1.17.0
+ * @since 1.19.0
  */
 public record GroupInfo(String id, String name, String description, GroupType type) implements
     Serializable {

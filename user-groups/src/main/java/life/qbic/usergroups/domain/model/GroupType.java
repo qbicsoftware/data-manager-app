@@ -6,7 +6,7 @@ package life.qbic.usergroups.domain.model;
  * Distinguishes administrator-managed groups (org groups, e.g. NGS labs) from self-service
  * ad-hoc groups created by users.
  *
- * @since 1.0.0
+ * @since 1.19.0
  */
 public enum GroupType {
   /** Administrator-managed group (e.g. QBiC internal labs). */

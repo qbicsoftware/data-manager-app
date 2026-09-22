@@ -17,7 +17,7 @@ import life.qbic.usergroups.domain.model.GroupType;
  * @param groupDescription the group description (may be empty)
  * @param groupType      the group type (ORG / ADHOC)
  * @param myRole         the caller's role inside the group
- * @since 1.17.0
+ * @since 1.19.0
  */
 public record GroupMembershipProjection(GroupId groupId, GroupName groupName,
                                         GroupDescription groupDescription, GroupType groupType,

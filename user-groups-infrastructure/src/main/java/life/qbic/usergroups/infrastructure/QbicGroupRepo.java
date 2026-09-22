@@ -24,7 +24,7 @@ import org.springframework.data.repository.query.Param;
  * {@code user_group.name} under the {@code utf8mb4_unicode_ci} collation — see
  * {@code sql/migrations/create-user-groups.sql}.</p>
  *
- * @since 1.17.0
+ * @since 1.19.0
  */
 public interface QbicGroupRepo extends JpaRepository<UserGroup, GroupId> {
 
@@ -34,7 +34,7 @@ public interface QbicGroupRepo extends JpaRepository<UserGroup, GroupId> {
    *
    * @param name the group name to search for
    * @return the matching group, or {@link Optional#empty()} if none matches
-   * @since 1.17.0
+   * @since 1.19.0
    */
   Optional<UserGroup> findByNameIgnoreCase(String name);
 
@@ -43,7 +43,7 @@ public interface QbicGroupRepo extends JpaRepository<UserGroup, GroupId> {
    *
    * @param status the status to filter for
    * @return groups in the given status
-   * @since 1.17.0
+   * @since 1.19.0
    */
   List<UserGroup> findByStatus(GroupStatus status);
 
@@ -57,7 +57,7 @@ public interface QbicGroupRepo extends JpaRepository<UserGroup, GroupId> {
    * @param userId the user id to match memberships for
    * @param status the group status to filter for (typically {@link GroupStatus#ACTIVE})
    * @return the matching groups
-   * @since 1.17.0
+   * @since 1.19.0
    */
   @Query("SELECT DISTINCT g FROM UserGroup g JOIN FETCH g.memberships m "
       + "WHERE m.id.userId = :userId AND g.status = :status")

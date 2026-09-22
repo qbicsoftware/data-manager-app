@@ -23,7 +23,7 @@ import life.qbic.usergroups.domain.repository.GroupRepository;
  * create → store via repository → dispatch {@link GroupCreated};
  * removal of the last membership → dissolve (aggregate) → dispatch {@link GroupDissolved}.</p>
  *
- * @since 1.0.0
+ * @since 1.19.0
  */
 public class GroupDomainService {
 
@@ -45,7 +45,7 @@ public class GroupDomainService {
    * @param description   the group description (optional)
    * @param creatorUserId the user id of the creating user
    * @param createdAt     the creation timestamp
-   * @since 1.0.0
+   * @since 1.19.0
    */
   public void createAdHocGroup(GroupId id, GroupName name, GroupDescription description,
       String creatorUserId, Instant createdAt) {
@@ -69,7 +69,7 @@ public class GroupDomainService {
    * @param groupId the id of the group
    * @param userId  the id of the user to remove
    * @return the updated group if a membership was removed, otherwise an empty {@link Optional}
-   * @since 1.0.0
+   * @since 1.19.0
    */
   public Optional<UserGroup> removeMembership(GroupId groupId, String userId) {
     Optional<UserGroup> maybeGroup = groupRepository.findById(groupId);
@@ -96,7 +96,7 @@ public class GroupDomainService {
    *
    * @param groupId the group id
    * @return the group, or an empty {@link Optional} if no group with this id exists
-   * @since 1.0.0
+   * @since 1.19.0
    */
   public Optional<UserGroup> findGroup(GroupId groupId) {
     return groupRepository.findById(groupId);
@@ -107,7 +107,7 @@ public class GroupDomainService {
    *
    * @param userId the user id
    * @return list of active groups of the user
-   * @since 1.0.0
+   * @since 1.19.0
    */
   public List<UserGroup> listMyGroups(String userId) {
     return groupRepository.findActiveGroupsByUserId(userId);
@@ -118,7 +118,7 @@ public class GroupDomainService {
    * type only; never membership information.
    *
    * @return list of all active groups
-   * @since 1.0.0
+   * @since 1.19.0
    */
   public List<UserGroup> listPublicDirectory() {
     return groupRepository.findAllActive();

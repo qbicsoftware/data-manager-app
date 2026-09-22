@@ -11,7 +11,7 @@ import life.qbic.usergroups.domain.model.GroupDescription;
  * to {@code null} (the description is optional).
  * </p>
  *
- * @since 1.0.0
+ * @since 1.19.0
  */
 public class GroupDescriptionConverter implements AttributeConverter<GroupDescription, String> {
 
