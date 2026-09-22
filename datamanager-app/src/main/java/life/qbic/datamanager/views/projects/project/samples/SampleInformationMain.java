@@ -116,20 +116,19 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver, 
       SampleRegistrationServiceV2 sampleRegistrationServiceV2,
       MessageSourceNotificationFactory messageSourceNotificationFactory,
       UploadConfiguration uploadConfiguration) {
-    this.downloadComponent = new DownloadComponent();
-    this.uploadConfiguration = uploadConfiguration;
-    this.experimentInformationService = requireNonNull(experimentInformationService,
-        "ExperimentInformationService cannot be null");
-    this.deletionService = requireNonNull(deletionService,
-        "DeletionService cannot be null");
-    this.sampleDetailsComponent = new Div();
-    this.projectInformationService = projectInformationService;
-    this.notificationFactory = requireNonNull(notificationFactory,
-        "messageSourceNotificationFactory must not be null");
-    this.sampleValidationService = sampleValidationService;
-    this.sampleRegistrationServiceV2 = sampleRegistrationServiceV2;
-
     this.asyncProjectService = requireNonNull(asyncProjectService);
+    this.deletionService = requireNonNull(deletionService);
+    this.experimentInformationService = requireNonNull(experimentInformationService);
+    this.notificationFactory = requireNonNull(notificationFactory);
+    this.projectInformationService = requireNonNull(projectInformationService);
+    this.sampleRegistrationServiceV2 = requireNonNull(sampleRegistrationServiceV2);
+    this.sampleValidationService = requireNonNull(sampleValidationService);
+    this.uploadConfiguration = requireNonNull(uploadConfiguration);
+
+    addClassName("sample"); //todo style with grid
+
+    this.downloadComponent = new DownloadComponent();
+    this.sampleDetailsComponent = new Div();
 
     noGroupsDefinedDisclaimer = createNoGroupsDefinedDisclaimer();
     noGroupsDefinedDisclaimer.setVisible(false);
@@ -137,8 +136,23 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver, 
     noSamplesRegisteredDisclaimer = createNoSamplesRegisteredDisclaimer();
     noSamplesRegisteredDisclaimer.setVisible(false);
 
+    Span titleField = new Span();
+    titleField.setText("View Samples");
+    titleField.addClassNames("title");
+
+    Button registerButton = new Button("Register Samples", VaadinIcon.PLUS.create());
+    registerButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    registerButton.addClassName("sample-register-button");
+    registerButton.addClickListener(clicked -> openRegistrationDialog());
+
+
+    Div header = new Div(titleField, registerButton);
+    header.addClassName("sample-main-header"); //TODO style internally
+
+    content.add(header);
+    content.addClassName("sample-main-content");
     add(noGroupsDefinedDisclaimer, noSamplesRegisteredDisclaimer);
-    initContent();
+    add(content);
     add(sampleDetailsComponent);
     add(downloadComponent);
 
@@ -149,22 +163,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver, 
     return experiment.getExperimentalGroups().isEmpty();
   }
 
-  private void initContent() {
-    Span titleField = new Span();
-    titleField.setText("Register sample batch");
-    titleField.addClassNames("title");
-    Button registerButton = new Button("Register Samples", VaadinIcon.PLUS.create());
-    registerButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    registerButton.addClassName("sample-register-button");
-    registerButton.addClickListener(clicked -> onRegisterBatchClicked());
-    Div header = new Div(titleField, registerButton);
-    header.addClassName("sample-main-header");
-    content.add(header);
-    add(content);
-    content.addClassName("sample-main-content");
-  }
-
-  private void onRegisterBatchClicked() {
+  private void openRegistrationDialog() {
     ProjectId projectId = context.projectId().orElseThrow();
     ExperimentId experimentId = context.experimentId().orElseThrow();
 
@@ -242,7 +241,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver, 
         "Start your project by registering the first sample batch", "Register batch");
     noSamplesDefinedCard.addClassName("no-samples-registered-disclaimer");
     noSamplesDefinedCard.addDisclaimerConfirmedListener(
-        event -> onRegisterBatchClicked());
+        event -> openRegistrationDialog());
     return noSamplesDefinedCard;
   }
 
@@ -436,7 +435,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver, 
         .map(ProjectCode::value)
         .orElse(null));
 
-    // URL list-state synchronisation (USER-R-03, FEAT-PAG-LIST-02): capture the router handler,
+    // URL list-state synchronization (USER-R-03, FEAT-PAG-LIST-02): capture the router handler,
     // install our own, and seed the list from the URL on direct load / reload / shared links.
     History history = UI.getCurrent().getPage().getHistory();
     History.HistoryStateChangeHandler currentHandler = history.getHistoryStateChangeHandler();
