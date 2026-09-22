@@ -1,0 +1,167 @@
+/* -- My Groups view + New Group creation page (FEAT-USER-GROUPS-10) -- */
+
+/* Row list container */
+.my-groups-component {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.my-groups-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* One membership row */
+.my-groups-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--lumo-space-m);
+  flex-wrap: wrap;
+  box-sizing: border-box;
+  padding: var(--lumo-space-m);
+  background-color: var(--lumo-base-color);
+  border: 1px solid var(--lumo-contrast-20pct);
+  border-radius: var(--lumo-border-radius-m);
+}
+
+/* Left column: name (+ description below it) */
+.my-groups-row__identity {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-xs);
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.my-groups-row__name {
+  font-size: var(--lumo-font-size-m);
+  font-weight: var(--lumo-font-weight-semibold, 600);
+  color: var(--lumo-header-text-color);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.my-groups-row__description {
+  font-size: var(--lumo-font-size-s);
+  color: var(--lumo-secondary-text-color);
+  line-height: var(--lumo-line-height-s);
+  margin: 0;
+}
+
+/* Middle column: type + role badges */
+.my-groups-row__badges {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-xs);
+  flex-shrink: 0;
+}
+
+.my-groups-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--lumo-border-radius-m);
+  padding: 0 var(--lumo-space-s);
+  font-size: var(--lumo-font-size-xs);
+  font-weight: var(--lumo-font-weight-semibold, 600);
+  line-height: var(--lumo-line-height-s);
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.my-groups-badge--type-org {
+  background-color: var(--lumo-contrast-10pct);
+  color: var(--lumo-secondary-text-color);
+}
+
+.my-groups-badge--type-adhoc {
+  background-color: var(--lumo-primary-color-10pct);
+  color: var(--lumo-primary-text-color);
+}
+
+.my-groups-badge--role-owner,
+.my-groups-badge--role-manager {
+  background-color: var(--lumo-success-color-10pct);
+  color: var(--lumo-success-text-color);
+}
+
+.my-groups-badge--role-member {
+  background-color: var(--lumo-contrast-10pct);
+  color: var(--lumo-secondary-text-color);
+}
+
+/* Right column: actions */
+.my-groups-row__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-xs);
+  flex-shrink: 0;
+}
+
+/* Disabled management stubs (available in FEAT-USER-GROUPS-04) */
+.my-groups-action--disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Tooltip is attached to the wrapper span (disabled buttons do not fire events) */
+.my-groups-action-wrapper {
+  display: inline-flex;
+}
+
+.my-groups-action--leave {
+  flex-shrink: 0;
+}
+
+/* Empty state */
+.my-groups-empty-state {
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-s);
+  padding: var(--lumo-space-m) 0;
+}
+
+/* -- New Group page (shareable route settings/groups/new) -- */
+
+.new-group {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.new-group-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-l);
+  width: 100%;
+  max-width: 40rem;
+  box-sizing: border-box;
+  padding: var(--lumo-space-l);
+  background-color: var(--lumo-base-color);
+  border: 1px solid var(--lumo-contrast-20pct);
+  border-radius: var(--lumo-border-radius-m);
+}
+
+.new-group-form__fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+  box-sizing: border-box;
+}
+
+.new-group-form__fields vaadin-text-field,
+.new-group-form__fields vaadin-text-area {
+  width: 100%;
+}
+
+.new-group-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--lumo-space-s);
+  box-sizing: border-box;
+}
