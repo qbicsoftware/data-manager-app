@@ -9,10 +9,10 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.shared.Tooltip;
 import com.vaadin.flow.shared.Registration;
-import jakarta.annotation.Nullable;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import life.qbic.usergroups.api.GroupRole;
@@ -28,17 +28,20 @@ import life.qbic.usergroups.api.MyGroupMembership;
  * <p>
  * Actions are role-gated:
  * <ul>
- *   <li>Ad-hoc MEMBER: an enabled "Leave group" action firing a {@link LeaveGroupEvent}.</li>
- *   <li>Ad-hoc OWNER and MANAGER: management actions rendered as <em>disabled</em> stubs with a
- *   tooltip pointing to the upcoming management update (FEAT-USER-GROUPS-04). Disabled buttons do
- *   not fire events in Vaadin, so they are wrapped in a {@link Span} carrying the {@link Tooltip}.</li>
+ *   <li>Ad-hoc MEMBER: an enabled "Leave group" action.</li>
+ *   <li>Ad-hoc MANAGER: the <em>disabled</em> management stubs (they cannot manage) plus an
+ *   enabled "Leave group" self-remove action.</li>
+ *   <li>Ad-hoc OWNER: the <em>disabled</em> management stubs and <b>no</b> self-remove (owner
+ *   leave/transfer is handled by a later story, FEAT-USER-GROUPS-05). Disabled buttons do not
+ *   fire events in Vaadin, so they are wrapped in a {@link Span} carrying the {@link Tooltip}.</li>
  *   <li>Org groups: no action buttons, membership-only rendering (structural AC 5).</li>
  * </ul>
  * <p>
  * The component is intentionally free of UI-specific state and services: memberships are provided
- * through a {@link Supplier}, re-rendering through a {@link Runnable} refresh callback and leaving
- * a group through a {@link Consumer} seam. This keeps it unit-testable without a Spring or Vaadin
- * {@code UI} context, mirroring the {@code PinnedProjectsComponent} pattern.
+ * through a {@link Supplier}, re-rendering through a {@link Runnable} refresh callback, leaving a
+ * group through a {@link Consumer} seam and the confirmation UI through a {@link LeaveConfirmation}
+ * seam. This keeps it unit-testable without a Spring or Vaadin {@code UI} context, mirroring the
+ * {@code PinnedProjectsComponent} pattern.
  *
  * @since 1.19.0
  */
@@ -53,6 +56,7 @@ public class MyGroupsComponent extends Div implements Serializable {
   private final Supplier<List<MyGroupMembership>> membershipsSupplier;
   private final Runnable refreshCallback;
   private final Consumer<String> leaveGroupCallback;
+  private final LeaveConfirmation leaveConfirmation;
   private final Div groupList = new Div();
   private final Span emptyState = new Span("No groups yet.");
 
@@ -63,17 +67,22 @@ public class MyGroupsComponent extends Div implements Serializable {
    *                            {@code null}
    * @param refreshCallback     re-runs the membership query and re-renders this component; must
    *                            not be {@code null}
-   * @param leaveGroupCallback  invoked with the group id when the caller wants to leave a group;
-   *                            must not be {@code null}
+   * @param leaveGroupCallback  invoked with the group id when the caller confirms leaving a
+   *                            group; must not be {@code null}
+   * @param leaveConfirmation   asks the user to confirm leaving a group and runs the provided
+   *                            action when confirmed; must not be {@code null}
    */
   public MyGroupsComponent(Supplier<List<MyGroupMembership>> membershipsSupplier,
-      Runnable refreshCallback, Consumer<String> leaveGroupCallback) {
-    this.membershipsSupplier = java.util.Objects.requireNonNull(membershipsSupplier,
+      Runnable refreshCallback, Consumer<String> leaveGroupCallback,
+      LeaveConfirmation leaveConfirmation) {
+    this.membershipsSupplier = Objects.requireNonNull(membershipsSupplier,
         "membershipsSupplier must not be null");
-    this.refreshCallback = java.util.Objects.requireNonNull(refreshCallback,
+    this.refreshCallback = Objects.requireNonNull(refreshCallback,
         "refreshCallback must not be null");
-    this.leaveGroupCallback = java.util.Objects.requireNonNull(leaveGroupCallback,
+    this.leaveGroupCallback = Objects.requireNonNull(leaveGroupCallback,
         "leaveGroupCallback must not be null");
+    this.leaveConfirmation = Objects.requireNonNull(leaveConfirmation,
+        "leaveConfirmation must not be null");
     addClassName("my-groups-component");
     groupList.addClassName("my-groups-list");
     emptyState.addClassName("my-groups-empty-state");
@@ -132,7 +141,11 @@ public class MyGroupsComponent extends Div implements Serializable {
       return;
     }
     switch (membership.myRole()) {
-      case OWNER, MANAGER -> addDisabledManagementStubs(actions);
+      case OWNER -> addDisabledManagementStubs(actions);
+      case MANAGER -> {
+        addDisabledManagementStubs(actions);
+        addLeaveButton(actions, membership.groupId());
+      }
       case MEMBER -> addLeaveButton(actions, membership.groupId());
     }
   }
@@ -155,15 +168,20 @@ public class MyGroupsComponent extends Div implements Serializable {
     Button leaveButton = new Button("Leave group");
     leaveButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE, ButtonVariant.LUMO_ERROR);
     leaveButton.addClassName("my-groups-action--leave");
-    leaveButton.addClickListener(
-        event -> fireEvent(new LeaveGroupEvent(this, event.isFromClient(), groupId)));
+    leaveButton.addClickListener(event ->
+        leaveConfirmation.confirm(groupId, () -> onLeaveConfirmed(groupId)));
     actions.add(leaveButton);
   }
 
+  private void onLeaveConfirmed(String groupId) {
+    leaveGroupCallback.accept(groupId);
+    refreshCallback.run();
+    fireEvent(new LeaveGroupEvent(this, true, groupId));
+  }
+
   /**
-   * Fired when the caller triggers the "Leave group" action on an ad-hoc group they are a plain
-   * member of. The receiver (e.g. the hosting view) is responsible for showing a confirmation and
-   * invoking {@code GroupService.removeMembership}.
+   * Fired after the caller confirmed leaving an ad-hoc group. The leave callback and the refresh
+   * have already run when this event is dispatched; the receiver may use it for bookkeeping.
    */
   public static class LeaveGroupEvent extends ComponentEvent<MyGroupsComponent> {
 
@@ -189,6 +207,25 @@ public class MyGroupsComponent extends Div implements Serializable {
    */
   public Registration addLeaveGroupListener(ComponentEventListener<LeaveGroupEvent> listener) {
     return addListener(LeaveGroupEvent.class, listener);
+  }
+
+  /**
+   * Asks the user to confirm leaving a group.
+   * <p>
+   * Implementations show the confirmation UI (e.g. an {@code AlertDialog}) and invoke the
+   * {@code onConfirm} action when the user confirms. Kept as a seam so the component remains
+   * unit-testable without a Vaadin {@code UI} context.
+   */
+  @FunctionalInterface
+  public interface LeaveConfirmation {
+
+    /**
+     * Requests confirmation for leaving the given group.
+     *
+     * @param groupId   the group the caller wants to leave
+     * @param onConfirm the action to run when the user confirms the leave
+     */
+    void confirm(String groupId, Runnable onConfirm);
   }
 
   private static Span buildTypeBadge(GroupType type) {

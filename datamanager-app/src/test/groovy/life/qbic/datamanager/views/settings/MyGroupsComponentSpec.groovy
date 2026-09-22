@@ -24,12 +24,16 @@ class MyGroupsComponentSpec extends Specification {
   List<MyGroupMembership> memberships = []
   Runnable refreshSpy = Mock(Runnable)
   List<String> leaveCalls = []
+  List<String[]> confirmations = []
   MyGroupsComponent component
 
   def setup() {
     Supplier<List<MyGroupMembership>> supplier = { -> memberships } as Supplier
     Consumer<String> leaveSeam = { String groupId -> leaveCalls << groupId } as Consumer<String>
-    component = new MyGroupsComponent(supplier, refreshSpy, leaveSeam)
+    MyGroupsComponent.LeaveConfirmation confirmSeam =
+        { String groupId, Runnable onConfirm -> confirmations << [groupId, "asked"]; onConfirm.run() }
+            as MyGroupsComponent.LeaveConfirmation
+    component = new MyGroupsComponent(supplier, refreshSpy, leaveSeam, confirmSeam)
   }
 
   def "renders each membership with name, description, type badge and role badge"() {
@@ -76,23 +80,40 @@ class MyGroupsComponentSpec extends Specification {
     textOf(component).contains("No groups yet.")
   }
 
-  def "renders an enabled Leave group action for an ad-hoc plain member and emits the leave event"() {
+  def "renders an enabled Leave group action for an ad-hoc plain member and asks for confirmation"() {
     given: "a plain ad-hoc member"
     memberships = [membership("group-1", "Sprint Team", null, GroupType.ADHOC, GroupRole.MEMBER)]
     component.refresh()
-    boolean[] fired = new boolean[1]
-    component.addLeaveGroupListener(event -> fired[0] = event.groupId() == "group-1")
 
     when: "the user clicks leave"
     List<Button> buttons = buttonsOf(renderedRows()[0])
     Button leave = buttons.find { it.text == "Leave group" }
     leave.click()
 
-    then: "the leave event is fired with the group id"
+    then: "the confirmation seam is consulted with the group id"
+    confirmations.size() == 1
+    confirmations[0][0] == "group-1"
+  }
+
+  def "invokes the leave callback and refreshes when the confirmation is accepted"() {
+    given: "a plain ad-hoc member"
+    memberships = [membership("group-1", "Sprint Team", null, GroupType.ADHOC, GroupRole.MEMBER)]
+    component.refresh()
+    boolean[] fired = new boolean[1]
+    component.addLeaveGroupListener(event -> fired[0] = event.groupId() == "group-1")
+
+    when: "the user clicks leave and the confirmation seam confirms"
+    List<Button> buttons = buttonsOf(renderedRows()[0])
+    Button leave = buttons.find { it.text == "Leave group" }
+    leave.click()
+
+    then: "the leave callback runs with the group id, the list refreshes and the leave event fires"
+    leaveCalls == ["group-1"]
+    1 * refreshSpy.run()
     fired[0]
   }
 
-  def "renders disabled management stubs for an ad-hoc owner without a self-remove action"() {
+  def "renders disabled management stubs without a self-remove action for an ad-hoc owner"() {
     given: "an ad-hoc owner"
     memberships = [membership("group-1", "Bioinformatics Lab", "lab", GroupType.ADHOC,
         GroupRole.OWNER)]
@@ -105,6 +126,21 @@ class MyGroupsComponentSpec extends Specification {
     buttons.every { !it.enabled }
     buttons*.text.containsAll(["Manage members", "Appoint manager", "Rename", "Dissolve"])
     buttons.findAll { it.text == "Leave group" }.isEmpty()
+  }
+
+  def "renders disabled management stubs plus an enabled leave action for an ad-hoc manager"() {
+    given: "an ad-hoc manager"
+    memberships = [membership("group-1", "Sprint Team", null, GroupType.ADHOC, GroupRole.MANAGER)]
+
+    when:
+    component.refresh()
+
+    then: "the manager sees the disabled management stubs and an enabled Leave group self-remove"
+    List<Button> buttons = buttonsOf(renderedRows()[0])
+    buttons.findAll { !it.enabled }*.text.containsAll(["Manage members", "Appoint manager", "Rename", "Dissolve"])
+    buttons.findAll { it.text == "Leave group" }.size() == 1
+    Button leave = buttons.find { it.text == "Leave group" }
+    leave.enabled
   }
 
   def "wraps the disabled management stubs in tooltip carriers with the upcoming-update tooltip"() {
@@ -151,7 +187,7 @@ class MyGroupsComponentSpec extends Specification {
 
   def "rejects null seams at construction time"() {
     when: "a null supplier is provided"
-    new MyGroupsComponent(null, () -> {}, { })
+    new MyGroupsComponent(null, () -> {}, { }, { g, r -> })
 
     then:
     thrown(NullPointerException)
