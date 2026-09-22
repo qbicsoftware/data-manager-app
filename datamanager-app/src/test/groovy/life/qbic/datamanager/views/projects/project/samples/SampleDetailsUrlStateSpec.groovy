@@ -100,4 +100,37 @@ class SampleDetailsUrlStateSpec extends Specification {
         component.paginatedGrid().selectedIds() == Set.of("3270ce7f-4092-40e3-9c4c-ce7adb688b01",
             "3270ce7f-4092-40e3-9c4c-ce7adb688b02")
     }
+
+    def "select all N matching samples is offered when the selection is partial"() {
+        given: "a component with 1000 samples, page loaded so the total is known"
+        def component = newComponent(1000)
+        component.applyExternalState(new ListState(1, 12, "", SampleSort.DEFAULT))
+
+        when: "two samples are selected (a partial selection)"
+        component.paginatedGrid().select(Set.of("3270ce7f-4092-40e3-9c4c-ce7adb688b01",
+            "3270ce7f-4092-40e3-9c4c-ce7adb688b02"))
+
+        then: "the count is shown and the select-all affordance is offered with the total"
+        component.selectionDisplay().getText() == "2 samples are selected"
+        component.selectAllResultsButton().isVisible()
+        component.clearSelectionButton().isVisible()
+    }
+
+    def "selecting every matching sample shows the all-matched message and hides select-all"() {
+        given: "a component with 5 samples and a page loaded"
+        def component = newComponent(5)
+        component.applyExternalState(new ListState(1, 12, "", SampleSort.DEFAULT))
+
+        when: "all matching samples are selected"
+        component.paginatedGrid().select(Set.of("3270ce7f-4092-40e3-9c4c-ce7adb688b01",
+            "3270ce7f-4092-40e3-9c4c-ce7adb688b02",
+            "3270ce7f-4092-40e3-9c4c-ce7adb688b03",
+            "3270ce7f-4092-40e3-9c4c-ce7adb688b04",
+            "3270ce7f-4092-40e3-9c4c-ce7adb688b05"))
+
+        then: "the selection bar states the full set is selected and hides select-all"
+        component.selectionDisplay().getText() == "All 5 samples matching the filter are selected"
+        !component.selectAllResultsButton().isVisible()
+        component.clearSelectionButton().isVisible()
+    }
 }

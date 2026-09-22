@@ -92,11 +92,14 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   private String projectCode;
   private final TextField searchField = new TextField();
   private final Span selectionDisplay = new Span();
+  private final Button selectAllResultsButton = new Button();
   private final Button clearSelectionButton = new Button("Clear selection");
+  private final Div selectionBar = new Div(selectionDisplay, selectAllResultsButton,
+      clearSelectionButton);
+  private long totalItemsActive;
   private final PaginationBar paginationBar =
       new PaginationBar(ListStateCodec.ALLOWED_PAGE_SIZES, ListStateCodec.DEFAULT_PAGE_SIZE,
           "samples");
-  private final Button registerButton = new Button("Register Samples", VaadinIcon.PLUS.create());
   private final Button exportButton = new Button("Export", VaadinIcon.DOWNLOAD.create());
   private final Button editButton = new Button("Edit", VaadinIcon.EDIT.create());
   private final Button deleteButton = new Button("Delete", VaadinIcon.TRASH.create());
@@ -139,6 +142,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     configurePagination();
 
     paginatedGrid.addPageLoadedListener(event -> {
+      totalItemsActive = event.getTotal();
       paginationBar.setListState(event.getPage(), event.getTotal(),
           paginatedGrid.listState().pageSize());
       paginationBar.setVisible(event.getTotal() > 0);
@@ -148,7 +152,6 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     paginatedGrid.addSelectionChangeListener(event -> updateSelectionBar());
 
     Div toolbar = createToolbar(sampleGrid);
-    Div selectionBar = createSelectionBar();
     add(toolbar, selectionBar, paginatedGrid, paginationBar);
 
     updateSelectionBar();
@@ -156,7 +159,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
 
   private Div createToolbar(Grid<SamplePreview> grid) {
     searchField.addClassName("sample-search");
-    Div toolbar = new Div(searchField, registerButton, exportButton, editButton, deleteButton);
+    Div toolbar = new Div(searchField, exportButton, editButton, deleteButton);
     toolbar.addClassName("sample-toolbar");
     Div toolbarRight = new Div();
     toolbarRight.addClassName("sample-toolbar-right");
@@ -165,13 +168,17 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     return toolbar;
   }
 
-  private Div createSelectionBar() {
+  private void configureSelectionBar() {
     selectionDisplay.addClassName("sample-selection-count");
+    selectAllResultsButton.addClassName("sample-select-all-results");
     clearSelectionButton.addClassName("sample-clear-selection");
-    Div selectionBar = new Div(selectionDisplay, clearSelectionButton);
     selectionBar.addClassName("sample-selection-bar");
     selectionBar.setVisible(false);
-    return selectionBar;
+    clearSelectionButton.addClickListener(ignored -> {
+      paginatedGrid.deselect(Set.copyOf(paginatedGrid.selectedIds()));
+      applySelectionToGrid();
+    });
+    selectAllResultsButton.addClickListener(ignored -> selectAllMatching());
   }
 
   private void configureSearch() {
@@ -248,17 +255,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     });
   }
 
-  private void configureSelectionBar() {
-    clearSelectionButton.addClickListener(ignored -> {
-      paginatedGrid.deselect(Set.copyOf(paginatedGrid.selectedIds()));
-      applySelectionToGrid();
-    });
-  }
-
   private void configureActions() {
-    registerButton.addClassName("button-color-primary");
-    registerButton.addClickListener(clicked -> fireEvent(new SampleRegistrationRequested(this, true)));
-
     exportButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     exportButton.addClickListener(clicked -> onExportClicked());
 
@@ -317,12 +314,47 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   private void updateSelectionBar() {
     int count = paginatedGrid.selectedIds().size();
     boolean hasSelection = count > 0;
-    selectionDisplay.setText(hasSelection
-        ? "%d sample%s selected".formatted(count, count == 1 ? "" : "s")
-        : "");
-    selectionDisplay.setVisible(hasSelection);
+    selectionBar.setVisible(hasSelection);
+    // scope disambiguation: when the selection covers the whole filtered result set, say so
+    // explicitly instead of showing a bare count next to the pager total
+    if (count > 0 && count == totalItemsActive) {
+      selectionDisplay.setText(count == 1
+          ? "The single sample matching the filter is selected"
+          : "All %d samples matching the filter are selected".formatted(count));
+      selectAllResultsButton.setVisible(false);
+    } else {
+      selectionDisplay.setText(count == 1
+          ? "1 sample is selected"
+          : "%d samples are selected".formatted(count));
+      // Gmail-style inline context action: extend a partial selection to every result matching the
+      // active filter (cross-page), only while the selection is still partial.
+      boolean offerSelectAll = count > 0 && count < totalItemsActive;
+      selectAllResultsButton.setVisible(offerSelectAll);
+      if (offerSelectAll) {
+        selectAllResultsButton.setText("Select all %d matching samples".formatted(totalItemsActive));
+      }
+    }
     clearSelectionButton.setVisible(hasSelection);
     updateActionButtons();
+  }
+
+  /**
+   * Selects every sample matching the active filter (cross-page), resolving all matching sample IDs
+   * in backend storage.
+   */
+  private void selectAllMatching() {
+    ListState state = paginatedGrid.listState();
+    SamplePreviewFilter filter = new SamplePreviewFilter(state.filter(), apiSortOrders(state));
+    int total = asyncProjectService.countSamples(projectId, experimentId, filter).blockOptional()
+        .orElse(0);
+    Set<String> ids = asyncProjectService.getSamplePreviews(projectId, experimentId, 0, total,
+            filter)
+        .map(preview -> preview.sampleId().value())
+        .collectList().blockOptional().orElse(List.of())
+        .stream().collect(Collectors.toSet());
+    paginatedGrid.select(ids);
+    applySelectionToGrid();
+    updateSelectionBar();
   }
 
   private void updateActionButtons() {
@@ -504,9 +536,22 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   private PaginatedGrid.Page<SamplePreview> loadPage(ListState state) {
     int offset = (state.page() - 1) * state.pageSize();
     int limit = state.pageSize();
-    // The backend applies the sort orders as given, so append the deterministic sample-code
-    // tie-break to keep offset/limit pagination stable across page boundaries (equal sort values
-    // would otherwise duplicate or drop rows).
+    SamplePreviewFilter filter = new SamplePreviewFilter(state.filter(), apiSortOrders(state));
+    int total = asyncProjectService.countSamples(projectId, experimentId, filter).blockOptional()
+        .orElse(0);
+    List<SamplePreview> page = asyncProjectService.getSamplePreviews(projectId, experimentId,
+            offset, limit, filter)
+        .collectList().blockOptional().orElse(List.of());
+    return new PaginatedGrid.Page<>(page, total);
+  }
+
+  /**
+   * Translates a list state's sort into the API sort orders. The backend applies the orders as
+   * given, so the deterministic sample-code tie-break is appended to keep offset/limit pagination
+   * stable across page boundaries (equal sort values would otherwise duplicate or drop rows).
+   */
+  private static List<life.qbic.projectmanagement.application.api.AsyncProjectService.SortOrder<AsyncProjectService.SamplePreviewSortKey>> apiSortOrders(
+      ListState state) {
     List<life.qbic.projectmanagement.application.api.AsyncProjectService.SortOrder<AsyncProjectService.SamplePreviewSortKey>> sortOrders =
         new java.util.ArrayList<>();
     sortOrders.add(SampleSort.toApiSortOrder(state.sort()));
@@ -515,13 +560,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
           AsyncProjectService.SamplePreviewSortKey.SAMPLE_ID,
           life.qbic.projectmanagement.application.api.AsyncProjectService.SortDirection.ASC));
     }
-    SamplePreviewFilter filter = new SamplePreviewFilter(state.filter(), sortOrders);
-    int total = asyncProjectService.countSamples(projectId, experimentId, filter).blockOptional()
-        .orElse(0);
-    List<SamplePreview> page = asyncProjectService.getSamplePreviews(projectId, experimentId,
-            offset, limit, filter)
-        .collectList().blockOptional().orElse(List.of());
-    return new PaginatedGrid.Page<>(page, total);
+    return sortOrders;
   }
 
   private void triggerSampleMetadataDownload(
@@ -612,14 +651,20 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   }
 
   /**
-   * Register a {@link ComponentEventListener} that gets informed with a
-   * {@link SampleRegistrationRequested} as soon as a user wants to register samples.
-   *
-   * @param listener a listener on the sample registration trigger
+   * Test seams: exposes the selection-bar controls so specs can pin the cross-page selection
+   * affordances (count, "select all N matching", clear) without a running UI. Package-private, not
+   * part of the public API.
    */
-  public Registration addSampleRegistrationListener(
-      ComponentEventListener<SampleRegistrationRequested> listener) {
-    return addListener(SampleRegistrationRequested.class, listener);
+  Button selectAllResultsButton() {
+    return selectAllResultsButton;
+  }
+
+  Span selectionDisplay() {
+    return selectionDisplay;
+  }
+
+  Button clearSelectionButton() {
+    return clearSelectionButton;
   }
 
   /**
@@ -641,22 +686,6 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   public Registration addSampleDeletionListener(
       ComponentEventListener<SampleDeletionRequested> listener) {
     return addListener(SampleDeletionRequested.class, listener);
-  }
-
-  /**
-   * <b>Sample Registration Requested</b>
-   *
-   * <p>Indicates that a user wants to register samples within the {@link SampleDetailsComponent} of
-   * a project.</p>
-   */
-  public static class SampleRegistrationRequested extends ComponentEvent<SampleDetailsComponent> {
-
-    @Serial
-    private static final long serialVersionUID = 8039568599366236205L;
-
-    public SampleRegistrationRequested(SampleDetailsComponent source, boolean fromClient) {
-      super(source, fromClient);
-    }
   }
 
   /**

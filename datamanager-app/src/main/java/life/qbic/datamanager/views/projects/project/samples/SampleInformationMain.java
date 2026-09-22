@@ -5,8 +5,11 @@ import static java.util.Objects.requireNonNull;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.page.History;
 import com.vaadin.flow.component.page.History.HistoryStateChangeEvent;
 import com.vaadin.flow.router.BeforeEnterEvent;
@@ -38,7 +41,6 @@ import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactor
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
 import life.qbic.datamanager.views.projects.project.samples.SampleDetailsComponent.SampleDeletionRequested;
 import life.qbic.datamanager.views.projects.project.samples.SampleDetailsComponent.SampleEditRequested;
-import life.qbic.datamanager.views.projects.project.samples.SampleDetailsComponent.SampleRegistrationRequested;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.EditSampleBatchDialog;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.RegisterSampleBatchDialog;
 import life.qbic.logging.api.Logger;
@@ -151,7 +153,13 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver, 
     Span titleField = new Span();
     titleField.setText("Register sample batch");
     titleField.addClassNames("title");
-    content.add(titleField);
+    Button registerButton = new Button("Register Samples", VaadinIcon.PLUS.create());
+    registerButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    registerButton.addClassName("sample-register-button");
+    registerButton.addClickListener(clicked -> onRegisterBatchClicked());
+    Div header = new Div(titleField, registerButton);
+    header.addClassName("sample-main-header");
+    content.add(header);
     add(content);
     content.addClassName("sample-main-content");
   }
@@ -555,7 +563,6 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver, 
   private void reloadSampleInformation() {
     remove(sampleDetailsComponent);
     var sampleDetails = new SampleDetailsComponent(asyncProjectService, messageFactory, context);
-    sampleDetails.addSampleRegistrationListener(ignored -> onRegisterBatchClicked());
     sampleDetails.addSampleEditListener(this::onEditSamplesClicked);
     sampleDetails.addSampleDeletionListener(this::onDeleteSamplesClicked);
     // Mirror the list state into the URL whenever a page is loaded (page/filter/sort change),
