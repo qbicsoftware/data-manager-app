@@ -153,7 +153,7 @@ public class LocalRawDatasetRepositoryImpl implements LocalRawDatasetRepository 
         experimentId);
 
     return ngsInfoRepository.findAll(fullSpec,
-            new OffsetBasedRequest(offset, limit, Sort.by(orders)))
+            new OffsetBasedRequest(offset, limit, withMeasurementCodeTieBreaker(Sort.by(orders))))
         .map(LocalRawDatasetRepositoryImpl::convert)
         .toList();
   }
@@ -175,6 +175,23 @@ public class LocalRawDatasetRepositoryImpl implements LocalRawDatasetRepository 
     return Optional.ofNullable(rawDataSortingMap.getOrDefault(key, null));
   }
 
+  private static final String MEASUREMENT_CODE_PROPERTY = "measurementCode";
+
+  /**
+   * Appends {@code measurementCode ASC} to a user-provided sort as an internal tie-break key.
+   *
+   * <p>Offset/limit pagination requires a deterministic total order so page boundaries never
+   * drift when several rows share the user-visible sort key (ADR-0008/0009). The measurement ID
+   * is unique within an experiment, so appending it ascending guarantees a stable order for the
+   * paginated raw dataset lists (FEAT-PAG-LIST-04).</p>
+   *
+   * @param sort the user-selected sort order
+   * @return the user sort with {@code measurementCode ASC} appended
+   */
+  private static Sort withMeasurementCodeTieBreaker(Sort sort) {
+    return sort.and(Sort.by(Direction.ASC, MEASUREMENT_CODE_PROPERTY));
+  }
+
   @Override
   public List<RawDatasetInformationPxP> findAllPxP(String experimentId, int offset, int limit,
       RawDatasetFilter filter) throws LookupException {
@@ -190,7 +207,7 @@ public class LocalRawDatasetRepositoryImpl implements LocalRawDatasetRepository 
     var fullSpec = createFullSpecificationPxp(filter, experimentId);
 
     return pxpInfoRepository.findAll(fullSpec,
-            new OffsetBasedRequest(offset, limit, Sort.by(orders)))
+            new OffsetBasedRequest(offset, limit, withMeasurementCodeTieBreaker(Sort.by(orders))))
         .map(LocalRawDatasetRepositoryImpl::convert).toList();
   }
 
@@ -255,7 +272,7 @@ public class LocalRawDatasetRepositoryImpl implements LocalRawDatasetRepository 
     var fullSpec = createFullSpecificationIp(filter, experimentId);
 
     return ipInfoRepository.findAll(fullSpec,
-            new OffsetBasedRequest(offset, limit, Sort.by(orders)))
+            new OffsetBasedRequest(offset, limit, withMeasurementCodeTieBreaker(Sort.by(orders))))
         .map(LocalRawDatasetRepositoryImpl::convertIp).toList();
   }
 

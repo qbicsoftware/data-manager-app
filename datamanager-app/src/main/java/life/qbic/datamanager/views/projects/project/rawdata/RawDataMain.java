@@ -4,8 +4,12 @@ import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.page.History;
+import com.vaadin.flow.component.page.History.HistoryStateChangeEvent;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
+import com.vaadin.flow.router.BeforeLeaveEvent;
+import com.vaadin.flow.router.BeforeLeaveObserver;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
@@ -21,6 +25,8 @@ import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
+import life.qbic.datamanager.views.projects.project.rawdata.pagination.RawDataListState;
+import life.qbic.datamanager.views.projects.project.rawdata.pagination.RawDataListStateCodec;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
@@ -39,14 +45,16 @@ import org.springframework.beans.factory.annotation.Value;
  * <p>
  * This component hosts the components necessary to show and download the raw data associated with
  * the {@link MeasurementMetadata} within an {@link Experiment} via the provided
- * {@link ExperimentId} and {@link ProjectId} in the URL
+ * {@link ExperimentId} and {@link ProjectId} in the URL. The raw data is shown as paginated
+ * lists with cross-page selection (FEAT-PAG-LIST-04); the list state (active tab + per-tab
+ * page/size/filter/sort) is mirrored into the browser URL (USER-R-03).
  */
 
 @SpringComponent
 @UIScope
 @Route(value = "projects/:projectId?/experiments/:experimentId?/rawdata", layout = ExperimentMainLayout.class)
 @PermitAll
-public class RawDataMain extends Main implements BeforeEnterObserver {
+public class RawDataMain extends Main implements BeforeEnterObserver, BeforeLeaveObserver {
 
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
@@ -65,6 +73,13 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
   private final String rawDataSourceURL;
   private final String documentationUrl;
   private final AsyncProjectService asyncProjectService;
+  private final RawDataDetailsComponent rawDataDetailsComponent;
+  /**
+   * The framework's own history state change handler, captured before this view installs its own.
+   */
+  private History.HistoryStateChangeHandler routerHistoryStateChangeHandler;
+  private final History.HistoryStateChangeHandler listStateHistoryHandler =
+      this::onHistoryStateChange;
   private transient Context context;
 
   public RawDataMain(
@@ -91,6 +106,11 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
     noRawDataRegisteredDisclaimer.addClassName("no-raw-data-registered-disclaimer");
     rawdataDetailsComponentContainer = new Div();
     rawdataDetailsComponentContainer.addClassNames("display-contents");
+    rawDataDetailsComponent = new RawDataDetailsComponent(
+        asyncProjectService,
+        new Context(),
+        rawDataSourceURL,
+        messageSourceNotificationFactory);
 
     initContent();
     add(registerMeasurementsDisclaimer);
@@ -140,10 +160,61 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
     this.context = context.with(parsedExperimentId);
     asyncProjectService.getProjectCode(projectID).blockOptional()
         .ifPresent(projectCode -> context = context.withProjectCode(projectCode.value()));
-    setRawDataInformation();
+
+    // URL list-state synchronisation (USER-R-03): capture the router handler, install our own,
+    // and seed the container from the URL on direct load / reload / shared links.
+    History history = UI.getCurrent().getPage().getHistory();
+    History.HistoryStateChangeHandler currentHandler = history.getHistoryStateChangeHandler();
+    if (currentHandler != listStateHistoryHandler) {
+      routerHistoryStateChangeHandler = currentHandler;
+    }
+    history.setHistoryStateChangeHandler(listStateHistoryHandler);
+    String basePath = String.format(ProjectRoutes.RAWDATA, projectID, experimentId);
+    rawDataDetailsComponent.setBasePath(basePath);
+    RawDataListState urlState = RawDataListStateCodec.parse(
+        event.getLocation().getQueryParameters(),
+        rawDataDetailsComponent.getTabPagination().listState());
+
+    setRawDataInformation(urlState);
   }
 
-  private void setRawDataInformation() {
+  /**
+   * Gives the history state change handler back to the router when this view is left.
+   */
+  @Override
+  public void beforeLeave(BeforeLeaveEvent event) {
+    getUI().ifPresent(ui -> ui.getPage().getHistory()
+        .setHistoryStateChangeHandler(routerHistoryStateChangeHandler));
+  }
+
+  /**
+   * Re-applies the list state when the browser history changes (back/forward or router-link
+   * navigation). Non-raw-data locations are delegated back to the router handler.
+   */
+  private void onHistoryStateChange(HistoryStateChangeEvent event) {
+    String expectedPath = currentRawDataPath();
+    if (expectedPath == null || !expectedPath.equals(event.getLocation().getPath())) {
+      if (routerHistoryStateChangeHandler != null) {
+        routerHistoryStateChangeHandler.onHistoryStateChange(event);
+      }
+      return;
+    }
+    RawDataListState urlState = RawDataListStateCodec.parse(
+        event.getLocation().getQueryParameters(),
+        rawDataDetailsComponent.getTabPagination().listState());
+    rawDataDetailsComponent.getTabPagination().applyExternalState(urlState);
+  }
+
+  private String currentRawDataPath() {
+    if (context == null || context.projectId().isEmpty() || context.experimentId().isEmpty()) {
+      return null;
+    }
+    return String.format(ProjectRoutes.RAWDATA,
+        context.projectId().orElseThrow().value(),
+        context.experimentId().orElseThrow().value());
+  }
+
+  private void setRawDataInformation(RawDataListState urlState) {
     //Check if measurements exist
     ExperimentId currentExperimentId = context.experimentId().orElseThrow();
     var projectId = context.projectId().orElseThrow();
@@ -155,7 +226,7 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
     if (!remoteRawDataService.hasRawData(projectId.value(), currentExperimentId)) {
       showNoRawDataRegisteredDisclaimer();
     } else {
-      showRawDataForRegisteredMeasurements();
+      showRawDataForRegisteredMeasurements(urlState);
     }
   }
 
@@ -175,17 +246,17 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
     noRawDataRegisteredDisclaimer.setVisible(true);
   }
 
-  private void showRawDataForRegisteredMeasurements() {
+  private void showRawDataForRegisteredMeasurements(RawDataListState urlState) {
     noRawDataRegisteredDisclaimer.setVisible(false);
     registerMeasurementsDisclaimer.setVisible(false);
     content.setVisible(true);
     rawdataDetailsComponentContainer.removeAll();
-    rawdataDetailsComponentContainer.add(
-        new RawDataDetailsComponent(
-            asyncProjectService,
-            context,
-            rawDataSourceURL,
-            messageSourceNotificationFactory));
+    // setContext resets the per-tab list state to defaults when a new experiment is shown; apply
+    // the URL state afterwards so the initial fetch reflects the tab/page/size/filter/sort of a
+    // reloaded or shared link instead of the defaults (USER-R-03).
+    rawDataDetailsComponent.setContext(context);
+    rawDataDetailsComponent.getTabPagination().applyExternalState(urlState);
+    rawdataDetailsComponentContainer.add(rawDataDetailsComponent);
     rawDataDownloadInformationComponent.setVisible(true);
     rawdataDetailsComponentContainer.setVisible(true);
   }
