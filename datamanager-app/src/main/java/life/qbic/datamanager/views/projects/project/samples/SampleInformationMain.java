@@ -8,7 +8,9 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.ListItem;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.html.UnorderedList;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.page.History;
 import com.vaadin.flow.component.page.History.HistoryStateChangeEvent;
@@ -22,19 +24,26 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.application.commons.SortOrder;
 import life.qbic.datamanager.configuration.UploadConfiguration;
 import life.qbic.datamanager.views.AppRoutes.ProjectRoutes;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.DisclaimerConfirmedEvent;
 import life.qbic.datamanager.views.general.Main;
+import life.qbic.datamanager.views.general.icon.IconFactory;
 import life.qbic.datamanager.views.general.dialog.AlertDialog;
+import life.qbic.datamanager.views.general.dialog.AppDialog;
+import life.qbic.datamanager.views.general.dialog.DialogBody;
+import life.qbic.datamanager.views.general.dialog.DialogFooter;
+import life.qbic.datamanager.views.general.dialog.DialogHeader;
 import life.qbic.datamanager.views.general.download.DownloadComponent;
 import life.qbic.datamanager.views.general.pagination.ListState;
 import life.qbic.datamanager.views.general.pagination.ListStateCodec;
@@ -55,6 +64,7 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.SampleReg
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ExperimentReference;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
+import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.application.sample.SampleMetadata;
 import life.qbic.projectmanagement.application.sample.SampleRegistrationServiceV2;
 import life.qbic.projectmanagement.application.sample.SampleValidationService;
@@ -110,6 +120,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver, 
   private final transient AsyncProjectService asyncProjectService;
   private final transient UploadConfiguration uploadConfiguration;
   private final transient MeasurementService measurementService;
+  private final transient SampleInformationService sampleInformationService;
   private final MessageSourceNotificationFactory messageFactory;
   private transient Context context;
 
@@ -122,7 +133,8 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver, 
       SampleRegistrationServiceV2 sampleRegistrationServiceV2,
       MessageSourceNotificationFactory messageSourceNotificationFactory,
       UploadConfiguration uploadConfiguration,
-      @Autowired MeasurementService measurementService) {
+      @Autowired MeasurementService measurementService,
+      @Autowired SampleInformationService sampleInformationService) {
     this.asyncProjectService = requireNonNull(asyncProjectService);
     this.deletionService = requireNonNull(deletionService);
     this.experimentInformationService = requireNonNull(experimentInformationService);
@@ -132,6 +144,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver, 
     this.sampleValidationService = requireNonNull(sampleValidationService);
     this.uploadConfiguration = requireNonNull(uploadConfiguration);
     this.measurementService = requireNonNull(measurementService);
+    this.sampleInformationService = requireNonNull(sampleInformationService);
 
     addClassName("sample");
 
@@ -402,19 +415,79 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver, 
   }
 
   private void showBlockedDeletionDialog(Set<String> measuredSampleIds) {
-    String listedIds = measuredSampleIds.stream().sorted().limit(20)
-        .collect(Collectors.joining(", "));
-    if (measuredSampleIds.size() > 20) {
-      listedIds = listedIds + ", and %d more".formatted(measuredSampleIds.size() - 20);
+    var projectId = context.projectId().orElseThrow();
+    List<Sample> measuredSamples = sampleInformationService.retrieveSamplesByIds(projectId,
+        measuredSampleIds.stream().map(SampleId::parse).toList());
+    SortOrder currentSort = currentSampleSort();
+    measuredSamples.sort(sampleComparator(currentSort));
+
+    var dialog = AppDialog.small();
+    DialogHeader.withIcon(dialog, "Samples cannot be deleted", IconFactory.warningIcon());
+
+    var list = new UnorderedList();
+    measuredSamples.stream().limit(20)
+        .forEach(sample -> list.add(new ListItem(
+            "%s (%s)".formatted(sample.label(), sample.sampleCode().code()))));
+    if (measuredSamples.size() > 20) {
+      list.add(new ListItem("and %d more".formatted(measuredSamples.size() - 20)));
     }
-    AlertDialog.alert(this)
-        .warning()
-        .title("Samples cannot be deleted")
-        .message(
-            "The following samples have associated measurements and therefore cannot be deleted: "
-                + listedIds)
-        .confirmButton("Close", () -> { })
-        .build().open();
+    var message = new Div(new Span(
+        "The following samples have associated measurements and therefore cannot be deleted:"),
+        list);
+
+    DialogBody.withoutUserInput(dialog, message);
+    DialogFooter.withConfirmOnly(dialog, "Close");
+    dialog.registerConfirmAction(dialog::close);
+    dialog.open();
+  }
+
+  /**
+   * @return the current sort order of the sample grid, or the default sample sort if the grid is
+   * not available
+   */
+  private SortOrder currentSampleSort() {
+    if (sampleDetailsComponent instanceof SampleDetailsComponent sampleDetails) {
+      return sampleDetails.listState().sort();
+    }
+    return SampleSort.DEFAULT;
+  }
+
+  /**
+   * Builds a {@link Comparator} for {@link Sample}s matching the sample grid's current sort order,
+   * with the deterministic {@code sampleCode} tie-break the grid applies for pagination.
+   *
+   * @param sortOrder the sort order applied by the sample grid
+   */
+  private static Comparator<Sample> sampleComparator(SortOrder sortOrder) {
+    Comparator<Sample> byProperty = sampleComparatorFor(sortOrder.propertyName());
+    if (sortOrder.isDescending()) {
+      byProperty = byProperty.reversed();
+    }
+    return byProperty.thenComparing(sample -> sample.sampleCode().code());
+  }
+
+  private static Comparator<Sample> sampleComparatorFor(String property) {
+    return switch (property) {
+      case "sampleId" -> Comparator.comparing(sample -> sample.sampleId().value());
+      case "sampleName" -> Comparator.comparing(Sample::label);
+      case "biologicalReplicate" -> Comparator.comparing(sample -> sample.biologicalReplicate(),
+          Comparator.nullsLast(String::compareTo));
+      case "batch" -> Comparator.comparing(Sample::batch,
+          Comparator.nullsLast(String::compareTo));
+      case "condition" -> Comparator.comparing(sample -> sample.sampleCode().code());
+      case "species" -> Comparator.comparing(sample -> sample.sampleOrigin().getSpecies().getLabel());
+      case "specimen" -> Comparator.comparing(
+          sample -> sample.sampleOrigin().getSpecimen().getLabel());
+      case "analyte" -> Comparator.comparing(
+          sample -> sample.sampleOrigin().getAnalyte().getLabel());
+      case "analysisMethod" -> Comparator.comparing(sample -> sample.analysisMethod().label());
+      case "comment" -> Comparator.comparing(sample -> sample.comment().orElse(""));
+      case "registrationTime" -> Comparator.comparing(Sample::registrationTime,
+          Comparator.nullsLast(Comparator.naturalOrder()));
+      case "lastModified" -> Comparator.comparing(Sample::lastModified,
+          Comparator.nullsLast(Comparator.naturalOrder()));
+      default -> Comparator.comparing(sample -> sample.sampleCode().code());
+    };
   }
 
   /**
