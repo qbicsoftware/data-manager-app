@@ -8,8 +8,11 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.shared.Registration;
 import jakarta.annotation.Nullable;
 import java.io.Serial;
@@ -44,6 +47,12 @@ public class NewGroupForm extends Div {
 
   private static final int NAME_MAX_LENGTH = 80;
   private static final int DESCRIPTION_MAX_LENGTH = 500;
+
+  /**
+   * Debounce window (ms) for the live name-availability hint while typing. The hint is
+   * best-effort and must not fire a backend request on every single key stroke.
+   */
+  private static final int NAME_AVAILABILITY_DEBOUNCE_MS = 500;
 
   private final TextField nameField = new TextField("Name");
   private final TextArea descriptionField = new TextArea("Description");
@@ -83,6 +92,14 @@ public class NewGroupForm extends Div {
     nameField.setRequiredIndicatorVisible(true);
     nameField.setMaxLength(NAME_MAX_LENGTH);
     nameField.setPlaceholder("e.g. Acknowledgements Working Group");
+    nameField.setValueChangeMode(ValueChangeMode.LAZY);
+    nameField.setValueChangeTimeout(NAME_AVAILABILITY_DEBOUNCE_MS);
+    // Native autofocus on initial render plus an attach-time focus: Vaadin views swap in the
+    // same SPA, so the browser only honours the autofocus attribute on the very first load —
+    // re-focusing on attach guarantees the field is focused when navigating from My Groups to
+    // the New Group page as well (UX requirement: focus lands directly in the name input).
+    nameField.setAutofocus(true);
+    nameField.addAttachListener(event -> nameField.focus());
 
     descriptionField.setMaxLength(DESCRIPTION_MAX_LENGTH);
     descriptionField.setPlaceholder("What is this group about? (optional)");
@@ -103,25 +120,67 @@ public class NewGroupForm extends Div {
     add(actions);
 
     if (nameAvailabilityCheck != null) {
+      // Live availability while typing: fired (debounced) on every value change, not only on
+      // blur, so the "is this name free?" answer is visible during input. The value change
+      // mode keeps the hint responsive without hammering the backend on every key stroke.
+      nameField.addValueChangeListener(event -> {
+        if (event.isFromClient()) {
+          checkNameAvailability(nameAvailabilityCheck);
+        }
+      });
+      // Keep the hint accurate for the final (committed) value even if the user never blurs.
       nameField.addBlurListener(event -> checkNameAvailability(nameAvailabilityCheck));
     }
   }
 
   private void checkNameAvailability(Function<String, Boolean> availabilityCheck) {
-    if (nameField.getValue().isEmpty()) {
+    String value = nameField.getValue();
+    if (value.isEmpty()) {
+      // Nothing to confirm: clear the hint and the availability icon.
       nameField.setHelperText(null);
+      nameField.setSuffixComponent(null);
+      nameField.removeClassName("new-group-form__name-field--taken");
       return;
     }
-    boolean available = Boolean.TRUE.equals(availabilityCheck.apply(nameField.getValue()));
+    boolean available = Boolean.TRUE.equals(availabilityCheck.apply(value));
+    showAvailabilityState(available);
+  }
+
+  /**
+   * Renders the availability result next to the name input:
+   * <ul>
+   *   <li>available → green check-circle icon + green "Group name is available." helper</li>
+   *   <li>taken → red close-circle icon + red helper text</li>
+   * </ul>
+   * The authoritative check still happens on submit; this hint is best-effort and only
+   * reflects the last completed (debounced) lookup.
+   */
+  private void showAvailabilityState(boolean available) {
+    Icon icon = available
+        ? VaadinIcon.CHECK_CIRCLE_O.create()
+        : VaadinIcon.CLOSE_CIRCLE_O.create();
+    icon.addClassName("new-group-form__availability-icon");
+    icon.addClassName(available
+        ? "new-group-form__availability-icon--available"
+        : "new-group-form__availability-icon--taken");
+    icon.setTooltipText(
+        available ? "This name is available." : "This name is already taken.");
+    nameField.setSuffixComponent(icon);
     nameField.setHelperText(available
         ? "Group name is available."
         : "This name is already taken. Group names must be unique (case-insensitive).");
+    if (available) {
+      nameField.removeClassName("new-group-form__name-field--taken");
+    } else {
+      nameField.addClassName("new-group-form__name-field--taken");
+    }
   }
 
   /**
    * Package-private trigger for the live name-availability hint; exposed so unit tests can
-   * invoke the check without a Vaadin {@code UI} (blur listeners do not fire in component
-   * tests). The production wiring calls this on name-field blur.
+   * invoke the check without a Vaadin {@code UI} (blur/value-change listeners do not fire in
+   * component tests). The production wiring calls this on debounced value changes (while
+   * typing) and on name-field blur.
    */
   final void runNameAvailabilityCheck() {
     if (nameAvailabilityCheck != null) {

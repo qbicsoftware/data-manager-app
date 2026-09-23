@@ -51,10 +51,10 @@ class MyGroupsComponentSpec extends Specification {
     renderedRows().size() == 2
     textOf(renderedRows()[0]).contains("Bioinformatics Lab")
     textOf(renderedRows()[0]).contains("lab of the bioinformatics team")
-    textOf(renderedRows()[0]).contains("Ad-hoc")
+    textOf(renderedRows()[0]).contains("User Group")
     textOf(renderedRows()[0]).contains("Owner")
     textOf(renderedRows()[1]).contains("Sprint Team")
-    textOf(renderedRows()[1]).contains("Ad-hoc")
+    textOf(renderedRows()[1]).contains("User Group")
     textOf(renderedRows()[1]).contains("Member")
   }
 

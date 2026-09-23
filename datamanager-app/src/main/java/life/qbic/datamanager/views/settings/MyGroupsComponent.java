@@ -23,15 +23,15 @@ import life.qbic.usergroups.api.MyGroupMembership;
  * <b>My Groups list component</b>
  * <p>
  * Renders the group memberships of the current user ("My Groups"). Each membership is shown as a
- * row with the group name, its description (when present), a type badge (Org / Ad-hoc) and the
+ * row with the group name, its description (when present), a type badge (Org / User Group) and the
  * caller's role badge (Owner / Manager / Member).
  * <p>
  * Actions are role-gated:
  * <ul>
- *   <li>Ad-hoc MEMBER: an enabled "Leave group" action.</li>
- *   <li>Ad-hoc MANAGER: the <em>disabled</em> management stubs (they cannot manage) plus an
+ *   <li>User Group MEMBER: an enabled "Leave group" action.</li>
+ *   <li>User Group MANAGER: the <em>disabled</em> management stubs (they cannot manage) plus an
  *   enabled "Leave group" self-remove action.</li>
- *   <li>Ad-hoc OWNER: the <em>disabled</em> management stubs and <b>no</b> self-remove (owner
+ *   <li>User Group OWNER: the <em>disabled</em> management stubs and <b>no</b> self-remove (owner
  *   leave/transfer is handled by a later story, FEAT-USER-GROUPS-05). Disabled buttons do not
  *   fire events in Vaadin, so they are wrapped in a {@link Span} carrying the {@link Tooltip}.</li>
  *   <li>Org groups: no action buttons, membership-only rendering (structural AC 5).</li>
@@ -229,7 +229,7 @@ public class MyGroupsComponent extends Div implements Serializable {
   }
 
   private static Span buildTypeBadge(GroupType type) {
-    Span badge = new Span(type == GroupType.ORG ? "Org" : "Ad-hoc");
+    Span badge = new Span(type == GroupType.ORG ? "Org" : "User Group");
     badge.addClassName("my-groups-badge");
     badge.addClassName(
         type == GroupType.ORG ? "my-groups-badge--type-org" : "my-groups-badge--type-adhoc");

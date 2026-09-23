@@ -142,7 +142,7 @@ public class MyGroupsMain extends Main implements BeforeEnterObserver {
     myGroupsComponent.refresh();
     section.addContent(myGroupsComponent);
     Button newGroupButton = new Button("New group");
-    newGroupButton.setClassName("my-groups__new-group");
+    newGroupButton.addClassName("primary");
     newGroupButton.addClickListener(click ->
         com.vaadin.flow.component.UI.getCurrent().navigate(NewGroupMain.class));
     section.addAction(newGroupButton);

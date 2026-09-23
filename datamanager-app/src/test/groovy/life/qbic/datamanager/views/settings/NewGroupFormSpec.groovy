@@ -2,6 +2,7 @@ package life.qbic.datamanager.views.settings
 
 import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.button.Button
+import com.vaadin.flow.component.icon.Icon
 import com.vaadin.flow.component.textfield.TextArea
 import com.vaadin.flow.component.textfield.TextField
 import life.qbic.application.commons.ApplicationException
@@ -24,8 +25,9 @@ import java.util.function.Supplier
  * Unit tests for the new-group creation form.
  *
  * <p>Covers the client-side validation that mirrors the domain value objects, the create and
- * cancel events, the best-effort name availability hint, and the create orchestration (service
- * call, toasts, navigation) — all without a Spring or Vaadin {@code UI} context.
+ * cancel events, the debounced live name-availability hint (fired while typing and on blur),
+ * autofocus of the name field, and the create orchestration (service call, toasts, navigation)
+ * — all without a Spring or Vaadin {@code UI} context.
  */
 class NewGroupFormSpec extends Specification {
 
@@ -180,12 +182,32 @@ class NewGroupFormSpec extends Specification {
     given: "a name that is already taken"
     form.setValues("Sprint Team", null)
 
-    when: "the availability check runs"
+    when: "the availability check runs (as on blur or after the debounce window)"
     form.runNameAvailabilityCheck()
 
     then: "the availability seam is consulted and a taken-hint is shown"
     availabilityCalls == ["Sprint Team"]
     nameField().helperText.contains("already taken")
+
+    and: "a red taken-indicator icon is shown inside the field"
+    Icon icon = (Icon) nameField().suffixComponent
+    icon != null
+    icon.className.contains("new-group-form__availability-icon--taken")
+    nameField().hasClassName("new-group-form__name-field--taken")
+  }
+
+  def "checks availability live while typing using a debounced lazy mode"() {
+    given: "the name field is wired for live checking"
+    form.setValues("Sprint Team", null)
+
+    expect: "the lazy value-change mode with a short timeout is active"
+    nameField().getValueChangeMode() == com.vaadin.flow.data.value.ValueChangeMode.LAZY
+    nameField().getValueChangeTimeout() == 500
+  }
+
+  def "autofocuses the name field on page load so the user can type immediately"() {
+    expect:
+    nameField().isAutofocus()
   }
 
   def "shows an available hint once a unique name is entered"() {
@@ -198,6 +220,12 @@ class NewGroupFormSpec extends Specification {
     then: "the availability seam is consulted and the available-hint is shown"
     availabilityCalls == ["New Team"]
     nameField().helperText.contains("available")
+
+    and: "a green available-indicator icon is shown inside the field"
+    Icon icon = (Icon) nameField().suffixComponent
+    icon != null
+    icon.className.contains("new-group-form__availability-icon--available")
+    !nameField().hasClassName("new-group-form__name-field--taken")
   }
 
   def "exposes name availability check via the public markNameError seam"() {

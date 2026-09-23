@@ -133,7 +133,7 @@ public class NewGroupMain extends Main implements BeforeEnterObserver {
         errorToast, navigateToMyGroups);
     form.addCancelListener(cancelEvent -> navigateToMyGroups.run());
     section = new SettingsSection("New Group",
-        "Create a new ad-hoc group for your collaboration.");
+        "Create a new user group for your collaboration.");
     section.addContent(form);
     add(section);
   }
