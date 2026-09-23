@@ -114,6 +114,7 @@ vaadin-app-layout:not([drawer-opened])::part(drawer) {
   margin: auto;
 }
 
+.main.sample .page-area,
 .main.measurement .page-area {
   border: 1px solid;
   border-color: var(--lumo-contrast-10pct);
@@ -121,14 +122,9 @@ vaadin-app-layout:not([drawer-opened])::part(drawer) {
 }
 
 /*We want to show disclaimer centralized over the whole main width and height independent of defined areas */
-.main.measurement .no-samples-registered-disclaimer {
-  grid-column-start: 1;
-  grid-column-end: -1;
-  grid-row-start: 1;
-  grid-row-end: -1;
-}
-
-/*We want to show disclaimer centralized over the whole main width and height independent of defined areas */
+.main.sample .no-experimental-groups-registered-disclaimer,
+.main.sample .no-samples-registered-disclaimer,
+.main.measurement .no-samples-registered-disclaimer,
 .main.measurement .no-measurements-registered-disclaimer {
   grid-column-start: 1;
   grid-column-end: -1;
@@ -157,10 +153,15 @@ vaadin-app-layout:not([drawer-opened])::part(drawer) {
 }
 
 
-.main.measurement .measurement-details-component {
-  grid-area: measurementdetails
+.main.sample .sample-details-component {
+  grid-area: sampledetails;
 }
 
+.main.measurement .measurement-details-component {
+  grid-area: measurementdetails;
+}
+
+.main.sample .sample-main-content,
 .main.measurement .measurement-main-content {
   display: flex;
   flex-direction: column;
@@ -169,14 +170,17 @@ vaadin-app-layout:not([drawer-opened])::part(drawer) {
   justify-content: space-between;
 }
 
+.main.sample .sample-main-header,
 .main.measurement .measurement-main-content .measurement-main-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
+  flex-direction: row;
   column-gap: var(--lumo-space-m);
 }
 
+.main.sample .sample-main-header .title,
 .main.measurement .measurement-main-content .title {
   font-weight: bold;
   color: var(--lumo-secondary-text-color);
@@ -184,12 +188,14 @@ vaadin-app-layout:not([drawer-opened])::part(drawer) {
   margin-bottom: 0.5rem;
 }
 
+.main.sample .sample-main-header .buttonsAndInfo,
 .main.measurement .measurement-main-content .buttonsAndInfo {
   display: flex;
   flex-direction: column;
   row-gap: var(--lumo-space-m);
 }
 
+.main.sample .sample-main-header .buttonsAndInfo .info,
 .main.measurement .measurement-main-content .buttonsAndInfo .info {
   border-radius: var(--lumo-border-radius-m);
   column-gap: var(--spacing-03);
@@ -365,6 +371,14 @@ vaadin-app-layout:not([drawer-opened])::part(drawer) {
   justify-content: space-between;
 }
 
+.main.sample .sample-main-content .sample-main-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  column-gap: var(--lumo-space-m);
+}
+
 .main.sample .sample-main-content .title {
   font-weight: bold;
   color: var(--lumo-secondary-text-color);
@@ -376,10 +390,6 @@ vaadin-app-layout:not([drawer-opened])::part(drawer) {
   display: inline-flex;
   justify-content: space-between;
   gap: var(--lumo-space-m);
-}
-
-.main.sample .batch-details-component {
-  grid-area: batchdetails;
 }
 
 .main.sample .sample-details-component {

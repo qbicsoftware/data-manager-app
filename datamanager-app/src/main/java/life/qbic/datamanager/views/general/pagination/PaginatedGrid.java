@@ -357,6 +357,15 @@ public class PaginatedGrid<T> extends Div {
   }
 
   /**
+   * Re-renders the currently visible rows without refetching from the backend. Useful when a
+   * display-only dependency (e.g. the client time zone) changes after the page was first rendered
+   * and should be reflected in the rendered cells.
+   */
+  public void refreshItems() {
+    grid.getDataProvider().refreshAll();
+  }
+
+  /**
    * Applies an externally provided list state (initial page load, URL back/forward, shared link)
    * and reloads the page.
    */

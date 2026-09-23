@@ -175,6 +175,11 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         receiver -> {
           clientTimeZoneOffset.set(receiver.getTimezoneOffset());
           clientTimeZone.set(receiver.getTimeZoneId());
+          // The client time zone arrives asynchronously, potentially after the first page has
+          // already rendered; re-render the rows so the date/time columns reflect the client zone.
+          ngsPaginatedGrid.refreshItems();
+          pxpPaginatedGrid.refreshItems();
+          ipPaginatedGrid.refreshItems();
         });
   }
 
