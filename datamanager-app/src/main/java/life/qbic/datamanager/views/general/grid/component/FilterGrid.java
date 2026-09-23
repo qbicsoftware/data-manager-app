@@ -117,6 +117,7 @@ public final class FilterGrid<T, F> extends Div {
   private final ConfiguredGrid<T, F> configuredGrid;
   private final Div selectionDisplay = new SelectionNotification();
   private final Div secondaryActionGroup = createSecondaryActionGroup();
+  private boolean showHideColumnsMenuVisible = true;
 
   // make sure the search field exists
   private final TextField searchField = createSearchField();
@@ -369,24 +370,26 @@ public final class FilterGrid<T, F> extends Div {
     var spacer = new Div();
     spacer.addClassName("spacer-horizontal-full-width");
 
-    // A vertical line the help separate secondary action group and show/hide button
-    var visualSeparator = new Div();
-    visualSeparator.addClassNames("border", "border-color-light", "height-07");
-
     primaryGridControls.addClassNames(FLEX_HORIZONTAL_CSS, GAP_04_CSS, "flex-align-items-center");
-    /* Show / Hide Menu */
-    MenuBar showHideMenu = new MenuBar();
-    var showHideItem = showHideMenu.addItem("Show/Hide Columns");
-    var subMenu = showHideItem.getSubMenu();
+    primaryGridControls.add(searchField, selectionDisplay, spacer, secondaryActionGroup);
 
-    CheckboxGroup<Column<T>> checkboxGroup = createCheckboxes(columns);
-    preventClickPropagation(checkboxGroup);
-    checkboxGroup.addThemeVariants(CheckboxGroupVariant.LUMO_VERTICAL);
+    if (showHideColumnsMenuVisible) {
+      // A vertical line the help separate secondary action group and show/hide button
+      var visualSeparator = new Div();
+      visualSeparator.addClassNames("border", "border-color-light", "height-07");
+      /* Show / Hide Menu */
+      MenuBar showHideMenu = new MenuBar();
+      var showHideItem = showHideMenu.addItem("Show/Hide Columns");
+      var subMenu = showHideItem.getSubMenu();
 
-    checkboxGroup.addClassNames("flex-vertical");
-    subMenu.addComponent(checkboxGroup);
-    primaryGridControls.add(searchField, selectionDisplay, spacer, secondaryActionGroup,
-        visualSeparator, showHideMenu);
+      CheckboxGroup<Column<T>> checkboxGroup = createCheckboxes(columns);
+      preventClickPropagation(checkboxGroup);
+      checkboxGroup.addThemeVariants(CheckboxGroupVariant.LUMO_VERTICAL);
+
+      checkboxGroup.addClassNames("flex-vertical");
+      subMenu.addComponent(checkboxGroup);
+      primaryGridControls.add(visualSeparator, showHideMenu);
+    }
 
     return primaryGridControls;
   }
@@ -443,6 +446,15 @@ public final class FilterGrid<T, F> extends Div {
   public void searchFieldPlaceholder(String placeholder) {
     Objects.requireNonNull(placeholder);
     searchField.setPlaceholder(placeholder);
+  }
+
+  /**
+   * Controls whether the "Show/Hide Columns" menu is rendered next to the toolbar.
+   * Defaults to {@code true}; set to {@code false} for lists with a fixed, small column set
+   * where the menu would only add clutter.
+   */
+  public void setShowHideColumnsMenuVisible(boolean visible) {
+    this.showHideColumnsMenuVisible = visible;
   }
 
   // helper

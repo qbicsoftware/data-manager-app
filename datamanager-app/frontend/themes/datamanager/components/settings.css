@@ -336,3 +336,10 @@
     inset 0 0 0 2px var(--lumo-primary-color),
     0 0 0 3px var(--lumo-primary-color-10pct);
 }
+/* For textarea-backed inline editable fields (e.g. long descriptions): align the pencil and
+   edit controls to the top of the field instead of vertically centering them next to a tall
+   input, so the icon sits at the same height as in single-line fields. */
+.inline-editable-field--textarea .inline-editable-field__value-area {
+  align-items: flex-start;
+  padding-top: var(--lumo-space-xs);
+}

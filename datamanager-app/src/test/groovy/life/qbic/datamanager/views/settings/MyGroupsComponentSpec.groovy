@@ -114,7 +114,7 @@ class MyGroupsComponentSpec extends Specification {
     fired[0]
   }
 
-  def "renders enabled management actions without a self-remove action for an ad-hoc owner"() {
+  def "renders a Manage group action without a self-remove action for an ad-hoc owner"() {
     given: "an ad-hoc owner"
     memberships = [membership("group-1", "Bioinformatics Lab", "lab", GroupType.ADHOC,
         GroupRole.OWNER)]
@@ -122,46 +122,37 @@ class MyGroupsComponentSpec extends Specification {
     when:
     component.refresh()
 
-    then: "the management actions exist, are enabled, and no leave action does"
+    then: "the Manage group action exists, is enabled, and no leave action does"
     List<Button> buttons = buttonsOf(renderedRows()[0])
     buttons.every { it.enabled }
-    buttons*.text.containsAll(["Manage members", "Appoint manager", "Rename", "Dissolve"])
+    buttons*.text.contains("Manage group")
     buttons.findAll { it.text == "Leave group" }.isEmpty()
   }
 
-  def "renders enabled management actions plus an enabled leave action for an ad-hoc manager"() {
+  def "renders a Manage group action plus an enabled leave action for an ad-hoc manager"() {
     given: "an ad-hoc manager"
     memberships = [membership("group-1", "Sprint Team", null, GroupType.ADHOC, GroupRole.MANAGER)]
 
     when:
     component.refresh()
 
-    then: "the manager sees enable management actions and an enabled Leave group self-remove"
+    then: "the manager sees the Manage group entry (the detail page owns management)"
     List<Button> buttons = buttonsOf(renderedRows()[0])
-    buttons.findAll { it.enabled }*.text.containsAll(["Manage members", "Rename"])
-    buttons.findAll { it.text == "Appoint manager" }.isEmpty()
-    buttons.findAll { it.text == "Dissolve" }.isEmpty()
-    Button leave = buttons.find { it.text == "Leave group" }
-    leave.enabled
+    buttons.findAll { it.enabled }*.text.contains("Manage group")
+    buttons.findAll { it.text == "Leave group" }.isEmpty()
   }
 
-  def "fires a management action request when the owner clicks manage members"() {
+  def "a Manage group action exists for an ad-hoc owner (navigates to the detail page)"() {
     given: "an ad-hoc owner"
     memberships = [membership("group-1", "Bioinformatics Lab", "lab", GroupType.ADHOC,
         GroupRole.OWNER)]
     component.refresh()
-    List<String[]> requests = []
-    component.addManagementActionListener(event ->
-        requests << [event.groupId(), event.action().name()])
 
-    when: "the user clicks Manage members"
+    when: "the user clicks Manage group"
     List<Button> buttons = buttonsOf(renderedRows()[0])
-    buttons.find { it.text == "Manage members" }.click()
 
-    then: "a management action request with the group id fires"
-    requests.size() == 1
-    requests[0][0] == "group-1"
-    requests[0][1] == "MANAGE_MEMBERS"
+    then: "a Manage group button exists (UI navigation is exercised by the owning view)"
+    buttons.find { it.text == "Manage group" } != null
   }
 
   def "a plain ad-hoc member sees no management actions, only self-remove"() {

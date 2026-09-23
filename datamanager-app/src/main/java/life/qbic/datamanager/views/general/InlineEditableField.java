@@ -6,11 +6,14 @@ import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.ClientCallable;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.component.textfield.TextFieldBase;
 import com.vaadin.flow.shared.Registration;
 import java.io.Serial;
 
@@ -36,8 +39,17 @@ public class InlineEditableField extends Div {
   @Serial
   private static final long serialVersionUID = 1L;
 
+  /**
+   * Which input widget backs the editable value: a single-line {@link TextField} or a
+   * multi-line {@link TextArea}.
+   */
+  public enum InputKind {
+    TEXT,
+    TEXTAREA
+  }
+
   private final Span label;
-  private final TextField editField;
+  private final TextFieldBase<?, String> editField;
   private final Button editButton;
   private final Button saveButton;
   private final Button cancelButton;
@@ -46,11 +58,26 @@ public class InlineEditableField extends Div {
   private boolean editable = true;
   private String currentValue;
   private boolean editing = false;
+  private boolean commitOnBlurToOutside = true;
+  private int minDisplayWidthCh = MIN_DISPLAY_WIDTH_CH;
 
   /** Minimum width (in ch) of the field in display mode, so short values don't collapse. */
   private static final int MIN_DISPLAY_WIDTH_CH = 12;
 
+  /** Single-line text field. */
   public InlineEditableField(String label, String initialValue) {
+    this(InputKind.TEXT, label, initialValue);
+  }
+
+  /**
+   * Creates an inline editable field backed by the given input kind.
+   *
+   * @param kind         {@link InputKind#TEXT} for a single-line input, {@link InputKind#TEXTAREA}
+   *                     for a multi-line input (e.g. long descriptions)
+   * @param label        the row label
+   * @param initialValue the current value
+   */
+  public InlineEditableField(InputKind kind, String label, String initialValue) {
     addClassName("inline-editable-field");
 
     this.currentValue = initialValue != null ? initialValue : "";
@@ -58,18 +85,33 @@ public class InlineEditableField extends Div {
     this.label = new Span(label + ":");
     this.label.addClassName("inline-editable-field__label");
 
-    this.editField = new TextField();
+    this.editField = kind == InputKind.TEXTAREA ? new TextArea() : new TextField();
+    if (kind == InputKind.TEXTAREA) {
+      ((TextArea) this.editField).setMaxLength(500);
+      ((TextArea) this.editField).setMinHeight("6em");
+      addClassName("inline-editable-field--textarea");
+    } else {
+      ((TextField) this.editField).setMaxLength(80);
+    }
     this.editField.setValue(this.currentValue);
     this.editField.setReadOnly(true);
     this.editField.addClassName("inline-editable-field__edit-field");
     // Clicking into the field enters edit mode, exactly like the edit button — both entry
-    // points must behave identically. There is deliberately NO blur listener: a blur-triggered
-    // revert races with the Save/Cancel buttons (the blur fires before the click, hiding the
-    // controls and swallowing the click) and causes jarring width/style changes when the user
-    // tabs away. Edit mode is left explicitly via Save (Enter/check) or Cancel (Escape/close).
+    // points must behave identically. Blur is not used directly: a blur-triggered revert would
+    // race the Save/Cancel clicks (blur fires before the click, hiding the controls under the
+    // cursor). Instead a native focusout listener reports the actual focus target over RPC
+    // (installBlurRpc), so an outside click commits and clicks on the field's own buttons keep
+    // editing. Edit mode is also left explicitly via Save (Enter/check) or Cancel (Escape/close).
     this.editField.addFocusListener(e -> startEdit());
     this.editField.addKeyDownListener(Key.ENTER, e -> triggerSave());
     this.editField.addKeyDownListener(Key.ESCAPE, e -> triggerCancel());
+    // Blur handling: Vaadin's BlurEvent carries no relatedTarget, so we cannot tell server-side
+    // whether focus moved to the Save/Cancel buttons or somewhere else. We attach a native
+    // focusout listener that asks the browser which way focus went and reports it over RPC
+    // (@ClientCallable). This is deterministic — no deferred executeJs().then() that depends on
+    // a later UI flush. If focus moved inside the field or onto its own buttons (Save/Cancel
+    // are DOM children of this component), keep editing; otherwise commit the draft.
+    installBlurRpc();
 
     this.editButton = new Button(new Icon(VaadinIcon.EDIT));
     this.editButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
@@ -114,6 +156,46 @@ public class InlineEditableField extends Div {
 
   public boolean isEditable() {
     return editable;
+  }
+
+  /**
+   * Controls what happens when the user blurs the field while in edit mode:
+   * <ul>
+   *   <li>{@code true} (default): blur-to-outside commits the draft ({@code SaveEvent} fires,
+   *   parent persists) — least surprise, no silent data loss.</li>
+   *   <li>{@code false}: blur-to-outside reverts to the committed value (like Cancel).</li>
+   * </ul>
+   * This only applies when focus moves <em>outside</em> the component; clicking the field's
+   * own Save/Cancel buttons never triggers a blur-commit (they keep editing until clicked).
+   */
+  public void setCommitOnBlurToOutside(boolean commitOnBlurToOutside) {
+    this.commitOnBlurToOutside = commitOnBlurToOutside;
+  }
+
+  public boolean isCommitOnBlurToOutside() {
+    return commitOnBlurToOutside;
+  }
+
+  /**
+   * Raises the minimum display-mode width (in characters). Useful when a field's content is
+   * short but the caller wants a more generous input (e.g. group names on a detail page).
+   * Takes effect immediately: the display width is re-applied.
+   */
+  public void setMinDisplayWidth(int widthCh) {
+    this.minDisplayWidthCh = Math.max(MIN_DISPLAY_WIDTH_CH, widthCh);
+    if (!editing) {
+      applyDisplayWidth();
+    }
+  }
+
+  /**
+   * Whether the current (pending) value differs from the last committed value.
+   */
+  public boolean hasChanges() {
+    String raw = editField.getValue();
+    String normalized = raw == null ? "" : raw.trim();
+    String committed = currentValue == null ? "" : currentValue;
+    return !normalized.equals(committed);
   }
 
   // ── Value ─────────────────────────────────────────────────────
@@ -229,7 +311,7 @@ public class InlineEditableField extends Div {
   private void applyDisplayWidth() {
     String placeholder = editField.getPlaceholder() != null ? editField.getPlaceholder() : "";
     int longest = Math.max(currentValue.length(), placeholder.length());
-    int widthCh = Math.max(MIN_DISPLAY_WIDTH_CH, (int) Math.round(longest * 1.2) + 3);
+    int widthCh = Math.max(minDisplayWidthCh, (int) Math.round(longest * 1.2) + 3);
     editField.setWidth(widthCh + "ch");
     editField.getElement().setAttribute("title", currentValue);
   }
@@ -240,6 +322,96 @@ public class InlineEditableField extends Div {
     }
     String newValue = editField.getValue().trim();
     fireEvent(new SaveEvent(this, true, newValue));
+  }
+
+  /**
+   * Package-private seam for the blur-commit decision so unit tests can exercise it without a
+   * browser (the real path is driven from {@link #onFieldBlur()} after the deferred client
+   * check reports focus moved outside the component).
+   */
+  void attemptBlurCommitForTest() {
+    attemptBlurCommit();
+  }
+
+  /**
+   * True while the field is in edit mode (package-private, exposed for unit tests).
+   */
+  boolean isEditingForTest() {
+    return editing;
+  }
+
+  /**
+   * Directly enters a value for tests, bypassing the read-only display-mode toggle.
+   */
+  void setValueInternal(String value) {
+    editField.setValue(value == null ? "" : value);
+  }
+
+  /**
+   * Triggers the save path for tests.
+   */
+  void saveForTest() {
+    triggerSave();
+  }
+
+  /**
+   * Blur-to-outside: the user left the field without pressing Save/Cancel. We keep the
+   * changes (least surprise — no silent data loss), fire a {@link SaveEvent} so the parent
+   * persists, and only leave edit mode if the parent did not reject the value by re-entering
+   * edit mode with an error (e.g. validation failure).
+   */
+  private void attemptBlurCommit() {
+    if (!editable || !editing) {
+      return;
+    }
+    if (!commitOnBlurToOutside) {
+      // cancel-on-blur semantics: discard the draft, leave edit mode (like Cancel).
+      revertToDisplay();
+      return;
+    }
+    String newValue = editField.getValue().trim();
+    // If nothing changed, just leave edit mode quietly (no event, no persistence round-trip).
+    if (!hasChanges()) {
+      revertToDisplay();
+      return;
+    }
+    // Fire SaveEvent and optimistically clear the editing chrome. If the parent validation
+    // rejects the value (setError + startEditing), it re-enters edit mode and keeps the ring.
+    revertToDisplay();
+    fireEvent(new SaveEvent(this, true, newValue));
+  }
+
+  /**
+   * Attaches a native {@code focusout} listener on the edit field (runs client-side on the blur
+   * itself, so it is deterministic) and reports whether focus moved outside the component via
+   * {@link #receiveFocusout(boolean)}. {@code setTimeout(..., 0)} ensures focus has settled
+   * before {@code document.activeElement} is checked, so clicking Save/Cancel is never mistaken
+   * for an outside click (the buttons are DOM children of this component).
+   */
+  private void installBlurRpc() {
+    getElement().executeJs(
+        "this.addEventListener(\"focusout\", e => {"
+            + "  setTimeout(() => {"
+            + "    const a = document.activeElement;"
+            + "    const inside = a === this || this.contains(a);"
+            + "    if (this.$server) this.$server.receiveFocusout(!inside);"
+            + "  }, 0);"
+            + "});");
+  }
+
+  /**
+   * Called from the client when the edit field loses focus.
+   *
+   * @param focusOutside {@code true} if the newly focused element is outside this component,
+   *                     {@code false} if focus moved to the field itself or its Save/Cancel
+   */
+  @ClientCallable
+  private void receiveFocusout(boolean focusOutside) {
+    if (focusOutside) {
+      // commit (default) OR revert, per setCommitOnBlurToOutside
+      attemptBlurCommit();
+    }
+    // focus inside → keep editing; nothing to do.
   }
 
   private void triggerCancel() {

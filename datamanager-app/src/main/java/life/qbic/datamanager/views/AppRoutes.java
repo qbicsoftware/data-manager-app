@@ -146,5 +146,10 @@ public class AppRoutes {
      * Path to the page to create a new ad-hoc group.
      */
     public static final String NEW_GROUP = "settings/groups/new";
+
+    /**
+     * Path to the page showing one group's details and management surface.
+     */
+    public static final String GROUP_DETAIL = "settings/groups/:groupId";
   }
 }

@@ -3,10 +3,14 @@ package life.qbic.datamanager.views.settings;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.router.RouteConfiguration;
+import com.vaadin.flow.router.RouteParam;
+import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.shared.Registration;
 import java.io.Serial;
 import java.io.Serializable;
@@ -37,9 +41,10 @@ import life.qbic.usergroups.api.MyGroupMembership;
  * <p>
  * The which-actions-to-show decision is delegated to an injectable
  * {@link ManagementActionPolicy} so the component stays UI-state-free and unit-testable without a
- * Spring or Vaadin {@code UI} context. Management actions are surfaced as typed
- * {@link ManagementActionRequest} events that the owning view handles (dialogs + service calls
- * happen there), mirroring the existing {@link LeaveGroupEvent} pattern.
+ * Spring or Vaadin {@code UI} context. When the policy grants management actions, the row offers a
+ * "Manage group" navigation button that opens the dedicated group detail page
+ * ({@link GroupDetailMain}, route {@code settings/groups/:groupId}) where the non-destructive
+ * management happens <em>in place</em> instead of in modal dialogs.
  *
  * @since 1.19.0
  */
@@ -141,13 +146,15 @@ public class MyGroupsComponent extends Div implements Serializable {
       return;
     }
     List<ManagementAction> actionsForRole = managementActionPolicy.actionsFor(membership);
-    for (ManagementAction managementAction : actionsForRole) {
-      Button actionButton = new Button(managementAction.label);
-      actionButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
-      actionButton.addClassName("my-groups-action--manage");
-      actionButton.addClickListener(event ->
-          fireEvent(new ManagementActionRequest(this, true, membership.groupId(), managementAction)));
-      actions.add(actionButton);
+    if (!actionsForRole.isEmpty()) {
+      // Non-destructive management (members, appoint, rename) now opens the group detail page
+      // (settings/groups/:groupId) instead of a modal dialog; the row carries a navigation
+      // button that jumps to the detail surface of this group.
+      Button openDetail = new Button("Manage group");
+      openDetail.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+      openDetail.addClickListener(click -> navigateToDetail(membership));
+      actions.add(openDetail);
+      return;
     }
 
     switch (membership.myRole()) {
@@ -156,6 +163,12 @@ public class MyGroupsComponent extends Div implements Serializable {
       }
       case MANAGER, MEMBER -> addLeaveButton(actions, membership.groupId());
     }
+  }
+
+  private void navigateToDetail(MyGroupMembership membership) {
+    RouteParameters parameters = new RouteParameters(
+        new RouteParam(GroupDetailMain.GROUP_ID_ROUTE_PARAMETER, membership.groupId()));
+    UI.getCurrent().navigate(GroupDetailMain.class, parameters);
   }
 
   private void addLeaveButton(Div actions, String groupId) {
@@ -201,44 +214,6 @@ public class MyGroupsComponent extends Div implements Serializable {
    */
   public Registration addLeaveGroupListener(ComponentEventListener<LeaveGroupEvent> listener) {
     return addListener(LeaveGroupEvent.class, listener);
-  }
-
-  /**
-   * Fired when the caller clicks a management action on a row. The owning view decides how to
-   * handle it (open the corresponding dialog, invoke the service, refresh).
-   */
-  public static class ManagementActionRequest extends ComponentEvent<MyGroupsComponent> {
-
-    @Serial
-    private static final long serialVersionUID = -6310975212370339701L;
-
-    private final String groupId;
-    private final ManagementAction action;
-
-    public ManagementActionRequest(MyGroupsComponent source, boolean fromClient, String groupId,
-        ManagementAction action) {
-      super(source, fromClient);
-      this.groupId = groupId;
-      this.action = action;
-    }
-
-    public String groupId() {
-      return groupId;
-    }
-
-    public ManagementAction action() {
-      return action;
-    }
-  }
-
-  /**
-   * Registers a listener for {@link ManagementActionRequest}s.
-   *
-   * @return the registration, usable for removing the listener later
-   */
-  public Registration addManagementActionListener(
-      ComponentEventListener<ManagementActionRequest> listener) {
-    return addListener(ManagementActionRequest.class, listener);
   }
 
   /**
