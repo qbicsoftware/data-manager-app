@@ -99,8 +99,8 @@ public final class EditSampleBatchDialog {
     Supplier<Integer> allSamplesCount = () ->
         service.countSamples(projectId, experimentId).blockOptional().orElse(0);
     SampleTemplateComponent template = new SampleTemplateComponent(
-        "Please download the metadata template, adapt the sample properties and upload the metadata sheet below to edit the samples.",
-        "Download all samples",
+        "Export the sample metadata you want to edit. You can modify the properties in the sheet and upload it below to save the changes.",
+        "Export all samples",
         allSamplesTemplate,
         messageFactory,
         () -> projectCode,
@@ -109,7 +109,7 @@ public final class EditSampleBatchDialog {
       // the selected set is already resolved (dialog-open time); just wrap it in a deferred
       // mono so the service call happens on click
       template.addTemplateExport(
-          "Download selected (%d)".formatted(sampleIds.size()),
+          "Export selected (%d)".formatted(sampleIds.size()),
           Mono.defer(() -> service.sampleUpdateTemplate(projectId, experimentId, sampleIds,
               OPEN_XML).doOnError(throwable -> handleError(throwable, messageFactory))),
           sampleIds::size);
