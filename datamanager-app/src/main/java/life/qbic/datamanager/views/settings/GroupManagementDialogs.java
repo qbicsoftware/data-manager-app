@@ -354,10 +354,9 @@ public final class GroupManagementDialogs {
         MemberSearch memberSearch, ManagementHandler handler,
         Supplier<List<GroupMember>> reloadMembers) {
       this.groupId = requireNonNull(groupId, "groupId must not be null");
+      // The passed-in roster is the current snapshot; copy it so we never mutate the caller's
+      // (possibly immutable) list. reloadMembers is only used to refresh after a mutation.
       this.members = new ArrayList<>(requireNonNull(members, "members must not be null"));
-      if (reloadMembers != null) {
-        this.members.addAll(reloadMembers.get());
-      }
       this.actingUserRole = Objects.requireNonNull(actingUserRole,
           "actingUserRole must not be null");
       this.memberNameResolver = memberNameResolver;

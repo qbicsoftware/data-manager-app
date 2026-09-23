@@ -117,8 +117,26 @@ class ManageMembersBodySpec extends Specification {
 
     then: "the removal request is handled and the roster reloads"
     requests == [[GroupManagementDialogs.ManageAction.REMOVE_MEMBER, "bob"]]
-    // one reload at construction (hydration) + one after the mutation
-    reloadCounter == 2
+    // the constructor does NOT re-fetch (only the passed snapshot is used),
+    // so the reload supplier is invoked exactly once: after the mutation
+    reloadCounter == 1
+  }
+
+  def "the roster is not duplicated when the passed list already contains the members"() {
+    given: "a roster as returned by the service"
+    List<GroupMember> members =
+        [new GroupMember("alice", GroupRole.OWNER),
+         new GroupMember("bob", GroupRole.MEMBER)].stream().toList()
+
+    when: "the body is constructed with that roster"
+    def body = new GroupManagementDialogs.ManageMembersBody(
+        "group-1", members, GroupRole.OWNER,
+        { userId -> userId }, { filter, offset, limit -> [] }, { req -> }, null)
+    def roster = firstWithClass(body, "manage-members-roster")
+    def rows = childrenOfClass(roster, "manage-members-row")
+
+    then: "exactly one row per member is rendered (no duplicates)"
+    rows.size() == 2
   }
 
   private static Component firstWithClass(Component root, String className) {
