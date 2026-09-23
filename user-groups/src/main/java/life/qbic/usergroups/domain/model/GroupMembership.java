@@ -5,10 +5,6 @@ import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.MapsId;
 import jakarta.persistence.Table;
 import java.io.Serial;
 import java.io.Serializable;
@@ -36,16 +32,6 @@ public class GroupMembership implements Serializable {
 
   @EmbeddedId
   private GroupMembershipId id;
-
-  /**
-   * Owning side of the aggregate's memberships collection. The {@code group_id} column is shared
-   * between this association and the {@code GroupMembershipId#groupId} primary-key attribute
-   * (@MapsId). Insert/update of {@code group_id} is handled via the embedded id.
-   */
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "group_id", insertable = false, updatable = false)
-  @MapsId("groupId")
-  private UserGroup group;
 
   @Enumerated(EnumType.STRING)
   @Column(name = "role")
@@ -79,15 +65,9 @@ public class GroupMembership implements Serializable {
     return new GroupMembership(new GroupMembershipId(groupId.get(), userId), role, joinedAt);
   }
 
-  /**
-   * Attaches this membership to its owning group (package-private; invoked by
-   * {@link UserGroup} to keep the bidirectional association consistent).
-   *
-   * @param group the owning group
-   * @since 1.19.0
-   */
-  void attachTo(UserGroup group) {
-    this.group = group;
+  void attachTo() {
+    // no-op: membership's composite key carries the group id; no back-reference to the aggregate
+    // is needed (the collection is owned by UserGroup via a unidirectional @OneToMany).
   }
 
   /**
@@ -96,7 +76,7 @@ public class GroupMembership implements Serializable {
    * @since 1.19.0
    */
   void detach() {
-    this.group = null;
+    // no-op: see {@link #attachTo()}.
   }
 
   public GroupMembershipId id() {
