@@ -23,9 +23,11 @@ import life.qbic.identity.application.user.policy.directive.WhenUserRegisteredSu
 import life.qbic.identity.domain.repository.UserDataStorage;
 import life.qbic.identity.domain.repository.UserRepository;
 import life.qbic.usergroups.api.GroupInformationService;
+import life.qbic.usergroups.api.GroupManagementService;
 import life.qbic.usergroups.api.GroupSidProvider;
 import life.qbic.usergroups.application.GroupService;
 import life.qbic.usergroups.application.service.GroupInformationServiceImpl;
+import life.qbic.usergroups.application.service.GroupManagementServiceImpl;
 import life.qbic.usergroups.application.service.GroupSidProviderImpl;
 import life.qbic.usergroups.domain.repository.GroupDataStorage;
 import life.qbic.usergroups.domain.repository.GroupRepository;
@@ -216,6 +218,11 @@ public class AppConfig {
   @Bean
   public GroupInformationServiceImpl groupInformationService(GroupService groupService) {
     return new GroupInformationServiceImpl(groupService);
+  }
+
+  @Bean
+  public GroupManagementServiceImpl groupManagementService(GroupService groupService) {
+    return new GroupManagementServiceImpl(groupService);
   }
 
   @Bean

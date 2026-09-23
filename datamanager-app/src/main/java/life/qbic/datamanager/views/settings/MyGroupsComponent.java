@@ -7,7 +7,6 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.shared.Tooltip;
 import com.vaadin.flow.shared.Registration;
 import java.io.Serial;
 import java.io.Serializable;
@@ -29,19 +28,18 @@ import life.qbic.usergroups.api.MyGroupMembership;
  * Actions are role-gated:
  * <ul>
  *   <li>User Group MEMBER: an enabled "Leave group" action.</li>
- *   <li>User Group MANAGER: the <em>disabled</em> management stubs (they cannot manage) plus an
+ *   <li>User Group MANAGER: management actions (add/remove members, rename/describe) plus an
  *   enabled "Leave group" self-remove action.</li>
- *   <li>User Group OWNER: the <em>disabled</em> management stubs and <b>no</b> self-remove (owner
- *   leave/transfer is handled by a later story, FEAT-USER-GROUPS-05). Disabled buttons do not
- *   fire events in Vaadin, so they are wrapped in a {@link Span} carrying the {@link Tooltip}.</li>
+ *   <li>User Group OWNER: management actions including appoint-manager and dissolve, no self-remove
+ *   (owner-leave/transfer is handled by FEAT-USER-GROUPS-05).</li>
  *   <li>Org groups: no action buttons, membership-only rendering (structural AC 5).</li>
  * </ul>
  * <p>
- * The component is intentionally free of UI-specific state and services: memberships are provided
- * through a {@link Supplier}, re-rendering through a {@link Runnable} refresh callback, leaving a
- * group through a {@link Consumer} seam and the confirmation UI through a {@link LeaveConfirmation}
- * seam. This keeps it unit-testable without a Spring or Vaadin {@code UI} context, mirroring the
- * {@code PinnedProjectsComponent} pattern.
+ * The which-actions-to-show decision is delegated to an injectable
+ * {@link ManagementActionPolicy} so the component stays UI-state-free and unit-testable without a
+ * Spring or Vaadin {@code UI} context. Management actions are surfaced as typed
+ * {@link ManagementActionRequest} events that the owning view handles (dialogs + service calls
+ * happen there), mirroring the existing {@link LeaveGroupEvent} pattern.
  *
  * @since 1.19.0
  */
@@ -50,31 +48,31 @@ public class MyGroupsComponent extends Div implements Serializable {
   @Serial
   private static final long serialVersionUID = 7426951543168024956L;
 
-  private static final String DISABLED_MANAGEMENT_TOOLTIP =
-      "Available in an upcoming update — FEAT-USER-GROUPS-04";
-
   private final Supplier<List<MyGroupMembership>> membershipsSupplier;
   private final Runnable refreshCallback;
   private final Consumer<String> leaveGroupCallback;
   private final LeaveConfirmation leaveConfirmation;
+  private final ManagementActionPolicy managementActionPolicy;
   private final Div groupList = new Div();
   private final Span emptyState = new Span("No groups yet.");
 
   /**
    * Creates a new my-groups list component.
    *
-   * @param membershipsSupplier supplies the caller's current memberships; must not be
-   *                            {@code null}
-   * @param refreshCallback     re-runs the membership query and re-renders this component; must
-   *                            not be {@code null}
-   * @param leaveGroupCallback  invoked with the group id when the caller confirms leaving a
-   *                            group; must not be {@code null}
-   * @param leaveConfirmation   asks the user to confirm leaving a group and runs the provided
-   *                            action when confirmed; must not be {@code null}
+   * @param membershipsSupplier    supplies the caller's current memberships; must not be
+   *                               {@code null}
+   * @param refreshCallback        re-runs the membership query and re-renders this component; must
+   *                               not be {@code null}
+   * @param leaveGroupCallback     invoked with the group id when the caller confirms leaving a
+   *                               group; must not be {@code null}
+   * @param leaveConfirmation      asks the user to confirm leaving a group and runs the provided
+   *                               action when confirmed; must not be {@code null}
+   * @param managementActionPolicy decides which management actions a row offers based on the group
+   *                               type and the caller's role; must not be {@code null}
    */
   public MyGroupsComponent(Supplier<List<MyGroupMembership>> membershipsSupplier,
       Runnable refreshCallback, Consumer<String> leaveGroupCallback,
-      LeaveConfirmation leaveConfirmation) {
+      LeaveConfirmation leaveConfirmation, ManagementActionPolicy managementActionPolicy) {
     this.membershipsSupplier = Objects.requireNonNull(membershipsSupplier,
         "membershipsSupplier must not be null");
     this.refreshCallback = Objects.requireNonNull(refreshCallback,
@@ -83,6 +81,8 @@ public class MyGroupsComponent extends Div implements Serializable {
         "leaveGroupCallback must not be null");
     this.leaveConfirmation = Objects.requireNonNull(leaveConfirmation,
         "leaveConfirmation must not be null");
+    this.managementActionPolicy = Objects.requireNonNull(managementActionPolicy,
+        "managementActionPolicy must not be null");
     addClassName("my-groups-component");
     groupList.addClassName("my-groups-list");
     emptyState.addClassName("my-groups-empty-state");
@@ -140,27 +140,21 @@ public class MyGroupsComponent extends Div implements Serializable {
       // Org groups: membership-only rendering, no management controls (structural AC 5).
       return;
     }
-    switch (membership.myRole()) {
-      case OWNER -> addDisabledManagementStubs(actions);
-      case MANAGER -> {
-        addDisabledManagementStubs(actions);
-        addLeaveButton(actions, membership.groupId());
-      }
-      case MEMBER -> addLeaveButton(actions, membership.groupId());
+    List<ManagementAction> actionsForRole = managementActionPolicy.actionsFor(membership);
+    for (ManagementAction managementAction : actionsForRole) {
+      Button actionButton = new Button(managementAction.label);
+      actionButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+      actionButton.addClassName("my-groups-action--manage");
+      actionButton.addClickListener(event ->
+          fireEvent(new ManagementActionRequest(this, true, membership.groupId(), managementAction)));
+      actions.add(actionButton);
     }
-  }
 
-  private void addDisabledManagementStubs(Div actions) {
-    for (String label : List.of("Manage members", "Appoint manager", "Rename", "Dissolve")) {
-      Button disabledButton = new Button(label);
-      disabledButton.setEnabled(false);
-      disabledButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
-      disabledButton.addClassName("my-groups-action--disabled");
-
-      Span wrapper = new Span(disabledButton);
-      wrapper.addClassName("my-groups-action-wrapper");
-      Tooltip.forComponent(wrapper).setText(DISABLED_MANAGEMENT_TOOLTIP);
-      actions.add(wrapper);
+    switch (membership.myRole()) {
+      case OWNER -> {
+        // no self-remove; owner-leave/transfer is handled by a later story
+      }
+      case MANAGER, MEMBER -> addLeaveButton(actions, membership.groupId());
     }
   }
 
@@ -210,6 +204,44 @@ public class MyGroupsComponent extends Div implements Serializable {
   }
 
   /**
+   * Fired when the caller clicks a management action on a row. The owning view decides how to
+   * handle it (open the corresponding dialog, invoke the service, refresh).
+   */
+  public static class ManagementActionRequest extends ComponentEvent<MyGroupsComponent> {
+
+    @Serial
+    private static final long serialVersionUID = -6310975212370339701L;
+
+    private final String groupId;
+    private final ManagementAction action;
+
+    public ManagementActionRequest(MyGroupsComponent source, boolean fromClient, String groupId,
+        ManagementAction action) {
+      super(source, fromClient);
+      this.groupId = groupId;
+      this.action = action;
+    }
+
+    public String groupId() {
+      return groupId;
+    }
+
+    public ManagementAction action() {
+      return action;
+    }
+  }
+
+  /**
+   * Registers a listener for {@link ManagementActionRequest}s.
+   *
+   * @return the registration, usable for removing the listener later
+   */
+  public Registration addManagementActionListener(
+      ComponentEventListener<ManagementActionRequest> listener) {
+    return addListener(ManagementActionRequest.class, listener);
+  }
+
+  /**
    * Asks the user to confirm leaving a group.
    * <p>
    * Implementations show the confirmation UI (e.g. an {@code AlertDialog}) and invoke the
@@ -226,6 +258,56 @@ public class MyGroupsComponent extends Div implements Serializable {
      * @param onConfirm the action to run when the user confirms the leave
      */
     void confirm(String groupId, Runnable onConfirm);
+  }
+
+  /**
+   * A management action a membership row may offer.
+   */
+  public enum ManagementAction {
+    MANAGE_MEMBERS("Manage members"),
+    APPOINT_MANAGER("Appoint manager"),
+    RENAME("Rename"),
+    DISSOLVE("Dissolve");
+
+    private final String label;
+
+    ManagementAction(String label) {
+      this.label = label;
+    }
+
+    public String label() {
+      return label;
+    }
+  }
+
+  /**
+   * Decides which {@link ManagementAction}s a membership row offers, given the group type and the
+   * caller's role. The default policy encodes the FEAT-USER-GROUPS-04 role gates:
+   * <ul>
+   *   <li>OWNER of an ad-hoc group: manage members, appoint manager, rename, dissolve</li>
+   *   <li>MANAGER of an ad-hoc group: manage members, rename</li>
+   *   <li>all other rows (MEMBER/ORG): no management actions</li>
+   * </ul>
+   */
+  @FunctionalInterface
+  public interface ManagementActionPolicy {
+
+    List<ManagementAction> actionsFor(MyGroupMembership membership);
+
+    static ManagementActionPolicy defaultPolicy() {
+      return membership -> {
+        if (membership.groupType() != GroupType.ADHOC) {
+          return List.of();
+        }
+        return switch (membership.myRole()) {
+          case OWNER -> List.of(ManagementAction.MANAGE_MEMBERS,
+              ManagementAction.APPOINT_MANAGER, ManagementAction.RENAME,
+              ManagementAction.DISSOLVE);
+          case MANAGER -> List.of(ManagementAction.MANAGE_MEMBERS, ManagementAction.RENAME);
+          case MEMBER -> List.of();
+        };
+      };
+    }
   }
 
   private static Span buildTypeBadge(GroupType type) {

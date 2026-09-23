@@ -33,7 +33,8 @@ class MyGroupsComponentSpec extends Specification {
     MyGroupsComponent.LeaveConfirmation confirmSeam =
         { String groupId, Runnable onConfirm -> confirmations << [groupId, "asked"]; onConfirm.run() }
             as MyGroupsComponent.LeaveConfirmation
-    component = new MyGroupsComponent(supplier, refreshSpy, leaveSeam, confirmSeam)
+    component = new MyGroupsComponent(supplier, refreshSpy, leaveSeam, confirmSeam,
+        MyGroupsComponent.ManagementActionPolicy.defaultPolicy())
   }
 
   def "renders each membership with name, description, type badge and role badge"() {
@@ -113,7 +114,7 @@ class MyGroupsComponentSpec extends Specification {
     fired[0]
   }
 
-  def "renders disabled management stubs without a self-remove action for an ad-hoc owner"() {
+  def "renders enabled management actions without a self-remove action for an ad-hoc owner"() {
     given: "an ad-hoc owner"
     memberships = [membership("group-1", "Bioinformatics Lab", "lab", GroupType.ADHOC,
         GroupRole.OWNER)]
@@ -121,40 +122,59 @@ class MyGroupsComponentSpec extends Specification {
     when:
     component.refresh()
 
-    then: "disabled management stubs exist and no leave action does"
+    then: "the management actions exist, are enabled, and no leave action does"
     List<Button> buttons = buttonsOf(renderedRows()[0])
-    buttons.every { !it.enabled }
+    buttons.every { it.enabled }
     buttons*.text.containsAll(["Manage members", "Appoint manager", "Rename", "Dissolve"])
     buttons.findAll { it.text == "Leave group" }.isEmpty()
   }
 
-  def "renders disabled management stubs plus an enabled leave action for an ad-hoc manager"() {
+  def "renders enabled management actions plus an enabled leave action for an ad-hoc manager"() {
     given: "an ad-hoc manager"
     memberships = [membership("group-1", "Sprint Team", null, GroupType.ADHOC, GroupRole.MANAGER)]
 
     when:
     component.refresh()
 
-    then: "the manager sees the disabled management stubs and an enabled Leave group self-remove"
+    then: "the manager sees enable management actions and an enabled Leave group self-remove"
     List<Button> buttons = buttonsOf(renderedRows()[0])
-    buttons.findAll { !it.enabled }*.text.containsAll(["Manage members", "Appoint manager", "Rename", "Dissolve"])
-    buttons.findAll { it.text == "Leave group" }.size() == 1
+    buttons.findAll { it.enabled }*.text.containsAll(["Manage members", "Rename"])
+    buttons.findAll { it.text == "Appoint manager" }.isEmpty()
+    buttons.findAll { it.text == "Dissolve" }.isEmpty()
     Button leave = buttons.find { it.text == "Leave group" }
     leave.enabled
   }
 
-  def "wraps the disabled management stubs in tooltip carriers with the upcoming-update tooltip"() {
-    given: "an ad-hoc manager"
-    memberships = [membership("group-1", "Sprint Team", null, GroupType.ADHOC, GroupRole.MANAGER)]
+  def "fires a management action request when the owner clicks manage members"() {
+    given: "an ad-hoc owner"
+    memberships = [membership("group-1", "Bioinformatics Lab", "lab", GroupType.ADHOC,
+        GroupRole.OWNER)]
+    component.refresh()
+    List<String[]> requests = []
+    component.addManagementActionListener(event ->
+        requests << [event.groupId(), event.action().name()])
+
+    when: "the user clicks Manage members"
+    List<Button> buttons = buttonsOf(renderedRows()[0])
+    buttons.find { it.text == "Manage members" }.click()
+
+    then: "a management action request with the group id fires"
+    requests.size() == 1
+    requests[0][0] == "group-1"
+    requests[0][1] == "MANAGE_MEMBERS"
+  }
+
+  def "a plain ad-hoc member sees no management actions, only self-remove"() {
+    given: "a plain ad-hoc member"
+    memberships = [membership("group-1", "Sprint Team", null, GroupType.ADHOC, GroupRole.MEMBER)]
 
     when:
     component.refresh()
 
-    then: "each disabled stub is wrapped so its tooltip is reachable despite the disabled state"
-    def wrappers = allDescendants(renderedRows()[0])
-        .findAll { it instanceof Span && it.element.classList.contains("my-groups-action-wrapper") }
-    !wrappers.isEmpty()
-    wrappers.size() == 4
+    then:
+    List<Button> buttons = buttonsOf(renderedRows()[0])
+    buttons.findAll { it.text in ["Manage members", "Appoint manager", "Rename", "Dissolve"] }.isEmpty()
+    buttons.findAll { it.text == "Leave group" }.size() == 1
   }
 
   def "renders no action buttons for an org group membership (membership-only, structural AC 5)"() {
@@ -187,7 +207,8 @@ class MyGroupsComponentSpec extends Specification {
 
   def "rejects null seams at construction time"() {
     when: "a null supplier is provided"
-    new MyGroupsComponent(null, () -> {}, { }, { g, r -> })
+    new MyGroupsComponent(null, () -> {}, { }, { g, r -> },
+        MyGroupsComponent.ManagementActionPolicy.defaultPolicy())
 
     then:
     thrown(NullPointerException)

@@ -79,6 +79,17 @@ public class GroupMembership implements Serializable {
     // no-op: see {@link #attachTo()}.
   }
 
+  /**
+   * Updates the role of this membership (package-private; the aggregate funnels role changes
+   * through its role-gated management operations).
+   *
+   * @param newRole the new role inside the group
+   * @since 1.20.0
+   */
+  void setRole(GroupRole newRole) {
+    this.role = Objects.requireNonNull(newRole, "newRole must not be null");
+  }
+
   public GroupMembershipId id() {
     return id;
   }
