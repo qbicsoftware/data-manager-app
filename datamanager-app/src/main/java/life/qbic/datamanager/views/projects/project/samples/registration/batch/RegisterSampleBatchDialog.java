@@ -54,6 +54,7 @@ public final class RegisterSampleBatchDialog {
     Objects.requireNonNull(onConfirm);
 
     var dialog = AppDialog.large();
+    dialog.addClassName("register-samples-dialog");
     DialogHeader.with(dialog, "Register Samples");
     DialogFooter.with(dialog, "Cancel", "Register");
 

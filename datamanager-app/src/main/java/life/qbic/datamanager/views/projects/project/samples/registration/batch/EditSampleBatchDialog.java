@@ -64,6 +64,7 @@ public final class EditSampleBatchDialog {
     Objects.requireNonNull(onConfirm);
 
     var dialog = AppDialog.large();
+    dialog.addClassName("edit-samples-dialog");
     DialogHeader.with(dialog, "Edit Samples");
     DialogFooter.with(dialog, "Cancel", "Edit Samples");
 
