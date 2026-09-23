@@ -1,0 +1,211 @@
+/* -- My Groups view + New Group creation page (FEAT-USER-GROUPS-10) -- */
+
+/* Row list container */
+.my-groups-component {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.my-groups-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* One membership row */
+.my-groups-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--lumo-space-m);
+  flex-wrap: wrap;
+  box-sizing: border-box;
+  padding: var(--lumo-space-m);
+  background-color: var(--lumo-base-color);
+  border: 1px solid var(--lumo-contrast-20pct);
+  border-radius: var(--lumo-border-radius-m);
+}
+
+/* Left column: name (+ description below it) */
+.my-groups-row__identity {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-xs);
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.my-groups-row__name {
+  font-size: var(--lumo-font-size-m);
+  font-weight: var(--lumo-font-weight-semibold, 600);
+  color: var(--lumo-header-text-color);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.my-groups-row__description {
+  font-size: var(--lumo-font-size-s);
+  color: var(--lumo-secondary-text-color);
+  line-height: var(--lumo-line-height-s);
+  margin: 0;
+}
+
+/* Middle column: type + role badges */
+.my-groups-row__badges {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-xs);
+  flex-shrink: 0;
+}
+
+.my-groups-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--lumo-border-radius-m);
+  padding: 0 var(--lumo-space-s);
+  font-size: var(--lumo-font-size-xs);
+  font-weight: var(--lumo-font-weight-semibold, 600);
+  line-height: var(--lumo-line-height-s);
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.my-groups-badge--type-org {
+  background-color: var(--lumo-contrast-10pct);
+  color: var(--lumo-secondary-text-color);
+}
+
+.my-groups-badge--type-adhoc {
+  background-color: var(--lumo-primary-color-10pct);
+  color: var(--lumo-primary-text-color);
+}
+
+.my-groups-badge--role-owner,
+.my-groups-badge--role-manager {
+  background-color: var(--lumo-success-color-10pct);
+  color: var(--lumo-success-text-color);
+}
+
+.my-groups-badge--role-member {
+  background-color: var(--lumo-contrast-10pct);
+  color: var(--lumo-secondary-text-color);
+}
+
+/* Right column: actions */
+.my-groups-row__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-xs);
+  flex-shrink: 0;
+}
+
+/* Disabled management stubs (available in FEAT-USER-GROUPS-04) */
+.my-groups-action--disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Tooltip is attached to the wrapper span (disabled buttons do not fire events) */
+.my-groups-action-wrapper {
+  display: inline-flex;
+}
+
+.my-groups-action--leave {
+  flex-shrink: 0;
+}
+
+/* Empty state */
+.my-groups-empty-state {
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-s);
+  padding: var(--lumo-space-m) 0;
+}
+
+/* -- New Group page (shareable route settings/groups/new) -- */
+
+.new-group {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.new-group-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-l);
+  width: 100%;
+  max-width: 40rem;
+  box-sizing: border-box;
+  padding: var(--lumo-space-l);
+  background-color: var(--lumo-base-color);
+  border: 1px solid var(--lumo-contrast-20pct);
+  border-radius: var(--lumo-border-radius-m);
+}
+
+.new-group-form__fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+  box-sizing: border-box;
+}
+
+.new-group-form__fields vaadin-text-field,
+.new-group-form__fields vaadin-text-area {
+  width: 100%;
+}
+
+.new-group-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--lumo-space-s);
+  box-sizing: border-box;
+}
+
+/* The name field receives autofocus on page load — give it a clear primary focus ring so
+   the user immediately sees which field is active (same technique as the inline-editable
+   fields in settings.css: the `focused` attribute on the host is more reliable than
+   :focus-within across browsers). */
+.new-group-form__fields vaadin-text-field::part(input-field),
+.new-group-form__fields vaadin-text-area::part(input-field) {
+  transition: box-shadow 120ms ease, background-color 120ms ease;
+}
+
+.new-group-form__fields vaadin-text-field[focused]::part(input-field),
+.new-group-form__fields vaadin-text-area[focused]::part(input-field) {
+  background-color: var(--lumo-base-color);
+  box-shadow:
+    inset 0 0 0 2px var(--lumo-primary-color),
+    0 0 0 3px var(--lumo-primary-color-10pct);
+}
+
+/* Live name-availability indicator (FEAT-USER-GROUPS-03): a suffix icon inside the Name field
+   shows whether the entered name is still free (green check) or already taken (red cross).
+   The icon inherits the Lumo primary sizing; only the tint carries the semantic meaning. */
+.new-group-form__availability-icon {
+  --lumo-icon-size: 1.1rem;
+  margin-left: var(--lumo-space-s);
+}
+
+.new-group-form__availability-icon--available {
+  color: var(--lumo-success-color);
+}
+
+.new-group-form__availability-icon--taken {
+  color: var(--lumo-error-color);
+}
+
+/* Colored helper text next to the availability state: green for "available", red for
+   "already taken". Vaadin renders helpers through ::part(helper-text); the field-level
+   class lets us tint it without affecting the description or error slots. */
+.new-group-form__name-field--taken::part(helper-text) {
+  color: var(--lumo-error-text-color);
+}
+
+.new-group-form__name-field:not(.new-group-form__name-field--taken)::part(helper-text) {
+  color: var(--lumo-success-text-color);
+}

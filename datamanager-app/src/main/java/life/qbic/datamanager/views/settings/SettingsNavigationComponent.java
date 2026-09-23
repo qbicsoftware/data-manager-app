@@ -34,6 +34,7 @@ public class SettingsNavigationComponent extends Div {
     addTab("Profile", VaadinIcon.USER, UserProfileMain.class);
     addTab("API Tokens", VaadinIcon.KEY, PersonalAccessTokenMain.class);
     addTab("External Providers", VaadinIcon.DATABASE, ExternalProvidersMain.class);
+    addTab("My Groups", VaadinIcon.USERS, MyGroupsMain.class);
     add(tabs);
   }
 
