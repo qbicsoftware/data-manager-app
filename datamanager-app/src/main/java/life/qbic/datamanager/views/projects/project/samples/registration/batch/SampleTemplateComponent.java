@@ -123,7 +123,7 @@ public class SampleTemplateComponent extends Div {
   }
 
   private void closeToast(Toast toast) {
-    getUI().ifPresent(ui -> ui.access(toast::close));
+    toast.getUI().ifPresent(ui -> ui.access(toast::close));
   }
 
   private void openToast(Toast toast) {
