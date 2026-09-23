@@ -3,6 +3,7 @@ package life.qbic.datamanager.views.projects.project.measurements.pagination
 import com.vaadin.flow.component.grid.Grid
 import com.vaadin.flow.data.selection.MultiSelectionEvent
 import com.vaadin.flow.data.selection.SelectionListener
+import life.qbic.datamanager.views.general.pagination.Selection
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementDetailsComponent
 import life.qbic.projectmanagement.application.measurement.IpMeasurementLookup
 import life.qbic.projectmanagement.application.measurement.NgsMeasurementLookup
@@ -10,7 +11,7 @@ import spock.lang.Specification
 
 /**
  * Pins the end-to-end selection semantics of the paginated measurement lists
- * (ADR-0009, USER-R-02): the identifier-based {@link MeasurementSelection} must
+ * (ADR-0009, USER-R-02): the identifier-based {@link Selection} must
  * survive page renders, tab switches, and the synthetic deselection events that
  * Vaadin fires when a new page is written to a grid.
  *
@@ -19,7 +20,7 @@ import spock.lang.Specification
  * purging every selected measurement that is not on the newly rendered page —
  * the "weird number" in the selection bar after tab switches.</p>
  */
-class MeasurementSelectionIntegrationSpec extends Specification {
+class SelectionIntegrationSpec extends Specification {
 
     /**
      * A {@link MultiSelectionEvent} stand-in that exposes the added/removed sets
@@ -68,10 +69,10 @@ class MeasurementSelectionIntegrationSpec extends Specification {
     static class ListenerBackedSelection {
 
         private final SelectionListener<Grid<Object>, Object> listener
-        final MeasurementSelection selection
+        final Selection selection
 
         ListenerBackedSelection(Grid<Object> grid, MeasurementDomain domain) {
-            this.selection = new MeasurementSelection(null as Runnable)
+            this.selection = new Selection(null as Runnable)
             this.listener = MeasurementDetailsComponent
                 .createSelectionReconciliationListener(grid, selection, domain)
             grid.addSelectionListener(listener)
@@ -102,7 +103,7 @@ class MeasurementSelectionIntegrationSpec extends Specification {
 
     def "selecting one NGS measurement after a tab switch does not wipe the IP selection"() {
         given: "IP selection carries 40 ids, NGS grid is fresh"
-        def ipSelection = new MeasurementSelection(null as Runnable)
+        def ipSelection = new Selection(null as Runnable)
         ipSelection.select((1..40).collect { "IP-MEAS-$it" } as Set<String>)
         def ngsGrid = new Grid<Object>()
         ngsGrid.setSelectionMode(Grid.SelectionMode.MULTI)

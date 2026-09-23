@@ -1,42 +1,42 @@
-package life.qbic.datamanager.views.projects.project.measurements.pagination
+package life.qbic.datamanager.views.general.pagination
 
 import spock.lang.Specification
 
-class MeasurementSelectionSpec extends Specification {
+class SelectionSpec extends Specification {
 
     def "empty selection has no ids and count zero"() {
         given:
-        def selection = new MeasurementSelection(null as Runnable)
+        def selection = new Selection(null as Runnable)
 
         expect:
         selection.count() == 0
         selection.selectedIds().isEmpty()
-        !selection.contains("NGS-ID-1")
+        !selection.contains("ID-1")
     }
 
     def "select adds ids and notifies the change listener"() {
         given:
         def notified = 0
-        def selection = new MeasurementSelection(() -> notified++)
+        def selection = new Selection(() -> notified++)
 
         when:
-        selection.select("NGS-ID-1")
-        selection.select(Set.of("NGS-ID-2", "NGS-ID-3"))
+        selection.select("ID-1")
+        selection.select(Set.of("ID-2", "ID-3"))
 
         then:
         selection.count() == 3
-        selection.contains("NGS-ID-2")
+        selection.contains("ID-2")
         notified == 2
     }
 
     def "selecting an already selected id does not notify again"() {
         given:
         def notified = 0
-        def selection = new MeasurementSelection(() -> notified++)
+        def selection = new Selection(() -> notified++)
 
         when:
-        selection.select("NGS-ID-1")
-        selection.select("NGS-ID-1")
+        selection.select("ID-1")
+        selection.select("ID-1")
 
         then:
         selection.count() == 1
@@ -46,7 +46,7 @@ class MeasurementSelectionSpec extends Specification {
     def "deselect removes ids and notifies"() {
         given:
         def notified = 0
-        def selection = new MeasurementSelection(() -> notified++)
+        def selection = new Selection(() -> notified++)
         selection.select(Set.of("A", "B", "C"))
 
         when:
@@ -62,7 +62,7 @@ class MeasurementSelectionSpec extends Specification {
     def "clear empties the selection and notifies once"() {
         given:
         def notified = 0
-        def selection = new MeasurementSelection(() -> notified++)
+        def selection = new Selection(() -> notified++)
         selection.select(Set.of("A", "B"))
 
         when:
@@ -81,7 +81,7 @@ class MeasurementSelectionSpec extends Specification {
 
     def "selectedIds returns an unmodifiable snapshot"() {
         given:
-        def selection = new MeasurementSelection(null as Runnable)
+        def selection = new Selection(null as Runnable)
         selection.select("A")
 
         when:

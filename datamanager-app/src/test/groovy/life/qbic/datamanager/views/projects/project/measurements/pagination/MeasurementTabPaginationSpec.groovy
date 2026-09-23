@@ -4,6 +4,7 @@ import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.html.Span
 import life.qbic.application.commons.SortOrder
 import life.qbic.datamanager.views.general.pagination.ListState
+import life.qbic.datamanager.views.general.pagination.Selection
 import spock.lang.Specification
 
 /**
@@ -153,7 +154,7 @@ class MeasurementTabPaginationSpec extends Specification {
     def "onPageLoaded stores the rendered page and total for the active tab"() {
         given:
         def container = newContainer()
-        container.setSelection(new MeasurementSelection(null as Runnable))
+        container.setSelection(new Selection(null as Runnable))
 
         when: "the owning view reports the (already clamped) rendered page"
         container.onPageLoaded(MeasurementDomain.NGS, 2, 25L)
