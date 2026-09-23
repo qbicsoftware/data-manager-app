@@ -12,9 +12,7 @@ import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.shared.Registration;
-import java.io.IOException;
 import java.io.InputStream;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -26,16 +24,13 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import life.qbic.application.commons.ApplicationException;
-import life.qbic.application.commons.FileNameFormatter;
 import life.qbic.datamanager.configuration.UploadConfiguration;
-import life.qbic.datamanager.files.export.download.ByteArrayDownloadStreamProvider;
 import life.qbic.datamanager.files.parsing.MetadataParser.ParsingException;
 import life.qbic.datamanager.files.parsing.ParsingResult;
 import life.qbic.datamanager.files.parsing.SampleInformationExtractor;
 import life.qbic.datamanager.files.parsing.SampleInformationExtractor.SampleInformationForExistingSample;
 import life.qbic.datamanager.files.parsing.xlsx.XLSXParser;
 import life.qbic.datamanager.views.general.WizardDialogWindow;
-import life.qbic.datamanager.views.general.download.DownloadComponent;
 import life.qbic.datamanager.views.general.upload.ContentUploadComponent;
 import life.qbic.datamanager.views.general.upload.UploadedFilesChangeListener.FileEntry;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
@@ -53,6 +48,7 @@ import life.qbic.projectmanagement.application.sample.SampleValidationService;
 import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.MimeType;
+import reactor.core.publisher.Mono;
 
 /**
  * A dialog used for editing sample and batch information.
@@ -74,7 +70,6 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
   private final Div failedView;
   private final Div succeededView;
   private final MessageSourceNotificationFactory messageFactory;
-  private final DownloadComponent downloadComponent;
   private final ContentUploadComponent contentUploadComponent;
 
 
@@ -89,7 +84,6 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
 
     this.messageFactory = Objects.requireNonNull(messageFactory);
     this.sampleValidationService = sampleValidationService;
-    this.downloadComponent = new DownloadComponent();
     this.contentUploadComponent = new ContentUploadComponent(uploadConfiguration);
 
     setHeaderTitle("Edit Sample Batch");
@@ -139,7 +133,7 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
     inProgressView.setVisible(false);
     failedView.setVisible(false);
     succeededView.setVisible(false);
-    add(initialView, inProgressView, failedView, succeededView, downloadComponent);
+    add(initialView, inProgressView, failedView, succeededView);
   }
 
   private List<SampleInformationForExistingSample> extractSampleInformationForExistingSamples(
@@ -155,20 +149,27 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
       Set<String> sampleIds,
       String experimentId,
       String projectId, String projectCode) {
-    Button downloadTemplate = new Button("Download metadata template");
-    downloadTemplate.addClassName("download-metadata-button");
-    downloadTemplate.addClickListener(
-        buttonClickEvent -> service.sampleUpdateTemplate(projectId, experimentId,
-            sampleIds, OPEN_XML).doOnSuccess(resource ->
-            triggerDownload(resource,
-                FileNameFormatter.formatWithTimestampedSimple(LocalDate.now(), projectCode,
-                    "sample metadata update template",
-                    "xlsx")
-            )).doOnError(this::handleError).subscribe());
-    Div text = new Div();
-    text.addClassName("download-metadata-text");
-    text.setText(
-        "Please download the metadata template, adapt the sample properties and upload the metadata sheet below to edit the sample batch.");
+    // The "download all" template is lazy: sample IDs are resolved only when the user clicks the
+    // button, so opening the dialog stays instant and the workbook reflects the current state of
+    // the experiment at export time. This is the default export and rescues users whose session
+    // selection was lost.
+    Mono<DigitalObject> allSamplesTemplate = Mono.defer(() ->
+        service.sampleUpdateTemplate(projectId, experimentId, OPEN_XML)
+            .doOnError(this::handleError));
+    SampleTemplateComponent template = new SampleTemplateComponent(
+        "Please download the metadata template, adapt the sample properties and upload the metadata sheet below to edit the sample batch.",
+        "Download all samples",
+        allSamplesTemplate,
+        messageFactory,
+        () -> projectCode);
+    if (!sampleIds.isEmpty()) {
+      // the selected set is already resolved (dialog-open time); just wrap it in a deferred
+      // mono so the service call happens on click
+      template.addTemplateExport(
+          "Download selected (%d)".formatted(sampleIds.size()),
+          Mono.defer(() -> service.sampleUpdateTemplate(projectId, experimentId, sampleIds,
+              OPEN_XML).doOnError(this::handleError)));
+    }
     Div downloadMetadataSection = new Div();
     downloadMetadataSection.addClassName("download-metadata");
     downloadMetadataSection.addClassName("section-with-title");
@@ -177,7 +178,7 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
     sectionTitle.addClassName("download-metadata-section-title");
     Div sectionContent = new Div();
     sectionContent.addClassName("download-metadata-section-content");
-    sectionContent.add(text, downloadTemplate);
+    sectionContent.add(template);
     downloadMetadataSection.add(sectionTitle, sectionContent);
     return downloadMetadataSection;
   }
@@ -197,30 +198,6 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
   private void handleAccessDeniedError() {
     getUI().ifPresent(ui -> ui.access(
         () -> messageFactory.toast("access.denied.message", new Object[]{}, getLocale()).open()));
-  }
-
-  private void triggerDownload(DigitalObject resource, String filename) {
-    getUI().ifPresent(
-        ui -> ui.access(() -> downloadComponent.trigger(new ByteArrayDownloadStreamProvider() {
-          @Override
-          public byte[] getBytes() {
-            try (var content = resource.content()) {
-              return content.readAllBytes();
-            } catch (IOException e) {
-              throw new RuntimeException(e);
-            }
-          }
-
-          @Override
-          public String getFilename() {
-            return filename;
-          }
-
-          @Override
-          public Optional<Long> contentLength() {
-            return Optional.empty();
-          }
-        })));
   }
 
   public Registration addConfirmListener(ComponentEventListener<ConfirmEvent> listener) {

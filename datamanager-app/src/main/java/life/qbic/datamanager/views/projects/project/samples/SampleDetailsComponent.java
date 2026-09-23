@@ -360,7 +360,10 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   private void updateActionButtons() {
     boolean hasSelection = paginatedGrid.selectedIds().size() > 0;
     exportButton.setEnabled(hasSelection);
-    editButton.setEnabled(hasSelection);
+    // editing is scope-agnostic: the edit dialog always offers to download all sample metadata and
+    // additionally the selected samples when a selection exists (mirroring the measurement edit
+    // dialog), so it is always available regardless of the current selection.
+    editButton.setEnabled(true);
     deleteButton.setEnabled(hasSelection);
   }
 
@@ -387,10 +390,8 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   private void onEditClicked() {
     List<SampleId> selectedSampleIds = selectedSampleIds().stream()
         .toList();
-    if (selectedSampleIds.isEmpty()) {
-      messageFactory.toast("sample.no-sample-selected", new Object[]{}, getLocale()).open();
-      return;
-    }
+    // An empty selection is allowed: the edit dialog defaults to downloading all sample metadata
+    // and offers a "download selected" convenience template only when a selection exists.
     fireEvent(new SampleEditRequested(selectedSampleIds, this, true));
   }
 
