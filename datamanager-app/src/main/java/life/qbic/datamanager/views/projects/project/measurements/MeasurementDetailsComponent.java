@@ -12,8 +12,8 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.CheckboxGroup;
 import com.vaadin.flow.component.checkbox.CheckboxGroupVariant;
 import com.vaadin.flow.component.grid.Grid;
-import com.vaadin.flow.component.grid.Grid.MultiSortPriority;
 import com.vaadin.flow.component.grid.Grid.Column;
+import com.vaadin.flow.component.grid.Grid.MultiSortPriority;
 import com.vaadin.flow.component.grid.GridMultiSelectionModel;
 import com.vaadin.flow.component.grid.GridSortOrder;
 import com.vaadin.flow.component.html.Anchor;
@@ -41,7 +41,6 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -58,10 +57,11 @@ import life.qbic.datamanager.views.general.dialog.DialogFooter;
 import life.qbic.datamanager.views.general.dialog.DialogHeader;
 import life.qbic.datamanager.views.general.dialog.DialogSection;
 import life.qbic.datamanager.views.general.pagination.ListState;
+import life.qbic.datamanager.views.general.pagination.PaginatedGrid;
+import life.qbic.datamanager.views.general.pagination.Selection;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.projects.project.measurements.pagination.MeasurementDomain;
 import life.qbic.datamanager.views.projects.project.measurements.pagination.MeasurementListState;
-import life.qbic.datamanager.views.projects.project.measurements.pagination.MeasurementSelection;
 import life.qbic.datamanager.views.projects.project.measurements.pagination.MeasurementSort;
 import life.qbic.datamanager.views.projects.project.measurements.pagination.MeasurementTabPagination;
 import life.qbic.datamanager.views.projects.project.measurements.pagination.MeasurementTabPagination.RefreshRequestedEvent;
@@ -81,7 +81,7 @@ import org.springframework.data.domain.Sort;
  * <p>The three measurement domains (genomics / proteomics / immunopeptidomics) are shown as
  * paginated in-memory grids inside a {@link MeasurementTabPagination}: only the current page is
  * fetched and rendered, a shared pager reports location and total, and a view-owned
- * {@link MeasurementSelection} of measurement IDs survives page, filter, and sort changes.
+ * {@link Selection} of measurement IDs survives page, filter, and sort changes.
  * Bulk actions (export / edit / delete) apply to the full cross-page selection. The "Select all
  * N matching the active filter" action resolves all matching measurement IDs in backend storage
  * (ADR-0008, A1).</p>
@@ -102,8 +102,11 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
 
   private final MeasurementTabPagination tabPagination;
   private final Grid<NgsMeasurementLookup.MeasurementInfo> ngsGrid = createNgsGrid();
+  private final PaginatedGrid<NgsMeasurementLookup.MeasurementInfo> ngsPaginatedGrid;
   private final Grid<MeasurementInfo> pxpGrid = createPxpGrid();
+  private final PaginatedGrid<MeasurementInfo> pxpPaginatedGrid;
   private final Grid<IpMeasurementLookup.MeasurementInfo> ipGrid = createIpGrid();
+  private final PaginatedGrid<IpMeasurementLookup.MeasurementInfo> ipPaginatedGrid;
   private final TextField ngsSearchField = searchField();
   private final TextField pxpSearchField = searchField();
   private final TextField ipSearchField = searchField();
@@ -114,10 +117,9 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   private final Button ipEditButton = new Button("Edit");
   private final Button ipDeleteButton = new Button("Delete");
   private final Map<MeasurementDomain, Button> exportButtons = new EnumMap<>(MeasurementDomain.class);
-  private final Map<MeasurementDomain, Div> emptyStates = new EnumMap<>(MeasurementDomain.class);
-  private final MeasurementSelection ngsSelection = new MeasurementSelection(() -> updateSelectionBar());
-  private final MeasurementSelection pxpSelection = new MeasurementSelection(() -> updateSelectionBar());
-  private final MeasurementSelection ipSelection = new MeasurementSelection(() -> updateSelectionBar());
+  private final Selection ngsSelection = new Selection(() -> updateSelectionBar());
+  private final Selection pxpSelection = new Selection(() -> updateSelectionBar());
+  private final Selection ipSelection = new Selection(() -> updateSelectionBar());
 
   private final transient NgsMeasurementLookup ngsMeasurementLookup;
   private final transient PxpMeasurementLookup pxpMeasurementLookup;
@@ -142,7 +144,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   // fail-closed: mutation actions hidden until the owning view confirms ACL write scope
   private boolean writeAccess = false;
 
-  private void updateActionButtons(MeasurementDomain domain, MeasurementSelection selection,
+  private void updateActionButtons(MeasurementDomain domain, Selection selection,
       Button editButton, Button deleteButton) {
     editButton.setVisible(writeAccess);
     deleteButton.setVisible(writeAccess);
@@ -191,8 +193,34 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     this.pxpMeasurementLookup = requireNonNull(pxpMeasurementLookup);
     this.ipMeasurementLookup = requireNonNull(ipMeasurementLookup);
     addClassNames("measurement-details-component", "width-full");
-
     tabPagination = new MeasurementTabPagination();
+
+    // The three measurement grids are wrapped in the reusable PaginatedGrid (FEAT-PAG-LIST-03).
+    // They are driven externally — their own toolbar and pager are suppressed and the shared
+    // pager/selection bar of the tab container stay authoritative — so each PaginatedGrid only
+    // owns page loading, clamping and the empty state for its tab.
+    ngsPaginatedGrid = new PaginatedGrid<>(ngsGrid, this::loadNgsPage,
+        NgsMeasurementLookup.MeasurementInfo::measurementId, "measurement",
+        MeasurementSort.DEFAULT, false, false, false);
+    ngsPaginatedGrid.addPageLoadedListener(event -> {
+      applySelectionToGrid(ngsGrid, ngsSelection, MeasurementDomain.NGS);
+      tabPagination.onPageLoaded(MeasurementDomain.NGS, event.getPage(), event.getTotal());
+    });
+    pxpPaginatedGrid = new PaginatedGrid<>(pxpGrid, this::loadPxpPage,
+        MeasurementInfo::measurementId, "measurement", MeasurementSort.DEFAULT, false, false,
+        false);
+    pxpPaginatedGrid.addPageLoadedListener(event -> {
+      applySelectionToGrid(pxpGrid, pxpSelection, MeasurementDomain.PXP);
+      tabPagination.onPageLoaded(MeasurementDomain.PXP, event.getPage(), event.getTotal());
+    });
+    ipPaginatedGrid = new PaginatedGrid<>(ipGrid, this::loadIpPage,
+        IpMeasurementLookup.MeasurementInfo::measurementId, "measurement",
+        MeasurementSort.DEFAULT, false, false, false);
+    ipPaginatedGrid.addPageLoadedListener(event -> {
+      applySelectionToGrid(ipGrid, ipSelection, MeasurementDomain.IP);
+      tabPagination.onPageLoaded(MeasurementDomain.IP, event.getPage(), event.getTotal());
+    });
+
     tabPagination.addTab(TAB_LABELS.get(MeasurementDomain.NGS), MeasurementDomain.NGS,
         ngsTabContent());
     tabPagination.addTab(TAB_LABELS.get(MeasurementDomain.PXP), MeasurementDomain.PXP,
@@ -203,7 +231,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     tabPagination.attachSelectionBar();
     tabPagination.setSelection(ngsSelection);
     tabPagination.addRefreshRequestedListener(this::onRefreshRequested);
-    tabPagination.addSelectionClearedListener(event -> reconcileAllGrids());
+    tabPagination.addSelectionClearedListener(event -> applySelectionToAllGrids());
     tabPagination.addSelectAllResultsListener(
         event -> selectAllMatching(event.domain()));
     add(tabPagination);
@@ -224,39 +252,39 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     updateSelectionBar();
 
     // register buttons wiring (fires the same events as the old implementation)
-    ngsEditButton.addClickListener(clicked -> fireEditRequested(MeasurementDomain.NGS,
-        ngsSelection, NgsMeasurementEditRequested::new));
-    ngsDeleteButton.addClickListener(clicked -> fireDeletionRequested(MeasurementDomain.NGS,
-        ngsSelection, NgsMeasurementDeletionRequested::new));
-    pxpEditButton.addClickListener(clicked -> fireEditRequested(MeasurementDomain.PXP,
-        pxpSelection, PxpMeasurementEditRequested::new));
-    pxpDeleteButton.addClickListener(clicked -> fireDeletionRequested(MeasurementDomain.PXP,
-        pxpSelection, PxpMeasurementDeletionRequested::new));
-    ipEditButton.addClickListener(clicked -> fireEditRequested(MeasurementDomain.IP,
-        ipSelection, IpMeasurementEditRequested::new));
-    ipDeleteButton.addClickListener(clicked -> fireDeletionRequested(MeasurementDomain.IP,
-        ipSelection, IpMeasurementDeletionRequested::new));
+    ngsEditButton.addClickListener(
+        clicked -> fireEditRequested(ngsSelection, NgsMeasurementEditRequested::new));
+    ngsDeleteButton.addClickListener(
+        clicked -> fireDeletionRequested(ngsSelection, NgsMeasurementDeletionRequested::new));
+    pxpEditButton.addClickListener(
+        clicked -> fireEditRequested(pxpSelection, PxpMeasurementEditRequested::new));
+    pxpDeleteButton.addClickListener(
+        clicked -> fireDeletionRequested(pxpSelection, PxpMeasurementDeletionRequested::new));
+    ipEditButton.addClickListener(
+        clicked -> fireEditRequested(ipSelection, IpMeasurementEditRequested::new));
+    ipDeleteButton.addClickListener(
+        clicked -> fireDeletionRequested(ipSelection, IpMeasurementDeletionRequested::new));
   }
 
   // ---- tab content ---------------------------------------------------------
 
   private Component ngsTabContent() {
     return tabContent(ngsGrid, ngsSearchField, ngsEditButton, ngsDeleteButton,
-        MeasurementDomain.NGS, this::exportNgs);
+        MeasurementDomain.NGS, this::exportNgs, ngsPaginatedGrid);
   }
 
   private Component pxpTabContent() {
     return tabContent(pxpGrid, pxpSearchField, pxpEditButton, pxpDeleteButton,
-        MeasurementDomain.PXP, this::exportPxp);
+        MeasurementDomain.PXP, this::exportPxp, pxpPaginatedGrid);
   }
 
   private Component ipTabContent() {
     return tabContent(ipGrid, ipSearchField, ipEditButton, ipDeleteButton,
-        MeasurementDomain.IP, this::exportIp);
+        MeasurementDomain.IP, this::exportIp, ipPaginatedGrid);
   }
 
   private <T> Component tabContent(Grid<T> grid, TextField searchField, Button editButton,
-      Button deleteButton, MeasurementDomain domain, Runnable exporter) {
+      Button deleteButton, MeasurementDomain domain, Runnable exporter, Component body) {
     Div toolbar = new Div();
     toolbar.addClassName("measurement-tab-toolbar");
     searchField.addClassName("measurement-search");
@@ -281,15 +309,11 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     toolbarRight.add(showHideColumnsMenu(grid));
     toolbar.add(toolbarRight);
 
-    // UX F8: explicit empty-state message instead of a blank grid region
-    Div emptyState = new Div();
-    emptyState.addClassName("measurement-empty-state");
-    emptyState.setVisible(false);
-    emptyStates.put(domain, emptyState);
-
     Div content = new Div();
     content.addClassName("measurement-tab-content");
-    content.add(toolbar, emptyState, grid);
+    // UX F8: the reusable PaginatedGrid owns the explicit empty-state message, so the content is
+    // just the toolbar plus the (PaginatedGrid-wrapped) grid.
+    content.add(toolbar, body);
     return content;
   }
 
@@ -382,7 +406,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         .orElse(null);
   }
 
-  private void configureSelectionReconciliation(Grid<?> grid, MeasurementSelection selection,
+  private void configureSelectionReconciliation(Grid<?> grid, Selection selection,
       MeasurementDomain domain) {
     grid.setSelectionMode(Grid.SelectionMode.MULTI);
     // Freeze the selection (checkbox) column so the user always sees the selection state when
@@ -398,17 +422,17 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
 
   /**
    * Builds the selection listener that translates grid row selection changes into the
-   * identifier-based {@link MeasurementSelection}.
+   * identifier-based {@link Selection}.
    *
    * <p>Only client-side changes are translated (USER-R-02, ADR-0009): the selection is a
    * cross-page, cross-tab view-owned set, and server-side selection events are fired by
    * Vaadin itself whenever a new page is written to the grid via {@code setItems} (the data
    * provider change deselects every row). Translating those synthetic events would purge
    * every selected measurement that is not on the newly rendered page — the rows are
-   * reconciled with the identifier set afterwards by {@link #reconcileSelection} instead.</p>
+   * reconciled with the identifier set afterwards by {@link #applySelectionToGrid} instead.</p>
    */
   static SelectionListener<Grid<Object>, Object> createSelectionReconciliationListener(
-      Grid<Object> grid, MeasurementSelection selection, MeasurementDomain domain) {
+      Grid<Object> grid, Selection selection, MeasurementDomain domain) {
     return event -> {
       if (!event.isFromClient()) {
         return;
@@ -476,96 +500,103 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
 
   private void loadAndRender(MeasurementDomain domain, ListState state,
       boolean scrollGridTopIntoView) {
-    String experimentId = context.experimentId().orElseThrow().value();
-    String projectId = context.projectId().orElseThrow().value();
-    Sort sort = MeasurementSort.toSpringDataSort(state.sort(), domain);
-    int offset = (state.page() - 1) * state.pageSize();
-    int limit = state.pageSize();
-    String searchTerm = state.filter();
     switch (domain) {
       case NGS -> {
-        NgsMeasurementLookup.MeasurementFilter filter =
-            NgsMeasurementLookup.MeasurementFilter.forExperiment(experimentId)
-                .withSearch(searchTerm, clientTimeZoneOffset.get(),
-                    MEASUREMENT_REGISTRATION_DATE_TIME_FORMAT);
-        int total = ngsMeasurementLookup.countNgsMeasurements(projectId, filter);
-        List<NgsMeasurementLookup.MeasurementInfo> page = ngsMeasurementLookup
-            .lookupNgsMeasurements(projectId, offset, limit, sort, filter).toList();
-        renderPage(ngsGrid, page, total, state, MeasurementDomain.NGS, scrollGridTopIntoView);
+        // Each grid is driven through its reusable PaginatedGrid, which owns page loading,
+        // clamping and the empty state; the PageLoadedEvent listener then reports the rendered
+        // page back to the shared pager and reconciles the per-domain selection.
+        ngsPaginatedGrid.setListState(state);
+        // UX F3: only for pager-driven page/page-size changes (the pager sits below the grid, so
+        // after paging the viewport is left at the bottom) bring the grid's top back into view.
+        if (scrollGridTopIntoView) {
+          ngsGrid.getElement().executeJs(
+              "requestAnimationFrame(() => this.scrollIntoView({block: 'start'}))");
+        }
       }
       case PXP -> {
-        PxpMeasurementLookup.MeasurementFilter filter =
-            PxpMeasurementLookup.MeasurementFilter.forExperiment(experimentId)
-                .withSearch(searchTerm, clientTimeZoneOffset.get(),
-                    MEASUREMENT_REGISTRATION_DATE_TIME_FORMAT);
-        int total = pxpMeasurementLookup.countPxpMeasurements(projectId, filter);
-        List<MeasurementInfo> page = pxpMeasurementLookup
-            .lookupPxpMeasurements(projectId, offset, limit, sort, filter).toList();
-        renderPage(pxpGrid, page, total, state, MeasurementDomain.PXP, scrollGridTopIntoView);
+        pxpPaginatedGrid.setListState(state);
+        if (scrollGridTopIntoView) {
+          pxpGrid.getElement().executeJs(
+              "requestAnimationFrame(() => this.scrollIntoView({block: 'start'}))");
+        }
       }
       case IP -> {
-        IpMeasurementLookup.MeasurementFilter filter =
-            IpMeasurementLookup.MeasurementFilter.forExperiment(experimentId)
-                .withSearch(searchTerm, clientTimeZoneOffset.get(),
-                    MEASUREMENT_REGISTRATION_DATE_TIME_FORMAT);
-        int total = ipMeasurementLookup.countIpMeasurements(projectId, filter);
-        List<IpMeasurementLookup.MeasurementInfo> page = ipMeasurementLookup
-            .lookupIpMeasurements(projectId, offset, limit, sort, filter).toList();
-        renderPage(ipGrid, page, total, state, MeasurementDomain.IP, scrollGridTopIntoView);
+        ipPaginatedGrid.setListState(state);
+        if (scrollGridTopIntoView) {
+          ipGrid.getElement().executeJs(
+              "requestAnimationFrame(() => this.scrollIntoView({block: 'start'}))");
+        }
       }
     }
   }
 
-  private <T> void renderPage(Grid<T> grid, List<T> page, int total, ListState state,
-      MeasurementDomain domain, boolean scrollGridTopIntoView) {
-    int totalPages = Math.max(1, (int) Math.ceil((double) total / state.pageSize()));
-    int pageToRender = Math.min(state.page(), totalPages);
-    if (pageToRender != state.page()) {
-      // the requested page lies beyond the last valid page (filter/deletion shrank the result
-      // set); re-fetch the clamped page once
-      refreshClamped(domain, pageToRender, scrollGridTopIntoView);
-      return;
-    }
-    grid.setItems(page);
-    // With explicit pagination the grid shows exactly the current page; render all its rows at
-    // their natural height (no internal scroll container) so the whole configured page size is
-    // visible and the native page scroll handles overflow.
-    grid.setAllRowsVisible(true);
-    // UX F3: only for pager-driven page/page-size changes (the pager sits below the grid, so
-    // after paging the viewport is left at the bottom) bring the grid's top back into view.
-    // Search/sort/tab actions are triggered at the top and must not yank the viewport.
-    if (scrollGridTopIntoView) {
-      grid.getElement().executeJs(
-          "requestAnimationFrame(() => this.scrollIntoView({block: 'start'}))");
-    }
-    // UX F8: render an explicit empty state distinguishing "nothing registered" from
-    // "filter matched nothing" instead of leaving a blank grid region.
-    Div emptyState = emptyStates.get(domain);
-    boolean noResults = total == 0;
-    emptyState.setVisible(noResults);
-    grid.setVisible(!noResults);
-    if (noResults) {
-      String filter = state.filter();
-      boolean hasFilter = filter != null && !filter.isBlank();
-      emptyState.setText(hasFilter
-          ? "No measurements match '" + filter + "'. Clear the search to see all measurements."
-          : "No measurements registered yet.");
-    }
-    reconcileSelection(grid, selectionFor(domain), domain);
-    tabPagination.onPageLoaded(domain, pageToRender, total);
+  /**
+   * Loads a single NGS page for the reusable {@link PaginatedGrid} (the {@code PageLoader} of the
+   * NGS grid). Performs the same backend lookup as the legacy manual path and returns the page
+   * items together with the total count of measurements matching the active filter.
+   */
+  private PaginatedGrid.Page<NgsMeasurementLookup.MeasurementInfo> loadNgsPage(ListState state) {
+    String experimentId = context.experimentId().orElseThrow().value();
+    String projectId = context.projectId().orElseThrow().value();
+    Sort sort = MeasurementSort.toSpringDataSort(state.sort(), MeasurementDomain.NGS);
+    int offset = (state.page() - 1) * state.pageSize();
+    int limit = state.pageSize();
+    NgsMeasurementLookup.MeasurementFilter filter =
+        NgsMeasurementLookup.MeasurementFilter.forExperiment(experimentId)
+            .withSearch(state.filter(), clientTimeZoneOffset.get(),
+                MEASUREMENT_REGISTRATION_DATE_TIME_FORMAT);
+    int total = ngsMeasurementLookup.countNgsMeasurements(projectId, filter);
+    List<NgsMeasurementLookup.MeasurementInfo> page = ngsMeasurementLookup
+        .lookupNgsMeasurements(projectId, offset, limit, sort, filter).toList();
+    return new PaginatedGrid.Page<>(page, total);
   }
 
+  /**
+   * Loads a single Proteomics (PxP) page for the reusable {@link PaginatedGrid} (the
+   * {@code PageLoader} of the PxP grid). Performs the same backend lookup as the legacy manual path
+   * and returns the page items together with the total count of measurements matching the active
+   * filter.
+   */
+  private PaginatedGrid.Page<MeasurementInfo> loadPxpPage(ListState state) {
+    String experimentId = context.experimentId().orElseThrow().value();
+    String projectId = context.projectId().orElseThrow().value();
+    Sort sort = MeasurementSort.toSpringDataSort(state.sort(), MeasurementDomain.PXP);
+    int offset = (state.page() - 1) * state.pageSize();
+    int limit = state.pageSize();
+    PxpMeasurementLookup.MeasurementFilter filter =
+        PxpMeasurementLookup.MeasurementFilter.forExperiment(experimentId)
+            .withSearch(state.filter(), clientTimeZoneOffset.get(),
+                MEASUREMENT_REGISTRATION_DATE_TIME_FORMAT);
+    int total = pxpMeasurementLookup.countPxpMeasurements(projectId, filter);
+    List<MeasurementInfo> page = pxpMeasurementLookup
+        .lookupPxpMeasurements(projectId, offset, limit, sort, filter).toList();
+    return new PaginatedGrid.Page<>(page, total);
+  }
 
-  private void refreshClamped(MeasurementDomain domain, int clampedPage,
-      boolean scrollGridTopIntoView) {
-    ListState current = tabPagination.listState().stateOf(domain);
-    ListState clamped = current.withPage(clampedPage);
-    tabPagination.applyListState(domain, clamped);
-    loadAndRender(domain, clamped, scrollGridTopIntoView);
+  /**
+   * Loads a single Immunopeptidomics (IP) page for the reusable {@link PaginatedGrid} (the
+   * {@code PageLoader} of the IP grid). Performs the same backend lookup as the legacy manual path
+   * and returns the page items together with the total count of measurements matching the active
+   * filter.
+   */
+  private PaginatedGrid.Page<IpMeasurementLookup.MeasurementInfo> loadIpPage(ListState state) {
+    String experimentId = context.experimentId().orElseThrow().value();
+    String projectId = context.projectId().orElseThrow().value();
+    Sort sort = MeasurementSort.toSpringDataSort(state.sort(), MeasurementDomain.IP);
+    int offset = (state.page() - 1) * state.pageSize();
+    int limit = state.pageSize();
+    IpMeasurementLookup.MeasurementFilter filter =
+        IpMeasurementLookup.MeasurementFilter.forExperiment(experimentId)
+            .withSearch(state.filter(), clientTimeZoneOffset.get(),
+                MEASUREMENT_REGISTRATION_DATE_TIME_FORMAT);
+    int total = ipMeasurementLookup.countIpMeasurements(projectId, filter);
+    List<IpMeasurementLookup.MeasurementInfo> page = ipMeasurementLookup
+        .lookupIpMeasurements(projectId, offset, limit, sort, filter).toList();
+    return new PaginatedGrid.Page<>(page, total);
   }
 
   @SuppressWarnings("unchecked")
-  private <T> void reconcileSelection(Grid<T> grid, MeasurementSelection selection,
+  private <T> void applySelectionToGrid(Grid<T> grid, Selection selection,
       MeasurementDomain domain) {
     grid.getGenericDataView().getItems().toList().forEach(item -> {
       String id = measurementIdOf(domain, item);
@@ -578,18 +609,18 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   }
 
   /**
-   * Reconciles every grid's visible rows against its tab selection (used after the user
+   * Applies every grid's visible rows against its tab selection (used after the user
    * cleared the selection so row checkboxes reflect the empty selection).
    */
-  private void reconcileAllGrids() {
-    reconcileSelection(ngsGrid, ngsSelection, MeasurementDomain.NGS);
-    reconcileSelection(pxpGrid, pxpSelection, MeasurementDomain.PXP);
-    reconcileSelection(ipGrid, ipSelection, MeasurementDomain.IP);
+  private void applySelectionToAllGrids() {
+    applySelectionToGrid(ngsGrid, ngsSelection, MeasurementDomain.NGS);
+    applySelectionToGrid(pxpGrid, pxpSelection, MeasurementDomain.PXP);
+    applySelectionToGrid(ipGrid, ipSelection, MeasurementDomain.IP);
   }
 
   // ---- selection helpers ----------------------------------------------------
 
-  private MeasurementSelection selectionFor(MeasurementDomain domain) {
+  private Selection selectionFor(MeasurementDomain domain) {
     return switch (domain) {
       case NGS -> ngsSelection;
       case PXP -> pxpSelection;
@@ -642,7 +673,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
       case PXP -> pxpGrid;
       case IP -> ipGrid;
     };
-    reconcileSelection(grid, selectionFor(domain), domain);
+    applySelectionToGrid(grid, selectionFor(domain), domain);
     tabPagination.updateSelectionBar();
   }
 
@@ -652,35 +683,27 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     T create(List<String> ids, MeasurementDetailsComponent source, boolean fromClient);
   }
 
-  private void fireEditRequested(MeasurementDomain domain, MeasurementSelection selection,
+  private void fireEditRequested(Selection selection,
       IdEventFactory<?> factory) {
     List<String> ids = idsOf(selection);
     // The edit dialog is scope-agnostic towards the (session-only) row selection: updates are
     // identified per row via the measurement ID in the uploaded sheet. The dialog always offers
     // to download the template for all measurements of the domain in the current experiment; the
     // selection (if any) is only a convenience to download a smaller, targeted template.
-    switch (domain) {
-      case NGS -> fireEvent((NgsMeasurementEditRequested) factory.create(ids, this, true));
-      case PXP -> fireEvent((PxpMeasurementEditRequested) factory.create(ids, this, true));
-      case IP -> fireEvent((IpMeasurementEditRequested) factory.create(ids, this, true));
-    }
+    fireEvent(factory.create(ids, this, true));
   }
 
-  private void fireDeletionRequested(MeasurementDomain domain, MeasurementSelection selection,
-      IdEventFactory<?> factory) {
+  private void fireDeletionRequested(Selection selection, IdEventFactory<?> factory) {
     List<String> ids = idsOf(selection);
     if (ids.isEmpty()) {
       displayMissingSelectionNote();
       return;
     }
-    switch (domain) {
-      case NGS -> fireEvent((NgsMeasurementDeletionRequested) factory.create(ids, this, true));
-      case PXP -> fireEvent((PxpMeasurementDeletionRequested) factory.create(ids, this, true));
-      case IP -> fireEvent((IpMeasurementDeletionRequested) factory.create(ids, this, true));
-    }
+    fireEvent(factory.create(ids, this, true));
+
   }
 
-  private static List<String> idsOf(MeasurementSelection selection) {
+  private static List<String> idsOf(Selection selection) {
     List<String> ids = new ArrayList<>(selection.selectedIds());
     return ids;
   }
