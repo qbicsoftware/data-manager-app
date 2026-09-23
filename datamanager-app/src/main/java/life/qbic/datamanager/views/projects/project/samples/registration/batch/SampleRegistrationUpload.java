@@ -54,8 +54,6 @@ public class SampleRegistrationUpload extends Div implements UserInput {
   private static final int MAX_FILE_SIZE = 25 * 1024 * 1024;
 
   private final AsyncProjectService service;
-  private final String projectId;
-  private final String experimentId;
   private final ContentUploadComponent contentUploadComponent;
   private final SampleUploadDisplay uploadDisplay;
   private final transient Map<String, List<SampleRegistrationInformation>> validatedSampleMetadata = new HashMap<>();
@@ -65,8 +63,6 @@ public class SampleRegistrationUpload extends Div implements UserInput {
       String experimentId,
       UploadConfiguration uploadConfiguration) {
     this.service = requireNonNull(service);
-    this.projectId = requireNonNull(projectId);
-    this.experimentId = requireNonNull(experimentId);
 
     this.contentUploadComponent = new ContentUploadComponent(requireNonNull(uploadConfiguration));
     this.uploadDisplay = new SampleUploadDisplay();
