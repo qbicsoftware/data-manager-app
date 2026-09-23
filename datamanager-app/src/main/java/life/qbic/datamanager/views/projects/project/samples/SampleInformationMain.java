@@ -468,7 +468,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver, 
 
   private static Comparator<Sample> sampleComparatorFor(String property) {
     return switch (property) {
-      case "sampleId" -> Comparator.comparing(sample -> sample.sampleId().value());
+      case "sampleId" -> Comparator.comparing(sample -> sample.sampleCode().code());
       case "sampleName" -> Comparator.comparing(Sample::label);
       case "biologicalReplicate" -> Comparator.comparing(sample -> sample.biologicalReplicate(),
           Comparator.nullsLast(String::compareTo));
