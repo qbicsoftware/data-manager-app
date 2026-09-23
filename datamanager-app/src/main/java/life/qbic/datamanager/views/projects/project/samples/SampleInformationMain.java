@@ -23,6 +23,7 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -53,6 +54,7 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectCo
 import life.qbic.projectmanagement.application.api.AsyncProjectService.SampleRegistrationInformation;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ExperimentReference;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
+import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.sample.SampleMetadata;
 import life.qbic.projectmanagement.application.sample.SampleRegistrationServiceV2;
 import life.qbic.projectmanagement.application.sample.SampleValidationService;
@@ -107,6 +109,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver, 
   private final transient SampleRegistrationServiceV2 sampleRegistrationServiceV2;
   private final transient AsyncProjectService asyncProjectService;
   private final transient UploadConfiguration uploadConfiguration;
+  private final transient MeasurementService measurementService;
   private final MessageSourceNotificationFactory messageFactory;
   private transient Context context;
 
@@ -118,7 +121,8 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver, 
       SampleValidationService sampleValidationService,
       SampleRegistrationServiceV2 sampleRegistrationServiceV2,
       MessageSourceNotificationFactory messageSourceNotificationFactory,
-      UploadConfiguration uploadConfiguration) {
+      UploadConfiguration uploadConfiguration,
+      @Autowired MeasurementService measurementService) {
     this.asyncProjectService = requireNonNull(asyncProjectService);
     this.deletionService = requireNonNull(deletionService);
     this.experimentInformationService = requireNonNull(experimentInformationService);
@@ -127,6 +131,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver, 
     this.sampleRegistrationServiceV2 = requireNonNull(sampleRegistrationServiceV2);
     this.sampleValidationService = requireNonNull(sampleValidationService);
     this.uploadConfiguration = requireNonNull(uploadConfiguration);
+    this.measurementService = requireNonNull(measurementService);
 
     addClassName("sample");
 
@@ -380,12 +385,36 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver, 
   }
 
   private void onDeleteSamplesClicked(SampleDeletionRequested deletionRequest) {
+    Set<String> sampleIds = deletionRequest.sampleIds().stream().map(SampleId::value)
+        .collect(Collectors.toSet());
+    Set<String> measuredSampleIds = measurementService.findMeasuredSampleIds(
+        context.projectId().orElseThrow(), context.experimentId().orElseThrow(), sampleIds);
+    if (!measuredSampleIds.isEmpty()) {
+      showBlockedDeletionDialog(measuredSampleIds);
+      return;
+    }
     AlertDialog.danger(this,
         "Samples will be deleted",
         "Deleting these samples will also delete the data connected to them. Proceed?",
         "Delete samples",
         "Keep samples",
         () -> deleteSamples(deletionRequest)).open();
+  }
+
+  private void showBlockedDeletionDialog(Set<String> measuredSampleIds) {
+    String listedIds = measuredSampleIds.stream().sorted().limit(20)
+        .collect(Collectors.joining(", "));
+    if (measuredSampleIds.size() > 20) {
+      listedIds = listedIds + ", and %d more".formatted(measuredSampleIds.size() - 20);
+    }
+    AlertDialog.alert(this)
+        .warning()
+        .title("Samples cannot be deleted")
+        .message(
+            "The following samples have associated measurements and therefore cannot be deleted: "
+                + listedIds)
+        .confirmButton("Close", () -> { })
+        .build().open();
   }
 
   /**
