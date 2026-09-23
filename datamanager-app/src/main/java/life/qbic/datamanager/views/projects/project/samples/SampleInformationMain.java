@@ -384,6 +384,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver, 
         .thenRun(() -> getUI().ifPresent(ui -> ui.access(() -> {
           pendingToast.close();
           displayDeletionSuccess(deletionRequest.sampleIds().size());
+          deselectDeletedSamples(deletionRequest.sampleIds());
           setBatchAndSampleInformation();
         })))
         .exceptionally(e -> {
@@ -395,6 +396,18 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver, 
           }));
           return null;
         });
+  }
+
+  /**
+   * Removes the deleted sample identifiers from the grid's cross-page selection, so stale IDs of
+   * removed samples do not inflate the selection counter or leak into bulk actions after deletion.
+   */
+  private void deselectDeletedSamples(List<SampleId> deletedSampleIds) {
+    if (sampleDetailsComponent instanceof SampleDetailsComponent sampleDetails) {
+      Set<String> deletedIds = deletedSampleIds.stream().map(SampleId::value)
+          .collect(Collectors.toSet());
+      sampleDetails.paginatedGrid().deselect(deletedIds);
+    }
   }
 
   private void onDeleteSamplesClicked(SampleDeletionRequested deletionRequest) {
