@@ -76,42 +76,22 @@ public class MyGroupsMain extends Main implements BeforeEnterObserver {
       @Autowired GroupService groupService,
       @Autowired AuthenticationToUserIdTranslationService userIdTranslator,
       @Autowired MessageSourceNotificationFactory messageFactory) {
-    this(groupInformationService,
-        groupService,
-        defaultSuccessToast(messageFactory),
-        defaultErrorToast(messageFactory),
-        () -> {
-          Authentication authentication =
-              SecurityContextHolder.getContext().getAuthentication();
-          return userIdTranslator.translateToUserId(authentication).orElseThrow();
-        },
-        (groupId, onConfirm) -> MyGroupsMain.showLeaveConfirmation(groupId, onConfirm));
+    this.groupInformationService = requireNonNull(groupInformationService,
+        "groupInformationService must not be null");
+    this.groupService = requireNonNull(groupService, "groupService must not be null");
     this.userIdTranslator = requireNonNull(userIdTranslator,
         "userIdTranslator must not be null");
     this.messageFactory = requireNonNull(messageFactory,
         "messageFactory must not be null");
-  }
-
-  /**
-   * Test constructor: injects all seams directly. Intentionally package-private so only tests in
-   * this package can bypass the Vaadin {@code UI} and Spring context wiring.
-   */
-  MyGroupsMain(GroupInformationService groupInformationService,
-      GroupService groupService,
-      Consumer<String> successToast,
-      Consumer<String> errorToast,
-      Supplier<String> currentUserId,
-      MyGroupsComponent.LeaveConfirmation leaveConfirmation) {
-    this.groupInformationService = requireNonNull(groupInformationService,
-        "groupInformationService must not be null");
-    this.groupService = requireNonNull(groupService, "groupService must not be null");
-    this.successToast = requireNonNull(successToast, "successToast must not be null");
-    this.errorToast = requireNonNull(errorToast, "errorToast must not be null");
-    this.currentUserId = requireNonNull(currentUserId, "currentUserId must not be null");
-    this.leaveConfirmation = requireNonNull(leaveConfirmation,
-        "leaveConfirmation must not be null");
-    this.userIdTranslator = null;
-    this.messageFactory = null;
+    this.successToast = defaultSuccessToast(messageFactory);
+    this.errorToast = defaultErrorToast(messageFactory);
+    this.currentUserId = () -> {
+      Authentication authentication =
+          SecurityContextHolder.getContext().getAuthentication();
+      return userIdTranslator.translateToUserId(authentication).orElseThrow();
+    };
+    this.leaveConfirmation = (groupId, onConfirm) ->
+        MyGroupsMain.showLeaveConfirmation(groupId, onConfirm);
     addClassName("my-groups");
   }
 

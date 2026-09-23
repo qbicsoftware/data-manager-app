@@ -24,10 +24,7 @@ import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactor
 import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.projectmanagement.application.AuthenticationToUserIdTranslationService;
 import life.qbic.usergroups.api.GroupInformationService;
-import life.qbic.usergroups.application.GroupInfoProjection;
 import life.qbic.usergroups.application.GroupService;
-import life.qbic.usergroups.domain.model.GroupDescription;
-import life.qbic.usergroups.domain.model.GroupName;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -55,18 +52,15 @@ public class NewGroupMain extends Main implements BeforeEnterObserver {
   @Serial
   private static final long serialVersionUID = 1155319990453929046L;
 
-  static final String DUPLICATE_NAME_FIELD_MESSAGE =
-      "A group with this name already exists. Group names are unique (case-insensitive).";
-
   private final GroupService groupService;
   private final Function<String, Boolean> nameAvailability;
   private final Consumer<String> successToast;
   private final Runnable errorToast;
   private final Runnable navigateToMyGroups;
   private final Supplier<String> currentUserId;
-  private final Consumer<String> nameError;
 
   private transient NewGroupForm form;
+  private transient SettingsSection section;
 
   /**
    * Production constructor: wires the seams to the real services, toasts, navigation and the
@@ -77,39 +71,16 @@ public class NewGroupMain extends Main implements BeforeEnterObserver {
       @Autowired GroupInformationService groupInformationService,
       @Autowired AuthenticationToUserIdTranslationService userIdTranslator,
       @Autowired MessageSourceNotificationFactory messageFactory) {
-    this(groupService,
-        defaultNameAvailability(groupInformationService),
-        defaultSuccessToast(messageFactory),
-        defaultErrorToast(messageFactory),
-        () -> UI.getCurrent().navigate(MyGroupsMain.class),
-        () -> {
-          Authentication authentication =
-              SecurityContextHolder.getContext().getAuthentication();
-          return userIdTranslator.translateToUserId(authentication).orElseThrow();
-        },
-        message -> { /* the form is marked directly by nameErrorSeam */ });
-  }
-
-  /**
-   * Test constructor: injects all seams directly. Intentionally package-private so only tests in
-   * this package can bypass the Vaadin {@code UI} and Spring context wiring.
-   */
-  NewGroupMain(GroupService groupService,
-      Function<String, Boolean> nameAvailability,
-      Consumer<String> successToast,
-      Runnable errorToast,
-      Runnable navigateToMyGroups,
-      Supplier<String> currentUserId,
-      Consumer<String> nameError) {
     this.groupService = requireNonNull(groupService, "groupService must not be null");
-    this.nameAvailability = requireNonNull(nameAvailability,
-        "nameAvailability must not be null");
-    this.successToast = requireNonNull(successToast, "successToast must not be null");
-    this.errorToast = requireNonNull(errorToast, "errorToast must not be null");
-    this.navigateToMyGroups = requireNonNull(navigateToMyGroups,
-        "navigateToMyGroups must not be null");
-    this.currentUserId = requireNonNull(currentUserId, "currentUserId must not be null");
-    this.nameError = requireNonNull(nameError, "nameError must not be null");
+    this.nameAvailability = defaultNameAvailability(groupInformationService);
+    this.successToast = defaultSuccessToast(messageFactory);
+    this.errorToast = defaultErrorToast(messageFactory);
+    this.navigateToMyGroups = () -> UI.getCurrent().navigate(MyGroupsMain.class);
+    this.currentUserId = () -> {
+      Authentication authentication =
+          SecurityContextHolder.getContext().getAuthentication();
+      return userIdTranslator.translateToUserId(authentication).orElseThrow();
+    };
     addClassName("new-group");
   }
 
@@ -153,47 +124,17 @@ public class NewGroupMain extends Main implements BeforeEnterObserver {
 
   @Override
   public void beforeEnter(BeforeEnterEvent event) {
-    if (form != null) {
-      remove(form);
+    if (section != null) {
+      remove(section);
+      section = null;
       form = null;
     }
-    form = new NewGroupForm(nameAvailability);
-    form.addCreateListener(this::onCreate);
+    form = new NewGroupForm(nameAvailability, groupService, currentUserId, successToast,
+        errorToast, navigateToMyGroups);
     form.addCancelListener(cancelEvent -> navigateToMyGroups.run());
-    SettingsSection section = new SettingsSection("New Group",
+    section = new SettingsSection("New Group",
         "Create a new ad-hoc group for your collaboration.");
     section.addContent(form);
     add(section);
-  }
-
-  private void onCreate(NewGroupForm.CreateEvent createEvent) {
-    if (form != null) {
-      form.clearNameError();
-    }
-
-    GroupName groupName = GroupName.from(createEvent.groupName());
-    GroupDescription groupDescription = GroupDescription.from(createEvent.groupDescription());
-
-    Result<GroupInfoProjection, ApplicationException> result =
-        groupService.createAdHocGroup(currentUserId.get(), groupName, groupDescription);
-
-    result.onValue(created -> {
-          successToast.accept(created.groupName().value());
-          navigateToMyGroups.run();
-        })
-        .onError(error -> {
-          if (error.errorCode() == ErrorCode.DUPLICATE_GROUP_NAME) {
-            nameErrorSeam(DUPLICATE_NAME_FIELD_MESSAGE);
-          } else {
-            errorToast.run();
-          }
-        });
-  }
-
-  private void nameErrorSeam(String message) {
-    nameError.accept(message);
-    if (form != null) {
-      form.markNameError(message);
-    }
   }
 }

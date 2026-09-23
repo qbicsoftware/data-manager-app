@@ -1,5 +1,7 @@
 package life.qbic.datamanager.views.settings;
 
+import static java.util.Objects.requireNonNull;
+
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
@@ -11,7 +13,16 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.shared.Registration;
 import jakarta.annotation.Nullable;
 import java.io.Serial;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
+import life.qbic.application.commons.ApplicationException;
+import life.qbic.application.commons.ApplicationException.ErrorCode;
+import life.qbic.application.commons.Result;
+import life.qbic.usergroups.application.GroupInfoProjection;
+import life.qbic.usergroups.application.GroupService;
+import life.qbic.usergroups.domain.model.GroupDescription;
+import life.qbic.usergroups.domain.model.GroupName;
 
 /**
  * <b>New group form</b>
@@ -21,9 +32,8 @@ import java.util.function.Function;
  * objects ({@code GroupName}, {@code GroupDescription}) and is performed client-side before any
  * service call.
  * <p>
- * The component deliberately does <em>not</em> navigate or talk to services: data entry is
- * exposed through a {@link CreateEvent} and a cancel event, so it can be tested without a
- * Vaadin {@code UI} or Spring context.
+ * The component owns the create orchestration (service call, toasts and navigation behind
+ * injected seams) so it is testable without a Vaadin {@code UI} or Spring context.
  *
  * @since 1.19.0
  */
@@ -40,15 +50,34 @@ public class NewGroupForm extends Div {
   private final Button createButton = new Button("Create");
   private final Button cancelButton = new Button("Cancel");
   private final Function<String, Boolean> nameAvailabilityCheck;
+  private final GroupService groupService;
+  private final Supplier<String> currentUserId;
+  private final Consumer<String> successToast;
+  private final Runnable errorToast;
+  private final Runnable navigateToMyGroups;
 
   /**
-   * Creates a new group creation form.
+   * Creates a new group creation form. The create action is handled here so the form is fully
+   * testable without a Vaadin {@code UI} or Spring context (all collaborators are seams).
    *
    * @param nameAvailabilityCheck optional case-insensitive name availability check invoked on
    *                              name blur; may be {@code null} to disable the live hint
+   * @param groupService         the user-groups create service (never {@code null})
+   * @param currentUserId        supplies the current user id (never {@code null})
+   * @param successToast         invoked with the created group name on success (never {@code null})
+   * @param errorToast           invoked on a non-duplicate failure (never {@code null})
+   * @param navigateToMyGroups   invoked after a successful creation (never {@code null})
    */
-  public NewGroupForm(@Nullable Function<String, Boolean> nameAvailabilityCheck) {
+  public NewGroupForm(@Nullable Function<String, Boolean> nameAvailabilityCheck,
+      GroupService groupService, Supplier<String> currentUserId, Consumer<String> successToast,
+      Runnable errorToast, Runnable navigateToMyGroups) {
     this.nameAvailabilityCheck = nameAvailabilityCheck;
+    this.groupService = requireNonNull(groupService, "groupService must not be null");
+    this.currentUserId = requireNonNull(currentUserId, "currentUserId must not be null");
+    this.successToast = requireNonNull(successToast, "successToast must not be null");
+    this.errorToast = requireNonNull(errorToast, "errorToast must not be null");
+    this.navigateToMyGroups = requireNonNull(navigateToMyGroups,
+        "navigateToMyGroups must not be null");
     addClassName("new-group-form");
 
     nameField.setRequiredIndicatorVisible(true);
@@ -127,8 +156,28 @@ public class NewGroupForm extends Div {
     }
 
     if (valid) {
-      fireEvent(new CreateEvent(this, name, description.isEmpty() ? null : description));
+      createGroup(name, description);
     }
+  }
+
+  private void createGroup(String name, String description) {
+    clearNameError();
+    GroupName groupName = GroupName.from(name);
+    GroupDescription groupDescription = GroupDescription.from(description);
+    Result<GroupInfoProjection, ApplicationException> result =
+        groupService.createAdHocGroup(currentUserId.get(), groupName, groupDescription);
+    result.onValue(created -> {
+          successToast.accept(created.groupName().value());
+          navigateToMyGroups.run();
+        })
+        .onError(error -> {
+          if (error.errorCode() == ErrorCode.DUPLICATE_GROUP_NAME) {
+            markNameError("A group with this name already exists. "
+                + "Group names are unique (case-insensitive).");
+          } else {
+            errorToast.run();
+          }
+        });
   }
 
   /**
