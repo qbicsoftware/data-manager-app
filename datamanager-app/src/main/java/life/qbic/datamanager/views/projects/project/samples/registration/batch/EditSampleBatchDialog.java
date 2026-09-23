@@ -64,8 +64,8 @@ public final class EditSampleBatchDialog {
     Objects.requireNonNull(onConfirm);
 
     var dialog = AppDialog.large();
-    DialogHeader.with(dialog, "Edit Sample Batch");
-    DialogFooter.with(dialog, "Cancel", "Edit Batch");
+    DialogHeader.with(dialog, "Edit Samples");
+    DialogFooter.with(dialog, "Cancel", "Edit Samples");
 
     var upload = new SampleUpdateUpload(sampleValidationService, projectId, experimentId,
         uploadConfiguration);
@@ -99,7 +99,7 @@ public final class EditSampleBatchDialog {
     Supplier<Integer> allSamplesCount = () ->
         service.countSamples(projectId, experimentId).blockOptional().orElse(0);
     SampleTemplateComponent template = new SampleTemplateComponent(
-        "Please download the metadata template, adapt the sample properties and upload the metadata sheet below to edit the sample batch.",
+        "Please download the metadata template, adapt the sample properties and upload the metadata sheet below to edit the samples.",
         "Download all samples",
         allSamplesTemplate,
         messageFactory,
