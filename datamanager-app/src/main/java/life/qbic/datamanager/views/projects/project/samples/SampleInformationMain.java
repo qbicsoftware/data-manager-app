@@ -23,6 +23,7 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -52,6 +53,7 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectCode;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ExperimentReference;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
+import life.qbic.projectmanagement.application.sample.SampleMetadata;
 import life.qbic.projectmanagement.application.sample.SampleRegistrationServiceV2;
 import life.qbic.projectmanagement.application.sample.SampleValidationService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
@@ -306,70 +308,57 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver, 
     var sampleIds = editRequest.sampleIds().stream()
         .map(SampleId::value)
         .collect(Collectors.toSet());
-    var editSampleBatchDialog = new EditSampleBatchDialog(
+    UI ui = UI.getCurrent();
+    var editSampleBatchDialog = EditSampleBatchDialog.create(
         asyncProjectService, messageFactory,
         sampleIds,
         experimentId.value(),
         projectId.value(),
         projectOverview.projectCode(),
         sampleValidationService,
-        uploadConfiguration);
-    UI ui = UI.getCurrent();
-    editSampleBatchDialog.addConfirmListener(event -> {
-      var sampleMetadata = new ArrayList<>(event.validatedSampleMetadata());
-      event.getSource().close();
-      var pendingToast = notificationFactory.pendingTaskToast("task.in-progress",
-          new Object[]{"Sample update for %d samples".formatted(sampleMetadata.size())},
-          getLocale());
-      ui.access(pendingToast::open);
-
-      CompletableFuture<Void> editTask = sampleRegistrationServiceV2.updateSamples(
-              sampleMetadata,
-              projectId,
-              new ExperimentReference(context.experimentId().orElseThrow().value()))
-          .orTimeout(5, TimeUnit.MINUTES);
-      try {
-        editTask
-            .exceptionally(e -> {
-              ui.access(() -> {
-                //this needs to come before all the success events
-                pendingToast.close();
-                notificationFactory.toast("task.failed",
-                        new String[]{"Sample update"}, getLocale())
-                    .open();
-              });
-              throw new HandledException(e);
-            })
-            .thenRun(() -> ui.access(this::setBatchAndSampleInformation))
-            .thenRun(() -> ui.access(() -> {
-              pendingToast.close();
-              displayUpdateSuccess();
-            }))
-            .exceptionally(e -> {
-              //we need to make sure we do not swallow exceptions but still stay in the exceptional state.
-              throw new HandledException(e); //we need the future to complete exceptionally
-            });
-      } catch (HandledException e) {
-        // we only log the exception as the user was presented with the error already and nothing we can do here.
-        log.error(e.getMessage(), e);
-      }
-    });
-    editSampleBatchDialog.addCancelListener(
-        event -> showCancelConfirmationDialog(event.getSource()));
-    editSampleBatchDialog.setEscAction(
-        () -> showCancelConfirmationDialog(editSampleBatchDialog));
+        uploadConfiguration,
+        sampleMetadata -> submitSampleUpdate(sampleMetadata, projectId, ui));
+    // cancellation (incl. the discard-changes confirmation) is handled by the AppDialog itself
     editSampleBatchDialog.open();
   }
 
-  private void showCancelConfirmationDialog(EditSampleBatchDialog editBatchDialog) {
-    AlertDialog.alert(this)
-        .warning()
-        .title("Discard changes?")
-        .message("By aborting the editing process and closing the dialog, you will lose all information entered.")
-        .confirmButton("Discard changes", () -> editBatchDialog.close())
-        .cancelButton("Keep editing", () -> {})
-        .build()
-        .open();
+  private void submitSampleUpdate(List<SampleMetadata> sampleMetadata, ProjectId projectId,
+      UI ui) {
+    var pendingToast = notificationFactory.pendingTaskToast("task.in-progress",
+        new Object[]{"Sample update for %d samples".formatted(sampleMetadata.size())},
+        getLocale());
+    ui.access(pendingToast::open);
+
+    CompletableFuture<Void> editTask = sampleRegistrationServiceV2.updateSamples(
+            sampleMetadata,
+            projectId,
+            new ExperimentReference(context.experimentId().orElseThrow().value()))
+        .orTimeout(5, TimeUnit.MINUTES);
+    try {
+      editTask
+          .exceptionally(e -> {
+            ui.access(() -> {
+              //this needs to come before all the success events
+              pendingToast.close();
+              notificationFactory.toast("task.failed",
+                      new String[]{"Sample update"}, getLocale())
+                  .open();
+            });
+            throw new HandledException(e);
+          })
+          .thenRun(() -> ui.access(this::setBatchAndSampleInformation))
+          .thenRun(() -> ui.access(() -> {
+            pendingToast.close();
+            displayUpdateSuccess();
+          }))
+          .exceptionally(e -> {
+            //we need to make sure we do not swallow exceptions but still stay in the exceptional state.
+            throw new HandledException(e); //we need the future to complete exceptionally
+          });
+    } catch (HandledException e) {
+      // we only log the exception as the user was presented with the error already and nothing we can do here.
+      log.error(e.getMessage(), e);
+    }
   }
 
   private void deleteSamples(SampleDeletionRequested deletionRequest) {
