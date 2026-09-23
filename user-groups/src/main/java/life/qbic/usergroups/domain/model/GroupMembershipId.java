@@ -1,5 +1,7 @@
 package life.qbic.usergroups.domain.model;
 
+import jakarta.persistence.Access;
+import jakarta.persistence.AccessType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import java.io.Serial;
@@ -15,6 +17,7 @@ import java.util.Objects;
  * @since 1.19.0
  */
 @Embeddable
+@Access(AccessType.FIELD)
 public class GroupMembershipId implements Serializable {
 
   @Serial
