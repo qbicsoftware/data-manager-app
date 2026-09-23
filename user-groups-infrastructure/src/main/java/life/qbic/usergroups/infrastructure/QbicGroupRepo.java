@@ -32,11 +32,17 @@ public interface QbicGroupRepo extends JpaRepository<UserGroup, GroupId> {
    * Finds a group by its display name, ignoring case (the underlying comparison additionally
    * benefits from the {@code utf8mb4_unicode_ci} column collation).
    *
+   * <p>Explicit JPQL: the {@code name} column is a {@code GroupName} value object (with an
+   * {@code @Convert}), so Spring Data's derived {@code ...IgnoreCase} keyword (which only
+   * supports {@code String} properties) cannot be used; the case-insensitive comparison is
+   * expressed via {@code LOWER} on both sides.
+   *
    * @param name the group name to search for
    * @return the matching group, or {@link Optional#empty()} if none matches
    * @since 1.19.0
    */
-  Optional<UserGroup> findByNameIgnoreCase(String name);
+  @Query("SELECT g FROM UserGroup g WHERE LOWER(g.name) = LOWER(:name)")
+  Optional<UserGroup> findByNameIgnoreCase(@Param("name") String name);
 
   /**
    * Returns all groups with the given lifecycle status.
