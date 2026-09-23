@@ -13,6 +13,7 @@ import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
@@ -342,9 +343,10 @@ public final class GroupManagementDialogs {
         Function<String, List<UserInfo>> candidateSearcher, ManagementHandler handler,
         Supplier<List<GroupMember>> reloadMembers) {
       this.groupId = requireNonNull(groupId, "groupId must not be null");
-      this.members = requireNonNull(members, "members must not be null");
-      this.members.clear();
-      this.members.addAll(reloadMembers == null ? List.of() : reloadMembers.get());
+      this.members = new ArrayList<>(requireNonNull(members, "members must not be null"));
+      if (reloadMembers != null) {
+        this.members.addAll(reloadMembers.get());
+      }
       this.actingUserRole = Objects.requireNonNull(actingUserRole,
           "actingUserRole must not be null");
       this.memberNameResolver = memberNameResolver;
