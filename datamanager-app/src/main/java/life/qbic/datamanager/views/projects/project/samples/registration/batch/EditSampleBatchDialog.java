@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.configuration.UploadConfiguration;
 import life.qbic.datamanager.files.parsing.MetadataParser.ParsingException;
@@ -156,19 +157,23 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
     Mono<DigitalObject> allSamplesTemplate = Mono.defer(() ->
         service.sampleUpdateTemplate(projectId, experimentId, OPEN_XML)
             .doOnError(this::handleError));
+    Supplier<Integer> allSamplesCount = () ->
+        service.countSamples(projectId, experimentId).blockOptional().orElse(0);
     SampleTemplateComponent template = new SampleTemplateComponent(
         "Please download the metadata template, adapt the sample properties and upload the metadata sheet below to edit the sample batch.",
         "Download all samples",
         allSamplesTemplate,
         messageFactory,
-        () -> projectCode);
+        () -> projectCode,
+        allSamplesCount);
     if (!sampleIds.isEmpty()) {
       // the selected set is already resolved (dialog-open time); just wrap it in a deferred
       // mono so the service call happens on click
       template.addTemplateExport(
           "Download selected (%d)".formatted(sampleIds.size()),
           Mono.defer(() -> service.sampleUpdateTemplate(projectId, experimentId, sampleIds,
-              OPEN_XML).doOnError(this::handleError)));
+              OPEN_XML).doOnError(this::handleError)),
+          sampleIds::size);
     }
     Div downloadMetadataSection = new Div();
     downloadMetadataSection.addClassName("download-metadata");
