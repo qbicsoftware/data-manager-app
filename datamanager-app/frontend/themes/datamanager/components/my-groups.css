@@ -209,3 +209,74 @@
 .new-group-form__name-field:not(.new-group-form__name-field--taken)::part(helper-text) {
   color: var(--lumo-success-text-color);
 }
+
+/* -- Owner/manager management controls (FEAT-USER-GROUPS-04, task #1577) -- */
+
+/* Enabled management action buttons */
+.my-groups-action--manage {
+  flex-shrink: 0;
+}
+
+/* Manage Members dialog */
+.manage-members-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.manage-members-title {
+  font-weight: var(--lumo-font-weight-semibold, 600);
+  color: var(--lumo-header-text-color);
+}
+
+.manage-members-roster {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-xs);
+  max-height: 24rem;
+  overflow-y: auto;
+}
+
+.manage-members-row {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+  padding: var(--lumo-space-xs) 0;
+  border-bottom: 1px solid var(--lumo-contrast-10pct);
+}
+
+.manage-members-name {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.manage-members-role {
+  font-size: var(--lumo-font-size-xs);
+  color: var(--lumo-secondary-text-color);
+  flex-shrink: 0;
+}
+
+.manage-members-add {
+  border-top: 1px solid var(--lumo-contrast-10pct);
+  padding-top: var(--lumo-space-m);
+}
+
+.manage-members-add-row {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+}
+
+.manage-members-add-row vaadin-combo-box {
+  flex: 1 1 auto;
+}
+
+/* Dialog body message for destructive confirmations */
+.my-groups-dialog-message {
+  color: var(--lumo-body-text-color);
+  line-height: var(--lumo-line-height-m);
+}

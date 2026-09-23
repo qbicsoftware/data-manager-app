@@ -9,7 +9,6 @@ import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import java.io.Serial;
@@ -70,8 +69,7 @@ public class UserGroup implements Serializable {
   @Column(name = "created_at")
   private Instant createdAt;
 
-  @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-  @JoinColumn(name = "group_id")
+  @OneToMany(mappedBy = "group", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<GroupMembership> memberships = new ArrayList<>();
 
   protected UserGroup() {
@@ -117,7 +115,7 @@ public class UserGroup implements Serializable {
         createdAt);
     GroupMembership ownerMembership = GroupMembership.create(id, creatorUserId, GroupRole.OWNER,
         createdAt);
-    ownerMembership.attachTo();
+    ownerMembership.attachTo(group);
     group.memberships.add(ownerMembership);
     return group;
   }
@@ -182,7 +180,7 @@ public class UserGroup implements Serializable {
       throw new IllegalArgumentException("User " + userId + " is already a member of this group");
     }
     GroupMembership membership = GroupMembership.create(id, userId, GroupRole.MEMBER, joinedAt);
-    membership.attachTo();
+    membership.attachTo(this);
     memberships.add(membership);
   }
 
