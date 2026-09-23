@@ -125,7 +125,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver, 
     this.sampleValidationService = requireNonNull(sampleValidationService);
     this.uploadConfiguration = requireNonNull(uploadConfiguration);
 
-    addClassName("sample"); //todo style with grid
+    addClassName("sample");
 
     this.downloadComponent = new DownloadComponent();
     this.sampleDetailsComponent = new Div();
@@ -147,7 +147,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver, 
 
 
     Div header = new Div(titleField, registerButton);
-    header.addClassName("sample-main-header"); //TODO style internally
+    header.addClassName("sample-main-header");
 
     content.add(header);
     content.addClassName("sample-main-content");
