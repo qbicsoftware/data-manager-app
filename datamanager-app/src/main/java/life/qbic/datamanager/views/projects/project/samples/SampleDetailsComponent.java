@@ -64,7 +64,7 @@ import org.springframework.util.MimeType;
  * {@link Project} Additionally it enables the user to register and edit {@link Sample} via the
  * contained
  * {@link
- * life.qbic.datamanager.views.projects.project.samples.registration.batch.RegisterSampleBatchDialog}.
+ * life.qbic.datamanager.views.projects.project.samples.registration.batch.RegisterSampleDialog}.
  * <p>
  * The sample list is rendered by a reusable {@link PaginatedGrid} (FEAT-PAG-LIST-02): only the
  * current page is fetched and rendered, a pager reports location and total, and an identifier-based

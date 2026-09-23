@@ -41,8 +41,8 @@ import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactor
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
 import life.qbic.datamanager.views.projects.project.samples.SampleDetailsComponent.SampleDeletionRequested;
 import life.qbic.datamanager.views.projects.project.samples.SampleDetailsComponent.SampleEditRequested;
-import life.qbic.datamanager.views.projects.project.samples.registration.batch.EditSampleBatchDialog;
-import life.qbic.datamanager.views.projects.project.samples.registration.batch.RegisterSampleBatchDialog;
+import life.qbic.datamanager.views.projects.project.samples.registration.batch.EditSampleDialog;
+import life.qbic.datamanager.views.projects.project.samples.registration.batch.RegisterSampleDialog;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.DeletionService;
@@ -179,7 +179,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver, 
     ProjectOverview projectOverview = projectInformationService.findOverview(projectId)
         .orElseThrow();
     UI ui = UI.getCurrent();
-    var registerSampleBatchDialog = RegisterSampleBatchDialog.create(
+    var registerSampleDialog = RegisterSampleDialog.create(
         asyncProjectService, messageFactory,
         experimentId.value(),
         projectId.value(),
@@ -187,7 +187,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver, 
         uploadConfiguration,
         sampleMetadata -> submitSampleRegistration(sampleMetadata, projectId, experimentId, ui));
     // cancellation (incl. the discard-changes confirmation) is handled by the AppDialog itself
-    registerSampleBatchDialog.open();
+    registerSampleDialog.open();
   }
 
   private void submitSampleRegistration(
@@ -300,7 +300,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver, 
         .map(SampleId::value)
         .collect(Collectors.toSet());
     UI ui = UI.getCurrent();
-    var editSampleBatchDialog = EditSampleBatchDialog.create(
+    var editSampleDialog = EditSampleDialog.create(
         asyncProjectService, messageFactory,
         sampleIds,
         experimentId.value(),
@@ -310,7 +310,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver, 
         uploadConfiguration,
         sampleMetadata -> submitSampleUpdate(sampleMetadata, projectId, ui));
     // cancellation (incl. the discard-changes confirmation) is handled by the AppDialog itself
-    editSampleBatchDialog.open();
+    editSampleDialog.open();
   }
 
   private void submitSampleUpdate(List<SampleMetadata> sampleMetadata, ProjectId projectId,

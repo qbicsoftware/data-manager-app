@@ -26,12 +26,12 @@ import reactor.core.publisher.Mono;
  *
  * @since 1.4.0
  */
-public final class RegisterSampleBatchDialog {
+public final class RegisterSampleDialog {
 
   private static final MimeType OPEN_XML = MimeType.valueOf(
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
 
-  private RegisterSampleBatchDialog() {
+  private RegisterSampleDialog() {
   }
 
   /**
