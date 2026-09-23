@@ -978,6 +978,12 @@ a.pinned-project-card-body:hover {
   background: color-mix(in srgb, var(--primary-color) 6%, var(--primary-contrast-color));
 }
 
+.sample-details-component .sample-selection-icon {
+  color: var(--primary-color);
+  width: var(--lumo-icon-size-m);
+  height: var(--lumo-icon-size-m);
+}
+
 .sample-details-component .sample-selection-count {
   color: var(--body-text-color);
   font-weight: 700;

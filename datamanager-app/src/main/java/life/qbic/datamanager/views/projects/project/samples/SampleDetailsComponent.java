@@ -11,6 +11,7 @@ import com.vaadin.flow.component.grid.Grid.Column;
 import com.vaadin.flow.component.grid.GridSortOrder;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.textfield.TextField;
@@ -91,10 +92,11 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   private String experimentId;
   private String projectCode;
   private final TextField searchField = new TextField();
+  private final Icon selectionIcon = VaadinIcon.CHECK_SQUARE_O.create();
   private final Span selectionDisplay = new Span();
   private final Button selectAllResultsButton = new Button();
   private final Button clearSelectionButton = new Button("Clear selection");
-  private final Div selectionBar = new Div(selectionDisplay, selectAllResultsButton,
+  private final Div selectionBar = new Div(selectionIcon, selectionDisplay, selectAllResultsButton,
       clearSelectionButton);
   private long totalItemsActive;
   private final PaginationBar paginationBar =
@@ -169,6 +171,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   }
 
   private void configureSelectionBar() {
+    selectionIcon.addClassName("sample-selection-icon");
     selectionDisplay.addClassName("sample-selection-count");
     selectAllResultsButton.addClassName("sample-select-all-results");
     clearSelectionButton.addClassName("sample-clear-selection");
