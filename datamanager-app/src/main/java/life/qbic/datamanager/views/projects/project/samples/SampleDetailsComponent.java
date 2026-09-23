@@ -123,6 +123,9 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
       event.getUI().getPage().getExtendedClientDetails().refresh(
           receiver -> {
             clientTimeZone.set(receiver.getTimeZoneId());
+            // The client time zone arrives asynchronously, potentially after the first page has
+            // already rendered; re-render the rows so the date/time columns reflect the client zone.
+            paginatedGrid.refreshItems();
           });
     });
 
