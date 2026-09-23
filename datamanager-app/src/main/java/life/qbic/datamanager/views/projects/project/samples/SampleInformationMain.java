@@ -22,7 +22,6 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -51,6 +50,7 @@ import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectOverview;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectCode;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.SampleRegistrationInformation;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ExperimentReference;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.sample.SampleMetadata;
@@ -178,64 +178,54 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver, 
     }
     ProjectOverview projectOverview = projectInformationService.findOverview(projectId)
         .orElseThrow();
-    RegisterSampleBatchDialog registerSampleBatchDialog = new RegisterSampleBatchDialog(
-        asyncProjectService, messageFactory, experimentId.value(),
-        projectId.value(), projectOverview.projectCode(),
-        uploadConfiguration);
     UI ui = UI.getCurrent();
-    registerSampleBatchDialog.addConfirmListener(event -> {
-      var sampleMetadata = new ArrayList<>(event.validatedSampleMetadata());
-      event.getSource().close();
-      var pendingToast = notificationFactory.pendingTaskToast("task.in-progress",
-          new Object[]{"Sample registration for %d samples".formatted(sampleMetadata.size())},
-          getLocale());
-      ui.access(pendingToast::open);
-
-      CompletableFuture<Void> registrationTask = sampleRegistrationServiceV2
-          .registerSamples(sampleMetadata, projectId,
-              new ExperimentReference(experimentId.value()))
-          .orTimeout(5, TimeUnit.MINUTES);
-      try {
-        registrationTask
-            .exceptionally(e -> {
-              ui.access(() -> {
-                //this needs to come before all the success events
-                pendingToast.close();
-                notificationFactory.toast("task.failed",
-                    new Object[]{"Sample registration"}, getLocale()).open();
-              });
-              throw new HandledException(e);
-            })
-            .thenRun(() -> ui.access(this::setBatchAndSampleInformation))
-            .thenRun(() -> ui.access(() -> {
-              pendingToast.close();
-              displayRegistrationSuccess();
-            }))
-            .exceptionally(e -> {
-              //we need to make sure we do not swallow exceptions but still stay in the exceptional state.
-              throw new HandledException(e); //we need the future to complete exceptionally
-            });
-      } catch (HandledException e) {
-        // we only log the exception as the user was presented with the error already and nothing we can do here.
-        log.error(e.getMessage(), e);
-      }
-    });
-    registerSampleBatchDialog.addCancelListener(
-        event -> showCancelConfirmationDialog(event.getSource()));
-    registerSampleBatchDialog.setEscAction(
-        () -> showCancelConfirmationDialog(registerSampleBatchDialog));
+    var registerSampleBatchDialog = RegisterSampleBatchDialog.create(
+        asyncProjectService, messageFactory,
+        experimentId.value(),
+        projectId.value(),
+        projectOverview.projectCode(),
+        uploadConfiguration,
+        sampleMetadata -> submitSampleRegistration(sampleMetadata, projectId, experimentId, ui));
+    // cancellation (incl. the discard-changes confirmation) is handled by the AppDialog itself
     registerSampleBatchDialog.open();
   }
 
-  private void showCancelConfirmationDialog(RegisterSampleBatchDialog dialog) {
-    AlertDialog.alert(this)
-        .warning()
-        .title("Discard changes?")
-        .message("By aborting the editing process and closing the dialog, you will lose all information entered.")
-        .confirmButton("Discard changes", () -> dialog.close())
-        .cancelButton("Keep editing", () -> {})
-        .build()
-        .open();
+  private void submitSampleRegistration(
+      List<SampleRegistrationInformation> sampleMetadata, ProjectId projectId,
+      ExperimentId experimentId, UI ui) {
+    var pendingToast = notificationFactory.pendingTaskToast("task.in-progress",
+        new Object[]{"Sample registration for %d samples".formatted(sampleMetadata.size())},
+        getLocale());
+    ui.access(pendingToast::open);
+
+    CompletableFuture<Void> registrationTask = sampleRegistrationServiceV2
+        .registerSamples(sampleMetadata, projectId,
+            new ExperimentReference(experimentId.value()))
+        .orTimeout(5, TimeUnit.MINUTES);
+    try {
+      registrationTask
+          .exceptionally(e -> {
+            ui.access(() -> {
+              //this needs to come before all the success events
+              pendingToast.close();
+              notificationFactory.toast("task.failed",
+                  new Object[]{"Sample registration"}, getLocale()).open();
+            });
+            throw new HandledException(e);
+          })
+          .thenRun(() -> ui.access(this::setBatchAndSampleInformation))
+          .thenRun(() -> ui.access(() -> {
+            pendingToast.close();
+            displayRegistrationSuccess();
+          }))
+          .exceptionally(e -> {
+            //we need to make sure we do not swallow exceptions but still stay in the exceptional state.
+            throw new HandledException(e); //we need the future to complete exceptionally
+          });
+    } catch (HandledException e) {
+      // we only log the exception as the user was presented with the error already and nothing we can do here.
+      log.error(e.getMessage(), e);
+    }
   }
 
   private Disclaimer createNoSamplesRegisteredDisclaimer() {

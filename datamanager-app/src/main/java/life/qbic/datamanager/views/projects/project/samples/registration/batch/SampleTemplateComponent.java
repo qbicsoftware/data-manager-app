@@ -16,6 +16,7 @@ import life.qbic.datamanager.views.general.download.DownloadComponent;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.projectmanagement.application.api.fair.DigitalObject;
+import org.jspecify.annotations.Nullable;
 import org.springframework.util.MimeTypeUtils;
 import reactor.core.publisher.Mono;
 
@@ -27,8 +28,9 @@ import reactor.core.publisher.Mono;
  * (e.g. "Download all samples"); additional scoped exports (e.g. "Download selected (N)") can be
  * appended via {@link #addTemplateExport(String, Mono, Supplier)}.
  * <p>
- * Each export carries a {@link Supplier} of the number of samples it will export, used to populate
- * the "fetching metadata for {0} samples" progress toast.
+ * Each export may carry a {@link Supplier} of the number of samples it will export, used to populate
+ * the "fetching metadata for {0} samples" progress toast. When the supplier is <code>null</code> a
+ * generic "collecting information" toast is shown instead (e.g. for a blank registration template).
  * <p>
  * <strong>Note:</strong> the download in the client will only work if the component is attached to a
  * {@link com.vaadin.flow.component.UI}.
@@ -47,14 +49,13 @@ public class SampleTemplateComponent extends Div {
       Mono<DigitalObject> templateMono,
       MessageSourceNotificationFactory messageFactory,
       Supplier<String> projectCodeSupplier,
-      Supplier<Integer> sampleCountSupplier
+      @Nullable Supplier<Integer> sampleCountSupplier
   ) {
     requireNonNull(description);
     requireNonNull(buttonText);
     requireNonNull(templateMono);
     requireNonNull(messageFactory);
     requireNonNull(projectCodeSupplier);
-    requireNonNull(sampleCountSupplier);
     this.downloadComponent = new DownloadComponent();
     this.projectCodeSupplier = projectCodeSupplier;
     this.messageFactory = messageFactory;
@@ -91,9 +92,12 @@ public class SampleTemplateComponent extends Div {
   }
 
   private void subscribe(Mono<DigitalObject> templateMono,
-      Supplier<Integer> sampleCountSupplier) {
-    var inProgressToast = messageFactory.pendingTaskToast("sample.fetching-metadata",
-        new Object[]{sampleCountSupplier.get()}, getLocale());
+      @Nullable Supplier<Integer> sampleCountSupplier) {
+    var inProgressToast = sampleCountSupplier != null
+        ? messageFactory.pendingTaskToast("sample.fetching-metadata",
+            new Object[]{sampleCountSupplier.get()}, getLocale())
+        : messageFactory.pendingTaskToast("sample.preparing-download",
+            MessageSourceNotificationFactory.EMPTY_PARAMETERS, getLocale());
     var failureToast = messageFactory.toast("task.failed", new Object[]{"Template generation"},
         getLocale());
     templateMono
