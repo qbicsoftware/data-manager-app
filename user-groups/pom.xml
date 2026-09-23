@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>life.qbic.datamanager</groupId>
+    <artifactId>datamanager</artifactId>
+    <version>1.17.0</version>
+  </parent>
+
+  <artifactId>user-groups</artifactId>
+  <dependencies>
+    <dependency>
+      <groupId>life.qbic.datamanager</groupId>
+      <artifactId>user-groups-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>life.qbic.datamanager</groupId>
+      <artifactId>logging</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>life.qbic.datamanager</groupId>
+      <artifactId>domain-concept</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>life.qbic.datamanager</groupId>
+      <artifactId>broadcasting</artifactId>
+    </dependency>
+
+    <!--    spring-->
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-beans</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-context</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.data</groupId>
+      <artifactId>spring-data-commons</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-tx</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>jakarta.persistence</groupId>
+      <artifactId>jakarta.persistence-api</artifactId>
+    </dependency>
+
+    <!--    third party-->
+    <dependency>
+      <groupId>life.qbic.datamanager</groupId>
+      <artifactId>application-commons</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.groovy</groupId>
+      <artifactId>groovy</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.spockframework</groupId>
+      <artifactId>spock-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>

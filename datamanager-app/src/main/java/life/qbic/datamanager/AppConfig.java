@@ -22,6 +22,13 @@ import life.qbic.identity.application.user.policy.directive.WhenUserRegisteredSe
 import life.qbic.identity.application.user.policy.directive.WhenUserRegisteredSubmitIntegrationEvent;
 import life.qbic.identity.domain.repository.UserDataStorage;
 import life.qbic.identity.domain.repository.UserRepository;
+import life.qbic.usergroups.api.GroupInformationService;
+import life.qbic.usergroups.api.GroupSidProvider;
+import life.qbic.usergroups.application.GroupService;
+import life.qbic.usergroups.application.service.GroupInformationServiceImpl;
+import life.qbic.usergroups.application.service.GroupSidProviderImpl;
+import life.qbic.usergroups.domain.repository.GroupDataStorage;
+import life.qbic.usergroups.domain.repository.GroupRepository;
 import life.qbic.infrastructure.email.EmailServiceProvider;
 import life.qbic.infrastructure.email.identity.IdentityEmailServiceProvider;
 import life.qbic.infrastructure.email.project.ProjectManagementEmailServiceProvider;
@@ -88,7 +95,8 @@ import reactor.core.scheduler.Scheduler;
  * @since 1.0.0
  */
 @Configuration
-@ComponentScan({"life.qbic.identity.infrastructure", "life.qbic.datamanager.announcements"})
+@ComponentScan({"life.qbic.identity.infrastructure", "life.qbic.usergroups.infrastructure",
+    "life.qbic.datamanager.announcements"})
 public class AppConfig {
   /*
   Wiring up identity application core and policies
@@ -186,6 +194,33 @@ public class AppConfig {
   @Bean
   public UserRepository userRepository(UserDataStorage userDataStorage) {
     return UserRepository.getInstance(userDataStorage);
+  }
+
+  /**
+   * Creates the group repository instance.
+   *
+   * @param groupDataStorage an implementation of the {@link GroupDataStorage} interface
+   * @return a Singleton of the group repository
+   * @since 1.0.0
+   */
+  @Bean
+  public GroupRepository groupRepository(GroupDataStorage groupDataStorage) {
+    return GroupRepository.getInstance(groupDataStorage);
+  }
+
+  @Bean
+  public GroupService groupService(GroupRepository groupRepository) {
+    return new GroupService(groupRepository);
+  }
+
+  @Bean
+  public GroupInformationServiceImpl groupInformationService(GroupService groupService) {
+    return new GroupInformationServiceImpl(groupService);
+  }
+
+  @Bean
+  public GroupSidProviderImpl groupSidProvider(GroupService groupService) {
+    return new GroupSidProviderImpl(groupService);
   }
   /*
   Section ends
