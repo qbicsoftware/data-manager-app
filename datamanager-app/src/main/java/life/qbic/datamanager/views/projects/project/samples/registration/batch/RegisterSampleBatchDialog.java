@@ -77,7 +77,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
     this.messageFactory = Objects.requireNonNull(messageFactory);
     this.downloadComponent = new DownloadComponent();
 
-    setHeaderTitle("Register Sample Batch");
+    setHeaderTitle("Register Samples");
     setConfirmButtonLabel("Register");
 
     initialView = new Div();
