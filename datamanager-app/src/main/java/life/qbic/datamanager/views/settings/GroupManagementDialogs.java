@@ -141,6 +141,16 @@ public final class GroupManagementDialogs {
   }
 
   /**
+   * Search callback for the "add member" combobox honoring the Vaadin data-provider
+   * paging contract (the fetch callback must read the query bounds).
+   */
+  @FunctionalInterface
+  public interface MemberSearch extends Serializable {
+
+    List<UserInfo> search(String filter, int offset, int limit);
+  }
+
+  /**
    * Opens the "Manage members" dialog for the given group.
    *
    * @param parent             the owner component (for dialog attachment)
@@ -148,13 +158,14 @@ public final class GroupManagementDialogs {
    * @param members            the current members of the group
    * @param actingUserRole     the acting user's role inside the group
    * @param memberNameResolver maps a user id to a display name for the roster
-   * @param candidateSearcher  returns users who could be added (not yet members)
+   * @param memberSearch       returns users who could be added (not yet members); must honor the
+   *                           given offset/limit paging contract
    * @param handler            handles the concrete member op and refreshes
    */
   public static void openManageMembersDialog(Component parent, String groupId,
       List<GroupMember> members, GroupRole actingUserRole,
       Function<String, String> memberNameResolver,
-      Function<String, List<UserInfo>> candidateSearcher,
+      MemberSearch memberSearch,
       ManagementHandler handler, Supplier<List<GroupMember>> reloadMembers) {
     requireNonNull(parent, "parent must not be null");
     requireNonNull(groupId, "groupId must not be null");
@@ -164,7 +175,7 @@ public final class GroupManagementDialogs {
     AppDialog dialog = AppDialog.medium();
     DialogHeader.with(dialog, "Manage members");
     var body = new ManageMembersBody(groupId, members, actingUserRole, memberNameResolver,
-        candidateSearcher, handler, reloadMembers);
+        memberSearch, handler, reloadMembers);
     dialog.registerUserInput(body);
     DialogBody.with(dialog, body, body);
     DialogFooter.with(dialog, "Close", "Done");
@@ -186,7 +197,7 @@ public final class GroupManagementDialogs {
    */
   public static void openAppointManagerDialog(Component parent, String groupId,
       List<GroupMember> members, Function<String, String> memberNameResolver,
-      Function<String, List<UserInfo>> candidateSearcher, ManagementHandler handler) {
+      MemberSearch candidateSearcher, ManagementHandler handler) {
     requireNonNull(parent, "parent must not be null");
     requireNonNull(groupId, "groupId must not be null");
     requireNonNull(members, "members must not be null");
@@ -333,14 +344,14 @@ public final class GroupManagementDialogs {
     private final List<GroupMember> members;
     private final GroupRole actingUserRole;
     private final Function<String, String> memberNameResolver;
-    private final Function<String, List<UserInfo>> candidateSearcher;
+    private final MemberSearch memberSearch;
     private final ManagementHandler handler;
     private final Supplier<List<GroupMember>> reloadMembers;
     private final Div roster = new Div();
 
     ManageMembersBody(String groupId, List<GroupMember> members, GroupRole actingUserRole,
         Function<String, String> memberNameResolver,
-        Function<String, List<UserInfo>> candidateSearcher, ManagementHandler handler,
+        MemberSearch memberSearch, ManagementHandler handler,
         Supplier<List<GroupMember>> reloadMembers) {
       this.groupId = requireNonNull(groupId, "groupId must not be null");
       this.members = new ArrayList<>(requireNonNull(members, "members must not be null"));
@@ -350,7 +361,7 @@ public final class GroupManagementDialogs {
       this.actingUserRole = Objects.requireNonNull(actingUserRole,
           "actingUserRole must not be null");
       this.memberNameResolver = memberNameResolver;
-      this.candidateSearcher = candidateSearcher;
+      this.memberSearch = memberSearch;
       this.handler = requireNonNull(handler, "handler must not be null");
       this.reloadMembers = reloadMembers;
       addClassName("manage-members-dialog");
@@ -373,7 +384,7 @@ public final class GroupManagementDialogs {
       roster.addClassName("manage-members-roster");
       add(title, roster);
       renderRoster();
-      if (actingUserRole == GroupRole.OWNER && candidateSearcher != null) {
+      if (actingUserRole == GroupRole.OWNER && memberSearch != null) {
         ComboBox<UserInfo> addMember = new ComboBox<>("Add member");
         addMember.setPlaceholder("Search for username or full name");
         addMember.setItemLabelGenerator(UserInfo::platformUserName);
@@ -384,7 +395,8 @@ public final class GroupManagementDialogs {
               : candidate.fullName() + " (" + candidate.platformUserName() + ")");
           return div;
         }));
-        addMember.setItems(query -> candidateSearcher.apply(query.getFilter().orElse(null))
+        addMember.setItems(query -> memberSearch.search(
+                query.getFilter().orElse(null), query.getOffset(), query.getLimit())
             .stream());
         Button addButton = new Button("Add");
         addButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);

@@ -261,9 +261,9 @@ public class MyGroupsMain extends Main implements BeforeEnterObserver {
         ? userInfo.platformUserName() : userInfo.fullName();
   }
 
-  private List<UserInfo> searchAddableUsers(String filter) {
+  private List<UserInfo> searchAddableUsers(String filter, int offset, int limit) {
     try {
-      return userInformationService.queryActiveUsersWithFilter(filter, 0, 25,
+      return userInformationService.queryActiveUsersWithFilter(filter, offset, limit,
           List.of(SortOrder.of("userName")));
     } catch (RuntimeException e) {
       // best-effort search; an empty list just means "no suggestions"

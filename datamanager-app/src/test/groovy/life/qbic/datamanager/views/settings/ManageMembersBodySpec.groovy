@@ -30,7 +30,7 @@ class ManageMembersBodySpec extends Specification {
     when: "the manage-members body is built with the immutable list"
     new GroupManagementDialogs.ManageMembersBody(
         "group-1", immutableMembers, GroupRole.OWNER,
-        { userId -> userId }, { filter -> [] }, { request -> actions << request.action() }, null)
+        { userId -> userId }, { filter, offset, limit -> [] }, { request -> actions << request.action() }, null)
 
     then: "no exception is thrown and the immutable list is untouched"
     noExceptionThrown()
@@ -47,7 +47,7 @@ class ManageMembersBodySpec extends Specification {
     when:
     def body = new GroupManagementDialogs.ManageMembersBody(
         "group-1", immutableMembers, GroupRole.OWNER,
-        { userId -> userId }, { filter -> [] }, { req -> }, null)
+        { userId -> userId }, { filter, offset, limit -> [] }, { req -> }, null)
 
     then: "the roster contains one row per member"
     def roster = firstWithClass(body, "manage-members-roster")
@@ -65,7 +65,7 @@ class ManageMembersBodySpec extends Specification {
     when:
     def body = new GroupManagementDialogs.ManageMembersBody(
         "group-1", immutableMembers, GroupRole.OWNER,
-        { userId -> userId }, { filter -> [] }, { req -> }, null)
+        { userId -> userId }, { filter, offset, limit -> [] }, { req -> }, null)
     def roster = firstWithClass(body, "manage-members-roster")
     def rows = childrenOfClass(roster, "manage-members-row")
 
@@ -88,7 +88,7 @@ class ManageMembersBodySpec extends Specification {
     when:
     def body = new GroupManagementDialogs.ManageMembersBody(
         "group-1", immutableMembers, GroupRole.MANAGER,
-        { userId -> userId }, { filter -> [] }, { req -> }, null)
+        { userId -> userId }, { filter, offset, limit -> [] }, { req -> }, null)
     def roster = firstWithClass(body, "manage-members-roster")
     def rows = childrenOfClass(roster, "manage-members-row")
 
@@ -108,7 +108,7 @@ class ManageMembersBodySpec extends Specification {
     when: "the owner clicks Remove on bob"
     def body = new GroupManagementDialogs.ManageMembersBody(
         "group-1", immutableMembers, GroupRole.OWNER,
-        { userId -> userId }, { filter -> [] },
+        { userId -> userId }, { filter, offset, limit -> [] },
         { req -> requests << [req.action(), req.userId()] },
         { reloadCounter++; [new GroupMember("alice", GroupRole.OWNER)] })
     def roster = firstWithClass(body, "manage-members-roster")
