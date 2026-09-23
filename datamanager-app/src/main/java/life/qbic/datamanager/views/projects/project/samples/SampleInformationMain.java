@@ -89,6 +89,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver, 
   private final History.HistoryStateChangeHandler listStateHistoryHandler = this::onHistoryStateChange;
   private String basePath;
   private boolean suppressUrlWrite;
+  private ExperimentId shownExperimentId;
 
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
@@ -549,6 +550,18 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver, 
   }
 
   private void reloadSampleInformation() {
+    ExperimentId currentExperiment = context.experimentId().orElseThrow();
+    boolean experimentChanged = !currentExperiment.equals(shownExperimentId);
+    if (sampleDetailsComponent instanceof SampleDetailsComponent sampleDetails
+        && !experimentChanged) {
+      // Same experiment (e.g. after a sample update/registration): preserve the current list state
+      // (page/filter/sort) and URL params and simply reload the data in place, mirroring the
+      // measurement list. Recreating the component would lose the load trigger and show an empty
+      // grid after editing.
+      sampleDetails.refresh();
+      return;
+    }
+    shownExperimentId = currentExperiment;
     remove(sampleDetailsComponent);
     var sampleDetails = new SampleDetailsComponent(asyncProjectService, messageFactory, context);
     sampleDetails.addSampleEditListener(this::onEditSamplesClicked);
