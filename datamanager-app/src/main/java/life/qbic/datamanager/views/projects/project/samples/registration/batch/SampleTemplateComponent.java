@@ -136,7 +136,7 @@ public class SampleTemplateComponent extends Div {
       public String getFilename() {
         var projectCode = projectCodeSupplier.get();
         return FileNameFormatter.formatWithTimestampedSimple(LocalDate.now(), projectCode,
-            "sample metadata update template", "xlsx");
+            "sample_metadata", "xlsx");
       }
 
       @Override
