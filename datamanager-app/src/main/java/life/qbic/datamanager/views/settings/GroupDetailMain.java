@@ -3,8 +3,12 @@ package life.qbic.datamanager.views.settings;
 import static java.util.Objects.requireNonNull;
 
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H3;
+import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.NotFoundException;
@@ -22,7 +26,7 @@ import life.qbic.datamanager.views.general.InlineEditableField;
 import life.qbic.datamanager.views.general.InlineEditableField.InputKind;
 import life.qbic.datamanager.views.general.InlineEditableField.SaveEvent;
 import life.qbic.datamanager.views.general.Main;
-import life.qbic.datamanager.views.general.dialog.AlertDialog;
+import life.qbic.datamanager.views.general.dialog.TypeToConfirmInput;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.settings.GroupMembersComponent.GroupMembersUpdatedRequest;
@@ -33,6 +37,7 @@ import life.qbic.usergroups.api.GroupInformationService;
 import life.qbic.usergroups.api.GroupManagementService;
 import life.qbic.usergroups.api.GroupMember;
 import life.qbic.usergroups.api.GroupRole;
+import life.qbic.usergroups.api.GroupType;
 import life.qbic.usergroups.api.MyGroupMembership;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -48,8 +53,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
  * The page follows the Profile settings convention: a flat {@link SettingsSection} made of
  * {@code settings-group} blocks separated by subheadings and whitespace (no card chrome), with
  * the group name and description as inline-editable rows ({@link InlineEditableField}) and the
- * member roster in a group of its own. Destructive operations (dissolve group) remain a confirm
- * dialog; non-destructive modifications happen on the page.
+ * member roster in a group of its own. The destructive dissolve operation is guarded by an
+ * inline type-to-confirm form that expands in place inside the danger zone (the owner must
+ * retype the exact group name); non-destructive modifications happen on the page.
  * <p>
  * Back navigation reuses the settings navigation concept: a text link "My Groups" in the
  * section header points back to the list ({@link MyGroupsMain}), matching the aside links.
@@ -83,6 +89,8 @@ public class GroupDetailMain extends Main implements BeforeEnterObserver {
   private transient InlineEditableField nameField;
   private transient InlineEditableField descriptionField;
   private transient RouterLink backLink;
+  private transient Div membersGroup;
+  private transient H3 membersHeading;
 
   /**
    * Production constructor: wires the seams to the real services, toasts and navigation.
@@ -121,6 +129,8 @@ public class GroupDetailMain extends Main implements BeforeEnterObserver {
     membership = null;
     nameField = null;
     descriptionField = null;
+    membersGroup = null;
+    membersHeading = null;
     String groupId = event.getRouteParameters().get(GROUP_ID_ROUTE_PARAMETER).orElseThrow();
     String actingUserId = currentUserId();
 
@@ -170,13 +180,15 @@ public class GroupDetailMain extends Main implements BeforeEnterObserver {
     section.addContent(profileGroup);
 
     // ── Members group (roster in place) ─────────────────────────────────
-    Div membersGroup = settingsGroup("Members");
     List<GroupMember> members = groupManagementService.listMembers(groupId, actingUserId);
+    membersGroup = newMembersGroup(members.size());
     GroupMembersComponent membersComponent = new GroupMembersComponent(
-        groupId, members, myRole, this::displayNameFor, this::searchAddableUsers,
+        groupId, members, myRole, actingUserId, this::displayNameFor, this::searchAddableUsers,
         this::handleMemberRequest, () -> groupManagementService.listMembers(groupId, actingUserId));
     if (myRole == GroupRole.OWNER || myRole == GroupRole.MANAGER) {
-      var addMemberButton = new com.vaadin.flow.component.button.Button("Add member");
+      var addMemberButton = new com.vaadin.flow.component.button.Button("Add member",
+          new com.vaadin.flow.component.icon.Icon(
+              com.vaadin.flow.component.icon.VaadinIcon.PLUS));
       addMemberButton.addClassName("primary");
       addMemberButton.addClickListener(click -> membersComponent.openAddMemberDialog());
       addGroupAction(membersGroup, addMemberButton);
@@ -186,21 +198,79 @@ public class GroupDetailMain extends Main implements BeforeEnterObserver {
     membersGroup.add(membersComponent);
     section.addContent(membersGroup);
 
-    // ── Danger zone group (owner-only, destructive → confirm) ───────────
-    if (myRole == GroupRole.OWNER) {
+    // ── Danger zone group (owner-only, destructive → inline type-to-confirm) ──
+    // Dissolving a group is irreversible, so the action is guarded by an inline
+    // type-to-confirm form that expands in place (expand-on-click, GitHub/GitLab-style)
+    // instead of a modal: the owner must retype the exact group name to unlock the
+    // destructive button while keeping the blast radius (roster, member count) visible.
+    // Org groups are admin-governed (no OWNER membership) and never expose a dissolve
+    // affordance; only ad-hoc owners can dissolve their group.
+    if (myRole == GroupRole.OWNER && membership.groupType() == GroupType.ADHOC) {
       Div dangerGroup = settingsGroup("Danger zone");
-      var dissolveIcon = new com.vaadin.flow.component.icon.Icon(
-          com.vaadin.flow.component.icon.VaadinIcon.WARNING);
-      var dissolveButton = new com.vaadin.flow.component.button.Button("Dissolve Group",
-          dissolveIcon);
-      dissolveButton.addClassName("button-danger");
-      dissolveButton.addClickListener(click -> confirmDissolve(groupId, actingUserId));
-      dangerGroup.add(dissolveButton);
-      var dissolveNote = new com.vaadin.flow.component.html.Span(
+
+      // Explainer: always visible above the trigger/confirm actions, so the scope of the
+      // destructive operation stays in sight even while the type-to-confirm guard is open.
+      Span dissolveNote = new Span(
           "Permanently dissolves this group, removes all members and revokes access to "
               + "projects shared with it. This cannot be undone.");
       dissolveNote.addClassName("group-detail-danger-note");
       dangerGroup.add(dissolveNote);
+
+      // Calm state: the dissolve trigger. The guard form is hidden until the owner
+      // actively engages with the trigger; the note above stays visible regardless.
+      Div dangerRow = new Div();
+      dangerRow.addClassName("group-detail-danger-zone");
+      Button dissolveButton = new Button("Dissolve Group", new Icon(VaadinIcon.WARNING));
+      dissolveButton.addClassName("button-danger");
+      dangerRow.add(dissolveButton);
+      dangerGroup.add(dangerRow);
+
+      // Guard state: replaces the calm row while engaged. The destructive button stays
+      // locked until the retyped name exactly matches the group name; the server re-checks
+      // on click regardless (defense in depth, never trust the client-side button state).
+      String groupName = membership.groupName();
+      TypeToConfirmInput confirmInput = new TypeToConfirmInput(groupName);
+      confirmInput.addClassNames("group-detail-dissolve-confirm-input", "width-full");
+      com.vaadin.flow.component.textfield.TextField confirmField = confirmInput.textField();
+      confirmField.addClassNames("width-full");
+      Button cancelButton = new Button("Keep group");
+      Button confirmButton = new Button("Dissolve group");
+      confirmButton.addClassName("button-danger");
+      confirmButton.setEnabled(false); // locked until the typed name matches
+
+      Div confirmButtons = new Div();
+      confirmButtons.addClassNames("flex-horizontal", "gap-02");
+      confirmButtons.add(cancelButton, confirmButton);
+
+      Div confirmSection = new Div();
+      confirmSection.addClassNames("group-detail-dissolve-confirm", "flex-vertical",
+          "gap-03", "width-full");
+      confirmSection.setVisible(false);
+      confirmSection.add(confirmInput, confirmButtons);
+      dangerGroup.add(confirmSection);
+
+      dissolveButton.addClickListener(click -> {
+        dangerRow.setVisible(false);
+        confirmField.clear();
+        confirmButton.setEnabled(false);
+        confirmSection.setVisible(true);
+        confirmField.focus();
+      });
+      cancelButton.addClickListener(click -> {
+        confirmSection.setVisible(false);
+        confirmField.clear();
+        dangerRow.setVisible(true);
+      });
+      confirmField.addValueChangeListener(event ->
+          confirmButton.setEnabled(confirmInput.validate().hasPassed()));
+      confirmButton.addClickListener(click -> {
+        // Re-validate server-side: never trigger the irreversible operation based on the
+        // client-side button state alone.
+        if (confirmInput.validate().hasPassed()) {
+          dissolveGroup(groupId, actingUserId, groupName);
+        }
+      });
+
       section.addContent(dangerGroup);
     }
 
@@ -256,6 +326,12 @@ public class GroupDetailMain extends Main implements BeforeEnterObserver {
   }
 
   private void onMembersUpdated(GroupMembersComponent.GroupMembersUpdatedEvent event) {
+    // keep the Members section heading count in sync with the roster after add/remove
+    if (membersHeading != null) {
+      int freshCount = groupManagementService.listMembers(membership.groupId(),
+          currentUserId()).size();
+      membersHeading.setText("Members (" + freshCount + ")");
+    }
     toast("user-groups.manage.success",
         new Object[]{membership.groupName()}, Locale.getDefault());
   }
@@ -274,26 +350,21 @@ public class GroupDetailMain extends Main implements BeforeEnterObserver {
     }
   }
 
-  private void confirmDissolve(String groupId, String actingUserId) {
-    String groupName = membership.groupName();
-    AlertDialog.danger(this,
-        "Dissolve this group?",
-        "Dissolving \"" + groupName
-            + "\" removes all members and permanently ends the group. Members will lose access "
-            + "to projects this group is shared with. This cannot be undone.",
-        "Dissolve Group",
-        "Keep group",
-        () -> {
-          try {
-            groupManagementService.dissolveGroup(groupId, actingUserId);
-            toast("user-groups.dissolve.success",
-                new Object[]{groupName}, Locale.getDefault());
-            getUI().ifPresent(ui -> ui.navigate(MyGroupsMain.class));
-          } catch (RuntimeException error) {
-            toast("user-groups.dissolve.error",
-                new Object[]{groupName}, Locale.getDefault());
-          }
-        });
+  /**
+   * Executes the irreversible dissolve and reacts to the outcome. On success the dismissal
+   * toast is shown and the owner returns to the My Groups list. On failure an error toast is
+   * shown and the page remains; the guard form stays open so the owner can retry.
+   */
+  private void dissolveGroup(String groupId, String actingUserId, String groupName) {
+    try {
+      groupManagementService.dissolveGroup(groupId, actingUserId);
+      toast("user-groups.dissolve.success",
+          new Object[]{groupName}, Locale.getDefault());
+      getUI().ifPresent(ui -> ui.navigate(MyGroupsMain.class));
+    } catch (RuntimeException error) {
+      toast("user-groups.dissolve.error",
+          new Object[]{groupName}, Locale.getDefault());
+    }
   }
 
   private void refreshMembership(String groupId, String actingUserId) {
@@ -309,13 +380,13 @@ public class GroupDetailMain extends Main implements BeforeEnterObserver {
     return userIdTranslator.translateToUserId(authentication).orElseThrow();
   }
 
-  private String displayNameFor(String userId) {
+  private GroupMembersComponent.MemberDisplayInfo displayNameFor(String userId) {
     UserInfo userInfo = userInformationService.findById(userId).orElse(null);
     if (userInfo == null) {
       return null;
     }
-    return userInfo.fullName() == null || userInfo.fullName().isBlank()
-        ? userInfo.platformUserName() : userInfo.fullName();
+    return new GroupMembersComponent.MemberDisplayInfo(userInfo.fullName(),
+        userInfo.platformUserName());
   }
 
   private List<UserInfo> searchAddableUsers(String filter, int offset, int limit) {
@@ -342,6 +413,20 @@ public class GroupDetailMain extends Main implements BeforeEnterObserver {
     var heading = new H3(title);
     heading.addClassName("settings-group__title");
     group.add(heading);
+    return group;
+  }
+
+  /**
+   * Members section: a settings-group whose subheading carries the current roster size
+   * ("Members (N)"). The heading is captured so the count stays in sync when members are
+   * added or removed in place.
+   */
+  private Div newMembersGroup(int memberCount) {
+    Div group = new Div();
+    group.addClassName("settings-group");
+    membersHeading = new H3("Members (" + memberCount + ")");
+    membersHeading.addClassName("settings-group__title");
+    group.add(membersHeading);
     return group;
   }
 

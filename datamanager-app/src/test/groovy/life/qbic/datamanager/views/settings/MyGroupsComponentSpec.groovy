@@ -136,10 +136,30 @@ class MyGroupsComponentSpec extends Specification {
     when:
     component.refresh()
 
-    then: "the manager sees the Manage group entry (the detail page owns management)"
+    then: "the manager sees the Manage group entry (the detail page owns management) and can also leave"
     List<Button> buttons = buttonsOf(renderedRows()[0])
     buttons.findAll { it.enabled }*.text.contains("Manage group")
-    buttons.findAll { it.text == "Leave group" }.isEmpty()
+    buttons.findAll { it.text == "Leave group" }.size() == 1
+  }
+
+  def "a manager's Leave group action runs the confirmation seam, leave callback, refresh and leave event"() {
+    given: "an ad-hoc manager"
+    memberships = [membership("group-1", "Sprint Team", null, GroupType.ADHOC, GroupRole.MANAGER)]
+    component.refresh()
+    boolean[] fired = new boolean[1]
+    component.addLeaveGroupListener(event -> fired[0] = event.groupId() == "group-1")
+
+    when: "the user clicks leave and the confirmation seam confirms"
+    List<Button> buttons = buttonsOf(renderedRows()[0])
+    Button leave = buttons.find { it.text == "Leave group" }
+    leave.click()
+
+    then: "the confirmation is asked once, the leave callback runs, the list refreshes and the event fires"
+    confirmations.size() == 1
+    confirmations[0][0] == "group-1"
+    leaveCalls == ["group-1"]
+    1 * refreshSpy.run()
+    fired[0]
   }
 
   def "a Manage group action exists for an ad-hoc owner (navigates to the detail page)"() {
@@ -196,6 +216,26 @@ class MyGroupsComponentSpec extends Specification {
     textOf(renderedRows()[0]).contains("Sprint Team")
   }
 
+  def "renders the total member count of a group as a badge"() {
+    given: "a membership whose group has 4 members"
+    memberships = [new MyGroupMembership("group-1", "Sprint Team", null, GroupType.ADHOC,
+        GroupRole.MEMBER, 4 as int)]
+
+    when: "the component refreshes"
+    component.refresh()
+
+    then: "the row shows the plural member count"
+    textOf(renderedRows()[0]).contains("4 members")
+
+    when: "the group has a single member"
+    memberships = [new MyGroupMembership("group-1", "Solo Team", null, GroupType.ADHOC,
+        GroupRole.OWNER, 1 as int)]
+    component.refresh()
+
+    then: "the row shows the singular member count"
+    textOf(renderedRows()[0]).contains("1 member")
+  }
+
   def "rejects null seams at construction time"() {
     when: "a null supplier is provided"
     new MyGroupsComponent(null, () -> {}, { }, { g, r -> },
@@ -207,7 +247,7 @@ class MyGroupsComponentSpec extends Specification {
 
   private static MyGroupMembership membership(String groupId, String name, String description,
       GroupType type, GroupRole role) {
-    new MyGroupMembership(groupId, name, description, type, role)
+    new MyGroupMembership(groupId, name, description, type, role, 1 as int)
   }
 
   private List<Div> renderedRows() {

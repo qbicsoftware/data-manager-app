@@ -80,6 +80,7 @@ public class GroupInformationServiceImpl implements GroupInformationService {
         projection.groupName().value(),
         projection.groupDescription().value().orElse(null),
         apiType,
-        apiRole);
+        apiRole,
+        projection.memberCount());
   }
 }

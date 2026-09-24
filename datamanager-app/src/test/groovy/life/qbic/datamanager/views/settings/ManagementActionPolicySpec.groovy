@@ -22,7 +22,7 @@ class ManagementActionPolicySpec extends Specification {
   def "an ad-hoc #role row offers #expected"() {
     given: "a membership in an ad-hoc group"
     MyGroupMembership membership = new MyGroupMembership("g-1", "Group", null, GroupType.ADHOC,
-        role)
+        role, 3 as int)
 
     when:
     def actions = policy.actionsFor(membership)
@@ -41,7 +41,7 @@ class ManagementActionPolicySpec extends Specification {
   def "an org group membership never offers management actions (#role)"() {
     given:
     MyGroupMembership membership = new MyGroupMembership("org-1", "Org Group", null, GroupType.ORG,
-        role)
+        role, 5 as int)
 
     expect:
     policy.actionsFor(membership).isEmpty()

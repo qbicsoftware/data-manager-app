@@ -109,6 +109,25 @@ class GroupInformationServiceImplSpec extends Specification {
     aliceGroups*.groupId().contains(bobGroup.get()) == false
   }
 
+  def "listMyGroups carries the total member count of each group"() {
+    given: "a group owned by alice with bob added as a second member"
+    GroupId aliceGroup = GroupId.create()
+    domainService.createAdHocGroup(aliceGroup, GroupName.from("Alice's Group"), DESC, "alice", NOW)
+    domainService.addMember(aliceGroup, "alice", "bob", NOW)
+
+    and: "a solo group owned by bob"
+    GroupId bobGroup = GroupId.create()
+    domainService.createAdHocGroup(bobGroup, GroupName.from("Bob's Group"), DESC, "bob", NOW)
+
+    when:
+    List<MyGroupMembership> aliceGroups = service.listMyGroups("alice")
+    List<MyGroupMembership> bobGroups = service.listMyGroups("bob")
+
+    then: "alice sees the full roster size of her group (2) and bob sees his solo group (1)"
+    aliceGroups.find { it.groupId() == aliceGroup.get() }.memberCount() == 2
+    bobGroups.find { it.groupId() == bobGroup.get() }.memberCount() == 1
+  }
+
   def "isGroupNameAvailable is case-insensitive"() {
     given: "a group named 'NGS Lab' exists"
     domainService.createAdHocGroup(GroupId.create(), GroupName.from("NGS Lab"), DESC, "alice", NOW)

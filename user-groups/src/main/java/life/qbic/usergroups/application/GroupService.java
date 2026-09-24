@@ -562,8 +562,11 @@ public class GroupService {
         .findFirst()
         .orElseThrow(() -> new IllegalStateException(
             "User " + userId + " has no membership in group " + group.id()));
+    // The caller is a member, so the roster size is within the visibility policy — and it
+    // comes for free here because the memberships are already loaded with the aggregate.
+    int memberCount = group.memberships().size();
     return new GroupMembershipProjection(group.id(), group.name(), group.description(),
-        group.type(), role);
+        group.type(), role, memberCount);
   }
 
   private GroupInfoProjection toInfoProjection(UserGroup group) {

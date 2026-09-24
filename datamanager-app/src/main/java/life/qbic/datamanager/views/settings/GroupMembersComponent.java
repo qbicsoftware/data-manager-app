@@ -10,10 +10,12 @@ import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.shared.Registration;
 import java.io.Serial;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -22,7 +24,11 @@ import java.util.function.Supplier;
 import life.qbic.datamanager.views.general.grid.component.FilterGrid;
 import life.qbic.datamanager.views.general.grid.component.FilterGridConfigurations;
 import life.qbic.datamanager.views.general.grid.component.GridConfiguration.FilterTester;
+import life.qbic.datamanager.views.general.dialog.AppDialog;
 import life.qbic.datamanager.views.general.dialog.AlertDialog;
+import life.qbic.datamanager.views.general.dialog.DialogBody;
+import life.qbic.datamanager.views.general.dialog.DialogFooter;
+import life.qbic.datamanager.views.general.dialog.DialogHeader;
 import life.qbic.datamanager.views.settings.GroupMembersComponent.MemberAction;
 import life.qbic.identity.api.UserInfo;
 import life.qbic.usergroups.api.GroupMember;
@@ -44,6 +50,11 @@ import life.qbic.usergroups.api.GroupRole;
  *   <li><b>Remove</b> — removes the selected members.</li>
  * </ul>
  * <p>
+ * The table is laid out as a <b>Member</b> column (full name + platform user name) plus a
+ * dedicated <b>Role</b> column so every member's role lines up vertically. All rows are rendered
+ * at their natural height (no embedded scrollbar): the roster size equals the number of members,
+ * so the native page scroll handles overflow (USER-NFR-01).
+ * <p>
  * The component is seam-driven: the actual service calls and the refresh happen behind the
  * {@link MemberManagementHandler} seam, and the add-member search runs through the
  * {@link MemberSearch} seam honoring the Vaadin data-provider paging contract. This keeps the
@@ -62,7 +73,8 @@ public final class GroupMembersComponent extends Div {
   private final String groupId;
   private final List<GroupMember> members;
   private final GroupRole actingUserRole;
-  private final Function<String, String> memberNameResolver;
+  private final String actingUserId;
+  private final Function<String, MemberDisplayInfo> memberInfoResolver;
   private final MemberSearch memberSearch;
   private final MemberManagementHandler handler;
   private final Supplier<List<GroupMember>> reloadMembers;
@@ -74,17 +86,22 @@ public final class GroupMembersComponent extends Div {
   /**
    * Creates the roster component.
    *
-   * @param groupId            the group being managed; must not be {@code null}
-   * @param members            the current members of the group (a snapshot; never mutated)
-   * @param actingUserRole     the acting user's role inside the group; must not be {@code null}
-   * @param memberNameResolver maps a user id to a display name for the roster
-   * @param memberSearch       returns users who could be added (not yet members); must honor the
-   *                           given offset/limit paging contract
-   * @param handler            handles a concrete member op and refreshes; must not be {@code null}
-   * @param reloadMembers      reloads the members after a mutation; may be {@code null}
+   * @param groupId             the group being managed; must not be {@code null}
+   * @param members             the current members of the group (a snapshot; never mutated)
+   * @param actingUserRole      the acting user's role inside the group; must not be {@code null}
+   * @param actingUserId        the acting user's own user id — used to render the acting user's
+   *                            row (and any owner row) as non-actionable; must not be
+   *                            {@code null}
+   * @param memberInfoResolver  maps a user id to the member's display info (full name + user
+   *                            name); must not be {@code null}
+   * @param memberSearch        returns users who could be added (not yet members); must honor the
+   *                            given offset/limit paging contract
+   * @param handler             handles a concrete member op and refreshes; must not be {@code null}
+   * @param reloadMembers       reloads the members after a mutation; may be {@code null}
    */
   public GroupMembersComponent(String groupId, List<GroupMember> members,
-      GroupRole actingUserRole, Function<String, String> memberNameResolver,
+      GroupRole actingUserRole, String actingUserId,
+      Function<String, MemberDisplayInfo> memberInfoResolver,
       MemberSearch memberSearch, MemberManagementHandler handler,
       Supplier<List<GroupMember>> reloadMembers) {
     this.groupId = requireNonNull(groupId, "groupId must not be null");
@@ -93,7 +110,9 @@ public final class GroupMembersComponent extends Div {
     this.members = new ArrayList<>(requireNonNull(members, "members must not be null"));
     this.actingUserRole = Objects.requireNonNull(actingUserRole,
         "actingUserRole must not be null");
-    this.memberNameResolver = memberNameResolver;
+    this.actingUserId = requireNonNull(actingUserId, "actingUserId must not be null");
+    this.memberInfoResolver = requireNonNull(memberInfoResolver,
+        "memberInfoResolver must not be null");
     this.memberSearch = memberSearch;
     this.handler = requireNonNull(handler, "handler must not be null");
     this.reloadMembers = reloadMembers;
@@ -119,6 +138,9 @@ public final class GroupMembersComponent extends Div {
       members.clear();
       members.addAll(fresh);
     }
+    // Re-sort after a reload so the hierarchy (owner → managers → members) is restored even
+    // when a reload returns an unsorted roster.
+    sortMembers();
     if (filterGrid != null) {
       filterGrid.refreshAll();
       filterGrid.deselectAll();
@@ -127,39 +149,80 @@ public final class GroupMembersComponent extends Div {
   }
 
   private void build() {
+    // Hierarchy order: owner first, then managers, then members — each group ordered
+    // lexicographically by the resolved full name (fallback: user id).
+    sortMembers();
+
     FilterTester<GroupMember, String> filterTester = (member, searchTerm) -> {
       if (searchTerm == null || searchTerm.isBlank()) {
         return true;
       }
       String lower = searchTerm.toLowerCase();
-      String displayName = memberNameResolver == null ? null
-          : memberNameResolver.apply(member.userId());
-      if (displayName != null && displayName.toLowerCase().contains(lower)) {
-        return true;
+      MemberDisplayInfo info = memberInfoResolver.apply(member.userId());
+      if (info != null) {
+        String full = info.fullName() == null ? "" : info.fullName();
+        String handle = info.userName() == null ? "" : info.userName();
+        if (full.toLowerCase().contains(lower) || handle.toLowerCase().contains(lower)) {
+          return true;
+        }
       }
       return member.userId().toLowerCase().contains(lower);
     };
-    var configuredGrid = FilterGridConfigurations.<GroupMember, String>inMemory(
-        new ArrayList<>(members), filterTester);
+    // The grid's in-memory data provider is wired to this component's own roster list: reloads
+    // (clear + addAll) mutate the very collection the provider reads, so role changes and
+    // add/remove operations are reflected in the grid immediately after a refresh — no page
+    // reload needed. (The list itself is already a copy of the caller's snapshot, see ctor.)
+    var configuredGrid = FilterGridConfigurations.<GroupMember, String>inMemory(members,
+        filterTester);
 
     Grid<GroupMember> grid = new Grid<>();
     grid.setSelectionMode(Grid.SelectionMode.MULTI);
-    // Member column: display name (fallback: user id) with a role badge next to it
+    // The roster is a small, member-only list: render all rows at their natural height so the
+    // native page scroll handles overflow (USER-NFR-01) instead of an embedded grid scrollbar.
+    grid.setAllRowsVisible(true);
+    // Group-governance NFR: the owner can never be demoted or removed by anyone from the roster,
+    // and nobody may act on themselves (a manager may not remove the owner; an owner manages
+    // self-removal via the governed transfer/dissolve flow, FEAT-USER-GROUPS-05). These rows are
+    // excluded from selection entirely: their checkbox renders disabled and "select all" skips
+    // them, so no action can ever be attempted on a protected row in the first place.
+    grid.setItemSelectableProvider(this::isActionable);
+    // Rows that cannot be acted on receive a part name so they can be visually quieted.
+    grid.setPartNameGenerator(
+        member -> isActionable(member) ? null : "protected-row");
+
+    // Member column: full name (fallback: user name, then user id), the user name in
+    // parentheses with weaker contrast (like the account overview header).
     grid.addColumn(new ComponentRenderer<>(member -> {
-      String displayName = memberNameResolver == null ? null
-          : memberNameResolver.apply(member.userId());
+      MemberDisplayInfo info = memberInfoResolver.apply(member.userId());
+      String fullName = info == null ? null : info.fullName();
+      String userName = info == null ? null : info.userName();
       Div cell = new Div();
       cell.addClassName("group-member-cell");
-      Span name = new Span(displayName == null || displayName.isBlank()
-          ? member.userId() : displayName);
+      String primary = !isBlank(fullName) ? fullName
+          : (!isBlank(userName) ? userName : member.userId());
+      Span name = new Span(primary);
       name.addClassName("group-member-cell__name");
       cell.add(name);
-      Span role = new Span(roleLabel(member.role()));
-      role.addClassName("group-members-role");
-      role.addClassName("group-members-role--" + member.role().name().toLowerCase());
-      cell.add(role);
+      if (isBlank(fullName) && !isBlank(userName) && !userName.equals(member.userId())) {
+        // no full name; the user name is already shown as primary, nothing extra to add
+      } else if (!isBlank(userName) && !userName.equals(primary)) {
+        Span userNameSpan = new Span("(" + userName + ")");
+        userNameSpan.addClassNames("text-s", "text-secondary");
+        cell.add(userNameSpan);
+      }
       return cell;
     })).setHeader("Member").setAutoWidth(true).setFlexGrow(1);
+
+    // Role column: its own column so the members' roles line up vertically (own the alignment
+    // instead of mixing the badge into the Member cell). Content-sized: the role badges line up
+    // directly under the Role heading, while the Member column absorbs the remaining space.
+    grid.addColumn(new ComponentRenderer<>(member -> {
+      Span role = new Span(roleLabel(member.role()));
+      role.addClassName("my-groups-badge");
+      role.addClassName(member.role() == GroupRole.MEMBER
+          ? "my-groups-badge--role-member" : "my-groups-badge--role-owner");
+      return role;
+    })).setHeader("Role").setAutoWidth(true).setFlexGrow(0);
 
     grid.setMultiSort(true);
 
@@ -222,7 +285,7 @@ public final class GroupMembersComponent extends Div {
     if (memberSearch == null) {
       return;
     }
-    ComboBox<UserInfo> picker = new ComboBox<>("Add member");
+    ComboBox<UserInfo> picker = new ComboBox<>("Select a user");
     picker.setPlaceholder("Search for username or full name");
     picker.setItemLabelGenerator(UserInfo::platformUserName);
     picker.setRenderer(new ComponentRenderer<>(candidate -> {
@@ -235,20 +298,21 @@ public final class GroupMembersComponent extends Div {
     picker.setItems(query -> memberSearch.search(
             query.getFilter().orElse(null), query.getOffset(), query.getLimit())
         .stream());
-    com.vaadin.flow.component.dialog.Dialog dialog =
-        new com.vaadin.flow.component.dialog.Dialog();
-    dialog.setHeaderTitle("Add member");
-    dialog.add(picker);
-    var addButton = new com.vaadin.flow.component.button.Button("Add",
-        click -> {
-          UserInfo selected = picker.getValue();
-          if (selected != null) {
-            perform(MemberAction.ADD_MEMBER, List.of(selected.id()));
-            dialog.close();
-          }
-        });
-    addButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    dialog.getFooter().add(addButton);
+
+    AppDialog dialog = AppDialog.small();
+    DialogHeader.with(dialog, "Add member");
+    picker.setWidthFull();
+    DialogBody.withoutUserInput(dialog, picker);
+    DialogFooter.with(dialog, "Cancel", "Add member");
+    dialog.registerConfirmAction(() -> {
+      UserInfo selected = picker.getValue();
+      if (selected != null) {
+        perform(MemberAction.ADD_MEMBER, List.of(selected.id()));
+        dialog.close();
+      }
+      // no selection: keep the dialog open so the user can search again
+    });
+    dialog.registerCancelAction(dialog::close);
     dialog.open();
   }
 
@@ -268,28 +332,48 @@ public final class GroupMembersComponent extends Div {
     }
     // Always ask for the target role explicitly: assigning a role is a deliberate action and
     // the user must choose Manager or Member for the selected members (no implicit toggle).
-    com.vaadin.flow.component.dialog.Dialog dialog =
-        new com.vaadin.flow.component.dialog.Dialog();
-    dialog.setHeaderTitle("Assign role");
-    com.vaadin.flow.component.radiobutton.RadioButtonGroup<GroupRole> rolePicker =
-        new com.vaadin.flow.component.radiobutton.RadioButtonGroup<>();
+    // The confirm button carries an explicit action label that reflects the chosen target role.
+    AppDialog dialog = AppDialog.small();
+    DialogHeader.with(dialog, "Assign role");
+
+    RadioButtonGroup<GroupRole> rolePicker = new RadioButtonGroup<>();
     rolePicker.setLabel("Role for " + changeable.size() + " selected member(s)");
     rolePicker.setItems(GroupRole.MANAGER, GroupRole.MEMBER);
     rolePicker.setItemLabelGenerator(role -> role == GroupRole.MANAGER ? "Manager" : "Member");
     rolePicker.setValue(GroupRole.MANAGER);
-    dialog.add(rolePicker);
-    var applyButton = new com.vaadin.flow.component.button.Button("Apply",
-        click -> {
-          applyRole(changeable, rolePicker.getValue());
-          dialog.close();
-        });
-    applyButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    dialog.getFooter().add(applyButton);
+    DialogBody.withoutUserInput(dialog, rolePicker);
+
+    DialogFooter.with(dialog, "Cancel", "Assign Manager role");
+    rolePicker.addValueChangeListener(event -> {
+      if (rolePicker.getValue() == GroupRole.MANAGER) {
+        DialogFooter.with(dialog, "Cancel", "Assign Manager role");
+      } else {
+        DialogFooter.with(dialog, "Cancel", "Assign Member role");
+      }
+    });
+    dialog.registerConfirmAction(() -> {
+      applyRole(changeable, rolePicker.getValue());
+      dialog.close();
+    });
+    dialog.registerCancelAction(dialog::close);
     dialog.open();
   }
 
-  private void applyRole(List<GroupMember> changeable, GroupRole target) {
+  /**
+   * Applies the chosen target role to the selected members.
+   * <p>
+   * Only members whose current role differs from the target are touched: promoting to MANAGER
+   * only appoints plain MEMBERs, demoting to MEMBER only demotes current MANAGERs. Members already
+   * holding the target role are skipped. This makes the operation robust against a mixed
+   * selection (e.g. selecting both a MEMBER and a MANAGER and assigning one target role) and
+   * never submits a role-changing command the application layer cannot perform.
+   */
+  void applyRole(List<GroupMember> changeable, GroupRole target) {
     for (GroupMember m : changeable) {
+      if (m.role() == target) {
+        // already holds the target role — nothing to do
+        continue;
+      }
       MemberAction action = target == GroupRole.MANAGER
           ? MemberAction.APPOINT_MANAGER : MemberAction.DEMOTE_MANAGER;
       perform(action, List.of(m.userId()));
@@ -308,12 +392,95 @@ public final class GroupMembersComponent extends Div {
         "Remove",
         "Keep",
         () -> perform(MemberAction.REMOVE_MEMBER,
-            selected.stream().map(GroupMember::userId).toList()));
+            selected.stream().map(GroupMember::userId).toList()))
+        .open();
   }
 
   private static String roleLabel(GroupRole role) {
     return role == GroupRole.OWNER ? "Owner"
         : role == GroupRole.MANAGER ? "Manager" : "Member";
+  }
+
+  /**
+   * Sorts the roster by hierarchy: owner first, then managers, then members. Within each role
+   * group members are ordered lexicographically by their resolved full name (fallback: user id),
+   * so the list always reads as a clear role hierarchy with people sorted alphabetically.
+   */
+  private void sortMembers() {
+    members.sort(Comparator
+        .comparingInt((GroupMember m) -> roleRank(m.role()))
+        .thenComparing(this::sortKeyFor));
+  }
+
+  private int roleRank(GroupRole role) {
+    return switch (role) {
+      case OWNER -> 0;
+      case MANAGER -> 1;
+      case MEMBER -> 2;
+    };
+  }
+
+  /**
+   * Whether a roster row may be acted on (selected for Assign role / Remove).
+   * <p>
+   * A row is <em>not</em> actionable when it is the acting user themselves or the group owner:
+   * the domain refuses self-demotion/self-removal and the removal/demotion of an owner
+   * (FEAT-USER-GROUPS-04/05 governance), so the UI must not even offer the attempt. A
+   * MANAGER may only add/remove regular members (GROUP-R-03) and has no authority over other
+   * managers, so a MANAGER acting user cannot select a peer MANAGER row either — only the
+   * OWNER may act on managers.
+   */
+  private boolean isActionable(GroupMember member) {
+    return !member.userId().equals(actingUserId)
+        && member.role() != GroupRole.OWNER
+        && !(actingUserRole == GroupRole.MANAGER && member.role() == GroupRole.MANAGER);
+  }
+
+  private String sortKeyFor(GroupMember member) {
+    MemberDisplayInfo info = memberInfoResolver.apply(member.userId());
+    String fullName = info == null ? null : info.fullName();
+    String userName = info == null ? null : info.userName();
+    String key = !isBlank(fullName) ? fullName
+        : (!isBlank(userName) ? userName : member.userId());
+    return key.toLowerCase();
+  }
+
+  private static boolean isBlank(String value) {
+    return value == null || value.isBlank();
+  }
+
+  /**
+   * Display information of a group member: the full name (primary) and the platform user name
+   * (shown in parentheses with weaker contrast, like the account overview header).
+   */
+  public record MemberDisplayInfo(String fullName, String userName) {
+
+    public MemberDisplayInfo {
+      // keep nulls: callers fall back to the user id when nothing is available
+    }
+  }
+
+  /**
+   * Package-private test seam: performs a real member operation against the handler and refreshes
+   * the roster — the exact production path a dialog confirm triggers.
+   */
+  void performMemberActionForTest(String userId) {
+    perform(MemberAction.APPOINT_MANAGER, List.of(userId));
+  }
+
+  /**
+   * Package-private test seam: performs a real REMOVE_MEMBER operation against the handler and
+   * refreshes — mirrors what {@link #removeSelectedMembers()} does on confirm.
+   */
+  void performRemoveForTest(List<String> userIds) {
+    perform(MemberAction.REMOVE_MEMBER, userIds);
+  }
+
+  /**
+   * Package-private test seam: returns the roster in its current display (sorted) order.
+   */
+  List<GroupMember> membersForTest() {
+    return List.copyOf(members);
   }
 
   /**

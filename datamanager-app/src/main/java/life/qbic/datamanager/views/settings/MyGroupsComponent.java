@@ -26,8 +26,8 @@ import life.qbic.usergroups.api.MyGroupMembership;
  * <b>My Groups list component</b>
  * <p>
  * Renders the group memberships of the current user ("My Groups"). Each membership is shown as a
- * row with the group name, its description (when present), a type badge (Org / User Group) and the
- * caller's role badge (Owner / Manager / Member).
+ * row with the group name, its description (when present), a type badge (Org / User Group), the
+ * caller's role badge (Owner / Manager / Member) and the group's total member count.
  * <p>
  * Actions are role-gated:
  * <ul>
@@ -131,6 +131,7 @@ public class MyGroupsComponent extends Div implements Serializable {
     badges.addClassName("my-groups-row__badges");
     badges.add(buildTypeBadge(membership.groupType()));
     badges.add(buildRoleBadge(membership.myRole()));
+    badges.add(buildMemberCountBadge(membership.memberCount()));
 
     Div actions = new Div();
     actions.addClassName("my-groups-row__actions");
@@ -154,6 +155,12 @@ public class MyGroupsComponent extends Div implements Serializable {
       openDetail.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
       openDetail.addClickListener(click -> navigateToDetail(membership));
       actions.add(openDetail);
+      // A manager reaches the group detail page for management but may still leave the group
+      // (self-remove) directly from the list, like any other non-owner member. The owner's
+      // self-remove/transfer is governed by FEAT-USER-GROUPS-05.
+      if (membership.myRole() == GroupRole.MANAGER) {
+        addLeaveButton(actions, membership.groupId());
+      }
       return;
     }
 
@@ -290,6 +297,13 @@ public class MyGroupsComponent extends Div implements Serializable {
     badge.addClassName("my-groups-badge");
     badge.addClassName(
         type == GroupType.ORG ? "my-groups-badge--type-org" : "my-groups-badge--type-adhoc");
+    return badge;
+  }
+
+  private static Span buildMemberCountBadge(int memberCount) {
+    Span badge = new Span(memberCount + " member" + (memberCount == 1 ? "" : "s"));
+    badge.addClassName("my-groups-badge");
+    badge.addClassName("my-groups-badge--member-count");
     return badge;
   }
 

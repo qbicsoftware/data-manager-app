@@ -568,4 +568,40 @@ of the project list.
 
 ---
 
-*Last updated: 2026-09-17*
+### FEAT-USER-GROUPS
+
+| Field | Value |
+|---|---|
+| **Description** | User groups for project sharing: org groups (admin-managed, e.g. NGS labs) and ad-hoc groups (self-service) that can be shared onto projects at READ/WRITE/ADMIN (never OWNER), replacing per-person access assignment for recurring teams |
+| **PRD Section** | — (new capability; see (docs) [`user-groups-strategy.md`](user-groups-strategy.md)) |
+| **Requirements** | `GROUP-R-01` … `GROUP-R-12`, `GROUP-NFR-01` … `GROUP-NFR-03` *(draft — new `GROUP` domain, pending requirements PR)* |
+| **GitHub Feature** | — (tracked in this document + external stories; see Notes & Context) |
+| **Status** | 🔴 Open |
+
+**Strategy reference:** [`docs/user-groups-strategy.md`](user-groups-strategy.md) defines the full
+strategy (two group types, internal OWNER/MANAGER/MEMBER roles vs. project roles, visibility policy,
+notification profile, revocation NFR = ≤60s). The full user stories (EPIC-grouped, with acceptance
+criteria) are hosted **externally** in
+[`docs/features/FEAT-USER-GROUPS-stories.md`](features/FEAT-USER-GROUPS-stories.md); this entry
+carries only the Feature-level summary until stories are approved.
+
+**Governance status & blockers (per `AGENTS.md` §0/§12 and strategy §6):**
+
+- New `GROUP-*` / `ACCESS-*` requirements must be added to `docs/requirements.md` in a **dedicated,
+  human-approved PR** before any story is implemented.
+- A new `user-groups` bounded context requires an **ADR + Maven module approval** (human) before
+  implementation can begin.
+- Stories follow the **draft → approved lifecycle**: they are recorded here with stable IDs only
+  once approved; tasks reference the stable story ID, never a GitHub issue number.
+- **Traceability deviation (mirrors FEAT-PINNED-PROJECTS):** user stories are hosted externally
+  (per current policy, not on GitHub), so the **GitHub Feature** / **GitHub** fields carry `—`.
+  Story IDs follow the `FEAT-USER-GROUPS-<NN>` schema.
+
+### Stories
+
+_Draft EPIC-grouped stories live in_ [`docs/features/FEAT-USER-GROUPS-stories.md`](features/FEAT-USER-GROUPS-stories.md).
+_Once approved, stories will be recorded here individually with their final stable IDs._
+
+---
+
+*Last updated: 2026-09-21*
