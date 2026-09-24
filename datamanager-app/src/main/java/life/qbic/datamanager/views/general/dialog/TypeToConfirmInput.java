@@ -6,6 +6,7 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import java.io.Serial;
+import java.util.function.Supplier;
 import org.jspecify.annotations.NonNull;
 
 /**
@@ -36,24 +37,47 @@ public class TypeToConfirmInput extends Div implements UserInput {
   @Serial
   private static final long serialVersionUID = -2012222222222222227L;
 
-  private final String expectedName;
+  private final Supplier<String> expectedNameSupplier;
   private final TextField textField;
 
   /**
-   * Creates a type-to-confirm field for the given expected name.
+   * Creates a type-to-confirm field whose expected name is resolved lazily from the given
+   * supplier at validation time.
+   * <p>
+   * The supplier indirection keeps the guard in sync with the live resource name: the caller
+   * may rename the resource (e.g. an inline-renamed group) after this input was constructed,
+   * and the guard must then compare against the <em>current</em> name, not a stale snapshot.
    *
-   * @param expectedName the exact name the caller must type; must not be {@code null}
+   * @param expectedNameSupplier resolves the exact name the caller must type; must not be
+   *                             {@code null}, and must never return {@code null}
    */
-  public TypeToConfirmInput(String expectedName) {
-    this.expectedName = requireNonNull(expectedName, "expectedName must not be null");
-    this.textField = new TextField("Type \"" + expectedName + "\" to confirm");
-    textField.setPlaceholder(expectedName);
+  public TypeToConfirmInput(Supplier<String> expectedNameSupplier) {
+    this.expectedNameSupplier = requireNonNull(expectedNameSupplier,
+        "expectedNameSupplier must not be null");
+    String initialName = trimmedExpectedName();
+    this.textField = new TextField("Type \"" + initialName + "\" to confirm");
+    textField.setPlaceholder(initialName);
     textField.setValueChangeMode(ValueChangeMode.EAGER);
     // Focus the field as soon as it appears so the committed user only has to type.
     textField.setAutofocus(true);
     textField.addClassName("type-to-confirm-input__field");
     addClassName("type-to-confirm-input");
     add(textField);
+  }
+
+  /**
+   * The name the user must currently type, trimmed of surrounding whitespace (consistent with
+   * how group names are stored). Kept current on every call so a rename of the wrapped
+   * resource stays in sync.
+   *
+   * @return the trimmed expected name; never {@code null}
+   */
+  private String trimmedExpectedName() {
+    String raw = expectedNameSupplier.get();
+    if (raw == null) {
+      throw new IllegalStateException("expectedNameSupplier must never return null");
+    }
+    return raw.trim();
   }
 
   /**
@@ -64,7 +88,11 @@ public class TypeToConfirmInput extends Div implements UserInput {
    */
   @Override
   public @NonNull InputValidation validate() {
-    return textField.getValue().trim().equalsIgnoreCase(expectedName)
+    String value = textField.getValue().trim();
+    if (value.isEmpty()) {
+      return InputValidation.failed();
+    }
+    return value.equalsIgnoreCase(trimmedExpectedName())
         ? InputValidation.passed() : InputValidation.failed();
   }
 

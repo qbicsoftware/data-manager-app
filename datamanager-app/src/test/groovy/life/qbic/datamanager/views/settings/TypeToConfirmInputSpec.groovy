@@ -15,7 +15,7 @@ import spock.lang.Specification
 class TypeToConfirmInputSpec extends Specification {
 
   private static TypeToConfirmInput inputFor(String expected) {
-    return new TypeToConfirmInput(expected)
+    return new TypeToConfirmInput({ -> expected })
   }
 
   def "an exact match validates as passed"() {
@@ -83,5 +83,39 @@ class TypeToConfirmInputSpec extends Specification {
 
     then:
     input.hasChanges()
+  }
+
+  def "the expected name is resolved lazily so an inline rename of the guarded resource stays in sync"() {
+    given: "the expected name is provided via a mutable holder (like the page's membership)"
+    String holder = "Old Name"
+    def input = new TypeToConfirmInput({ -> holder })
+
+    when: "the user first matches the old name"
+    input.textField().setValue("Old Name")
+
+    then: "the guard passes against the current expected name"
+    input.validate().hasPassed()
+
+    when: "the resource is renamed (e.g. inline rename on the page) and the user retypes the old name"
+    holder = "New Name"
+    input.textField().setValue("Old Name")
+
+    then: "the guard does not pass anymore — the current name must be confirmed"
+    !input.validate().hasPassed()
+
+    and: "typing the new name passes"
+    input.textField().setValue("New Name")
+    input.validate().hasPassed()
+  }
+
+  def "surrounding whitespace in the expected name does not trap the user (name is compared trimmed)"() {
+    given: "the guarded resource name carries surrounding whitespace"
+    def input = new TypeToConfirmInput({ -> "  Padded Name  " })
+
+    when: "the user types the name exactly as it is displayed (trimmed)"
+    input.textField().setValue("Padded Name")
+
+    then: "the guard passes — the comparison ignores the expected name's surrounding whitespace"
+    input.validate().hasPassed()
   }
 }

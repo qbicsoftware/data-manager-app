@@ -14,6 +14,7 @@ import com.vaadin.flow.data.provider.ItemCountChangeEvent;
 import com.vaadin.flow.data.selection.SelectionListener;
 import com.vaadin.flow.data.selection.SelectionModel;
 import com.vaadin.flow.shared.Registration;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -94,6 +95,15 @@ public interface GridConfiguration<T, F> {
   interface ConfiguredSelectionModel<T> {
 
     void deselectAll();
+
+    /**
+     * Removes the given items from the current selection, keeping the rest of the selection
+     * intact.
+     *
+     * @param items the items to deselect
+     * @see GridMultiSelectionModel#deselect(Collection)
+     */
+    void deselect(Collection<T> items);
 
 
     /**
@@ -249,6 +259,15 @@ public interface GridConfiguration<T, F> {
     @Override
     public void deselectAll() {
       grid.getSelectionModel().deselectAll();
+    }
+
+    @Override
+    public void deselect(Collection<T> items) {
+      GridMultiSelectionModel<T> selectionModel =
+          (GridMultiSelectionModel<T>) grid.getSelectionModel();
+      for (T item : items) {
+        selectionModel.deselect(item);
+      }
     }
 
     @Override

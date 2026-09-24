@@ -207,6 +207,52 @@ class GroupMembersComponentSpec extends Specification {
     bobSelectable
   }
 
+  def "select-all that includes protected rows is sanitized before any action is armed"() {
+    given: "an owner roster; Vaadin's select-all can select the owner or the acting user's own row"
+    def component = new GroupMembersComponent(
+        "group-1",
+        [new GroupMember("alice", GroupRole.OWNER),
+         new GroupMember("me", GroupRole.MEMBER),
+         new GroupMember("carol", GroupRole.MEMBER)],
+        GroupRole.OWNER,
+        "me",
+        { id -> new GroupMembersComponent.MemberDisplayInfo(id, id) },
+        { filter, offset, limit -> [] }, { req -> }, null)
+
+    when: "the selection sneaks in protected rows (owner + own row)"
+    def protectedInSelection = component.protectedSelection(
+        [new GroupMember("alice", GroupRole.OWNER),
+         new GroupMember("me", GroupRole.MEMBER)] as Set)
+
+    then: "those protected rows are reported for deselection"
+    protectedInSelection*.userId().sort() == ["alice", "me"]
+
+    and: "a selection without protected rows yields nothing to deselect"
+    component.protectedSelection([new GroupMember("carol", GroupRole.MEMBER)] as Set).isEmpty()
+  }
+
+  def "a MANAGER actor's select-all cannot sneak a peer manager row through"() {
+    given: "a manager acting on a roster with a peer manager"
+    def component = new GroupMembersComponent(
+        "group-1",
+        [new GroupMember("alice", GroupRole.OWNER),
+         new GroupMember("me", GroupRole.MANAGER),
+         new GroupMember("bob", GroupRole.MANAGER),
+         new GroupMember("carol", GroupRole.MEMBER)],
+        GroupRole.MANAGER,
+        "me",
+        { id -> new GroupMembersComponent.MemberDisplayInfo(id, id) },
+        { filter, offset, limit -> [] }, { req -> }, null)
+
+    when: "select-all includes the peer manager and a plain member"
+    def protectedInSelection = component.protectedSelection(
+        [new GroupMember("bob", GroupRole.MANAGER),
+         new GroupMember("carol", GroupRole.MEMBER)] as Set)
+
+    then: "the peer manager is flagged for deselection, the plain member is kept"
+    protectedInSelection*.userId() == ["bob"]
+  }
+
   def "applyRole over a mixed Manager+Member selection only touches members whose role differs"() {
     given: "a roster with both a manager and a plain member selected"
     def actions = []

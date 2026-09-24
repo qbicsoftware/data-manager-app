@@ -226,10 +226,12 @@ public class GroupDetailMain extends Main implements BeforeEnterObserver {
       dangerGroup.add(dangerRow);
 
       // Guard state: replaces the calm row while engaged. The destructive button stays
-      // locked until the retyped name exactly matches the group name; the server re-checks
-      // on click regardless (defense in depth, never trust the client-side button state).
-      String groupName = membership.groupName();
-      TypeToConfirmInput confirmInput = new TypeToConfirmInput(groupName);
+      // locked until the retyped name exactly matches the (live) group name; the server
+      // re-checks on click regardless (defense in depth, never trust the client-side
+      // button state). The expected name is resolved lazily: an inline rename on this page
+      // must not stale the guard against the group's current name.
+      TypeToConfirmInput confirmInput = new TypeToConfirmInput(
+          () -> membership.groupName());
       confirmInput.addClassNames("group-detail-dissolve-confirm-input", "width-full");
       com.vaadin.flow.component.textfield.TextField confirmField = confirmInput.textField();
       confirmField.addClassNames("width-full");
@@ -267,7 +269,7 @@ public class GroupDetailMain extends Main implements BeforeEnterObserver {
         // Re-validate server-side: never trigger the irreversible operation based on the
         // client-side button state alone.
         if (confirmInput.validate().hasPassed()) {
-          dissolveGroup(groupId, actingUserId, groupName);
+          dissolveGroup(groupId, actingUserId, membership.groupName());
         }
       });
 

@@ -21,6 +21,7 @@ import com.vaadin.flow.data.provider.ConfigurableFilterDataProvider;
 import com.vaadin.flow.data.provider.ItemCountChangeEvent;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.shared.Registration;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -560,6 +561,16 @@ public final class FilterGrid<T, F> extends Div {
     configuredGrid.deselectAll();
   }
 
+  /**
+   * Removes the given items from the selection, leaving any other selected items intact.
+   *
+   * @param items the items to deselect; must not be {@code null}
+   * @see com.vaadin.flow.component.grid.GridMultiSelectionModel#deselect(Collection)
+   */
+  public void deselect(Collection<T> items) {
+    Objects.requireNonNull(items);
+    configuredGrid.deselect(items);
+  }
   /**
    * Registers a {@link ComponentEventListener} for {@link FilterGridSelectionEvent} to the
    * selection event.

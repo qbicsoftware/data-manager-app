@@ -183,8 +183,10 @@ public final class GroupMembersComponent extends Div {
     // Group-governance NFR: the owner can never be demoted or removed by anyone from the roster,
     // and nobody may act on themselves (a manager may not remove the owner; an owner manages
     // self-removal via the governed transfer/dissolve flow, FEAT-USER-GROUPS-05). These rows are
-    // excluded from selection entirely: their checkbox renders disabled and "select all" skips
-    // them, so no action can ever be attempted on a protected row in the first place.
+    // marked non-selectable (checkbox disabled) so actions can never target them; as a belt-and-
+    // braces measure any such row that still ends up selected (Vaadin's header "select all" does
+    // NOT consult the item-selectable provider) is immediately deselected again, see
+    // {@link #updateToolbarForSelection()}.
     grid.setItemSelectableProvider(this::isActionable);
     // Rows that cannot be acted on receive a part name so they can be visually quieted.
     grid.setPartNameGenerator(
@@ -267,6 +269,14 @@ public final class GroupMembersComponent extends Div {
 
   private void updateToolbarForSelection() {
     Set<GroupMember> selected = filterGrid.selectedElements();
+    // Vaadin's header "select all" selects every row including non-selectable ones, so ensure
+    // no protected row stays selected (a selected non-actionable row would arm the toolbar
+    // buttons for an operation the domain must reject anyway).
+    List<GroupMember> protectedSelected = protectedSelection(selected);
+    if (!protectedSelected.isEmpty()) {
+      filterGrid.deselect(protectedSelected);
+      selected = filterGrid.selectedElements();
+    }
     boolean hasSelection = !selected.isEmpty();
     if (removeButton != null) {
       removeButton.setEnabled(hasSelection);
@@ -274,6 +284,21 @@ public final class GroupMembersComponent extends Div {
     if (assignRoleButton != null) {
       assignRoleButton.setEnabled(hasSelection);
     }
+  }
+
+  /**
+   * The subset of the given selection that must never stay selected: rows that are not
+   * actionable (self/owner, and peer-manager rows for a MANAGER actor). Vaadin's header
+   * "select all" does not honour the item-selectable provider, so these can sneak into the
+   * selection; they are removed again (and never acted upon).
+   *
+   * @param selected the current selection
+   * @return the non-actionable rows among the selection; empty if none
+   */
+  List<GroupMember> protectedSelection(Set<GroupMember> selected) {
+    return selected.stream()
+        .filter(m -> !isActionable(m))
+        .toList();
   }
 
   /**
