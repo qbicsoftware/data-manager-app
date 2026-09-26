@@ -246,19 +246,40 @@ public class AppConfig {
   }
 
   /**
+   * The added-member notification directive. Exposed as its own {@code @Bean} so the JobRunr
+   * IOC runner can resolve it by class when the enqueued notification job executes (a plain
+   * {@code new} inside the policy bean would not register it in the context).
+   */
+  @Bean
+  public InformAddedGroupMember informAddedGroupMember(
+      life.qbic.usergroups.application.communication.EmailService emailService,
+      JobScheduler jobScheduler, UserInformationService userInformationService,
+      GroupService groupService) {
+    return new InformAddedGroupMember(emailService, jobScheduler, userInformationService,
+        groupService);
+  }
+
+  /**
+   * The removed-member notification directive (see {@link #informAddedGroupMember} for why this
+   * must be a Spring bean, not a local {@code new}).
+   */
+  @Bean
+  public InformRemovedGroupMember informRemovedGroupMember(
+      life.qbic.usergroups.application.communication.EmailService emailService,
+      JobScheduler jobScheduler, UserInformationService userInformationService,
+      GroupService groupService) {
+    return new InformRemovedGroupMember(emailService, jobScheduler, userInformationService,
+        groupService);
+  }
+
+  /**
    * Registers the user-groups membership notification directives with the domain dispatcher: a
    * newly added member and a removed member each receive an email.
    */
   @Bean
-  public MemberAccessPolicy memberAccessPolicy(
-      life.qbic.usergroups.application.communication.EmailService emailService,
-      JobScheduler jobScheduler, UserInformationService userInformationService,
-      GroupService groupService) {
-    var informAdded = new InformAddedGroupMember(emailService, jobScheduler,
-        userInformationService, groupService);
-    var informRemoved = new InformRemovedGroupMember(emailService, jobScheduler,
-        userInformationService, groupService);
-    return new MemberAccessPolicy(informAdded, informRemoved);
+  public MemberAccessPolicy memberAccessPolicy(InformAddedGroupMember informAddedGroupMember,
+      InformRemovedGroupMember informRemovedGroupMember) {
+    return new MemberAccessPolicy(informAddedGroupMember, informRemovedGroupMember);
   }
   /*
   Section ends
