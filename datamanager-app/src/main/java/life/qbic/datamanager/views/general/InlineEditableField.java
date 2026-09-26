@@ -25,7 +25,7 @@ import java.io.Serial;
  *   <li><b>Display mode</b> — shows the current value with an optional edit button.</li>
  *   <li><b>Edit mode</b> — entered by clicking into the field or via the edit button; both
  *       behave identically. Shows Save/Cancel buttons; Enter triggers save, Escape triggers
- *       cancel. Edit mode is only left explicitly, never on blur.</li>
+ *       cancel. Blur-to-outside commits by default (see {@link #setCommitOnBlurToOutside}).</li>
  *   <li><b>Read-only mode</b> — shows the value without any edit affordance.
  *       Used when the user lacks permission to modify the field.</li>
  * </ul>
@@ -50,6 +50,7 @@ public class InlineEditableField extends Div {
 
   private final Span label;
   private final TextFieldBase<?, String> editField;
+  private final boolean textArea;
   private final Button editButton;
   private final Button saveButton;
   private final Button cancelButton;
@@ -85,7 +86,8 @@ public class InlineEditableField extends Div {
     this.label = new Span(label + ":");
     this.label.addClassName("inline-editable-field__label");
 
-    this.editField = kind == InputKind.TEXTAREA ? new TextArea() : new TextField();
+    this.textArea = kind == InputKind.TEXTAREA;
+    this.editField = textArea ? new TextArea() : new TextField();
     if (kind == InputKind.TEXTAREA) {
       ((TextArea) this.editField).setMaxLength(500);
       ((TextArea) this.editField).setMinHeight("6em");
@@ -103,6 +105,10 @@ public class InlineEditableField extends Div {
     // (installBlurRpc), so an outside click commits and clicks on the field's own buttons keep
     // editing. Edit mode is also left explicitly via Save (Enter/check) or Cancel (Escape/close).
     this.editField.addFocusListener(e -> startEdit());
+    // Enter/Escape handling: the host-level key listeners fire for the single-line field;
+    // for the textarea the keys are typed inside its slotted shadow-DOM element, so those
+    // events do not reach this listener (the browser newline is the default there). We do
+    // not fight the framework: textarea edits are confirmed with the green save button.
     this.editField.addKeyDownListener(Key.ENTER, e -> triggerSave());
     this.editField.addKeyDownListener(Key.ESCAPE, e -> triggerCancel());
     // Blur handling: Vaadin's BlurEvent carries no relatedTarget, so we cannot tell server-side
@@ -309,6 +315,17 @@ public class InlineEditableField extends Div {
    * safety net for extreme edge cases.
    */
   private void applyDisplayWidth() {
+    // Textarea-backed fields: fluid width — CSS grows them to the available container width
+    // on large screens and lets them shrink back to a comfortable minimum on small screens
+    // (setMinDisplayWidth / caller-configurable), wrapping + scrolling vertically when the
+    // content overflows (see settings.css). A fixed width would fight the responsive layout,
+    // so we set only the lower bound here. Single-line fields still size to their content.
+    if (textArea) {
+      editField.getElement().getStyle()
+          .setMinWidth(Math.max(MIN_DISPLAY_WIDTH_CH, minDisplayWidthCh) + "ch");
+      editField.getElement().setAttribute("title", currentValue);
+      return;
+    }
     String placeholder = editField.getPlaceholder() != null ? editField.getPlaceholder() : "";
     int longest = Math.max(currentValue.length(), placeholder.length());
     int widthCh = Math.max(minDisplayWidthCh, (int) Math.round(longest * 1.2) + 3);
@@ -324,10 +341,11 @@ public class InlineEditableField extends Div {
     fireEvent(new SaveEvent(this, true, newValue));
   }
 
+
   /**
    * Package-private seam for the blur-commit decision so unit tests can exercise it without a
-   * browser (the real path is driven from {@link #onFieldBlur()} after the deferred client
-   * check reports focus moved outside the component).
+   * browser (the real path is {@link #attemptBlurCommit()}, invoked from the client-side
+   * {@code receiveFocusout} handler when focus moves outside the component).
    */
   void attemptBlurCommitForTest() {
     attemptBlurCommit();
@@ -352,6 +370,25 @@ public class InlineEditableField extends Div {
    */
   void saveForTest() {
     triggerSave();
+  }
+
+  /**
+   * The width (in {@code ch}) applied in display mode as a lower bound, for unit tests.
+   * Delegates to {@link #applyDisplayWidth()} so a test can pin the width-stability contract
+   * of textarea-backed fields (long content must not grow the Java-set width; the CSS grows
+   * the field fluidly up to its cap instead).
+   *
+   * @return the applied min-width in {@code ch}, or {@code -1} if unset
+   */
+  int displayWidthForTest() {
+    applyDisplayWidth();
+    String minWidth = editField.getElement().getStyle().get("min-width");
+    String width = editField.getElement().getStyle().get("width");
+    String value = minWidth != null ? minWidth : width;
+    if (value == null || !value.endsWith("ch")) {
+      return -1;
+    }
+    return Integer.parseInt(value.replace("ch", ""));
   }
 
   /**

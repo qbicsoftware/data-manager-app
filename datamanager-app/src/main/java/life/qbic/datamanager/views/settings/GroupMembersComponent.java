@@ -13,6 +13,7 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.shared.Registration;
+import life.qbic.datamanager.views.account.UserAvatar;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -192,7 +193,8 @@ public final class GroupMembersComponent extends Div {
     grid.setPartNameGenerator(
         member -> isActionable(member) ? null : "protected-row");
 
-    // Member column: full name (fallback: user name, then user id), the user name in
+    // Member column: the user avatar (identicon, consistent with the project access roster)
+    // next to the full name (fallback: user name, then user id) and the user name in
     // parentheses with weaker contrast (like the account overview header).
     grid.addColumn(new ComponentRenderer<>(member -> {
       MemberDisplayInfo info = memberInfoResolver.apply(member.userId());
@@ -200,18 +202,26 @@ public final class GroupMembersComponent extends Div {
       String userName = info == null ? null : info.userName();
       Div cell = new Div();
       cell.addClassName("group-member-cell");
-      String primary = !isBlank(fullName) ? fullName
-          : (!isBlank(userName) ? userName : member.userId());
+      UserAvatar avatar = new UserAvatar();
+      avatar.setUserId(member.userId());
+      avatar.setName(primaryName(fullName, userName, member.userId()));
+      avatar.setAbbreviation(abbreviationFor(primaryName(fullName, userName, member.userId())));
+      avatar.addClassName("group-member-cell__avatar");
+      cell.add(avatar);
+      Div identity = new Div();
+      identity.addClassName("group-member-cell__identity");
+      String primary = primaryName(fullName, userName, member.userId());
       Span name = new Span(primary);
       name.addClassName("group-member-cell__name");
-      cell.add(name);
+      identity.add(name);
       if (isBlank(fullName) && !isBlank(userName) && !userName.equals(member.userId())) {
         // no full name; the user name is already shown as primary, nothing extra to add
       } else if (!isBlank(userName) && !userName.equals(primary)) {
         Span userNameSpan = new Span("(" + userName + ")");
         userNameSpan.addClassNames("text-s", "text-secondary");
-        cell.add(userNameSpan);
+        identity.add(userNameSpan);
       }
+      cell.add(identity);
       return cell;
     })).setHeader("Member").setAutoWidth(true).setFlexGrow(1);
 
@@ -228,6 +238,13 @@ public final class GroupMembersComponent extends Div {
 
     grid.setMultiSort(true);
 
+    // Clicking anywhere on a row (not just the selection checkbox) toggles the row's selection
+    // — the roster is small and the checkbox is a small click target, so row-click selection
+    // makes selecting members much faster (consistent with the dataset search results in
+    // {@code ConnectDatasetSidebar}). The toggle deliberately respects {@link #isActionable}:
+    // a click on a protected row (owner / the acting user / a peer-manager row for a MANAGER
+    // actor) does nothing, mirroring its disabled checkbox — no governance bypass via the row.
+    grid.addItemClickListener(event -> toggleRowSelection(grid, event.getItem()));
     filterGrid = FilterGrid.create(
         GroupMember.class,
         String.class,
@@ -305,6 +322,10 @@ public final class GroupMembersComponent extends Div {
    * Opens the "Add member" dialog (user search for non-member candidates). Called from the
    * page's Members section header button — the add action is decoupled from the roster-selection
    * toolbar.
+   * <p>
+   * Duplicate/conflict outcomes are surfaced <em>inline on the picker</em> (Vaadin error
+   * message + invalid state) so the search dialog stays open and the user can immediately pick
+   * another person — no overlapping modal error dialog on top of the search dialog.
    */
   public void openAddMemberDialog() {
     if (memberSearch == null) {
@@ -313,13 +334,46 @@ public final class GroupMembersComponent extends Div {
     ComboBox<UserInfo> picker = new ComboBox<>("Select a user");
     picker.setPlaceholder("Search for username or full name");
     picker.setItemLabelGenerator(UserInfo::platformUserName);
+    // Search results are rendered exactly like the roster rows: user avatar, full name
+    // (fallback: user name), and the user name in parentheses — consistent with
+    // {@link #build()} and the project access roster.
     picker.setRenderer(new ComponentRenderer<>(candidate -> {
+      String primary = !isBlank(candidate.fullName())
+          ? candidate.fullName() : candidate.platformUserName();
+      UserAvatar avatar = new UserAvatar();
+      avatar.setUserId(candidate.id());
+      avatar.setName(primary);
+      avatar.setAbbreviation(abbreviationFor(primary));
       Div div = new Div();
-      div.setText(candidate.fullName() == null || candidate.fullName().isBlank()
-          ? candidate.platformUserName()
-          : candidate.fullName() + " (" + candidate.platformUserName() + ")");
+      div.addClassName("user-search-result");
+      avatar.addClassName("user-search-result__avatar");
+      div.add(avatar);
+      Div identity = new Div();
+      identity.addClassName("user-search-result__identity");
+      Span name = new Span(primary);
+      name.addClassName("user-search-result__name");
+      identity.add(name);
+      if (!isBlank(candidate.platformUserName()) && !candidate.platformUserName().equals(primary)) {
+        Span userNameSpan = new Span("(" + candidate.platformUserName() + ")");
+        userNameSpan.addClassNames("text-s", "text-secondary");
+        identity.add(userNameSpan);
+      }
+      div.add(identity);
       return div;
     }));
+    // If the picked user is already a roster member, refuse inline instead of letting the
+    // backend reject it with a modal error over the search dialog. Choosing a different user
+    // (or clearing the selection) clears the error and resets the field to a healthy state.
+    picker.addValueChangeListener(event -> {
+      UserInfo candidate = event.getValue();
+      if (candidate != null && isRosterMember(candidate.id())) {
+        picker.setErrorMessage("This user is already a member of the group.");
+        picker.setInvalid(true);
+      } else {
+        picker.setErrorMessage(null);
+        picker.setInvalid(false);
+      }
+    });
     picker.setItems(query -> memberSearch.search(
             query.getFilter().orElse(null), query.getOffset(), query.getLimit())
         .stream());
@@ -331,11 +385,19 @@ public final class GroupMembersComponent extends Div {
     DialogFooter.with(dialog, "Cancel", "Add member");
     dialog.registerConfirmAction(() -> {
       UserInfo selected = picker.getValue();
-      if (selected != null) {
-        perform(MemberAction.ADD_MEMBER, List.of(selected.id()));
-        dialog.close();
+      if (selected == null) {
+        // no selection: keep the dialog open so the user can search again
+        return;
       }
-      // no selection: keep the dialog open so the user can search again
+      if (isRosterMember(selected.id())) {
+        // Belt-and-braces: re-check against the (possibly refreshed) roster before calling the
+        // service; the inline value-change listener already flags this case.
+        picker.setErrorMessage("This user is already a member of the group.");
+        picker.setInvalid(true);
+        return;
+      }
+      perform(MemberAction.ADD_MEMBER, List.of(selected.id()));
+      dialog.close();
     });
     dialog.registerCancelAction(dialog::close);
     dialog.open();
@@ -421,6 +483,22 @@ public final class GroupMembersComponent extends Div {
         .open();
   }
 
+  private static String primaryName(String fullName, String userName, String userId) {
+    return !isBlank(fullName) ? fullName
+        : (!isBlank(userName) ? userName : userId);
+  }
+
+  private static String abbreviationFor(String name) {
+    if (isBlank(name)) {
+      return "";
+    }
+    String[] parts = name.trim().split("\\s+");
+    if (parts.length == 1) {
+      return parts[0].substring(0, 1).toUpperCase();
+    }
+    return (parts[0].substring(0, 1) + parts[parts.length - 1].substring(0, 1)).toUpperCase();
+  }
+
   private static String roleLabel(GroupRole role) {
     return role == GroupRole.OWNER ? "Owner"
         : role == GroupRole.MANAGER ? "Manager" : "Member";
@@ -475,6 +553,15 @@ public final class GroupMembersComponent extends Div {
   }
 
   /**
+   * Whether the given user id is already part of the current roster snapshot. Used to refuse
+   * adding an existing member inline in the add-member dialog instead of surfacing a modal
+   * backend error on top of the search dialog.
+   */
+  private boolean isRosterMember(String userId) {
+    return members.stream().anyMatch(m -> m.userId().equals(userId));
+  }
+
+  /**
    * Display information of a group member: the full name (primary) and the platform user name
    * (shown in parentheses with weaker contrast, like the account overview header).
    */
@@ -482,6 +569,30 @@ public final class GroupMembersComponent extends Div {
 
     public MemberDisplayInfo {
       // keep nulls: callers fall back to the user id when nothing is available
+    }
+  }
+
+  /**
+   * Toggles the selection of a roster row, honoring the {@link #isActionable} governance
+   * rules. This is the exact logic wired to the grid's item-click listener, so clicking
+   * anywhere on a row selects/deselects it (in addition to the selection checkbox) while a
+   * click on a protected row (owner / acting user / peer-manager row for a MANAGER actor)
+   * never changes the selection — no governance bypass via the row.
+   * <p>
+   * Package-private so Spock can unit-test the toggle without constructing Vaadin client
+   * click events.
+   *
+   * @param grid   the grid whose selection is toggled
+   * @param member the clicked member row
+   */
+  void toggleRowSelection(Grid<GroupMember> grid, GroupMember member) {
+    if (!isActionable(member)) {
+      return;
+    }
+    if (grid.getSelectedItems().contains(member)) {
+      grid.deselect(member);
+    } else {
+      grid.select(member);
     }
   }
 

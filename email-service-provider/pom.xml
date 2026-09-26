@@ -27,6 +27,10 @@
     </dependency>
     <dependency>
       <groupId>life.qbic.datamanager</groupId>
+      <artifactId>user-groups</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>life.qbic.datamanager</groupId>
       <artifactId>identity</artifactId>
     </dependency>
     <!-- spring dependencies-->

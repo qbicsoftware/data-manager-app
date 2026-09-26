@@ -43,7 +43,7 @@ class GroupManagementServiceSpec extends Specification {
     repository = new GroupRepository(storage)
     domainService = new GroupDomainService(repository)
     DomainRegistry.instance().registerService(domainService)
-    service = new GroupService(repository)
+    service = new GroupService(repository, new InMemoryUserInformationService())
   }
 
   def cleanup() {
@@ -65,6 +65,23 @@ class GroupManagementServiceSpec extends Specification {
     result.isValue()
     def members = service.listMembers(groupId, "alice")
     members.any { it.userId() == "bob" && it.role() == GroupRole.MEMBER }
+  }
+
+  def "adding a non-existent user is rejected and creates no corrupt membership"() {
+    given: "a group owned by alice and a user service that only knows alice"
+    String groupId = createGroupOwnedBy("alice")
+    service = new GroupService(repository, new InMemoryUserInformationService(["alice"] as Set))
+
+    when: "an unknown user id is added as a member"
+    Result<Void, ApplicationException> result = service.addMember(groupId, "alice", "ghost-user")
+
+    then: "the operation fails with a user-not-found error"
+    result.isError()
+    result.getError().getMessage().contains("ghost-user")
+
+    and: "no membership row for the unknown user was created"
+    service.listMembers(groupId, "alice").findAll { it.userId() == "ghost-user" }.isEmpty()
+    !service.listMyGroups("ghost-user").any { it.groupId() == groupId }
   }
 
   def "a manager can add a regular member to an ad-hoc group"() {

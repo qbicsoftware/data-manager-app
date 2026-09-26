@@ -3,6 +3,7 @@ package life.qbic.datamanager.views.settings
 import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.grid.Grid
+import life.qbic.identity.api.UserInfo
 import life.qbic.usergroups.api.GroupMember
 import life.qbic.usergroups.api.GroupRole
 import spock.lang.Specification
@@ -207,6 +208,91 @@ class GroupMembersComponentSpec extends Specification {
     bobSelectable
   }
 
+  def "clicking an actionable row toggles its selection (row-click selection)"() {
+    given: "an owner roster with a selectable manager and a selectable member"
+    def component = new GroupMembersComponent(
+        "group-1",
+        [new GroupMember("alice", GroupRole.OWNER),
+         new GroupMember("bob", GroupRole.MANAGER),
+         new GroupMember("carol", GroupRole.MEMBER)],
+        GroupRole.OWNER,
+        "acting-user",
+        { id -> new GroupMembersComponent.MemberDisplayInfo(id, id) },
+        { filter, offset, limit -> [] }, { req -> }, null)
+    def grid = gridOf(component)
+    def bob = new GroupMember("bob", GroupRole.MANAGER)
+    def carol = new GroupMember("carol", GroupRole.MEMBER)
+
+    when: "the user clicks the manager row"
+    component.toggleRowSelection(grid, bob)
+
+    then: "the row becomes selected"
+    grid.selectedItems.contains(bob)
+
+    when: "the user clicks the same row again"
+    component.toggleRowSelection(grid, bob)
+
+    then: "the row is deselected again"
+    !grid.selectedItems.contains(bob)
+
+    and: "another row can be selected independently"
+    component.toggleRowSelection(grid, carol)
+    grid.selectedItems.contains(carol)
+  }
+
+  def "clicking a protected row never changes the selection (no governance bypass)"() {
+    given: "an owner roster containing the acting user and the owner row"
+    def component = new GroupMembersComponent(
+        "group-1",
+        [new GroupMember("alice", GroupRole.OWNER),
+         new GroupMember("me", GroupRole.MEMBER),
+         new GroupMember("carol", GroupRole.MEMBER)],
+        GroupRole.OWNER,
+        "me",
+        { id -> new GroupMembersComponent.MemberDisplayInfo(id, id) },
+        { filter, offset, limit -> [] }, { req -> }, null)
+    def grid = gridOf(component)
+    def alice = new GroupMember("alice", GroupRole.OWNER)
+    def me = new GroupMember("me", GroupRole.MEMBER)
+    def carol = new GroupMember("carol", GroupRole.MEMBER)
+
+    when: "the user clicks the owner row and their own row"
+    component.toggleRowSelection(grid, alice)
+    component.toggleRowSelection(grid, me)
+
+    then: "neither protected row becomes selected"
+    grid.selectedItems.isEmpty()
+
+    and: "an actionable row still gets selected normally"
+    component.toggleRowSelection(grid, carol)
+    grid.selectedItems.contains(carol)
+  }
+
+  def "a manager clicking a peer manager row does not toggle it (governance NFR)"() {
+    given: "a manager acting on a roster with a peer manager and a plain member"
+    def component = new GroupMembersComponent(
+        "group-1",
+        [new GroupMember("alice", GroupRole.OWNER),
+         new GroupMember("me", GroupRole.MANAGER),
+         new GroupMember("bob", GroupRole.MANAGER),
+         new GroupMember("carol", GroupRole.MEMBER)],
+        GroupRole.MANAGER,
+        "me",
+        { id -> new GroupMembersComponent.MemberDisplayInfo(id, id) },
+        { filter, offset, limit -> [] }, { req -> }, null)
+    def grid = gridOf(component)
+    def bob = new GroupMember("bob", GroupRole.MANAGER)
+    def carol = new GroupMember("carol", GroupRole.MEMBER)
+
+    when: "the manager clicks the peer manager row and then a plain member row"
+    component.toggleRowSelection(grid, bob)
+    component.toggleRowSelection(grid, carol)
+
+    then: "only the plain member is selected; the peer manager click had no effect"
+    grid.selectedItems.contains(carol)
+    !grid.selectedItems.contains(bob)
+  }
+
   def "select-all that includes protected rows is sanitized before any action is armed"() {
     given: "an owner roster; Vaadin's select-all can select the owner or the acting user's own row"
     def component = new GroupMembersComponent(
@@ -304,6 +390,23 @@ class GroupMembersComponentSpec extends Specification {
     then: "the grid reads bob with the updated role from its in-memory data"
     def bob = grid.getListDataView().items.toList().find { it.userId() == "bob" }
     bob.role() == GroupRole.MANAGER
+  }
+
+  def "the add-member candidate check flags roster members and accepts non-members (inline duplicate guard)"() {
+    given: "a roster containing alice (owner) and bob (member)"
+    def component = new GroupMembersComponent(
+        "group-1",
+        [new GroupMember("alice", GroupRole.OWNER), new GroupMember("bob", GroupRole.MEMBER)],
+        GroupRole.OWNER,
+        "acting-user",
+        { id -> new GroupMembersComponent.MemberDisplayInfo(id, id) },
+        { filter, offset, limit -> [] }, { req -> }, null)
+
+    expect: "a member of the roster is detected as such"
+    component.isRosterMember("bob")
+
+    and: "an unknown user is accepted"
+    !component.isRosterMember("carol")
   }
 
   private static Grid gridOf(GroupMembersComponent component) {

@@ -2,11 +2,13 @@ package life.qbic.usergroups.application;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
+import life.qbic.identity.api.UserInformationService;
 import life.qbic.usergroups.domain.model.GroupDescription;
 import life.qbic.usergroups.domain.model.GroupId;
 import life.qbic.usergroups.domain.model.GroupMembership;
@@ -55,9 +57,13 @@ public class GroupService {
   static final String GROUP_NOT_FOUND_MESSAGE = "Group %s not found.";
 
   private final GroupRepository groupRepository;
+  private final UserInformationService userInformationService;
 
-  public GroupService(GroupRepository groupRepository) {
+  public GroupService(GroupRepository groupRepository,
+      UserInformationService userInformationService) {
     this.groupRepository = groupRepository;
+    this.userInformationService = Objects.requireNonNull(userInformationService,
+        "userInformationService must not be null");
   }
 
   /**
@@ -255,13 +261,14 @@ public class GroupService {
    * Adds a regular member to an ad-hoc group.
    *
    * <p>Role-gated: the caller must hold role OWNER or MANAGER inside the group (enforced by the
-   * domain layer). The target user must not be a member yet.</p>
+   * domain layer). The target user must exist and must not be a member yet.</p>
    *
    * @param groupId      the id of the group
    * @param actingUserId the user performing the operation (must hold OWNER or MANAGER)
-   * @param userId       the user to add as a regular member
+   * @param userId       the user to add as a regular member; must reference an existing user
    * @return a {@link Result} with no value on success, or an error if the group does not exist,
-   * the user to add is already a member, or the acting user lacks the required role
+   * the user to add does not exist, is already a member, or the acting user lacks the required
+   * role
    * @since 1.20.0
    */
   @Transactional
@@ -274,6 +281,12 @@ public class GroupService {
     Optional<UserGroup> maybeGroup = resolveActiveGroup(groupId);
     if (maybeGroup.isEmpty()) {
       return Result.fromError(groupNotFound(groupId));
+    }
+    // A group membership references a real identity user (no FK on group_membership.user_id):
+    // reject unknown user ids up front so a typo or stale UI state can never create a corrupt
+    // membership row that no real user can ever act on.
+    if (userInformationService.findById(userId).isEmpty()) {
+      return Result.fromError(userNotFound(userId));
     }
     UserGroup group = maybeGroup.get();
     if (group.memberships().stream().anyMatch(m -> m.userId().equals(userId))) {
@@ -522,6 +535,11 @@ public class GroupService {
   private ApplicationException groupNotFound(String groupId) {
     return new ApplicationException(String.format(GROUP_NOT_FOUND_MESSAGE, groupId),
         ErrorCode.GENERAL, ErrorParameters.empty());
+  }
+
+  private static ApplicationException userNotFound(String userId) {
+    return new ApplicationException("User " + userId + " not found.", ErrorCode.GENERAL,
+        ErrorParameters.empty());
   }
 
   private static ApplicationException accessDenied(String userId, String groupId) {

@@ -1,4 +1,5 @@
 package life.qbic.usergroups.application.service
+import life.qbic.usergroups.application.InMemoryUserInformationService
 
 import java.time.Instant
 
@@ -41,7 +42,7 @@ class GroupSidProviderImplSpec extends Specification {
     repository = new GroupRepository(storage)
     domainService = new GroupDomainService(repository)
     DomainRegistry.instance().registerService(domainService)
-    groupService = new GroupService(repository)
+    groupService = new GroupService(repository, new InMemoryUserInformationService())
     provider = new GroupSidProviderImpl(groupService)
   }
 

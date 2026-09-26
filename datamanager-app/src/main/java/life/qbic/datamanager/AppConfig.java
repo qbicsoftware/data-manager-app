@@ -26,6 +26,9 @@ import life.qbic.usergroups.api.GroupInformationService;
 import life.qbic.usergroups.api.GroupManagementService;
 import life.qbic.usergroups.api.GroupSidProvider;
 import life.qbic.usergroups.application.GroupService;
+import life.qbic.usergroups.application.policy.MemberAccessPolicy;
+import life.qbic.usergroups.application.policy.directive.InformAddedGroupMember;
+import life.qbic.usergroups.application.policy.directive.InformRemovedGroupMember;
 import life.qbic.usergroups.application.service.GroupInformationServiceImpl;
 import life.qbic.usergroups.application.service.GroupManagementServiceImpl;
 import life.qbic.usergroups.application.service.GroupSidProviderImpl;
@@ -34,6 +37,7 @@ import life.qbic.usergroups.domain.repository.GroupRepository;
 import life.qbic.infrastructure.email.EmailServiceProvider;
 import life.qbic.infrastructure.email.identity.IdentityEmailServiceProvider;
 import life.qbic.infrastructure.email.project.ProjectManagementEmailServiceProvider;
+import life.qbic.infrastructure.email.usergroups.UserGroupsEmailServiceProvider;
 import life.qbic.projectmanagement.application.AppContextProvider;
 import life.qbic.projectmanagement.application.OrganisationRepository;
 import life.qbic.projectmanagement.application.ProjectInformationService;
@@ -211,8 +215,9 @@ public class AppConfig {
   }
 
   @Bean
-  public GroupService groupService(GroupRepository groupRepository) {
-    return new GroupService(groupRepository);
+  public GroupService groupService(GroupRepository groupRepository,
+      UserInformationService userInformationService) {
+    return new GroupService(groupRepository, userInformationService);
   }
 
   @Bean
@@ -228,6 +233,32 @@ public class AppConfig {
   @Bean
   public GroupSidProviderImpl groupSidProvider(GroupService groupService) {
     return new GroupSidProviderImpl(groupService);
+  }
+
+  /**
+   * The user groups email provider, implementing the context's {@link EmailService} port with
+   * the shared mail infrastructure.
+   */
+  @Bean
+  public life.qbic.usergroups.application.communication.EmailService userGroupsEmailService(
+      EmailServiceProvider emailServiceProvider) {
+    return new UserGroupsEmailServiceProvider(emailServiceProvider);
+  }
+
+  /**
+   * Registers the user-groups membership notification directives with the domain dispatcher: a
+   * newly added member and a removed member each receive an email.
+   */
+  @Bean
+  public MemberAccessPolicy memberAccessPolicy(
+      life.qbic.usergroups.application.communication.EmailService emailService,
+      JobScheduler jobScheduler, UserInformationService userInformationService,
+      GroupService groupService) {
+    var informAdded = new InformAddedGroupMember(emailService, jobScheduler,
+        userInformationService, groupService);
+    var informRemoved = new InformRemovedGroupMember(emailService, jobScheduler,
+        userInformationService, groupService);
+    return new MemberAccessPolicy(informAdded, informRemoved);
   }
   /*
   Section ends

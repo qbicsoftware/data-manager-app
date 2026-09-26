@@ -114,18 +114,19 @@ public class MyGroupsComponent extends Div implements Serializable {
     Div row = new Div();
     row.addClassName("my-groups-row");
 
-    Div identity = new Div();
-    identity.addClassName("my-groups-row__identity");
+    // Header: title on the left; badges + actions inline on the right of the SAME line as the
+    // title (never next to the description), so a long description cannot push them around.
+    Div header = new Div();
+    header.addClassName("my-groups-row__header");
 
+    Div title = new Div();
+    title.addClassName("my-groups-row__title");
     Span name = new Span(membership.groupName());
     name.addClassName("my-groups-row__name");
-    identity.add(name);
+    title.add(name);
 
-    if (membership.groupDescription() != null && !membership.groupDescription().isBlank()) {
-      Span description = new Span(membership.groupDescription());
-      description.addClassName("my-groups-row__description");
-      identity.add(description);
-    }
+    Div badgesAndActions = new Div();
+    badgesAndActions.addClassName("my-groups-row__badges-actions");
 
     Div badges = new Div();
     badges.addClassName("my-groups-row__badges");
@@ -137,7 +138,20 @@ public class MyGroupsComponent extends Div implements Serializable {
     actions.addClassName("my-groups-row__actions");
     appendActions(actions, membership);
 
-    row.add(identity, badges, actions);
+    badgesAndActions.add(badges, actions);
+    header.add(title, badgesAndActions);
+
+    Div identity = new Div();
+    identity.addClassName("my-groups-row__identity");
+    identity.add(header);
+
+    if (membership.groupDescription() != null && !membership.groupDescription().isBlank()) {
+      Span description = new Span(membership.groupDescription());
+      description.addClassName("my-groups-row__description");
+      identity.add(description);
+    }
+
+    row.add(identity);
     return row;
   }
 

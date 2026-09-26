@@ -50,7 +50,7 @@ class GroupServiceSpec extends Specification {
     repository = new GroupRepository(storage)
     domainService = new GroupDomainService(repository)
     DomainRegistry.instance().registerService(domainService)
-    service = new GroupService(repository)
+    service = new GroupService(repository, new InMemoryUserInformationService())
   }
 
   def cleanup() {
@@ -124,7 +124,8 @@ class GroupServiceSpec extends Specification {
     }
     GroupRepository racingRepository = new GroupRepository(racingStorage)
     DomainRegistry.instance().registerService(new GroupDomainService(racingRepository))
-    GroupService racingService = new GroupService(racingRepository)
+    GroupService racingService = new GroupService(racingRepository,
+        new InMemoryUserInformationService())
 
     when:
     Result<GroupInfoProjection, ApplicationException> result =

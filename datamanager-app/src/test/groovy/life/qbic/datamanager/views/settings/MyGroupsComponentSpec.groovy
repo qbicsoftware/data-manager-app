@@ -67,8 +67,9 @@ class MyGroupsComponentSpec extends Specification {
     component.refresh()
 
     then: "the row renders without the description element"
-    def rowChildren = rowChildren(renderedRows()[0])
-    rowChildren.findAll { it instanceof Span && it.element.classList.contains("my-groups-row__description") }.isEmpty()
+    def descSpans = []
+    collectSpans(renderedRows()[0], descSpans)
+    descSpans.findAll { it.element.classList.contains("my-groups-row__description") }.isEmpty()
     textOf(renderedRows()[0]).contains("Sprint Team")
     textOf(renderedRows()[0]).contains("Member")
   }
@@ -256,6 +257,13 @@ class MyGroupsComponentSpec extends Specification {
 
   private static List<Component> rowChildren(Div row) {
     row.children.toList() as List<Component>
+  }
+
+  private static void collectSpans(Component component, List<Span> spans) {
+    if (component instanceof Span span) {
+      spans << span
+    }
+    component.children.forEach { child -> collectSpans(child, spans) }
   }
 
   private static List<Button> buttonsOf(Div row) {

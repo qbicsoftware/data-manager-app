@@ -1,4 +1,5 @@
 package life.qbic.usergroups.application.service
+import life.qbic.usergroups.application.InMemoryUserInformationService
 
 import java.time.Instant
 
@@ -44,7 +45,7 @@ class GroupInformationServiceImplSpec extends Specification {
     repository = new GroupRepository(storage)
     domainService = new GroupDomainService(repository)
     DomainRegistry.instance().registerService(domainService)
-    groupService = new GroupService(repository)
+    groupService = new GroupService(repository, new InMemoryUserInformationService())
     service = new GroupInformationServiceImpl(groupService)
   }
 
@@ -126,6 +127,26 @@ class GroupInformationServiceImplSpec extends Specification {
     then: "alice sees the full roster size of her group (2) and bob sees his solo group (1)"
     aliceGroups.find { it.groupId() == aliceGroup.get() }.memberCount() == 2
     bobGroups.find { it.groupId() == bobGroup.get() }.memberCount() == 1
+  }
+
+  def "listMyGroups maps a group with a NULL (DB-loaded) description without an NPE"() {
+    given: "a group whose aggregate description is null (DB converter maps NULL column to null)"
+    GroupId groupId = GroupId.create()
+    UserGroup group = UserGroup.createAdHoc(groupId, GroupName.from("Legacy Group"),
+        GroupDescription.from("desc"), "alice", NOW)
+    // simulate the JPA AttributeConverter: a NULL description column yields a null field
+    group.getClass().getDeclaredField("description").with { f ->
+      f.setAccessible(true)
+      f.set(group, null)
+    }
+    storage.save(group)
+
+    when: "the caller's memberships are mapped to API DTOs"
+    List<MyGroupMembership> aliceGroups = service.listMyGroups("alice")
+
+    then: "no NPE; the group is exposed with a null description"
+    aliceGroups.size() == 1
+    aliceGroups.get(0).groupDescription() == null
   }
 
   def "isGroupNameAvailable is case-insensitive"() {

@@ -79,4 +79,17 @@ class InlineEditableFieldSpec extends Specification {
     // the committed value is unchanged until the parent persists and calls setValue
     field.getValue() == "old"
   }
+
+  def "a textarea-backed field sets a stable min-width bound instead of growing to fit long content"() {
+    given: "a textarea field with a long multi-line value (like a 500-char group description)"
+    def longDescription = "word ".repeat(120).trim() // ~600 characters, longer than any max len
+    def field = new InlineEditableField(InlineEditableField.InputKind.TEXTAREA, "Description", longDescription)
+    field.setMinDisplayWidth(40)
+
+    when: "the display min-width is applied"
+    int minWidthCh = field.displayWidthForTest()
+
+    then: "the lower bound stays at the configured minimum (40ch) regardless of the long content"
+    minWidthCh == 40
+  }
 }

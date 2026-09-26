@@ -20,10 +20,6 @@
 /* One membership row */
 .my-groups-row {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--lumo-space-m);
-  flex-wrap: wrap;
   box-sizing: border-box;
   padding: var(--lumo-space-m);
   background-color: var(--lumo-base-color);
@@ -31,11 +27,30 @@
   border-radius: var(--lumo-border-radius-m);
 }
 
-/* Left column: name (+ description below it) */
+/* Left column: header (title + badges/actions inline) and description below it */
 .my-groups-row__identity {
   display: flex;
   flex-direction: column;
   gap: var(--lumo-space-xs);
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+/* Header row: title on the left, badges + actions inline on the same line to the right.
+   The badges/actions are tied to the TITLE, not the description, so a long description
+   never pushes them down or out of alignment. */
+.my-groups-row__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--lumo-space-m);
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.my-groups-row__title {
+  display: flex;
+  align-items: center;
   min-width: 0;
   flex: 1 1 auto;
 }
@@ -47,6 +62,14 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Badges + actions grouped at the end of the title line */
+.my-groups-row__badges-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+  flex-shrink: 0;
 }
 
 .my-groups-row__description {
@@ -264,15 +287,29 @@
   width: 100%;
 }
 
-/* Member cell in the grid's Member column: full name (fallback: user id), the username in
-   parentheses with weaker contrast (like the account overview header), and the role badge
-   reusing the My Groups badge styles (owner/manager green, member grey). */
+/* Member cell in the grid's Member column: user avatar (identicon), full name (fallback:
+   user id) and the username in parentheses with weaker contrast — matching the project
+   access roster and the account overview header. The role badge reuses the My Groups badge
+   styles (owner/manager green, member grey). */
 .group-member-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+  padding: var(--lumo-space-xs) 0;
+  white-space: nowrap;
+}
+
+.group-member-cell__avatar {
+  width: var(--lumo-icon-size-l);
+  height: var(--lumo-icon-size-l);
+  flex-shrink: 0;
+}
+
+.group-member-cell__identity {
   display: flex;
   align-items: baseline;
   gap: var(--lumo-space-xs);
-  padding: var(--lumo-space-xs) 0;
-  white-space: nowrap;
+  min-width: 0;
 }
 
 .group-member-cell__name {
@@ -282,13 +319,58 @@
   text-overflow: ellipsis;
 }
 
-/* Rows that cannot be acted on (the group owner, or the acting user themselves): the row's
-   part name `protected-row` is applied via Grid.setPartNameGenerator and rendered on the row
-   element (vaadin-grid-row::part(protected-row)). The whole row is slightly quieted so the
-   disabled selection checkbox reads as intentional and not a rendering bug. */
-.group-members-component vaadin-grid-row::part(protected-row) {
+/* Add-member search results in the ComboBox overlay: identical layout to the roster rows
+   (avatar + full name + username in parentheses) so the suggestions read exactly like the
+   members they will join. */
+.user-search-result {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+  padding: var(--lumo-space-xs) 0;
+  white-space: nowrap;
+}
+
+.user-search-result__avatar {
+  width: var(--lumo-icon-size-l);
+  height: var(--lumo-icon-size-l);
+  flex-shrink: 0;
+}
+
+.user-search-result__identity {
+  display: flex;
+  align-items: baseline;
+  gap: var(--lumo-space-xs);
+  min-width: 0;
+}
+
+.user-search-result__name {
+  color: var(--lumo-body-text-color);
+  font-weight: var(--lumo-font-weight-semibold, 600);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Rows that cannot be acted on (the group owner, or the acting user themselves) are marked
+   with part name `protected-row` via Grid.setPartNameGenerator, which lands on the row's
+   cells (vaadin-grid::part(protected-row) in the grid's shadow DOM — the grid renders plain
+   <tr> rows, not vaadin-grid-row elements). The cells are slightly quieted so the disabled
+   selection checkbox reads as intentional and not a rendering bug. */
+.group-members-component vaadin-grid::part(protected-row) {
   opacity: 0.65;
   background-color: var(--lumo-contrast-5pct);
+}
+
+/* Clicking anywhere on an actionable member row toggles its selection (in addition to the
+   selection checkbox). All body rows get a pointer cursor to signal clickability; rows that
+   cannot be acted on (owner / acting user / peer-manager rows) carry Vaadin's built-in
+   `nonselectable-row` part and are explicitly reset to the default cursor, so the hand only
+   appears where a click actually toggles the selection. */
+.group-members-component vaadin-grid::part(row) {
+  cursor: pointer;
+}
+
+.group-members-component vaadin-grid::part(nonselectable-row) {
+  cursor: default;
 }
 
 /* Danger zone: destructive group-level action (dissolve) */

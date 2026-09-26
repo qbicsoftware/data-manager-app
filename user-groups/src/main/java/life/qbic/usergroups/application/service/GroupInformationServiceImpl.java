@@ -10,6 +10,7 @@ import life.qbic.usergroups.api.MyGroupMembership;
 import life.qbic.usergroups.application.GroupInfoProjection;
 import life.qbic.usergroups.application.GroupMembershipProjection;
 import life.qbic.usergroups.application.GroupService;
+import life.qbic.usergroups.domain.model.GroupDescription;
 
 /**
  * <b>Group information service</b>
@@ -61,7 +62,7 @@ public class GroupInformationServiceImpl implements GroupInformationService {
     return new GroupInfo(
         projection.groupId().get(),
         projection.groupName().value(),
-        projection.groupDescription().value().orElse(null),
+        descriptionValue(projection.groupDescription()),
         apiType);
   }
 
@@ -78,9 +79,25 @@ public class GroupInformationServiceImpl implements GroupInformationService {
     return new MyGroupMembership(
         projection.groupId().get(),
         projection.groupName().value(),
-        projection.groupDescription().value().orElse(null),
+        descriptionValue(projection.groupDescription()),
         apiType,
         apiRole,
         projection.memberCount());
+  }
+
+  /**
+   * Resolves the description of a membership/info projection to a nullable API value.
+   * <p>
+   * A DB-loaded group with a {@code NULL} description column carries a {@code null}
+   * {@code GroupDescription} (the attribute converter maps NULL to {@code null}), while a
+   * freshly created group carries {@code GroupDescription.from(null)}. Both must surface as
+   * {@code null}/“no description” at the API boundary — never an NPE on
+   * {@code groupDescription().value()}.
+   *
+   * @param description the projection's description, may be {@code null}
+   * @return the description string, or {@code null} if none was set
+   */
+  private static String descriptionValue(GroupDescription description) {
+    return description == null ? null : description.value().orElse(null);
   }
 }
