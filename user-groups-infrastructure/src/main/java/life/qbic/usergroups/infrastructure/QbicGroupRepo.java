@@ -54,19 +54,39 @@ public interface QbicGroupRepo extends JpaRepository<UserGroup, GroupId> {
   List<UserGroup> findByStatus(GroupStatus status);
 
   /**
+   * The JPQL of {@link #findByMemberAndStatus}, extractable so tests can execute the exact
+   * production query (instead of re-typing it and risking drift). The query keeps the
+   * {@code JOIN FETCH} unfiltered and expresses the caller membership via a correlated
+   * {@code IN} subquery — see {@link #findByMemberAndStatus} for why.
+   *
+   * @since 1.19.0
+   */
+  String FIND_BY_MEMBER_AND_STATUS_QUERY = "SELECT DISTINCT g FROM UserGroup g JOIN FETCH g.memberships "
+      + "WHERE g.id.value IN (SELECT m.id.groupId FROM GroupMembership m "
+      + "WHERE m.id.userId = :userId) AND g.status = :status";
+
+  /**
    * Returns all groups in the given status that contain a membership of the provided user.
    *
    * <p>Explicit JPQL navigation through the aggregate's membership collection: each membership's
    * composite key embeds the {@code userId}, so the {@code group_membership.user_id} column is
    * reached via {@code m.id.userId}.</p>
    *
+   * <p><b>Important:</b> the membership predicate must <em>not</em> be applied to the
+   * {@code JOIN FETCH g.memberships} alias. A fetch join whose alias appears in a WHERE clause
+   * silently truncates the loaded collection to the matching rows — the fetched
+   * {@code memberships} collection would then contain only the caller's own membership, making
+   * {@code memberships().size()} (the roster/member count shown in the My Groups view) report
+   * 1 for every group. The caller's membership is therefore expressed with a correlated
+   * {@code IN} subquery on the composite id, while the fetch join stays unfiltered so the full
+   * roster is hydrated.</p>
+   *
    * @param userId the user id to match memberships for
    * @param status the group status to filter for (typically {@link GroupStatus#ACTIVE})
-   * @return the matching groups
+   * @return the matching groups with their complete membership rosters
    * @since 1.19.0
    */
-  @Query("SELECT DISTINCT g FROM UserGroup g JOIN FETCH g.memberships m "
-      + "WHERE m.id.userId = :userId AND g.status = :status")
+  @Query(FIND_BY_MEMBER_AND_STATUS_QUERY)
   List<UserGroup> findByMemberAndStatus(@Param("userId") String userId,
       @Param("status") GroupStatus status);
 }

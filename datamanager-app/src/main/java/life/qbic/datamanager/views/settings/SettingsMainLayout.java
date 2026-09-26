@@ -74,8 +74,8 @@ public class SettingsMainLayout extends DataManagerLayout implements BeforeEnter
   @Override
   public void beforeEnter(BeforeEnterEvent event) {
     Class<?> target = event.getNavigationTarget();
-    if (target == NewGroupMain.class) {
-      // the create page belongs to the My Groups tab
+    if (target == NewGroupMain.class || target == GroupDetailMain.class) {
+      // the create page and the group detail page belong to the My Groups tab
       target = MyGroupsMain.class;
     }
     settingsNavigationComponent.selectTabFor(target);

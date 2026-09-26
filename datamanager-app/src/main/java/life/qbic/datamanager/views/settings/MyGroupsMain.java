@@ -11,6 +11,7 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
+import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -22,6 +23,7 @@ import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.general.dialog.AlertDialog;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.notifications.Toast;
+import life.qbic.identity.api.UserInformationService;
 import life.qbic.projectmanagement.application.AuthenticationToUserIdTranslationService;
 import life.qbic.usergroups.api.GroupInformationService;
 import life.qbic.usergroups.api.MyGroupMembership;
@@ -41,6 +43,13 @@ import org.springframework.security.core.context.SecurityContextHolder;
  * {@link MyGroupsComponent.LeaveConfirmation} seam, this view shows an {@link AlertDialog}
  * confirmation and, when confirmed, calls {@link GroupService#removeMembership} and toasts the
  * outcome before refreshing the list.
+ * <p>
+ * The owner/manager management actions (FEAT-USER-GROUPS-04, task #1577) are now owned by the
+ * dedicated group detail page ({@link GroupDetailMain}, route {@code settings/groups/:groupId}):
+ * the list component navigates to that page for the non-destructive management surface
+ * (members/add/rename/dissolve stays there). Non-destructive actions are no longer modal
+ * dialogs (cognitive-load decision); only destructive confirmations (leave group) use an
+ * {@link AlertDialog} here.
  *
  * @since 1.19.0
  */
@@ -56,6 +65,7 @@ public class MyGroupsMain extends Main implements BeforeEnterObserver {
 
   private final transient GroupInformationService groupInformationService;
   private final transient GroupService groupService;
+  private final transient UserInformationService userInformationService;
   private transient AuthenticationToUserIdTranslationService userIdTranslator;
   private transient MessageSourceNotificationFactory messageFactory;
 
@@ -74,11 +84,14 @@ public class MyGroupsMain extends Main implements BeforeEnterObserver {
   public MyGroupsMain(
       @Autowired GroupInformationService groupInformationService,
       @Autowired GroupService groupService,
+      @Autowired UserInformationService userInformationService,
       @Autowired AuthenticationToUserIdTranslationService userIdTranslator,
       @Autowired MessageSourceNotificationFactory messageFactory) {
     this.groupInformationService = requireNonNull(groupInformationService,
         "groupInformationService must not be null");
     this.groupService = requireNonNull(groupService, "groupService must not be null");
+    this.userInformationService = requireNonNull(userInformationService,
+        "userInformationService must not be null");
     this.userIdTranslator = requireNonNull(userIdTranslator,
         "userIdTranslator must not be null");
     this.messageFactory = requireNonNull(messageFactory,
@@ -138,7 +151,8 @@ public class MyGroupsMain extends Main implements BeforeEnterObserver {
         () -> groupInformationService.listMyGroups(userId),
         this::refreshList,
         this::onLeaveConfirmed,
-        MyGroupsMain::showLeaveConfirmation);
+        MyGroupsMain::showLeaveConfirmation,
+        MyGroupsComponent.ManagementActionPolicy.defaultPolicy());
     myGroupsComponent.refresh();
     section.addContent(myGroupsComponent);
     Button newGroupButton = new Button("New group");
@@ -175,4 +189,5 @@ public class MyGroupsMain extends Main implements BeforeEnterObserver {
         })
         .onError(error -> errorToast.accept(groupName));
   }
+
 }

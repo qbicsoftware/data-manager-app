@@ -17,10 +17,11 @@ import life.qbic.usergroups.domain.model.GroupType;
  * @param groupDescription the group description (may be empty)
  * @param groupType      the group type (ORG / ADHOC)
  * @param myRole         the caller's role inside the group
+ * @param memberCount    the total number of members of the group
  * @since 1.19.0
  */
 public record GroupMembershipProjection(GroupId groupId, GroupName groupName,
                                         GroupDescription groupDescription, GroupType groupType,
-                                        GroupRole myRole) {
+                                        GroupRole myRole, int memberCount) {
 
 }

@@ -2,11 +2,13 @@ package life.qbic.usergroups.application;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
+import life.qbic.identity.api.UserInformationService;
 import life.qbic.usergroups.domain.model.GroupDescription;
 import life.qbic.usergroups.domain.model.GroupId;
 import life.qbic.usergroups.domain.model.GroupMembership;
@@ -55,9 +57,13 @@ public class GroupService {
   static final String GROUP_NOT_FOUND_MESSAGE = "Group %s not found.";
 
   private final GroupRepository groupRepository;
+  private final UserInformationService userInformationService;
 
-  public GroupService(GroupRepository groupRepository) {
+  public GroupService(GroupRepository groupRepository,
+      UserInformationService userInformationService) {
     this.groupRepository = groupRepository;
+    this.userInformationService = Objects.requireNonNull(userInformationService,
+        "userInformationService must not be null");
   }
 
   /**
@@ -251,10 +257,309 @@ public class GroupService {
     return Result.fromValue(null);
   }
 
+  /**
+   * Adds a regular member to an ad-hoc group.
+   *
+   * <p>Role-gated: the caller must hold role OWNER or MANAGER inside the group (enforced by the
+   * domain layer). The target user must exist and must not be a member yet.</p>
+   *
+   * @param groupId      the id of the group
+   * @param actingUserId the user performing the operation (must hold OWNER or MANAGER)
+   * @param userId       the user to add as a regular member; must reference an existing user
+   * @return a {@link Result} with no value on success, or an error if the group does not exist,
+   * the user to add does not exist, is already a member, or the acting user lacks the required
+   * role
+   * @since 1.20.0
+   */
+  @Transactional
+  public Result<Void, ApplicationException> addMember(String groupId, String actingUserId,
+      String userId) {
+    var domainService = DomainRegistry.instance().groupDomainService();
+    if (domainService.isEmpty()) {
+      return Result.fromError(systemFailure());
+    }
+    Optional<UserGroup> maybeGroup = resolveActiveGroup(groupId);
+    if (maybeGroup.isEmpty()) {
+      return Result.fromError(groupNotFound(groupId));
+    }
+    // A group membership references a real identity user (no FK on group_membership.user_id):
+    // reject unknown user ids up front so a typo or stale UI state can never create a corrupt
+    // membership row that no real user can ever act on.
+    if (userInformationService.findById(userId).isEmpty()) {
+      return Result.fromError(userNotFound(userId));
+    }
+    UserGroup group = maybeGroup.get();
+    if (group.memberships().stream().anyMatch(m -> m.userId().equals(userId))) {
+      return Result.fromError(new ApplicationException(
+          "User " + userId + " is already a member of group " + groupId, ErrorCode.GENERAL,
+          ErrorParameters.empty()));
+    }
+    Optional<UserGroup> updated = domainService.get().addMember(group.id(), actingUserId, userId,
+        Instant.now());
+    if (updated.isEmpty()) {
+      return Result.fromError(accessDenied(actingUserId, groupId));
+    }
+    return Result.fromValue(null);
+  }
+
+  /**
+   * Removes a regular member from an ad-hoc group.
+   *
+   * <p>Role-gated: the caller must hold role OWNER or MANAGER (a manager may not remove another
+   * manager, and nobody may remove the owner). If the removal empties the group, it is
+   * auto-dissolved.</p>
+   *
+   * @param groupId      the id of the group
+   * @param actingUserId the user performing the removal
+   * @param userId       the member to remove
+   * @return a {@link Result} with no value on success, or an error if the operation is not
+   * permitted
+   * @since 1.20.0
+   */
+  @Transactional
+  public Result<Void, ApplicationException> removeMember(String groupId, String actingUserId,
+      String userId) {
+    var domainService = DomainRegistry.instance().groupDomainService();
+    if (domainService.isEmpty()) {
+      return Result.fromError(systemFailure());
+    }
+    Optional<UserGroup> maybeGroup = resolveActiveGroup(groupId);
+    if (maybeGroup.isEmpty()) {
+      return Result.fromError(groupNotFound(groupId));
+    }
+    Optional<UserGroup> updated = domainService.get().removeMember(maybeGroup.get().id(),
+        actingUserId, userId);
+    if (updated.isEmpty()) {
+      return Result.fromError(accessDenied(actingUserId, groupId));
+    }
+    return Result.fromValue(null);
+  }
+
+  /**
+   * Appoints a regular member as a manager of an ad-hoc group.
+   *
+   * <p>Role-gated: only the OWNER may appoint managers.</p>
+   *
+   * @param groupId      the id of the group
+   * @param actingUserId the user performing the operation (must hold OWNER)
+   * @param userId       the member to promote to MANAGER
+   * @return a {@link Result} with no value on success, or an error if the operation is not
+   * permitted
+   * @since 1.20.0
+   */
+  @Transactional
+  public Result<Void, ApplicationException> appointManager(String groupId, String actingUserId,
+      String userId) {
+    var domainService = DomainRegistry.instance().groupDomainService();
+    if (domainService.isEmpty()) {
+      return Result.fromError(systemFailure());
+    }
+    Optional<UserGroup> maybeGroup = resolveActiveGroup(groupId);
+    if (maybeGroup.isEmpty()) {
+      return Result.fromError(groupNotFound(groupId));
+    }
+    Optional<UserGroup> updated = domainService.get().appointManager(maybeGroup.get().id(),
+        actingUserId, userId);
+    if (updated.isEmpty()) {
+      return Result.fromError(accessDenied(actingUserId, groupId));
+    }
+    return Result.fromValue(null);
+  }
+
+  /**
+   * Demotes a manager back to a regular member of an ad-hoc group.
+   *
+   * <p>Role-gated: only the OWNER may demote managers.</p>
+   *
+   * @param groupId      the id of the group
+   * @param actingUserId the user performing the operation (must hold OWNER)
+   * @param userId       the manager to demote
+   * @return a {@link Result} with no value on success, or an error if the operation is not
+   * permitted
+   * @since 1.20.0
+   */
+  @Transactional
+  public Result<Void, ApplicationException> demoteManager(String groupId, String actingUserId,
+      String userId) {
+    var domainService = DomainRegistry.instance().groupDomainService();
+    if (domainService.isEmpty()) {
+      return Result.fromError(systemFailure());
+    }
+    Optional<UserGroup> maybeGroup = resolveActiveGroup(groupId);
+    if (maybeGroup.isEmpty()) {
+      return Result.fromError(groupNotFound(groupId));
+    }
+    Optional<UserGroup> updated = domainService.get().demoteManager(maybeGroup.get().id(),
+        actingUserId, userId);
+    if (updated.isEmpty()) {
+      return Result.fromError(accessDenied(actingUserId, groupId));
+    }
+    return Result.fromValue(null);
+  }
+
+  /**
+   * Renames an ad-hoc group.
+   *
+   * <p>Role-gated: the OWNER and MANAGER may rename. The new name must be unique
+   * (case-insensitive); a violation is rejected with {@link ErrorCode#DUPLICATE_GROUP_NAME}.</p>
+   *
+   * @param groupId      the id of the group
+   * @param actingUserId the user performing the operation (must hold OWNER or MANAGER)
+   * @param newName      the new group name
+   * @return a {@link Result} with no value on success, or an error if the operation is not
+   * permitted or the new name is already taken
+   * @since 1.20.0
+   */
+  @Transactional
+  public Result<Void, ApplicationException> renameGroup(String groupId, String actingUserId,
+      GroupName newName) {
+    var domainService = DomainRegistry.instance().groupDomainService();
+    if (domainService.isEmpty()) {
+      return Result.fromError(systemFailure());
+    }
+    Optional<UserGroup> maybeGroup = resolveActiveGroup(groupId);
+    if (maybeGroup.isEmpty()) {
+      return Result.fromError(groupNotFound(groupId));
+    }
+    Optional<UserGroup> existing = groupRepository.findByNameIgnoreCase(newName);
+    if (existing.isPresent() && !existing.get().id().equals(maybeGroup.get().id())) {
+      return Result.fromError(duplicateNameApplicationError(newName.value()));
+    }
+    Optional<UserGroup> updated = domainService.get().renameGroup(maybeGroup.get().id(),
+        actingUserId, newName);
+    if (updated.isEmpty()) {
+      return Result.fromError(accessDenied(actingUserId, groupId));
+    }
+    return Result.fromValue(null);
+  }
+
+  /**
+   * Updates the description of an ad-hoc group.
+   *
+   * <p>Role-gated: the OWNER and MANAGER may change the description.</p>
+   *
+   * @param groupId        the id of the group
+   * @param actingUserId   the user performing the operation (must hold OWNER or MANAGER)
+   * @param newDescription the new group description
+   * @return a {@link Result} with no value on success, or an error if the operation is not
+   * permitted
+   * @since 1.20.0
+   */
+  @Transactional
+  public Result<Void, ApplicationException> updateDescription(String groupId, String actingUserId,
+      GroupDescription newDescription) {
+    var domainService = DomainRegistry.instance().groupDomainService();
+    if (domainService.isEmpty()) {
+      return Result.fromError(systemFailure());
+    }
+    Optional<UserGroup> maybeGroup = resolveActiveGroup(groupId);
+    if (maybeGroup.isEmpty()) {
+      return Result.fromError(groupNotFound(groupId));
+    }
+    Optional<UserGroup> updated = domainService.get().updateDescription(maybeGroup.get().id(),
+        actingUserId, newDescription);
+    if (updated.isEmpty()) {
+      return Result.fromError(accessDenied(actingUserId, groupId));
+    }
+    return Result.fromValue(null);
+  }
+
+  /**
+   * Dissolves an ad-hoc group by its owner (explicit dissolve).
+   *
+   * <p>Role-gated: only the OWNER may dissolve explicitly.</p>
+   *
+   * @param groupId      the id of the group
+   * @param actingUserId the user performing the operation (must hold OWNER)
+   * @return a {@link Result} with no value on success, or an error if the operation is not
+   * permitted
+   * @since 1.20.0
+   */
+  @Transactional
+  public Result<Void, ApplicationException> dissolveGroup(String groupId, String actingUserId) {
+    var domainService = DomainRegistry.instance().groupDomainService();
+    if (domainService.isEmpty()) {
+      return Result.fromError(systemFailure());
+    }
+    Optional<UserGroup> maybeGroup = resolveActiveGroup(groupId);
+    if (maybeGroup.isEmpty()) {
+      return Result.fromError(groupNotFound(groupId));
+    }
+    Optional<UserGroup> updated = domainService.get().dissolve(maybeGroup.get().id(),
+        actingUserId);
+    if (updated.isEmpty()) {
+      return Result.fromError(accessDenied(actingUserId, groupId));
+    }
+    return Result.fromValue(null);
+  }
+
+  /**
+   * Returns the members of the given active group.
+   *
+   * <p><b>Visibility:</b> members of a group are only exposed to the group's own members (and
+   * the QBiC admin for oversight); non-members receive an empty result. This enforces the
+   * strategy's visibility rule in the application layer.</p>
+   *
+   * @param groupId  the id of the group
+   * @param viewerId the user requesting the list (must be a member of the group)
+   * @return the group's members, or an empty list if the group does not exist, is inactive, or
+   * the viewer is not a member
+   * @since 1.20.0
+   */
+  @Transactional(readOnly = true)
+  public List<GroupMemberProjection> listMembers(String groupId, String viewerId) {
+    Optional<UserGroup> maybeGroup = resolveActiveGroup(groupId);
+    if (maybeGroup.isEmpty()) {
+      return List.of();
+    }
+    UserGroup group = maybeGroup.get();
+    boolean isMember = group.memberships().stream().anyMatch(m -> m.userId().equals(viewerId));
+    if (!isMember) {
+      return List.of();
+    }
+    return group.memberships().stream()
+        .map(m -> new GroupMemberProjection(m.userId(), m.role()))
+        .toList();
+  }
+
+  private Optional<UserGroup> resolveActiveGroup(String groupId) {
+    GroupId parsedId;
+    try {
+      parsedId = GroupId.from(groupId);
+    } catch (IllegalArgumentException e) {
+      return Optional.empty();
+    }
+    return groupRepository.findById(parsedId).filter(UserGroup::isActive);
+  }
+
+  private ApplicationException groupNotFound(String groupId) {
+    return new ApplicationException(String.format(GROUP_NOT_FOUND_MESSAGE, groupId),
+        ErrorCode.GENERAL, ErrorParameters.empty());
+  }
+
+  private static ApplicationException userNotFound(String userId) {
+    return new ApplicationException("User " + userId + " not found.", ErrorCode.GENERAL,
+        ErrorParameters.empty());
+  }
+
+  private static ApplicationException accessDenied(String userId, String groupId) {
+    return new ApplicationException("User " + userId + " is not allowed to perform this "
+        + "operation on group " + groupId, ErrorCode.ACCESS_DENIED, ErrorParameters.empty());
+  }
+
+  private static ApplicationException systemFailure() {
+    return new ApplicationException("Group operation failed.", ErrorCode.SERVICE_FAILED,
+        ErrorParameters.empty());
+  }
+
   private Result<GroupInfoProjection, ApplicationException> duplicateNameError(String name) {
-    return Result.fromError(new ApplicationException(
+    return Result.fromError(duplicateNameApplicationError(name));
+  }
+
+  private static ApplicationException duplicateNameApplicationError(String name) {
+    return new ApplicationException(
         String.format(DUPLICATE_NAME_MESSAGE, name), ErrorCode.DUPLICATE_GROUP_NAME,
-        ErrorParameters.of(name)));
+        ErrorParameters.of(name));
   }
 
   private boolean isDataIntegrityViolation(RuntimeException e) {
@@ -275,8 +580,11 @@ public class GroupService {
         .findFirst()
         .orElseThrow(() -> new IllegalStateException(
             "User " + userId + " has no membership in group " + group.id()));
+    // The caller is a member, so the roster size is within the visibility policy — and it
+    // comes for free here because the memberships are already loaded with the aggregate.
+    int memberCount = group.memberships().size();
     return new GroupMembershipProjection(group.id(), group.name(), group.description(),
-        group.type(), role);
+        group.type(), role, memberCount);
   }
 
   private GroupInfoProjection toInfoProjection(UserGroup group) {

@@ -3,11 +3,14 @@ package life.qbic.datamanager.views.settings;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.shared.Tooltip;
+import com.vaadin.flow.router.RouteConfiguration;
+import com.vaadin.flow.router.RouteParam;
+import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.shared.Registration;
 import java.io.Serial;
 import java.io.Serializable;
@@ -23,25 +26,25 @@ import life.qbic.usergroups.api.MyGroupMembership;
  * <b>My Groups list component</b>
  * <p>
  * Renders the group memberships of the current user ("My Groups"). Each membership is shown as a
- * row with the group name, its description (when present), a type badge (Org / User Group) and the
- * caller's role badge (Owner / Manager / Member).
+ * row with the group name, its description (when present), a type badge (Org / User Group), the
+ * caller's role badge (Owner / Manager / Member) and the group's total member count.
  * <p>
  * Actions are role-gated:
  * <ul>
  *   <li>User Group MEMBER: an enabled "Leave group" action.</li>
- *   <li>User Group MANAGER: the <em>disabled</em> management stubs (they cannot manage) plus an
+ *   <li>User Group MANAGER: management actions (add/remove members, rename/describe) plus an
  *   enabled "Leave group" self-remove action.</li>
- *   <li>User Group OWNER: the <em>disabled</em> management stubs and <b>no</b> self-remove (owner
- *   leave/transfer is handled by a later story, FEAT-USER-GROUPS-05). Disabled buttons do not
- *   fire events in Vaadin, so they are wrapped in a {@link Span} carrying the {@link Tooltip}.</li>
+ *   <li>User Group OWNER: management actions including appoint-manager and dissolve, no self-remove
+ *   (owner-leave/transfer is handled by FEAT-USER-GROUPS-05).</li>
  *   <li>Org groups: no action buttons, membership-only rendering (structural AC 5).</li>
  * </ul>
  * <p>
- * The component is intentionally free of UI-specific state and services: memberships are provided
- * through a {@link Supplier}, re-rendering through a {@link Runnable} refresh callback, leaving a
- * group through a {@link Consumer} seam and the confirmation UI through a {@link LeaveConfirmation}
- * seam. This keeps it unit-testable without a Spring or Vaadin {@code UI} context, mirroring the
- * {@code PinnedProjectsComponent} pattern.
+ * The which-actions-to-show decision is delegated to an injectable
+ * {@link ManagementActionPolicy} so the component stays UI-state-free and unit-testable without a
+ * Spring or Vaadin {@code UI} context. When the policy grants management actions, the row offers a
+ * "Manage group" navigation button that opens the dedicated group detail page
+ * ({@link GroupDetailMain}, route {@code settings/groups/:groupId}) where the non-destructive
+ * management happens <em>in place</em> instead of in modal dialogs.
  *
  * @since 1.19.0
  */
@@ -50,31 +53,31 @@ public class MyGroupsComponent extends Div implements Serializable {
   @Serial
   private static final long serialVersionUID = 7426951543168024956L;
 
-  private static final String DISABLED_MANAGEMENT_TOOLTIP =
-      "Available in an upcoming update — FEAT-USER-GROUPS-04";
-
   private final Supplier<List<MyGroupMembership>> membershipsSupplier;
   private final Runnable refreshCallback;
   private final Consumer<String> leaveGroupCallback;
   private final LeaveConfirmation leaveConfirmation;
+  private final ManagementActionPolicy managementActionPolicy;
   private final Div groupList = new Div();
   private final Span emptyState = new Span("No groups yet.");
 
   /**
    * Creates a new my-groups list component.
    *
-   * @param membershipsSupplier supplies the caller's current memberships; must not be
-   *                            {@code null}
-   * @param refreshCallback     re-runs the membership query and re-renders this component; must
-   *                            not be {@code null}
-   * @param leaveGroupCallback  invoked with the group id when the caller confirms leaving a
-   *                            group; must not be {@code null}
-   * @param leaveConfirmation   asks the user to confirm leaving a group and runs the provided
-   *                            action when confirmed; must not be {@code null}
+   * @param membershipsSupplier    supplies the caller's current memberships; must not be
+   *                               {@code null}
+   * @param refreshCallback        re-runs the membership query and re-renders this component; must
+   *                               not be {@code null}
+   * @param leaveGroupCallback     invoked with the group id when the caller confirms leaving a
+   *                               group; must not be {@code null}
+   * @param leaveConfirmation      asks the user to confirm leaving a group and runs the provided
+   *                               action when confirmed; must not be {@code null}
+   * @param managementActionPolicy decides which management actions a row offers based on the group
+   *                               type and the caller's role; must not be {@code null}
    */
   public MyGroupsComponent(Supplier<List<MyGroupMembership>> membershipsSupplier,
       Runnable refreshCallback, Consumer<String> leaveGroupCallback,
-      LeaveConfirmation leaveConfirmation) {
+      LeaveConfirmation leaveConfirmation, ManagementActionPolicy managementActionPolicy) {
     this.membershipsSupplier = Objects.requireNonNull(membershipsSupplier,
         "membershipsSupplier must not be null");
     this.refreshCallback = Objects.requireNonNull(refreshCallback,
@@ -83,6 +86,8 @@ public class MyGroupsComponent extends Div implements Serializable {
         "leaveGroupCallback must not be null");
     this.leaveConfirmation = Objects.requireNonNull(leaveConfirmation,
         "leaveConfirmation must not be null");
+    this.managementActionPolicy = Objects.requireNonNull(managementActionPolicy,
+        "managementActionPolicy must not be null");
     addClassName("my-groups-component");
     groupList.addClassName("my-groups-list");
     emptyState.addClassName("my-groups-empty-state");
@@ -109,12 +114,36 @@ public class MyGroupsComponent extends Div implements Serializable {
     Div row = new Div();
     row.addClassName("my-groups-row");
 
-    Div identity = new Div();
-    identity.addClassName("my-groups-row__identity");
+    // Header: title on the left; badges + actions inline on the right of the SAME line as the
+    // title (never next to the description), so a long description cannot push them around.
+    Div header = new Div();
+    header.addClassName("my-groups-row__header");
 
+    Div title = new Div();
+    title.addClassName("my-groups-row__title");
     Span name = new Span(membership.groupName());
     name.addClassName("my-groups-row__name");
-    identity.add(name);
+    title.add(name);
+
+    Div badgesAndActions = new Div();
+    badgesAndActions.addClassName("my-groups-row__badges-actions");
+
+    Div badges = new Div();
+    badges.addClassName("my-groups-row__badges");
+    badges.add(buildTypeBadge(membership.groupType()));
+    badges.add(buildRoleBadge(membership.myRole()));
+    badges.add(buildMemberCountBadge(membership.memberCount()));
+
+    Div actions = new Div();
+    actions.addClassName("my-groups-row__actions");
+    appendActions(actions, membership);
+
+    badgesAndActions.add(badges, actions);
+    header.add(title, badgesAndActions);
+
+    Div identity = new Div();
+    identity.addClassName("my-groups-row__identity");
+    identity.add(header);
 
     if (membership.groupDescription() != null && !membership.groupDescription().isBlank()) {
       Span description = new Span(membership.groupDescription());
@@ -122,16 +151,7 @@ public class MyGroupsComponent extends Div implements Serializable {
       identity.add(description);
     }
 
-    Div badges = new Div();
-    badges.addClassName("my-groups-row__badges");
-    badges.add(buildTypeBadge(membership.groupType()));
-    badges.add(buildRoleBadge(membership.myRole()));
-
-    Div actions = new Div();
-    actions.addClassName("my-groups-row__actions");
-    appendActions(actions, membership);
-
-    row.add(identity, badges, actions);
+    row.add(identity);
     return row;
   }
 
@@ -140,28 +160,36 @@ public class MyGroupsComponent extends Div implements Serializable {
       // Org groups: membership-only rendering, no management controls (structural AC 5).
       return;
     }
-    switch (membership.myRole()) {
-      case OWNER -> addDisabledManagementStubs(actions);
-      case MANAGER -> {
-        addDisabledManagementStubs(actions);
+    List<ManagementAction> actionsForRole = managementActionPolicy.actionsFor(membership);
+    if (!actionsForRole.isEmpty()) {
+      // Non-destructive management (members, appoint, rename) now opens the group detail page
+      // (settings/groups/:groupId) instead of a modal dialog; the row carries a navigation
+      // button that jumps to the detail surface of this group.
+      Button openDetail = new Button("Manage group");
+      openDetail.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+      openDetail.addClickListener(click -> navigateToDetail(membership));
+      actions.add(openDetail);
+      // A manager reaches the group detail page for management but may still leave the group
+      // (self-remove) directly from the list, like any other non-owner member. The owner's
+      // self-remove/transfer is governed by FEAT-USER-GROUPS-05.
+      if (membership.myRole() == GroupRole.MANAGER) {
         addLeaveButton(actions, membership.groupId());
       }
-      case MEMBER -> addLeaveButton(actions, membership.groupId());
+      return;
+    }
+
+    switch (membership.myRole()) {
+      case OWNER -> {
+        // no self-remove; owner-leave/transfer is handled by a later story
+      }
+      case MANAGER, MEMBER -> addLeaveButton(actions, membership.groupId());
     }
   }
 
-  private void addDisabledManagementStubs(Div actions) {
-    for (String label : List.of("Manage members", "Appoint manager", "Rename", "Dissolve")) {
-      Button disabledButton = new Button(label);
-      disabledButton.setEnabled(false);
-      disabledButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
-      disabledButton.addClassName("my-groups-action--disabled");
-
-      Span wrapper = new Span(disabledButton);
-      wrapper.addClassName("my-groups-action-wrapper");
-      Tooltip.forComponent(wrapper).setText(DISABLED_MANAGEMENT_TOOLTIP);
-      actions.add(wrapper);
-    }
+  private void navigateToDetail(MyGroupMembership membership) {
+    RouteParameters parameters = new RouteParameters(
+        new RouteParam(GroupDetailMain.GROUP_ID_ROUTE_PARAMETER, membership.groupId()));
+    UI.getCurrent().navigate(GroupDetailMain.class, parameters);
   }
 
   private void addLeaveButton(Div actions, String groupId) {
@@ -228,11 +256,68 @@ public class MyGroupsComponent extends Div implements Serializable {
     void confirm(String groupId, Runnable onConfirm);
   }
 
+  /**
+   * A management action a membership row may offer.
+   */
+  public enum ManagementAction {
+    MANAGE_MEMBERS("Manage members"),
+    APPOINT_MANAGER("Appoint manager"),
+    RENAME("Rename"),
+    DISSOLVE("Dissolve");
+
+    private final String label;
+
+    ManagementAction(String label) {
+      this.label = label;
+    }
+
+    public String label() {
+      return label;
+    }
+  }
+
+  /**
+   * Decides which {@link ManagementAction}s a membership row offers, given the group type and the
+   * caller's role. The default policy encodes the FEAT-USER-GROUPS-04 role gates:
+   * <ul>
+   *   <li>OWNER of an ad-hoc group: manage members, appoint manager, rename, dissolve</li>
+   *   <li>MANAGER of an ad-hoc group: manage members, rename</li>
+   *   <li>all other rows (MEMBER/ORG): no management actions</li>
+   * </ul>
+   */
+  @FunctionalInterface
+  public interface ManagementActionPolicy {
+
+    List<ManagementAction> actionsFor(MyGroupMembership membership);
+
+    static ManagementActionPolicy defaultPolicy() {
+      return membership -> {
+        if (membership.groupType() != GroupType.ADHOC) {
+          return List.of();
+        }
+        return switch (membership.myRole()) {
+          case OWNER -> List.of(ManagementAction.MANAGE_MEMBERS,
+              ManagementAction.APPOINT_MANAGER, ManagementAction.RENAME,
+              ManagementAction.DISSOLVE);
+          case MANAGER -> List.of(ManagementAction.MANAGE_MEMBERS, ManagementAction.RENAME);
+          case MEMBER -> List.of();
+        };
+      };
+    }
+  }
+
   private static Span buildTypeBadge(GroupType type) {
     Span badge = new Span(type == GroupType.ORG ? "Org" : "User Group");
     badge.addClassName("my-groups-badge");
     badge.addClassName(
         type == GroupType.ORG ? "my-groups-badge--type-org" : "my-groups-badge--type-adhoc");
+    return badge;
+  }
+
+  private static Span buildMemberCountBadge(int memberCount) {
+    Span badge = new Span(memberCount + " member" + (memberCount == 1 ? "" : "s"));
+    badge.addClassName("my-groups-badge");
+    badge.addClassName("my-groups-badge--member-count");
     return badge;
   }
 

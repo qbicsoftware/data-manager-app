@@ -5,6 +5,9 @@ import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.io.Serial;
 import java.io.Serializable;
@@ -32,6 +35,19 @@ public class GroupMembership implements Serializable {
 
   @EmbeddedId
   private GroupMembershipId id;
+
+  /**
+   * Read-only back-reference to the owning aggregate for the bidirectional one-to-many mapping.
+   * <p>
+   * The {@code group_id} column is <em>owned</em> by the composite {@link GroupMembershipId}
+   * (the aggregate sets it via {@link #create}); this association only models the relationship
+   * so {@link UserGroup#memberships()} can use {@code mappedBy} and orphan removal can delete
+   * by the full composite key. No {@code @MapsId} is used because the parent's id is a
+   * {@code GroupId} value object, not a plain String (Hibernate 7 reflection issue).
+   */
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "group_id", insertable = false, updatable = false)
+  private UserGroup group;
 
   @Enumerated(EnumType.STRING)
   @Column(name = "role")
@@ -65,9 +81,15 @@ public class GroupMembership implements Serializable {
     return new GroupMembership(new GroupMembershipId(groupId.get(), userId), role, joinedAt);
   }
 
-  void attachTo() {
-    // no-op: membership's composite key carries the group id; no back-reference to the aggregate
-    // is needed (the collection is owned by UserGroup via a unidirectional @OneToMany).
+  /**
+   * Attaches this membership to its owning group (package-private; invoked by {@link UserGroup}
+   * to keep the bidirectional association consistent).
+   *
+   * @param group the owning group
+   * @since 1.19.0
+   */
+  void attachTo(UserGroup group) {
+    this.group = group;
   }
 
   /**
@@ -76,7 +98,18 @@ public class GroupMembership implements Serializable {
    * @since 1.19.0
    */
   void detach() {
-    // no-op: see {@link #attachTo()}.
+    this.group = null;
+  }
+
+  /**
+   * Updates the role of this membership (package-private; the aggregate funnels role changes
+   * through its role-gated management operations).
+   *
+   * @param newRole the new role inside the group
+   * @since 1.20.0
+   */
+  void setRole(GroupRole newRole) {
+    this.role = Objects.requireNonNull(newRole, "newRole must not be null");
   }
 
   public GroupMembershipId id() {

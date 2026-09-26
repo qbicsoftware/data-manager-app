@@ -17,6 +17,10 @@
     </dependency>
     <dependency>
       <groupId>life.qbic.datamanager</groupId>
+      <artifactId>identity-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>life.qbic.datamanager</groupId>
       <artifactId>logging</artifactId>
     </dependency>
     <dependency>
@@ -54,6 +58,10 @@
     <dependency>
       <groupId>life.qbic.datamanager</groupId>
       <artifactId>application-commons</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.jobrunr</groupId>
+      <artifactId>jobrunr</artifactId>
     </dependency>
     <dependency>
       <groupId>org.apache.groovy</groupId>
