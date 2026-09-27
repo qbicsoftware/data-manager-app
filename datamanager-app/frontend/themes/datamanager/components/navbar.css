@@ -212,6 +212,10 @@
 .top-level-navigation-strip {
   display: inline-flex;
   align-items: stretch;
+  /* Give the nav strip a clear, balanced gap from the brand title (was flush
+     against it, tighter than the inter-tab spacing). 1rem keeps the left edge
+     intentional without overpowering the tab strip. */
+  margin-left: var(--spacing-04);
 }
 
 .top-level-navigation .top-level-navigation-tabs {
@@ -224,7 +228,9 @@
   display: inline-flex;
   align-items: center;
   align-self: center;
-  padding: var(--lumo-space-xs) var(--lumo-space-m);
+  /* Horizontal padding reduced (m -> s) so the active-tab bottom accent hugs
+     the tab tighter and feels more GitHub-like; vertical padding unchanged. */
+  padding: var(--lumo-space-xs) var(--lumo-space-s);
   margin-inline: var(--spacing-01);
   border-radius: var(--lumo-border-radius-m) var(--lumo-border-radius-m) 0 0;
   color: var(--lumo-secondary-text-color);
