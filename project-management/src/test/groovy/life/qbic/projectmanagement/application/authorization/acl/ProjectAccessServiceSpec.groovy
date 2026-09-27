@@ -8,6 +8,7 @@ import life.qbic.usergroups.api.GroupInfo
 import life.qbic.usergroups.api.GroupInformationService
 import life.qbic.usergroups.api.GroupType
 import org.springframework.jdbc.core.JdbcTemplate
+import org.springframework.security.acls.domain.BasePermission
 import org.springframework.security.acls.domain.GrantedAuthoritySid
 import org.springframework.security.acls.domain.ObjectIdentityImpl
 import org.springframework.security.acls.jdbc.JdbcMutableAclService
@@ -38,7 +39,7 @@ class ProjectAccessServiceSpec extends Specification {
 
   def setup() {
     acl = buildAcl(projectId)
-    aclService.readAclById(_ as ObjectIdentityImpl, _ as List) >> acl
+    aclService.readAclById(_ as ObjectIdentityImpl, _) >> acl
     aclService.createAcl(_ as ObjectIdentityImpl) >> acl
     service = new ProjectAccessServiceImpl(aclService, jdbcTemplate, groupInformationService)
     entries.clear()
@@ -97,7 +98,10 @@ class ProjectAccessServiceSpec extends Specification {
 
   def "duplicate authority grant throws"() {
     given: "an authority already granted the ADMIN role"
-    service.addAuthorityAccess(projectId, "ROLE_EXAMPLE", ProjectRole.ADMIN)
+    // Pre-seed the ACL with a ROLE_EXAMPLE authority grant so the duplicate
+    // check is deterministic regardless of mock insert-order behavior.
+    entries.add(ace(BasePermission.ADMINISTRATION,
+        new GrantedAuthoritySid("ROLE_EXAMPLE"), true))
 
     when: "the same authority is granted again"
     service.addAuthorityAccess(projectId, "ROLE_EXAMPLE", ProjectRole.ADMIN)
