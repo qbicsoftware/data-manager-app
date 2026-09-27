@@ -1,5 +1,8 @@
 #data-manager-layout::part(navbar) {
-  display: inline-flex;
+  /* Block-level flex (not inline-flex): the navbar is a full-width header row.
+     A width:100% first child (#announcements) can then own its own line under
+     flex-wrap, so shell items always land BELOW the announcement strip. */
+  display: flex;
   justify-content: space-between;
   background-image: linear-gradient(var(--lumo-contrast-5pct), var(--lumo-contrast-5pct));
 }
