@@ -177,3 +177,43 @@
     padding: var(--lumo-space-xxs);
   }
 }
+
+/* -- Top-level navigation (GitHub-style primary tabs) -- */
+
+.top-level-navigation {
+  display: inline-flex;
+  align-items: center;
+}
+
+.top-level-navigation .top-level-navigation-tabs {
+  display: inline-flex;
+  align-items: center;
+  column-gap: var(--spacing-01, 0.25rem);
+}
+
+.top-level-navigation-tab {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--lumo-space-xs) var(--lumo-space-m);
+  border-radius: var(--lumo-border-radius-m);
+  color: var(--lumo-secondary-text-color);
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.top-level-navigation-tab:hover {
+  background: var(--lumo-contrast-5pct);
+  color: var(--lumo-primary-text-color);
+}
+
+.top-level-navigation-tab[highlight] {
+  background: var(--lumo-primary-color-10pct);
+  color: var(--lumo-primary-text-color);
+}
+
+/* Keep the Data Manager brand title from wrapping around the tabs */
+.user-main-layout .navbar-title,
+.groups-main-layout .navbar-title {
+  white-space: nowrap;
+}

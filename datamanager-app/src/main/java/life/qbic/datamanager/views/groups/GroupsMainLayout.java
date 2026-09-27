@@ -12,6 +12,7 @@ import life.qbic.datamanager.announcements.AnnouncementService;
 import life.qbic.datamanager.views.DataManagerLayout;
 import life.qbic.datamanager.views.general.DataManagerMenu;
 import life.qbic.datamanager.views.general.HomeLink;
+import life.qbic.datamanager.views.general.TopLevelNavigationComponent;
 import life.qbic.datamanager.views.general.footer.FooterComponent;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -38,8 +39,9 @@ public class GroupsMainLayout extends DataManagerLayout implements BeforeEnterOb
     Objects.requireNonNull(authenticationContext);
     Span navBarTitle = new Span("Groups");
     navBarTitle.setClassName("navbar-title");
+    TopLevelNavigationComponent topLevelNavigationComponent = new TopLevelNavigationComponent();
     DataManagerMenu dataManagerMenu = new DataManagerMenu(authenticationContext);
-    addToNavbar(new HomeLink(), navBarTitle, dataManagerMenu);
+    addToNavbar(new HomeLink(), navBarTitle, topLevelNavigationComponent, dataManagerMenu);
     addClassName("groups-main-layout");
     setAside(groupsNavigationComponent);
   }

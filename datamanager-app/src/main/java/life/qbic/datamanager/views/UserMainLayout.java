@@ -9,6 +9,7 @@ import life.qbic.datamanager.announcements.AnnouncementService;
 import life.qbic.datamanager.views.account.PersonalAccessTokenMain;
 import life.qbic.datamanager.views.general.DataManagerMenu;
 import life.qbic.datamanager.views.general.HomeLink;
+import life.qbic.datamanager.views.general.TopLevelNavigationComponent;
 import life.qbic.datamanager.views.general.footer.FooterComponent;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.identity.api.UserInformationService;
@@ -34,9 +35,10 @@ public class UserMainLayout extends DataManagerLayout {
     navBarTitle.setClassName("navbar-title");
     addClassName("user-main-layout");
     Objects.requireNonNull(userInformationService);
+    TopLevelNavigationComponent topLevelNavigationComponent = new TopLevelNavigationComponent();
     DataManagerMenu dataManagerMenu = new DataManagerMenu(
         Objects.requireNonNull(authenticationContext));
-    addToNavbar(new HomeLink(), navBarTitle, dataManagerMenu);
+    addToNavbar(new HomeLink(), navBarTitle, topLevelNavigationComponent, dataManagerMenu);
 
   }
 }
