@@ -45,9 +45,15 @@ public class DataManagerLayout extends AppLayout implements RouterLayout {
     contentHeaderArea.setId("content-header");
     contentHeaderArea.setVisible(false);
     AnnouncementComponent announcementComponent = new AnnouncementComponent(announcementService);
+    // Add the announcement as the first child of the navbar so it renders as a
+    // slim full-width top strip ABOVE the normal navbar row (CSS flex-wrap + 100%
+    // basis in all.css#announcements). The AppLayout measures the navbar height, so
+    // content below is offset correctly and the strip never sits between the tabs
+    // and the page content. Every DataManagerLayout derivative inherits this via
+    // super(...); subclasses' addToNavbar(...) calls append after it.
+    addToNavbar(announcementComponent);
     // Add content area and footer to the main layout
-    Div mainLayout = new Div(asideArea, announcementComponent, contentHeaderArea, contentArea,
-        footerComponent);
+    Div mainLayout = new Div(asideArea, contentHeaderArea, contentArea, footerComponent);
     mainLayout.setId("main-layout");
     persistDrawerStateBetweenLayouts();
     setContent(mainLayout);

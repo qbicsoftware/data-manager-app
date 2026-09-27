@@ -1206,16 +1206,33 @@ Icons
 
 /*region Single-Purpose Component Styles*/
 /*region Announcements*/
+/* Slim top-strip environment notice. The announcement is the first child of the
+   app-layout navbar (see DataManagerLayout: addToNavbar(announcementComponent)),
+   rendered as a full-width first row above the regular navbar row via
+   flex-wrap: wrap on [part~=navbar] + flex-basis: 100% below. It therefore sits
+   at the very top (in the header region), never between the tab strip and the
+   page content, and content below is offset automatically (AppLayout measures
+   the navbar height). Kept quiet and compact so it does not compete with the
+   top-level navigation. */
+[part~="navbar"] {
+  flex-wrap: wrap;
+}
+
 #announcements {
+  flex: 0 0 100%;
   background-color: var(--warning-icon-color);
-  padding: var(--spacing-03) var(--spacing-04);
+  color: var(--lumo-contrast-90pct);
+  padding: var(--spacing-02) var(--spacing-04);
   text-align: left;
+  font-size: var(--lumo-font-size-s);
+  box-sizing: border-box;
 }
 
 .announcement {
-  margin: var(--spacing-03) 0;
+  margin: 0;
   display: flex;
-  gap: var(--spacing-03);
+  align-items: center;
+  gap: var(--spacing-02);
 }
 
 .announcement vaadin-icon {
