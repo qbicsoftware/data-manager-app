@@ -1,7 +1,8 @@
 #data-manager-layout::part(navbar) {
-  /* Block-level flex (not inline-flex): the navbar is a full-width header row.
-     A width:100% first child (#announcements) can then own its own line under
-     flex-wrap, so shell items always land BELOW the announcement strip. */
+  /* Shared flex header row. The announcement does NOT live here — it is rendered
+     at the top of the content area (see DataManagerLayout). The gray wash is the
+     base presentation; the authenticated shell (.user-main-layout) overrides it
+     to a white background with a hairline divider (see below). */
   display: flex;
   justify-content: space-between;
   background-image: linear-gradient(var(--lumo-contrast-5pct), var(--lumo-contrast-5pct));
@@ -190,6 +191,12 @@
    buttons stay right-aligned. */
 .user-main-layout::part(navbar) {
   justify-content: flex-start;
+  /* White navbar: neutralize Vaadin's default background (--vaadin-background-container
+     is an off-white/light-gray fallback) with an explicit Lumo base color, then add a
+     1px hairline divider under the nav row so the active tab's 2px bottom accent sits
+     on a continuous line (smooth GitHub-style top bar). */
+  background: var(--lumo-base-color);
+  border-bottom: 1px solid var(--lumo-contrast-10pct);
 }
 
 /* Descendant rules must not trail a ::part() pseudo-element (invalid CSS that
