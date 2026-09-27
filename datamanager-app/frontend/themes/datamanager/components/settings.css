@@ -1,16 +1,27 @@
-/* -- Settings Hub (GitHub-style master-detail layout) -- */
+/* -- Settings Hub (GitHub-style master-detail layout, mirrors Groups) -- */
 
-.settings-main-layout::part(navbar) {
-  padding-inline: var(--lumo-space-m);
+/* The settings hub is a RouterLayout nested inside UserMainLayout (see @ParentLayout
+   in SettingsMainLayout), so the outer shell — navbar, announcements banner, footer —
+   is owned by UserMainLayout/DataManagerLayout. This stylesheet only lays out the
+   two-column hub: the account overview header, the persistent settings navigation
+   (aside) and the routed content. */
+
+.settings-main-layout {
+  display: grid;
+  grid-template-columns:
+    minmax(var(--lumo-space-l), 1fr)
+    minmax(240px, 280px)
+    minmax(0, calc(var(--content-shell-max-width) - 280px))
+    minmax(var(--lumo-space-l), 1fr);
+  grid-template-areas:
+    ". account-overview account-overview ."
+    ". aside-area content-area .";
+  box-sizing: border-box;
+  min-width: 0;
 }
 
-.settings-main-layout .navbar-title {
-  font-size: var(--lumo-font-size-l);
-}
-
-/* Account overview bar at the top of the content area (below navbar + announcements),
-   spanning the full settings width and left-aligned so it visually sits above the menu.
-   Its left padding matches the aside/menu gutter so title and menu items align on an
+/* Account overview bar at the top of the settings hub, spanning the hub width (both central
+   tracks, excluding the two gutters) and left-aligned so title and menu items align on an
    invisible vertical line. */
 .settings-main-layout .settings-account-overview {
   display: flex;
@@ -29,65 +40,11 @@
   min-width: 0;
 }
 
-/* Two-column hub (settings navigation + section content) centered on large screens, with
-   full-width announcement banner and footer.
-
-   Centering strategy (mirrors the refined project overview, ADR-0007 / USER-NFR-01): on the
-   projects page the cap+center lives on the INNER .main while #main-layout stays full-width,
-   so the footer spans the whole viewport. Settings has no wrapper between #main-layout and
-   its children, so the same result is achieved with a 4-track grid here:
-   [gutter][aside][content][gutter]. The outer 1fr gutters absorb the surrounding white
-   space and grow/shrink dynamically with the viewport, centering the capped hub
-   (aside 280px + content, together at most --content-shell-max-width). The announcement
-   banner and the footer span all four tracks and therefore stay full-width, just like on
-   the projects page. */
-
-.settings-main-layout #main-layout {
-  display: grid;
-  grid-template-columns:
-    minmax(var(--lumo-space-l), 1fr)
-    minmax(240px, 280px)
-    minmax(0, calc(var(--content-shell-max-width) - 280px))
-    minmax(var(--lumo-space-l), 1fr);
-  grid-template-areas:
-    "announcements announcements announcements announcements"
-    ". content-header content-header ."
-    ". aside-area content-area ."
-    "data-manager-footer data-manager-footer data-manager-footer data-manager-footer";
-  grid-template-rows: auto auto minmax(max-content, 0.95fr) minmax(min-content, 0.05fr);
-}
-
-/* Announcement banner and application footer are full-bleed: they span all four grid
-   tracks (the two flanking gutters + the two central hub tracks), so they always stretch
-   edge-to-edge of the viewport regardless of the hub width. Both elements auto-place into
-   the first free grid cells without an explicit assignment (the redesigned footer is a
-   semantic <footer> with class .app-footer; the old #data-manager-footer id no longer
-   exists), which would put the footer into the top row. */
-.settings-main-layout #announcements {
-  grid-area: announcements;
-}
-
-.settings-main-layout .app-footer {
-  grid-area: data-manager-footer;
-}
-
-/* The account overview header spans the hub width (both central tracks, excluding the two
-   gutters) and stays left-aligned so its title sits on the invisible vertical line above
-   the settings menu. */
-.settings-main-layout #content-header {
-  grid-area: content-header;
-  box-sizing: border-box;
-  padding: var(--lumo-space-m) var(--lumo-space-m) var(--lumo-space-s) var(--lumo-space-xl);
-  background-color: var(--lumo-base-color);
-}
-
-/* The aside is a fixed, non-collapsible column (GitHub-style). No border: separation comes from
-   the shared gutters. Left gutter is (--lumo-space-l) here; combined with the tabs' own left
-   padding (--lumo-space-m, see below) menu items start at --lumo-space-xl, which is exactly the
-   left inset of the content header and content area — so title, section titles and menu items
-   align on one invisible vertical line. The aside is sticky: it stays pinned at the top of the
-   content row while the page scrolls. */
-.settings-main-layout #aside-area {
+/* The aside is a fixed, non-collapsible column (GitHub-style). No border: separation comes
+   from the shared gutters. The left gutter + the tab's own left padding align menu items
+   with the content area. The aside is sticky: it stays pinned at the top of the content row
+   while the page scrolls. */
+.settings-main-layout .settings-aside-area {
   grid-area: aside-area;
   box-sizing: border-box;
   padding: var(--lumo-space-l);
@@ -99,15 +56,22 @@
   z-index: 1;
 }
 
-/* The content column holds the route content (a SettingsSection). The whole page scrolls
-   natively (no internal scroll region); when the content is narrower than the column, the
-   section centers itself via margin-inline: auto on .settings-section below. */
-.settings-main-layout #content-area {
+/* The content column holds the routed route content. The whole page scrolls natively (no
+   internal scroll region); when the content is narrower than the column, the section centers
+   itself via margin-inline: auto on .settings-section below. */
+.settings-main-layout .settings-content-area {
   grid-area: content-area;
   box-sizing: border-box;
   padding: var(--lumo-space-l) var(--lumo-space-xl);
   min-width: 0;
   min-height: 0;
+}
+
+/* The settings hub provides the page spacing; neutralize the base page-area padding/gap so
+   the settings sections share the same uniform look. */
+.settings-main-layout .page-area {
+  padding: 0;
+  gap: 0;
 }
 
 /* -- Settings section blueprint (single settings page layout) -- */
@@ -160,13 +124,6 @@
   gap: var(--lumo-space-m);
 }
 
-/* The settings hub + section blueprint provide the page spacing; neutralize the base
-   page-area padding/gap so all settings sections share a uniform look. */
-.settings-main-layout .page-area {
-  padding: 0;
-  gap: 0;
-}
-
 /* -- Settings aside: navigation -- */
 
 .settings-navigation-component {
@@ -209,36 +166,16 @@
 
 /* Adjust spacing on narrow screens */
 @media (max-width: 1024px) {
-  .settings-main-layout #main-layout {
-    /* The base rule sets height: 100% (viewport). In the stacked layout this caps the grid at
-       the viewport height: overflowing rows paint over the footer instead of pushing it down
-       and growing the scrollable page. Grow freely (auto), but keep short pages stretched so
-       the footer still sits at the bottom (min-height: 100%). Desktop keeps height: 100%
-       because its 95fr/5fr rows need a definite size. */
-    height: auto;
-    min-height: 100%;
-    /* Stacked layout: the flexible outer gutters collapse to a small fixed inset for the
-       stacked hub (header, nav, section), while the announcement banner and footer stay
-       truly full-width (they span all three tracks). */
+  .settings-main-layout {
     grid-template-areas:
-      "announcements announcements announcements"
-      ". content-header ."
+      ". account-overview ."
       ". aside-area ."
-      ". content-area ."
-      "data-manager-footer data-manager-footer data-manager-footer";
+      ". content-area .";
     grid-template-columns: var(--lumo-space-m) minmax(0, 1fr) var(--lumo-space-m);
-    /* All rows size to their content. The desktop 95fr/5fr split must not apply here: with the
-       menu stacked above the content, a height-constrained 95fr row clips the settings content
-       instead of letting the page grow and pushing the footer below the fold. Note: 'none' is
-       invalid for grid-template-rows and leaves the desktop rows intact — use 'auto'. */
-    grid-template-rows: auto;
   }
 
-  .settings-main-layout #aside-area {
+  .settings-main-layout .settings-aside-area {
     position: static;
-    /* In the stacked layout the aside must size with its row. As a sticky, start-aligned item
-       it does not stretch the track, so on short screens it overflows the row and paints over
-       the footer below. */
     align-self: stretch;
     padding: var(--lumo-space-m) var(--lumo-space-l) var(--lumo-space-s) var(--lumo-space-l);
   }
