@@ -277,6 +277,7 @@
   align-items: center;
   gap: var(--lumo-space-xs);
   flex-wrap: wrap;
+  width: 100%;
 }
 
 .inline-editable-field__edit-controls {
@@ -311,6 +312,21 @@
   max-width: none;
 }
 
+/* Display-mode text parity: after an edit/save cycle the web component has upgraded and the
+   [readonly] attribute is present (on initial render the server sets readonly before the
+   upgrade, so no [readonly] attribute existed yet), which can change how the field renders.
+   Key the display look off the absence of the --active class (set/cleared by the component)
+   instead of the [readonly] attribute so it is timing-independent, and pin the value color so
+   it can never be grayed after an edit cycle. */
+.inline-editable-field__edit-field:not(.inline-editable-field__edit-field--active) {
+  /* keep the value fully opaque, normal body text color (never grayed) */
+  --vaadin-input-field-value-color: var(--lumo-body-text-color);
+  --vaadin-input-field-placeholder-color: var(--lumo-secondary-text-color);
+}
+.inline-editable-field__edit-field:not(.inline-editable-field__edit-field--active)::part(input-field) {
+  color: var(--lumo-body-text-color) !important;
+}
+
 /* Display and edit mode share the same standard Lumo input look (contrasting background), so
    the field always reads as editable and switching modes never changes its appearance except
    for the primary focus ring below. Keying this off the --active class instead of the [readonly]
@@ -335,4 +351,51 @@
   box-shadow:
     inset 0 0 0 2px var(--lumo-primary-color),
     0 0 0 3px var(--lumo-primary-color-10pct);
+}
+/* Textarea-backed inline editable fields (long descriptions): fluid width — fill the
+   available container width on large screens, shrink toward the Java-set min-width on
+   smaller screens, and cap at the page's generous maximum (44rem on the group detail page;
+   elsewhere the generic 24rem cap still applies unless overridden). Combined with the
+   readonly vertical-scroll rule below, long values wrap + scroll instead of stretching. */
+/* Textarea-backed inline editable fields (long descriptions): the textarea and the edit
+   button form ONE composed unit on a single line — the textarea flexes to fill the space
+   that remains next to the edit button/controls, so the button is never pushed below it.
+   The field is fluid: it fills the available container width on large screens, shrinks
+   toward the Java-set min-width on smaller screens, and caps at the page's generous maximum
+   (44rem on the group detail page). Long values wrap + scroll vertically (see the readonly
+   rule below). */
+.inline-editable-field--textarea .inline-editable-field__edit-field {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+  max-width: 44rem;
+}
+
+.inline-editable-field--textarea .inline-editable-field__edit-btn,
+.inline-editable-field--textarea .inline-editable-field__edit-controls {
+  flex-shrink: 0; /* the edit/confirm controls stay visible at their natural size */
+}
+
+/* For textarea-backed inline editable fields (e.g. long descriptions): keep the whole
+   unit (textarea + edit button/controls) on ONE line and align the pencil to the top of
+   the field instead of vertically centering it next to a tall input, so the icon sits at
+   the same height as in single-line fields. No wrapping: the button must not drop below
+   the textarea (a flexible row that can never wrap). */
+.inline-editable-field--textarea .inline-editable-field__value-area {
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  min-width: 0;
+  padding-top: var(--lumo-space-xs);
+}
+
+/* Textarea display mode (readonly): keep the field's existing width (the caller controls it
+   via setMinDisplayWidth / the page's 44rem cap), but wrap the text on display instead of
+   letting it overflow horizontally, and show a vertical scrollbar when the content exceeds
+   the visible height. The field's min-height stays as configured (6em).
+   In vaadin-text-area the scroll container IS the input-field part and the native <textarea>
+   is slotted into it (the component already styles ::slotted(textarea){white-space:pre-wrap}),
+   so enabling the vertical scroll happens on the [part=input-field] of the host. */
+.inline-editable-field--textarea .inline-editable-field__edit-field[readonly]::part(input-field) {
+  overflow-y: auto;
+  overflow-x: hidden;
 }

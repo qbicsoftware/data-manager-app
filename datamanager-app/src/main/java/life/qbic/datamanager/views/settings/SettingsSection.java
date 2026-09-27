@@ -19,6 +19,7 @@ public class SettingsSection extends Div {
 
   private final Div header = new Div();
   private final Div contentArea = new Div();
+  private final H2 titleElement;
 
   /**
    * Creates a settings section with a title only.
@@ -51,6 +52,7 @@ public class SettingsSection extends Div {
 
     H2 titleElement = new H2(title);
     titleElement.addClassName("settings-section__title");
+    this.titleElement = titleElement;
 
     Div titlesLayout = new Div();
     titlesLayout.addClassName("settings-section__titles");
@@ -66,6 +68,15 @@ public class SettingsSection extends Div {
     contentArea.addClassName("settings-section__content");
 
     add(header, contentArea);
+  }
+
+  /**
+   * Updates the section title text in place. Used when the underlying entity is renamed so the
+   * heading stays in sync (e.g. a group renamed on its detail page).
+   */
+  public void setTitle(String title) {
+    requireNonNull(title, "title must not be null");
+    titleElement.setText(title);
   }
 
   /**

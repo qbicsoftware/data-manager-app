@@ -9,12 +9,15 @@ import life.qbic.application.commons.ApplicationException
 import life.qbic.application.commons.ApplicationException.ErrorCode
 import life.qbic.application.commons.ApplicationException.ErrorParameters
 import life.qbic.application.commons.Result
+import life.qbic.identity.api.UserInformationService
 import life.qbic.usergroups.application.GroupInfoProjection
 import life.qbic.usergroups.application.GroupService
 import life.qbic.usergroups.domain.model.GroupDescription
 import life.qbic.usergroups.domain.model.GroupId
 import life.qbic.usergroups.domain.model.GroupName
 import life.qbic.usergroups.domain.model.GroupType
+import life.qbic.usergroups.domain.repository.GroupDataStorage
+import life.qbic.usergroups.domain.repository.GroupRepository
 import spock.lang.Specification
 
 import java.util.function.Consumer
@@ -33,7 +36,13 @@ class NewGroupFormSpec extends Specification {
 
   static final String USER_ID = "user-1"
 
-  GroupService groupService = Mock(GroupService)
+  // GroupService now takes (GroupRepository, UserInformationService). Spock's byte-buddy mock
+  // has no Objenesis on this test classpath, so it instantiates via the real constructor with the
+  // given args: pass a real (empty) repository and a stub user service. Only createAdHocGroup is
+  // stubbed below, so the real collaborators are never touched.
+  GroupRepository groupRepository = GroupRepository.getInstance(new EmptyGroupDataStorage())
+  GroupService groupService = Mock(GroupService,
+      constructorArgs: [groupRepository, Mock(UserInformationService)])
   NewGroupForm form
   List<NewGroupForm.CreateEvent> createEvents = []
   List<NewGroupForm.CancelEvent> cancelEvents = []
@@ -263,6 +272,39 @@ class NewGroupFormSpec extends Specification {
     component.children.forEach { child ->
       acc << child
       collectDescendants(child, acc)
+    }
+  }
+
+  /**
+   * A {@link GroupDataStorage} that is never actually touched by this form test (the mocked
+   * {@code GroupService} intercepts the create call), only needed to construct a real
+   * {@link GroupRepository} for the mock's constructor args.
+   */
+  static class EmptyGroupDataStorage implements GroupDataStorage {
+
+    @Override
+    void save(life.qbic.usergroups.domain.model.UserGroup group) {
+      throw new UnsupportedOperationException("not used in this spec")
+    }
+
+    @Override
+    Optional<life.qbic.usergroups.domain.model.UserGroup> findById(GroupId id) {
+      return Optional.empty()
+    }
+
+    @Override
+    Optional<life.qbic.usergroups.domain.model.UserGroup> findByNameIgnoreCase(String name) {
+      return Optional.empty()
+    }
+
+    @Override
+    List<life.qbic.usergroups.domain.model.UserGroup> findAllActive() {
+      return []
+    }
+
+    @Override
+    List<life.qbic.usergroups.domain.model.UserGroup> findActiveGroupsByUserId(String userId) {
+      return []
     }
   }
 }

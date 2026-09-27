@@ -70,7 +70,7 @@ class UserGroupSpec extends Specification {
   def "Removing one member of a non-empty ad-hoc group keeps it ACTIVE"() {
     given:
     UserGroup group = createAdHoc()
-    group.addMember("member-2", GroupRole.MEMBER, NOW)
+    group.addMember("creator-user", "member-2", NOW)
 
     when:
     boolean dissolved = group.removeMembership("member-2")
@@ -98,7 +98,7 @@ class UserGroupSpec extends Specification {
   def "Explicit dissolve purges all memberships and is idempotent"() {
     given:
     UserGroup group = createAdHoc()
-    group.addMember("member-2", GroupRole.MEMBER, NOW)
+    group.addMember("creator-user", "member-2", NOW)
 
     when:
     group.dissolve()
@@ -120,7 +120,7 @@ class UserGroupSpec extends Specification {
     UserGroup group = createAdHoc()
 
     when: "adding an existing member"
-    group.addMember("creator-user", GroupRole.MEMBER, NOW)
+    group.addMember("creator-user", "creator-user", NOW)
 
     then:
     thrown(IllegalArgumentException)
@@ -132,7 +132,7 @@ class UserGroupSpec extends Specification {
     group.dissolve()
 
     when: "adding a member to a dissolved group"
-    group.addMember("new-user", GroupRole.MEMBER, NOW)
+    group.addMember("creator-user", "new-user", NOW)
 
     then:
     thrown(IllegalStateException)

@@ -32,9 +32,9 @@ public class SettingsNavigationComponent extends Div {
     tabs.addClassName("settings-navigation-tabs");
     tabs.getElement().setAttribute("orientation", "vertical");
     addTab("Profile", VaadinIcon.USER, UserProfileMain.class);
+    addTab("My Groups", VaadinIcon.USERS, MyGroupsMain.class);
     addTab("API Tokens", VaadinIcon.KEY, PersonalAccessTokenMain.class);
     addTab("External Providers", VaadinIcon.DATABASE, ExternalProvidersMain.class);
-    addTab("My Groups", VaadinIcon.USERS, MyGroupsMain.class);
     add(tabs);
   }
 

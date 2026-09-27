@@ -20,10 +20,6 @@
 /* One membership row */
 .my-groups-row {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--lumo-space-m);
-  flex-wrap: wrap;
   box-sizing: border-box;
   padding: var(--lumo-space-m);
   background-color: var(--lumo-base-color);
@@ -31,11 +27,30 @@
   border-radius: var(--lumo-border-radius-m);
 }
 
-/* Left column: name (+ description below it) */
+/* Left column: header (title + badges/actions inline) and description below it */
 .my-groups-row__identity {
   display: flex;
   flex-direction: column;
   gap: var(--lumo-space-xs);
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+/* Header row: title on the left, badges + actions inline on the same line to the right.
+   The badges/actions are tied to the TITLE, not the description, so a long description
+   never pushes them down or out of alignment. */
+.my-groups-row__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--lumo-space-m);
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.my-groups-row__title {
+  display: flex;
+  align-items: center;
   min-width: 0;
   flex: 1 1 auto;
 }
@@ -47,6 +62,14 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Badges + actions grouped at the end of the title line */
+.my-groups-row__badges-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+  flex-shrink: 0;
 }
 
 .my-groups-row__description {
@@ -94,6 +117,14 @@
 
 .my-groups-badge--role-member {
   background-color: var(--lumo-contrast-10pct);
+  color: var(--lumo-secondary-text-color);
+}
+
+/* Member-count badge: neutral, informational — the roster size of a group the user belongs
+   to. Kept visually quiet (no tint) so it never competes with the role/type badges. */
+.my-groups-badge--member-count {
+  background-color: transparent;
+  border: 1px solid var(--lumo-contrast-20pct);
   color: var(--lumo-secondary-text-color);
 }
 
@@ -208,4 +239,189 @@
 
 .new-group-form__name-field:not(.new-group-form__name-field--taken)::part(helper-text) {
   color: var(--lumo-success-text-color);
+}
+
+/* -- Owner/manager management controls (FEAT-USER-GROUPS-04, task #1577) -- */
+
+/* Enabled management action buttons */
+.my-groups-action--manage {
+  flex-shrink: 0;
+}
+
+/* -- Group detail page (settings/groups/:groupId) — replaces the management dialogs -- */
+
+/* The page content uses the Profile settings conventions (settings-group blocks separated by
+   subheadings and whitespace, no card chrome); only the detail-specific bits live here. */
+
+.group-detail {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Back navigation as a breadcrumb link directly above the section: a settings-aside-style
+   text link (chevron-left), so its purpose (return to the My Groups list) is obvious. */
+.group-detail-back-link {
+  font-size: var(--lumo-font-size-s);
+  color: var(--lumo-secondary-text-color);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lumo-space-xs);
+  margin-bottom: var(--lumo-space-s);
+  align-self: flex-start;
+}
+
+.group-detail-back-link:hover {
+  color: var(--lumo-primary-text-color);
+  text-decoration: underline;
+}
+
+/* Member roster on the detail page (inside a settings-group; no card chrome).
+   The roster is a FilterGrid (search + multi-select + toolbar), matching the measurements
+   and raw-data views. */
+.group-members-component {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+  box-sizing: border-box;
+  width: 100%;
+}
+
+/* Member cell in the grid's Member column: user avatar (identicon), full name (fallback:
+   user id) and the username in parentheses with weaker contrast — matching the project
+   access roster and the account overview header. The role badge reuses the My Groups badge
+   styles (owner/manager green, member grey). */
+.group-member-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+  padding: var(--lumo-space-xs) 0;
+  white-space: nowrap;
+}
+
+.group-member-cell__avatar {
+  width: var(--lumo-icon-size-l);
+  height: var(--lumo-icon-size-l);
+  flex-shrink: 0;
+}
+
+.group-member-cell__identity {
+  display: flex;
+  align-items: baseline;
+  gap: var(--lumo-space-xs);
+  min-width: 0;
+}
+
+.group-member-cell__name {
+  color: var(--lumo-body-text-color);
+  font-weight: var(--lumo-font-weight-semibold, 600);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Add-member search results in the ComboBox overlay: identical layout to the roster rows
+   (avatar + full name + username in parentheses) so the suggestions read exactly like the
+   members they will join. */
+.user-search-result {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+  padding: var(--lumo-space-xs) 0;
+  white-space: nowrap;
+}
+
+.user-search-result__avatar {
+  width: var(--lumo-icon-size-l);
+  height: var(--lumo-icon-size-l);
+  flex-shrink: 0;
+}
+
+.user-search-result__identity {
+  display: flex;
+  align-items: baseline;
+  gap: var(--lumo-space-xs);
+  min-width: 0;
+}
+
+.user-search-result__name {
+  color: var(--lumo-body-text-color);
+  font-weight: var(--lumo-font-weight-semibold, 600);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Rows that cannot be acted on (the group owner, or the acting user themselves) are marked
+   with part name `protected-row` via Grid.setPartNameGenerator, which lands on the row's
+   cells (vaadin-grid::part(protected-row) in the grid's shadow DOM — the grid renders plain
+   <tr> rows, not vaadin-grid-row elements). The cells are slightly quieted so the disabled
+   selection checkbox reads as intentional and not a rendering bug. */
+.group-members-component vaadin-grid::part(protected-row) {
+  opacity: 0.65;
+  background-color: var(--lumo-contrast-5pct);
+}
+
+/* Clicking anywhere on an actionable member row toggles its selection (in addition to the
+   selection checkbox). All body rows get a pointer cursor to signal clickability; rows that
+   cannot be acted on (owner / acting user / peer-manager rows) carry Vaadin's built-in
+   `nonselectable-row` part and are explicitly reset to the default cursor, so the hand only
+   appears where a click actually toggles the selection. */
+.group-members-component vaadin-grid::part(row) {
+  cursor: pointer;
+}
+
+.group-members-component vaadin-grid::part(nonselectable-row) {
+  cursor: default;
+}
+
+/* Danger zone: destructive group-level action (dissolve) */
+.group-detail-danger-zone {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+}
+
+/* Subsequent explainer under the dissolve action in the danger zone */
+.group-detail-danger-note {
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-s);
+  line-height: var(--lumo-line-height-s);
+  margin: 0;
+  max-width: 60ch;
+}
+
+/* Inline type-to-confirm guard for the dissolve action. The form replaces the calm danger
+   row when engaged (expand-on-click): the destructive button stays locked until the retyped
+   group name exactly matches. The small top separator signals the state switch inside the
+   same danger zone block. */
+.group-detail-dissolve-confirm {
+  padding-top: var(--lumo-space-m);
+  border-top: 1px solid var(--lumo-contrast-10pct);
+}
+
+.group-detail-dissolve-confirm-input {
+  max-width: 44rem;
+}
+
+/* On the group detail page the editable name/description fields are intentionally wider
+   (display width raised via setMinDisplayWidth). Edit mode must not collapse them back to
+   the generic 24rem cap: widen the cap only for fields on this page. */
+.group-detail .inline-editable-field__edit-field {
+  max-width: 44rem;
+}
+
+/* Settings-group header row: title on the left, a primary action (e.g. Add member) on the
+   same line at the right — the action belongs to the section, not to the roster rows. */
+.group-members-in-settings-group .settings-group__header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--lumo-space-m);
+}
+
+.group-members-in-settings-group .settings-group__header-row .settings-group__title {
+  margin: 0;
+}
+
+.group-members-in-settings-group .settings-group__action {
+  flex-shrink: 0;
 }
