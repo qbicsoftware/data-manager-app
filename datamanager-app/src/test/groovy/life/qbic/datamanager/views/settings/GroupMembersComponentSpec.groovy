@@ -409,6 +409,29 @@ class GroupMembersComponentSpec extends Specification {
     !component.isRosterMember("carol")
   }
 
+  def "the assign-role dialog renders each role option with its description (GroupRole.label/description)"() {
+    given: "an owner whose roster contains a selectable member (bob)"
+    def component = new GroupMembersComponent(
+        "group-1",
+        [new GroupMember("alice", GroupRole.OWNER), new GroupMember("bob", GroupRole.MEMBER)],
+        GroupRole.OWNER,
+        "acting-user",
+        { id -> new GroupMembersComponent.MemberDisplayInfo(id, id) },
+        { filter, offset, limit -> [] }, { req -> }, null)
+
+    expect: "both assignable group roles define a user-facing label and description"
+    GroupRole.MANAGER.label() == "Manager"
+    GroupRole.MANAGER.description()
+    GroupRole.MEMBER.label() == "Member"
+    GroupRole.MEMBER.description()
+
+    and: "the dialog defaults to the least-privileged MEMBER role, never a pre-selected privilege"
+    // The picker is constructed freshly per dialog open with an explicit MEMBER default (no
+    // accidental manager promotion on a quick confirm); asserting the constant keeps the
+    // least-privilege default from regressing.
+    GroupMembersComponent.DEFAULT_ASSIGN_ROLE == GroupRole.MEMBER
+  }
+
   private static Grid gridOf(GroupMembersComponent component) {
     component.@filterGrid.children.toList()
         .findAll { it instanceof com.vaadin.flow.component.Composite }

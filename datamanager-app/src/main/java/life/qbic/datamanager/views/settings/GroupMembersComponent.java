@@ -85,6 +85,13 @@ public final class GroupMembersComponent extends Div {
   private Button removeButton;
 
   /**
+   * The role the assign-role dialog preselects. Keep this the least-privileged assignable
+   * role: promoting someone to Manager must be an explicit choice, not a default that can be
+   * confirmed by accident.
+   */
+  static final GroupRole DEFAULT_ASSIGN_ROLE = GroupRole.MEMBER;
+
+  /**
    * Creates the roster component.
    *
    * @param groupId             the group being managed; must not be {@code null}
@@ -426,11 +433,26 @@ public final class GroupMembersComponent extends Div {
     RadioButtonGroup<GroupRole> rolePicker = new RadioButtonGroup<>();
     rolePicker.setLabel("Role for " + changeable.size() + " selected member(s)");
     rolePicker.setItems(GroupRole.MANAGER, GroupRole.MEMBER);
-    rolePicker.setItemLabelGenerator(role -> role == GroupRole.MANAGER ? "Manager" : "Member");
-    rolePicker.setValue(GroupRole.MANAGER);
+    // Each option renders the role name plus a one-line description of what the role may
+    // do inside the group, so the acting user does not need to guess the semantics before
+    // confirming — same label + description pattern as the project access role picker
+    // (AddCollaboratorToProjectDialog).
+    rolePicker.setRenderer(new ComponentRenderer<>(role -> {
+      Span roleLabel = new Span(role.label());
+      roleLabel.addClassName("group-role-label");
+      Span roleDescription = new Span(role.description());
+      roleDescription.addClassName("group-role-description");
+      Div roleItem = new Div();
+      roleItem.addClassName("group-role-item");
+      roleItem.add(roleLabel, roleDescription);
+      return roleItem;
+    }));
+    // Default the picker to the least-privileged role: assigning a privilege (promotion to
+    // Manager) must be an active choice, never an accidental confirm on the pre-selected value.
+    rolePicker.setValue(DEFAULT_ASSIGN_ROLE);
     DialogBody.withoutUserInput(dialog, rolePicker);
 
-    DialogFooter.with(dialog, "Cancel", "Assign Manager role");
+    DialogFooter.with(dialog, "Cancel", "Assign Member role");
     rolePicker.addValueChangeListener(event -> {
       if (rolePicker.getValue() == GroupRole.MANAGER) {
         DialogFooter.with(dialog, "Cancel", "Assign Manager role");

@@ -171,6 +171,21 @@
   flex-direction: column;
 }
 
+.group-role-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-03);
+}
+
+.group-role-item .group-role-label {
+  font-weight: bold;
+}
+
+.group-role-item .group-role-description {
+  display: flex;
+  flex-direction: column;
+}
+
 .tag-collection {
   display: inline-flex;
   flex-wrap: wrap;
