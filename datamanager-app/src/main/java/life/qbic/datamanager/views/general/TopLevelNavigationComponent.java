@@ -13,15 +13,16 @@ import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
  * <b>Top-level navigation</b>
  * <p>
  * GitHub-style top bar tabs for the application's primary surfaces: the project overview
- * ({@code projects/list}) and the user groups hub ({@code groups}). The component is rendered in
- * the navbar of every outer (non-project-specific) layout — {@link UserMainLayout} for the
- * projects overview and {@code GroupsMainLayout} for the groups hub — so a user sees the same
- * top-level navigation wherever they are in one of those areas.
+ * ({@code projects/list}) and the user groups hub ({@code groups}). It is rendered once in the
+ * navbar of the single outer shell {@code UserMainLayout}, which hosts both the projects outline
+ * and — via the nested {@code GroupsMainLayout} — the groups hub, so the same top-level
+ * navigation is visible wherever the user is in one of those areas.
  * <p>
  * Each entry is a real {@link RouterLink} using {@link HighlightConditions#locationPrefix()}, so
  * the active tab is highlighted based on the current location without any manual tab-to-route
  * syncing: "Projects" is highlighted on {@code projects/list}, "Groups" on every {@code groups*}
- * route (list, creation page and group detail).
+ * route (list, creation page and group detail), including the group routes nested under
+ * {@code GroupsMainLayout} which render inside this same outer shell.
  */
 public class TopLevelNavigationComponent extends Div {
 

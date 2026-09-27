@@ -178,11 +178,29 @@
   }
 }
 
+/* Top-level brand + primary tabs cluster on the left of the navbar (the account menu is on
+   the right), above any local content titles. The layout is internally centered, so the whole
+   cluster stays together instead of individual items drifting toward the right edge while the
+   title wraps. */
+#data-manager-layout::part(navbar) {
+  justify-content: flex-start;
+}
+
+#data-manager-layout::part(navbar) .home-link,
+#data-manager-layout::part(navbar) .navbar-title {
+  flex-shrink: 0;
+}
+
+/* Prevent the account menu from being pushed out of the navbar by the brand/tab cluster. */
+#data-manager-layout::part(navbar) .data-manager-menu {
+  margin-left: auto;
+}
+
 /* -- Top-level navigation (GitHub-style primary tabs) -- */
 
 .top-level-navigation {
   display: inline-flex;
-  align-items: center;
+  align-items: stretch;
 }
 
 .top-level-navigation .top-level-navigation-tabs {
@@ -194,6 +212,7 @@
 .top-level-navigation-tab {
   display: inline-flex;
   align-items: center;
+  align-self: center;
   padding: var(--lumo-space-xs) var(--lumo-space-m);
   border-radius: var(--lumo-border-radius-m);
   color: var(--lumo-secondary-text-color);
@@ -213,7 +232,6 @@
 }
 
 /* Keep the Data Manager brand title from wrapping around the tabs */
-.user-main-layout .navbar-title,
-.groups-main-layout .navbar-title {
+.user-main-layout .navbar-title {
   white-space: nowrap;
 }

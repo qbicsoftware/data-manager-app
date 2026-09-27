@@ -32,7 +32,6 @@ import life.qbic.datamanager.views.general.contact.Contact;
 import life.qbic.datamanager.views.general.funding.FundingEntry;
 import life.qbic.datamanager.views.general.pagination.ListState;
 import life.qbic.datamanager.views.general.pagination.ListStateCodec;
-import life.qbic.datamanager.views.groups.MyGroupSummaryComponent;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.projects.create.AddProjectDialog;
@@ -45,7 +44,6 @@ import life.qbic.datamanager.views.projects.overview.components.ProjectOverviewS
 import life.qbic.finances.api.FinanceService;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.AddExperimentToProjectService;
-import life.qbic.projectmanagement.application.AuthenticationToUserIdTranslationService;
 import life.qbic.projectmanagement.application.ProjectCreationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.FundingInformation;
@@ -55,7 +53,6 @@ import life.qbic.projectmanagement.application.contact.PersonLookupService;
 import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.domain.model.project.Project;
-import life.qbic.usergroups.api.GroupInformationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -74,7 +71,6 @@ public class ProjectOverviewMain extends Main implements BeforeEnterObserver, Be
   private static final long serialVersionUID = 4625607082710157069L;
   private static final Logger log = logger(ProjectOverviewMain.class);
   private final ProjectCollectionComponent projectCollectionComponent;
-  private final transient MyGroupSummaryComponent myGroupSummaryComponent;
   private final transient ProjectCreationService projectCreationService;
   private final transient ProjectInformationService projectInformationService;
   private final transient FinanceService financeService;
@@ -101,9 +97,7 @@ public class ProjectOverviewMain extends Main implements BeforeEnterObserver, Be
       PersonLookupService personLookupService,
       AddExperimentToProjectService addExperimentToProjectService,
       TerminologyService terminologyService,
-      MessageSourceNotificationFactory messageSourceNotificationFactory,
-      GroupInformationService groupInformationService,
-      AuthenticationToUserIdTranslationService userIdTranslator) {
+      MessageSourceNotificationFactory messageSourceNotificationFactory) {
     this.projectCollectionComponent = requireNonNull(projectCollectionComponent,
         "project collection component can not be null");
     this.projectCreationService = requireNonNull(projectCreationService,
@@ -118,14 +112,9 @@ public class ProjectOverviewMain extends Main implements BeforeEnterObserver, Be
     this.addExperimentToProjectService = requireNonNull(addExperimentToProjectService,
         "add experiment to project service cannot be null");
     requireNonNull(terminologyService, "terminologyService must not be null");
-    requireNonNull(groupInformationService, "groupInformationService must not be null");
-    requireNonNull(userIdTranslator, "userIdTranslator must not be null");
 
-    this.myGroupSummaryComponent = new MyGroupSummaryComponent(() -> groupInformationService
-        .listMyGroups(userIdTranslator.translateToUserId(
-            SecurityContextHolder.getContext().getAuthentication()).orElseThrow()));
     addWelcomeText();
-    add(myGroupSummaryComponent, projectCollectionComponent);
+    add(projectCollectionComponent);
     this.projectCollectionComponent.addCreateClickedListener(projectCreationClickedEvent -> {
       AddProjectDialog addProjectDialog = new AddProjectDialog(this.projectInformationService,
           this.financeService,
