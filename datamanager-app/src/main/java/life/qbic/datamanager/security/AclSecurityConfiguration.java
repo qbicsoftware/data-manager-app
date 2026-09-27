@@ -4,8 +4,10 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.spring.security.VaadinAwareSecurityContextHolderStrategy;
 import javax.sql.DataSource;
+import life.qbic.identity.api.AuthenticationToUserIdTranslator;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.authorization.acl.QbicPermissionEvaluator;
+import life.qbic.usergroups.api.GroupSidProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
@@ -114,8 +116,14 @@ public class AclSecurityConfiguration {
 
   @Bean(name = "qbicPermissionEvaluator")
   AclPermissionEvaluator permissionEvaluator(
-      @Qualifier("mutableAclService") MutableAclService mutableAclService) {
-    return new QbicPermissionEvaluator(mutableAclService);
+      @Qualifier("mutableAclService") MutableAclService mutableAclService,
+      GroupSidProvider groupSidProvider,
+      AuthenticationToUserIdTranslator authenticationToUserIdTranslator) {
+    QbicPermissionEvaluator qbicPermissionEvaluator = new QbicPermissionEvaluator(
+        mutableAclService);
+    qbicPermissionEvaluator.setSidRetrievalStrategy(
+        new GroupAwareSidRetrievalStrategy(groupSidProvider, authenticationToUserIdTranslator));
+    return qbicPermissionEvaluator;
   }
 
   @Bean

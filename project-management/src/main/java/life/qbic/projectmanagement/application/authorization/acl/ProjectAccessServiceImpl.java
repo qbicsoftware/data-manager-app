@@ -18,6 +18,7 @@ import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.service.event.ProjectAccessGranted;
+import life.qbic.usergroups.api.GroupInformationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -27,6 +28,7 @@ import org.springframework.security.acls.domain.ObjectIdentityImpl;
 import org.springframework.security.acls.domain.PrincipalSid;
 import org.springframework.security.acls.jdbc.JdbcMutableAclService;
 import org.springframework.security.acls.model.AccessControlEntry;
+import org.springframework.security.acls.model.AclCache;
 import org.springframework.security.acls.model.Acl;
 import org.springframework.security.acls.model.AlreadyExistsException;
 import org.springframework.security.acls.model.MutableAcl;
@@ -44,13 +46,22 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
 
   private static final Logger log = logger(ProjectAccessServiceImpl.class);
   public static final String SELECT_IDENTITY = "SELECT @@IDENTITY";
+  public static final String GROUP_SID_PREFIX = "GROUP_";
   private final MutableAclService aclService;
   private final JdbcTemplate jdbcTemplate;
+  private final GroupInformationService groupInformationService;
+  private @org.springframework.context.annotation.Lazy AclCache aclCache;
 
   public ProjectAccessServiceImpl(@Autowired MutableAclService aclService,
-      JdbcTemplate jdbcTemplate) {
+      JdbcTemplate jdbcTemplate, @Autowired GroupInformationService groupInformationService) {
     this.aclService = aclService;
     this.jdbcTemplate = jdbcTemplate;
+    this.groupInformationService = groupInformationService;
+  }
+
+  @Autowired(required = false)
+  void setAclCache(@org.springframework.context.annotation.Lazy AclCache aclCache) {
+    this.aclCache = aclCache;
   }
 
   private static MutableAcl getAclForProject(ProjectId projectId, List<Sid> sids,
@@ -86,6 +97,47 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
     return sidListEntry.getValue().stream()
         .map(AccessControlEntry::getPermission)
         .collect(Collectors.toSet());
+  }
+
+  /**
+   * Rejects granting the project OWNER role to a non-principal (authority) sid.
+   *
+   * <p>User groups ride as {@link GrantedAuthoritySid}s (reserved {@code GROUP_} prefix, strategy
+   * §4.3). A group must never become the ACL owner — ownership is a personal, principal-sid
+   * property. The guard is authority-agnostic on purpose: since groups are type-identical to
+   * {@code ROLE_*} authorities at the ACL layer, no non-principal sid may ever become the owner.
+   * Enforcement happens at the service boundary because the ACL write path is reachable outside
+   * the UI (e.g. the project repository seeding ADMIN grants for system roles).</p>
+   *
+   * @param projectId the project whose ACL is about to be changed
+   * @param authority the authority string whose ownership grant is refused
+   * @param projectRole the requested project role
+   * @throws ApplicationException if the requested role is {@link ProjectRole#OWNER}
+   */
+  private void rejectAuthorityOwnership(ProjectId projectId, String authority,
+      ProjectRole projectRole) {
+    if (ProjectRole.OWNER.equals(projectRole)) {
+      throw new ApplicationException(
+          "Authority %s can never become the project OWNER of project %s. Groups and roles are granted READ, WRITE or ADMIN only."
+              .formatted(authority, projectId));
+    }
+  }
+
+  /**
+   * Evicts the cached ACL for the given project from the process-local acl cache.
+   *
+   * <p>Spring's {@code JdbcMutableAclService.updateAcl} evicts the {@code acl_cache} entry only on
+   * the executing node. This is sufficient for single-node correctness (the revoked/updated grant
+   * is effective at the next permission check on this node). Cross-instance propagation of the
+   * revocation NFR (≤60s) is addressed by the broadcast-eviction mechanism tracked as a follow-up
+   * (strategy §4.6, plan D5).</p>
+   *
+   * @param projectId the project whose ACL cache entry shall be evicted
+   */
+  private void evictCachedAcl(ProjectId projectId) {
+    if (aclCache != null) {
+      aclCache.evictFromCache(new ObjectIdentityImpl(Project.class, projectId));
+    }
   }
 
   private void fireProjectAccessGranted(String userId, ProjectId projectId) {
@@ -227,15 +279,8 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'ADMINISTRATION')")
   public void addAuthorityAccess(ProjectId projectId, String authority, ProjectRole projectRole) {
     GrantedAuthoritySid authoritySid = new GrantedAuthoritySid(authority);
+    rejectAuthorityOwnership(projectId, authority, projectRole);
     MutableAcl aclForProject = getAclForProject(projectId, List.of(authoritySid), aclService);
-
-    if (ProjectRole.OWNER.equals(projectRole)) {
-      log.debug("Project %s owner changed from %s to authority %s".formatted(projectId.value(),
-          aclForProject.getOwner(), projectId));
-      aclForProject.setOwner(authoritySid);
-      aclService.updateAcl(aclForProject);
-      return;
-    }
 
     Collection<Permission> permissions = projectRole.toPermissions();
     boolean authorityHasAccess = aclForProject.getEntries().stream()
@@ -249,7 +294,8 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
        * This leads to redundant access control entries.
        */
       throw new ApplicationException(
-          "Authority %s already collaborates on %s. Please change the project role instead");
+          "Authority %s already collaborates on %s. Please change the project role instead".formatted(
+              authority, projectId));
     }
     for (Permission permission : permissions) {
       aclForProject.insertAce(aclForProject.getEntries().size(), permission, authoritySid, true);
@@ -258,6 +304,7 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
         "Authority %s now collaborates on project %s as %s.".formatted(authority, projectId.value(),
             projectRole.label()));
     aclService.updateAcl(aclForProject);
+    evictCachedAcl(projectId);
   }
 
   @Override
@@ -277,6 +324,7 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
     log.debug("Authority %s no longer collaborates on project %s.".formatted(authority,
         projectId.value()));
     aclService.updateAcl(aclForProject);
+    evictCachedAcl(projectId);
   }
 
   @Override
@@ -285,17 +333,10 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
   public void changeAuthorityAccess(ProjectId projectId, String authority,
       ProjectRole projectRole) {
     GrantedAuthoritySid authoritySid = new GrantedAuthoritySid(authority);
+    rejectAuthorityOwnership(projectId, authority, projectRole);
     MutableAcl aclForProject = getAclForProject(projectId, List.of(authoritySid), aclService);
 
     Collection<Permission> requiredPermissions = projectRole.toPermissions();
-
-    if (ProjectRole.OWNER.equals(projectRole)) {
-      Sid previousOwner = aclForProject.getOwner();
-      log.debug("Project %s owner changed from %s to authority %s".formatted(projectId.value(),
-          previousOwner, projectId));
-      aclForProject.setOwner(authoritySid);
-      requiredPermissions = List.of();
-    }
 
     Set<Permission> currentPermissions = aclForProject.getEntries().stream()
         .filter(accessControlEntry -> accessControlEntry.getSid().equals(authoritySid))
@@ -327,6 +368,7 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
     }
 
     aclService.updateAcl(aclForProject);
+    evictCachedAcl(projectId);
   }
 
   @Override
@@ -407,6 +449,41 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
         .collect(Collectors.toUnmodifiableSet());
     collaborators.addAll(otherCollaborators);
     return collaborators;
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
+  public List<SharedProjectGroup> listSharedGroups(ProjectId projectId) {
+    Acl acl = aclService.readAclById(new ObjectIdentityImpl(Project.class, projectId), null);
+
+    Map<String, List<AccessControlEntry>> entriesByGroupSid = acl.getEntries().stream()
+        .filter(accessControlEntry -> accessControlEntry.getSid() instanceof GrantedAuthoritySid)
+        .filter(accessControlEntry -> ((GrantedAuthoritySid) accessControlEntry.getSid())
+            .getGrantedAuthority().startsWith(GROUP_SID_PREFIX))
+        .collect(Collectors.groupingBy(accessControlEntry ->
+            ((GrantedAuthoritySid) accessControlEntry.getSid()).getGrantedAuthority()));
+
+    return entriesByGroupSid.entrySet().stream()
+        .map(groupSidEntry -> {
+          String groupSid = groupSidEntry.getKey();
+          String groupId = groupSid.substring(GROUP_SID_PREFIX.length());
+          Set<Permission> permissions = groupSidEntry.getValue().stream()
+              .map(AccessControlEntry::getPermission)
+              .collect(Collectors.toSet());
+          Optional<ProjectRole> roleFromPermissions = ProjectRole.fromPermissions(permissions);
+          if (roleFromPermissions.isEmpty()) {
+            return null;
+          }
+          var groupInfo = groupInformationService.findGroupById(groupId);
+          if (groupInfo.isEmpty()) {
+            return null;
+          }
+          return new SharedProjectGroup(groupId, groupInfo.get().name(),
+              groupInfo.get().description(), projectId, roleFromPermissions.orElseThrow());
+        })
+        .filter(Objects::nonNull)
+        .toList();
   }
 
   @Override

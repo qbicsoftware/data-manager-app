@@ -35,7 +35,7 @@ class PinnedProjectServiceSpec extends Specification {
   PinnedProjectStore pinnedProjectStore = Mock()
 
   ProjectInformationService projectInformationService = new ProjectInformationService(
-      projectOverviewLookup, projectRepository, projectAccessService, userIdTranslator)
+      projectOverviewLookup, projectRepository, projectAccessService, userIdTranslator, null)
 
   PinnedProjectService pinnedProjectService = new PinnedProjectService(
       pinnedProjectStore, projectOverviewLookup, projectInformationService, userIdTranslator)

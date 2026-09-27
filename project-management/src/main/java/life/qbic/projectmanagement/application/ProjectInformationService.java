@@ -25,6 +25,7 @@ import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.model.project.ProjectTitle;
 import life.qbic.projectmanagement.domain.repository.ProjectRepository;
+import life.qbic.usergroups.api.GroupSidProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -47,16 +48,19 @@ public class ProjectInformationService {
   private final ProjectRepository projectRepository;
   private final ProjectAccessService projectAccessService;
   private final AuthenticationToUserIdTranslator userIdTranslator;
+  private final GroupSidProvider groupSidProvider;
 
   public ProjectInformationService(@Autowired ProjectOverviewLookup projectOverviewLookup,
       @Autowired ProjectRepository projectRepository,
       @Autowired ProjectAccessService projectAccessService,
-      AuthenticationToUserIdTranslator userIdTranslator) {
+      AuthenticationToUserIdTranslator userIdTranslator,
+      @Autowired GroupSidProvider groupSidProvider) {
     Objects.requireNonNull(projectOverviewLookup);
     this.projectOverviewLookup = projectOverviewLookup;
     this.projectRepository = projectRepository;
     this.projectAccessService = projectAccessService;
     this.userIdTranslator = userIdTranslator;
+    this.groupSidProvider = groupSidProvider;
   }
 
   /**
@@ -129,6 +133,16 @@ public class ProjectInformationService {
         .filter(not(accessibleProjectIds::contains))
         .toList();
     accessibleProjectIds.addAll(accessibleProjectsFromRoles);
+    // user groups ride as GrantedAuthoritySid at the ACL layer but never appear in the
+    // Authentication (they are derived live, not injected at login, strategy §4.3).
+    // Union the caller's group sids or group-granted projects would pass hasPermission(READ)
+    // but never appear in the project overview.
+    List<ProjectId> accessibleProjectsFromGroups = groupSidProvider.listGroupSidsForUser(
+            optionalUserId.get()).stream()
+        .flatMap(groupSid -> projectAccessService.getAccessibleProjectsForSid(groupSid).stream())
+        .filter(not(accessibleProjectIds::contains))
+        .toList();
+    accessibleProjectIds.addAll(accessibleProjectsFromGroups);
     return accessibleProjectIds;
   }
 
