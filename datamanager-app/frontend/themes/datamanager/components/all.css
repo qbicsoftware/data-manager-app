@@ -1219,7 +1219,13 @@ Icons
 }
 
 #announcements {
-  flex: 0 0 100%;
+  /* Full-width first row: block-level + width:100% (not just flex-basis) forces
+     the row break even when the navbar is inline-flex, so the shell's items
+     (HomeLink/title/tabs/avatar) always land on the row BELOW the strip and
+     never to its right. */
+  display: block;
+  width: 100%;
+  flex: 1 0 100%;
   background-color: var(--warning-icon-color);
   color: var(--lumo-contrast-90pct);
   padding: var(--spacing-02) var(--spacing-04);
