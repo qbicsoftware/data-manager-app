@@ -581,9 +581,9 @@ of the project list.
 **Strategy reference:** [`docs/user-groups-strategy.md`](user-groups-strategy.md) defines the full
 strategy (two group types, internal OWNER/MANAGER/MEMBER roles vs. project roles, visibility policy,
 notification profile, revocation NFR = ≤60s). The full user stories (EPIC-grouped, with acceptance
-criteria) are hosted **externally** in
-[`docs/features/FEAT-USER-GROUPS-stories.md`](features/FEAT-USER-GROUPS-stories.md); this entry
-carries only the Feature-level summary until stories are approved.
+criteria) are hosted **externally** (stakeholder documents do not live in this repository; see the
+external stories/SharePoint source per current stakeholder policy); this entry carries only the
+Feature-level summary until stories are approved.
 
 **Governance status & blockers (per `AGENTS.md` §0/§12 and strategy §6):**
 
@@ -599,8 +599,8 @@ carries only the Feature-level summary until stories are approved.
 
 ### Stories
 
-_Draft EPIC-grouped stories live in_ [`docs/features/FEAT-USER-GROUPS-stories.md`](features/FEAT-USER-GROUPS-stories.md).
-_Once approved, stories will be recorded here individually with their final stable IDs._
+_Draft EPIC-grouped stories live in the external stakeholder document (not in this repository);_ once
+_approved, stories will be recorded here individually with their final stable IDs._
 
 ---
 
