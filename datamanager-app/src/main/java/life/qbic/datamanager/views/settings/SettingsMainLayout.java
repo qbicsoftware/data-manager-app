@@ -11,6 +11,7 @@ import java.util.Objects;
 import life.qbic.datamanager.announcements.AnnouncementService;
 import life.qbic.datamanager.views.DataManagerLayout;
 import life.qbic.datamanager.views.general.DataManagerMenu;
+import life.qbic.datamanager.views.general.HomeLink;
 import life.qbic.datamanager.views.general.footer.FooterComponent;
 import life.qbic.identity.api.UserInfo;
 import life.qbic.identity.api.UserInformationService;
@@ -50,7 +51,7 @@ public class SettingsMainLayout extends DataManagerLayout implements BeforeEnter
     Span navBarTitle = new Span("Settings");
     navBarTitle.setClassName("navbar-title");
     DataManagerMenu dataManagerMenu = new DataManagerMenu(authenticationContext);
-    addToNavbar(navBarTitle, dataManagerMenu);
+    addToNavbar(new HomeLink(), navBarTitle, dataManagerMenu);
     addClassName("settings-main-layout");
     setAside(settingsNavigationComponent);
     setContentHeader(new AccountOverviewHeader(loadCurrentUser()));

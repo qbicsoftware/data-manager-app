@@ -4,16 +4,17 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HasElement;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.RouterLayout;
+import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import java.io.Serial;
 import java.util.Objects;
 import life.qbic.datamanager.announcements.AnnouncementService;
 import life.qbic.datamanager.views.DataManagerLayout;
 import life.qbic.datamanager.views.LandingPageTitleAndLogo;
+import life.qbic.datamanager.views.MainPage;
 import life.qbic.datamanager.views.general.footer.FooterComponent;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -59,7 +60,7 @@ public class LandingPageLayout extends DataManagerLayout implements RouterLayout
   }
 
   private void createNavBarContent() {
-    Span dataManagerTitle = new Span("Data Manager");
+    RouterLink dataManagerTitle = new RouterLink("Data Manager", MainPage.class);
     dataManagerTitle.setClassName("navbar-title");
     addToNavbar(dataManagerTitle, createHeaderButtonLayout());
   }
