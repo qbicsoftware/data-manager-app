@@ -137,8 +137,8 @@ public class ProjectInformationService {
     // Authentication (they are derived live, not injected at login, strategy §4.3).
     // Union the caller's group sids or group-granted projects would pass hasPermission(READ)
     // but never appear in the project overview.
-    List<ProjectId> accessibleProjectsFromGroups = groupSidProvider.listGroupSidsForUser(
-            optionalUserId.get()).stream()
+    List<ProjectId> accessibleProjectsFromGroups = Optional.ofNullable(
+            groupSidProvider.listGroupSidsForUser(optionalUserId.get())).orElse(List.of()).stream()
         .flatMap(groupSid -> projectAccessService.getAccessibleProjectsForSid(groupSid).stream())
         .filter(not(accessibleProjectIds::contains))
         .toList();

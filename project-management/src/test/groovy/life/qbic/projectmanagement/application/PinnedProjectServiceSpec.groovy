@@ -34,17 +34,11 @@ class PinnedProjectServiceSpec extends Specification {
   ProjectRepository projectRepository = Mock()
   ProjectOverviewLookup projectOverviewLookup = Mock()
   PinnedProjectStore pinnedProjectStore = Mock()
-  GroupSidProvider groupSidProvider = Mock() { listGroupSidsForUser(_ as String) >> [] }
+  GroupSidProvider groupSidProvider = Mock()
 
   ProjectInformationService projectInformationService = new ProjectInformationService(
       projectOverviewLookup, projectRepository, projectAccessService, userIdTranslator,
       groupSidProvider)
-
-  def setup() {
-    // Group-merge path (strategy §4.3.3) calls listGroupSidsForUser on every
-    // accessible-project query; default to no group memberships so these pin tests
-    // exercise only the direct + role grants. Group tests override per-test.
-  }
 
   PinnedProjectService pinnedProjectService = new PinnedProjectService(
       pinnedProjectStore, projectOverviewLookup, projectInformationService, userIdTranslator)

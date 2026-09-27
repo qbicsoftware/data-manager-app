@@ -17,7 +17,7 @@ class ProjectInformationServiceSpec extends Specification {
     ProjectOverviewLookup projectPreviewLookup = Mock()
     ProjectAccessService projectAccessService = Mock()
     AuthenticationToUserIdTranslator authenticationToUserIdTranslator = Mock()
-    GroupSidProvider groupSidProvider = Mock() { listGroupSidsForUser(_ as String) >> [] }
+    GroupSidProvider groupSidProvider = Mock()
     ProjectInformationService projectInformationService = new ProjectInformationService(projectPreviewLookup, projectRepository, projectAccessService, authenticationToUserIdTranslator, groupSidProvider)
 
     def cleanup() {
