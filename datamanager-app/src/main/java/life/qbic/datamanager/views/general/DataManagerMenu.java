@@ -10,6 +10,7 @@ import com.vaadin.flow.spring.security.AuthenticationContext;
 import java.util.Objects;
 import life.qbic.datamanager.views.account.UserAvatar;
 import life.qbic.datamanager.views.account.UserProfileMain;
+import life.qbic.datamanager.views.groups.MyGroupsMain;
 import life.qbic.projectmanagement.application.authorization.QbicOidcUser;
 import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -40,6 +41,7 @@ public class DataManagerMenu extends Div {
     MenuItem userMenuItem = projectMenu.addItem(userAvatar);
     SubMenu userSubMenu = userMenuItem.getSubMenu();
     userSubMenu.addItem("Settings", event -> routeTo(UserProfileMain.class));
+    userSubMenu.addItem("My Groups", event -> routeTo(MyGroupsMain.class));
     userSubMenu.addItem("Log Out", event -> authenticationContext.logout());
   }
 

@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.settings;
+package life.qbic.datamanager.views.groups;
 
 import static java.util.Objects.requireNonNull;
 

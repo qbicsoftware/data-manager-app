@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.settings;
+package life.qbic.datamanager.views.groups;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
@@ -43,7 +43,7 @@ import life.qbic.usergroups.api.MyGroupMembership;
  * {@link ManagementActionPolicy} so the component stays UI-state-free and unit-testable without a
  * Spring or Vaadin {@code UI} context. When the policy grants management actions, the row offers a
  * "Manage group" navigation button that opens the dedicated group detail page
- * ({@link GroupDetailMain}, route {@code settings/groups/:groupId}) where the non-destructive
+ * ({@link GroupDetailMain}, route {@code groups/:groupId}) where the non-destructive
  * management happens <em>in place</em> instead of in modal dialogs.
  *
  * @since 1.19.0
@@ -163,7 +163,7 @@ public class MyGroupsComponent extends Div implements Serializable {
     List<ManagementAction> actionsForRole = managementActionPolicy.actionsFor(membership);
     if (!actionsForRole.isEmpty()) {
       // Non-destructive management (members, appoint, rename) now opens the group detail page
-      // (settings/groups/:groupId) instead of a modal dialog; the row carries a navigation
+      // (groups/:groupId) instead of a modal dialog; the row carries a navigation
       // button that jumps to the detail surface of this group.
       Button openDetail = new Button("Manage group");
       openDetail.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);

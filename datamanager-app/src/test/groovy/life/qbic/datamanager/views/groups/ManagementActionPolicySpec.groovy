@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.settings
+package life.qbic.datamanager.views.groups
 
 import life.qbic.usergroups.api.GroupRole
 import life.qbic.usergroups.api.GroupType

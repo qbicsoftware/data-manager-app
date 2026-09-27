@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.settings;
+package life.qbic.datamanager.views.groups;
 
 import static java.util.Objects.requireNonNull;
 
@@ -27,9 +27,10 @@ import life.qbic.datamanager.views.general.InlineEditableField.InputKind;
 import life.qbic.datamanager.views.general.InlineEditableField.SaveEvent;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.general.dialog.TypeToConfirmInput;
+import life.qbic.datamanager.views.groups.GroupMembersComponent.GroupMembersUpdatedRequest;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.notifications.Toast;
-import life.qbic.datamanager.views.settings.GroupMembersComponent.GroupMembersUpdatedRequest;
+import life.qbic.datamanager.views.settings.SettingsSection;
 import life.qbic.identity.api.UserInfo;
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.projectmanagement.application.AuthenticationToUserIdTranslationService;
@@ -46,11 +47,11 @@ import org.springframework.security.core.context.SecurityContextHolder;
 /**
  * <b>Group detail page</b>
  * <p>
- * A dedicated, shareable settings route (<code>settings/groups/:groupId</code>) showing one
+ * A dedicated, shareable group route (<code>groups/:groupId</code>) showing one
  * group's details and its member-management surface <em>in place</em> instead of in a modal
  * dialog (FEAT-USER-GROUPS-04 cognitive-load decision).
  * <p>
- * The page follows the Profile settings convention: a flat {@link SettingsSection} made of
+ * The page follows the Profile settings section convention: a flat {@link SettingsSection} made of
  * {@code settings-group} blocks separated by subheadings and whitespace (no card chrome), with
  * the group name and description as inline-editable rows ({@link InlineEditableField}) and the
  * member roster in a group of its own. The destructive dissolve operation is guarded by an
@@ -66,11 +67,11 @@ import org.springframework.security.core.context.SecurityContextHolder;
  *
  * @since 1.20.0
  */
-@Route(value = AppRoutes.GroupsRoutes.GROUP_DETAIL, layout = SettingsMainLayout.class)
+@Route(value = AppRoutes.GroupsRoutes.GROUP_DETAIL, layout = GroupsMainLayout.class)
 @SpringComponent
 @UIScope
 @PermitAll
-@PageTitle("Settings · Group")
+@PageTitle("Groups · Group")
 public class GroupDetailMain extends Main implements BeforeEnterObserver {
 
   @Serial
