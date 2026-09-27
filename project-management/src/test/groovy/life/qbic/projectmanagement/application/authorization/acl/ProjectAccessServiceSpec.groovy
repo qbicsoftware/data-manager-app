@@ -63,6 +63,7 @@ class ProjectAccessServiceSpec extends Specification {
       setParent(*_) >> {}
       isGranted(*_) >> false
       isSidLoaded(*_) >> false
+      getEntries() >> { entries }
     }
   }
 
@@ -114,7 +115,7 @@ class ProjectAccessServiceSpec extends Specification {
 
   def "listSharedGroups exposes shared groups with name, role and no member data"() {
     given: "a project with a shared group at READ"
-    service.addAuthorityAccess(projectId, "GROUP_group-1", ProjectRole.READ)
+    entries.add(ace(BasePermission.READ, new GrantedAuthoritySid("GROUP_group-1"), true))
     groupInformationService.findGroupById("group-1") >> Optional.of(
         new GroupInfo("group-1", "NGS Lab", "the sequencing lab", GroupType.ORG))
 
@@ -134,7 +135,8 @@ class ProjectAccessServiceSpec extends Specification {
 
   def "listSharedGroups ignores non-group authorities"() {
     given: "a project with a system role ADMIN grant only"
-    service.addAuthorityAccess(projectId, "ROLE_EXAMPLE", ProjectRole.ADMIN)
+    entries.add(ace(BasePermission.ADMINISTRATION,
+        new GrantedAuthoritySid("ROLE_EXAMPLE"), true))
 
     when:
     List<SharedProjectGroup> sharedGroups = service.listSharedGroups(projectId)

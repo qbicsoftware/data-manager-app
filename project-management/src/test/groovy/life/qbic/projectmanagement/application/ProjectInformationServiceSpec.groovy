@@ -17,15 +17,8 @@ class ProjectInformationServiceSpec extends Specification {
     ProjectOverviewLookup projectPreviewLookup = Mock()
     ProjectAccessService projectAccessService = Mock()
     AuthenticationToUserIdTranslator authenticationToUserIdTranslator = Mock()
-    GroupSidProvider groupSidProvider = Mock()
+    GroupSidProvider groupSidProvider = Mock() { listGroupSidsForUser(_ as String) >> [] }
     ProjectInformationService projectInformationService = new ProjectInformationService(projectPreviewLookup, projectRepository, projectAccessService, authenticationToUserIdTranslator, groupSidProvider)
-
-    def setup() {
-        // The group-merge path (strategy §4.3.3) calls listGroupSidsForUser on every
-        // accessible-project query; default the mock to no group memberships so
-        // non-group tests are unaffected. Group tests override per-test.
-        groupSidProvider.listGroupSidsForUser(_ as String) >> []
-    }
 
     def cleanup() {
         SecurityContextHolder.clearContext()
