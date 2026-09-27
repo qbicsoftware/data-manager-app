@@ -4,26 +4,96 @@
 
 Application footer (FooterComponent)
 
-Semantic <footer> with grouped <nav> landmarks and a copyright bar.
-Layout: link groups wrap on narrow viewports and stack vertically on
-very small screens. The footer itself is kept at the bottom of short
-pages by the flex column layout of #main-layout (see main.css).
+Semantic <footer> with a brand block, grouped <nav> landmarks and a copyright bar.
+
+Layout pattern: "full-bleed bar + capped centered content shell", matching the
+project overview (grid-templates.css .main.project-overview) and the settings hub
+(settings.css). The .app-footer bar stays full-bleed (the settings layout's grid
+spans it across all its tracks), while its content lives in .app-footer-inner,
+capped at --content-shell-max-width and centered with margin-inline: auto.
+
+Desktop: two-column grid — brand block left, the three link groups spread across
+the right column via justify-content: space-between, bottom bar spanning both.
+Link groups wrap on narrow viewports and stack vertically on very small screens.
+The footer itself is kept at the bottom of short pages by the flex column layout
+of #main-layout (see main.css).
 
 *****************************************/
 
 .app-footer {
   display: flex;
   flex-direction: column;
-  gap: var(--lumo-space-m);
-  padding: var(--lumo-space-l) var(--lumo-space-xl) var(--lumo-space-m);
+  /* Vertical padding only — the horizontal gutters live in .app-footer-inner so
+     the capped region aligns with the --content-shell-max-width shell. */
+  padding: var(--lumo-space-l) 0 var(--lumo-space-m);
   border-top: 1px solid var(--lumo-contrast-10pct);
   background-color: var(--lumo-contrast-5pct);
   font-size: var(--lumo-font-size-s);
 }
 
+/* Capped, centered content shell. Mirrors .main.project-overview (grid-templates.css):
+   the outer bar spans the full viewport width, the shell keeps content readable. */
+.app-footer .app-footer-inner {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: var(--content-shell-max-width);
+  margin-inline: auto;
+  padding-inline: var(--lumo-space-xl);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  grid-template-areas:
+    "brand links"
+    "bottom bottom";
+  column-gap: var(--spacing-08);
+  row-gap: var(--lumo-space-m);
+}
+
+/* Brand block: product name, subtitle and the University of Tübingen logo. */
+.app-footer .app-footer-brand {
+  grid-area: brand;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-02);
+  align-items: flex-start;
+}
+
+.app-footer .app-footer-brand-name {
+  font-size: var(--lumo-font-size-l);
+  font-weight: var(--font-weight-semi-bold);
+  color: var(--lumo-header-text-color);
+}
+
+.app-footer .app-footer-brand-sub {
+  font-size: var(--lumo-font-size-s);
+  color: var(--lumo-secondary-text-color);
+  max-width: 24em;
+  /* Render the two subtitle lines as blocks so the line breaks before
+     "Data Management" and the product name stays together. */
+  display: flex;
+  flex-direction: column;
+  row-gap: 0;
+}
+
+.app-footer .app-footer-ut-logo {
+  margin-top: var(--lumo-space-s);
+}
+
+.app-footer .app-footer-ut-logo img {
+  display: block;
+  height: 2.5em;
+  width: auto;
+}
+
+.app-footer .app-footer-ut-logo:hover img {
+  opacity: 0.85;
+}
+
 .app-footer .app-footer-links {
+  grid-area: links;
   display: flex;
   flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
   gap: var(--spacing-04) var(--spacing-06);
 }
 
@@ -55,23 +125,45 @@ pages by the flex column layout of #main-layout (see main.css).
   text-decoration: underline;
 }
 
-.app-footer .app-footer-group a:focus-visible {
+/* Focus ring for every footer link, including the University of Tübingen logo link. */
+.app-footer a:focus-visible {
   outline: 2px solid var(--lumo-primary-color);
   outline-offset: 2px;
   border-radius: 2px;
 }
 
 .app-footer .app-footer-bottom {
+  grid-area: bottom;
   padding-top: var(--lumo-space-s);
   border-top: 1px solid var(--lumo-contrast-10pct);
   color: var(--lumo-tertiary-text-color);
   font-size: var(--lumo-font-size-xs);
 }
 
+/* Tablet (601-900px): single column — brand on top, links wrap left-aligned
+   (no wide-gap orphan spread from space-between), bottom bar last. */
+@media only screen and (max-width: 900px) {
+  .app-footer .app-footer-inner {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "brand"
+      "links"
+      "bottom";
+  }
+
+  .app-footer .app-footer-links {
+    justify-content: flex-start;
+  }
+}
+
 /* Small screens: stack the link groups full-width */
 @media only screen and (max-width: 600px) {
   .app-footer {
-    padding: var(--spacing-04);
+    padding: var(--spacing-04) 0;
+  }
+
+  .app-footer .app-footer-inner {
+    padding-inline: var(--spacing-04);
   }
 
   .app-footer .app-footer-links {
@@ -81,5 +173,9 @@ pages by the flex column layout of #main-layout (see main.css).
 
   .app-footer .app-footer-group {
     min-width: 0;
+  }
+
+  .app-footer .app-footer-ut-logo img {
+    height: 2em;
   }
 }

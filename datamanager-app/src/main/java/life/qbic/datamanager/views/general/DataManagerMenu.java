@@ -1,7 +1,6 @@
 package life.qbic.datamanager.views.general;
 
 import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.contextmenu.SubMenu;
 import com.vaadin.flow.component.html.Div;
@@ -11,7 +10,6 @@ import com.vaadin.flow.spring.security.AuthenticationContext;
 import java.util.Objects;
 import life.qbic.datamanager.views.account.UserAvatar;
 import life.qbic.datamanager.views.account.UserProfileMain;
-import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.projectmanagement.application.authorization.QbicOidcUser;
 import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -19,9 +17,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 /**
  * Data Manager Menu
  * <p>
- * Menubar within the data manager application with which the user can route to the
- * {@link ProjectOverviewMain}, logout and access his personal access tokens in the
- * {@link PersonalAccessTokenMain}
+ * Menubar within the data manager application that hosts the logged-in user's account actions:
+ * the user avatar with shortcuts to the {@link UserProfileMain} (Settings) and logout. Global
+ * navigation (e.g. back to the project overview) is provided by the explicitly rendered homepage
+ * link in the layouts, not by this menu.
  */
 public class DataManagerMenu extends Div {
 
@@ -29,16 +28,11 @@ public class DataManagerMenu extends Div {
   UserAvatar userAvatar = new UserAvatar();
 
   public DataManagerMenu(AuthenticationContext authenticationContext) {
-    initializeHomeMenuItem();
     initializeUserSubMenuItems(Objects.requireNonNull(authenticationContext));
     add(projectMenu);
     projectMenu.addClassName("menubar");
     addClassName("data-manager-menu");
     projectMenu.addThemeVariants(MenuBarVariant.LUMO_TERTIARY_INLINE);
-  }
-
-  private void initializeHomeMenuItem() {
-    projectMenu.addItem(new Button("Home"), event -> routeTo(ProjectOverviewMain.class));
   }
 
   private void initializeUserSubMenuItems(AuthenticationContext authenticationContext) {

@@ -38,6 +38,7 @@
 .drawer-title-bar {
   display: inline-flex;
   align-items: center;
+  column-gap: var(--lumo-space-s);
 }
 
 .experiment-navigation-component {
@@ -100,4 +101,79 @@
   display: inline-flex;
   align-items: inherit;
   column-gap: var(--spacing-03);
+}
+
+/* When the navbar title is a link (project title → project summary),
+   keep the link presentation quiet: inherit the header text color, no
+   underline, and affordance only on hover/focus. */
+.navbar-title[href] {
+  color: var(--lumo-header-text-color);
+  text-decoration: none;
+}
+
+.navbar-title[href]:hover {
+  color: var(--lumo-primary-text-color);
+  text-decoration: underline;
+}
+
+.navbar-title[href]:focus-visible {
+  outline: 2px solid var(--lumo-primary-color);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Quiet link for a segment of a navbar title (e.g. the project code inside
+   the experiment breadcrumb). Matches the .navbar-title[href] presentation. */
+.navbar-title-link {
+  color: var(--lumo-header-text-color);
+  text-decoration: none;
+}
+
+.navbar-title-link:hover {
+  color: var(--lumo-primary-text-color);
+  text-decoration: underline;
+}
+
+.navbar-title-link:focus-visible {
+  outline: 2px solid var(--lumo-primary-color);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/*
+ * Home navigation affordance (HomeLink) rendered next to the brand title in
+ * the top navigation bar. RouterLink renders a real <a>; the base style is the
+ * quiet icon-only link, hover/focus give feedback, and Vaadin's router-link
+ * highlight marks the active state when the user is already on the overview
+ * page.
+ */
+.home-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--lumo-secondary-text-color);
+  padding: var(--lumo-space-xs);
+  border-radius: var(--lumo-border-radius-m);
+  text-decoration: none;
+}
+
+.home-link:hover {
+  color: var(--lumo-primary-text-color);
+  background: var(--lumo-contrast-5pct);
+}
+
+.home-link:focus-visible {
+  outline: 2px solid var(--lumo-primary-color);
+  outline-offset: 2px;
+}
+
+.home-link[highlight] {
+  color: var(--lumo-primary-text-color);
+}
+
+/* Smaller touch target on very narrow screens */
+@media only screen and (max-width: 600px) {
+  .home-link {
+    padding: var(--lumo-space-xxs);
+  }
 }
