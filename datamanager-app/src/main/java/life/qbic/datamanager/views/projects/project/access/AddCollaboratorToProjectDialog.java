@@ -25,11 +25,15 @@ import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.projects.project.access.ProjectAccessComponent.UserInfoComponent;
 import life.qbic.identity.api.UserInfo;
 import life.qbic.identity.api.UserInformationService;
+import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.ProjectCollaborator;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.ProjectRole;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.ProjectRoleRecommendationRenderer;
+import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.SharedProjectGroup;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import life.qbic.usergroups.api.GroupInfo;
+import life.qbic.usergroups.api.GroupInformationService;
 
 /**
  * Add Collaborator to Project Dialog
@@ -46,20 +50,28 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
   private static final long serialVersionUID = 6582904858073255011L;
   private final Div projectRoleSelectionSection = new Div();
   private final Div personSelectionSection = new Div();
+  private final Div groupSelectionSection = new Div();
   private final RadioButtonGroup<ProjectRole> projectRoleSelection = new RadioButtonGroup<>();
   private final ComboBox<UserInfo> personSelection = new ComboBox<>();
+  private final ComboBox<GroupInfo> groupSelection = new ComboBox<>();
   private final ProjectId projectId;
+  private final GroupInformationService groupInformationService;
 
   public AddCollaboratorToProjectDialog(UserInformationService userInformationService,
       ProjectId projectId,
-      List<ProjectCollaborator> projectCollaborators) {
+      List<ProjectCollaborator> projectCollaborators,
+      GroupInformationService groupInformationService,
+      List<SharedProjectGroup> alreadySharedGroups) {
     requireNonNull(userInformationService, "userInformationService must not be null");
+    requireNonNull(groupInformationService, "groupInformationService must not be null");
     this.projectId = requireNonNull(projectId, "projectId must not be null");
+    this.groupInformationService = groupInformationService;
     addClassName("add-user-to-project-dialog");
     initPersonSelection(userInformationService, projectCollaborators);
+    initGroupSelection(alreadySharedGroups);
     initProjectRoleSelection();
-    setHeaderTitle("Add Collaborator");
-    add(personSelectionSection, projectRoleSelectionSection);
+    setHeaderTitle("Add people or groups");
+    add(personSelectionSection, groupSelectionSection, projectRoleSelectionSection);
   }
 
   private static Component renderUserInfo(UserInfo userInfo) {
@@ -111,10 +123,38 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
 
   }
 
+  private void initGroupSelection(List<SharedProjectGroup> alreadySharedGroups) {
+    Span title = new Span("Select the group");
+    title.addClassNames("section-title");
+    Span comment = new Span("Choose one: a person or a group");
+    comment.addClassName("secondary");
+    Span description = new Span(
+        "Please select a user group you want to grant access to. Every member of the group gains the selected project role.");
+    description.addClassName("secondary");
+    groupSelection.setItems(query ->
+        groupInformationService.listPublicDirectory().stream()
+            .filter(groupInfo -> alreadySharedGroups.stream()
+                .noneMatch(sharedGroup -> sharedGroup.groupId().equals(groupInfo.id())))
+            .filter(groupInfo -> query.getFilter().map(filter -> groupInfo.name().toLowerCase()
+                    .contains(filter.toLowerCase()) || (groupInfo.description() != null
+                    && groupInfo.description().toLowerCase().contains(filter.toLowerCase())))
+                .orElse(true))
+            .skip(query.getOffset())
+            .limit(query.getLimit()));
+    groupSelection.setItemLabelGenerator(GroupInfo::name);
+    groupSelection.setRequired(true);
+    groupSelection.setErrorMessage(
+        "Please specify the group to be added to the project");
+    groupSelection.setPlaceholder("Search groups…");
+    groupSelection.addClassName("group-selection");
+    groupSelectionSection.addClassName("group-selection-section");
+    groupSelectionSection.add(title, comment, description, groupSelection);
+  }
+
   private void initProjectRoleSelection() {
     Span title = new Span("Assign a Role");
     title.addClassNames("section-title");
-    Span description = new Span("Please select the role of the person within the project");
+    Span description = new Span("Please select the role for the person or group within the project");
     description.addClassName("secondary");
     projectRoleSelection.addThemeVariants(RadioGroupVariant.LUMO_VERTICAL,
         RadioGroupVariant.LUMO_HELPER_ABOVE_FIELD);
@@ -149,13 +189,36 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
   @Override
   protected void onConfirmClicked(ClickEvent<Button> clickEvent) {
     personSelection.setInvalid(personSelection.isEmpty());
+    groupSelection.setInvalid(groupSelection.isEmpty());
     projectRoleSelection.setInvalid(projectRoleSelection.isEmpty());
-    if (!personSelection.isInvalid() && !projectRoleSelection.isInvalid()) {
+    boolean personSelected = !personSelection.isEmpty();
+    boolean groupSelected = !groupSelection.isEmpty();
+    if (!(personSelected ^ groupSelected)) {
+      // exactly one of person or group must be selected
+      personSelection.setInvalid(!personSelected);
+      groupSelection.setInvalid(!groupSelected);
+      if (!personSelected && !groupSelected) {
+        groupSelection.setErrorMessage(
+            "Choose one: grant a person or a group access (not both, not neither).");
+        projectRoleSelection.setInvalid(projectRoleSelection.isEmpty());
+      } else {
+        groupSelection.setErrorMessage("Please specify the group to be added to the project");
+      }
+      return;
+    }
+    if (personSelected && !projectRoleSelection.isInvalid()) {
       String userId = personSelection.getValue().id();
       ProjectRole projectRole = projectRoleSelection.getValue();
       ProjectCollaborator projectCollaborator = new ProjectCollaborator(userId, projectId,
           projectRole);
       fireEvent(new ConfirmEvent(this, clickEvent.isFromClient(), projectCollaborator));
+      return;
+    }
+    if (groupSelected && !projectRoleSelection.isInvalid()) {
+      GroupInfo groupInfo = groupSelection.getValue();
+      ProjectRole projectRole = projectRoleSelection.getValue();
+      fireEvent(
+          new GroupConfirmEvent(this, clickEvent.isFromClient(), groupInfo.id(), projectRole));
     }
   }
 
@@ -170,6 +233,11 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
 
   public Registration addConfirmListener(ComponentEventListener<ConfirmEvent> listener) {
     return addListener(ConfirmEvent.class, listener);
+  }
+
+  public Registration addGroupConfirmListener(
+      ComponentEventListener<GroupConfirmEvent> listener) {
+    return addListener(GroupConfirmEvent.class, listener);
   }
 
   public static class CancelEvent extends ComponentEvent<AddCollaboratorToProjectDialog> {
@@ -207,6 +275,35 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
 
     public ProjectCollaborator projectCollaborator() {
       return projectCollaborator;
+    }
+  }
+
+  public static class GroupConfirmEvent extends ComponentEvent<AddCollaboratorToProjectDialog> {
+
+    private final transient String groupId;
+    private final transient ProjectRole projectRole;
+
+    /**
+     * Fired when the user confirms sharing a user group onto the project.
+     *
+     * @param source      the dialog that fired the event
+     * @param fromClient  {@code true} if the event originated from the client
+     * @param groupId     the stable user group id to share
+     * @param projectRole the project role to grant the group
+     */
+    public GroupConfirmEvent(AddCollaboratorToProjectDialog source, boolean fromClient,
+        String groupId, ProjectRole projectRole) {
+      super(source, fromClient);
+      this.groupId = groupId;
+      this.projectRole = projectRole;
+    }
+
+    public String groupId() {
+      return groupId;
+    }
+
+    public ProjectRole projectRole() {
+      return projectRole;
     }
   }
 }

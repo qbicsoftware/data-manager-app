@@ -111,6 +111,12 @@ Since we want to remove the spacing between the cancel and confirm button we rep
   gap: var(--spacing-03);
 }
 
+.add-user-to-project-dialog .group-selection-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-03);
+}
+
 .add-user-to-project-dialog .section-title {
   color: var(--lumo-secondary-text-color);
   font-size: var(--lumo-font-size-l);
