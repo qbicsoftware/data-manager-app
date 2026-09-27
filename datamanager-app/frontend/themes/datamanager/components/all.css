@@ -1206,30 +1206,22 @@ Icons
 
 /*region Single-Purpose Component Styles*/
 /*region Announcements*/
-/* Slim top-strip environment notice. The announcement is the first child of the
-   app-layout navbar (see DataManagerLayout: addToNavbar(announcementComponent)),
-   rendered as a full-width first row above the regular navbar row via
-   flex-wrap: wrap on [part~=navbar] + flex-basis: 100% below. It therefore sits
-   at the very top (in the header region), never between the tab strip and the
-   page content, and content below is offset automatically (AppLayout measures
-   the navbar height). Kept quiet and compact so it does not compete with the
-   top-level navigation. */
-[part~="navbar"] {
-  flex-wrap: wrap;
-}
-
+/* Slim environment notice rendered at the very top of the content area (below the
+   fixed top-level navbar, above the routed content — see DataManagerLayout, where
+   the AnnouncementComponent sits first in the content column). Kept quiet and
+   visually separated from the GitHub-style tab strip above it: reduced vertical
+   padding, moderate breathing room via top/bottom margin, and a softened,
+   card-like treatment (white background + warning-tinted accent + subtle border)
+   instead of a harsh full-bleed block, so it reads as its own notice and never
+   competes with the Projects | Groups | Settings tabs. */
 #announcements {
-  /* Full-width first row: block-level + width:100% (not just flex-basis) forces
-     the row break even when the navbar is inline-flex, so the shell's items
-     (HomeLink/title/tabs/avatar) always land on the row BELOW the strip and
-     never to its right. order: -1 keeps it first regardless of insertion. */
-  display: block;
-  width: 100%;
-  flex: 1 0 100%;
-  order: -1;
-  background-color: var(--warning-icon-color);
-  color: var(--lumo-contrast-90pct);
-  padding: var(--spacing-02) var(--spacing-04);
+  margin: var(--spacing-04) var(--spacing-04) 0;
+  padding: var(--spacing-03) var(--spacing-04);
+  background-color: var(--lumo-base-color);
+  color: var(--lumo-contrast-80pct);
+  border: 1px solid var(--warning-color);
+  border-left-width: 4px;
+  border-radius: var(--lumo-border-radius-m);
   text-align: left;
   font-size: var(--lumo-font-size-s);
   box-sizing: border-box;
@@ -1239,13 +1231,14 @@ Icons
   margin: 0;
   display: flex;
   align-items: center;
-  gap: var(--spacing-02);
+  gap: var(--spacing-03);
 }
 
 .announcement vaadin-icon {
   min-width: var(--icon-size-s);
   max-width: var(--icon-size-s);
-  color: var(--icon-color);
+  color: var(--warning-color);
+  flex-shrink: 0;
 }
 
 .announcement-text {

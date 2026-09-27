@@ -1,9 +1,10 @@
 /* -- Groups Hub (GitHub-style master-detail layout, mirrors Settings) -- */
 
 /* The groups hub is a RouterLayout nested inside UserMainLayout (see @ParentLayout
-   in GroupsMainLayout), so the outer shell — navbar, slim announcement strip, footer —
-   is owned by UserMainLayout/DataManagerLayout. This stylesheet only lays out the
-   two-column hub: the persistent groups navigation (aside) and the routed content. */
+   in GroupsMainLayout), so the outer shell — navbar, announcement at the top of the
+   content area, footer — is owned by UserMainLayout/DataManagerLayout. This
+   stylesheet only lays out the two-column hub: the persistent groups navigation
+   (aside) and the routed content. */
 
 .groups-main-layout {
   display: grid;
