@@ -71,6 +71,22 @@ class ProjectAccessServiceSpec extends Specification {
     return new StubAccessControlEntry(permission, sid, granting)
   }
 
+  def "authority writes read the full ACL so a group-admin member can manage another group"() {
+    given: "a project with a shared group"
+    entries.add(ace(BasePermission.ADMINISTRATION, new GrantedAuthoritySid("GROUP_admin"), true))
+
+    when: "a group-admin member changes the role of a different group"
+    service.changeAuthorityAccess(projectId, "GROUP_other", ProjectRole.WRITE)
+    service.addAuthorityAccess(projectId, "GROUP_new", ProjectRole.READ)
+    service.removeAuthorityAccess(projectId, "GROUP_other")
+
+    then: "each authority write resolves the full ACL, not a sid-filtered partial ACL"
+    // the acting group-admin's own ACE must be visible to the ACL authorization check inside
+    // insertAce/deleteAce; sid-filtered reads would expose only the modified group's entries
+    // and raise "Unable to locate a matching ACE" (FEAT-USER-GROUPS-08 regression)
+    3 * aclService.readAclById(_ as ObjectIdentityImpl, null)
+  }
+
   def "rejects OWNER on the authority grant path (groups can never become project OWNER)"() {
     when: "an authority is granted the OWNER role"
     service.addAuthorityAccess(projectId, "GROUP_abc", ProjectRole.OWNER)
