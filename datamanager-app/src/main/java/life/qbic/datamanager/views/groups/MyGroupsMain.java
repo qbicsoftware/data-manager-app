@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.settings;
+package life.qbic.datamanager.views.groups;
 
 import static java.util.Objects.requireNonNull;
 
@@ -23,6 +23,7 @@ import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.general.dialog.AlertDialog;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.notifications.Toast;
+import life.qbic.datamanager.views.settings.SettingsSection;
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.projectmanagement.application.AuthenticationToUserIdTranslationService;
 import life.qbic.usergroups.api.GroupInformationService;
@@ -45,7 +46,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
  * outcome before refreshing the list.
  * <p>
  * The owner/manager management actions (FEAT-USER-GROUPS-04, task #1577) are now owned by the
- * dedicated group detail page ({@link GroupDetailMain}, route {@code settings/groups/:groupId}):
+ * dedicated group detail page ({@link GroupDetailMain}, route {@code groups/:groupId}):
  * the list component navigates to that page for the non-destructive management surface
  * (members/add/rename/dissolve stays there). Non-destructive actions are no longer modal
  * dialogs (cognitive-load decision); only destructive confirmations (leave group) use an
@@ -53,11 +54,11 @@ import org.springframework.security.core.context.SecurityContextHolder;
  *
  * @since 1.19.0
  */
-@Route(value = AppRoutes.GroupsRoutes.MY_GROUPS, layout = SettingsMainLayout.class)
+@Route(value = AppRoutes.GroupsRoutes.MY_GROUPS, layout = GroupsMainLayout.class)
 @SpringComponent
 @UIScope
 @PermitAll
-@PageTitle("Settings · My Groups")
+@PageTitle("Groups · My Groups")
 public class MyGroupsMain extends Main implements BeforeEnterObserver {
 
   @Serial

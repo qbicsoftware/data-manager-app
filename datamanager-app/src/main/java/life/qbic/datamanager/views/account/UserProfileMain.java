@@ -3,6 +3,7 @@ package life.qbic.datamanager.views.account;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.router.AfterNavigationEvent;
 import com.vaadin.flow.router.AfterNavigationObserver;
 import com.vaadin.flow.router.BeforeEnterEvent;
@@ -16,6 +17,7 @@ import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.settings.SettingsMainLayout;
@@ -96,15 +98,26 @@ public class UserProfileMain extends Main implements BeforeEnterObserver, AfterN
   /**
    * Refreshes the account overview header in the surrounding settings layout in place, so a
    * username change is reflected everywhere without a full page reload.
+   * <p>
+   * The settings layout is a nested {@link RouterLayout} under the global shell, so the profile
+   * view may be several levels deep; walk up the component tree to find it.
    */
   private void onUsernameChanged(String newUserName) {
-    getUI().ifPresent(ui -> ui.getChildren()
-        .filter(SettingsMainLayout.class::isInstance)
-        .map(SettingsMainLayout.class::cast)
-        .findFirst()
-        .ifPresent(SettingsMainLayout::refreshAccountOverview));
+    findSettingsLayout()
+        .ifPresent(SettingsMainLayout::refreshAccountOverview);
     messageFactory.toast("profile.username.change.success", new Object[]{newUserName},
         getLocale()).open();
+  }
+
+  private Optional<SettingsMainLayout> findSettingsLayout() {
+    Component current = this;
+    while (current.getParent().isPresent()) {
+      current = current.getParent().get();
+      if (current instanceof SettingsMainLayout settingsMainLayout) {
+        return Optional.of(settingsMainLayout);
+      }
+    }
+    return Optional.empty();
   }
 
   private void processRequestParams(QueryParameters parameters) {

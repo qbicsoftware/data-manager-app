@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.settings;
+package life.qbic.datamanager.views.groups;
 
 import static java.util.Objects.requireNonNull;
 
@@ -30,7 +30,6 @@ import life.qbic.datamanager.views.general.dialog.AlertDialog;
 import life.qbic.datamanager.views.general.dialog.DialogBody;
 import life.qbic.datamanager.views.general.dialog.DialogFooter;
 import life.qbic.datamanager.views.general.dialog.DialogHeader;
-import life.qbic.datamanager.views.settings.GroupMembersComponent.MemberAction;
 import life.qbic.identity.api.UserInfo;
 import life.qbic.usergroups.api.GroupMember;
 import life.qbic.usergroups.api.GroupRole;

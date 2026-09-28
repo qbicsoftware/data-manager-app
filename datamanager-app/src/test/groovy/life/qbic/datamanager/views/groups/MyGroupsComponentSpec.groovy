@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.settings
+package life.qbic.datamanager.views.groups
 
 import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.button.Button
