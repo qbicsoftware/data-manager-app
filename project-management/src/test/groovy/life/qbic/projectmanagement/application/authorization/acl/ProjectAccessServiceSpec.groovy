@@ -181,6 +181,95 @@ class ProjectAccessServiceSpec extends Specification {
     1 * publisher.publishAclEviction(projectId)
   }
 
+  def "role change escalates a group from READ to ADMIN with delete-stale plus insert-new"() {
+    given: "a group sharing the project at READ"
+    entries.add(ace(BasePermission.READ, new GrantedAuthoritySid("GROUP_group-1"), true))
+
+    when: "the group role is escalated to ADMIN"
+    service.changeAuthorityAccess(projectId, "GROUP_group-1", ProjectRole.ADMIN)
+
+    then: "the group retains READ and gains the additional WRITE and ADMINISTRATION permissions"
+    1 * aclService.updateAcl(acl)
+    Set<Permission> groupPermissions = entries.findAll {
+      it.sid == new GrantedAuthoritySid("GROUP_group-1")
+    }*.permission as Set
+    groupPermissions == (BasePermission.READ | BasePermission.WRITE |
+        BasePermission.ADMINISTRATION) as Set
+  }
+
+  def "role change downgrades a group from ADMIN to READ by deleting the stale permissions"() {
+    given: "a group sharing the project at ADMIN"
+    entries.add(ace(BasePermission.READ, new GrantedAuthoritySid("GROUP_group-1"), true))
+    entries.add(ace(BasePermission.WRITE, new GrantedAuthoritySid("GROUP_group-1"), true))
+    entries.add(ace(BasePermission.ADMINISTRATION, new GrantedAuthoritySid("GROUP_group-1"), true))
+
+    when: "the group role is downgraded to READ"
+    service.changeAuthorityAccess(projectId, "GROUP_group-1", ProjectRole.READ)
+
+    then: "only the READ permission remains for the group"
+    1 * aclService.updateAcl(acl)
+    Set<Permission> groupPermissions = entries.findAll {
+      it.sid == new GrantedAuthoritySid("GROUP_group-1")
+    }*.permission as Set
+    groupPermissions == ([BasePermission.READ] as Set)
+  }
+
+  def "role change back to the same role is a no-op on the entries"() {
+    given: "a group already sharing the project at WRITE"
+    entries.add(ace(BasePermission.READ, new GrantedAuthoritySid("GROUP_group-1"), true))
+    entries.add(ace(BasePermission.WRITE, new GrantedAuthoritySid("GROUP_group-1"), true))
+
+    when: "the group role is set to WRITE again"
+    service.changeAuthorityAccess(projectId, "GROUP_group-1", ProjectRole.WRITE)
+
+    then: "the group keeps exactly its WRITE permissions"
+    1 * aclService.updateAcl(acl)
+    Set<Permission> groupPermissions = entries.findAll {
+      it.sid == new GrantedAuthoritySid("GROUP_group-1")
+    }*.permission as Set
+    groupPermissions == (BasePermission.READ | BasePermission.WRITE) as Set
+  }
+
+  def "removing an authority removes only its group entries and keeps other sids intact"() {
+    given: "a project with a shared group and an unrelated system role"
+    entries.add(ace(BasePermission.READ, new GrantedAuthoritySid("GROUP_group-1"), true))
+    entries.add(ace(BasePermission.ADMINISTRATION, new GrantedAuthoritySid("ROLE_EXAMPLE"), true))
+
+    when: "the group is revoked from the project"
+    service.removeAuthorityAccess(projectId, "GROUP_group-1")
+
+    then: "the group's ACEs are gone while the unrelated role remains"
+    1 * aclService.updateAcl(acl)
+    entries.findAll { it.sid == new GrantedAuthoritySid("GROUP_group-1") }.isEmpty()
+    entries.findAll { it.sid == new GrantedAuthoritySid("ROLE_EXAMPLE") }.size() == 1
+  }
+
+  def "revoking a non-shared group is a no-op that does not throw"() {
+    given: "a project that has never shared the group"
+    // entries stays empty
+
+    when: "a stale UI action revokes a non-shared group"
+    service.removeAuthorityAccess(projectId, "GROUP_notShared")
+
+    then: "no exception is raised and no group ACE appears"
+    noExceptionThrown()
+    1 * aclService.updateAcl(acl)
+    entries.isEmpty()
+  }
+
+  def "changing the role of a non-shared group is a no-op that does not throw"() {
+    given: "a project that has never shared the group"
+    // entries stays empty
+
+    when: "a stale UI action changes the role of a non-shared group"
+    service.changeAuthorityAccess(projectId, "GROUP_notShared", ProjectRole.ADMIN)
+
+    then: "no exception is raised and the grant is inserted for the group"
+    noExceptionThrown()
+    1 * aclService.updateAcl(acl)
+    entries.findAll { it.sid == new GrantedAuthoritySid("GROUP_notShared") }.size() == 3
+  }
+
   def "authority writes succeed without an ACL eviction publisher"() {
     given: "no publisher is wired into the service"
     // service has no AclEvictionPublisher injected (null)

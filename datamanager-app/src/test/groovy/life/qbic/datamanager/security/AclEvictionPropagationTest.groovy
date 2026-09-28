@@ -42,11 +42,12 @@ import java.util.concurrent.TimeUnit
  * <p>The ≤60s revocation NFR (strategy §4.6) is asserted with a far tighter wall-clock bound;
  * on a healthy LAN the broker hop is sub-second.</p>
  *
- * <p>Run with {@code ./mvnw -pl datamanager-app -am verify -Pit} (no external broker or database
- * required — the embedded broker is started and stopped within this test).</p>
+ * <p>Run with {@code ./mvnw -pl datamanager-app test -Dtest=AclEvictionPropagationTest}
+ * (no external broker or database required — the embedded broker is started and stopped within
+ * this test).</p>
  */
 @Timeout(60)
-class AclEvictionPropagationIT extends Specification {
+class AclEvictionPropagationTest extends Specification {
 
   static final String TOPIC = "ProjectAccessAclEvictions"
 

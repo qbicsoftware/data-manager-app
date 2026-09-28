@@ -36,6 +36,14 @@ public class AclCacheEvictionListener {
 
   private static final Logger log = logger(AclCacheEvictionListener.class);
 
+  /**
+   * Shared mapper for the JSON deserialization of {@link IntegrationEvent}s.
+   *
+   * <p>tools.jackson {@link ObjectMapper}s are thread-safe after configuration and can be reused
+   * across concurrent listener invocations without per-call construction overhead.</p>
+   */
+  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
   static final String ACL_EVICTION_EVENT_TYPE = "aclCacheEvicted";
   static final String PROJECT_ID_KEY = "projectId";
 
@@ -65,9 +73,8 @@ public class AclCacheEvictionListener {
   }
 
   private IntegrationEvent parse(String content) {
-    var objectMapper = new ObjectMapper();
     try {
-      return objectMapper.readValue(content, IntegrationEvent.class);
+      return OBJECT_MAPPER.readValue(content, IntegrationEvent.class);
     } catch (JacksonException e) {
       log.error("Json to object mapping failed!", e);
       return null;

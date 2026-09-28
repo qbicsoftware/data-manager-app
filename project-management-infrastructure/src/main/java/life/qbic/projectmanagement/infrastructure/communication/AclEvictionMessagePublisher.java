@@ -35,6 +35,14 @@ public class AclEvictionMessagePublisher implements AclEvictionPublisher {
 
   public static final String ACL_EVICTION_EVENT_TYPE = "aclCacheEvicted";
 
+  /**
+   * Shared mapper for the JSON serialization of {@link IntegrationEvent}s.
+   *
+   * <p>tools.jackson {@link ObjectMapper}s are thread-safe after configuration and can be reused
+   * for concurrent publications without per-call construction overhead.</p>
+   */
+  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
   private final JmsTemplate jmsTemplate;
 
   private final String topic;
@@ -48,11 +56,10 @@ public class AclEvictionMessagePublisher implements AclEvictionPublisher {
 
   @Override
   public void publishAclEviction(ProjectId projectId) {
-    ObjectMapper mapper = new ObjectMapper();
     IntegrationEvent event = IntegrationEvent.create(ACL_EVICTION_EVENT_TYPE,
         Map.of("projectId", projectId.value()));
     try {
-      jmsTemplate.convertAndSend(topic, mapper.writeValueAsString(event));
+      jmsTemplate.convertAndSend(topic, OBJECT_MAPPER.writeValueAsString(event));
       log.debug("Published ACL eviction event for project %s on topic %s".formatted(
           projectId.value(), topic));
     } catch (JacksonException e) {
