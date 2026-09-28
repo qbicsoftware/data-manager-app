@@ -1215,7 +1215,10 @@ Icons
    instead of a harsh full-bleed block, so it reads as its own notice and never
    competes with the Projects | Groups | Settings tabs. */
 #announcements {
-  margin: var(--spacing-04) var(--spacing-04) 0;
+  /* Symmetric gutter margin (incl. bottom): the base layout owns the page's default
+     spacing, so whatever follows (content header / content areas) is always separated
+     from the announcement by the same gap — no component has to add its own top margin. */
+  margin: var(--spacing-04);
   padding: var(--spacing-03) var(--spacing-04);
   background-color: var(--lumo-base-color);
   color: var(--lumo-contrast-80pct);
