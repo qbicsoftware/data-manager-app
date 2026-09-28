@@ -25,10 +25,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
  * "Projects | Groups | Settings" navigation + account menu), the announcement banner and the
  * footer.
  * <p>
- * This layout itself only provides the two-column settings hub: a persistent, non-collapsible
- * aside column with the {@link SettingsNavigationComponent} and the {@link AccountOverviewHeader}
- * on the left and the currently selected settings section in the content area on the right. The
- * selected aside tab is kept in sync with the active route via
+ * This layout itself only provides the two-column settings hub: a standalone account overview
+ * row at the top (spanning the hub width), a persistent, non-collapsible aside column with the
+ * {@link SettingsNavigationComponent} on the left and the currently selected settings section in
+ * the content area on the right. The selected aside tab is kept in sync with the active route via
  * {@link #beforeEnter(BeforeEnterEvent)}.
  */
 @PermitAll
@@ -48,10 +48,13 @@ public class SettingsMainLayout extends Div implements RouterLayout, BeforeEnter
     this.userIdTranslator = requireNonNull(userIdTranslator,
         "userIdTranslator must not be null");
     addClassName("settings-main-layout");
-    Div asideArea = new Div(accountOverviewArea, settingsNavigationComponent);
+    accountOverviewArea.addClassName("settings-account-overview-area");
+    Div asideArea = new Div(settingsNavigationComponent);
     asideArea.addClassName("settings-aside-area");
     contentSlot.addClassName("settings-content-area");
-    add(asideArea, contentSlot);
+    // grid rows: [account overview] / [aside | content] — the overview is a standalone
+    // full-hub-width row above the menu+content, not nested in the aside.
+    add(accountOverviewArea, asideArea, contentSlot);
     renderAccountOverview();
   }
 

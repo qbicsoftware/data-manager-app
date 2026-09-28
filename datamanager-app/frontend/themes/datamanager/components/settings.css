@@ -21,10 +21,12 @@
   min-width: 0;
 }
 
-/* Account overview bar at the top of the settings hub, spanning the hub width (both central
-   tracks, excluding the two gutters) and left-aligned so title and menu items align on an
-   invisible vertical line. */
-.settings-main-layout .settings-account-overview {
+/**
+ * The account overview occupies the standalone first grid row of the settings
+ * hub (both central tracks), above the aside + content columns.
+ */
+.settings-main-layout .settings-account-overview-area {
+  grid-area: account-overview;
   display: flex;
   align-items: center;
   gap: var(--lumo-space-m);
