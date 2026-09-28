@@ -190,11 +190,11 @@ class ProjectAccessServiceSpec extends Specification {
 
     then: "the group retains READ and gains the additional WRITE and ADMINISTRATION permissions"
     1 * aclService.updateAcl(acl)
-    Set<Permission> groupPermissions = entries.findAll {
+    Set<Integer> groupPermissionMasks = entries.findAll {
       it.sid == new GrantedAuthoritySid("GROUP_group-1")
-    }*.permission as Set
-    groupPermissions == (BasePermission.READ | BasePermission.WRITE |
-        BasePermission.ADMINISTRATION) as Set
+    }*.permission*.mask as Set
+    groupPermissionMasks == ([BasePermission.READ.mask, BasePermission.WRITE.mask,
+        BasePermission.ADMINISTRATION.mask] as Set)
   }
 
   def "role change downgrades a group from ADMIN to READ by deleting the stale permissions"() {
@@ -224,10 +224,10 @@ class ProjectAccessServiceSpec extends Specification {
 
     then: "the group keeps exactly its WRITE permissions"
     1 * aclService.updateAcl(acl)
-    Set<Permission> groupPermissions = entries.findAll {
+    Set<Integer> groupPermissionMasks = entries.findAll {
       it.sid == new GrantedAuthoritySid("GROUP_group-1")
-    }*.permission as Set
-    groupPermissions == (BasePermission.READ | BasePermission.WRITE) as Set
+    }*.permission*.mask as Set
+    groupPermissionMasks == ([BasePermission.READ.mask, BasePermission.WRITE.mask] as Set)
   }
 
   def "removing an authority removes only its group entries and keeps other sids intact"() {
