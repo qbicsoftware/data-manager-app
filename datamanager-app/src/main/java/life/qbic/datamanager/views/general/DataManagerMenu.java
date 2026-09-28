@@ -1,6 +1,5 @@
 package life.qbic.datamanager.views.general;
 
-import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.contextmenu.SubMenu;
 import com.vaadin.flow.component.html.Div;
@@ -9,8 +8,6 @@ import com.vaadin.flow.component.menubar.MenuBarVariant;
 import com.vaadin.flow.spring.security.AuthenticationContext;
 import java.util.Objects;
 import life.qbic.datamanager.views.account.UserAvatar;
-import life.qbic.datamanager.views.account.UserProfileMain;
-import life.qbic.datamanager.views.groups.MyGroupsMain;
 import life.qbic.projectmanagement.application.authorization.QbicOidcUser;
 import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -19,9 +16,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
  * Data Manager Menu
  * <p>
  * Menubar within the data manager application that hosts the logged-in user's account actions:
- * the user avatar with shortcuts to the {@link UserProfileMain} (Settings) and logout. Global
- * navigation (e.g. back to the project overview) is provided by the explicitly rendered homepage
- * link in the layouts, not by this menu.
+ * the user avatar with logout. Global navigation (Projects | Groups | Settings tabs, back to the
+ * project overview) is provided by the top-level navigation and homepage link in the layouts;
+ * the avatar is now reserved for account-scoped actions only.
  */
 public class DataManagerMenu extends Div {
 
@@ -40,8 +37,6 @@ public class DataManagerMenu extends Div {
     initializeAvatar();
     MenuItem userMenuItem = projectMenu.addItem(userAvatar);
     SubMenu userSubMenu = userMenuItem.getSubMenu();
-    userSubMenu.addItem("Settings", event -> routeTo(UserProfileMain.class));
-    userSubMenu.addItem("My Groups", event -> routeTo(MyGroupsMain.class));
     userSubMenu.addItem("Log Out", event -> authenticationContext.logout());
   }
 
@@ -55,9 +50,5 @@ public class DataManagerMenu extends Div {
       userId = qbicOidcUser.getQbicUserId();
     }
     userAvatar.setUserId(userId);
-  }
-
-  private <T extends Component> void routeTo(Class<T> mainComponent) {
-    getUI().orElseThrow().navigate(mainComponent);
   }
 }
