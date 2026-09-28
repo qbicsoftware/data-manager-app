@@ -3,6 +3,8 @@ package life.qbic.datamanager.views.general;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.contextmenu.SubMenu;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.menubar.MenuBarVariant;
 import com.vaadin.flow.spring.security.AuthenticationContext;
@@ -37,7 +39,8 @@ public class DataManagerMenu extends Div {
     initializeAvatar();
     MenuItem userMenuItem = projectMenu.addItem(userAvatar);
     SubMenu userSubMenu = userMenuItem.getSubMenu();
-    userSubMenu.addItem("Log Out", event -> authenticationContext.logout());
+    userSubMenu.addItem(new Icon(VaadinIcon.SIGN_OUT),
+        event -> authenticationContext.logout());
   }
 
   private void initializeAvatar() {
