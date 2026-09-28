@@ -1,6 +1,8 @@
 package life.qbic.datamanager.views.projects.project.access
 
 import com.vaadin.flow.component.button.Button
+import com.vaadin.flow.component.html.Span
+import com.vaadin.flow.component.select.Select
 import life.qbic.datamanager.security.UserPermissions
 import life.qbic.datamanager.views.Context
 import life.qbic.datamanager.views.projects.project.access.AddCollaboratorToProjectDialog.GroupConfirmEvent
@@ -17,13 +19,13 @@ import org.springframework.security.core.context.SecurityContextHolder
 import spock.lang.Specification
 
 /**
- * Unit tests for the project access component's Groups section (story FEAT-USER-GROUPS-06).
+ * Unit tests for the project access component's Groups section (story FEAT-USER-GROUPS-08).
  *
- * <p>Covers: shared groups render read-only with name + description + role for an ADMIN user
- * (AC1), the add-people-or-groups control is gated to access-administration holders (AC5), the
- * already-shared groups feed the share dialog's group pre-filter, and the group confirm path
- * grants the group authority then refreshes the listing. Mirrors {@code PinnedProjectsComponentSpec}
- * (no Spring context, headless Vaadin).</p>
+ * <p>Covers: shared groups render with name + description + role for an ADMIN user (AC1), the
+ * ADMIN can change a shared group's role and revoke the grant (AC2), the add-people-or-groups
+ * control is gated to access-administration holders, non-administrators see neither role-editing
+ * nor revoke affordances (AC4), and rendering never touches membership data (AC3). Mirrors
+ * {@code PinnedProjectsComponentSpec} (no Spring context, headless Vaadin).</p>
  */
 class ProjectAccessComponentSpec extends Specification {
 
@@ -79,7 +81,24 @@ class ProjectAccessComponentSpec extends Specification {
         groupInformationService, [])
   }
 
-  def "renders shared groups read-only for a project ADMIN"() {
+  /**
+   * Renders the action-cell component for the given group row exactly as the grid would, using
+   * the column's public {@code ComponentRenderer}.
+   */
+  private Span actionCellFor(ProjectGroup projectGroup) {
+    def renderer = component.@projectGroupGrid.getColumnByKey("action").getRenderer()
+    return renderer.createComponent(projectGroup) as Span
+  }
+
+  /**
+   * Resolves the role editor {@link Select} the grid uses for the given group row by invoking the
+   * component's private editor-rendering method (same component the grid's editor displays).
+   */
+  private Select<ProjectRole> roleEditorFor(ProjectGroup projectGroup) {
+    return component.renderProjectGroupRoleComponent(projectGroup) as Select<ProjectRole>
+  }
+
+  def "renders shared groups with an editable/revocable action column for a project ADMIN"() {
     given: "a project shared with one group at ADMIN"
     projectAccessService.listSharedGroups(projectId) >> [
         new SharedProjectGroup("group-1", "Bioinformatics Lab", "the lab", projectId,
@@ -96,18 +115,18 @@ class ProjectAccessComponentSpec extends Specification {
     rows[0].groupDescription() == "the lab"
     rows[0].projectRole() == ProjectRole.ADMIN
 
-    and: "the group grid has no action/edit/remove column (read-only surface, AC2 deferred)"
-    def columnKeys = component.@projectGroupGrid.columns.collect { it.key }
-    !columnKeys.contains("action")
-    !columnKeys.contains("edit")
-    !columnKeys.contains("remove")
+    and: "the group grid offers an action column with edit and remove buttons for the ADMIN (AC2)"
+    columnKeys().contains("action")
+    def actionCell = actionCellFor(rows[0])
+    actionCell.children.any { it instanceof Button && it.text == "Edit" }
+    actionCell.children.any { it instanceof Button && it.text == "Remove" }
 
     and: "the add-people-or-groups control is visible for the ADMIN"
     buttonBarButtons().any { it.text == "Add people or groups" }
   }
 
-  def "hides the add-people-or-groups control for a READ-only collaborator but still lists groups"() {
-    given: "a project shared with a group"
+  def "renders empty action cells without edit/remove buttons for a READ-only collaborator"() {
+    given: "a project shared with one group"
     projectAccessService.listSharedGroups(projectId) >> [
         new SharedProjectGroup("group-1", "NGS Lab", null, projectId, ProjectRole.READ)]
 
@@ -118,11 +137,19 @@ class ProjectAccessComponentSpec extends Specification {
     !buttonBarInHeader()
     headerButtons().isEmpty()
 
-    and: "the shared groups are still listed read-only with name and role"
+    and: "the shared groups are still listed with name and role"
     def rows = groupGridItems()
     rows.size() == 1
     rows[0].groupName() == "NGS Lab"
     rows[0].projectRole() == ProjectRole.READ
+
+    and: "the action column exists but renders no edit/remove buttons (AC4 surface gate)"
+    columnKeys().contains("action")
+    def actionCell = actionCellFor(rows[0])
+    !actionCell.children.any { it instanceof Button }
+
+    and: "no membership data is ever requested when rendering the groups surface (AC3/AC4)"
+    0 * groupInformationService.listMyGroups(_)
   }
 
   def "group confirm grants the GROUP_ authority and refreshes the groups listing"() {
@@ -170,5 +197,76 @@ class ProjectAccessComponentSpec extends Specification {
 
     and: "the groups listing is not refreshed with a stale entry"
     groupGridItems().isEmpty()
+  }
+
+  def "changing the role of a shared group invokes changeAuthorityAccess with the GROUP_ prefix and refreshes"() {
+    given: "a project ADMIN viewing a project shared with one group at READ"
+    projectAccessService.listSharedGroups(projectId) >> [
+        new SharedProjectGroup("group-1", "NGS Lab", "sequencing core", projectId,
+            ProjectRole.READ)]
+    setContext(true)
+    def rows = groupGridItems()
+
+    when: "the ADMIN selects ADMIN as the group's new project role"
+    def roleSelect = roleEditorFor(rows[0])
+    roleSelect.setValue(ProjectRole.ADMIN)
+
+    then: "the change is propagated to the access service with the GROUP_ authority prefix (AC2)"
+    1 * projectAccessService.changeAuthorityAccess(projectId, "GROUP_group-1", ProjectRole.ADMIN)
+
+    and: "the groups listing is refreshed with the new role"
+    projectAccessService.listSharedGroups(projectId) >> [
+        new SharedProjectGroup("group-1", "NGS Lab", "sequencing core", projectId,
+            ProjectRole.ADMIN)]
+    def refreshedRows = groupGridItems()
+    refreshedRows.collect { it.projectRole() } == [ProjectRole.ADMIN]
+  }
+
+  def "the group role editor offers only READ, WRITE and ADMIN, never OWNER"() {
+    given: "a project ADMIN viewing a shared group"
+    projectAccessService.listSharedGroups(projectId) >> [
+        new SharedProjectGroup("group-1", "NGS Lab", null, projectId, ProjectRole.READ)]
+    setContext(true)
+
+    when: "the role editor is resolved for the group"
+    def rows = groupGridItems()
+    def roleSelect = roleEditorFor(rows[0])
+
+    then: "only READ, WRITE and ADMIN are offered, never OWNER"
+    def offered = roleSelect.listDataView.items.toSet()
+    offered == ([ProjectRole.READ, ProjectRole.WRITE, ProjectRole.ADMIN] as Set)
+    !offered.contains(ProjectRole.OWNER)
+  }
+
+  def "the remove button confirms and then revokes the shared group's grant"() {
+    given: "a project ADMIN viewing a project shared with one group"
+    projectAccessService.listSharedGroups(projectId) >> [
+        new SharedProjectGroup("group-1", "NGS Lab", "sequencing core", projectId,
+            ProjectRole.ADMIN)]
+    setContext(true)
+    def rows = groupGridItems()
+
+    when: "the ADMIN clicks Remove and confirms the alert in the action cell"
+    def actionCell = actionCellFor(rows[0])
+    def removeButton = actionCell.children.find { it instanceof Button && it.text == "Remove" } as Button
+    removeButton.click()
+
+    then: "a confirmation alert is shown and rendering has not revoked anything yet"
+    0 * projectAccessService.removeAuthorityAccess(*_)
+
+    when: "the ADMIN confirms the removal"
+    // the alert's confirm action triggers the component's revoke path
+    component.revokeGroup(rows[0])
+
+    then: "the group grant is revoked from the project (AC2)"
+    1 * projectAccessService.removeAuthorityAccess(projectId, "GROUP_group-1")
+
+    and: "the groups listing is refreshed to drop the revoked group"
+    projectAccessService.listSharedGroups(projectId) >> []
+    groupGridItems().isEmpty()
+  }
+
+  private List<String> columnKeys() {
+    return component.@projectGroupGrid.columns.collect { it.key }
   }
 }
