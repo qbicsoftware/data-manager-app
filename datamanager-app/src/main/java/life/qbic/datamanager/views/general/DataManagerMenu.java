@@ -3,6 +3,7 @@ package life.qbic.datamanager.views.general;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.contextmenu.SubMenu;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.menubar.MenuBar;
@@ -43,11 +44,31 @@ public class DataManagerMenu extends Div {
     SubMenu userSubMenu = userMenuItem.getSubMenu();
     // Account settings stay reachable from the avatar for discoverability/familiarity
     // (GitHub keeps Settings in the user menu too), with the top-level Settings tab as the
-    // primary entry.
-    userSubMenu.addItem(new Icon(VaadinIcon.COG),
+    // primary entry. Each item shows an icon plus its semantic label.
+    userSubMenu.addItem(settingsItem(),
         event -> getUI().ifPresent(ui -> ui.navigate(UserProfileMain.class)));
-    userSubMenu.addItem(new Icon(VaadinIcon.SIGN_OUT),
-        event -> authenticationContext.logout());
+    userSubMenu.addItem(logoutItem(), event -> authenticationContext.logout());
+  }
+
+  private static Span settingsItem() {
+    Icon icon = new Icon(VaadinIcon.COG);
+    Span label = new Span("Settings");
+    return withIcon(icon, label);
+  }
+
+  private static Span logoutItem() {
+    Icon icon = new Icon(VaadinIcon.SIGN_OUT);
+    Span label = new Span("Log Out");
+    return withIcon(icon, label);
+  }
+
+  private static Span withIcon(Icon icon, Span label) {
+    Span item = new Span(icon, label);
+    item.addClassName("user-menu-item");
+    item.getStyle().set("display", "inline-flex");
+    item.getStyle().set("align-items", "center");
+    item.getStyle().set("gap", "var(--spacing-02)");
+    return item;
   }
 
   private void initializeAvatar() {
