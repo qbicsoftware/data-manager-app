@@ -37,6 +37,7 @@ import org.springframework.security.acls.model.Sid;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 /**
  * End-to-end proof of the user-group sharing authorization path (story FEAT-USER-GROUPS-06).
@@ -146,6 +147,41 @@ class GroupShareAuthorizationTest {
         "A group must never become the project OWNER (AC3) — only principals own projects");
   }
 
+  @Test
+  void groupAdminMemberCanDemoteTheirOwnGroupRole() {
+    // given: the project is shared with a group at ADMIN (READ+WRITE+ADMINISTRATION)
+    // and the acting user is a member of that very group (demoting their own group)
+    ProjectId projectId = createProjectSharedWithGroup("owner-1", "group-1",
+        BasePermission.READ, BasePermission.WRITE, BasePermission.ADMINISTRATION);
+
+    // authenticate as a GROUP member WITHOUT the raw acl:change-access authority
+    // (the repro for FEAT-USER-GROUPS-08: a group-admin member changing their own group)
+    SecurityContextHolder.getContext().setAuthentication(member("member-1"));
+
+    // when: the member demotes their own group from ADMIN -> READ
+    Acl acl = inMemoryAclService.readAclById(
+        new ObjectIdentityImpl(Project.class, projectId.value()));
+    GrantedAuthoritySid groupSid = new GrantedAuthoritySid("GROUP_group-1");
+    MutableAcl mutableAcl = (MutableAcl) acl;
+    List<AccessControlEntry> groupEntries = acl.getEntries().stream()
+        .filter(entry -> entry.getSid().equals(groupSid))
+        .toList();
+    for (AccessControlEntry entry : groupEntries) {
+      if (entry.getPermission().equals(BasePermission.ADMINISTRATION)
+          || entry.getPermission().equals(BasePermission.WRITE)) {
+        mutableAcl.deleteAce(acl.getEntries().indexOf(entry));
+      }
+    }
+
+    // then: the demotion succeeds without "Unable to locate a matching ACE"
+    // (the ACL authorization check inside deleteAce must see the caller's GROUP_group-1 sid)
+    assertFalse(
+        permissionEvaluator.hasPermission(member("member-1"), projectId,
+            "life.qbic.projectmanagement.domain.model.project.Project",
+            BasePermission.ADMINISTRATION),
+        "after demotion the group member must no longer hold ADMINISTRATION");
+  }
+
   /**
    * Minimal in-memory {@link MutableAclService} using Spring's real {@link AclImpl} so the
    * evaluator exercises the genuine {@code isGranted} decision path without a database.
@@ -217,10 +253,18 @@ class GroupShareAuthorizationTest {
 
     private static MutableAcl newAcl(ObjectIdentity identity, Sid owner) {
       AuditLogger auditLogger = new ConsoleAuditLogger();
-      AclAuthorizationStrategy authorizationStrategy = new AclAuthorizationStrategyImpl(
+      AclAuthorizationStrategyImpl authorizationStrategy = new AclAuthorizationStrategyImpl(
           new SimpleGrantedAuthority("acl:change-owner"),
           new SimpleGrantedAuthority("acl:change-audit"),
           new SimpleGrantedAuthority("acl:change-access"));
+      // mirror the production fix: the ACL authorization strategy must resolve group sids too,
+      // otherwise a group-admin member cannot deleteAce/insertAce ("Unable to locate a matching
+      // ACE") — see AclSecurityConfiguration.aclAuthorizationStrategy()
+      GroupAwareSidRetrievalStrategy groupAware = new GroupAwareSidRetrievalStrategy(
+          userId -> userId.equals("member-1") ? List.of("GROUP_group-1") : List.of(),
+          authentication -> Optional.ofNullable(authentication.getPrincipal())
+              .map(Object::toString));
+      authorizationStrategy.setSidRetrievalStrategy(groupAware);
       return new AclImpl(identity, identity.getIdentifier(), authorizationStrategy,
           new DefaultPermissionGrantingStrategy(auditLogger), null, null, true, owner);
     }

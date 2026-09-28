@@ -28,6 +28,7 @@ import org.springframework.security.acls.domain.ObjectIdentityImpl;
 import org.springframework.security.acls.domain.PrincipalSid;
 import org.springframework.security.acls.jdbc.JdbcMutableAclService;
 import org.springframework.security.acls.model.AccessControlEntry;
+import org.springframework.cache.CacheManager;
 import org.springframework.security.acls.model.AclCache;
 import org.springframework.security.acls.model.Acl;
 import org.springframework.security.acls.model.AlreadyExistsException;
@@ -51,6 +52,8 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
   private final JdbcTemplate jdbcTemplate;
   private final GroupInformationService groupInformationService;
   private @org.springframework.context.annotation.Lazy AclCache aclCache;
+  private AclEvictionPublisher aclEvictionPublisher;
+  private CacheManager cacheManager;
 
   public ProjectAccessServiceImpl(@Autowired MutableAclService aclService,
       JdbcTemplate jdbcTemplate, @Autowired GroupInformationService groupInformationService) {
@@ -62,6 +65,16 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
   @Autowired(required = false)
   void setAclCache(@org.springframework.context.annotation.Lazy AclCache aclCache) {
     this.aclCache = aclCache;
+  }
+
+  @Autowired(required = false)
+  void setAclEvictionPublisher(AclEvictionPublisher aclEvictionPublisher) {
+    this.aclEvictionPublisher = aclEvictionPublisher;
+  }
+
+  @Autowired(required = false)
+  void setCacheManager(CacheManager cacheManager) {
+    this.cacheManager = cacheManager;
   }
 
   private static MutableAcl getAclForProject(ProjectId projectId, List<Sid> sids,
@@ -135,6 +148,28 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
    * @param projectId the project whose ACL cache entry shall be evicted
    */
   private void evictCachedAcl(ProjectId projectId) {
+    // SpringCacheBasedAclCache.evictFromCache only evicts when the entry is currently present
+    // under the ObjectIdentity key (it looks the entry up first). To make revocation of a
+    // group/role grant effective at the next authorization check even if the entry is keyed
+    // differently (the cache stores both under the ObjectIdentity AND the AclImpl id), evict
+    // the raw Spring cache directly. Clearing the whole "acl_cache" is acceptable: project
+    // sharIng writes are rare, and it guarantees no stale ACL survives on this instance.
+    // Cross-instance propagation of the ≤60s revocation NFR is handled by the broadcast
+    // eviction (each node evicts its own process-local cache the same way).
+    try {
+      if (cacheManager != null) {
+        org.springframework.cache.Cache cache = cacheManager.getCache("acl_cache");
+        if (cache != null) {
+          cache.evict(new ObjectIdentityImpl(Project.class, projectId));
+          cache.clear();
+          log.debug("[DIAG] evictCachedAcl: raw cache cleared for project %s".formatted(
+              projectId.value()));
+        }
+      }
+    } catch (RuntimeException e) {
+      log.warn("Could not clear acl_cache via CacheManager for project %s: %s".formatted(
+          projectId.value(), e.getMessage()));
+    }
     if (aclCache != null) {
       aclCache.evictFromCache(new ObjectIdentityImpl(Project.class, projectId));
     }
@@ -143,6 +178,23 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
   private void fireProjectAccessGranted(String userId, ProjectId projectId) {
     var projectAccessGranted = ProjectAccessGranted.create(userId, projectId.value());
     DomainEventDispatcher.instance().dispatch(projectAccessGranted);
+  }
+
+  /**
+   * Publishes an eviction signal for the given project's ACL cache entry to all running
+   * instances.
+   *
+   * <p>The local {@link AclCache} is evicted synchronously by {@link #evictCachedAcl(ProjectId)};
+   * this broadcast makes the change effective on the other instances (≤60s revocation NFR, plan
+   * D4). The publisher is optional — if no implementation is on the classpath (e.g. isolated
+   * unit tests), the call degrades to a no-op.</p>
+   *
+   * @param projectId the project whose ACL cache entries shall be evicted everywhere
+   */
+  private void publishAclEviction(ProjectId projectId) {
+    if (aclEvictionPublisher != null) {
+      aclEvictionPublisher.publishAclEviction(projectId);
+    }
   }
 
   @Override
@@ -280,7 +332,12 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
   public void addAuthorityAccess(ProjectId projectId, String authority, ProjectRole projectRole) {
     GrantedAuthoritySid authoritySid = new GrantedAuthoritySid(authority);
     rejectAuthorityOwnership(projectId, authority, projectRole);
-    MutableAcl aclForProject = getAclForProject(projectId, List.of(authoritySid), aclService);
+    // read the full ACL (not sid-filtered): sid-filtered reads expose only the requested sid's
+    // entries, which breaks the ACL authorization check inside insertAce/deleteAce when the
+    // acting group-admin member is not the authority being modified. An empty sid list means
+    // "no filtering" to Spring's readAclById (identical semantics to null, but null-conflicts
+    // with the two-arg overload resolution in some callers).
+    MutableAcl aclForProject = getAclForProject(projectId, List.of(), aclService);
 
     Collection<Permission> permissions = projectRole.toPermissions();
     boolean authorityHasAccess = aclForProject.getEntries().stream()
@@ -305,6 +362,7 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
             projectRole.label()));
     aclService.updateAcl(aclForProject);
     evictCachedAcl(projectId);
+    publishAclEviction(projectId);
   }
 
   @Override
@@ -312,8 +370,7 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'ADMINISTRATION')")
   public void removeAuthorityAccess(ProjectId projectId, String authority) {
     GrantedAuthoritySid grantedAuthoritySid = new GrantedAuthoritySid(authority);
-    MutableAcl aclForProject = getAclForProject(projectId, List.of(grantedAuthoritySid),
-        aclService);
+    MutableAcl aclForProject = getAclForProject(projectId, List.of(), aclService);
     List<AccessControlEntry> entries = aclForProject.getEntries();
     for (int entryIndex = 0; entryIndex < entries.size(); entryIndex++) {
       AccessControlEntry accessControlEntry = entries.get(entryIndex);
@@ -325,6 +382,7 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
         projectId.value()));
     aclService.updateAcl(aclForProject);
     evictCachedAcl(projectId);
+    publishAclEviction(projectId);
   }
 
   @Override
@@ -332,9 +390,27 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'ADMINISTRATION')")
   public void changeAuthorityAccess(ProjectId projectId, String authority,
       ProjectRole projectRole) {
+    log.debug("[DIAG] changeAuthorityAccess start project=%s authority=%s newRole=%s".formatted(
+        projectId.value(), authority, projectRole));
+    try {
+      doChangeAuthorityAccess(projectId, authority, projectRole);
+      log.debug("[DIAG] changeAuthorityAccess ok project=%s authority=%s newRole=%s".formatted(
+          projectId.value(), authority, projectRole));
+    } catch (RuntimeException e) {
+      log.error("[DIAG] changeAuthorityAccess FAILED project=%s authority=%s newRole=%s".formatted(
+          projectId.value(), authority, projectRole), e);
+      throw e;
+    }
+  }
+
+  private void doChangeAuthorityAccess(ProjectId projectId, String authority,
+      ProjectRole projectRole) {
     GrantedAuthoritySid authoritySid = new GrantedAuthoritySid(authority);
     rejectAuthorityOwnership(projectId, authority, projectRole);
-    MutableAcl aclForProject = getAclForProject(projectId, List.of(authoritySid), aclService);
+    // read the full ACL (not sid-filtered) so the acting group-admin member's own admin ACE is
+    // visible to the ACL authorization check performed inside deleteAce/insertAce. Empty sid
+    // list = no filtering (see addAuthorityAccess for the rationale).
+    MutableAcl aclForProject = getAclForProject(projectId, List.of(), aclService);
 
     Collection<Permission> requiredPermissions = projectRole.toPermissions();
 
@@ -369,6 +445,7 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
 
     aclService.updateAcl(aclForProject);
     evictCachedAcl(projectId);
+    publishAclEviction(projectId);
   }
 
   @Override
