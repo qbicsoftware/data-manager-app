@@ -9,6 +9,7 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.menubar.MenuBarVariant;
 import com.vaadin.flow.spring.security.AuthenticationContext;
+import com.vaadin.flow.theme.lumo.LumoUtility.IconSize;
 import java.util.Objects;
 import life.qbic.datamanager.views.account.UserAvatar;
 import life.qbic.datamanager.views.account.UserProfileMain;
@@ -63,6 +64,7 @@ public class DataManagerMenu extends Div {
   }
 
   private static Span withIcon(Icon icon, Span label) {
+    icon.addClassName(IconSize.SMALL);
     Span item = new Span(icon, label);
     item.addClassName("user-menu-item");
     item.getStyle().set("display", "inline-flex");
