@@ -54,15 +54,28 @@ public class TypeToConfirmInput extends Div implements UserInput {
   public TypeToConfirmInput(Supplier<String> expectedNameSupplier) {
     this.expectedNameSupplier = requireNonNull(expectedNameSupplier,
         "expectedNameSupplier must not be null");
-    String initialName = trimmedExpectedName();
-    this.textField = new TextField("Type \"" + initialName + "\" to confirm");
-    textField.setPlaceholder(initialName);
+    this.textField = new TextField();
     textField.setValueChangeMode(ValueChangeMode.EAGER);
     // Focus the field as soon as it appears so the committed user only has to type.
     textField.setAutofocus(true);
     textField.addClassName("type-to-confirm-input__field");
     addClassName("type-to-confirm-input");
     add(textField);
+    refresh();
+  }
+
+  /**
+   * Re-renders the prompt (label and placeholder) from the <em>current</em> expected name.
+   * <p>
+   * The label ({@code Type "<name>" to confirm}) and the placeholder are derived from the
+   * expected name at construction; call this after the guarded resource was renamed so the
+   * danger-zone prompt never shows a stale name while the button already validates against
+   * the live name.
+   */
+  public void refresh() {
+    String name = trimmedExpectedName();
+    textField.setLabel("Type \"" + name + "\" to confirm");
+    textField.setPlaceholder(name);
   }
 
   /**

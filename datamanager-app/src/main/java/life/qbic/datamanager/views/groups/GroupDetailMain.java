@@ -92,6 +92,7 @@ public class GroupDetailMain extends Main implements BeforeEnterObserver {
   private transient RouterLink backLink;
   private transient Div membersGroup;
   private transient H3 membersHeading;
+  private transient TypeToConfirmInput dissolveConfirmInput;
 
   /**
    * Production constructor: wires the seams to the real services, toasts and navigation.
@@ -132,6 +133,7 @@ public class GroupDetailMain extends Main implements BeforeEnterObserver {
     descriptionField = null;
     membersGroup = null;
     membersHeading = null;
+    dissolveConfirmInput = null;
     String groupId = event.getRouteParameters().get(GROUP_ID_ROUTE_PARAMETER).orElseThrow();
     String actingUserId = currentUserId();
 
@@ -233,6 +235,7 @@ public class GroupDetailMain extends Main implements BeforeEnterObserver {
       // must not stale the guard against the group's current name.
       TypeToConfirmInput confirmInput = new TypeToConfirmInput(
           () -> membership.groupName());
+      dissolveConfirmInput = confirmInput;
       confirmInput.addClassNames("group-detail-dissolve-confirm-input", "width-full");
       com.vaadin.flow.component.textfield.TextField confirmField = confirmInput.textField();
       confirmField.addClassNames("width-full");
@@ -299,6 +302,12 @@ public class GroupDetailMain extends Main implements BeforeEnterObserver {
       // keep the section heading in sync with the new name
       if (section != null) {
         section.setTitle(newName);
+      }
+      // keep the danger-zone type-to-confirm guard in sync: its label/placeholder render the
+      // expected name. validate() already reads the live name via the supplier, so without
+      // this the guard would still pass/fail correctly but would display a stale name.
+      if (dissolveConfirmInput != null) {
+        dissolveConfirmInput.refresh();
       }
       toast("user-groups.manage.success",
           new Object[]{newName}, Locale.getDefault());
