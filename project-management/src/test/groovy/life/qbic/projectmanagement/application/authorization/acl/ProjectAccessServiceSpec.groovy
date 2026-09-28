@@ -84,7 +84,7 @@ class ProjectAccessServiceSpec extends Specification {
     // the acting group-admin's own ACE must be visible to the ACL authorization check inside
     // insertAce/deleteAce; sid-filtered reads would expose only the modified group's entries
     // and raise "Unable to locate a matching ACE" (FEAT-USER-GROUPS-08 regression)
-    3 * aclService.readAclById(_ as ObjectIdentityImpl, null)
+    3 * aclService.readAclById(_ as ObjectIdentityImpl, List.of())
   }
 
   def "rejects OWNER on the authority grant path (groups can never become project OWNER)"() {

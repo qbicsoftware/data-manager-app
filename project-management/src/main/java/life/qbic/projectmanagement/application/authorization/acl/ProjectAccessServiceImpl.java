@@ -305,8 +305,10 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
     rejectAuthorityOwnership(projectId, authority, projectRole);
     // read the full ACL (not sid-filtered): sid-filtered reads expose only the requested sid's
     // entries, which breaks the ACL authorization check inside insertAce/deleteAce when the
-    // acting group-admin member is not the authority being modified
-    MutableAcl aclForProject = getAclForProject(projectId, null, aclService);
+    // acting group-admin member is not the authority being modified. An empty sid list means
+    // "no filtering" to Spring's readAclById (identical semantics to null, but null-conflicts
+    // with the two-arg overload resolution in some callers).
+    MutableAcl aclForProject = getAclForProject(projectId, List.of(), aclService);
 
     Collection<Permission> permissions = projectRole.toPermissions();
     boolean authorityHasAccess = aclForProject.getEntries().stream()
@@ -339,7 +341,7 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'ADMINISTRATION')")
   public void removeAuthorityAccess(ProjectId projectId, String authority) {
     GrantedAuthoritySid grantedAuthoritySid = new GrantedAuthoritySid(authority);
-    MutableAcl aclForProject = getAclForProject(projectId, null, aclService);
+    MutableAcl aclForProject = getAclForProject(projectId, List.of(), aclService);
     List<AccessControlEntry> entries = aclForProject.getEntries();
     for (int entryIndex = 0; entryIndex < entries.size(); entryIndex++) {
       AccessControlEntry accessControlEntry = entries.get(entryIndex);
@@ -362,8 +364,9 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
     GrantedAuthoritySid authoritySid = new GrantedAuthoritySid(authority);
     rejectAuthorityOwnership(projectId, authority, projectRole);
     // read the full ACL (not sid-filtered) so the acting group-admin member's own admin ACE is
-    // visible to the ACL authorization check performed inside deleteAce/insertAce
-    MutableAcl aclForProject = getAclForProject(projectId, null, aclService);
+    // visible to the ACL authorization check performed inside deleteAce/insertAce. Empty sid
+    // list = no filtering (see addAuthorityAccess for the rationale).
+    MutableAcl aclForProject = getAclForProject(projectId, List.of(), aclService);
 
     Collection<Permission> requiredPermissions = projectRole.toPermissions();
 
