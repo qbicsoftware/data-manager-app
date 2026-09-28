@@ -108,6 +108,28 @@ class TypeToConfirmInputSpec extends Specification {
     input.validate().hasPassed()
   }
 
+  def "refresh re-renders the prompt after the guarded resource is renamed"() {
+    given: "the guarded resource is renamed after the guard was constructed"
+    String holder = "Old Name"
+    def input = new TypeToConfirmInput({ -> holder })
+
+    when: "the rename is committed and the caller refreshes the prompt"
+    holder = "New Name"
+    input.refresh()
+
+    then: "the label and placeholder show the current name, not the snapshot"
+    input.textField().getLabel() == "Type \"New Name\" to confirm"
+    input.textField().getPlaceholder() == "New Name"
+
+    and: "a stale input no longer matches the current name"
+    input.textField().setValue("Old Name")
+    !input.validate().hasPassed()
+
+    and: "typing the new name passes and the guard is battle-ready"
+    input.textField().setValue("New Name")
+    input.validate().hasPassed()
+  }
+
   def "surrounding whitespace in the expected name does not trap the user (name is compared trimmed)"() {
     given: "the guarded resource name carries surrounding whitespace"
     def input = new TypeToConfirmInput({ -> "  Padded Name  " })
