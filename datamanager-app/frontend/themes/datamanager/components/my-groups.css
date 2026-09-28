@@ -259,7 +259,10 @@
 }
 
 /* Back navigation as a breadcrumb link directly above the section: a settings-aside-style
-   text link (chevron-left), so its purpose (return to the My Groups list) is obvious. */
+   text link (chevron-left), so its purpose (return to the My Groups list) is obvious.
+   Uses the same horizontal constraint as .settings-section (max-width 1000px + margin-inline
+   auto) so the breadcrumb and the section content share the same left edge at every
+   viewport width. */
 .group-detail-back-link {
   font-size: var(--lumo-font-size-s);
   color: var(--lumo-secondary-text-color);
@@ -267,8 +270,10 @@
   display: inline-flex;
   align-items: center;
   gap: var(--lumo-space-xs);
-  margin-bottom: var(--lumo-space-s);
-  align-self: flex-start;
+  margin: 0 auto var(--lumo-space-s);
+  max-width: 1000px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .group-detail-back-link:hover {
