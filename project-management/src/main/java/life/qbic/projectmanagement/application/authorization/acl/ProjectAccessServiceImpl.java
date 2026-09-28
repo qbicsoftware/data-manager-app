@@ -51,6 +51,7 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
   private final JdbcTemplate jdbcTemplate;
   private final GroupInformationService groupInformationService;
   private @org.springframework.context.annotation.Lazy AclCache aclCache;
+  private AclEvictionPublisher aclEvictionPublisher;
 
   public ProjectAccessServiceImpl(@Autowired MutableAclService aclService,
       JdbcTemplate jdbcTemplate, @Autowired GroupInformationService groupInformationService) {
@@ -62,6 +63,11 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
   @Autowired(required = false)
   void setAclCache(@org.springframework.context.annotation.Lazy AclCache aclCache) {
     this.aclCache = aclCache;
+  }
+
+  @Autowired(required = false)
+  void setAclEvictionPublisher(AclEvictionPublisher aclEvictionPublisher) {
+    this.aclEvictionPublisher = aclEvictionPublisher;
   }
 
   private static MutableAcl getAclForProject(ProjectId projectId, List<Sid> sids,
@@ -143,6 +149,23 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
   private void fireProjectAccessGranted(String userId, ProjectId projectId) {
     var projectAccessGranted = ProjectAccessGranted.create(userId, projectId.value());
     DomainEventDispatcher.instance().dispatch(projectAccessGranted);
+  }
+
+  /**
+   * Publishes an eviction signal for the given project's ACL cache entry to all running
+   * instances.
+   *
+   * <p>The local {@link AclCache} is evicted synchronously by {@link #evictCachedAcl(ProjectId)};
+   * this broadcast makes the change effective on the other instances (≤60s revocation NFR, plan
+   * D4). The publisher is optional — if no implementation is on the classpath (e.g. isolated
+   * unit tests), the call degrades to a no-op.</p>
+   *
+   * @param projectId the project whose ACL cache entries shall be evicted everywhere
+   */
+  private void publishAclEviction(ProjectId projectId) {
+    if (aclEvictionPublisher != null) {
+      aclEvictionPublisher.publishAclEviction(projectId);
+    }
   }
 
   @Override
@@ -305,6 +328,7 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
             projectRole.label()));
     aclService.updateAcl(aclForProject);
     evictCachedAcl(projectId);
+    publishAclEviction(projectId);
   }
 
   @Override
@@ -325,6 +349,7 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
         projectId.value()));
     aclService.updateAcl(aclForProject);
     evictCachedAcl(projectId);
+    publishAclEviction(projectId);
   }
 
   @Override
@@ -369,6 +394,7 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
 
     aclService.updateAcl(aclForProject);
     evictCachedAcl(projectId);
+    publishAclEviction(projectId);
   }
 
   @Override

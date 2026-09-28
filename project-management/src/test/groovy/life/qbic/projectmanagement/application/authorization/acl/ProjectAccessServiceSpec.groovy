@@ -145,6 +145,53 @@ class ProjectAccessServiceSpec extends Specification {
     sharedGroups.isEmpty()
   }
 
+  def "granting an authority publishes an ACL eviction after the local cache eviction"() {
+    given: "an ACL eviction publisher wired into the service"
+    AclEvictionPublisher publisher = Mock()
+    service.setAclEvictionPublisher(publisher)
+
+    when: "an authority grant is added"
+    service.addAuthorityAccess(projectId, "GROUP_abc", ProjectRole.READ)
+
+    then: "the publisher is notified with the affected project"
+    1 * publisher.publishAclEviction(projectId)
+  }
+
+  def "removing an authority publishes an ACL eviction after the local cache eviction"() {
+    given: "an ACL eviction publisher wired into the service"
+    AclEvictionPublisher publisher = Mock()
+    service.setAclEvictionPublisher(publisher)
+
+    when: "the authority grant is removed"
+    service.removeAuthorityAccess(projectId, "GROUP_abc")
+
+    then: "the publisher is notified with the affected project"
+    1 * publisher.publishAclEviction(projectId)
+  }
+
+  def "changing an authority role publishes an ACL eviction after the local cache eviction"() {
+    given: "an ACL eviction publisher wired into the service"
+    AclEvictionPublisher publisher = Mock()
+    service.setAclEvictionPublisher(publisher)
+
+    when: "the authority role is changed"
+    service.changeAuthorityAccess(projectId, "GROUP_abc", ProjectRole.WRITE)
+
+    then: "the publisher is notified with the affected project"
+    1 * publisher.publishAclEviction(projectId)
+  }
+
+  def "authority writes succeed without an ACL eviction publisher"() {
+    given: "no publisher is wired into the service"
+    // service has no AclEvictionPublisher injected (null)
+
+    when: "authority operations run"
+    service.addAuthorityAccess(projectId, "GROUP_abc", ProjectRole.READ)
+
+    then: "no exception is thrown and the ACL is updated"
+    1 * aclService.updateAcl(acl)
+  }
+
   /**
    * Minimal {@link AccessControlEntry} for the in-memory ACL stub.
    */
