@@ -2,6 +2,8 @@ package life.qbic.datamanager.security
 
 import life.qbic.projectmanagement.domain.model.project.Project
 import life.qbic.projectmanagement.domain.model.project.ProjectId
+import org.springframework.cache.Cache
+import org.springframework.cache.CacheManager
 import org.springframework.security.acls.domain.ObjectIdentityImpl
 import org.springframework.security.acls.model.AclCache
 import spock.lang.Specification
@@ -18,10 +20,13 @@ class AclCacheEvictionListenerSpec extends Specification {
   static final String PROJECT_UUID = "9f7a6e3e-2d1e-4a6b-8c5d-9a0b1c2d3e4f"
 
   AclCache aclCache = Mock()
+  CacheManager cacheManager = Mock()
+  Cache cache = Mock()
   AclCacheEvictionListener listener
 
   def setup() {
-    listener = new AclCacheEvictionListener(aclCache)
+    cacheManager.getCache("acl_cache") >> cache
+    listener = new AclCacheEvictionListener(aclCache, cacheManager)
   }
 
   def "evicts the ACL cache entry for the project referenced in a valid event"() {
@@ -32,8 +37,9 @@ class AclCacheEvictionListenerSpec extends Specification {
     when: "the eviction event is received"
     listener.onAclEvictionEvent(content)
 
-    then: "the local cache entry for that project is evicted exactly once"
+    then: "the local cache entry for that project is evicted exactly once and the raw cache is cleared"
     1 * aclCache.evictFromCache(new ObjectIdentityImpl(Project.class, projectId))
+    1 * cache.clear()
   }
 
   def "ignores events of an unknown type"() {

@@ -91,6 +91,20 @@ class ProjectAccessServiceSpec extends Specification {
     entries.count { it.sid == new GrantedAuthoritySid("GROUP_new") } == 1
   }
 
+  def "authority writes clear the local acl_cache so a demoted member loses admin at the next check"() {
+    given: "a wired cache manager and a shared project"
+    org.springframework.cache.CacheManager cacheManager = Mock()
+    org.springframework.cache.Cache cache = Mock()
+    cacheManager.getCache("acl_cache") >> cache
+    service.setCacheManager(cacheManager)
+
+    when: "a group grant is changed"
+    service.changeAuthorityAccess(projectId, "GROUP_abc", ProjectRole.READ)
+
+    then: "the raw acl_cache is evicted and cleared so no stale ADMIN survives until restart"
+    1 * cache.clear()
+  }
+
   def "rejects OWNER on the authority grant path (groups can never become project OWNER)"() {
     when: "an authority is granted the OWNER role"
     service.addAuthorityAccess(projectId, "GROUP_abc", ProjectRole.OWNER)

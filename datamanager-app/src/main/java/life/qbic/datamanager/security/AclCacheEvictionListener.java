@@ -7,6 +7,7 @@ import life.qbic.projectmanagement.application.communication.broadcasting.Integr
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.CacheManager;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.security.acls.domain.ObjectIdentityImpl;
 import org.springframework.security.acls.model.AclCache;
@@ -48,10 +49,12 @@ public class AclCacheEvictionListener {
   static final String PROJECT_ID_KEY = "projectId";
 
   private final AclCache aclCache;
+  private final CacheManager cacheManager;
 
   @Autowired
-  public AclCacheEvictionListener(AclCache aclCache) {
+  public AclCacheEvictionListener(AclCache aclCache, CacheManager cacheManager) {
     this.aclCache = aclCache;
+    this.cacheManager = cacheManager;
   }
 
   @JmsListener(destination = "${qbic.broadcasting.acl-eviction.topic}")
@@ -68,6 +71,15 @@ public class AclCacheEvictionListener {
       return;
     }
     ProjectId projectId = ProjectId.parse(projectIdValue);
+    // Robust eviction: the raw Spring cache holds the ACL under both the ObjectIdentity and the
+    // AclImpl id keys; SpringCacheBasedAclCache.evictFromCache only evicts if it finds the entry
+    // first. Clearing the whole process-local "acl_cache" guarantees the revoked grant cannot
+    // survive in this instance (≤60s revocation NFR).
+    org.springframework.cache.Cache cache = cacheManager.getCache("acl_cache");
+    if (cache != null) {
+      cache.evict(new ObjectIdentityImpl(Project.class, projectId));
+      cache.clear();
+    }
     aclCache.evictFromCache(new ObjectIdentityImpl(Project.class, projectId));
     log.debug("Evicted ACL cache entry for project %s".formatted(projectId.value()));
   }

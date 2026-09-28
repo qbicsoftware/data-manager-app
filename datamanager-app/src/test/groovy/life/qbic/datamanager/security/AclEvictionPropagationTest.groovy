@@ -10,6 +10,7 @@ import org.apache.activemq.artemis.jms.server.config.impl.ConnectionFactoryConfi
 import org.apache.activemq.artemis.jms.server.config.impl.JMSConfigurationImpl
 import org.apache.activemq.artemis.jms.server.embedded.EmbeddedJMS
 import org.springframework.context.annotation.AnnotationConfigApplicationContext
+import org.springframework.cache.CacheManager
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer
@@ -223,6 +224,11 @@ class AclEvictionPropagationTest extends Specification {
     @Bean
     AclCache aclCache() {
       return new CountingAclCache()
+    }
+
+    @Bean
+    CacheManager cacheManager() {
+      return new org.springframework.cache.concurrent.ConcurrentMapCacheManager("acl_cache")
     }
   }
 }
