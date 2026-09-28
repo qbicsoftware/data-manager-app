@@ -36,8 +36,8 @@
 }
 
 /* The content column holds the routed route content. The whole page scrolls natively (no
-   internal scroll region); when the content is narrower than the column, the section centers
-   itself via margin-inline: auto on .settings-section below. */
+   internal scroll region). Content is left-aligned to this column's padding; the surrounding
+   flexible spacing (grid gutters + this padding) provides the margins. */
 .groups-main-layout .groups-content-area {
   grid-area: content-area;
   box-sizing: border-box;

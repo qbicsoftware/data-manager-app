@@ -60,8 +60,8 @@
 }
 
 /* The content column holds the routed route content. The whole page scrolls natively (no
-   internal scroll region); when the content is narrower than the column, the section centers
-   itself via margin-inline: auto on .settings-section below. */
+   internal scroll region). Content is left-aligned to this column's padding; the surrounding
+   flexible spacing (grid gutters + this padding) provides the margins. */
 .settings-main-layout .settings-content-area {
   grid-area: content-area;
   box-sizing: border-box;
@@ -84,10 +84,9 @@
   flex-direction: column;
   gap: var(--lumo-space-m);
   width: 100%;
-  max-width: 1000px;
-  /* Center the section content within the (potentially wider) content column, like the
-     project overview cards center within their shell. */
-  margin-inline: auto;
+  /* Left-aligned to the content column padding: the surrounding flexible spacing
+     (grid gutters + content-area padding) provides the margins, so the section's
+     left edge is stable across views and viewport widths. No auto-margin centering. */
 }
 
 .settings-section__header {
