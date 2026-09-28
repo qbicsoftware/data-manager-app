@@ -10,6 +10,7 @@ import com.vaadin.flow.component.menubar.MenuBarVariant;
 import com.vaadin.flow.spring.security.AuthenticationContext;
 import java.util.Objects;
 import life.qbic.datamanager.views.account.UserAvatar;
+import life.qbic.datamanager.views.account.UserProfileMain;
 import life.qbic.projectmanagement.application.authorization.QbicOidcUser;
 import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -18,9 +19,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
  * Data Manager Menu
  * <p>
  * Menubar within the data manager application that hosts the logged-in user's account actions:
- * the user avatar with logout. Global navigation (Projects | Groups | Settings tabs, back to the
- * project overview) is provided by the top-level navigation and homepage link in the layouts;
- * the avatar is now reserved for account-scoped actions only.
+ * the user avatar with the account Settings shortcut and logout. Projects | Groups | Settings are
+ * also top-level navigation tabs; the avatar menu additionally keeps Settings for users
+ * accustomed to reaching account settings from the avatar (GitHub-style), while collaborative
+ * surfaces (My Groups) stay in their top-level hub.
  */
 public class DataManagerMenu extends Div {
 
@@ -39,6 +41,11 @@ public class DataManagerMenu extends Div {
     initializeAvatar();
     MenuItem userMenuItem = projectMenu.addItem(userAvatar);
     SubMenu userSubMenu = userMenuItem.getSubMenu();
+    // Account settings stay reachable from the avatar for discoverability/familiarity
+    // (GitHub keeps Settings in the user menu too), with the top-level Settings tab as the
+    // primary entry.
+    userSubMenu.addItem(new Icon(VaadinIcon.COG),
+        event -> getUI().ifPresent(ui -> ui.navigate(UserProfileMain.class)));
     userSubMenu.addItem(new Icon(VaadinIcon.SIGN_OUT),
         event -> authenticationContext.logout());
   }
