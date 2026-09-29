@@ -321,8 +321,17 @@ vaadin-app-layout:not([drawer-opened])::part(drawer) {
 .main.raw-data .raw-data-main-content {
   display: flex;
   flex-direction: column;
-  row-gap: var(--lumo-space-m);
-  padding: var(--lumo-space-m);
+  row-gap: var(--lumo-space-s);
+  padding: var(--lumo-space-m) var(--lumo-space-m) 0;
+  justify-content: space-between;
+}
+
+.main.raw-data .raw-data-main-content .raw-data-main-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  column-gap: var(--lumo-space-m);
 }
 
 
@@ -330,7 +339,7 @@ vaadin-app-layout:not([drawer-opened])::part(drawer) {
   font-weight: bold;
   color: var(--lumo-secondary-text-color);
   font-size: var(--lumo-font-size-xxl);
-  margin-bottom: 0.5rem;
+  margin-bottom: 0;
 }
 
 .main.user-registration {
