@@ -95,6 +95,10 @@ public class PaginatedGrid<T> extends Div {
     }
   }
 
+  @FunctionalInterface
+  public interface IdExtractor<T> extends Function<T, String> {
+
+  }
   /**
    * Creates a paginated grid wrapping the given, already column-configured grid.
    *
@@ -105,7 +109,7 @@ public class PaginatedGrid<T> extends Div {
    *                    selection display)
    * @param defaultSort the fallback sort order, used until the user changes the sort
    */
-  public PaginatedGrid(Grid<T> grid, PageLoader<T> pageLoader, Function<T, String> idExtractor,
+  public PaginatedGrid(Grid<T> grid, PageLoader<T> pageLoader, IdExtractor<T> idExtractor,
       String itemLabel, SortOrder defaultSort) {
     this(grid, pageLoader, idExtractor, itemLabel, defaultSort, true, true, true);
   }
@@ -136,7 +140,7 @@ public class PaginatedGrid<T> extends Div {
    *                         attached; set to {@code false} when an external owner drives
    *                         {@link ListState} and triggers the load explicitly
    */
-  public PaginatedGrid(Grid<T> grid, PageLoader<T> pageLoader, Function<T, String> idExtractor,
+  public PaginatedGrid(Grid<T> grid, PageLoader<T> pageLoader, IdExtractor<T> idExtractor,
       String itemLabel, SortOrder defaultSort, boolean showToolbar, boolean showPager,
       boolean autoLoadOnAttach) {
     this.grid = Objects.requireNonNull(grid, "grid must not be null");

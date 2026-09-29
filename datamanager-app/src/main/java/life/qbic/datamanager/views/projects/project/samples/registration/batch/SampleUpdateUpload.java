@@ -55,10 +55,6 @@ public class SampleUpdateUpload extends Div implements UserInput {
   private static final Logger log = LoggerFactory.logger(SampleUpdateUpload.class);
 
   private final SampleValidationService sampleValidationService;
-  private final String experimentId;
-  private final String projectId;
-  private final ContentUploadComponent contentUploadComponent;
-  private final SampleUploadDisplay uploadDisplay;
   private final transient Map<String, List<SampleMetadata>> validatedSampleMetadata = new HashMap<>();
 
   public SampleUpdateUpload(SampleValidationService sampleValidationService,
@@ -66,11 +62,12 @@ public class SampleUpdateUpload extends Div implements UserInput {
       String experimentId,
       UploadConfiguration uploadConfiguration) {
     this.sampleValidationService = requireNonNull(sampleValidationService);
-    this.projectId = requireNonNull(projectId);
-    this.experimentId = requireNonNull(experimentId);
+    requireNonNull(projectId);
+    requireNonNull(experimentId);
 
-    this.contentUploadComponent = new ContentUploadComponent(requireNonNull(uploadConfiguration));
-    this.uploadDisplay = new SampleUploadDisplay();
+    ContentUploadComponent contentUploadComponent = new ContentUploadComponent(
+        requireNonNull(uploadConfiguration));
+    SampleUploadDisplay uploadDisplay = new SampleUploadDisplay();
 
     contentUploadComponent.setMaxFiles(1);
     contentUploadComponent.setAcceptedMimeTypes(

@@ -27,6 +27,7 @@ import java.io.Serializable;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -45,6 +46,7 @@ import life.qbic.datamanager.views.general.pagination.ListState;
 import life.qbic.datamanager.views.general.pagination.ListStateCodec;
 import life.qbic.datamanager.views.general.pagination.PaginatedGrid;
 import life.qbic.datamanager.views.general.pagination.PaginationBar;
+import life.qbic.datamanager.views.general.pagination.Selection;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.SamplePreviewFilter;
@@ -88,9 +90,9 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
 
   private final AtomicReference<String> clientTimeZone = new AtomicReference<>("UTC");
   private PaginatedGrid<SamplePreview> paginatedGrid;
-  private String projectId;
-  private String experimentId;
-  private String projectCode;
+  private final String projectId;
+  private final String experimentId;
+  private final String projectCode;
   private final TextField searchField = new TextField();
   private final Icon selectionIcon = VaadinIcon.CHECK_SQUARE_O.create();
   private final Span selectionDisplay = new Span();
@@ -353,18 +355,18 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     SamplePreviewFilter filter = new SamplePreviewFilter(state.filter(), apiSortOrders(state));
     int total = asyncProjectService.countSamples(projectId, experimentId, filter).blockOptional()
         .orElse(0);
-    Set<String> ids = asyncProjectService.getSamplePreviews(projectId, experimentId, 0, total,
+    Set<String> ids = new HashSet<>(asyncProjectService.getSamplePreviews(projectId, experimentId,
+            0, total,
             filter)
         .map(preview -> preview.sampleId().value())
-        .collectList().blockOptional().orElse(List.of())
-        .stream().collect(Collectors.toSet());
+        .collectList().blockOptional().orElse(List.of()));
     paginatedGrid.select(ids);
     applySelectionToGrid();
     updateSelectionBar();
   }
 
   private void updateActionButtons() {
-    boolean hasSelection = paginatedGrid.selectedIds().size() > 0;
+    boolean hasSelection = !paginatedGrid.selectedIds().isEmpty();
     exportButton.setEnabled(hasSelection);
     // editing is scope-agnostic: the edit dialog always offers to download all sample metadata and
     // additionally the selected samples when a selection exists (mirroring the measurement edit

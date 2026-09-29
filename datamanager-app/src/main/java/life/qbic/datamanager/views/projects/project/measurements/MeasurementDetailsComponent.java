@@ -26,7 +26,6 @@ import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.provider.SortDirection;
 import com.vaadin.flow.data.selection.MultiSelectionEvent;
-import com.vaadin.flow.data.selection.SelectionListener;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.server.streams.DownloadHandler;
 import com.vaadin.flow.shared.Registration;
@@ -68,6 +67,7 @@ import life.qbic.datamanager.views.projects.project.measurements.pagination.Meas
 import life.qbic.projectmanagement.application.measurement.IpMeasurementLookup;
 import life.qbic.projectmanagement.application.measurement.NgsMeasurementLookup;
 import life.qbic.projectmanagement.application.measurement.NgsMeasurementLookup.NgsSortKey;
+import life.qbic.projectmanagement.application.measurement.NgsMeasurementLookup.SampleInfo;
 import life.qbic.projectmanagement.application.measurement.PxpMeasurementLookup;
 import life.qbic.projectmanagement.application.measurement.PxpMeasurementLookup.MeasurementInfo;
 import life.qbic.projectmanagement.application.measurement.PxpMeasurementLookup.PxpSortKey;
@@ -117,9 +117,9 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   private final Button ipEditButton = new Button("Edit");
   private final Button ipDeleteButton = new Button("Delete");
   private final Map<MeasurementDomain, Button> exportButtons = new EnumMap<>(MeasurementDomain.class);
-  private final Selection ngsSelection = new Selection(() -> updateSelectionBar());
-  private final Selection pxpSelection = new Selection(() -> updateSelectionBar());
-  private final Selection ipSelection = new Selection(() -> updateSelectionBar());
+  private final Selection ngsSelection = new Selection(this::updateSelectionBar);
+  private final Selection pxpSelection = new Selection(this::updateSelectionBar);
+  private final Selection ipSelection = new Selection(this::updateSelectionBar);
 
   private final transient NgsMeasurementLookup ngsMeasurementLookup;
   private final transient PxpMeasurementLookup pxpMeasurementLookup;
@@ -377,14 +377,14 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     field.addValueChangeListener(event -> tabPagination.applySearch(domain, event.getValue()));
   }
 
-  private void configureSortListener(Grid<?> grid, MeasurementDomain domain) {
+  private <T> void configureSortListener(Grid<T> grid, MeasurementDomain domain) {
     grid.setMultiSort(false);
     grid.addSortListener(event -> {
-      List<GridSortOrder<?>> orders = (List<GridSortOrder<?>>) (List<?>) grid.getSortOrder();
+      List<GridSortOrder<T>> orders = grid.getSortOrder();
       if (orders.isEmpty()) {
         return;
       }
-      GridSortOrder<?> order = orders.get(0);
+      var order = orders.getFirst();
       String property = sortPropertyOf(order);
       if (property == null || property.isBlank()) {
         return;
@@ -402,53 +402,34 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     if (order.getSorted() == null) {
       return null;
     }
-    Column<?> column = (Column<?>) order.getSorted();
+    Column<?> column = order.getSorted();
     // The Column exposes its sort properties only via the sort-order provider; the first
     // QuerySortOrder returned for the clicked direction carries the property name.
     return column.getSortOrder(order.getDirection())
         .findFirst()
-        .map(querySortOrder -> querySortOrder.getSorted())
+        .map(com.vaadin.flow.data.provider.SortOrder::getSorted)
         .orElse(null);
   }
 
-  private void configureSelectionReconciliation(Grid<?> grid, Selection selection,
+  private <T> void configureSelectionReconciliation(Grid<T> grid, Selection selection,
       MeasurementDomain domain) {
     grid.setSelectionMode(Grid.SelectionMode.MULTI);
     // Freeze the selection (checkbox) column so the user always sees the selection state when
     // scrolling horizontally (same as the frozen QBiC Measurement ID column).
-    if (grid.getSelectionModel() instanceof GridMultiSelectionModel<?> multiSelectionModel) {
+    if (grid.getSelectionModel() instanceof GridMultiSelectionModel<T> multiSelectionModel) {
       multiSelectionModel.setSelectionColumnFrozen(true);
     }
-    @SuppressWarnings("unchecked")
-    Grid<Object> objectGrid = (Grid<Object>) grid;
-    objectGrid.addSelectionListener(createSelectionReconciliationListener(objectGrid, selection,
-        domain));
-  }
-
-  /**
-   * Builds the selection listener that translates grid row selection changes into the
-   * identifier-based {@link Selection}.
-   *
-   * <p>Only client-side changes are translated (USER-R-02, ADR-0009): the selection is a
-   * cross-page, cross-tab view-owned set, and server-side selection events are fired by
-   * Vaadin itself whenever a new page is written to the grid via {@code setItems} (the data
-   * provider change deselects every row). Translating those synthetic events would purge
-   * every selected measurement that is not on the newly rendered page — the rows are
-   * reconciled with the identifier set afterwards by {@link #applySelectionToGrid} instead.</p>
-   */
-  static SelectionListener<Grid<Object>, Object> createSelectionReconciliationListener(
-      Grid<Object> grid, Selection selection, MeasurementDomain domain) {
-    return event -> {
+    grid.addSelectionListener(event -> {
       if (!event.isFromClient()) {
         return;
       }
-      MultiSelectionEvent<Grid<Object>, Object> multi =
-          (MultiSelectionEvent<Grid<Object>, Object>) event;
-      Set<Object> added = multi.getAddedSelection();
-      Set<Object> removed = multi.getRemovedSelection();
+      MultiSelectionEvent<Grid<T>, T> multi =
+          (MultiSelectionEvent<Grid<T>, T>) event;
+      Set<T> added = multi.getAddedSelection();
+      Set<T> removed = multi.getRemovedSelection();
       added.forEach(item -> selection.select(measurementIdOf(domain, item)));
       removed.forEach(item -> selection.deselect(measurementIdOf(domain, item)));
-    };
+    });
   }
 
   private static String measurementIdOf(MeasurementDomain domain, Object item) {
@@ -600,7 +581,6 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     return new PaginatedGrid.Page<>(page, total);
   }
 
-  @SuppressWarnings("unchecked")
   private <T> void applySelectionToGrid(Grid<T> grid, Selection selection,
       MeasurementDomain domain) {
     grid.getGenericDataView().getItems().toList().forEach(item -> {
@@ -709,8 +689,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   }
 
   private static List<String> idsOf(Selection selection) {
-    List<String> ids = new ArrayList<>(selection.selectedIds());
-    return ids;
+    return new ArrayList<>(selection.selectedIds());
   }
 
   private void exportNgs() {
@@ -945,7 +924,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         .setResizable(true);
     ngsGrid.addComponentColumn(
             (NgsMeasurementLookup.MeasurementInfo measurementInfo) -> renderSamplesNgs(measurementInfo,
-                info -> info.comment()))
+                SampleInfo::comment))
         .setHeader("Comment")
         .setSortable(false)
         .setAutoWidth(true)
@@ -999,7 +978,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         .setSortable(false)
         .setAutoWidth(true)
         .setResizable(true);
-    pxpGrid.addColumn(info -> info.technicalReplicateName())
+    pxpGrid.addColumn(MeasurementInfo::technicalReplicateName)
         .setHeader("Technical Replicate")
         .setKey(PxpSortKey.TECHNICAL_REPLICATE.sortKey())
         .setComparator(
@@ -1012,7 +991,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         .setComparator(Comparator.comparing(PxpMeasurementLookup.MeasurementInfo::digestionEnzyme))
         .setAutoWidth(true)
         .setResizable(true);
-    pxpGrid.addColumn(info -> info.digestionMethod())
+    pxpGrid.addColumn(MeasurementInfo::digestionMethod)
         .setHeader("Digestion Method")
         .setKey(PxpSortKey.DIGESTION_METHOD.sortKey())
         .setComparator(Comparator.comparing(PxpMeasurementLookup.MeasurementInfo::digestionMethod))
@@ -1024,19 +1003,19 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         .setComparator(Comparator.comparing(PxpMeasurementLookup.MeasurementInfo::injectionVolume))
         .setAutoWidth(true)
         .setResizable(true);
-    pxpGrid.addColumn(info -> info.lcmsMethod())
+    pxpGrid.addColumn(MeasurementInfo::lcmsMethod)
         .setHeader("LCMS")
         .setKey(PxpSortKey.LCMS_METHOD.sortKey())
         .setComparator(Comparator.comparing(PxpMeasurementLookup.MeasurementInfo::lcmsMethod))
         .setAutoWidth(true)
         .setResizable(true);
-    pxpGrid.addColumn(info -> info.lcColumn())
+    pxpGrid.addColumn(MeasurementInfo::lcColumn)
         .setHeader("LC column")
         .setKey(PxpSortKey.LC_COLUMN.sortKey())
         .setComparator(Comparator.comparing(PxpMeasurementLookup.MeasurementInfo::lcColumn))
         .setAutoWidth(true)
         .setResizable(true);
-    pxpGrid.addColumn(info -> info.enrichmentMethod())
+    pxpGrid.addColumn(MeasurementInfo::enrichmentMethod)
         .setHeader("Enrichment")
         .setKey(PxpSortKey.ENRICHMENT_METHOD.sortKey())
         .setComparator(Comparator.comparing(PxpMeasurementLookup.MeasurementInfo::enrichmentMethod))

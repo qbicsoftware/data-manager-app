@@ -54,8 +54,6 @@ public class SampleRegistrationUpload extends Div implements UserInput {
   private static final int MAX_FILE_SIZE = 25 * 1024 * 1024;
 
   private final AsyncProjectService service;
-  private final ContentUploadComponent contentUploadComponent;
-  private final SampleUploadDisplay uploadDisplay;
   private final transient Map<String, List<SampleRegistrationInformation>> validatedSampleMetadata = new HashMap<>();
 
   public SampleRegistrationUpload(AsyncProjectService service,
@@ -64,8 +62,9 @@ public class SampleRegistrationUpload extends Div implements UserInput {
       UploadConfiguration uploadConfiguration) {
     this.service = requireNonNull(service);
 
-    this.contentUploadComponent = new ContentUploadComponent(requireNonNull(uploadConfiguration));
-    this.uploadDisplay = new SampleUploadDisplay();
+    ContentUploadComponent contentUploadComponent = new ContentUploadComponent(
+        requireNonNull(uploadConfiguration));
+    SampleUploadDisplay uploadDisplay = new SampleUploadDisplay();
 
     contentUploadComponent.setAcceptedMimeTypes(
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");

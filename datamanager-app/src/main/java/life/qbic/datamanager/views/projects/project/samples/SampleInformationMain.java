@@ -38,13 +38,13 @@ import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.DisclaimerConfirmedEvent;
 import life.qbic.datamanager.views.general.Main;
-import life.qbic.datamanager.views.general.icon.IconFactory;
 import life.qbic.datamanager.views.general.dialog.AlertDialog;
 import life.qbic.datamanager.views.general.dialog.AppDialog;
 import life.qbic.datamanager.views.general.dialog.DialogBody;
 import life.qbic.datamanager.views.general.dialog.DialogFooter;
 import life.qbic.datamanager.views.general.dialog.DialogHeader;
 import life.qbic.datamanager.views.general.download.DownloadComponent;
+import life.qbic.datamanager.views.general.icon.IconFactory;
 import life.qbic.datamanager.views.general.pagination.ListState;
 import life.qbic.datamanager.views.general.pagination.ListStateCodec;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
@@ -109,7 +109,6 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver, 
   private final transient ExperimentInformationService experimentInformationService;
   private final transient DeletionService deletionService;
   private transient Component sampleDetailsComponent;
-  private final DownloadComponent downloadComponent;
   private final Div content = new Div();
   private final Disclaimer noGroupsDefinedDisclaimer;
   private final Disclaimer noSamplesRegisteredDisclaimer;
@@ -148,7 +147,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver, 
 
     addClassName("sample");
 
-    this.downloadComponent = new DownloadComponent();
+    DownloadComponent downloadComponent = new DownloadComponent();
     this.sampleDetailsComponent = new Div();
 
     noGroupsDefinedDisclaimer = createNoGroupsDefinedDisclaimer();
@@ -483,7 +482,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver, 
     return switch (property) {
       case "sampleId" -> Comparator.comparing(sample -> sample.sampleCode().code());
       case "sampleName" -> Comparator.comparing(Sample::label);
-      case "biologicalReplicate" -> Comparator.comparing(sample -> sample.biologicalReplicate(),
+      case "biologicalReplicate" -> Comparator.comparing(Sample::biologicalReplicate,
           Comparator.nullsLast(String::compareTo));
       case "batch" -> Comparator.comparing(Sample::batch,
           Comparator.nullsLast(String::compareTo));
