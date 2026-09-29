@@ -1,0 +1,110 @@
+/* -- Groups Hub (GitHub-style master-detail layout, mirrors Settings) -- */
+
+/* The groups hub is a RouterLayout nested inside UserMainLayout (see @ParentLayout
+   in GroupsMainLayout), so the outer shell — navbar, announcement at the top of the
+   content area, footer — is owned by UserMainLayout/DataManagerLayout. This
+   stylesheet only lays out the two-column hub: the persistent groups navigation
+   (aside) and the routed content. */
+
+.groups-main-layout {
+  display: grid;
+  grid-template-columns:
+    minmax(var(--lumo-space-l), 1fr)
+    minmax(240px, 280px)
+    minmax(0, calc(var(--content-shell-max-width) - 280px))
+    minmax(var(--lumo-space-l), 1fr);
+  grid-template-areas:
+    ". aside-area content-area .";
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+/* The aside is a fixed, non-collapsible column (GitHub-style). No border: separation comes
+   from the shared gutters. The left gutter + the tab's own left padding align menu items
+   with the content area, like the settings hub. The aside is sticky: it stays pinned at the
+   top of the content row while the page scrolls. */
+.groups-main-layout .groups-aside-area {
+  grid-area: aside-area;
+  box-sizing: border-box;
+  padding: var(--lumo-space-l);
+  align-self: start;
+  position: sticky;
+  top: 0;
+  min-height: 0;
+  background-color: var(--lumo-base-color);
+  z-index: 1;
+}
+
+/* The content column holds the routed route content. The whole page scrolls natively (no
+   internal scroll region). Content is left-aligned to this column's padding; the surrounding
+   flexible spacing (grid gutters + this padding) provides the margins. */
+.groups-main-layout .groups-content-area {
+  grid-area: content-area;
+  box-sizing: border-box;
+  padding: var(--lumo-space-l) var(--lumo-space-xl);
+  min-width: 0;
+  min-height: 0;
+}
+
+/* The hub layout provides the page spacing; neutralize the base page-area padding/gap so the
+   group sections share the same uniform look. */
+.groups-main-layout .page-area {
+  padding: 0;
+  gap: 0;
+}
+
+/* -- Groups aside: navigation -- */
+
+.groups-navigation-component {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.groups-navigation-tabs {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.groups-navigation-tabs vaadin-tab {
+  width: 100%;
+  justify-content: flex-start;
+  --vaadin-tab-padding: var(--lumo-space-m) var(--lumo-space-m);
+  --vaadin-tab-border-radius: var(--lumo-border-radius-m);
+  box-sizing: border-box;
+}
+
+/* Gap between icon and text inside each tab's RouterLink */
+.groups-navigation-tabs vaadin-tab a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lumo-space-m);
+}
+
+.groups-navigation-tabs vaadin-tab:hover {
+  --vaadin-tab-background: var(--lumo-contrast-5pct);
+}
+
+.groups-navigation-tabs vaadin-tab[selected] {
+  --vaadin-tab-background: var(--lumo-primary-color-10pct);
+  --vaadin-tab-text-color: var(--lumo-primary-text-color);
+}
+
+.groups-navigation-tabs vaadin-tab[selected] vaadin-icon {
+  color: var(--lumo-primary-text-color);
+}
+
+/* Adjust spacing on narrow screens: stack the aside above the content. */
+@media (max-width: 1024px) {
+  .groups-main-layout {
+    grid-template-areas:
+      ". aside-area ."
+      ". content-area .";
+    grid-template-columns: var(--lumo-space-m) minmax(0, 1fr) var(--lumo-space-m);
+  }
+
+  .groups-main-layout .groups-aside-area {
+    position: static;
+    align-self: stretch;
+    padding: var(--lumo-space-m) var(--lumo-space-l) var(--lumo-space-s) var(--lumo-space-l);
+  }
+}

@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.settings;
+package life.qbic.datamanager.views.groups;
 
 import static java.util.Objects.requireNonNull;
 
@@ -22,6 +22,7 @@ import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.notifications.Toast;
+import life.qbic.datamanager.views.settings.SettingsSection;
 import life.qbic.projectmanagement.application.AuthenticationToUserIdTranslationService;
 import life.qbic.usergroups.api.GroupInformationService;
 import life.qbic.usergroups.application.GroupService;
@@ -42,11 +43,11 @@ import org.springframework.security.core.context.SecurityContextHolder;
  *
  * @since 1.19.0
  */
-@Route(value = AppRoutes.GroupsRoutes.NEW_GROUP, layout = SettingsMainLayout.class)
+@Route(value = AppRoutes.GroupsRoutes.NEW_GROUP, layout = GroupsMainLayout.class)
 @SpringComponent
 @UIScope
 @PermitAll
-@PageTitle("Settings · New Group")
+@PageTitle("Groups · New Group")
 public class NewGroupMain extends Main implements BeforeEnterObserver {
 
   @Serial

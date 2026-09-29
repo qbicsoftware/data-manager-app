@@ -8,6 +8,7 @@ import life.qbic.projectmanagement.application.pinned.PinnedProject
 import life.qbic.projectmanagement.application.pinned.PinnedProjectView
 import life.qbic.projectmanagement.domain.model.project.ProjectId
 import life.qbic.projectmanagement.domain.repository.ProjectRepository
+import life.qbic.usergroups.api.GroupSidProvider
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.context.SecurityContextHolder
 import spock.lang.Specification
@@ -33,9 +34,11 @@ class PinnedProjectServiceSpec extends Specification {
   ProjectRepository projectRepository = Mock()
   ProjectOverviewLookup projectOverviewLookup = Mock()
   PinnedProjectStore pinnedProjectStore = Mock()
+  GroupSidProvider groupSidProvider = Mock()
 
   ProjectInformationService projectInformationService = new ProjectInformationService(
-      projectOverviewLookup, projectRepository, projectAccessService, userIdTranslator)
+      projectOverviewLookup, projectRepository, projectAccessService, userIdTranslator,
+      groupSidProvider)
 
   PinnedProjectService pinnedProjectService = new PinnedProjectService(
       pinnedProjectStore, projectOverviewLookup, projectInformationService, userIdTranslator)

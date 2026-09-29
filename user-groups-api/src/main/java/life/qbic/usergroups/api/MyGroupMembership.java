@@ -13,9 +13,12 @@ import java.io.Serializable;
  * @param groupDescription the group's description, may be {@code null} if none was set
  * @param groupType        the group type (ORG / ADHOC)
  * @param myRole           the caller's role inside the group (OWNER / MANAGER / MEMBER)
+ * @param memberCount      the total number of members of the group (the caller is a member, so
+ *                         the roster size is visible to them)
  * @since 1.19.0
  */
 public record MyGroupMembership(String groupId, String groupName, String groupDescription,
-                                GroupType groupType, GroupRole myRole) implements Serializable {
+                                GroupType groupType, GroupRole myRole, int memberCount)
+    implements Serializable {
 
 }

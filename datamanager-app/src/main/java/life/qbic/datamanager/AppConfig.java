@@ -23,15 +23,21 @@ import life.qbic.identity.application.user.policy.directive.WhenUserRegisteredSu
 import life.qbic.identity.domain.repository.UserDataStorage;
 import life.qbic.identity.domain.repository.UserRepository;
 import life.qbic.usergroups.api.GroupInformationService;
+import life.qbic.usergroups.api.GroupManagementService;
 import life.qbic.usergroups.api.GroupSidProvider;
 import life.qbic.usergroups.application.GroupService;
+import life.qbic.usergroups.application.policy.MemberAccessPolicy;
+import life.qbic.usergroups.application.policy.directive.InformAddedGroupMember;
+import life.qbic.usergroups.application.policy.directive.InformRemovedGroupMember;
 import life.qbic.usergroups.application.service.GroupInformationServiceImpl;
+import life.qbic.usergroups.application.service.GroupManagementServiceImpl;
 import life.qbic.usergroups.application.service.GroupSidProviderImpl;
 import life.qbic.usergroups.domain.repository.GroupDataStorage;
 import life.qbic.usergroups.domain.repository.GroupRepository;
 import life.qbic.infrastructure.email.EmailServiceProvider;
 import life.qbic.infrastructure.email.identity.IdentityEmailServiceProvider;
 import life.qbic.infrastructure.email.project.ProjectManagementEmailServiceProvider;
+import life.qbic.infrastructure.email.usergroups.UserGroupsEmailServiceProvider;
 import life.qbic.projectmanagement.application.AppContextProvider;
 import life.qbic.projectmanagement.application.OrganisationRepository;
 import life.qbic.projectmanagement.application.ProjectInformationService;
@@ -209,8 +215,9 @@ public class AppConfig {
   }
 
   @Bean
-  public GroupService groupService(GroupRepository groupRepository) {
-    return new GroupService(groupRepository);
+  public GroupService groupService(GroupRepository groupRepository,
+      UserInformationService userInformationService) {
+    return new GroupService(groupRepository, userInformationService);
   }
 
   @Bean
@@ -219,8 +226,60 @@ public class AppConfig {
   }
 
   @Bean
+  public GroupManagementServiceImpl groupManagementService(GroupService groupService) {
+    return new GroupManagementServiceImpl(groupService);
+  }
+
+  @Bean
   public GroupSidProviderImpl groupSidProvider(GroupService groupService) {
     return new GroupSidProviderImpl(groupService);
+  }
+
+  /**
+   * The user groups email provider, implementing the context's {@link EmailService} port with
+   * the shared mail infrastructure.
+   */
+  @Bean
+  public life.qbic.usergroups.application.communication.EmailService userGroupsEmailService(
+      EmailServiceProvider emailServiceProvider) {
+    return new UserGroupsEmailServiceProvider(emailServiceProvider);
+  }
+
+  /**
+   * The added-member notification directive. Exposed as its own {@code @Bean} so the JobRunr
+   * IOC runner can resolve it by class when the enqueued notification job executes (a plain
+   * {@code new} inside the policy bean would not register it in the context).
+   */
+  @Bean
+  public InformAddedGroupMember informAddedGroupMember(
+      life.qbic.usergroups.application.communication.EmailService emailService,
+      JobScheduler jobScheduler, UserInformationService userInformationService,
+      GroupService groupService) {
+    return new InformAddedGroupMember(emailService, jobScheduler, userInformationService,
+        groupService);
+  }
+
+  /**
+   * The removed-member notification directive (see {@link #informAddedGroupMember} for why this
+   * must be a Spring bean, not a local {@code new}).
+   */
+  @Bean
+  public InformRemovedGroupMember informRemovedGroupMember(
+      life.qbic.usergroups.application.communication.EmailService emailService,
+      JobScheduler jobScheduler, UserInformationService userInformationService,
+      GroupService groupService) {
+    return new InformRemovedGroupMember(emailService, jobScheduler, userInformationService,
+        groupService);
+  }
+
+  /**
+   * Registers the user-groups membership notification directives with the domain dispatcher: a
+   * newly added member and a removed member each receive an email.
+   */
+  @Bean
+  public MemberAccessPolicy memberAccessPolicy(InformAddedGroupMember informAddedGroupMember,
+      InformRemovedGroupMember informRemovedGroupMember) {
+    return new MemberAccessPolicy(informAddedGroupMember, informRemovedGroupMember);
   }
   /*
   Section ends

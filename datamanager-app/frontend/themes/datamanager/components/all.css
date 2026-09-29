@@ -1206,22 +1206,42 @@ Icons
 
 /*region Single-Purpose Component Styles*/
 /*region Announcements*/
+/* Slim environment notice rendered at the very top of the content area (below the
+   fixed top-level navbar, above the routed content — see DataManagerLayout, where
+   the AnnouncementComponent sits first in the content column). Kept quiet and
+   visually separated from the GitHub-style tab strip above it: reduced vertical
+   padding, moderate breathing room via top/bottom margin, and a softened,
+   card-like treatment (white background + warning-tinted accent + subtle border)
+   instead of a harsh full-bleed block, so it reads as its own notice and never
+   competes with the Projects | Groups | Settings tabs. */
 #announcements {
-  background-color: var(--warning-icon-color);
+  /* Symmetric gutter margin (incl. bottom): the base layout owns the page's default
+     spacing, so whatever follows (content header / content areas) is always separated
+     from the announcement by the same gap — no component has to add its own top margin. */
+  margin: var(--spacing-04);
   padding: var(--spacing-03) var(--spacing-04);
+  background-color: var(--lumo-base-color);
+  color: var(--lumo-contrast-80pct);
+  border: 1px solid var(--warning-color);
+  border-left-width: 4px;
+  border-radius: var(--lumo-border-radius-m);
   text-align: left;
+  font-size: var(--lumo-font-size-s);
+  box-sizing: border-box;
 }
 
 .announcement {
-  margin: var(--spacing-03) 0;
+  margin: 0;
   display: flex;
+  align-items: center;
   gap: var(--spacing-03);
 }
 
 .announcement vaadin-icon {
   min-width: var(--icon-size-s);
   max-width: var(--icon-size-s);
-  color: var(--icon-color);
+  color: var(--warning-color);
+  flex-shrink: 0;
 }
 
 .announcement-text {

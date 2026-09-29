@@ -39,7 +39,7 @@ public class ExperimentNavigationComponent extends Div {
       new Span("Design Experiment"),
       ExperimentInformationMain.class);
   RoutingTab<SampleInformationMain> registerSampleBatch = new RoutingTab<>(VaadinIcon.USER.create(),
-      new Span("Register Sample Batch"), SampleInformationMain.class);
+      new Span("View Samples"), SampleInformationMain.class);
   RoutingTab<MeasurementMain> viewMeasurements = new RoutingTab<>(VaadinIcon.USER.create(),
       new Span("View Measurements"), MeasurementMain.class);
   RoutingTab<RawDataMain> rawData = new RoutingTab<>(VaadinIcon.USER.create(),
