@@ -51,6 +51,24 @@ public interface ProjectAccessService {
   List<ProjectCollaborator> listCollaborators(ProjectId projectId);
 
   /**
+   * Lists the principal (personal) users holding OWNER or ADMIN role on a project.
+   *
+   * <p>This is the non-authorization-annotated seam for background (JobRunr) consumers that
+   * have no security context — e.g. the user-groups notification directive informing project
+   * owners/admins about a membership change on a shared group (FEAT-USER-GROUPS-02 AC2). It
+   * deliberately carries <b>no</b> {@code @PreAuthorize} and must only be invoked by trusted
+   * callers.</p>
+   *
+   * <p>Group SIDs ({@code GROUP_} prefix) and system-role authorities are never returned; the
+   * result only contains principal sids with a resolvable OWNER or ADMIN project role.</p>
+   *
+   * @param projectId the project to resolve administrators for
+   * @return the principal user ids holding OWNER or ADMIN on the project (may be empty)
+   * @since 1.22.0
+   */
+  List<String> listProjectAdministrators(ProjectId projectId);
+
+  /**
    * Lists the user groups shared onto a project.
    *
    * <p>Groups ride as {@link GrantedAuthoritySid}s with the reserved {@code GROUP_} prefix

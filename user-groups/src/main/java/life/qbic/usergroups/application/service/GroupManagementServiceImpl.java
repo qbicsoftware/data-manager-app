@@ -50,6 +50,16 @@ public class GroupManagementServiceImpl implements GroupManagementService {
   }
 
   @Override
+  public void appointOrgManager(String groupId, String actingAdminUserId, String userId) {
+    run(groupService.appointOrgManager(groupId, actingAdminUserId, userId));
+  }
+
+  @Override
+  public void removeOrgManager(String groupId, String actingAdminUserId, String userId) {
+    run(groupService.removeOrgManager(groupId, actingAdminUserId, userId));
+  }
+
+  @Override
   public void renameGroup(String groupId, String actingUserId, String newName) {
     run(groupService.renameGroup(groupId, actingUserId, GroupName.from(newName)));
   }

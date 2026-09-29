@@ -22,18 +22,8 @@ import life.qbic.identity.application.user.policy.directive.WhenUserRegisteredSe
 import life.qbic.identity.application.user.policy.directive.WhenUserRegisteredSubmitIntegrationEvent;
 import life.qbic.identity.domain.repository.UserDataStorage;
 import life.qbic.identity.domain.repository.UserRepository;
-import life.qbic.usergroups.api.GroupInformationService;
-import life.qbic.usergroups.api.GroupManagementService;
-import life.qbic.usergroups.api.GroupSidProvider;
-import life.qbic.usergroups.application.GroupService;
-import life.qbic.usergroups.application.policy.MemberAccessPolicy;
-import life.qbic.usergroups.application.policy.directive.InformAddedGroupMember;
-import life.qbic.usergroups.application.policy.directive.InformRemovedGroupMember;
-import life.qbic.usergroups.application.service.GroupInformationServiceImpl;
-import life.qbic.usergroups.application.service.GroupManagementServiceImpl;
-import life.qbic.usergroups.application.service.GroupSidProviderImpl;
-import life.qbic.usergroups.domain.repository.GroupDataStorage;
-import life.qbic.usergroups.domain.repository.GroupRepository;
+import life.qbic.datamanager.views.groups.notifications.InformProjectAdministratorsAboutMembershipChange;
+import life.qbic.datamanager.views.groups.notifications.InformProjectAdministratorsPolicy;
 import life.qbic.infrastructure.email.EmailServiceProvider;
 import life.qbic.infrastructure.email.identity.IdentityEmailServiceProvider;
 import life.qbic.infrastructure.email.project.ProjectManagementEmailServiceProvider;
@@ -83,6 +73,18 @@ import life.qbic.projectmanagement.domain.repository.ProjectRepository;
 import life.qbic.projectmanagement.infrastructure.organisations.CachedOrganisationRepository;
 import life.qbic.projectmanagement.infrastructure.organisations.RorApi;
 import life.qbic.projectmanagement.infrastructure.organisations.RorApi.RorApiV2;
+import life.qbic.usergroups.api.GroupInformationService;
+import life.qbic.usergroups.api.GroupManagementService;
+import life.qbic.usergroups.api.GroupSidProvider;
+import life.qbic.usergroups.application.GroupService;
+import life.qbic.usergroups.application.policy.MemberAccessPolicy;
+import life.qbic.usergroups.application.policy.directive.InformAddedGroupMember;
+import life.qbic.usergroups.application.policy.directive.InformRemovedGroupMember;
+import life.qbic.usergroups.application.service.GroupInformationServiceImpl;
+import life.qbic.usergroups.application.service.GroupManagementServiceImpl;
+import life.qbic.usergroups.application.service.GroupSidProviderImpl;
+import life.qbic.usergroups.domain.repository.GroupDataStorage;
+import life.qbic.usergroups.domain.repository.GroupRepository;
 import org.jobrunr.scheduling.JobScheduler;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -282,6 +284,33 @@ public class AppConfig {
   public MemberAccessPolicy memberAccessPolicy(InformAddedGroupMember informAddedGroupMember,
       InformRemovedGroupMember informRemovedGroupMember) {
     return new MemberAccessPolicy(informAddedGroupMember, informRemovedGroupMember);
+  }
+
+  /**
+   * The project-administrator informing directive (FEAT-USER-GROUPS-02, AC2). Notifies the
+   * owners/admins of projects a group is shared with when a member is added to or removed from
+   * that group. Uses the user-groups {@link EmailService} port so the composition root only
+   * ever adapts one email backend for group notifications.
+   */
+  @Bean
+  public InformProjectAdministratorsAboutMembershipChange informProjectAdministratorsAboutMembershipChange(
+      life.qbic.usergroups.application.communication.EmailService emailService,
+      JobScheduler jobScheduler, ProjectAccessService projectAccessService,
+      GroupInformationService groupInformationService,
+      UserInformationService userInformationService) {
+    return new InformProjectAdministratorsAboutMembershipChange(emailService, jobScheduler,
+        projectAccessService, groupInformationService, userInformationService);
+  }
+
+  /**
+   * Registers the project-administrator informing directive with the domain dispatcher for both
+   * membership-change event types. Exposed as a {@code @Bean} so the dispatcher subscription
+   * happens exactly once at startup (mirrors {@link #memberAccessPolicy}).
+   */
+  @Bean
+  public InformProjectAdministratorsPolicy informProjectAdministratorsPolicy(
+      InformProjectAdministratorsAboutMembershipChange directive) {
+    return new InformProjectAdministratorsPolicy(directive);
   }
   /*
   Section ends

@@ -217,6 +217,11 @@
   margin: 0;
 }
 
+.admin-groups-row__manage {
+  flex-shrink: 0;
+  align-self: center;
+}
+
 .admin-groups-badge {
   display: inline-flex;
   align-items: center;
@@ -236,6 +241,67 @@
 }
 
 .admin-groups-empty-state {
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-s);
+  padding: var(--lumo-space-m) 0;
+}
+
+/* -- Admin org-group manager management (FEAT-USER-GROUPS-02) -- */
+
+.admin-group-managers-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.admin-group-managers-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--lumo-space-m);
+  box-sizing: border-box;
+  padding: var(--lumo-space-m);
+  background-color: var(--lumo-base-color);
+  border: 1px solid var(--lumo-contrast-20pct);
+  border-radius: var(--lumo-border-radius-m);
+}
+
+.admin-group-managers-row__identity {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-m);
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.admin-group-managers-row__avatar {
+  flex-shrink: 0;
+}
+
+.admin-group-managers-row__title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--lumo-space-s);
+  min-width: 0;
+}
+
+.admin-group-managers-row__name {
+  font-size: var(--lumo-font-size-m);
+  font-weight: var(--lumo-font-weight-semibold, 600);
+  color: var(--lumo-header-text-color);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-group-managers-row__remove {
+  flex-shrink: 0;
+}
+
+.admin-group-managers-empty-state {
   color: var(--lumo-secondary-text-color);
   font-size: var(--lumo-font-size-s);
   padding: var(--lumo-space-m) 0;

@@ -138,7 +138,7 @@ public class AdminGroupsMain extends Main implements BeforeEnterObserver {
         .toList();
   }
 
-  private Component buildRow(GroupInfo groupInfo) {
+  Component buildRow(GroupInfo groupInfo) {
     Div row = new Div();
     row.addClassName("admin-groups-row");
 
@@ -168,6 +168,15 @@ public class AdminGroupsMain extends Main implements BeforeEnterObserver {
     }
 
     row.add(identity);
+
+    // FEAT-USER-GROUPS-02: manage the org group's managers (admin-governed manager lifecycle).
+    Button manageButton = new Button("Manage");
+    manageButton.addClassName("admin-groups-row__manage");
+    manageButton.addClickListener(click ->
+        UI.getCurrent().navigate(AdminGroupManagersMain.class,
+            new com.vaadin.flow.router.RouteParameters(
+                AdminGroupManagersMain.GROUP_ID_ROUTE_PARAMETER, groupInfo.id())));
+    row.add(manageButton);
     return row;
   }
 }

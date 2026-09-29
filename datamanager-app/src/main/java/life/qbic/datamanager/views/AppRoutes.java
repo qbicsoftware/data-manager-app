@@ -158,6 +158,12 @@ public class AppRoutes {
     public static final String NEW_ORG_GROUP = "groups/admin/new";
 
     /**
+     * Path to the admin-only page to manage the managers of one organisational group
+     * (FEAT-USER-GROUPS-02). The {@code groupId} route parameter identifies the org group.
+     */
+    public static final String ADMIN_GROUP_MANAGERS = "groups/admin/:groupId/managers";
+
+    /**
      * Path to the page showing one group's details and management surface.
      */
     public static final String GROUP_DETAIL = "groups/:groupId";

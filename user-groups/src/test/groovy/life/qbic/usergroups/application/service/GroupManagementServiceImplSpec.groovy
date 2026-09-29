@@ -133,6 +133,44 @@ class GroupManagementServiceImplSpec extends Specification {
     groupService.listPublicDirectory().findAll { it.groupId().get() == groupId }.isEmpty()
   }
 
+  def "appointOrgManager and removeOrgManager delegate to the admin-gated org lifecycle"() {
+    given: "an org group created through the admin service"
+    def adminPermission = { String id -> id == "admin-1" } as life.qbic.usergroups.api.GroupAdministrationPermission
+    def adminService = new GroupService(repository, new InMemoryUserInformationService(),
+        adminPermission)
+    def groupId = adminService.createOrgGroup("admin-1", GroupName.from("NGS Lab Admin"), DESC)
+        .getValue().groupId().get()
+    def adminFacade = new GroupManagementServiceImpl(adminService)
+
+    when: "the admin appoints a manager"
+    adminFacade.appointOrgManager(groupId, "admin-1", "alice")
+
+    then: "the manager appears in the roster (admin oversight sees it)"
+    adminFacade.listMembers(groupId, "admin-1")
+        .find { it.userId() == "alice" }.role() ==
+        life.qbic.usergroups.api.GroupRole.MANAGER
+
+    when: "the admin removes the manager"
+    adminFacade.removeOrgManager(groupId, "admin-1", "alice")
+
+    then: "the roster is empty and the group stays active"
+    adminFacade.listMembers(groupId, "admin-1").isEmpty()
+    storage.findById(GroupId.from(groupId)).get().status() ==
+        life.qbic.usergroups.domain.model.GroupStatus.ACTIVE
+  }
+
+  def "appointOrgManager by a non-admin is rejected with IllegalArgumentException"() {
+    given: "an org group and a non-admin facade"
+    def groupId = groupService.createAdHocGroup("alice", GroupName.from("Sprint"), DESC)
+        .getValue().groupId().get()
+
+    when: "a non-admin (and non-member) calls the org manager lifecycle on an ad-hoc group"
+    service.appointOrgManager(groupId, "alice", "bob")
+
+    then:
+    thrown(IllegalArgumentException)
+  }
+
   static class InMemoryGroupDataStorage implements GroupDataStorage {
 
     private final Map<GroupId, UserGroup> groups = new LinkedHashMap<>()

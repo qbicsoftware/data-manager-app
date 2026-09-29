@@ -76,6 +76,42 @@ public interface GroupManagementService extends Serializable {
   void demoteManager(String groupId, String actingUserId, String userId);
 
   /**
+   * Appoints a user as a MANAGER of an <b>org</b> group (QBiC admin governed).
+   *
+   * <p>Only a QBiC administrator (enforced via the admin-gate port at the application
+   * boundary) may appoint org-group managers. The appointed user may be a non-member (direct
+   * appointment) or an existing regular MEMBER (promotion). Org groups have no OWNER row; no
+   * OWNER membership is ever created.</p>
+   *
+   * @param groupId       the id of the org group
+   * @param actingAdminUserId the user performing the operation (must be a QBiC administrator)
+   * @param userId        the user to appoint (non-member or existing MEMBER)
+   * @throws IllegalArgumentException if the group does not exist, is not an org group, the
+   *                                  acting user is not a QBiC administrator, or the target
+   *                                  user is unknown
+   * @since 1.22.0
+   */
+  void appointOrgManager(String groupId, String actingAdminUserId, String userId);
+
+  /**
+   * Removes a manager's (or member's) membership from an <b>org</b> group (QBiC admin
+   * governed).
+   *
+   * <p>Only a QBiC administrator may remove an org-group manager. The member's membership is
+   * removed entirely (no demotion). Removing the last manager keeps the group ACTIVE and
+   * admin-governed (no OWNER row).</p>
+   *
+   * @param groupId       the id of the org group
+   * @param actingAdminUserId the user performing the operation (must be a QBiC administrator)
+   * @param userId        the manager (or member) to remove
+   * @throws IllegalArgumentException if the group does not exist, is not an org group, the
+   *                                  acting user is not a QBiC administrator, or the target is
+   *                                  not a member
+   * @since 1.22.0
+   */
+  void removeOrgManager(String groupId, String actingAdminUserId, String userId);
+
+  /**
    * Renames a group.
    *
    * @param groupId      the id of the group

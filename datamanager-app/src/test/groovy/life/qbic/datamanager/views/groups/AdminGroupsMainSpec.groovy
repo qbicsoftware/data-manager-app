@@ -65,4 +65,26 @@ class AdminGroupsMainSpec extends Specification {
     administrationPermission.isAdmin("admin-1")
     !administrationPermission.isAdmin("user-1")
   }
+
+  def "each org-group row exposes a Manage affordance navigating to the manager-management page (FEAT-USER-GROUPS-02)"() {
+    given: "one org group in the directory"
+    def org1 = new GroupInfo("g2", "NGS Lab", "sequencing lab", GroupType.ORG)
+    groupInformationService.listPublicDirectory() >> [org1]
+
+    when: "the org-group row is built"
+    def row = newDirectory().buildRow(org1)
+
+    then: "the row contains a Manage button"
+    def buttons = []
+    collectButtons(row, buttons)
+    buttons*.text.contains("Manage")
+  }
+
+  private static void collectButtons(com.vaadin.flow.component.Component component,
+      List<com.vaadin.flow.component.button.Button> acc) {
+    if (component instanceof com.vaadin.flow.component.button.Button button) {
+      acc << button
+    }
+    component.children.forEach { child -> collectButtons(child, acc) }
+  }
 }

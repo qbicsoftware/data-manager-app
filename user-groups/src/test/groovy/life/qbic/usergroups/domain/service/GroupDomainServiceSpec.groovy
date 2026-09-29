@@ -393,6 +393,132 @@ class GroupDomainServiceSpec extends Specification {
     ownerResult.get().memberships().isEmpty()
   }
 
+  // ── appointOrgManager / removeOrgManager (FEAT-USER-GROUPS-02) ──────────────
+
+  def "appointOrgManager direct appointment dispatches MemberAddedToGroup and no role-changed"() {
+    given:
+    GroupDataStorage storage = new InMemoryGroupDataStorage()
+    GroupRepository repository = new GroupRepository(storage)
+    GroupDomainService service = new GroupDomainService(repository)
+    GroupCaptor<MemberAddedToGroup> addedCaptor = subscribe(MemberAddedToGroup)
+    GroupCaptor<GroupMembershipRoleChanged> roleCaptor = subscribe(GroupMembershipRoleChanged)
+
+    and: "an org group"
+    GroupId id = GroupId.create()
+    service.createOrgGroup(id, GroupName.from("NGS Lab Org"), DESC, "admin-user", NOW)
+
+    when: "the admin directly appoints a non-member as manager"
+    Optional<UserGroup> result =
+        service.appointOrgManager(id, "admin-user", "lab-lead", NOW)
+
+    then: "the roster gains a MANAGER and a MemberAddedToGroup event fires"
+    result.isPresent()
+    result.get().memberships().size() == 1
+    result.get().memberships().get(0).role() == GroupRole.MANAGER
+    addedCaptor.getEvent().isPresent()
+    addedCaptor.getEvent().get().groupId() == id.get()
+    addedCaptor.getEvent().get().userId() == "lab-lead"
+    addedCaptor.getEvent().get().triggeredByUserId() == "admin-user"
+    roleCaptor.getEvent().isEmpty()
+  }
+
+  def "appointOrgManager promoting an existing MEMBER dispatches GroupMembershipRoleChanged and no added event"() {
+    given:
+    GroupDataStorage storage = new InMemoryGroupDataStorage()
+    GroupRepository repository = new GroupRepository(storage)
+    GroupDomainService service = new GroupDomainService(repository)
+    GroupCaptor<MemberAddedToGroup> addedCaptor = subscribe(MemberAddedToGroup)
+    GroupCaptor<GroupMembershipRoleChanged> roleCaptor = subscribe(GroupMembershipRoleChanged)
+
+    and: "an org group whose manager added a regular member"
+    GroupId id = GroupId.create()
+    service.createOrgGroup(id, GroupName.from("NGS Lab Org"), DESC, "admin-user", NOW)
+    service.appointOrgManager(id, "admin-user", "manager-1", NOW)
+    service.addMember(id, "manager-1", "alice", NOW)
+    // clear the captor so the promotion event is the one under observation
+    addedCaptor.clearEvent()
+    roleCaptor.clearEvent()
+
+    when: "the admin promotes the member to manager"
+    Optional<UserGroup> result =
+        service.appointOrgManager(id, "admin-user", "alice", NOW)
+
+    then: "a role-changed event MEMBER->MANAGER fires and no added-member event"
+    result.isPresent()
+    result.get().memberships().find { it.userId() == "alice" }.role() == GroupRole.MANAGER
+    roleCaptor.getEvent().isPresent()
+    roleCaptor.getEvent().get().userId() == "alice"
+    roleCaptor.getEvent().get().previousRole() == GroupRole.MEMBER
+    roleCaptor.getEvent().get().newRole() == GroupRole.MANAGER
+    addedCaptor.getEvent().isEmpty()
+  }
+
+  def "removeOrgManager dispatches MemberRemovedFromGroup and never GroupDissolved for an org group"() {
+    given:
+    GroupDataStorage storage = new InMemoryGroupDataStorage()
+    GroupRepository repository = new GroupRepository(storage)
+    GroupDomainService service = new GroupDomainService(repository)
+    GroupCaptor<MemberRemovedFromGroup> removedCaptor = subscribe(MemberRemovedFromGroup)
+    GroupCaptor<GroupDissolved> dissolvedCaptor = subscribe(GroupDissolved)
+
+    and: "an org group with a single manager"
+    GroupId id = GroupId.create()
+    service.createOrgGroup(id, GroupName.from("NGS Lab Org"), DESC, "admin-user", NOW)
+    service.appointOrgManager(id, "admin-user", "solo", NOW)
+
+    when: "the admin removes the last manager"
+    Optional<UserGroup> result = service.removeOrgManager(id, "admin-user", "solo")
+
+    then: "the membership is gone, the group stays ACTIVE, a MemberRemovedFromGroup fires and no dissolve"
+    result.isPresent()
+    result.get().memberships().isEmpty()
+    result.get().status() == GroupStatus.ACTIVE
+    removedCaptor.getEvent().isPresent()
+    removedCaptor.getEvent().get().userId() == "solo"
+    removedCaptor.getEvent().get().triggeredByUserId() == "admin-user"
+    dissolvedCaptor.getEvent().isEmpty()
+  }
+
+  def "appointOrgManager and removeOrgManager reject ad-hoc groups"() {
+    given:
+    GroupDataStorage storage = new InMemoryGroupDataStorage()
+    GroupRepository repository = new GroupRepository(storage)
+    GroupDomainService service = new GroupDomainService(repository)
+    GroupId adHocId = GroupId.create()
+    service.createAdHocGroup(adHocId, GroupName.from("Sprint Team"), DESC, "creator-user", NOW)
+
+    expect: "the org-only lifecycle is rejected"
+    service.appointOrgManager(adHocId, "creator-user", "alice", NOW).isEmpty()
+    service.removeOrgManager(adHocId, "creator-user", "alice").isEmpty()
+  }
+
+  def "appointOrgManager and removeOrgManager reject a dissolved org group"() {
+    given:
+    GroupDataStorage storage = new InMemoryGroupDataStorage()
+    GroupRepository repository = new GroupRepository(storage)
+    GroupDomainService service = new GroupDomainService(repository)
+    GroupId dissolvedOrgId = GroupId.create()
+    service.createOrgGroup(dissolvedOrgId, GroupName.from("Gone Org"), DESC, "admin-user", NOW)
+    storage.findById(dissolvedOrgId).get().dissolve()
+    storage.save(storage.findById(dissolvedOrgId).get())
+
+    expect:
+    service.appointOrgManager(dissolvedOrgId, "admin-user", "alice", NOW).isEmpty()
+    service.removeOrgManager(dissolvedOrgId, "admin-user", "alice").isEmpty()
+  }
+
+  def "removeOrgManager returns empty for a non-member"() {
+    given:
+    GroupDataStorage storage = new InMemoryGroupDataStorage()
+    GroupRepository repository = new GroupRepository(storage)
+    GroupDomainService service = new GroupDomainService(repository)
+    GroupId orgId = GroupId.create()
+    service.createOrgGroup(orgId, GroupName.from("NGS Lab"), DESC, "admin-user", NOW)
+
+    expect:
+    service.removeOrgManager(orgId, "admin-user", "ghost").isEmpty()
+  }
+
   /**
    * A simple subscriber that records the last event of the given type.
    */
@@ -420,6 +546,10 @@ class GroupDomainServiceSpec extends Specification {
     @Override
     void handleEvent(T domainEvent) {
       this.event = domainEvent
+    }
+
+    void clearEvent() {
+      this.event = null
     }
 
     Optional<T> getEvent() {

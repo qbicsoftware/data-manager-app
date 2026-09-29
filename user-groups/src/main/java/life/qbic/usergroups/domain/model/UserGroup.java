@@ -299,6 +299,101 @@ public class UserGroup implements Serializable {
   }
 
   /**
+   * Appoints a user as a MANAGER of this <b>org</b> group (admin-governed).
+   *
+   * <p>Org groups have no OWNER membership row by design (strategy §3/§4.2); the QBiC admin
+   * acts as owner-equivalent at the application layer. This operation therefore requires
+   * <b>no</b> membership role on the aggregate — the authority is provided by the
+   * application-layer admin gate ({@code GroupAdministrationPermission}, enforced in
+   * {@code GroupService}). It is <em>org-only</em>: an ad-hoc group rejects it.
+   *
+   * <p>Direct appointment of a non-member creates a MANAGER membership; promoting an existing
+   * MEMBER changes that membership's role. It never creates an OWNER row.</p>
+   *
+   * @param actingAdminUserId the user id of the acting QBiC administrator (authority enforced
+   *                          by the application layer; not verified here)
+   * @param userId            the user to appoint as manager (must exist as a real user; may
+   *                          currently be a non-member or a regular MEMBER)
+   * @param joinedAt          the join timestamp for a freshly created membership (ignored when
+   *                          the user already is a member)
+   * @return {@code true} if the membership roster or a role changed as a result, {@code false}
+   * if the user was already a MANAGER (no-op)
+   * @throws IllegalStateException    if the group is dissolved or not an org group
+   * @throws IllegalArgumentException if the acting admin user id or target user id is null or
+   *                                  blank
+   * @since 1.22.0
+   */
+  public boolean appointOrgManager(String actingAdminUserId, String userId, Instant joinedAt) {
+    if (status == GroupStatus.DISSOLVED) {
+      throw new IllegalStateException("Cannot manage a dissolved group");
+    }
+    if (type != GroupType.ORG) {
+      throw new IllegalStateException("appointOrgManager is only available for org groups");
+    }
+    if (actingAdminUserId == null || actingAdminUserId.isBlank()) {
+      throw new IllegalArgumentException("actingAdminUserId must not be null or blank");
+    }
+    if (userId == null || userId.isBlank()) {
+      throw new IllegalArgumentException("userId must not be null or blank");
+    }
+    GroupMembership target = findMembership(userId);
+    if (target == null) {
+      GroupMembership membership = GroupMembership.create(id, userId, GroupRole.MANAGER,
+          requireNonNull(joinedAt, "joinedAt must not be null"));
+      membership.attachTo(this);
+      memberships.add(membership);
+      return true;
+    }
+    if (target.role() == GroupRole.MANAGER) {
+      return false;
+    }
+    target.setRole(GroupRole.MANAGER);
+    return true;
+  }
+
+  /**
+   * Removes a manager's (or any member's) membership from this <b>org</b> group.
+   *
+   * <p>Org groups have no OWNER membership row; QBiC admins act as owner-equivalent at the
+   * application layer. Like {@link #appointOrgManager(String, String, Instant)} this
+   * operation requires no membership role on the aggregate. It is <em>org-only</em>, removes
+   * the member's membership entirely (no demotion — the person leaves the group), and never
+   * auto-dissolves the group even when the last manager is removed (AC4: the QBiC admin
+   * remains owner-equivalent; the group stays ACTIVE and no OWNER row is created).</p>
+   *
+   * @param actingAdminUserId the user id of the acting QBiC administrator (authority enforced
+   *                          by the application layer; not verified here)
+   * @param userId            the manager (or member) whose membership is removed
+   * @return {@code true} if a membership was removed, {@code false} if the user was not a
+   * member
+   * @throws IllegalStateException    if the group is dissolved or not an org group
+   * @throws IllegalArgumentException if the acting admin user id or target user id is null or
+   *                                  blank
+   * @since 1.22.0
+   */
+  public boolean removeOrgManager(String actingAdminUserId, String userId) {
+    if (status == GroupStatus.DISSOLVED) {
+      throw new IllegalStateException("Cannot manage a dissolved group");
+    }
+    if (type != GroupType.ORG) {
+      throw new IllegalStateException("removeOrgManager is only available for org groups");
+    }
+    if (actingAdminUserId == null || actingAdminUserId.isBlank()) {
+      throw new IllegalArgumentException("actingAdminUserId must not be null or blank");
+    }
+    if (userId == null || userId.isBlank()) {
+      throw new IllegalArgumentException("userId must not be null or blank");
+    }
+    GroupMembership target = findMembership(userId);
+    if (target == null) {
+      return false;
+    }
+    this.memberships.remove(target);
+    target.detach();
+    return true;
+  }
+
+  /**
    * Demotes a manager back to a regular MEMBER.
    *
    * <p>Role-gated: only the OWNER may demote managers.</p>

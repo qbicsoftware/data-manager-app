@@ -15,6 +15,7 @@ import life.qbic.usergroups.domain.model.GroupId;
 import life.qbic.usergroups.domain.model.GroupName;
 import life.qbic.usergroups.domain.model.GroupRole;
 import life.qbic.usergroups.domain.model.GroupStatus;
+import life.qbic.usergroups.domain.model.GroupType;
 import life.qbic.usergroups.domain.model.UserGroup;
 import life.qbic.usergroups.domain.repository.GroupRepository;
 
@@ -271,6 +272,96 @@ public class GroupDomainService {
     groupRepository.store(group);
     DomainEventDispatcher.instance().dispatch(GroupMembershipRoleChanged.create(
         group.id().get(), userId, GroupRole.MANAGER, GroupRole.MEMBER, actingUserId));
+    return Optional.of(group);
+  }
+
+  /**
+   * Appoints a user as a MANAGER of an <b>org</b> group (admin-governed).
+   *
+   * <p>No membership role is required on the aggregate — the application layer enforces the
+   * QBiC admin gate ({@code GroupAdministrationPermission}) before calling this method. Event
+   * semantics (plan D3): direct appointment of a non-member dispatches a
+   * {@link MemberAddedToGroup} (membership gained → the existing {@code InformAddedGroupMember}
+   * email fires); promoting an existing MEMBER dispatches
+   * {@link GroupMembershipRoleChanged}(MEMBER → MANAGER) (audit-log-only, no email). A user who
+   * is already a MANAGER is a no-op.</p>
+   *
+   * @param groupId       the id of the org group
+   * @param actingAdminUserId the user id of the acting QBiC administrator
+   * @param userId        the user to appoint (non-member or regular MEMBER)
+   * @param joinedAt      the join timestamp for direct appointment
+   * @return the updated group, or an empty {@link Optional} if the group does not exist, is not
+   * an org group, is dissolved, or the target user id is blank
+   * @since 1.22.0
+   */
+  public Optional<UserGroup> appointOrgManager(GroupId groupId, String actingAdminUserId,
+      String userId, Instant joinedAt) {
+    Optional<UserGroup> maybeGroup = groupRepository.findById(groupId);
+    if (maybeGroup.isEmpty()) {
+      return Optional.empty();
+    }
+    UserGroup group = maybeGroup.get();
+    if (group.type() != GroupType.ORG || group.status() == GroupStatus.DISSOLVED) {
+      return Optional.empty();
+    }
+    boolean wasMember = group.memberships().stream()
+        .anyMatch(m -> m.userId().equals(userId));
+    try {
+      boolean changed = group.appointOrgManager(actingAdminUserId, userId, joinedAt);
+      if (!changed) {
+        return Optional.of(group);
+      }
+    } catch (IllegalArgumentException | IllegalStateException e) {
+      return Optional.empty();
+    }
+    groupRepository.store(group);
+    if (!wasMember) {
+      DomainEventDispatcher.instance().dispatch(
+          MemberAddedToGroup.create(group.id().get(), userId, actingAdminUserId));
+    } else {
+      DomainEventDispatcher.instance().dispatch(GroupMembershipRoleChanged.create(
+          group.id().get(), userId, GroupRole.MEMBER, GroupRole.MANAGER, actingAdminUserId));
+    }
+    return Optional.of(group);
+  }
+
+  /**
+   * Removes a manager's (or member's) membership from an <b>org</b> group (admin-governed).
+   *
+   * <p>No membership role is required on the aggregate — the application layer enforces the
+   * QBiC admin gate before calling this method. The member's membership is removed entirely
+   * (no demotion) and a {@link MemberRemovedFromGroup} event is dispatched. Org groups never
+   * auto-dissolve: removing the last manager keeps the group ACTIVE (AC4), so no
+   * {@link GroupDissolved} is ever dispatched here.</p>
+   *
+   * @param groupId       the id of the org group
+   * @param actingAdminUserId the user id of the acting QBiC administrator
+   * @param userId        the manager (or member) to remove
+   * @return the updated group, or an empty {@link Optional} if the group does not exist, is not
+   * an org group, is dissolved, or the target is not a member
+   * @since 1.22.0
+   */
+  public Optional<UserGroup> removeOrgManager(GroupId groupId, String actingAdminUserId,
+      String userId) {
+    Optional<UserGroup> maybeGroup = groupRepository.findById(groupId);
+    if (maybeGroup.isEmpty()) {
+      return Optional.empty();
+    }
+    UserGroup group = maybeGroup.get();
+    if (group.type() != GroupType.ORG || group.status() == GroupStatus.DISSOLVED) {
+      return Optional.empty();
+    }
+    try {
+      boolean removed = group.removeOrgManager(actingAdminUserId, userId);
+      if (!removed) {
+        return Optional.empty();
+      }
+    } catch (IllegalArgumentException | IllegalStateException e) {
+      return Optional.empty();
+    }
+    groupRepository.store(group);
+    DomainEventDispatcher.instance().dispatch(
+        MemberRemovedFromGroup.create(group.id().get(), userId, actingAdminUserId));
     return Optional.of(group);
   }
 
