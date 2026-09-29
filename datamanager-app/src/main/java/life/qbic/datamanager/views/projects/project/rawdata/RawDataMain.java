@@ -126,7 +126,9 @@ public class RawDataMain extends Main implements BeforeEnterObserver, BeforeLeav
     Span titleField = new Span();
     titleField.setText("Download Raw Data");
     titleField.addClassNames("title");
-    content.add(titleField);
+    Div header = new Div(titleField);
+    header.addClassName("raw-data-main-header");
+    content.add(header);
     add(content);
     content.addClassName("raw-data-main-content");
   }
