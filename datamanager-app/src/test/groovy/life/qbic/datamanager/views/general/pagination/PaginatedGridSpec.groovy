@@ -36,7 +36,7 @@ class PaginatedGridSpec extends Specification {
         }
     }
 
-    PaginatedGrid<Item> newGrid(FakeLoader loader, List<Item> items = []) {
+    static PaginatedGrid<Item> newGrid(FakeLoader loader, List<Item> items = []) {
         def grid = new Grid<Item>()
         grid.addColumn({ it.id })
         def paginated = new PaginatedGrid<>(grid, loader, { it.id }, "item", DEFAULT_SORT)

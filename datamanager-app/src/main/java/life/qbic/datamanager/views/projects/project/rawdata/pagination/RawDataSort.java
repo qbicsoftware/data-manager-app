@@ -3,6 +3,7 @@ package life.qbic.datamanager.views.projects.project.rawdata.pagination;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Stream;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.RawDataSortingKey;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.SortDirection;
@@ -42,8 +43,7 @@ public final class RawDataSort {
    * All sort orders selectable for the raw dataset lists, keyed by their sort property.
    */
   public static final List<SortOrder> SORTS = PROPERTY_TO_KEY.keySet().stream()
-      .flatMap(property -> List.of(new SortOrder(property, false), new SortOrder(property, true))
-          .stream())
+      .flatMap(property -> Stream.of(new SortOrder(property, false), new SortOrder(property, true)))
       .toList();
 
   /**

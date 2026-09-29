@@ -17,7 +17,6 @@ import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import java.util.Objects;
 import life.qbic.application.commons.ApplicationException;
-import life.qbic.datamanager.ClientDetailsProvider;
 import life.qbic.datamanager.views.AppRoutes.ProjectRoutes;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.account.PersonalAccessTokenMain;
@@ -61,8 +60,6 @@ public class RawDataMain extends Main implements BeforeEnterObserver, BeforeLeav
   @Serial
   private static final long serialVersionUID = -4506659645977994192L;
   private static final Logger log = LoggerFactory.logger(RawDataMain.class);
-  private final MessageSourceNotificationFactory messageSourceNotificationFactory;
-  private final ClientDetailsProvider clientDetailsProvider;
   private final Div rawdataDetailsComponentContainer;
   private final RawDataDownloadInformationComponent rawDataDownloadInformationComponent;
   private final Div content = new Div();
@@ -70,7 +67,6 @@ public class RawDataMain extends Main implements BeforeEnterObserver, BeforeLeav
   private final transient RemoteRawDataService remoteRawDataService;
   private final Disclaimer registerMeasurementsDisclaimer;
   private final Disclaimer noRawDataRegisteredDisclaimer;
-  private final String rawDataSourceURL;
   private final String documentationUrl;
   private final AsyncProjectService asyncProjectService;
   private final RawDataDetailsComponent rawDataDetailsComponent;
@@ -89,17 +85,14 @@ public class RawDataMain extends Main implements BeforeEnterObserver, BeforeLeav
       @Value("${server.download.api.measurement.url}") String dataSourceURL,
       @Value("${qbic.communication.documentation.url}") String documentationUrl,
       @Autowired AsyncProjectService asyncProjectService,
-      @Autowired ClientDetailsProvider clientDetailsProvider,
       MessageSourceNotificationFactory messageSourceNotificationFactory) {
     this.rawDataDownloadInformationComponent = Objects.requireNonNull(
         rawDataDownloadInformationComponent);
     this.measurementService = Objects.requireNonNull(measurementService);
     this.remoteRawDataService = Objects.requireNonNull(remoteRawDataService);
-    this.rawDataSourceURL = Objects.requireNonNull(dataSourceURL);
+    String rawDataSourceURL = Objects.requireNonNull(dataSourceURL);
     this.documentationUrl = Objects.requireNonNull(documentationUrl);
     this.asyncProjectService = Objects.requireNonNull(asyncProjectService);
-    this.messageSourceNotificationFactory = Objects.requireNonNull(messageSourceNotificationFactory);
-    this.clientDetailsProvider = Objects.requireNonNull(clientDetailsProvider);
     registerMeasurementsDisclaimer = createNoMeasurementsRegisteredDisclaimer();
     registerMeasurementsDisclaimer.addClassName("no-measurements-registered-disclaimer");
     noRawDataRegisteredDisclaimer = createNoRawDataRegisteredDisclaimer();

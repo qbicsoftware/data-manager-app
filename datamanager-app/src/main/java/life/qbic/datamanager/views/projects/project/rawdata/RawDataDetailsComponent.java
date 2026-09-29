@@ -6,8 +6,8 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.Grid.Column;
-import com.vaadin.flow.component.grid.GridSortOrder;
 import com.vaadin.flow.component.grid.GridMultiSelectionModel;
+import com.vaadin.flow.component.grid.GridSortOrder;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.textfield.TextField;
@@ -101,9 +101,9 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
   private final TextField pxpSearchField = searchField();
   private final TextField ipSearchField = searchField();
   private final Map<RawDataDomain, Button> exportButtons = new EnumMap<>(RawDataDomain.class);
-  private final Selection ngsSelection = new Selection(() -> updateSelectionBar());
-  private final Selection pxpSelection = new Selection(() -> updateSelectionBar());
-  private final Selection ipSelection = new Selection(() -> updateSelectionBar());
+  private final Selection ngsSelection = new Selection(this::updateSelectionBar);
+  private final Selection pxpSelection = new Selection(this::updateSelectionBar);
+  private final Selection ipSelection = new Selection(this::updateSelectionBar);
 
   private Context context;
 
@@ -231,14 +231,14 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
     field.addValueChangeListener(event -> tabPagination.applySearch(domain, event.getValue()));
   }
 
-  private void configureSortListener(Grid<?> grid, RawDataDomain domain) {
+  private <T> void configureSortListener(Grid<T> grid, RawDataDomain domain) {
     grid.setMultiSort(false);
     grid.addSortListener(event -> {
-      List<GridSortOrder<?>> orders = (List<GridSortOrder<?>>) (List<?>) grid.getSortOrder();
+      var orders = grid.getSortOrder();
       if (orders.isEmpty()) {
         return;
       }
-      GridSortOrder<?> order = orders.get(0);
+      GridSortOrder<?> order = orders.getFirst();
       String property = sortPropertyOf(order);
       if (property == null || property.isBlank()) {
         return;
@@ -256,10 +256,10 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
     if (order.getSorted() == null) {
       return null;
     }
-    Column<?> column = (Column<?>) order.getSorted();
+    Column<?> column = order.getSorted();
     return column.getSortOrder(order.getDirection())
         .findFirst()
-        .map(querySortOrder -> querySortOrder.getSorted())
+        .map(com.vaadin.flow.data.provider.SortOrder::getSorted)
         .orElse(null);
   }
 
@@ -271,7 +271,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
     }
     @SuppressWarnings("unchecked")
     Grid<Object> objectGrid = (Grid<Object>) grid;
-    objectGrid.addSelectionListener(createSelectionReconciliationListener(objectGrid, selection,
+    objectGrid.addSelectionListener(createSelectionReconciliationListener(selection,
         domain));
   }
 
@@ -287,7 +287,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
    * the identifier set afterwards by {@link #applySelectionToGrid} instead.</p>
    */
   static SelectionListener<Grid<Object>, Object> createSelectionReconciliationListener(
-      Grid<Object> grid, Selection selection, RawDataDomain domain) {
+      Selection selection, RawDataDomain domain) {
     return event -> {
       if (!event.isFromClient()) {
         return;
@@ -432,7 +432,6 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
     return new PaginatedGrid.Page<>(page, total);
   }
 
-  @SuppressWarnings("unchecked")
   private <T> void applySelectionToGrid(Grid<T> grid, Selection selection,
       RawDataDomain domain) {
     grid.getGenericDataView().getItems().toList().forEach(item -> {
