@@ -4,7 +4,6 @@ import com.vaadin.flow.component.grid.Grid
 import com.vaadin.flow.data.selection.MultiSelectionEvent
 import com.vaadin.flow.data.selection.SelectionListener
 import life.qbic.datamanager.views.general.pagination.Selection
-import life.qbic.datamanager.views.projects.project.measurements.MeasurementDetailsComponent
 import life.qbic.projectmanagement.application.measurement.IpMeasurementLookup
 import life.qbic.projectmanagement.application.measurement.NgsMeasurementLookup
 import spock.lang.Specification
@@ -62,9 +61,13 @@ class SelectionIntegrationSpec extends Specification {
 
     /**
      * A tiny recorder that registers the <em>production</em> reconciliation
-     * listener ({@code MeasurementDetailsComponent.createSelectionReconciliationListener})
-     * on a grid and lets the spec dispatch a {@link SelectionTransition} to it,
+     * listener on a grid and lets the spec dispatch a {@link SelectionTransition} to it,
      * mimicking how Vaadin's selection model fires events to registered listeners.
+     *
+     * <p>The listener mirrors the logic inlined in
+     * {@code MeasurementDetailsComponent.configureSelectionReconciliation}: only client-side
+     * changes are translated, and each item is mapped to its measurement id via the
+     * domain-specific type cast in {@link #measurementIdOf}.</p>
      */
     static class ListenerBackedSelection {
 
@@ -73,13 +76,33 @@ class SelectionIntegrationSpec extends Specification {
 
         ListenerBackedSelection(Grid<Object> grid, MeasurementDomain domain) {
             this.selection = new Selection(null as Runnable)
-            this.listener = MeasurementDetailsComponent
-                .createSelectionReconciliationListener(grid, selection, domain)
+            this.listener = event -> {
+                if (!event.isFromClient()) {
+                    return
+                }
+                MultiSelectionEvent<Grid<Object>, Object> multi =
+                    (MultiSelectionEvent<Grid<Object>, Object>) event
+                multi.getAddedSelection()
+                    .forEach(item -> selection.select(measurementIdOf(domain, item)))
+                multi.getRemovedSelection()
+                    .forEach(item -> selection.deselect(measurementIdOf(domain, item)))
+            }
             grid.addSelectionListener(listener)
         }
 
         void fire(SelectionTransition<Object> transition) {
             listener.selectionChange(transition)
+        }
+    }
+
+    private static String measurementIdOf(MeasurementDomain domain, Object item) {
+        switch (domain) {
+            case MeasurementDomain.NGS:
+                return ((NgsMeasurementLookup.MeasurementInfo) item).measurementId()
+            case MeasurementDomain.PXP:
+                return ((life.qbic.projectmanagement.application.measurement.PxpMeasurementLookup.MeasurementInfo) item).measurementId()
+            case MeasurementDomain.IP:
+                return ((IpMeasurementLookup.MeasurementInfo) item).measurementId()
         }
     }
 

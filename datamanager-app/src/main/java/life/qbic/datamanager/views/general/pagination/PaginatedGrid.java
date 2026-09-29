@@ -95,6 +95,10 @@ public class PaginatedGrid<T> extends Div {
     }
   }
 
+  @FunctionalInterface
+  public interface IdExtractor<T> extends Function<T, String> {
+
+  }
   /**
    * Creates a paginated grid wrapping the given, already column-configured grid.
    *
@@ -105,7 +109,7 @@ public class PaginatedGrid<T> extends Div {
    *                    selection display)
    * @param defaultSort the fallback sort order, used until the user changes the sort
    */
-  public PaginatedGrid(Grid<T> grid, PageLoader<T> pageLoader, Function<T, String> idExtractor,
+  public PaginatedGrid(Grid<T> grid, PageLoader<T> pageLoader, IdExtractor<T> idExtractor,
       String itemLabel, SortOrder defaultSort) {
     this(grid, pageLoader, idExtractor, itemLabel, defaultSort, true, true, true);
   }
@@ -136,7 +140,7 @@ public class PaginatedGrid<T> extends Div {
    *                         attached; set to {@code false} when an external owner drives
    *                         {@link ListState} and triggers the load explicitly
    */
-  public PaginatedGrid(Grid<T> grid, PageLoader<T> pageLoader, Function<T, String> idExtractor,
+  public PaginatedGrid(Grid<T> grid, PageLoader<T> pageLoader, IdExtractor<T> idExtractor,
       String itemLabel, SortOrder defaultSort, boolean showToolbar, boolean showPager,
       boolean autoLoadOnAttach) {
     this.grid = Objects.requireNonNull(grid, "grid must not be null");
@@ -212,7 +216,7 @@ public class PaginatedGrid<T> extends Div {
       if (orders.isEmpty()) {
         return;
       }
-      GridSortOrder<T> order = orders.get(0);
+      GridSortOrder<T> order = orders.getFirst();
       if (order.getSorted() == null) {
         return;
       }
@@ -240,9 +244,7 @@ public class PaginatedGrid<T> extends Div {
   }
 
   private void configureSelection() {
-    @SuppressWarnings("unchecked")
-    Grid<Object> objectGrid = (Grid<Object>) grid;
-    objectGrid.addSelectionListener(this::onGridSelectionChanged);
+    grid.addSelectionListener(this::onGridSelectionChanged);
     clearSelectionButton.addClickListener(event -> {
       selection.clear();
       applySelectionToGrid();
@@ -256,14 +258,14 @@ public class PaginatedGrid<T> extends Div {
    * not on the newly rendered page. The rows are reconciled against the identifier set afterwards
    * by {@link #applySelectionToGrid}.
    */
-  private void onGridSelectionChanged(SelectionEvent<Grid<Object>, Object> event) {
+  private void onGridSelectionChanged(SelectionEvent<Grid<T>, T> event) {
     if (!event.isFromClient()) {
       return;
     }
-    MultiSelectionEvent<Grid<Object>, Object> multi =
-        (MultiSelectionEvent<Grid<Object>, Object>) event;
-    multi.getAddedSelection().forEach(item -> selection.select(idExtractor.apply((T) item)));
-    multi.getRemovedSelection().forEach(item -> selection.deselect(idExtractor.apply((T) item)));
+    MultiSelectionEvent<Grid<T>, T> multi =
+        (MultiSelectionEvent<Grid<T>, T>) event;
+    multi.getAddedSelection().forEach(item -> selection.select(idExtractor.apply(item)));
+    multi.getRemovedSelection().forEach(item -> selection.deselect(idExtractor.apply(item)));
   }
 
   private void configurePagination() {
@@ -354,6 +356,15 @@ public class PaginatedGrid<T> extends Div {
    */
   public void refresh() {
     setListState(listState);
+  }
+
+  /**
+   * Re-renders the currently visible rows without refetching from the backend. Useful when a
+   * display-only dependency (e.g. the client time zone) changes after the page was first rendered
+   * and should be reflected in the rendered cells.
+   */
+  public void refreshItems() {
+    grid.getDataProvider().refreshAll();
   }
 
   /**
