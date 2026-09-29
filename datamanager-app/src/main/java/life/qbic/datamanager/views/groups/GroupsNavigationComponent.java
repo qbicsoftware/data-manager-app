@@ -19,8 +19,8 @@ import java.util.Map;
  * based on the active route. Additional group categories can be added by registering further tabs
  * via {@link #addTab(String, VaadinIcon, Class)}.
  * <p>
- * For QBiC administrators an additional admin-only "Admin" tab points to the org-group creation
- * page ({@link AdminGroupCreationMain}).
+ * For QBiC administrators an additional admin-only "Admin" tab points to the org-group directory
+ * ({@link AdminGroupsMain}).
  */
 public class GroupsNavigationComponent extends Div {
 
@@ -38,7 +38,7 @@ public class GroupsNavigationComponent extends Div {
     tabs.getElement().setAttribute("orientation", "vertical");
     addTab("My Groups", VaadinIcon.USERS, MyGroupsMain.class);
     if (isAdmin) {
-      addTab("Admin", VaadinIcon.SHIELD, AdminGroupCreationMain.class);
+      addTab("Admin", VaadinIcon.SHIELD, AdminGroupsMain.class);
     }
     add(tabs);
   }
@@ -66,6 +66,10 @@ public class GroupsNavigationComponent extends Div {
     // the create page and the group detail page belong to the My Groups tab
     if (navigationTarget == NewGroupMain.class || navigationTarget == GroupDetailMain.class) {
       navigationTarget = MyGroupsMain.class;
+    }
+    // the org-group creation page belongs to the Admin tab
+    if (navigationTarget == AdminGroupCreationMain.class) {
+      navigationTarget = AdminGroupsMain.class;
     }
     Tab tab = tabsByNavigationTarget.get(navigationTarget);
     if (tab != null) {

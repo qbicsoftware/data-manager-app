@@ -150,6 +150,11 @@ public class AppRoutes {
     /**
      * Path to the admin-only page to create a new organisational group (FEAT-USER-GROUPS-01).
      */
+    public static final String ADMIN_GROUPS = "groups/admin";
+
+    /**
+     * Path to the admin-only page to create a new organisational group (FEAT-USER-GROUPS-01).
+     */
     public static final String NEW_ORG_GROUP = "groups/admin/new";
 
     /**

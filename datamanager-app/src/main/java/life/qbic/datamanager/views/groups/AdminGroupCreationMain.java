@@ -34,8 +34,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
  * <p>
  * A dedicated, admin-only route hosting the organisational group creation form
  * (FEAT-USER-GROUPS-01). Submitting a valid form creates an org group (type {@code ORG}) via
- * {@link GroupService#createOrgGroup}, shows a success toast and navigates back to the My Groups
- * list.
+ * {@link GroupService#createOrgGroup}, shows a success toast and navigates back to the admin
+ * org-group directory ({@link AdminGroupsMain}).
  * <p>
  * Access control is <b>defense in depth</b>: the route gate re-checks the caller is a QBiC
  * administrator ({@link GroupAdministrationPermission}) on every {@code beforeEnter} and reroutes
@@ -85,7 +85,7 @@ public class AdminGroupCreationMain extends Main implements BeforeEnterObserver 
     this.nameAvailability = defaultNameAvailability(groupInformationService);
     this.successToast = defaultSuccessToast(messageFactory);
     this.errorToast = defaultErrorToast(messageFactory);
-    this.navigateToMyGroups = () -> UI.getCurrent().navigate(MyGroupsMain.class);
+    this.navigateToMyGroups = () -> UI.getCurrent().navigate(AdminGroupsMain.class);
     this.currentUserId = () -> {
       Authentication authentication =
           SecurityContextHolder.getContext().getAuthentication();
