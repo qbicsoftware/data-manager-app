@@ -27,11 +27,11 @@
 }
 
 .main.sample {
-  grid-template-columns: minmax(min-content, 50%) minmax(min-content, 50%);
-  grid-template-rows: minmax(min-content, 25%) minmax(60vh, 1fr);
+  grid-template-columns: 100%;
+  grid-template-rows: minmax(min-content, 10%) auto;
   grid-template-areas:
-    ". batchdetails"
-    "sampledetails sampledetails";
+    "."
+    "sampledetails";
 }
 
 .main.experiment {
@@ -137,8 +137,7 @@
     grid-template-columns: minmax(min-content, 1fr);
     grid-template-areas:
     "."
-    "batchdetails"
     "sampledetails";
-    grid-template-rows: minmax(min-content, 20%) minmax(min-content, 20%) minmax(60vh, 1fr);
+    grid-template-rows: minmax(min-content, 10%) auto;
   }
 }
