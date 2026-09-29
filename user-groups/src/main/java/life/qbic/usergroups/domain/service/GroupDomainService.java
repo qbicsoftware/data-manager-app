@@ -63,6 +63,33 @@ public class GroupDomainService {
   }
 
   /**
+   * Creates a new organisational user group by a QBiC administrator.
+   *
+   * <p>Note: this will create a new domain event of type {@link GroupCreated} with type
+   * {@link GroupType#ORG}. The caller is responsible for the duplicate-name check
+   * (case-insensitive) before invoking this method; this domain service does not enforce
+   * cross-aggregate uniqueness.</p>
+   *
+   * <p>The created org group has an <b>empty roster</b> — organisational groups have no OWNER
+   * membership row (QBiC admin acts as owner-equivalent at the application layer).</p>
+   *
+   * @param id            the id of the new group
+   * @param name          the (unique, case-insensitive) group name
+   * @param description   the group description (optional)
+   * @param createdByUserId the user id of the creating QBiC administrator
+   * @param createdAt     the creation timestamp
+   * @since 1.21.0
+   */
+  public void createOrgGroup(GroupId id, GroupName name, GroupDescription description,
+      String createdByUserId, Instant createdAt) {
+    var group = UserGroup.createOrg(id, name, description, createdByUserId, createdAt);
+    groupRepository.store(group);
+    var groupCreatedEvent = GroupCreated.create(group.id().get(), group.name().value(),
+        group.type(), group.createdBy());
+    DomainEventDispatcher.instance().dispatch(groupCreatedEvent);
+  }
+
+  /**
    * Removes a user's membership from a group.
    *
    * <p>If the group is an ad-hoc group and the roster becomes empty as a result, the group is

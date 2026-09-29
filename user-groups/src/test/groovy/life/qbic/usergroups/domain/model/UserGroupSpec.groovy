@@ -43,6 +43,34 @@ class UserGroupSpec extends Specification {
     createAdHoc().memberships().size() == 1
   }
 
+  def "An org group is created ACTIVE with type ORG and an empty roster (no OWNER row)"() {
+    given:
+    GroupId id = GroupId.create()
+    String admin = "admin-user"
+
+    when:
+    UserGroup group = UserGroup.createOrg(id, GroupName.from("NGS Lab"),
+        GroupDescription.from("QBiC NGS lab"), admin, NOW)
+
+    then:
+    group.id() == id
+    group.type() == GroupType.ORG
+    group.status() == GroupStatus.ACTIVE
+    group.createdBy() == admin
+    group.createdAt() == NOW
+    group.isActive()
+    group.memberships().isEmpty()
+  }
+
+  def "Org group creation rejects a blank admin user id"() {
+    when:
+    UserGroup.createOrg(GroupId.create(), GroupName.from("NGS Lab"),
+        GroupDescription.from("desc"), "  ", NOW)
+
+    then:
+    thrown(IllegalArgumentException)
+  }
+
   def "Creation rejects a blank creator user id"() {
     when:
     UserGroup.createAdHoc(GroupId.create(), GroupName.from("NGS Lab"),

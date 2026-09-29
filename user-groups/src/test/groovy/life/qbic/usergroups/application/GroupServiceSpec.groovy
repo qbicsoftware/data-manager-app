@@ -17,6 +17,7 @@ import life.qbic.usergroups.domain.registry.DomainRegistry
 import life.qbic.usergroups.domain.repository.GroupDataStorage
 import life.qbic.usergroups.domain.repository.GroupRepository
 import life.qbic.usergroups.domain.service.GroupDomainService
+import life.qbic.usergroups.api.GroupAdministrationPermission
 import org.springframework.dao.DataIntegrityViolationException
 import spock.lang.Specification
 
@@ -45,13 +46,20 @@ class GroupServiceSpec extends Specification {
 
   private GroupService service
 
+  private GroupAdministrationPermission adminPermission
+
   def setup() {
     storage = new InMemoryGroupDataStorage()
     repository = new GroupRepository(storage)
     domainService = new GroupDomainService(repository)
     DomainRegistry.instance().registerService(domainService)
+    adminPermission = new TestAdminPermission()
     service = new GroupService(repository, new InMemoryUserInformationService())
+    serviceForOrgTests = new GroupService(repository, new InMemoryUserInformationService(),
+        adminPermission)
   }
+
+  private GroupService serviceForOrgTests
 
   def cleanup() {
     DomainRegistry.instance().registerService(null)
@@ -142,6 +150,136 @@ class GroupServiceSpec extends Specification {
     when:
     Result<GroupInfoProjection, ApplicationException> result =
         service.createAdHocGroup("  ", NAME, DESC)
+
+    then:
+    result.isError()
+    result.getError().errorCode() == ErrorCode.GENERAL
+  }
+
+  def "An admin createOrgGroup produces an ACTIVE ORG group with an empty roster (AC1)"() {
+    given: "an administrator"
+    String admin = "admin-user"
+
+    when: "the admin creates an org group with a unique name and description"
+    Result<GroupInfoProjection, ApplicationException> result =
+        serviceForOrgTests.createOrgGroup(admin, GroupName.from("NGS Lab"),
+            GroupDescription.from("QBiC NGS lab"))
+
+    then: "the org group is created"
+    result.isValue()
+    def group = result.getValue()
+    group.groupId() != null
+    group.groupName().value() == "NGS Lab"
+    group.groupType() == GroupType.ORG
+    group.groupDescription().value().get() == "QBiC NGS lab"
+
+    and: "the stored group is ACTIVE with type ORG and no membership row"
+    def stored = storage.findById(group.groupId()).get()
+    stored.status() == GroupStatus.ACTIVE
+    stored.type() == GroupType.ORG
+    stored.memberships().isEmpty()
+
+    and: "the org group appears in the public directory (AC1 directory criterion)"
+    service.listPublicDirectory()*.groupName().contains(GroupName.from("NGS Lab"))
+
+    and: "the creating admin is NOT a member (no OWNER row, D4)"
+    service.listMyGroups(admin).isEmpty()
+  }
+
+  def "A non-admin is denied org-group creation before any write (AC3)"() {
+    given: "a regular (non-admin) user"
+    String user = "researcher-1"
+
+    when: "the user attempts to create an org group"
+    Result<GroupInfoProjection, ApplicationException> result =
+        serviceForOrgTests.createOrgGroup(user, GroupName.from("NGS Lab"),
+            GroupDescription.from("desc"))
+
+    then: "an access-denied error is returned"
+    result.isError()
+    result.getError().errorCode() == ErrorCode.ACCESS_DENIED
+
+    and: "nothing was persisted"
+    storage.allGroups().isEmpty()
+  }
+
+  def "An org group with an already used name is rejected with the exact uniqueness message (AC2)"() {
+    given: "an org group with name 'NGS Lab' exists"
+    serviceForOrgTests.createOrgGroup("admin-user", NAME, DESC)
+
+    when: "a second org group with the exact same name is created"
+    Result<GroupInfoProjection, ApplicationException> result =
+        serviceForOrgTests.createOrgGroup("admin-user", NAME, DESC)
+
+    then: "an error with the duplicate name code and exact message is returned"
+    result.isError()
+    result.getError().errorCode() == ErrorCode.DUPLICATE_GROUP_NAME
+    result.getError().getMessage() ==
+        "A group with the name 'NGS Lab' already exists. Group names must be unique (case-insensitive)."
+
+    and: "nothing was persisted"
+    storage.allGroups().size() == 1
+  }
+
+  def "An org group with a case-different duplicate name is rejected as duplicate (AC2)"() {
+    given: "an org group with name 'NGS Lab' exists"
+    serviceForOrgTests.createOrgGroup("admin-user", NAME, DESC)
+
+    when: "an org group with 'ngs lab' (different case) is created"
+    Result<GroupInfoProjection, ApplicationException> result =
+        serviceForOrgTests.createOrgGroup("admin-user", GroupName.from("ngs lab"), DESC)
+
+    then: "the creation is rejected with the duplicate name code"
+    result.isError()
+    result.getError().errorCode() == ErrorCode.DUPLICATE_GROUP_NAME
+    result.getError().getMessage() ==
+        "A group with the name 'ngs lab' already exists. Group names must be unique (case-insensitive)."
+
+    and: "nothing was persisted"
+    storage.allGroups().size() == 1
+  }
+
+  def "Uniqueness is global across group types: an ad-hoc name blocks an org group and vice versa"() {
+    given: "an ad-hoc group named 'NGS Lab' exists"
+    service.createAdHocGroup("alice", NAME, DESC)
+
+    when: "an admin tries to create an org group with the same name"
+    Result<GroupInfoProjection, ApplicationException> result =
+        serviceForOrgTests.createOrgGroup("admin-user", NAME, DESC)
+
+    then: "the creation is rejected as a duplicate"
+    result.isError()
+    result.getError().errorCode() == ErrorCode.DUPLICATE_GROUP_NAME
+  }
+
+  def "A race condition on the unique index is translated to the same friendly duplicate error for org groups"() {
+    given: "the storage rejects the save with a DataIntegrityViolationException"
+    InMemoryGroupDataStorage racingStorage = new InMemoryGroupDataStorage() {
+      @Override
+      void save(UserGroup group) {
+        throw new DataIntegrityViolationException("duplicate key on name")
+      }
+    }
+    GroupRepository racingRepository = new GroupRepository(racingStorage)
+    DomainRegistry.instance().registerService(new GroupDomainService(racingRepository))
+    GroupService racingService = new GroupService(racingRepository,
+        new InMemoryUserInformationService(), adminPermission)
+
+    when:
+    Result<GroupInfoProjection, ApplicationException> result =
+        racingService.createOrgGroup("admin-user", GroupName.from("Brand New Org"), DESC)
+
+    then: "a friendly duplicate-name error is returned"
+    result.isError()
+    result.getError().errorCode() == ErrorCode.DUPLICATE_GROUP_NAME
+    result.getError().getMessage() ==
+        "A group with the name 'Brand New Org' already exists. Group names must be unique (case-insensitive)."
+  }
+
+  def "Creating an org group with a blank admin user id is rejected"() {
+    when:
+    Result<GroupInfoProjection, ApplicationException> result =
+        serviceForOrgTests.createOrgGroup("  ", NAME, DESC)
 
     then:
     result.isError()
@@ -271,6 +409,18 @@ class GroupServiceSpec extends Specification {
     then:
     result.isError()
     result.getError().getMessage().contains("not a member")
+  }
+
+  /**
+   * Test admin gate: every user id starting with "admin-" is treated as an administrator;
+   * all other users (including unknown ids) are not.
+   */
+  static class TestAdminPermission implements GroupAdministrationPermission {
+
+    @Override
+    boolean isAdmin(String userId) {
+      return userId != null && userId.startsWith("admin-")
+    }
   }
 
   /**

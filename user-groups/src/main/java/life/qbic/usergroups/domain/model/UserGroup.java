@@ -121,6 +121,36 @@ public class UserGroup implements Serializable {
   }
 
   /**
+   * Creates a new organisational user group by a QBiC administrator.
+   *
+   * <p>Invariants: type is {@link GroupType#ORG}, status is {@link GroupStatus#ACTIVE}, and the
+   * roster is <b>empty</b> — org groups have <em>no OWNER membership row</em> by design
+   * (user-groups strategy §3/§4.2): the QBiC admin acts as owner-equivalent only at the
+   * application layer (system role {@code ROLE_ADMIN}), never as a group member. The creating
+   * admin's id is retained on the {@code created_by} column for traceability.</p>
+   *
+   * @param id            the new group id
+   * @param name          the group name
+   * @param description   the group description (optional)
+   * @param createdByUserId the user id of the creating QBiC administrator
+   * @param createdAt     the creation timestamp
+   * @return the new org group with an empty roster
+   * @throws IllegalArgumentException if the creating user id is null or blank
+   * @since 1.21.0
+   */
+  public static UserGroup createOrg(GroupId id, GroupName name, GroupDescription description,
+      String createdByUserId, Instant createdAt) {
+    requireNonNull(id, "id must not be null");
+    requireNonNull(name, "name must not be null");
+    requireNonNull(description, "description must not be null (use GroupDescription.from(null))");
+    requireNonNull(createdAt, "createdAt must not be null");
+    if (createdByUserId == null || createdByUserId.isBlank()) {
+      throw new IllegalArgumentException("createdByUserId must not be null or blank");
+    }
+    return new UserGroup(id, name, description, GroupType.ORG, createdByUserId, createdAt);
+  }
+
+  /**
    * Removes a user's membership from this group.
    *
    * <p>If this is an ad-hoc group and the roster becomes empty, the group is dissolved: the
