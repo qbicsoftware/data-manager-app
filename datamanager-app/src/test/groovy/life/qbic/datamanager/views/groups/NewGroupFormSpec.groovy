@@ -262,7 +262,7 @@ class NewGroupFormSpec extends Specification {
 
     when: "the user clicks create"
     ((Button) allDescendants(orgForm).find {
-      it instanceof Button && it.text == "Create org group"
+      it instanceof Button && it.text == "Create organisational group"
     }).click()
 
     then: "the admin-gated org service is called and we toast + navigate"
@@ -289,7 +289,7 @@ class NewGroupFormSpec extends Specification {
 
     when: "the user clicks create"
     ((Button) allDescendants(orgForm).find {
-      it instanceof Button && it.text == "Create org group"
+      it instanceof Button && it.text == "Create organisational group"
     }).click()
 
     then: "no org service success and an inline name error is shown"

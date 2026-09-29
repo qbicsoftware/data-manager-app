@@ -34,7 +34,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
  * <p>
  * Admin-only overview of all organisational groups (type {@code ORG}). Each group is shown as a
  * row with its name, description and type badge — read-only, membership is never exposed
- * (visibility policy, strategy §1a/§5.1). A "New Org Group" action opens the org-group creation
+ * (visibility policy, strategy §1a/§5.1). A "New Organisational Group" action opens the
+ * org-group creation
  * form ({@link AdminGroupCreationMain}).
  * <p>
  * Access control is <b>defense in depth</b>: the route gate re-checks the caller is a QBiC
@@ -93,14 +94,14 @@ public class AdminGroupsMain extends Main implements BeforeEnterObserver {
       section = null;
       groupList = null;
     }
-    section = new SettingsSection("Admin · Org Groups",
+    section = new SettingsSection("Admin · Organisational Groups",
         "Organisational groups shared onto projects as one unit. Names and descriptions are "
             + "visible to all users.");
     groupList = new Div();
     groupList.addClassName("admin-groups-list");
     renderOrgGroups();
     section.addContent(groupList);
-    Button newOrgGroupButton = new Button("New Org Group");
+    Button newOrgGroupButton = new Button("New Organisational Group");
     newOrgGroupButton.addClassName("primary");
     newOrgGroupButton.addClickListener(click ->
         UI.getCurrent().navigate(AdminGroupCreationMain.class));
@@ -118,7 +119,7 @@ public class AdminGroupsMain extends Main implements BeforeEnterObserver {
   private void renderOrgGroups() {
     List<GroupInfo> orgGroups = orgGroupsFromDirectory();
     if (orgGroups.isEmpty()) {
-      Span emptyState = new Span("No org groups yet.");
+      Span emptyState = new Span("No organisational groups yet.");
       emptyState.addClassName("admin-groups-empty-state");
       groupList.add(emptyState);
       return;
@@ -151,7 +152,7 @@ public class AdminGroupsMain extends Main implements BeforeEnterObserver {
     title.add(name);
     header.add(title);
 
-    Span typeBadge = new Span("Org");
+    Span typeBadge = new Span("organisational");
     typeBadge.addClassName("admin-groups-badge");
     typeBadge.addClassName("admin-groups-badge--type-org");
     header.add(typeBadge);

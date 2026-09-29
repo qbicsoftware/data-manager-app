@@ -307,7 +307,7 @@ public class MyGroupsComponent extends Div implements Serializable {
   }
 
   private static Span buildTypeBadge(GroupType type) {
-    Span badge = new Span(type == GroupType.ORG ? "Org" : "User Group");
+    Span badge = new Span(type == GroupType.ORG ? "organisational" : "User Group");
     badge.addClassName("my-groups-badge");
     badge.addClassName(
         type == GroupType.ORG ? "my-groups-badge--type-org" : "my-groups-badge--type-adhoc");

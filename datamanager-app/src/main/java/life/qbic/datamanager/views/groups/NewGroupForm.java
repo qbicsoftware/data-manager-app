@@ -97,8 +97,8 @@ public class NewGroupForm extends Div {
    *
    * <p>In organisational mode ({@code createOrg}), the submit calls
    * {@link GroupService#createOrgGroup} (admin-gated at the service boundary) instead of
-   * {@link GroupService#createAdHocGroup}, and the form labels read "New Org Group" /
-   * "Create an organisational group for recurring teams". All validation, the live
+   * {@link GroupService#createAdHocGroup}, and the form labels read "New Organisational Group" /
+   * "Create organisational group". All validation, the live
    * name-availability hint and the duplicate-name inline error are identical in both modes.</p>
    *
    * @param nameAvailabilityCheck optional case-insensitive name availability check invoked on
@@ -128,7 +128,7 @@ public class NewGroupForm extends Div {
     nameField.setPlaceholder(createOrg
         ? "e.g. NGS Lab"
         : "e.g. Acknowledgements Working Group");
-    createButton.setText(createOrg ? "Create org group" : "Create");
+    createButton.setText(createOrg ? "Create organisational group" : "Create");
     nameField.setRequiredIndicatorVisible(true);
     nameField.setMaxLength(NAME_MAX_LENGTH);
     nameField.setValueChangeMode(ValueChangeMode.LAZY);

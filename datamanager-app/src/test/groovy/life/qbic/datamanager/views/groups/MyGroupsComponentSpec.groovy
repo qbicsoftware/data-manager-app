@@ -199,7 +199,7 @@ class MyGroupsComponentSpec extends Specification {
 
     then: "the row shows no action buttons at all"
     buttonsOf(renderedRows()[0]).isEmpty()
-    textOf(renderedRows()[0]).contains("Org")
+    textOf(renderedRows()[0]).contains("organisational")
     textOf(renderedRows()[0]).contains("Member")
   }
 

@@ -52,7 +52,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 @SpringComponent
 @UIScope
 @PermitAll
-@PageTitle("Groups · New Org Group")
+@PageTitle("Groups · New Organisational Group")
 public class AdminGroupCreationMain extends Main implements BeforeEnterObserver {
 
   @Serial
@@ -148,7 +148,7 @@ public class AdminGroupCreationMain extends Main implements BeforeEnterObserver 
     form = new NewGroupForm(nameAvailability, groupService, currentUserId, successToast,
         errorToast, navigateToMyGroups, true);
     form.addCancelListener(cancelEvent -> navigateToMyGroups.run());
-    section = new SettingsSection("New Org Group",
+    section = new SettingsSection("New Organisational Group",
         "Create an organisational group for recurring teams.");
     section.addContent(form);
     add(section);
