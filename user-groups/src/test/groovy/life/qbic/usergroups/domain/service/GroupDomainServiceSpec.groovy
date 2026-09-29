@@ -68,6 +68,36 @@ class GroupDomainServiceSpec extends Specification {
     captor.getEvent().get().creatorUserId() == creator
   }
 
+  def "A created org group is stored with an empty roster and a GroupCreated event is dispatched"() {
+    given:
+    GroupDataStorage storage = new InMemoryGroupDataStorage()
+    GroupRepository repository = new GroupRepository(storage)
+    GroupDomainService service = new GroupDomainService(repository)
+    GroupCaptor<GroupCreated> captor = subscribe(GroupCreated)
+
+    and:
+    GroupId id = GroupId.create()
+    String admin = "admin-user"
+
+    when:
+    service.createOrgGroup(id, GroupName.from("NGS Lab Org"), DESC, admin, NOW)
+
+    then:
+    def stored = storage.findById(id)
+    stored.isPresent()
+    stored.get().type() == GroupType.ORG
+    stored.get().status() == GroupStatus.ACTIVE
+    stored.get().createdBy() == admin
+    stored.get().memberships().isEmpty()
+
+    and: "the GroupCreated event was dispatched with type ORG"
+    captor.getEvent().isPresent()
+    captor.getEvent().get().groupId() == id.get()
+    captor.getEvent().get().groupName() == "NGS Lab Org"
+    captor.getEvent().get().groupType() == GroupType.ORG
+    captor.getEvent().get().creatorUserId() == admin
+  }
+
   def "Removing the last member persists the dissolved group and dispatches GroupDissolved"() {
     given:
     GroupDataStorage storage = new InMemoryGroupDataStorage()

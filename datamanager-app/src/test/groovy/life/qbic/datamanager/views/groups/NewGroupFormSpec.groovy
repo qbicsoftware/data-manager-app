@@ -246,6 +246,63 @@ class NewGroupFormSpec extends Specification {
     nameField().errorMessage.contains("already exists")
   }
 
+  def "org mode creates the group via createOrgGroup with org-specific labels"() {
+    given: "an org-mode form"
+    NewGroupForm orgForm = new NewGroupForm(
+        { String n -> true } as Function<String, Boolean>,
+        groupService,
+        { USER_ID } as Supplier<String>,
+        { String name -> successToasts << name } as Consumer<String>,
+        { errorToasts << "error" } as Runnable,
+        { navigations++ } as Runnable,
+        true)
+    def groupName = GroupName.from("NGS Lab")
+    def groupDesc = GroupDescription.from("QBiC NGS laboratory")
+    orgForm.setValues("NGS Lab", "QBiC NGS laboratory")
+
+    when: "the user clicks create"
+    ((Button) allDescendants(orgForm).find {
+      it instanceof Button && it.text == "Create organisational group"
+    }).click()
+
+    then: "the admin-gated org service is called and we toast + navigate"
+    1 * groupService.createOrgGroup(USER_ID, groupName, groupDesc) >>
+        Result.fromValue(new GroupInfoProjection(GroupId.create(), groupName, groupDesc,
+            GroupType.ORG))
+    successToasts == ["NGS Lab"]
+    navigations == 1
+  }
+
+  def "org mode rejects a duplicate name inline and does not navigate"() {
+    given: "an org-mode form and a duplicate rejection from the service"
+    NewGroupForm orgForm = new NewGroupForm(
+        { String n -> true } as Function<String, Boolean>,
+        groupService,
+        { USER_ID } as Supplier<String>,
+        { String name -> successToasts << name } as Consumer<String>,
+        { errorToasts << "error" } as Runnable,
+        { navigations++ } as Runnable,
+        true)
+    def groupName = GroupName.from("NGS Lab")
+    def groupDesc = GroupDescription.from(null)
+    orgForm.setValues("NGS Lab", null)
+
+    when: "the user clicks create"
+    ((Button) allDescendants(orgForm).find {
+      it instanceof Button && it.text == "Create organisational group"
+    }).click()
+
+    then: "no org service success and an inline name error is shown"
+    1 * groupService.createOrgGroup(USER_ID, groupName, groupDesc) >>
+        Result.fromError(new ApplicationException("duplicate", ErrorCode.DUPLICATE_GROUP_NAME,
+            ErrorParameters.empty()))
+    TextField orgNameField = allDescendants(orgForm).find { it instanceof TextField } as TextField
+    orgNameField.invalid
+    orgNameField.errorMessage.contains("already exists")
+    navigations == 0
+    successToasts.isEmpty()
+  }
+
   private TextField nameField() {
     allDescendants(form).find { it instanceof TextField } as TextField
   }
