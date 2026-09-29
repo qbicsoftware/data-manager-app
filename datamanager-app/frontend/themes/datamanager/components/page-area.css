@@ -1078,3 +1078,14 @@ a.project-dataset-footer, a.project-dataset-footer:hover {
   outline: 2px solid var(--primary-color);
   outline-offset: -2px;
 }
+
+/* Groups section of the project access component.
+   Long group descriptions are truncated with an ellipsis instead of forcing
+   horizontal page scroll, so the Role column stays visible. The part is applied
+   to each grid row via setPartNameGenerator (see ProjectAccessComponent). */
+.project-access-component [part~="group-description-row"] {
+  max-width: 28em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

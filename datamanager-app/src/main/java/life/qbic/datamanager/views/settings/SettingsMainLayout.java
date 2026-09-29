@@ -2,16 +2,14 @@ package life.qbic.datamanager.views.settings;
 
 import static java.util.Objects.requireNonNull;
 
-import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.HasElement;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
-import com.vaadin.flow.spring.security.AuthenticationContext;
+import com.vaadin.flow.router.ParentLayout;
+import com.vaadin.flow.router.RouterLayout;
 import jakarta.annotation.security.PermitAll;
-import java.util.Objects;
-import life.qbic.datamanager.announcements.AnnouncementService;
-import life.qbic.datamanager.views.DataManagerLayout;
-import life.qbic.datamanager.views.general.DataManagerMenu;
-import life.qbic.datamanager.views.general.footer.FooterComponent;
+import life.qbic.datamanager.views.UserMainLayout;
 import life.qbic.identity.api.UserInfo;
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.projectmanagement.application.AuthenticationToUserIdTranslationService;
@@ -21,48 +19,57 @@ import org.springframework.security.core.context.SecurityContextHolder;
 /**
  * <b> Settings Main Layout </b>
  * <p>
- * The layout hosting all user-specific settings sections. It provides a persistent, non-collapsible
- * aside column with the {@link AccountOverviewHeader} and the {@link SettingsNavigationComponent}
- * on the left and renders the currently selected settings section in the content area on the right.
+ * The layout hosting all user-specific settings sections. It is nested under
+ * {@link UserMainLayout} via {@link ParentLayout}, so the settings routes render inside the
+ * single outer shell that provides the global navbar (brand title + top-level
+ * "Projects | Groups | Settings" navigation + account menu), the announcement banner and the
+ * footer.
  * <p>
- * The layout is the parent layout of the settings section routes, e.g. {@code /settings/profile},
- * {@code /settings/api-tokens} and {@code /settings/external-providers}. The selected tab is kept
- * in sync with the active route via {@link #beforeEnter(BeforeEnterEvent)}.
+ * This layout itself only provides the two-column settings hub: a standalone account overview
+ * row at the top (spanning the hub width), a persistent, non-collapsible aside column with the
+ * {@link SettingsNavigationComponent} on the left and the currently selected settings section in
+ * the content area on the right. The selected aside tab is kept in sync with the active route via
+ * {@link #beforeEnter(BeforeEnterEvent)}.
  */
 @PermitAll
-public class SettingsMainLayout extends DataManagerLayout implements BeforeEnterObserver {
+@ParentLayout(UserMainLayout.class)
+public class SettingsMainLayout extends Div implements RouterLayout, BeforeEnterObserver {
 
   private final SettingsNavigationComponent settingsNavigationComponent = new SettingsNavigationComponent();
+  private final Div contentSlot = new Div();
   private final transient AuthenticationToUserIdTranslationService userIdTranslator;
   private final transient UserInformationService userInformationService;
+  private final Div accountOverviewArea = new Div();
 
-  public SettingsMainLayout(@Autowired AuthenticationContext authenticationContext,
-      @Autowired UserInformationService userInformationService,
-      @Autowired AuthenticationToUserIdTranslationService userIdTranslator,
-      @Autowired FooterComponent footerComponent,
-      @Autowired AnnouncementService announcementService) {
-    super(requireNonNull(footerComponent), announcementService);
+  public SettingsMainLayout(@Autowired UserInformationService userInformationService,
+      @Autowired AuthenticationToUserIdTranslationService userIdTranslator) {
     this.userInformationService = requireNonNull(userInformationService,
         "userInformationService must not be null");
     this.userIdTranslator = requireNonNull(userIdTranslator,
         "userIdTranslator must not be null");
-    Objects.requireNonNull(authenticationContext);
-    Span navBarTitle = new Span("Settings");
-    navBarTitle.setClassName("navbar-title");
-    DataManagerMenu dataManagerMenu = new DataManagerMenu(authenticationContext);
-    addToNavbar(navBarTitle, dataManagerMenu);
     addClassName("settings-main-layout");
-    setAside(settingsNavigationComponent);
-    setContentHeader(new AccountOverviewHeader(loadCurrentUser()));
+    accountOverviewArea.addClassName("settings-account-overview-area");
+    Div asideArea = new Div(settingsNavigationComponent);
+    asideArea.addClassName("settings-aside-area");
+    contentSlot.addClassName("settings-content-area");
+    // grid rows: [account overview] / [aside | content] — the overview is a standalone
+    // full-hub-width row above the menu+content, not nested in the aside.
+    add(accountOverviewArea, asideArea, contentSlot);
+    renderAccountOverview();
+  }
+
+  private void renderAccountOverview() {
+    accountOverviewArea.removeAll();
+    accountOverviewArea.add(new AccountOverviewHeader(loadCurrentUser()));
   }
 
   /**
    * Reloads the current user's information and re-renders the account overview header in place.
    * Call this after account data shown in the header (e.g. the username) has changed, so the
-   * header stays consistent without a page reload.
+   * header stays consistent without a full page reload.
    */
   public void refreshAccountOverview() {
-    setContentHeader(new AccountOverviewHeader(loadCurrentUser()));
+    renderAccountOverview();
   }
 
   private UserInfo loadCurrentUser() {
@@ -72,12 +79,13 @@ public class SettingsMainLayout extends DataManagerLayout implements BeforeEnter
   }
 
   @Override
+  public void showRouterLayoutContent(HasElement content) {
+    contentSlot.removeAll();
+    contentSlot.getElement().appendChild(content.getElement());
+  }
+
+  @Override
   public void beforeEnter(BeforeEnterEvent event) {
-    Class<?> target = event.getNavigationTarget();
-    if (target == NewGroupMain.class) {
-      // the create page belongs to the My Groups tab
-      target = MyGroupsMain.class;
-    }
-    settingsNavigationComponent.selectTabFor(target);
+    settingsNavigationComponent.selectTabFor(event.getNavigationTarget());
   }
 }

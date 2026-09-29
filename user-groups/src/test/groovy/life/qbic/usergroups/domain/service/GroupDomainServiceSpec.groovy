@@ -7,6 +7,10 @@ import life.qbic.domain.concepts.DomainEventDispatcher
 import life.qbic.domain.concepts.DomainEventSubscriber
 import life.qbic.usergroups.domain.event.GroupCreated
 import life.qbic.usergroups.domain.event.GroupDissolved
+import life.qbic.usergroups.domain.event.GroupMembershipRoleChanged
+import life.qbic.usergroups.domain.event.GroupProfileUpdated
+import life.qbic.usergroups.domain.event.MemberAddedToGroup
+import life.qbic.usergroups.domain.event.MemberRemovedFromGroup
 import life.qbic.usergroups.domain.model.GroupDescription
 import life.qbic.usergroups.domain.model.GroupId
 import life.qbic.usergroups.domain.model.GroupName
@@ -112,9 +116,7 @@ class GroupDomainServiceSpec extends Specification {
 
     and: "add a second member directly on the aggregate before storing"
     def group = storage.findById(id).get()
-    def addMember = group.class.getDeclaredMethod("addMember", String, GroupRole, Instant)
-    addMember.setAccessible(true)
-    addMember.invoke(group, "member-2", GroupRole.MEMBER, NOW)
+    group.addMember(creator, "member-2", NOW)
     storage.save(group)
 
     when:
@@ -206,6 +208,159 @@ class GroupDomainServiceSpec extends Specification {
 
     then:
     directory*.id() == [activeGroup]
+  }
+
+  def "adding a member dispatches a MemberAddedToGroup event"() {
+    given:
+    GroupDataStorage storage = new InMemoryGroupDataStorage()
+    GroupRepository repository = new GroupRepository(storage)
+    GroupDomainService service = new GroupDomainService(repository)
+    GroupCaptor<MemberAddedToGroup> captor = subscribe(MemberAddedToGroup)
+
+    and:
+    GroupId id = GroupId.create()
+    service.createAdHocGroup(id, NAME, DESC, "alice", NOW)
+
+    when:
+    Optional<UserGroup> result = service.addMember(id, "alice", "bob", NOW)
+
+    then:
+    result.isPresent()
+    captor.getEvent().isPresent()
+    captor.getEvent().get().groupId() == id.get()
+    captor.getEvent().get().userId() == "bob"
+    captor.getEvent().get().triggeredByUserId() == "alice"
+  }
+
+  def "removing a member dispatches MemberRemovedFromGroup and no GroupDissolved when the group stays non-empty"() {
+    given:
+    GroupDataStorage storage = new InMemoryGroupDataStorage()
+    GroupRepository repository = new GroupRepository(storage)
+    GroupDomainService service = new GroupDomainService(repository)
+    GroupCaptor<MemberRemovedFromGroup> removedCaptor = subscribe(MemberRemovedFromGroup)
+    GroupCaptor<GroupDissolved> dissolvedCaptor = subscribe(GroupDissolved)
+
+    and:
+    GroupId id = GroupId.create()
+    service.createAdHocGroup(id, NAME, DESC, "alice", NOW)
+    service.addMember(id, "alice", "bob", NOW)
+
+    when:
+    Optional<UserGroup> result = service.removeMember(id, "alice", "bob")
+
+    then:
+    result.isPresent()
+    result.get().status() == GroupStatus.ACTIVE
+    removedCaptor.getEvent().isPresent()
+    removedCaptor.getEvent().get().userId() == "bob"
+    dissolvedCaptor.getEvent().isEmpty()
+  }
+
+  def "removing the last member dispatches both MemberRemovedFromGroup and GroupDissolved"() {
+    given:
+    GroupDataStorage storage = new InMemoryGroupDataStorage()
+    GroupRepository repository = new GroupRepository(storage)
+    GroupDomainService service = new GroupDomainService(repository)
+    GroupCaptor<MemberRemovedFromGroup> removedCaptor = subscribe(MemberRemovedFromGroup)
+    GroupCaptor<GroupDissolved> dissolvedCaptor = subscribe(GroupDissolved)
+
+    and:
+    GroupId id = GroupId.create()
+    service.createAdHocGroup(id, NAME, DESC, "alice", NOW)
+    service.addMember(id, "alice", "bob", NOW)
+
+    when: "the owner removes the last remaining member (bob), leaving only the owner"
+    Optional<UserGroup> result = service.removeMember(id, "alice", "bob")
+
+    then:
+    result.isPresent()
+    removedCaptor.getEvent().isPresent()
+    result.get().status() == GroupStatus.ACTIVE
+    dissolvedCaptor.getEvent().isEmpty()
+  }
+
+  def "appointing and demoting a manager dispatch GroupMembershipRoleChanged events"() {
+    given:
+    GroupDataStorage storage = new InMemoryGroupDataStorage()
+    GroupRepository repository = new GroupRepository(storage)
+    GroupDomainService service = new GroupDomainService(repository)
+    GroupCaptor<GroupMembershipRoleChanged> captor = subscribe(GroupMembershipRoleChanged)
+
+    and:
+    GroupId id = GroupId.create()
+    service.createAdHocGroup(id, NAME, DESC, "alice", NOW)
+    service.addMember(id, "alice", "bob", NOW)
+
+    when: "alice appoints bob as manager"
+    service.appointManager(id, "alice", "bob")
+
+    then: "the role-changed event carries MEMBER -> MANAGER"
+    captor.getEvent().isPresent()
+    captor.getEvent().get().userId() == "bob"
+    captor.getEvent().get().previousRole() == GroupRole.MEMBER
+    captor.getEvent().get().newRole() == GroupRole.MANAGER
+
+    when: "alice demotes bob back"
+    service.demoteManager(id, "alice", "bob")
+
+    then: "the role-changed event carries MANAGER -> MEMBER"
+    captor.getEvent().get().previousRole() == GroupRole.MANAGER
+    captor.getEvent().get().newRole() == GroupRole.MEMBER
+  }
+
+  def "renaming and changing the description dispatch GroupProfileUpdated events"() {
+    given:
+    GroupDataStorage storage = new InMemoryGroupDataStorage()
+    GroupRepository repository = new GroupRepository(storage)
+    GroupDomainService service = new GroupDomainService(repository)
+    GroupCaptor<GroupProfileUpdated> captor = subscribe(GroupProfileUpdated)
+
+    and:
+    GroupId id = GroupId.create()
+    service.createAdHocGroup(id, NAME, DESC, "alice", NOW)
+
+    when: "alice renames the group"
+    service.renameGroup(id, "alice", GroupName.from("Renamed Lab"))
+
+    then:
+    captor.getEvent().isPresent()
+    captor.getEvent().get().groupId() == id.get()
+    captor.getEvent().get().oldName() == NAME.value()
+    captor.getEvent().get().newName() == "Renamed Lab"
+
+    when: "alice changes the description"
+    service.updateDescription(id, "alice", GroupDescription.from("new description"))
+
+    then: "a profile-updated event fires"
+    captor.getEvent().isPresent()
+  }
+
+  def "only the owner can dissolve an ad-hoc group explicitly"() {
+    given:
+    GroupDataStorage storage = new InMemoryGroupDataStorage()
+    GroupRepository repository = new GroupRepository(storage)
+    GroupDomainService service = new GroupDomainService(repository)
+
+    and:
+    GroupId id = GroupId.create()
+    service.createAdHocGroup(id, NAME, DESC, "alice", NOW)
+    service.addMember(id, "alice", "bob", NOW)
+    service.appointManager(id, "alice", "bob")
+
+    when: "the manager attempts to dissolve"
+    Optional<UserGroup> managerResult = service.dissolve(id, "bob")
+
+    then: "the operation is rejected"
+    managerResult.isEmpty()
+    storage.findById(id).get().status() == GroupStatus.ACTIVE
+
+    when: "the owner dissolves"
+    Optional<UserGroup> ownerResult = service.dissolve(id, "alice")
+
+    then:
+    ownerResult.isPresent()
+    ownerResult.get().status() == GroupStatus.DISSOLVED
+    ownerResult.get().memberships().isEmpty()
   }
 
   /**
