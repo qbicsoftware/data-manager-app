@@ -216,7 +216,7 @@ public class PaginatedGrid<T> extends Div {
       if (orders.isEmpty()) {
         return;
       }
-      GridSortOrder<T> order = orders.get(0);
+      GridSortOrder<T> order = orders.getFirst();
       if (order.getSorted() == null) {
         return;
       }
@@ -244,9 +244,7 @@ public class PaginatedGrid<T> extends Div {
   }
 
   private void configureSelection() {
-    @SuppressWarnings("unchecked")
-    Grid<Object> objectGrid = (Grid<Object>) grid;
-    objectGrid.addSelectionListener(this::onGridSelectionChanged);
+    grid.addSelectionListener(this::onGridSelectionChanged);
     clearSelectionButton.addClickListener(event -> {
       selection.clear();
       applySelectionToGrid();
@@ -260,14 +258,14 @@ public class PaginatedGrid<T> extends Div {
    * not on the newly rendered page. The rows are reconciled against the identifier set afterwards
    * by {@link #applySelectionToGrid}.
    */
-  private void onGridSelectionChanged(SelectionEvent<Grid<Object>, Object> event) {
+  private void onGridSelectionChanged(SelectionEvent<Grid<T>, T> event) {
     if (!event.isFromClient()) {
       return;
     }
-    MultiSelectionEvent<Grid<Object>, Object> multi =
-        (MultiSelectionEvent<Grid<Object>, Object>) event;
-    multi.getAddedSelection().forEach(item -> selection.select(idExtractor.apply((T) item)));
-    multi.getRemovedSelection().forEach(item -> selection.deselect(idExtractor.apply((T) item)));
+    MultiSelectionEvent<Grid<T>, T> multi =
+        (MultiSelectionEvent<Grid<T>, T>) event;
+    multi.getAddedSelection().forEach(item -> selection.select(idExtractor.apply(item)));
+    multi.getRemovedSelection().forEach(item -> selection.deselect(idExtractor.apply(item)));
   }
 
   private void configurePagination() {

@@ -210,7 +210,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
       if (orders.isEmpty()) {
         return;
       }
-      GridSortOrder<SamplePreview> order = orders.get(0);
+      GridSortOrder<SamplePreview> order = orders.getFirst();
       String property = sortPropertyOf(order);
       if (property == null || property.isBlank()) {
         return;
@@ -233,7 +233,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     if (order.getSorted() == null) {
       return null;
     }
-    Column<?> column = (Column<?>) order.getSorted();
+    var column = order.getSorted();
     return column.getSortOrder(order.getDirection())
         .findFirst()
         .map(QuerySortOrder::getSorted)
