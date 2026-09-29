@@ -1,6 +1,8 @@
 package life.qbic.datamanager.views.general.pagination
 
 import com.vaadin.flow.component.grid.Grid
+import com.vaadin.flow.component.grid.GridSortOrder
+import com.vaadin.flow.data.provider.SortDirection
 import life.qbic.application.commons.SortOrder
 import spock.lang.Specification
 
@@ -176,5 +178,41 @@ class PaginatedGridSpec extends Specification {
         then: "the page is loaded exactly as in standalone mode"
         loader.loadCount == 1
         paginated.grid().getGenericDataView().getItems().toList()*.id == (11..20).collect { "id-$it" }
+    }
+
+    PaginatedGrid<Item> newSortablePaginatedGrid(FakeLoader loader, SortOrder defaultSort) {
+        // value provider + sort property only (no explicit comparator), as in the raw data grids;
+        // the grid still re-sorts in-memory, so the sort indicator must be synced to the state.
+        def grid = new Grid<Item>()
+        grid.addColumn({ it.id })
+            .setKey("id")
+            .setSortProperty("id")
+        grid.sort([new GridSortOrder<>(grid.getColumnByKey("id"), SortDirection.ASCENDING)])
+        return new PaginatedGrid<>(grid, loader, { it.id }, "item", defaultSort,
+            false, false, false)
+    }
+
+    def "setListState with a descending sort displays the page descending, not ascending"() {
+        given: "a sortable paginated grid whose backend page is already descending"
+        def loader = new FakeLoader([new Item("c"), new Item("b"), new Item("a")])
+        def paginated = newSortablePaginatedGrid(loader, new SortOrder("id", false))
+
+        when: "a descending sort is applied"
+        paginated.setListState(new ListState(1, 10, "", new SortOrder("id", true)))
+
+        then: "the grid matches the applied sort instead of re-sorting by a stale ascending indicator"
+        paginated.grid().getGenericDataView().getItems().toList()*.id == ["c", "b", "a"]
+    }
+
+    def "setListState with an ascending sort displays the page ascending"() {
+        given: "a sortable paginated grid whose backend page is ascending"
+        def loader = new FakeLoader([new Item("a"), new Item("b"), new Item("c")])
+        def paginated = newSortablePaginatedGrid(loader, new SortOrder("id", false))
+
+        when: "an ascending sort is applied"
+        paginated.setListState(new ListState(1, 10, "", new SortOrder("id", false)))
+
+        then:
+        paginated.grid().getGenericDataView().getItems().toList()*.id == ["a", "b", "c"]
     }
 }
