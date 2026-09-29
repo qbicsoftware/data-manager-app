@@ -7,7 +7,13 @@ import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.ParentLayout;
 import com.vaadin.flow.router.RouterLayout;
 import jakarta.annotation.security.PermitAll;
+import java.util.Objects;
 import life.qbic.datamanager.views.UserMainLayout;
+import life.qbic.projectmanagement.application.AuthenticationToUserIdTranslationService;
+import life.qbic.usergroups.api.GroupAdministrationPermission;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 /**
  * <b> Groups Main Layout </b>
@@ -21,20 +27,36 @@ import life.qbic.datamanager.views.UserMainLayout;
  * aside column with the {@link GroupsNavigationComponent} on the left and the currently selected
  * group route in the content area on the right. The selected aside tab is kept in sync with the
  * active route via {@link #beforeEnter(BeforeEnterEvent)}.
+ * <p>
+ * QBiC administrators additionally see the admin-only "Admin" tab leading to the org-group
+ * creation page ({@link AdminGroupCreationMain}); the admin gate is resolved through the
+ * {@link GroupAdministrationPermission} port when the layout is built.
  */
 @PermitAll
 @ParentLayout(UserMainLayout.class)
 public class GroupsMainLayout extends Div implements RouterLayout, BeforeEnterObserver {
 
-  private final GroupsNavigationComponent groupsNavigationComponent = new GroupsNavigationComponent();
+  private final GroupsNavigationComponent groupsNavigationComponent;
   private final Div contentSlot = new Div();
 
-  public GroupsMainLayout() {
+  public GroupsMainLayout(
+      @Autowired GroupAdministrationPermission groupAdministrationPermission,
+      @Autowired AuthenticationToUserIdTranslationService userIdTranslator) {
     addClassName("groups-main-layout");
+    this.groupsNavigationComponent = new GroupsNavigationComponent(
+        isCurrentUserAdmin(groupAdministrationPermission, userIdTranslator));
     Div asideArea = new Div(groupsNavigationComponent);
     asideArea.addClassName("groups-aside-area");
     contentSlot.addClassName("groups-content-area");
     add(asideArea, contentSlot);
+  }
+
+  private static boolean isCurrentUserAdmin(GroupAdministrationPermission permission,
+      AuthenticationToUserIdTranslationService userIdTranslator) {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    return userIdTranslator.translateToUserId(authentication)
+        .map(permission::isAdmin)
+        .orElse(false);
   }
 
   @Override

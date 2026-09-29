@@ -18,18 +18,33 @@ import java.util.Map;
  * to a group route, so sections remain deep-linkable and the current section can be highlighted
  * based on the active route. Additional group categories can be added by registering further tabs
  * via {@link #addTab(String, VaadinIcon, Class)}.
+ * <p>
+ * For QBiC administrators an additional admin-only "Admin" tab points to the org-group creation
+ * page ({@link AdminGroupCreationMain}).
  */
 public class GroupsNavigationComponent extends Div {
 
   private final Tabs tabs = new Tabs();
   private final Map<Class<?>, Tab> tabsByNavigationTarget = new HashMap<>();
 
-  public GroupsNavigationComponent() {
+  /**
+   * Creates the groups navigation.
+   *
+   * @param isAdmin whether the current user is a QBiC administrator (shows the admin-only tab)
+   */
+  public GroupsNavigationComponent(boolean isAdmin) {
     addClassName("groups-navigation-component");
     tabs.addClassName("groups-navigation-tabs");
     tabs.getElement().setAttribute("orientation", "vertical");
     addTab("My Groups", VaadinIcon.USERS, MyGroupsMain.class);
+    if (isAdmin) {
+      addTab("Admin", VaadinIcon.SHIELD, AdminGroupCreationMain.class);
+    }
     add(tabs);
+  }
+
+  public GroupsNavigationComponent() {
+    this(false);
   }
 
   private void addTab(String label, VaadinIcon icon, Class<? extends Component> navigationTarget) {

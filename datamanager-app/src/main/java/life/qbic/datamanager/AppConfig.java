@@ -216,8 +216,10 @@ public class AppConfig {
 
   @Bean
   public GroupService groupService(GroupRepository groupRepository,
-      UserInformationService userInformationService) {
-    return new GroupService(groupRepository, userInformationService);
+      UserInformationService userInformationService,
+      life.qbic.usergroups.api.GroupAdministrationPermission groupAdministrationPermission) {
+    return new GroupService(groupRepository, userInformationService,
+        groupAdministrationPermission);
   }
 
   @Bean

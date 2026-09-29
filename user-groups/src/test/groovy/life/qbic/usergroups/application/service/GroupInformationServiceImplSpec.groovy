@@ -159,6 +159,24 @@ class GroupInformationServiceImplSpec extends Specification {
     service.isGroupNameAvailable("Proteomics Core")
   }
 
+  def "an org group surfaces in the public directory with type ORG (FEAT-USER-GROUPS-01 regression)"() {
+    given: "an org group created by an admin"
+    domainService.createOrgGroup(GroupId.create(), GroupName.from("NGS Lab Org"),
+        GroupDescription.from("QBiC NGS laboratory"), "admin-user", NOW)
+
+    when:
+    List<GroupInfo> directory = service.listPublicDirectory()
+
+    then: "the org group appears with its type, name and description"
+    directory.size() == 1
+    directory.get(0).name() == "NGS Lab Org"
+    directory.get(0).description() == "QBiC NGS laboratory"
+    directory.get(0).type() == GroupType.ORG
+
+    and: "no membership information is exposed for the admin created it"
+    service.listMyGroups("admin-user").isEmpty()
+  }
+
   private static GroupDescription DESC = GroupDescription.from("desc")
 
   static class InMemoryGroupDataStorage implements GroupDataStorage {

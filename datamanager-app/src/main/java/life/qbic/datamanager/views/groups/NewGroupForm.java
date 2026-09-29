@@ -30,11 +30,18 @@ import life.qbic.usergroups.domain.model.GroupName;
 /**
  * <b>New group form</b>
  * <p>
- * Renders the creation form for a new ad-hoc group: a required name field (max 80 characters)
+ * Renders the creation form for a new user group: a required name field (max 80 characters)
  * and an optional description field (max 500 characters). Validation mirrors the domain value
  * objects ({@code GroupName}, {@code GroupDescription}) and is performed client-side before any
  * service call.
  * <p>
+ * Supports two modes:
+ * <ul>
+ *   <li><b>ad-hoc</b> (default) — creates a self-service group via
+ *   {@link GroupService#createAdHocGroup}; the caller becomes OWNER.</li>
+ *   <li><b>org</b> ({@code createOrg}) — creates an administrator-managed group via
+ *   {@link GroupService#createOrgGroup}; the admin gate is enforced at the service boundary.</li>
+ * </ul>
  * The component owns the create orchestration (service call, toasts and navigation behind
  * injected seams) so it is testable without a Vaadin {@code UI} or Spring context.
  *
@@ -64,6 +71,7 @@ public class NewGroupForm extends Div {
   private final Consumer<String> successToast;
   private final Runnable errorToast;
   private final Runnable navigateToMyGroups;
+  private final boolean createOrg;
 
   /**
    * Creates a new group creation form. The create action is handled here so the form is fully
@@ -75,23 +83,54 @@ public class NewGroupForm extends Div {
    * @param currentUserId        supplies the current user id (never {@code null})
    * @param successToast         invoked with the created group name on success (never {@code null})
    * @param errorToast           invoked on a non-duplicate failure (never {@code null})
-   * @param navigateToMyGroups   invoked after a successful creation (never {@code null})
+   * @param navigateAfterCreate  invoked after a successful creation (never {@code null})
    */
   public NewGroupForm(@Nullable Function<String, Boolean> nameAvailabilityCheck,
       GroupService groupService, Supplier<String> currentUserId, Consumer<String> successToast,
-      Runnable errorToast, Runnable navigateToMyGroups) {
+      Runnable errorToast, Runnable navigateAfterCreate) {
+    this(nameAvailabilityCheck, groupService, currentUserId, successToast, errorToast,
+        navigateAfterCreate, false);
+  }
+
+  /**
+   * Creates a group creation form in either ad-hoc or organisational mode.
+   *
+   * <p>In organisational mode ({@code createOrg}), the submit calls
+   * {@link GroupService#createOrgGroup} (admin-gated at the service boundary) instead of
+   * {@link GroupService#createAdHocGroup}, and the form labels read "New Org Group" /
+   * "Create an organisational group for recurring teams". All validation, the live
+   * name-availability hint and the duplicate-name inline error are identical in both modes.</p>
+   *
+   * @param nameAvailabilityCheck optional case-insensitive name availability check invoked on
+   *                              name blur; may be {@code null} to disable the live hint
+   * @param groupService         the user-groups create service (never {@code null})
+   * @param currentUserId        supplies the current user id (never {@code null})
+   * @param successToast         invoked with the created group name on success (never {@code null})
+   * @param errorToast           invoked on a non-duplicate failure (never {@code null})
+   * @param navigateAfterCreate  invoked after a successful creation (never {@code null})
+   * @param createOrg            {@code true} to create an organisational (admin-managed) group
+   * @since 1.21.0
+   */
+  public NewGroupForm(@Nullable Function<String, Boolean> nameAvailabilityCheck,
+      GroupService groupService, Supplier<String> currentUserId, Consumer<String> successToast,
+      Runnable errorToast, Runnable navigateAfterCreate, boolean createOrg) {
     this.nameAvailabilityCheck = nameAvailabilityCheck;
     this.groupService = requireNonNull(groupService, "groupService must not be null");
     this.currentUserId = requireNonNull(currentUserId, "currentUserId must not be null");
     this.successToast = requireNonNull(successToast, "successToast must not be null");
     this.errorToast = requireNonNull(errorToast, "errorToast must not be null");
-    this.navigateToMyGroups = requireNonNull(navigateToMyGroups,
-        "navigateToMyGroups must not be null");
+    this.navigateToMyGroups = requireNonNull(navigateAfterCreate,
+        "navigateAfterCreate must not be null");
+    this.createOrg = createOrg;
     addClassName("new-group-form");
 
+    nameField.setLabel("Name");
+    nameField.setPlaceholder(createOrg
+        ? "e.g. NGS Lab"
+        : "e.g. Acknowledgements Working Group");
+    createButton.setText(createOrg ? "Create org group" : "Create");
     nameField.setRequiredIndicatorVisible(true);
     nameField.setMaxLength(NAME_MAX_LENGTH);
-    nameField.setPlaceholder("e.g. Acknowledgements Working Group");
     nameField.setValueChangeMode(ValueChangeMode.LAZY);
     nameField.setValueChangeTimeout(NAME_AVAILABILITY_DEBOUNCE_MS);
     // Native autofocus on initial render plus an attach-time focus: Vaadin views swap in the
@@ -223,8 +262,9 @@ public class NewGroupForm extends Div {
     clearNameError();
     GroupName groupName = GroupName.from(name);
     GroupDescription groupDescription = GroupDescription.from(description);
-    Result<GroupInfoProjection, ApplicationException> result =
-        groupService.createAdHocGroup(currentUserId.get(), groupName, groupDescription);
+    Result<GroupInfoProjection, ApplicationException> result = createOrg
+        ? groupService.createOrgGroup(currentUserId.get(), groupName, groupDescription)
+        : groupService.createAdHocGroup(currentUserId.get(), groupName, groupDescription);
     result.onValue(created -> {
           successToast.accept(created.groupName().value());
           navigateToMyGroups.run();

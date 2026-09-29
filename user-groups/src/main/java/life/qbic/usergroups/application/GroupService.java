@@ -9,6 +9,7 @@ import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
 import life.qbic.identity.api.UserInformationService;
+import life.qbic.usergroups.api.GroupAdministrationPermission;
 import life.qbic.usergroups.domain.model.GroupDescription;
 import life.qbic.usergroups.domain.model.GroupId;
 import life.qbic.usergroups.domain.model.GroupMembership;
@@ -58,12 +59,30 @@ public class GroupService {
 
   private final GroupRepository groupRepository;
   private final UserInformationService userInformationService;
+  private final GroupAdministrationPermission groupAdministrationPermission;
 
   public GroupService(GroupRepository groupRepository,
       UserInformationService userInformationService) {
+    this(groupRepository, userInformationService, userId -> false);
+  }
+
+  /**
+   * Creates a new {@link GroupService} with an injected admin-gate port.
+   *
+   * @param groupRepository               the group storage port
+   * @param userInformationService        the identity lookup port
+   * @param groupAdministrationPermission the admin-gate port (org-group operations); never
+   *                                      {@code null}
+   * @since 1.21.0
+   */
+  public GroupService(GroupRepository groupRepository,
+      UserInformationService userInformationService,
+      GroupAdministrationPermission groupAdministrationPermission) {
     this.groupRepository = groupRepository;
     this.userInformationService = Objects.requireNonNull(userInformationService,
         "userInformationService must not be null");
+    this.groupAdministrationPermission = Objects.requireNonNull(groupAdministrationPermission,
+        "groupAdministrationPermission must not be null");
   }
 
   /**
@@ -109,6 +128,73 @@ public class GroupService {
 
     try {
       domainService.get().createAdHocGroup(groupId, name, description, creatorUserId, createdAt);
+    } catch (RuntimeException e) {
+      if (isDataIntegrityViolation(e)) {
+        return duplicateNameError(name.value());
+      }
+      throw e;
+    }
+
+    Optional<UserGroup> created = groupRepository.findById(groupId);
+    return created.<Result<GroupInfoProjection, ApplicationException>>map(
+            group -> Result.fromValue(toInfoProjection(group)))
+        .orElseGet(() -> Result.fromError(new ApplicationException(
+            "Group creation failed.", ErrorCode.SERVICE_FAILED, ErrorParameters.empty())));
+  }
+
+  /**
+   * Creates a new organisational user group by a QBiC administrator.
+   *
+   * <p>Admin gate (AC3): the caller must be a QBiC administrator — enforced through the
+   * {@link GroupAdministrationPermission} port <b>before any write</b>; otherwise an
+   * {@link ErrorCode#ACCESS_DENIED} error is returned and nothing is persisted.</p>
+   *
+   * <p>Reuses the exact duplicate-name flow of {@link #createAdHocGroup(String, GroupName,
+   * GroupDescription)}: a case-insensitive pre-check plus a {@link DataIntegrityViolationException}
+   * race mapping, both yielding the existing {@link ErrorCode#DUPLICATE_GROUP_NAME} message (AC2).
+   * The uniqueness is global over all group types, matching the database unique index
+   * {@code uk_user_group_name}.</p>
+   *
+   * <p>The created org group has an empty roster — org groups carry no OWNER membership row; the
+   * QBiC admin acts as owner-equivalent at the application layer (D4).</p>
+   *
+   * @param actingAdminUserId the user id of the acting QBiC administrator; must not be blank
+   * @param name              the desired group name (validated by {@link GroupName})
+   * @param description       the desired group description (may be empty)
+   * @return a result wrapping the created org-group {@link GroupInfoProjection}, or an error if
+   * the caller is not an admin, the name is already taken (case-insensitive) or the admin id is
+   * invalid
+   * @since 1.21.0
+   */
+  @Transactional
+  public Result<GroupInfoProjection, ApplicationException> createOrgGroup(String actingAdminUserId,
+      GroupName name, GroupDescription description) {
+    if (actingAdminUserId == null || actingAdminUserId.isBlank()) {
+      return Result.fromError(new ApplicationException(
+          "Invalid admin user id: " + actingAdminUserId, ErrorCode.GENERAL,
+          ErrorParameters.empty()));
+    }
+    if (!groupAdministrationPermission.isAdmin(actingAdminUserId)) {
+      return Result.fromError(new ApplicationException(
+          "User " + actingAdminUserId + " is not a QBiC administrator and is not allowed to "
+              + "create organisational groups.", ErrorCode.ACCESS_DENIED, ErrorParameters.empty()));
+    }
+
+    Optional<UserGroup> existing = groupRepository.findByNameIgnoreCase(name);
+    if (existing.isPresent()) {
+      return duplicateNameError(name.value());
+    }
+
+    GroupId groupId = GroupId.create();
+    Instant createdAt = Instant.now();
+    var domainService = DomainRegistry.instance().groupDomainService();
+    if (domainService.isEmpty()) {
+      return Result.fromError(new ApplicationException(
+          "Group creation failed.", ErrorCode.SERVICE_FAILED, ErrorParameters.empty()));
+    }
+
+    try {
+      domainService.get().createOrgGroup(groupId, name, description, actingAdminUserId, createdAt);
     } catch (RuntimeException e) {
       if (isDataIntegrityViolation(e)) {
         return duplicateNameError(name.value());
