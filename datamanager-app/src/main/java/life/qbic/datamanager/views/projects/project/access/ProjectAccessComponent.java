@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.grid.Grid;
@@ -27,9 +28,12 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
+import life.qbic.datamanager.views.UiHandle;
 import life.qbic.datamanager.views.account.UserAvatar;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
@@ -54,6 +58,7 @@ import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.usergroups.api.GroupInformationService;
 import life.qbic.usergroups.api.GroupSidProvider;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 /**
@@ -83,6 +88,8 @@ public class ProjectAccessComponent extends PageArea {
   private final transient GroupInformationService groupInformationService;
   private final transient UserPermissions userPermissions;
   private final transient AuthenticationToUserIdTranslator authenticationToUserIdTranslator;
+  private final transient Executor taskExecutor;
+  private final UiHandle uiHandle = new UiHandle();
 
   private final Div header;
   private final ProjectSharingComposer composer;
@@ -103,7 +110,8 @@ public class ProjectAccessComponent extends PageArea {
       @Autowired UserInformationService userInformationService,
       @Autowired GroupInformationService groupInformationService,
       UserPermissions userPermissions,
-      AuthenticationToUserIdTranslator authenticationToUserIdTranslator) {
+      AuthenticationToUserIdTranslator authenticationToUserIdTranslator,
+      @Qualifier("taskExecutor") Executor taskExecutor) {
     this.projectAccessService = requireNonNull(projectAccessService,
         "projectAccessService must not be null");
     this.userInformationService = requireNonNull(userInformationService,
@@ -113,6 +121,7 @@ public class ProjectAccessComponent extends PageArea {
     this.userPermissions = requireNonNull(userPermissions, "userPermissions must not be null");
     this.authenticationToUserIdTranslator = requireNonNull(authenticationToUserIdTranslator,
         "authenticationToUserIdTranslator must not be null");
+    this.taskExecutor = requireNonNull(taskExecutor, "taskExecutor must not be null");
     this.addClassName("project-access-component");
     log.debug("New instance for %s(#%d)".formatted(ProjectAccessComponent.class.getSimpleName(),
         System.identityHashCode(this)));
@@ -223,6 +232,7 @@ public class ProjectAccessComponent extends PageArea {
     this.context = context;
     this.canChangeAccess = userPermissions.changeProjectAccess(context.projectId().orElseThrow());
     composer.setVisible(canChangeAccess);
+    uiHandle.bind(UI.getCurrent());
     removeButton.setVisible(canChangeAccess);
     changeRoleButton.setVisible(canChangeAccess);
     grid.setSelectionMode(canChangeAccess ? SelectionMode.MULTI : SelectionMode.NONE);
@@ -483,10 +493,22 @@ public class ProjectAccessComponent extends PageArea {
   }
 
   private void onGrantRequested(GrantRequestedEvent event) {
+    List<GrantRequest> requests = List.copyOf(event.requests());
+    composer.setBusy(true);
+    // Run the ACL write on the UI thread (via UiHandle/ui.access): the app uses a
+    // VaadinAwareSecurityContextHolderStrategy whose ACL strategy resolves the authenticated
+    // principal from the Vaadin session, which is not available on a raw pool thread. The busy
+    // overlay is sent to the client with the current response before the scheduled task runs.
+    CompletableFuture.runAsync(
+        () -> uiHandle.onUiAndPush(() -> onGrantsApplied(applyGrants(requests))),
+        taskExecutor);
+  }
+
+  private GrantOutcome applyGrants(List<GrantRequest> requests) {
     ProjectId projectId = context.projectId().orElseThrow();
     int granted = 0;
     List<String> problems = new ArrayList<>();
-    for (GrantRequest request : event.requests()) {
+    for (GrantRequest request : requests) {
       try {
         if (request.type() == PrincipalType.USER) {
           projectAccessService.addCollaborator(projectId, request.id(), request.role());
@@ -499,18 +521,27 @@ public class ProjectAccessComponent extends PageArea {
         problems.add(ProjectSharingComposer.describeFailure(request, e));
       }
     }
+    return new GrantOutcome(granted, List.copyOf(problems));
+  }
+
+  private void onGrantsApplied(GrantOutcome outcome) {
+    composer.setBusy(false);
     loadAccess();
-    if (!problems.isEmpty()) {
-      composer.showInlineError(granted > 0
-          ? "Access granted to %d, but some requests failed:".formatted(granted)
-          : "Access could not be granted:", problems);
-    } else if (granted > 0) {
+    if (!outcome.problems().isEmpty()) {
+      composer.showInlineError(outcome.granted() > 0
+          ? "Access granted to %d, but some requests failed:".formatted(outcome.granted())
+          : "Access could not be granted:", outcome.problems());
+    } else if (outcome.granted() > 0) {
       composer.reset();
-      composer.showInlineConfirmation(granted == 1
+      composer.showInlineConfirmation(outcome.granted() == 1
           ? "Access granted to 1 principal. The list below is up to date."
           : "Access granted to %d principals. The list below is up to date."
-              .formatted(granted));
+              .formatted(outcome.granted()));
     }
+  }
+
+  private record GrantOutcome(int granted, List<String> problems) {
+
   }
 
   private static int roleRank(ProjectRole role) {

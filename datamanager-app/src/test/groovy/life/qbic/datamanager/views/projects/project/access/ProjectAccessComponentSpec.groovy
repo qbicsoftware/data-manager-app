@@ -4,6 +4,7 @@ import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.select.Select
+import java.util.concurrent.Executor
 import life.qbic.datamanager.security.UserPermissions
 import life.qbic.datamanager.views.Context
 import life.qbic.datamanager.views.general.Tag
@@ -47,16 +48,22 @@ class ProjectAccessComponentSpec extends Specification {
   /** Mutable backing lists the service stubs read from, so tests can define the state. */
   List collaborators = []
   List sharedGroups = []
+  Executor directExecutor = { Runnable runnable -> runnable.run() } as Executor
 
   def setup() {
     component = new ProjectAccessComponent(projectAccessService, userInformationService,
-        groupInformationService, userPermissions, authenticationToUserIdTranslator)
+        groupInformationService, userPermissions, authenticationToUserIdTranslator, directExecutor)
     SecurityContextHolder.clearContext()
     SecurityContextHolder.getContext().setAuthentication(Mock(Authentication))
     authenticationToUserIdTranslator.translateToUserId(_ as Authentication) >> Optional.of("user-1")
     projectAccessService.listCollaborators(_ as ProjectId) >> { collaborators }
     projectAccessService.listSharedGroups(_ as ProjectId) >> { sharedGroups }
-    UI.setCurrent(Mock(UI))
+    def ui = Mock(UI)
+    ui.isAttached() >> true
+    def session = Mock(com.vaadin.flow.server.VaadinSession)
+    session.hasLock() >> true
+    ui.getSession() >> session
+    UI.setCurrent(ui)
   }
 
   def cleanup() {

@@ -203,7 +203,7 @@ public class ProjectSideNavigationComponent extends Div implements
 
   private static SideNavItem createProjectUsers(String projectId) {
     String projectUsersPath = String.format(ProjectRoutes.ACCESS, projectId);
-    return new SideNavItem("USERS", projectUsersPath,
+    return new SideNavItem("ACCESS", projectUsersPath,
         VaadinIcon.USERS.create());
   }
 
