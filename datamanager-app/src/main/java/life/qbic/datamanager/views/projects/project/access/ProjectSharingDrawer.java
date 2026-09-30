@@ -1,8 +1,10 @@
 package life.qbic.datamanager.views.projects.project.access;
 
 import static java.util.Objects.requireNonNull;
+import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Anchor;
@@ -13,18 +15,18 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import java.io.Serial;
 import java.util.Comparator;
 import java.util.List;
-import life.qbic.application.commons.ApplicationException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import life.qbic.datamanager.views.AppRoutes.ProjectRoutes;
+import life.qbic.datamanager.views.UiHandle;
 import life.qbic.datamanager.views.account.UserAvatar;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.Tag.TagColor;
-import life.qbic.datamanager.views.notifications.ErrorMessage;
-import life.qbic.datamanager.views.notifications.StyledNotification;
-import life.qbic.datamanager.views.notifications.SuccessMessage;
 import life.qbic.datamanager.views.projects.project.access.ProjectSharingComposer.GrantRequest;
 import life.qbic.datamanager.views.projects.project.access.ProjectSharingComposer.GrantRequestedEvent;
 import life.qbic.datamanager.views.projects.project.access.ProjectSharingComposer.PrincipalType;
 import life.qbic.identity.api.UserInformationService;
+import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.ProjectCollaborator;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.ProjectRole;
@@ -50,10 +52,13 @@ public class ProjectSharingDrawer extends Div {
 
   @Serial
   private static final long serialVersionUID = 3928119923411238841L;
+  private static final Logger log = logger(ProjectSharingDrawer.class);
 
   private final transient ProjectAccessService projectAccessService;
   private final transient UserInformationService userInformationService;
   private final transient GroupInformationService groupInformationService;
+  private final transient Executor taskExecutor;
+  private final UiHandle uiHandle = new UiHandle();
   private final ProjectId projectId;
   private final ProjectSharingComposer composer;
   private final Div overlay = new Div();
@@ -63,11 +68,13 @@ public class ProjectSharingDrawer extends Div {
   public ProjectSharingDrawer(ProjectAccessService projectAccessService,
       UserInformationService userInformationService,
       GroupInformationService groupInformationService,
+      Executor taskExecutor,
       ProjectId projectId,
       String projectLabel) {
     this.projectAccessService = requireNonNull(projectAccessService);
     this.userInformationService = requireNonNull(userInformationService);
     this.groupInformationService = requireNonNull(groupInformationService);
+    this.taskExecutor = requireNonNull(taskExecutor);
     this.projectId = requireNonNull(projectId);
     addClassName("project-sharing-drawer");
     composer = new ProjectSharingComposer(userInformationService, groupInformationService);
@@ -117,6 +124,7 @@ public class ProjectSharingDrawer extends Div {
    * Opens the drawer and loads the current access summary.
    */
   public void open() {
+    uiHandle.bind(UI.getCurrent());
     refresh();
     overlay.getStyle().set("display", "block");
     panel.getStyle().set("display", "block");
@@ -126,6 +134,7 @@ public class ProjectSharingDrawer extends Div {
    * Closes the drawer. The panel stays mounted so it can be reopened quickly.
    */
   public void close() {
+    uiHandle.unbind();
     overlay.getStyle().set("display", "none");
     panel.getStyle().set("display", "none");
   }
@@ -254,8 +263,17 @@ public class ProjectSharingDrawer extends Div {
   }
 
   private void onGrantRequested(GrantRequestedEvent event) {
+    List<GrantRequest> requests = List.copyOf(event.requests());
+    composer.setBusy(true);
+    CompletableFuture
+        .supplyAsync(() -> applyGrants(requests), taskExecutor)
+        .thenAccept(outcome -> uiHandle.onUiAndPush(() -> onGrantsApplied(outcome)));
+  }
+
+  private GrantOutcome applyGrants(List<GrantRequest> requests) {
     int granted = 0;
-    for (GrantRequest request : event.requests()) {
+    boolean failed = false;
+    for (GrantRequest request : requests) {
       try {
         if (request.type() == PrincipalType.USER) {
           projectAccessService.addCollaborator(projectId, request.id(), request.role());
@@ -264,17 +282,34 @@ public class ProjectSharingDrawer extends Div {
               GroupSidProvider.GROUP_SID_PREFIX + request.id(), request.role());
         }
         granted++;
-      } catch (ApplicationException e) {
-        new StyledNotification(new ErrorMessage("Invalid access grant",
-            "One or more selected people or groups could not be granted access.")).open();
+      } catch (RuntimeException e) {
+        log.error("Could not grant project access for %s".formatted(request.id()), e);
+        failed = true;
       }
     }
-    event.getSource().reset();
+    return new GrantOutcome(granted, failed);
+  }
+
+  /**
+   * Keeps the drawer open after a grant: hides the spinner, refreshes the roster in place and leaves
+   * the confirmation visible inline in the composer.
+   */
+  private void onGrantsApplied(GrantOutcome outcome) {
+    composer.setBusy(false);
+    composer.reset();
     refresh();
-    if (granted > 0) {
-      new StyledNotification(new SuccessMessage("Access granted", granted == 1
-          ? "Access was granted to 1 principal."
-          : "Access was granted to %d principals.".formatted(granted))).open();
+    if (outcome.failed()) {
+      composer.showInlineError(
+          "One or more selected people or groups could not be granted access.");
+    } else if (outcome.granted() > 0) {
+      composer.showInlineConfirmation(outcome.granted() == 1
+          ? "Access granted to 1 principal. The list below is up to date."
+          : "Access granted to %d principals. The list below is up to date."
+              .formatted(outcome.granted()));
     }
+  }
+
+  private record GrantOutcome(int granted, boolean failed) {
+
   }
 }

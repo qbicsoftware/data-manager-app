@@ -1,6 +1,7 @@
 package life.qbic.datamanager.views.projects.project.access
 
 import com.vaadin.flow.component.UI
+import java.util.concurrent.Executor
 import life.qbic.identity.api.UserInfo
 import life.qbic.identity.api.UserInformationService
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService
@@ -22,13 +23,14 @@ class ProjectSharingDrawerSpec extends Specification {
   ProjectAccessService projectAccessService = Mock()
   UserInformationService userInformationService = Mock()
   GroupInformationService groupInformationService = Mock()
+  Executor directExecutor = { Runnable runnable -> runnable.run() } as Executor
   ProjectId projectId = ProjectId.create()
   ProjectSharingDrawer drawer
 
   def setup() {
     UI.setCurrent(Mock(UI))
     drawer = new ProjectSharingDrawer(projectAccessService, userInformationService,
-        groupInformationService, projectId, "QVAMP — Vampirism Test project")
+        groupInformationService, directExecutor, projectId, "QVAMP — Vampirism Test project")
   }
 
   def cleanup() {

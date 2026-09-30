@@ -58,6 +58,7 @@ import life.qbic.projectmanagement.application.ProjectOverview;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.usergroups.api.GroupInformationService;
+import org.springframework.security.task.DelegatingSecurityContextAsyncTaskExecutor;
 import org.springframework.stereotype.Component;
 
 /**
@@ -111,6 +112,7 @@ public class ProjectCollectionComponent extends PageArea {
   private final transient UserInformationService userInformationService;
   private final transient GroupInformationService groupInformationService;
   private final transient UserPermissions userPermissions;
+  private final transient DelegatingSecurityContextAsyncTaskExecutor taskExecutor;
   /** The drawer currently mounted for quick-sharing; replaced per card. */
   private ProjectSharingDrawer sharingDrawer;
   /**
@@ -130,7 +132,8 @@ public class ProjectCollectionComponent extends PageArea {
       ProjectAccessService projectAccessService,
       UserInformationService userInformationService,
       GroupInformationService groupInformationService,
-      UserPermissions userPermissions) {
+      UserPermissions userPermissions,
+      DelegatingSecurityContextAsyncTaskExecutor taskExecutor) {
     this.projectInformationService = Objects.requireNonNull(projectInformationService,
         "Project information service cannot be null");
     this.pinnedProjectService = Objects.requireNonNull(pinnedProjectService,
@@ -145,6 +148,8 @@ public class ProjectCollectionComponent extends PageArea {
         "groupInformationService cannot be null");
     this.userPermissions = Objects.requireNonNull(userPermissions,
         "userPermissions cannot be null");
+    this.taskExecutor = Objects.requireNonNull(taskExecutor,
+        "taskExecutor cannot be null");
     this.pinnedProjectsComponent = new PinnedProjectsComponent(
         pinnedProjectService::findPinnedProjects, this::handlePinToggle);
     layoutComponent();
@@ -397,7 +402,7 @@ public class ProjectCollectionComponent extends PageArea {
       remove(sharingDrawer);
     }
     sharingDrawer = new ProjectSharingDrawer(projectAccessService, userInformationService,
-        groupInformationService, overview.projectId(),
+        groupInformationService, taskExecutor, overview.projectId(),
         "%s — %s".formatted(overview.projectCode(), overview.projectTitle()));
     add(sharingDrawer);
     sharingDrawer.open();

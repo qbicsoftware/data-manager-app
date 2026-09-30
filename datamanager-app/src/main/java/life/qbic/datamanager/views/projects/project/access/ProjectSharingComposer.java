@@ -61,6 +61,11 @@ public class ProjectSharingComposer extends Div {
   private final ComboBox<GroupInfo> groupPicker = new ComboBox<>();
   private final Div stagedGrants = new Div();
   private final Button grantButton = new Button("Grant access");
+  /** Centered spinner overlay shown while a grant request is being processed. */
+  private final Div loadingOverlay = new Div();
+  /** Inline success/error confirmation that stays visible while the drawer remains open. */
+  private final Div inlineMessage = new Div();
+  private boolean busy = false;
 
   private final Set<String> alreadyGrantedUserIds = new HashSet<>();
   private final Set<String> alreadyGrantedGroupIds = new HashSet<>();
@@ -104,10 +109,70 @@ public class ProjectSharingComposer extends Div {
     grantButton.setEnabled(false);
     grantButton.addClickListener(event -> fireGrantRequest());
 
+    Div spinner = new Div();
+    spinner.addClassName("psc-spinner");
+    Span loadingMessage = new Span("Granting access…");
+    loadingMessage.addClassName("project-sharing-composer-loading-message");
+    loadingOverlay.addClassName("project-sharing-composer-overlay");
+    loadingOverlay.add(spinner, loadingMessage);
+    loadingOverlay.getStyle().set("display", "none");
+
+    inlineMessage.addClassName("inline-message");
+    inlineMessage.getStyle().set("display", "none");
+
     Div pickers = new Div(personPicker, groupPicker);
     pickers.addClassName("sharing-pickers");
 
-    add(title, description, pickers, stagedGrants, grantButton);
+    add(title, description, pickers, stagedGrants, grantButton, inlineMessage, loadingOverlay);
+  }
+
+  /**
+   * Shows or hides the busy overlay while a grant request is processed. Disables the inputs so the
+   * same batch cannot be submitted twice.
+   *
+   * @param busy {@code true} while the grant request is in flight
+   */
+  public void setBusy(boolean busy) {
+    this.busy = busy;
+    loadingOverlay.getStyle().set("display", busy ? "flex" : "none");
+    personPicker.setEnabled(!busy);
+    groupPicker.setEnabled(!busy);
+    updateGrantButtonState();
+    if (busy) {
+      clearInlineMessage();
+    }
+  }
+
+  /**
+   * Shows an inline success confirmation that stays visible (the drawer stays open).
+   *
+   * @param message the confirmation text
+   */
+  public void showInlineConfirmation(String message) {
+    setInlineMessage(message, false);
+  }
+
+  /**
+   * Shows an inline error message that stays visible until the next staging action.
+   *
+   * @param message the error text
+   */
+  public void showInlineError(String message) {
+    setInlineMessage(message, true);
+  }
+
+  private void setInlineMessage(String message, boolean error) {
+    inlineMessage.removeAll();
+    inlineMessage.removeClassName("inline-message-success");
+    inlineMessage.removeClassName("inline-message-error");
+    inlineMessage.addClassName(error ? "inline-message-error" : "inline-message-success");
+    inlineMessage.add(new Span(message));
+    inlineMessage.getStyle().remove("display");
+  }
+
+  private void clearInlineMessage() {
+    inlineMessage.removeAll();
+    inlineMessage.getStyle().set("display", "none");
   }
 
   private void configurePersonPicker() {
@@ -164,6 +229,7 @@ public class ProjectSharingComposer extends Div {
     if (!stagedUserIds.add(userInfo.id())) {
       return;
     }
+    clearInlineMessage();
     addStagedGrant(PrincipalType.USER, userInfo.id(), userInfo.platformUserName(),
         renderUser(userInfo));
     personPicker.getDataProvider().refreshAll();
@@ -174,6 +240,7 @@ public class ProjectSharingComposer extends Div {
     if (!stagedGroupIds.add(groupInfo.id())) {
       return;
     }
+    clearInlineMessage();
     addStagedGrant(PrincipalType.GROUP, groupInfo.id(), groupInfo.name(), renderGroup(groupInfo));
     groupPicker.getDataProvider().refreshAll();
     updateGrantButtonState();
@@ -210,7 +277,7 @@ public class ProjectSharingComposer extends Div {
   }
 
   private void updateGrantButtonState() {
-    grantButton.setEnabled(!stagedGrants.getChildren().findAny().isEmpty());
+    grantButton.setEnabled(!busy && stagedGrants.getChildren().findAny().isPresent());
   }
 
   private void fireGrantRequest() {
