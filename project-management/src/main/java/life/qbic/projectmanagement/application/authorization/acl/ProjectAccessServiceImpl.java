@@ -530,32 +530,6 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
 
   @Override
   @Transactional(readOnly = true)
-  public List<String> listProjectAdministrators(ProjectId projectId) {
-    Acl acl = aclService.readAclById(new ObjectIdentityImpl(Project.class, projectId), null);
-    List<String> administrators = new ArrayList<>();
-    if (acl.getOwner() instanceof PrincipalSid ownerSid) {
-      administrators.add(ownerSid.getPrincipal());
-    }
-    Map<Sid, List<AccessControlEntry>> entriesBySid = acl.getEntries().stream()
-        .collect(Collectors.groupingBy(AccessControlEntry::getSid));
-    Set<String> principalsWithAdminGrant = entriesBySid.entrySet().stream()
-        // skip the owner as it is handled explicitly
-        .filter(sidListEntry -> !acl.getOwner().equals(sidListEntry.getKey()))
-        .filter(sidListEntry -> sidListEntry.getKey() instanceof PrincipalSid)
-        .filter(sidListEntry -> {
-          Set<Permission> permissions = parsePermissions(sidListEntry);
-          Optional<ProjectRole> role = ProjectRole.fromPermissions(permissions);
-          return role.isPresent()
-              && (role.get() == ProjectRole.OWNER || role.get() == ProjectRole.ADMIN);
-        })
-        .map(sidListEntry -> ((PrincipalSid) sidListEntry.getKey()).getPrincipal())
-        .collect(Collectors.toUnmodifiableSet());
-    administrators.addAll(principalsWithAdminGrant);
-    return administrators;
-  }
-
-  @Override
-  @Transactional(readOnly = true)
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
   public List<SharedProjectGroup> listSharedGroups(ProjectId projectId) {
     Acl acl = aclService.readAclById(new ObjectIdentityImpl(Project.class, projectId), null);

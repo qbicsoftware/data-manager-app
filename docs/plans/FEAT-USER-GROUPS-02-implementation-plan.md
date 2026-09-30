@@ -10,6 +10,21 @@
 
 ---
 
+> **Correction (2026-09-30) — project-administrator informing withdrawn from this story.**
+>
+> The PO confirmed that the official, approved user-story document is authoritative, and that
+> `FEAT-USER-GROUPS-02` AC2 does **not** require project owners/admins to be informed of a
+> membership change — that clause was added to GitHub issue #1560 in error. The
+> project-owner/admin informing belongs to the notifications story (`FEAT-USER-GROUPS-09`,
+> EPIC 4, proposed `GROUP-R-10`) and is **not** approved for implementation yet.
+>
+> Consequently, design decision **D4**, D4b, file-list items 10–13, the directive tests and the
+> AC2 second-half mapping below are **withdrawn from this PR**. No
+> `InformProjectAdministratorsAboutMembershipChange` directive/policy and no
+> `ProjectAccessService.listProjectAdministrators` seam are shipped here; the pre-existing
+> member-facing emails (`MemberAccessPolicy` → `InformAddedGroupMember`/`InformRemovedGroupMember`)
+> are unchanged. Treat the D4-related sections below as historical planning context only.
+
 ## 0. What this story actually is (verified reality check)
 
 The story reads as "let an admin manage an org group's members and managers". **The code already implements most of it** — the only missing piece is a small, precisely-scoped admin gate. Verified on `development`:
