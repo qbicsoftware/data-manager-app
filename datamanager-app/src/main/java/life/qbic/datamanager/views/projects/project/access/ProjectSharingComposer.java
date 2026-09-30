@@ -321,14 +321,16 @@ public class ProjectSharingComposer extends Div {
    * description (if any) muted on a second line. Keeps the picker scannable without overloading it.
    */
   private static Component renderGroupOption(GroupInfo groupInfo) {
+    Div option = new Div();
+    option.addClassName("group-option");
+    // Three stable lines: type badge, name, description. Keeping the badge on its own line stops
+    // it from being pushed out of the dropdown when the name/description is long.
+    option.add(groupTypeBadge(groupInfo.type()));
     Span name = new Span(groupInfo.name());
     name.addClassName("bold");
     name.addClassName("group-option-name");
     name.getElement().setAttribute("title", groupInfo.name());
-    Div header = new Div(name, groupTypeBadge(groupInfo.type()));
-    header.addClassName("group-option-header");
-    Div option = new Div(header);
-    option.addClassName("group-option");
+    option.add(name);
     if (groupInfo.description() != null && !groupInfo.description().isBlank()) {
       Span description = new Span(groupInfo.description());
       description.addClassName("tertiary");
