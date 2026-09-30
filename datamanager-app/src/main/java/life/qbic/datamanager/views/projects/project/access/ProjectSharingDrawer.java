@@ -269,18 +269,11 @@ public class ProjectSharingDrawer extends Div {
     Div identityWrapper = new Div(typeTag, identity);
     identityWrapper.addClassName("psd-identity");
     Tag roleTag = new Tag(role.label());
-    roleTag.setTagColor(roleColor(role));
+    roleTag.setTagColor(ProjectSharingComposer.roleColor(role));
     roleTag.addClassName("psd-role-tag");
     Div row = new Div(identityWrapper, roleTag);
     row.addClassName("psd-summary-row");
     return row;
-  }
-
-  private static TagColor roleColor(ProjectRole role) {
-    return switch (role) {
-      case READ -> TagColor.CONTRAST;
-      case WRITE, ADMIN, OWNER -> TagColor.PRIMARY;
-    };
   }
 
   private void onGrantRequested(GrantRequestedEvent event) {

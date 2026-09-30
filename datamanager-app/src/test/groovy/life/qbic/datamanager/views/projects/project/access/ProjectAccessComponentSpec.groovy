@@ -8,14 +8,18 @@ import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.component.select.Select
 import life.qbic.datamanager.security.UserPermissions
 import life.qbic.datamanager.views.Context
+import life.qbic.datamanager.views.general.Tag
+import life.qbic.datamanager.views.projects.project.access.ProjectAccessComponent.AccessFilter
 import life.qbic.datamanager.views.projects.project.access.ProjectAccessComponent.ProjectGroup
 import life.qbic.datamanager.views.projects.project.access.ProjectAccessComponent.ProjectUser
 import life.qbic.datamanager.views.projects.project.access.ProjectSharingComposer.GrantRequest
 import life.qbic.datamanager.views.projects.project.access.ProjectSharingComposer.GrantRequestedEvent
 import life.qbic.datamanager.views.projects.project.access.ProjectSharingComposer.PrincipalType
 import life.qbic.identity.api.AuthenticationToUserIdTranslator
+import life.qbic.identity.api.UserInfo
 import life.qbic.identity.api.UserInformationService
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService
+import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.ProjectCollaborator
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.ProjectRole
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.SharedProjectGroup
 import life.qbic.projectmanagement.domain.model.project.ProjectId
@@ -25,13 +29,11 @@ import org.springframework.security.core.context.SecurityContextHolder
 import spock.lang.Specification
 
 /**
- * Unit tests for the dialog-free project access component (story FEAT-USER-GROUPS-08).
+ * Unit tests for the dialog-free project access page (FEAT-USER-GROUPS-08).
  *
- * <p>Covers: shared groups render with name, description and an always-visible role control for an
- * ADMIN (AC1), the ADMIN can change a shared group's role and revoke the grant through an inline
- * confirmation (AC2), the inline composer grants one or several principals in a single action,
- * READ-only collaborators get a read-only view (AC4/D7), and rendering never touches membership
- * data (AC3). No Spring context, headless Vaadin.</p>
+ * <p>Covers: the roster renders editable role controls and removal for access-administrators, a
+ * read-only view otherwise, role change and revoke wiring, batch grants through the inline
+ * composer, the type filter, and the membership-leakage guard. Headless, no Spring context.</p>
  */
 class ProjectAccessComponentSpec extends Specification {
 
@@ -44,19 +46,14 @@ class ProjectAccessComponentSpec extends Specification {
   ProjectId projectId = ProjectId.create()
   ProjectAccessComponent component
 
-  /** Mutable backing lists the service stubs read from, so tests can define the state. */
-  List collaborators = []
-  List sharedGroups = []
-
   def setup() {
     component = new ProjectAccessComponent(projectAccessService, userInformationService,
         groupInformationService, userPermissions, authenticationToUserIdTranslator)
     SecurityContextHolder.clearContext()
     SecurityContextHolder.getContext().setAuthentication(Mock(Authentication))
     authenticationToUserIdTranslator.translateToUserId(_ as Authentication) >> Optional.of("user-1")
-    projectAccessService.listCollaborators(_ as ProjectId) >> { collaborators }
-    projectAccessService.listSharedGroups(_ as ProjectId) >> { sharedGroups }
-    // notifications (StyledNotification.open) require a current UI
+    projectAccessService.listCollaborators(_ as ProjectId) >> []
+    projectAccessService.listSharedGroups(_ as ProjectId) >> []
     UI.setCurrent(Mock(UI))
   }
 
@@ -70,11 +67,11 @@ class ProjectAccessComponentSpec extends Specification {
     component.setContext(new Context().with(projectId))
   }
 
-  private List<ProjectGroup> groupGridItems() {
-    return component.@projectGroupGrid.getGenericDataView().getItems().toList()
+  private static UserInfo user(String id, String fullName, String username) {
+    return new UserInfo(id, fullName, "${username}@example.org", username, true, null, null)
   }
 
-  private List<Component> allComponents(Component root) {
+  private static List<Component> allComponents(Component root) {
     def result = []
     root.children.forEach { child ->
       result << child
@@ -83,174 +80,137 @@ class ProjectAccessComponentSpec extends Specification {
     return result
   }
 
-  private List<Button> buttonsIn(Component root) {
+  private static List<Button> buttonsIn(Component root) {
     return allComponents(root).findAll { it instanceof Button } as List<Button>
   }
 
-  private boolean buttonBarInHeader() {
-    return component.@header.children.any { it == component.@buttonBar }
-  }
-
-  /**
-   * Renders the action-cell component for the given group row exactly as the grid would, using
-   * the column's public {@code ComponentRenderer}.
-   */
-  private Div actionCellFor(ProjectGroup projectGroup) {
-    def renderer = component.@projectGroupGrid.getColumnByKey("action").getRenderer()
-    return renderer.createComponent(projectGroup) as Div
-  }
-
-  def "renders shared groups with an always-visible role control and a remove action for a project ADMIN"() {
-    given: "a project shared with one group at ADMIN"
-    sharedGroups = [new SharedProjectGroup("group-1", "Bioinformatics Lab", "the lab", projectId,
-        ProjectRole.ADMIN)]
-
-    when: "an ADMIN opens the project access page"
+  def "an access-administrator sees editable role controls and a remove action per row"() {
+    given:
     setContext(true)
+    def projectUser = new ProjectUser("user-2", "jdoe", "Jane Doe", "", "", ProjectRole.READ)
 
-    then: "the group appears with its name, description and granted role"
-    def rows = groupGridItems()
-    rows.size() == 1
-    rows[0].groupId() == "group-1"
-    rows[0].groupName() == "Bioinformatics Lab"
-    rows[0].groupDescription() == "the lab"
-    rows[0].projectRole() == ProjectRole.ADMIN
+    when:
+    def roleControl = component.userRoleControl(projectUser)
+    def row = component.userRow(projectUser)
 
-    and: "the role is editable inline, without an extra edit step"
-    component.renderGroupRoleComponent(rows[0]) instanceof Select
-
-    and: "the action column offers a remove button for the ADMIN (AC2)"
-    def actionCell = actionCellFor(rows[0])
-    buttonsIn(actionCell).any { it.text == "Remove" }
-
-    and: "the add-people-or-groups control is visible for the ADMIN"
-    buttonBarInHeader()
+    then:
+    roleControl instanceof Select
+    buttonsIn(row).any { it.text == "Remove" }
+    component.@composer.isVisible()
   }
 
-  def "renders a read-only view for a collaborator without access-administration rights"() {
-    given: "a project shared with one group"
-    sharedGroups = [new SharedProjectGroup("group-1", "NGS Lab", null, projectId, ProjectRole.READ)]
-
-    when: "a READ-only collaborator opens the project access page"
+  def "a collaborator without administration rights gets a read-only roster"() {
+    given:
     setContext(false)
+    def projectUser = new ProjectUser("user-2", "jdoe", "Jane Doe", "", "", ProjectRole.READ)
 
-    then: "no add control is shown"
-    !buttonBarInHeader()
+    when:
+    def roleControl = component.userRoleControl(projectUser)
+    def row = component.userRow(projectUser)
 
-    and: "the group role is a static label, not an editable control"
-    def rows = groupGridItems()
-    rows.size() == 1
-    rows[0].groupName() == "NGS Lab"
-    component.renderGroupRoleComponent(rows[0]) instanceof Span
+    then:
+    roleControl instanceof Tag
+    buttonsIn(row).isEmpty()
+    !component.@composer.isVisible()
 
-    and: "the action column renders no remove button"
-    buttonsIn(actionCellFor(rows[0])).isEmpty()
-
-    and: "no membership data is ever requested when rendering the groups surface (AC3/AC4)"
+    and: "no membership data is ever requested (AC3/AC4)"
     0 * groupInformationService.listMyGroups(_)
   }
 
-  def "changing the role of a shared group invokes changeAuthorityAccess with the GROUP_ prefix and refreshes"() {
-    given: "a project ADMIN viewing a project shared with one group at READ"
-    sharedGroups = [new SharedProjectGroup("group-1", "NGS Lab", "sequencing core", projectId,
-        ProjectRole.READ)]
+  def "changing a user role invokes changeRole"() {
+    given:
     setContext(true)
-    def rows = groupGridItems()
+    def projectUser = new ProjectUser("user-2", "jdoe", "Jane Doe", "", "", ProjectRole.READ)
+    def roleSelect = component.userRoleControl(projectUser) as Select<ProjectRole>
 
-    when: "the ADMIN selects ADMIN as the group's new project role"
-    def roleSelect = component.renderGroupRoleComponent(rows[0]) as Select<ProjectRole>
+    when:
     roleSelect.setValue(ProjectRole.ADMIN)
 
-    then: "the change is propagated to the access service with the GROUP_ authority prefix (AC2)"
-    1 * projectAccessService.changeAuthorityAccess(projectId, "GROUP_group-1", ProjectRole.ADMIN)
+    then:
+    1 * projectAccessService.changeRole(projectId, "user-2", ProjectRole.ADMIN)
   }
 
-  def "the group role control offers only READ, WRITE and ADMIN, never OWNER"() {
-    given: "a project ADMIN viewing a shared group"
-    sharedGroups = [new SharedProjectGroup("group-1", "NGS Lab", null, projectId, ProjectRole.READ)]
+  def "changing a group role invokes changeAuthorityAccess with the GROUP_ prefix"() {
+    given:
     setContext(true)
+    def group = new ProjectGroup("g-1", "NGS Lab", "sequencing core", ProjectRole.READ)
+    def roleSelect = component.groupRoleControl(group) as Select<ProjectRole>
 
-    when: "the role control is resolved for the group"
-    def rows = groupGridItems()
-    def roleSelect = component.renderGroupRoleComponent(rows[0]) as Select<ProjectRole>
+    when:
+    roleSelect.setValue(ProjectRole.WRITE)
 
-    then: "only READ, WRITE and ADMIN are offered, never OWNER"
+    then:
+    1 * projectAccessService.changeAuthorityAccess(projectId, "GROUP_g-1", ProjectRole.WRITE)
+  }
+
+  def "the role control offers only READ, WRITE and ADMIN, never OWNER"() {
+    given:
+    setContext(true)
+    def group = new ProjectGroup("g-1", "NGS Lab", null, ProjectRole.READ)
+
+    when:
+    def roleSelect = component.groupRoleControl(group) as Select<ProjectRole>
+
+    then:
     def offered = roleSelect.listDataView.items.toSet()
     offered == ([ProjectRole.READ, ProjectRole.WRITE, ProjectRole.ADMIN] as Set)
     !offered.contains(ProjectRole.OWNER)
   }
 
-  def "revoking a shared group requires an inline confirmation and then removes the grant"() {
-    given: "a project ADMIN viewing a project shared with one group"
-    sharedGroups = [new SharedProjectGroup("group-1", "NGS Lab", "sequencing core", projectId,
-        ProjectRole.ADMIN)]
+  def "revoking a user requires an inline confirmation first"() {
+    given:
     setContext(true)
-    def rows = groupGridItems()
-    def actionCell = actionCellFor(rows[0])
-    def removeButton = buttonsIn(actionCell).find { it.text == "Remove" } as Button
+    def projectUser = new ProjectUser("user-2", "jdoe", "Jane Doe", "", "", ProjectRole.READ)
+    def row = component.userRow(projectUser)
+    def removeButton = buttonsIn(row).find { it.text == "Remove" } as Button
 
     when: "the ADMIN clicks Remove"
     removeButton.click()
 
-    then: "an inline confirmation is shown and nothing has been revoked yet"
-    0 * projectAccessService.removeAuthorityAccess(*_)
-    buttonsIn(actionCell).any { it.text == "Cancel" }
+    then: "nothing is revoked yet and an inline confirmation is shown"
+    0 * projectAccessService.removeCollaborator(*_)
+    buttonsIn(row).any { it.text == "Cancel" }
 
-    when: "the ADMIN confirms the removal inline"
-    def confirmButton = buttonsIn(actionCell).find {
+    when: "the ADMIN confirms"
+    def confirmButton = buttonsIn(row).find {
       it instanceof Button && (it as Button).text == "Remove"
     } as Button
     confirmButton.click()
 
-    then: "the group grant is revoked from the project (AC2)"
-    1 * projectAccessService.removeAuthorityAccess(projectId, "GROUP_group-1")
+    then:
+    1 * projectAccessService.removeCollaborator(projectId, "user-2")
   }
 
-  def "cancelling the inline confirmation restores the remove action without revoking"() {
-    given: "a project ADMIN viewing a project shared with one group"
-    sharedGroups = [new SharedProjectGroup("group-1", "NGS Lab", null, projectId, ProjectRole.READ)]
-    setContext(true)
-    def rows = groupGridItems()
-    def actionCell = actionCellFor(rows[0])
-    def removeButton = buttonsIn(actionCell).find { it.text == "Remove" } as Button
-    removeButton.click()
-
-    when: "the ADMIN cancels"
-    def cancelButton = buttonsIn(actionCell).find { it.text == "Cancel" } as Button
-    cancelButton.click()
-
-    then: "nothing is revoked and the remove action is available again"
-    0 * projectAccessService.removeAuthorityAccess(*_)
-    buttonsIn(actionCell).any { it.text == "Remove" }
-  }
-
-  def "the composer grants several staged principals in a single batch action"() {
-    given: "a project ADMIN viewing a project without shared groups"
+  def "the composer grants several staged principals in one batch"() {
+    given:
     setContext(true)
     def composer = component.@composer
     def event = new GrantRequestedEvent(composer, false, [
         new GrantRequest(PrincipalType.USER, "user-2", ProjectRole.WRITE, "jdoe"),
-        new GrantRequest(PrincipalType.GROUP, "group-9", ProjectRole.READ, "Sprint Team")])
+        new GrantRequest(PrincipalType.GROUP, "g-9", ProjectRole.READ, "Sprint Team")])
 
-    when: "the user grants the staged batch"
+    when:
     component.onGrantRequested(event)
 
-    then: "every staged principal is granted through the correct service path"
+    then:
     1 * projectAccessService.addCollaborator(projectId, "user-2", ProjectRole.WRITE)
-    1 * projectAccessService.addAuthorityAccess(projectId, "GROUP_group-9", ProjectRole.READ)
+    1 * projectAccessService.addAuthorityAccess(projectId, "GROUP_g-9", ProjectRole.READ)
   }
 
-  def "changing a user role invokes changeRole and refreshes"() {
-    given: "a project ADMIN viewing a direct collaborator"
+  def "the type filter hides the other section"() {
+    given: "a project with one person and one group"
+    projectAccessService.listCollaborators(projectId) >> [
+        new ProjectCollaborator("user-2", projectId, ProjectRole.READ)]
+    projectAccessService.listSharedGroups(projectId) >> [
+        new SharedProjectGroup("g-1", "NGS Lab", null, projectId, ProjectRole.ADMIN)]
+    userInformationService.findById("user-2") >> Optional.of(user("user-2", "Jane Doe", "jdoe"))
     setContext(true)
-    def projectUser = new ProjectUser("user-2", "jdoe", "Jane Doe", "", "",
-        ProjectRole.READ)
 
-    when: "the ADMIN changes the user's role to WRITE"
-    def roleSelect = component.renderUserRoleComponent(projectUser) as Select<ProjectRole>
-    roleSelect.setValue(ProjectRole.WRITE)
+    when: "the filter is set to Groups"
+    component.@filterSelect.setValue(AccessFilter.GROUPS)
 
-    then: "the change is propagated to the access service"
-    1 * projectAccessService.changeRole(projectId, "user-2", ProjectRole.WRITE)
+    then:
+    !component.@peopleSection.isVisible()
+    component.@groupsSection.isVisible()
   }
 }

@@ -181,6 +181,19 @@ public class ProjectSharingComposer extends Div {
         request.type() == PrincipalType.USER ? "user" : "group", reason);
   }
 
+  /**
+   * Colour token for a project role: elevated roles share the primary accent, read stays neutral.
+   *
+   * @param role the project role
+   * @return the tag colour for the role
+   */
+  static TagColor roleColor(ProjectRole role) {
+    return switch (role) {
+      case READ -> TagColor.CONTRAST;
+      case WRITE, ADMIN, OWNER -> TagColor.PRIMARY;
+    };
+  }
+
   private void setInlineMessage(String title, List<String> lines, boolean error) {
     inlineMessage.removeAll();
     inlineMessage.removeClassName("inline-message-success");
