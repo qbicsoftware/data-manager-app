@@ -22,8 +22,8 @@ import spock.lang.Specification
 /**
  * Unit tests for the authority-based (user group) grant path of {@link ProjectAccessServiceImpl}.
  *
- * <p>Covers the OWNER invariant on the authority write path (AC3), the duplicate-authority
- * guard (AC2) and the shared-groups listing (AC1) without a database or Spring context.</p>
+ * <p>Covers the OWNER invariant on the authority write path (AC3), the self-healing re-grant
+ * (AC2) and the shared-groups listing (AC1) without a database or Spring context.</p>
  */
 class ProjectAccessServiceSpec extends Specification {
 
@@ -131,20 +131,19 @@ class ProjectAccessServiceSpec extends Specification {
     1 * aclService.updateAcl(acl)
   }
 
-  def "duplicate authority grant throws"() {
-    given: "an authority already granted the ADMIN role"
-    // Pre-seed the ACL with a ROLE_EXAMPLE authority grant so the duplicate
-    // check is deterministic regardless of mock insert-order behavior.
-    entries.add(ace(BasePermission.ADMINISTRATION,
-        new GrantedAuthoritySid("ROLE_EXAMPLE"), true))
+  def "re-granting an existing authority updates its role instead of failing"() {
+    given: "an authority already granted WRITE (READ + WRITE)"
+    entries.add(ace(BasePermission.READ, new GrantedAuthoritySid("GROUP_abc"), true))
+    entries.add(ace(BasePermission.WRITE, new GrantedAuthoritySid("GROUP_abc"), true))
 
-    when: "the same authority is granted again"
-    service.addAuthorityAccess(projectId, "ROLE_EXAMPLE", ProjectRole.ADMIN)
+    when: "the same authority is granted ADMIN again"
+    service.addAuthorityAccess(projectId, "GROUP_abc", ProjectRole.ADMIN)
 
-    then: "a duplicate-grant error is raised mentioning the authority and project"
-    def error = thrown(Exception)
-    error.message.contains("ROLE_EXAMPLE")
-    error.message.contains(projectId.value())
+    then: "the grant self-heals to ADMIN without an error and without duplicate entries"
+    noExceptionThrown()
+    def granted = entries.findAll { it.sid == new GrantedAuthoritySid("GROUP_abc") }
+    granted.collect { it.permission }.toSet() == ProjectRole.ADMIN.toPermissions().toSet()
+    granted.size() == ProjectRole.ADMIN.toPermissions().size()
   }
 
   def "listSharedGroups exposes shared groups with name, role and no member data"() {

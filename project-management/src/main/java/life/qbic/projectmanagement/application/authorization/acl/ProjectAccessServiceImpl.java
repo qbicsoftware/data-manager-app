@@ -347,13 +347,11 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
             accessControlEntry -> ((GrantedAuthoritySid) accessControlEntry.getSid()).getGrantedAuthority()
                 .equals(authority));
     if (authorityHasAccess) {
-      /* This is important!
-       * Consider adding a person as admin and then adding them again as reader.
-       * This leads to redundant access control entries.
-       */
-      throw new ApplicationException(
-          "Authority %s already collaborates on %s. Please change the project role instead".formatted(
-              authority, projectId));
+      // Self-heal: re-granting an authority that already has access is treated as a role change.
+      // This corrects stale or partial ACEs (for example left behind by an old removal) instead
+      // of blocking the user with "already collaborates" while the grant is invisible/incorrect.
+      doChangeAuthorityAccess(projectId, authority, projectRole);
+      return;
     }
     for (Permission permission : permissions) {
       aclForProject.insertAce(aclForProject.getEntries().size(), permission, authoritySid, true);
