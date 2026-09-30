@@ -4,6 +4,7 @@ import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.grid.Grid.Column;
 import com.vaadin.flow.component.grid.GridMultiSelectionModel;
 import com.vaadin.flow.component.grid.GridSortOrder;
 import com.vaadin.flow.component.html.Div;
@@ -304,6 +305,7 @@ public class PaginatedGrid<T> extends Div {
     }
     this.listState = state.withPage(pageToRender);
     grid.setItems(page.items());
+    applySortToGrid(state);
     renderEmptyState(page.items().isEmpty(), !state.filter().isBlank());
     paginationBar.setListState(pageToRender, page.total(), state.pageSize());
     paginationBar.setVisible(page.total() > 0);
@@ -322,6 +324,39 @@ public class PaginatedGrid<T> extends Div {
               itemLabel)
           : "No %ss registered yet.".formatted(itemLabel));
     }
+  }
+
+  /**
+   * Applies the list state's sort to the grid's sort indicator so the header arrow matches the
+   * applied (backend) order and the in-memory page is not re-sorted in a conflicting direction.
+   * A column click, external URL state, or page reload therefore always displays the sort that is
+   * actually queried. A state sort whose property does not match any column clears the indicator.
+   */
+  private void applySortToGrid(ListState state) {
+    String property = state.sort().propertyName();
+    SortDirection direction = state.sort().isDescending() ? SortDirection.DESCENDING
+        : SortDirection.ASCENDING;
+    GridSortOrder<T> matchingOrder = grid.getColumns().stream()
+        .map(column -> new GridSortOrder<>(column, direction))
+        .filter(order -> property.equals(sortPropertyOf(order)))
+        .findFirst()
+        .orElse(null);
+    if (matchingOrder != null) {
+      grid.sort(List.of(matchingOrder));
+    } else {
+      grid.sort(List.of());
+    }
+  }
+
+  private static String sortPropertyOf(GridSortOrder<?> order) {
+    if (order.getSorted() == null) {
+      return null;
+    }
+    Column<?> column = (Column<?>) order.getSorted();
+    return column.getSortOrder(order.getDirection())
+        .findFirst()
+        .map(querySortOrder -> querySortOrder.getSorted())
+        .orElse(null);
   }
 
   /**

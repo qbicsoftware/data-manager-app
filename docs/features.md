@@ -331,7 +331,7 @@ Data stewards are power users with access to potentially hundreds of projects. D
 | Field | Value |
 |---|---|
 | **Requirement IDs** | `USER-R-01`, `USER-R-02`, `USER-R-03` |
-| **Status** | 🔴 Open |
+| **Status** | 🟡 In Progress |
 | **GitHub** | [#1538](https://github.com/qbicsoftware/data-manager-app/issues/1538) |
 
 **User Story**
