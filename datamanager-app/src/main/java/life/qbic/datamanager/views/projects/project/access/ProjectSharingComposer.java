@@ -89,8 +89,8 @@ public class ProjectSharingComposer extends Div {
     Span title = new Span("Share this project");
     title.addClassName("section-title");
     Span description = new Span(
-        "Add one or several people and groups. Everyone selected gains the role you choose on the "
-            + "chip. Already granted people and groups are not offered again.");
+        "Add one or several people and groups. Everyone you select gains the role chosen next to "
+            + "their name. People and groups that already have access are not shown again.");
     description.addClassName("secondary");
 
     configurePersonPicker();
@@ -162,7 +162,8 @@ public class ProjectSharingComposer extends Div {
     if (!stagedUserIds.add(userInfo.id())) {
       return;
     }
-    addStagedGrant(PrincipalType.USER, userInfo.id(), renderUser(userInfo));
+    addStagedGrant(PrincipalType.USER, userInfo.id(), userInfo.platformUserName(),
+        renderUser(userInfo));
     personPicker.getDataProvider().refreshAll();
     updateGrantButtonState();
   }
@@ -171,7 +172,7 @@ public class ProjectSharingComposer extends Div {
     if (!stagedGroupIds.add(groupInfo.id())) {
       return;
     }
-    addStagedGrant(PrincipalType.GROUP, groupInfo.id(), renderGroup(groupInfo));
+    addStagedGrant(PrincipalType.GROUP, groupInfo.id(), groupInfo.name(), renderGroup(groupInfo));
     groupPicker.getDataProvider().refreshAll();
     updateGrantButtonState();
   }
@@ -189,8 +190,9 @@ public class ProjectSharingComposer extends Div {
     return identity;
   }
 
-  private void addStagedGrant(PrincipalType type, String id, Component identity) {
-    stagedGrants.add(new StagedGrant(type, id, identity));
+  private void addStagedGrant(PrincipalType type, String id, String displayName,
+      Component identity) {
+    stagedGrants.add(new StagedGrant(type, id, displayName, identity));
   }
 
   private void removeStagedGrant(StagedGrant stagedGrant) {
@@ -286,7 +288,7 @@ public class ProjectSharingComposer extends Div {
     private final String id;
     private final Select<ProjectRole> roleSelect = new Select<>();
 
-    private StagedGrant(PrincipalType type, String id, Component identity) {
+    private StagedGrant(PrincipalType type, String id, String displayName, Component identity) {
       this.type = type;
       this.id = id;
       addClassName("staged-grant");
@@ -294,7 +296,8 @@ public class ProjectSharingComposer extends Div {
       Button remove = new Button(VaadinIcon.CLOSE_SMALL.create());
       remove.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE, ButtonVariant.LUMO_SMALL);
       remove.addClassName("remove-staged-grant");
-      remove.getElement().setAttribute("aria-label", "Remove from the share list");
+      remove.getElement().setAttribute("aria-label",
+          "Remove %s from the share list".formatted(displayName));
       remove.addClickListener(event -> removeStagedGrant(this));
       add(identity, roleSelect, remove);
     }

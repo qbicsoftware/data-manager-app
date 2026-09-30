@@ -90,8 +90,12 @@ public class ProjectSharingDrawer extends Div {
     closeButton.addClickListener(event -> close());
     header.add(titleBlock, closeButton);
 
-    Div content = new Div(composer, summary);
+    Div content = new Div();
     content.addClassName("psd-content");
+    content.add(composer);
+    Div summaryScroll = new Div(summary);
+    summaryScroll.addClassName("psd-summary-scroll");
+    content.add(summaryScroll);
 
     body.add(header, content);
     panel.add(body);
@@ -148,7 +152,11 @@ public class ProjectSharingDrawer extends Div {
     section.addClassName("psd-section");
     Span sectionTitle = new Span(title);
     sectionTitle.addClassName("psd-section-title");
-    section.add(sectionTitle);
+    Span roleHeader = new Span("Role");
+    roleHeader.addClassName("psd-role-header");
+    Div headerRow = new Div(sectionTitle, roleHeader);
+    headerRow.addClassName("psd-section-header");
+    section.add(headerRow);
     if (rows.isEmpty()) {
       Span empty = new Span("None yet.");
       empty.addClassName("secondary");

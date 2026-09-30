@@ -1144,6 +1144,12 @@ a.project-dataset-footer, a.project-dataset-footer:hover {
   margin-left: auto;
 }
 
+.project-sharing-composer .staged-grant .remove-staged-grant {
+  min-width: 44px;
+  min-height: 44px;
+  justify-content: center;
+}
+
 .project-sharing-composer .grant-access-button {
   align-self: flex-start;
 }

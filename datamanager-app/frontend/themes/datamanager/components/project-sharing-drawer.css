@@ -49,10 +49,18 @@
 }
 
 .project-sharing-drawer .psd-content {
+  flex: 1 1 auto;
   padding: var(--lumo-space-l);
   display: flex;
   flex-direction: column;
   gap: var(--lumo-space-l);
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* Only the access summary scrolls; the composer stays anchored above it. */
+.project-sharing-drawer .psd-summary-scroll {
+  flex: 1 1 auto;
   overflow: auto;
   min-height: 0;
 }
@@ -70,6 +78,18 @@
 }
 
 .project-sharing-drawer .psd-section-title {
+  font-weight: var(--lumo-font-weight-semibold, 600);
+}
+
+.project-sharing-drawer .psd-section-header {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--lumo-space-m);
+}
+
+.project-sharing-drawer .psd-role-header {
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-s);
   font-weight: var(--lumo-font-weight-semibold, 600);
 }
 
