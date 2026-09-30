@@ -82,20 +82,50 @@
 
 .project-sharing-drawer .psd-role-header {
   color: var(--lumo-secondary-text-color);
-  font-size: var(--lumo-font-size-s);
+  font-size: var(--lumo-font-size-xs);
   font-weight: var(--lumo-font-weight-semibold, 600);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
+/* Roster row: identity on the left (flexible, ellipsizes), role tag on the right. */
 .project-sharing-drawer .psd-summary-row {
   display: flex;
+  align-items: center;
   justify-content: space-between;
+  flex-wrap: nowrap;
   gap: var(--lumo-space-m);
   padding: var(--lumo-space-xs) 0;
   border-bottom: 1px solid var(--lumo-contrast-10pct);
+  min-width: 0;
 }
 
-.project-sharing-drawer .psd-role {
-  color: var(--lumo-secondary-text-color);
+.project-sharing-drawer .psd-identity {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.project-sharing-drawer .psd-type-tag,
+.project-sharing-drawer .psd-role-tag,
+.project-sharing-drawer .psd-identity .user-avatar,
+.project-sharing-drawer .psd-group-icon {
+  flex: 0 0 auto;
+}
+
+.project-sharing-drawer .psd-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-sharing-drawer .psd-footer {
+  flex: 0 0 auto;
+  padding: var(--lumo-space-s) var(--lumo-space-l);
+  border-top: 1px solid var(--lumo-contrast-10pct);
 }
 
 /* On narrow viewports the drawer becomes a full-width sheet (D6). */

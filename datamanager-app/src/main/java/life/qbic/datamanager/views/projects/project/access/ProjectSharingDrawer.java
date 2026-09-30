@@ -7,10 +7,16 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.router.RouteParameters;
+import com.vaadin.flow.router.RouterLink;
 import java.io.Serial;
 import java.util.List;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.datamanager.views.account.UserAvatar;
+import life.qbic.datamanager.views.general.Tag;
+import life.qbic.datamanager.views.general.Tag.TagColor;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
@@ -20,6 +26,7 @@ import life.qbic.datamanager.views.projects.project.access.ProjectSharingCompose
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.ProjectCollaborator;
+import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.ProjectRole;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.SharedProjectGroup;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.usergroups.api.GroupInformationService;
@@ -93,7 +100,14 @@ public class ProjectSharingDrawer extends Div {
     Div content = new Div(composer, summary);
     content.addClassName("psd-content");
 
-    body.add(header, content);
+    Div footer = new Div();
+    footer.addClassName("psd-footer");
+    RouterLink manageAccess = new RouterLink("Manage access", ProjectAccessMain.class,
+        new RouteParameters("projectId", projectId.value()));
+    manageAccess.addClassName("psd-manage-access");
+    footer.add(manageAccess);
+
+    body.add(header, content, footer);
     panel.add(body);
     add(overlay, panel);
   }
@@ -136,11 +150,16 @@ public class ProjectSharingDrawer extends Div {
     String displayName = userInformationService.findById(collaborator.userId())
         .map(userInfo -> userInfo.platformUserName())
         .orElse(collaborator.userId());
-    return summaryRow(displayName, collaborator.projectRole().label());
+    UserAvatar avatar = new UserAvatar();
+    avatar.setUserId(collaborator.userId());
+    avatar.setName(displayName);
+    return summaryRow(PrincipalType.USER, avatar, displayName, collaborator.projectRole());
   }
 
   private Component renderGroup(SharedProjectGroup group) {
-    return summaryRow(group.groupName(), group.projectRole().label());
+    Icon groupIcon = VaadinIcon.USERS.create();
+    groupIcon.addClassName("psd-group-icon");
+    return summaryRow(PrincipalType.GROUP, groupIcon, group.groupName(), group.projectRole());
   }
 
   private Component section(String title, List<Component> rows) {
@@ -163,14 +182,30 @@ public class ProjectSharingDrawer extends Div {
     return section;
   }
 
-  private Component summaryRow(String name, String role) {
+  private Component summaryRow(PrincipalType type, Component icon, String name,
+      ProjectRole role) {
+    Tag typeTag = new Tag(type == PrincipalType.USER ? "User" : "Group");
+    typeTag.setTagColor(type == PrincipalType.USER ? TagColor.CONTRAST : TagColor.TEAL);
+    typeTag.addClassName("psd-type-tag");
     Span nameSpan = new Span(name);
-    nameSpan.addClassName("bold");
-    Span roleSpan = new Span(role);
-    roleSpan.addClassName("psd-role");
-    Div row = new Div(nameSpan, roleSpan);
+    nameSpan.addClassName("psd-name");
+    Div identity = new Div(typeTag, icon, nameSpan);
+    identity.addClassName("psd-identity");
+    Tag roleTag = new Tag(role.label());
+    roleTag.setTagColor(roleColor(role));
+    roleTag.addClassName("psd-role-tag");
+    Div row = new Div(identity, roleTag);
     row.addClassName("psd-summary-row");
     return row;
+  }
+
+  private static TagColor roleColor(ProjectRole role) {
+    return switch (role) {
+      case READ -> TagColor.CONTRAST;
+      case WRITE -> TagColor.TEAL;
+      case ADMIN -> TagColor.WARNING;
+      case OWNER -> TagColor.ERROR;
+    };
   }
 
   private void onGrantRequested(GrantRequestedEvent event) {
