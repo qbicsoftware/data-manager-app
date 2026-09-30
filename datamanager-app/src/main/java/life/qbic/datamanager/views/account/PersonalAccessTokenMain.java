@@ -151,13 +151,11 @@ public class PersonalAccessTokenMain extends Main implements BeforeEnterObserver
 
   private String beautifyExpiredTokenString(PersonalAccessToken token){
     DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("MMM d, yyyy").withZone(ZoneId.systemDefault());
-    StringBuilder sb = new StringBuilder();
-      sb.append("\n")
-          .append(token.description())
-          .append(" - ")
-          .append("Expired on ")
-          .append(DATE_FORMATTER.format(token.expiration()));
-    return sb.toString();
+    return "\n"
+        + token.description()
+        + " - "
+        + "Expired on "
+        + DATE_FORMATTER.format(token.expiration());
   }
 
   private void onAddTokenClicked(AddTokenEvent addTokenEvent) {
