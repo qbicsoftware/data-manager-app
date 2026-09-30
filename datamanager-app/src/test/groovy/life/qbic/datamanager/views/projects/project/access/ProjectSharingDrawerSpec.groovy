@@ -1,5 +1,7 @@
 package life.qbic.datamanager.views.projects.project.access
 
+import com.vaadin.flow.component.Component
+import com.vaadin.flow.component.HasText
 import com.vaadin.flow.component.UI
 import java.util.concurrent.Executor
 import life.qbic.identity.api.UserInfo
@@ -121,5 +123,61 @@ class ProjectSharingDrawerSpec extends Specification {
 
     then:
     described == "jdoe (user): access could not be granted."
+  }
+
+  def "roster row shows the username and the full name"() {
+    given: "a collaborator with a resolvable full name"
+    projectAccessService.listCollaborators(projectId) >> [
+        new ProjectCollaborator("u-1", projectId, ProjectRole.WRITE)]
+    projectAccessService.listSharedGroups(projectId) >> []
+    userInformationService.findById("u-1") >> Optional.of(user("u-1", "Jane Doe", "jdoe"))
+
+    when:
+    drawer.refresh()
+
+    then:
+    def texts = collectText(drawer.@summary)
+    texts.contains("jdoe")
+    texts.contains("Jane Doe")
+  }
+
+  def "roster row exposes the username and full name as a tooltip"() {
+    given:
+    projectAccessService.listCollaborators(projectId) >> [
+        new ProjectCollaborator("u-1", projectId, ProjectRole.READ)]
+    projectAccessService.listSharedGroups(projectId) >> []
+    userInformationService.findById("u-1") >> Optional.of(user("u-1", "Jane Doe", "jdoe"))
+
+    when:
+    drawer.refresh()
+
+    then:
+    collectAttribute(drawer.@summary, "title").contains("jdoe (Jane Doe)")
+  }
+
+  private static List<String> collectText(Component root) {
+    def result = []
+    root.children.forEach { child ->
+      if (child instanceof HasText) {
+        def text = (child as HasText).getText()
+        if (text != null && !text.isEmpty()) {
+          result << text
+        }
+      }
+      result.addAll(collectText(child))
+    }
+    return result
+  }
+
+  private static List<String> collectAttribute(Component root, String attribute) {
+    def result = []
+    root.children.forEach { child ->
+      def value = child.element.getAttribute(attribute)
+      if (value != null && !value.isEmpty()) {
+        result << value
+      }
+      result.addAll(collectAttribute(child, attribute))
+    }
+    return result
   }
 }

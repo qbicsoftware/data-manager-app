@@ -204,19 +204,42 @@ public class ProjectSharingDrawer extends Div {
   }
 
   private Component renderCollaborator(ProjectCollaborator collaborator) {
-    String displayName = userInformationService.findById(collaborator.userId())
-        .map(userInfo -> userInfo.platformUserName())
+    var userInfo = userInformationService.findById(collaborator.userId());
+    String username = userInfo.map(info -> info.platformUserName())
         .orElse(collaborator.userId());
+    String fullName = userInfo.map(info -> info.fullName()).orElse(null);
     UserAvatar avatar = new UserAvatar();
     avatar.setUserId(collaborator.userId());
-    avatar.setName(displayName);
-    return summaryRow(PrincipalType.USER, avatar, displayName, collaborator.projectRole());
+    avatar.setName(username);
+    Span nameSpan = new Span();
+    nameSpan.addClassName("psd-name");
+    Span usernameSpan = new Span(username);
+    usernameSpan.addClassName("bold");
+    nameSpan.add(usernameSpan);
+    if (fullName != null && !fullName.isBlank()) {
+      Span fullNameSpan = new Span(fullName);
+      fullNameSpan.addClassName("psd-full-name");
+      nameSpan.add(fullNameSpan);
+    }
+    Div identity = new Div(avatar, nameSpan);
+    identity.addClassName("psd-user-identity");
+    identity.getElement().setAttribute("title",
+        fullName == null || fullName.isBlank() ? username
+            : "%s (%s)".formatted(username, fullName));
+    return summaryRow(PrincipalType.USER, identity, collaborator.projectRole());
   }
 
   private Component renderGroup(SharedProjectGroup group) {
     Icon groupIcon = VaadinIcon.USERS.create();
     groupIcon.addClassName("psd-group-icon");
-    return summaryRow(PrincipalType.GROUP, groupIcon, group.groupName(), group.projectRole());
+    Span nameSpan = new Span(group.groupName());
+    nameSpan.addClassName("psd-name");
+    Div identity = new Div(groupIcon, nameSpan);
+    identity.addClassName("psd-group-identity");
+    if (group.groupName() != null && !group.groupName().isBlank()) {
+      identity.getElement().setAttribute("title", group.groupName());
+    }
+    return summaryRow(PrincipalType.GROUP, identity, group.projectRole());
   }
 
   private Component section(String title, List<Component> rows) {
@@ -239,19 +262,16 @@ public class ProjectSharingDrawer extends Div {
     return section;
   }
 
-  private Component summaryRow(PrincipalType type, Component icon, String name,
-      ProjectRole role) {
+  private Component summaryRow(PrincipalType type, Component identity, ProjectRole role) {
     Tag typeTag = new Tag(type == PrincipalType.USER ? "User" : "Group");
     typeTag.setTagColor(type == PrincipalType.USER ? TagColor.CONTRAST : TagColor.TEAL);
     typeTag.addClassName("psd-type-tag");
-    Span nameSpan = new Span(name);
-    nameSpan.addClassName("psd-name");
-    Div identity = new Div(typeTag, icon, nameSpan);
-    identity.addClassName("psd-identity");
+    Div identityWrapper = new Div(typeTag, identity);
+    identityWrapper.addClassName("psd-identity");
     Tag roleTag = new Tag(role.label());
     roleTag.setTagColor(roleColor(role));
     roleTag.addClassName("psd-role-tag");
-    Div row = new Div(identity, roleTag);
+    Div row = new Div(identityWrapper, roleTag);
     row.addClassName("psd-summary-row");
     return row;
   }

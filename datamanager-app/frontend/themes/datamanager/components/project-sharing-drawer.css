@@ -108,6 +108,15 @@
   min-width: 0;
 }
 
+.project-sharing-drawer .psd-user-identity,
+.project-sharing-drawer .psd-group-identity {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .project-sharing-drawer .psd-type-tag,
 .project-sharing-drawer .psd-role-tag,
 .project-sharing-drawer .psd-identity .user-avatar,
@@ -120,6 +129,11 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.project-sharing-drawer .psd-full-name {
+  color: var(--lumo-secondary-text-color);
+  margin-left: var(--lumo-space-xs);
 }
 
 .project-sharing-drawer .psd-header-actions {
