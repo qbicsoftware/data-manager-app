@@ -3,6 +3,7 @@ package life.qbic.datamanager.views.projects.project.access
 import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
+import com.vaadin.flow.component.select.Select
 import life.qbic.datamanager.security.UserPermissions
 import life.qbic.datamanager.views.Context
 import life.qbic.datamanager.views.general.Tag
@@ -100,6 +101,10 @@ class ProjectAccessComponentSpec extends Specification {
     return component.@grid.getColumnByKey("role").getRenderer().createComponent(entry)
   }
 
+  private Select<ProjectRole> roleSelectInActionBar() {
+    return allComponents(component.@actionBar).find { it instanceof Select } as Select<ProjectRole>
+  }
+
   def "an access-administrator sees a role badge and the toolbar actions"() {
     given:
     setContext(true)
@@ -140,12 +145,12 @@ class ProjectAccessComponentSpec extends Specification {
     setContext(true)
     component.@grid.asMultiSelect().select(component.@grid.getListDataView().getItems()
         .find { it.id() == "user-2" })
-    component.@changeRoleButton.click()
 
-    when: "the ADMIN chooses ADMIN in the inline role chooser"
-    def adminButton = buttonsIn(component.@actionBar)
-        .find { it.text == ProjectRole.ADMIN.label() } as Button
-    adminButton.click()
+    when: "the ADMIN picks ADMIN in the role dropdown and applies"
+    component.@changeRoleButton.click()
+    def roleSelect = roleSelectInActionBar()
+    roleSelect.setValue(ProjectRole.ADMIN)
+    buttonsIn(component.@actionBar).find { it.text == "Apply" }.click()
 
     then:
     1 * projectAccessService.changeRole(projectId, "user-2", ProjectRole.ADMIN)
@@ -158,18 +163,18 @@ class ProjectAccessComponentSpec extends Specification {
     setContext(true)
     component.@grid.asMultiSelect().select(component.@grid.getListDataView().getItems()
         .find { it.id() == "g-1" })
-    component.@changeRoleButton.click()
 
     when:
-    def writeButton = buttonsIn(component.@actionBar)
-        .find { it.text == ProjectRole.WRITE.label() } as Button
-    writeButton.click()
+    component.@changeRoleButton.click()
+    def roleSelect = roleSelectInActionBar()
+    roleSelect.setValue(ProjectRole.WRITE)
+    buttonsIn(component.@actionBar).find { it.text == "Apply" }.click()
 
     then:
     1 * projectAccessService.changeAuthorityAccess(projectId, "GROUP_g-1", ProjectRole.WRITE)
   }
 
-  def "the role chooser offers only READ, WRITE and ADMIN, never OWNER"() {
+  def "the role dropdown defaults to member and offers only READ, WRITE and ADMIN"() {
     given:
     collaborators = [new ProjectCollaborator("user-2", projectId, ProjectRole.READ)]
     userInformationService.findById("user-2") >> Optional.of(user("user-2", "Jane Doe", "jdoe"))
@@ -179,12 +184,28 @@ class ProjectAccessComponentSpec extends Specification {
 
     when:
     component.@changeRoleButton.click()
+    def roleSelect = roleSelectInActionBar()
 
     then:
-    def offered = buttonsIn(component.@actionBar).collect { it.text }
-    offered.containsAll([ProjectRole.READ.label(), ProjectRole.WRITE.label(),
-                         ProjectRole.ADMIN.label()])
-    !offered.contains(ProjectRole.OWNER.label())
+    roleSelect.getValue() == ProjectRole.READ
+    def offered = roleSelect.listDataView.items.toSet()
+    offered == ([ProjectRole.READ, ProjectRole.WRITE, ProjectRole.ADMIN] as Set)
+    !offered.contains(ProjectRole.OWNER)
+  }
+
+  def "the toolbar highlights the number of selected principals"() {
+    given:
+    collaborators = [new ProjectCollaborator("user-2", projectId, ProjectRole.READ)]
+    userInformationService.findById("user-2") >> Optional.of(user("user-2", "Jane Doe", "jdoe"))
+    setContext(true)
+
+    when:
+    component.@grid.asMultiSelect().select(component.@grid.getListDataView().getItems()
+        .find { it.id() == "user-2" })
+
+    then:
+    component.@selectionCount.isVisible()
+    component.@selectionCount.getText() == "1 selected"
   }
 
   def "removing a selected principal requires an inline confirmation"() {

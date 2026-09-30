@@ -194,6 +194,21 @@ public class ProjectSharingComposer extends Div {
     };
   }
 
+  /**
+   * Display label for a project role in the sharing UI.
+   *
+   * @param role the project role
+   * @return the display label (member / editor / manager / owner)
+   */
+  static String roleLabel(ProjectRole role) {
+    return switch (role) {
+      case READ -> "member";
+      case WRITE -> "editor";
+      case ADMIN -> "manager";
+      case OWNER -> "owner";
+    };
+  }
+
   private void setInlineMessage(String title, List<String> lines, boolean error) {
     inlineMessage.removeAll();
     inlineMessage.removeClassName("inline-message-success");
@@ -426,14 +441,14 @@ public class ProjectSharingComposer extends Div {
 
     private void configureRoleSelect() {
       roleSelect.addClassName("project-role-select");
-      roleSelect.setItemLabelGenerator(ProjectRole::label);
+      roleSelect.setItemLabelGenerator(ProjectSharingComposer::roleLabel);
       roleSelect.setItems(ASSIGNABLE_ROLES);
       roleSelect.setRenderer(new ComponentRenderer<>(role -> {
-        Span roleLabel = new Span(role.label());
-        roleLabel.addClassName("project-role-label");
+        Span roleName = new Span(ProjectSharingComposer.roleLabel(role));
+        roleName.addClassName("project-role-label");
         Span roleDescription = new Span(ProjectRoleRecommendationRenderer.render(role));
         roleDescription.addClassName("project-role-description");
-        Div item = new Div(roleLabel, roleDescription);
+        Div item = new Div(roleName, roleDescription);
         item.addClassName("project-role-item");
         return item;
       }));

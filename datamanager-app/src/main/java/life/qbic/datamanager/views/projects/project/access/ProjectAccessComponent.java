@@ -91,6 +91,7 @@ public class ProjectAccessComponent extends PageArea {
   private final Button changeRoleButton;
   private final Button removeButton;
   private final Div actionBar;
+  private final Tag selectionCount;
   private final Grid<AccessEntry> grid;
 
   private Context context;
@@ -133,6 +134,7 @@ public class ProjectAccessComponent extends PageArea {
     changeRoleButton = new Button("Change role");
     removeButton = new Button("Remove", VaadinIcon.TRASH.create());
     actionBar = new Div();
+    selectionCount = new Tag("");
     grid = createGrid();
     configureToolbar();
 
@@ -152,7 +154,7 @@ public class ProjectAccessComponent extends PageArea {
     toolbar.addClassName("access-toolbar");
     Div spacer = new Div();
     spacer.addClassName("flex-grow-1");
-    toolbar.add(searchField, filterSelect, spacer, changeRoleButton, removeButton);
+    toolbar.add(searchField, filterSelect, spacer, selectionCount, changeRoleButton, removeButton);
     return toolbar;
   }
 
@@ -175,6 +177,9 @@ public class ProjectAccessComponent extends PageArea {
     changeRoleButton.setEnabled(false);
     changeRoleButton.setVisible(false);
     changeRoleButton.addClickListener(event -> showRoleChooser());
+
+    selectionCount.addClassName("access-selection-count");
+    selectionCount.setVisible(false);
 
     removeButton.addClassName("access-remove-button");
     removeButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
@@ -290,9 +295,12 @@ public class ProjectAccessComponent extends PageArea {
   }
 
   private void updateActionButtons() {
-    boolean hasSelection = canChangeAccess && !grid.getSelectedItems().isEmpty();
+    int selectedCount = grid.getSelectedItems().size();
+    boolean hasSelection = canChangeAccess && selectedCount > 0;
     changeRoleButton.setEnabled(hasSelection);
     removeButton.setEnabled(hasSelection);
+    selectionCount.setText(selectedCount == 1 ? "1 selected" : "%d selected".formatted(selectedCount));
+    selectionCount.setVisible(selectedCount > 0);
   }
 
   private Component principalCell(AccessEntry entry) {
@@ -357,7 +365,7 @@ public class ProjectAccessComponent extends PageArea {
   }
 
   private static Tag roleBadge(ProjectRole role) {
-    Tag tag = new Tag(role.label());
+    Tag tag = new Tag(ProjectSharingComposer.roleLabel(role));
     tag.setTagColor(ProjectSharingComposer.roleColor(role));
     tag.addClassName("access-role-badge");
     return tag;
@@ -392,23 +400,31 @@ public class ProjectAccessComponent extends PageArea {
     }
     actionBar.removeAll();
     Span question = new Span(selected.size() == 1
-        ? "Set the role for 1 principal:"
-        : "Set the role for %d principals:".formatted(selected.size()));
+        ? "Set the role for 1 selected principal:"
+        : "Set the role for %d selected principals:".formatted(selected.size()));
     question.addClassName("inline-confirm-question");
-    actionBar.add(question);
-    for (ProjectRole role : List.of(ProjectRole.READ, ProjectRole.WRITE, ProjectRole.ADMIN)) {
-      Button roleButton = new Button(role.label());
-      roleButton.addThemeVariants(ButtonVariant.LUMO_SMALL);
-      roleButton.addClassName("inline-role-choice");
-      roleButton.getElement().setAttribute("title",
-          ProjectRoleRecommendationRenderer.render(role));
-      roleButton.addClickListener(event -> applyRole(selected, role));
-      actionBar.add(roleButton);
-    }
+    Select<ProjectRole> roleSelect = new Select<>();
+    roleSelect.addClassName("access-role-chooser");
+    roleSelect.setItems(ProjectRole.READ, ProjectRole.WRITE, ProjectRole.ADMIN);
+    roleSelect.setItemLabelGenerator(ProjectSharingComposer::roleLabel);
+    roleSelect.setRenderer(new ComponentRenderer<>(role -> {
+      Span roleName = new Span(ProjectSharingComposer.roleLabel(role));
+      roleName.addClassName("project-role-label");
+      Span roleDescription = new Span(ProjectRoleRecommendationRenderer.render(role));
+      roleDescription.addClassName("project-role-description");
+      Div roleItem = new Div(roleName, roleDescription);
+      roleItem.addClassName("project-role-item");
+      return roleItem;
+    }));
+    roleSelect.setValue(ProjectRole.READ);
+    roleSelect.getElement().setAttribute("aria-label", "New role for the selected principals");
+    Button apply = new Button("Apply", event -> applyRole(selected, roleSelect.getValue()));
+    apply.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL);
+    apply.addClassName("inline-role-apply");
     Button cancel = new Button("Cancel", event -> hideActionBar());
     cancel.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_SMALL);
     cancel.addClassName("inline-confirm-cancel");
-    actionBar.add(cancel);
+    actionBar.add(question, roleSelect, apply, cancel);
     actionBar.setVisible(true);
   }
 

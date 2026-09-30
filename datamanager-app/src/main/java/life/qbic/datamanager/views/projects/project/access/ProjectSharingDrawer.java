@@ -268,7 +268,7 @@ public class ProjectSharingDrawer extends Div {
     typeTag.addClassName("psd-type-tag");
     Div identityWrapper = new Div(typeTag, identity);
     identityWrapper.addClassName("psd-identity");
-    Tag roleTag = new Tag(role.label());
+    Tag roleTag = new Tag(ProjectSharingComposer.roleLabel(role));
     roleTag.setTagColor(ProjectSharingComposer.roleColor(role));
     roleTag.addClassName("psd-role-tag");
     Div row = new Div(identityWrapper, roleTag);

@@ -517,6 +517,15 @@
   min-width: 10em;
 }
 
+.project-access-component .access-selection-count {
+  flex: 0 0 auto;
+}
+
+.project-access-component .access-role-chooser {
+  min-width: 10em;
+  flex: 0 0 auto;
+}
+
 .project-access-component .access-inline-confirm {
   display: flex;
   align-items: center;
