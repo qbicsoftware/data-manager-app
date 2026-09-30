@@ -5,15 +5,16 @@ import static java.util.Objects.requireNonNull;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.router.RouteParameters;
-import com.vaadin.flow.router.RouterLink;
 import java.io.Serial;
+import java.util.Comparator;
 import java.util.List;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.datamanager.views.AppRoutes.ProjectRoutes;
 import life.qbic.datamanager.views.account.UserAvatar;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.Tag.TagColor;
@@ -102,8 +103,8 @@ public class ProjectSharingDrawer extends Div {
 
     Div footer = new Div();
     footer.addClassName("psd-footer");
-    RouterLink manageAccess = new RouterLink("Manage access", ProjectAccessMain.class,
-        new RouteParameters("projectId", projectId.value()));
+    Anchor manageAccess = new Anchor(
+        String.format(ProjectRoutes.ACCESS, projectId.value()), "Manage access");
     manageAccess.addClassName("psd-manage-access");
     footer.add(manageAccess);
 
@@ -141,9 +142,55 @@ public class ProjectSharingDrawer extends Div {
     summary.removeAll();
     summary.addClassName("psd-summary");
     summary.add(section("People with access", collaborators.stream()
+        .sorted(collaboratorOrder())
         .map(this::renderCollaborator).toList()));
     summary.add(section("Groups with access", groups.stream()
+        .sorted(groupOrder())
         .map(this::renderGroup).toList()));
+  }
+
+  /**
+   * Roster order: highest privilege first (owner &gt; admin &gt; write &gt; read), then
+   * lexicographically by last name (ascending). People without a resolvable full name fall back
+   * to their username.
+   */
+  private Comparator<ProjectCollaborator> collaboratorOrder() {
+    return Comparator
+        .comparingInt((ProjectCollaborator collaborator) -> roleRank(collaborator.projectRole()))
+        .thenComparing(collaborator -> lastNameOf(collaborator.userId()),
+            String.CASE_INSENSITIVE_ORDER);
+  }
+
+  /**
+   * Roster order for groups: highest privilege first, then by group name (ascending).
+   */
+  private Comparator<SharedProjectGroup> groupOrder() {
+    return Comparator
+        .comparingInt((SharedProjectGroup group) -> roleRank(group.projectRole()))
+        .thenComparing(SharedProjectGroup::groupName, String.CASE_INSENSITIVE_ORDER);
+  }
+
+  private static int roleRank(ProjectRole role) {
+    return switch (role) {
+      case OWNER -> 0;
+      case ADMIN -> 1;
+      case WRITE -> 2;
+      case READ -> 3;
+    };
+  }
+
+  private String lastNameOf(String userId) {
+    return userInformationService.findById(userId)
+        .map(userInfo -> lastName(userInfo.fullName(), userInfo.platformUserName()))
+        .orElse(userId);
+  }
+
+  private static String lastName(String fullName, String fallback) {
+    if (fullName == null || fullName.isBlank()) {
+      return fallback == null ? "" : fallback;
+    }
+    String[] parts = fullName.trim().split("\\s+");
+    return parts[parts.length - 1];
   }
 
   private Component renderCollaborator(ProjectCollaborator collaborator) {
