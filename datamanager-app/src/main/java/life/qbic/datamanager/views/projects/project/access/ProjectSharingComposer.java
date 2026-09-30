@@ -323,6 +323,8 @@ public class ProjectSharingComposer extends Div {
   private static Component renderGroupOption(GroupInfo groupInfo) {
     Span name = new Span(groupInfo.name());
     name.addClassName("bold");
+    name.addClassName("group-option-name");
+    name.getElement().setAttribute("title", groupInfo.name());
     Div header = new Div(name, groupTypeBadge(groupInfo.type()));
     header.addClassName("group-option-header");
     Div option = new Div(header);
@@ -330,6 +332,8 @@ public class ProjectSharingComposer extends Div {
     if (groupInfo.description() != null && !groupInfo.description().isBlank()) {
       Span description = new Span(groupInfo.description());
       description.addClassName("tertiary");
+      description.addClassName("group-option-description");
+      description.getElement().setAttribute("title", groupInfo.description());
       option.add(description);
     }
     return option;
