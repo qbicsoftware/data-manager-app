@@ -179,6 +179,34 @@ class ProjectAccessServiceSpec extends Specification {
     sharedGroups.isEmpty()
   }
 
+  def "removing an authority removes every ACE for the group"() {
+    given: "a group with multiple ACEs (READ + WRITE + ADMINISTRATION)"
+    entries.add(ace(BasePermission.READ, new GrantedAuthoritySid("GROUP_abc"), true))
+    entries.add(ace(BasePermission.WRITE, new GrantedAuthoritySid("GROUP_abc"), true))
+    entries.add(ace(BasePermission.ADMINISTRATION, new GrantedAuthoritySid("GROUP_abc"), true))
+
+    when: "the group grant is removed"
+    service.removeAuthorityAccess(projectId, "GROUP_abc")
+
+    then: "no ACE for the group remains, so the group can be re-added"
+    entries.count { it.sid == new GrantedAuthoritySid("GROUP_abc") } == 0
+  }
+
+  def "listSharedGroups surfaces a partial group ACE with a fallback role instead of hiding it"() {
+    given: "a leftover WRITE-only ACE as a failed removal would leave behind"
+    entries.add(ace(BasePermission.WRITE, new GrantedAuthoritySid("GROUP_group-1"), true))
+    groupInformationService.findGroupById("group-1") >> Optional.of(
+        new GroupInfo("group-1", "Test Group", null, GroupType.ADHOC))
+
+    when:
+    List<SharedProjectGroup> sharedGroups = service.listSharedGroups(projectId)
+
+    then: "the group is visible with a usable role so it can be corrected or revoked"
+    sharedGroups.size() == 1
+    sharedGroups[0].groupName == "Test Group"
+    sharedGroups[0].projectRole == ProjectRole.WRITE
+  }
+
   def "granting an authority publishes an ACL eviction after the local cache eviction"() {
     given: "an ACL eviction publisher wired into the service"
     AclEvictionPublisher publisher = Mock()
