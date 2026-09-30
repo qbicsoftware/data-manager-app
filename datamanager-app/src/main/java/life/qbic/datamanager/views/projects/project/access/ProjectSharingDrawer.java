@@ -248,10 +248,8 @@ public class ProjectSharingDrawer extends Div {
 
   private static TagColor roleColor(ProjectRole role) {
     return switch (role) {
-      case READ -> TagColor.CONTRAST;
-      case WRITE -> TagColor.PRIMARY;
-      case ADMIN -> TagColor.WARNING;
-      case OWNER -> TagColor.ERROR;
+      case READ, WRITE -> TagColor.CONTRAST;
+      case ADMIN, OWNER -> TagColor.PRIMARY;
     };
   }
 
