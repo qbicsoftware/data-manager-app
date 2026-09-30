@@ -35,6 +35,8 @@ class GroupSidProviderImplSpec extends Specification {
 
   private GroupService groupService
 
+  private GroupService orgService
+
   private GroupSidProvider provider
 
   def setup() {
@@ -43,6 +45,8 @@ class GroupSidProviderImplSpec extends Specification {
     domainService = new GroupDomainService(repository)
     DomainRegistry.instance().registerService(domainService)
     groupService = new GroupService(repository, new InMemoryUserInformationService())
+    orgService = new GroupService(repository, new InMemoryUserInformationService(),
+        { String id -> id == "admin-user" || id == "admin-1" } as life.qbic.usergroups.api.GroupAdministrationPermission)
     provider = new GroupSidProviderImpl(groupService)
   }
 
@@ -78,6 +82,26 @@ class GroupSidProviderImplSpec extends Specification {
 
     then:
     sids.isEmpty()
+  }
+
+  def "An org MANAGER membership produces a GROUP_ sid; removing the manager stops producing it (AC3 next-check contract)"() {
+    given: "an org group with an appointed manager"
+    String admin = "admin-user"
+    String groupId = orgService.createOrgGroup(admin, GroupName.from("NGS Lab"), DESC)
+        .getValue().groupId().get()
+    orgService.appointOrgManager(groupId, admin, "alice")
+
+    when: "the manager's group sids are resolved"
+    List<String> sids = provider.listGroupSidsForUser("alice")
+
+    then: "the org group grants the GROUP_<id> sid"
+    sids == [GroupSidProvider.GROUP_SID_PREFIX + groupId]
+
+    when: "the admin removes the manager"
+    orgService.removeOrgManager(groupId, admin, "alice")
+
+    then: "at the next check the sid is gone (live, per-check derivation)"
+    provider.listGroupSidsForUser("alice").isEmpty()
   }
 
   static class InMemoryGroupDataStorage implements GroupDataStorage {

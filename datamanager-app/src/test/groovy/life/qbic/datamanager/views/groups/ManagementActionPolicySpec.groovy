@@ -38,15 +38,24 @@ class ManagementActionPolicySpec extends Specification {
   }
 
   @Unroll
-  def "an org group membership never offers management actions (#role)"() {
+  def "an org group row offers #expected for role #role (PO model: manager manages like ad-hoc)"() {
     given:
     MyGroupMembership membership = new MyGroupMembership("org-1", "Org Group", null, GroupType.ORG,
         role, 5 as int)
 
-    expect:
-    policy.actionsFor(membership).isEmpty()
+    when:
+    def actions = policy.actionsFor(membership)
+
+    then:
+    actions*.name() == expected
 
     where:
-    role << [GroupRole.OWNER, GroupRole.MANAGER, GroupRole.MEMBER]
+    role              | expected
+    // Org groups carry no OWNER membership row (owner-equivalent = QBiC admin at the app
+    // layer), so the OWNER case is unreachable via a real row; keep it defensive-empty.
+    GroupRole.OWNER   | []
+    // An org MANAGER manages the group exactly like an ad-hoc MANAGER: manage members + rename.
+    GroupRole.MANAGER | ["MANAGE_MEMBERS", "RENAME"]
+    GroupRole.MEMBER  | []
   }
 }

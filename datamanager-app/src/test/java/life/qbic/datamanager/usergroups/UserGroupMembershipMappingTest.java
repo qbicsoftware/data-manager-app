@@ -90,7 +90,7 @@ class UserGroupMembershipMappingIT {
   }
 
   @Test
-  void removingTheLastMemberDissolvesTheGroupAndClearsRoster() {
+  void explicitDissolveClearsRosterAndPersistsDissolvedStatus() {
     GroupId groupId = GroupId.create();
     Instant now = Instant.parse("2026-09-23T10:00:00Z");
 
@@ -99,15 +99,17 @@ class UserGroupMembershipMappingIT {
       session.persist(group);
     });
 
+    // removing the non-owner member persists the removal; the group stays ACTIVE
     sessionFactory.inTransaction(session -> {
       UserGroup managed = session.find(UserGroup.class, groupId);
       managed.removeMember("owner-user", "member-2");
       session.flush();
     });
 
+    // explicit dissolve is the only way a group is dissolved (no auto-dissolve)
     sessionFactory.inTransaction(session -> {
-      UserGroup reloaded = session.find(UserGroup.class, groupId);
-      reloaded.removeMembership("owner-user");
+      UserGroup managed = session.find(UserGroup.class, groupId);
+      managed.dissolve();
       session.flush();
     });
 
@@ -123,7 +125,7 @@ class UserGroupMembershipMappingIT {
   private static UserGroup createGroupWithMembers(GroupId groupId, Instant now) {
     UserGroup group = UserGroup.createAdHoc(groupId, GroupName.from("NGS Lab"),
         GroupDescription.from("A test lab"), "owner-user", now);
-    group.addMember("owner-user", "member-2", now);
+    group.addMember("member-2", now);
     return group;
   }
 }

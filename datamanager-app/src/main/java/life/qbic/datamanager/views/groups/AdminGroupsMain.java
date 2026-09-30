@@ -5,8 +5,12 @@ import static java.util.Objects.requireNonNull;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.router.RouterLink;
+import com.vaadin.flow.router.RouteParam;
+import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.NotFoundException;
@@ -24,6 +28,7 @@ import life.qbic.projectmanagement.application.AuthenticationToUserIdTranslation
 import life.qbic.usergroups.api.GroupAdministrationPermission;
 import life.qbic.usergroups.api.GroupInfo;
 import life.qbic.usergroups.api.GroupInformationService;
+import life.qbic.usergroups.api.GroupManagementService;
 import life.qbic.usergroups.api.GroupType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -60,6 +65,7 @@ public class AdminGroupsMain extends Main implements BeforeEnterObserver {
   private static final long serialVersionUID = 7152438654172894561L;
 
   private final transient GroupInformationService groupInformationService;
+  private final transient GroupManagementService groupManagementService;
   private final transient GroupAdministrationPermission groupAdministrationPermission;
   private final transient AuthenticationToUserIdTranslationService userIdTranslator;
 
@@ -71,10 +77,13 @@ public class AdminGroupsMain extends Main implements BeforeEnterObserver {
    */
   public AdminGroupsMain(
       @Autowired GroupInformationService groupInformationService,
+      @Autowired GroupManagementService groupManagementService,
       @Autowired GroupAdministrationPermission groupAdministrationPermission,
       @Autowired AuthenticationToUserIdTranslationService userIdTranslator) {
     this.groupInformationService = requireNonNull(groupInformationService,
         "groupInformationService must not be null");
+    this.groupManagementService = requireNonNull(groupManagementService,
+        "groupManagementService must not be null");
     this.groupAdministrationPermission = requireNonNull(groupAdministrationPermission,
         "groupAdministrationPermission must not be null");
     this.userIdTranslator = requireNonNull(userIdTranslator,
@@ -116,6 +125,11 @@ public class AdminGroupsMain extends Main implements BeforeEnterObserver {
         .orElse(false);
   }
 
+  private String currentUserId() {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    return userIdTranslator.translateToUserId(authentication).orElseThrow();
+  }
+
   private void renderOrgGroups() {
     List<GroupInfo> orgGroups = orgGroupsFromDirectory();
     if (orgGroups.isEmpty()) {
@@ -124,7 +138,10 @@ public class AdminGroupsMain extends Main implements BeforeEnterObserver {
       groupList.add(emptyState);
       return;
     }
-    orgGroups.forEach(groupInfo -> groupList.add(buildRow(groupInfo)));
+    // Resolve the acting admin once and build every row with its member count (the admin
+    // gate is already enforced in beforeEnter; each orgGroupMemberCount call re-checks it).
+    String actingUserId = currentUserId();
+    orgGroups.forEach(groupInfo -> groupList.add(buildRow(groupInfo, actingUserId)));
   }
 
   /**
@@ -138,36 +155,92 @@ public class AdminGroupsMain extends Main implements BeforeEnterObserver {
         .toList();
   }
 
-  private Component buildRow(GroupInfo groupInfo) {
+  Component buildRow(GroupInfo groupInfo, String actingUserId) {
     Div row = new Div();
-    row.addClassName("admin-groups-row");
+    // The org-group directory uses the exact same card anatomy and styling as the My Groups
+    // rows (shared `my-groups-*` classes), so org group cards and ad-hoc user group cards are
+    // visually identical — including their action buttons. The class prefix is historical: the
+    // shared group-card styles are anchored in my-groups.css and already reused by
+    // GroupMembersComponent.
+    row.addClassName("my-groups-row");
+
+    // Vertical scan pattern (mirrors My Groups): title + action on line 1, badges on line 2,
+    // description below.
+    Div identity = new Div();
+    identity.addClassName("my-groups-row__identity");
 
     Div header = new Div();
-    header.addClassName("admin-groups-row__header");
+    header.addClassName("my-groups-row__header");
 
     Div title = new Div();
-    title.addClassName("admin-groups-row__title");
-    Span name = new Span(groupInfo.name());
-    name.addClassName("admin-groups-row__name");
+    title.addClassName("my-groups-row__title");
+    // The org-group name is the row's primary identity and a navigation target
+    // ({@link AdminGroupManagersMain}). A {@link RouterLink} routes via Vaadin's router (real
+    // route, no '#' hash) and gives native link behavior, matching the My Groups rows.
+    RouterLink name = new RouterLink("", AdminGroupManagersMain.class,
+        new RouteParameters(
+            new RouteParam(AdminGroupManagersMain.GROUP_ID_ROUTE_PARAMETER, groupInfo.id())));
+    name.setText(groupInfo.name());
+    name.addClassName("my-groups-row__name");
     title.add(name);
-    header.add(title);
 
-    Span typeBadge = new Span("organisational");
-    typeBadge.addClassName("admin-groups-badge");
-    typeBadge.addClassName("admin-groups-badge--type-org");
-    header.add(typeBadge);
-
-    Div identity = new Div();
-    identity.addClassName("admin-groups-row__identity");
+    Div actions = new Div();
+    actions.addClassName("my-groups-row__actions");
+    actions.add(buildManageButton(groupInfo));
+    header.add(title, actions);
     identity.add(header);
+
+    Div badges = new Div();
+    badges.addClassName("my-groups-row__badges");
+    badges.add(buildTypeBadge());
+    badges.add(buildMemberCountBadge(groupManagementService.orgGroupMemberCount(
+        groupInfo.id(), actingUserId)));
+    identity.add(badges);
 
     if (groupInfo.description() != null && !groupInfo.description().isBlank()) {
       Span description = new Span(groupInfo.description());
-      description.addClassName("admin-groups-row__description");
+      description.addClassName("my-groups-row__description");
       identity.add(description);
     }
 
     row.add(identity);
     return row;
+  }
+
+  private static Span buildTypeBadge() {
+    Span badge = new Span("organisational");
+    badge.addClassName("my-groups-badge");
+    badge.addClassName("my-groups-badge--type-org");
+    return badge;
+  }
+
+  /**
+   * Member-count badge for the org group card (admin oversight). The count is resolved by the
+   * caller from the admin-gated {@link GroupManagementService#orgGroupMemberCount} seam — the
+   * public directory never carries membership data.
+   */
+  private static Span buildMemberCountBadge(int memberCount) {
+    Span badge = new Span(memberCount + " member" + (memberCount == 1 ? "" : "s"));
+    badge.addClassName("my-groups-badge");
+    badge.addClassName("my-groups-badge--member-count");
+    return badge;
+  }
+
+  /**
+   * The admin "Manage" action is styled exactly like the My Groups "Manage group" action — a
+   * tertiary inline button (primary text colour, hover/focus tint, chevron) — so both group-card
+   * surfaces offer visually identical action affordances.
+   */
+  private Button buildManageButton(GroupInfo groupInfo) {
+    Button manageButton = new Button("Manage",
+        new com.vaadin.flow.component.icon.Icon(
+            com.vaadin.flow.component.icon.VaadinIcon.CHEVRON_RIGHT));
+    manageButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+    manageButton.addClassName("my-groups-action--manage");
+    manageButton.addClickListener(click ->
+        UI.getCurrent().navigate(AdminGroupManagersMain.class,
+            new com.vaadin.flow.router.RouteParameters(
+                AdminGroupManagersMain.GROUP_ID_ROUTE_PARAMETER, groupInfo.id())));
+    return manageButton;
   }
 }

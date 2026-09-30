@@ -61,7 +61,7 @@ class GroupInformationServiceImplSpec extends Specification {
     def goneId = GroupId.create()
     domainService.createAdHocGroup(goneId, GroupName.from("Gone Group"),
         GroupDescription.from("gone"), "bob", NOW)
-    domainService.removeMembership(goneId, "bob")
+    domainService.dissolve(goneId, "bob")
 
     when:
     List<GroupInfo> directory = service.listPublicDirectory()
@@ -80,7 +80,7 @@ class GroupInformationServiceImplSpec extends Specification {
     domainService.createAdHocGroup(activeId, GroupName.from("Active"), DESC, "alice", NOW)
     def goneId = GroupId.create()
     domainService.createAdHocGroup(goneId, GroupName.from("Gone"), DESC, "bob", NOW)
-    domainService.removeMembership(goneId, "bob")
+    domainService.dissolve(goneId, "bob")
 
     expect: "active resolves, dissolved and unknown resolve to empty"
     service.findGroupById(activeId.get()).isPresent()

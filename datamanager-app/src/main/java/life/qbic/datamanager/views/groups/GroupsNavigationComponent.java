@@ -67,8 +67,9 @@ public class GroupsNavigationComponent extends Div {
     if (navigationTarget == NewGroupMain.class || navigationTarget == GroupDetailMain.class) {
       navigationTarget = MyGroupsMain.class;
     }
-    // the org-group creation page belongs to the Admin tab
-    if (navigationTarget == AdminGroupCreationMain.class) {
+    // the org-group creation and manager-management pages belong to the Admin tab
+    if (navigationTarget == AdminGroupCreationMain.class
+        || navigationTarget == AdminGroupManagersMain.class) {
       navigationTarget = AdminGroupsMain.class;
     }
     Tab tab = tabsByNavigationTarget.get(navigationTarget);
