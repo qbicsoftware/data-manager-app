@@ -3,15 +3,12 @@ package life.qbic.datamanager.views.projects.project.access
 import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
-import com.vaadin.flow.component.html.Div
-import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.component.select.Select
 import life.qbic.datamanager.security.UserPermissions
 import life.qbic.datamanager.views.Context
 import life.qbic.datamanager.views.general.Tag
+import life.qbic.datamanager.views.projects.project.access.ProjectAccessComponent.AccessEntry
 import life.qbic.datamanager.views.projects.project.access.ProjectAccessComponent.AccessFilter
-import life.qbic.datamanager.views.projects.project.access.ProjectAccessComponent.ProjectGroup
-import life.qbic.datamanager.views.projects.project.access.ProjectAccessComponent.ProjectUser
 import life.qbic.datamanager.views.projects.project.access.ProjectSharingComposer.GrantRequest
 import life.qbic.datamanager.views.projects.project.access.ProjectSharingComposer.GrantRequestedEvent
 import life.qbic.datamanager.views.projects.project.access.ProjectSharingComposer.PrincipalType
@@ -31,9 +28,10 @@ import spock.lang.Specification
 /**
  * Unit tests for the dialog-free project access page (FEAT-USER-GROUPS-08).
  *
- * <p>Covers: the roster renders editable role controls and removal for access-administrators, a
- * read-only view otherwise, role change and revoke wiring, batch grants through the inline
- * composer, the type filter, and the membership-leakage guard. Headless, no Spring context.</p>
+ * <p>The roster follows the measurements/samples layout: a searchable Grid with a toolbar (search,
+ * type filter, selection-based Remove). Covers editable/read-only role controls, user/group role
+ * change, inline-confirmed removal, batch grants through the composer, and the type filter.
+ * Headless, no Spring context.</p>
  */
 class ProjectAccessComponentSpec extends Specification {
 
@@ -46,14 +44,18 @@ class ProjectAccessComponentSpec extends Specification {
   ProjectId projectId = ProjectId.create()
   ProjectAccessComponent component
 
+  /** Mutable backing lists the service stubs read from, so tests can define the state. */
+  List collaborators = []
+  List sharedGroups = []
+
   def setup() {
     component = new ProjectAccessComponent(projectAccessService, userInformationService,
         groupInformationService, userPermissions, authenticationToUserIdTranslator)
     SecurityContextHolder.clearContext()
     SecurityContextHolder.getContext().setAuthentication(Mock(Authentication))
     authenticationToUserIdTranslator.translateToUserId(_ as Authentication) >> Optional.of("user-1")
-    projectAccessService.listCollaborators(_ as ProjectId) >> []
-    projectAccessService.listSharedGroups(_ as ProjectId) >> []
+    projectAccessService.listCollaborators(_ as ProjectId) >> { collaborators }
+    projectAccessService.listSharedGroups(_ as ProjectId) >> { sharedGroups }
     UI.setCurrent(Mock(UI))
   }
 
@@ -71,6 +73,17 @@ class ProjectAccessComponentSpec extends Specification {
     return new UserInfo(id, fullName, "${username}@example.org", username, true, null, null)
   }
 
+  private static AccessEntry aUser(String id, String username, String fullName,
+      ProjectRole role) {
+    return new AccessEntry(PrincipalType.USER, id, username, fullName, null, null, null, null,
+        role)
+  }
+
+  private static AccessEntry aGroup(String id, String name, String description,
+      ProjectRole role) {
+    return new AccessEntry(PrincipalType.GROUP, id, null, null, null, null, name, description, role)
+  }
+
   private static List<Component> allComponents(Component root) {
     def result = []
     root.children.forEach { child ->
@@ -84,33 +97,31 @@ class ProjectAccessComponentSpec extends Specification {
     return allComponents(root).findAll { it instanceof Button } as List<Button>
   }
 
-  def "an access-administrator sees editable role controls and a remove action per row"() {
+  def "an access-administrator sees an editable role control and the Remove action"() {
     given:
     setContext(true)
-    def projectUser = new ProjectUser("user-2", "jdoe", "Jane Doe", "", "", ProjectRole.READ)
+    def entry = aUser("user-2", "jdoe", "Jane Doe", ProjectRole.READ)
 
     when:
-    def roleControl = component.userRoleControl(projectUser)
-    def row = component.userRow(projectUser)
+    def roleControl = component.roleCell(entry)
 
     then:
     roleControl instanceof Select
-    buttonsIn(row).any { it.text == "Remove" }
+    component.@removeButton.isVisible()
     component.@composer.isVisible()
   }
 
-  def "a collaborator without administration rights gets a read-only roster"() {
+  def "a collaborator without administration rights gets a read-only view"() {
     given:
     setContext(false)
-    def projectUser = new ProjectUser("user-2", "jdoe", "Jane Doe", "", "", ProjectRole.READ)
+    def entry = aUser("user-2", "jdoe", "Jane Doe", ProjectRole.READ)
 
     when:
-    def roleControl = component.userRoleControl(projectUser)
-    def row = component.userRow(projectUser)
+    def roleControl = component.roleCell(entry)
 
     then:
     roleControl instanceof Tag
-    buttonsIn(row).isEmpty()
+    !component.@removeButton.isVisible()
     !component.@composer.isVisible()
 
     and: "no membership data is ever requested (AC3/AC4)"
@@ -120,8 +131,8 @@ class ProjectAccessComponentSpec extends Specification {
   def "changing a user role invokes changeRole"() {
     given:
     setContext(true)
-    def projectUser = new ProjectUser("user-2", "jdoe", "Jane Doe", "", "", ProjectRole.READ)
-    def roleSelect = component.userRoleControl(projectUser) as Select<ProjectRole>
+    def entry = aUser("user-2", "jdoe", "Jane Doe", ProjectRole.READ)
+    def roleSelect = component.roleCell(entry) as Select<ProjectRole>
 
     when:
     roleSelect.setValue(ProjectRole.ADMIN)
@@ -133,8 +144,8 @@ class ProjectAccessComponentSpec extends Specification {
   def "changing a group role invokes changeAuthorityAccess with the GROUP_ prefix"() {
     given:
     setContext(true)
-    def group = new ProjectGroup("g-1", "NGS Lab", "sequencing core", ProjectRole.READ)
-    def roleSelect = component.groupRoleControl(group) as Select<ProjectRole>
+    def entry = aGroup("g-1", "NGS Lab", "sequencing core", ProjectRole.READ)
+    def roleSelect = component.roleCell(entry) as Select<ProjectRole>
 
     when:
     roleSelect.setValue(ProjectRole.WRITE)
@@ -146,10 +157,10 @@ class ProjectAccessComponentSpec extends Specification {
   def "the role control offers only READ, WRITE and ADMIN, never OWNER"() {
     given:
     setContext(true)
-    def group = new ProjectGroup("g-1", "NGS Lab", null, ProjectRole.READ)
+    def entry = aGroup("g-1", "NGS Lab", null, ProjectRole.READ)
 
     when:
-    def roleSelect = component.groupRoleControl(group) as Select<ProjectRole>
+    def roleSelect = component.roleCell(entry) as Select<ProjectRole>
 
     then:
     def offered = roleSelect.listDataView.items.toSet()
@@ -157,25 +168,25 @@ class ProjectAccessComponentSpec extends Specification {
     !offered.contains(ProjectRole.OWNER)
   }
 
-  def "revoking a user requires an inline confirmation first"() {
-    given:
+  def "removing a selected principal requires an inline confirmation"() {
+    given: "a project shared with one user"
+    collaborators = [new ProjectCollaborator("user-2", projectId, ProjectRole.READ)]
+    userInformationService.findById("user-2") >> Optional.of(user("user-2", "Jane Doe", "jdoe"))
     setContext(true)
-    def projectUser = new ProjectUser("user-2", "jdoe", "Jane Doe", "", "", ProjectRole.READ)
-    def row = component.userRow(projectUser)
-    def removeButton = buttonsIn(row).find { it.text == "Remove" } as Button
+    def entry = component.@grid.getListDataView().getItems()
+        .find { it.id() == "user-2" }
+    component.@grid.asMultiSelect().select(entry)
 
     when: "the ADMIN clicks Remove"
-    removeButton.click()
+    component.@removeButton.click()
 
-    then: "nothing is revoked yet and an inline confirmation is shown"
+    then: "an inline confirmation is shown and nothing is removed yet"
     0 * projectAccessService.removeCollaborator(*_)
-    buttonsIn(row).any { it.text == "Cancel" }
+    component.@removeConfirmBar.isVisible()
 
     when: "the ADMIN confirms"
-    def confirmButton = buttonsIn(row).find {
-      it instanceof Button && (it as Button).text == "Remove"
-    } as Button
-    confirmButton.click()
+    def confirm = buttonsIn(component.@removeConfirmBar).find { it.text == "Remove" } as Button
+    confirm.click()
 
     then:
     1 * projectAccessService.removeCollaborator(projectId, "user-2")
@@ -197,20 +208,18 @@ class ProjectAccessComponentSpec extends Specification {
     1 * projectAccessService.addAuthorityAccess(projectId, "GROUP_g-9", ProjectRole.READ)
   }
 
-  def "the type filter hides the other section"() {
-    given: "a project with one person and one group"
-    projectAccessService.listCollaborators(projectId) >> [
-        new ProjectCollaborator("user-2", projectId, ProjectRole.READ)]
-    projectAccessService.listSharedGroups(projectId) >> [
-        new SharedProjectGroup("g-1", "NGS Lab", null, projectId, ProjectRole.ADMIN)]
+  def "the type filter narrows the table"() {
+    given:
+    collaborators = [new ProjectCollaborator("user-2", projectId, ProjectRole.READ)]
+    sharedGroups = [new SharedProjectGroup("g-1", "NGS Lab", null, projectId, ProjectRole.ADMIN)]
     userInformationService.findById("user-2") >> Optional.of(user("user-2", "Jane Doe", "jdoe"))
     setContext(true)
 
-    when: "the filter is set to Groups"
+    when:
     component.@filterSelect.setValue(AccessFilter.GROUPS)
 
     then:
-    !component.@peopleSection.isVisible()
-    component.@groupsSection.isVisible()
+    component.@grid.getListDataView().getItems().collect { it.displayName() }.toList() ==
+        ["NGS Lab"]
   }
 }

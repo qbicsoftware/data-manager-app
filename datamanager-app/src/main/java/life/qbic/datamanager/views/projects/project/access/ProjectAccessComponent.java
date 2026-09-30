@@ -6,6 +6,8 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.grid.Grid.SelectionMode;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
@@ -21,9 +23,10 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Function;
+import java.util.Set;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
@@ -59,12 +62,11 @@ import org.springframework.security.core.context.SecurityContextHolder;
  * The access component is a {@link PageArea} component, which shows the current permissions for all
  * users and user groups within a {@link Project}.
  * <p>
- * The component is dialog-free and uses the {@link ProjectSharingComposer} inline at the top for
- * granting access to one or several people and groups in a single action. The access roster below
- * is composed of sections ("People with access" / "Groups with access"), a search + type filter, and
- * shared rows with an always-visible role control and an inline removal confirmation. Users without
- * access-administration rights see a read-only view (group names and descriptions only, never
- * membership data).
+ * Following the measurements/samples layout, the access roster is a searchable table with a toolbar:
+ * a search field, a type filter and a selection-based {@code Remove} action. The
+ * {@link ProjectSharingComposer} sits in a sticky rail for granting access. Role editing is a
+ * per-row {@link Select} (dialog-free). Users without access-administration rights see a read-only
+ * view (group names and descriptions only, never membership data).
  */
 @SpringComponent
 @UIScope
@@ -86,15 +88,13 @@ public class ProjectAccessComponent extends PageArea {
   private final ProjectSharingComposer composer;
   private final TextField searchField;
   private final Select<AccessFilter> filterSelect;
-  private final Div peopleSection;
-  private final Div groupsSection;
+  private final Button removeButton;
+  private final Div removeConfirmBar;
+  private final Grid<AccessEntry> grid;
 
   private Context context;
   private boolean canChangeAccess = false;
-  private List<ProjectUser> users = List.of();
-  private List<ProjectGroup> groups = List.of();
-  private Div openConfirmCell;
-  private Component openConfirmRestore;
+  private List<AccessEntry> entries = List.of();
 
   protected ProjectAccessComponent(
       @Autowired ProjectAccessService projectAccessService,
@@ -129,17 +129,12 @@ public class ProjectAccessComponent extends PageArea {
 
     searchField = new TextField();
     filterSelect = new Select<>();
+    removeButton = new Button("Remove", VaadinIcon.TRASH.create());
+    removeConfirmBar = new Div();
+    grid = createGrid();
     configureToolbar();
 
-    peopleSection = new Div();
-    peopleSection.addClassName("access-section");
-    groupsSection = new Div();
-    groupsSection.addClassName("access-section");
-
-    Div toolbar = new Div(searchField, filterSelect);
-    toolbar.addClassName("access-toolbar");
-
-    Div roster = new Div(toolbar, peopleSection, groupsSection);
+    Div roster = new Div(toolbar(), removeConfirmBar, grid);
     roster.addClassName("access-roster");
 
     // DOM order keeps the composer first so it stacks on top on small screens; a CSS grid places
@@ -150,20 +145,63 @@ public class ProjectAccessComponent extends PageArea {
     add(header, body);
   }
 
+  private Component toolbar() {
+    Div toolbar = new Div();
+    toolbar.addClassName("access-toolbar");
+    Div spacer = new Div();
+    spacer.addClassName("flex-grow-1");
+    toolbar.add(searchField, filterSelect, spacer, removeButton);
+    return toolbar;
+  }
+
   private void configureToolbar() {
     searchField.setPlaceholder("Search people and groups");
     searchField.setClearButtonVisible(true);
     searchField.setPrefixComponent(VaadinIcon.SEARCH.create());
     searchField.setValueChangeMode(ValueChangeMode.LAZY);
     searchField.addClassName("access-search");
-    searchField.addValueChangeListener(event -> renderAccessLists());
+    searchField.addValueChangeListener(event -> applyFilter());
 
     filterSelect.setItems(AccessFilter.values());
     filterSelect.setItemLabelGenerator(AccessFilter::label);
     filterSelect.setValue(AccessFilter.ALL);
     filterSelect.addClassName("access-filter");
     filterSelect.getElement().setAttribute("aria-label", "Filter by principal type");
-    filterSelect.addValueChangeListener(event -> renderAccessLists());
+    filterSelect.addValueChangeListener(event -> applyFilter());
+
+    removeButton.addClassName("access-remove-button");
+    removeButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
+    removeButton.setEnabled(false);
+    removeButton.setVisible(false);
+    removeButton.addClickListener(event -> showRemoveConfirm());
+
+    removeConfirmBar.addClassName("access-inline-confirm");
+    removeConfirmBar.setVisible(false);
+  }
+
+  private Grid<AccessEntry> createGrid() {
+    Grid<AccessEntry> accessGrid = new Grid<>();
+    accessGrid.addClassName("access-grid");
+    accessGrid.setSelectionMode(SelectionMode.MULTI);
+    // Small roster: let the native page scroll handle overflow instead of an embedded scrollbar.
+    accessGrid.setAllRowsVisible(true);
+    // Owner and the acting user can never be acted upon, so their checkboxes stay disabled.
+    accessGrid.setItemSelectableProvider(this::isActionable);
+    accessGrid.addColumn(new ComponentRenderer<>(this::principalCell))
+        .setKey("principal")
+        .setHeader("Principal")
+        .setAutoWidth(true)
+        .setFlexGrow(1)
+        .setSortable(true)
+        .setComparator(Comparator.comparing(AccessEntry::displayName,
+            String.CASE_INSENSITIVE_ORDER));
+    accessGrid.addColumn(new ComponentRenderer<>(this::roleCell))
+        .setKey("role")
+        .setHeader("Role")
+        .setAutoWidth(true)
+        .setFlexGrow(0);
+    accessGrid.asMultiSelect().addSelectionListener(event -> updateRemoveButton());
+    return accessGrid;
   }
 
   public void setContext(Context context) {
@@ -173,8 +211,8 @@ public class ProjectAccessComponent extends PageArea {
     this.context = context;
     this.canChangeAccess = userPermissions.changeProjectAccess(context.projectId().orElseThrow());
     composer.setVisible(canChangeAccess);
-    openConfirmCell = null;
-    openConfirmRestore = null;
+    removeButton.setVisible(canChangeAccess);
+    grid.setSelectionMode(canChangeAccess ? SelectionMode.MULTI : SelectionMode.NONE);
     loadAccess();
   }
 
@@ -183,148 +221,131 @@ public class ProjectAccessComponent extends PageArea {
     List<ProjectCollaborator> collaborators = projectAccessService.listCollaborators(projectId);
     List<SharedProjectGroup> sharedGroups = projectAccessService.listSharedGroups(projectId);
     composer.setAlreadyGranted(collaborators, sharedGroups);
-    this.users = collaborators.stream().map(this::toProjectUser).toList();
-    this.groups = sharedGroups.stream().map(this::toProjectGroup).toList();
-    renderAccessLists();
+    List<AccessEntry> loaded = new ArrayList<>();
+    collaborators.forEach(collaborator -> loaded.add(toAccessEntry(collaborator)));
+    sharedGroups.forEach(group -> loaded.add(toAccessEntry(group)));
+    loaded.sort(Comparator
+        .comparingInt((AccessEntry entry) -> roleRank(entry.projectRole()))
+        .thenComparing(AccessEntry::displayName, String.CASE_INSENSITIVE_ORDER));
+    this.entries = loaded;
+    applyFilter();
   }
 
-  private ProjectUser toProjectUser(ProjectCollaborator collaborator) {
+  private AccessEntry toAccessEntry(ProjectCollaborator collaborator) {
     var userInfo = userInformationService.findById(collaborator.userId()).orElseThrow();
-    return new ProjectUser(collaborator.userId(), userInfo.platformUserName(), userInfo.fullName(),
-        userInfo.oidcId(), userInfo.oidcIssuer(), collaborator.projectRole());
+    return new AccessEntry(PrincipalType.USER, collaborator.userId(), userInfo.platformUserName(),
+        userInfo.fullName(), userInfo.oidcId(), userInfo.oidcIssuer(), null, null,
+        collaborator.projectRole());
   }
 
-  private ProjectGroup toProjectGroup(SharedProjectGroup sharedProjectGroup) {
-    return new ProjectGroup(sharedProjectGroup.groupId(), sharedProjectGroup.groupName(),
-        sharedProjectGroup.groupDescription(), sharedProjectGroup.projectRole());
+  private AccessEntry toAccessEntry(SharedProjectGroup group) {
+    return new AccessEntry(PrincipalType.GROUP, group.groupId(), null, null, null, null,
+        group.groupName(), group.groupDescription(), group.projectRole());
   }
 
-  private void renderAccessLists() {
-    openConfirmCell = null;
-    openConfirmRestore = null;
+  private void applyFilter() {
+    hideRemoveConfirm();
     String query = searchField.getValue() == null ? "" : searchField.getValue().trim().toLowerCase();
-    boolean queryActive = !query.isEmpty();
-    AccessFilter filter = filterSelect.getValue() == null ? AccessFilter.ALL : filterSelect.getValue();
-    boolean showPeople = filter != AccessFilter.GROUPS;
-    boolean showGroups = filter != AccessFilter.PEOPLE;
-
-    List<ProjectUser> filteredUsers = showPeople
-        ? users.stream().filter(user -> matchesUser(user, query)).toList()
-        : List.of();
-    List<ProjectGroup> filteredGroups = showGroups
-        ? groups.stream().filter(group -> matchesGroup(group, query)).toList()
-        : List.of();
-
-    renderSection(peopleSection, "People with access", filteredUsers, this::userRow, showPeople,
-        queryActive);
-    renderSection(groupsSection, "Groups with access", filteredGroups, this::groupRow, showGroups,
-        queryActive);
+    AccessFilter filter = filterSelect.getValue() == null ? AccessFilter.ALL
+        : filterSelect.getValue();
+    List<AccessEntry> filtered = entries.stream()
+        .filter(entry -> matchesFilter(entry, filter))
+        .filter(entry -> matchesQuery(entry, query))
+        .toList();
+    grid.setItems(filtered);
+    grid.deselectAll();
+    updateRemoveButton();
   }
 
-  private boolean matchesUser(ProjectUser user, String query) {
+  private static boolean matchesFilter(AccessEntry entry, AccessFilter filter) {
+    return switch (filter) {
+      case ALL -> true;
+      case PEOPLE -> entry.isUser();
+      case GROUPS -> !entry.isUser();
+    };
+  }
+
+  private static boolean matchesQuery(AccessEntry entry, String query) {
     if (query.isEmpty()) {
       return true;
     }
-    return user.userName().toLowerCase().contains(query)
-        || (user.fullName() != null && user.fullName().toLowerCase().contains(query))
-        || (user.oidc() != null && user.oidc().toLowerCase().contains(query));
-  }
-
-  private boolean matchesGroup(ProjectGroup group, String query) {
-    if (query.isEmpty()) {
-      return true;
+    if (entry.isUser()) {
+      return contains(entry.userName(), query)
+          || contains(entry.fullName(), query)
+          || contains(entry.oidc(), query);
     }
-    return group.groupName().toLowerCase().contains(query)
-        || (group.groupDescription() != null
-        && group.groupDescription().toLowerCase().contains(query));
+    return contains(entry.groupName(), query) || contains(entry.groupDescription(), query);
   }
 
-  private <T> void renderSection(Div section, String title, List<T> items,
-      Function<T, Component> rowFactory, boolean visible, boolean queryActive) {
-    section.removeAll();
-    section.setVisible(visible);
-    if (!visible) {
-      return;
-    }
-    section.add(sectionHeader(title));
-    if (items.isEmpty()) {
-      Span empty = new Span(queryActive ? "No matches." : "None.");
-      empty.addClassNames("secondary", "access-empty");
-      section.add(empty);
-    } else {
-      items.forEach(item -> section.add(rowFactory.apply(item)));
-    }
+  private static boolean contains(String value, String query) {
+    return value != null && value.toLowerCase().contains(query);
   }
 
-  private Div sectionHeader(String title) {
-    Span titleSpan = new Span(title);
-    titleSpan.addClassName("access-section-title");
-    Span roleHeader = new Span("Role");
-    roleHeader.addClassName("access-role-header");
-    Div sectionHeader = new Div(titleSpan, roleHeader);
-    sectionHeader.addClassName("access-section-header");
-    return sectionHeader;
+  private void updateRemoveButton() {
+    removeButton.setEnabled(canChangeAccess && !grid.getSelectedItems().isEmpty());
   }
 
-  private Component userRow(ProjectUser user) {
-    Div actions = new Div();
-    actions.addClassName("access-actions");
-    actions.add(userRoleControl(user), userRemoveControl(user, actions));
-    Div row = new Div(personIdentity(user), actions);
-    row.addClassName("access-row");
-    return row;
+  private Component principalCell(AccessEntry entry) {
+    Component principal = entry.isUser() ? userIdentity(entry) : groupIdentity(entry);
+    Div cell = new Div(typeTag(entry.type()), principal);
+    cell.addClassName("access-principal-cell");
+    cell.getElement().setAttribute("title", tooltip(entry));
+    return cell;
   }
 
-  private Component groupRow(ProjectGroup group) {
-    Div actions = new Div();
-    actions.addClassName("access-actions");
-    actions.add(groupRoleControl(group), groupRemoveControl(group, actions));
-    Div row = new Div(groupIdentity(group), actions);
-    row.addClassName("access-row");
-    return row;
-  }
-
-  private Component personIdentity(ProjectUser user) {
+  private Component userIdentity(AccessEntry entry) {
     UserAvatar avatar = new UserAvatar();
-    avatar.setUserId(user.userId());
-    avatar.setName(user.userName());
+    avatar.setUserId(entry.id());
+    avatar.setName(entry.userName());
     Span name = new Span();
     name.addClassName("access-name");
-    Span userNameSpan = new Span(user.userName());
+    Span userNameSpan = new Span(entry.userName());
     userNameSpan.addClassName("bold");
     name.add(userNameSpan);
-    if (user.fullName() != null && !user.fullName().isBlank()) {
-      Span fullNameSpan = new Span(user.fullName());
+    if (entry.fullName() != null && !entry.fullName().isBlank()) {
+      Span fullNameSpan = new Span(entry.fullName());
       fullNameSpan.addClassName("access-full-name");
       name.add(fullNameSpan);
     }
-    Div identity = new Div(typeTag(PrincipalType.USER), avatar, name);
+    Div identity = new Div(avatar, name);
     identity.addClassName("access-identity");
-    identity.getElement().setAttribute("title",
-        user.fullName() == null || user.fullName().isBlank() ? user.userName()
-            : "%s (%s)".formatted(user.userName(), user.fullName()));
     return identity;
   }
 
-  private Component groupIdentity(ProjectGroup group) {
+  private Component groupIdentity(AccessEntry entry) {
     Icon groupIcon = VaadinIcon.USERS.create();
     groupIcon.addClassName("access-group-icon");
-    Span name = new Span(group.groupName());
+    Span name = new Span(entry.groupName());
     name.addClassName("access-name");
     Div nameBlock = new Div(name);
     nameBlock.addClassName("access-name-block");
-    if (group.groupDescription() != null && !group.groupDescription().isBlank()) {
-      Span description = new Span(group.groupDescription());
+    if (entry.groupDescription() != null && !entry.groupDescription().isBlank()) {
+      Span description = new Span(entry.groupDescription());
       description.addClassName("access-description");
       nameBlock.add(description);
     }
-    Div identity = new Div(typeTag(PrincipalType.GROUP), groupIcon, nameBlock);
+    Div identity = new Div(groupIcon, nameBlock);
     identity.addClassName("access-identity");
-    identity.getElement().setAttribute("title",
-        group.groupDescription() == null || group.groupDescription().isBlank()
-            ? group.groupName()
-            : "%s — %s".formatted(group.groupName(), group.groupDescription()));
     return identity;
+  }
+
+  private static String tooltip(AccessEntry entry) {
+    if (entry.isUser()) {
+      return entry.fullName() == null || entry.fullName().isBlank() ? entry.userName()
+          : "%s (%s)".formatted(entry.userName(), entry.fullName());
+    }
+    return entry.groupDescription() == null || entry.groupDescription().isBlank()
+        ? entry.groupName()
+        : "%s — %s".formatted(entry.groupName(), entry.groupDescription());
+  }
+
+  private Component roleCell(AccessEntry entry) {
+    if (!canChangeAccess || !isActionable(entry)) {
+      return roleBadge(entry.projectRole());
+    }
+    Select<ProjectRole> roleSelect = createRoleSelect(entry.projectRole());
+    roleSelect.addValueChangeListener(event -> changeRole(entry, event.getValue()));
+    return roleSelect;
   }
 
   private static Tag typeTag(PrincipalType type) {
@@ -339,86 +360,6 @@ public class ProjectAccessComponent extends PageArea {
     tag.setTagColor(ProjectSharingComposer.roleColor(role));
     tag.addClassName("access-role-badge");
     return tag;
-  }
-
-  private Component userRoleControl(ProjectUser user) {
-    boolean editable = canChangeAccess && !isCurrentUser(user)
-        && user.projectRole() != ProjectRole.OWNER;
-    if (!editable) {
-      return roleBadge(user.projectRole());
-    }
-    Select<ProjectRole> roleSelect = createRoleSelect(user.projectRole());
-    roleSelect.addValueChangeListener(event -> onUserRoleChanged(user, event.getValue()));
-    return roleSelect;
-  }
-
-  private Component groupRoleControl(ProjectGroup group) {
-    if (!canChangeAccess) {
-      return roleBadge(group.projectRole());
-    }
-    Select<ProjectRole> roleSelect = createRoleSelect(group.projectRole());
-    roleSelect.addValueChangeListener(event -> changeGroupRole(group, event.getValue()));
-    return roleSelect;
-  }
-
-  private Component userRemoveControl(ProjectUser user, Div actionsCell) {
-    boolean removable = canChangeAccess && !isCurrentUser(user)
-        && user.projectRole() != ProjectRole.OWNER;
-    if (!removable) {
-      return new Span();
-    }
-    Button removeButton = new Button("Remove");
-    removeButton.addClassName("remove-access-button");
-    removeButton.addClickListener(clickEvent -> openInlineRemoveConfirm(actionsCell, removeButton,
-        "Remove %s from this project?".formatted(user.userName()),
-        () -> removeCollaborator(user)));
-    return removeButton;
-  }
-
-  private Component groupRemoveControl(ProjectGroup group, Div actionsCell) {
-    if (!canChangeAccess) {
-      return new Span();
-    }
-    Button removeButton = new Button("Remove");
-    removeButton.addClassName("remove-access-button");
-    removeButton.addClickListener(clickEvent -> openInlineRemoveConfirm(actionsCell, removeButton,
-        "Remove %s from this project?".formatted(group.groupName()),
-        () -> revokeGroup(group)));
-    return removeButton;
-  }
-
-  /**
-   * Replaces the given action cell's content with an inline removal confirmation. No dialog is used;
-   * the row keeps its context and the confirmation is keyboard-operable. Only one row can be in
-   * confirmation state at a time.
-   */
-  private void openInlineRemoveConfirm(Div cell, Component restore, String question,
-      Runnable onConfirm) {
-    if (openConfirmCell != null && openConfirmCell != cell && openConfirmRestore != null) {
-      openConfirmCell.removeAll();
-      openConfirmCell.add(openConfirmRestore);
-    }
-    cell.removeAll();
-    Span questionSpan = new Span(question);
-    questionSpan.addClassName("inline-confirm-question");
-    Button confirmButton = new Button("Remove", event -> onConfirm.run());
-    confirmButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
-    confirmButton.addClassName("inline-confirm-remove");
-    Button cancelButton = new Button("Cancel", event -> {
-      cell.removeAll();
-      cell.add(restore);
-      if (openConfirmCell == cell) {
-        openConfirmCell = null;
-        openConfirmRestore = null;
-      }
-    });
-    cancelButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_SMALL);
-    cancelButton.addClassName("inline-confirm-cancel");
-    Span inlineConfirm = new Span(questionSpan, confirmButton, cancelButton);
-    inlineConfirm.addClassName("inline-confirm");
-    cell.add(inlineConfirm);
-    openConfirmCell = cell;
-    openConfirmRestore = restore;
   }
 
   private Select<ProjectRole> createRoleSelect(ProjectRole currentRole) {
@@ -439,61 +380,78 @@ public class ProjectAccessComponent extends PageArea {
     return roleSelect;
   }
 
-  private boolean isCurrentUser(ProjectUser projectUser) {
-    var userId = this.authenticationToUserIdTranslator.translateToUserId(
+  private void changeRole(AccessEntry entry, ProjectRole projectRole) {
+    if (!canChangeAccess) {
+      displayError(INVALID_ROLE_EDIT, "You don't have permission to change this project role");
+      loadAccess();
+      return;
+    }
+    ProjectId projectId = context.projectId().orElseThrow();
+    try {
+      if (entry.isUser()) {
+        projectAccessService.changeRole(projectId, entry.id(), projectRole);
+      } else {
+        projectAccessService.changeAuthorityAccess(projectId,
+            GroupSidProvider.GROUP_SID_PREFIX + entry.id(), projectRole);
+      }
+    } catch (ApplicationException e) {
+      displayError(INVALID_ROLE_EDIT, "You don't have permission to change this project role");
+    }
+    loadAccess();
+  }
+
+  private void showRemoveConfirm() {
+    Set<AccessEntry> selected = grid.getSelectedItems();
+    if (selected.isEmpty()) {
+      return;
+    }
+    removeConfirmBar.removeAll();
+    Span question = new Span(selected.size() == 1
+        ? "Remove 1 principal from this project?"
+        : "Remove %d principals from this project?".formatted(selected.size()));
+    question.addClassName("inline-confirm-question");
+    Button confirm = new Button("Remove", event -> removeSelected(selected));
+    confirm.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
+    confirm.addClassName("inline-confirm-remove");
+    Button cancel = new Button("Cancel", event -> hideRemoveConfirm());
+    cancel.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_SMALL);
+    cancel.addClassName("inline-confirm-cancel");
+    removeConfirmBar.add(question, confirm, cancel);
+    removeConfirmBar.setVisible(true);
+  }
+
+  private void hideRemoveConfirm() {
+    removeConfirmBar.setVisible(false);
+    removeConfirmBar.removeAll();
+  }
+
+  private void removeSelected(Set<AccessEntry> selected) {
+    ProjectId projectId = context.projectId().orElseThrow();
+    for (AccessEntry entry : selected) {
+      try {
+        if (entry.isUser()) {
+          projectAccessService.removeCollaborator(projectId, entry.id());
+        } else {
+          projectAccessService.removeAuthorityAccess(projectId,
+              GroupSidProvider.GROUP_SID_PREFIX + entry.id());
+        }
+      } catch (ApplicationException e) {
+        displayError(INVALID_USER_REMOVAL, "You can't remove this principal from the project");
+      }
+    }
+    loadAccess();
+  }
+
+  private boolean isActionable(AccessEntry entry) {
+    if (!canChangeAccess || entry.projectRole() == ProjectRole.OWNER) {
+      return false;
+    }
+    if (!entry.isUser()) {
+      return true;
+    }
+    var currentUserId = authenticationToUserIdTranslator.translateToUserId(
         SecurityContextHolder.getContext().getAuthentication()).orElseThrow();
-    return Objects.equals(projectUser.userId(), userId);
-  }
-
-  private void removeCollaborator(ProjectUser projectUser) {
-    ProjectId projectId = context.projectId().orElseThrow();
-    projectAccessService.removeCollaborator(projectId, projectUser.userId());
-    loadAccess();
-  }
-
-  private void onUserRoleChanged(ProjectUser projectUser, ProjectRole projectRole) {
-    if (!canChangeAccess) {
-      displayError(INVALID_ROLE_EDIT, "You don't have permission to change this project role");
-      loadAccess();
-      return;
-    }
-    try {
-      projectAccessService.changeRole(context.projectId().orElseThrow(), projectUser.userId(),
-          projectRole);
-    } catch (ApplicationException e) {
-      displayError(INVALID_ROLE_EDIT, "You don't have permission to change this project role");
-    }
-    loadAccess();
-  }
-
-  private void changeGroupRole(ProjectGroup projectGroup, ProjectRole projectRole) {
-    if (!canChangeAccess) {
-      displayError(INVALID_ROLE_EDIT,
-          "You don't have permission to change the role of this group");
-      loadAccess();
-      return;
-    }
-    ProjectId projectId = context.projectId().orElseThrow();
-    try {
-      projectAccessService.changeAuthorityAccess(projectId,
-          GroupSidProvider.GROUP_SID_PREFIX + projectGroup.groupId(), projectRole);
-    } catch (ApplicationException e) {
-      displayError(INVALID_ROLE_EDIT,
-          "You don't have permission to change the role of this group");
-    }
-    loadAccess();
-  }
-
-  private void revokeGroup(ProjectGroup projectGroup) {
-    ProjectId projectId = context.projectId().orElseThrow();
-    try {
-      projectAccessService.removeAuthorityAccess(projectId,
-          GroupSidProvider.GROUP_SID_PREFIX + projectGroup.groupId());
-    } catch (ApplicationException e) {
-      displayError(INVALID_USER_REMOVAL, "You can't remove this group from the project");
-      return;
-    }
-    loadAccess();
+    return !Objects.equals(entry.id(), currentUserId);
   }
 
   private void onGrantRequested(GrantRequestedEvent event) {
@@ -527,6 +485,15 @@ public class ProjectAccessComponent extends PageArea {
     }
   }
 
+  private static int roleRank(ProjectRole role) {
+    return switch (role) {
+      case OWNER -> 0;
+      case ADMIN -> 1;
+      case WRITE -> 2;
+      case READ -> 3;
+    };
+  }
+
   private void displayError(String title, String description) {
     ErrorMessage errorMessage = new ErrorMessage(title, description);
     StyledNotification notification = new StyledNotification(errorMessage);
@@ -553,28 +520,19 @@ public class ProjectAccessComponent extends PageArea {
   }
 
   /**
-   * A user in a specific project.
-   *
-   * @param userId      the collaborating user
-   * @param userName    the unique username of the user
-   * @param fullName    the full name of the user
-   * @param oidc        the oidc of the user
-   * @param projectRole the role of the user within the project
+   * One principal (user or group) with access to the project.
    */
-  public record ProjectUser(String userId, String userName, String fullName, String oidc,
-                            String oidcIssuer, ProjectRole projectRole) {
-  }
+  public record AccessEntry(PrincipalType type, String id, String userName, String fullName,
+                            String oidc, String oidcIssuer, String groupName,
+                            String groupDescription, ProjectRole projectRole) {
 
-  /**
-   * A user group shared onto a project.
-   *
-   * @param groupId          the stable user group id
-   * @param groupName        the group's display name
-   * @param groupDescription the group's description, may be {@code null}
-   * @param projectRole      the project role granted to the group
-   */
-  public record ProjectGroup(String groupId, String groupName, String groupDescription,
-                             ProjectRole projectRole) {
+    public boolean isUser() {
+      return type == PrincipalType.USER;
+    }
+
+    public String displayName() {
+      return isUser() ? userName : groupName;
+    }
   }
 
   /**
@@ -602,7 +560,8 @@ public class ProjectAccessComponent extends PageArea {
       userInfoContent.add(userNameAndFullName);
     }
 
-    protected void setOidc(String oidcIssuer, String oidc) {      if (oidcIssuer.isEmpty() || oidc.isEmpty()) {
+    protected void setOidc(String oidcIssuer, String oidc) {
+      if (oidcIssuer.isEmpty() || oidc.isEmpty()) {
         return;
       }
       Arrays.stream(OidcType.values())
