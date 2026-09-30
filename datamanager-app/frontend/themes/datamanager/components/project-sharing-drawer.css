@@ -122,10 +122,32 @@
   white-space: nowrap;
 }
 
-.project-sharing-drawer .psd-footer {
+.project-sharing-drawer .psd-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
   flex: 0 0 auto;
-  padding: var(--lumo-space-s) var(--lumo-space-l);
-  border-top: 1px solid var(--lumo-contrast-10pct);
+}
+
+/* Prominent shortcut to the full access page, placed in the header. */
+.project-sharing-drawer .psd-manage-access {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lumo-space-xs);
+  color: var(--lumo-primary-color);
+  font-weight: var(--lumo-font-weight-semibold, 600);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.project-sharing-drawer .psd-manage-access:hover,
+.project-sharing-drawer .psd-manage-access:focus-visible {
+  text-decoration: underline;
+}
+
+.project-sharing-drawer .psd-manage-access vaadin-icon {
+  width: var(--lumo-icon-size-s);
+  height: var(--lumo-icon-size-s);
 }
 
 /* On narrow viewports the drawer becomes a full-width sheet (D6). */

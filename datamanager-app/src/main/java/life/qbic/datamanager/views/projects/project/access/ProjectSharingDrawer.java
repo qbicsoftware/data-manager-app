@@ -96,19 +96,19 @@ public class ProjectSharingDrawer extends Div {
     closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
     closeButton.getElement().setAttribute("aria-label", "Close sharing panel");
     closeButton.addClickListener(event -> close());
-    header.add(titleBlock, closeButton);
+
+    Anchor manageAccess = new Anchor(
+        String.format(ProjectRoutes.ACCESS, projectId.value()),
+        VaadinIcon.ARROW_RIGHT.create(), new Span("Manage access"));
+    manageAccess.addClassName("psd-manage-access");
+    Div headerActions = new Div(manageAccess, closeButton);
+    headerActions.addClassName("psd-header-actions");
+    header.add(titleBlock, headerActions);
 
     Div content = new Div(composer, summary);
     content.addClassName("psd-content");
 
-    Div footer = new Div();
-    footer.addClassName("psd-footer");
-    Anchor manageAccess = new Anchor(
-        String.format(ProjectRoutes.ACCESS, projectId.value()), "Manage access");
-    manageAccess.addClassName("psd-manage-access");
-    footer.add(manageAccess);
-
-    body.add(header, content, footer);
+    body.add(header, content);
     panel.add(body);
     add(overlay, panel);
   }
@@ -249,7 +249,7 @@ public class ProjectSharingDrawer extends Div {
   private static TagColor roleColor(ProjectRole role) {
     return switch (role) {
       case READ -> TagColor.CONTRAST;
-      case WRITE -> TagColor.TEAL;
+      case WRITE -> TagColor.PRIMARY;
       case ADMIN -> TagColor.WARNING;
       case OWNER -> TagColor.ERROR;
     };
