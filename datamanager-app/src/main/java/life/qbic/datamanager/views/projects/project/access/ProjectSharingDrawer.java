@@ -35,8 +35,6 @@ import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessSe
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.usergroups.api.GroupInformationService;
 import life.qbic.usergroups.api.GroupSidProvider;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
 
 /**
  * <b>Project Sharing Drawer</b>
@@ -267,21 +265,14 @@ public class ProjectSharingDrawer extends Div {
 
   private void onGrantRequested(GrantRequestedEvent event) {
     List<GrantRequest> requests = List.copyOf(event.requests());
-    // Capture the security context on the UI thread; the app uses
-    // VaadinAwareSecurityContextHolderStrategy, so the async thread has no authentication unless
-    // the captured context is restored there (same pattern as ConnectDatasetSidebar).
-    SecurityContext securityContext = SecurityContextHolder.getContext();
     composer.setBusy(true);
-    CompletableFuture
-        .supplyAsync(() -> {
-          try {
-            SecurityContextHolder.setContext(securityContext);
-            return applyGrants(requests);
-          } finally {
-            SecurityContextHolder.clearContext();
-          }
-        }, taskExecutor)
-        .thenAccept(outcome -> uiHandle.onUiAndPush(() -> onGrantsApplied(outcome)));
+    // Run the ACL write on the UI thread (via UiHandle/ui.access): the app uses a
+    // VaadinAwareSecurityContextHolderStrategy whose ACL strategy resolves the authenticated
+    // principal from the Vaadin session, which is not available on a raw pool thread. The busy
+    // overlay is sent to the client with the current response before the scheduled task runs.
+    CompletableFuture.runAsync(
+        () -> uiHandle.onUiAndPush(() -> onGrantsApplied(applyGrants(requests))),
+        taskExecutor);
   }
 
   private GrantOutcome applyGrants(List<GrantRequest> requests) {
