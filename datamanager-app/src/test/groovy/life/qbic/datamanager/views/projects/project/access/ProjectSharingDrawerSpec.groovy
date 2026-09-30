@@ -10,6 +10,8 @@ import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessSe
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.SharedProjectGroup
 import life.qbic.projectmanagement.domain.model.project.ProjectId
 import life.qbic.usergroups.api.GroupInformationService
+import life.qbic.datamanager.views.projects.project.access.ProjectSharingComposer.GrantRequest
+import life.qbic.datamanager.views.projects.project.access.ProjectSharingComposer.PrincipalType
 import spock.lang.Specification
 
 /**
@@ -95,5 +97,29 @@ class ProjectSharingDrawerSpec extends Specification {
 
     then: "admin first, then reads ordered alphabetically"
     ordered == ["Alpha Lab", "Beta Lab", "Zeta Lab"]
+  }
+
+  def "describes a failed group grant with the principal, kind and a friendly reason"() {
+    given: "a duplicate group grant whose service message is technical"
+    def request = new GrantRequest(PrincipalType.GROUP, "g-1", ProjectRole.WRITE, "NGS Lab")
+    def duplicate = new life.qbic.application.commons.ApplicationException(
+        "Authority GROUP_g-1 already collaborates on ProjectId[abc]. Please change the project role instead")
+
+    when:
+    def described = ProjectSharingComposer.describeFailure(request, duplicate)
+
+    then:
+    described == "NGS Lab (group): already has access to this project. Change the role instead."
+  }
+
+  def "falls back to a generic reason when the cause has no message"() {
+    given:
+    def request = new GrantRequest(PrincipalType.USER, "u-1", ProjectRole.READ, "jdoe")
+
+    when:
+    def described = ProjectSharingComposer.describeFailure(request, new RuntimeException())
+
+    then:
+    described == "jdoe (user): access could not be granted."
   }
 }

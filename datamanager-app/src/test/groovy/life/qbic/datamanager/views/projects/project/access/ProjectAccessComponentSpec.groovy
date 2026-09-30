@@ -229,8 +229,8 @@ class ProjectAccessComponentSpec extends Specification {
     setContext(true)
     def composer = component.@composer
     def event = new GrantRequestedEvent(composer, false, [
-        new GrantRequest(PrincipalType.USER, "user-2", ProjectRole.WRITE),
-        new GrantRequest(PrincipalType.GROUP, "group-9", ProjectRole.READ)])
+        new GrantRequest(PrincipalType.USER, "user-2", ProjectRole.WRITE, "jdoe"),
+        new GrantRequest(PrincipalType.GROUP, "group-9", ProjectRole.READ, "Sprint Team")])
 
     when: "the user grants the staged batch"
     component.onGrantRequested(event)

@@ -1274,6 +1274,20 @@ a.project-dataset-footer, a.project-dataset-footer:hover {
   font-size: var(--lumo-font-size-s);
 }
 
+.project-sharing-composer .inline-message-title {
+  display: block;
+  font-weight: var(--lumo-font-weight-semibold, 600);
+}
+
+.project-sharing-composer .inline-message-line {
+  display: block;
+  padding-left: var(--lumo-space-s);
+}
+
+.project-sharing-composer .inline-message-line::before {
+  content: "• ";
+}
+
 .project-sharing-composer .inline-message-success {
   color: var(--lumo-success-text-color, var(--lumo-success-color));
   background-color: var(--lumo-success-color-10pct);

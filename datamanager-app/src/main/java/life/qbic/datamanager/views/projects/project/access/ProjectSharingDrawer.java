@@ -13,6 +13,7 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import java.io.Serial;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -272,7 +273,7 @@ public class ProjectSharingDrawer extends Div {
 
   private GrantOutcome applyGrants(List<GrantRequest> requests) {
     int granted = 0;
-    boolean failed = false;
+    List<String> problems = new ArrayList<>();
     for (GrantRequest request : requests) {
       try {
         if (request.type() == PrincipalType.USER) {
@@ -284,23 +285,25 @@ public class ProjectSharingDrawer extends Div {
         granted++;
       } catch (RuntimeException e) {
         log.error("Could not grant project access for %s".formatted(request.id()), e);
-        failed = true;
+        problems.add(ProjectSharingComposer.describeFailure(request, e));
       }
     }
-    return new GrantOutcome(granted, failed);
+    return new GrantOutcome(granted, List.copyOf(problems));
   }
 
   /**
    * Keeps the drawer open after a grant: hides the spinner, refreshes the roster in place and leaves
-   * the confirmation visible inline in the composer.
+   * the confirmation visible inline in the composer. Failures name the affected principals and why.
    */
   private void onGrantsApplied(GrantOutcome outcome) {
     composer.setBusy(false);
     composer.reset();
     refresh();
-    if (outcome.failed()) {
-      composer.showInlineError(
-          "One or more selected people or groups could not be granted access.");
+    if (!outcome.problems().isEmpty()) {
+      String title = outcome.granted() > 0
+          ? "Access granted to %d, but some requests failed:".formatted(outcome.granted())
+          : "Access could not be granted:";
+      composer.showInlineError(title, outcome.problems());
     } else if (outcome.granted() > 0) {
       composer.showInlineConfirmation(outcome.granted() == 1
           ? "Access granted to 1 principal. The list below is up to date."
@@ -309,7 +312,7 @@ public class ProjectSharingDrawer extends Div {
     }
   }
 
-  private record GrantOutcome(int granted, boolean failed) {
+  private record GrantOutcome(int granted, List<String> problems) {
 
   }
 }

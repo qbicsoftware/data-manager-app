@@ -149,24 +149,51 @@ public class ProjectSharingComposer extends Div {
    * @param message the confirmation text
    */
   public void showInlineConfirmation(String message) {
-    setInlineMessage(message, false);
+    setInlineMessage(message, List.of(), false);
   }
 
   /**
-   * Shows an inline error message that stays visible until the next staging action.
+   * Shows an inline error that names the principals that failed and why. Stays visible until the
+   * next staging action.
    *
-   * @param message the error text
+   * @param title    a short headline, e.g. "Access could not be granted:"
+   * @param problems one line per failed principal
    */
-  public void showInlineError(String message) {
-    setInlineMessage(message, true);
+  public void showInlineError(String title, List<String> problems) {
+    setInlineMessage(title, problems, true);
   }
 
-  private void setInlineMessage(String message, boolean error) {
+  /**
+   * Builds a user-readable description of a failed grant: the principal, its kind and the reason.
+   *
+   * @param request the grant that failed
+   * @param cause   the exception the service raised
+   * @return a line such as {@code "NGS Lab (group): already has access to this project."}
+   */
+  static String describeFailure(GrantRequest request, RuntimeException cause) {
+    String reason = cause.getMessage();
+    if (reason == null || reason.isBlank()) {
+      reason = "access could not be granted.";
+    } else if (reason.contains("already collaborates")) {
+      reason = "already has access to this project. Change the role instead.";
+    }
+    return "%s (%s): %s".formatted(request.displayName(),
+        request.type() == PrincipalType.USER ? "user" : "group", reason);
+  }
+
+  private void setInlineMessage(String title, List<String> lines, boolean error) {
     inlineMessage.removeAll();
     inlineMessage.removeClassName("inline-message-success");
     inlineMessage.removeClassName("inline-message-error");
     inlineMessage.addClassName(error ? "inline-message-error" : "inline-message-success");
-    inlineMessage.add(new Span(message));
+    Span titleSpan = new Span(title);
+    titleSpan.addClassName("inline-message-title");
+    inlineMessage.add(titleSpan);
+    lines.forEach(line -> {
+      Span lineSpan = new Span(line);
+      lineSpan.addClassName("inline-message-line");
+      inlineMessage.add(lineSpan);
+    });
     inlineMessage.getStyle().remove("display");
   }
 
@@ -284,7 +311,8 @@ public class ProjectSharingComposer extends Div {
     List<GrantRequest> requests = stagedGrants.getChildren()
         .filter(StagedGrant.class::isInstance)
         .map(StagedGrant.class::cast)
-        .map(staged -> new GrantRequest(staged.type(), staged.id(), staged.role()))
+        .map(staged -> new GrantRequest(staged.type(), staged.id(), staged.role(),
+            staged.displayName()))
         .toList();
     if (requests.isEmpty()) {
       return;
@@ -342,7 +370,7 @@ public class ProjectSharingComposer extends Div {
   /**
    * A single grant staged in the composer: a principal and the project role it should receive.
    */
-  public record GrantRequest(PrincipalType type, String id, ProjectRole role) {
+  public record GrantRequest(PrincipalType type, String id, ProjectRole role, String displayName) {
 
   }
 
@@ -355,11 +383,13 @@ public class ProjectSharingComposer extends Div {
     private static final long serialVersionUID = 8907312431231123345L;
     private final PrincipalType type;
     private final String id;
+    private final String displayName;
     private final Select<ProjectRole> roleSelect = new Select<>();
 
     private StagedGrant(PrincipalType type, String id, String displayName, Component identity) {
       this.type = type;
       this.id = id;
+      this.displayName = displayName;
       addClassName("staged-grant");
       addClassName(type == PrincipalType.USER ? "staged-grant-user" : "staged-grant-group");
       configureRoleSelect();
@@ -404,6 +434,10 @@ public class ProjectSharingComposer extends Div {
 
     private String id() {
       return id;
+    }
+
+    private String displayName() {
+      return displayName;
     }
 
     private ProjectRole role() {

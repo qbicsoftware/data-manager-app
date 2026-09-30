@@ -19,6 +19,7 @@ import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -202,6 +203,7 @@ public class ProjectAccessComponent extends PageArea {
   private void onGrantRequested(GrantRequestedEvent event) {
     ProjectId projectId = context.projectId().orElseThrow();
     int granted = 0;
+    List<String> problems = new ArrayList<>();
     for (GrantRequest request : event.requests()) {
       try {
         if (request.type() == PrincipalType.USER) {
@@ -211,16 +213,23 @@ public class ProjectAccessComponent extends PageArea {
               GroupSidProvider.GROUP_SID_PREFIX + request.id(), request.role());
         }
         granted++;
-      } catch (ApplicationException e) {
-        displayError("Invalid access grant",
-            "One or more selected people or groups could not be granted access. They may already "
-                + "have access or the change is not permitted.");
+      } catch (RuntimeException e) {
+        problems.add(ProjectSharingComposer.describeFailure(request, e));
       }
+    }
+    refreshProjectUserGrid();
+    refreshProjectGroupGrid();
+    if (!problems.isEmpty()) {
+      // Keep the composer open so the user can retry; the message names who failed and why.
+      composer.setAlreadyGranted(projectAccessService.listCollaborators(projectId),
+          projectAccessService.listSharedGroups(projectId));
+      composer.showInlineError(granted > 0
+          ? "Access granted to %d, but some requests failed:".formatted(granted)
+          : "Access could not be granted:", problems);
+      return;
     }
     composer.reset();
     composer.setVisible(false);
-    refreshProjectUserGrid();
-    refreshProjectGroupGrid();
     if (granted > 0) {
       displaySuccess("Access granted", granted == 1
           ? "Access was granted to 1 principal."
