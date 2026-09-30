@@ -3,7 +3,6 @@ package life.qbic.datamanager.views.projects.project.access
 import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
-import com.vaadin.flow.component.select.Select
 import life.qbic.datamanager.security.UserPermissions
 import life.qbic.datamanager.views.Context
 import life.qbic.datamanager.views.general.Tag
@@ -29,9 +28,9 @@ import spock.lang.Specification
  * Unit tests for the dialog-free project access page (FEAT-USER-GROUPS-08).
  *
  * <p>The roster follows the measurements/samples layout: a searchable Grid with a toolbar (search,
- * type filter, selection-based Remove). Covers editable/read-only role controls, user/group role
- * change, inline-confirmed removal, batch grants through the composer, and the type filter.
- * Headless, no Spring context.</p>
+ * type filter, selection-based Change role / Remove). Roles are shown as badges; role changes and
+ * removals go through an inline action bar. Covers editable/read-only views, user/group role
+ * change, inline-confirmed removal, batch grants and the type filter.</p>
  */
 class ProjectAccessComponentSpec extends Specification {
 
@@ -97,16 +96,21 @@ class ProjectAccessComponentSpec extends Specification {
     return allComponents(root).findAll { it instanceof Button } as List<Button>
   }
 
-  def "an access-administrator sees an editable role control and the Remove action"() {
+  private Component roleBadgeOf(AccessEntry entry) {
+    return component.@grid.getColumnByKey("role").getRenderer().createComponent(entry)
+  }
+
+  def "an access-administrator sees a role badge and the toolbar actions"() {
     given:
     setContext(true)
     def entry = aUser("user-2", "jdoe", "Jane Doe", ProjectRole.READ)
 
     when:
-    def roleControl = component.roleCell(entry)
+    def roleBadge = roleBadgeOf(entry)
 
     then:
-    roleControl instanceof Select
+    roleBadge instanceof Tag
+    component.@changeRoleButton.isVisible()
     component.@removeButton.isVisible()
     component.@composer.isVisible()
   }
@@ -117,10 +121,11 @@ class ProjectAccessComponentSpec extends Specification {
     def entry = aUser("user-2", "jdoe", "Jane Doe", ProjectRole.READ)
 
     when:
-    def roleControl = component.roleCell(entry)
+    def roleBadge = roleBadgeOf(entry)
 
     then:
-    roleControl instanceof Tag
+    roleBadge instanceof Tag
+    !component.@changeRoleButton.isVisible()
     !component.@removeButton.isVisible()
     !component.@composer.isVisible()
 
@@ -129,43 +134,57 @@ class ProjectAccessComponentSpec extends Specification {
   }
 
   def "changing a user role invokes changeRole"() {
-    given:
+    given: "a project shared with one user"
+    collaborators = [new ProjectCollaborator("user-2", projectId, ProjectRole.READ)]
+    userInformationService.findById("user-2") >> Optional.of(user("user-2", "Jane Doe", "jdoe"))
     setContext(true)
-    def entry = aUser("user-2", "jdoe", "Jane Doe", ProjectRole.READ)
-    def roleSelect = component.roleCell(entry) as Select<ProjectRole>
+    component.@grid.asMultiSelect().select(component.@grid.getListDataView().getItems()
+        .find { it.id() == "user-2" })
+    component.@changeRoleButton.click()
 
-    when:
-    roleSelect.setValue(ProjectRole.ADMIN)
+    when: "the ADMIN chooses ADMIN in the inline role chooser"
+    def adminButton = buttonsIn(component.@actionBar)
+        .find { it.text == ProjectRole.ADMIN.label() } as Button
+    adminButton.click()
 
     then:
     1 * projectAccessService.changeRole(projectId, "user-2", ProjectRole.ADMIN)
   }
 
   def "changing a group role invokes changeAuthorityAccess with the GROUP_ prefix"() {
-    given:
+    given: "a project shared with one group"
+    sharedGroups = [new SharedProjectGroup("g-1", "NGS Lab", "sequencing core", projectId,
+        ProjectRole.READ)]
     setContext(true)
-    def entry = aGroup("g-1", "NGS Lab", "sequencing core", ProjectRole.READ)
-    def roleSelect = component.roleCell(entry) as Select<ProjectRole>
+    component.@grid.asMultiSelect().select(component.@grid.getListDataView().getItems()
+        .find { it.id() == "g-1" })
+    component.@changeRoleButton.click()
 
     when:
-    roleSelect.setValue(ProjectRole.WRITE)
+    def writeButton = buttonsIn(component.@actionBar)
+        .find { it.text == ProjectRole.WRITE.label() } as Button
+    writeButton.click()
 
     then:
     1 * projectAccessService.changeAuthorityAccess(projectId, "GROUP_g-1", ProjectRole.WRITE)
   }
 
-  def "the role control offers only READ, WRITE and ADMIN, never OWNER"() {
+  def "the role chooser offers only READ, WRITE and ADMIN, never OWNER"() {
     given:
+    collaborators = [new ProjectCollaborator("user-2", projectId, ProjectRole.READ)]
+    userInformationService.findById("user-2") >> Optional.of(user("user-2", "Jane Doe", "jdoe"))
     setContext(true)
-    def entry = aGroup("g-1", "NGS Lab", null, ProjectRole.READ)
+    component.@grid.asMultiSelect().select(component.@grid.getListDataView().getItems()
+        .find { it.id() == "user-2" })
 
     when:
-    def roleSelect = component.roleCell(entry) as Select<ProjectRole>
+    component.@changeRoleButton.click()
 
     then:
-    def offered = roleSelect.listDataView.items.toSet()
-    offered == ([ProjectRole.READ, ProjectRole.WRITE, ProjectRole.ADMIN] as Set)
-    !offered.contains(ProjectRole.OWNER)
+    def offered = buttonsIn(component.@actionBar).collect { it.text }
+    offered.containsAll([ProjectRole.READ.label(), ProjectRole.WRITE.label(),
+                         ProjectRole.ADMIN.label()])
+    !offered.contains(ProjectRole.OWNER.label())
   }
 
   def "removing a selected principal requires an inline confirmation"() {
@@ -173,19 +192,18 @@ class ProjectAccessComponentSpec extends Specification {
     collaborators = [new ProjectCollaborator("user-2", projectId, ProjectRole.READ)]
     userInformationService.findById("user-2") >> Optional.of(user("user-2", "Jane Doe", "jdoe"))
     setContext(true)
-    def entry = component.@grid.getListDataView().getItems()
-        .find { it.id() == "user-2" }
-    component.@grid.asMultiSelect().select(entry)
+    component.@grid.asMultiSelect().select(component.@grid.getListDataView().getItems()
+        .find { it.id() == "user-2" })
 
     when: "the ADMIN clicks Remove"
     component.@removeButton.click()
 
     then: "an inline confirmation is shown and nothing is removed yet"
     0 * projectAccessService.removeCollaborator(*_)
-    component.@removeConfirmBar.isVisible()
+    component.@actionBar.isVisible()
 
     when: "the ADMIN confirms"
-    def confirm = buttonsIn(component.@removeConfirmBar).find { it.text == "Remove" } as Button
+    def confirm = buttonsIn(component.@actionBar).find { it.text == "Remove" } as Button
     confirm.click()
 
     then:

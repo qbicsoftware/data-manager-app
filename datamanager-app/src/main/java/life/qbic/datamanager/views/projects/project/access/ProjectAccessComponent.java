@@ -88,8 +88,9 @@ public class ProjectAccessComponent extends PageArea {
   private final ProjectSharingComposer composer;
   private final TextField searchField;
   private final Select<AccessFilter> filterSelect;
+  private final Button changeRoleButton;
   private final Button removeButton;
-  private final Div removeConfirmBar;
+  private final Div actionBar;
   private final Grid<AccessEntry> grid;
 
   private Context context;
@@ -129,12 +130,13 @@ public class ProjectAccessComponent extends PageArea {
 
     searchField = new TextField();
     filterSelect = new Select<>();
+    changeRoleButton = new Button("Change role");
     removeButton = new Button("Remove", VaadinIcon.TRASH.create());
-    removeConfirmBar = new Div();
+    actionBar = new Div();
     grid = createGrid();
     configureToolbar();
 
-    Div roster = new Div(toolbar(), removeConfirmBar, grid);
+    Div roster = new Div(toolbar(), actionBar, grid);
     roster.addClassName("access-roster");
 
     // DOM order keeps the composer first so it stacks on top on small screens; a CSS grid places
@@ -150,7 +152,7 @@ public class ProjectAccessComponent extends PageArea {
     toolbar.addClassName("access-toolbar");
     Div spacer = new Div();
     spacer.addClassName("flex-grow-1");
-    toolbar.add(searchField, filterSelect, spacer, removeButton);
+    toolbar.add(searchField, filterSelect, spacer, changeRoleButton, removeButton);
     return toolbar;
   }
 
@@ -169,14 +171,19 @@ public class ProjectAccessComponent extends PageArea {
     filterSelect.getElement().setAttribute("aria-label", "Filter by principal type");
     filterSelect.addValueChangeListener(event -> applyFilter());
 
+    changeRoleButton.addClassName("access-change-role-button");
+    changeRoleButton.setEnabled(false);
+    changeRoleButton.setVisible(false);
+    changeRoleButton.addClickListener(event -> showRoleChooser());
+
     removeButton.addClassName("access-remove-button");
     removeButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
     removeButton.setEnabled(false);
     removeButton.setVisible(false);
     removeButton.addClickListener(event -> showRemoveConfirm());
 
-    removeConfirmBar.addClassName("access-inline-confirm");
-    removeConfirmBar.setVisible(false);
+    actionBar.addClassName("access-inline-confirm");
+    actionBar.setVisible(false);
   }
 
   private Grid<AccessEntry> createGrid() {
@@ -195,12 +202,12 @@ public class ProjectAccessComponent extends PageArea {
         .setSortable(true)
         .setComparator(Comparator.comparing(AccessEntry::displayName,
             String.CASE_INSENSITIVE_ORDER));
-    accessGrid.addColumn(new ComponentRenderer<>(this::roleCell))
+    accessGrid.addColumn(new ComponentRenderer<>(entry -> roleBadge(entry.projectRole())))
         .setKey("role")
         .setHeader("Role")
         .setAutoWidth(true)
         .setFlexGrow(0);
-    accessGrid.asMultiSelect().addSelectionListener(event -> updateRemoveButton());
+    accessGrid.asMultiSelect().addSelectionListener(event -> updateActionButtons());
     return accessGrid;
   }
 
@@ -212,6 +219,7 @@ public class ProjectAccessComponent extends PageArea {
     this.canChangeAccess = userPermissions.changeProjectAccess(context.projectId().orElseThrow());
     composer.setVisible(canChangeAccess);
     removeButton.setVisible(canChangeAccess);
+    changeRoleButton.setVisible(canChangeAccess);
     grid.setSelectionMode(canChangeAccess ? SelectionMode.MULTI : SelectionMode.NONE);
     loadAccess();
   }
@@ -244,7 +252,7 @@ public class ProjectAccessComponent extends PageArea {
   }
 
   private void applyFilter() {
-    hideRemoveConfirm();
+    hideActionBar();
     String query = searchField.getValue() == null ? "" : searchField.getValue().trim().toLowerCase();
     AccessFilter filter = filterSelect.getValue() == null ? AccessFilter.ALL
         : filterSelect.getValue();
@@ -254,7 +262,7 @@ public class ProjectAccessComponent extends PageArea {
         .toList();
     grid.setItems(filtered);
     grid.deselectAll();
-    updateRemoveButton();
+    updateActionButtons();
   }
 
   private static boolean matchesFilter(AccessEntry entry, AccessFilter filter) {
@@ -281,8 +289,10 @@ public class ProjectAccessComponent extends PageArea {
     return value != null && value.toLowerCase().contains(query);
   }
 
-  private void updateRemoveButton() {
-    removeButton.setEnabled(canChangeAccess && !grid.getSelectedItems().isEmpty());
+  private void updateActionButtons() {
+    boolean hasSelection = canChangeAccess && !grid.getSelectedItems().isEmpty();
+    changeRoleButton.setEnabled(hasSelection);
+    removeButton.setEnabled(hasSelection);
   }
 
   private Component principalCell(AccessEntry entry) {
@@ -339,15 +349,6 @@ public class ProjectAccessComponent extends PageArea {
         : "%s — %s".formatted(entry.groupName(), entry.groupDescription());
   }
 
-  private Component roleCell(AccessEntry entry) {
-    if (!canChangeAccess || !isActionable(entry)) {
-      return roleBadge(entry.projectRole());
-    }
-    Select<ProjectRole> roleSelect = createRoleSelect(entry.projectRole());
-    roleSelect.addValueChangeListener(event -> changeRole(entry, event.getValue()));
-    return roleSelect;
-  }
-
   private static Tag typeTag(PrincipalType type) {
     Tag tag = new Tag(type == PrincipalType.USER ? "User" : "Group");
     tag.setTagColor(type == PrincipalType.USER ? TagColor.CONTRAST : TagColor.TEAL);
@@ -362,42 +363,53 @@ public class ProjectAccessComponent extends PageArea {
     return tag;
   }
 
-  private Select<ProjectRole> createRoleSelect(ProjectRole currentRole) {
-    Select<ProjectRole> roleSelect = new Select<>();
-    roleSelect.addClassName("project-role-select");
-    roleSelect.setItemLabelGenerator(ProjectRole::label);
-    roleSelect.setItems(ProjectRole.READ, ProjectRole.WRITE, ProjectRole.ADMIN);
-    roleSelect.setRenderer(new ComponentRenderer<>(projectRole -> {
-      Span roleLabel = new Span(projectRole.label());
-      roleLabel.addClassName("project-role-label");
-      Span roleDescription = new Span(ProjectRoleRecommendationRenderer.render(projectRole));
-      roleDescription.addClassName("project-role-description");
-      Div projectRoleDiv = new Div(roleLabel, roleDescription);
-      projectRoleDiv.addClassName("project-role-item");
-      return projectRoleDiv;
-    }));
-    roleSelect.setValue(currentRole);
-    return roleSelect;
-  }
-
-  private void changeRole(AccessEntry entry, ProjectRole projectRole) {
+  private void applyRole(Set<AccessEntry> selected, ProjectRole projectRole) {
     if (!canChangeAccess) {
       displayError(INVALID_ROLE_EDIT, "You don't have permission to change this project role");
-      loadAccess();
+      hideActionBar();
       return;
     }
     ProjectId projectId = context.projectId().orElseThrow();
-    try {
-      if (entry.isUser()) {
-        projectAccessService.changeRole(projectId, entry.id(), projectRole);
-      } else {
-        projectAccessService.changeAuthorityAccess(projectId,
-            GroupSidProvider.GROUP_SID_PREFIX + entry.id(), projectRole);
+    for (AccessEntry entry : selected) {
+      try {
+        if (entry.isUser()) {
+          projectAccessService.changeRole(projectId, entry.id(), projectRole);
+        } else {
+          projectAccessService.changeAuthorityAccess(projectId,
+              GroupSidProvider.GROUP_SID_PREFIX + entry.id(), projectRole);
+        }
+      } catch (ApplicationException e) {
+        displayError(INVALID_ROLE_EDIT, "You don't have permission to change this project role");
       }
-    } catch (ApplicationException e) {
-      displayError(INVALID_ROLE_EDIT, "You don't have permission to change this project role");
     }
     loadAccess();
+  }
+
+  private void showRoleChooser() {
+    Set<AccessEntry> selected = grid.getSelectedItems();
+    if (selected.isEmpty()) {
+      return;
+    }
+    actionBar.removeAll();
+    Span question = new Span(selected.size() == 1
+        ? "Set the role for 1 principal:"
+        : "Set the role for %d principals:".formatted(selected.size()));
+    question.addClassName("inline-confirm-question");
+    actionBar.add(question);
+    for (ProjectRole role : List.of(ProjectRole.READ, ProjectRole.WRITE, ProjectRole.ADMIN)) {
+      Button roleButton = new Button(role.label());
+      roleButton.addThemeVariants(ButtonVariant.LUMO_SMALL);
+      roleButton.addClassName("inline-role-choice");
+      roleButton.getElement().setAttribute("title",
+          ProjectRoleRecommendationRenderer.render(role));
+      roleButton.addClickListener(event -> applyRole(selected, role));
+      actionBar.add(roleButton);
+    }
+    Button cancel = new Button("Cancel", event -> hideActionBar());
+    cancel.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_SMALL);
+    cancel.addClassName("inline-confirm-cancel");
+    actionBar.add(cancel);
+    actionBar.setVisible(true);
   }
 
   private void showRemoveConfirm() {
@@ -405,7 +417,7 @@ public class ProjectAccessComponent extends PageArea {
     if (selected.isEmpty()) {
       return;
     }
-    removeConfirmBar.removeAll();
+    actionBar.removeAll();
     Span question = new Span(selected.size() == 1
         ? "Remove 1 principal from this project?"
         : "Remove %d principals from this project?".formatted(selected.size()));
@@ -413,16 +425,16 @@ public class ProjectAccessComponent extends PageArea {
     Button confirm = new Button("Remove", event -> removeSelected(selected));
     confirm.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
     confirm.addClassName("inline-confirm-remove");
-    Button cancel = new Button("Cancel", event -> hideRemoveConfirm());
+    Button cancel = new Button("Cancel", event -> hideActionBar());
     cancel.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_SMALL);
     cancel.addClassName("inline-confirm-cancel");
-    removeConfirmBar.add(question, confirm, cancel);
-    removeConfirmBar.setVisible(true);
+    actionBar.add(question, confirm, cancel);
+    actionBar.setVisible(true);
   }
 
-  private void hideRemoveConfirm() {
-    removeConfirmBar.setVisible(false);
-    removeConfirmBar.removeAll();
+  private void hideActionBar() {
+    actionBar.setVisible(false);
+    actionBar.removeAll();
   }
 
   private void removeSelected(Set<AccessEntry> selected) {
