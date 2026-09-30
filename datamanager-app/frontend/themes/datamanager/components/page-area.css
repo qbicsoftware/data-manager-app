@@ -1089,3 +1089,77 @@ a.project-dataset-footer, a.project-dataset-footer:hover {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* -- Dialog-free project sharing (inline composer + inline confirm) -- */
+
+.project-access-component .button-bar {
+  display: inline-flex;
+  column-gap: var(--lumo-space-m);
+}
+
+/* The inline sharing composer: no modal dialog, the page stays in context. */
+.project-sharing-composer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+  padding: var(--lumo-space-m);
+  background-color: var(--lumo-base-color);
+  border: 1px solid var(--lumo-contrast-20pct);
+  border-radius: var(--lumo-border-radius-m);
+}
+
+.project-sharing-composer .sharing-pickers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lumo-space-m);
+}
+
+.project-sharing-composer .sharing-pickers > * {
+  flex: 1 1 18em;
+  min-width: 14em;
+}
+
+.project-sharing-composer .staged-grants {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+}
+
+.project-sharing-composer .staged-grant {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--lumo-space-s);
+  padding: var(--lumo-space-xs) var(--lumo-space-s);
+  border: 1px solid var(--lumo-contrast-10pct);
+  border-radius: var(--lumo-border-radius-m);
+}
+
+.project-sharing-composer .staged-grant .group-identity {
+  display: flex;
+  flex-direction: column;
+}
+
+.project-sharing-composer .staged-grant .project-role-select {
+  margin-left: auto;
+}
+
+.project-sharing-composer .grant-access-button {
+  align-self: flex-start;
+}
+
+/* Inline removal confirmation inside a grid action cell. */
+.project-access-component .inline-confirm {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--lumo-space-s);
+}
+
+.project-access-component .inline-confirm-question {
+  font-size: var(--lumo-font-size-s);
+}
+
+.project-access-component .project-role-static {
+  font-size: var(--lumo-font-size-s);
+}

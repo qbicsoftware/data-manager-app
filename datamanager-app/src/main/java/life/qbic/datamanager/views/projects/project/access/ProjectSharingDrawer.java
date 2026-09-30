@@ -1,0 +1,196 @@
+package life.qbic.datamanager.views.projects.project.access;
+
+import static java.util.Objects.requireNonNull;
+
+import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.VaadinIcon;
+import java.io.Serial;
+import java.util.List;
+import life.qbic.application.commons.ApplicationException;
+import life.qbic.datamanager.views.notifications.ErrorMessage;
+import life.qbic.datamanager.views.notifications.StyledNotification;
+import life.qbic.datamanager.views.notifications.SuccessMessage;
+import life.qbic.datamanager.views.projects.project.access.ProjectSharingComposer.GrantRequest;
+import life.qbic.datamanager.views.projects.project.access.ProjectSharingComposer.GrantRequestedEvent;
+import life.qbic.datamanager.views.projects.project.access.ProjectSharingComposer.PrincipalType;
+import life.qbic.identity.api.UserInformationService;
+import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
+import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.ProjectCollaborator;
+import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.SharedProjectGroup;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import life.qbic.usergroups.api.GroupInformationService;
+import life.qbic.usergroups.api.GroupSidProvider;
+
+/**
+ * <b>Project Sharing Drawer</b>
+ *
+ * <p>A non-modal, right-anchored panel that lets a user share a project with people and groups
+ * directly from the project list, without navigating into the project and without a modal dialog.
+ * It hosts the same {@link ProjectSharingComposer} used on the project access page and shows a
+ * read-only summary of the currently granted people and groups.</p>
+ *
+ * <p>The panel never exposes group membership data: only group names and descriptions are shown,
+ * matching the visibility policy of the user-groups strategy.</p>
+ *
+ * @since 1.20.0
+ */
+public class ProjectSharingDrawer extends Div {
+
+  @Serial
+  private static final long serialVersionUID = 3928119923411238841L;
+
+  private final transient ProjectAccessService projectAccessService;
+  private final transient UserInformationService userInformationService;
+  private final transient GroupInformationService groupInformationService;
+  private final ProjectId projectId;
+  private final ProjectSharingComposer composer;
+  private final Div overlay = new Div();
+  private final Div panel = new Div();
+  private final Div summary = new Div();
+
+  public ProjectSharingDrawer(ProjectAccessService projectAccessService,
+      UserInformationService userInformationService,
+      GroupInformationService groupInformationService,
+      ProjectId projectId,
+      String projectLabel) {
+    this.projectAccessService = requireNonNull(projectAccessService);
+    this.userInformationService = requireNonNull(userInformationService);
+    this.groupInformationService = requireNonNull(groupInformationService);
+    this.projectId = requireNonNull(projectId);
+    addClassName("project-sharing-drawer");
+    composer = new ProjectSharingComposer(userInformationService, groupInformationService);
+    composer.addGrantListener(this::onGrantRequested);
+    layout(projectLabel);
+    close();
+  }
+
+  private void layout(String projectLabel) {
+    overlay.addClassName("psd-backdrop");
+    overlay.addClickListener(event -> close());
+
+    panel.addClassName("psd-panel");
+    Div body = new Div();
+    body.addClassName("psd-body");
+
+    Div header = new Div();
+    header.addClassName("psd-header");
+    Span title = new Span("Share project");
+    title.addClassName("heading-4");
+    Span subtitle = new Span(projectLabel);
+    subtitle.addClassName("secondary");
+    Div titleBlock = new Div(title, subtitle);
+    titleBlock.addClassName("psd-title");
+    Button closeButton = new Button(VaadinIcon.CLOSE.create());
+    closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+    closeButton.getElement().setAttribute("aria-label", "Close sharing panel");
+    closeButton.addClickListener(event -> close());
+    header.add(titleBlock, closeButton);
+
+    Div content = new Div(composer, summary);
+    content.addClassName("psd-content");
+
+    body.add(header, content);
+    panel.add(body);
+    add(overlay, panel);
+  }
+
+  /**
+   * Opens the drawer and loads the current access summary.
+   */
+  public void open() {
+    refresh();
+    overlay.getStyle().set("display", "block");
+    panel.getStyle().set("display", "block");
+  }
+
+  /**
+   * Closes the drawer. The panel stays mounted so it can be reopened quickly.
+   */
+  public void close() {
+    overlay.getStyle().set("display", "none");
+    panel.getStyle().set("display", "none");
+  }
+
+  private void refresh() {
+    List<ProjectCollaborator> collaborators = projectAccessService.listCollaborators(projectId);
+    List<SharedProjectGroup> groups = projectAccessService.listSharedGroups(projectId);
+    composer.setAlreadyGranted(collaborators, groups);
+    renderSummary(collaborators, groups);
+  }
+
+  private void renderSummary(List<ProjectCollaborator> collaborators,
+      List<SharedProjectGroup> groups) {
+    summary.removeAll();
+    summary.addClassName("psd-summary");
+    summary.add(section("People with access", collaborators.stream()
+        .map(this::renderCollaborator).toList()));
+    summary.add(section("Groups with access", groups.stream()
+        .map(this::renderGroup).toList()));
+  }
+
+  private Component renderCollaborator(ProjectCollaborator collaborator) {
+    String displayName = userInformationService.findById(collaborator.userId())
+        .map(userInfo -> userInfo.platformUserName())
+        .orElse(collaborator.userId());
+    return summaryRow(displayName, collaborator.projectRole().label());
+  }
+
+  private Component renderGroup(SharedProjectGroup group) {
+    return summaryRow(group.groupName(), group.projectRole().label());
+  }
+
+  private Component section(String title, List<Component> rows) {
+    Div section = new Div();
+    section.addClassName("psd-section");
+    Span sectionTitle = new Span(title);
+    sectionTitle.addClassName("psd-section-title");
+    section.add(sectionTitle);
+    if (rows.isEmpty()) {
+      Span empty = new Span("None yet.");
+      empty.addClassName("secondary");
+      section.add(empty);
+    } else {
+      rows.forEach(section::add);
+    }
+    return section;
+  }
+
+  private Component summaryRow(String name, String role) {
+    Span nameSpan = new Span(name);
+    nameSpan.addClassName("bold");
+    Span roleSpan = new Span(role);
+    roleSpan.addClassName("psd-role");
+    Div row = new Div(nameSpan, roleSpan);
+    row.addClassName("psd-summary-row");
+    return row;
+  }
+
+  private void onGrantRequested(GrantRequestedEvent event) {
+    int granted = 0;
+    for (GrantRequest request : event.requests()) {
+      try {
+        if (request.type() == PrincipalType.USER) {
+          projectAccessService.addCollaborator(projectId, request.id(), request.role());
+        } else {
+          projectAccessService.addAuthorityAccess(projectId,
+              GroupSidProvider.GROUP_SID_PREFIX + request.id(), request.role());
+        }
+        granted++;
+      } catch (ApplicationException e) {
+        new StyledNotification(new ErrorMessage("Invalid access grant",
+            "One or more selected people or groups could not be granted access.")).open();
+      }
+    }
+    event.getSource().reset();
+    refresh();
+    if (granted > 0) {
+      new StyledNotification(new SuccessMessage("Access granted", granted == 1
+          ? "Access was granted to 1 principal."
+          : "Access was granted to %d principals.".formatted(granted))).open();
+    }
+  }
+}

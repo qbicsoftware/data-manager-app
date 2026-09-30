@@ -46,13 +46,18 @@ import life.qbic.datamanager.views.general.pagination.ListStateCodec;
 import life.qbic.datamanager.views.general.pagination.PaginationBar;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.projects.overview.components.PinnedProjectsComponent.ToggleHandler;
+import life.qbic.datamanager.views.projects.project.access.ProjectSharingDrawer;
 import life.qbic.datamanager.views.projects.project.datasets.ConnectedDatasetsMain;
 import life.qbic.datamanager.views.projects.project.info.ProjectInformationMain;
+import life.qbic.datamanager.security.UserPermissions;
+import life.qbic.identity.api.UserInformationService;
 import life.qbic.projectmanagement.application.PinnedProjectService;
 import life.qbic.projectmanagement.application.PinnedProjectService.PinOutcome;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectOverview;
+import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import life.qbic.usergroups.api.GroupInformationService;
 import org.springframework.stereotype.Component;
 
 /**
@@ -102,6 +107,12 @@ public class ProjectCollectionComponent extends PageArea {
   private final PinnedProjectsComponent pinnedProjectsComponent;
   private final transient PinnedProjectService pinnedProjectService;
   private final transient MessageSourceNotificationFactory notificationFactory;
+  private final transient ProjectAccessService projectAccessService;
+  private final transient UserInformationService userInformationService;
+  private final transient GroupInformationService groupInformationService;
+  private final transient UserPermissions userPermissions;
+  /** The drawer currently mounted for quick-sharing; replaced per card. */
+  private ProjectSharingDrawer sharingDrawer;
   /**
    * The overviews rendered on the current page; reused to re-render the card toggle states after a pin
    * change without querying the project list again.
@@ -115,13 +126,25 @@ public class ProjectCollectionComponent extends PageArea {
 
   public ProjectCollectionComponent(ProjectInformationService projectInformationService,
       PinnedProjectService pinnedProjectService,
-      MessageSourceNotificationFactory notificationFactory) {
+      MessageSourceNotificationFactory notificationFactory,
+      ProjectAccessService projectAccessService,
+      UserInformationService userInformationService,
+      GroupInformationService groupInformationService,
+      UserPermissions userPermissions) {
     this.projectInformationService = Objects.requireNonNull(projectInformationService,
         "Project information service cannot be null");
     this.pinnedProjectService = Objects.requireNonNull(pinnedProjectService,
         "pinnedProjectService cannot be null");
     this.notificationFactory = Objects.requireNonNull(notificationFactory,
         "notificationFactory cannot be null");
+    this.projectAccessService = Objects.requireNonNull(projectAccessService,
+        "projectAccessService cannot be null");
+    this.userInformationService = Objects.requireNonNull(userInformationService,
+        "userInformationService cannot be null");
+    this.groupInformationService = Objects.requireNonNull(groupInformationService,
+        "groupInformationService cannot be null");
+    this.userPermissions = Objects.requireNonNull(userPermissions,
+        "userPermissions cannot be null");
     this.pinnedProjectsComponent = new PinnedProjectsComponent(
         pinnedProjectService::findPinnedProjects, this::handlePinToggle);
     layoutComponent();
@@ -357,7 +380,27 @@ public class ProjectCollectionComponent extends PageArea {
     projectCards.removeAll();
     overviews.forEach(overview -> projectCards.add(
         new ProjectOverviewItem(overview, pinnedProjectIds.contains(overview.projectId()),
-            this::handlePinToggle)));
+            this::handlePinToggle, this::openSharingDrawer,
+            userPermissions.changeProjectAccess(overview.projectId()))));
+  }
+
+  /**
+   * Opens the non-modal sharing drawer for the given project. Replaces any previously mounted
+   * drawer so at most one is present. Only access-administration holders reach this method; the
+   * card action is gated accordingly.
+   */
+  private void openSharingDrawer(ProjectOverview overview) {
+    if (!userPermissions.changeProjectAccess(overview.projectId())) {
+      return;
+    }
+    if (sharingDrawer != null) {
+      remove(sharingDrawer);
+    }
+    sharingDrawer = new ProjectSharingDrawer(projectAccessService, userInformationService,
+        groupInformationService, overview.projectId(),
+        "%s — %s".formatted(overview.projectCode(), overview.projectTitle()));
+    add(sharingDrawer);
+    sharingDrawer.open();
   }
 
   /**
@@ -452,6 +495,15 @@ public class ProjectCollectionComponent extends PageArea {
   }
 
   /**
+   * Callback invoked when the user chooses "Share project…" on a project card.
+   */
+  @FunctionalInterface
+  interface ShareHandler {
+
+    void onShare(ProjectOverview projectOverview);
+  }
+
+  /**
    * The Measurement Types are employed to set the Tag Color and Tag naming dependent on the
    * registered measurements within the projectCollection
    */
@@ -487,9 +539,10 @@ public class ProjectCollectionComponent extends PageArea {
     private final transient ProjectOverview projectOverview;
 
     public ProjectOverviewItem(ProjectOverview projectOverview, boolean pinned,
-        ToggleHandler toggleHandler) {
+        ToggleHandler toggleHandler, ShareHandler shareHandler, boolean canManageAccess) {
       this.projectOverview = Objects.requireNonNull(projectOverview);
       Objects.requireNonNull(toggleHandler);
+      Objects.requireNonNull(shareHandler);
       // Both RouterLinks (card body + footer) must share a single parent so they render
       // as one unified card. Using a wrapper Div prevents event propagation between
       // clicks on the footer and clicks on the card body.
@@ -497,7 +550,7 @@ public class ProjectCollectionComponent extends PageArea {
       wrapper.addClassName("project-card-wrapper");
       wrapper.add(projectInfoLink(pinned));
       attachDatasetFooter(wrapper);
-      wrapper.add(buildTopRightControl(pinned, toggleHandler));
+      wrapper.add(buildTopRightControl(pinned, toggleHandler, shareHandler, canManageAccess));
       add(wrapper);
     }
 
@@ -512,7 +565,8 @@ public class ProjectCollectionComponent extends PageArea {
      * <p>The control is a sibling of the card-body {@link RouterLink} inside the card wrapper,
      * not a child of it, so clicking it cannot also fire navigation to the project.</p>
      */
-    private com.vaadin.flow.component.Component buildTopRightControl(boolean pinned, ToggleHandler toggleHandler) {
+    private com.vaadin.flow.component.Component buildTopRightControl(boolean pinned, ToggleHandler toggleHandler,
+        ShareHandler shareHandler, boolean canManageAccess) {
       var topRight = new Div();
       topRight.addClassName("project-card-top-right");
 
@@ -532,6 +586,10 @@ public class ProjectCollectionComponent extends PageArea {
 
       var menu = new ContextMenu(menuButton);
       menu.setOpenOnClick(true);
+      if (canManageAccess) {
+        var shareItem = menu.addItem("Share project…");
+        shareItem.addClickListener(event -> shareHandler.onShare(projectOverview));
+      }
       String actionLabel = pinned ? "Unpin project" : "Pin project";
       var actionItem = menu.addItem(actionLabel);
       actionItem.addClickListener(event -> toggleHandler.onToggle(projectOverview.projectId(), !pinned));

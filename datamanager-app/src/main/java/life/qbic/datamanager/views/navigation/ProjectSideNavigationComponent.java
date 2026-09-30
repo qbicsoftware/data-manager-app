@@ -114,12 +114,12 @@ public class ProjectSideNavigationComponent extends Div implements
   }
 
   private static Div createProjectSection(Project project,
-      List<ProjectOverview> lastModifiedProjects, boolean canUserAdministrate) {
+      List<ProjectOverview> lastModifiedProjects, boolean canViewAccess) {
     Div projectSection = new Div();
     projectSection.add(createProjectHeader(),
         createProjectSelection(project.getProjectIntent().projectTitle().title(),
             lastModifiedProjects),
-        generateSectionDivider(), createProjectItems(project.getId().value(), canUserAdministrate));
+        generateSectionDivider(), createProjectItems(project.getId().value(), canViewAccess));
     projectSection.addClassName("project-section");
     return projectSection;
   }
@@ -178,11 +178,11 @@ public class ProjectSideNavigationComponent extends Div implements
     return sectionDivider;
   }
 
-  private static Div createProjectItems(String projectId, boolean canUserAdministrate) {
+  private static Div createProjectItems(String projectId, boolean canViewAccess) {
     Div projectItems = new Div();
     projectItems.add(createProjectSummaryLink(projectId));
     projectItems.add(createProjectDatasetsLink(projectId));
-    if (canUserAdministrate) {
+    if (canViewAccess) {
       projectItems.add(createProjectUsers(projectId));
     }
     projectItems.addClassName("project-items");
@@ -265,9 +265,9 @@ private static void routeToProject(ProjectId projectId) {
     var project = loadProject(parsedProjectId);
     List<Experiment> experiments = loadExperimentsForProject(project);
     List<ProjectOverview> lastModifiedProjects = retrieveLastModifiedProjects();
-    boolean canUserAdministrate = userPermissions.changeProjectAccess(parsedProjectId);
+    boolean canViewAccess = userPermissions.readProject(parsedProjectId);
     content.add(
-        generateNavigationSections(project, lastModifiedProjects, experiments, canUserAdministrate)
+        generateNavigationSections(project, lastModifiedProjects, experiments, canViewAccess)
             .toArray(Component[]::new));
     content.add(createOntologyLookupSideNavItem(projectId));
   }
@@ -292,8 +292,8 @@ private static void routeToProject(ProjectId projectId) {
 
   private List<Div> generateNavigationSections(Project project,
       List<ProjectOverview> lastModifiedProjects, List<Experiment> experiments,
-      boolean canUserAdministrate) {
-    Div projectSection = createProjectSection(project, lastModifiedProjects, canUserAdministrate);
+      boolean canViewAccess) {
+    Div projectSection = createProjectSection(project, lastModifiedProjects, canViewAccess);
     Div experimentSection = createExperimentSection(project.getId().value(), experiments);
     return List.of(projectSection, experimentSection);
   }

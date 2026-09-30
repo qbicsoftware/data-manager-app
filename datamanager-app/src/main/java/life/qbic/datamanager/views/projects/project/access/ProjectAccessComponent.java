@@ -3,19 +3,17 @@ package life.qbic.datamanager.views.projects.project.access;
 import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
-import com.vaadin.flow.component.AbstractField.ComponentValueChangeEvent;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.Grid.SelectionMode;
 import com.vaadin.flow.component.grid.GridSortOrder;
-import com.vaadin.flow.component.grid.editor.Editor;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.select.Select;
-import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.provider.SortDirection;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.spring.annotation.SpringComponent;
@@ -29,18 +27,21 @@ import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.account.UserAvatar;
 import life.qbic.datamanager.views.general.PageArea;
-import life.qbic.datamanager.views.general.dialog.AlertDialog;
 import life.qbic.datamanager.views.general.oidc.OidcLogo;
 import life.qbic.datamanager.views.general.oidc.OidcType;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
-import life.qbic.datamanager.views.projects.project.access.AddCollaboratorToProjectDialog.ConfirmEvent;
+import life.qbic.datamanager.views.notifications.SuccessMessage;
+import life.qbic.datamanager.views.projects.project.access.ProjectSharingComposer.GrantRequest;
+import life.qbic.datamanager.views.projects.project.access.ProjectSharingComposer.GrantRequestedEvent;
+import life.qbic.datamanager.views.projects.project.access.ProjectSharingComposer.PrincipalType;
 import life.qbic.identity.api.AuthenticationToUserIdTranslator;
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.ProjectCollaborator;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.ProjectRole;
+import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.ProjectRoleRecommendationRenderer;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.SharedProjectGroup;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
@@ -55,15 +56,17 @@ import org.springframework.security.core.context.SecurityContextHolder;
  * The access component is a {@link PageArea} component, which shows the current permissions for all
  * users and user groups within a {@link Project}.
  * <p>
- * Additionally, it provides the possibility to add or revoke project access for individual users
- * and user groups for the selected {@link Project}.
- * <p>
+ * The component is dialog-free: people and groups are listed with an always-visible role control
+ * and an inline removal confirmation. Sharing happens through the inline
+ * {@link ProjectSharingComposer}, which supports granting access to one or several principals in a
+ * single action. Users without access-administration rights see a read-only view (group names and
+ * descriptions only, never membership data).
  */
 @SpringComponent
 @UIScope
 public class ProjectAccessComponent extends PageArea {
 
-  private static final Logger log = logger(ProjectAccessMain.class);
+  private static final Logger log = logger(ProjectAccessComponent.class);
   @Serial
   private static final long serialVersionUID = 6832688939965353201L;
   public static final String INVALID_USER_REMOVAL = "Invalid user removal";
@@ -75,10 +78,15 @@ public class ProjectAccessComponent extends PageArea {
   private final transient UserPermissions userPermissions;
   private final Grid<ProjectUser> projectUserGrid;
   private final Grid<ProjectGroup> projectGroupGrid;
+  private final ProjectSharingComposer composer;
   private final Div header;
   private final Span buttonBar;
+  private final Button shareButton;
   private final transient AuthenticationToUserIdTranslator authenticationToUserIdTranslator;
   private Context context;
+  private boolean canChangeAccess = false;
+  private Div openConfirmCell;
+  private Component openConfirmRestore;
 
   protected ProjectAccessComponent(
       @Autowired ProjectAccessService projectAccessService,
@@ -98,23 +106,31 @@ public class ProjectAccessComponent extends PageArea {
     this.addClassName("project-access-component");
     log.debug("New instance for %s(#%d)".formatted(ProjectAccessComponent.class.getSimpleName(),
         System.identityHashCode(this)));
+
     header = new Div();
     header.addClassName("header");
     Span titleField = new Span();
     titleField.setText("Project Access Management");
     titleField.addClassName("title");
     buttonBar = new Span();
-    Button addCollaboratorButton = new Button("Add people or groups");
-    addCollaboratorButton.addClickListener(event -> openAddCollaboratorDialog());
-    buttonBar.add(addCollaboratorButton);
+    buttonBar.addClassName("button-bar");
+    shareButton = new Button("Add people or groups");
+    shareButton.addClassName("share-project-button");
+    shareButton.addClickListener(event -> toggleComposer());
+    buttonBar.add(shareButton);
     header.add(titleField);
-    add(header);
+
+    composer = new ProjectSharingComposer(userInformationService, groupInformationService);
+    composer.addClassName("project-sharing-composer");
+    composer.addGrantListener(this::onGrantRequested);
+    composer.setVisible(false);
+
     Span userProjectAccessDescription = new Span("Users with access to this project.");
     projectUserGrid = createProjectUserGrid();
-    add(userProjectAccessDescription, projectUserGrid);
     Span groupProjectAccessDescription = new Span("Groups with access to this project.");
     projectGroupGrid = createProjectGroupGrid();
-    add(groupProjectAccessDescription, projectGroupGrid);
+    add(header, composer, userProjectAccessDescription, projectUserGrid,
+        groupProjectAccessDescription, projectGroupGrid);
   }
 
   private static UserInfoComponent renderUserInfo(ProjectUser projectUser) {
@@ -132,17 +148,22 @@ public class ProjectAccessComponent extends PageArea {
       throw new ApplicationException("no project id in context " + context);
     }
     this.context = context;
+    this.canChangeAccess = userPermissions.changeProjectAccess(context.projectId().orElseThrow());
     setProjectInformation();
   }
 
   private void setProjectInformation() {
+    openConfirmCell = null;
+    openConfirmRestore = null;
+    composer.reset();
     refreshProjectUserGrid();
     refreshProjectGroupGrid();
-    showControls(userPermissions.changeProjectAccess(context.projectId().orElseThrow()));
+    showControls(canChangeAccess);
   }
 
   private void refreshProjectUserGrid() {
-    loadProjectUsers();
+    openConfirmCell = null;
+    openConfirmRestore = null;
     projectUserGrid.setItems(loadProjectUsers());
   }
 
@@ -163,14 +184,52 @@ public class ProjectAccessComponent extends PageArea {
       if (containsButtonBar) {
         header.remove(buttonBar);
       }
+      composer.setVisible(false);
+    }
+  }
+
+  private void toggleComposer() {
+    if (composer.isVisible()) {
+      composer.setVisible(false);
+      return;
+    }
+    ProjectId projectId = context.projectId().orElseThrow();
+    composer.setAlreadyGranted(projectAccessService.listCollaborators(projectId),
+        projectAccessService.listSharedGroups(projectId));
+    composer.setVisible(true);
+  }
+
+  private void onGrantRequested(GrantRequestedEvent event) {
+    ProjectId projectId = context.projectId().orElseThrow();
+    int granted = 0;
+    for (GrantRequest request : event.requests()) {
+      try {
+        if (request.type() == PrincipalType.USER) {
+          projectAccessService.addCollaborator(projectId, request.id(), request.role());
+        } else {
+          projectAccessService.addAuthorityAccess(projectId,
+              GroupSidProvider.GROUP_SID_PREFIX + request.id(), request.role());
+        }
+        granted++;
+      } catch (ApplicationException e) {
+        displayError("Invalid access grant",
+            "One or more selected people or groups could not be granted access. They may already "
+                + "have access or the change is not permitted.");
+      }
+    }
+    composer.reset();
+    composer.setVisible(false);
+    refreshProjectUserGrid();
+    refreshProjectGroupGrid();
+    if (granted > 0) {
+      displaySuccess("Access granted", granted == 1
+          ? "Access was granted to 1 principal."
+          : "Access was granted to %d principals.".formatted(granted));
     }
   }
 
   private Grid<ProjectUser> createProjectUserGrid() {
     Grid<ProjectUser> pUserGrid = new Grid<>(ProjectUser.class, false);
-    Editor<ProjectUser> editor = pUserGrid.getEditor();
-    Binder<ProjectUser> binder = new Binder<>(ProjectUser.class);
-    editor.setBinder(binder);
     var projectUserInfoColumn = pUserGrid.addComponentColumn(
             ProjectAccessComponent::renderUserInfo)
         .setKey("userinfo")
@@ -179,30 +238,14 @@ public class ProjectAccessComponent extends PageArea {
         .setSortable(true)
         .setComparator(ProjectUser::userName)
         .setResizable(true);
-    var projectRoleColumn = pUserGrid.addColumn(
-            collaborator -> "Role: " + collaborator.projectRole().label())
+    var projectRoleColumn = pUserGrid.addComponentColumn(this::renderUserRoleComponent)
         .setKey("projectRole").setHeader("Role")
-        .setEditorComponent(
-            this::renderProjectRoleComponent)
         .setSortable(true)
         .setComparator(projectUser -> projectUser.projectRole().label())
         .setResizable(true)
         .setAutoWidth(true);
-    pUserGrid.addComponentColumn(projectUser -> {
-          //You can't remove or edit your own role
-          if (isCurrentUser(projectUser)) {
-            return new Span();
-          }
-          //You can't remove or edit the project owner
-          if (projectUser.projectRole() == ProjectRole.OWNER) {
-            return new Span();
-          }
-          //You don't have the rights to change the user
-          if (!userPermissions.changeProjectAccess(context.projectId().orElseThrow())) {
-            return new Span();
-          }
-          return changeProjectAccessCell(projectUser);
-        })
+    pUserGrid.addComponentColumn(this::renderUserActionCell)
+        .setKey("action")
         .setHeader("Action")
         .setAutoWidth(true);
     pUserGrid.sort(
@@ -213,58 +256,74 @@ public class ProjectAccessComponent extends PageArea {
     return pUserGrid;
   }
 
-  private Span changeProjectAccessCell(ProjectUser projectUser) {
-    Span changeProjectAccessCell = new Span();
-    //We want to ensure that even if the frontend components are shown no event is propagated
+  private Component renderUserRoleComponent(ProjectUser projectUser) {
+    boolean editable = canChangeAccess && !isCurrentUser(projectUser)
+        && projectUser.projectRole() != ProjectRole.OWNER;
+    if (!editable) {
+      return roleLabel(projectUser.projectRole());
+    }
+    Select<ProjectRole> roleSelect = createRoleSelect(projectUser.projectRole());
+    roleSelect.addValueChangeListener(event -> onUserRoleChanged(projectUser, event.getValue()));
+    return roleSelect;
+  }
+
+  private Component renderUserActionCell(ProjectUser projectUser) {
+    Div cell = new Div();
+    cell.addClassName("change-project-access-cell");
+    // We want to ensure that even if the frontend components are shown no event is propagated
     // if the user doesn't have the correct role or tries to remove himself/the project owner
-    Button removeButton = new Button("Remove", clickEvent -> {
-      if (isCurrentUser(projectUser)) {
-        displayError(INVALID_USER_REMOVAL, "You can't remove yourself from a project");
-        return;
-      }
-      if (projectUser.projectRole() == ProjectRole.OWNER) {
-        displayError(INVALID_USER_REMOVAL, "You can't remove the owner of a project");
-        return;
-      }
-      if (!userPermissions.changeProjectAccess(context.projectId().orElseThrow())) {
+    if (!canChangeAccess || isCurrentUser(projectUser)
+        || projectUser.projectRole() == ProjectRole.OWNER) {
+      return cell;
+    }
+    Button removeButton = new Button("Remove");
+    removeButton.addClassName("remove-access-button");
+    removeButton.addClickListener(clickEvent -> {
+      if (!canChangeAccess) {
         displayError(INVALID_USER_REMOVAL,
             "You don't have permission to remove the user from this project");
         return;
       }
-      AlertDialog.danger(this,
-          "Remove user from project",
-          "Are you sure you want to remove the user %s from the project?".formatted(
-              projectUser.userName()),
-          "Remove user",
-          "Keep user",
-          () -> removeCollaborator(projectUser)).open();
+      openInlineRemoveConfirm(cell, removeButton,
+          "Remove %s from this project?".formatted(projectUser.userName()),
+          () -> removeCollaborator(projectUser));
     });
-    //We want to ensure that even if the frontend components are shown no event is propagated
-    // if the user doesn't have the correct role or tries to edit himself/the project owner
-    Button editButton = new Button("Edit", clickEvent -> {
-      if (isCurrentUser(projectUser)) {
-        displayError(INVALID_ROLE_EDIT, "You can't change your own project role");
-        return;
+    cell.add(removeButton);
+    return cell;
+  }
+
+  /**
+   * Replaces the given cell's content with an inline removal confirmation. No dialog is used; the
+   * row keeps its context and the confirmation is keyboard-operable. Only one row can be in
+   * confirmation state at a time.
+   */
+  private void openInlineRemoveConfirm(Div cell, Component restore, String question,
+      Runnable onConfirm) {
+    if (openConfirmCell != null && openConfirmCell != cell && openConfirmRestore != null) {
+      openConfirmCell.removeAll();
+      openConfirmCell.add(openConfirmRestore);
+    }
+    cell.removeAll();
+    Span questionSpan = new Span(question);
+    questionSpan.addClassName("inline-confirm-question");
+    Button confirmButton = new Button("Remove", event -> onConfirm.run());
+    confirmButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
+    confirmButton.addClassName("inline-confirm-remove");
+    Button cancelButton = new Button("Cancel", event -> {
+      cell.removeAll();
+      cell.add(restore);
+      if (openConfirmCell == cell) {
+        openConfirmCell = null;
+        openConfirmRestore = null;
       }
-      if (projectUser.projectRole() == ProjectRole.OWNER) {
-        displayError(INVALID_ROLE_EDIT, "You can't change the owner of this project");
-        return;
-      }
-      if (!userPermissions.changeProjectAccess(context.projectId().orElseThrow())) {
-        displayError(INVALID_ROLE_EDIT,
-            "You don't have permission to change the role of this collaborator");
-        return;
-      }
-      if (projectUserGrid.getEditor().isOpen()) {
-        projectUserGrid.getEditor().cancel();
-        projectUserGrid.getEditor().closeEditor();
-        return;
-      }
-      projectUserGrid.getEditor().editItem(projectUser);
     });
-    changeProjectAccessCell.add(editButton, removeButton);
-    changeProjectAccessCell.addClassName("change-project-access-cell");
-    return changeProjectAccessCell;
+    cancelButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_SMALL);
+    cancelButton.addClassName("inline-confirm-cancel");
+    Span inlineConfirm = new Span(questionSpan, confirmButton, cancelButton);
+    inlineConfirm.addClassName("inline-confirm");
+    cell.add(inlineConfirm);
+    openConfirmCell = cell;
+    openConfirmRestore = restore;
   }
 
   private List<ProjectUser> loadProjectUsers() {
@@ -286,13 +345,10 @@ public class ProjectAccessComponent extends PageArea {
     }).toList();
   }
 
-  private Component renderProjectRoleComponent(
-      ProjectUser projectUser) {
-    String labelPrefix = "Role: ";
+  private Select<ProjectRole> createRoleSelect(ProjectRole currentRole) {
     Select<ProjectRole> roleSelect = new Select<>();
     roleSelect.addClassName("project-role-select");
     roleSelect.setItemLabelGenerator(ProjectRole::label);
-    roleSelect.setPrefixComponent(new Span(labelPrefix));
     roleSelect.setItems(
         ProjectRole.READ,
         ProjectRole.WRITE,
@@ -303,7 +359,7 @@ public class ProjectAccessComponent extends PageArea {
           Span roleLabel = new Span(projectRole.label());
           roleLabel.addClassName("project-role-label");
 
-          Span roleDescription = new Span(projectRole.description());
+          Span roleDescription = new Span(ProjectRoleRecommendationRenderer.render(projectRole));
           roleDescription.addClassName("project-role-description");
 
           Div projectRoleDiv = new Div();
@@ -311,15 +367,14 @@ public class ProjectAccessComponent extends PageArea {
           projectRoleDiv.add(roleLabel, roleDescription);
           return projectRoleDiv;
         }));
-
-    roleSelect.setValue(projectUser.projectRole());
-    roleSelect.addValueChangeListener(valueChanged -> {
-      onProjectRoleSelectionChanged(projectUser, valueChanged);
-      projectUserGrid.getEditor().save();
-      projectUserGrid.getEditor().closeEditor();
-      refreshProjectUserGrid();
-    });
+    roleSelect.setValue(currentRole);
     return roleSelect;
+  }
+
+  private Span roleLabel(ProjectRole projectRole) {
+    Span label = new Span(projectRole.label());
+    label.addClassName("project-role-static");
+    return label;
   }
 
   private void removeCollaborator(ProjectUser projectUser) {
@@ -329,6 +384,12 @@ public class ProjectAccessComponent extends PageArea {
   }
 
   private void changeGroupRole(ProjectGroup projectGroup, ProjectRole projectRole) {
+    if (!canChangeAccess) {
+      displayError(INVALID_ROLE_EDIT,
+          "You don't have permission to change the role of this group");
+      refreshProjectGroupGrid();
+      return;
+    }
     ProjectId projectId = context.projectId().orElseThrow();
     try {
       projectAccessService.changeAuthorityAccess(projectId,
@@ -336,7 +397,6 @@ public class ProjectAccessComponent extends PageArea {
     } catch (ApplicationException e) {
       displayError(INVALID_ROLE_EDIT,
           "You don't have permission to change the role of this group");
-      return;
     }
     refreshProjectGroupGrid();
   }
@@ -353,17 +413,23 @@ public class ProjectAccessComponent extends PageArea {
     refreshProjectGroupGrid();
   }
 
-  private void onProjectRoleSelectionChanged(ProjectUser projectUser,
-      ComponentValueChangeEvent<Select<ProjectRole>, ProjectRole> valueChanged) {
-    projectAccessService.changeRole(context.projectId().orElseThrow(), projectUser.userId(),
-        valueChanged.getValue());
+  private void onUserRoleChanged(ProjectUser projectUser, ProjectRole projectRole) {
+    if (!canChangeAccess) {
+      displayError(INVALID_ROLE_EDIT, "You don't have permission to change this project role");
+      refreshProjectUserGrid();
+      return;
+    }
+    try {
+      projectAccessService.changeRole(context.projectId().orElseThrow(), projectUser.userId(),
+          projectRole);
+    } catch (ApplicationException e) {
+      displayError(INVALID_ROLE_EDIT, "You don't have permission to change this project role");
+    }
+    refreshProjectUserGrid();
   }
 
   private Grid<ProjectGroup> createProjectGroupGrid() {
     Grid<ProjectGroup> groupGrid = new Grid<>(ProjectGroup.class, false);
-    Editor<ProjectGroup> editor = groupGrid.getEditor();
-    Binder<ProjectGroup> binder = new Binder<>(ProjectGroup.class);
-    editor.setBinder(binder);
     groupGrid.addColumn(ProjectGroup::groupName)
         .setKey("groupName")
         .setHeader("Group")
@@ -378,20 +444,14 @@ public class ProjectAccessComponent extends PageArea {
         .setFlexGrow(1)
         .setResizable(true);
     groupGrid.setPartNameGenerator(projectGroup -> "group-description-row");
-    var projectRoleColumn = groupGrid.addColumn(projectGroup -> "Role: " + projectGroup.projectRole().label())
+    groupGrid.addComponentColumn(this::renderGroupRoleComponent)
         .setKey("projectRole")
         .setHeader("Role")
-        .setEditorComponent(this::renderProjectGroupRoleComponent)
         .setAutoWidth(true)
         .setSortable(true)
+        .setComparator(projectGroup -> projectGroup.projectRole().label())
         .setResizable(true);
-    groupGrid.addComponentColumn(projectGroup -> {
-          //You don't have the rights to change the group grants
-          if (!userPermissions.changeProjectAccess(context.projectId().orElseThrow())) {
-            return new Span();
-          }
-          return changeProjectGroupAccessCell(projectGroup);
-        })
+    groupGrid.addComponentColumn(this::renderGroupActionCell)
         .setKey("action")
         .setHeader("Action")
         .setAutoWidth(true);
@@ -400,81 +460,40 @@ public class ProjectAccessComponent extends PageArea {
     return groupGrid;
   }
 
-  private Span changeProjectGroupAccessCell(ProjectGroup projectGroup) {
-    Span changeProjectGroupAccessCell = new Span();
-    //We want to ensure that even if the frontend components are shown no event is propagated
-    // if the user doesn't have the correct role
-    Button removeButton = new Button("Remove", clickEvent -> {
-      if (!userPermissions.changeProjectAccess(context.projectId().orElseThrow())) {
+  private Component renderGroupRoleComponent(ProjectGroup projectGroup) {
+    if (!canChangeAccess) {
+      return roleLabel(projectGroup.projectRole());
+    }
+    Select<ProjectRole> roleSelect = createRoleSelect(projectGroup.projectRole());
+    roleSelect.addValueChangeListener(event -> changeGroupRole(projectGroup, event.getValue()));
+    return roleSelect;
+  }
+
+  private Component renderGroupActionCell(ProjectGroup projectGroup) {
+    Div cell = new Div();
+    cell.addClassName("change-project-access-cell");
+    if (!canChangeAccess) {
+      return cell;
+    }
+    Button removeButton = new Button("Remove");
+    removeButton.addClassName("remove-access-button");
+    removeButton.addClickListener(clickEvent -> {
+      if (!canChangeAccess) {
         displayError(INVALID_USER_REMOVAL,
             "You don't have permission to remove the group from this project");
         return;
       }
-      AlertDialog.danger(this,
-          "Remove group from project",
-          "Are you sure you want to remove the group %s from the project?".formatted(
-              projectGroup.groupName()),
-          "Remove group",
-          "Keep group",
-          () -> revokeGroup(projectGroup)).open();
+      openInlineRemoveConfirm(cell, removeButton,
+          "Remove %s from this project?".formatted(projectGroup.groupName()),
+          () -> revokeGroup(projectGroup));
     });
-    Button editButton = new Button("Edit", clickEvent -> {
-      //We want to ensure that even if the frontend components are shown no event is propagated
-      // if the user doesn't have the correct role
-      if (!userPermissions.changeProjectAccess(context.projectId().orElseThrow())) {
-        displayError(INVALID_ROLE_EDIT,
-            "You don't have permission to change the role of this group");
-        return;
-      }
-      if (projectGroupGrid.getEditor().isOpen()) {
-        projectGroupGrid.getEditor().cancel();
-        projectGroupGrid.getEditor().closeEditor();
-        return;
-      }
-      projectGroupGrid.getEditor().editItem(projectGroup);
-    });
-    changeProjectGroupAccessCell.add(editButton, removeButton);
-    changeProjectGroupAccessCell.addClassName("change-project-access-cell");
-    return changeProjectGroupAccessCell;
-  }
-
-  private Component renderProjectGroupRoleComponent(
-      ProjectGroup projectGroup) {
-    String labelPrefix = "Role: ";
-    Select<ProjectRole> roleSelect = new Select<>();
-    roleSelect.addClassName("project-role-select");
-    roleSelect.setItemLabelGenerator(ProjectRole::label);
-    roleSelect.setPrefixComponent(new Span(labelPrefix));
-    roleSelect.setItems(
-        ProjectRole.READ,
-        ProjectRole.WRITE,
-        ProjectRole.ADMIN
-    );
-    roleSelect.setRenderer(new ComponentRenderer<>(
-        projectRole -> {
-          Span roleLabel = new Span(projectRole.label());
-          roleLabel.addClassName("project-role-label");
-
-          Span roleDescription = new Span(projectRole.description());
-          roleDescription.addClassName("project-role-description");
-
-          Div projectRoleDiv = new Div();
-          projectRoleDiv.addClassName("project-role-item");
-          projectRoleDiv.add(roleLabel, roleDescription);
-          return projectRoleDiv;
-        }));
-
-    roleSelect.setValue(projectGroup.projectRole());
-    roleSelect.addValueChangeListener(valueChanged -> {
-      changeGroupRole(projectGroup, valueChanged.getValue());
-      projectGroupGrid.getEditor().save();
-      projectGroupGrid.getEditor().closeEditor();
-      refreshProjectGroupGrid();
-    });
-    return roleSelect;
+    cell.add(removeButton);
+    return cell;
   }
 
   private void refreshProjectGroupGrid() {
+    openConfirmCell = null;
+    openConfirmRestore = null;
     List<SharedProjectGroup> sharedGroups = projectAccessService.listSharedGroups(
         context.projectId().orElseThrow());
     projectGroupGrid.setItems(
@@ -486,48 +505,15 @@ public class ProjectAccessComponent extends PageArea {
         sharedProjectGroup.groupDescription(), sharedProjectGroup.projectRole());
   }
 
-  private void openAddCollaboratorDialog() {
-    ProjectId projectId = context.projectId().orElseThrow();
-    List<ProjectCollaborator> alreadyExistingCollaborators = projectAccessService
-        .listCollaborators(projectId);
-    List<SharedProjectGroup> alreadySharedGroups = projectAccessService.listSharedGroups(projectId);
-    AddCollaboratorToProjectDialog addCollaboratorToProjectDialog = new AddCollaboratorToProjectDialog(
-        userInformationService, projectId, alreadyExistingCollaborators, groupInformationService,
-        alreadySharedGroups);
-    addCollaboratorToProjectDialog.open();
-    addCollaboratorToProjectDialog.addCancelListener(event -> event.getSource().close());
-    addCollaboratorToProjectDialog.addConfirmListener(this::onAddCollaboratorConfirmed);
-    addCollaboratorToProjectDialog.addGroupConfirmListener(this::onGroupSharedConfirmed);
-  }
-
-  private void onGroupSharedConfirmed(
-      AddCollaboratorToProjectDialog.GroupConfirmEvent event) {
-    ProjectId projectId = context.projectId().orElseThrow();
-    try {
-      projectAccessService.addAuthorityAccess(projectId,
-          GroupSidProvider.GROUP_SID_PREFIX + event.groupId(),
-          event.projectRole());
-    } catch (ApplicationException e) {
-      displayError("Invalid group sharing",
-          "This group is already shared onto the project. Please change the project role instead.");
-      return;
-    }
-    refreshProjectUserGrid();
-    refreshProjectGroupGrid();
-    event.getSource().close();
-  }
-
-  private void onAddCollaboratorConfirmed(ConfirmEvent event) {
-    projectAccessService.addCollaborator(context.projectId().orElseThrow(),
-        event.projectCollaborator()
-            .userId(), event.projectCollaborator().projectRole());
-    refreshProjectUserGrid();
-    event.getSource().close();
-  }
-
   private void displayError(String title, String description) {
     ErrorMessage errorMessage = new ErrorMessage(title, description);
     StyledNotification notification = new StyledNotification(errorMessage);
+    notification.open();
+  }
+
+  private void displaySuccess(String title, String description) {
+    SuccessMessage successMessage = new SuccessMessage(title, description);
+    StyledNotification notification = new StyledNotification(successMessage);
     notification.open();
   }
 

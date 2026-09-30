@@ -1,0 +1,94 @@
+/* ────────────────────────────────────────────────────────────────────────────
+ * Project Sharing Drawer (FEAT-USER-GROUPS-08)
+ *
+ * Non-modal, right-anchored panel for quick-sharing a project from the project
+ * list. It is deliberately not a dialog: no focus trap, the list stays visible.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+.project-sharing-drawer .psd-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.3);
+  z-index: 999;
+}
+
+.project-sharing-drawer .psd-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: min(45%, 640px);
+  min-width: 380px;
+  max-width: 100vw;
+  height: 100%;
+  background-color: var(--lumo-base-color);
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.12);
+  z-index: 1000;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.project-sharing-drawer .psd-body {
+  height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.project-sharing-drawer .psd-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--lumo-space-m);
+  padding: var(--lumo-space-m) var(--lumo-space-l);
+  border-bottom: 1px solid var(--lumo-contrast-10pct);
+}
+
+.project-sharing-drawer .psd-title {
+  display: flex;
+  flex-direction: column;
+}
+
+.project-sharing-drawer .psd-content {
+  padding: var(--lumo-space-l);
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-l);
+  overflow: auto;
+  min-height: 0;
+}
+
+.project-sharing-drawer .psd-summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+}
+
+.project-sharing-drawer .psd-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-xs);
+}
+
+.project-sharing-drawer .psd-section-title {
+  font-weight: var(--lumo-font-weight-semibold, 600);
+}
+
+.project-sharing-drawer .psd-summary-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--lumo-space-m);
+  padding: var(--lumo-space-xs) 0;
+  border-bottom: 1px solid var(--lumo-contrast-10pct);
+}
+
+.project-sharing-drawer .psd-role {
+  color: var(--lumo-secondary-text-color);
+}
+
+/* On narrow viewports the drawer becomes a full-width sheet (D6). */
+@media (max-width: 600px) {
+  .project-sharing-drawer .psd-panel {
+    width: 100vw;
+    min-width: 0;
+  }
+}

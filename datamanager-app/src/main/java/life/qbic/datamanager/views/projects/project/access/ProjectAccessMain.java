@@ -63,13 +63,11 @@ public class ProjectAccessMain extends Main implements BeforeEnterObserver {
     }
     ProjectId parsedProjectId = ProjectId.parse(projectID);
     this.context = new Context().with(parsedProjectId);
-    if (userPermissions.changeProjectAccess(parsedProjectId)) {
+    if (userPermissions.readProject(parsedProjectId)) {
       initializeComponentsWithContext();
     } else {
       event.rerouteToError(NotFoundException.class);
     }
-    initializeComponentsWithContext();
-
   }
 
   private void initializeComponentsWithContext() {
