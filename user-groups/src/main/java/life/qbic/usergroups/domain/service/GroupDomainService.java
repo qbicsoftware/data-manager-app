@@ -22,13 +22,18 @@ import life.qbic.usergroups.domain.repository.GroupRepository;
 /**
  * <b>Group Domain Service</b>
  *
- * <p>Domain service within the user groups context. Takes over the ad-hoc group creation and
- * membership removal, and publishes domain events once the corresponding domain state changes have
- * been persisted.</p>
+ * <p>Domain service within the user groups context. Publishes the domain events once the
+ * corresponding domain state changes have been persisted, and bridges the aggregate's
+ * type-agnostic primitives to the use-cases of the application layer.</p>
  *
- * <p>Mirrors the identity context's {@code UserDomainService}:
- * create → store via repository → dispatch {@link GroupCreated};
- * removal of the last membership → dissolve (aggregate) → dispatch {@link GroupDissolved}.</p>
+ * <p>The aggregate is type-agnostic: the org and ad-hoc entry points below persist the same
+ * primitives. <em>Authorization</em> (who may act) is enforced upstream in the application layer
+ * (system-admin gate for org groups, OWNER/MANAGER membership gates for ad-hoc groups), never
+ * here.</p>
+ *
+ * <p>Dissolution is always explicit: {@link GroupDissolved} is dispatched only by the explicit
+ * dissolve paths (ad-hoc owner dissolve, admin org dissolve). Removing a member never dissolves a
+ * group.</p>
  *
  * @since 1.19.0
  */
@@ -42,10 +47,6 @@ public class GroupDomainService {
 
   /**
    * Creates a new ad-hoc user group with the creator as its OWNER.
-   *
-   * <p>Note: this will create a new domain event of type {@link GroupCreated}. The caller is
-   * responsible for the duplicate-name check (case-insensitive) before invoking this method; this
-   * domain service does not enforce cross-aggregate uniqueness.</p>
    *
    * @param id            the id of the new group
    * @param name          the (unique, case-insensitive) group name
@@ -64,15 +65,7 @@ public class GroupDomainService {
   }
 
   /**
-   * Creates a new organisational user group by a QBiC administrator.
-   *
-   * <p>Note: this will create a new domain event of type {@link GroupCreated} with type
-   * {@link GroupType#ORG}. The caller is responsible for the duplicate-name check
-   * (case-insensitive) before invoking this method; this domain service does not enforce
-   * cross-aggregate uniqueness.</p>
-   *
-   * <p>The created org group has an <b>empty roster</b> — organisational groups have no OWNER
-   * membership row (QBiC admin acts as owner-equivalent at the application layer).</p>
+   * Creates a new organisational user group (empty roster, no OWNER row).
    *
    * @param id            the id of the new group
    * @param name          the (unique, case-insensitive) group name
@@ -91,14 +84,10 @@ public class GroupDomainService {
   }
 
   /**
-   * Removes a user's membership from a group.
+   * Removes a user's membership from a group (self-removal; non-owner).
    *
-   * <p>If the group is an ad-hoc group and the roster becomes empty as a result, the group is
-   * dissolved (soft dissolve via the aggregate) and a {@link GroupDissolved} event is dispatched.</p>
-   *
-   * <p>If the group does not exist, or the user is not a member, this method does nothing and
-   * returns an empty {@link Optional}. Callers that need to distinguish these cases must resolve
-   * the group via {@link #findGroup(GroupId)} first.</p>
+   * <p>The group is never dissolved by this operation. A {@link MemberRemovedFromGroup} event is
+   * dispatched when a membership was actually removed.</p>
    *
    * @param groupId the id of the group
    * @param userId  the id of the user to remove
@@ -115,12 +104,11 @@ public class GroupDomainService {
     if (!isMember) {
       return Optional.empty();
     }
-    boolean dissolved = group.removeMembership(userId);
+    boolean removed = group.removeMembership(userId);
     groupRepository.store(group);
-    if (dissolved) {
-      var dissolvedEvent = GroupDissolved.create(group.id().get(), group.name().value(),
-          group.type(), userId);
-      DomainEventDispatcher.instance().dispatch(dissolvedEvent);
+    if (removed) {
+      DomainEventDispatcher.instance().dispatch(
+          MemberRemovedFromGroup.create(group.id().get(), userId, userId));
     }
     return Optional.of(group);
   }
@@ -137,19 +125,17 @@ public class GroupDomainService {
   }
 
   /**
-   * Adds a regular member to an ad-hoc group.
+   * Adds a regular member to a group.
    *
-   * <p>Role-gated by the aggregate ({@code GroupMember}: only the OWNER or a MANAGER may add
-   * regular members). After a successful persist a {@link MemberAddedToGroup} event is dispatched
-   * for the notification profile.</p>
+   * <p>No authorization here (application layer enforced). After a successful persist a
+   * {@link MemberAddedToGroup} event is dispatched.</p>
    *
-   * @param groupId        the id of the group
-   * @param actingUserId   the user performing the operation (must hold OWNER or MANAGER)
-   * @param userId         the user to add as a regular member
-   * @param joinedAt       the join timestamp
+   * @param groupId      the id of the group
+   * @param actingUserId the user performing the operation (authorization already enforced)
+   * @param userId       the user to add as a regular member
+   * @param joinedAt     the join timestamp
    * @return the updated group, or an empty {@link Optional} if the group does not exist or the
-   * operation was rejected (group dissolved, acting user lacks the required role, or the target
-   * is already a member)
+   * operation was rejected (group dissolved or the target is already a member)
    * @since 1.20.0
    */
   public Optional<UserGroup> addMember(GroupId groupId, String actingUserId, String userId,
@@ -160,7 +146,7 @@ public class GroupDomainService {
     }
     UserGroup group = maybeGroup.get();
     try {
-      group.addMember(actingUserId, userId, joinedAt);
+      group.addMember(userId, joinedAt);
     } catch (IllegalArgumentException | IllegalStateException e) {
       return Optional.empty();
     }
@@ -171,14 +157,14 @@ public class GroupDomainService {
   }
 
   /**
-   * Removes a regular member from an ad-hoc group.
+   * Removes another member's membership from a group.
    *
-   * <p>Role-gated by the aggregate: only the OWNER or a MANAGER may remove other members. If the
-   * removal empties the group the aggregate auto-dissolves it. A {@link MemberRemovedFromGroup}
-   * event is dispatched when a member was actually removed.</p>
+   * <p>No authorization here (application layer enforced). The group is never dissolved by this
+   * operation; a {@link MemberRemovedFromGroup} event is dispatched when a member was actually
+   * removed.</p>
    *
    * @param groupId      the id of the group
-   * @param actingUserId the user performing the removal
+   * @param actingUserId the user performing the removal (authorization already enforced)
    * @param userId       the member to remove
    * @return the updated group, or an empty {@link Optional} if the group does not exist or the
    * operation was rejected
@@ -190,31 +176,29 @@ public class GroupDomainService {
       return Optional.empty();
     }
     UserGroup group = maybeGroup.get();
-    boolean dissolved;
     try {
-      dissolved = group.removeMember(actingUserId, userId);
+      boolean removed = group.removeMember(actingUserId, userId);
+      if (!removed) {
+        return Optional.empty();
+      }
     } catch (IllegalArgumentException | IllegalStateException e) {
       return Optional.empty();
     }
     groupRepository.store(group);
     DomainEventDispatcher.instance().dispatch(
         MemberRemovedFromGroup.create(group.id().get(), userId, actingUserId));
-    if (dissolved) {
-      DomainEventDispatcher.instance().dispatch(GroupDissolved.create(
-          group.id().get(), group.name().value(), group.type(), actingUserId));
-    }
     return Optional.of(group);
   }
 
   /**
-   * Appoints a regular member as a manager of an ad-hoc group.
+   * Appoints a regular member as a MANAGER.
    *
-   * <p>Role-gated by the aggregate: only the OWNER may appoint managers. On success a
-   * {@link GroupMembershipRoleChanged} event (audit hook; role changes are audit-log-only per
-   * the notification profile) is dispatched.</p>
+   * <p>No authorization here (application layer enforced). On success a
+   * {@link GroupMembershipRoleChanged} event (MEMBER → MANAGER) is dispatched. A user who is
+   * already a MANAGER is a no-op (no event, retrieved as-is).</p>
    *
    * @param groupId      the id of the group
-   * @param actingUserId the user performing the operation (must hold OWNER)
+   * @param actingUserId the user performing the operation (authorization already enforced)
    * @param userId       the member to promote to MANAGER
    * @return the updated group, or an empty {@link Optional} if the group does not exist or the
    * operation was rejected
@@ -228,7 +212,7 @@ public class GroupDomainService {
     UserGroup group = maybeGroup.get();
     boolean changed;
     try {
-      changed = group.appointManager(actingUserId, userId);
+      changed = group.setRoleOf(userId, GroupRole.MANAGER);
     } catch (IllegalArgumentException | IllegalStateException e) {
       return Optional.empty();
     }
@@ -242,13 +226,13 @@ public class GroupDomainService {
   }
 
   /**
-   * Demotes a manager back to a regular member of an ad-hoc group.
+   * Demotes a MANAGER back to a regular MEMBER.
    *
-   * <p>Role-gated by the aggregate: only the OWNER may demote managers. On success a
-   * {@link GroupMembershipRoleChanged} event is dispatched.</p>
+   * <p>No authorization here (application layer enforced). On success a
+   * {@link GroupMembershipRoleChanged} event (MANAGER → MEMBER) is dispatched.</p>
    *
    * @param groupId      the id of the group
-   * @param actingUserId the user performing the operation (must hold OWNER)
+   * @param actingUserId the user performing the operation (authorization already enforced)
    * @param userId       the manager to demote
    * @return the updated group, or an empty {@link Optional} if the group does not exist or the
    * operation was rejected
@@ -262,7 +246,7 @@ public class GroupDomainService {
     UserGroup group = maybeGroup.get();
     boolean changed;
     try {
-      changed = group.demoteManager(actingUserId, userId);
+      changed = group.setRoleOf(userId, GroupRole.MEMBER);
     } catch (IllegalArgumentException | IllegalStateException e) {
       return Optional.empty();
     }
@@ -278,20 +262,16 @@ public class GroupDomainService {
   /**
    * Appoints a user as a MANAGER of an <b>org</b> group (admin-governed).
    *
-   * <p>No membership role is required on the aggregate — the application layer enforces the
-   * QBiC admin gate ({@code GroupAdministrationPermission}) before calling this method. Event
-   * semantics (plan D3): direct appointment of a non-member dispatches a
-   * {@link MemberAddedToGroup} (membership gained → the existing {@code InformAddedGroupMember}
-   * email fires); promoting an existing MEMBER dispatches
-   * {@link GroupMembershipRoleChanged}(MEMBER → MANAGER) (audit-log-only, no email). A user who
+   * <p>Direct appointment of a non-member dispatches a {@link MemberAddedToGroup}; promoting an
+   * existing MEMBER dispatches {@link GroupMembershipRoleChanged}(MEMBER → MANAGER). A user who
    * is already a MANAGER is a no-op.</p>
    *
    * @param groupId       the id of the org group
    * @param actingAdminUserId the user id of the acting QBiC administrator
    * @param userId        the user to appoint (non-member or regular MEMBER)
    * @param joinedAt      the join timestamp for direct appointment
-   * @return the updated group, or an empty {@link Optional} if the group does not exist, is not
-   * an org group, is dissolved, or the target user id is blank
+   * @return the updated group, or an empty {@link Optional} if the group does not exist, is
+   * dissolved, or the target user id is blank
    * @since 1.22.0
    */
   public Optional<UserGroup> appointOrgManager(GroupId groupId, String actingAdminUserId,
@@ -301,44 +281,48 @@ public class GroupDomainService {
       return Optional.empty();
     }
     UserGroup group = maybeGroup.get();
-    if (group.type() != GroupType.ORG || group.status() == GroupStatus.DISSOLVED) {
+    if (group.status() == GroupStatus.DISSOLVED) {
       return Optional.empty();
     }
     boolean wasMember = group.memberships().stream()
         .anyMatch(m -> m.userId().equals(userId));
+    if (wasMember) {
+      // existing member → role promotion
+      Optional<UserGroup> promoted = appointManager(groupId, actingAdminUserId, userId);
+      return promoted.isEmpty() ? Optional.empty() : Optional.of(promoted.get());
+    }
+    // direct appointment of a non-member: a MANAGER membership is created with MemberAdded event
     try {
-      boolean changed = group.appointOrgManager(actingAdminUserId, userId, joinedAt);
-      if (!changed) {
-        return Optional.of(group);
-      }
+      group.addMember(userId, joinedAt);
     } catch (IllegalArgumentException | IllegalStateException e) {
       return Optional.empty();
     }
-    groupRepository.store(group);
-    if (!wasMember) {
-      DomainEventDispatcher.instance().dispatch(
-          MemberAddedToGroup.create(group.id().get(), userId, actingAdminUserId));
-    } else {
-      DomainEventDispatcher.instance().dispatch(GroupMembershipRoleChanged.create(
-          group.id().get(), userId, GroupRole.MEMBER, GroupRole.MANAGER, actingAdminUserId));
+    boolean changed;
+    try {
+      changed = group.setRoleOf(userId, GroupRole.MANAGER);
+    } catch (IllegalArgumentException | IllegalStateException e) {
+      return Optional.empty();
     }
+    if (!changed) {
+      return Optional.of(group);
+    }
+    groupRepository.store(group);
+    DomainEventDispatcher.instance().dispatch(
+        MemberAddedToGroup.create(group.id().get(), userId, actingAdminUserId));
     return Optional.of(group);
   }
 
   /**
-   * Removes a manager's (or member's) membership from an <b>org</b> group (admin-governed).
+   * Removes a member's (or manager's) membership from an <b>org</b> group (admin-governed).
    *
-   * <p>No membership role is required on the aggregate — the application layer enforces the
-   * QBiC admin gate before calling this method. The member's membership is removed entirely
-   * (no demotion) and a {@link MemberRemovedFromGroup} event is dispatched. Org groups never
-   * auto-dissolve: removing the last manager keeps the group ACTIVE (AC4), so no
-   * {@link GroupDissolved} is ever dispatched here.</p>
+   * <p>A {@link MemberRemovedFromGroup} event is dispatched. The group is never dissolved by
+   * this operation.</p>
    *
    * @param groupId       the id of the org group
    * @param actingAdminUserId the user id of the acting QBiC administrator
    * @param userId        the manager (or member) to remove
-   * @return the updated group, or an empty {@link Optional} if the group does not exist, is not
-   * an org group, is dissolved, or the target is not a member
+   * @return the updated group, or an empty {@link Optional} if the group does not exist, is
+   * dissolved, or the target is not a member
    * @since 1.22.0
    */
   public Optional<UserGroup> removeOrgManager(GroupId groupId, String actingAdminUserId,
@@ -348,11 +332,11 @@ public class GroupDomainService {
       return Optional.empty();
     }
     UserGroup group = maybeGroup.get();
-    if (group.type() != GroupType.ORG || group.status() == GroupStatus.DISSOLVED) {
+    if (group.status() == GroupStatus.DISSOLVED) {
       return Optional.empty();
     }
     try {
-      boolean removed = group.removeOrgManager(actingAdminUserId, userId);
+      boolean removed = group.removeMembership(userId);
       if (!removed) {
         return Optional.empty();
       }
@@ -366,17 +350,142 @@ public class GroupDomainService {
   }
 
   /**
-   * Renames an ad-hoc group.
+   * Adds a regular MEMBER to an <b>org</b> group (admin-governed).
    *
-   * <p>Role-gated by the aggregate: the OWNER and MANAGER may rename. The unique-name check is
-   * the caller's responsibility (application layer). On success a {@link GroupProfileUpdated}
-   * event is dispatched.</p>
+   * @param groupId       the id of the org group
+   * @param actingAdminUserId the user id of the acting QBiC administrator
+   * @param userId        the user to add as a regular member
+   * @param joinedAt      the join timestamp
+   * @return the updated group, or an empty {@link Optional} if the group does not exist, is
+   * dissolved, or is already a member
+   * @since 1.22.0
+   */
+  public Optional<UserGroup> addOrgMember(GroupId groupId, String actingAdminUserId,
+      String userId, Instant joinedAt) {
+    Optional<UserGroup> maybeGroup = groupRepository.findById(groupId);
+    if (maybeGroup.isEmpty()) {
+      return Optional.empty();
+    }
+    UserGroup group = maybeGroup.get();
+    if (group.status() == GroupStatus.DISSOLVED) {
+      return Optional.empty();
+    }
+    boolean wasMember = group.memberships().stream()
+        .anyMatch(m -> m.userId().equals(userId));
+    if (wasMember) {
+      return Optional.of(group);
+    }
+    try {
+      group.addMember(userId, joinedAt);
+    } catch (IllegalArgumentException | IllegalStateException e) {
+      return Optional.empty();
+    }
+    groupRepository.store(group);
+    DomainEventDispatcher.instance().dispatch(
+        MemberAddedToGroup.create(group.id().get(), userId, actingAdminUserId));
+    return Optional.of(group);
+  }
+
+  /**
+   * Demotes a MANAGER back to a regular MEMBER of an <b>org</b> group (admin-governed).
+   *
+   * @param groupId       the id of the org group
+   * @param actingAdminUserId the user id of the acting QBiC administrator
+   * @param userId        the manager to demote
+   * @return the updated group, or an empty {@link Optional} if the group does not exist, is
+   * dissolved, or the target is not a manager
+   * @since 1.22.0
+   */
+  public Optional<UserGroup> demoteOrgManager(GroupId groupId, String actingAdminUserId,
+      String userId) {
+    return demoteManager(groupId, actingAdminUserId, userId);
+  }
+
+  /**
+   * Removes a member's membership from an <b>org</b> group (admin-governed).
+   *
+   * @param groupId       the id of the org group
+   * @param actingAdminUserId the user id of the acting QBiC administrator
+   * @param userId        the member to remove
+   * @return the updated group, or an empty {@link Optional} if the group does not exist, is
+   * dissolved, or the target is not a member
+   * @since 1.22.0
+   */
+  public Optional<UserGroup> removeOrgMember(GroupId groupId, String actingAdminUserId,
+      String userId) {
+    return removeOrgManager(groupId, actingAdminUserId, userId);
+  }
+
+  /**
+   * Renames an <b>org</b> group (admin-governed).
+   *
+   * @param groupId       the id of the org group
+   * @param actingAdminUserId the user id of the acting QBiC administrator
+   * @param newName       the new group name
+   * @return the updated group, or an empty {@link Optional} if the group does not exist or is
+   * dissolved
+   * @since 1.22.0
+   */
+  public Optional<UserGroup> renameOrgGroup(GroupId groupId, String actingAdminUserId,
+      GroupName newName) {
+    return renameGroup(groupId, actingAdminUserId, newName);
+  }
+
+  /**
+   * Updates an <b>org</b> group's description (admin-governed).
+   *
+   * @param groupId        the id of the org group
+   * @param actingAdminUserId the user id of the acting QBiC administrator
+   * @param newDescription the new group description
+   * @return the updated group, or an empty {@link Optional} if the group does not exist or is
+   * dissolved
+   * @since 1.22.0
+   */
+  public Optional<UserGroup> updateOrgGroupDescription(GroupId groupId, String actingAdminUserId,
+      GroupDescription newDescription) {
+    return updateDescription(groupId, actingAdminUserId, newDescription);
+  }
+
+  /**
+   * Dissolves an <b>org</b> group (admin-governed).
+   *
+   * <p>An explicit admin dissolve is the only way an org group ends (org groups never
+   * auto-dissolve and never carry an OWNER row). On success a {@link GroupDissolved} event is
+   * dispatched.</p>
+   *
+   * @param groupId       the id of the org group
+   * @param actingAdminUserId the user id of the acting QBiC administrator
+   * @return the dissolved group, or an empty {@link Optional} if the group does not exist or is
+   * already dissolved
+   * @since 1.22.0
+   */
+  public Optional<UserGroup> dissolveOrgGroup(GroupId groupId, String actingAdminUserId) {
+    Optional<UserGroup> maybeGroup = groupRepository.findById(groupId);
+    if (maybeGroup.isEmpty()) {
+      return Optional.empty();
+    }
+    UserGroup group = maybeGroup.get();
+    if (group.status() == GroupStatus.DISSOLVED) {
+      return Optional.of(group);
+    }
+    group.dissolve();
+    groupRepository.store(group);
+    DomainEventDispatcher.instance().dispatch(GroupDissolved.create(
+        group.id().get(), group.name().value(), group.type(), actingAdminUserId));
+    return Optional.of(group);
+  }
+
+  /**
+   * Renames a group.
+   *
+   * <p>No authorization here (application layer enforced). On success a
+   * {@link GroupProfileUpdated} event is dispatched.</p>
    *
    * @param groupId      the id of the group
-   * @param actingUserId the user performing the operation (must hold OWNER or MANAGER)
+   * @param actingUserId the user performing the operation (authorization already enforced)
    * @param newName      the new group name
-   * @return the updated group, or an empty {@link Optional} if the group does not exist or the
-   * operation was rejected
+   * @return the updated group, or an empty {@link Optional} if the group does not exist or is
+   * dissolved
    * @since 1.20.0
    */
   public Optional<UserGroup> renameGroup(GroupId groupId, String actingUserId, GroupName newName) {
@@ -387,7 +496,7 @@ public class GroupDomainService {
     UserGroup group = maybeGroup.get();
     String oldName = group.name().value();
     try {
-      group.rename(actingUserId, newName);
+      group.rename(newName);
     } catch (IllegalArgumentException | IllegalStateException e) {
       return Optional.empty();
     }
@@ -398,16 +507,16 @@ public class GroupDomainService {
   }
 
   /**
-   * Updates an ad-hoc group's description.
+   * Updates a group's description.
    *
-   * <p>Role-gated by the aggregate: the OWNER and MANAGER may change the description. On success
-   * a {@link GroupProfileUpdated} event is dispatched.</p>
+   * <p>No authorization here (application layer enforced). On success a
+   * {@link GroupProfileUpdated} event is dispatched.</p>
    *
    * @param groupId        the id of the group
-   * @param actingUserId   the user performing the operation (must hold OWNER or MANAGER)
+   * @param actingUserId   the user performing the operation (authorization already enforced)
    * @param newDescription the new group description
-   * @return the updated group, or an empty {@link Optional} if the group does not exist or the
-   * operation was rejected
+   * @return the updated group, or an empty {@link Optional} if the group does not exist or is
+   * dissolved
    * @since 1.20.0
    */
   public Optional<UserGroup> updateDescription(GroupId groupId, String actingUserId,
@@ -418,7 +527,7 @@ public class GroupDomainService {
     }
     UserGroup group = maybeGroup.get();
     try {
-      group.updateDescription(actingUserId, newDescription);
+      group.updateDescription(newDescription);
     } catch (IllegalArgumentException | IllegalStateException e) {
       return Optional.empty();
     }
@@ -429,16 +538,14 @@ public class GroupDomainService {
   }
 
   /**
-   * Dissolves an ad-hoc group by its owner (explicit dissolve).
+   * Dissolves a group explicitly (ad-hoc owner dissolve or admin org dissolve).
    *
-   * <p>Role-gated by the aggregate: only the OWNER may dissolve explicitly. The dissolve may also
-   * happen implicitly when the last membership is removed (see {@link #removeMembership}). When a
-   * group is dissolved a {@link GroupDissolved} event is dispatched.</p>
+   * <p>This is the only path that dispatches {@link GroupDissolved}. No authorization here
+   * (application layer enforced the caller is authorized to dissolve the group type).</p>
    *
    * @param groupId      the id of the group
-   * @param actingUserId the user performing the operation (must hold OWNER)
-   * @return the dissolved group, or an empty {@link Optional} if the group does not exist or the
-   * operation was rejected
+   * @param actingUserId the user performing the dissolve (authorization already enforced)
+   * @return the dissolved group, or an empty {@link Optional} if the group does not exist
    * @since 1.20.0
    */
   public Optional<UserGroup> dissolve(GroupId groupId, String actingUserId) {
@@ -450,11 +557,7 @@ public class GroupDomainService {
     if (group.status() == GroupStatus.DISSOLVED) {
       return Optional.of(group);
     }
-    try {
-      group.dissolveByOwner(actingUserId);
-    } catch (IllegalArgumentException | IllegalStateException e) {
-      return Optional.empty();
-    }
+    group.dissolve();
     groupRepository.store(group);
     DomainEventDispatcher.instance().dispatch(GroupDissolved.create(
         group.id().get(), group.name().value(), group.type(), actingUserId));

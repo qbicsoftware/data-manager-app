@@ -82,8 +82,8 @@ class GroupMemberCountQueryTest {
     sessionFactory.inTransaction(session -> {
       UserGroup group = UserGroup.createAdHoc(groupId, GroupName.from("NGS Lab"),
           GroupDescription.from("A lab"), "owner-user", now);
-      group.addMember("owner-user", "member-2", now);
-      group.addMember("owner-user", "member-3", now);
+      group.addMember("member-2", now);
+      group.addMember("member-3", now);
       session.persist(group);
     });
 
@@ -118,7 +118,7 @@ class GroupMemberCountQueryTest {
     sessionFactory.inTransaction(session -> {
       UserGroup group = UserGroup.createAdHoc(GroupId.create(), GroupName.from("Foreign Lab"),
           GroupDescription.from("Not mine"), "stranger-user", now);
-      group.addMember("stranger-user", "other-user", now);
+      group.addMember("other-user", now);
       session.persist(group);
     });
 

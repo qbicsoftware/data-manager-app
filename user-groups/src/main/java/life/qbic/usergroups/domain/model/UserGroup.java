@@ -31,9 +31,19 @@ import life.qbic.usergroups.domain.model.translation.GroupNameConverter;
  * <p>Role structure <em>inside</em> the group: OWNER (ad-hoc creator) / MANAGER / MEMBER. This is
  * unrelated to project access roles (Spring ACL).
  *
- * <p><em>Soft dissolve:</em> when the last membership of an ad-hoc group is removed, the group is
- * dissolved by setting the status to {@link GroupStatus#DISSOLVED} and purging all memberships.
- * The {@code user_group} row itself is never deleted.
+ * <p><b>Type-agnostic aggregate.</b> This aggregate does <em>not</em> branch on {@link GroupType}:
+ * its operations are the unconditional invariants shared by both group types (roster integrity,
+ * the "the last member is always the OWNER" invariant, the lifecycle status). Who is allowed to
+ * perform an operation is <em>authorization</em> and therefore lives at the application boundary
+ * ({@code GroupService}), not here — the two group types differ only in who acts as
+ * owner-equivalent: the ad-hoc creator-OWNER membership vs. any QBiC system administrator for
+ * org groups.
+ *
+ * <p><b>Never empty, never auto-dissolved.</b> An ad-hoc group is always created with its OWNER
+ * and the OWNER can never be removed, so the roster never becomes empty through member removal.
+ * The group is dissolved only by an <em>explicit</em> operation ({@link #dissolve()}) — never
+ * automatically. Org groups may start with an empty roster (no OWNER row, governed by system
+ * admins) and likewise only end by an explicit admin dissolve.
  *
  * @since 1.19.0
  */
@@ -91,7 +101,9 @@ public class UserGroup implements Serializable {
    * Creates a new ad-hoc user group with the creator as its sole owner.
    *
    * <p>Invariants: type is {@link GroupType#ADHOC}, status is {@link GroupStatus#ACTIVE}, and the
-   * roster contains exactly one membership: the creator with role {@link GroupRole#OWNER}.
+   * roster contains exactly one membership: the creator with role {@link GroupRole#OWNER}. The
+   * owner is the permanent anchor of the group — it can never be removed, so the group is never
+   * empty through member removal.</p>
    *
    * @param id            the new group id
    * @param name          the group name
@@ -121,12 +133,12 @@ public class UserGroup implements Serializable {
   }
 
   /**
-   * Creates a new organisational user group by a QBiC administrator.
+   * Creates a new organisational user group.
    *
    * <p>Invariants: type is {@link GroupType#ORG}, status is {@link GroupStatus#ACTIVE}, and the
    * roster is <b>empty</b> — org groups have <em>no OWNER membership row</em> by design
-   * (user-groups strategy §3/§4.2): the QBiC admin acts as owner-equivalent only at the
-   * application layer (system role {@code ROLE_ADMIN}), never as a group member. The creating
+   * (user-groups strategy §3/§4.2): any QBiC system administrator acts as owner-equivalent at
+   * the application layer (system role {@code ROLE_ADMIN}), never as a group member. The creating
    * admin's id is retained on the {@code created_by} column for traceability.</p>
    *
    * @param id            the new group id
@@ -151,14 +163,15 @@ public class UserGroup implements Serializable {
   }
 
   /**
-   * Removes a user's membership from this group.
+   * Removes a user's membership from this group (self-removal).
    *
-   * <p>If this is an ad-hoc group and the roster becomes empty, the group is dissolved: the
-   * status is set to {@link GroupStatus#DISSOLVED} and all memberships are purged (soft dissolve,
-   * the row is kept).
+   * <p>The group is <b>never</b> dissolved by this operation — removing a member simply removes
+   * their membership and keeps the group ACTIVE. (For ad-hoc groups the OWNER can never be
+   * removed, so the roster never becomes empty this way; the owner's leave is the guarded
+   * transfer-or-dissolve of story FEAT-USER-GROUPS-05.)</p>
    *
    * @param userId the user id to remove
-   * @return {@code true} if the group was dissolved as a result of this removal
+   * @return {@code true} if a membership was removed, {@code false} if the user was not a member
    * @since 1.19.0
    */
   public boolean removeMembership(String userId) {
@@ -168,11 +181,7 @@ public class UserGroup implements Serializable {
     }
     membership.detach();
     this.memberships.remove(membership);
-    if (type == GroupType.ADHOC && memberships.isEmpty()) {
-      dissolve();
-      return true;
-    }
-    return false;
+    return true;
   }
 
   private GroupMembership findMembership(String userId) {
@@ -185,27 +194,22 @@ public class UserGroup implements Serializable {
   }
 
   /**
-   * Adds a regular MEMBER to this group.
+   * Adds a regular member to this group.
    *
-   * <p>This operation is role-gated: only the OWNER or a MANAGER may add regular members
-   * (FEAT-USER-GROUPS-04). Org groups are admin-governed and do not expose this operation to
-   * their members (the QBiC admin acts as owner-equivalent at the application layer).</p>
+   * <p>No authorization lives here: who may add members is decided at the application layer
+   * (an ad-hoc OWNER/MANAGER, or a system admin acting as owner-equivalent for an org group).
+   * This method only upholds the roster invariant — the target must not already be a member.</p>
    *
-   * @param actingUserId the user performing the operation; must hold role OWNER or MANAGER
-   *                     inside this group
-   * @param userId       the user id to add
-   * @param joinedAt     the join timestamp
+   * @param userId   the user id to add as a regular member
+   * @param joinedAt the join timestamp
    * @throws IllegalStateException    if the group is dissolved
-   * @throws IllegalArgumentException if the acting user lacks OWNER/MANAGER role, or the user to
-   *                                  add is already a member
+   * @throws IllegalArgumentException if the user to add is already a member
    * @since 1.20.0
    */
-  public void addMember(String actingUserId, String userId, Instant joinedAt) {
+  public void addMember(String userId, Instant joinedAt) {
     if (status == GroupStatus.DISSOLVED) {
       throw new IllegalStateException("Cannot add members to a dissolved group");
     }
-    requireRole(actingUserId, "Only the group owner or a manager may add members",
-        GroupRole.OWNER, GroupRole.MANAGER);
     if (findMembership(userId) != null) {
       throw new IllegalArgumentException("User " + userId + " is already a member of this group");
     }
@@ -215,19 +219,24 @@ public class UserGroup implements Serializable {
   }
 
   /**
-   * Removes a regular MEMBER from this group.
+   * Removes another member's membership from this group.
    *
-   * <p>Role-gated: only the OWNER or a MANAGER may remove <em>other</em> members. Any role may
-   * remove themselves (self-remove, see {@link #removeMembership(String)}). When the removal
-   * empties an ad-hoc group the group is auto-dissolved.</p>
+   * <p>No authorization lives here (who may remove is the application layer's concern). The two
+   * guards below are <em>unconditional invariants</em>, not role gates:
+   * <ul>
+   *   <li>the acting user must not be removing themselves (self-removal goes through
+   *   {@link #removeMembership(String)}), and</li>
+   *   <li>the OWNER can never be removed — the owner is the permanent anchor, so the roster can
+   *   never become empty this way (ad-hoc).</li>
+   * </ul>
+   * The group is never dissolved by this operation.</p>
    *
-   * @param actingUserId the user performing the removal
-   * @param userId       the user to remove; must not equal the acting user (use
-   *                     {@link #removeMembership(String)} for self-removal)
-   * @return {@code true} if the group was dissolved as a result
-   * @throws IllegalArgumentException if the acting user may not remove the given member, the
-   *                                  target is not a member, or the acting user tries to remove
-   *                                  themselves
+   * @param actingUserId the user performing the removal (must not be the removal target)
+   * @param userId       the member to remove (must not be the OWNER)
+   * @return {@code true} if a membership was removed, {@code false} if the target was not a
+   * member
+   * @throws IllegalArgumentException if the acting user removes themselves, or the target is the
+   *                                  OWNER
    * @since 1.20.0
    */
   public boolean removeMember(String actingUserId, String userId) {
@@ -235,158 +244,12 @@ public class UserGroup implements Serializable {
       throw new IllegalArgumentException(
           "Use removeMembership(userId) to remove yourself from a group");
     }
-    if (findMembership(actingUserId) == null) {
-      throw new IllegalArgumentException("Acting user " + actingUserId
-          + " is not a member of this group");
-    }
-    GroupRole actingRole = findMembership(actingUserId).role();
-    if (actingRole == GroupRole.MEMBER) {
-      throw new IllegalArgumentException(
-          "Only the group owner or a manager may remove other members");
-    }
     GroupMembership target = findMembership(userId);
     if (target == null) {
-      throw new IllegalArgumentException("User " + userId + " is not a member of this group");
+      return false;
     }
     if (target.role() == GroupRole.OWNER) {
       throw new IllegalArgumentException("The group owner cannot be removed");
-    }
-    if (target.role() == GroupRole.MANAGER && actingRole != GroupRole.OWNER) {
-      throw new IllegalArgumentException("Only the group owner may remove a manager");
-    }
-    boolean removed = this.memberships.remove(target);
-    if (!removed) {
-      return false;
-    }
-    if (type == GroupType.ADHOC && memberships.isEmpty()) {
-      dissolve();
-      return true;
-    }
-    return false;
-  }
-
-  /**
-   * Appoints a regular member as a MANAGER of this group.
-   *
-   * <p>Role-gated: only the OWNER may appoint managers (ad-hoc groups). The appointed user must
-   * already be a member.</p>
-   *
-   * @param actingUserId the user performing the operation; must hold role OWNER
-   * @param userId       the member to promote to MANAGER
-   * @return whether the membership role changed
-   * @throws IllegalStateException    if the group is dissolved
-   * @throws IllegalArgumentException if the acting user is not the OWNER, the target user is not
-   *                                  a member, or the target is the OWNER themselves
-   * @since 1.20.0
-   */
-  public boolean appointManager(String actingUserId, String userId) {
-    if (status == GroupStatus.DISSOLVED) {
-      throw new IllegalStateException("Cannot manage a dissolved group");
-    }
-    requireRole(actingUserId, "Only the group owner may appoint managers", GroupRole.OWNER);
-    GroupMembership target = findMembership(userId);
-    if (target == null) {
-      throw new IllegalArgumentException("User " + userId + " is not a member of this group");
-    }
-    if (target.role() == GroupRole.OWNER) {
-      throw new IllegalArgumentException("The group owner cannot be a manager");
-    }
-    if (target.role() == GroupRole.MANAGER) {
-      return false;
-    }
-    target.setRole(GroupRole.MANAGER);
-    return true;
-  }
-
-  /**
-   * Appoints a user as a MANAGER of this <b>org</b> group (admin-governed).
-   *
-   * <p>Org groups have no OWNER membership row by design (strategy §3/§4.2); the QBiC admin
-   * acts as owner-equivalent at the application layer. This operation therefore requires
-   * <b>no</b> membership role on the aggregate — the authority is provided by the
-   * application-layer admin gate ({@code GroupAdministrationPermission}, enforced in
-   * {@code GroupService}). It is <em>org-only</em>: an ad-hoc group rejects it.
-   *
-   * <p>Direct appointment of a non-member creates a MANAGER membership; promoting an existing
-   * MEMBER changes that membership's role. It never creates an OWNER row.</p>
-   *
-   * @param actingAdminUserId the user id of the acting QBiC administrator (authority enforced
-   *                          by the application layer; not verified here)
-   * @param userId            the user to appoint as manager (must exist as a real user; may
-   *                          currently be a non-member or a regular MEMBER)
-   * @param joinedAt          the join timestamp for a freshly created membership (ignored when
-   *                          the user already is a member)
-   * @return {@code true} if the membership roster or a role changed as a result, {@code false}
-   * if the user was already a MANAGER (no-op)
-   * @throws IllegalStateException    if the group is dissolved or not an org group
-   * @throws IllegalArgumentException if the acting admin user id or target user id is null or
-   *                                  blank
-   * @since 1.22.0
-   */
-  public boolean appointOrgManager(String actingAdminUserId, String userId, Instant joinedAt) {
-    if (status == GroupStatus.DISSOLVED) {
-      throw new IllegalStateException("Cannot manage a dissolved group");
-    }
-    if (type != GroupType.ORG) {
-      throw new IllegalStateException("appointOrgManager is only available for org groups");
-    }
-    if (actingAdminUserId == null || actingAdminUserId.isBlank()) {
-      throw new IllegalArgumentException("actingAdminUserId must not be null or blank");
-    }
-    if (userId == null || userId.isBlank()) {
-      throw new IllegalArgumentException("userId must not be null or blank");
-    }
-    GroupMembership target = findMembership(userId);
-    if (target == null) {
-      GroupMembership membership = GroupMembership.create(id, userId, GroupRole.MANAGER,
-          requireNonNull(joinedAt, "joinedAt must not be null"));
-      membership.attachTo(this);
-      memberships.add(membership);
-      return true;
-    }
-    if (target.role() == GroupRole.MANAGER) {
-      return false;
-    }
-    target.setRole(GroupRole.MANAGER);
-    return true;
-  }
-
-  /**
-   * Removes a manager's (or any member's) membership from this <b>org</b> group.
-   *
-   * <p>Org groups have no OWNER membership row; QBiC admins act as owner-equivalent at the
-   * application layer. Like {@link #appointOrgManager(String, String, Instant)} this
-   * operation requires no membership role on the aggregate. It is <em>org-only</em>, removes
-   * the member's membership entirely (no demotion — the person leaves the group), and never
-   * auto-dissolves the group even when the last manager is removed (AC4: the QBiC admin
-   * remains owner-equivalent; the group stays ACTIVE and no OWNER row is created).</p>
-   *
-   * @param actingAdminUserId the user id of the acting QBiC administrator (authority enforced
-   *                          by the application layer; not verified here)
-   * @param userId            the manager (or member) whose membership is removed
-   * @return {@code true} if a membership was removed, {@code false} if the user was not a
-   * member
-   * @throws IllegalStateException    if the group is dissolved or not an org group
-   * @throws IllegalArgumentException if the acting admin user id or target user id is null or
-   *                                  blank
-   * @since 1.22.0
-   */
-  public boolean removeOrgManager(String actingAdminUserId, String userId) {
-    if (status == GroupStatus.DISSOLVED) {
-      throw new IllegalStateException("Cannot manage a dissolved group");
-    }
-    if (type != GroupType.ORG) {
-      throw new IllegalStateException("removeOrgManager is only available for org groups");
-    }
-    if (actingAdminUserId == null || actingAdminUserId.isBlank()) {
-      throw new IllegalArgumentException("actingAdminUserId must not be null or blank");
-    }
-    if (userId == null || userId.isBlank()) {
-      throw new IllegalArgumentException("userId must not be null or blank");
-    }
-    GroupMembership target = findMembership(userId);
-    if (target == null) {
-      return false;
     }
     this.memberships.remove(target);
     target.detach();
@@ -394,119 +257,81 @@ public class UserGroup implements Serializable {
   }
 
   /**
-   * Demotes a manager back to a regular MEMBER.
+   * Changes the role of an existing member.
    *
-   * <p>Role-gated: only the OWNER may demote managers.</p>
+   * <p>No authorization lives here (appoint/demote authority is the application layer's
+   * concern). This is the primitive behind appointing a MANAGER and demoting back to MEMBER for
+   * both group types.</p>
    *
-   * @param actingUserId the user performing the operation; must hold role OWNER
-   * @param userId       the manager to demote
-   * @return whether the membership role changed
+   * @param userId  the member whose role changes
+   * @param newRole the new role (never {@link GroupRole#OWNER}; the OWNER role cannot be granted
+   *                and the owner membership cannot be re-rolled)
+   * @return {@code true} if the role changed, {@code false} if the member already holds it
    * @throws IllegalStateException    if the group is dissolved
-   * @throws IllegalArgumentException if the acting user is not the OWNER, the target is not a
-   *                                  manager, or the target is the OWNER themselves
+   * @throws IllegalArgumentException if the user is not a member, or {@code newRole} is
+   *                                  {@link GroupRole#OWNER}
    * @since 1.20.0
    */
-  public boolean demoteManager(String actingUserId, String userId) {
+  public boolean setRoleOf(String userId, GroupRole newRole) {
     if (status == GroupStatus.DISSOLVED) {
       throw new IllegalStateException("Cannot manage a dissolved group");
     }
-    requireRole(actingUserId, "Only the group owner may demote managers", GroupRole.OWNER);
     GroupMembership target = findMembership(userId);
     if (target == null) {
       throw new IllegalArgumentException("User " + userId + " is not a member of this group");
     }
-    if (target.role() != GroupRole.MANAGER) {
-      throw new IllegalArgumentException("User " + userId + " is not a manager of this group");
+    if (newRole == GroupRole.OWNER) {
+      throw new IllegalArgumentException("The role OWNER cannot be assigned via setRoleOf");
     }
-    target.setRole(GroupRole.MEMBER);
+    if (target.role() == newRole) {
+      return false;
+    }
+    target.setRole(newRole);
     return true;
   }
 
   /**
    * Renames this group.
    *
-   * <p>Role-gated: the OWNER and MANAGER may rename an ad-hoc group (FEAT-USER-GROUPS-04,
-   * AC 'manager can rename/describe'). The new name must be unique case-insensitively, which is
-   * enforced by the application layer.</p>
+   * <p>No authorization lives here (who may rename is the application layer's concern). The
+   * unique case-insensitive name invariant is enforced by the application layer + database.</p>
    *
-   * @param actingUserId the user performing the operation; must hold role OWNER or MANAGER
-   * @param newName      the new group name
+   * @param newName the new group name
    * @throws IllegalStateException    if the group is dissolved
-   * @throws IllegalArgumentException if the acting user lacks OWNER/MANAGER role
+   * @throws IllegalArgumentException if the new name is null
    * @since 1.20.0
    */
-  public void rename(String actingUserId, GroupName newName) {
+  public void rename(GroupName newName) {
     if (status == GroupStatus.DISSOLVED) {
       throw new IllegalStateException("Cannot rename a dissolved group");
     }
-    requireRole(actingUserId, "Only the group owner or a manager may rename the group",
-        GroupRole.OWNER, GroupRole.MANAGER);
     this.name = requireNonNull(newName, "newName must not be null");
   }
 
   /**
    * Updates the group description.
    *
-   * <p>Role-gated: the OWNER and MANAGER may change the description of an ad-hoc group.</p>
+   * <p>No authorization lives here (who may edit is the application layer's concern).</p>
    *
-   * @param actingUserId   the user performing the operation; must hold role OWNER or MANAGER
    * @param newDescription the new group description (may be empty, never {@code null})
    * @throws IllegalStateException    if the group is dissolved
-   * @throws IllegalArgumentException if the acting user lacks OWNER/MANAGER role
+   * @throws IllegalArgumentException if the new description is null
    * @since 1.20.0
    */
-  public void updateDescription(String actingUserId, GroupDescription newDescription) {
+  public void updateDescription(GroupDescription newDescription) {
     if (status == GroupStatus.DISSOLVED) {
       throw new IllegalStateException("Cannot change the description of a dissolved group");
     }
-    requireRole(actingUserId, "Only the group owner or a manager may change the group description",
-        GroupRole.OWNER, GroupRole.MANAGER);
     this.description = requireNonNull(newDescription, "newDescription must not be null");
-  }
-
-  /**
-   * Dissolves this group by its owner (explicit dissolve with confirmation in the UI).
-   *
-   * <p>Role-gated: only the OWNER may dissolve an ad-hoc group explicitly. This is distinct from
-   * the automatic dissolve when the last membership leaves ({@link #removeMembership(String)}).</p>
-   *
-   * @param actingUserId the user performing the operation; must hold role OWNER
-   * @throws IllegalStateException    if the group is dissolved
-   * @throws IllegalArgumentException if the acting user is not the OWNER
-   * @since 1.20.0
-   */
-  public void dissolveByOwner(String actingUserId) {
-    if (status == GroupStatus.DISSOLVED) {
-      return;
-    }
-    requireRole(actingUserId, "Only the group owner may dissolve the group", GroupRole.OWNER);
-    dissolve();
-  }
-
-  /**
-   * Asserts that the acting user holds at least one of the given roles. Every membership-based
-   * management operation funnels through this check so role gates stay consistent.
-   *
-   * @param actingUserId the user performing the operation
-   * @param allowed      the roles that are allowed to perform the operation
-   */
-  private void requireRole(String actingUserId, String errorMessage, GroupRole... allowed) {
-    GroupMembership membership = findMembership(actingUserId);
-    if (membership == null) {
-      throw new IllegalArgumentException("User " + actingUserId
-          + " is not a member of this group");
-    }
-    for (GroupRole role : allowed) {
-      if (membership.role() == role) {
-        return;
-      }
-    }
-    throw new IllegalArgumentException(errorMessage);
   }
 
   /**
    * Dissolves this group (soft): marks it {@link GroupStatus#DISSOLVED} and purges all
    * memberships. The row is kept for traceability.
+   *
+   * <p>This is the <em>only</em> way a group is dissolved — an explicit, authorized operation
+   * (ad-hoc owner dissolve, admin org dissolve, or story-05 transfer-or-dissolve). There is no
+   * auto-dissolve anywhere.</p>
    *
    * @since 1.19.0
    */

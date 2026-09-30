@@ -8,6 +8,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.router.RouteConfiguration;
 import com.vaadin.flow.router.RouteParam;
 import com.vaadin.flow.router.RouteParameters;
@@ -114,36 +115,48 @@ public class MyGroupsComponent extends Div implements Serializable {
     Div row = new Div();
     row.addClassName("my-groups-row");
 
-    // Header: title on the left; badges + actions inline on the right of the SAME line as the
-    // title (never next to the description), so a long description cannot push them around.
+    // Vertical scan pattern: title (+ actions) on line 1, badges on line 2, description below.
+    // This reads top-down for the eye instead of requiring horizontal tracking between a
+    // left title and right-aligned badges/actions.
+    Div identity = new Div();
+    identity.addClassName("my-groups-row__identity");
+
+    // Line 1: title on the left, actions on the right of the SAME line.
     Div header = new Div();
     header.addClassName("my-groups-row__header");
 
     Div title = new Div();
     title.addClassName("my-groups-row__title");
-    Span name = new Span(membership.groupName());
+    // The group name is the row's primary identity and a navigation target ({@link
+    // GroupDetailMain}). A {@link RouterLink} routes via Vaadin's client-side router (real
+    // route, no '#' hash) and gives native link behavior (pointer cursor, middle/right-click,
+    // focus). It resolves its href from the router at construction; unit specs that build the
+    // row install a stubbed VaadinService (see MyGroupsComponentSpec) or assert on the row
+    // structure without resolving the href (mirroring PinnedProjectsComponentSpec). The detail
+    // page is member-gated (not role-gated): all members navigate here (read-only for plain
+    // members, manage surface for owners/managers).
+    RouterLink name = new RouterLink("", GroupDetailMain.class,
+        new RouteParameters(
+            new RouteParam(GroupDetailMain.GROUP_ID_ROUTE_PARAMETER, membership.groupId())));
+    name.setText(membership.groupName());
     name.addClassName("my-groups-row__name");
     title.add(name);
-
-    Div badgesAndActions = new Div();
-    badgesAndActions.addClassName("my-groups-row__badges-actions");
-
-    Div badges = new Div();
-    badges.addClassName("my-groups-row__badges");
-    badges.add(buildTypeBadge(membership.groupType()));
-    badges.add(buildRoleBadge(membership.myRole()));
-    badges.add(buildMemberCountBadge(membership.memberCount()));
 
     Div actions = new Div();
     actions.addClassName("my-groups-row__actions");
     appendActions(actions, membership);
 
-    badgesAndActions.add(badges, actions);
-    header.add(title, badgesAndActions);
-
-    Div identity = new Div();
-    identity.addClassName("my-groups-row__identity");
+    header.add(title, actions);
     identity.add(header);
+
+    // Line 2: badges below the title (type + role + member count) — a vertical read, no
+    // horizontal reach across the row.
+    Div badges = new Div();
+    badges.addClassName("my-groups-row__badges");
+    badges.add(buildTypeBadge(membership.groupType()));
+    badges.add(buildRoleBadge(membership.myRole()));
+    badges.add(buildMemberCountBadge(membership.memberCount()));
+    identity.add(badges);
 
     if (membership.groupDescription() != null && !membership.groupDescription().isBlank()) {
       Span description = new Span(membership.groupDescription());
@@ -156,23 +169,23 @@ public class MyGroupsComponent extends Div implements Serializable {
   }
 
   private void appendActions(Div actions, MyGroupMembership membership) {
-    if (membership.groupType() == GroupType.ORG) {
-      // Org groups: membership-only rendering, no management controls (structural AC 5).
-      return;
-    }
     List<ManagementAction> actionsForRole = managementActionPolicy.actionsFor(membership);
     if (!actionsForRole.isEmpty()) {
       // Non-destructive management (members, appoint, rename) now opens the group detail page
       // (groups/:groupId) instead of a modal dialog; the row carries a navigation
       // button that jumps to the detail surface of this group.
-      Button openDetail = new Button("Manage group");
+      Button openDetail = new Button("Manage group",
+          new com.vaadin.flow.component.icon.Icon(
+              com.vaadin.flow.component.icon.VaadinIcon.CHEVRON_RIGHT));
       openDetail.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+      openDetail.addClassName("my-groups-action--manage");
       openDetail.addClickListener(click -> navigateToDetail(membership));
       actions.add(openDetail);
       // A manager reaches the group detail page for management but may still leave the group
-      // (self-remove) directly from the list, like any other non-owner member. The owner's
-      // self-remove/transfer is governed by FEAT-USER-GROUPS-05.
-      if (membership.myRole() == GroupRole.MANAGER) {
+      // (self-remove) directly from the list, like any other non-owner member. For ad-hoc
+      // groups the owner's self-remove/transfer is governed by FEAT-USER-GROUPS-05; org groups
+      // have no owner row (managers are not owner-equivalent) so a manager may self-remove.
+      if (membership.myRole() == GroupRole.MANAGER && membership.groupType() == GroupType.ADHOC) {
         addLeaveButton(actions, membership.groupId());
       }
       return;
@@ -193,7 +206,8 @@ public class MyGroupsComponent extends Div implements Serializable {
   }
 
   private void addLeaveButton(Div actions, String groupId) {
-    Button leaveButton = new Button("Leave group");
+    Button leaveButton = new Button("Leave group", new com.vaadin.flow.component.icon.Icon(
+        com.vaadin.flow.component.icon.VaadinIcon.EXIT_O));
     leaveButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE, ButtonVariant.LUMO_ERROR);
     leaveButton.addClassName("my-groups-action--leave");
     leaveButton.addClickListener(event ->
@@ -292,13 +306,16 @@ public class MyGroupsComponent extends Div implements Serializable {
 
     static ManagementActionPolicy defaultPolicy() {
       return membership -> {
-        if (membership.groupType() != GroupType.ADHOC) {
-          return List.of();
-        }
+        // An org-group MANAGER manages the group exactly like an ad-hoc MANAGER: add/remove
+        // regular members and rename/describe (PO model: only ownership transfer differs). An
+        // org MEMBER has no management actions. Org groups carry no OWNER membership row
+        // (owner-equivalent = QBiC admin at the application layer), so an org OWNER role is
+        // unreachable via a real membership and is treated as no actions.
         return switch (membership.myRole()) {
-          case OWNER -> List.of(ManagementAction.MANAGE_MEMBERS,
-              ManagementAction.APPOINT_MANAGER, ManagementAction.RENAME,
-              ManagementAction.DISSOLVE);
+          case OWNER -> membership.groupType() == GroupType.ADHOC
+              ? List.of(ManagementAction.MANAGE_MEMBERS, ManagementAction.APPOINT_MANAGER,
+              ManagementAction.RENAME, ManagementAction.DISSOLVE)
+              : List.of();
           case MANAGER -> List.of(ManagementAction.MANAGE_MEMBERS, ManagementAction.RENAME);
           case MEMBER -> List.of();
         };

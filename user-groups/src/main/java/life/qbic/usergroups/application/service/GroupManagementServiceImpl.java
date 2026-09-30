@@ -60,6 +60,38 @@ public class GroupManagementServiceImpl implements GroupManagementService {
   }
 
   @Override
+  public void addOrgMember(String groupId, String actingAdminUserId, String userId) {
+    run(groupService.addOrgMember(groupId, actingAdminUserId, userId));
+  }
+
+  @Override
+  public void removeOrgMember(String groupId, String actingAdminUserId, String userId) {
+    run(groupService.removeOrgMember(groupId, actingAdminUserId, userId));
+  }
+
+  @Override
+  public void demoteOrgManager(String groupId, String actingAdminUserId, String userId) {
+    run(groupService.demoteOrgManager(groupId, actingAdminUserId, userId));
+  }
+
+  @Override
+  public void renameOrgGroup(String groupId, String actingAdminUserId, String newName) {
+    run(groupService.renameOrgGroup(groupId, actingAdminUserId, GroupName.from(newName)));
+  }
+
+  @Override
+  public void updateOrgGroupDescription(String groupId, String actingAdminUserId,
+      String newDescription) {
+    run(groupService.updateOrgGroupDescription(groupId, actingAdminUserId,
+        GroupDescription.from(newDescription)));
+  }
+
+  @Override
+  public void dissolveOrgGroup(String groupId, String actingAdminUserId) {
+    run(groupService.dissolveOrgGroup(groupId, actingAdminUserId));
+  }
+
+  @Override
   public void renameGroup(String groupId, String actingUserId, String newName) {
     run(groupService.renameGroup(groupId, actingUserId, GroupName.from(newName)));
   }
@@ -80,6 +112,11 @@ public class GroupManagementServiceImpl implements GroupManagementService {
     return groupService.listMembers(groupId, viewerId).stream()
         .map(GroupManagementServiceImpl::toApiMember)
         .toList();
+  }
+
+  @Override
+  public int orgGroupMemberCount(String groupId, String actingAdminUserId) {
+    return groupService.orgGroupMemberCount(groupId, actingAdminUserId);
   }
 
   private static GroupMember toApiMember(GroupMemberProjection projection) {

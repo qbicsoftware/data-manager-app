@@ -62,14 +62,35 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  display: inline-block;
+  max-width: 100%;
+  vertical-align: middle;
+  /* Native link: pointer cursor from the browser; underline on hover/focus. */
+  text-decoration: none;
+  cursor: pointer;
 }
 
-/* Badges + actions grouped at the end of the title line */
-.my-groups-row__badges-actions {
+.my-groups-row__name:hover {
+  color: var(--lumo-primary-text-color);
+  text-decoration: underline;
+}
+
+.my-groups-row__name:focus {
+  color: var(--lumo-primary-text-color);
+  text-decoration: underline;
+  border-radius: var(--lumo-border-radius-m);
+  box-shadow: 0 0 0 2px var(--lumo-primary-color-50pct);
+}
+
+/* Badges live on their own line below the title (vertical scan pattern): wrap gracefully
+   when the viewport is narrow. */
+.my-groups-row__badges {
   display: flex;
   align-items: center;
-  gap: var(--lumo-space-s);
+  flex-wrap: wrap;
+  gap: var(--lumo-space-xs);
   flex-shrink: 0;
+  margin-top: var(--lumo-space-xs);
 }
 
 .my-groups-row__description {
@@ -77,14 +98,9 @@
   color: var(--lumo-secondary-text-color);
   line-height: var(--lumo-line-height-s);
   margin: 0;
-}
-
-/* Middle column: type + role badges */
-.my-groups-row__badges {
-  display: flex;
-  align-items: center;
-  gap: var(--lumo-space-xs);
-  flex-shrink: 0;
+  /* Keep long descriptions readable and aligned under the title (not ragged relative to the
+     badge column); cap the width so a long description doesn't span the full card. */
+  max-width: 60ch;
 }
 
 .my-groups-badge {
@@ -104,9 +120,12 @@
   color: var(--lumo-secondary-text-color);
 }
 
+/* Ad-hoc (User Group) badge: same neutral treatment as the org badge so both type badges
+   read equally and don't compete with the role badges (which carry the semantic colour).
+   The distinction stays in the label text ("User Group" vs "organisational"). */
 .my-groups-badge--type-adhoc {
-  background-color: var(--lumo-primary-color-10pct);
-  color: var(--lumo-primary-text-color);
+  background-color: var(--lumo-contrast-10pct);
+  color: var(--lumo-secondary-text-color);
 }
 
 .my-groups-badge--role-owner,
@@ -159,6 +178,10 @@
 }
 
 /* -- Admin org-group directory (FEAT-USER-GROUPS-01) -- */
+/* The org-group rows reuse the shared group-card anatomy and badges above (`.my-groups-row*`,
+   `.my-groups-badge*`, `.my-groups-action*`), so org group cards and ad-hoc user group cards
+   render identically — including their action buttons. Only the directory-list container and
+   empty state are admin-specific. */
 
 .admin-groups-list {
   display: flex;
@@ -168,143 +191,18 @@
   box-sizing: border-box;
 }
 
-.admin-groups-row {
-  display: flex;
-  box-sizing: border-box;
-  padding: var(--lumo-space-m);
-  background-color: var(--lumo-base-color);
-  border: 1px solid var(--lumo-contrast-20pct);
-  border-radius: var(--lumo-border-radius-m);
-}
-
-.admin-groups-row__identity {
-  display: flex;
-  flex-direction: column;
-  gap: var(--lumo-space-xs);
-  min-width: 0;
-  flex: 1 1 auto;
-}
-
-.admin-groups-row__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--lumo-space-m);
-  flex-wrap: wrap;
-  min-width: 0;
-}
-
-.admin-groups-row__title {
-  display: flex;
-  align-items: center;
-  min-width: 0;
-  flex: 1 1 auto;
-}
-
-.admin-groups-row__name {
-  font-size: var(--lumo-font-size-m);
-  font-weight: var(--lumo-font-weight-semibold, 600);
-  color: var(--lumo-header-text-color);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.admin-groups-row__description {
-  font-size: var(--lumo-font-size-s);
-  color: var(--lumo-secondary-text-color);
-  line-height: var(--lumo-line-height-s);
-  margin: 0;
-}
-
-.admin-groups-row__manage {
-  flex-shrink: 0;
-  align-self: center;
-}
-
-.admin-groups-badge {
-  display: inline-flex;
-  align-items: center;
-  border-radius: var(--lumo-border-radius-m);
-  padding: 0 var(--lumo-space-s);
-  font-size: var(--lumo-font-size-xs);
-  font-weight: var(--lumo-font-weight-semibold, 600);
-  line-height: var(--lumo-line-height-s);
-  white-space: nowrap;
-  box-sizing: border-box;
-  flex-shrink: 0;
-}
-
-.admin-groups-badge--type-org {
-  background-color: var(--lumo-contrast-10pct);
-  color: var(--lumo-secondary-text-color);
-}
-
 .admin-groups-empty-state {
   color: var(--lumo-secondary-text-color);
   font-size: var(--lumo-font-size-s);
   padding: var(--lumo-space-m) 0;
 }
 
-/* -- Admin org-group manager management (FEAT-USER-GROUPS-02) -- */
+/* -- Admin org-group management (FEAT-USER-GROUPS-02) -- */
 
-.admin-group-managers-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--lumo-space-s);
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.admin-group-managers-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--lumo-space-m);
-  box-sizing: border-box;
-  padding: var(--lumo-space-m);
-  background-color: var(--lumo-base-color);
-  border: 1px solid var(--lumo-contrast-20pct);
-  border-radius: var(--lumo-border-radius-m);
-}
-
-.admin-group-managers-row__identity {
-  display: flex;
-  align-items: center;
-  gap: var(--lumo-space-m);
-  min-width: 0;
-  flex: 1 1 auto;
-}
-
-.admin-group-managers-row__avatar {
-  flex-shrink: 0;
-}
-
-.admin-group-managers-row__title {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--lumo-space-s);
-  min-width: 0;
-}
-
-.admin-group-managers-row__name {
-  font-size: var(--lumo-font-size-m);
-  font-weight: var(--lumo-font-weight-semibold, 600);
-  color: var(--lumo-header-text-color);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.admin-group-managers-row__remove {
-  flex-shrink: 0;
-}
-
-.admin-group-managers-empty-state {
-  color: var(--lumo-secondary-text-color);
-  font-size: var(--lumo-font-size-s);
-  padding: var(--lumo-space-m) 0;
+/* The admin page reuses the shared GroupMembersComponent grid (same as ad-hoc groups), so the
+   only admin-specific bits are the back-link above the section. */
+.admin-group-managers-back-link {
+  /* spacing/look inherit from .group-detail-back-link (applied together) */
 }
 
 /* -- New Group page (shareable route settings/groups/new) -- */
@@ -392,9 +290,39 @@
 
 /* -- Owner/manager management controls (FEAT-USER-GROUPS-04, task #1577) -- */
 
-/* Enabled management action buttons */
+/* Enabled management action buttons. The Manage/Leave actions are LUMO_TERTIARY_INLINE
+   buttons with icons: keep the flex layout and give them a clear hover/focus affordance so
+   they read as clickable (not plain text). */
 .my-groups-action--manage {
   flex-shrink: 0;
+}
+
+.my-groups-row__actions vaadin-button {
+  color: var(--lumo-primary-text-color);
+}
+
+.my-groups-row__actions vaadin-button:hover {
+  color: var(--lumo-primary-color);
+  background-color: var(--lumo-primary-color-10pct);
+  border-radius: var(--lumo-border-radius-m);
+}
+
+.my-groups-row__actions vaadin-button[focus-ring] {
+  color: var(--lumo-primary-color);
+  background-color: var(--lumo-primary-color-10pct);
+  border-radius: var(--lumo-border-radius-m);
+  box-shadow: 0 0 0 2px var(--lumo-primary-color-50pct);
+}
+
+/* Leave-group is destructive: red text, red hover tint. */
+.my-groups-row__actions .my-groups-action--leave {
+  color: var(--lumo-error-text-color);
+}
+
+.my-groups-row__actions .my-groups-action--leave:hover,
+.my-groups-row__actions .my-groups-action--leave[focus-ring] {
+  color: var(--lumo-error-color);
+  background-color: var(--lumo-error-color-10pct);
 }
 
 /* -- Group detail page (settings/groups/:groupId) — replaces the management dialogs -- */
@@ -575,5 +503,23 @@
 }
 
 .group-members-in-settings-group .settings-group__action {
+  flex-shrink: 0;
+}
+
+/* Admin manager management: the "Managers" settings group carries its action (Assign
+   manager) on the same line as its title — identical to the "Members (N)" group on the
+   group detail page. */
+.admin-group-managers .settings-group__header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--lumo-space-m);
+}
+
+.admin-group-managers .settings-group__header-row .settings-group__title {
+  margin: 0;
+}
+
+.admin-group-managers .settings-group__action {
   flex-shrink: 0;
 }

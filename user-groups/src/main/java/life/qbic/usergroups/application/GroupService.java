@@ -229,6 +229,35 @@ public class GroupService {
   }
 
   /**
+   * Returns the member count of an organisational group (admin oversight).
+   *
+   * <p>Admin gate: the caller must be a QBiC administrator, and the target group must be an
+   * active organisational group (the public directory never carries membership data; this is
+   * the admin-only seam for it). The count is derived from the loaded aggregate's roster, with
+   * the same semantics as the member-count badge in My Groups.</p>
+   *
+   * @param groupId        the id of the org group
+   * @param actingAdminUserId the user requesting the count; must be a QBiC administrator
+   * @return the number of members in the org group, or {@code 0} if the group does not exist,
+   * is not active, is not an org group, or the caller is not an administrator
+   * @since 1.22.0
+   */
+  @Transactional(readOnly = true)
+  public int orgGroupMemberCount(String groupId, String actingAdminUserId) {
+    if (actingAdminUserId == null || actingAdminUserId.isBlank()) {
+      return 0;
+    }
+    if (!groupAdministrationPermission.isAdmin(actingAdminUserId)) {
+      return 0;
+    }
+    Optional<UserGroup> maybeGroup = resolveActiveGroup(groupId);
+    if (maybeGroup.isEmpty() || maybeGroup.get().type() != GroupType.ORG) {
+      return 0;
+    }
+    return maybeGroup.get().memberships().size();
+  }
+
+  /**
    * Returns all active groups for the public directory.
    *
    * <p>Exposes group identity, name, description and type <b>only</b> — never the member list
@@ -327,6 +356,12 @@ public class GroupService {
           "User " + userId + " is not a member of group " + groupId, ErrorCode.GENERAL,
           ErrorParameters.empty()));
     }
+    // Never-empty invariant (PO model): the OWNER is the permanent anchor of an ad-hoc group and
+    // cannot self-remove. The owner's leave is governed by the guarded transfer-or-dissolve of
+    // story FEAT-USER-GROUPS-05.
+    if (roleOf(group.get(), userId).orElse(null) == GroupRole.OWNER) {
+      return Result.fromError(accessDenied(userId, groupId));
+    }
 
     var domainService = DomainRegistry.instance().groupDomainService();
     if (domainService.isEmpty()) {
@@ -369,13 +404,18 @@ public class GroupService {
     if (maybeGroup.isEmpty()) {
       return Result.fromError(groupNotFound(groupId));
     }
+    UserGroup group = maybeGroup.get();
+    // Authorization (moved here from the aggregate): only an OWNER or MANAGER may add members.
+    Optional<GroupRole> actingRole = roleOf(group, actingUserId);
+    if (actingRole.isEmpty() || actingRole.get() == GroupRole.MEMBER) {
+      return Result.fromError(accessDenied(actingUserId, groupId));
+    }
     // A group membership references a real identity user (no FK on group_membership.user_id):
     // reject unknown user ids up front so a typo or stale UI state can never create a corrupt
     // membership row that no real user can ever act on.
     if (userInformationService.findById(userId).isEmpty()) {
       return Result.fromError(userNotFound(userId));
     }
-    UserGroup group = maybeGroup.get();
     if (group.memberships().stream().anyMatch(m -> m.userId().equals(userId))) {
       return Result.fromError(new ApplicationException(
           "User " + userId + " is already a member of group " + groupId, ErrorCode.GENERAL,
@@ -414,6 +454,24 @@ public class GroupService {
     if (maybeGroup.isEmpty()) {
       return Result.fromError(groupNotFound(groupId));
     }
+    UserGroup group = maybeGroup.get();
+    // Authorization (moved here from the aggregate): only an OWNER or MANAGER may remove other
+    // members.
+    Optional<GroupRole> actingRole = roleOf(group, actingUserId);
+    if (actingRole.isEmpty() || actingRole.get() == GroupRole.MEMBER) {
+      return Result.fromError(accessDenied(actingUserId, groupId));
+    }
+    // A manager may not remove another manager (only an owner may); removing the OWNER is an
+    // aggregate invariant and rejected there.
+    Optional<GroupRole> targetRole = roleOf(group, userId);
+    if (targetRole.isEmpty()) {
+      return Result.fromError(new ApplicationException(
+          "User " + userId + " is not a member of group " + groupId, ErrorCode.GENERAL,
+          ErrorParameters.empty()));
+    }
+    if (targetRole.get() == GroupRole.MANAGER && actingRole.get() == GroupRole.MANAGER) {
+      return Result.fromError(accessDenied(actingUserId, groupId));
+    }
     Optional<UserGroup> updated = domainService.get().removeMember(maybeGroup.get().id(),
         actingUserId, userId);
     if (updated.isEmpty()) {
@@ -445,6 +503,16 @@ public class GroupService {
     if (maybeGroup.isEmpty()) {
       return Result.fromError(groupNotFound(groupId));
     }
+    UserGroup group = maybeGroup.get();
+    // Authorization (moved here from the aggregate): only the OWNER may appoint managers.
+    if (roleOf(group, actingUserId).orElse(null) != GroupRole.OWNER) {
+      return Result.fromError(accessDenied(actingUserId, groupId));
+    }
+    if (roleOf(group, userId).isEmpty()) {
+      return Result.fromError(new ApplicationException(
+          "User " + userId + " is not a member of group " + groupId, ErrorCode.GENERAL,
+          ErrorParameters.empty()));
+    }
     Optional<UserGroup> updated = domainService.get().appointManager(maybeGroup.get().id(),
         actingUserId, userId);
     if (updated.isEmpty()) {
@@ -475,6 +543,16 @@ public class GroupService {
     Optional<UserGroup> maybeGroup = resolveActiveGroup(groupId);
     if (maybeGroup.isEmpty()) {
       return Result.fromError(groupNotFound(groupId));
+    }
+    UserGroup group = maybeGroup.get();
+    // Authorization (moved here from the aggregate): only the OWNER may demote managers.
+    if (roleOf(group, actingUserId).orElse(null) != GroupRole.OWNER) {
+      return Result.fromError(accessDenied(actingUserId, groupId));
+    }
+    if (roleOf(group, userId).orElse(null) != GroupRole.MANAGER) {
+      return Result.fromError(new ApplicationException(
+          "User " + userId + " is not a manager of group " + groupId, ErrorCode.GENERAL,
+          ErrorParameters.empty()));
     }
     Optional<UserGroup> updated = domainService.get().demoteManager(maybeGroup.get().id(),
         actingUserId, userId);
@@ -593,6 +671,273 @@ public class GroupService {
   }
 
   /**
+   * Adds a regular MEMBER to an <b>org</b> group (admin-governed, FEAT-USER-GROUPS-02).
+   *
+   * <p>Admin gate: the caller must be a QBiC administrator — enforced through the
+   * {@link GroupAdministrationPermission} port <b>before any write</b>; otherwise an
+   * {@link ErrorCode#ACCESS_DENIED} error is returned and nothing is persisted. Grants the
+   * regular MEMBER role (an org MANAGER uses the role-gated {@link #addMember}; the QBiC admin
+   * is not a member and therefore uses this owner-equivalent path).</p>
+   *
+   * @param groupId        the id of the org group
+   * @param actingAdminUserId the user performing the operation (must be a QBiC administrator)
+   * @param userId         the user to add as a regular member
+   * @return a {@link Result} with no value on success, or an error if the operation is not
+   * permitted
+   * @since 1.22.0
+   */
+  @Transactional
+  public Result<Void, ApplicationException> addOrgMember(String groupId,
+      String actingAdminUserId, String userId) {
+    var domainService = DomainRegistry.instance().groupDomainService();
+    if (domainService.isEmpty()) {
+      return Result.fromError(systemFailure());
+    }
+    if (actingAdminUserId == null || actingAdminUserId.isBlank()) {
+      return Result.fromError(new ApplicationException(
+          "Invalid admin user id.", ErrorCode.GENERAL, ErrorParameters.empty()));
+    }
+    if (!groupAdministrationPermission.isAdmin(actingAdminUserId)) {
+      return Result.fromError(accessDenied(actingAdminUserId, groupId));
+    }
+    Optional<UserGroup> maybeGroup = resolveActiveGroup(groupId);
+    if (maybeGroup.isEmpty()) {
+      return Result.fromError(groupNotFound(groupId));
+    }
+    UserGroup group = maybeGroup.get();
+    if (group.type() != GroupType.ORG) {
+      return Result.fromError(accessDenied(actingAdminUserId, groupId));
+    }
+    if (userInformationService.findById(userId).isEmpty()) {
+      return Result.fromError(userNotFound(userId));
+    }
+    if (group.memberships().stream().anyMatch(m -> m.userId().equals(userId))) {
+      return Result.fromError(new ApplicationException(
+          "User " + userId + " is already a member of group " + groupId, ErrorCode.GENERAL,
+          ErrorParameters.empty()));
+    }
+    Optional<UserGroup> updated = domainService.get().addOrgMember(group.id(),
+        actingAdminUserId, userId, Instant.now());
+    if (updated.isEmpty()) {
+      return Result.fromError(accessDenied(actingAdminUserId, groupId));
+    }
+    return Result.fromValue(null);
+  }
+
+  /**
+   * Removes a regular MEMBER (or manager) membership from an <b>org</b> group
+   * (admin-governed, FEAT-USER-GROUPS-02).
+   *
+   * <p>Admin gate: the caller must be a QBiC administrator — enforced through the
+   * {@link GroupAdministrationPermission} port <b>before any write</b>; otherwise an
+   * {@link ErrorCode#ACCESS_DENIED} error is returned and nothing is persisted. The member's
+   * membership is removed entirely (no demotion); removing the last manager keeps the group
+   * ACTIVE and admin-governed (AC4, no OWNER row).</p>
+   *
+   * @param groupId        the id of the org group
+   * @param actingAdminUserId the user performing the operation (must be a QBiC administrator)
+   * @param userId         the member (or manager) to remove
+   * @return a {@link Result} with no value on success, or an error if the operation is not
+   * permitted
+   * @since 1.22.0
+   */
+  @Transactional
+  public Result<Void, ApplicationException> removeOrgMember(String groupId,
+      String actingAdminUserId, String userId) {
+    return removeOrgManager(groupId, actingAdminUserId, userId);
+  }
+
+  /**
+   * Demotes a MANAGER back to a regular MEMBER of an <b>org</b> group (admin-governed,
+   * FEAT-USER-GROUPS-02 — role assignment in the group roster).
+   *
+   * <p>Admin gate: the caller must be a QBiC administrator — enforced through the
+   * {@link GroupAdministrationPermission} port <b>before any write</b>; otherwise an
+   * {@link ErrorCode#ACCESS_DENIED} error is returned and nothing is persisted. The manager is
+   * demoted to MEMBER <em>while staying in the group</em> (distinct from {@link #removeOrgMember}
+   * which removes the membership entirely).</p>
+   *
+   * @param groupId        the id of the org group
+   * @param actingAdminUserId the user performing the operation (must be a QBiC administrator)
+   * @param userId         the manager to demote
+   * @return a {@link Result} with no value on success, or an error if the operation is not
+   * permitted
+   * @since 1.22.0
+   */
+  @Transactional
+  public Result<Void, ApplicationException> demoteOrgManager(String groupId,
+      String actingAdminUserId, String userId) {
+    var domainService = DomainRegistry.instance().groupDomainService();
+    if (domainService.isEmpty()) {
+      return Result.fromError(systemFailure());
+    }
+    if (actingAdminUserId == null || actingAdminUserId.isBlank()) {
+      return Result.fromError(new ApplicationException(
+          "Invalid admin user id.", ErrorCode.GENERAL, ErrorParameters.empty()));
+    }
+    if (!groupAdministrationPermission.isAdmin(actingAdminUserId)) {
+      return Result.fromError(accessDenied(actingAdminUserId, groupId));
+    }
+    Optional<UserGroup> maybeGroup = resolveActiveGroup(groupId);
+    if (maybeGroup.isEmpty()) {
+      return Result.fromError(groupNotFound(groupId));
+    }
+    UserGroup group = maybeGroup.get();
+    if (group.type() != GroupType.ORG) {
+      return Result.fromError(accessDenied(actingAdminUserId, groupId));
+    }
+    Optional<UserGroup> updated = domainService.get().demoteOrgManager(group.id(),
+        actingAdminUserId, userId);
+    if (updated.isEmpty()) {
+      return Result.fromError(new ApplicationException(
+          "User " + userId + " is not a manager of group " + groupId, ErrorCode.GENERAL,
+          ErrorParameters.empty()));
+    }
+    return Result.fromValue(null);
+  }
+
+  /**
+   * Renames an <b>org</b> group (admin-governed, FEAT-USER-GROUPS-02).
+   *
+   * <p>Admin gate: the caller must be a QBiC administrator — enforced through the
+   * {@link GroupAdministrationPermission} port <b>before any write</b>; otherwise an
+   * {@link ErrorCode#ACCESS_DENIED} error is returned and nothing is persisted. Reuses the
+   * exact duplicate-name flow of {@link #renameGroup}: a case-insensitive pre-check plus a
+   * {@link DataIntegrityViolationException} race mapping, both yielding
+   * {@link ErrorCode#DUPLICATE_GROUP_NAME}.</p>
+   *
+   * @param groupId        the id of the org group
+   * @param actingAdminUserId the user performing the operation (must be a QBiC administrator)
+   * @param newName        the new group name
+   * @return a {@link Result} with no value on success, or an error if the operation is not
+   * permitted or the new name is already taken
+   * @since 1.22.0
+   */
+  @Transactional
+  public Result<Void, ApplicationException> renameOrgGroup(String groupId,
+      String actingAdminUserId, GroupName newName) {
+    var domainService = DomainRegistry.instance().groupDomainService();
+    if (domainService.isEmpty()) {
+      return Result.fromError(systemFailure());
+    }
+    if (actingAdminUserId == null || actingAdminUserId.isBlank()) {
+      return Result.fromError(new ApplicationException(
+          "Invalid admin user id.", ErrorCode.GENERAL, ErrorParameters.empty()));
+    }
+    if (!groupAdministrationPermission.isAdmin(actingAdminUserId)) {
+      return Result.fromError(accessDenied(actingAdminUserId, groupId));
+    }
+    Optional<UserGroup> maybeGroup = resolveActiveGroup(groupId);
+    if (maybeGroup.isEmpty()) {
+      return Result.fromError(groupNotFound(groupId));
+    }
+    UserGroup group = maybeGroup.get();
+    if (group.type() != GroupType.ORG) {
+      return Result.fromError(accessDenied(actingAdminUserId, groupId));
+    }
+    Optional<UserGroup> existing = groupRepository.findByNameIgnoreCase(newName);
+    if (existing.isPresent() && !existing.get().id().equals(maybeGroup.get().id())) {
+      return Result.fromError(duplicateNameApplicationError(newName.value()));
+    }
+    Optional<UserGroup> updated = domainService.get().renameOrgGroup(group.id(),
+        actingAdminUserId, newName);
+    if (updated.isEmpty()) {
+      return Result.fromError(accessDenied(actingAdminUserId, groupId));
+    }
+    return Result.fromValue(null);
+  }
+
+  /**
+   * Updates the description of an <b>org</b> group (admin-governed, FEAT-USER-GROUPS-02).
+   *
+   * <p>Admin gate: the caller must be a QBiC administrator — enforced through the
+   * {@link GroupAdministrationPermission} port <b>before any write</b>; otherwise an
+   * {@link ErrorCode#ACCESS_DENIED} error is returned and nothing is persisted.</p>
+   *
+   * @param groupId        the id of the org group
+   * @param actingAdminUserId the user performing the operation (must be a QBiC administrator)
+   * @param newDescription the new group description
+   * @return a {@link Result} with no value on success, or an error if the operation is not
+   * permitted
+   * @since 1.22.0
+   */
+  @Transactional
+  public Result<Void, ApplicationException> updateOrgGroupDescription(String groupId,
+      String actingAdminUserId, GroupDescription newDescription) {
+    var domainService = DomainRegistry.instance().groupDomainService();
+    if (domainService.isEmpty()) {
+      return Result.fromError(systemFailure());
+    }
+    if (actingAdminUserId == null || actingAdminUserId.isBlank()) {
+      return Result.fromError(new ApplicationException(
+          "Invalid admin user id.", ErrorCode.GENERAL, ErrorParameters.empty()));
+    }
+    if (!groupAdministrationPermission.isAdmin(actingAdminUserId)) {
+      return Result.fromError(accessDenied(actingAdminUserId, groupId));
+    }
+    Optional<UserGroup> maybeGroup = resolveActiveGroup(groupId);
+    if (maybeGroup.isEmpty()) {
+      return Result.fromError(groupNotFound(groupId));
+    }
+    UserGroup group = maybeGroup.get();
+    if (group.type() != GroupType.ORG) {
+      return Result.fromError(accessDenied(actingAdminUserId, groupId));
+    }
+    Optional<UserGroup> updated = domainService.get().updateOrgGroupDescription(group.id(),
+        actingAdminUserId, newDescription);
+    if (updated.isEmpty()) {
+      return Result.fromError(accessDenied(actingAdminUserId, groupId));
+    }
+    return Result.fromValue(null);
+  }
+
+  /**
+   * Dissolves an <b>org</b> group (admin-governed, FEAT-USER-GROUPS-02).
+   *
+   * <p>Admin gate: the caller must be a QBiC administrator — enforced through the
+   * {@link GroupAdministrationPermission} port <b>before any write</b>; otherwise an
+   * {@link ErrorCode#ACCESS_DENIED} error is returned and nothing is persisted. Admin dissolve
+   * is the only way an org group ends (org groups never auto-dissolve). The blast radius
+   * (orphaned ACEs / membership rows) is handled by EPIC-6 story 13; this operation marks the
+   * group dissolved and purges its roster.</p>
+   *
+   * @param groupId        the id of the org group
+   * @param actingAdminUserId the user performing the operation (must be a QBiC administrator)
+   * @return a {@link Result} with no value on success, or an error if the operation is not
+   * permitted
+   * @since 1.22.0
+   */
+  @Transactional
+  public Result<Void, ApplicationException> dissolveOrgGroup(String groupId,
+      String actingAdminUserId) {
+    var domainService = DomainRegistry.instance().groupDomainService();
+    if (domainService.isEmpty()) {
+      return Result.fromError(systemFailure());
+    }
+    if (actingAdminUserId == null || actingAdminUserId.isBlank()) {
+      return Result.fromError(new ApplicationException(
+          "Invalid admin user id.", ErrorCode.GENERAL, ErrorParameters.empty()));
+    }
+    if (!groupAdministrationPermission.isAdmin(actingAdminUserId)) {
+      return Result.fromError(accessDenied(actingAdminUserId, groupId));
+    }
+    Optional<UserGroup> maybeGroup = resolveActiveGroup(groupId);
+    if (maybeGroup.isEmpty()) {
+      return Result.fromError(groupNotFound(groupId));
+    }
+    UserGroup group = maybeGroup.get();
+    if (group.type() != GroupType.ORG) {
+      return Result.fromError(accessDenied(actingAdminUserId, groupId));
+    }
+    Optional<UserGroup> updated = domainService.get().dissolveOrgGroup(group.id(),
+        actingAdminUserId);
+    if (updated.isEmpty()) {
+      return Result.fromError(accessDenied(actingAdminUserId, groupId));
+    }
+    return Result.fromValue(null);
+  }
+
+  /**
    * Renames an ad-hoc group.
    *
    * <p>Role-gated: the OWNER and MANAGER may rename. The new name must be unique
@@ -615,6 +960,12 @@ public class GroupService {
     Optional<UserGroup> maybeGroup = resolveActiveGroup(groupId);
     if (maybeGroup.isEmpty()) {
       return Result.fromError(groupNotFound(groupId));
+    }
+    UserGroup group = maybeGroup.get();
+    // Authorization (moved here from the aggregate): only the OWNER or a MANAGER may rename.
+    GroupRole actingRole = roleOf(group, actingUserId).orElse(null);
+    if (actingRole == null || actingRole == GroupRole.MEMBER) {
+      return Result.fromError(accessDenied(actingUserId, groupId));
     }
     Optional<UserGroup> existing = groupRepository.findByNameIgnoreCase(newName);
     if (existing.isPresent() && !existing.get().id().equals(maybeGroup.get().id())) {
@@ -651,6 +1002,12 @@ public class GroupService {
     if (maybeGroup.isEmpty()) {
       return Result.fromError(groupNotFound(groupId));
     }
+    UserGroup group = maybeGroup.get();
+    // Authorization (moved here from the aggregate): only the OWNER or a MANAGER may edit.
+    GroupRole actingRole = roleOf(group, actingUserId).orElse(null);
+    if (actingRole == null || actingRole == GroupRole.MEMBER) {
+      return Result.fromError(accessDenied(actingUserId, groupId));
+    }
     Optional<UserGroup> updated = domainService.get().updateDescription(maybeGroup.get().id(),
         actingUserId, newDescription);
     if (updated.isEmpty()) {
@@ -679,6 +1036,12 @@ public class GroupService {
     Optional<UserGroup> maybeGroup = resolveActiveGroup(groupId);
     if (maybeGroup.isEmpty()) {
       return Result.fromError(groupNotFound(groupId));
+    }
+    UserGroup group = maybeGroup.get();
+    // Authorization (moved here from the aggregate): only the OWNER may dissolve an ad-hoc group
+    // explicitly. (Org groups are dissolved by a system admin via dissolveOrgGroup.)
+    if (roleOf(group, actingUserId).orElse(null) != GroupRole.OWNER) {
+      return Result.fromError(accessDenied(actingUserId, groupId));
     }
     Optional<UserGroup> updated = domainService.get().dissolve(maybeGroup.get().id(),
         actingUserId);
@@ -729,6 +1092,19 @@ public class GroupService {
       return Optional.empty();
     }
     return groupRepository.findById(parsedId).filter(UserGroup::isActive);
+  }
+
+  /**
+   * Resolves a user's role inside a group, if they are a member.
+   *
+   * <p>Authorization helper: the ad-hoc role gates (OWNER/MANAGER) live in this application
+   * layer, not in the aggregate.</p>
+   */
+  private static Optional<GroupRole> roleOf(UserGroup group, String userId) {
+    return group.memberships().stream()
+        .filter(m -> m.userId().equals(userId))
+        .map(GroupMembership::role)
+        .findFirst();
   }
 
   private ApplicationException groupNotFound(String groupId) {

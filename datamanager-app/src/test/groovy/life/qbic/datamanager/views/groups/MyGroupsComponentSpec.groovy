@@ -4,6 +4,11 @@ import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.Span
+import com.vaadin.flow.router.Router
+import com.vaadin.flow.router.RouterLink
+import com.vaadin.flow.router.RouteParameters
+import com.vaadin.flow.server.RouteRegistry
+import com.vaadin.flow.server.VaadinService
 import life.qbic.usergroups.api.GroupRole
 import life.qbic.usergroups.api.GroupType
 import life.qbic.usergroups.api.MyGroupMembership
@@ -35,6 +40,27 @@ class MyGroupsComponentSpec extends Specification {
             as MyGroupsComponent.LeaveConfirmation
     component = new MyGroupsComponent(supplier, refreshSpy, leaveSeam, confirmSeam,
         MyGroupsComponent.ManagementActionPolicy.defaultPolicy())
+    installStubbedVaadinService()
+  }
+
+  def cleanup() {
+    VaadinService.setCurrent(null)
+  }
+
+  /**
+   * The group-name {@link RouterLink} resolves its href from the router at construction, so a
+   * minimal service/registry stub (mirroring {@code HomeLinkSpec}) lets the row build and the
+   * href be asserted in a pure unit spec.
+   */
+  private void installStubbedVaadinService() {
+    RouteRegistry registry = Stub(RouteRegistry)
+    registry.getTargetUrl(GroupDetailMain, _ as RouteParameters) >>
+        Optional.of("groups/:groupId")
+    Router router = new Router(registry)
+    VaadinService service = Stub(VaadinService)
+    service.getRouter() >> router
+    service.getContext() >> null
+    VaadinService.setCurrent(service)
   }
 
   def "renders each membership with name, description, type badge and role badge"() {
@@ -189,18 +215,55 @@ class MyGroupsComponentSpec extends Specification {
     buttons.findAll { it.text == "Leave group" }.size() == 1
   }
 
-  def "renders no action buttons for an org group membership (membership-only, structural AC 5)"() {
-    given: "a membership in an org group"
+  def "an org MEMBER sees no management actions, only self-remove"() {
+    given: "a membership in an org group as a regular MEMBER"
     memberships = [membership("org-1", "NGS Core Facility", "sequencing facility",
         GroupType.ORG, GroupRole.MEMBER)]
 
     when:
     component.refresh()
 
-    then: "the row shows no action buttons at all"
-    buttonsOf(renderedRows()[0]).isEmpty()
+    then: "the row shows no management button, only self-remove"
+    List<Button> buttons = buttonsOf(renderedRows()[0])
+    buttons.findAll { it.text in ["Manage members", "Appoint manager", "Rename", "Dissolve"] }.isEmpty()
+    buttons.findAll { it.text == "Manage group" }.isEmpty()
+    buttons.findAll { it.text == "Leave group" }.size() == 1
     textOf(renderedRows()[0]).contains("organisational")
     textOf(renderedRows()[0]).contains("Member")
+  }
+
+  def "an org MANAGER gets the Manage group action (manages the group like an ad-hoc manager)"() {
+    given: "a membership in an org group as a MANAGER"
+    memberships = [membership("org-1", "NGS Core Facility", "sequencing facility",
+        GroupType.ORG, GroupRole.MANAGER)]
+
+    when:
+    component.refresh()
+
+    then: "the row shows a Manage group button (opens the detail page) and no leave button"
+    List<Button> buttons = buttonsOf(renderedRows()[0])
+    buttons.findAll { it.text == "Manage group" }.size() == 1
+    buttons.findAll { it.text == "Leave group" }.isEmpty()
+    textOf(renderedRows()[0]).contains("Manager")
+  }
+
+  def "the group name is a clickable title that also navigates to the detail page"() {
+    given: "a membership in a group"
+    memberships = [membership("group-1", "Bioinformatics Lab", "lab", GroupType.ADHOC,
+        GroupRole.OWNER)]
+
+    when:
+    component.refresh()
+
+    then: "the row's name is a RouterLink to the group detail page route"
+    def links = []
+    collectRouterLinks(renderedRows()[0], links)
+    def nameLink = links.find { it.text == "Bioinformatics Lab" }
+    nameLink != null
+    nameLink.classNames.contains("my-groups-row__name")
+    // The stubbed registry resolves the route template; param interpolation is the real
+    // registry's job, so we assert the route template.
+    nameLink.href == "groups/:groupId"
   }
 
   def "re-renders from the supplier on refresh, so newly created groups appear"() {
@@ -264,6 +327,13 @@ class MyGroupsComponentSpec extends Specification {
       spans << span
     }
     component.children.forEach { child -> collectSpans(child, spans) }
+  }
+
+  private static void collectRouterLinks(Component component, List<RouterLink> links) {
+    if (component instanceof RouterLink link) {
+      links << link
+    }
+    component.children.forEach { child -> collectRouterLinks(child, links) }
   }
 
   private static List<Button> buttonsOf(Div row) {
