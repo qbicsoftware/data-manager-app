@@ -35,6 +35,8 @@ import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessSe
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.usergroups.api.GroupInformationService;
 import life.qbic.usergroups.api.GroupSidProvider;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 /**
  * <b>Project Sharing Drawer</b>
@@ -265,9 +267,20 @@ public class ProjectSharingDrawer extends Div {
 
   private void onGrantRequested(GrantRequestedEvent event) {
     List<GrantRequest> requests = List.copyOf(event.requests());
+    // Capture the security context on the UI thread; the app uses
+    // VaadinAwareSecurityContextHolderStrategy, so the async thread has no authentication unless
+    // the captured context is restored there (same pattern as ConnectDatasetSidebar).
+    SecurityContext securityContext = SecurityContextHolder.getContext();
     composer.setBusy(true);
     CompletableFuture
-        .supplyAsync(() -> applyGrants(requests), taskExecutor)
+        .supplyAsync(() -> {
+          try {
+            SecurityContextHolder.setContext(securityContext);
+            return applyGrants(requests);
+          } finally {
+            SecurityContextHolder.clearContext();
+          }
+        }, taskExecutor)
         .thenAccept(outcome -> uiHandle.onUiAndPush(() -> onGrantsApplied(outcome)));
   }
 
