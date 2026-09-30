@@ -207,7 +207,7 @@ public class MyGroupsComponent extends Div implements Serializable {
 
   private void addLeaveButton(Div actions, String groupId) {
     Button leaveButton = new Button("Leave group", new com.vaadin.flow.component.icon.Icon(
-        com.vaadin.flow.component.icon.VaadinIcon.EXIT_O));
+        com.vaadin.flow.component.icon.VaadinIcon.EXIT));
     leaveButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE, ButtonVariant.LUMO_ERROR);
     leaveButton.addClassName("my-groups-action--leave");
     leaveButton.addClickListener(event ->
