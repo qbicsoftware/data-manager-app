@@ -100,6 +100,13 @@ First some general property definitions
   --spacing-11: 5rem;
   --spacing-12: 6rem;
 
+  /* --- Content shell --- */
+  /* Max width of centered page content on large screens. The white space around the shell
+     is created by the layout (margin-inline: auto) and grows/shrinks with the viewport,
+     so pages stay readable on very wide monitors. Must match the project overview
+     (grid-templates.css .main.project-overview). */
+  --content-shell-max-width: 1400px;
+
   /* --- Toast dark-surface tokens --- */
   --toast-background-color: #223348;
   --toast-text-color: rgba(235, 244, 255, 0.9);

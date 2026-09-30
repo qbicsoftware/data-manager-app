@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import life.qbic.application.commons.SortOrder;
 import life.qbic.datamanager.configuration.UploadConfiguration;
 import life.qbic.datamanager.views.StringBean;
 import life.qbic.datamanager.views.general.Card;
@@ -51,6 +52,8 @@ import life.qbic.datamanager.views.general.grid.component.FilterGridTabSheet;
 import life.qbic.datamanager.views.general.grid.component.FilterGridTabSheet.TabAction;
 import life.qbic.datamanager.views.general.grid.component.GridConfiguration.FilterTester;
 import life.qbic.datamanager.views.general.icon.IconFactory;
+import life.qbic.datamanager.views.general.pagination.ListState;
+import life.qbic.datamanager.views.general.pagination.PaginatedGrid;
 import life.qbic.datamanager.views.general.upload.ContentUploadComponent;
 import life.qbic.datamanager.views.general.upload.UploadedFilesChangeListener.FileEntry;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
@@ -108,6 +111,7 @@ public class ComponentDemo extends Div {
     add(borderShowcase());
     add(createTestComponent());
     add(filterGridShowCase());
+    add(paginatedGridShowCase());
   }
 
   private @org.jspecify.annotations.NonNull ContentUploadComponent uploadShowcase() {
@@ -235,6 +239,85 @@ public class ComponentDemo extends Div {
     tabSheet.addPrimaryAction(filterTab, primaryAction);
 
     return new Div(tabSheet);
+  }
+
+  /**
+   * Demonstrates the {@link PaginatedGrid}: an explicitly paginated grid that owns a pager, a
+   * search field, cross-page selection and empty states. The backing data is an in-memory list
+   * sliced by offset/limit, mirroring how a view would drive it from a service lookup.
+   */
+  private Component paginatedGridShowCase() {
+    var container = new Div();
+    container.add(createHeading2("Paginated Grid"));
+    container.add(createHeading3("Paginated Grid with cross-page selection"));
+    container.add(new Div(
+        "Browse the grid with the pager below it. Select rows, change page, search, and sort by a "
+            + "column header: the selection count is preserved across pages."));
+
+    var grid = new Grid<Person>();
+    grid.addColumn(Person::firstName).setHeader("First Name").setSortable(true).setKey("firstName");
+    grid.addColumn(Person::lastName).setHeader("Last Name").setSortable(true).setKey("lastName");
+    grid.addColumn(Person::age).setHeader("Age").setSortable(true).setKey("age");
+
+    var paginatedGrid = new PaginatedGrid<>(grid,
+        this::loadPersonsPage,
+        person -> person.firstName() + " " + person.lastName(),
+        "person",
+        new SortOrder("lastName", false));
+
+    paginatedGrid.setSearchPlaceholder("Search persons");
+    // Surface the selected identifiers so the showcase makes the cross-page selection visible.
+    paginatedGrid.addSelectionChangeListener(event -> log.info(
+        "Selected persons: " + event.getSelectedIds()));
+
+    container.addClassNames(FLEX_VERTICAL, GAP_04);
+    container.add(paginatedGrid);
+    return container;
+  }
+
+  private PaginatedGrid.Page<Person> loadPersonsPage(ListState state) {
+    String filter = state.filter().toLowerCase();
+    var matching = DEMO_PERSONS.stream()
+        .filter(person -> filter.isBlank() || String.join(" ",
+            person.firstName(), person.lastName()).toLowerCase().contains(filter))
+        .sorted((a, b) -> compareBySort(a, b, state))
+        .toList();
+    int offset = (state.page() - 1) * state.pageSize();
+    int end = Math.min(offset + state.pageSize(), matching.size());
+    var page = offset >= matching.size() ? List.<Person>of() : matching.subList(offset, end);
+    return new PaginatedGrid.Page<>(page, matching.size());
+  }
+
+  private static int compareBySort(Person a, Person b, ListState state) {
+    String property = state.sort().propertyName();
+    boolean descending = state.sort().isDescending();
+    int result = switch (property) {
+      case "firstName" -> a.firstName().compareToIgnoreCase(b.firstName());
+      case "age" -> Integer.compare(a.age(), b.age());
+      default -> a.lastName().compareToIgnoreCase(b.lastName());
+    };
+    return descending ? -result : result;
+  }
+
+  /**
+   * A larger dummy dataset for the {@link PaginatedGrid} demo, generated once so there is enough
+   * data to make paging, search and the page-size selector visible.
+   */
+  private static final List<Person> DEMO_PERSONS = demoPersons();
+
+  private static List<Person> demoPersons() {
+    var names = List.of("Ava", "Ben", "Chloe", "Diego", "Ella", "Felix", "Grace", "Hugo", "Iris",
+        "Jonas", "Lena", "Milo", "Nora", "Oscar", "Pia", "Quinn", "Rosa", "Sam", "Thea", "Umar");
+    var surnames = List.of("Smith", "Muller", "Tanaka", "Garcia", "Dubois", "Andersen", "Petrov",
+        "Nguyen", "Rossi", "Kowalski", "Rahman", "Patel", "O'Connor", "Schneider", "Al-Sayed");
+    var persons = new ArrayList<Person>();
+    int id = 1;
+    for (String surname : surnames) {
+      for (String name : names) {
+        persons.add(new Person(name, surname, 18 + (id++ * 7) % 45));
+      }
+    }
+    return persons;
   }
 
   static List<Person> examples = new ArrayList<>();

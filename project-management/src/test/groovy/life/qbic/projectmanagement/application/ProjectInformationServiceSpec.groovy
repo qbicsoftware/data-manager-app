@@ -5,6 +5,7 @@ import life.qbic.projectmanagement.application.api.ProjectOverviewLookup
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService
 import life.qbic.projectmanagement.domain.model.project.*
 import life.qbic.projectmanagement.domain.repository.ProjectRepository
+import life.qbic.usergroups.api.GroupSidProvider
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.context.SecurityContextHolder
@@ -16,7 +17,8 @@ class ProjectInformationServiceSpec extends Specification {
     ProjectOverviewLookup projectPreviewLookup = Mock()
     ProjectAccessService projectAccessService = Mock()
     AuthenticationToUserIdTranslator authenticationToUserIdTranslator = Mock()
-    ProjectInformationService projectInformationService = new ProjectInformationService(projectPreviewLookup, projectRepository, projectAccessService, authenticationToUserIdTranslator)
+    GroupSidProvider groupSidProvider = Mock()
+    ProjectInformationService projectInformationService = new ProjectInformationService(projectPreviewLookup, projectRepository, projectAccessService, authenticationToUserIdTranslator, groupSidProvider)
 
     def cleanup() {
         SecurityContextHolder.clearContext()
@@ -126,6 +128,30 @@ class ProjectInformationServiceSpec extends Specification {
 
         then: "the lookup is called with the filter and the deduplicated accessible project ids"
         1 * projectPreviewLookup.count("cancer", [projectIdA, projectIdB, roleProjectId]) >> 17
+        and:
+        result == 17
+    }
+
+    def "Counting accessible project overviews includes projects the user's groups have access to"() {
+        given: "an authenticated user with a user id, one authority and one group membership"
+        def userId = "user-1"
+        def projectIdA = ProjectId.parse("0270ce7f-4092-40e3-9c4c-ce7adb688bf5")
+        def roleProjectId = ProjectId.parse("2270ce7f-4092-40e3-9c4c-ce7adb688bf7")
+        def groupProjectId = ProjectId.parse("3270ce7f-4092-40e3-9c4c-ce7adb688bf8")
+        projectAccessService.getAccessibleProjectsForSid(userId) >> [projectIdA]
+        projectAccessService.getAccessibleProjectsForSid("ROLE_EXAMPLE") >> [roleProjectId]
+        projectAccessService.getAccessibleProjectsForSid("GROUP_group-1") >> [groupProjectId, projectIdA]
+        groupSidProvider.listGroupSidsForUser(userId) >> ["GROUP_group-1"]
+        authenticationToUserIdTranslator.translateToUserId(_ as Authentication) >> Optional.of(userId)
+        Authentication authentication = Mock()
+        authentication.authorities >> [new SimpleGrantedAuthority("ROLE_EXAMPLE")]
+        SecurityContextHolder.getContext().setAuthentication(authentication)
+
+        when:
+        long result = projectInformationService.countOverview("cancer")
+
+        then: "the lookup is called with the combined, deduplicated project ids including the group project"
+        1 * projectPreviewLookup.count("cancer", [projectIdA, roleProjectId, groupProjectId]) >> 17
         and:
         result == 17
     }

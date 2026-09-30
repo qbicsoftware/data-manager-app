@@ -132,4 +132,40 @@ public class AppRoutes {
      */
     public static final String SETTINGS_EXTERNAL_PROVIDERS = "settings/external-providers";
   }
+
+  public static class GroupsRoutes {
+
+    private GroupsRoutes() {}
+
+    /**
+     * Path to the top-level Groups area listing the groups a user belongs to.
+     */
+    public static final String MY_GROUPS = "groups";
+
+    /**
+     * Path to the page to create a new ad-hoc group.
+     */
+    public static final String NEW_GROUP = "groups/new";
+
+    /**
+     * Path to the admin-only page to create a new organisational group (FEAT-USER-GROUPS-01).
+     */
+    public static final String ADMIN_GROUPS = "groups/admin";
+
+    /**
+     * Path to the admin-only page to create a new organisational group (FEAT-USER-GROUPS-01).
+     */
+    public static final String NEW_ORG_GROUP = "groups/admin/new";
+
+    /**
+     * Path to the admin-only page to manage the managers of one organisational group
+     * (FEAT-USER-GROUPS-02). The {@code groupId} route parameter identifies the org group.
+     */
+    public static final String ADMIN_GROUP_MANAGERS = "groups/admin/:groupId/managers";
+
+    /**
+     * Path to the page showing one group's details and management surface.
+     */
+    public static final String GROUP_DETAIL = "groups/:groupId";
+  }
 }

@@ -1,18 +1,32 @@
-/* -- Settings Hub (GitHub-style master-detail layout) -- */
+/* -- Settings Hub (GitHub-style master-detail layout, mirrors Groups) -- */
 
-.settings-main-layout::part(navbar) {
-  padding-inline: var(--lumo-space-m);
+/* The settings hub is a RouterLayout nested inside UserMainLayout (see @ParentLayout
+   in SettingsMainLayout), so the outer shell — navbar, announcement at the top of the
+   content area, footer — is owned by UserMainLayout/DataManagerLayout. This stylesheet
+   only lays out the two-column hub: the account overview header, the persistent
+   settings navigation
+   (aside) and the routed content. */
+
+.settings-main-layout {
+  display: grid;
+  grid-template-columns:
+    minmax(var(--lumo-space-l), 1fr)
+    minmax(240px, 280px)
+    minmax(0, calc(var(--content-shell-max-width) - 280px))
+    minmax(var(--lumo-space-l), 1fr);
+  grid-template-areas:
+    ". account-overview account-overview ."
+    ". aside-area content-area .";
+  box-sizing: border-box;
+  min-width: 0;
 }
 
-.settings-main-layout .navbar-title {
-  font-size: var(--lumo-font-size-l);
-}
-
-/* Account overview bar at the top of the content area (below navbar + announcements),
-   spanning the full settings width and left-aligned so it visually sits above the menu.
-   Its left padding matches the aside/menu gutter so title and menu items align on an
-   invisible vertical line. */
-.settings-main-layout .settings-account-overview {
+/**
+ * The account overview occupies the standalone first grid row of the settings
+ * hub (both central tracks), above the aside + content columns.
+ */
+.settings-main-layout .settings-account-overview-area {
+  grid-area: account-overview;
   display: flex;
   align-items: center;
   gap: var(--lumo-space-m);
@@ -29,48 +43,11 @@
   min-width: 0;
 }
 
-/* Two-column main area: persistent settings navigation on the left, section page on the right.
-   The account overview header and the announcements span both columns. The content row keeps a
-   max-content minimum so tall sections grow the row instead of overlapping the footer.
-   display: grid must be set explicitly: the base #main-layout rule uses flex column (footer
-   redesign), so the grid template below would otherwise be ignored and aside + content would
-   stack vertically. */
-.settings-main-layout #main-layout {
-  display: grid;
-  grid-template-areas:
-    "announcements announcements"
-    "content-header content-header"
-    "aside-area content-area"
-    "data-manager-footer data-manager-footer";
-  grid-template-columns: minmax(240px, 280px) minmax(0, 1fr);
-  grid-template-rows: auto auto minmax(max-content, 0.95fr) minmax(min-content, 0.05fr);
-}
-
-/* Announcement banner and application footer span both columns. Both elements auto-place into
-   the first free grid cells without an explicit assignment (the redesigned footer is a semantic
-   <footer> with class .app-footer; the old #data-manager-footer id no longer exists), which
-   would put the footer into the top row. */
-.settings-main-layout #announcements {
-  grid-area: announcements;
-}
-
-.settings-main-layout .app-footer {
-  grid-area: data-manager-footer;
-}
-
-.settings-main-layout #content-header {
-  grid-area: content-header;
-  box-sizing: border-box;
-  padding: var(--lumo-space-m) var(--lumo-space-m) var(--lumo-space-s) var(--lumo-space-xl);
-  background-color: var(--lumo-base-color);
-}
-
-/* The aside is a fixed, non-collapsible column (GitHub-style). No border: separation comes from
-   the shared gutters. Left gutter is (--lumo-space-l) here; combined with the tabs' own left
-   padding (--lumo-space-m, see below) menu items start at --lumo-space-xl, which is exactly the
-   left inset of the content header and content area — so title, section titles and menu items
-   align on one invisible vertical line. */
-.settings-main-layout #aside-area {
+/* The aside is a fixed, non-collapsible column (GitHub-style). No border: separation comes
+   from the shared gutters. The left gutter + the tab's own left padding align menu items
+   with the content area. The aside is sticky: it stays pinned at the top of the content row
+   while the page scrolls. */
+.settings-main-layout .settings-aside-area {
   grid-area: aside-area;
   box-sizing: border-box;
   padding: var(--lumo-space-l);
@@ -82,12 +59,22 @@
   z-index: 1;
 }
 
-.settings-main-layout #content-area {
+/* The content column holds the routed route content. The whole page scrolls natively (no
+   internal scroll region). Content is left-aligned to this column's padding; the surrounding
+   flexible spacing (grid gutters + this padding) provides the margins. */
+.settings-main-layout .settings-content-area {
   grid-area: content-area;
   box-sizing: border-box;
   padding: var(--lumo-space-l) var(--lumo-space-xl);
   min-width: 0;
   min-height: 0;
+}
+
+/* The settings hub provides the page spacing; neutralize the base page-area padding/gap so
+   the settings sections share the same uniform look. */
+.settings-main-layout .page-area {
+  padding: 0;
+  gap: 0;
 }
 
 /* -- Settings section blueprint (single settings page layout) -- */
@@ -97,7 +84,9 @@
   flex-direction: column;
   gap: var(--lumo-space-m);
   width: 100%;
-  max-width: 1000px;
+  /* Left-aligned to the content column padding: the surrounding flexible spacing
+     (grid gutters + content-area padding) provides the margins, so the section's
+     left edge is stable across views and viewport widths. No auto-margin centering. */
 }
 
 .settings-section__header {
@@ -135,13 +124,6 @@
   display: flex;
   flex-direction: column;
   gap: var(--lumo-space-m);
-}
-
-/* The settings hub + section blueprint provide the page spacing; neutralize the base
-   page-area padding/gap so all settings sections share a uniform look. */
-.settings-main-layout .page-area {
-  padding: 0;
-  gap: 0;
 }
 
 /* -- Settings aside: navigation -- */
@@ -186,33 +168,16 @@
 
 /* Adjust spacing on narrow screens */
 @media (max-width: 1024px) {
-  .settings-main-layout #main-layout {
-    /* The base rule sets height: 100% (viewport). In the stacked layout this caps the grid at
-       the viewport height: overflowing rows paint over the footer instead of pushing it down
-       and growing the scrollable page. Grow freely (auto), but keep short pages stretched so
-       the footer still sits at the bottom (min-height: 100%). Desktop keeps height: 100%
-       because its 95fr/5fr rows need a definite size. */
-    height: auto;
-    min-height: 100%;
+  .settings-main-layout {
     grid-template-areas:
-      "announcements announcements"
-      "content-header content-header"
-      "aside-area aside-area"
-      "content-area content-area"
-      "data-manager-footer data-manager-footer";
-    grid-template-columns: 1fr;
-    /* All rows size to their content. The desktop 95fr/5fr split must not apply here: with the
-       menu stacked above the content, a height-constrained 95fr row clips the settings content
-       instead of letting the page grow and pushing the footer below the fold. Note: 'none' is
-       invalid for grid-template-rows and leaves the desktop rows intact — use 'auto'. */
-    grid-template-rows: auto;
+      ". account-overview ."
+      ". aside-area ."
+      ". content-area .";
+    grid-template-columns: var(--lumo-space-m) minmax(0, 1fr) var(--lumo-space-m);
   }
 
-  .settings-main-layout #aside-area {
+  .settings-main-layout .settings-aside-area {
     position: static;
-    /* In the stacked layout the aside must size with its row. As a sticky, start-aligned item
-       it does not stretch the track, so on short screens it overflows the row and paints over
-       the footer below. */
     align-self: stretch;
     padding: var(--lumo-space-m) var(--lumo-space-l) var(--lumo-space-s) var(--lumo-space-l);
   }
@@ -277,6 +242,7 @@
   align-items: center;
   gap: var(--lumo-space-xs);
   flex-wrap: wrap;
+  width: 100%;
 }
 
 .inline-editable-field__edit-controls {
@@ -311,6 +277,21 @@
   max-width: none;
 }
 
+/* Display-mode text parity: after an edit/save cycle the web component has upgraded and the
+   [readonly] attribute is present (on initial render the server sets readonly before the
+   upgrade, so no [readonly] attribute existed yet), which can change how the field renders.
+   Key the display look off the absence of the --active class (set/cleared by the component)
+   instead of the [readonly] attribute so it is timing-independent, and pin the value color so
+   it can never be grayed after an edit cycle. */
+.inline-editable-field__edit-field:not(.inline-editable-field__edit-field--active) {
+  /* keep the value fully opaque, normal body text color (never grayed) */
+  --vaadin-input-field-value-color: var(--lumo-body-text-color);
+  --vaadin-input-field-placeholder-color: var(--lumo-secondary-text-color);
+}
+.inline-editable-field__edit-field:not(.inline-editable-field__edit-field--active)::part(input-field) {
+  color: var(--lumo-body-text-color) !important;
+}
+
 /* Display and edit mode share the same standard Lumo input look (contrasting background), so
    the field always reads as editable and switching modes never changes its appearance except
    for the primary focus ring below. Keying this off the --active class instead of the [readonly]
@@ -335,4 +316,51 @@
   box-shadow:
     inset 0 0 0 2px var(--lumo-primary-color),
     0 0 0 3px var(--lumo-primary-color-10pct);
+}
+/* Textarea-backed inline editable fields (long descriptions): fluid width — fill the
+   available container width on large screens, shrink toward the Java-set min-width on
+   smaller screens, and cap at the page's generous maximum (44rem on the group detail page;
+   elsewhere the generic 24rem cap still applies unless overridden). Combined with the
+   readonly vertical-scroll rule below, long values wrap + scroll instead of stretching. */
+/* Textarea-backed inline editable fields (long descriptions): the textarea and the edit
+   button form ONE composed unit on a single line — the textarea flexes to fill the space
+   that remains next to the edit button/controls, so the button is never pushed below it.
+   The field is fluid: it fills the available container width on large screens, shrinks
+   toward the Java-set min-width on smaller screens, and caps at the page's generous maximum
+   (44rem on the group detail page). Long values wrap + scroll vertically (see the readonly
+   rule below). */
+.inline-editable-field--textarea .inline-editable-field__edit-field {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+  max-width: 44rem;
+}
+
+.inline-editable-field--textarea .inline-editable-field__edit-btn,
+.inline-editable-field--textarea .inline-editable-field__edit-controls {
+  flex-shrink: 0; /* the edit/confirm controls stay visible at their natural size */
+}
+
+/* For textarea-backed inline editable fields (e.g. long descriptions): keep the whole
+   unit (textarea + edit button/controls) on ONE line and align the pencil to the top of
+   the field instead of vertically centering it next to a tall input, so the icon sits at
+   the same height as in single-line fields. No wrapping: the button must not drop below
+   the textarea (a flexible row that can never wrap). */
+.inline-editable-field--textarea .inline-editable-field__value-area {
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  min-width: 0;
+  padding-top: var(--lumo-space-xs);
+}
+
+/* Textarea display mode (readonly): keep the field's existing width (the caller controls it
+   via setMinDisplayWidth / the page's 44rem cap), but wrap the text on display instead of
+   letting it overflow horizontally, and show a vertical scrollbar when the content exceeds
+   the visible height. The field's min-height stays as configured (6em).
+   In vaadin-text-area the scroll container IS the input-field part and the native <textarea>
+   is slotted into it (the component already styles ::slotted(textarea){white-space:pre-wrap}),
+   so enabling the vertical scroll happens on the [part=input-field] of the host. */
+.inline-editable-field--textarea .inline-editable-field__edit-field[readonly]::part(input-field) {
+  overflow-y: auto;
+  overflow-x: hidden;
 }

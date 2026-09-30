@@ -16,6 +16,8 @@ import life.qbic.identity.domain.service.UserDomainService;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.DataRepoConnectionTester;
+import life.qbic.usergroups.domain.repository.GroupRepository;
+import life.qbic.usergroups.domain.service.GroupDomainService;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
@@ -65,5 +67,10 @@ public class Application extends SpringBootServletInitializer implements AppShel
     // We need to set up the domain registry and register important services:
     var userRepository = appContext.getBean(UserRepository.class);
     DomainRegistry.instance().registerService(new UserDomainService(userRepository));
+
+    // Set up the user groups domain registry:
+    var groupRepository = appContext.getBean(GroupRepository.class);
+    life.qbic.usergroups.domain.registry.DomainRegistry.instance().registerService(
+        new GroupDomainService(groupRepository));
   }
 }

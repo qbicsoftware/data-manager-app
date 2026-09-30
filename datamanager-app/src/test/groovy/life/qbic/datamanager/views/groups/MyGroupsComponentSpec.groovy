@@ -1,0 +1,375 @@
+package life.qbic.datamanager.views.groups
+
+import com.vaadin.flow.component.Component
+import com.vaadin.flow.component.button.Button
+import com.vaadin.flow.component.html.Div
+import com.vaadin.flow.component.html.Span
+import com.vaadin.flow.router.Router
+import com.vaadin.flow.router.RouterLink
+import com.vaadin.flow.router.RouteParameters
+import com.vaadin.flow.server.RouteRegistry
+import com.vaadin.flow.server.VaadinService
+import life.qbic.usergroups.api.GroupRole
+import life.qbic.usergroups.api.GroupType
+import life.qbic.usergroups.api.MyGroupMembership
+import spock.lang.Specification
+
+import java.util.function.Consumer
+import java.util.function.Supplier
+
+/**
+ * Unit tests for the my-groups list component.
+ *
+ * <p>Covers the role/type action matrix and the empty state without any Spring or Vaadin
+ * {@link com.vaadin.flow.component.UI} context, using the seam based constructor (supplier +
+ * runnable + consumer), mirroring {@code PinnedProjectsComponentSpec}.
+ */
+class MyGroupsComponentSpec extends Specification {
+
+  List<MyGroupMembership> memberships = []
+  Runnable refreshSpy = Mock(Runnable)
+  List<String> leaveCalls = []
+  List<String[]> confirmations = []
+  MyGroupsComponent component
+
+  def setup() {
+    Supplier<List<MyGroupMembership>> supplier = { -> memberships } as Supplier
+    Consumer<String> leaveSeam = { String groupId -> leaveCalls << groupId } as Consumer<String>
+    MyGroupsComponent.LeaveConfirmation confirmSeam =
+        { String groupId, Runnable onConfirm -> confirmations << [groupId, "asked"]; onConfirm.run() }
+            as MyGroupsComponent.LeaveConfirmation
+    component = new MyGroupsComponent(supplier, refreshSpy, leaveSeam, confirmSeam,
+        MyGroupsComponent.ManagementActionPolicy.defaultPolicy())
+    installStubbedVaadinService()
+  }
+
+  def cleanup() {
+    VaadinService.setCurrent(null)
+  }
+
+  /**
+   * The group-name {@link RouterLink} resolves its href from the router at construction, so a
+   * minimal service/registry stub (mirroring {@code HomeLinkSpec}) lets the row build and the
+   * href be asserted in a pure unit spec.
+   */
+  private void installStubbedVaadinService() {
+    RouteRegistry registry = Stub(RouteRegistry)
+    registry.getTargetUrl(GroupDetailMain, _ as RouteParameters) >>
+        Optional.of("groups/:groupId")
+    Router router = new Router(registry)
+    VaadinService service = Stub(VaadinService)
+    service.getRouter() >> router
+    service.getContext() >> null
+    VaadinService.setCurrent(service)
+  }
+
+  def "renders each membership with name, description, type badge and role badge"() {
+    given: "a user with two ad-hoc memberships"
+    memberships = [
+        membership("group-1", "Bioinformatics Lab", "lab of the bioinformatics team",
+            GroupType.ADHOC, GroupRole.OWNER),
+        membership("group-2", "Sprint Team", null, GroupType.ADHOC, GroupRole.MEMBER),
+    ]
+
+    when: "the component is refreshed"
+    component.refresh()
+
+    then: "two rows are rendered including their textual content"
+    renderedRows().size() == 2
+    textOf(renderedRows()[0]).contains("Bioinformatics Lab")
+    textOf(renderedRows()[0]).contains("lab of the bioinformatics team")
+    textOf(renderedRows()[0]).contains("User Group")
+    textOf(renderedRows()[0]).contains("Owner")
+    textOf(renderedRows()[1]).contains("Sprint Team")
+    textOf(renderedRows()[1]).contains("User Group")
+    textOf(renderedRows()[1]).contains("Member")
+  }
+
+  def "omits the description when the membership has none"() {
+    given: "a membership without a description"
+    memberships = [membership("group-1", "Sprint Team", null, GroupType.ADHOC, GroupRole.MEMBER)]
+
+    when:
+    component.refresh()
+
+    then: "the row renders without the description element"
+    def descSpans = []
+    collectSpans(renderedRows()[0], descSpans)
+    descSpans.findAll { it.element.classList.contains("my-groups-row__description") }.isEmpty()
+    textOf(renderedRows()[0]).contains("Sprint Team")
+    textOf(renderedRows()[0]).contains("Member")
+  }
+
+  def "shows the empty state while the user belongs to no group"() {
+    when: "there are no memberships"
+    component.refresh()
+
+    then:
+    textOf(component).contains("No groups yet.")
+  }
+
+  def "renders an enabled Leave group action for an ad-hoc plain member and asks for confirmation"() {
+    given: "a plain ad-hoc member"
+    memberships = [membership("group-1", "Sprint Team", null, GroupType.ADHOC, GroupRole.MEMBER)]
+    component.refresh()
+
+    when: "the user clicks leave"
+    List<Button> buttons = buttonsOf(renderedRows()[0])
+    Button leave = buttons.find { it.text == "Leave group" }
+    leave.click()
+
+    then: "the confirmation seam is consulted with the group id"
+    confirmations.size() == 1
+    confirmations[0][0] == "group-1"
+  }
+
+  def "invokes the leave callback and refreshes when the confirmation is accepted"() {
+    given: "a plain ad-hoc member"
+    memberships = [membership("group-1", "Sprint Team", null, GroupType.ADHOC, GroupRole.MEMBER)]
+    component.refresh()
+    boolean[] fired = new boolean[1]
+    component.addLeaveGroupListener(event -> fired[0] = event.groupId() == "group-1")
+
+    when: "the user clicks leave and the confirmation seam confirms"
+    List<Button> buttons = buttonsOf(renderedRows()[0])
+    Button leave = buttons.find { it.text == "Leave group" }
+    leave.click()
+
+    then: "the leave callback runs with the group id, the list refreshes and the leave event fires"
+    leaveCalls == ["group-1"]
+    1 * refreshSpy.run()
+    fired[0]
+  }
+
+  def "renders a Manage group action without a self-remove action for an ad-hoc owner"() {
+    given: "an ad-hoc owner"
+    memberships = [membership("group-1", "Bioinformatics Lab", "lab", GroupType.ADHOC,
+        GroupRole.OWNER)]
+
+    when:
+    component.refresh()
+
+    then: "the Manage group action exists, is enabled, and no leave action does"
+    List<Button> buttons = buttonsOf(renderedRows()[0])
+    buttons.every { it.enabled }
+    buttons*.text.contains("Manage group")
+    buttons.findAll { it.text == "Leave group" }.isEmpty()
+  }
+
+  def "renders a Manage group action plus an enabled leave action for an ad-hoc manager"() {
+    given: "an ad-hoc manager"
+    memberships = [membership("group-1", "Sprint Team", null, GroupType.ADHOC, GroupRole.MANAGER)]
+
+    when:
+    component.refresh()
+
+    then: "the manager sees the Manage group entry (the detail page owns management) and can also leave"
+    List<Button> buttons = buttonsOf(renderedRows()[0])
+    buttons.findAll { it.enabled }*.text.contains("Manage group")
+    buttons.findAll { it.text == "Leave group" }.size() == 1
+  }
+
+  def "a manager's Leave group action runs the confirmation seam, leave callback, refresh and leave event"() {
+    given: "an ad-hoc manager"
+    memberships = [membership("group-1", "Sprint Team", null, GroupType.ADHOC, GroupRole.MANAGER)]
+    component.refresh()
+    boolean[] fired = new boolean[1]
+    component.addLeaveGroupListener(event -> fired[0] = event.groupId() == "group-1")
+
+    when: "the user clicks leave and the confirmation seam confirms"
+    List<Button> buttons = buttonsOf(renderedRows()[0])
+    Button leave = buttons.find { it.text == "Leave group" }
+    leave.click()
+
+    then: "the confirmation is asked once, the leave callback runs, the list refreshes and the event fires"
+    confirmations.size() == 1
+    confirmations[0][0] == "group-1"
+    leaveCalls == ["group-1"]
+    1 * refreshSpy.run()
+    fired[0]
+  }
+
+  def "a Manage group action exists for an ad-hoc owner (navigates to the detail page)"() {
+    given: "an ad-hoc owner"
+    memberships = [membership("group-1", "Bioinformatics Lab", "lab", GroupType.ADHOC,
+        GroupRole.OWNER)]
+    component.refresh()
+
+    when: "the user clicks Manage group"
+    List<Button> buttons = buttonsOf(renderedRows()[0])
+
+    then: "a Manage group button exists (UI navigation is exercised by the owning view)"
+    buttons.find { it.text == "Manage group" } != null
+  }
+
+  def "a plain ad-hoc member sees no management actions, only self-remove"() {
+    given: "a plain ad-hoc member"
+    memberships = [membership("group-1", "Sprint Team", null, GroupType.ADHOC, GroupRole.MEMBER)]
+
+    when:
+    component.refresh()
+
+    then:
+    List<Button> buttons = buttonsOf(renderedRows()[0])
+    buttons.findAll { it.text in ["Manage members", "Appoint manager", "Rename", "Dissolve"] }.isEmpty()
+    buttons.findAll { it.text == "Leave group" }.size() == 1
+  }
+
+  def "an org MEMBER sees no management actions, only self-remove"() {
+    given: "a membership in an org group as a regular MEMBER"
+    memberships = [membership("org-1", "NGS Core Facility", "sequencing facility",
+        GroupType.ORG, GroupRole.MEMBER)]
+
+    when:
+    component.refresh()
+
+    then: "the row shows no management button, only self-remove"
+    List<Button> buttons = buttonsOf(renderedRows()[0])
+    buttons.findAll { it.text in ["Manage members", "Appoint manager", "Rename", "Dissolve"] }.isEmpty()
+    buttons.findAll { it.text == "Manage group" }.isEmpty()
+    buttons.findAll { it.text == "Leave group" }.size() == 1
+    textOf(renderedRows()[0]).contains("organisational")
+    textOf(renderedRows()[0]).contains("Member")
+  }
+
+  def "an org MANAGER gets the Manage group action (manages the group like an ad-hoc manager)"() {
+    given: "a membership in an org group as a MANAGER"
+    memberships = [membership("org-1", "NGS Core Facility", "sequencing facility",
+        GroupType.ORG, GroupRole.MANAGER)]
+
+    when:
+    component.refresh()
+
+    then: "the row shows a Manage group button (opens the detail page) and no leave button"
+    List<Button> buttons = buttonsOf(renderedRows()[0])
+    buttons.findAll { it.text == "Manage group" }.size() == 1
+    buttons.findAll { it.text == "Leave group" }.isEmpty()
+    textOf(renderedRows()[0]).contains("Manager")
+  }
+
+  def "the group name is a clickable title that also navigates to the detail page"() {
+    given: "a membership in a group"
+    memberships = [membership("group-1", "Bioinformatics Lab", "lab", GroupType.ADHOC,
+        GroupRole.OWNER)]
+
+    when:
+    component.refresh()
+
+    then: "the row's name is a RouterLink to the group detail page route"
+    def links = []
+    collectRouterLinks(renderedRows()[0], links)
+    def nameLink = links.find { it.text == "Bioinformatics Lab" }
+    nameLink != null
+    nameLink.classNames.contains("my-groups-row__name")
+    // The stubbed registry resolves the route template; param interpolation is the real
+    // registry's job, so we assert the route template.
+    nameLink.href == "groups/:groupId"
+  }
+
+  def "re-renders from the supplier on refresh, so newly created groups appear"() {
+    given: "no memberships initially"
+    component.refresh()
+    assert textOf(component).contains("No groups yet.")
+
+    when: "a group appears and the component refreshes"
+    memberships = [membership("group-1", "Sprint Team", null, GroupType.ADHOC, GroupRole.OWNER)]
+    component.refresh()
+
+    then: "the new group is shown"
+    renderedRows().size() == 1
+    textOf(renderedRows()[0]).contains("Sprint Team")
+  }
+
+  def "renders the total member count of a group as a badge"() {
+    given: "a membership whose group has 4 members"
+    memberships = [new MyGroupMembership("group-1", "Sprint Team", null, GroupType.ADHOC,
+        GroupRole.MEMBER, 4 as int)]
+
+    when: "the component refreshes"
+    component.refresh()
+
+    then: "the row shows the plural member count"
+    textOf(renderedRows()[0]).contains("4 members")
+
+    when: "the group has a single member"
+    memberships = [new MyGroupMembership("group-1", "Solo Team", null, GroupType.ADHOC,
+        GroupRole.OWNER, 1 as int)]
+    component.refresh()
+
+    then: "the row shows the singular member count"
+    textOf(renderedRows()[0]).contains("1 member")
+  }
+
+  def "rejects null seams at construction time"() {
+    when: "a null supplier is provided"
+    new MyGroupsComponent(null, () -> {}, { }, { g, r -> },
+        MyGroupsComponent.ManagementActionPolicy.defaultPolicy())
+
+    then:
+    thrown(NullPointerException)
+  }
+
+  private static MyGroupMembership membership(String groupId, String name, String description,
+      GroupType type, GroupRole role) {
+    new MyGroupMembership(groupId, name, description, type, role, 1 as int)
+  }
+
+  private List<Div> renderedRows() {
+    component.@groupList.children.toList() as List<Div>
+  }
+
+  private static List<Component> rowChildren(Div row) {
+    row.children.toList() as List<Component>
+  }
+
+  private static void collectSpans(Component component, List<Span> spans) {
+    if (component instanceof Span span) {
+      spans << span
+    }
+    component.children.forEach { child -> collectSpans(child, spans) }
+  }
+
+  private static void collectRouterLinks(Component component, List<RouterLink> links) {
+    if (component instanceof RouterLink link) {
+      links << link
+    }
+    component.children.forEach { child -> collectRouterLinks(child, links) }
+  }
+
+  private static List<Button> buttonsOf(Div row) {
+    List<Button> buttons = []
+    collectButtons(row, buttons)
+    return buttons
+  }
+
+  private static void collectButtons(Component component, List<Button> buttons) {
+    if (component instanceof Button button) {
+      buttons << button
+    }
+    component.children.forEach { child -> collectButtons(child, buttons) }
+  }
+
+  private static String textOf(Component component) {
+    def text = new StringBuilder()
+    appendText(component, text)
+    return text.toString()
+  }
+
+  private static void appendText(Component component, StringBuilder target) {
+    target.append(component.element.text ?: "")
+    component.children.forEach { child -> appendText(child, target) }
+  }
+
+  private static List<Component> allDescendants(Div root) {
+    List<Component> result = []
+    collectDescendants(root, result)
+    return result
+  }
+
+  private static void collectDescendants(Component component, List<Component> acc) {
+    component.children.forEach { child ->
+      acc << child
+      collectDescendants(child, acc)
+    }
+  }
+}

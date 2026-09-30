@@ -1085,3 +1085,30 @@ CREATE TABLE IF NOT EXISTS `user_external_credential`
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `user_group`
+(
+    `id`          varchar(36)  NOT NULL,
+    `name`        varchar(80)  NOT NULL,
+    `description` varchar(500) DEFAULT NULL,
+    `type`        varchar(16)  NOT NULL,
+    `status`      varchar(16)  NOT NULL,
+    `created_by`  varchar(255) NOT NULL,
+    `created_at`  datetime(6)  NOT NULL,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_user_group_name` (`name`)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `group_membership`
+(
+    `group_id`  varchar(36)  NOT NULL,
+    `user_id`   varchar(255) NOT NULL,
+    `role`      varchar(16)  NOT NULL,
+    `joined_at` datetime(6)  NOT NULL,
+    PRIMARY KEY (`group_id`, `user_id`),
+    KEY `idx_group_membership_user` (`user_id`)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci;

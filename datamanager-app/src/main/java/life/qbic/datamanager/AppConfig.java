@@ -25,6 +25,7 @@ import life.qbic.identity.domain.repository.UserRepository;
 import life.qbic.infrastructure.email.EmailServiceProvider;
 import life.qbic.infrastructure.email.identity.IdentityEmailServiceProvider;
 import life.qbic.infrastructure.email.project.ProjectManagementEmailServiceProvider;
+import life.qbic.infrastructure.email.usergroups.UserGroupsEmailServiceProvider;
 import life.qbic.projectmanagement.application.AppContextProvider;
 import life.qbic.projectmanagement.application.OrganisationRepository;
 import life.qbic.projectmanagement.application.ProjectInformationService;
@@ -70,6 +71,18 @@ import life.qbic.projectmanagement.domain.repository.ProjectRepository;
 import life.qbic.projectmanagement.infrastructure.organisations.CachedOrganisationRepository;
 import life.qbic.projectmanagement.infrastructure.organisations.RorApi;
 import life.qbic.projectmanagement.infrastructure.organisations.RorApi.RorApiV2;
+import life.qbic.usergroups.api.GroupInformationService;
+import life.qbic.usergroups.api.GroupManagementService;
+import life.qbic.usergroups.api.GroupSidProvider;
+import life.qbic.usergroups.application.GroupService;
+import life.qbic.usergroups.application.policy.MemberAccessPolicy;
+import life.qbic.usergroups.application.policy.directive.InformAddedGroupMember;
+import life.qbic.usergroups.application.policy.directive.InformRemovedGroupMember;
+import life.qbic.usergroups.application.service.GroupInformationServiceImpl;
+import life.qbic.usergroups.application.service.GroupManagementServiceImpl;
+import life.qbic.usergroups.application.service.GroupSidProviderImpl;
+import life.qbic.usergroups.domain.repository.GroupDataStorage;
+import life.qbic.usergroups.domain.repository.GroupRepository;
 import org.jobrunr.scheduling.JobScheduler;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -88,7 +101,8 @@ import reactor.core.scheduler.Scheduler;
  * @since 1.0.0
  */
 @Configuration
-@ComponentScan({"life.qbic.identity.infrastructure", "life.qbic.datamanager.announcements"})
+@ComponentScan({"life.qbic.identity.infrastructure", "life.qbic.usergroups.infrastructure",
+    "life.qbic.datamanager.announcements"})
 public class AppConfig {
   /*
   Wiring up identity application core and policies
@@ -186,6 +200,88 @@ public class AppConfig {
   @Bean
   public UserRepository userRepository(UserDataStorage userDataStorage) {
     return UserRepository.getInstance(userDataStorage);
+  }
+
+  /**
+   * Creates the group repository instance.
+   *
+   * @param groupDataStorage an implementation of the {@link GroupDataStorage} interface
+   * @return a Singleton of the group repository
+   * @since 1.0.0
+   */
+  @Bean
+  public GroupRepository groupRepository(GroupDataStorage groupDataStorage) {
+    return GroupRepository.getInstance(groupDataStorage);
+  }
+
+  @Bean
+  public GroupService groupService(GroupRepository groupRepository,
+      UserInformationService userInformationService,
+      life.qbic.usergroups.api.GroupAdministrationPermission groupAdministrationPermission) {
+    return new GroupService(groupRepository, userInformationService,
+        groupAdministrationPermission);
+  }
+
+  @Bean
+  public GroupInformationServiceImpl groupInformationService(GroupService groupService) {
+    return new GroupInformationServiceImpl(groupService);
+  }
+
+  @Bean
+  public GroupManagementServiceImpl groupManagementService(GroupService groupService) {
+    return new GroupManagementServiceImpl(groupService);
+  }
+
+  @Bean
+  public GroupSidProviderImpl groupSidProvider(GroupService groupService) {
+    return new GroupSidProviderImpl(groupService);
+  }
+
+  /**
+   * The user groups email provider, implementing the context's {@link EmailService} port with
+   * the shared mail infrastructure.
+   */
+  @Bean
+  public life.qbic.usergroups.application.communication.EmailService userGroupsEmailService(
+      EmailServiceProvider emailServiceProvider) {
+    return new UserGroupsEmailServiceProvider(emailServiceProvider);
+  }
+
+  /**
+   * The added-member notification directive. Exposed as its own {@code @Bean} so the JobRunr
+   * IOC runner can resolve it by class when the enqueued notification job executes (a plain
+   * {@code new} inside the policy bean would not register it in the context).
+   */
+  @Bean
+  public InformAddedGroupMember informAddedGroupMember(
+      life.qbic.usergroups.application.communication.EmailService emailService,
+      JobScheduler jobScheduler, UserInformationService userInformationService,
+      GroupService groupService) {
+    return new InformAddedGroupMember(emailService, jobScheduler, userInformationService,
+        groupService);
+  }
+
+  /**
+   * The removed-member notification directive (see {@link #informAddedGroupMember} for why this
+   * must be a Spring bean, not a local {@code new}).
+   */
+  @Bean
+  public InformRemovedGroupMember informRemovedGroupMember(
+      life.qbic.usergroups.application.communication.EmailService emailService,
+      JobScheduler jobScheduler, UserInformationService userInformationService,
+      GroupService groupService) {
+    return new InformRemovedGroupMember(emailService, jobScheduler, userInformationService,
+        groupService);
+  }
+
+  /**
+   * Registers the user-groups membership notification directives with the domain dispatcher: a
+   * newly added member and a removed member each receive an email.
+   */
+  @Bean
+  public MemberAccessPolicy memberAccessPolicy(InformAddedGroupMember informAddedGroupMember,
+      InformRemovedGroupMember informRemovedGroupMember) {
+    return new MemberAccessPolicy(informAddedGroupMember, informRemovedGroupMember);
   }
   /*
   Section ends

@@ -41,8 +41,11 @@ import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.ProjectCollaborator;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.ProjectRole;
+import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.SharedProjectGroup;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import life.qbic.usergroups.api.GroupInformationService;
+import life.qbic.usergroups.api.GroupSidProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -68,8 +71,10 @@ public class ProjectAccessComponent extends PageArea {
 
   private final transient ProjectAccessService projectAccessService;
   private final transient UserInformationService userInformationService;
+  private final transient GroupInformationService groupInformationService;
   private final transient UserPermissions userPermissions;
   private final Grid<ProjectUser> projectUserGrid;
+  private final Grid<ProjectGroup> projectGroupGrid;
   private final Div header;
   private final Span buttonBar;
   private final transient AuthenticationToUserIdTranslator authenticationToUserIdTranslator;
@@ -78,12 +83,15 @@ public class ProjectAccessComponent extends PageArea {
   protected ProjectAccessComponent(
       @Autowired ProjectAccessService projectAccessService,
       @Autowired UserInformationService userInformationService,
+      @Autowired GroupInformationService groupInformationService,
       UserPermissions userPermissions,
       AuthenticationToUserIdTranslator authenticationToUserIdTranslator) {
     this.projectAccessService = requireNonNull(projectAccessService,
         "projectAccessService must not be null");
     this.userInformationService = requireNonNull(userInformationService,
         "userInformationService must not be null");
+    this.groupInformationService = requireNonNull(groupInformationService,
+        "groupInformationService must not be null");
     this.userPermissions = requireNonNull(userPermissions, "userPermissions must not be null");
     this.authenticationToUserIdTranslator = requireNonNull(authenticationToUserIdTranslator,
         "authenticationToUserIdTranslator must not be null");
@@ -96,7 +104,7 @@ public class ProjectAccessComponent extends PageArea {
     titleField.setText("Project Access Management");
     titleField.addClassName("title");
     buttonBar = new Span();
-    Button addCollaboratorButton = new Button("Add people");
+    Button addCollaboratorButton = new Button("Add people or groups");
     addCollaboratorButton.addClickListener(event -> openAddCollaboratorDialog());
     buttonBar.add(addCollaboratorButton);
     header.add(titleField);
@@ -104,6 +112,9 @@ public class ProjectAccessComponent extends PageArea {
     Span userProjectAccessDescription = new Span("Users with access to this project.");
     projectUserGrid = createProjectUserGrid();
     add(userProjectAccessDescription, projectUserGrid);
+    Span groupProjectAccessDescription = new Span("Groups with access to this project.");
+    projectGroupGrid = createProjectGroupGrid();
+    add(groupProjectAccessDescription, projectGroupGrid);
   }
 
   private static UserInfoComponent renderUserInfo(ProjectUser projectUser) {
@@ -126,6 +137,7 @@ public class ProjectAccessComponent extends PageArea {
 
   private void setProjectInformation() {
     refreshProjectUserGrid();
+    refreshProjectGroupGrid();
     showControls(userPermissions.changeProjectAccess(context.projectId().orElseThrow()));
   }
 
@@ -316,20 +328,193 @@ public class ProjectAccessComponent extends PageArea {
     refreshProjectUserGrid();
   }
 
+  private void changeGroupRole(ProjectGroup projectGroup, ProjectRole projectRole) {
+    ProjectId projectId = context.projectId().orElseThrow();
+    try {
+      projectAccessService.changeAuthorityAccess(projectId,
+          GroupSidProvider.GROUP_SID_PREFIX + projectGroup.groupId(), projectRole);
+    } catch (ApplicationException e) {
+      displayError(INVALID_ROLE_EDIT,
+          "You don't have permission to change the role of this group");
+      return;
+    }
+    refreshProjectGroupGrid();
+  }
+
+  private void revokeGroup(ProjectGroup projectGroup) {
+    ProjectId projectId = context.projectId().orElseThrow();
+    try {
+      projectAccessService.removeAuthorityAccess(projectId,
+          GroupSidProvider.GROUP_SID_PREFIX + projectGroup.groupId());
+    } catch (ApplicationException e) {
+      displayError(INVALID_USER_REMOVAL, "You can't remove this group from the project");
+      return;
+    }
+    refreshProjectGroupGrid();
+  }
+
   private void onProjectRoleSelectionChanged(ProjectUser projectUser,
       ComponentValueChangeEvent<Select<ProjectRole>, ProjectRole> valueChanged) {
     projectAccessService.changeRole(context.projectId().orElseThrow(), projectUser.userId(),
         valueChanged.getValue());
   }
 
-  private void openAddCollaboratorDialog() {
-    List<ProjectCollaborator> alreadyExistingCollaborators = projectAccessService.listCollaborators(
+  private Grid<ProjectGroup> createProjectGroupGrid() {
+    Grid<ProjectGroup> groupGrid = new Grid<>(ProjectGroup.class, false);
+    Editor<ProjectGroup> editor = groupGrid.getEditor();
+    Binder<ProjectGroup> binder = new Binder<>(ProjectGroup.class);
+    editor.setBinder(binder);
+    groupGrid.addColumn(ProjectGroup::groupName)
+        .setKey("groupName")
+        .setHeader("Group")
+        .setAutoWidth(true)
+        .setSortable(true)
+        .setSortProperty("groupName")
+        .setResizable(true);
+    groupGrid.addColumn(ProjectGroup::groupDescription)
+        .setKey("groupDescription")
+        .setHeader("Description")
+        .setWidth("28em")
+        .setFlexGrow(1)
+        .setResizable(true);
+    groupGrid.setPartNameGenerator(projectGroup -> "group-description-row");
+    var projectRoleColumn = groupGrid.addColumn(projectGroup -> "Role: " + projectGroup.projectRole().label())
+        .setKey("projectRole")
+        .setHeader("Role")
+        .setEditorComponent(this::renderProjectGroupRoleComponent)
+        .setAutoWidth(true)
+        .setSortable(true)
+        .setResizable(true);
+    groupGrid.addComponentColumn(projectGroup -> {
+          //You don't have the rights to change the group grants
+          if (!userPermissions.changeProjectAccess(context.projectId().orElseThrow())) {
+            return new Span();
+          }
+          return changeProjectGroupAccessCell(projectGroup);
+        })
+        .setKey("action")
+        .setHeader("Action")
+        .setAutoWidth(true);
+    groupGrid.setSelectionMode(Grid.SelectionMode.NONE);
+    groupGrid.setColumnReorderingAllowed(true);
+    return groupGrid;
+  }
+
+  private Span changeProjectGroupAccessCell(ProjectGroup projectGroup) {
+    Span changeProjectGroupAccessCell = new Span();
+    //We want to ensure that even if the frontend components are shown no event is propagated
+    // if the user doesn't have the correct role
+    Button removeButton = new Button("Remove", clickEvent -> {
+      if (!userPermissions.changeProjectAccess(context.projectId().orElseThrow())) {
+        displayError(INVALID_USER_REMOVAL,
+            "You don't have permission to remove the group from this project");
+        return;
+      }
+      AlertDialog.danger(this,
+          "Remove group from project",
+          "Are you sure you want to remove the group %s from the project?".formatted(
+              projectGroup.groupName()),
+          "Remove group",
+          "Keep group",
+          () -> revokeGroup(projectGroup)).open();
+    });
+    Button editButton = new Button("Edit", clickEvent -> {
+      //We want to ensure that even if the frontend components are shown no event is propagated
+      // if the user doesn't have the correct role
+      if (!userPermissions.changeProjectAccess(context.projectId().orElseThrow())) {
+        displayError(INVALID_ROLE_EDIT,
+            "You don't have permission to change the role of this group");
+        return;
+      }
+      if (projectGroupGrid.getEditor().isOpen()) {
+        projectGroupGrid.getEditor().cancel();
+        projectGroupGrid.getEditor().closeEditor();
+        return;
+      }
+      projectGroupGrid.getEditor().editItem(projectGroup);
+    });
+    changeProjectGroupAccessCell.add(editButton, removeButton);
+    changeProjectGroupAccessCell.addClassName("change-project-access-cell");
+    return changeProjectGroupAccessCell;
+  }
+
+  private Component renderProjectGroupRoleComponent(
+      ProjectGroup projectGroup) {
+    String labelPrefix = "Role: ";
+    Select<ProjectRole> roleSelect = new Select<>();
+    roleSelect.addClassName("project-role-select");
+    roleSelect.setItemLabelGenerator(ProjectRole::label);
+    roleSelect.setPrefixComponent(new Span(labelPrefix));
+    roleSelect.setItems(
+        ProjectRole.READ,
+        ProjectRole.WRITE,
+        ProjectRole.ADMIN
+    );
+    roleSelect.setRenderer(new ComponentRenderer<>(
+        projectRole -> {
+          Span roleLabel = new Span(projectRole.label());
+          roleLabel.addClassName("project-role-label");
+
+          Span roleDescription = new Span(projectRole.description());
+          roleDescription.addClassName("project-role-description");
+
+          Div projectRoleDiv = new Div();
+          projectRoleDiv.addClassName("project-role-item");
+          projectRoleDiv.add(roleLabel, roleDescription);
+          return projectRoleDiv;
+        }));
+
+    roleSelect.setValue(projectGroup.projectRole());
+    roleSelect.addValueChangeListener(valueChanged -> {
+      changeGroupRole(projectGroup, valueChanged.getValue());
+      projectGroupGrid.getEditor().save();
+      projectGroupGrid.getEditor().closeEditor();
+      refreshProjectGroupGrid();
+    });
+    return roleSelect;
+  }
+
+  private void refreshProjectGroupGrid() {
+    List<SharedProjectGroup> sharedGroups = projectAccessService.listSharedGroups(
         context.projectId().orElseThrow());
+    projectGroupGrid.setItems(
+        sharedGroups.stream().map(this::toProjectGroup).toList());
+  }
+
+  private ProjectGroup toProjectGroup(SharedProjectGroup sharedProjectGroup) {
+    return new ProjectGroup(sharedProjectGroup.groupId(), sharedProjectGroup.groupName(),
+        sharedProjectGroup.groupDescription(), sharedProjectGroup.projectRole());
+  }
+
+  private void openAddCollaboratorDialog() {
+    ProjectId projectId = context.projectId().orElseThrow();
+    List<ProjectCollaborator> alreadyExistingCollaborators = projectAccessService
+        .listCollaborators(projectId);
+    List<SharedProjectGroup> alreadySharedGroups = projectAccessService.listSharedGroups(projectId);
     AddCollaboratorToProjectDialog addCollaboratorToProjectDialog = new AddCollaboratorToProjectDialog(
-        userInformationService, context.projectId().orElseThrow(), alreadyExistingCollaborators);
+        userInformationService, projectId, alreadyExistingCollaborators, groupInformationService,
+        alreadySharedGroups);
     addCollaboratorToProjectDialog.open();
     addCollaboratorToProjectDialog.addCancelListener(event -> event.getSource().close());
     addCollaboratorToProjectDialog.addConfirmListener(this::onAddCollaboratorConfirmed);
+    addCollaboratorToProjectDialog.addGroupConfirmListener(this::onGroupSharedConfirmed);
+  }
+
+  private void onGroupSharedConfirmed(
+      AddCollaboratorToProjectDialog.GroupConfirmEvent event) {
+    ProjectId projectId = context.projectId().orElseThrow();
+    try {
+      projectAccessService.addAuthorityAccess(projectId,
+          GroupSidProvider.GROUP_SID_PREFIX + event.groupId(),
+          event.projectRole());
+    } catch (ApplicationException e) {
+      displayError("Invalid group sharing",
+          "This group is already shared onto the project. Please change the project role instead.");
+      return;
+    }
+    refreshProjectUserGrid();
+    refreshProjectGroupGrid();
+    event.getSource().close();
   }
 
   private void onAddCollaboratorConfirmed(ConfirmEvent event) {
@@ -357,6 +542,18 @@ public class ProjectAccessComponent extends PageArea {
    */
   public record ProjectUser(String userId, String userName, String fullName, String oidc,
                             String oidcIssuer, ProjectRole projectRole) {
+  }
+
+  /**
+   * A user group shared onto a project.
+   *
+   * @param groupId          the stable user group id
+   * @param groupName        the group's display name
+   * @param groupDescription the group's description, may be {@code null}
+   * @param projectRole      the project role granted to the group
+   */
+  public record ProjectGroup(String groupId, String groupName, String groupDescription,
+                             ProjectRole projectRole) {
   }
 
   /**

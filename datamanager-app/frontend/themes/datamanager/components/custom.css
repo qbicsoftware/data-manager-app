@@ -10,10 +10,12 @@
 @import "sync-results-sidebar.css";
 @import "div.css";
 @import "footer.css";
+@import "groups.css";
 @import "image.css";
 @import "info.css";
 @import "icon.css";
 @import "main.css";
+@import "my-groups.css";
 @import "navbar.css";
 @import "navigation-drawer.css";
 @import "page-area.css";
@@ -26,6 +28,7 @@
 @import "toast.css";
 @import "pagination.css";
 @import "measurements-pagination.css";
+@import "rawdata-pagination.css";
 @import "grid-templates.css";
 @import "verification-sidebar.css";
 

@@ -1,0 +1,823 @@
+package life.qbic.usergroups.application
+
+import java.time.Instant
+
+import life.qbic.application.commons.ApplicationException
+import life.qbic.application.commons.ApplicationException.ErrorCode
+import life.qbic.application.commons.Result
+import life.qbic.usergroups.domain.model.GroupDescription
+import life.qbic.usergroups.domain.model.GroupId
+import life.qbic.usergroups.domain.model.GroupName
+import life.qbic.usergroups.domain.model.GroupRole
+import life.qbic.usergroups.domain.model.GroupStatus
+import life.qbic.usergroups.domain.model.GroupType
+import life.qbic.usergroups.domain.model.UserGroup
+import life.qbic.usergroups.application.GroupInfoProjection
+import life.qbic.usergroups.domain.registry.DomainRegistry
+import life.qbic.usergroups.domain.repository.GroupDataStorage
+import life.qbic.usergroups.domain.repository.GroupRepository
+import life.qbic.usergroups.domain.service.GroupDomainService
+import life.qbic.usergroups.api.GroupAdministrationPermission
+import org.springframework.dao.DataIntegrityViolationException
+import spock.lang.Specification
+
+/**
+ * Tests for the {@link GroupService}.
+ *
+ * <p>Uses an in-memory fake {@link GroupDataStorage} and registers a {@link GroupDomainService}
+ * in the singleton {@link DomainRegistry} so the application service can delegate.</p>
+ */
+class GroupServiceSpec extends Specification {
+
+  private static Instant NOW = Instant.parse("2026-09-22T10:00:00Z")
+
+  private static GroupName NAME = GroupName.from("NGS Lab")
+
+  private static GroupDescription DESC = GroupDescription.from("A test lab")
+
+  private static final String DUPLICATE_MESSAGE_PREFIX =
+      "A group with the name "
+
+  private GroupDomainService domainService
+
+  private InMemoryGroupDataStorage storage
+
+  private GroupRepository repository
+
+  private GroupService service
+
+  private GroupAdministrationPermission adminPermission
+
+  def setup() {
+    storage = new InMemoryGroupDataStorage()
+    repository = new GroupRepository(storage)
+    domainService = new GroupDomainService(repository)
+    DomainRegistry.instance().registerService(domainService)
+    adminPermission = new TestAdminPermission()
+    service = new GroupService(repository, new InMemoryUserInformationService())
+    serviceForOrgTests = new GroupService(repository, new InMemoryUserInformationService(),
+        adminPermission)
+  }
+
+  private GroupService serviceForOrgTests
+
+  def cleanup() {
+    DomainRegistry.instance().registerService(null)
+  }
+
+  def "Creating an ad-hoc group sets the creator as OWNER and results in the created group"() {
+    given: "a registered user"
+    String creator = "creator-user"
+
+    when:
+    Result<GroupInfoProjection, ApplicationException> result =
+        service.createAdHocGroup(creator, NAME, DESC)
+
+    then: "the result contains the created group as a projection"
+    result.isValue()
+    def group = result.getValue()
+    group.groupId() != null
+    group.groupName() == NAME
+    group.groupType() == GroupType.ADHOC
+
+    and: "the creator's OWNER membership is observable via my-groups"
+    def myGroups = service.listMyGroups(creator)
+    myGroups.size() == 1
+    myGroups.get(0).myRole() == GroupRole.OWNER
+  }
+
+  def "Creating a group with an already used name is rejected with the exact uniqueness message"() {
+    given: "a group with name 'NGS Lab' already exists"
+    service.createAdHocGroup("creator-user", NAME, DESC)
+
+    when: "a second group with the exact same name is created"
+    Result<GroupInfoProjection, ApplicationException> result =
+        service.createAdHocGroup("other-user", NAME, DESC)
+
+    then: "an error with the duplicate name code and exact message is returned"
+    result.isError()
+    result.getError().errorCode() == ErrorCode.DUPLICATE_GROUP_NAME
+    result.getError().getMessage() ==
+        "A group with the name 'NGS Lab' already exists. Group names must be unique (case-insensitive)."
+
+    and: "nothing was persisted"
+    storage.allGroups().size() == 1
+  }
+
+  def "Creating a group with a name that differs only in case is rejected as duplicate"() {
+    given: "a group with name 'NGS Lab' already exists"
+    service.createAdHocGroup("creator-user", NAME, DESC)
+
+    when: "a group with 'ngs lab' (different case) is created"
+    Result<GroupInfoProjection, ApplicationException> result =
+        service.createAdHocGroup("other-user", GroupName.from("ngs lab"), DESC)
+
+    then: "the creation is rejected with the duplicate name code"
+    result.isError()
+    result.getError().errorCode() == ErrorCode.DUPLICATE_GROUP_NAME
+    result.getError().getMessage() ==
+        "A group with the name 'ngs lab' already exists. Group names must be unique (case-insensitive)."
+
+    and: "nothing was persisted"
+    storage.allGroups().size() == 1
+  }
+
+  def "A race condition on the unique index is translated to the same friendly duplicate error"() {
+    given: "the storage rejects the save with a DataIntegrityViolationException"
+    InMemoryGroupDataStorage racingStorage = new InMemoryGroupDataStorage() {
+      @Override
+      void save(UserGroup group) {
+        throw new DataIntegrityViolationException("duplicate key on name")
+      }
+    }
+    GroupRepository racingRepository = new GroupRepository(racingStorage)
+    DomainRegistry.instance().registerService(new GroupDomainService(racingRepository))
+    GroupService racingService = new GroupService(racingRepository,
+        new InMemoryUserInformationService())
+
+    when:
+    Result<GroupInfoProjection, ApplicationException> result =
+        racingService.createAdHocGroup("creator-user", GroupName.from("Brand New Name"), DESC)
+
+    then: "a friendly duplicate-name error is returned"
+    result.isError()
+    result.getError().errorCode() == ErrorCode.DUPLICATE_GROUP_NAME
+    result.getError().getMessage() ==
+        "A group with the name 'Brand New Name' already exists. Group names must be unique (case-insensitive)."
+  }
+
+  def "Creating a group with a blank creator user id is rejected"() {
+    when:
+    Result<GroupInfoProjection, ApplicationException> result =
+        service.createAdHocGroup("  ", NAME, DESC)
+
+    then:
+    result.isError()
+    result.getError().errorCode() == ErrorCode.GENERAL
+  }
+
+  def "An admin createOrgGroup produces an ACTIVE ORG group with an empty roster (AC1)"() {
+    given: "an administrator"
+    String admin = "admin-user"
+
+    when: "the admin creates an org group with a unique name and description"
+    Result<GroupInfoProjection, ApplicationException> result =
+        serviceForOrgTests.createOrgGroup(admin, GroupName.from("NGS Lab"),
+            GroupDescription.from("QBiC NGS lab"))
+
+    then: "the org group is created"
+    result.isValue()
+    def group = result.getValue()
+    group.groupId() != null
+    group.groupName().value() == "NGS Lab"
+    group.groupType() == GroupType.ORG
+    group.groupDescription().value().get() == "QBiC NGS lab"
+
+    and: "the stored group is ACTIVE with type ORG and no membership row"
+    def stored = storage.findById(group.groupId()).get()
+    stored.status() == GroupStatus.ACTIVE
+    stored.type() == GroupType.ORG
+    stored.memberships().isEmpty()
+
+    and: "the org group appears in the public directory (AC1 directory criterion)"
+    service.listPublicDirectory()*.groupName().contains(GroupName.from("NGS Lab"))
+
+    and: "the creating admin is NOT a member (no OWNER row, D4)"
+    service.listMyGroups(admin).isEmpty()
+  }
+
+  def "A non-admin is denied org-group creation before any write (AC3)"() {
+    given: "a regular (non-admin) user"
+    String user = "researcher-1"
+
+    when: "the user attempts to create an org group"
+    Result<GroupInfoProjection, ApplicationException> result =
+        serviceForOrgTests.createOrgGroup(user, GroupName.from("NGS Lab"),
+            GroupDescription.from("desc"))
+
+    then: "an access-denied error is returned"
+    result.isError()
+    result.getError().errorCode() == ErrorCode.ACCESS_DENIED
+
+    and: "nothing was persisted"
+    storage.allGroups().isEmpty()
+  }
+
+  def "An org group with an already used name is rejected with the exact uniqueness message (AC2)"() {
+    given: "an org group with name 'NGS Lab' exists"
+    serviceForOrgTests.createOrgGroup("admin-user", NAME, DESC)
+
+    when: "a second org group with the exact same name is created"
+    Result<GroupInfoProjection, ApplicationException> result =
+        serviceForOrgTests.createOrgGroup("admin-user", NAME, DESC)
+
+    then: "an error with the duplicate name code and exact message is returned"
+    result.isError()
+    result.getError().errorCode() == ErrorCode.DUPLICATE_GROUP_NAME
+    result.getError().getMessage() ==
+        "A group with the name 'NGS Lab' already exists. Group names must be unique (case-insensitive)."
+
+    and: "nothing was persisted"
+    storage.allGroups().size() == 1
+  }
+
+  def "An org group with a case-different duplicate name is rejected as duplicate (AC2)"() {
+    given: "an org group with name 'NGS Lab' exists"
+    serviceForOrgTests.createOrgGroup("admin-user", NAME, DESC)
+
+    when: "an org group with 'ngs lab' (different case) is created"
+    Result<GroupInfoProjection, ApplicationException> result =
+        serviceForOrgTests.createOrgGroup("admin-user", GroupName.from("ngs lab"), DESC)
+
+    then: "the creation is rejected with the duplicate name code"
+    result.isError()
+    result.getError().errorCode() == ErrorCode.DUPLICATE_GROUP_NAME
+    result.getError().getMessage() ==
+        "A group with the name 'ngs lab' already exists. Group names must be unique (case-insensitive)."
+
+    and: "nothing was persisted"
+    storage.allGroups().size() == 1
+  }
+
+  def "Uniqueness is global across group types: an ad-hoc name blocks an org group and vice versa"() {
+    given: "an ad-hoc group named 'NGS Lab' exists"
+    service.createAdHocGroup("alice", NAME, DESC)
+
+    when: "an admin tries to create an org group with the same name"
+    Result<GroupInfoProjection, ApplicationException> result =
+        serviceForOrgTests.createOrgGroup("admin-user", NAME, DESC)
+
+    then: "the creation is rejected as a duplicate"
+    result.isError()
+    result.getError().errorCode() == ErrorCode.DUPLICATE_GROUP_NAME
+  }
+
+  def "A race condition on the unique index is translated to the same friendly duplicate error for org groups"() {
+    given: "the storage rejects the save with a DataIntegrityViolationException"
+    InMemoryGroupDataStorage racingStorage = new InMemoryGroupDataStorage() {
+      @Override
+      void save(UserGroup group) {
+        throw new DataIntegrityViolationException("duplicate key on name")
+      }
+    }
+    GroupRepository racingRepository = new GroupRepository(racingStorage)
+    DomainRegistry.instance().registerService(new GroupDomainService(racingRepository))
+    GroupService racingService = new GroupService(racingRepository,
+        new InMemoryUserInformationService(), adminPermission)
+
+    when:
+    Result<GroupInfoProjection, ApplicationException> result =
+        racingService.createOrgGroup("admin-user", GroupName.from("Brand New Org"), DESC)
+
+    then: "a friendly duplicate-name error is returned"
+    result.isError()
+    result.getError().errorCode() == ErrorCode.DUPLICATE_GROUP_NAME
+    result.getError().getMessage() ==
+        "A group with the name 'Brand New Org' already exists. Group names must be unique (case-insensitive)."
+  }
+
+  def "Creating an org group with a blank admin user id is rejected"() {
+    when:
+    Result<GroupInfoProjection, ApplicationException> result =
+        serviceForOrgTests.createOrgGroup("  ", NAME, DESC)
+
+    then:
+    result.isError()
+    result.getError().errorCode() == ErrorCode.GENERAL
+  }
+
+  def "listMyGroups returns only active groups the user is a member of, with the caller's role"() {
+    given: "three groups: one active & owned by the caller, one dissolved, one belonging to someone else"
+    service.createAdHocGroup("alice", GroupName.from("Alice's Group"), DESC)
+    def dissolvedId = GroupId.create()
+    domainService.createAdHocGroup(dissolvedId, GroupName.from("Gone Group"), DESC, "alice", NOW)
+    domainService.dissolve(dissolvedId, "alice")
+    service.createAdHocGroup("bob", GroupName.from("Bob's Group"), DESC)
+
+    when:
+    def myGroups = service.listMyGroups("alice")
+
+    then:
+    myGroups*.groupName() == [GroupName.from("Alice's Group")]
+    myGroups.get(0).myRole() == GroupRole.OWNER
+  }
+
+  def "A created ad-hoc group appears in the public directory AND in the creator's my-groups (AC a)"() {
+    given: "a registered user"
+    String creator = "researcher-1"
+
+    when: "the user creates an ad-hoc group with a unique name and description"
+    Result<GroupInfoProjection, ApplicationException> result =
+        service.createAdHocGroup(creator, GroupName.from("Collab Team"),
+            GroupDescription.from("Assembled collaboration team"))
+
+    then: "the group is created (projection) and the creator is OWNER"
+    result.isValue()
+    result.getValue().groupType() == GroupType.ADHOC
+    service.listMyGroups(creator).get(0).myRole() == GroupRole.OWNER
+
+    and: "the group appears in the public directory"
+    service.listPublicDirectory()*.groupName() == [GroupName.from("Collab Team")]
+
+    and: "the group appears in the creator's my-groups"
+    def myGroups = service.listMyGroups(creator)
+    myGroups*.groupName() == [GroupName.from("Collab Team")]
+    myGroups.get(0).myRole() == GroupRole.OWNER
+  }
+
+  def "a non-owner self-removal keeps the group ACTIVE and does not dissolve it (no auto-dissolve)"() {
+    given: "an ad-hoc group owned by a single user with one added member"
+    String solo = "solo-user"
+    String groupId = service.createAdHocGroup(solo, NAME, DESC).getValue().groupId().get()
+    service.addMember(groupId, solo, "member-2")
+
+    when: "a non-owner member removes themselves"
+    Result<Void, ApplicationException> result = service.removeMembership(groupId, "member-2")
+
+    then: "the removal succeeds and the group stays ACTIVE (no auto-dissolve)"
+    result.isValue()
+    storage.findById(GroupId.from(groupId)).get().status() == GroupStatus.ACTIVE
+
+    and: "it remains in the public directory"
+    service.listPublicDirectory().size() == 1
+
+    and: "the owner is still in my-groups"
+    service.listMyGroups(solo).size() == 1
+  }
+
+  def "listPublicDirectory exposes identity, name, description and type only, never members"() {
+    given: "an active group and a dissolved group"
+    service.createAdHocGroup("alice", GroupName.from("Public Group"), DESC)
+    def dissolvedId = GroupId.create()
+    domainService.createAdHocGroup(dissolvedId, GroupName.from("Secret Gone"), DESC, "bob", NOW)
+    domainService.dissolve(dissolvedId, "bob")
+
+    when:
+    def directory = service.listPublicDirectory()
+
+    then: "only the active group appears"
+    directory*.groupName() == [GroupName.from("Public Group")]
+
+    and: "the projection carries no membership information"
+    directory.get(0).groupId() != null
+    directory.get(0).groupType() == GroupType.ADHOC
+    directory.get(0).groupDescription() == DESC
+    directory.get(0).toString().toLowerCase().contains("members") == false
+  }
+
+  def "the OWNER cannot self-remove (permanent anchor — story 05 governs owner leave)"() {
+    given: "a group with a single member (the owner)"
+    Result<GroupInfoProjection, ApplicationException> created =
+        service.createAdHocGroup("solo-user", NAME, DESC)
+    String groupId = created.getValue().groupId().get()
+
+    when: "the owner attempts to remove themselves"
+    Result<Void, ApplicationException> result = service.removeMembership(groupId, "solo-user")
+
+    then: "the self-removal is denied"
+    result.isError()
+    result.getError().errorCode() == ErrorCode.ACCESS_DENIED
+    storage.findById(GroupId.from(groupId)).get().status() == GroupStatus.ACTIVE
+    storage.findById(GroupId.from(groupId)).get().memberships().size() == 1
+  }
+
+  def "removeMembership of a group that does not exist fails with a not-found error"() {
+    given: "a group id that does not exist"
+    String unknownGroupId = GroupId.create().get()
+
+    when:
+    Result<Void, ApplicationException> result =
+        service.removeMembership(unknownGroupId, "some-user")
+
+    then:
+    result.isError()
+    result.getError().getMessage() == "Group " + unknownGroupId + " not found."
+  }
+
+  def "removeMembership by a non-member fails with an error"() {
+    given: "a group owned by alice"
+    Result<GroupInfoProjection, ApplicationException> created =
+        service.createAdHocGroup("alice", NAME, DESC)
+    String groupId = created.getValue().groupId().get()
+
+    when: "a non-member attempts to remove themselves"
+    Result<Void, ApplicationException> result = service.removeMembership(groupId, "not-a-member")
+
+    then:
+    result.isError()
+    result.getError().getMessage().contains("not a member")
+  }
+
+  // ── appointOrgManager / removeOrgManager (FEAT-USER-GROUPS-02) ──────────────
+
+  def "an admin appoints an org-group manager (direct appointment) and the user gains a MANAGER membership (AC1)"() {
+    given: "an org group created by an admin"
+    String admin = "admin-user"
+    String groupId = serviceForOrgTests.createOrgGroup(admin, GroupName.from("NGS Lab"), DESC)
+        .getValue().groupId().get()
+
+    when: "the admin appoints a non-member as manager"
+    Result<Void, ApplicationException> result =
+        serviceForOrgTests.appointOrgManager(groupId, admin, "lab-lead")
+
+    then: "the appointment succeeds"
+    result.isValue()
+
+    and: "the user holds a MANAGER membership and no OWNER row exists"
+    def members = serviceForOrgTests.listMembers(groupId, admin)
+    members.size() == 1
+    members.get(0).userId() == "lab-lead"
+    members.get(0).role() == GroupRole.MANAGER
+    members.every { it.role() != GroupRole.OWNER }
+
+    and: "the admin is not a member (no OWNER row, admin == owner-equivalent only in the app layer)"
+    serviceForOrgTests.listMyGroups(admin).isEmpty()
+  }
+
+  def "an admin promotes an existing org MEMBER to MANAGER (AC1 promotion path)"() {
+    given: "an org group whose manager added a regular member"
+    String admin = "admin-user"
+    String groupId = serviceForOrgTests.createOrgGroup(admin, GroupName.from("NGS Lab"), DESC)
+        .getValue().groupId().get()
+    serviceForOrgTests.appointOrgManager(groupId, admin, "manager-1")
+    serviceForOrgTests.addMember(groupId, "manager-1", "alice")
+
+    when: "the admin promotes the member"
+    Result<Void, ApplicationException> result =
+        serviceForOrgTests.appointOrgManager(groupId, admin, "alice")
+
+    then: "the member becomes a MANAGER"
+    result.isValue()
+    serviceForOrgTests.listMembers(groupId, admin).find { it.userId() == "alice" }.role() ==
+        GroupRole.MANAGER
+  }
+
+  def "a non-admin is denied appointing an org-group manager before any write (AC1 gate)"() {
+    given: "an org group and a non-admin user"
+    String admin = "admin-user"
+    String groupId = serviceForOrgTests.createOrgGroup(admin, GroupName.from("NGS Lab"), DESC)
+        .getValue().groupId().get()
+
+    when: "a non-admin tries to appoint a manager"
+    Result<Void, ApplicationException> result =
+        serviceForOrgTests.appointOrgManager(groupId, "researcher-1", "lab-lead")
+
+    then: "access denied and nothing persisted"
+    result.isError()
+    result.getError().errorCode() == ErrorCode.ACCESS_DENIED
+    serviceForOrgTests.listMembers(groupId, admin).isEmpty()
+  }
+
+  def "appointing an already-manager or an unknown user fails cleanly"() {
+    given: "an org group with a manager"
+    String admin = "admin-user"
+    String groupId = serviceForOrgTests.createOrgGroup(admin, GroupName.from("NGS Lab"), DESC)
+        .getValue().groupId().get()
+    serviceForOrgTests.appointOrgManager(groupId, admin, "lab-lead")
+
+    when: "appointing the same user again"
+    Result<Void, ApplicationException> duplicate =
+        serviceForOrgTests.appointOrgManager(groupId, admin, "lab-lead")
+
+    then: "a clean general error (already a manager)"
+    duplicate.isError()
+    duplicate.getError().getMessage().contains("already a manager")
+
+    when: "appointing an unknown user"
+    // the admin-gated org service consults the identity lookup before writing: with a
+    // restricted user service the ghost id does not exist → clean error, nothing persisted
+    def restrictedService = new GroupService(repository,
+        new InMemoryUserInformationService(["admin-user", "lab-lead"] as Set), adminPermission)
+    Result<Void, ApplicationException> unknown =
+        restrictedService.appointOrgManager(groupId, admin, "ghost")
+
+    then: "a not-found error"
+    unknown.isError()
+    unknown.getError().getMessage().contains("not found")
+  }
+
+  def "an admin removes an org-group manager and the group stays ACTIVE with the roster updated (AC4)"() {
+    given: "an org group with two managers"
+    String admin = "admin-user"
+    String groupId = serviceForOrgTests.createOrgGroup(admin, GroupName.from("NGS Lab"), DESC)
+        .getValue().groupId().get()
+    serviceForOrgTests.appointOrgManager(groupId, admin, "alice")
+    serviceForOrgTests.appointOrgManager(groupId, admin, "bob")
+
+    when: "the admin removes alice"
+    Result<Void, ApplicationException> result =
+        serviceForOrgTests.removeOrgManager(groupId, admin, "alice")
+
+    then: "the removal succeeds and the roster updates"
+    result.isValue()
+    serviceForOrgTests.listMembers(groupId, admin)*.userId() == ["bob"]
+
+    and: "the group remains ACTIVE with no OWNER row"
+    storage.findById(GroupId.from(groupId)).get().status() == GroupStatus.ACTIVE
+    serviceForOrgTests.listMembers(groupId, admin).every { it.role() != GroupRole.OWNER }
+  }
+
+  def "removing the last org-group manager keeps the group ACTIVE and governed (AC4 fallback)"() {
+    given: "an org group with a single manager"
+    String admin = "admin-user"
+    String groupId = serviceForOrgTests.createOrgGroup(admin, GroupName.from("NGS Lab"), DESC)
+        .getValue().groupId().get()
+    serviceForOrgTests.appointOrgManager(groupId, admin, "solo")
+
+    when: "the admin removes the last manager"
+    Result<Void, ApplicationException> result =
+        serviceForOrgTests.removeOrgManager(groupId, admin, "solo")
+
+    then: "the removal succeeds and the group stays ACTIVE"
+    result.isValue()
+    storage.findById(GroupId.from(groupId)).get().status() == GroupStatus.ACTIVE
+    serviceForOrgTests.listMembers(groupId, admin).isEmpty()
+  }
+
+  def "removeOrgManager by a non-admin is denied before any write"() {
+    given: "an org group with a manager"
+    String admin = "admin-user"
+    String groupId = serviceForOrgTests.createOrgGroup(admin, GroupName.from("NGS Lab"), DESC)
+        .getValue().groupId().get()
+    serviceForOrgTests.appointOrgManager(groupId, admin, "alice")
+
+    when: "a non-admin tries to remove the manager"
+    Result<Void, ApplicationException> result =
+        serviceForOrgTests.removeOrgManager(groupId, "researcher-1", "alice")
+
+    then: "access denied and the roster is unchanged"
+    result.isError()
+    result.getError().errorCode() == ErrorCode.ACCESS_DENIED
+    serviceForOrgTests.listMembers(groupId, admin)*.userId() == ["alice"]
+  }
+
+  def "listMembers gives QBiC admins oversight over org rosters but keeps ad-hoc rosters member-only (D6)"() {
+    given: "an org group and an ad-hoc group"
+    String admin = "admin-user"
+    String orgId = serviceForOrgTests.createOrgGroup(admin, GroupName.from("NGS Lab"), DESC)
+        .getValue().groupId().get()
+    serviceForOrgTests.appointOrgManager(orgId, admin, "alice")
+
+    String adHocId = service.createAdHocGroup("owner", GroupName.from("Sprint"), DESC)
+        .getValue().groupId().get()
+    service.addMember(adHocId, "owner", "mem-1")
+
+    expect: "the admin can see the org roster"
+    serviceForOrgTests.listMembers(orgId, admin)*.userId() == ["alice"]
+
+    and: "a non-member non-admin sees nothing for the org group"
+    serviceForOrgTests.listMembers(orgId, "stranger").isEmpty()
+
+    and: "the ad-hoc roster stays member-only: not visible to this QBiC admin (or a stranger)"
+    serviceForOrgTests.listMembers(adHocId, admin).isEmpty()
+    service.listMembers(adHocId, "stranger").isEmpty()
+  }
+
+  def "an org manager can add/remove regular members and rename/describe through the existing role-gated paths (AC1)"() {
+    given: "an org group with an appointed manager"
+    String admin = "admin-user"
+    String groupId = serviceForOrgTests.createOrgGroup(admin, GroupName.from("NGS Lab"), DESC)
+        .getValue().groupId().get()
+    serviceForOrgTests.appointOrgManager(groupId, admin, "manager-1")
+
+    when: "the org manager adds a regular member through the existing addMember path"
+    Result<Void, ApplicationException> addResult =
+        serviceForOrgTests.addMember(groupId, "manager-1", "regular-1")
+
+    then: "the added member is a MEMBER"
+    addResult.isValue()
+    serviceForOrgTests.listMembers(groupId, admin).find { it.userId() == "regular-1" }.role() ==
+        GroupRole.MEMBER
+
+    when: "the org manager removes the regular member"
+    Result<Void, ApplicationException> removeResult =
+        serviceForOrgTests.removeMember(groupId, "manager-1", "regular-1")
+
+    then: "the removal works"
+    removeResult.isValue()
+    serviceForOrgTests.listMembers(groupId, admin)*.userId() == ["manager-1"]
+
+    when: "the org manager renames + describes the group"
+    Result<Void, ApplicationException> renameResult =
+        serviceForOrgTests.renameGroup(groupId, "manager-1", GroupName.from("Renamed Org"))
+    Result<Void, ApplicationException> descResult =
+        serviceForOrgTests.updateDescription(groupId, "manager-1",
+            GroupDescription.from("new description"))
+
+    then: "both succeed"
+    renameResult.isValue()
+    descResult.isValue()
+    storage.findById(GroupId.from(groupId)).get().name().value() == "Renamed Org"
+    storage.findById(GroupId.from(groupId)).get().description().value().get() == "new description"
+  }
+
+  def "addOrgMember by an admin adds a regular MEMBER (owner-equivalent)"() {
+    given: "an org group"
+    String admin = "admin-user"
+    String groupId = serviceForOrgTests.createOrgGroup(admin, GroupName.from("NGS Lab"), DESC)
+        .getValue().groupId().get()
+
+    when: "the admin adds a regular member"
+    Result<Void, ApplicationException> result =
+        serviceForOrgTests.addOrgMember(groupId, admin, "alice")
+
+    then: "the member is added as a MEMBER (never MANAGER/OWNER)"
+    result.isValue()
+    def added = serviceForOrgTests.listMembers(groupId, admin).find { it.userId() == "alice" }
+    added.role() == GroupRole.MEMBER
+  }
+
+  def "addOrgMember by a non-admin is denied before any write"() {
+    given: "an org group"
+    String admin = "admin-user"
+    String groupId = serviceForOrgTests.createOrgGroup(admin, GroupName.from("NGS Lab"), DESC)
+        .getValue().groupId().get()
+
+    when: "a non-admin tries to add a member"
+    Result<Void, ApplicationException> result =
+        serviceForOrgTests.addOrgMember(groupId, "researcher-1", "alice")
+
+    then: "access denied and nothing is persisted"
+    result.isError()
+    result.getError().errorCode() == ErrorCode.ACCESS_DENIED
+    serviceForOrgTests.listMembers(groupId, admin).isEmpty()
+  }
+
+  def "addOrgMember rejects an already-a-member and an unknown user"() {
+    given: "an org group with a member"
+    String admin = "admin-user"
+    String groupId = serviceForOrgTests.createOrgGroup(admin, GroupName.from("NGS Lab"), DESC)
+        .getValue().groupId().get()
+    serviceForOrgTests.addOrgMember(groupId, admin, "alice")
+
+    when: "the admin adds alice again"
+    Result<Void, ApplicationException> dup =
+        serviceForOrgTests.addOrgMember(groupId, admin, "alice")
+
+    then: "a clear error is returned"
+    dup.isError()
+    serviceForOrgTests.listMembers(groupId, admin)*.userId() == ["alice"]
+  }
+
+  def "renameOrgGroup by an admin renames the org group and enforces unique names"() {
+    given: "an org group"
+    String admin = "admin-user"
+    String groupId = serviceForOrgTests.createOrgGroup(admin, GroupName.from("NGS Lab"), DESC)
+        .getValue().groupId().get()
+
+    when: "the admin renames it"
+    Result<Void, ApplicationException> result =
+        serviceForOrgTests.renameOrgGroup(groupId, admin, GroupName.from("QBiC NGS Core"))
+
+    then: "the name is updated"
+    result.isValue()
+    storage.findById(GroupId.from(groupId)).get().name().value() == "QBiC NGS Core"
+  }
+
+  def "renameOrgGroup rejects a duplicate name (case-insensitive) and a non-admin"() {
+    given: "two org groups"
+    String admin = "admin-user"
+    String g1 = serviceForOrgTests.createOrgGroup(admin, GroupName.from("NGS Lab"), DESC)
+        .getValue().groupId().get()
+    serviceForOrgTests.createOrgGroup(admin, GroupName.from("Proteomics"), DESC)
+
+    when: "renaming to a taken name"
+    Result<Void, ApplicationException> dup =
+        serviceForOrgTests.renameOrgGroup(g1, admin, GroupName.from("proteomics"))
+
+    then: "a duplicate-name error is returned"
+    dup.isError()
+    dup.getError().errorCode() == ErrorCode.DUPLICATE_GROUP_NAME
+
+    when: "a non-admin renames"
+    Result<Void, ApplicationException> denied =
+        serviceForOrgTests.renameOrgGroup(g1, "researcher-1", GroupName.from("X"))
+
+    then: "access denied"
+    denied.isError()
+    denied.getError().errorCode() == ErrorCode.ACCESS_DENIED
+  }
+
+  def "updateOrgGroupDescription by an admin updates the description"() {
+    given: "an org group"
+    String admin = "admin-user"
+    String groupId = serviceForOrgTests.createOrgGroup(admin, GroupName.from("NGS Lab"), DESC)
+        .getValue().groupId().get()
+
+    when: "the admin updates the description"
+    Result<Void, ApplicationException> result =
+        serviceForOrgTests.updateOrgGroupDescription(groupId, admin,
+            GroupDescription.from("Updated description"))
+
+    then:
+    result.isValue()
+    storage.findById(GroupId.from(groupId)).get().description().value().get() ==
+        "Updated description"
+  }
+
+  def "updateOrgGroupDescription by a non-admin is denied"() {
+    given: "an org group"
+    String admin = "admin-user"
+    String groupId = serviceForOrgTests.createOrgGroup(admin, GroupName.from("NGS Lab"), DESC)
+        .getValue().groupId().get()
+
+    when: "a non-admin updates the description"
+    Result<Void, ApplicationException> result =
+        serviceForOrgTests.updateOrgGroupDescription(groupId, "researcher-1",
+            GroupDescription.from("hacked"))
+
+    then:
+    result.isError()
+    result.getError().errorCode() == ErrorCode.ACCESS_DENIED
+  }
+
+  def "dissolveOrgGroup by an admin dissolves the org group and purges its roster"() {
+    given: "an org group with managers and members"
+    String admin = "admin-user"
+    String groupId = serviceForOrgTests.createOrgGroup(admin, GroupName.from("NGS Lab"), DESC)
+        .getValue().groupId().get()
+    serviceForOrgTests.appointOrgManager(groupId, admin, "alice")
+    serviceForOrgTests.addOrgMember(groupId, admin, "bob")
+
+    when: "the admin dissolves it"
+    Result<Void, ApplicationException> result =
+        serviceForOrgTests.dissolveOrgGroup(groupId, admin)
+
+    then: "the org group is dissolved and its roster is purged"
+    result.isValue()
+    storage.findById(GroupId.from(groupId)).get().status() == GroupStatus.DISSOLVED
+    serviceForOrgTests.listMembers(groupId, admin).isEmpty()
+  }
+
+  def "dissolveOrgGroup by a non-admin is denied before any write"() {
+    given: "an org group"
+    String admin = "admin-user"
+    String groupId = serviceForOrgTests.createOrgGroup(admin, GroupName.from("NGS Lab"), DESC)
+        .getValue().groupId().get()
+
+    when: "a non-admin tries to dissolve it"
+    Result<Void, ApplicationException> result =
+        serviceForOrgTests.dissolveOrgGroup(groupId, "researcher-1")
+
+    then: "access denied and the group remains ACTIVE"
+    result.isError()
+    result.getError().errorCode() == ErrorCode.ACCESS_DENIED
+    storage.findById(GroupId.from(groupId)).get().status() == GroupStatus.ACTIVE
+  }
+
+  /**
+   * Test admin gate: every user id starting with "admin-" is treated as an administrator;
+   * all other users (including unknown ids) are not.
+   */
+  static class TestAdminPermission implements GroupAdministrationPermission {
+
+    @Override
+    boolean isAdmin(String userId) {
+      return userId != null && userId.startsWith("admin-")
+    }
+  }
+
+  /**
+   * In-memory fake of the {@link GroupDataStorage} port.
+   */
+  static class InMemoryGroupDataStorage implements GroupDataStorage {
+
+    private final Map<GroupId, UserGroup> groups = new LinkedHashMap<>()
+
+    @Override
+    void save(UserGroup group) {
+      groups.put(group.id(), group)
+    }
+
+    @Override
+    Optional<UserGroup> findById(GroupId id) {
+      return Optional.ofNullable(groups.get(id))
+    }
+
+    @Override
+    Optional<UserGroup> findByNameIgnoreCase(String name) {
+      return groups.values().stream()
+          .filter(g -> g.name().value().equalsIgnoreCase(name))
+          .findFirst()
+    }
+
+    @Override
+    List<UserGroup> findAllActive() {
+      return groups.values().stream()
+          .filter(g -> g.isActive())
+          .toList()
+    }
+
+    @Override
+    List<UserGroup> findActiveGroupsByUserId(String userId) {
+      return groups.values().stream()
+          .filter(g -> g.isActive())
+          .filter(g -> g.memberships().stream().anyMatch(m -> m.userId() == userId))
+          .toList()
+    }
+
+    List<UserGroup> allGroups() {
+      return new ArrayList<>(groups.values())
+    }
+  }
+}

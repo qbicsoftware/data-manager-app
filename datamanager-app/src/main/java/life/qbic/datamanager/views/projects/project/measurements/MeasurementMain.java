@@ -1081,11 +1081,11 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
         event.getLocation().getQueryParameters(),
         measurementDetailsComponent.getTabPagination().listState());
 
-    // seed the URL state before the first render so the initial fetch already reflects the
-    // tab/page/size/filter/sort of a reloaded or shared link, instead of briefly rendering the
-    // in-session state and re-fetching (USER-R-03, ADR-0008).
-    measurementDetailsComponent.getTabPagination().applyExternalState(urlState);
+    // setContext resets the per-tab list state to defaults when a new experiment is shown; apply
+    // the URL state afterwards so the initial fetch reflects the tab/page/size/filter/sort of a
+    // reloaded or shared link instead of the defaults (USER-R-03, ADR-0008).
     reloadMeasurements();
+    measurementDetailsComponent.getTabPagination().applyExternalState(urlState);
 
     asyncService.getProjectCode(context.projectId().orElseThrow().value())
         .doOnSuccess(projectCode -> projectContext.setProjectId(projectCode.value()))

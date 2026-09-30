@@ -24,6 +24,7 @@ For the migration documentation structure, see [`README.md`](README.md).
 | 1 | [`add-sample-batch-property-and-project-association.sql`](../../sql/migrations/add-sample-batch-property-and-project-association.sql) | Add `batch`, `project_id`, `registrationTime`, `lastModified` to `sample` and backfill from legacy `sample_batches` (additive) | Low (non-destructive) |
 | 2 | [`finalize-sample-batch-removal.sql`](../../sql/migrations/finalize-sample-batch-removal.sql) | Add `project_id` FK, drop `sample.assigned_batch_id`, drop legacy `sample_batches`/`sample_batches_sampleid` (stop-the-world) | High (destructive) |
 | 3 | [`create-pinned-projects.sql`](../../sql/migrations/create-pinned-projects.sql) | Create `pinned_projects` table holding per-user pinned-project associations | low (additive, new empty table) |
+| 4 | [`create-user-groups.sql`](../../sql/migrations/create-user-groups.sql) | Create `user_group` + `group_membership` tables for the user-groups bounded context (ad-hoc group creation) | Low (additive, new empty tables) |
 
 Each row links to its incremental script. The sections below expand each entry
 with apply / verify / rollback detail.
@@ -310,6 +311,83 @@ DROP TABLE IF EXISTS data_management.pinned_projects;
 - The application must not start with the new code before the migration is applied; the pinned-project
   row is read on every project overview render and fails with “table not found” otherwise.
 - No backfill: pins are created by users in the UI.
+
+---
+
+## Migration #4: Create the user-groups tables (ad-hoc group creation)
+
+| Field | Value |
+|---|---|
+| **Story** | [FEAT-USER-GROUPS-03 #1561](https://github.com/qbicsoftware/data-manager-app/issues/1561) |
+| **Feature** | [FEAT-USER-GROUPS #1558](https://github.com/qbicsoftware/data-manager-app/issues/1558) |
+| **ADRs** | 0010 (user-groups bounded context) — pending human approval |
+| **Scope** | two new tables |
+| **Script** | `sql/migrations/create-user-groups.sql` |
+| **Target datasource** | `data_management` |
+
+### What it does
+
+Creates the `user_group` and `group_membership` tables of the new `user-groups` bounded
+context (GROUP-R-02, GROUP-NFR-02). Ad-hoc group creation by authenticated researchers becomes
+possible: the creator becomes the group OWNER (self-service, no admin involved).
+
+- `user_group.id` is the stable UUID by which the group will be referenced in Spring ACL
+  authority SIDs (`"GROUP_<id>"`) once the sharing feature lands;
+- `user_group.name` is unique **case-insensitively** via the `utf8mb4_unicode_ci` collation and
+  its unique index — the authoritative DB backstop for the duplicate-name acceptance criterion;
+- `user_group.status` supports soft dissolve (`ACTIVE` → `DISSOLVED`); dissolved rows are kept
+  for traceability;
+- `group_membership` carries the group-internal role (`OWNER|MANAGER|MEMBER`) and its composite
+  primary key `(group_id, user_id)` makes a user hold at most one membership per group;
+- `created_by` / `user_id` are bare varchar identity-user references with **no foreign keys** to
+  `users`, following the `personal_access_tokens.userId` / `pinned_projects.userId` precedent
+  (bounded-context rule, GROUP-C-01 / ADR-0010).
+
+### Pre-flight
+
+```sql
+-- Expect 0 rows: the migration is idempotent, but non-zero means it was already applied.
+SELECT COUNT(*) FROM information_schema.tables
+ WHERE table_schema = 'data_management' AND table_name IN ('user_group', 'group_membership');
+```
+
+### Apply
+
+```bash
+mysql -u <user> -h <host> -P <port> data_management \
+    < sql/migrations/create-user-groups.sql
+```
+
+### Verify
+
+```sql
+SHOW CREATE TABLE data_management.user_group\G
+-- Expect: PRIMARY KEY (id), UNIQUE KEY uk_user_group_name (name), ENGINE=InnoDB,
+--         CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+SHOW CREATE TABLE data_management.group_membership\G
+-- Expect: PRIMARY KEY (group_id, user_id), KEY idx_group_membership_user (user_id)
+
+SELECT COUNT(*) FROM data_management.user_group;        -- 0 until users create groups
+SELECT COUNT(*) FROM data_management.group_membership;  -- 0 until users join groups
+```
+
+### Rollback
+
+```sql
+-- The feature is additive; dropping the tables returns the schema to its previous state.
+DROP TABLE IF EXISTS data_management.group_membership;
+DROP TABLE IF EXISTS data_management.user_group;
+```
+
+### Operator notes
+
+- Safe to run while the application is live: two new, empty tables are created and no existing
+  object is locked or altered.
+- The application must not start with the new code before the migration is applied; group reads
+  fail with “table not found” otherwise.
+- No backfill: groups are created by users in the UI.
+- The case-insensitive name uniqueness depends on the `utf8mb4_unicode_ci` collation; do not
+  switch these tables to a case-sensitive collation.
 
 ---
 

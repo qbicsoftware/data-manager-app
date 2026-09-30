@@ -50,6 +50,18 @@ public interface ProjectAccessService {
 
   List<ProjectCollaborator> listCollaborators(ProjectId projectId);
 
+  /**
+   * Lists the user groups shared onto a project.
+   *
+   * <p>Groups ride as {@link GrantedAuthoritySid}s with the reserved {@code GROUP_} prefix
+   * (strategy §4.3). Only the group identity, display name, description and granted project role
+   * are exposed — never the member roster (visibility policy, strategy §5.1).</p>
+   *
+   * @param projectId the project id
+   * @return the shared groups with their granted project role
+   */
+  List<SharedProjectGroup> listSharedGroups(ProjectId projectId);
+
   void removeProject(ProjectId projectId);
 
   enum ProjectRole {
@@ -138,6 +150,20 @@ public interface ProjectAccessService {
    * @param projectRole the role of the user within the project
    */
   record ProjectCollaborator(String userId, ProjectId projectId, ProjectRole projectRole) {
+
+  }
+
+  /**
+   * A user group shared onto a specific project.
+   *
+   * @param groupId the stable user group id
+   * @param groupName the group's display name
+   * @param groupDescription the group's description, may be {@code null}
+   * @param projectId the project on which the group is shared
+   * @param projectRole the project role granted to the group
+   */
+  record SharedProjectGroup(String groupId, String groupName, String groupDescription,
+      ProjectId projectId, ProjectRole projectRole) {
 
   }
 }

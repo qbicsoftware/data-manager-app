@@ -108,6 +108,21 @@
       </dependency>
       <dependency>
         <groupId>life.qbic.datamanager</groupId>
+        <artifactId>user-groups</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>life.qbic.datamanager</groupId>
+        <artifactId>user-groups-api</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>life.qbic.datamanager</groupId>
+        <artifactId>user-groups-infrastructure</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>life.qbic.datamanager</groupId>
         <artifactId>datamanager-app</artifactId>
         <version>${project.version}</version>
       </dependency>
