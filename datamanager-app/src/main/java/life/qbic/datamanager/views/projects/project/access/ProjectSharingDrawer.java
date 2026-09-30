@@ -90,12 +90,8 @@ public class ProjectSharingDrawer extends Div {
     closeButton.addClickListener(event -> close());
     header.add(titleBlock, closeButton);
 
-    Div content = new Div();
+    Div content = new Div(composer, summary);
     content.addClassName("psd-content");
-    content.add(composer);
-    Div summaryScroll = new Div(summary);
-    summaryScroll.addClassName("psd-summary-scroll");
-    content.add(summaryScroll);
 
     body.add(header, content);
     panel.add(body);

@@ -23,6 +23,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.datamanager.views.account.UserAvatar;
+import life.qbic.datamanager.views.general.Tag;
+import life.qbic.datamanager.views.general.Tag.TagColor;
 import life.qbic.datamanager.views.projects.project.access.ProjectAccessComponent.UserInfoComponent;
 import life.qbic.identity.api.UserInfo;
 import life.qbic.identity.api.UserInformationService;
@@ -292,6 +294,7 @@ public class ProjectSharingComposer extends Div {
       this.type = type;
       this.id = id;
       addClassName("staged-grant");
+      addClassName(type == PrincipalType.USER ? "staged-grant-user" : "staged-grant-group");
       configureRoleSelect();
       Button remove = new Button(VaadinIcon.CLOSE_SMALL.create());
       remove.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE, ButtonVariant.LUMO_SMALL);
@@ -299,7 +302,16 @@ public class ProjectSharingComposer extends Div {
       remove.getElement().setAttribute("aria-label",
           "Remove %s from the share list".formatted(displayName));
       remove.addClickListener(event -> removeStagedGrant(this));
-      add(identity, roleSelect, remove);
+      Div identityWrapper = new Div(typeTag(type), identity);
+      identityWrapper.addClassName("staged-grant-identity");
+      add(identityWrapper, roleSelect, remove);
+    }
+
+    private static Tag typeTag(PrincipalType type) {
+      Tag tag = new Tag(type == PrincipalType.USER ? "User" : "Group");
+      tag.setTagColor(type == PrincipalType.USER ? TagColor.CONTRAST : TagColor.TEAL);
+      tag.addClassName("staged-grant-type");
+      return tag;
     }
 
     private void configureRoleSelect() {

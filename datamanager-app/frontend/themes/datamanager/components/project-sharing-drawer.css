@@ -54,13 +54,6 @@
   display: flex;
   flex-direction: column;
   gap: var(--lumo-space-l);
-  overflow: hidden;
-  min-height: 0;
-}
-
-/* Only the access summary scrolls; the composer stays anchored above it. */
-.project-sharing-drawer .psd-summary-scroll {
-  flex: 1 1 auto;
   overflow: auto;
   min-height: 0;
 }

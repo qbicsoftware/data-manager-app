@@ -1128,20 +1128,72 @@ a.project-dataset-footer, a.project-dataset-footer:hover {
 .project-sharing-composer .staged-grant {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: var(--lumo-space-s);
   padding: var(--lumo-space-xs) var(--lumo-space-s);
   border: 1px solid var(--lumo-contrast-10pct);
   border-radius: var(--lumo-border-radius-m);
+  min-width: 0;
+}
+
+/* Type badge + identity share the flexible space; long names ellipsize instead of
+   pushing the role control and remove button onto the next line. */
+.project-sharing-composer .staged-grant .staged-grant-identity {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.project-sharing-composer .staged-grant .staged-grant-type {
+  flex: 0 0 auto;
+}
+
+/* Group identity without a description renders as a bare name span. */
+.project-sharing-composer .staged-grant .staged-grant-identity > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-sharing-composer .staged-grant .user-info-component {
+  min-width: 0;
+}
+
+.project-sharing-composer .staged-grant .user-info-component .avatar {
+  flex: 0 0 auto;
+}
+
+.project-sharing-composer .staged-grant .user-info-component .user-info,
+.project-sharing-composer .staged-grant .user-info-component .user-name-and-full-name {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.project-sharing-composer .staged-grant .user-info-component .user-name-and-full-name {
+  display: block;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .project-sharing-composer .staged-grant .group-identity {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
-.project-sharing-composer .staged-grant .project-role-select {
-  margin-left: auto;
+.project-sharing-composer .staged-grant .group-identity > span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-sharing-composer .staged-grant .project-role-select,
+.project-sharing-composer .staged-grant .remove-staged-grant {
+  flex: 0 0 auto;
 }
 
 .project-sharing-composer .staged-grant .remove-staged-grant {
