@@ -34,6 +34,7 @@ import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessSe
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.SharedProjectGroup;
 import life.qbic.usergroups.api.GroupInfo;
 import life.qbic.usergroups.api.GroupInformationService;
+import life.qbic.usergroups.api.GroupType;
 
 /**
  * <b>Project Sharing Composer</b>
@@ -259,6 +260,7 @@ public class ProjectSharingComposer extends Div {
     groupPicker.setLabel("Add a group");
     groupPicker.setPlaceholder("Search groups…");
     groupPicker.setItemLabelGenerator(GroupInfo::name);
+    groupPicker.setRenderer(new ComponentRenderer<>(ProjectSharingComposer::renderGroupOption));
     groupPicker.addClassName("group-selection");
     groupPicker.setItems(query -> {
       String filter = query.getFilter().orElse("").toLowerCase();
@@ -312,6 +314,40 @@ public class ProjectSharingComposer extends Div {
     Div identity = new Div(name, description);
     identity.addClassName("group-identity");
     return identity;
+  }
+
+  /**
+   * Renders a group as a search result: the name plus its type badge on the first line and the
+   * description (if any) muted on a second line. Keeps the picker scannable without overloading it.
+   */
+  private static Component renderGroupOption(GroupInfo groupInfo) {
+    Span name = new Span(groupInfo.name());
+    name.addClassName("bold");
+    Div header = new Div(name, groupTypeBadge(groupInfo.type()));
+    header.addClassName("group-option-header");
+    Div option = new Div(header);
+    option.addClassName("group-option");
+    if (groupInfo.description() != null && !groupInfo.description().isBlank()) {
+      Span description = new Span(groupInfo.description());
+      description.addClassName("tertiary");
+      option.add(description);
+    }
+    return option;
+  }
+
+  /**
+   * A small badge naming the group type, matching the groups hub convention
+   * ({@code organisational} / {@code User Group}).
+   *
+   * @param type the group type
+   * @return the rendered badge
+   */
+  static Span groupTypeBadge(GroupType type) {
+    Span badge = new Span(type == GroupType.ORG ? "organisational" : "User Group");
+    badge.addClassName("my-groups-badge");
+    badge.addClassName(type == GroupType.ORG
+        ? "my-groups-badge--type-org" : "my-groups-badge--type-adhoc");
+    return badge;
   }
 
   private void addStagedGrant(PrincipalType type, String id, String displayName,

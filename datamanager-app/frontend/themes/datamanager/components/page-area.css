@@ -580,6 +580,13 @@
   min-width: 0;
 }
 
+.project-access-component .access-name-header {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+  min-width: 0;
+}
+
 .project-access-component .access-description {
   color: var(--lumo-secondary-text-color);
   font-size: var(--lumo-font-size-s);

@@ -56,6 +56,8 @@ import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessSe
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.usergroups.api.GroupInformationService;
+import life.qbic.usergroups.api.GroupInfo;
+import life.qbic.usergroups.api.GroupType;
 import life.qbic.usergroups.api.GroupSidProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -257,13 +259,15 @@ public class ProjectAccessComponent extends PageArea {
   private AccessEntry toAccessEntry(ProjectCollaborator collaborator) {
     var userInfo = userInformationService.findById(collaborator.userId()).orElseThrow();
     return new AccessEntry(PrincipalType.USER, collaborator.userId(), userInfo.platformUserName(),
-        userInfo.fullName(), userInfo.oidcId(), userInfo.oidcIssuer(), null, null,
+        userInfo.fullName(), userInfo.oidcId(), userInfo.oidcIssuer(), null, null, null,
         collaborator.projectRole());
   }
 
   private AccessEntry toAccessEntry(SharedProjectGroup group) {
+    GroupType groupType = groupInformationService.findGroupById(group.groupId())
+        .map(GroupInfo::type).orElse(null);
     return new AccessEntry(PrincipalType.GROUP, group.groupId(), null, null, null, null,
-        group.groupName(), group.groupDescription(), group.projectRole());
+        group.groupName(), group.groupDescription(), groupType, group.projectRole());
   }
 
   private void applyFilter() {
@@ -345,7 +349,12 @@ public class ProjectAccessComponent extends PageArea {
     groupIcon.addClassName("access-group-icon");
     Span name = new Span(entry.groupName());
     name.addClassName("access-name");
-    Div nameBlock = new Div(name);
+    Div nameHeader = new Div(name);
+    nameHeader.addClassName("access-name-header");
+    if (entry.groupType() != null) {
+      nameHeader.add(ProjectSharingComposer.groupTypeBadge(entry.groupType()));
+    }
+    Div nameBlock = new Div(nameHeader);
     nameBlock.addClassName("access-name-block");
     if (entry.groupDescription() != null && !entry.groupDescription().isBlank()) {
       Span description = new Span(entry.groupDescription());
@@ -583,7 +592,7 @@ public class ProjectAccessComponent extends PageArea {
    */
   public record AccessEntry(PrincipalType type, String id, String userName, String fullName,
                             String oidc, String oidcIssuer, String groupName,
-                            String groupDescription, ProjectRole projectRole) {
+                            String groupDescription, GroupType groupType, ProjectRole projectRole) {
 
     public boolean isUser() {
       return type == PrincipalType.USER;

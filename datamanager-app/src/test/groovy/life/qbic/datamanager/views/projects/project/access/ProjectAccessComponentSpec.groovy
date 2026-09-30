@@ -58,6 +58,7 @@ class ProjectAccessComponentSpec extends Specification {
     authenticationToUserIdTranslator.translateToUserId(_ as Authentication) >> Optional.of("user-1")
     projectAccessService.listCollaborators(_ as ProjectId) >> { collaborators }
     projectAccessService.listSharedGroups(_ as ProjectId) >> { sharedGroups }
+    groupInformationService.findGroupById(_ as String) >> Optional.empty()
     def ui = Mock(UI)
     ui.isAttached() >> true
     def session = Mock(com.vaadin.flow.server.VaadinSession)
@@ -83,12 +84,13 @@ class ProjectAccessComponentSpec extends Specification {
   private static AccessEntry aUser(String id, String username, String fullName,
       ProjectRole role) {
     return new AccessEntry(PrincipalType.USER, id, username, fullName, null, null, null, null,
-        role)
+        null, role)
   }
 
   private static AccessEntry aGroup(String id, String name, String description,
       ProjectRole role) {
-    return new AccessEntry(PrincipalType.GROUP, id, null, null, null, null, name, description, role)
+    return new AccessEntry(PrincipalType.GROUP, id, null, null, null, null, name, description,
+        null, role)
   }
 
   private static List<Component> allComponents(Component root) {
