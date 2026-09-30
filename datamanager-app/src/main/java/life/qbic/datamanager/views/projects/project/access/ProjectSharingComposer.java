@@ -90,6 +90,10 @@ public class ProjectSharingComposer extends Div {
     if (userInfo.oidcId() != null && userInfo.oidcIssuer() != null) {
       userInfoComponent.setOidc(userInfo.oidcIssuer(), userInfo.oidcId());
     }
+    userInfoComponent.getElement().setAttribute("title",
+        userInfo.fullName() == null || userInfo.fullName().isBlank()
+            ? userInfo.platformUserName()
+            : "%s (%s)".formatted(userInfo.platformUserName(), userInfo.fullName()));
     return userInfoComponent;
   }
 
@@ -306,13 +310,18 @@ public class ProjectSharingComposer extends Div {
   private static Component renderGroup(GroupInfo groupInfo) {
     Span name = new Span(groupInfo.name());
     name.addClassName("bold");
+    String tooltip = groupInfo.description() == null || groupInfo.description().isBlank()
+        ? groupInfo.name()
+        : "%s — %s".formatted(groupInfo.name(), groupInfo.description());
     if (groupInfo.description() == null || groupInfo.description().isBlank()) {
+      name.getElement().setAttribute("title", tooltip);
       return name;
     }
     Span description = new Span(groupInfo.description());
     description.addClassName("tertiary");
     Div identity = new Div(name, description);
     identity.addClassName("group-identity");
+    identity.getElement().setAttribute("title", tooltip);
     return identity;
   }
 
