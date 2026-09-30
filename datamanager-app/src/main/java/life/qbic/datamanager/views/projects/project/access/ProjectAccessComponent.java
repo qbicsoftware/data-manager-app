@@ -139,7 +139,15 @@ public class ProjectAccessComponent extends PageArea {
     Div toolbar = new Div(searchField, filterSelect);
     toolbar.addClassName("access-toolbar");
 
-    add(header, composer, toolbar, peopleSection, groupsSection);
+    Div roster = new Div(toolbar, peopleSection, groupsSection);
+    roster.addClassName("access-roster");
+
+    // DOM order keeps the composer first so it stacks on top on small screens; a CSS grid places
+    // it in a right-hand rail on wide screens.
+    Div body = new Div(composer, roster);
+    body.addClassName("access-body");
+
+    add(header, body);
   }
 
   private void configureToolbar() {

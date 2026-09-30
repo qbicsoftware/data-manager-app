@@ -462,6 +462,45 @@
 }
 
 /* -- Dialog-free access roster (toolbar, sections, rows) -- */
+
+/* Master-detail: roster on the left, sticky Share-this-project rail on the right.
+   Below the breakpoint the grid collapses and the composer (first in the DOM) sits on top. */
+.project-access-component .access-body {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(320px, 420px);
+  align-items: start;
+  gap: var(--lumo-space-l);
+}
+
+.project-access-component .access-roster {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+}
+
+.project-access-component .access-body > .project-sharing-composer {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: start;
+  position: sticky;
+  top: var(--lumo-space-l);
+}
+
+@media (max-width: 1023px) {
+  .project-access-component .access-body {
+    grid-template-columns: 1fr;
+  }
+
+  .project-access-component .access-body > .project-sharing-composer,
+  .project-access-component .access-roster {
+    grid-column: 1;
+    grid-row: auto;
+    position: static;
+  }
+}
 .project-access-component .access-toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -1216,6 +1255,9 @@ a.project-dataset-footer, a.project-dataset-footer:hover {
   display: flex;
   flex-direction: column;
   gap: var(--lumo-space-s);
+  /* Bound the staged batch so a large one scrolls internally instead of growing the rail. */
+  max-height: 40vh;
+  overflow-y: auto;
 }
 
 .project-sharing-composer .staged-grant {
