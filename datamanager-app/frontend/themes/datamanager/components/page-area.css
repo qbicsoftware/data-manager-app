@@ -540,11 +540,18 @@
   width: 100%;
 }
 
+/* Clip grid cell content so long names/descriptions ellipsize instead of widening the cell and
+   pushing the Role column out of view. */
+.project-access-component .access-grid vaadin-grid-cell-content {
+  overflow: hidden;
+}
+
 .project-access-component .access-principal-cell {
   display: flex;
   align-items: center;
   gap: var(--lumo-space-s);
   min-width: 0;
+  overflow: hidden;
 }
 
 .project-access-component .access-identity {

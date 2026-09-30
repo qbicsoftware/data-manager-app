@@ -213,7 +213,10 @@ public class ProjectAccessComponent extends PageArea {
     accessGrid.addColumn(new ComponentRenderer<>(this::principalCell))
         .setKey("principal")
         .setHeader("Principal")
-        .setAutoWidth(true)
+        // Not auto-width: a long group description would otherwise widen this column without
+        // bound and push the Role column out of view. Flex + a minimum width keeps it bounded and
+        // lets the cell content ellipsize.
+        .setAutoWidth(false)
         .setFlexGrow(1)
         .setSortable(true)
         .setComparator(Comparator.comparing(AccessEntry::displayName,
