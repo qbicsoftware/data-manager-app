@@ -46,6 +46,7 @@ public class ProfilePictureService {
   private final GroupAdministrationPermission adminPermission;
   private final ImageNormalizer normalizer;
 
+  @org.springframework.beans.factory.annotation.Autowired
   public ProfilePictureService(ProfilePictureRepository repository,
       ProfilePictureAuditRepository auditRepository,
       GroupPictureAuthorization groupPictureAuthorization,
