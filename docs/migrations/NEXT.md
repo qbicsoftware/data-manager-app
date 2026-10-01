@@ -25,6 +25,7 @@ For the migration documentation structure, see [`README.md`](README.md).
 | 2 | [`finalize-sample-batch-removal.sql`](../../sql/migrations/finalize-sample-batch-removal.sql) | Add `project_id` FK, drop `sample.assigned_batch_id`, drop legacy `sample_batches`/`sample_batches_sampleid` (stop-the-world) | High (destructive) |
 | 3 | [`create-pinned-projects.sql`](../../sql/migrations/create-pinned-projects.sql) | Create `pinned_projects` table holding per-user pinned-project associations | low (additive, new empty table) |
 | 4 | [`create-user-groups.sql`](../../sql/migrations/create-user-groups.sql) | Create `user_group` + `group_membership` tables for the user-groups bounded context (ad-hoc group creation) | Low (additive, new empty tables) |
+| 5 | [`create-profile-pictures.sql`](../../sql/migrations/create-profile-pictures.sql) | Create `profile_picture` + `profile_picture_audit` tables for user and user-group profile pictures | Low (additive, new empty tables) |
 
 Each row links to its incremental script. The sections below expand each entry
 with apply / verify / rollback detail.
@@ -388,6 +389,62 @@ DROP TABLE IF EXISTS data_management.user_group;
 - No backfill: groups are created by users in the UI.
 - The case-insensitive name uniqueness depends on the `utf8mb4_unicode_ci` collation; do not
   switch these tables to a case-sensitive collation.
+
+---
+
+## Migration #5: Create the profile picture tables
+
+| Field | Value |
+|---|---|
+| **Story** | `FEAT-PROF-PIC-01` / `FEAT-PROF-PIC-02` (proposed; governance prerequisites pending) |
+| **Feature** | `FEAT-PROFILE-PICTURES` (proposed) |
+| **ADRs** | new profile-picture storage ADR — pending human approval |
+| **Scope** | create `profile_picture`, `profile_picture_audit` |
+| **Script** | [`sql/migrations/create-profile-pictures.sql`](../../sql/migrations/create-profile-pictures.sql) |
+| **Target datasource** | `data_management` |
+
+### Purpose
+
+Backs profile pictures for user profiles and user-group profiles. Only the normalized square PNG
+derivative (256×256) is stored; the upload is discarded. The blob is isolated from the hot
+`users` / `user_group` rows and keyed by `(owner_type, owner_id)` with no foreign keys, following
+the cross-context precedent of `pinned_projects` and `group_membership`. The audit table records
+`SET` / `REPLACE` events for system-admin review only.
+
+### Apply
+
+```bash
+mysql -u <user> -h <host> -P <port> data_management \
+    < sql/migrations/create-profile-pictures.sql
+```
+
+### Verify
+
+```sql
+SHOW TABLES LIKE 'profile_picture%';
+SHOW CREATE TABLE data_management.profile_picture;
+SHOW CREATE TABLE data_management.profile_picture_audit;
+-- Both start empty and fill as users set pictures:
+SELECT COUNT(*) FROM data_management.profile_picture;        -- 0 until pictures are set
+SELECT COUNT(*) FROM data_management.profile_picture_audit;  -- 0 until pictures are set
+```
+
+### Rollback
+
+```sql
+-- The feature is additive; dropping the tables returns the schema to its previous state.
+DROP TABLE IF EXISTS data_management.profile_picture_audit;
+DROP TABLE IF EXISTS data_management.profile_picture;
+```
+
+### Operator notes
+
+- Safe to run while the application is live: two new, empty tables are created and no existing
+  object is locked or altered.
+- The application must not start with the new code before the migration is applied; avatar
+  delivery and uploads fail with “table not found” otherwise.
+- No backfill: the identicon fallback is used until a user or manager sets a picture.
+- Expect roughly 10–30 KB per row (256×256 PNG) plus blob overhead.
 
 ---
 

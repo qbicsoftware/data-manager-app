@@ -1112,3 +1112,38 @@ CREATE TABLE IF NOT EXISTS `group_membership`
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `profile_picture`
+(
+    `id`           bigint(20)   NOT NULL AUTO_INCREMENT,
+    `owner_type`   varchar(16)  NOT NULL,
+    `owner_id`     varchar(255) NOT NULL,
+    `content_type` varchar(32)  NOT NULL,
+    `content_hash` char(64)     NOT NULL,
+    `width`        smallint     NOT NULL,
+    `height`       smallint     NOT NULL,
+    `data`         mediumblob   NOT NULL,
+    `updated_at`   datetime(6)  NOT NULL,
+    `updated_by`   varchar(255) NOT NULL,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_profile_picture_owner` (`owner_type`, `owner_id`)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `profile_picture_audit`
+(
+    `id`                   bigint(20)   NOT NULL AUTO_INCREMENT,
+    `owner_type`           varchar(16)  NOT NULL,
+    `owner_id`             varchar(255) NOT NULL,
+    `action`               varchar(16)  NOT NULL,
+    `actor_id`             varchar(255) NOT NULL,
+    `previous_content_hash` char(64)    DEFAULT NULL,
+    `new_content_hash`     char(64)     NOT NULL,
+    `created_at`           datetime(6)  NOT NULL,
+    PRIMARY KEY (`id`),
+    KEY `idx_profile_picture_audit_owner` (`owner_type`, `owner_id`, `created_at`),
+    KEY `idx_profile_picture_audit_created` (`created_at`)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci;
