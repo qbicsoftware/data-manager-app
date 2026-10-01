@@ -172,10 +172,12 @@ class ProfilePictureServiceSpec extends Specification {
         }
 
         @Override
-        Optional<String> findContentHashByOwnerTypeAndOwnerId(ProfilePictureOwnerType ownerType,
-                String ownerId) {
-            return Optional.ofNullable(store[key(ownerType, ownerId)])
-                    .map { it.contentHash }
+        Optional<ProfilePictureRepository.ContentHashProjection>
+                findContentHashByOwnerTypeAndOwnerId(ProfilePictureOwnerType ownerType,
+                        String ownerId) {
+            return Optional.ofNullable(store[key(ownerType, ownerId)]).map { entity ->
+                [getContentHash: { entity.contentHash }] as ProfilePictureRepository.ContentHashProjection
+            }
         }
 
         @Override

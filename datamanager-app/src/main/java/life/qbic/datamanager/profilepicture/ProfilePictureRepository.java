@@ -11,9 +11,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.Instant;
 import life.qbic.datamanager.profilepicture.ProfilePictureRepository.ProfilePictureEntity;
-import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.Repository;
-import org.springframework.data.repository.query.Param;
 
 /**
  * Persistence port for normalized profile-picture derivatives.
@@ -38,15 +36,24 @@ public interface ProfilePictureRepository extends Repository<ProfilePictureEntit
   /**
    * Reads only the content hash for an owner, without loading the blob. Used by the avatar URL
    * resolver on hot render paths.
+   *
+   * <p>A (closed) projection derived query is used instead of a JPQL {@code @Query}, because the
+   * entity is a nested class and its Hibernate entity name is not the simple class name.</p>
    */
-  @Query("select p.contentHash from ProfilePictureEntity p "
-      + "where p.ownerType = :ownerType and p.ownerId = :ownerId")
-  java.util.Optional<String> findContentHashByOwnerTypeAndOwnerId(
-      @Param("ownerType") ProfilePictureOwnerType ownerType, @Param("ownerId") String ownerId);
+  java.util.Optional<ContentHashProjection> findContentHashByOwnerTypeAndOwnerId(
+      ProfilePictureOwnerType ownerType, String ownerId);
 
   ProfilePictureEntity save(ProfilePictureEntity entity);
 
   void deleteByOwnerTypeAndOwnerId(ProfilePictureOwnerType ownerType, String ownerId);
+
+  /**
+   * Closed projection exposing only the content hash.
+   */
+  interface ContentHashProjection {
+
+    String getContentHash();
+  }
 
   /**
    * The stored, normalized derivative of one owner's profile picture.

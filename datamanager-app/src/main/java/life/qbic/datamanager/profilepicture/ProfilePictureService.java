@@ -183,7 +183,8 @@ public class ProfilePictureService {
     if (ownerType == null || isBlank(ownerId)) {
       return Optional.empty();
     }
-    return repository.findContentHashByOwnerTypeAndOwnerId(ownerType, ownerId);
+    return repository.findContentHashByOwnerTypeAndOwnerId(ownerType, ownerId)
+        .map(ProfilePictureRepository.ContentHashProjection::getContentHash);
   }
 
   /**
