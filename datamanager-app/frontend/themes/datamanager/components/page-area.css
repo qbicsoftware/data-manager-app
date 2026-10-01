@@ -470,6 +470,13 @@
   grid-template-columns: minmax(0, 2fr) minmax(320px, 420px);
   align-items: start;
   gap: var(--lumo-space-l);
+  min-width: 0;
+}
+
+/* Grid items default to min-width:auto, which lets wide content (a long staged chip) push the
+   track — and the whole page — wider. Allow them to shrink. */
+.project-access-component .access-body > * {
+  min-width: 0;
 }
 
 .project-access-component .access-roster {
@@ -1233,6 +1240,9 @@ a.project-dataset-footer, a.project-dataset-footer:hover {
   border-radius: var(--lumo-border-radius-m);
   /* Anchors the busy overlay to the composer container. */
   position: relative;
+  /* Allow the composer to shrink inside a grid/flex track: otherwise a long staged chip forces
+     the whole access area (roster included) wider than the viewport. */
+  min-width: 0;
 }
 
 .project-sharing-composer .sharing-pickers {
@@ -1243,7 +1253,8 @@ a.project-dataset-footer, a.project-dataset-footer:hover {
 
 .project-sharing-composer .sharing-pickers > * {
   flex: 1 1 18em;
-  min-width: 14em;
+  /* Never force a minimum wider than the container on narrow screens. */
+  min-width: 0;
 }
 
 .project-sharing-composer .staged-grants {
@@ -1253,6 +1264,7 @@ a.project-dataset-footer, a.project-dataset-footer:hover {
   /* Bound the staged batch so a large one scrolls internally instead of growing the rail. */
   max-height: 40vh;
   overflow-y: auto;
+  min-width: 0;
 }
 
 .project-sharing-composer .staged-grant {

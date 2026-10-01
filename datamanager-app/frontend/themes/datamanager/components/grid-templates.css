@@ -29,6 +29,12 @@
   width: 100%;
 }
 
+/* Grid items default to min-width:auto; allow the page content to shrink so long content
+   (e.g. a staged group chip) cannot widen the whole layout. */
+.main.project-access > * {
+  min-width: 0;
+}
+
 .main.raw-data {
   grid-template-columns: minmax(min-content, 80%) minmax(min-content, 20%);
   grid-template-rows: minmax(min-content, 10%) minmax(60vh, 1fr);
