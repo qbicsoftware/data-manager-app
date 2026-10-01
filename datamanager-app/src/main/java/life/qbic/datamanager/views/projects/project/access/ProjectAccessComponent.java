@@ -308,6 +308,9 @@ public class ProjectAccessComponent extends PageArea {
       throw new ApplicationException("no project id in context " + context);
     }
     this.context = context;
+    // The component is @UIScope: role-change indicators must not leak from a previously shown
+    // project (their ids are not globally unique across projects).
+    recentRoleChanges.clear();
     this.canChangeAccess = userPermissions.changeProjectAccess(context.projectId().orElseThrow());
     composer.setVisible(canChangeAccess);
     uiHandle.bind(UI.getCurrent());
@@ -491,8 +494,9 @@ public class ProjectAccessComponent extends PageArea {
 
   /**
    * Mirrors the current roster state into the URL query parameters so search and filter settings
-   * are preserved during natural browser navigation. Debounced/rapid changes replace the current
-   * history entry, explicit role switches push a new one.
+   * are preserved during natural browser navigation. All roster-state changes (search, type
+   * filter, role filter) replace the current history entry — the roster is a single, always
+   * in-sync view, so pushing a new entry per change would spam the browser history.
    */
   private void writeUrl(boolean push) {
     if (suppressUrlWrite || context == null || context.projectId().isEmpty()) {
@@ -757,6 +761,11 @@ public class ProjectAccessComponent extends PageArea {
   }
 
   private void removeSelected(Set<AccessEntry> selected) {
+    if (!canChangeAccess) {
+      displayError(INVALID_USER_REMOVAL, "You can't remove this principal from the project");
+      hideActionBar();
+      return;
+    }
     ProjectId projectId = context.projectId().orElseThrow();
     for (AccessEntry entry : selected) {
       try {

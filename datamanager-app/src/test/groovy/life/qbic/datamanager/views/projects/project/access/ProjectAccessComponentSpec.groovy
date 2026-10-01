@@ -535,13 +535,17 @@ class ProjectAccessComponentSpec extends Specification {
     collaborators = [new ProjectCollaborator("u-1", projectId, ProjectRole.READ)]
     userInformationService.findById("u-1") >> Optional.of(user("u-1", "One", "alice"))
     setContext(true)
+    def applied = new AccessRosterState("alice", AccessFilter.ALL, Optional.empty())
 
     when: "an external state is applied"
-    def listenerFiresBefore = component.@rosterState
-    component.applyExternalState(new AccessRosterState("alice", AccessFilter.ALL,
-        Optional.empty()))
+    component.applyExternalState(applied)
 
-    then: "the roster state is exactly what was applied, not re-mutated by a listener"
+    then: "rosterState is the exact applied instance, not a re-mutated copy"
+    // Without the applyingExternalState guard, searchField.setValue(...) would fire the search
+    // listener, which replaces rosterState via withSearch(...) — a different reference. Identity
+    // therefore proves the guard held.
+    component.@rosterState.is(applied)
+    and: "the values are what was applied"
     component.@rosterState == new AccessRosterState("alice", AccessFilter.ALL, Optional.empty())
   }
 
