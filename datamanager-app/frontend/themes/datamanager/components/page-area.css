@@ -515,6 +515,64 @@
   gap: var(--lumo-space-m);
 }
 
+/* Summary overview chips: a clickable count of shared principals per role. Clicking a chip
+   filters the roster to that role; clicking “Shared total” clears the role filter. */
+.project-access-component .access-stats-overview {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--lumo-space-s);
+}
+
+.project-access-component .access-stat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+  padding: var(--lumo-space-xs) var(--lumo-space-s);
+  border-radius: var(--lumo-border-radius-l);
+  border: 1px solid var(--lumo-contrast-10pct);
+  background-color: var(--lumo-base-color);
+  color: var(--lumo-body-text-color);
+  font-size: var(--lumo-font-size-s);
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.1s ease, border-color 0.1s ease;
+}
+
+.project-access-component .access-stat-chip:hover:not([disabled]) {
+  background-color: var(--lumo-contrast-5pct);
+  border-color: var(--lumo-contrast-20pct);
+}
+
+.project-access-component .access-stat-chip:focus-visible {
+  outline: 2px solid var(--lumo-primary-color);
+  outline-offset: 2px;
+}
+
+.project-access-component .access-stat-chip[disabled] {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.project-access-component .access-stat-chip-active {
+  background-color: var(--lumo-primary-color-10pct);
+  border-color: var(--lumo-primary-color);
+  color: var(--lumo-primary-text-color);
+}
+
+.project-access-component .access-stat-name {
+  font-weight: 500;
+}
+
+.project-access-component .access-stat-count {
+  font-weight: 600;
+  color: var(--lumo-secondary-text-color);
+}
+
+.project-access-component .access-stat-chip-active .access-stat-count {
+  color: var(--lumo-primary-text-color);
+}
+
 .project-access-component .access-search {
   flex: 1 1 18em;
 }
@@ -540,7 +598,19 @@
   gap: var(--lumo-space-s);
   padding: var(--lumo-space-s) var(--lumo-space-m);
   border-radius: var(--lumo-border-radius-m);
+  /* Management action (change role) and destructive action (remove) share the inline bar. The
+     bar itself uses a light version of the primary color: changing a role is a normal management
+     action, not a danger action. The destructive character is conveyed by the Remove button's
+     error theme instead. */
+  background-color: var(--lumo-primary-color-10pct);
+  border: 1px solid var(--lumo-primary-color-30pct);
+}
+
+/* When the inline bar hosts the destructive remove confirmation, it may use the light error
+   tint for the background to reinforce the danger of the action. */
+.project-access-component .access-inline-confirm.access-inline-confirm-danger {
   background-color: var(--lumo-error-color-10pct);
+  border-color: var(--lumo-error-color-30pct);
 }
 
 .project-access-component .access-grid {
@@ -577,6 +647,35 @@
 .project-access-component .access-group-icon,
 .project-access-component .access-identity .user-avatar {
   flex: 0 0 auto;
+}
+
+/* Role cell: fixed-width indicator slot before the badge plus a transient direction indicator
+   shown right after a role change. The slot always reserves its width, so the badge stays in its
+   normal position whether or not an indicator is present. */
+.project-access-component .access-role-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lumo-space-xs);
+}
+
+.project-access-component .access-role-cell .role-change-slot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* Reserve the icon width even when empty so the badge never shifts. */
+  width: var(--lumo-icon-size-m);
+  height: var(--lumo-icon-size-m);
+  flex: 0 0 auto;
+}
+
+.project-access-component .access-role-cell .role-change-up {
+  color: var(--lumo-success-color);
+  font-size: var(--lumo-font-size-s);
+}
+
+.project-access-component .access-role-cell .role-change-down {
+  color: var(--lumo-error-color);
+  font-size: var(--lumo-font-size-s);
 }
 
 .project-access-component .access-name {

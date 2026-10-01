@@ -4,6 +4,8 @@ import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.ComponentEvent;
+import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -15,23 +17,33 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.page.History;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
+import com.vaadin.flow.router.Location;
+import com.vaadin.flow.router.QueryParameters;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.security.UserPermissions;
+import life.qbic.datamanager.views.AppRoutes.ProjectRoutes;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.UiHandle;
 import life.qbic.datamanager.views.account.UserAvatar;
@@ -41,7 +53,9 @@ import life.qbic.datamanager.views.general.Tag.TagColor;
 import life.qbic.datamanager.views.general.oidc.OidcLogo;
 import life.qbic.datamanager.views.general.oidc.OidcType;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
+import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.notifications.StyledNotification;
+import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.projects.project.access.ProjectSharingComposer.GrantRequest;
 import life.qbic.datamanager.views.projects.project.access.ProjectSharingComposer.GrantRequestedEvent;
 import life.qbic.datamanager.views.projects.project.access.ProjectSharingComposer.PrincipalType;
@@ -101,12 +115,16 @@ public class ProjectAccessComponent extends PageArea {
   private final transient UserPermissions userPermissions;
   private final transient AuthenticationToUserIdTranslator authenticationToUserIdTranslator;
   private final transient Executor taskExecutor;
+  private final transient MessageSourceNotificationFactory notificationFactory;
   private final UiHandle uiHandle = new UiHandle();
 
   private final Div header;
   private final ProjectSharingComposer composer;
   private final TextField searchField;
   private final Select<AccessFilter> filterSelect;
+  private final Div statsOverview;
+  private final Map<ProjectRole, Div> roleStatChips = new LinkedHashMap<>();
+  private Div allStatChip;
   private final Button changeRoleButton;
   private final Button removeButton;
   private final Div actionBar;
@@ -116,6 +134,26 @@ public class ProjectAccessComponent extends PageArea {
   private Context context;
   private boolean canChangeAccess = false;
   private List<AccessEntry> entries = List.of();
+  /**
+   * Records the role change of a principal that was just applied, keyed by the principal id, so
+   * the affected roster row can show a transient direction indicator (up = increased grant,
+   * down = decreased grant) before the next data reload or page leave.
+   */
+  private final Map<String, RoleChange> recentRoleChanges = new HashMap<>();
+  /**
+   * The current roster state mirrored into the URL query parameters.
+   */
+  private AccessRosterState rosterState = AccessRosterState.defaults();
+  /**
+   * Set while applying an externally provided state (initial load / back-forward / shared link)
+   * so the applied state is not mirrored back into the URL.
+   */
+  private boolean suppressUrlWrite = false;
+  /**
+   * Set while applying an externally provided state so the search/filter value-change listeners
+   * do not re-enter {@link #rosterState} mutation and re-render mid-application.
+   */
+  private boolean applyingExternalState = false;
 
   protected ProjectAccessComponent(
       @Autowired ProjectAccessService projectAccessService,
@@ -123,7 +161,8 @@ public class ProjectAccessComponent extends PageArea {
       @Autowired GroupInformationService groupInformationService,
       UserPermissions userPermissions,
       AuthenticationToUserIdTranslator authenticationToUserIdTranslator,
-      @Qualifier("taskExecutor") Executor taskExecutor) {
+      @Qualifier("taskExecutor") Executor taskExecutor,
+      @Autowired MessageSourceNotificationFactory notificationFactory) {
     this.projectAccessService = requireNonNull(projectAccessService,
         "projectAccessService must not be null");
     this.userInformationService = requireNonNull(userInformationService,
@@ -134,6 +173,8 @@ public class ProjectAccessComponent extends PageArea {
     this.authenticationToUserIdTranslator = requireNonNull(authenticationToUserIdTranslator,
         "authenticationToUserIdTranslator must not be null");
     this.taskExecutor = requireNonNull(taskExecutor, "taskExecutor must not be null");
+    this.notificationFactory = requireNonNull(notificationFactory,
+        "notificationFactory must not be null");
     this.addClassName("project-access-component");
     log.debug("New instance for %s(#%d)".formatted(ProjectAccessComponent.class.getSimpleName(),
         System.identityHashCode(this)));
@@ -152,14 +193,16 @@ public class ProjectAccessComponent extends PageArea {
 
     searchField = new TextField();
     filterSelect = new Select<>();
+    statsOverview = new Div();
     changeRoleButton = new Button("Change role");
     removeButton = new Button("Remove", VaadinIcon.TRASH.create());
     actionBar = new Div();
     selectionCount = new Tag("");
     grid = createGrid();
     configureToolbar();
+    configureStatsOverview();
 
-    Div roster = new Div(toolbar(), actionBar, grid);
+    Div roster = new Div(statsOverview, toolbar(), actionBar, grid);
     roster.addClassName("access-roster");
 
     // DOM order keeps the composer first so it stacks on top on small screens; a CSS grid places
@@ -185,14 +228,27 @@ public class ProjectAccessComponent extends PageArea {
     searchField.setPrefixComponent(VaadinIcon.SEARCH.create());
     searchField.setValueChangeMode(ValueChangeMode.LAZY);
     searchField.addClassName("access-search");
-    searchField.addValueChangeListener(event -> applyFilter());
+    searchField.addValueChangeListener(event -> {
+      if (!applyingExternalState) {
+        rosterState = rosterState.withSearch(event.getValue() == null ? "" : event.getValue());
+        writeUrl(false);
+        applyFilter();
+      }
+    });
 
     filterSelect.setItems(AccessFilter.values());
     filterSelect.setItemLabelGenerator(AccessFilter::label);
     filterSelect.setValue(AccessFilter.ALL);
     filterSelect.addClassName("access-filter");
     filterSelect.getElement().setAttribute("aria-label", "Filter by principal type");
-    filterSelect.addValueChangeListener(event -> applyFilter());
+    filterSelect.addValueChangeListener(event -> {
+      if (!applyingExternalState) {
+        rosterState = rosterState.withFilter(
+            event.getValue() == null ? AccessFilter.ALL : event.getValue());
+        writeUrl(false);
+        applyFilter();
+      }
+    });
 
     changeRoleButton.addClassName("access-change-role-button");
     changeRoleButton.setEnabled(false);
@@ -230,7 +286,7 @@ public class ProjectAccessComponent extends PageArea {
         .setFlexGrow(1)
         .setSortable(true)
         .setComparator(ROSTER_ORDER);
-    accessGrid.addColumn(new ComponentRenderer<>(entry -> roleBadge(entry.projectRole())))
+    accessGrid.addColumn(new ComponentRenderer<>(this::roleCell))
         .setKey("role")
         .setHeader("Role")
         .setAutoWidth(true)
@@ -240,6 +296,14 @@ public class ProjectAccessComponent extends PageArea {
   }
 
   public void setContext(Context context) {
+    setContext(context, AccessRosterState.defaults());
+  }
+
+  /**
+   * Initialises the component with the project context and an externally provided roster state
+   * (e.g. restored from the URL on direct load / reload / shared links).
+   */
+  public void setContext(Context context, AccessRosterState urlState) {
     if (context.projectId().isEmpty()) {
       throw new ApplicationException("no project id in context " + context);
     }
@@ -250,7 +314,31 @@ public class ProjectAccessComponent extends PageArea {
     removeButton.setVisible(canChangeAccess);
     changeRoleButton.setVisible(canChangeAccess);
     grid.setSelectionMode(canChangeAccess ? SelectionMode.MULTI : SelectionMode.NONE);
+    suppressUrlWrite = true;
+    try {
+      applyExternalState(urlState);
+    } finally {
+      suppressUrlWrite = false;
+    }
     loadAccess();
+  }
+
+  /**
+   * Applies an externally provided roster state (initial load, URL back/forward, shared links)
+   * to the search field, type filter and role filter without writing back to the URL.
+   */
+  public void applyExternalState(AccessRosterState state) {
+    this.rosterState = state;
+    suppressUrlWrite = true;
+    applyingExternalState = true;
+    try {
+      searchField.setValue(state.search());
+      filterSelect.setValue(state.filter());
+    } finally {
+      suppressUrlWrite = false;
+      applyingExternalState = false;
+    }
+    applyFilter();
   }
 
   private void loadAccess() {
@@ -285,13 +373,16 @@ public class ProjectAccessComponent extends PageArea {
     String query = searchField.getValue() == null ? "" : searchField.getValue().trim().toLowerCase();
     AccessFilter filter = filterSelect.getValue() == null ? AccessFilter.ALL
         : filterSelect.getValue();
+    Optional<ProjectRole> role = rosterState.role();
     List<AccessEntry> filtered = entries.stream()
         .filter(entry -> matchesFilter(entry, filter))
+        .filter(entry -> role.isEmpty() || entry.projectRole() == role.get())
         .filter(entry -> matchesQuery(entry, query))
         .toList();
     grid.setItems(filtered);
     grid.deselectAll();
     updateActionButtons();
+    updateStatsOverview();
   }
 
   private static boolean matchesFilter(AccessEntry entry, AccessFilter filter) {
@@ -325,6 +416,109 @@ public class ProjectAccessComponent extends PageArea {
     removeButton.setEnabled(hasSelection);
     selectionCount.setText(selectedCount == 1 ? "1 selected" : "%d selected".formatted(selectedCount));
     selectionCount.setVisible(selectedCount > 0);
+  }
+
+  /**
+   * Builds the summary overview row: a clickable chip with the total number of shared principals,
+   * plus one chip per project role with the number of principals holding it. Clicking a chip
+   * filters the roster directly to that role (clicking the total clears the role filter).
+   */
+  private void configureStatsOverview() {
+    statsOverview.addClassName("access-stats-overview");
+    allStatChip = statChip("Shared total", null);
+    statsOverview.add(allStatChip);
+    for (ProjectRole role : roleOrder()) {
+      Div roleChip = statChip(ProjectSharingComposer.roleLabel(role), role);
+      roleStatChips.put(role, roleChip);
+      statsOverview.add(roleChip);
+    }
+  }
+
+  private Div statChip(String label, ProjectRole role) {
+    Div chip = new Div();
+    chip.addClassName("access-stat-chip");
+    if (role != null) {
+      chip.addClassName("access-stat-chip-" + role.name().toLowerCase());
+    }
+    chip.getElement().setAttribute("role", "button");
+    chip.getElement().setAttribute("tabindex", "0");
+    Span name = new Span(label);
+    name.addClassName("access-stat-name");
+    Span count = new Span("0");
+    count.addClassName("access-stat-count");
+    chip.add(name, count);
+    chip.addClickListener(event -> selectRoleFilter(role));
+    // Keyboard accessibility: the chip behaves like a button (role="button", tabindex="0"),
+    // so activate it with Enter or Space as well.
+    chip.getElement().addEventListener("keydown", event -> selectRoleFilter(role))
+        .setFilter("event.key === 'Enter' || event.key === ' '");
+    return chip;
+  }
+
+  private void selectRoleFilter(ProjectRole role) {
+    rosterState = rosterState.withRole(role == null ? Optional.empty() : Optional.of(role));
+    writeUrl(false);
+    applyFilter();
+  }
+
+  /**
+   * Updates the role counts on the overview chips and highlights the active one. Counts always
+   * reflect the full roster, independent of the current search/type/role filter, so the manager
+   * gets a stable overview of what is shared.
+   */
+  private void updateStatsOverview() {
+    int total = entries.size();
+    setStatCount(allStatChip, total);
+    allStatChip.setEnabled(total > 0);
+    // The active chip always reflects the role filter: “Shared total” is active whenever no
+    // role filter is set, independently of the orthogonal search/type filters.
+    boolean allActive = rosterState.role().isEmpty();
+    allStatChip.getElement().getClassList().set("access-stat-chip-active", allActive);
+    for (Map.Entry<ProjectRole, Div> entry : roleStatChips.entrySet()) {
+      long count = entries.stream().filter(e -> e.projectRole() == entry.getKey()).count();
+      setStatCount(entry.getValue(), (int) count);
+      boolean active = rosterState.role().map(role -> role == entry.getKey()).orElse(false);
+      entry.getValue().setEnabled(total > 0 && count > 0);
+      entry.getValue().getElement().getClassList().set("access-stat-chip-active", active);
+    }
+  }
+
+  private static void setStatCount(Div chip, int count) {
+    chip.getChildren().filter(c -> c instanceof Span)
+        .filter(c -> c.getElement().getClassList().contains("access-stat-count"))
+        .forEach(c -> ((Span) c).setText(String.valueOf(count)));
+  }
+
+  /**
+   * Mirrors the current roster state into the URL query parameters so search and filter settings
+   * are preserved during natural browser navigation. Debounced/rapid changes replace the current
+   * history entry, explicit role switches push a new one.
+   */
+  private void writeUrl(boolean push) {
+    if (suppressUrlWrite || context == null || context.projectId().isEmpty()) {
+      return;
+    }
+    UI ui = UI.getCurrent();
+    // Defensive null checks: without a current UI or page (e.g. unit tests) there is nothing
+    // to navigate, and the state is simply not mirrored.
+    if (ui == null || ui.getPage() == null) {
+      return;
+    }
+    Location location =
+        new Location(currentAccessPath(), AccessRosterStateCodec.toQueryParameters(rosterState));
+    if (push) {
+      ui.getPage().getHistory().pushState(null, location);
+    } else {
+      ui.getPage().getHistory().replaceState(null, location);
+    }
+  }
+
+  private String currentAccessPath() {
+    return String.format(ProjectRoutes.ACCESS, context.projectId().orElseThrow().value());
+  }
+
+  private static List<ProjectRole> roleOrder() {
+    return List.of(ProjectRole.OWNER, ProjectRole.ADMIN, ProjectRole.WRITE, ProjectRole.READ);
   }
 
   private Component principalCell(AccessEntry entry) {
@@ -400,6 +594,46 @@ public class ProjectAccessComponent extends PageArea {
     return tag;
   }
 
+  /**
+   * Renders the Role cell: a fixed-width indicator slot followed by the role badge. The slot is
+   * always present so the badge keeps its normal position whether or not a fresh role change
+   * indicator is shown (the indicator never pushes the badge). Green double-up marks an increased
+   * grant, red double-down a decreased grant.
+   */
+  private Component roleCell(AccessEntry entry) {
+    Span slot = new Span();
+    slot.addClassName("role-change-slot");
+    RoleChange change = recentRoleChanges.get(entry.id());
+    if (change != null) {
+      boolean increased = change.increased();
+      Icon icon = new Icon(
+          increased ? VaadinIcon.ANGLE_DOUBLE_UP : VaadinIcon.ANGLE_DOUBLE_DOWN);
+      icon.addClassName(increased ? "role-change-up" : "role-change-down");
+      icon.getElement().setAttribute("aria-label",
+          increased ? "Role increased" : "Role decreased");
+      icon.getElement().setAttribute("title",
+          increased ? "Grant increased (previous role: %s)".formatted(
+              ProjectSharingComposer.roleLabel(change.previous()))
+              : "Grant decreased (previous role: %s)".formatted(
+                  ProjectSharingComposer.roleLabel(change.previous())));
+      slot.add(icon);
+    }
+    Div cell = new Div(slot, roleBadge(entry.projectRole()));
+    cell.addClassName("access-role-cell");
+    return cell;
+  }
+
+  /**
+   * A just-applied role change of a principal (previous → updated), used to render a transient
+   * direction indicator on the roster row.
+   */
+  private record RoleChange(ProjectRole previous, ProjectRole updated) {
+
+    private boolean increased() {
+      return roleRank(updated) < roleRank(previous);
+    }
+  }
+
   private void applyRole(Set<AccessEntry> selected, ProjectRole projectRole) {
     if (!canChangeAccess) {
       displayError(INVALID_ROLE_EDIT, "You don't have permission to change this project role");
@@ -407,19 +641,57 @@ public class ProjectAccessComponent extends PageArea {
       return;
     }
     ProjectId projectId = context.projectId().orElseThrow();
+    int updated = 0;
     for (AccessEntry entry : selected) {
       try {
+        ProjectRole previousRole = entry.projectRole();
         if (entry.isUser()) {
           projectAccessService.changeRole(projectId, entry.id(), projectRole);
         } else {
           projectAccessService.changeAuthorityAccess(projectId,
               GroupSidProvider.GROUP_SID_PREFIX + entry.id(), projectRole);
         }
+        updated++;
+        recordRoleChange(entry.id(), previousRole, projectRole);
       } catch (ApplicationException e) {
         displayError(INVALID_ROLE_EDIT, "You don't have permission to change this project role");
       }
     }
+    if (updated > 0) {
+      showRoleUpdatedConfirmation(updated, projectRole);
+    }
     loadAccess();
+  }
+
+  /**
+   * Records a just-applied role change so the affected roster row can show a transient direction
+   * indicator (increase/decrease of the grant). Older indicators are dropped once a handful of
+   * further changes have been recorded, so the map stays small.
+   */
+  private void recordRoleChange(String principalId, ProjectRole previous, ProjectRole updated) {
+    if (recentRoleChanges.size() >= 20) {
+      recentRoleChanges.clear();
+    }
+    recentRoleChanges.put(principalId, new RoleChange(previous, updated));
+  }
+
+  /**
+   * Shows a success toast after the roles of one or more selected principals were changed.
+   */
+  private void showRoleUpdatedConfirmation(int updated, ProjectRole projectRole) {
+    UI currentUi = UI.getCurrent();
+    Locale locale = currentUi == null || currentUi.getLocale() == null
+        ? Locale.getDefault()
+        : currentUi.getLocale();
+    String roleLabel = ProjectSharingComposer.roleLabel(projectRole);
+    String messageKey = updated == 1
+        ? "project-access.role.updated.success"
+        : "project-access.role.updated.success.plural";
+    Toast toast = notificationFactory.toast(messageKey,
+        updated == 1 ? new Object[]{roleLabel}
+            : new Object[]{updated, roleLabel},
+        locale);
+    toast.open();
   }
 
   private void showRoleChooser() {
@@ -428,6 +700,7 @@ public class ProjectAccessComponent extends PageArea {
       return;
     }
     actionBar.removeAll();
+    actionBar.removeClassName("access-inline-confirm-danger");
     Span question = new Span(selected.size() == 1
         ? "Set the role for 1 selected principal:"
         : "Set the role for %d selected principals:".formatted(selected.size()));
@@ -463,6 +736,7 @@ public class ProjectAccessComponent extends PageArea {
       return;
     }
     actionBar.removeAll();
+    actionBar.addClassName("access-inline-confirm-danger");
     Span question = new Span(selected.size() == 1
         ? "Remove 1 principal from this project?"
         : "Remove %d principals from this project?".formatted(selected.size()));
@@ -637,12 +911,17 @@ public class ProjectAccessComponent extends PageArea {
     }
 
     private void setUserNameAndFullName(String userName, String fullName) {
-      Span fullNameSpan = new Span(fullName);
       Span userNameSpan = new Span(userName);
       userNameSpan.addClassName("bold");
-      Span userNameAndFullName = new Span(userNameSpan, fullNameSpan);
-      userNameAndFullName.addClassName("user-name-and-full-name");
-      userInfoContent.add(userNameAndFullName);
+      userNameSpan.addClassName("user-name");
+      Div nameBlock = new Div(userNameSpan);
+      nameBlock.addClassName("name-block");
+      if (fullName != null && !fullName.isBlank()) {
+        Span fullNameSpan = new Span(fullName);
+        fullNameSpan.addClassName("user-full-name");
+        nameBlock.add(fullNameSpan);
+      }
+      userInfoContent.add(nameBlock);
     }
 
     protected void setOidc(String oidcIssuer, String oidc) {
@@ -658,12 +937,16 @@ public class ProjectAccessComponent extends PageArea {
 
     private void addOidcInfoItem(OidcType oidcType, String oidc) {
       String oidcUrl = String.format(oidcType.getUrl()) + oidc;
-      Anchor oidcLink = new Anchor(oidcUrl, oidcUrl);
-      oidcLink.setTarget(AnchorTarget.BLANK);
       OidcLogo oidcLogo = new OidcLogo(oidcType);
-      Span oidcSpan = new Span(oidcLogo, oidcLink);
-      oidcSpan.addClassNames("icon-size-m oidc");
-      userInfoContent.add(oidcSpan);
+      oidcLogo.addClassNames("oidc-logo", "clickable");
+      oidcLogo.getElement().setAttribute("title",
+          "View %s profile of %s (opens in a new tab)".formatted(oidcType.getName(), oidc));
+      Anchor oidcLink = new Anchor(oidcUrl, oidcLogo);
+      oidcLink.setTarget(AnchorTarget.BLANK);
+      oidcLink.setClassName("oidc-link");
+      oidcLink.getElement().setAttribute("aria-label",
+          "Open %s profile of %s in a new tab".formatted(oidcType.getName(), oidc));
+      userInfoContent.add(oidcLink);
     }
   }
 }

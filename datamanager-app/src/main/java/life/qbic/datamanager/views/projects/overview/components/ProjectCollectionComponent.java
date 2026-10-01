@@ -25,6 +25,7 @@ import com.vaadin.flow.router.Location;
 import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.spring.annotation.RouteScope;
+import com.vaadin.flow.theme.lumo.LumoUtility.IconSize;
 import java.io.Serial;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -46,6 +47,7 @@ import life.qbic.datamanager.views.general.pagination.ListStateCodec;
 import life.qbic.datamanager.views.general.pagination.PaginationBar;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.projects.overview.components.PinnedProjectsComponent.ToggleHandler;
+import life.qbic.datamanager.views.projects.project.access.ProjectAccessMain;
 import life.qbic.datamanager.views.projects.project.access.ProjectSharingDrawer;
 import life.qbic.datamanager.views.projects.project.datasets.ConnectedDatasetsMain;
 import life.qbic.datamanager.views.projects.project.info.ProjectInformationMain;
@@ -570,6 +572,17 @@ public class ProjectCollectionComponent extends PageArea {
      * <p>The control is a sibling of the card-body {@link RouterLink} inside the card wrapper,
      * not a child of it, so clicking it cannot also fire navigation to the project.</p>
      */
+    private static com.vaadin.flow.component.Component menuItemWithIcon(String label,
+        VaadinIcon icon) {
+      Icon iconComponent = icon.create();
+      iconComponent.addClassName(IconSize.SMALL);
+      Span item = new Span(iconComponent, new Span(label));
+      item.addClassName("user-menu-item");
+      item.getStyle().set("display", "inline-flex");
+      item.getStyle().set("align-items", "center");
+      item.getStyle().set("gap", "var(--spacing-02)");
+      return item;
+    }
     private com.vaadin.flow.component.Component buildTopRightControl(boolean pinned, ToggleHandler toggleHandler,
         ShareHandler shareHandler, boolean canManageAccess) {
       var topRight = new Div();
@@ -592,12 +605,22 @@ public class ProjectCollectionComponent extends PageArea {
       var menu = new ContextMenu(menuButton);
       menu.setOpenOnClick(true);
       if (canManageAccess) {
-        var shareItem = menu.addItem("Share project…");
-        shareItem.addClickListener(event -> shareHandler.onShare(projectOverview));
+        var shareItem = menu.addItem(menuItemWithIcon("Share project…", VaadinIcon.SHARE),
+            event -> shareHandler.onShare(projectOverview));
+
+        // Access management is one level up from quick sharing: the dedicated access page
+        // (roster, role editing, removal) reached from the card menu, matching the "Manage
+        // access" affordance inside the sharing drawer.
+        var manageAccessItem = menu.addItem(
+            menuItemWithIcon("Manage access", VaadinIcon.GROUP),
+            event -> UI.getCurrent().navigate(
+                ProjectAccessMain.class,
+                new RouteParameters(PROJECT_ID_ROUTE_PARAMETER,
+                    projectOverview.projectId().value())));
       }
       String actionLabel = pinned ? "Unpin project" : "Pin project";
-      var actionItem = menu.addItem(actionLabel);
-      actionItem.addClickListener(event -> toggleHandler.onToggle(projectOverview.projectId(), !pinned));
+      var actionItem = menu.addItem(actionLabel,
+          event -> toggleHandler.onToggle(projectOverview.projectId(), !pinned));
 
       topRight.add(menuButton);
       return topRight;
