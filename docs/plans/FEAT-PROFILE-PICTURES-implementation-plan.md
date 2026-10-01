@@ -249,9 +249,12 @@ deliberate and recorded as a limitation.
   - `404` on missing picture or hash mismatch; explicit authentication check (401 for anonymous).
 - [x] `ProfilePictureUrlResolver` (+ lightweight `findContentHash` query so rendering never loads
   the blob).
-- Note: authentication is enforced in the controller, so **no `SecurityConfiguration` change was
-  needed** (avoids a §12 approval-gated change). Verify in manual testing that anonymous requests
-  receive 401.
+- Note: authentication is enforced in the controller, but the path **also had to be explicitly
+  authorized** in `SecurityConfiguration` (`/profile-pictures/**` → `authenticated()`). The existing
+  chain only `permitAll()`s a few paths and has no `anyRequest`, so unmatched paths fall through to
+  deny (403) — the avatar `<img>` got a 403 and no identicon/photo rendered. **This is a
+  `SecurityConfiguration` change and needs human review (AGENTS.md §12).** Verify in manual testing
+  that anonymous requests are redirected to login and authenticated requests render the avatar.
 - Remaining: automated `MockMvc` coverage for 200/302/304/401/404.
 
 ### T7 — Avatar component generalization
