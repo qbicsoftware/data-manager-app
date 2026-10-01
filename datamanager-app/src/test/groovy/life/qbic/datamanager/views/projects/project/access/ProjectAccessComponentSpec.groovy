@@ -270,4 +270,50 @@ class ProjectAccessComponentSpec extends Specification {
     component.@grid.getListDataView().getItems().collect { it.displayName() }.toList() ==
         ["NGS Lab"]
   }
+
+  def "the roster defaults to role, then type, then name order"() {
+    given: "users and groups with mixed roles and names"
+    collaborators = [
+        new ProjectCollaborator("u-read", projectId, ProjectRole.READ),
+        new ProjectCollaborator("u-admin", projectId, ProjectRole.ADMIN),
+        new ProjectCollaborator("u-write", projectId, ProjectRole.WRITE),
+        new ProjectCollaborator("u-owner", projectId, ProjectRole.OWNER)]
+    sharedGroups = [
+        new SharedProjectGroup("g-read", "Zebra Team", null, projectId, ProjectRole.READ),
+        new SharedProjectGroup("g-admin", "Alpha Lab", null, projectId, ProjectRole.ADMIN),
+        new SharedProjectGroup("g-read2", "Beta Lab", null, projectId, ProjectRole.READ)]
+    userInformationService.findById("u-read") >> Optional.of(user("u-read", "Read", "alice"))
+    userInformationService.findById("u-admin") >> Optional.of(user("u-admin", "Admin", "carol"))
+    userInformationService.findById("u-write") >> Optional.of(user("u-write", "Write", "bob"))
+    userInformationService.findById("u-owner") >> Optional.of(user("u-owner", "Owner", "dave"))
+    groupInformationService.findGroupById(_ as String) >> Optional.empty()
+    setContext(true)
+
+    when:
+    def names = component.@grid.getListDataView().getItems()
+        .collect { "${it.type()}:${it.displayName()}" }.toList()
+
+    then: "all OWNERs first, then ADMINs, WRITEs, READs; users before groups; then name"
+    names == [
+        "USER:dave",
+        "USER:carol", "GROUP:Alpha Lab",
+        "USER:bob",
+        "USER:alice", "GROUP:Beta Lab", "GROUP:Zebra Team"]
+  }
+
+  def "the principal column sorts by role, then type, then name"() {
+    given:
+    def entry1 = aGroup("g-1", "Zebra Team", null, ProjectRole.READ)
+    def entry2 = aUser("u-1", "alice", "Alice", ProjectRole.READ)
+    def entry3 = aUser("u-2", "carol", "Carol", ProjectRole.ADMIN)
+    def column = component.@grid.getColumnByKey("principal")
+
+    when:
+    def sorted = [entry1, entry2, entry3].stream()
+        .sorted(column.getComparator(com.vaadin.flow.data.provider.SortDirection.ASCENDING))
+        .toList()
+
+    then:
+    sorted*.displayName() == ["carol", "alice", "Zebra Team"]
+  }
 }

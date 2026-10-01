@@ -548,9 +548,12 @@
 }
 
 /* Clip grid cell content so long names/descriptions ellipsize instead of widening the cell and
-   pushing the Role column out of view. */
+   pushing the Role column out of view. The extra vertical padding also gives the roster rows a
+   bit more breathing room so the list does not look so visually dense. */
 .project-access-component .access-grid vaadin-grid-cell-content {
   overflow: hidden;
+  padding-top: var(--lumo-space-s);
+  padding-bottom: var(--lumo-space-s);
 }
 
 .project-access-component .access-principal-cell {

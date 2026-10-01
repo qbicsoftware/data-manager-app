@@ -82,6 +82,16 @@ public class ProjectAccessComponent extends PageArea {
   private static final Logger log = logger(ProjectAccessComponent.class);
   @Serial
   private static final long serialVersionUID = 6832688939965353201L;
+
+  /**
+   * Default order of the roster, applied on load and by the sortable Principal column:
+   * role (owner → admin → write → read), then type (users before groups), then name
+   * (case-insensitive).
+   */
+  private static final Comparator<AccessEntry> ROSTER_ORDER = Comparator
+      .comparingInt((AccessEntry entry) -> roleRank(entry.projectRole()))
+      .thenComparingInt((AccessEntry entry) -> typeRank(entry.type()))
+      .thenComparing(AccessEntry::displayName, String.CASE_INSENSITIVE_ORDER);
   public static final String INVALID_USER_REMOVAL = "Invalid user removal";
   public static final String INVALID_ROLE_EDIT = "Invalid role edit";
 
@@ -219,8 +229,7 @@ public class ProjectAccessComponent extends PageArea {
         .setAutoWidth(false)
         .setFlexGrow(1)
         .setSortable(true)
-        .setComparator(Comparator.comparing(AccessEntry::displayName,
-            String.CASE_INSENSITIVE_ORDER));
+        .setComparator(ROSTER_ORDER);
     accessGrid.addColumn(new ComponentRenderer<>(entry -> roleBadge(entry.projectRole())))
         .setKey("role")
         .setHeader("Role")
@@ -252,9 +261,7 @@ public class ProjectAccessComponent extends PageArea {
     List<AccessEntry> loaded = new ArrayList<>();
     collaborators.forEach(collaborator -> loaded.add(toAccessEntry(collaborator)));
     sharedGroups.forEach(group -> loaded.add(toAccessEntry(group)));
-    loaded.sort(Comparator
-        .comparingInt((AccessEntry entry) -> roleRank(entry.projectRole()))
-        .thenComparing(AccessEntry::displayName, String.CASE_INSENSITIVE_ORDER));
+    loaded.sort(ROSTER_ORDER);
     this.entries = loaded;
     applyFilter();
   }
@@ -562,6 +569,13 @@ public class ProjectAccessComponent extends PageArea {
       case ADMIN -> 1;
       case WRITE -> 2;
       case READ -> 3;
+    };
+  }
+
+  private static int typeRank(PrincipalType type) {
+    return switch (type) {
+      case USER -> 0;
+      case GROUP -> 1;
     };
   }
 
