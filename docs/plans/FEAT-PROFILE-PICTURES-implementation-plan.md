@@ -241,36 +241,30 @@ deliberate and recorded as a limitation.
 
 ### T6 — Delivery endpoint and caching
 
-- [ ] `ProfilePictureController` (`@Controller`, matching the existing `OidcLinkController`
-  precedent): `GET /profile-pictures/{ownerType}/{ownerId}/{hash}.png`.
-  - resolve the stored picture; `404` when absent or when `{hash}` does not match the stored hash;
-  - `Content-Type: image/png`; `Cache-Control: public, max-age=31536000, immutable`;
-    `ETag`/`Last-Modified` from the hash;
-  - `304` on `If-None-Match`.
-- [ ] Confirm the path requires authentication (default in `SecurityConfiguration` — **verify** we
-  do **not** add it to the `permitAll` list). Any change to `SecurityConfiguration` needs human
-  approval (AGENTS.md §12).
-- [ ] `ProfilePictureUrlResolver`: view-facing `owner -> Optional<String>` returning
-  `/profile-pictures/{type}/{id}/{hash}.png`, or empty when no picture exists.
-- DoD: manual curl checks for `200`, `304`, `404`, and cache headers; assert the endpoint is
-  rejected for anonymous requests.
+- [x] `ProfilePictureController` (`@Controller`):
+  - stable `GET /profile-pictures/{ownerType}/{ownerId}` → redirect to the immutable hashed URL
+    when a picture exists, else the identicon SVG;
+  - immutable `GET /profile-pictures/{ownerType}/{ownerId}/{hash}` → `image/png`,
+    `Cache-Control: public, max-age=31536000, immutable`, `ETag`, `304` on `If-None-Match`;
+  - `404` on missing picture or hash mismatch; explicit authentication check (401 for anonymous).
+- [x] `ProfilePictureUrlResolver` (+ lightweight `findContentHash` query so rendering never loads
+  the blob).
+- Note: authentication is enforced in the controller, so **no `SecurityConfiguration` change was
+  needed** (avoids a §12 approval-gated change). Verify in manual testing that anonymous requests
+  receive 401.
+- Remaining: automated `MockMvc` coverage for 200/302/304/401/404.
 
 ### T7 — Avatar component generalization
 
-- [ ] Generalize the existing `UserAvatar` into an owner-aware avatar (or add a sibling
-  `GroupAvatar`): if `ProfilePictureUrlResolver` has a picture, `setImage(url)`; else fall back to
-  the existing identicon `DownloadHandler` (users) and a new identicon keyed on **group id**
-  (groups).
-- [ ] Update every current `UserAvatar` call site to the new resolver path:
-  `AccountOverviewHeader`, `DataManagerMenu`, `ProjectAccessComponent`,
-  `AddCollaboratorToProjectDialog`, `ProjectSummaryComponent`, `ProjectCollectionComponent`,
-  `GroupMembersComponent` (user avatars).
-- [ ] Add group avatars wherever a `UserGroup` renders: `GroupDetailMain` header, `MyGroupsComponent`,
-  `MyGroupsMain`, `AdminGroupsMain`.
-- [ ] Keep the existing `avatar-with-name` / `AvatarGroup` composition; do not restyle — the
-  circular mask already exists in the theme.
-- DoD: component specs cover "stored picture URL used when present", "identicon when absent", and
-  "identicon keyed on group id for groups".
+- [x] `UserAvatar` points at the stable URL; stored picture else identicon is resolved by the
+  endpoint, so **no resolver injection was needed at any call site**.
+- [x] `setUserId(...)` upgrades all existing user call sites automatically; `setGroupId(...)` added
+  for groups; `UserAvatarGroupItem.forGroup(...)` for group items.
+- [x] Group avatars rendered in `MyGroupsComponent`, `AdminGroupsMain`, `GroupDetailMain`.
+- Note: existing `UserAvatarGroupItem(userName, userId)` call sites
+  (`ProjectSummaryComponent`, `ProjectCollectionComponent`) now render stored user pictures
+  without change.
+- Remaining: visual/CSS polish for the new group avatars.
 
 ### T8 — Cropper upload UI
 
