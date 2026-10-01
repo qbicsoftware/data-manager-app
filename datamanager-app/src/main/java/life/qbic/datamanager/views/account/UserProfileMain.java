@@ -51,6 +51,7 @@ public class UserProfileMain extends Main implements BeforeEnterObserver, AfterN
   private final transient UserInformationService userInformationService;
   private final transient AuthenticationToUserIdTranslationService userIdTranslator;
   private final IdentityService identityService;
+  private final transient life.qbic.datamanager.profilepicture.ProfilePictureService profilePictureService;
   private final transient List<ParameterProcessor> parameterProcessors = new ArrayList<>();
   private final transient MessageSourceNotificationFactory messageFactory;
   private UserProfileComponent profileComponent;
@@ -61,11 +62,13 @@ public class UserProfileMain extends Main implements BeforeEnterObserver, AfterN
       @Autowired UserInformationService userInformationService,
       @Autowired MessageSourceNotificationFactory messageFactory,
       AuthenticationToUserIdTranslationService userIdTranslator,
-      IdentityService identityService) {
+      IdentityService identityService,
+      @Autowired life.qbic.datamanager.profilepicture.ProfilePictureService profilePictureService) {
     this.userInformationService = requireNonNull(userInformationService,
         "userInformationService must not be null");
     this.userIdTranslator = requireNonNull(userIdTranslator, "userIdTranslator must not be null");
     this.messageFactory = requireNonNull(messageFactory);
+    this.profilePictureService = requireNonNull(profilePictureService);
     addClassName("user-profile");
     this.identityService = identityService;
     parameterProcessors.add(this::processSuccessParam);
@@ -86,8 +89,8 @@ public class UserProfileMain extends Main implements BeforeEnterObserver, AfterN
     if (nonNull(section)) {
       remove(section);
     }
-    profileComponent = new UserProfileComponent(identityService, userInfo, event.getLocation(),
-        this::onUsernameChanged);
+    profileComponent = new UserProfileComponent(identityService, profilePictureService, userInfo,
+        event.getLocation(), this::onUsernameChanged);
 
     section = new SettingsSection("Profile",
         "Manage your personal information and linked accounts.");

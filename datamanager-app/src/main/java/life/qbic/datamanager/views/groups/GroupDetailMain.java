@@ -84,6 +84,7 @@ public class GroupDetailMain extends Main implements BeforeEnterObserver {
   private final transient UserInformationService userInformationService;
   private final transient MessageSourceNotificationFactory messageFactory;
   private final transient AuthenticationToUserIdTranslationService userIdTranslator;
+  private final transient life.qbic.datamanager.profilepicture.ProfilePictureService profilePictureService;
 
   private transient MyGroupMembership membership;
   private transient SettingsSection section;
@@ -102,7 +103,8 @@ public class GroupDetailMain extends Main implements BeforeEnterObserver {
       @Autowired GroupManagementService groupManagementService,
       @Autowired UserInformationService userInformationService,
       @Autowired AuthenticationToUserIdTranslationService userIdTranslator,
-      @Autowired MessageSourceNotificationFactory messageFactory) {
+      @Autowired MessageSourceNotificationFactory messageFactory,
+      @Autowired life.qbic.datamanager.profilepicture.ProfilePictureService profilePictureService) {
     this.groupInformationService = requireNonNull(groupInformationService,
         "groupInformationService must not be null");
     this.groupManagementService = requireNonNull(groupManagementService,
@@ -113,6 +115,8 @@ public class GroupDetailMain extends Main implements BeforeEnterObserver {
         "userIdTranslator must not be null");
     this.messageFactory = requireNonNull(messageFactory,
         "messageFactory must not be null");
+    this.profilePictureService = requireNonNull(profilePictureService,
+        "profilePictureService must not be null");
     addClassName("group-detail");
   }
 
@@ -170,7 +174,48 @@ public class GroupDetailMain extends Main implements BeforeEnterObserver {
         new life.qbic.datamanager.views.account.UserAvatar();
     groupAvatar.setGroupId(groupId);
     groupAvatar.addClassName("group-detail-avatar");
-    profileGroup.add(groupAvatar);
+
+    Div pictureRow = new Div();
+    pictureRow.addClassName("profile-picture-row");
+    pictureRow.add(groupAvatar);
+    if (canManageProfile) {
+      Button removePicture = new Button("Remove picture");
+      removePicture.addClassName("tertiary");
+      removePicture.setVisible(profilePictureService.findContentHash(
+          life.qbic.datamanager.profilepicture.ProfilePictureOwnerType.GROUP, groupId).isPresent());
+      removePicture.addClickListener(click -> {
+        var result = profilePictureService.removeGroupPicture(groupId, actingUserId);
+        if (!result.isError()) {
+          groupAvatar.refresh(life.qbic.datamanager.profilepicture.ProfilePictureOwnerType.GROUP,
+              groupId);
+          click.getSource().setVisible(false);
+        }
+      });
+
+      Button changePicture = new Button("Change picture");
+      changePicture.addClassName("tertiary");
+      changePicture.addClickListener(click -> {
+        var dialog = new life.qbic.datamanager.profilepicture.ProfilePictureDialog();
+        dialog.addPictureSelectedListener(png -> {
+          var result = profilePictureService.setGroupPicture(groupId, actingUserId, png);
+          if (result.isError()) {
+            dialog.showError(life.qbic.datamanager.profilepicture.ProfilePictureMessages
+                .userMessage(result.getError()));
+            return;
+          }
+          dialog.close();
+          groupAvatar.refresh(life.qbic.datamanager.profilepicture.ProfilePictureOwnerType.GROUP,
+              groupId);
+          removePicture.setVisible(true);
+        });
+        dialog.open();
+      });
+
+      Div pictureActions = new Div(changePicture, removePicture);
+      pictureActions.addClassName("profile-picture-row__actions");
+      pictureRow.add(pictureActions);
+    }
+    profileGroup.add(pictureRow);
     nameField = new InlineEditableField("Group name", membership.groupName());
     nameField.setEditable(canManageProfile);
     nameField.setMinDisplayWidth(28); // generous width: group names read comfortably

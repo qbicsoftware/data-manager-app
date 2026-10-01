@@ -47,6 +47,18 @@ public class UserAvatar extends Avatar {
     setImage(ProfilePictureUrlResolver.stablePath(ownerType, ownerId));
   }
 
+  /**
+   * Re-points the avatar at the stable URL with a cache-busting parameter so a just-changed picture
+   * is re-fetched by the browser.
+   *
+   * @param ownerType the owner kind
+   * @param ownerId   the user or group id
+   */
+  public void refresh(ProfilePictureOwnerType ownerType, String ownerId) {
+    setImage(ProfilePictureUrlResolver.stablePath(ownerType, ownerId) + "?v="
+        + System.currentTimeMillis());
+  }
+
   public static class UserAvatarGroupItem extends AvatarGroup.AvatarGroupItem {
 
     public UserAvatarGroupItem(String userName, String userId) {

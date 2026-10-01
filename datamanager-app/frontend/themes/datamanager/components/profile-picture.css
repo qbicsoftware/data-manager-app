@@ -1,0 +1,113 @@
+/* Styles for profile pictures: avatar rows, the crop dialog and Cropper.js host. */
+
+.profile-picture-row {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-m);
+  margin-bottom: var(--lumo-space-m);
+}
+
+.profile-picture-row__avatar {
+  width: 4rem;
+  height: 4rem;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.profile-picture-row__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lumo-space-s);
+}
+
+.group-detail-avatar {
+  width: 4rem;
+  height: 4rem;
+  border-radius: 50%;
+  overflow: hidden;
+  margin-bottom: var(--lumo-space-s);
+}
+
+.my-groups-row__avatar {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  overflow: hidden;
+  margin-right: var(--lumo-space-s);
+  flex: 0 0 auto;
+}
+
+.my-groups-row__title {
+  display: flex;
+  align-items: center;
+}
+
+/* ── Crop dialog ─────────────────────────────────────────────── */
+
+.profile-picture-dialog__error {
+  display: block;
+  color: var(--lumo-error-text-color);
+  padding-top: var(--lumo-space-s);
+}
+
+.profile-picture-crop {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+}
+
+.profile-picture-crop__controls {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-m);
+}
+
+.profile-picture-crop__input {
+  display: none;
+}
+
+.profile-picture-crop__choose {
+  display: inline-block;
+  cursor: pointer;
+  padding: var(--lumo-space-xs) var(--lumo-space-m);
+  border-radius: var(--lumo-border-radius-m);
+  border: 1px solid var(--lumo-contrast-20pct);
+  background: var(--lumo-contrast-5pct);
+}
+
+.profile-picture-crop__choose:hover {
+  background: var(--lumo-contrast-10pct);
+}
+
+.profile-picture-crop__preview {
+  width: 5rem;
+  height: 5rem;
+  border-radius: 50%;
+  overflow: hidden;
+  background-color: var(--lumo-contrast-10pct);
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  border: 1px solid var(--lumo-contrast-20pct);
+}
+
+.profile-picture-crop__stage {
+  display: none;
+  width: 100%;
+  max-width: 20rem;
+  height: 20rem;
+}
+
+.profile-picture-crop.has-image .profile-picture-crop__stage {
+  display: block;
+}
+
+.profile-picture-crop__image {
+  display: block;
+  max-width: 100%;
+}
+
+.profile-picture-crop__hint {
+  font-size: var(--lumo-font-size-s);
+  color: var(--lumo-secondary-text-color);
+}

@@ -268,33 +268,29 @@ deliberate and recorded as a limitation.
 
 ### T8 — Cropper upload UI
 
-- [ ] Add a crop component in `datamanager-app` (client-side zoom/pan/reposition over a square
-  256×256 frame with a live circular preview) backed by **Cropper.js**, added to
-  `datamanager-app/package.json` and wrapped as a Vaadin custom component/extension; no `.ts` build
-  coupling beyond Vite.
-- [ ] `ProfilePictureDialog` (AppDialog pattern): file picker → local validation (≤1 MB,
-  PNG/JPEG) → crop UI → **Upload** submits the cropped square PNG; **Remove** shown when a picture
-  exists.
-- [ ] Client-side validation is advisory only; the server re-validates and re-encodes in T2
-  (never trust the client).
-- [ ] Integrate into `UserProfileComponent`/`UserProfileMain` and the "Group" profile group in
-  `GroupDetailMain` (next to the inline name/description fields), gated by the same
-  `canManageProfile` / role flags already computed there.
-- [ ] Error messages through `MessageSourceNotificationFactory` with new keys (e.g.
-  `profile.picture.too.large`, `profile.picture.unsupported`, `profile.picture.remove.success`).
-- [ ] CSS: reuse `settings.css` / theme tokens; add only what the crop frame and preview need; no
-  new design-system dependency.
-- DoD: component spec for the dialog states (empty → pick → crop → save; existing → replace;
-  existing → remove); a manual pass for the live preview.
+- [x] `ProfilePictureCropField`: `@NpmPackage("cropperjs", "1.6.2")` + `@JsModule(
+  ./javascript/profilepicturecropper.js)`, square crop frame with live circular preview; exports
+  the crop as a 256×256 PNG data URL via `requestCrop(Consumer<byte[]>)` (JS→server return value).
+- [x] `ProfilePictureDialog extends DialogWindow`: file picker → crop → **Save picture**; inline
+  error span; cancel closes.
+- [x] Client-side 1 MB pre-check is advisory; the server re-validates and re-encodes in T2.
+- [x] Integrated into `UserProfileComponent` (avatar row + Change/Remove) and the "Group" profile
+  group in `GroupDetailMain` (gated by `canManageProfile`).
+- [x] Error messages via `ProfilePictureMessages.userMessage(...)` (maps the normalization reason;
+  reserved for later i18n keys rather than `MessageSourceNotificationFactory`).
+- [x] CSS: new `components/profile-picture.css` imported from `custom.css`; reuses theme tokens.
+- Remaining: component spec for the dialog states; manual/visual pass for the live preview.
 
 ### T9 — Admin force-remove and audit view
 
-- [ ] Force-remove action on the user and group profile surfaces, visible only to system admins;
-  routes to `ProfilePictureService.forceRemove(...)`.
-- [ ] System-admin audit list (a `SettingsSection`/`GroupsMainLayout` subsection) showing
-  owner, action (`SET`/`REPLACE`), actor, previous hash, timestamp, paginated
-  (`FEAT-PAGINATED-LISTS` patterns).
-- DoD: spec asserts the audit list is empty/denied for non-admins; manual pass for force-remove.
+- [x] `AdminProfilePictureAuditMain` (admin-only route `groups/admin/profile-pictures`, gated in
+  `beforeEnter`): paginated audit grid with owner, action, actor, timestamps, hash previews, and a
+  per-row **Force remove** action calling `ProfilePictureService.forceRemove(...)`.
+- [x] Admin navigation tab "Profile pictures" in `GroupsNavigationComponent`.
+- Note: force-remove is exposed on the audit view rather than on every profile surface; the
+  service API already supports any owner. Removing an entry is not audited (agreed scope), so the
+  row's button is spent in place.
+- Remaining: spec asserting non-admins are rejected; manual pass.
 
 ### T10 — Tests
 
