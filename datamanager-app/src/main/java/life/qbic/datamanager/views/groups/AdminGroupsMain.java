@@ -182,6 +182,11 @@ public class AdminGroupsMain extends Main implements BeforeEnterObserver {
             new RouteParam(AdminGroupManagersMain.GROUP_ID_ROUTE_PARAMETER, groupInfo.id())));
     name.setText(groupInfo.name());
     name.addClassName("my-groups-row__name");
+    life.qbic.datamanager.views.account.UserAvatar groupAvatar =
+        new life.qbic.datamanager.views.account.UserAvatar();
+    groupAvatar.setGroupId(groupInfo.id());
+    groupAvatar.addClassName("my-groups-row__avatar");
+    title.add(groupAvatar);
     title.add(name);
 
     Div actions = new Div();

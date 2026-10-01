@@ -11,7 +11,9 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.Instant;
 import life.qbic.datamanager.profilepicture.ProfilePictureRepository.ProfilePictureEntity;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.Repository;
+import org.springframework.data.repository.query.Param;
 
 /**
  * Persistence port for normalized profile-picture derivatives.
@@ -32,6 +34,15 @@ public interface ProfilePictureRepository extends Repository<ProfilePictureEntit
 
   java.util.Optional<ProfilePictureEntity> findByOwnerTypeAndOwnerId(
       ProfilePictureOwnerType ownerType, String ownerId);
+
+  /**
+   * Reads only the content hash for an owner, without loading the blob. Used by the avatar URL
+   * resolver on hot render paths.
+   */
+  @Query("select p.contentHash from ProfilePictureEntity p "
+      + "where p.ownerType = :ownerType and p.ownerId = :ownerId")
+  java.util.Optional<String> findContentHashByOwnerTypeAndOwnerId(
+      @Param("ownerType") ProfilePictureOwnerType ownerType, @Param("ownerId") String ownerId);
 
   ProfilePictureEntity save(ProfilePictureEntity entity);
 

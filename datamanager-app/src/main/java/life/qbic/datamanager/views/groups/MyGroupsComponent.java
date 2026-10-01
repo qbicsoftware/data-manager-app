@@ -8,6 +8,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import life.qbic.datamanager.views.account.UserAvatar;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.router.RouteConfiguration;
 import com.vaadin.flow.router.RouteParam;
@@ -140,6 +141,10 @@ public class MyGroupsComponent extends Div implements Serializable {
             new RouteParam(GroupDetailMain.GROUP_ID_ROUTE_PARAMETER, membership.groupId())));
     name.setText(membership.groupName());
     name.addClassName("my-groups-row__name");
+    UserAvatar groupAvatar = new UserAvatar();
+    groupAvatar.setGroupId(membership.groupId());
+    groupAvatar.addClassName("my-groups-row__avatar");
+    title.add(groupAvatar);
     title.add(name);
 
     Div actions = new Div();

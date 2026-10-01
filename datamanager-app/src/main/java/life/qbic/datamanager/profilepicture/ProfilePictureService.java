@@ -170,6 +170,22 @@ public class ProfilePictureService {
   }
 
   /**
+   * Reads the content hash of a stored picture without loading the blob. Used by the avatar URL
+   * resolver on hot render paths.
+   *
+   * @param ownerType the owner kind
+   * @param ownerId   the owner id
+   * @return the SHA-256 content hash, or empty when no picture exists
+   */
+  @Transactional(readOnly = true)
+  public Optional<String> findContentHash(ProfilePictureOwnerType ownerType, String ownerId) {
+    if (ownerType == null || isBlank(ownerId)) {
+      return Optional.empty();
+    }
+    return repository.findContentHashByOwnerTypeAndOwnerId(ownerType, ownerId);
+  }
+
+  /**
    * Returns the audit trail (set/replace) for administrators, newest first.
    *
    * @param actingAdminUserId the acting administrator; must hold the admin role

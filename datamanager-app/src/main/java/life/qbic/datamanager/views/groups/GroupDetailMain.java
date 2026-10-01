@@ -166,6 +166,11 @@ public class GroupDetailMain extends Main implements BeforeEnterObserver {
 
     // ── Group profile group (inline editable, Profile concept) ──────────
     Div profileGroup = settingsGroup("Group");
+    life.qbic.datamanager.views.account.UserAvatar groupAvatar =
+        new life.qbic.datamanager.views.account.UserAvatar();
+    groupAvatar.setGroupId(groupId);
+    groupAvatar.addClassName("group-detail-avatar");
+    profileGroup.add(groupAvatar);
     nameField = new InlineEditableField("Group name", membership.groupName());
     nameField.setEditable(canManageProfile);
     nameField.setMinDisplayWidth(28); // generous width: group names read comfortably
