@@ -85,22 +85,29 @@ public class UserProfileComponent extends Div implements Serializable {
 
   private Div buildPersonalInformationGroup() {
     var group = settingsGroup("Personal information");
-    group.add(buildProfilePictureRow());
-    group.add(buildUsernameField());
-    group.add(buildEmailRow());
+
+    var fields = new Div();
+    fields.addClassName("personal-information__fields");
+    fields.add(buildUsernameField());
+    fields.add(buildEmailRow());
+
+    var layout = new Div(buildProfilePictureBlock(), fields);
+    layout.addClassName("personal-information__layout");
+
+    group.add(layout);
     return group;
   }
 
-  private Div buildProfilePictureRow() {
-    var row = new Div();
-    row.addClassNames("inline-editable-field", "profile-picture-row");
+  private Div buildProfilePictureBlock() {
+    var block = new Div();
+    block.addClassName("profile-picture-block");
 
-    var label = new Span("Profile picture:");
-    label.addClassName("inline-editable-field__label");
+    var label = new Span("Profile picture");
+    label.addClassName("profile-picture-block__label");
 
     profileAvatar = new UserAvatar();
     profileAvatar.setUserId(userInfo.id());
-    profileAvatar.addClassName("profile-picture-row__avatar");
+    profileAvatar.addClassName("profile-picture-block__avatar");
 
     var changeButton = new Button("Change picture");
     changeButton.addClassName("tertiary");
@@ -112,13 +119,10 @@ public class UserProfileComponent extends Div implements Serializable {
     removePictureButton.addClickListener(event -> removeProfilePicture());
 
     var actions = new Div(changeButton, removePictureButton);
-    actions.addClassName("profile-picture-row__actions");
+    actions.addClassName("profile-picture-block__actions");
 
-    var valueArea = new Div(profileAvatar, actions);
-    valueArea.addClassName("inline-editable-field__value-area");
-
-    row.add(label, valueArea);
-    return row;
+    block.add(label, profileAvatar, actions);
+    return block;
   }
 
   private boolean hasProfilePicture() {

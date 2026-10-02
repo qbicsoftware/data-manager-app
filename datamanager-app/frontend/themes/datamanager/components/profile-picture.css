@@ -1,31 +1,45 @@
 /* Styles for profile pictures: avatar rows, the crop dialog and Cropper.js host. */
 
-/* Two classes so this beats `.inline-editable-field` (settings.css) regardless of import order. */
-.inline-editable-field.profile-picture-row {
+/* Personal information: the picture block sits beside the username/email fields. */
+.personal-information__layout {
   display: flex;
+  align-items: flex-start;
+  gap: var(--lumo-space-xl);
+}
+
+.personal-information__fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.profile-picture-block {
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: var(--lumo-space-l);
-  margin-bottom: var(--lumo-space-m);
+  gap: var(--lumo-space-s);
+  flex: 0 0 auto;
 }
 
-/* The avatar and the action group are siblings inside the value area, whose own gap is small;
-   use the deliberate larger gap between them. */
-.profile-picture-row .inline-editable-field__value-area {
-  gap: var(--lumo-space-l);
+.profile-picture-block__label {
+  font-weight: 600;
+  color: var(--lumo-header-text-color);
 }
 
-.profile-picture-row__avatar {
+.profile-picture-block__avatar {
   width: 5.5rem;
   height: 5.5rem;
   border-radius: 50%;
   overflow: hidden;
 }
 
-.profile-picture-row__actions {
+.profile-picture-block__actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   align-items: center;
-  gap: var(--lumo-space-m);
+  gap: var(--lumo-space-xs);
 }
 
 /* Destructive action must read as destructive: keep the text-link shape but colour it. */
