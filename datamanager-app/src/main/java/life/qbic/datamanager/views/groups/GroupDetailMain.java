@@ -94,6 +94,7 @@ public class GroupDetailMain extends Main implements BeforeEnterObserver {
   private transient Div membersGroup;
   private transient H3 membersHeading;
   private transient TypeToConfirmInput dissolveConfirmInput;
+  private transient com.vaadin.flow.component.contextmenu.MenuItem removeGroupPictureItem;
 
   /**
    * Production constructor: wires the seams to the real services, toasts and navigation.
@@ -173,34 +174,20 @@ public class GroupDetailMain extends Main implements BeforeEnterObserver {
     life.qbic.datamanager.views.account.UserAvatar groupAvatar =
         new life.qbic.datamanager.views.account.UserAvatar();
     groupAvatar.setGroupId(groupId);
-    groupAvatar.addClassName("group-detail-avatar");
+    groupAvatar.addClassName("profile-picture-block__avatar");
 
-    Div pictureRow = new Div();
-    pictureRow.addClassNames("inline-editable-field", "profile-picture-row");
-    Span pictureLabel = new Span("Profile picture:");
-    pictureLabel.addClassName("inline-editable-field__label");
-    pictureRow.add(pictureLabel);
-
-    Div pictureValueArea = new Div(groupAvatar);
-    pictureValueArea.addClassName("inline-editable-field__value-area");
-    pictureRow.add(pictureValueArea);
+    Div avatarWrapper = new Div(groupAvatar);
+    avatarWrapper.addClassName("profile-picture-block__avatar-wrapper");
     if (canManageProfile) {
-      Button removePicture = new Button("Remove picture");
-      removePicture.addClassNames("tertiary", "profile-picture-row__remove");
-      removePicture.setVisible(profilePictureService.findContentHash(
-          life.qbic.datamanager.profilepicture.ProfilePictureOwnerType.GROUP, groupId).isPresent());
-      removePicture.addClickListener(click -> {
-        var result = profilePictureService.removeGroupPicture(groupId, actingUserId);
-        if (!result.isError()) {
-          groupAvatar.refresh(life.qbic.datamanager.profilepicture.ProfilePictureOwnerType.GROUP,
-              groupId);
-          click.getSource().setVisible(false);
-        }
-      });
+      Button settingsButton = new Button(new Icon(VaadinIcon.COG));
+      settingsButton.addClassName("profile-picture-block__overlay-button");
+      settingsButton.setAriaLabel("Group picture options");
 
-      Button changePicture = new Button("Change picture");
-      changePicture.addClassName("tertiary");
-      changePicture.addClickListener(click -> {
+      com.vaadin.flow.component.contextmenu.ContextMenu menu =
+          new com.vaadin.flow.component.contextmenu.ContextMenu();
+      menu.setTarget(settingsButton);
+      menu.setOpenOnClick(true);
+      menu.addItem("Change picture", event -> {
         var dialog = new life.qbic.datamanager.profilepicture.ProfilePictureDialog();
         dialog.addPictureSelectedListener(png -> {
           life.qbic.application.commons.Result<Void,
@@ -219,16 +206,25 @@ public class GroupDetailMain extends Main implements BeforeEnterObserver {
           dialog.close();
           groupAvatar.refresh(life.qbic.datamanager.profilepicture.ProfilePictureOwnerType.GROUP,
               groupId);
-          removePicture.setVisible(true);
+          if (removeGroupPictureItem != null) {
+            removeGroupPictureItem.setEnabled(true);
+          }
         });
         dialog.open();
       });
-
-      Div pictureActions = new Div(changePicture, removePicture);
-      pictureActions.addClassName("profile-picture-row__actions");
-      pictureValueArea.add(pictureActions);
+      removeGroupPictureItem = menu.addItem("Remove picture", event -> {
+        var result = profilePictureService.removeGroupPicture(groupId, actingUserId);
+        if (!result.isError()) {
+          groupAvatar.refresh(life.qbic.datamanager.profilepicture.ProfilePictureOwnerType.GROUP,
+              groupId);
+          removeGroupPictureItem.setEnabled(false);
+        }
+      });
+      removeGroupPictureItem.setEnabled(profilePictureService.findContentHash(
+          life.qbic.datamanager.profilepicture.ProfilePictureOwnerType.GROUP, groupId).isPresent());
+      avatarWrapper.add(settingsButton);
     }
-    profileGroup.add(pictureRow);
+    profileGroup.add(avatarWrapper);
     nameField = new InlineEditableField("Group name", membership.groupName());
     nameField.setEditable(canManageProfile);
     nameField.setMinDisplayWidth(28); // generous width: group names read comfortably

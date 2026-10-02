@@ -4,12 +4,16 @@ import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.contextmenu.ContextMenu;
+import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.router.Location;
 import com.vaadin.flow.server.VaadinService;
 import java.io.Serial;
@@ -53,7 +57,7 @@ public class UserProfileComponent extends Div implements Serializable {
   private final Location currentLocation;
   private final transient Consumer<String> usernameChangedListener;
   private UserAvatar profileAvatar;
-  private Button removePictureButton;
+  private transient MenuItem removePictureMenuItem;
 
   /**
    * @param usernameChangedListener invoked with the new username after a successful change, so
@@ -90,27 +94,26 @@ public class UserProfileComponent extends Div implements Serializable {
     profileAvatar.setUserId(userInfo.id());
     profileAvatar.addClassName("profile-picture-block__avatar");
 
-    var changeButton = new Button("Change picture");
-    changeButton.addClassName("tertiary");
-    changeButton.addClickListener(event -> openPictureDialog());
+    var settingsButton = new Button(new Icon(VaadinIcon.COG));
+    settingsButton.addClassName("profile-picture-block__overlay-button");
+    settingsButton.setAriaLabel("Profile picture options");
 
-    removePictureButton = new Button("Remove picture");
-    removePictureButton.addClassNames("tertiary", "profile-picture-row__remove");
-    removePictureButton.setVisible(hasProfilePicture());
-    removePictureButton.addClickListener(event -> removeProfilePicture());
+    var menu = new ContextMenu();
+    menu.setTarget(settingsButton);
+    menu.setOpenOnClick(true);
+    menu.addItem("Change picture", event -> openPictureDialog());
+    removePictureMenuItem = menu.addItem("Remove picture", event -> removeProfilePicture());
+    removePictureMenuItem.setEnabled(hasProfilePicture());
 
-    var pictureActions = new Div(changeButton, removePictureButton);
-    pictureActions.addClassName("profile-picture-block__actions");
+    var avatarWrapper = new Div(profileAvatar, settingsButton);
+    avatarWrapper.addClassName("profile-picture-block__avatar-wrapper");
 
     var fields = new Div();
     fields.addClassName("personal-information__fields");
     fields.add(buildUsernameField());
     fields.add(buildEmailRow());
 
-    var pictureBlock = new Div(profileAvatar, pictureActions);
-    pictureBlock.addClassName("profile-picture-block");
-
-    var layout = new Div(fields, pictureBlock);
+    var layout = new Div(fields, avatarWrapper);
     layout.addClassName("personal-information__layout");
 
     group.add(layout);
@@ -156,7 +159,9 @@ public class UserProfileComponent extends Div implements Serializable {
 
   private void refreshProfileAvatar() {
     profileAvatar.refresh(ProfilePictureOwnerType.USER, userInfo.id());
-    removePictureButton.setVisible(hasProfilePicture());
+    if (removePictureMenuItem != null) {
+      removePictureMenuItem.setEnabled(hasProfilePicture());
+    }
   }
 
   private InlineEditableField buildUsernameField() {

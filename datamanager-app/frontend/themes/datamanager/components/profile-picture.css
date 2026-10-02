@@ -22,45 +22,43 @@
   min-width: 0;
 }
 
-.profile-picture-block {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--lumo-space-s);
+.profile-picture-block__avatar-wrapper {
+  position: relative;
+  width: 5rem;
+  height: 5rem;
   flex: 0 0 auto;
 }
 
 .profile-picture-block__avatar {
-  width: 5rem;
-  height: 5rem;
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
   overflow: hidden;
-  flex: 0 0 auto;
 }
 
-.profile-picture-block__actions {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--lumo-space-xs);
-}
-
-/* Destructive action must read as destructive: keep the text-link shape but colour it. */
-vaadin-button.profile-picture-row__remove {
-  color: var(--error-color);
-}
-
-vaadin-button.profile-picture-row__remove:hover {
-  color: var(--error-color);
-  text-decoration: underline;
-}
-
-.group-detail-avatar {
-  width: 5.5rem;
-  height: 5.5rem;
+/* Gear button overlaid on the avatar's bottom-right corner; opens the picture context menu. */
+vaadin-button.profile-picture-block__overlay-button {
+  position: absolute;
+  right: -0.25rem;
+  bottom: -0.25rem;
+  width: 2rem;
+  height: 2rem;
+  min-width: 0;
+  padding: 0;
   border-radius: 50%;
-  overflow: hidden;
-  margin-bottom: var(--lumo-space-s);
+  background-color: var(--lumo-primary-color);
+  color: var(--lumo-primary-contrast-color);
+  box-shadow: var(--lumo-box-shadow-s);
+}
+
+vaadin-button.profile-picture-block__overlay-button:hover {
+  background-color: var(--lumo-primary-color-50pct);
+  color: var(--lumo-primary-contrast-color);
+}
+
+.profile-picture-block__overlay-button vaadin-icon {
+  width: 1rem;
+  height: 1rem;
 }
 
 .my-groups-row__avatar {
