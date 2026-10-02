@@ -89,8 +89,8 @@ public class UserProfileMain extends Main implements BeforeEnterObserver, AfterN
     if (nonNull(section)) {
       remove(section);
     }
-    profileComponent = new UserProfileComponent(identityService, profilePictureService, userInfo,
-        event.getLocation(), this::onUsernameChanged);
+    profileComponent = new UserProfileComponent(identityService, profilePictureService,
+        messageFactory, userInfo, event.getLocation(), this::onUsernameChanged);
 
     section = new SettingsSection("Profile",
         "Manage your personal information and linked accounts.");

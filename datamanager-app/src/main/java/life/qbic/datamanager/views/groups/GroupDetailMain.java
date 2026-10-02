@@ -210,18 +210,20 @@ public class GroupDetailMain extends Main implements BeforeEnterObserver {
           if (removeGroupPictureItem != null) {
             removeGroupPictureItem.setEnabled(true);
           }
+          messageFactory.toast("group.picture.change.success", new Object[]{}, getLocale()).open();
         });
         dialog.open();
       });
       removeGroupPictureItem = menu.addItem(
-          groupPictureMenuItem(new Icon(VaadinIcon.CLOSE_SMALL), "Remove"), event -> {
-        var result = profilePictureService.removeGroupPicture(groupId, actingUserId);
-        if (!result.isError()) {
-          groupAvatar.refresh(life.qbic.datamanager.profilepicture.ProfilePictureOwnerType.GROUP,
-              groupId);
-          removeGroupPictureItem.setEnabled(false);
-        }
-      });
+          groupPictureMenuItem(new Icon(VaadinIcon.CLOSE_SMALL), "Remove"), event ->
+              life.qbic.datamanager.views.general.dialog.AlertDialog.danger(this,
+                  "Remove group picture?",
+                  "Are you sure you want to remove the group picture? The default placeholder "
+                      + "will be shown instead.",
+                  "Remove picture",
+                  "Keep picture",
+                  () -> removeGroupPicture(groupId, actingUserId, groupAvatar))
+                  .open());
       removeGroupPictureItem.setEnabled(profilePictureService.findContentHash(
           life.qbic.datamanager.profilepicture.ProfilePictureOwnerType.GROUP, groupId).isPresent());
       avatarWrapper.add(settingsButton);
@@ -484,6 +486,19 @@ public class GroupDetailMain extends Main implements BeforeEnterObserver {
     var content = new Div(icon, new Span(label));
     content.addClassName("profile-picture-menu-item");
     return content;
+  }
+
+  private void removeGroupPicture(String groupId, String actingUserId,
+      life.qbic.datamanager.views.account.UserAvatar groupAvatar) {
+    var result = profilePictureService.removeGroupPicture(groupId, actingUserId);
+    if (result.isError()) {
+      return;
+    }
+    groupAvatar.refresh(life.qbic.datamanager.profilepicture.ProfilePictureOwnerType.GROUP, groupId);
+    if (removeGroupPictureItem != null) {
+      removeGroupPictureItem.setEnabled(false);
+    }
+    messageFactory.toast("group.picture.remove.success", new Object[]{}, getLocale()).open();
   }
 
   /** Profile-style group block: subheading + whitespace, no card chrome. */

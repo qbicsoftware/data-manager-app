@@ -32,6 +32,8 @@ import life.qbic.datamanager.security.OidcLinkController;
 import life.qbic.datamanager.views.general.InlineEditableField;
 import life.qbic.datamanager.views.general.InlineEditableField.CancelEvent;
 import life.qbic.datamanager.views.general.InlineEditableField.SaveEvent;
+import life.qbic.datamanager.views.general.dialog.AlertDialog;
+import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.general.oidc.OidcType;
 import life.qbic.identity.api.UserInfo;
 import life.qbic.identity.application.user.IdentityService;
@@ -53,6 +55,7 @@ public class UserProfileComponent extends Div implements Serializable {
   private static final Logger log = logger(UserProfileComponent.class);
   private final transient IdentityService identityService;
   private final transient ProfilePictureService profilePictureService;
+  private final transient MessageSourceNotificationFactory messageFactory;
   private final UserInfo userInfo;
   private final Location currentLocation;
   private final transient Consumer<String> usernameChangedListener;
@@ -66,6 +69,7 @@ public class UserProfileComponent extends Div implements Serializable {
    */
   public UserProfileComponent(IdentityService identityService,
       ProfilePictureService profilePictureService,
+      MessageSourceNotificationFactory messageFactory,
       UserInfo userInfo,
       Location currentLocation,
       Consumer<String> usernameChangedListener) {
@@ -73,6 +77,8 @@ public class UserProfileComponent extends Div implements Serializable {
         "identity service cannot be null");
     this.profilePictureService = requireNonNull(profilePictureService,
         "profile picture service cannot be null");
+    this.messageFactory = requireNonNull(messageFactory,
+        "message factory cannot be null");
     this.userInfo = requireNonNull(userInfo, "userInfo must not be null");
     this.currentLocation = requireNonNull(currentLocation);
     this.usernameChangedListener = requireNonNull(usernameChangedListener,
@@ -154,9 +160,21 @@ public class UserProfileComponent extends Div implements Serializable {
     }
     dialog.close();
     refreshProfileAvatar();
+    messageFactory.toast("profile.picture.change.success", new Object[]{}, getLocale()).open();
   }
 
   private void removeProfilePicture() {
+    AlertDialog.danger(this,
+        "Remove profile picture?",
+        "Are you sure you want to remove your profile picture? The default placeholder will be "
+            + "shown instead.",
+        "Remove picture",
+        "Keep picture",
+        this::performRemoveProfilePicture)
+        .open();
+  }
+
+  private void performRemoveProfilePicture() {
     var result = profilePictureService.removeUserPicture(userInfo.id());
     if (result.isError()) {
       log.warn("Could not remove profile picture for user " + userInfo.id() + ": "
@@ -164,6 +182,7 @@ public class UserProfileComponent extends Div implements Serializable {
       return;
     }
     refreshProfileAvatar();
+    messageFactory.toast("profile.picture.remove.success", new Object[]{}, getLocale()).open();
   }
 
   private void refreshProfileAvatar() {
