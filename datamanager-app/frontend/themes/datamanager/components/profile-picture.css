@@ -1,10 +1,17 @@
 /* Styles for profile pictures: avatar rows, the crop dialog and Cropper.js host. */
 
-.profile-picture-row {
+/* Two classes so this beats `.inline-editable-field` (settings.css) regardless of import order. */
+.inline-editable-field.profile-picture-row {
   display: flex;
   align-items: center;
   gap: var(--lumo-space-l);
   margin-bottom: var(--lumo-space-m);
+}
+
+/* The avatar and the action group are siblings inside the value area, whose own gap is small;
+   use the deliberate larger gap between them. */
+.profile-picture-row .inline-editable-field__value-area {
+  gap: var(--lumo-space-l);
 }
 
 .profile-picture-row__avatar {
