@@ -137,6 +137,9 @@ public class ProfilePictureService {
   /**
    * Force-removes any owner's picture. System administrators only.
    *
+   * <p>The owner's audit trail is removed together with the picture, so a force-removed picture
+   * no longer appears in the audit list.</p>
+   *
    * @param actingAdminUserId the acting administrator; must hold the admin role
    * @param ownerType         the owner kind
    * @param ownerId           the owner id
@@ -152,6 +155,7 @@ public class ProfilePictureService {
       return Result.fromError(generalError("ownerType and ownerId are required"));
     }
     delete(ownerType, ownerId);
+    auditRepository.deleteByOwnerTypeAndOwnerId(ownerType, ownerId);
     return Result.fromValue(null);
   }
 

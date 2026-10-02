@@ -4,7 +4,6 @@ import static java.util.Objects.requireNonNull;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
-import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.NotFoundException;
@@ -25,6 +24,7 @@ import life.qbic.datamanager.views.account.UserAvatar;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.general.pagination.ListState;
 import life.qbic.datamanager.views.general.pagination.PaginatedGrid;
+import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.settings.SettingsSection;
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.projectmanagement.application.AuthenticationToUserIdTranslationService;
@@ -70,13 +70,15 @@ public class AdminProfilePictureAuditMain extends Main implements BeforeEnterObs
   private final transient AuthenticationToUserIdTranslationService userIdTranslator;
   private final transient UserInformationService userInformationService;
   private final transient GroupInformationService groupInformationService;
+  private final transient MessageSourceNotificationFactory messageFactory;
 
   public AdminProfilePictureAuditMain(
       @Autowired ProfilePictureService profilePictureService,
       @Autowired GroupAdministrationPermission groupAdministrationPermission,
       @Autowired AuthenticationToUserIdTranslationService userIdTranslator,
       @Autowired UserInformationService userInformationService,
-      @Autowired GroupInformationService groupInformationService) {
+      @Autowired GroupInformationService groupInformationService,
+      @Autowired MessageSourceNotificationFactory messageFactory) {
     this.profilePictureService = requireNonNull(profilePictureService,
         "profilePictureService must not be null");
     this.groupAdministrationPermission = requireNonNull(groupAdministrationPermission,
@@ -86,6 +88,7 @@ public class AdminProfilePictureAuditMain extends Main implements BeforeEnterObs
         "userInformationService must not be null");
     this.groupInformationService = requireNonNull(groupInformationService,
         "groupInformationService must not be null");
+    this.messageFactory = requireNonNull(messageFactory, "messageFactory must not be null");
     addClassName("admin-profile-pictures");
   }
 
@@ -203,7 +206,13 @@ public class AdminProfilePictureAuditMain extends Main implements BeforeEnterObs
     }
     grid.deselect(grid.selectedIds());
     grid.refresh();
-    Notification.show(removed == 1 ? "Picture removed." : removed + " pictures removed.");
+    if (removed > 0) {
+      messageFactory.toast("profile.picture.force-remove.success", new Object[]{removed},
+          getLocale()).open();
+    } else {
+      messageFactory.toast("profile.picture.force-remove.error", new Object[]{}, getLocale())
+          .open();
+    }
   }
 
   // ── paging ───────────────────────────────────────────────────────────────

@@ -35,6 +35,8 @@ public interface ProfilePictureAuditRepository extends
   List<ProfilePictureAuditEntity> findByOwnerTypeAndOwnerIdOrderByCreatedAtDesc(
       ProfilePictureOwnerType ownerType, String ownerId);
 
+  void deleteByOwnerTypeAndOwnerId(ProfilePictureOwnerType ownerType, String ownerId);
+
   /**
    * One recorded profile-picture set/replace event.
    */

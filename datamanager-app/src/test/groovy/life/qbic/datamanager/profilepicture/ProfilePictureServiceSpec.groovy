@@ -133,6 +133,8 @@ class ProfilePictureServiceSpec extends Specification {
         then:
         !allowed.isError()
         repository.findByOwnerTypeAndOwnerId(ProfilePictureOwnerType.USER, "user-1").isEmpty()
+        and: "the owner's audit entries are removed too"
+        auditRepository.entries.isEmpty()
     }
 
     def "the audit list is admin-only"() {
@@ -217,6 +219,11 @@ class ProfilePictureServiceSpec extends Specification {
             return entries.findAll {
                 it.ownerType == ownerType && it.ownerId == ownerId
             }
+        }
+
+        @Override
+        void deleteByOwnerTypeAndOwnerId(ProfilePictureOwnerType ownerType, String ownerId) {
+            entries.removeAll { it.ownerType == ownerType && it.ownerId == ownerId }
         }
     }
 }

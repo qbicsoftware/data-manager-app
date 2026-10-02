@@ -159,5 +159,9 @@ class AdminGroupManagersMainSpec extends Specification {
             String ownerId) {
       return []
     }
+
+    @Override
+    void deleteByOwnerTypeAndOwnerId(ProfilePictureOwnerType ownerType, String ownerId) {
+    }
   }
 }
