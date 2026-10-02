@@ -35,7 +35,7 @@
   align-items: center;
   justify-content: center;
   flex: 0 0 auto;
-  padding-right: var(--lumo-space-m);
+  padding-right: var(--lumo-space-l);
 }
 
 /* Left column: header (title + badges/actions inline) and description below it */
