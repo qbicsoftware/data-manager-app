@@ -38,8 +38,7 @@ public class GroupsNavigationComponent extends Div {
     tabs.getElement().setAttribute("orientation", "vertical");
     addTab("My Groups", VaadinIcon.USERS, MyGroupsMain.class);
     if (isAdmin) {
-      addTab("Admin", VaadinIcon.SHIELD, AdminGroupsMain.class);
-      addTab("Profile pictures", VaadinIcon.PICTURE, AdminProfilePictureAuditMain.class);
+      addTab("Organisational groups", VaadinIcon.SHIELD, AdminGroupsMain.class);
     }
     add(tabs);
   }

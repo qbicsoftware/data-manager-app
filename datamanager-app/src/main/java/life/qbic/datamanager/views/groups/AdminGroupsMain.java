@@ -103,17 +103,24 @@ public class AdminGroupsMain extends Main implements BeforeEnterObserver {
       section = null;
       groupList = null;
     }
-    section = new SettingsSection("Admin · Organisational Groups",
+    section = new SettingsSection("Organisational Groups",
         "Organisational groups shared onto projects as one unit. Names and descriptions are "
             + "visible to all users.");
     groupList = new Div();
     groupList.addClassName("admin-groups-list");
     renderOrgGroups();
     section.addContent(groupList);
+    // Cross-cutting avatar moderation lives here as an action rather than a Groups nav tab:
+    // it audits both user and group pictures, so it is not a groups-only section.
+    Button pictureAuditButton = new Button("Picture audit");
+    pictureAuditButton.addClassName("tertiary");
+    pictureAuditButton.addClickListener(click ->
+        UI.getCurrent().navigate(AdminProfilePictureAuditMain.class));
     Button newOrgGroupButton = new Button("New Organisational Group");
     newOrgGroupButton.addClassName("primary");
     newOrgGroupButton.addClickListener(click ->
         UI.getCurrent().navigate(AdminGroupCreationMain.class));
+    section.addAction(pictureAuditButton);
     section.addAction(newOrgGroupButton);
     add(section);
   }
