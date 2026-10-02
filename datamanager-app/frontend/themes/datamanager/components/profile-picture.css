@@ -103,12 +103,6 @@ vaadin-button.profile-picture-block__overlay-button[focus-ring] {
   overflow: hidden;
 }
 
-/* The audit grid reuses the PaginatedGrid selection toolbar (selection text + clear) but has no
-   working free-text search, so hide only the search field. */
-.admin-profile-pictures .paginated-grid-toolbar vaadin-text-field {
-  display: none;
-}
-
 /* Larger screens have room to spare, so give the group avatar more presence. */
 @media (min-width: 1024px) {
   .my-groups-row__avatar {

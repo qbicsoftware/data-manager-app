@@ -58,6 +58,7 @@ public class PaginatedGrid<T> extends Div {
   private ListState listState;
   private final String itemLabel;
   private final boolean showToolbar;
+  private final boolean showSearch;
   private boolean initialLoadDone;
 
   /**
@@ -144,6 +145,24 @@ public class PaginatedGrid<T> extends Div {
   public PaginatedGrid(Grid<T> grid, PageLoader<T> pageLoader, IdExtractor<T> idExtractor,
       String itemLabel, SortOrder defaultSort, boolean showToolbar, boolean showPager,
       boolean autoLoadOnAttach) {
+    this(grid, pageLoader, idExtractor, itemLabel, defaultSort, showToolbar, true, showPager,
+        autoLoadOnAttach);
+  }
+
+  /**
+   * Creates a paginated grid with independently controllable toolbar, search and pager.
+   *
+   * <p>This is {@link #PaginatedGrid(Grid, PageLoader, IdExtractor, String, SortOrder, boolean,
+   * boolean, boolean)} with an explicit {@code showSearch} flag, so a list can keep the selection
+   * toolbar (selection display and clear action) without the free-text search field.</p>
+   *
+   * @param showSearch whether to render the free-text search field; only effective when
+   *                   {@code showToolbar} is {@code true}. Defaults to {@code true} everywhere
+   *                   else, so existing lists are unchanged.
+   */
+  public PaginatedGrid(Grid<T> grid, PageLoader<T> pageLoader, IdExtractor<T> idExtractor,
+      String itemLabel, SortOrder defaultSort, boolean showToolbar, boolean showSearch,
+      boolean showPager, boolean autoLoadOnAttach) {
     this.grid = Objects.requireNonNull(grid, "grid must not be null");
     this.pageLoader = Objects.requireNonNull(pageLoader, "pageLoader must not be null");
     this.idExtractor = Objects.requireNonNull(idExtractor, "idExtractor must not be null");
@@ -154,10 +173,13 @@ public class PaginatedGrid<T> extends Div {
         ListStateCodec.DEFAULT_PAGE_SIZE, itemLabel);
     this.selection = new Selection(this::updateSelectionDisplay);
     this.showToolbar = showToolbar;
+    this.showSearch = showSearch;
 
     configureGrid();
     if (showToolbar) {
-      configureSearch();
+      if (showSearch) {
+        configureSearch();
+      }
       configureSelection();
       // In controlled mode (toolbar suppressed) the owning view also owns sorting, paging and
       // selection: it drives the list state through setListState/applyExternalState and reads the
@@ -173,8 +195,12 @@ public class PaginatedGrid<T> extends Div {
     emptyState.addClassName("paginated-grid-empty-state");
     emptyState.setVisible(false);
     if (showToolbar) {
-      Div toolbar = new Div(searchField, selectionDisplay, clearSelectionButton);
+      Div toolbar = new Div();
       toolbar.addClassName("paginated-grid-toolbar");
+      if (showSearch) {
+        toolbar.add(searchField);
+      }
+      toolbar.add(selectionDisplay, clearSelectionButton);
       add(toolbar);
     }
     add(grid, emptyState);

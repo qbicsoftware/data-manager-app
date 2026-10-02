@@ -115,10 +115,10 @@ public class AdminProfilePictureAuditMain extends Main implements BeforeEnterObs
     grid.addColumn(this::actorDisplay).setHeader("Actor").setAutoWidth(true).setSortable(false);
     grid.addColumn(this::timestampDisplay).setHeader("When").setAutoWidth(true).setSortable(false);
 
-    // The PaginatedGrid's built-in toolbar provides the row-selection checkboxes, the
-    // "N records selected" text and the clear action — the same selection pattern the
-    // measurement lists use. The free-text search is hidden via scoped CSS (profile-picture.css),
-    // and the grid is not height-constrained so the page scrolls naturally.
+    // The PaginatedGrid's built-in selection toolbar provides the row checkboxes, the
+    // "N records selected" text and the clear action — the same selection pattern the measurement
+    // lists use. showSearch=false keeps that toolbar but drops the free-text search field, and the
+    // grid is not height-constrained so the page scrolls naturally.
     PaginatedGrid<ProfilePictureAuditEntry> paginatedGrid = new PaginatedGrid<>(
         grid,
         this::loadAuditPage,
@@ -126,6 +126,7 @@ public class AdminProfilePictureAuditMain extends Main implements BeforeEnterObs
         "record",
         SortOrder.of("createdAt"),
         true,
+        false,
         true,
         false);
     // Default to 24 rows per page (the PaginatedGrid constructor would default to 12).
