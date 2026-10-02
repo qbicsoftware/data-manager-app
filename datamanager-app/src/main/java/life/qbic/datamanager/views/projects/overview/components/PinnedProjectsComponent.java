@@ -3,10 +3,11 @@ package life.qbic.datamanager.views.projects.overview.components;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.contextmenu.ContextMenu;
-import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.theme.lumo.LumoUtility.IconSize;
 import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.router.RouterLink;
 import java.time.Instant;
@@ -58,6 +59,7 @@ public class PinnedProjectsComponent extends Div {
   private final Div cards = new Div();
   private final transient Supplier<List<PinnedProjectView>> pinnedProjectsSupplier;
   private final transient ToggleHandler toggleHandler;
+  private final transient PinnedProjectActionHandler actionHandler;
   /** The unpin action per pinned project, rebuilt on every refresh. Kept as {@link Runnable}s so
    * unit tests (and future programmatic triggers) can invoke the unpin action without simulating
    * browser menu interaction. */
@@ -68,12 +70,15 @@ public class PinnedProjectsComponent extends Div {
    * @param pinnedProjectsSupplier supplies the current user's pins; called on every {@link #refresh()},
    *                               so the row never owns access-resolution logic
    * @param toggleHandler          receives pin and unpin requests raised from this row
+   * @param actionHandler          exposes quick sharing / access management for manageable pins, so
+   *                               the shortlist offers the same project actions as the overview cards
    */
   public PinnedProjectsComponent(Supplier<List<PinnedProjectView>> pinnedProjectsSupplier,
-      ToggleHandler toggleHandler) {
+      ToggleHandler toggleHandler, PinnedProjectActionHandler actionHandler) {
     this.pinnedProjectsSupplier = Objects.requireNonNull(pinnedProjectsSupplier,
         "pinnedProjectsSupplier cannot be null");
     this.toggleHandler = Objects.requireNonNull(toggleHandler, "toggleHandler cannot be null");
+    this.actionHandler = Objects.requireNonNull(actionHandler, "actionHandler cannot be null");
     addClassName("pinned-projects");
     setVisible(false);
     var title = new Span("Pinned projects");
@@ -264,11 +269,58 @@ public class PinnedProjectsComponent extends Div {
 
     var menu = new ContextMenu(button);
     menu.setOpenOnClick(true);
-    var unpinItem = menu.addItem("Unpin project");
-    unpinItem.addClickListener(event -> toggleHandler.onToggle(pinnedProject.projectId(), false));
+    if (pinnedProject.isAccessible()
+        && actionHandler.canManageAccess(pinnedProject.projectId())) {
+      // Same project actions as the overview card menu, so a pinned project is not a dead end.
+      menu.addItem(menuItemWithIcon("Share project…", VaadinIcon.SHARE),
+          event -> actionHandler.share(pinnedProject.projectId(),
+              "%s — %s".formatted(pinnedProject.projectCode(), pinnedProject.projectTitle())));
+      menu.addItem(menuItemWithIcon("Manage access", VaadinIcon.GROUP),
+          event -> actionHandler.manageAccess(pinnedProject.projectId()));
+    }
+    menu.addItem(menuItemWithIcon("Unpin project", VaadinIcon.PIN, true),
+        event -> toggleHandler.onToggle(pinnedProject.projectId(), false));
     unpinActions.put(pinnedProject.projectId(),
         () -> toggleHandler.onToggle(pinnedProject.projectId(), false));
 
     return button;
+  }
+
+  private static Span menuItemWithIcon(String label, VaadinIcon icon) {
+    return menuItemWithIcon(label, icon, false);
+  }
+
+  /**
+   * Builds a menu item with a small icon. {@code rotated} tilts the glyph counter-clockwise,
+   * used for the unpin action: there is no dedicated unpin icon, so a rotated pin reads as
+   * "remove the pin".
+   */
+  private static Span menuItemWithIcon(String label, VaadinIcon icon, boolean rotated) {
+    Icon iconComponent = icon.create();
+    iconComponent.addClassName(IconSize.SMALL);
+    if (rotated) {
+      iconComponent.addClassName("menu-icon-unpin");
+    }
+    Span item = new Span(iconComponent, new Span(label));
+    item.addClassName("user-menu-item");
+    item.getStyle().set("display", "inline-flex");
+    item.getStyle().set("align-items", "center");
+    item.getStyle().set("gap", "var(--spacing-03)");
+    return item;
+  }
+
+  /**
+   * Project actions offered for an accessible pinned project. The shortlist does not own the access
+   * services; the owning collection component implements these callbacks.
+   *
+   * @since 1.20.0
+   */
+  public interface PinnedProjectActionHandler {
+
+    boolean canManageAccess(ProjectId projectId);
+
+    void share(ProjectId projectId, String projectLabel);
+
+    void manageAccess(ProjectId projectId);
   }
 }

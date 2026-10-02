@@ -19,6 +19,7 @@ import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.service.event.ProjectAccessGranted;
 import life.qbic.usergroups.api.GroupInformationService;
+import org.springframework.security.acls.domain.BasePermission;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -346,13 +347,11 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
             accessControlEntry -> ((GrantedAuthoritySid) accessControlEntry.getSid()).getGrantedAuthority()
                 .equals(authority));
     if (authorityHasAccess) {
-      /* This is important!
-       * Consider adding a person as admin and then adding them again as reader.
-       * This leads to redundant access control entries.
-       */
-      throw new ApplicationException(
-          "Authority %s already collaborates on %s. Please change the project role instead".formatted(
-              authority, projectId));
+      // Self-heal: re-granting an authority that already has access is treated as a role change.
+      // This corrects stale or partial ACEs (for example left behind by an old removal) instead
+      // of blocking the user with "already collaborates" while the grant is invisible/incorrect.
+      doChangeAuthorityAccess(projectId, authority, projectRole);
+      return;
     }
     for (Permission permission : permissions) {
       aclForProject.insertAce(aclForProject.getEntries().size(), permission, authoritySid, true);
@@ -372,7 +371,10 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
     GrantedAuthoritySid grantedAuthoritySid = new GrantedAuthoritySid(authority);
     MutableAcl aclForProject = getAclForProject(projectId, List.of(), aclService);
     List<AccessControlEntry> entries = aclForProject.getEntries();
-    for (int entryIndex = 0; entryIndex < entries.size(); entryIndex++) {
+    // Iterate backwards: deleteAce removes from the live entries list, so a forward loop would
+    // skip every other entry and leave partial ACEs behind (which then map to no role and block
+    // a re-grant while being invisible in the roster). Mirrors removeCollaborator/changeAuthority.
+    for (int entryIndex = entries.size() - 1; entryIndex >= 0; entryIndex--) {
       AccessControlEntry accessControlEntry = entries.get(entryIndex);
       if (accessControlEntry.getSid().equals(grantedAuthoritySid)) {
         aclForProject.deleteAce(entryIndex);
@@ -548,19 +550,32 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
           Set<Permission> permissions = groupSidEntry.getValue().stream()
               .map(AccessControlEntry::getPermission)
               .collect(Collectors.toSet());
-          Optional<ProjectRole> roleFromPermissions = ProjectRole.fromPermissions(permissions);
-          if (roleFromPermissions.isEmpty()) {
-            return null;
-          }
           var groupInfo = groupInformationService.findGroupById(groupId);
           if (groupInfo.isEmpty()) {
             return null;
           }
+          ProjectRole role = ProjectRole.fromPermissions(permissions)
+              .orElseGet(() -> fallbackRole(permissions));
           return new SharedProjectGroup(groupId, groupInfo.get().name(),
-              groupInfo.get().description(), projectId, roleFromPermissions.orElseThrow());
+              groupInfo.get().description(), projectId, role);
         })
         .filter(Objects::nonNull)
         .toList();
+  }
+
+  /**
+   * Maps a corrupt/partial ACE (for example one left over from a failed removal) to the closest
+   * role so the grant stays visible in the roster and can be corrected or revoked, instead of
+   * silently disappearing while still blocking a re-grant.
+   */
+  private static ProjectRole fallbackRole(Set<Permission> permissions) {
+    if (permissions.contains(BasePermission.ADMINISTRATION)) {
+      return ProjectRole.ADMIN;
+    }
+    if (permissions.contains(BasePermission.WRITE)) {
+      return ProjectRole.WRITE;
+    }
+    return ProjectRole.READ;
   }
 
   @Override

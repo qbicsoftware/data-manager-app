@@ -34,7 +34,11 @@ class PinnedProjectsComponentSpec extends Specification {
     component = new PinnedProjectsComponent(pinsSupplier,
         { ProjectId projectId, boolean pin ->
           toggleCalls << [projectId: projectId, pin: pin]
-        } as PinnedProjectsComponent.ToggleHandler)
+        } as PinnedProjectsComponent.ToggleHandler,
+        [canManageAccess: { ProjectId ignored -> false },
+         share: { ProjectId ignored, String label -> },
+         manageAccess: { ProjectId ignored -> }]
+            as PinnedProjectsComponent.PinnedProjectActionHandler)
   }
 
   def "is completely hidden while the user has pinned nothing"() {
