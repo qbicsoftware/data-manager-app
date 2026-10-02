@@ -106,9 +106,11 @@ public class UserProfileComponent extends Div implements Serializable {
     fields.addClassName("personal-information__fields");
     fields.add(buildUsernameField());
     fields.add(buildEmailRow());
-    fields.add(pictureActions);
 
-    var layout = new Div(profileAvatar, fields);
+    var pictureBlock = new Div(profileAvatar, pictureActions);
+    pictureBlock.addClassName("profile-picture-block");
+
+    var layout = new Div(fields, pictureBlock);
     layout.addClassName("personal-information__layout");
 
     group.add(layout);

@@ -5,6 +5,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
+  justify-content: space-between;
   gap: var(--lumo-space-xl);
 }
 
@@ -14,6 +15,14 @@
   gap: var(--lumo-space-m);
   flex: 1 1 auto;
   min-width: 0;
+}
+
+.profile-picture-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--lumo-space-s);
+  flex: 0 0 auto;
 }
 
 .profile-picture-block__avatar {
@@ -26,10 +35,9 @@
 
 .profile-picture-block__actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   align-items: center;
-  gap: var(--lumo-space-l);
-  margin-top: var(--lumo-space-xs);
+  gap: var(--lumo-space-xs);
 }
 
 /* Destructive action must read as destructive: keep the text-link shape but colour it. */
