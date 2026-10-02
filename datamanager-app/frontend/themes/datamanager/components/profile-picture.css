@@ -126,7 +126,10 @@ vaadin-button.profile-picture-block__overlay-button[focus-ring] {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: var(--lumo-space-xs);
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .profile-picture-crop__preview-label {
@@ -186,7 +189,8 @@ vaadin-button.profile-picture-block__overlay-button[focus-ring] {
 
 .profile-picture-crop__stage {
   position: relative;
-  width: 100%;
+  flex: 0 1 20rem;
+  width: 20rem;
   max-width: 20rem;
   height: 20rem;
   overflow: hidden;
