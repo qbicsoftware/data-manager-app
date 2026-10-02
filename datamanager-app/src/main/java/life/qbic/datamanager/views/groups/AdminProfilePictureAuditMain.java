@@ -114,25 +114,34 @@ public class AdminProfilePictureAuditMain extends Main implements BeforeEnterObs
         .setSortable(false);
     grid.addColumn(this::actorDisplay).setHeader("Actor").setAutoWidth(true).setSortable(false);
     grid.addColumn(this::timestampDisplay).setHeader("When").setAutoWidth(true).setSortable(false);
-    grid.addComponentColumn(entry -> forceRemoveButton(adminUserId, entry))
-        .setHeader("").setAutoWidth(true);
 
-    // showToolbar=false hides the built-in search/selection toolbar (the audit grid needs no
-    // free-text search), while the pager and natural page scrolling are kept. The grid itself is
-    // not height-constrained, so it takes the height it needs and the browser scrolls the page.
+    // The PaginatedGrid's built-in toolbar provides the row-selection checkboxes, the
+    // "N records selected" text and the clear action — the same selection pattern the
+    // measurement lists use. The free-text search is hidden via scoped CSS (profile-picture.css),
+    // and the grid is not height-constrained so the page scrolls naturally.
     PaginatedGrid<ProfilePictureAuditEntry> paginatedGrid = new PaginatedGrid<>(
         grid,
         this::loadAuditPage,
-        entry -> entry.ownerType().name() + ":" + entry.ownerId() + ":" + entry.createdAt(),
+        entry -> entry.ownerType().name() + "|" + entry.ownerId() + "|" + entry.createdAt(),
         "record",
         SortOrder.of("createdAt"),
-        false,
+        true,
         true,
         false);
     // Default to 24 rows per page (the PaginatedGrid constructor would default to 12).
     paginatedGrid.setListState(
         new ListState(1, AUDIT_PAGE_SIZE, "", SortOrder.of("createdAt")));
 
+    // Force remove is the primary bulk action on the current selection (cross-page), disabled
+    // while nothing is selected.
+    Button forceRemoveButton = new Button("Force remove");
+    forceRemoveButton.addClassName("primary");
+    forceRemoveButton.setEnabled(false);
+    forceRemoveButton.addClickListener(click -> forceRemoveSelected(paginatedGrid, adminUserId));
+    paginatedGrid.addSelectionChangeListener(
+        event -> forceRemoveButton.setEnabled(!event.getSelectedIds().isEmpty()));
+
+    section.addAction(forceRemoveButton);
     section.addContent(paginatedGrid);
     add(section);
   }
@@ -169,21 +178,31 @@ public class AdminProfilePictureAuditMain extends Main implements BeforeEnterObs
     return TIMESTAMP.format(entry.createdAt());
   }
 
-  private Button forceRemoveButton(String adminUserId, ProfilePictureAuditEntry entry) {
-    var button = new Button("Force remove");
-    button.addClassName("tertiary");
-    button.addClickListener(click -> {
-      var result = profilePictureService.forceRemove(adminUserId, entry.ownerType(),
-          entry.ownerId());
-      if (result.isError()) {
-        Notification.show("Could not remove the picture.");
-        return;
+  /**
+   * Force-removes the pictures of every distinct owner in the current selection (across pages).
+   * The audit rows remain (removal is not audited); the affected avatars become placeholders.
+   */
+  private void forceRemoveSelected(PaginatedGrid<ProfilePictureAuditEntry> grid,
+      String adminUserId) {
+    java.util.Set<String> owners = new java.util.LinkedHashSet<>();
+    for (String id : grid.selectedIds()) {
+      String[] parts = id.split("\\|", 3);
+      if (parts.length >= 2) {
+        owners.add(parts[0] + "|" + parts[1]);
       }
-      button.setEnabled(false);
-      button.setText("Removed");
-      Notification.show("Picture removed.");
-    });
-    return button;
+    }
+    int removed = 0;
+    for (String owner : owners) {
+      String[] parts = owner.split("\\|", 2);
+      var result = profilePictureService.forceRemove(adminUserId,
+          ProfilePictureOwnerType.valueOf(parts[0]), parts[1]);
+      if (!result.isError()) {
+        removed++;
+      }
+    }
+    grid.deselect(grid.selectedIds());
+    grid.refresh();
+    Notification.show(removed == 1 ? "Picture removed." : removed + " pictures removed.");
   }
 
   // ── paging ───────────────────────────────────────────────────────────────
