@@ -161,7 +161,15 @@ class AdminGroupManagersMainSpec extends Specification {
     }
 
     @Override
-    void deleteByOwnerTypeAndOwnerId(ProfilePictureOwnerType ownerType, String ownerId) {
+    Page<ProfilePictureAuditRepository.ProfilePictureAuditEntity>
+        findAllByReviewedFalseOrderByCreatedAtDesc(Pageable pageable) {
+      return Page.empty()
+    }
+
+    @Override
+    List<ProfilePictureAuditRepository.ProfilePictureAuditEntity> findAllByIdIn(
+        java.util.Collection<Long> ids) {
+      return []
     }
   }
 }

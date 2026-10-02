@@ -35,7 +35,9 @@ public interface ProfilePictureAuditRepository extends
   List<ProfilePictureAuditEntity> findByOwnerTypeAndOwnerIdOrderByCreatedAtDesc(
       ProfilePictureOwnerType ownerType, String ownerId);
 
-  void deleteByOwnerTypeAndOwnerId(ProfilePictureOwnerType ownerType, String ownerId);
+  Page<ProfilePictureAuditEntity> findAllByReviewedFalseOrderByCreatedAtDesc(Pageable pageable);
+
+  List<ProfilePictureAuditEntity> findAllByIdIn(java.util.Collection<Long> ids);
 
   /**
    * One recorded profile-picture set/replace event.
@@ -70,6 +72,15 @@ public interface ProfilePictureAuditRepository extends
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
+
+    @Column(name = "reviewed", nullable = false)
+    private boolean reviewed;
+
+    @Column(name = "reviewed_by", length = 255)
+    private String reviewedBy;
+
+    @Column(name = "reviewed_at")
+    private Instant reviewedAt;
 
     protected ProfilePictureAuditEntity() {
       // for JPA
@@ -117,6 +128,27 @@ public interface ProfilePictureAuditRepository extends
 
     public Instant getCreatedAt() {
       return createdAt;
+    }
+
+    public boolean isReviewed() {
+      return reviewed;
+    }
+
+    public String getReviewedBy() {
+      return reviewedBy;
+    }
+
+    public Instant getReviewedAt() {
+      return reviewedAt;
+    }
+
+    /**
+     * Marks this entry as reviewed by the given administrator at the given time.
+     */
+    public void markReviewed(String reviewedBy, Instant reviewedAt) {
+      this.reviewed = true;
+      this.reviewedBy = reviewedBy;
+      this.reviewedAt = reviewedAt;
     }
   }
 }

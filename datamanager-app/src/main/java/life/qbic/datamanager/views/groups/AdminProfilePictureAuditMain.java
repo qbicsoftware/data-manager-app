@@ -3,6 +3,7 @@ package life.qbic.datamanager.views.groups;
 import static java.util.Objects.requireNonNull;
 
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
@@ -103,10 +104,12 @@ public class AdminProfilePictureAuditMain extends Main implements BeforeEnterObs
     build(adminUserId);
   }
 
+  private boolean showReviewed = false;
+
   private void build(String adminUserId) {
     var section = new SettingsSection("Profile picture audit",
-        "Set and replace events for user and group profile pictures. Administrators may "
-            + "force-remove a picture.");
+        "Set and replace events for user and group profile pictures. Administrators may mark "
+            + "entries as reviewed or retract a violating picture.");
 
     Grid<ProfilePictureAuditEntry> grid = new Grid<>();
     grid.addComponentColumn(this::pictureCell)
@@ -117,6 +120,8 @@ public class AdminProfilePictureAuditMain extends Main implements BeforeEnterObs
         .setSortable(false);
     grid.addColumn(this::actorDisplay).setHeader("Actor").setAutoWidth(true).setSortable(false);
     grid.addColumn(this::timestampDisplay).setHeader("When").setAutoWidth(true).setSortable(false);
+    grid.addColumn(entry -> entry.reviewed() ? "Reviewed" : "—").setHeader("Review")
+        .setAutoWidth(true).setSortable(false);
 
     // The PaginatedGrid's built-in selection toolbar provides the row checkboxes, the
     // "N records selected" text and the clear action — the same selection pattern the measurement
@@ -125,7 +130,7 @@ public class AdminProfilePictureAuditMain extends Main implements BeforeEnterObs
     PaginatedGrid<ProfilePictureAuditEntry> paginatedGrid = new PaginatedGrid<>(
         grid,
         this::loadAuditPage,
-        entry -> entry.ownerType().name() + "|" + entry.ownerId() + "|" + entry.createdAt(),
+        entry -> String.valueOf(entry.id()),
         "record",
         SortOrder.of("createdAt"),
         true,
@@ -136,16 +141,33 @@ public class AdminProfilePictureAuditMain extends Main implements BeforeEnterObs
     paginatedGrid.setListState(
         new ListState(1, AUDIT_PAGE_SIZE, "", SortOrder.of("createdAt")));
 
-    // Force remove is the primary bulk action on the current selection (cross-page), disabled
-    // while nothing is selected.
+    // Bulk actions on the current selection (cross-page), disabled while nothing is selected.
+    Button markReviewedButton = new Button("Mark reviewed");
+    markReviewedButton.addClassName("primary");
+    markReviewedButton.setEnabled(false);
+    markReviewedButton.addClickListener(click -> markReviewedSelected(paginatedGrid, adminUserId));
+
     Button forceRemoveButton = new Button("Force remove");
-    forceRemoveButton.addClassName("primary");
+    forceRemoveButton.addClassName("button-danger");
     forceRemoveButton.setEnabled(false);
     forceRemoveButton.addClickListener(click -> forceRemoveSelected(paginatedGrid, adminUserId));
-    paginatedGrid.addSelectionChangeListener(
-        event -> forceRemoveButton.setEnabled(!event.getSelectedIds().isEmpty()));
 
+    paginatedGrid.addSelectionChangeListener(event -> {
+      boolean hasSelection = !event.getSelectedIds().isEmpty();
+      markReviewedButton.setEnabled(hasSelection);
+      forceRemoveButton.setEnabled(hasSelection);
+    });
+
+    Checkbox showReviewedCheckbox = new Checkbox("Show reviewed");
+    showReviewedCheckbox.setValue(showReviewed);
+    showReviewedCheckbox.addValueChangeListener(event -> {
+      showReviewed = event.getValue();
+      paginatedGrid.refresh();
+    });
+
+    section.addAction(markReviewedButton);
     section.addAction(forceRemoveButton);
+    section.addContent(showReviewedCheckbox);
     section.addContent(paginatedGrid);
     add(section);
   }
@@ -184,34 +206,40 @@ public class AdminProfilePictureAuditMain extends Main implements BeforeEnterObs
 
   /**
    * Force-removes the pictures of every distinct owner in the current selection (across pages).
-   * The audit rows remain (removal is not audited); the affected avatars become placeholders.
+   * The audit rows are kept; only the stored pictures are retracted, so the affected avatars
+   * become placeholders.
    */
   private void forceRemoveSelected(PaginatedGrid<ProfilePictureAuditEntry> grid,
       String adminUserId) {
-    java.util.Set<String> owners = new java.util.LinkedHashSet<>();
-    for (String id : grid.selectedIds()) {
-      String[] parts = id.split("\\|", 3);
-      if (parts.length >= 2) {
-        owners.add(parts[0] + "|" + parts[1]);
-      }
-    }
-    int removed = 0;
-    for (String owner : owners) {
-      String[] parts = owner.split("\\|", 2);
-      var result = profilePictureService.forceRemove(adminUserId,
-          ProfilePictureOwnerType.valueOf(parts[0]), parts[1]);
-      if (!result.isError()) {
-        removed++;
-      }
-    }
+    var ids = grid.selectedIds().stream().map(Long::valueOf).toList();
+    var result = profilePictureService.forceRemoveAuditEntries(adminUserId, ids);
     grid.deselect(grid.selectedIds());
     grid.refresh();
-    if (removed > 0) {
-      messageFactory.toast("profile.picture.force-remove.success", new Object[]{removed},
-          getLocale()).open();
-    } else {
+    if (result.isError() || result.getValue() == 0) {
       messageFactory.toast("profile.picture.force-remove.error", new Object[]{}, getLocale())
           .open();
+    } else {
+      messageFactory.toast("profile.picture.force-remove.success", new Object[]{result.getValue()},
+          getLocale()).open();
+    }
+  }
+
+  /**
+   * Marks the selected audit entries as reviewed. This only cleans up the working list; stored
+   * pictures are untouched.
+   */
+  private void markReviewedSelected(PaginatedGrid<ProfilePictureAuditEntry> grid,
+      String adminUserId) {
+    var ids = grid.selectedIds().stream().map(Long::valueOf).toList();
+    var result = profilePictureService.markReviewed(adminUserId, ids);
+    grid.deselect(grid.selectedIds());
+    grid.refresh();
+    if (result.isError()) {
+      messageFactory.toast("profile.picture.mark-reviewed.error", new Object[]{}, getLocale())
+          .open();
+    } else {
+      messageFactory.toast("profile.picture.mark-reviewed.success", new Object[]{ids.size()},
+          getLocale()).open();
     }
   }
 
@@ -219,7 +247,7 @@ public class AdminProfilePictureAuditMain extends Main implements BeforeEnterObs
 
   private PaginatedGrid.Page<ProfilePictureAuditEntry> loadAuditPage(ListState state) {
     String adminUserId = currentUserId();
-    var result = profilePictureService.auditPage(adminUserId,
+    var result = profilePictureService.auditPage(adminUserId, showReviewed,
         PageRequest.of(state.page() - 1, state.pageSize()));
     if (result.isError()) {
       return new PaginatedGrid.Page<>(java.util.List.of(), 0);

@@ -133,8 +133,8 @@ class ProfilePictureServiceSpec extends Specification {
         then:
         !allowed.isError()
         repository.findByOwnerTypeAndOwnerId(ProfilePictureOwnerType.USER, "user-1").isEmpty()
-        and: "the owner's audit entries are removed too"
-        auditRepository.entries.isEmpty()
+        and: "the audit trail is kept (only the image is retracted)"
+        !auditRepository.entries.isEmpty()
     }
 
     def "the audit list is admin-only"() {
@@ -222,8 +222,16 @@ class ProfilePictureServiceSpec extends Specification {
         }
 
         @Override
-        void deleteByOwnerTypeAndOwnerId(ProfilePictureOwnerType ownerType, String ownerId) {
-            entries.removeAll { it.ownerType == ownerType && it.ownerId == ownerId }
+        Page<ProfilePictureAuditRepository.ProfilePictureAuditEntity>
+                findAllByReviewedFalseOrderByCreatedAtDesc(Pageable pageable) {
+            def unreviewed = entries.findAll { !it.reviewed }.reverse()
+            return new PageImpl<>(unreviewed, pageable, unreviewed.size())
+        }
+
+        @Override
+        List<ProfilePictureAuditRepository.ProfilePictureAuditEntity> findAllByIdIn(
+                java.util.Collection<Long> ids) {
+            return entries.findAll { ids.contains(it.id) }
         }
     }
 }

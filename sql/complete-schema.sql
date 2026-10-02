@@ -1141,9 +1141,13 @@ CREATE TABLE IF NOT EXISTS `profile_picture_audit`
     `previous_content_hash` char(64)    DEFAULT NULL,
     `new_content_hash`     char(64)     NOT NULL,
     `created_at`           datetime(6)  NOT NULL,
+    `reviewed`             bit(1)       NOT NULL DEFAULT b'0',
+    `reviewed_by`          varchar(255) DEFAULT NULL,
+    `reviewed_at`          datetime(6)  DEFAULT NULL,
     PRIMARY KEY (`id`),
     KEY `idx_profile_picture_audit_owner` (`owner_type`, `owner_id`, `created_at`),
-    KEY `idx_profile_picture_audit_created` (`created_at`)
+    KEY `idx_profile_picture_audit_created` (`created_at`),
+    KEY `idx_profile_picture_audit_reviewed` (`reviewed`, `created_at`)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;

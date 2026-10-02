@@ -26,6 +26,7 @@ For the migration documentation structure, see [`README.md`](README.md).
 | 3 | [`create-pinned-projects.sql`](../../sql/migrations/create-pinned-projects.sql) | Create `pinned_projects` table holding per-user pinned-project associations | low (additive, new empty table) |
 | 4 | [`create-user-groups.sql`](../../sql/migrations/create-user-groups.sql) | Create `user_group` + `group_membership` tables for the user-groups bounded context (ad-hoc group creation) | Low (additive, new empty tables) |
 | 5 | [`create-profile-pictures.sql`](../../sql/migrations/create-profile-pictures.sql) | Create `profile_picture` + `profile_picture_audit` tables for user and user-group profile pictures | Low (additive, new empty tables) |
+| 6 | [`add-profile-picture-audit-review.sql`](../../sql/migrations/add-profile-picture-audit-review.sql) | Add `reviewed` / `reviewed_by` / `reviewed_at` to `profile_picture_audit` | Low (additive column) |
 
 Each row links to its incremental script. The sections below expand each entry
 with apply / verify / rollback detail.
@@ -445,6 +446,53 @@ DROP TABLE IF EXISTS data_management.profile_picture;
   delivery and uploads fail with “table not found” otherwise.
 - No backfill: the identicon fallback is used until a user or manager sets a picture.
 - Expect roughly 10–30 KB per row (256×256 PNG) plus blob overhead.
+
+---
+
+## Migration #6: Add a review marker to the profile picture audit
+
+| Field | Value |
+|---|---|
+| **Story** | FEAT-PROFILE-PICTURES (audit review follow-up) |
+| **Feature** | FEAT-PROFILE-PICTURES |
+| **ADRs** | new profile-picture moderation/audit ADR — pending human approval |
+| **Scope** | alter `profile_picture_audit` (add columns + index) |
+| **Script** | [`sql/migrations/add-profile-picture-audit-review.sql`](../../sql/migrations/add-profile-picture-audit-review.sql) |
+| **Target datasource** | `data_management` |
+
+### Purpose
+
+The audit trail is append-only. Administrators "clean up" the working list by marking entries
+as reviewed; stored images are never touched by that action. Retracting a violating image is a
+separate action ("Force remove") that removes only the stored picture and keeps the audit rows.
+
+### Apply
+
+```bash
+mysql -u <user> -h <host> -P <port> data_management \
+    < sql/migrations/add-profile-picture-audit-review.sql
+```
+
+### Verify
+
+```sql
+SHOW COLUMNS FROM data_management.profile_picture_audit LIKE 'reviewed%';
+```
+
+### Rollback
+
+```sql
+ALTER TABLE data_management.profile_picture_audit
+    DROP COLUMN IF EXISTS `reviewed_at`,
+    DROP COLUMN IF EXISTS `reviewed_by`,
+    DROP COLUMN IF EXISTS `reviewed`;
+DROP INDEX IF EXISTS `idx_profile_picture_audit_reviewed`
+    ON data_management.profile_picture_audit;
+```
+
+### Operator notes
+
+- Additive and safe while live; existing rows default to not reviewed.
 
 ---
 

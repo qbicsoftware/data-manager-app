@@ -155,7 +155,6 @@ public class ProfilePictureService {
       return Result.fromError(generalError("ownerType and ownerId are required"));
     }
     delete(ownerType, ownerId);
-    auditRepository.deleteByOwnerTypeAndOwnerId(ownerType, ownerId);
     return Result.fromValue(null);
   }
 
@@ -218,17 +217,81 @@ public class ProfilePictureService {
    * paginated audit grid needs for the pager.</p>
    *
    * @param actingAdminUserId the acting administrator; must hold the admin role
+   * @param includeReviewed   whether already-reviewed entries are included; {@code false} returns
+   *                          only unreviewed entries (the working list)
    * @param pageable          the requested page
    * @return the audit page, or an error if the caller is not an administrator
    */
   @Transactional(readOnly = true)
   public Result<org.springframework.data.domain.Page<ProfilePictureAuditEntry>, ApplicationException>
-      auditPage(String actingAdminUserId, Pageable pageable) {
+      auditPage(String actingAdminUserId, boolean includeReviewed, Pageable pageable) {
     if (isBlank(actingAdminUserId) || !adminPermission.isAdmin(actingAdminUserId)) {
       return Result.fromError(accessDenied(actingAdminUserId));
     }
-    return Result.fromValue(auditRepository.findAllByOrderByCreatedAtDesc(pageable)
-        .map(ProfilePictureService::toAuditEntry));
+    var page = includeReviewed
+        ? auditRepository.findAllByOrderByCreatedAtDesc(pageable)
+        : auditRepository.findAllByReviewedFalseOrderByCreatedAtDesc(pageable);
+    return Result.fromValue(page.map(ProfilePictureService::toAuditEntry));
+  }
+
+  /**
+   * Marks the given audit entries as reviewed by the acting administrator. Reviewed entries can be
+   * hidden from the working list; this never touches the stored pictures.
+   *
+   * @param actingAdminUserId the acting administrator; must hold the admin role
+   * @param entryIds          the audit row ids to mark reviewed; may be empty
+   * @return an empty success result, or an error if the caller is not an administrator
+   */
+  @Transactional
+  public Result<Void, ApplicationException> markReviewed(String actingAdminUserId,
+      java.util.Collection<Long> entryIds) {
+    if (isBlank(actingAdminUserId) || !adminPermission.isAdmin(actingAdminUserId)) {
+      return Result.fromError(accessDenied(actingAdminUserId));
+    }
+    if (entryIds == null || entryIds.isEmpty()) {
+      return Result.fromValue(null);
+    }
+    Instant now = Instant.now();
+    for (var entity : auditRepository.findAllByIdIn(entryIds)) {
+      if (!entity.isReviewed()) {
+        entity.markReviewed(actingAdminUserId, now);
+        auditRepository.save(entity);
+      }
+    }
+    return Result.fromValue(null);
+  }
+
+  /**
+   * Force-removes the pictures of every distinct owner referenced by the given audit rows. The
+   * audit rows themselves are kept (the trail stays intact); only the stored pictures are removed.
+   *
+   * @param actingAdminUserId the acting administrator; must hold the admin role
+   * @param entryIds          the audit row ids; may be empty
+   * @return the number of distinct owners whose picture was removed, or an error
+   */
+  @Transactional
+  public Result<Integer, ApplicationException> forceRemoveAuditEntries(String actingAdminUserId,
+      java.util.Collection<Long> entryIds) {
+    if (isBlank(actingAdminUserId) || !adminPermission.isAdmin(actingAdminUserId)) {
+      return Result.fromError(accessDenied(actingAdminUserId));
+    }
+    if (entryIds == null || entryIds.isEmpty()) {
+      return Result.fromValue(0);
+    }
+    java.util.Set<String> owners = new java.util.LinkedHashSet<>();
+    for (var entity : auditRepository.findAllByIdIn(entryIds)) {
+      owners.add(entity.getOwnerType().name() + "|" + entity.getOwnerId());
+    }
+    int removed = 0;
+    for (String owner : owners) {
+      String[] parts = owner.split("\\|", 2);
+      var result = forceRemove(actingAdminUserId, ProfilePictureOwnerType.valueOf(parts[0]),
+          parts[1]);
+      if (!result.isError()) {
+        removed++;
+      }
+    }
+    return Result.fromValue(removed);
   }
 
   /**
@@ -300,9 +363,10 @@ public class ProfilePictureService {
 
   private static ProfilePictureAuditEntry toAuditEntry(
       ProfilePictureAuditRepository.ProfilePictureAuditEntity entity) {
-    return new ProfilePictureAuditEntry(entity.getOwnerType(), entity.getOwnerId(),
+    return new ProfilePictureAuditEntry(entity.getId(), entity.getOwnerType(), entity.getOwnerId(),
         entity.getAction(), entity.getActorId(), entity.getPreviousContentHash(),
-        entity.getNewContentHash(), entity.getCreatedAt());
+        entity.getNewContentHash(), entity.isReviewed(), entity.getReviewedBy(),
+        entity.getReviewedAt(), entity.getCreatedAt());
   }
 
   private static boolean isBlank(String value) {
