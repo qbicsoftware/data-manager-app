@@ -110,9 +110,9 @@ vaadin-button.profile-picture-block__overlay-button[focus-ring] {
   }
 }
 
-/* Group-card avatars: same ring as all avatars plus a soft lift so they sit on the card. */
+/* Group-card avatars: a stronger 2px ring plus a soft lift so they sit on the card. */
 .my-groups-row .my-groups-row__avatar {
-  box-shadow: 0 0 0 1px var(--lumo-contrast-20pct), var(--lumo-box-shadow-xs);
+  box-shadow: 0 0 0 2px var(--lumo-contrast-20pct), var(--lumo-box-shadow-xs);
 }
 
 .my-groups-row__title {

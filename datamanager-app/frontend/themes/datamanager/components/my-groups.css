@@ -158,12 +158,20 @@
   color: var(--lumo-secondary-text-color);
 }
 
-/* Right column: actions */
+/* Actions */
 .my-groups-row__actions {
   display: flex;
   align-items: center;
   gap: var(--lumo-space-xs);
   flex-shrink: 0;
+}
+
+/* Footer row: actions anchored to the bottom of the card, so a long description does not
+   leave a tall empty column beside a top-pinned action. */
+.my-groups-row__footer {
+  display: flex;
+  align-items: center;
+  margin-top: auto;
 }
 
 /* Disabled management stubs (available in FEAT-USER-GROUPS-04) */

@@ -193,7 +193,7 @@ public class AdminGroupsMain extends Main implements BeforeEnterObserver {
     Div actions = new Div();
     actions.addClassName("my-groups-row__actions");
     actions.add(buildManageButton(groupInfo));
-    header.add(title, actions);
+    header.add(title);
     identity.add(header);
 
     Div badges = new Div();
@@ -208,6 +208,10 @@ public class AdminGroupsMain extends Main implements BeforeEnterObserver {
       description.addClassName("my-groups-row__description");
       identity.add(description);
     }
+
+    Div footer = new Div(actions);
+    footer.addClassName("my-groups-row__footer");
+    identity.add(footer);
 
     row.add(avatarSection, identity);
     return row;

@@ -38,7 +38,7 @@ vaadin-avatar-group vaadin-avatar,
   background-color: white;
   border-color: var(--lumo-contrast-20pct);
   /* The avatar has no border by default, so a thin ring defines its edge. */
-  box-shadow: 0 0 0 1px var(--lumo-contrast-20pct);
+  box-shadow: 0 0 0 1px var(--lumo-contrast-30pct);
 }
 
 .avatar-with-name {

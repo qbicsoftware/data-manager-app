@@ -122,7 +122,7 @@ public class MyGroupsComponent extends Div implements Serializable {
     Div identity = new Div();
     identity.addClassName("my-groups-row__identity");
 
-    // Line 1: title on the left, actions on the right of the SAME line.
+    // Line 1: title.
     Div header = new Div();
     header.addClassName("my-groups-row__header");
 
@@ -148,11 +148,7 @@ public class MyGroupsComponent extends Div implements Serializable {
     avatarSection.addClassName("my-groups-row__avatar-section");
     title.add(name);
 
-    Div actions = new Div();
-    actions.addClassName("my-groups-row__actions");
-    appendActions(actions, membership);
-
-    header.add(title, actions);
+    header.add(title);
     identity.add(header);
 
     // Line 2: badges below the title (type + role + member count) — a vertical read, no
@@ -169,6 +165,15 @@ public class MyGroupsComponent extends Div implements Serializable {
       description.addClassName("my-groups-row__description");
       identity.add(description);
     }
+
+    // Footer: actions anchored to the bottom of the card so a long description does not leave a
+    // tall empty column next to a top-pinned action.
+    Div actions = new Div();
+    actions.addClassName("my-groups-row__actions");
+    appendActions(actions, membership);
+    Div footer = new Div(actions);
+    footer.addClassName("my-groups-row__footer");
+    identity.add(footer);
 
     row.add(avatarSection, identity);
     return row;
