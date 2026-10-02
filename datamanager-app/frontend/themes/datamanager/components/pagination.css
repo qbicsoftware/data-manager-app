@@ -49,3 +49,31 @@
 .pagination-bar .pagination-page-size {
   width: 8rem;
 }
+/* Built-in selection bar of PaginatedGrid — mirrors the measurement selection bar (icon +
+   bold count + clear) so list selection reads consistently across the app. Hidden until a
+   selection exists (toggled in PaginatedGrid.updateSelectionDisplay). */
+.paginated-grid-selection-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+  padding: var(--lumo-space-s) var(--lumo-space-m);
+  border-radius: var(--lumo-border-radius-m);
+  background: color-mix(in srgb, var(--primary-color) 6%, var(--primary-contrast-color));
+}
+
+.paginated-grid-selection-icon {
+  color: var(--primary-color);
+  width: var(--lumo-icon-size-m);
+  height: var(--lumo-icon-size-m);
+}
+
+.paginated-grid-selection-count {
+  color: var(--body-text-color);
+  font-weight: 700;
+}
+
+.paginated-grid-clear-selection {
+  margin-left: var(--lumo-space-s);
+  color: var(--button-text-color);
+  font-weight: 600;
+}

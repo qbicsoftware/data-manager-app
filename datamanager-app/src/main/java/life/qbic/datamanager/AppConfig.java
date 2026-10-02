@@ -223,6 +223,12 @@ public class AppConfig {
   }
 
   @Bean
+  public life.qbic.datamanager.profilepicture.GroupPictureAuthorization groupPictureAuthorization(
+      GroupService groupService) {
+    return groupService::canManageProfilePicture;
+  }
+
+  @Bean
   public GroupInformationServiceImpl groupInformationService(GroupService groupService) {
     return new GroupInformationServiceImpl(groupService);
   }

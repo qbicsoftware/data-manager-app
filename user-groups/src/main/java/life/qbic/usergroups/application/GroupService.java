@@ -1084,6 +1084,38 @@ public class GroupService {
         .toList();
   }
 
+  /**
+   * Returns whether the acting user may manage (set, replace or remove) the profile picture of an
+   * active group.
+   *
+   * <p>Authorization mirrors the group's existing profile-edit rules: for an ad-hoc group the
+   * OWNER or a MANAGER may manage the picture (a regular MEMBER may not); for an organisational
+   * group a QBiC administrator acts as owner-equivalent. The check is read-only and never mutates
+   * the group.</p>
+   *
+   * @param groupId       the id of the group
+   * @param actingUserId  the user performing the operation
+   * @return {@code true} if the user may manage the group's profile picture
+   * @since 1.22.0
+   */
+  @Transactional(readOnly = true)
+  public boolean canManageProfilePicture(String groupId, String actingUserId) {
+    if (actingUserId == null || actingUserId.isBlank()) {
+      return false;
+    }
+    Optional<UserGroup> maybeGroup = resolveActiveGroup(groupId);
+    if (maybeGroup.isEmpty()) {
+      return false;
+    }
+    UserGroup group = maybeGroup.get();
+    if (group.type() == GroupType.ORG) {
+      return groupAdministrationPermission.isAdmin(actingUserId);
+    }
+    return roleOf(group, actingUserId)
+        .filter(role -> role == GroupRole.OWNER || role == GroupRole.MANAGER)
+        .isPresent();
+  }
+
   private Optional<UserGroup> resolveActiveGroup(String groupId) {
     GroupId parsedId;
     try {

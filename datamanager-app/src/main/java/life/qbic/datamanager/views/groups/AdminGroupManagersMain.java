@@ -4,9 +4,13 @@ import static java.util.Objects.requireNonNull;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.contextmenu.ContextMenu;
+import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.NotFoundException;
@@ -20,11 +24,17 @@ import java.io.Serial;
 import java.util.Locale;
 import java.util.List;
 import java.util.Optional;
+import life.qbic.datamanager.profilepicture.ProfilePictureDialog;
+import life.qbic.datamanager.profilepicture.ProfilePictureMessages;
+import life.qbic.datamanager.profilepicture.ProfilePictureOwnerType;
+import life.qbic.datamanager.profilepicture.ProfilePictureService;
 import life.qbic.datamanager.views.AppRoutes;
+import life.qbic.datamanager.views.account.UserAvatar;
 import life.qbic.datamanager.views.general.InlineEditableField;
 import life.qbic.datamanager.views.general.InlineEditableField.InputKind;
 import life.qbic.datamanager.views.general.InlineEditableField.SaveEvent;
 import life.qbic.datamanager.views.general.Main;
+import life.qbic.datamanager.views.general.dialog.AlertDialog;
 import life.qbic.datamanager.views.general.dialog.TypeToConfirmInput;
 import life.qbic.datamanager.views.groups.GroupMembersComponent.GroupMembersUpdatedRequest;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
@@ -86,6 +96,7 @@ public class AdminGroupManagersMain extends Main implements BeforeEnterObserver 
   private final GroupAdministrationPermission groupAdministrationPermission;
   private final AuthenticationToUserIdTranslationService userIdTranslator;
   private final MessageSourceNotificationFactory messageFactory;
+  private final transient ProfilePictureService profilePictureService;
 
   private transient SettingsSection section;
   private transient InlineEditableField nameField;
@@ -96,6 +107,7 @@ public class AdminGroupManagersMain extends Main implements BeforeEnterObserver 
   private transient String groupId;
   private transient String groupName;
   private transient String groupDescription;
+  private transient MenuItem removeGroupPictureItem;
 
   /**
    * Production constructor: wires the services, the admin gate, the user-id resolution and the
@@ -107,7 +119,8 @@ public class AdminGroupManagersMain extends Main implements BeforeEnterObserver 
       @Autowired UserInformationService userInformationService,
       @Autowired GroupAdministrationPermission groupAdministrationPermission,
       @Autowired AuthenticationToUserIdTranslationService userIdTranslator,
-      @Autowired MessageSourceNotificationFactory messageFactory) {
+      @Autowired MessageSourceNotificationFactory messageFactory,
+      @Autowired ProfilePictureService profilePictureService) {
     this.groupInformationService = requireNonNull(groupInformationService,
         "groupInformationService must not be null");
     this.groupManagementService = requireNonNull(groupManagementService,
@@ -120,6 +133,8 @@ public class AdminGroupManagersMain extends Main implements BeforeEnterObserver 
         "userIdTranslator must not be null");
     this.messageFactory = requireNonNull(messageFactory,
         "messageFactory must not be null");
+    this.profilePictureService = requireNonNull(profilePictureService,
+        "profilePictureService must not be null");
     addClassName("admin-group-managers");
   }
 
@@ -172,6 +187,54 @@ public class AdminGroupManagersMain extends Main implements BeforeEnterObserver 
 
     // ── Group profile group (inline editable, same as GroupDetailMain) ──
     Div profileGroup = settingsGroup("Group");
+
+    UserAvatar groupAvatar = new UserAvatar();
+    groupAvatar.setGroupId(groupId);
+    groupAvatar.addClassName("profile-picture-block__avatar");
+
+    Div avatarWrapper = new Div(groupAvatar);
+    avatarWrapper.addClassName("profile-picture-block__avatar-wrapper");
+
+    Button pictureSettingsButton = new Button(new Icon(VaadinIcon.COG));
+    pictureSettingsButton.addClassName("profile-picture-block__overlay-button");
+    pictureSettingsButton.setAriaLabel("Group picture options");
+    pictureSettingsButton.getElement().setAttribute("title", "Change picture");
+
+    ContextMenu pictureMenu = new ContextMenu();
+    pictureMenu.setTarget(pictureSettingsButton);
+    pictureMenu.setOpenOnClick(true);
+    pictureMenu.addItem(groupPictureMenuItem(new Icon(VaadinIcon.EXCHANGE), "Change"), event -> {
+      var dialog = new ProfilePictureDialog();
+      dialog.addPictureSelectedListener(png -> {
+        var result = profilePictureService.setGroupPicture(groupId, currentUserId(), png);
+        if (result.isError()) {
+          dialog.showError(ProfilePictureMessages.userMessage(result.getError()));
+          return;
+        }
+        dialog.close();
+        groupAvatar.refresh(ProfilePictureOwnerType.GROUP, groupId);
+        if (removeGroupPictureItem != null) {
+          removeGroupPictureItem.setEnabled(true);
+        }
+        messageFactory.toast("group.picture.change.success", new Object[]{}, getLocale()).open();
+      });
+      dialog.open();
+    });
+    removeGroupPictureItem = pictureMenu.addItem(
+        groupPictureMenuItem(new Icon(VaadinIcon.CLOSE_SMALL), "Remove"),
+        event -> AlertDialog.danger(this,
+            "Remove group picture?",
+            "Are you sure you want to remove the group picture? The default placeholder will "
+                + "be shown instead.",
+            "Remove picture",
+            "Keep picture",
+            () -> removeGroupPicture(groupId, groupAvatar))
+            .open());
+    removeGroupPictureItem.setEnabled(profilePictureService.findContentHash(
+        ProfilePictureOwnerType.GROUP, groupId).isPresent());
+    avatarWrapper.add(pictureSettingsButton);
+    profileGroup.add(avatarWrapper);
+
     nameField = new InlineEditableField("Group name", group.name());
     nameField.setEditable(true);
     nameField.setMinDisplayWidth(28);
@@ -387,6 +450,25 @@ public class AdminGroupManagersMain extends Main implements BeforeEnterObserver 
   private void toast(String key, Object[] params, Locale locale) {
     Toast toast = messageFactory.toast(key, params, locale);
     toast.open();
+  }
+
+  /** Context-menu item content: icon + short label. */
+  private static Div groupPictureMenuItem(Icon icon, String label) {
+    var content = new Div(icon, new Span(label));
+    content.addClassName("profile-picture-menu-item");
+    return content;
+  }
+
+  private void removeGroupPicture(String groupId, UserAvatar groupAvatar) {
+    var result = profilePictureService.removeGroupPicture(groupId, currentUserId());
+    if (result.isError()) {
+      return;
+    }
+    groupAvatar.refresh(ProfilePictureOwnerType.GROUP, groupId);
+    if (removeGroupPictureItem != null) {
+      removeGroupPictureItem.setEnabled(false);
+    }
+    messageFactory.toast("group.picture.remove.success", new Object[]{}, getLocale()).open();
   }
 
   /** Profile-style group block: subheading + whitespace, no card chrome. */

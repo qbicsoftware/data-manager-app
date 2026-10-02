@@ -215,4 +215,39 @@ class PaginatedGridSpec extends Specification {
         then:
         paginated.grid().getGenericDataView().getItems().toList()*.id == ["a", "b", "c"]
     }
+
+    def "showSearch is true by default and renders the search field"() {
+        given:
+        def grid = new Grid<Item>()
+        grid.addColumn({ it.id })
+        def loader = new FakeLoader([new Item("a")])
+        def paginated = new PaginatedGrid<>(grid, loader, { it.id }, "item", DEFAULT_SORT)
+
+        expect:
+        searchFieldOf(paginated) != null
+    }
+
+    def "showSearch=false keeps the toolbar but omits the search field"() {
+        given:
+        def grid = new Grid<Item>()
+        grid.addColumn({ it.id })
+        def loader = new FakeLoader([new Item("a")])
+        def paginated = new PaginatedGrid<>(grid, loader, { it.id }, "item", DEFAULT_SORT,
+                true, false, true, false)
+
+        expect:
+        toolbarOf(paginated) != null
+        searchFieldOf(paginated) == null
+    }
+
+    private static com.vaadin.flow.component.Component toolbarOf(PaginatedGrid<?> paginated) {
+        return paginated.children.toList()
+                .find { it.element.classList.contains("paginated-grid-toolbar") }
+    }
+
+    private static com.vaadin.flow.component.Component searchFieldOf(PaginatedGrid<?> paginated) {
+        def toolbar = toolbarOf(paginated)
+        return toolbar == null ? null : toolbar.children.toList()
+                .find { it instanceof com.vaadin.flow.component.textfield.TextField }
+    }
 }
