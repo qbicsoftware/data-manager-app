@@ -42,7 +42,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 @SpringComponent
 @UIScope
 @PermitAll
-@PageTitle("Groups · Admin · Profile pictures")
+@PageTitle("Groups · Profile pictures")
 public class AdminProfilePictureAuditMain extends Main implements BeforeEnterObserver {
 
   @Serial
