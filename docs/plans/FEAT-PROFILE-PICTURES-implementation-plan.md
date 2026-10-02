@@ -247,8 +247,11 @@ deliberate and recorded as a limitation.
   - immutable `GET /profile-pictures/{ownerType}/{ownerId}/{hash}` → `image/png`,
     `Cache-Control: public, max-age=31536000, immutable`, `ETag`, `304` on `If-None-Match`;
   - `404` on missing picture or hash mismatch; explicit authentication check (401 for anonymous).
-- [x] `ProfilePictureUrlResolver` (+ lightweight `findContentHash` query so rendering never loads
-  the blob).
+- [x] `ProfilePictureUrlResolver`: builds context-path-aware URLs. The app may run under a servlet
+  context path (e.g. `/dev`), so all avatar and redirect URLs must include it; the static helpers
+  read the current `VaadinRequest`, and the controller prepends the `HttpServletRequest` context
+  path to its redirect.
+- [x] Lightweight `findContentHash` query so rendering never loads the blob.
 - Note: authentication is enforced in the controller, but the path **also had to be explicitly
   authorized** in `SecurityConfiguration` (`/profile-pictures/**` → `authenticated()`). The existing
   chain only `permitAll()`s a few paths and has no `anyRequest`, so unmatched paths fall through to

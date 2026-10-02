@@ -5,6 +5,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import jakarta.servlet.http.HttpServletRequest;
 import life.qbic.datamanager.views.identicon.IdenticonGenerator;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
@@ -58,7 +59,8 @@ public class ProfilePictureController {
   @GetMapping(ProfilePictureUrlResolver.BASE_PATH + "/{ownerType}/{ownerId}")
   @ResponseBody
   public ResponseEntity<byte[]> stable(@PathVariable String ownerType,
-      @PathVariable String ownerId, Authentication authentication) {
+      @PathVariable String ownerId, Authentication authentication,
+      HttpServletRequest httpRequest) {
     if (!isAuthenticated(authentication)) {
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
@@ -69,7 +71,9 @@ public class ProfilePictureController {
     String decodedOwnerId = UriUtils.decode(ownerId, StandardCharsets.UTF_8);
     Optional<ProfilePicture> picture = lookupOrDefault(parsedType.get(), decodedOwnerId);
     if (picture.isPresent()) {
-      String target = hashedPath(parsedType.get(), decodedOwnerId, picture.get().contentHash());
+      String target = httpRequest.getContextPath()
+          + ProfilePictureUrlResolver.relativeStablePath(parsedType.get(), decodedOwnerId) + "/"
+          + picture.get().contentHash();
       // The redirect itself must not be cached: the picture may be replaced and would then
       // resolve to a new immutable URL. The target is immutable and cached for a year.
       return ResponseEntity.status(HttpStatus.FOUND)
@@ -116,11 +120,6 @@ public class ProfilePictureController {
         .eTag(etag)
         .cacheControl(CacheControl.maxAge(365, TimeUnit.DAYS).cachePublic().immutable())
         .body(picture.get().data());
-  }
-
-  private static String hashedPath(ProfilePictureOwnerType ownerType, String ownerId,
-      String hash) {
-    return ProfilePictureUrlResolver.stablePath(ownerType, ownerId) + "/" + hash;
   }
 
   /**
