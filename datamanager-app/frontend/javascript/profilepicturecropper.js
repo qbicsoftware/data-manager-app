@@ -84,39 +84,69 @@ window.qbicProfilePictureCropper = {
       });
     };
 
+    const notifyError = (reason) => {
+      if (host.$server && host.$server.onValidationError) {
+        host.$server.onValidationError(reason);
+      }
+    };
+
+    const clearError = () => {
+      if (host.$server && host.$server.clearValidationError) {
+        host.$server.clearValidationError();
+      }
+    };
+
     input.addEventListener('change', () => {
       const file = input.files && input.files[0];
       if (!file) {
         return;
       }
       if (file.size > 1024 * 1024) {
-        host.dispatchEvent(new CustomEvent('qbic-crop-error', {
-          detail: 'TOO_LARGE',
-          bubbles: true,
-        }));
+        notifyError('TOO_LARGE');
+        input.value = '';
+        return;
+      }
+      if (file.type && file.type !== 'image/png' && file.type !== 'image/jpeg') {
+        notifyError('UNSUPPORTED_FORMAT');
         input.value = '';
         return;
       }
       const reader = new FileReader();
       reader.onload = () => {
-        const existing = croppers.get(cropperKey);
-        if (existing) {
-          existing.replace(reader.result);
-        } else {
-          image.src = reader.result;
-          croppers.set(cropperKey, new Cropper(image, {
-            aspectRatio: 1,
-            viewMode: 1,
-            dragMode: 'move',
-            autoCropArea: 1,
-            background: false,
-            guides: false,
-            crop: schedulePreview,
-            ready: renderPreview,
-          }));
-        }
-        host.classList.add('has-image');
-        renderPreview();
+        // Validate the decoded pixel count before handing a potential decompression bomb to
+        // Cropper, which would otherwise try to render it.
+        const probe = new Image();
+        probe.onload = () => {
+          if (probe.naturalWidth * probe.naturalHeight > 16000000) {
+            notifyError('TOO_MANY_PIXELS');
+            input.value = '';
+            return;
+          }
+          const existing = croppers.get(cropperKey);
+          if (existing) {
+            existing.replace(reader.result);
+          } else {
+            image.src = reader.result;
+            croppers.set(cropperKey, new Cropper(image, {
+              aspectRatio: 1,
+              viewMode: 1,
+              dragMode: 'move',
+              autoCropArea: 1,
+              background: false,
+              guides: false,
+              crop: schedulePreview,
+              ready: renderPreview,
+            }));
+          }
+          host.classList.add('has-image');
+          clearError();
+          renderPreview();
+        };
+        probe.onerror = () => {
+          notifyError('UNSUPPORTED_FORMAT');
+          input.value = '';
+        };
+        probe.src = reader.result;
       };
       reader.readAsDataURL(file);
     });

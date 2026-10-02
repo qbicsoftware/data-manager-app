@@ -1,5 +1,6 @@
 package life.qbic.datamanager.profilepicture;
 
+import com.vaadin.flow.component.ClientCallable;
 import com.vaadin.flow.component.dependency.JsModule;
 import com.vaadin.flow.component.dependency.NpmPackage;
 import com.vaadin.flow.component.html.Div;
@@ -23,8 +24,33 @@ public class ProfilePictureCropField extends Div {
 
   private static final String DATA_URL_PREFIX = "data:";
 
+  private Consumer<String> validationErrorHandler = reason -> {
+  };
+
   public ProfilePictureCropField() {
     addClassName("profile-picture-crop");
+  }
+
+  /**
+   * Registers a handler for client-side validation feedback. Called with a reason name (e.g.
+   * {@code TOO_LARGE}) when the selected file fails a browser-side check, and with {@code null}
+   * once a valid file is selected.
+   *
+   * @param handler the handler; {@code null} clears any previous handler
+   */
+  public void setValidationErrorHandler(Consumer<String> handler) {
+    this.validationErrorHandler = handler == null ? reason -> {
+    } : handler;
+  }
+
+  @ClientCallable
+  public void onValidationError(String reason) {
+    validationErrorHandler.accept(reason);
+  }
+
+  @ClientCallable
+  public void clearValidationError() {
+    validationErrorHandler.accept(null);
   }
 
   @Override

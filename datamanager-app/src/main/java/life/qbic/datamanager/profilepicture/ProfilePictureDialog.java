@@ -27,6 +27,13 @@ public class ProfilePictureDialog extends DialogWindow {
     add(cropField, error);
     error.addClassName("profile-picture-dialog__error");
     error.setVisible(false);
+    cropField.setValidationErrorHandler(reason -> {
+      if (reason == null) {
+        error.setVisible(false);
+      } else {
+        showError(ProfilePictureMessages.userMessageForReason(reason));
+      }
+    });
     setConfirmButtonLabel("Save picture");
     setCancelButtonLabel("Cancel");
   }
@@ -55,7 +62,10 @@ public class ProfilePictureDialog extends DialogWindow {
     error.setVisible(false);
     cropField.requestCrop(png -> {
       if (png == null) {
-        showError("Please choose an image first.");
+        // Keep an existing constraint error visible; only fall back to the generic hint.
+        if (!error.isVisible()) {
+          showError("Please choose an image first.");
+        }
         return;
       }
       pictureSelectedListener.accept(png);
