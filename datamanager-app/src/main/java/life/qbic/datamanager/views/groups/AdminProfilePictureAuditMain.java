@@ -59,6 +59,9 @@ public class AdminProfilePictureAuditMain extends Main implements BeforeEnterObs
   @Serial
   private static final long serialVersionUID = 8822664477811220001L;
 
+  /** Larger default page size for the audit list (matches the measurements view). */
+  private static final int AUDIT_PAGE_SIZE = 24;
+
   private static final DateTimeFormatter TIMESTAMP =
       DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm").withZone(ZoneId.systemDefault());
 
@@ -125,7 +128,10 @@ public class AdminProfilePictureAuditMain extends Main implements BeforeEnterObs
         SortOrder.of("createdAt"),
         false,
         true,
-        true);
+        false);
+    // Default to 24 rows per page (the PaginatedGrid constructor would default to 12).
+    paginatedGrid.setListState(
+        new ListState(1, AUDIT_PAGE_SIZE, "", SortOrder.of("createdAt")));
 
     section.addContent(paginatedGrid);
     add(section);
