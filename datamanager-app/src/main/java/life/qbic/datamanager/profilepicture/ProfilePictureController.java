@@ -6,6 +6,8 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import life.qbic.datamanager.views.identicon.IdenticonGenerator;
+import life.qbic.logging.api.Logger;
+import life.qbic.logging.service.LoggerFactory;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -41,6 +43,7 @@ import org.springframework.web.util.UriUtils;
 public class ProfilePictureController {
 
   private static final String SVG_CONTENT_TYPE = "image/svg+xml";
+  private static final Logger log = LoggerFactory.logger(ProfilePictureController.class);
 
   private final ProfilePictureService service;
 
@@ -64,7 +67,7 @@ public class ProfilePictureController {
       return ResponseEntity.notFound().build();
     }
     String decodedOwnerId = UriUtils.decode(ownerId, StandardCharsets.UTF_8);
-    Optional<ProfilePicture> picture = service.find(parsedType.get(), decodedOwnerId);
+    Optional<ProfilePicture> picture = lookupOrDefault(parsedType.get(), decodedOwnerId);
     if (picture.isPresent()) {
       String target = hashedPath(parsedType.get(), decodedOwnerId, picture.get().contentHash());
       // The redirect itself must not be cached: the picture may be replaced and would then
@@ -118,6 +121,22 @@ public class ProfilePictureController {
   private static String hashedPath(ProfilePictureOwnerType ownerType, String ownerId,
       String hash) {
     return ProfilePictureUrlResolver.stablePath(ownerType, ownerId) + "/" + hash;
+  }
+
+  /**
+   * Looks up a stored picture, falling back to empty (the identicon default) when the store is
+   * unavailable. The identicon is the documented default for "no custom picture", so a store
+   * failure must not break avatar rendering entirely; the failure is logged as a warning.
+   */
+  private Optional<ProfilePicture> lookupOrDefault(ProfilePictureOwnerType ownerType,
+      String ownerId) {
+    try {
+      return service.find(ownerType, ownerId);
+    } catch (RuntimeException e) {
+      log.warn("Profile picture lookup failed for " + ownerType + "/" + ownerId
+          + "; serving identicon fallback: " + e.getMessage());
+      return Optional.empty();
+    }
   }
 
   private static boolean isAuthenticated(Authentication authentication) {

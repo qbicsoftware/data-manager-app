@@ -197,7 +197,14 @@ public class GroupDetailMain extends Main implements BeforeEnterObserver {
       changePicture.addClickListener(click -> {
         var dialog = new life.qbic.datamanager.profilepicture.ProfilePictureDialog();
         dialog.addPictureSelectedListener(png -> {
-          var result = profilePictureService.setGroupPicture(groupId, actingUserId, png);
+          life.qbic.application.commons.Result<Void,
+              life.qbic.application.commons.ApplicationException> result;
+          try {
+            result = profilePictureService.setGroupPicture(groupId, actingUserId, png);
+          } catch (RuntimeException e) {
+            dialog.showError("The picture could not be saved. Please try again.");
+            return;
+          }
           if (result.isError()) {
             dialog.showError(life.qbic.datamanager.profilepicture.ProfilePictureMessages
                 .userMessage(result.getError()));

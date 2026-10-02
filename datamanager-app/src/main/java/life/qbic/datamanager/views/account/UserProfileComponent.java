@@ -126,9 +126,15 @@ public class UserProfileComponent extends Div implements Serializable {
   }
 
   private void saveProfilePicture(byte[] png, ProfilePictureDialog dialog) {
-    var result = profilePictureService.setUserPicture(userInfo.id(), png);
-    if (result.isError()) {
-      dialog.showError(ProfilePictureMessages.userMessage(result.getError()));
+    try {
+      var result = profilePictureService.setUserPicture(userInfo.id(), png);
+      if (result.isError()) {
+        dialog.showError(ProfilePictureMessages.userMessage(result.getError()));
+        return;
+      }
+    } catch (RuntimeException e) {
+      log.warn("Saving profile picture failed for user " + userInfo.id() + ": " + e.getMessage());
+      dialog.showError("The picture could not be saved. Please try again.");
       return;
     }
     dialog.close();
