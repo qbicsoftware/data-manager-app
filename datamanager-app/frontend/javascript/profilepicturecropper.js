@@ -76,13 +76,13 @@ window.qbicProfilePictureCropper = {
 
     showEmptyPreview();
 
-    const renderPreview = () => {
+    const renderPreview = (size) => {
       const cropper = croppers.get(cropperKey);
       if (!cropper) {
         showEmptyPreview();
         return;
       }
-      const canvas = cropper.getCroppedCanvas({ width: 96, height: 96 });
+      const canvas = cropper.getCroppedCanvas({ width: size, height: size });
       if (canvas) {
         showImagePreview(canvas.toDataURL('image/png'));
       }
@@ -96,9 +96,11 @@ window.qbicProfilePictureCropper = {
       scheduled = true;
       window.requestAnimationFrame(() => {
         scheduled = false;
-        renderPreview();
+        // Lighter render while dragging; full resolution once the crop settles.
+        renderPreview(128);
       });
     };
+    const renderPreviewFull = () => renderPreview(256);
 
     const notifyError = (reason) => {
       if (host.$server && host.$server.onValidationError) {
@@ -154,11 +156,12 @@ window.qbicProfilePictureCropper = {
               background: false,
               guides: true,
               crop: schedulePreview,
-              ready: renderPreview,
+              cropend: renderPreviewFull,
+              ready: renderPreviewFull,
             }));
           }
           clearError();
-          renderPreview();
+          renderPreviewFull();
         };
         probe.onerror = () => {
           notifyError('UNSUPPORTED_FORMAT');
