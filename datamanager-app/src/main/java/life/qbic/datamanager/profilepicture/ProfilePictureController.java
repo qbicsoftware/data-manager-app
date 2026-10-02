@@ -60,7 +60,7 @@ public class ProfilePictureController {
   @ResponseBody
   public ResponseEntity<byte[]> stable(@PathVariable String ownerType,
       @PathVariable String ownerId, Authentication authentication,
-      HttpServletRequest httpRequest) {
+      HttpServletRequest httpRequest, WebRequest request) {
     if (!isAuthenticated(authentication)) {
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
@@ -83,9 +83,17 @@ public class ProfilePictureController {
     }
     byte[] svg = IdenticonGenerator.generateIdenticonSVG(decodedOwnerId)
         .getBytes(StandardCharsets.UTF_8);
+    // The stable URL is mutable: once a picture is set it redirects instead of serving the
+    // identicon. It must therefore revalidate on every load, and only the hashed URL may be
+    // cached as immutable. An ETag keeps the revalidation cheap (304).
+    String etag = "\"identicon-" + Integer.toHexString(java.util.Arrays.hashCode(svg)) + "\"";
+    if (request.checkNotModified(etag)) {
+      return ResponseEntity.status(HttpStatus.NOT_MODIFIED).build();
+    }
     return ResponseEntity.ok()
         .contentType(MediaType.valueOf(SVG_CONTENT_TYPE))
-        .cacheControl(CacheControl.maxAge(365, TimeUnit.DAYS).cachePublic().immutable())
+        .eTag(etag)
+        .cacheControl(CacheControl.noCache())
         .body(svg);
   }
 
