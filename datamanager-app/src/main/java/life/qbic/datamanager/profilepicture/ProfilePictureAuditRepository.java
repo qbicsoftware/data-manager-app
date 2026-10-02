@@ -32,6 +32,14 @@ public interface ProfilePictureAuditRepository extends
 
   Page<ProfilePictureAuditEntity> findAllByOrderByCreatedAtDesc(Pageable pageable);
 
+  /**
+   * Newest-first page whose owner id, actor id or action contains the given term
+   * (case-insensitive). Used by the audit view's free-text search.
+   */
+  Page<ProfilePictureAuditEntity>
+      findAllByOwnerIdContainingIgnoreCaseOrActorIdContainingIgnoreCaseOrActionContainingIgnoreCaseOrderByCreatedAtDesc(
+          String ownerIdTerm, String actorIdTerm, String actionTerm, Pageable pageable);
+
   List<ProfilePictureAuditEntity> findByOwnerTypeAndOwnerIdOrderByCreatedAtDesc(
       ProfilePictureOwnerType ownerType, String ownerId);
 

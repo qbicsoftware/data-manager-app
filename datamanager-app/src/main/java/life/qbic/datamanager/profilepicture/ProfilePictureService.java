@@ -208,6 +208,36 @@ public class ProfilePictureService {
   }
 
   /**
+   * Returns the audit trail (set/replace) for administrators as a paginated page, newest first.
+   *
+   * <p>The free-text {@code filter} is matched case-insensitively against the owner id, the actor
+   * id and the action ({@code SET}/{@code REPLACE}); a blank filter returns all entries. The
+   * returned {@link org.springframework.data.domain.Page} carries the total count, which the
+   * paginated audit grid needs for the pager.</p>
+   *
+   * @param actingAdminUserId the acting administrator; must hold the admin role
+   * @param filter            the optional free-text filter (owner/actor/action); may be blank
+   * @param pageable          the requested page
+   * @return the audit page, or an error if the caller is not an administrator
+   */
+  @Transactional(readOnly = true)
+  public Result<org.springframework.data.domain.Page<ProfilePictureAuditEntry>, ApplicationException>
+      auditPage(String actingAdminUserId, String filter, Pageable pageable) {
+    if (isBlank(actingAdminUserId) || !adminPermission.isAdmin(actingAdminUserId)) {
+      return Result.fromError(accessDenied(actingAdminUserId));
+    }
+    if (isBlank(filter)) {
+      return Result.fromValue(auditRepository.findAllByOrderByCreatedAtDesc(pageable)
+          .map(ProfilePictureService::toAuditEntry));
+    }
+    String term = filter.trim();
+    return Result.fromValue(auditRepository
+        .findAllByOwnerIdContainingIgnoreCaseOrActorIdContainingIgnoreCaseOrActionContainingIgnoreCaseOrderByCreatedAtDesc(
+            term, term, term, pageable)
+        .map(ProfilePictureService::toAuditEntry));
+  }
+
+  /**
    * Deletes the stored picture for an owner. Intended for the (future) user-deletion flow; group
    * deactivation must <b>not</b> call this.
    *

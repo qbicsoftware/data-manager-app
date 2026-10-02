@@ -95,6 +95,14 @@ vaadin-button.profile-picture-block__overlay-button[focus-ring] {
   flex: 0 0 auto;
 }
 
+/* Avatar thumbnail in the audit grid. */
+.audit-table-avatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
 /* Larger screens have room to spare, so give the group avatar more presence. */
 @media (min-width: 1024px) {
   .my-groups-row__avatar {
