@@ -32,8 +32,14 @@
   gap: var(--lumo-space-m);
 }
 
+.settings-account-overview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 .settings-account-overview__avatar {
-  --vaadin-avatar-size: 3.5rem;
+  --vaadin-avatar-size: 5.25rem;
 }
 
 .settings-account-overview__names {
@@ -41,6 +47,7 @@
   flex-direction: column;
   gap: var(--lumo-space-xs);
   min-width: 0;
+  text-align: left;
 }
 
 /* The aside is a fixed, non-collapsible column (GitHub-style). No border: separation comes

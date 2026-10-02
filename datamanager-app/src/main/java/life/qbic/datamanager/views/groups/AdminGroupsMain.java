@@ -103,7 +103,7 @@ public class AdminGroupsMain extends Main implements BeforeEnterObserver {
       section = null;
       groupList = null;
     }
-    section = new SettingsSection("Admin · Organisational Groups",
+    section = new SettingsSection("Organisational Groups",
         "Organisational groups shared onto projects as one unit. Names and descriptions are "
             + "visible to all users.");
     groupList = new Div();
@@ -182,12 +182,18 @@ public class AdminGroupsMain extends Main implements BeforeEnterObserver {
             new RouteParam(AdminGroupManagersMain.GROUP_ID_ROUTE_PARAMETER, groupInfo.id())));
     name.setText(groupInfo.name());
     name.addClassName("my-groups-row__name");
+    life.qbic.datamanager.views.account.UserAvatar groupAvatar =
+        new life.qbic.datamanager.views.account.UserAvatar();
+    groupAvatar.setGroupId(groupInfo.id());
+    groupAvatar.addClassName("my-groups-row__avatar");
+    Div avatarSection = new Div(groupAvatar);
+    avatarSection.addClassName("my-groups-row__avatar-section");
     title.add(name);
 
     Div actions = new Div();
     actions.addClassName("my-groups-row__actions");
     actions.add(buildManageButton(groupInfo));
-    header.add(title, actions);
+    header.add(title);
     identity.add(header);
 
     Div badges = new Div();
@@ -203,7 +209,11 @@ public class AdminGroupsMain extends Main implements BeforeEnterObserver {
       identity.add(description);
     }
 
-    row.add(identity);
+    Div footer = new Div(actions);
+    footer.addClassName("my-groups-row__footer");
+    identity.add(footer);
+
+    row.add(avatarSection, identity);
     return row;
   }
 

@@ -66,6 +66,11 @@ public class SecurityConfiguration {
             "/link/**",
             "/images/*.png")
         .permitAll()
+        // Profile pictures are served by a Spring MVC controller outside the Vaadin
+        // stream mechanism, so the path must be explicitly authorized. Any authenticated
+        // user may read any avatar (the controller is the authority for that policy).
+        .requestMatchers("/profile-pictures/**")
+        .authenticated()
     );
 
     http.oauth2Login(oauth2 ->

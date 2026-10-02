@@ -167,5 +167,10 @@ public class AppRoutes {
      * Path to the page showing one group's details and management surface.
      */
     public static final String GROUP_DETAIL = "groups/:groupId";
+
+    /**
+     * Path to the admin-only profile-picture audit trail (set/replace events, force-remove).
+     */
+    public static final String ADMIN_PROFILE_PICTURES = "groups/admin/profile-pictures";
   }
 }

@@ -3,12 +3,17 @@ package life.qbic.datamanager.views.account;
 import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
+import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.contextmenu.ContextMenu;
+import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.router.Location;
 import com.vaadin.flow.server.VaadinService;
 import java.io.Serial;
@@ -19,10 +24,16 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.function.Consumer;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.datamanager.profilepicture.ProfilePictureDialog;
+import life.qbic.datamanager.profilepicture.ProfilePictureMessages;
+import life.qbic.datamanager.profilepicture.ProfilePictureOwnerType;
+import life.qbic.datamanager.profilepicture.ProfilePictureService;
 import life.qbic.datamanager.security.OidcLinkController;
 import life.qbic.datamanager.views.general.InlineEditableField;
 import life.qbic.datamanager.views.general.InlineEditableField.CancelEvent;
 import life.qbic.datamanager.views.general.InlineEditableField.SaveEvent;
+import life.qbic.datamanager.views.general.dialog.AlertDialog;
+import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.general.oidc.OidcType;
 import life.qbic.identity.api.UserInfo;
 import life.qbic.identity.application.user.IdentityService;
@@ -43,9 +54,13 @@ public class UserProfileComponent extends Div implements Serializable {
   private static final long serialVersionUID = -65339437186530376L;
   private static final Logger log = logger(UserProfileComponent.class);
   private final transient IdentityService identityService;
+  private final transient ProfilePictureService profilePictureService;
+  private final transient MessageSourceNotificationFactory messageFactory;
   private final UserInfo userInfo;
   private final Location currentLocation;
   private final transient Consumer<String> usernameChangedListener;
+  private UserAvatar profileAvatar;
+  private transient MenuItem removePictureMenuItem;
 
   /**
    * @param usernameChangedListener invoked with the new username after a successful change, so
@@ -53,11 +68,17 @@ public class UserProfileComponent extends Div implements Serializable {
    *                                account overview header) without a page reload
    */
   public UserProfileComponent(IdentityService identityService,
+      ProfilePictureService profilePictureService,
+      MessageSourceNotificationFactory messageFactory,
       UserInfo userInfo,
       Location currentLocation,
       Consumer<String> usernameChangedListener) {
     this.identityService = requireNonNull(identityService,
         "identity service cannot be null");
+    this.profilePictureService = requireNonNull(profilePictureService,
+        "profile picture service cannot be null");
+    this.messageFactory = requireNonNull(messageFactory,
+        "message factory cannot be null");
     this.userInfo = requireNonNull(userInfo, "userInfo must not be null");
     this.currentLocation = requireNonNull(currentLocation);
     this.usernameChangedListener = requireNonNull(usernameChangedListener,
@@ -74,9 +95,101 @@ public class UserProfileComponent extends Div implements Serializable {
 
   private Div buildPersonalInformationGroup() {
     var group = settingsGroup("Personal information");
-    group.add(buildUsernameField());
-    group.add(buildEmailRow());
+
+    profileAvatar = new UserAvatar();
+    profileAvatar.setUserId(userInfo.id());
+    profileAvatar.addClassName("profile-picture-block__avatar");
+
+    var settingsButton = new Button(new Icon(VaadinIcon.COG));
+    settingsButton.addClassName("profile-picture-block__overlay-button");
+    settingsButton.setAriaLabel("Profile picture options");
+    settingsButton.getElement().setAttribute("title", "Change picture");
+
+    var menu = new ContextMenu();
+    menu.setTarget(settingsButton);
+    menu.setOpenOnClick(true);
+    menu.addItem(menuItem(new Icon(VaadinIcon.EXCHANGE), "Change"),
+        event -> openPictureDialog());
+    removePictureMenuItem = menu.addItem(menuItem(new Icon(VaadinIcon.CLOSE_SMALL), "Remove"),
+        event -> removeProfilePicture());
+    removePictureMenuItem.setEnabled(hasProfilePicture());
+
+    var avatarWrapper = new Div(profileAvatar, settingsButton);
+    avatarWrapper.addClassName("profile-picture-block__avatar-wrapper");
+
+    var fields = new Div();
+    fields.addClassName("personal-information__fields");
+    fields.add(buildUsernameField());
+    fields.add(buildEmailRow());
+
+    var layout = new Div(fields, avatarWrapper);
+    layout.addClassName("personal-information__layout");
+
+    group.add(layout);
     return group;
+  }
+
+  private static Div menuItem(Icon icon, String label) {
+    var content = new Div(icon, new Span(label));
+    content.addClassName("profile-picture-menu-item");
+    return content;
+  }
+
+  private boolean hasProfilePicture() {
+    return profilePictureService.findContentHash(ProfilePictureOwnerType.USER, userInfo.id())
+        .isPresent();
+  }
+
+  private void openPictureDialog() {
+    var dialog = new ProfilePictureDialog();
+    dialog.addPictureSelectedListener(png -> saveProfilePicture(png, dialog));
+    dialog.open();
+  }
+
+  private void saveProfilePicture(byte[] png, ProfilePictureDialog dialog) {
+    try {
+      var result = profilePictureService.setUserPicture(userInfo.id(), png);
+      if (result.isError()) {
+        dialog.showError(ProfilePictureMessages.userMessage(result.getError()));
+        return;
+      }
+    } catch (RuntimeException e) {
+      log.warn("Saving profile picture failed for user " + userInfo.id() + ": " + e.getMessage());
+      dialog.showError("The picture could not be saved. Please try again.");
+      return;
+    }
+    dialog.close();
+    refreshProfileAvatar();
+    messageFactory.toast("profile.picture.change.success", new Object[]{}, getLocale()).open();
+  }
+
+  private void removeProfilePicture() {
+    AlertDialog.danger(this,
+        "Remove profile picture?",
+        "Are you sure you want to remove your profile picture? The default placeholder will be "
+            + "shown instead.",
+        "Remove picture",
+        "Keep picture",
+        this::performRemoveProfilePicture)
+        .open();
+  }
+
+  private void performRemoveProfilePicture() {
+    var result = profilePictureService.removeUserPicture(userInfo.id());
+    if (result.isError()) {
+      log.warn("Could not remove profile picture for user " + userInfo.id() + ": "
+          + result.getError().getMessage());
+      return;
+    }
+    refreshProfileAvatar();
+    messageFactory.toast("profile.picture.remove.success", new Object[]{}, getLocale()).open();
+  }
+
+  private void refreshProfileAvatar() {
+    profileAvatar.refresh(ProfilePictureOwnerType.USER, userInfo.id());
+    if (removePictureMenuItem != null) {
+      removePictureMenuItem.setEnabled(hasProfilePicture());
+    }
   }
 
   private InlineEditableField buildUsernameField() {

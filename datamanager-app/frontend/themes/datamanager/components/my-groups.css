@@ -20,11 +20,22 @@
 /* One membership row */
 .my-groups-row {
   display: flex;
+  align-items: stretch;
   box-sizing: border-box;
   padding: var(--lumo-space-m);
   background-color: var(--lumo-base-color);
   border: 1px solid var(--lumo-contrast-20pct);
   border-radius: var(--lumo-border-radius-m);
+}
+
+/* Left rail: takes the full card height and centers the group avatar, so the picture is
+   prominent and easy to scan down the list. */
+.my-groups-row__avatar-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  padding-right: var(--lumo-space-l);
 }
 
 /* Left column: header (title + badges/actions inline) and description below it */
@@ -147,12 +158,20 @@
   color: var(--lumo-secondary-text-color);
 }
 
-/* Right column: actions */
+/* Actions */
 .my-groups-row__actions {
   display: flex;
   align-items: center;
   gap: var(--lumo-space-xs);
   flex-shrink: 0;
+}
+
+/* Footer row: actions anchored to the bottom of the card, so a long description does not
+   leave a tall empty column beside a top-pinned action. */
+.my-groups-row__footer {
+  display: flex;
+  align-items: center;
+  margin-top: auto;
 }
 
 /* Disabled management stubs (available in FEAT-USER-GROUPS-04) */

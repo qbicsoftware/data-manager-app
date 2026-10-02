@@ -8,6 +8,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import life.qbic.datamanager.views.account.UserAvatar;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.router.RouteConfiguration;
 import com.vaadin.flow.router.RouteParam;
@@ -121,7 +122,7 @@ public class MyGroupsComponent extends Div implements Serializable {
     Div identity = new Div();
     identity.addClassName("my-groups-row__identity");
 
-    // Line 1: title on the left, actions on the right of the SAME line.
+    // Line 1: title.
     Div header = new Div();
     header.addClassName("my-groups-row__header");
 
@@ -140,13 +141,14 @@ public class MyGroupsComponent extends Div implements Serializable {
             new RouteParam(GroupDetailMain.GROUP_ID_ROUTE_PARAMETER, membership.groupId())));
     name.setText(membership.groupName());
     name.addClassName("my-groups-row__name");
+    UserAvatar groupAvatar = new UserAvatar();
+    groupAvatar.setGroupId(membership.groupId());
+    groupAvatar.addClassName("my-groups-row__avatar");
+    Div avatarSection = new Div(groupAvatar);
+    avatarSection.addClassName("my-groups-row__avatar-section");
     title.add(name);
 
-    Div actions = new Div();
-    actions.addClassName("my-groups-row__actions");
-    appendActions(actions, membership);
-
-    header.add(title, actions);
+    header.add(title);
     identity.add(header);
 
     // Line 2: badges below the title (type + role + member count) — a vertical read, no
@@ -164,7 +166,16 @@ public class MyGroupsComponent extends Div implements Serializable {
       identity.add(description);
     }
 
-    row.add(identity);
+    // Footer: actions anchored to the bottom of the card so a long description does not leave a
+    // tall empty column next to a top-pinned action.
+    Div actions = new Div();
+    actions.addClassName("my-groups-row__actions");
+    appendActions(actions, membership);
+    Div footer = new Div(actions);
+    footer.addClassName("my-groups-row__footer");
+    identity.add(footer);
+
+    row.add(avatarSection, identity);
     return row;
   }
 

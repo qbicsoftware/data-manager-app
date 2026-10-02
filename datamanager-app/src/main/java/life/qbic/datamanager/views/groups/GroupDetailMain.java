@@ -84,6 +84,7 @@ public class GroupDetailMain extends Main implements BeforeEnterObserver {
   private final transient UserInformationService userInformationService;
   private final transient MessageSourceNotificationFactory messageFactory;
   private final transient AuthenticationToUserIdTranslationService userIdTranslator;
+  private final transient life.qbic.datamanager.profilepicture.ProfilePictureService profilePictureService;
 
   private transient MyGroupMembership membership;
   private transient SettingsSection section;
@@ -93,6 +94,7 @@ public class GroupDetailMain extends Main implements BeforeEnterObserver {
   private transient Div membersGroup;
   private transient H3 membersHeading;
   private transient TypeToConfirmInput dissolveConfirmInput;
+  private transient com.vaadin.flow.component.contextmenu.MenuItem removeGroupPictureItem;
 
   /**
    * Production constructor: wires the seams to the real services, toasts and navigation.
@@ -102,7 +104,8 @@ public class GroupDetailMain extends Main implements BeforeEnterObserver {
       @Autowired GroupManagementService groupManagementService,
       @Autowired UserInformationService userInformationService,
       @Autowired AuthenticationToUserIdTranslationService userIdTranslator,
-      @Autowired MessageSourceNotificationFactory messageFactory) {
+      @Autowired MessageSourceNotificationFactory messageFactory,
+      @Autowired life.qbic.datamanager.profilepicture.ProfilePictureService profilePictureService) {
     this.groupInformationService = requireNonNull(groupInformationService,
         "groupInformationService must not be null");
     this.groupManagementService = requireNonNull(groupManagementService,
@@ -113,6 +116,8 @@ public class GroupDetailMain extends Main implements BeforeEnterObserver {
         "userIdTranslator must not be null");
     this.messageFactory = requireNonNull(messageFactory,
         "messageFactory must not be null");
+    this.profilePictureService = requireNonNull(profilePictureService,
+        "profilePictureService must not be null");
     addClassName("group-detail");
   }
 
@@ -166,6 +171,64 @@ public class GroupDetailMain extends Main implements BeforeEnterObserver {
 
     // ── Group profile group (inline editable, Profile concept) ──────────
     Div profileGroup = settingsGroup("Group");
+    life.qbic.datamanager.views.account.UserAvatar groupAvatar =
+        new life.qbic.datamanager.views.account.UserAvatar();
+    groupAvatar.setGroupId(groupId);
+    groupAvatar.addClassName("profile-picture-block__avatar");
+
+    Div avatarWrapper = new Div(groupAvatar);
+    avatarWrapper.addClassName("profile-picture-block__avatar-wrapper");
+    if (canManageProfile) {
+      Button settingsButton = new Button(new Icon(VaadinIcon.COG));
+      settingsButton.addClassName("profile-picture-block__overlay-button");
+      settingsButton.setAriaLabel("Group picture options");
+      settingsButton.getElement().setAttribute("title", "Change picture");
+
+      com.vaadin.flow.component.contextmenu.ContextMenu menu =
+          new com.vaadin.flow.component.contextmenu.ContextMenu();
+      menu.setTarget(settingsButton);
+      menu.setOpenOnClick(true);
+      menu.addItem(groupPictureMenuItem(new Icon(VaadinIcon.EXCHANGE), "Change"), event -> {
+        var dialog = new life.qbic.datamanager.profilepicture.ProfilePictureDialog();
+        dialog.addPictureSelectedListener(png -> {
+          life.qbic.application.commons.Result<Void,
+              life.qbic.application.commons.ApplicationException> result;
+          try {
+            result = profilePictureService.setGroupPicture(groupId, actingUserId, png);
+          } catch (RuntimeException e) {
+            dialog.showError("The picture could not be saved. Please try again.");
+            return;
+          }
+          if (result.isError()) {
+            dialog.showError(life.qbic.datamanager.profilepicture.ProfilePictureMessages
+                .userMessage(result.getError()));
+            return;
+          }
+          dialog.close();
+          groupAvatar.refresh(life.qbic.datamanager.profilepicture.ProfilePictureOwnerType.GROUP,
+              groupId);
+          if (removeGroupPictureItem != null) {
+            removeGroupPictureItem.setEnabled(true);
+          }
+          messageFactory.toast("group.picture.change.success", new Object[]{}, getLocale()).open();
+        });
+        dialog.open();
+      });
+      removeGroupPictureItem = menu.addItem(
+          groupPictureMenuItem(new Icon(VaadinIcon.CLOSE_SMALL), "Remove"), event ->
+              life.qbic.datamanager.views.general.dialog.AlertDialog.danger(this,
+                  "Remove group picture?",
+                  "Are you sure you want to remove the group picture? The default placeholder "
+                      + "will be shown instead.",
+                  "Remove picture",
+                  "Keep picture",
+                  () -> removeGroupPicture(groupId, actingUserId, groupAvatar))
+                  .open());
+      removeGroupPictureItem.setEnabled(profilePictureService.findContentHash(
+          life.qbic.datamanager.profilepicture.ProfilePictureOwnerType.GROUP, groupId).isPresent());
+      avatarWrapper.add(settingsButton);
+    }
+    profileGroup.add(avatarWrapper);
     nameField = new InlineEditableField("Group name", membership.groupName());
     nameField.setEditable(canManageProfile);
     nameField.setMinDisplayWidth(28); // generous width: group names read comfortably
@@ -416,6 +479,26 @@ public class GroupDetailMain extends Main implements BeforeEnterObserver {
   private void toast(String key, Object[] params, Locale locale) {
     Toast toast = messageFactory.toast(key, params, locale);
     toast.open();
+  }
+
+  /** Context-menu item content: icon + short label. */
+  private static Div groupPictureMenuItem(Icon icon, String label) {
+    var content = new Div(icon, new Span(label));
+    content.addClassName("profile-picture-menu-item");
+    return content;
+  }
+
+  private void removeGroupPicture(String groupId, String actingUserId,
+      life.qbic.datamanager.views.account.UserAvatar groupAvatar) {
+    var result = profilePictureService.removeGroupPicture(groupId, actingUserId);
+    if (result.isError()) {
+      return;
+    }
+    groupAvatar.refresh(life.qbic.datamanager.profilepicture.ProfilePictureOwnerType.GROUP, groupId);
+    if (removeGroupPictureItem != null) {
+      removeGroupPictureItem.setEnabled(false);
+    }
+    messageFactory.toast("group.picture.remove.success", new Object[]{}, getLocale()).open();
   }
 
   /** Profile-style group block: subheading + whitespace, no card chrome. */
