@@ -16,6 +16,7 @@ import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.datamanager.profilepicture.ProfilePictureAuditEntry;
 import life.qbic.datamanager.profilepicture.ProfilePictureOwnerType;
@@ -64,7 +65,7 @@ public class AdminProfilePictureAuditMain extends Main implements BeforeEnterObs
   private static final int AUDIT_PAGE_SIZE = 24;
 
   private static final DateTimeFormatter TIMESTAMP =
-      DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm").withZone(ZoneId.systemDefault());
+      DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT).withZone(ZoneId.systemDefault());
 
   private final transient ProfilePictureService profilePictureService;
   private final transient GroupAdministrationPermission groupAdministrationPermission;
