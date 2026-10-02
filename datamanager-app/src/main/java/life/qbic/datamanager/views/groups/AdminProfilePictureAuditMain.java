@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.settings;
+package life.qbic.datamanager.views.groups;
 
 import static java.util.Objects.requireNonNull;
 
@@ -19,7 +19,9 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import life.qbic.datamanager.profilepicture.ProfilePictureAuditEntry;
 import life.qbic.datamanager.profilepicture.ProfilePictureService;
+import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.general.Main;
+import life.qbic.datamanager.views.settings.SettingsSection;
 import life.qbic.projectmanagement.application.AuthenticationToUserIdTranslationService;
 import life.qbic.usergroups.api.GroupAdministrationPermission;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,16 +36,13 @@ import org.springframework.security.core.context.SecurityContextHolder;
  * listed owner's picture. Admin-only: non-administrators are routed to the not-found page, and the
  * service gate remains authoritative.</p>
  *
- * <p>Lives in the Settings hub because avatar moderation spans <em>both</em> users and groups and
- * is therefore not a groups-domain concern.</p>
- *
  * @since 1.22.0
  */
-@Route(value = "settings/profile-pictures", layout = SettingsMainLayout.class)
+@Route(value = AppRoutes.GroupsRoutes.ADMIN_PROFILE_PICTURES, layout = GroupsMainLayout.class)
 @SpringComponent
 @UIScope
 @PermitAll
-@PageTitle("Settings · Profile pictures")
+@PageTitle("Groups · Admin · Profile pictures")
 public class AdminProfilePictureAuditMain extends Main implements BeforeEnterObserver {
 
   @Serial
@@ -82,7 +81,7 @@ public class AdminProfilePictureAuditMain extends Main implements BeforeEnterObs
   }
 
   private void build(String adminUserId) {
-    var section = new SettingsSection("Profile picture audit",
+    var section = new SettingsSection("Admin · Profile picture audit",
         "Set and replace events for user and group profile pictures. Administrators may "
             + "force-remove a picture.");
     grid.addColumn(entry -> entry.ownerType().name()).setHeader("Owner type").setAutoWidth(true);

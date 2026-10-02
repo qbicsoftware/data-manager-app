@@ -35,23 +35,18 @@ import org.springframework.security.core.context.SecurityContextHolder;
 @ParentLayout(UserMainLayout.class)
 public class SettingsMainLayout extends Div implements RouterLayout, BeforeEnterObserver {
 
-  private final SettingsNavigationComponent settingsNavigationComponent;
+  private final SettingsNavigationComponent settingsNavigationComponent = new SettingsNavigationComponent();
   private final Div contentSlot = new Div();
   private final transient AuthenticationToUserIdTranslationService userIdTranslator;
   private final transient UserInformationService userInformationService;
   private final Div accountOverviewArea = new Div();
 
   public SettingsMainLayout(@Autowired UserInformationService userInformationService,
-      @Autowired AuthenticationToUserIdTranslationService userIdTranslator,
-      @Autowired life.qbic.usergroups.api.GroupAdministrationPermission
-          groupAdministrationPermission) {
+      @Autowired AuthenticationToUserIdTranslationService userIdTranslator) {
     this.userInformationService = requireNonNull(userInformationService,
         "userInformationService must not be null");
     this.userIdTranslator = requireNonNull(userIdTranslator,
         "userIdTranslator must not be null");
-    this.settingsNavigationComponent = new SettingsNavigationComponent(isCurrentUserAdmin(
-        requireNonNull(groupAdministrationPermission,
-            "groupAdministrationPermission must not be null")));
     addClassName("settings-main-layout");
     accountOverviewArea.addClassName("settings-account-overview-area");
     Div asideArea = new Div(settingsNavigationComponent);
@@ -81,14 +76,6 @@ public class SettingsMainLayout extends Div implements RouterLayout, BeforeEnter
     var authentication = SecurityContextHolder.getContext().getAuthentication();
     var userId = userIdTranslator.translateToUserId(authentication).orElseThrow();
     return userInformationService.findById(userId).orElseThrow();
-  }
-
-  private boolean isCurrentUserAdmin(
-      life.qbic.usergroups.api.GroupAdministrationPermission permission) {
-    var authentication = SecurityContextHolder.getContext().getAuthentication();
-    return userIdTranslator.translateToUserId(authentication)
-        .map(permission::isAdmin)
-        .orElse(false);
   }
 
   @Override

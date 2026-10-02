@@ -28,24 +28,12 @@ public class SettingsNavigationComponent extends Div {
   private final Map<Class<?>, Tab> tabsByNavigationTarget = new HashMap<>();
 
   public SettingsNavigationComponent() {
-    this(false);
-  }
-
-  /**
-   * Creates the settings navigation.
-   *
-   * @param isAdmin whether the current user is a QBiC administrator (shows the admin-only tab)
-   */
-  public SettingsNavigationComponent(boolean isAdmin) {
     addClassName("settings-navigation-component");
     tabs.addClassName("settings-navigation-tabs");
     tabs.getElement().setAttribute("orientation", "vertical");
     addTab("Profile", VaadinIcon.USER, UserProfileMain.class);
     addTab("API Tokens", VaadinIcon.KEY, PersonalAccessTokenMain.class);
     addTab("External Providers", VaadinIcon.DATABASE, ExternalProvidersMain.class);
-    if (isAdmin) {
-      addTab("Profile pictures", VaadinIcon.PICTURE, AdminProfilePictureAuditMain.class);
-    }
     add(tabs);
   }
 
