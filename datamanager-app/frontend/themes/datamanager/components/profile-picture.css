@@ -3,6 +3,7 @@
 /* Personal information: the picture block sits beside the username/email fields. */
 .personal-information__layout {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   gap: var(--lumo-space-xl);
 }
