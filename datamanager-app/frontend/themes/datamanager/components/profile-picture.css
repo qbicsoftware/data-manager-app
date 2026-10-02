@@ -25,8 +25,8 @@
 
 .profile-picture-block__avatar-wrapper {
   position: relative;
-  width: 5rem;
-  height: 5rem;
+  width: 6.5rem;
+  height: 6.5rem;
   flex: 0 0 auto;
 }
 
@@ -45,8 +45,8 @@ vaadin-button.profile-picture-block__overlay-button {
   right: -0.5rem;
   bottom: -0.5rem;
   box-sizing: border-box;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 2.75rem;
+  height: 2.75rem;
   min-width: 0;
   padding: 0;
   border: 2px solid var(--lumo-base-color);
@@ -70,8 +70,8 @@ vaadin-button.profile-picture-block__overlay-button[focus-ring] {
 }
 
 .profile-picture-block__overlay-button vaadin-icon {
-  width: 1.125rem;
-  height: 1.125rem;
+  width: 1.375rem;
+  height: 1.375rem;
 }
 
 .my-groups-row__avatar {
