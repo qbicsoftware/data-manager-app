@@ -96,8 +96,9 @@ window.qbicProfilePictureCropper = {
       scheduled = true;
       window.requestAnimationFrame(() => {
         scheduled = false;
-        // Lighter render while dragging; full resolution once the crop settles.
-        renderPreview(128);
+        // Always full resolution: Cropper's initial `crop` event would otherwise overwrite the
+        // sharp `ready` render with a low-res one and stay blurry until the next interaction.
+        renderPreviewFull();
       });
     };
     const renderPreviewFull = () => renderPreview(256);
