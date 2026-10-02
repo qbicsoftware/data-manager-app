@@ -81,7 +81,8 @@ vaadin-button.profile-picture-row__remove:hover {
 }
 
 .profile-picture-crop__preview-label {
-  font-size: var(--lumo-font-size-xs);
+  font-size: var(--lumo-font-size-s);
+  font-weight: 500;
   color: var(--lumo-secondary-text-color);
 }
 
@@ -119,6 +120,7 @@ vaadin-button.profile-picture-row__remove:hover {
   width: 100%;
   max-width: 20rem;
   height: 20rem;
+  overflow: hidden;
   background-color: var(--lumo-contrast-5pct);
 }
 
@@ -126,16 +128,12 @@ vaadin-button.profile-picture-row__remove:hover {
   display: block;
 }
 
-/* Strengthen the crop frame so it stays visible on low-contrast images, and darken the area
-   outside the crop (Cropper's modal overlay) to reinforce the square selection. */
+/* Crop frame stays visible on any image, and a large spread shadow darkens everything outside
+   the crop square (the stage clips it), so the selected region reads as the focus. */
 .profile-picture-crop__stage .cropper-view-box {
   outline: 2px solid var(--lumo-primary-color);
   outline-color: var(--lumo-primary-color);
-}
-
-.profile-picture-crop__stage .cropper-modal {
-  background-color: #000;
-  opacity: 0.45;
+  box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.45);
 }
 
 .profile-picture-crop__image {

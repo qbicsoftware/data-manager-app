@@ -109,6 +109,7 @@ window.qbicProfilePictureCropper = {
             viewMode: 1,
             dragMode: 'move',
             autoCropArea: 1,
+            background: false,
             guides: false,
             crop: schedulePreview,
             ready: renderPreview,
