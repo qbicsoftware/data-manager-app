@@ -113,14 +113,19 @@ public class AdminProfilePictureAuditMain extends Main implements BeforeEnterObs
     grid.addColumn(this::timestampDisplay).setHeader("When").setAutoWidth(true).setSortable(false);
     grid.addComponentColumn(entry -> forceRemoveButton(adminUserId, entry))
         .setHeader("").setAutoWidth(true);
-    grid.setHeight("34rem");
 
+    // showToolbar=false hides the built-in search/selection toolbar (the audit grid needs no
+    // free-text search), while the pager and natural page scrolling are kept. The grid itself is
+    // not height-constrained, so it takes the height it needs and the browser scrolls the page.
     PaginatedGrid<ProfilePictureAuditEntry> paginatedGrid = new PaginatedGrid<>(
         grid,
         this::loadAuditPage,
         entry -> entry.ownerType().name() + ":" + entry.ownerId() + ":" + entry.createdAt(),
         "record",
-        SortOrder.of("createdAt"));
+        SortOrder.of("createdAt"),
+        false,
+        true,
+        true);
 
     section.addContent(paginatedGrid);
     add(section);
@@ -179,7 +184,7 @@ public class AdminProfilePictureAuditMain extends Main implements BeforeEnterObs
 
   private PaginatedGrid.Page<ProfilePictureAuditEntry> loadAuditPage(ListState state) {
     String adminUserId = currentUserId();
-    var result = profilePictureService.auditPage(adminUserId, state.filter(),
+    var result = profilePictureService.auditPage(adminUserId,
         PageRequest.of(state.page() - 1, state.pageSize()));
     if (result.isError()) {
       return new PaginatedGrid.Page<>(java.util.List.of(), 0);

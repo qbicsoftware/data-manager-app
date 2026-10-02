@@ -154,13 +154,6 @@ class AdminGroupManagersMainSpec extends Specification {
     }
 
     @Override
-    Page<ProfilePictureAuditRepository.ProfilePictureAuditEntity>
-        findAllByOwnerIdContainingIgnoreCaseOrActorIdContainingIgnoreCaseOrActionContainingIgnoreCaseOrderByCreatedAtDesc(
-            String ownerIdTerm, String actorIdTerm, String actionTerm, Pageable pageable) {
-      return Page.empty()
-    }
-
-    @Override
     List<ProfilePictureAuditRepository.ProfilePictureAuditEntity>
         findByOwnerTypeAndOwnerIdOrderByCreatedAtDesc(ProfilePictureOwnerType ownerType,
             String ownerId) {

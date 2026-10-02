@@ -211,19 +211,6 @@ class ProfilePictureServiceSpec extends Specification {
         }
 
         @Override
-        Page<ProfilePictureAuditRepository.ProfilePictureAuditEntity>
-                findAllByOwnerIdContainingIgnoreCaseOrActorIdContainingIgnoreCaseOrActionContainingIgnoreCaseOrderByCreatedAtDesc(
-                        String ownerIdTerm, String actorIdTerm, String actionTerm,
-                        Pageable pageable) {
-            def matches = entries.findAll {
-                (it.ownerId ?: "").toUpperCase().contains(ownerIdTerm.toUpperCase())
-                        || (it.actorId ?: "").toUpperCase().contains(actorIdTerm.toUpperCase())
-                        || (it.action ?: "").toUpperCase().contains(actionTerm.toUpperCase())
-            }.reverse()
-            return new PageImpl<>(matches, pageable, matches.size())
-        }
-
-        @Override
         List<ProfilePictureAuditRepository.ProfilePictureAuditEntity>
                 findByOwnerTypeAndOwnerIdOrderByCreatedAtDesc(
                         ProfilePictureOwnerType ownerType, String ownerId) {
