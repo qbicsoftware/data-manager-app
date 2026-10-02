@@ -16,31 +16,20 @@
   min-width: 0;
 }
 
-.profile-picture-block {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--lumo-space-s);
-  flex: 0 0 auto;
-}
-
-.profile-picture-block__label {
-  font-weight: 600;
-  color: var(--lumo-header-text-color);
-}
-
 .profile-picture-block__avatar {
-  width: 5.5rem;
-  height: 5.5rem;
+  width: 5rem;
+  height: 5rem;
   border-radius: 50%;
   overflow: hidden;
+  flex: 0 0 auto;
 }
 
 .profile-picture-block__actions {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--lumo-space-xs);
+  gap: var(--lumo-space-l);
+  margin-top: var(--lumo-space-xs);
 }
 
 /* Destructive action must read as destructive: keep the text-link shape but colour it. */

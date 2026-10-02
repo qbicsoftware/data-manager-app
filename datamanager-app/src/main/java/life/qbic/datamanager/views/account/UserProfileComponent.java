@@ -86,25 +86,6 @@ public class UserProfileComponent extends Div implements Serializable {
   private Div buildPersonalInformationGroup() {
     var group = settingsGroup("Personal information");
 
-    var fields = new Div();
-    fields.addClassName("personal-information__fields");
-    fields.add(buildUsernameField());
-    fields.add(buildEmailRow());
-
-    var layout = new Div(buildProfilePictureBlock(), fields);
-    layout.addClassName("personal-information__layout");
-
-    group.add(layout);
-    return group;
-  }
-
-  private Div buildProfilePictureBlock() {
-    var block = new Div();
-    block.addClassName("profile-picture-block");
-
-    var label = new Span("Profile picture");
-    label.addClassName("profile-picture-block__label");
-
     profileAvatar = new UserAvatar();
     profileAvatar.setUserId(userInfo.id());
     profileAvatar.addClassName("profile-picture-block__avatar");
@@ -118,11 +99,20 @@ public class UserProfileComponent extends Div implements Serializable {
     removePictureButton.setVisible(hasProfilePicture());
     removePictureButton.addClickListener(event -> removeProfilePicture());
 
-    var actions = new Div(changeButton, removePictureButton);
-    actions.addClassName("profile-picture-block__actions");
+    var pictureActions = new Div(changeButton, removePictureButton);
+    pictureActions.addClassName("profile-picture-block__actions");
 
-    block.add(label, profileAvatar, actions);
-    return block;
+    var fields = new Div();
+    fields.addClassName("personal-information__fields");
+    fields.add(buildUsernameField());
+    fields.add(buildEmailRow());
+    fields.add(pictureActions);
+
+    var layout = new Div(profileAvatar, fields);
+    layout.addClassName("personal-information__layout");
+
+    group.add(layout);
+    return group;
   }
 
   private boolean hasProfilePicture() {
