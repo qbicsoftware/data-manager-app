@@ -188,7 +188,7 @@ public class GroupDetailMain extends Main implements BeforeEnterObserver {
           new com.vaadin.flow.component.contextmenu.ContextMenu();
       menu.setTarget(settingsButton);
       menu.setOpenOnClick(true);
-      menu.addItem("Change picture", event -> {
+      menu.addItem(groupPictureMenuItem(new Icon(VaadinIcon.EXCHANGE), "Change"), event -> {
         var dialog = new life.qbic.datamanager.profilepicture.ProfilePictureDialog();
         dialog.addPictureSelectedListener(png -> {
           life.qbic.application.commons.Result<Void,
@@ -213,7 +213,8 @@ public class GroupDetailMain extends Main implements BeforeEnterObserver {
         });
         dialog.open();
       });
-      removeGroupPictureItem = menu.addItem("Remove picture", event -> {
+      removeGroupPictureItem = menu.addItem(
+          groupPictureMenuItem(new Icon(VaadinIcon.CLOSE_SMALL), "Remove"), event -> {
         var result = profilePictureService.removeGroupPicture(groupId, actingUserId);
         if (!result.isError()) {
           groupAvatar.refresh(life.qbic.datamanager.profilepicture.ProfilePictureOwnerType.GROUP,
@@ -476,6 +477,13 @@ public class GroupDetailMain extends Main implements BeforeEnterObserver {
   private void toast(String key, Object[] params, Locale locale) {
     Toast toast = messageFactory.toast(key, params, locale);
     toast.open();
+  }
+
+  /** Context-menu item content: icon + short label. */
+  private static Div groupPictureMenuItem(Icon icon, String label) {
+    var content = new Div(icon, new Span(label));
+    content.addClassName("profile-picture-menu-item");
+    return content;
   }
 
   /** Profile-style group block: subheading + whitespace, no card chrome. */

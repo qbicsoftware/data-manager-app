@@ -32,8 +32,15 @@
   gap: var(--lumo-space-m);
 }
 
+.settings-account-overview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
 .settings-account-overview__avatar {
-  --vaadin-avatar-size: 4.5rem;
+  --vaadin-avatar-size: 5.25rem;
 }
 
 .settings-account-overview__names {

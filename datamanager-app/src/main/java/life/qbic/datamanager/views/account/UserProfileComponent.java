@@ -102,8 +102,10 @@ public class UserProfileComponent extends Div implements Serializable {
     var menu = new ContextMenu();
     menu.setTarget(settingsButton);
     menu.setOpenOnClick(true);
-    menu.addItem("Change picture", event -> openPictureDialog());
-    removePictureMenuItem = menu.addItem("Remove picture", event -> removeProfilePicture());
+    menu.addItem(menuItem(new Icon(VaadinIcon.EXCHANGE), "Change"),
+        event -> openPictureDialog());
+    removePictureMenuItem = menu.addItem(menuItem(new Icon(VaadinIcon.CLOSE_SMALL), "Remove"),
+        event -> removeProfilePicture());
     removePictureMenuItem.setEnabled(hasProfilePicture());
 
     var avatarWrapper = new Div(profileAvatar, settingsButton);
@@ -119,6 +121,12 @@ public class UserProfileComponent extends Div implements Serializable {
 
     group.add(layout);
     return group;
+  }
+
+  private static Div menuItem(Icon icon, String label) {
+    var content = new Div(icon, new Span(label));
+    content.addClassName("profile-picture-menu-item");
+    return content;
   }
 
   private boolean hasProfilePicture() {
