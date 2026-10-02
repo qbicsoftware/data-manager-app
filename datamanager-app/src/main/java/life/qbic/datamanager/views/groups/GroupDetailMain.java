@@ -182,6 +182,7 @@ public class GroupDetailMain extends Main implements BeforeEnterObserver {
       Button settingsButton = new Button(new Icon(VaadinIcon.COG));
       settingsButton.addClassName("profile-picture-block__overlay-button");
       settingsButton.setAriaLabel("Group picture options");
+      settingsButton.getElement().setAttribute("title", "Change picture");
 
       com.vaadin.flow.component.contextmenu.ContextMenu menu =
           new com.vaadin.flow.component.contextmenu.ContextMenu();

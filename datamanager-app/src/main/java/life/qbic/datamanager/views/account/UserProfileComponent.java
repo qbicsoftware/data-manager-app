@@ -97,6 +97,7 @@ public class UserProfileComponent extends Div implements Serializable {
     var settingsButton = new Button(new Icon(VaadinIcon.COG));
     settingsButton.addClassName("profile-picture-block__overlay-button");
     settingsButton.setAriaLabel("Profile picture options");
+    settingsButton.getElement().setAttribute("title", "Change picture");
 
     var menu = new ContextMenu();
     menu.setTarget(settingsButton);

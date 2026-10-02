@@ -36,19 +36,24 @@
   overflow: hidden;
 }
 
-/* Gear button overlaid on the avatar's bottom-right corner; opens the picture context menu. */
+/* Gear button overlaid on the avatar's bottom-right corner; opens the picture context menu.
+   Sized for a comfortable touch target, with a base-colour ring so it stays visible on any
+   avatar (photo or identicon). */
 vaadin-button.profile-picture-block__overlay-button {
   position: absolute;
-  right: -0.25rem;
-  bottom: -0.25rem;
-  width: 2rem;
-  height: 2rem;
+  right: -0.5rem;
+  bottom: -0.5rem;
+  box-sizing: border-box;
+  width: 2.5rem;
+  height: 2.5rem;
   min-width: 0;
   padding: 0;
+  border: 2px solid var(--lumo-base-color);
   border-radius: 50%;
   background-color: var(--lumo-primary-color);
   color: var(--lumo-primary-contrast-color);
-  box-shadow: var(--lumo-box-shadow-s);
+  box-shadow: var(--lumo-box-shadow-m);
+  cursor: pointer;
 }
 
 vaadin-button.profile-picture-block__overlay-button:hover {
@@ -56,9 +61,16 @@ vaadin-button.profile-picture-block__overlay-button:hover {
   color: var(--lumo-primary-contrast-color);
 }
 
+vaadin-button.profile-picture-block__overlay-button:focus-visible,
+vaadin-button.profile-picture-block__overlay-button[focus-ring] {
+  outline: 2px solid var(--lumo-primary-color);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
 .profile-picture-block__overlay-button vaadin-icon {
-  width: 1rem;
-  height: 1rem;
+  width: 1.125rem;
+  height: 1.125rem;
 }
 
 .my-groups-row__avatar {
