@@ -101,6 +101,18 @@ class ProjectSharingDrawerSpec extends Specification {
     ordered == ["Alpha Lab", "Beta Lab", "Zeta Lab"]
   }
 
+  def "owner role uses a distinct colour from the other elevated roles"() {
+    expect:
+    ProjectSharingComposer.roleColor(ProjectRole.OWNER) ==
+        life.qbic.datamanager.views.general.Tag.TagColor.GOLD
+    ProjectSharingComposer.roleColor(ProjectRole.ADMIN) ==
+        life.qbic.datamanager.views.general.Tag.TagColor.PRIMARY
+    ProjectSharingComposer.roleColor(ProjectRole.WRITE) ==
+        life.qbic.datamanager.views.general.Tag.TagColor.PRIMARY
+    ProjectSharingComposer.roleColor(ProjectRole.READ) ==
+        life.qbic.datamanager.views.general.Tag.TagColor.CONTRAST
+  }
+
   def "describes a failed group grant with the principal, kind and a friendly reason"() {
     given: "a duplicate group grant whose service message is technical"
     def request = new GrantRequest(PrincipalType.GROUP, "g-1", ProjectRole.WRITE, "NGS Lab")
@@ -155,6 +167,22 @@ class ProjectSharingDrawerSpec extends Specification {
     collectAttribute(drawer.@summary, "title").contains("jdoe (Jane Doe)")
   }
 
+  def "roster row shows the group avatar for a group"() {
+    given: "a project shared with one group"
+    projectAccessService.listCollaborators(projectId) >> []
+    projectAccessService.listSharedGroups(projectId) >> [
+        new SharedProjectGroup("g-1", "NGS Lab", "sequencing core", projectId,
+            ProjectRole.WRITE)]
+
+    when:
+    drawer.refresh()
+
+    then: "the group is rendered with its profile avatar, not a generic icon"
+    collectComponents(drawer.@summary).any {
+      it instanceof life.qbic.datamanager.views.account.UserAvatar
+    }
+  }
+
   private static List<String> collectText(Component root) {
     def result = []
     root.children.forEach { child ->
@@ -165,6 +193,15 @@ class ProjectSharingDrawerSpec extends Specification {
         }
       }
       result.addAll(collectText(child))
+    }
+    return result
+  }
+
+  private static List<Component> collectComponents(Component root) {
+    def result = []
+    root.children.forEach { child ->
+      result << child
+      result.addAll(collectComponents(child))
     }
     return result
   }

@@ -23,7 +23,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.datamanager.views.account.UserAvatar;
-import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.Tag.TagColor;
 import life.qbic.datamanager.views.projects.project.access.ProjectAccessComponent.UserInfoComponent;
 import life.qbic.identity.api.UserInfo;
@@ -61,6 +60,10 @@ public class ProjectSharingComposer extends Div {
   private final ComboBox<UserInfo> personPicker = new ComboBox<>();
   private final ComboBox<GroupInfo> groupPicker = new ComboBox<>();
   private final Div stagedGrants = new Div();
+  private final Div stagedUsers = new Div();
+  private final Div stagedGroups = new Div();
+  private final Div usersSection = new Div();
+  private final Div groupsSection = new Div();
   private final Button grantButton = new Button("Grant access");
   /** Centered spinner overlay shown while a grant request is being processed. */
   private final Div loadingOverlay = new Div();
@@ -107,7 +110,16 @@ public class ProjectSharingComposer extends Div {
 
     configurePersonPicker();
     configureGroupPicker();
+    stagedUsers.addClassName("staged-grants-list");
+    stagedGroups.addClassName("staged-grants-list");
+    usersSection.addClassName("staged-grants-section");
+    groupsSection.addClassName("staged-grants-section");
+    usersSection.add(sectionTitle("People to add"), stagedUsers);
+    groupsSection.add(sectionTitle("Groups to add"), stagedGroups);
+    usersSection.setVisible(false);
+    groupsSection.setVisible(false);
     stagedGrants.addClassName("staged-grants");
+    stagedGrants.add(usersSection, groupsSection);
 
     grantButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     grantButton.addClassName("grant-access-button");
@@ -195,7 +207,10 @@ public class ProjectSharingComposer extends Div {
   static TagColor roleColor(ProjectRole role) {
     return switch (role) {
       case READ -> TagColor.CONTRAST;
-      case WRITE, ADMIN, OWNER -> TagColor.PRIMARY;
+      case WRITE, ADMIN -> TagColor.PRIMARY;
+      // The owner is unique and always present, so it gets its own colour instead of
+      // blending in with the other elevated roles.
+      case OWNER -> TagColor.GOLD;
     };
   }
 
@@ -308,19 +323,23 @@ public class ProjectSharingComposer extends Div {
   }
 
   private static Component renderGroup(GroupInfo groupInfo) {
+    UserAvatar avatar = new UserAvatar();
+    avatar.setGroupId(groupInfo.id());
+    avatar.addClassName("staged-group-avatar");
     Span name = new Span(groupInfo.name());
     name.addClassName("bold");
+    Div text = new Div(name);
+    text.addClassName("group-identity-text");
+    if (groupInfo.description() != null && !groupInfo.description().isBlank()) {
+      Span description = new Span(groupInfo.description());
+      description.addClassName("tertiary");
+      text.add(description);
+    }
+    Div identity = new Div(avatar, text);
+    identity.addClassName("group-identity");
     String tooltip = groupInfo.description() == null || groupInfo.description().isBlank()
         ? groupInfo.name()
         : "%s — %s".formatted(groupInfo.name(), groupInfo.description());
-    if (groupInfo.description() == null || groupInfo.description().isBlank()) {
-      name.getElement().setAttribute("title", tooltip);
-      return name;
-    }
-    Span description = new Span(groupInfo.description());
-    description.addClassName("tertiary");
-    Div identity = new Div(name, description);
-    identity.addClassName("group-identity");
     identity.getElement().setAttribute("title", tooltip);
     return identity;
   }
@@ -332,14 +351,19 @@ public class ProjectSharingComposer extends Div {
   private static Component renderGroupOption(GroupInfo groupInfo) {
     Div option = new Div();
     option.addClassName("group-option");
-    // Three stable lines: type badge, name, description. Keeping the badge on its own line stops
-    // it from being pushed out of the dropdown when the name/description is long.
+    // Three stable lines: type badge, name (with avatar), description. Keeping the badge on its
+    // own line stops it from being pushed out of the dropdown when the name/description is long.
     option.add(groupTypeBadge(groupInfo.type()));
+    UserAvatar avatar = new UserAvatar();
+    avatar.setGroupId(groupInfo.id());
+    avatar.addClassName("group-option-avatar");
     Span name = new Span(groupInfo.name());
     name.addClassName("bold");
     name.addClassName("group-option-name");
     name.getElement().setAttribute("title", groupInfo.name());
-    option.add(name);
+    Div nameRow = new Div(avatar, name);
+    nameRow.addClassName("group-option-name-row");
+    option.add(nameRow);
     if (groupInfo.description() != null && !groupInfo.description().isBlank()) {
       Span description = new Span(groupInfo.description());
       description.addClassName("tertiary");
@@ -365,33 +389,52 @@ public class ProjectSharingComposer extends Div {
     return badge;
   }
 
+  private static Span sectionTitle(String text) {
+    Span title = new Span(text);
+    title.addClassName("staged-grants-section-title");
+    return title;
+  }
+
   private void addStagedGrant(PrincipalType type, String id, String displayName,
       Component identity) {
-    stagedGrants.add(new StagedGrant(type, id, displayName, identity));
+    StagedGrant staged = new StagedGrant(type, id, displayName, identity);
+    if (type == PrincipalType.USER) {
+      stagedUsers.add(staged);
+      usersSection.setVisible(true);
+    } else {
+      stagedGroups.add(staged);
+      groupsSection.setVisible(true);
+    }
   }
 
   private void removeStagedGrant(StagedGrant stagedGrant) {
     if (stagedGrant.type() == PrincipalType.USER) {
       stagedUserIds.remove(stagedGrant.id());
+      stagedUsers.remove(stagedGrant);
+      usersSection.setVisible(stagedUsers.getComponentCount() > 0);
       personPicker.getDataProvider().refreshAll();
     } else {
       stagedGroupIds.remove(stagedGrant.id());
+      stagedGroups.remove(stagedGrant);
+      groupsSection.setVisible(stagedGroups.getComponentCount() > 0);
       groupPicker.getDataProvider().refreshAll();
     }
-    stagedGrants.remove(stagedGrant);
     updateGrantButtonState();
   }
 
   private void updateGrantButtonState() {
-    grantButton.setEnabled(!busy && stagedGrants.getChildren().findAny().isPresent());
+    grantButton.setEnabled(!busy && stagedGrantCount() > 0);
   }
 
   private void fireGrantRequest() {
-    List<GrantRequest> requests = stagedGrants.getChildren()
-        .filter(StagedGrant.class::isInstance)
-        .map(StagedGrant.class::cast)
-        .map(staged -> new GrantRequest(staged.type(), staged.id(), staged.role(),
-            staged.displayName()))
+    List<StagedGrant> staged = new ArrayList<>();
+    stagedUsers.getChildren().filter(StagedGrant.class::isInstance)
+        .map(StagedGrant.class::cast).forEach(staged::add);
+    stagedGroups.getChildren().filter(StagedGrant.class::isInstance)
+        .map(StagedGrant.class::cast).forEach(staged::add);
+    List<GrantRequest> requests = staged.stream()
+        .map(stagedGrant -> new GrantRequest(stagedGrant.type(), stagedGrant.id(),
+            stagedGrant.role(), stagedGrant.displayName()))
         .toList();
     if (requests.isEmpty()) {
       return;
@@ -424,8 +467,15 @@ public class ProjectSharingComposer extends Div {
     clearStagedGrants();
   }
 
+  private int stagedGrantCount() {
+    return stagedUsers.getComponentCount() + stagedGroups.getComponentCount();
+  }
+
   private void clearStagedGrants() {
-    stagedGrants.removeAll();
+    stagedUsers.removeAll();
+    stagedGroups.removeAll();
+    usersSection.setVisible(false);
+    groupsSection.setVisible(false);
     stagedUserIds.clear();
     stagedGroupIds.clear();
     updateGrantButtonState();
@@ -478,16 +528,9 @@ public class ProjectSharingComposer extends Div {
       remove.getElement().setAttribute("aria-label",
           "Remove %s from the share list".formatted(displayName));
       remove.addClickListener(event -> removeStagedGrant(this));
-      Div identityWrapper = new Div(typeTag(type), identity);
+      Div identityWrapper = new Div(identity);
       identityWrapper.addClassName("staged-grant-identity");
       add(identityWrapper, roleSelect, remove);
-    }
-
-    private static Tag typeTag(PrincipalType type) {
-      Tag tag = new Tag(type == PrincipalType.USER ? "User" : "Group");
-      tag.setTagColor(type == PrincipalType.USER ? TagColor.CONTRAST : TagColor.TEAL);
-      tag.addClassName("staged-grant-type");
-      return tag;
     }
 
     private void configureRoleSelect() {

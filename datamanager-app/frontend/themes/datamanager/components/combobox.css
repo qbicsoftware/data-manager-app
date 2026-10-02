@@ -29,7 +29,21 @@ vaadin-combo-box-overlay.connect-dataset-sidebar-overlay::part(overlay) {
   flex: 0 0 auto;
 }
 
+.group-option-name-row {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+  min-width: 0;
+}
+
+.group-option-avatar {
+  width: var(--lumo-icon-size-l);
+  height: var(--lumo-icon-size-l);
+  flex: 0 0 auto;
+}
+
 .group-option-name {
+  flex: 1 1 auto;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;

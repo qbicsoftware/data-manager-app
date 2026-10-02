@@ -10,7 +10,6 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import java.io.Serial;
 import java.util.ArrayList;
@@ -107,7 +106,7 @@ public class ProjectSharingDrawer extends Div {
 
     Anchor manageAccess = new Anchor(
         String.format(ProjectRoutes.ACCESS, projectId.value()),
-        VaadinIcon.ARROW_RIGHT.create(), new Span("Manage access"));
+        VaadinIcon.GROUP.create(), new Span("Manage access"));
     manageAccess.addClassName("psd-manage-access");
     Div headerActions = new Div(manageAccess, closeButton);
     headerActions.addClassName("psd-header-actions");
@@ -230,11 +229,12 @@ public class ProjectSharingDrawer extends Div {
   }
 
   private Component renderGroup(SharedProjectGroup group) {
-    Icon groupIcon = VaadinIcon.USERS.create();
-    groupIcon.addClassName("psd-group-icon");
+    UserAvatar avatar = new UserAvatar();
+    avatar.setGroupId(group.groupId());
+    avatar.addClassName("psd-group-avatar");
     Span nameSpan = new Span(group.groupName());
     nameSpan.addClassName("psd-name");
-    Div identity = new Div(groupIcon, nameSpan);
+    Div identity = new Div(avatar, nameSpan);
     identity.addClassName("psd-group-identity");
     if (group.groupName() != null && !group.groupName().isBlank()) {
       identity.getElement().setAttribute("title", group.groupName());
@@ -323,9 +323,8 @@ public class ProjectSharingDrawer extends Div {
       composer.showInlineError(title, outcome.problems());
     } else if (outcome.granted() > 0) {
       composer.showInlineConfirmation(outcome.granted() == 1
-          ? "Access granted to 1 principal. The list below is up to date."
-          : "Access granted to %d principals. The list below is up to date."
-              .formatted(outcome.granted()));
+          ? "Access granted to 1 principal."
+          : "Access granted to %d principals.".formatted(outcome.granted()));
     }
   }
 

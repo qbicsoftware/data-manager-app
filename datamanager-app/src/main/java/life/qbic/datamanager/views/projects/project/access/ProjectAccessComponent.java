@@ -202,7 +202,7 @@ public class ProjectAccessComponent extends PageArea {
     configureToolbar();
     configureStatsOverview();
 
-    Div roster = new Div(statsOverview, toolbar(), actionBar, grid);
+    Div roster = new Div(statsOverview, toolbar(), selectionBar(), actionBar, grid);
     roster.addClassName("access-roster");
 
     // DOM order keeps the composer first so it stacks on top on small screens; a CSS grid places
@@ -216,10 +216,20 @@ public class ProjectAccessComponent extends PageArea {
   private Component toolbar() {
     Div toolbar = new Div();
     toolbar.addClassName("access-toolbar");
-    Div spacer = new Div();
-    spacer.addClassName("flex-grow-1");
-    toolbar.add(searchField, filterSelect, spacer, selectionCount, changeRoleButton, removeButton);
+    toolbar.add(searchField, filterSelect);
     return toolbar;
+  }
+
+  /**
+   * The selection bar sits below the search/filter toolbar, mirroring the sample and measurement
+   * pages: it carries the selection count and the actions that operate on the selection, and is
+   * only meaningful once rows are selected.
+   */
+  private Component selectionBar() {
+    Div bar = new Div();
+    bar.addClassName("access-selection-bar");
+    bar.add(selectionCount, changeRoleButton, removeButton);
+    return bar;
   }
 
   private void configureToolbar() {
@@ -460,6 +470,13 @@ public class ProjectAccessComponent extends PageArea {
 
   private void selectRoleFilter(ProjectRole role) {
     rosterState = rosterState.withRole(role == null ? Optional.empty() : Optional.of(role));
+    if (filterSelect.getValue() != AccessFilter.ALL) {
+      // A role chip is a cross-type filter. Reset the type filter so clicking a role can never
+      // leave the user on an empty table just because people or groups were filtered out.
+      // Setting the value fires the filter listener, which writes the URL and re-applies.
+      filterSelect.setValue(AccessFilter.ALL);
+      return;
+    }
     writeUrl(false);
     applyFilter();
   }
@@ -549,12 +566,42 @@ public class ProjectAccessComponent extends PageArea {
     }
     Div identity = new Div(avatar, name);
     identity.addClassName("access-identity");
+    if (entry.oidc() != null && !entry.oidc().isBlank()
+        && entry.oidcIssuer() != null && !entry.oidcIssuer().isBlank()) {
+      identity.add(oidcBadge(entry));
+    }
     return identity;
   }
 
+  /**
+   * Renders the linked ORCID (or other OIDC provider) profile as a small logo linking to the
+   * public record, matching the identity rendering used in the sharing picker.
+   */
+  private Component oidcBadge(AccessEntry entry) {
+    return Arrays.stream(OidcType.values())
+        .filter(oidcType -> oidcType.getIssuer().equals(entry.oidcIssuer()))
+        .findFirst()
+        .map(oidcType -> {
+          String oidcUrl = String.format(oidcType.getUrl()) + entry.oidc();
+          OidcLogo oidcLogo = new OidcLogo(oidcType);
+          oidcLogo.addClassNames("oidc-logo", "clickable");
+          oidcLogo.getElement().setAttribute("title",
+              "View %s profile of %s (opens in a new tab)".formatted(oidcType.getName(),
+                  entry.oidc()));
+          Anchor oidcLink = new Anchor(oidcUrl, oidcLogo);
+          oidcLink.setTarget(AnchorTarget.BLANK);
+          oidcLink.addClassName("oidc-link");
+          oidcLink.getElement().setAttribute("aria-label",
+              "Open %s profile of %s in a new tab".formatted(oidcType.getName(), entry.oidc()));
+          return (Component) oidcLink;
+        })
+        .orElseGet(Span::new);
+  }
+
   private Component groupIdentity(AccessEntry entry) {
-    Icon groupIcon = VaadinIcon.USERS.create();
-    groupIcon.addClassName("access-group-icon");
+    UserAvatar groupAvatar = new UserAvatar();
+    groupAvatar.setGroupId(entry.id());
+    groupAvatar.addClassName("access-group-avatar");
     Span name = new Span(entry.groupName());
     name.addClassName("access-name");
     Div nameHeader = new Div(name);
@@ -569,7 +616,7 @@ public class ProjectAccessComponent extends PageArea {
       description.addClassName("access-description");
       nameBlock.add(description);
     }
-    Div identity = new Div(groupIcon, nameBlock);
+    Div identity = new Div(groupAvatar, nameBlock);
     identity.addClassName("access-identity");
     return identity;
   }
@@ -647,8 +694,12 @@ public class ProjectAccessComponent extends PageArea {
     ProjectId projectId = context.projectId().orElseThrow();
     int updated = 0;
     for (AccessEntry entry : selected) {
+      ProjectRole previousRole = entry.projectRole();
+      if (previousRole == projectRole) {
+        // No-op: re-applying the same role must not be reported as a "decreased" grant.
+        continue;
+      }
       try {
-        ProjectRole previousRole = entry.projectRole();
         if (entry.isUser()) {
           projectAccessService.changeRole(projectId, entry.id(), projectRole);
         } else {
@@ -742,8 +793,9 @@ public class ProjectAccessComponent extends PageArea {
     actionBar.removeAll();
     actionBar.addClassName("access-inline-confirm-danger");
     Span question = new Span(selected.size() == 1
-        ? "Remove 1 principal from this project?"
-        : "Remove %d principals from this project?".formatted(selected.size()));
+        ? "Remove 1 principal? They will lose immediate access to this project."
+        : "Remove %d principals? They will lose immediate access to this project."
+            .formatted(selected.size()));
     question.addClassName("inline-confirm-question");
     Button confirm = new Button("Remove", event -> removeSelected(selected));
     confirm.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
@@ -836,9 +888,8 @@ public class ProjectAccessComponent extends PageArea {
     } else if (outcome.granted() > 0) {
       composer.reset();
       composer.showInlineConfirmation(outcome.granted() == 1
-          ? "Access granted to 1 principal. The list below is up to date."
-          : "Access granted to %d principals. The list below is up to date."
-              .formatted(outcome.granted()));
+          ? "Access granted to 1 principal."
+          : "Access granted to %d principals.".formatted(outcome.granted()));
     }
   }
 

@@ -215,6 +215,11 @@ span.inline {
   color: #A68500;
 }
 
+.tag.teal {
+  background-color: #00ACAC1A;
+  color: #007A7A;
+}
+
 /* Project code badge — monospace identifier rendered next to a project title.
  * Subtle enough not to compete with measurement tags, but visually distinct
  * from normal text so users learn to scan for it as a code (same convention

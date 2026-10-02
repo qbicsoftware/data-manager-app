@@ -153,7 +153,25 @@ public class ProjectCollectionComponent extends PageArea {
     this.taskExecutor = Objects.requireNonNull(taskExecutor,
         "taskExecutor cannot be null");
     this.pinnedProjectsComponent = new PinnedProjectsComponent(
-        pinnedProjectService::findPinnedProjects, this::handlePinToggle);
+        pinnedProjectService::findPinnedProjects, this::handlePinToggle,
+        new PinnedProjectsComponent.PinnedProjectActionHandler() {
+          @Override
+          public boolean canManageAccess(ProjectId projectId) {
+            return userPermissions.changeProjectAccess(projectId);
+          }
+
+          @Override
+          public void share(ProjectId projectId, String projectLabel) {
+            openSharingDrawer(projectId, projectLabel);
+          }
+
+          @Override
+          public void manageAccess(ProjectId projectId) {
+            UI.getCurrent().navigate(ProjectAccessMain.class,
+                new RouteParameters(ProjectOverviewItem.PROJECT_ID_ROUTE_PARAMETER,
+                    projectId.value()));
+          }
+        });
     layoutComponent();
     configureSearch();
     configureSortButton();
@@ -400,12 +418,20 @@ public class ProjectCollectionComponent extends PageArea {
     if (!userPermissions.changeProjectAccess(overview.projectId())) {
       return;
     }
+    openSharingDrawer(overview.projectId(),
+        "%s — %s".formatted(overview.projectCode(), overview.projectTitle()));
+  }
+
+  /**
+   * Opens the non-modal sharing drawer for the given project. Replaces any previously mounted
+   * drawer so at most one is present.
+   */
+  private void openSharingDrawer(ProjectId projectId, String projectLabel) {
     if (sharingDrawer != null) {
       remove(sharingDrawer);
     }
     sharingDrawer = new ProjectSharingDrawer(projectAccessService, userInformationService,
-        groupInformationService, taskExecutor, overview.projectId(),
-        "%s — %s".formatted(overview.projectCode(), overview.projectTitle()));
+        groupInformationService, taskExecutor, projectId, projectLabel);
     add(sharingDrawer);
     sharingDrawer.open();
   }
@@ -574,13 +600,26 @@ public class ProjectCollectionComponent extends PageArea {
      */
     private static com.vaadin.flow.component.Component menuItemWithIcon(String label,
         VaadinIcon icon) {
+      return menuItemWithIcon(label, icon, false);
+    }
+
+    /**
+     * Builds a menu item with a small icon. {@code rotated} tilts the glyph counter-clockwise,
+     * used for the unpin action: there is no dedicated unpin icon, so a rotated pin reads as
+     * "remove the pin".
+     */
+    private static com.vaadin.flow.component.Component menuItemWithIcon(String label,
+        VaadinIcon icon, boolean rotated) {
       Icon iconComponent = icon.create();
       iconComponent.addClassName(IconSize.SMALL);
+      if (rotated) {
+        iconComponent.addClassName("menu-icon-unpin");
+      }
       Span item = new Span(iconComponent, new Span(label));
       item.addClassName("user-menu-item");
       item.getStyle().set("display", "inline-flex");
       item.getStyle().set("align-items", "center");
-      item.getStyle().set("gap", "var(--spacing-02)");
+      item.getStyle().set("gap", "var(--spacing-03)");
       return item;
     }
     private com.vaadin.flow.component.Component buildTopRightControl(boolean pinned, ToggleHandler toggleHandler,
@@ -619,7 +658,7 @@ public class ProjectCollectionComponent extends PageArea {
                     projectOverview.projectId().value())));
       }
       String actionLabel = pinned ? "Unpin project" : "Pin project";
-      var actionItem = menu.addItem(actionLabel,
+      menu.addItem(menuItemWithIcon(actionLabel, VaadinIcon.PIN, pinned),
           event -> toggleHandler.onToggle(projectOverview.projectId(), !pinned));
 
       topRight.add(menuButton);

@@ -119,9 +119,14 @@
 
 .project-sharing-drawer .psd-type-tag,
 .project-sharing-drawer .psd-role-tag,
-.project-sharing-drawer .psd-identity .user-avatar,
-.project-sharing-drawer .psd-group-icon {
+.project-sharing-drawer .psd-identity .user-avatar {
   flex: 0 0 auto;
+}
+
+/* Group and user identities share one avatar size so the roster reads uniformly. */
+.project-sharing-drawer .psd-identity .user-avatar {
+  width: var(--lumo-icon-size-l);
+  height: var(--lumo-icon-size-l);
 }
 
 .project-sharing-drawer .psd-name {

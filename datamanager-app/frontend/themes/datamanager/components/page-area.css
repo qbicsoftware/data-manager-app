@@ -467,7 +467,7 @@
    Below the breakpoint the grid collapses and the composer (first in the DOM) sits on top. */
 .project-access-component .access-body {
   display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(320px, 420px);
+  grid-template-columns: minmax(0, 2fr) minmax(360px, 520px);
   align-items: start;
   gap: var(--lumo-space-l);
   min-width: 0;
@@ -513,6 +513,15 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--lumo-space-m);
+}
+
+/* Selection bar below the search/filter toolbar (sample/measurement layout): the count and the
+   actions that operate on the selection live on their own row. */
+.project-access-component .access-selection-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--lumo-space-s);
 }
 
 /* Summary overview chips: a clickable count of shared principals per role. Clicking a chip
@@ -644,9 +653,25 @@
 
 .project-access-component .access-type-tag,
 .project-access-component .access-role-badge,
-.project-access-component .access-group-icon,
 .project-access-component .access-identity .user-avatar {
   flex: 0 0 auto;
+}
+
+/* Group and user identities share one avatar size so a group row reads the same as a person row. */
+.project-access-component .access-identity .user-avatar {
+  width: var(--lumo-icon-size-l);
+  height: var(--lumo-icon-size-l);
+}
+
+.project-access-component .access-identity .oidc-link {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.project-access-component .access-identity .oidc-link .oidc-logo {
+  width: var(--lumo-icon-size-s);
+  height: var(--lumo-icon-size-s);
 }
 
 /* Role cell: fixed-width indicator slot before the badge plus a transient direction indicator
@@ -840,6 +865,12 @@ a.project-collection-component .project-overview-item:hover {
   color: var(--lumo-primary-color);
   font-size: var(--lumo-font-size-xs);
   /* A touch smaller than the kebab icon so the action stays the primary target. */
+}
+
+/* Unpin action: there is no dedicated unpin glyph, so the pin icon is tilted counter-clockwise
+   to read as "remove the pin". */
+.user-menu-item .menu-icon-unpin {
+  transform: rotate(-45deg);
 }
 
 /* GitHub-style action button: transparent with no border, sized by padding so the
@@ -1362,10 +1393,34 @@ a.project-dataset-footer, a.project-dataset-footer:hover {
 .project-sharing-composer .staged-grants {
   display: flex;
   flex-direction: column;
-  gap: var(--lumo-space-s);
+  gap: var(--lumo-space-m);
   /* Bound the staged batch so a large one scrolls internally instead of growing the rail. */
   max-height: 40vh;
   overflow-y: auto;
+  min-width: 0;
+}
+
+/* People and groups are staged in separate, labelled lists. The section heading carries the type,
+   so each row does not repeat a redundant User/Group tag and the name gets the full width. */
+.project-sharing-composer .staged-grants-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-xs);
+  min-width: 0;
+}
+
+.project-sharing-composer .staged-grants-section-title {
+  font-size: var(--lumo-font-size-xs);
+  font-weight: var(--lumo-font-weight-semibold, 600);
+  color: var(--lumo-secondary-text-color);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.project-sharing-composer .staged-grants-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
   min-width: 0;
 }
 
@@ -1388,6 +1443,13 @@ a.project-dataset-footer, a.project-dataset-footer:hover {
   gap: var(--lumo-space-s);
   flex: 1 1 auto;
   min-width: 0;
+}
+
+/* The shared user-info component carries page-level spacing (margin + a large gap) that clips
+   the username inside the narrow staged chip. Reset it so the name is visible before granting. */
+.project-sharing-composer .staged-grant .user-info-component {
+  margin: 0;
+  gap: var(--lumo-space-s);
 }
 
 .project-sharing-composer .staged-grant .staged-grant-type {
@@ -1424,11 +1486,26 @@ a.project-dataset-footer, a.project-dataset-footer:hover {
 
 .project-sharing-composer .staged-grant .group-identity {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--lumo-space-s);
   min-width: 0;
 }
 
-.project-sharing-composer .staged-grant .group-identity > span {
+.project-sharing-composer .staged-grant .group-identity-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.project-sharing-composer .staged-grant .staged-group-avatar {
+  width: var(--lumo-icon-size-l);
+  height: var(--lumo-icon-size-l);
+  flex: 0 0 auto;
+}
+
+.project-sharing-composer .staged-grant .group-identity-text > span {
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;

@@ -261,6 +261,78 @@ class ProjectAccessComponentSpec extends Specification {
     roleCellHasIcon(roleCell, "role-change-down")
   }
 
+  def "re-applying the current role is a no-op and never shows a decreased indicator"() {
+    given: "a project shared with one READ user"
+    collaborators = [new ProjectCollaborator("user-2", projectId, ProjectRole.READ)]
+    userInformationService.findById("user-2") >> Optional.of(user("user-2", "Jane Doe", "jdoe"))
+    setContext(true)
+    component.@grid.asMultiSelect().select(component.@grid.getListDataView().getItems()
+        .find { it.id() == "user-2" })
+
+    when: "the manager applies the role the user already has"
+    component.@changeRoleButton.click()
+    def roleSelect = roleSelectInActionBar()
+    roleSelect.setValue(ProjectRole.READ)
+    buttonsIn(component.@actionBar).find { it.text == "Apply" }.click()
+
+    then: "the service is not called and no direction indicator is recorded"
+    0 * projectAccessService.changeRole(*_)
+    !component.@recentRoleChanges.containsKey("user-2")
+  }
+
+  def "the remove confirmation warns that access is lost immediately"() {
+    given: "a project shared with one user"
+    collaborators = [new ProjectCollaborator("user-2", projectId, ProjectRole.READ)]
+    userInformationService.findById("user-2") >> Optional.of(user("user-2", "Jane Doe", "jdoe"))
+    setContext(true)
+    component.@grid.asMultiSelect().select(component.@grid.getListDataView().getItems()
+        .find { it.id() == "user-2" })
+
+    when: "the ADMIN clicks Remove"
+    component.@removeButton.click()
+
+    then: "the confirmation tells the manager that access ends immediately"
+    textsIn(component.@actionBar).any { it.contains("lose immediate access") }
+  }
+
+  def "a group row shows the group profile avatar"() {
+    given: "a shared group"
+    def entry = aGroup("g-1", "NGS Lab", "sequencing core", ProjectRole.WRITE)
+
+    when:
+    def identity = component.groupIdentity(entry)
+
+    then: "the row renders the group avatar rather than a generic users icon"
+    allComponents(identity).any {
+      it instanceof life.qbic.datamanager.views.account.UserAvatar
+    }
+  }
+
+  def "a user with a linked ORCID account shows the ORCID badge in the roster"() {
+    given: "a roster entry with a linked ORCID"
+    def entry = new AccessEntry(PrincipalType.USER, "user-2", "jdoe", "Jane Doe",
+        "0000-0001-8835-2219", "https://orcid.org", null, null, null, ProjectRole.READ)
+
+    when:
+    def identity = component.userIdentity(entry)
+
+    then:
+    allComponents(identity).any { it.getElement().getClassList().contains("oidc-link") }
+  }
+
+  private static List<String> textsIn(Component root) {
+    def result = []
+    allComponents(root).each { child ->
+      if (child instanceof com.vaadin.flow.component.HasText) {
+        def text = child.getText()
+        if (text != null) {
+          result << text
+        }
+      }
+    }
+    return result
+  }
+
   private static boolean roleCellHasIcon(com.vaadin.flow.component.Component roleCell,
       String iconClass) {
     // role cell -> slot -> (icon | empty). The icon lives one level deeper now that the fixed
