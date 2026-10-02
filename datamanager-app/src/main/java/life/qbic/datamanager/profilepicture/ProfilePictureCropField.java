@@ -18,7 +18,7 @@ import java.util.function.Consumer;
  *
  * @since 1.22.0
  */
-@NpmPackage(value = "cropperjs", version = "1.6.2")
+@NpmPackage(value = "cropperjs", version = "1.6.3")
 @JsModule("./javascript/profilepicturecropper.js")
 public class ProfilePictureCropField extends Div {
 
