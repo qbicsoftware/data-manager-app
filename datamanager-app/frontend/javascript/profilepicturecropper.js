@@ -46,7 +46,7 @@ window.qbicProfilePictureCropper = {
 
     const controls = document.createElement('div');
     controls.className = 'profile-picture-crop__controls';
-    controls.append(choose, previewWrap);
+    controls.append(choose);
 
     const stage = document.createElement('div');
     stage.className = 'profile-picture-crop__stage';
@@ -55,21 +55,40 @@ window.qbicProfilePictureCropper = {
     image.alt = '';
     stage.appendChild(image);
 
+    const main = document.createElement('div');
+    main.className = 'profile-picture-crop__main';
+    main.append(stage, previewWrap);
+
     const hint = document.createElement('span');
     hint.className = 'profile-picture-crop__hint';
     hint.textContent = 'PNG or JPEG, max 1 MB. Drag to reposition, resize with the corner '
         + 'handles, zoom with the scroll wheel.';
 
-    host.append(controls, stage, hint);
+    host.append(controls, main, hint);
+
+    const showEmptyPreview = () => {
+      preview.classList.remove('has-image');
+      preview.style.backgroundImage = '';
+      preview.textContent = 'Upload image first';
+    };
+
+    const showImagePreview = (dataUrl) => {
+      preview.classList.add('has-image');
+      preview.textContent = '';
+      preview.style.backgroundImage = `url(${dataUrl})`;
+    };
+
+    showEmptyPreview();
 
     const renderPreview = () => {
       const cropper = croppers.get(cropperKey);
       if (!cropper) {
+        showEmptyPreview();
         return;
       }
       const canvas = cropper.getCroppedCanvas({ width: 96, height: 96 });
       if (canvas) {
-        preview.style.backgroundImage = `url(${canvas.toDataURL('image/png')})`;
+        showImagePreview(canvas.toDataURL('image/png'));
       }
     };
 

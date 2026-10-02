@@ -121,6 +121,13 @@ vaadin-button.profile-picture-block__overlay-button[focus-ring] {
   gap: var(--lumo-space-l);
 }
 
+.profile-picture-crop__main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--lumo-space-l);
+}
+
 .profile-picture-crop__preview-wrap {
   display: flex;
   flex-direction: column;
@@ -152,15 +159,27 @@ vaadin-button.profile-picture-block__overlay-button[focus-ring] {
 }
 
 .profile-picture-crop__preview {
-  width: 5rem;
-  height: 5rem;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 6.5rem;
+  height: 6.5rem;
+  padding: var(--lumo-space-s);
   border-radius: 50%;
-  overflow: hidden;
-  background-color: var(--lumo-contrast-10pct);
+  text-align: center;
+  font-size: var(--lumo-font-size-xs);
+  color: var(--lumo-secondary-text-color);
+  background-color: var(--lumo-contrast-5pct);
   background-position: center;
   background-size: cover;
   background-repeat: no-repeat;
-  border: 1px solid var(--lumo-contrast-20pct);
+  border: 1px dashed var(--lumo-contrast-30pct);
+}
+
+.profile-picture-crop__preview.has-image {
+  border-style: solid;
+  border-color: var(--lumo-contrast-20pct);
 }
 
 .profile-picture-crop__stage {
