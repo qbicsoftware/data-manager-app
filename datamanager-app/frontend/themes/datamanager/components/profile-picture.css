@@ -15,8 +15,8 @@
 }
 
 .profile-picture-row__avatar {
-  width: 4rem;
-  height: 4rem;
+  width: 5.5rem;
+  height: 5.5rem;
   border-radius: 50%;
   overflow: hidden;
 }
@@ -39,8 +39,8 @@ vaadin-button.profile-picture-row__remove:hover {
 }
 
 .group-detail-avatar {
-  width: 4rem;
-  height: 4rem;
+  width: 5.5rem;
+  height: 5.5rem;
   border-radius: 50%;
   overflow: hidden;
   margin-bottom: var(--lumo-space-s);
