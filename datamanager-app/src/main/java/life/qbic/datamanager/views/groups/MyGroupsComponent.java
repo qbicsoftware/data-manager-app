@@ -144,7 +144,8 @@ public class MyGroupsComponent extends Div implements Serializable {
     UserAvatar groupAvatar = new UserAvatar();
     groupAvatar.setGroupId(membership.groupId());
     groupAvatar.addClassName("my-groups-row__avatar");
-    title.add(groupAvatar);
+    Div avatarSection = new Div(groupAvatar);
+    avatarSection.addClassName("my-groups-row__avatar-section");
     title.add(name);
 
     Div actions = new Div();
@@ -169,7 +170,7 @@ public class MyGroupsComponent extends Div implements Serializable {
       identity.add(description);
     }
 
-    row.add(identity);
+    row.add(avatarSection, identity);
     return row;
   }
 

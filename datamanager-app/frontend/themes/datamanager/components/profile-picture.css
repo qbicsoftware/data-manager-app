@@ -88,11 +88,10 @@ vaadin-button.profile-picture-block__overlay-button[focus-ring] {
 }
 
 .my-groups-row__avatar {
-  width: 2.25rem;
-  height: 2.25rem;
+  width: 4rem;
+  height: 4rem;
   border-radius: 50%;
   overflow: hidden;
-  margin-right: var(--lumo-space-s);
   flex: 0 0 auto;
 }
 

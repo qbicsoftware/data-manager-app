@@ -186,7 +186,8 @@ public class AdminGroupsMain extends Main implements BeforeEnterObserver {
         new life.qbic.datamanager.views.account.UserAvatar();
     groupAvatar.setGroupId(groupInfo.id());
     groupAvatar.addClassName("my-groups-row__avatar");
-    title.add(groupAvatar);
+    Div avatarSection = new Div(groupAvatar);
+    avatarSection.addClassName("my-groups-row__avatar-section");
     title.add(name);
 
     Div actions = new Div();
@@ -208,7 +209,7 @@ public class AdminGroupsMain extends Main implements BeforeEnterObserver {
       identity.add(description);
     }
 
-    row.add(identity);
+    row.add(avatarSection, identity);
     return row;
   }
 

@@ -20,11 +20,22 @@
 /* One membership row */
 .my-groups-row {
   display: flex;
+  align-items: stretch;
   box-sizing: border-box;
   padding: var(--lumo-space-m);
   background-color: var(--lumo-base-color);
   border: 1px solid var(--lumo-contrast-20pct);
   border-radius: var(--lumo-border-radius-m);
+}
+
+/* Left rail: takes the full card height and centers the group avatar, so the picture is
+   prominent and easy to scan down the list. */
+.my-groups-row__avatar-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  padding-right: var(--lumo-space-m);
 }
 
 /* Left column: header (title + badges/actions inline) and description below it */
