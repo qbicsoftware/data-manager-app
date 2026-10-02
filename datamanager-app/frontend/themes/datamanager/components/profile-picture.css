@@ -184,6 +184,26 @@ vaadin-button.profile-picture-block__overlay-button[focus-ring] {
   box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.45);
 }
 
+/* Make the resize handles and edges clearly legible so users discover that the crop is
+   adjustable. */
+.profile-picture-crop__stage .cropper-line {
+  background-color: var(--lumo-primary-color);
+  opacity: 1;
+}
+
+.profile-picture-crop__stage .cropper-point {
+  width: 10px;
+  height: 10px;
+  background-color: var(--lumo-primary-color);
+  border: 2px solid var(--lumo-base-color);
+  opacity: 1;
+}
+
+.profile-picture-crop__stage .cropper-dashed {
+  border-color: rgba(255, 255, 255, 0.85);
+  border-style: dashed;
+}
+
 .profile-picture-crop__image {
   display: block;
   max-width: 100%;

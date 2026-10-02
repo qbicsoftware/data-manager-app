@@ -57,7 +57,8 @@ window.qbicProfilePictureCropper = {
 
     const hint = document.createElement('span');
     hint.className = 'profile-picture-crop__hint';
-    hint.textContent = 'PNG or JPEG, max 1 MB. Drag to reposition, zoom with the scroll wheel.';
+    hint.textContent = 'PNG or JPEG, max 1 MB. Drag to reposition, resize with the corner '
+        + 'handles, zoom with the scroll wheel.';
 
     host.append(controls, stage, hint);
 
@@ -131,9 +132,11 @@ window.qbicProfilePictureCropper = {
               aspectRatio: 1,
               viewMode: 1,
               dragMode: 'move',
-              autoCropArea: 1,
+              // Start slightly smaller than the image so the crop frame and handles are always
+              // visible — a square source with autoCropArea 1 would hide them at the image edge.
+              autoCropArea: 0.85,
               background: false,
-              guides: false,
+              guides: true,
               crop: schedulePreview,
               ready: renderPreview,
             }));
