@@ -36,9 +36,17 @@ window.qbicProfilePictureCropper = {
     preview.className = 'profile-picture-crop__preview';
     preview.setAttribute('aria-hidden', 'true');
 
+    const previewLabel = document.createElement('span');
+    previewLabel.className = 'profile-picture-crop__preview-label';
+    previewLabel.textContent = 'Preview';
+
+    const previewWrap = document.createElement('div');
+    previewWrap.className = 'profile-picture-crop__preview-wrap';
+    previewWrap.append(preview, previewLabel);
+
     const controls = document.createElement('div');
     controls.className = 'profile-picture-crop__controls';
-    controls.append(choose, preview);
+    controls.append(choose, previewWrap);
 
     const stage = document.createElement('div');
     stage.className = 'profile-picture-crop__stage';
@@ -101,7 +109,6 @@ window.qbicProfilePictureCropper = {
             viewMode: 1,
             dragMode: 'move',
             autoCropArea: 1,
-            background: false,
             guides: false,
             crop: schedulePreview,
             ready: renderPreview,

@@ -93,7 +93,10 @@ public class UserProfileComponent extends Div implements Serializable {
 
   private Div buildProfilePictureRow() {
     var row = new Div();
-    row.addClassName("profile-picture-row");
+    row.addClassNames("inline-editable-field", "profile-picture-row");
+
+    var label = new Span("Profile picture:");
+    label.addClassName("inline-editable-field__label");
 
     profileAvatar = new UserAvatar();
     profileAvatar.setUserId(userInfo.id());
@@ -104,13 +107,17 @@ public class UserProfileComponent extends Div implements Serializable {
     changeButton.addClickListener(event -> openPictureDialog());
 
     removePictureButton = new Button("Remove picture");
-    removePictureButton.addClassName("tertiary");
+    removePictureButton.addClassNames("tertiary", "profile-picture-row__remove");
     removePictureButton.setVisible(hasProfilePicture());
     removePictureButton.addClickListener(event -> removeProfilePicture());
 
     var actions = new Div(changeButton, removePictureButton);
     actions.addClassName("profile-picture-row__actions");
-    row.add(profileAvatar, actions);
+
+    var valueArea = new Div(profileAvatar, actions);
+    valueArea.addClassName("inline-editable-field__value-area");
+
+    row.add(label, valueArea);
     return row;
   }
 

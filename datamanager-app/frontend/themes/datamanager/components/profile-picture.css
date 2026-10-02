@@ -3,7 +3,7 @@
 .profile-picture-row {
   display: flex;
   align-items: center;
-  gap: var(--lumo-space-m);
+  gap: var(--lumo-space-l);
   margin-bottom: var(--lumo-space-m);
 }
 
@@ -17,7 +17,18 @@
 .profile-picture-row__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--lumo-space-s);
+  align-items: center;
+  gap: var(--lumo-space-m);
+}
+
+/* Destructive action must read as destructive: keep the text-link shape but colour it. */
+vaadin-button.profile-picture-row__remove {
+  color: var(--error-color);
+}
+
+vaadin-button.profile-picture-row__remove:hover {
+  color: var(--error-color);
+  text-decoration: underline;
 }
 
 .group-detail-avatar {
@@ -59,7 +70,19 @@
 .profile-picture-crop__controls {
   display: flex;
   align-items: center;
-  gap: var(--lumo-space-m);
+  gap: var(--lumo-space-l);
+}
+
+.profile-picture-crop__preview-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--lumo-space-xs);
+}
+
+.profile-picture-crop__preview-label {
+  font-size: var(--lumo-font-size-xs);
+  color: var(--lumo-secondary-text-color);
 }
 
 .profile-picture-crop__input {
@@ -96,10 +119,23 @@
   width: 100%;
   max-width: 20rem;
   height: 20rem;
+  background-color: var(--lumo-contrast-5pct);
 }
 
 .profile-picture-crop.has-image .profile-picture-crop__stage {
   display: block;
+}
+
+/* Strengthen the crop frame so it stays visible on low-contrast images, and darken the area
+   outside the crop (Cropper's modal overlay) to reinforce the square selection. */
+.profile-picture-crop__stage .cropper-view-box {
+  outline: 2px solid var(--lumo-primary-color);
+  outline-color: var(--lumo-primary-color);
+}
+
+.profile-picture-crop__stage .cropper-modal {
+  background-color: #000;
+  opacity: 0.45;
 }
 
 .profile-picture-crop__image {
@@ -110,4 +146,5 @@
 .profile-picture-crop__hint {
   font-size: var(--lumo-font-size-s);
   color: var(--lumo-secondary-text-color);
+  margin-top: var(--lumo-space-s);
 }

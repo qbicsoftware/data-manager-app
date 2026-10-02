@@ -176,11 +176,17 @@ public class GroupDetailMain extends Main implements BeforeEnterObserver {
     groupAvatar.addClassName("group-detail-avatar");
 
     Div pictureRow = new Div();
-    pictureRow.addClassName("profile-picture-row");
-    pictureRow.add(groupAvatar);
+    pictureRow.addClassNames("inline-editable-field", "profile-picture-row");
+    Span pictureLabel = new Span("Profile picture:");
+    pictureLabel.addClassName("inline-editable-field__label");
+    pictureRow.add(pictureLabel);
+
+    Div pictureValueArea = new Div(groupAvatar);
+    pictureValueArea.addClassName("inline-editable-field__value-area");
+    pictureRow.add(pictureValueArea);
     if (canManageProfile) {
       Button removePicture = new Button("Remove picture");
-      removePicture.addClassName("tertiary");
+      removePicture.addClassNames("tertiary", "profile-picture-row__remove");
       removePicture.setVisible(profilePictureService.findContentHash(
           life.qbic.datamanager.profilepicture.ProfilePictureOwnerType.GROUP, groupId).isPresent());
       removePicture.addClickListener(click -> {
@@ -220,7 +226,7 @@ public class GroupDetailMain extends Main implements BeforeEnterObserver {
 
       Div pictureActions = new Div(changePicture, removePicture);
       pictureActions.addClassName("profile-picture-row__actions");
-      pictureRow.add(pictureActions);
+      pictureValueArea.add(pictureActions);
     }
     profileGroup.add(pictureRow);
     nameField = new InlineEditableField("Group name", membership.groupName());
