@@ -115,16 +115,10 @@ vaadin-button.profile-picture-block__overlay-button[focus-ring] {
   gap: var(--lumo-space-s);
 }
 
-.profile-picture-crop__controls {
-  display: flex;
-  align-items: center;
-  gap: var(--lumo-space-l);
-}
-
 .profile-picture-crop__main {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-start;
+  align-items: center;
   gap: var(--lumo-space-l);
 }
 
@@ -146,16 +140,24 @@ vaadin-button.profile-picture-block__overlay-button[focus-ring] {
 }
 
 .profile-picture-crop__choose {
-  display: inline-block;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
   cursor: pointer;
-  padding: var(--lumo-space-xs) var(--lumo-space-m);
+  padding: var(--lumo-space-s) var(--lumo-space-l);
   border-radius: var(--lumo-border-radius-m);
   border: 1px solid var(--lumo-contrast-20pct);
-  background: var(--lumo-contrast-5pct);
+  background: var(--lumo-base-color);
 }
 
 .profile-picture-crop__choose:hover {
-  background: var(--lumo-contrast-10pct);
+  background: var(--lumo-contrast-5pct);
+}
+
+.profile-picture-crop.has-image .profile-picture-crop__choose {
+  display: none;
 }
 
 .profile-picture-crop__preview {
@@ -183,15 +185,27 @@ vaadin-button.profile-picture-block__overlay-button[focus-ring] {
 }
 
 .profile-picture-crop__stage {
-  display: none;
+  position: relative;
   width: 100%;
   max-width: 20rem;
   height: 20rem;
   overflow: hidden;
   background-color: var(--lumo-contrast-5pct);
+  border: 1px dashed var(--lumo-contrast-30pct);
+  border-radius: var(--lumo-border-radius-m);
 }
 
 .profile-picture-crop.has-image .profile-picture-crop__stage {
+  border-style: solid;
+  border-color: var(--lumo-contrast-20pct);
+}
+
+.profile-picture-crop__image {
+  display: none;
+  max-width: 100%;
+}
+
+.profile-picture-crop.has-image .profile-picture-crop__image {
   display: block;
 }
 

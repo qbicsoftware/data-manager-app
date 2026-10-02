@@ -29,7 +29,7 @@ window.qbicProfilePictureCropper = {
 
     const choose = document.createElement('label');
     choose.className = 'profile-picture-crop__choose';
-    choose.textContent = 'Choose image';
+    choose.textContent = 'Upload image';
     choose.appendChild(input);
 
     const preview = document.createElement('div');
@@ -44,16 +44,12 @@ window.qbicProfilePictureCropper = {
     previewWrap.className = 'profile-picture-crop__preview-wrap';
     previewWrap.append(preview, previewLabel);
 
-    const controls = document.createElement('div');
-    controls.className = 'profile-picture-crop__controls';
-    controls.append(choose);
-
     const stage = document.createElement('div');
     stage.className = 'profile-picture-crop__stage';
     const image = document.createElement('img');
     image.className = 'profile-picture-crop__image';
     image.alt = '';
-    stage.appendChild(image);
+    stage.append(choose, image);
 
     const main = document.createElement('div');
     main.className = 'profile-picture-crop__main';
@@ -64,7 +60,7 @@ window.qbicProfilePictureCropper = {
     hint.textContent = 'PNG or JPEG, max 1 MB. Drag to reposition, resize with the corner '
         + 'handles, zoom with the scroll wheel.';
 
-    host.append(controls, main, hint);
+    host.append(main, hint);
 
     const showEmptyPreview = () => {
       preview.classList.remove('has-image');
@@ -143,6 +139,7 @@ window.qbicProfilePictureCropper = {
             return;
           }
           const existing = croppers.get(cropperKey);
+          host.classList.add('has-image');
           if (existing) {
             existing.replace(reader.result);
           } else {
@@ -160,7 +157,6 @@ window.qbicProfilePictureCropper = {
               ready: renderPreview,
             }));
           }
-          host.classList.add('has-image');
           clearError();
           renderPreview();
         };
