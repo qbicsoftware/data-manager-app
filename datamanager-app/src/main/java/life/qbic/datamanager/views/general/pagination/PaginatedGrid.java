@@ -9,6 +9,7 @@ import com.vaadin.flow.component.grid.GridMultiSelectionModel;
 import com.vaadin.flow.component.grid.GridSortOrder;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.provider.SortDirection;
@@ -53,7 +54,9 @@ public class PaginatedGrid<T> extends Div {
   private final Selection selection;
   private final TextField searchField = createSearchField();
   private final Span selectionDisplay = new Span();
+  private final Icon selectionIcon = VaadinIcon.CHECK_CIRCLE_O.create();
   private final Button clearSelectionButton = new Button("Clear selection");
+  private final Div selectionBar = new Div();
   private final Div emptyState = new Div();
   private ListState listState;
   private final String itemLabel;
@@ -175,6 +178,13 @@ public class PaginatedGrid<T> extends Div {
     this.showToolbar = showToolbar;
     this.showSearch = showSearch;
 
+    selectionDisplay.addClassName("paginated-grid-selection-count");
+    selectionIcon.addClassName("paginated-grid-selection-icon");
+    clearSelectionButton.addClassName("paginated-grid-clear-selection");
+    selectionBar.addClassName("paginated-grid-selection-bar");
+    selectionBar.add(selectionIcon, selectionDisplay, clearSelectionButton);
+    selectionBar.setVisible(false);
+
     configureGrid();
     if (showToolbar) {
       if (showSearch) {
@@ -200,7 +210,7 @@ public class PaginatedGrid<T> extends Div {
       if (showSearch) {
         toolbar.add(searchField);
       }
-      toolbar.add(selectionDisplay, clearSelectionButton);
+      toolbar.add(selectionBar);
       add(toolbar);
     }
     add(grid, emptyState);
@@ -403,11 +413,9 @@ public class PaginatedGrid<T> extends Div {
     int count = selection.count();
     if (count > 0) {
       selectionDisplay.setText("%d %s selected".formatted(count, count == 1 ? itemLabel : itemLabel + "s"));
-      selectionDisplay.setVisible(true);
-      clearSelectionButton.setVisible(true);
+      selectionBar.setVisible(true);
     } else {
-      selectionDisplay.setVisible(false);
-      clearSelectionButton.setVisible(false);
+      selectionBar.setVisible(false);
     }
     fireEvent(new SelectionChangeEvent(this, selection.selectedIds()));
   }
