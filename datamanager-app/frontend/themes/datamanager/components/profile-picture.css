@@ -165,12 +165,12 @@ vaadin-button.profile-picture-block__overlay-button[focus-ring] {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 6.5rem;
-  height: 6.5rem;
+  width: 9rem;
+  height: 9rem;
   padding: var(--lumo-space-s);
   border-radius: 50%;
   text-align: center;
-  font-size: var(--lumo-font-size-xs);
+  font-size: var(--lumo-font-size-s);
   color: var(--lumo-secondary-text-color);
   background-color: var(--lumo-contrast-5pct);
   background-position: center;
