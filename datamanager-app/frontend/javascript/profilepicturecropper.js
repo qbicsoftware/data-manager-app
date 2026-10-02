@@ -161,7 +161,14 @@ window.qbicProfilePictureCropper = {
             }));
           }
           clearError();
-          renderPreviewFull();
+          // Render only once the image is decoded. Drawing earlier uses an undecoded bitmap and
+          // the first preview looks blurry until the next crop interaction redraws it.
+          const renderWhenDecoded = () => renderPreviewFull();
+          if (typeof image.decode === 'function') {
+            image.decode().then(renderWhenDecoded).catch(renderWhenDecoded);
+          } else {
+            window.requestAnimationFrame(renderWhenDecoded);
+          }
         };
         probe.onerror = () => {
           notifyError('UNSUPPORTED_FORMAT');
