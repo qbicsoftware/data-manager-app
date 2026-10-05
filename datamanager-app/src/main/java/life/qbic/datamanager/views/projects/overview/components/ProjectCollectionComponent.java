@@ -651,7 +651,7 @@ public class ProjectCollectionComponent extends PageArea {
         // (roster, role editing, removal) reached from the card menu, matching the "Manage
         // access" affordance inside the sharing drawer.
         var manageAccessItem = menu.addItem(
-            menuItemWithIcon("Manage access", VaadinIcon.GROUP),
+            menuItemWithIcon("Manage access", VaadinIcon.USERS),
             event -> UI.getCurrent().navigate(
                 ProjectAccessMain.class,
                 new RouteParameters(PROJECT_ID_ROUTE_PARAMETER,

@@ -275,7 +275,7 @@ public class PinnedProjectsComponent extends Div {
       menu.addItem(menuItemWithIcon("Share project…", VaadinIcon.SHARE),
           event -> actionHandler.share(pinnedProject.projectId(),
               "%s — %s".formatted(pinnedProject.projectCode(), pinnedProject.projectTitle())));
-      menu.addItem(menuItemWithIcon("Manage access", VaadinIcon.GROUP),
+      menu.addItem(menuItemWithIcon("Manage access", VaadinIcon.USERS),
           event -> actionHandler.manageAccess(pinnedProject.projectId()));
     }
     menu.addItem(menuItemWithIcon("Unpin project", VaadinIcon.PIN, true),

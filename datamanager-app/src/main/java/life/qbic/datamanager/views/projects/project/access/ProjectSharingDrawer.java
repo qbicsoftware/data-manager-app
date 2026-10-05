@@ -106,7 +106,7 @@ public class ProjectSharingDrawer extends Div {
 
     Anchor manageAccess = new Anchor(
         String.format(ProjectRoutes.ACCESS, projectId.value()),
-        VaadinIcon.GROUP.create(), new Span("Manage access"));
+        VaadinIcon.USERS.create(), new Span("Manage access"));
     manageAccess.addClassName("psd-manage-access");
     Div headerActions = new Div(manageAccess, closeButton);
     headerActions.addClassName("psd-header-actions");
