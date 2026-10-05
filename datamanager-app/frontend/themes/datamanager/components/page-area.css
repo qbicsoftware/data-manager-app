@@ -455,16 +455,286 @@
   align-items: baseline;
 }
 
-.project-access-component .change-project-access-cell {
-  display: inline-flex;
-  column-gap: var(--lumo-space-l);
-  align-items: center;
-}
-
 .project-access-component .oidc-cell {
   display: inline-flex;
   gap: var(--spacing-03);
   align-items: center;
+}
+
+/* -- Dialog-free access roster (toolbar, sections, rows) -- */
+
+/* Master-detail: roster on the left, sticky Share-this-project rail on the right.
+   Below the breakpoint the grid collapses and the composer (first in the DOM) sits on top. */
+.project-access-component .access-body {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(360px, 520px);
+  align-items: start;
+  gap: var(--lumo-space-l);
+  min-width: 0;
+}
+
+/* Grid items default to min-width:auto, which lets wide content (a long staged chip) push the
+   track — and the whole page — wider. Allow them to shrink. */
+.project-access-component .access-body > * {
+  min-width: 0;
+}
+
+.project-access-component .access-roster {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+}
+
+.project-access-component .access-body > .project-sharing-composer {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: start;
+  position: sticky;
+  top: var(--lumo-space-l);
+}
+
+@media (max-width: 1023px) {
+  .project-access-component .access-body {
+    grid-template-columns: 1fr;
+  }
+
+  .project-access-component .access-body > .project-sharing-composer,
+  .project-access-component .access-roster {
+    grid-column: 1;
+    grid-row: auto;
+    position: static;
+  }
+}
+.project-access-component .access-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--lumo-space-m);
+}
+
+/* Selection bar below the search/filter toolbar (sample/measurement layout): the count and the
+   actions that operate on the selection live on their own row. */
+.project-access-component .access-selection-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--lumo-space-s);
+}
+
+/* Summary overview chips: a clickable count of shared principals per role. Clicking a chip
+   filters the roster to that role; clicking “Shared total” clears the role filter. */
+.project-access-component .access-stats-overview {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--lumo-space-s);
+}
+
+.project-access-component .access-stat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+  padding: var(--lumo-space-xs) var(--lumo-space-s);
+  border-radius: var(--lumo-border-radius-l);
+  border: 1px solid var(--lumo-contrast-10pct);
+  background-color: var(--lumo-base-color);
+  color: var(--lumo-body-text-color);
+  font-size: var(--lumo-font-size-s);
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.1s ease, border-color 0.1s ease;
+}
+
+.project-access-component .access-stat-chip:hover:not([disabled]) {
+  background-color: var(--lumo-contrast-5pct);
+  border-color: var(--lumo-contrast-20pct);
+}
+
+.project-access-component .access-stat-chip:focus-visible {
+  outline: 2px solid var(--lumo-primary-color);
+  outline-offset: 2px;
+}
+
+.project-access-component .access-stat-chip[disabled] {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.project-access-component .access-stat-chip-active {
+  background-color: var(--lumo-primary-color-10pct);
+  border-color: var(--lumo-primary-color);
+  color: var(--lumo-primary-text-color);
+}
+
+.project-access-component .access-stat-name {
+  font-weight: 500;
+}
+
+.project-access-component .access-stat-count {
+  font-weight: 600;
+  color: var(--lumo-secondary-text-color);
+}
+
+.project-access-component .access-stat-chip-active .access-stat-count {
+  color: var(--lumo-primary-text-color);
+}
+
+.project-access-component .access-search {
+  flex: 1 1 18em;
+}
+
+.project-access-component .access-filter {
+  flex: 0 0 auto;
+  min-width: 10em;
+}
+
+.project-access-component .access-selection-count {
+  flex: 0 0 auto;
+}
+
+.project-access-component .access-role-chooser {
+  min-width: 10em;
+  flex: 0 0 auto;
+}
+
+.project-access-component .access-inline-confirm {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--lumo-space-s);
+  padding: var(--lumo-space-s) var(--lumo-space-m);
+  border-radius: var(--lumo-border-radius-m);
+  /* Management action (change role) and destructive action (remove) share the inline bar. The
+     bar itself uses a light version of the primary color: changing a role is a normal management
+     action, not a danger action. The destructive character is conveyed by the Remove button's
+     error theme instead. */
+  background-color: var(--lumo-primary-color-10pct);
+  border: 1px solid var(--lumo-primary-color-30pct);
+}
+
+/* When the inline bar hosts the destructive remove confirmation, it may use the light error
+   tint for the background to reinforce the danger of the action. */
+.project-access-component .access-inline-confirm.access-inline-confirm-danger {
+  background-color: var(--lumo-error-color-10pct);
+  border-color: var(--lumo-error-color-30pct);
+}
+
+.project-access-component .access-grid {
+  width: 100%;
+}
+
+/* Clip grid cell content so long names/descriptions ellipsize instead of widening the cell and
+   pushing the Role column out of view. The extra vertical padding also gives the roster rows a
+   bit more breathing room so the list does not look so visually dense. */
+.project-access-component .access-grid vaadin-grid-cell-content {
+  overflow: hidden;
+  padding-top: var(--lumo-space-s);
+  padding-bottom: var(--lumo-space-s);
+}
+
+.project-access-component .access-principal-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+  min-width: 0;
+  overflow: hidden;
+}
+
+.project-access-component .access-identity {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.project-access-component .access-type-tag,
+.project-access-component .access-role-badge,
+.project-access-component .access-identity .user-avatar {
+  flex: 0 0 auto;
+}
+
+/* Group and user identities share one avatar size so a group row reads the same as a person row. */
+.project-access-component .access-identity .user-avatar {
+  width: var(--lumo-icon-size-l);
+  height: var(--lumo-icon-size-l);
+}
+
+.project-access-component .access-identity .oidc-link {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.project-access-component .access-identity .oidc-link .oidc-logo {
+  width: var(--lumo-icon-size-s);
+  height: var(--lumo-icon-size-s);
+}
+
+/* Role cell: fixed-width indicator slot before the badge plus a transient direction indicator
+   shown right after a role change. The slot always reserves its width, so the badge stays in its
+   normal position whether or not an indicator is present. */
+.project-access-component .access-role-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lumo-space-xs);
+}
+
+.project-access-component .access-role-cell .role-change-slot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* Reserve the icon width even when empty so the badge never shifts. */
+  width: var(--lumo-icon-size-m);
+  height: var(--lumo-icon-size-m);
+  flex: 0 0 auto;
+}
+
+.project-access-component .access-role-cell .role-change-up {
+  color: var(--lumo-success-color);
+  font-size: var(--lumo-font-size-s);
+}
+
+.project-access-component .access-role-cell .role-change-down {
+  color: var(--lumo-error-color);
+  font-size: var(--lumo-font-size-s);
+}
+
+.project-access-component .access-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-access-component .access-full-name {
+  color: var(--lumo-secondary-text-color);
+  margin-left: var(--lumo-space-xs);
+}
+
+.project-access-component .access-name-block {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.project-access-component .access-name-header {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+  min-width: 0;
+}
+
+.project-access-component .access-description {
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-s);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .project-collection-component {
@@ -595,6 +865,12 @@ a.project-collection-component .project-overview-item:hover {
   color: var(--lumo-primary-color);
   font-size: var(--lumo-font-size-xs);
   /* A touch smaller than the kebab icon so the action stays the primary target. */
+}
+
+/* Unpin action: there is no dedicated unpin glyph, so the pin icon is tilted counter-clockwise
+   to read as "remove the pin". */
+.user-menu-item .menu-icon-unpin {
+  transform: rotate(-45deg);
 }
 
 /* GitHub-style action button: transparent with no border, sized by padding so the
@@ -1079,13 +1355,284 @@ a.project-dataset-footer, a.project-dataset-footer:hover {
   outline-offset: -2px;
 }
 
-/* Groups section of the project access component.
-   Long group descriptions are truncated with an ellipsis instead of forcing
-   horizontal page scroll, so the Role column stays visible. The part is applied
-   to each grid row via setPartNameGenerator (see ProjectAccessComponent). */
-.project-access-component [part~="group-description-row"] {
-  max-width: 28em;
+/* -- Dialog-free project sharing (inline composer + inline confirm) -- */
+
+.project-access-component .button-bar {
+  display: inline-flex;
+  column-gap: var(--lumo-space-m);
+}
+
+/* The inline sharing composer: no modal dialog, the page stays in context. */
+.project-sharing-composer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+  padding: var(--lumo-space-m);
+  background-color: var(--lumo-base-color);
+  border: 1px solid var(--lumo-contrast-20pct);
+  border-radius: var(--lumo-border-radius-m);
+  /* Anchors the busy overlay to the composer container. */
+  position: relative;
+  /* Allow the composer to shrink inside a grid/flex track: otherwise a long staged chip forces
+     the whole access area (roster included) wider than the viewport. */
+  min-width: 0;
+}
+
+.project-sharing-composer .sharing-pickers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lumo-space-m);
+}
+
+.project-sharing-composer .sharing-pickers > * {
+  flex: 1 1 18em;
+  /* Never force a minimum wider than the container on narrow screens. */
+  min-width: 0;
+}
+
+.project-sharing-composer .staged-grants {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+  /* Bound the staged batch so a large one scrolls internally instead of growing the rail. */
+  max-height: 40vh;
+  overflow-y: auto;
+  min-width: 0;
+}
+
+/* People and groups are staged in separate, labelled lists. The section heading carries the type,
+   so each row does not repeat a redundant User/Group tag and the name gets the full width. */
+.project-sharing-composer .staged-grants-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-xs);
+  min-width: 0;
+}
+
+.project-sharing-composer .staged-grants-section-title {
+  font-size: var(--lumo-font-size-xs);
+  font-weight: var(--lumo-font-weight-semibold, 600);
+  color: var(--lumo-secondary-text-color);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.project-sharing-composer .staged-grants-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+  min-width: 0;
+}
+
+.project-sharing-composer .staged-grant {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: var(--lumo-space-s);
+  padding: var(--lumo-space-xs) var(--lumo-space-s);
+  border: 1px solid var(--lumo-contrast-10pct);
+  border-radius: var(--lumo-border-radius-m);
+  min-width: 0;
+}
+
+/* Type badge + identity share the flexible space; long names ellipsize instead of
+   pushing the role control and remove button onto the next line. */
+.project-sharing-composer .staged-grant .staged-grant-identity {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* The shared user-info component carries page-level spacing (margin + a large gap) that clips
+   the username inside the narrow staged chip. Reset it so the name is visible before granting. */
+.project-sharing-composer .staged-grant .user-info-component {
+  margin: 0;
+  gap: var(--lumo-space-s);
+}
+
+.project-sharing-composer .staged-grant .staged-grant-type {
+  flex: 0 0 auto;
+}
+
+/* Group identity without a description renders as a bare name span. */
+.project-sharing-composer .staged-grant .staged-grant-identity > span {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.project-sharing-composer .staged-grant .user-info-component {
+  min-width: 0;
+}
+
+.project-sharing-composer .staged-grant .user-info-component .avatar {
+  flex: 0 0 auto;
+}
+
+.project-sharing-composer .staged-grant .user-info-component .user-info,
+.project-sharing-composer .staged-grant .user-info-component .user-name-and-full-name {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.project-sharing-composer .staged-grant .user-info-component .user-name-and-full-name {
+  display: block;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-sharing-composer .staged-grant .group-identity {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--lumo-space-s);
+  min-width: 0;
+}
+
+.project-sharing-composer .staged-grant .group-identity-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.project-sharing-composer .staged-grant .staged-group-avatar {
+  width: var(--lumo-icon-size-l);
+  height: var(--lumo-icon-size-l);
+  flex: 0 0 auto;
+}
+
+.project-sharing-composer .staged-grant .group-identity-text > span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-sharing-composer .staged-grant .project-role-select,
+.project-sharing-composer .staged-grant .remove-staged-grant {
+  flex: 0 0 auto;
+}
+
+.project-sharing-composer .staged-grant .remove-staged-grant {
+  min-width: 44px;
+  min-height: 44px;
+  justify-content: center;
+}
+
+/* -- Busy overlay: shown while a grant request is in flight -- */
+.project-sharing-composer .project-sharing-composer-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--lumo-space-s);
+  border-radius: var(--lumo-border-radius-m);
+  background-color: color-mix(in srgb, var(--lumo-base-color) 82%, transparent);
+}
+
+.project-sharing-composer .project-sharing-composer-loading-message {
+  color: var(--lumo-secondary-text-color);
+  font-weight: var(--font-weight-medium, 500);
+}
+
+/* Indeterminate four-dot spinner (mirrors the connect-dataset drawer spinner). */
+.project-sharing-composer .psc-spinner {
+  width: 40px;
+  aspect-ratio: 1;
+  display: grid;
+  --psc-spinner-outer: var(--lumo-primary-color);
+  --psc-spinner-inner: #00acac;
+}
+
+.project-sharing-composer .psc-spinner::after {
+  content: "";
+  grid-area: 1 / 1;
+  --c: radial-gradient(farthest-side, var(--psc-spinner-outer) 92%, #0000);
+  background:
+      var(--c) 50% 0,
+      var(--c) 50% 100%,
+      var(--c) 100% 50%,
+      var(--c) 0 50%;
+  background-size: 10px 10px;
+  background-repeat: no-repeat;
+  animation: psc-spin-half 1s infinite;
+}
+
+.project-sharing-composer .psc-spinner::before {
+  content: "";
+  grid-area: 1 / 1;
+  margin: 3px;
+  --c: radial-gradient(farthest-side, var(--psc-spinner-inner) 92%, #0000);
+  background:
+      var(--c) 50% 0,
+      var(--c) 50% 100%,
+      var(--c) 100% 50%,
+      var(--c) 0 50%;
+  background-size: 7px 7px;
+  background-repeat: no-repeat;
+  animation: psc-spin-half 1s infinite linear;
+}
+
+@keyframes psc-spin-half {
+  100% {
+    transform: rotate(0.5turn);
+  }
+}
+
+/* -- Inline confirmation that stays visible while the drawer is open -- */
+.project-sharing-composer .inline-message {
+  padding: var(--lumo-space-s) var(--lumo-space-m);
+  border-radius: var(--lumo-border-radius-m);
+  font-size: var(--lumo-font-size-s);
+}
+
+.project-sharing-composer .inline-message-title {
+  display: block;
+  font-weight: var(--lumo-font-weight-semibold, 600);
+}
+
+.project-sharing-composer .inline-message-line {
+  display: block;
+  padding-left: var(--lumo-space-s);
+}
+
+.project-sharing-composer .inline-message-line::before {
+  content: "• ";
+}
+
+.project-sharing-composer .inline-message-success {
+  color: var(--lumo-success-text-color, var(--lumo-success-color));
+  background-color: var(--lumo-success-color-10pct);
+}
+
+.project-sharing-composer .inline-message-error {
+  color: var(--lumo-error-text-color);
+  background-color: var(--lumo-error-color-10pct);
+}
+
+.project-sharing-composer .grant-access-button {
+  align-self: flex-start;
+}
+
+/* Inline removal confirmation inside a grid action cell. */
+.project-access-component .inline-confirm {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--lumo-space-s);
+}
+
+.project-access-component .inline-confirm-question {
+  font-size: var(--lumo-font-size-s);
+}
+
+.project-access-component .project-role-static {
+  font-size: var(--lumo-font-size-s);
 }

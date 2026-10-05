@@ -14,26 +14,47 @@
 .user-info-component .avatar {
   width: var(--lumo-icon-size-l);
   height: var(--lumo-icon-size-l);
+  flex: 0 0 auto;
 }
 
 .user-info-component .user-info {
   display: flex;
-  flex-direction: column;
-  flex-wrap: wrap;
-  gap: var(--spacing-03);
+  align-items: center;
+  gap: var(--lumo-space-s);
+  min-width: 0;
 }
 
-.user-info-component .user-info .oidc {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-03);
+/* Text block: username on its own line, full name below it. Two lines keep long names from
+   wrapping inline (which previously pushed the ORCID icon out of the dropdown item). */
+.user-info-component .user-info .name-block {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.user-info-component .user-info .user-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.user-info-component .user-info .user-name-and-full-name {
-  display: flex;
-  gap: var(--spacing-03);
-  align-items: baseline;
+.user-info-component .user-info .user-full-name {
+  color: var(--lumo-secondary-text-color);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-info-component .user-info .oidc-link {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+  flex: 0 0 auto;
+}
+
+.user-info-component .user-info .oidc-link .oidc-logo {
+  width: var(--lumo-icon-size-s);
+  height: var(--lumo-icon-size-s);
 }
 
 .card-layout {

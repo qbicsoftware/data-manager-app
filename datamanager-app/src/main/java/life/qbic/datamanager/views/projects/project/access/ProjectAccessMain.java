@@ -3,14 +3,20 @@ package life.qbic.datamanager.views.projects.project.access;
 import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
+import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.page.History;
+import com.vaadin.flow.component.page.History.HistoryStateChangeEvent;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
+import com.vaadin.flow.router.BeforeLeaveEvent;
+import com.vaadin.flow.router.BeforeLeaveObserver;
 import com.vaadin.flow.router.NotFoundException;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.security.UserPermissions;
+import life.qbic.datamanager.views.AppRoutes.ProjectRoutes;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.projects.project.ProjectMainLayout;
@@ -24,7 +30,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 @Route(value = "projects/:projectId?/access", layout = ProjectMainLayout.class)
 @PermitAll
-public class ProjectAccessMain extends Main implements BeforeEnterObserver {
+public class ProjectAccessMain extends Main implements BeforeEnterObserver, BeforeLeaveObserver {
 
   @Serial
   private static final long serialVersionUID = 4979017702364519296L;
@@ -33,6 +39,8 @@ public class ProjectAccessMain extends Main implements BeforeEnterObserver {
   private final ProjectAccessComponent projectAccessComponent;
   private final transient UserPermissions userPermissions;
   private transient Context context;
+  private History.HistoryStateChangeHandler routerHistoryStateChangeHandler;
+  private final History.HistoryStateChangeHandler accessHistoryHandler = this::onHistoryStateChange;
 
   protected ProjectAccessMain(@Autowired ProjectAccessComponent projectAccessComponent,
       @Autowired UserPermissions userPermissions) {
@@ -63,17 +71,60 @@ public class ProjectAccessMain extends Main implements BeforeEnterObserver {
     }
     ProjectId parsedProjectId = ProjectId.parse(projectID);
     this.context = new Context().with(parsedProjectId);
-    if (userPermissions.changeProjectAccess(parsedProjectId)) {
-      initializeComponentsWithContext();
+    if (userPermissions.readProject(parsedProjectId)) {
+      initializeComponentsWithContext(event);
     } else {
       event.rerouteToError(NotFoundException.class);
     }
-    initializeComponentsWithContext();
-
   }
 
-  private void initializeComponentsWithContext() {
-    projectAccessComponent.setContext(context);
+  private void initializeComponentsWithContext(BeforeEnterEvent event) {
+    // URL list-state synchronisation (FEAT-USER-GROUPS-08): capture the router handler, install
+    // our own, and seed the roster from the URL on direct load / reload / shared links so the
+    // search and filter settings are preserved during natural browser navigation.
+    History history = UI.getCurrent().getPage().getHistory();
+    History.HistoryStateChangeHandler currentHandler = history.getHistoryStateChangeHandler();
+    if (currentHandler != accessHistoryHandler) {
+      routerHistoryStateChangeHandler = currentHandler;
+    }
+    history.setHistoryStateChangeHandler(accessHistoryHandler);
+    AccessRosterState urlState = AccessRosterStateCodec.parse(
+        event.getLocation().getQueryParameters());
+    projectAccessComponent.setContext(context, urlState);
     add(projectAccessComponent);
+  }
+
+  /**
+   * Gives the history state change handler back to the router when this view is left.
+   */
+  @Override
+  public void beforeLeave(BeforeLeaveEvent event) {
+    getUI().ifPresent(ui -> ui.getPage().getHistory()
+        .setHistoryStateChangeHandler(routerHistoryStateChangeHandler));
+  }
+
+  /**
+   * Re-applies the roster state when the browser history changes (back/forward or router-link
+   * navigation). Non-access locations are delegated back to the router handler.
+   */
+  private void onHistoryStateChange(HistoryStateChangeEvent event) {
+    String expectedPath = currentAccessPath();
+    if (expectedPath == null || !expectedPath.equals(event.getLocation().getPath())) {
+      if (routerHistoryStateChangeHandler != null) {
+        routerHistoryStateChangeHandler.onHistoryStateChange(event);
+      }
+      return;
+    }
+    AccessRosterState urlState = AccessRosterStateCodec.parse(
+        event.getLocation().getQueryParameters());
+    projectAccessComponent.applyExternalState(urlState);
+  }
+
+  private String currentAccessPath() {
+    if (context == null || context.projectId().isEmpty()) {
+      return null;
+    }
+    return String.format(ProjectRoutes.ACCESS,
+        context.projectId().orElseThrow().value());
   }
 }

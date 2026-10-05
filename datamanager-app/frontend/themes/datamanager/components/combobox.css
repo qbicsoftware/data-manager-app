@@ -11,3 +11,48 @@
 vaadin-combo-box-overlay.connect-dataset-sidebar-overlay::part(overlay) {
   z-index: 1001;
 }
+
+/* -- Group search result in the sharing composer ------------------------------------------
+   Three stable lines: type badge, name, description. Each text line ellipsizes (full value on
+   hover via title); the badge sits on its own line so it can never be pushed out of the
+   dropdown. Kept global (not scoped to the composer) because Vaadin renders combo-box overlays
+   outside the component tree. */
+.group-option {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-xs);
+  min-width: 0;
+}
+
+.group-option .my-groups-badge {
+  align-self: flex-start;
+  flex: 0 0 auto;
+}
+
+.group-option-name-row {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+  min-width: 0;
+}
+
+.group-option-avatar {
+  width: var(--lumo-icon-size-l);
+  height: var(--lumo-icon-size-l);
+  flex: 0 0 auto;
+}
+
+.group-option-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.group-option-description {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

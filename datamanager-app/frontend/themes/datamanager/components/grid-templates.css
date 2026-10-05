@@ -18,6 +18,23 @@
   width: 100%;
 }
 
+/* The access page is centered and capped so the two-column roster does not stretch
+   across very wide screens (matching the project overview shell). */
+.main.project-access {
+  grid-template-columns: 1fr;
+  grid-template-rows: auto;
+  max-width: var(--content-shell-max-width);
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+}
+
+/* Grid items default to min-width:auto; allow the page content to shrink so long content
+   (e.g. a staged group chip) cannot widen the whole layout. */
+.main.project-access > * {
+  min-width: 0;
+}
+
 .main.raw-data {
   grid-template-columns: minmax(min-content, 80%) minmax(min-content, 20%);
   grid-template-rows: minmax(min-content, 10%) minmax(60vh, 1fr);
