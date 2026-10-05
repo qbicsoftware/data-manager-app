@@ -436,6 +436,46 @@ class ProjectAccessComponentSpec extends Specification {
     1 * projectAccessService.addAuthorityAccess(projectId, "GROUP_g-9", ProjectRole.READ)
   }
 
+  def "the busy state is pushed before the ACL write when push is enabled"() {
+    given:
+    setContext(true)
+    def pushConfiguration = Mock(com.vaadin.flow.component.PushConfiguration)
+    pushConfiguration.getPushMode() >> com.vaadin.flow.shared.communication.PushMode.AUTOMATIC
+    def ui = UI.getCurrent()
+    ui.getPushConfiguration() >> pushConfiguration
+    def composer = component.@composer
+    def event = new GrantRequestedEvent(composer, false,
+        [new GrantRequest(PrincipalType.USER, "user-2", ProjectRole.WRITE, "jdoe")])
+
+    when:
+    component.onGrantRequested(event)
+
+    then: "the busy overlay is flushed to the client before the grant is applied"
+    1 * ui.push()
+
+    and: "the grant still completes"
+    1 * projectAccessService.addCollaborator(projectId, "user-2", ProjectRole.WRITE)
+  }
+
+  def "no push is attempted when server push is disabled"() {
+    given:
+    setContext(true)
+    def pushConfiguration = Mock(com.vaadin.flow.component.PushConfiguration)
+    pushConfiguration.getPushMode() >> com.vaadin.flow.shared.communication.PushMode.DISABLED
+    def ui = UI.getCurrent()
+    ui.getPushConfiguration() >> pushConfiguration
+    def composer = component.@composer
+    def event = new GrantRequestedEvent(composer, false,
+        [new GrantRequest(PrincipalType.USER, "user-2", ProjectRole.WRITE, "jdoe")])
+
+    when:
+    component.onGrantRequested(event)
+
+    then:
+    0 * ui.push()
+    1 * projectAccessService.addCollaborator(projectId, "user-2", ProjectRole.WRITE)
+  }
+
   def "the type filter narrows the table"() {
     given:
     collaborators = [new ProjectCollaborator("user-2", projectId, ProjectRole.READ)]

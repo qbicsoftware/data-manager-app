@@ -865,11 +865,35 @@ public class ProjectAccessComponent extends PageArea {
     composer.setBusy(true);
     // Run the ACL write on the UI thread (via UiHandle/ui.access): the app uses a
     // VaadinAwareSecurityContextHolderStrategy whose ACL strategy resolves the authenticated
-    // principal from the Vaadin session, which is not available on a raw pool thread. The busy
-    // overlay is sent to the client with the current response before the scheduled task runs.
+    // principal from the Vaadin session. That session is set for ui.access commands but not on a
+    // raw pool thread, so the ACL write stays on the UI thread.
+    //
+    // The busy overlay must be pushed *before* the task runs: the task is queued via ui.access
+    // while this request still holds the session lock, so Vaadin runs it from
+    // VaadinSession.unlock() before the response is pushed. Without this explicit push, the busy
+    // state and the final state would coalesce into a single update and the spinner would never be
+    // rendered.
+    pushBusyState();
     CompletableFuture.runAsync(
         () -> uiHandle.onUiAndPush(() -> onGrantsApplied(applyGrants(requests))),
         taskExecutor);
+  }
+
+  /**
+   * Pushes the current (busy) state to the client immediately when server push is enabled, so a
+   * spinner shown before a long-running task is actually rendered (see
+   * {@link #onGrantRequested(GrantRequestedEvent)}).
+   */
+  private static void pushBusyState() {
+    UI currentUi = UI.getCurrent();
+    if (currentUi == null) {
+      return;
+    }
+    var pushConfiguration = currentUi.getPushConfiguration();
+    if (pushConfiguration == null || !pushConfiguration.getPushMode().isEnabled()) {
+      return;
+    }
+    currentUi.push();
   }
 
   private GrantOutcome applyGrants(List<GrantRequest> requests) {
