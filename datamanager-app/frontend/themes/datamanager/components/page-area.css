@@ -626,13 +626,12 @@
   width: 100%;
 }
 
-/* Highlight cells of principals that were just granted access so the manager can spot them
-   immediately after a successful grant. The primary colour at low opacity gives a subtle,
-   non-intrusive flash that fades on the next navigation or grant. */
-.project-access-component .access-grid .recently-granted {
+/* Highlight the whole row of principals that were just granted access so the manager can spot
+   them immediately after a successful grant. The part name is applied to every cell of the row
+   (selection, principal and role) and must be styled through the grid's shadow boundary with
+   `::part()`. The primary colour at low opacity gives a subtle, non-intrusive flash. */
+.project-access-component .access-grid::part(recently-granted) {
   background-color: var(--lumo-primary-color-10pct);
-  border-radius: var(--lumo-border-radius-s);
-  transition: background-color 0.6s ease-out;
 }
 
 /* Clip grid cell content so long names/descriptions ellipsize instead of widening the cell and

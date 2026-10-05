@@ -292,6 +292,11 @@ public class ProjectAccessComponent extends PageArea {
     accessGrid.setAllRowsVisible(true);
     // Owner and the acting user can never be acted upon, so their checkboxes stay disabled.
     accessGrid.setItemSelectableProvider(this::isActionable);
+    // Highlight the whole row of principals that were just granted access. The generator adds the
+    // part name to every cell in the row (including the selection and role columns), so the row is
+    // highlighted edge to edge. Styled via `vaadin-grid::part(recently-granted)` in the theme.
+    accessGrid.setPartNameGenerator(
+        entry -> recentlyGrantedIds.contains(entry.id()) ? "recently-granted" : null);
     accessGrid.addColumn(new ComponentRenderer<>(this::principalCell))
         .setKey("principal")
         .setHeader("Principal")
@@ -555,13 +560,6 @@ public class ProjectAccessComponent extends PageArea {
     Component principal = entry.isUser() ? userIdentity(entry) : groupIdentity(entry);
     Div cell = new Div(typeTag(entry.type()), principal);
     cell.addClassName("access-principal-cell");
-    // The ComponentRenderer may recycle the cell component across items, so always clear the
-    // highlight first and only add it when the entry was just granted — never leave a stale
-    // class on a reused component.
-    cell.getElement().getClassList().remove("recently-granted");
-    if (recentlyGrantedIds.contains(entry.id())) {
-      cell.addClassName("recently-granted");
-    }
     cell.getElement().setAttribute("title", tooltip(entry));
     return cell;
   }
