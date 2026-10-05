@@ -141,6 +141,12 @@ public class ProjectAccessComponent extends PageArea {
    */
   private final Map<String, RoleChange> recentRoleChanges = new HashMap<>();
   /**
+   * Principal IDs that were just granted access in the most recent grant operation, so their
+   * roster rows can be highlighted with a transient background colour. Cleared on navigation
+   * (setContext) and on the next grant or data reload.
+   */
+  private Set<String> recentlyGrantedIds = Set.of();
+  /**
    * The current roster state mirrored into the URL query parameters.
    */
   private AccessRosterState rosterState = AccessRosterState.defaults();
@@ -318,9 +324,12 @@ public class ProjectAccessComponent extends PageArea {
       throw new ApplicationException("no project id in context " + context);
     }
     this.context = context;
-    // The component is @UIScope: role-change indicators must not leak from a previously shown
-    // project (their ids are not globally unique across projects).
+    // The component is @UIScope: role-change indicators and grant highlights must not leak from
+    // a previously shown project or a stale navigation (their ids are not globally unique across
+    // projects and the inline confirmation is not preserved via query parameters).
     recentRoleChanges.clear();
+    recentlyGrantedIds = Set.of();
+    composer.reset();
     this.canChangeAccess = userPermissions.changeProjectAccess(context.projectId().orElseThrow());
     composer.setVisible(canChangeAccess);
     uiHandle.bind(UI.getCurrent());
@@ -546,6 +555,13 @@ public class ProjectAccessComponent extends PageArea {
     Component principal = entry.isUser() ? userIdentity(entry) : groupIdentity(entry);
     Div cell = new Div(typeTag(entry.type()), principal);
     cell.addClassName("access-principal-cell");
+    // The ComponentRenderer may recycle the cell component across items, so always clear the
+    // highlight first and only add it when the entry was just granted — never leave a stale
+    // class on a reused component.
+    cell.getElement().getClassList().remove("recently-granted");
+    if (recentlyGrantedIds.contains(entry.id())) {
+      cell.addClassName("recently-granted");
+    }
     cell.getElement().setAttribute("title", tooltip(entry));
     return cell;
   }
@@ -861,6 +877,7 @@ public class ProjectAccessComponent extends PageArea {
   private GrantOutcome applyGrants(List<GrantRequest> requests) {
     ProjectId projectId = context.projectId().orElseThrow();
     int granted = 0;
+    List<String> grantedIds = new ArrayList<>();
     List<String> problems = new ArrayList<>();
     for (GrantRequest request : requests) {
       try {
@@ -871,15 +888,17 @@ public class ProjectAccessComponent extends PageArea {
               GroupSidProvider.GROUP_SID_PREFIX + request.id(), request.role());
         }
         granted++;
+        grantedIds.add(request.id());
       } catch (RuntimeException e) {
         problems.add(ProjectSharingComposer.describeFailure(request, e));
       }
     }
-    return new GrantOutcome(granted, List.copyOf(problems));
+    return new GrantOutcome(granted, List.copyOf(grantedIds), List.copyOf(problems));
   }
 
   private void onGrantsApplied(GrantOutcome outcome) {
     composer.setBusy(false);
+    recentlyGrantedIds = Set.copyOf(outcome.grantedIds());
     loadAccess();
     if (!outcome.problems().isEmpty()) {
       composer.showInlineError(outcome.granted() > 0
@@ -893,7 +912,7 @@ public class ProjectAccessComponent extends PageArea {
     }
   }
 
-  private record GrantOutcome(int granted, List<String> problems) {
+  private record GrantOutcome(int granted, List<String> grantedIds, List<String> problems) {
 
   }
 

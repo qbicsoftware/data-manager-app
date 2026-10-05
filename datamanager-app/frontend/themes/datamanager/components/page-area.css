@@ -626,6 +626,15 @@
   width: 100%;
 }
 
+/* Highlight cells of principals that were just granted access so the manager can spot them
+   immediately after a successful grant. The primary colour at low opacity gives a subtle,
+   non-intrusive flash that fades on the next navigation or grant. */
+.project-access-component .access-grid .recently-granted {
+  background-color: var(--lumo-primary-color-10pct);
+  border-radius: var(--lumo-border-radius-s);
+  transition: background-color 0.6s ease-out;
+}
+
 /* Clip grid cell content so long names/descriptions ellipsize instead of widening the cell and
    pushing the Role column out of view. The extra vertical padding also gives the roster rows a
    bit more breathing room so the list does not look so visually dense. */

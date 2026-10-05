@@ -461,10 +461,12 @@ public class ProjectSharingComposer extends Div {
   }
 
   /**
-   * Clears the staging area. Called after a successful grant or when the composer is dismissed.
+   * Clears the staging area and any inline confirmation message. Called after a successful grant
+   * or when the composer is dismissed.
    */
   public void reset() {
     clearStagedGrants();
+    clearInlineMessage();
   }
 
   private int stagedGrantCount() {
