@@ -10,6 +10,7 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.data.provider.SortDirection;
@@ -17,12 +18,16 @@ import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.shared.Registration;
 import java.io.Serial;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.datamanager.views.account.UserAvatar;
+import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.Tag.TagColor;
 import life.qbic.datamanager.views.projects.project.access.ProjectAccessComponent.UserInfoComponent;
 import life.qbic.identity.api.UserInfo;
@@ -69,10 +74,23 @@ public class ProjectSharingComposer extends Div {
   private final Div loadingOverlay = new Div();
   /** Inline success/error confirmation that stays visible while the drawer remains open. */
   private final Div inlineMessage = new Div();
+  /**
+   * A permanently attached, visually hidden ARIA live region. The visible {@link #inlineMessage}
+   * cannot serve as the live region itself: it is hidden while empty, and a region that becomes
+   * visible together with its content in a single update is frequently not announced. Keeping a
+   * separate region that is always rendered (and only made visually imperceptible) makes the
+   * asynchronously delivered grant result reliably announced.
+   */
+  private final Div liveRegion = new Div();
   private boolean busy = false;
 
-  private final Set<String> alreadyGrantedUserIds = new HashSet<>();
-  private final Set<String> alreadyGrantedGroupIds = new HashSet<>();
+  /**
+   * Principals that already have access, mapped to the role they hold. They stay visible in the
+   * pickers (marked as already granted) instead of being hidden, so a search never dead-ends in a
+   * silent "no results" and the user learns the principal already has access.
+   */
+  private final Map<String, ProjectRole> alreadyGrantedUserRoles = new HashMap<>();
+  private final Map<String, ProjectRole> alreadyGrantedGroupRoles = new HashMap<>();
   private final Set<String> stagedUserIds = new HashSet<>();
   private final Set<String> stagedGroupIds = new HashSet<>();
 
@@ -82,6 +100,29 @@ public class ProjectSharingComposer extends Div {
     this.groupInformationService = requireNonNull(groupInformationService);
     addClassName("project-sharing-composer");
     layout();
+  }
+
+  /**
+   * Renders a person in the picker, marking people that already have access instead of hiding
+   * them. Selecting such an entry explains that the role must be changed instead (see
+   * {@link #configurePersonPicker()}).
+   */
+  private Component renderPickerUser(UserInfo userInfo) {
+    Component identity = renderUser(userInfo);
+    ProjectRole grantedRole = alreadyGrantedUserRoles.get(userInfo.id());
+    if (grantedRole == null) {
+      // Plain option: still gets the scrollbar reserve (see the theme), so a long name cannot run
+      // under the overlay scrollbar.
+      identity.addClassName("picker-option-plain");
+      return identity;
+    }
+    // The marker trails the identity in both pickers, so the same status is always in the same
+    // place. The principal's name keeps its normal contrast: de-emphasising the identity made the
+    // list harder to scan and pushed the name below the AA contrast minimum on the hovered row.
+    Div option = new Div(identity, accessState(grantedRole));
+    option.addClassName("picker-option");
+    option.addClassName("picker-option-granted");
+    return option;
   }
 
   private static Component renderUser(UserInfo userInfo) {
@@ -104,8 +145,8 @@ public class ProjectSharingComposer extends Div {
     Span title = new Span("Share this project");
     title.addClassName("section-title");
     Span description = new Span(
-        "Add one or several people and groups. Everyone you select gains the role chosen next to "
-            + "their name. People and groups that already have access are not shown again.");
+        "Add one or several people and groups. Everyone you select gains the role chosen next "
+            + "to their name.");
     description.addClassName("secondary");
 
     configurePersonPicker();
@@ -135,12 +176,19 @@ public class ProjectSharingComposer extends Div {
     loadingOverlay.getStyle().set("display", "none");
 
     inlineMessage.addClassName("inline-message");
-    inlineMessage.getStyle().set("display", "none");
+
+    // Always-rendered live region for assistive technology; the visible message below only
+    // duplicates it visually. Errors interrupt, confirmations and notes wait for a pause.
+    liveRegion.addClassName("composer-live-region");
+    liveRegion.getElement().setAttribute("role", "status");
+    liveRegion.getElement().setAttribute("aria-live", "polite");
+    liveRegion.getElement().setAttribute("aria-atomic", "true");
 
     Div pickers = new Div(personPicker, groupPicker);
     pickers.addClassName("sharing-pickers");
 
-    add(title, description, pickers, stagedGrants, grantButton, inlineMessage, loadingOverlay);
+    add(title, description, pickers, stagedGrants, grantButton, inlineMessage, liveRegion,
+        loadingOverlay);
   }
 
   /**
@@ -161,12 +209,30 @@ public class ProjectSharingComposer extends Div {
   }
 
   /**
-   * Shows an inline success confirmation that stays visible (the drawer stays open).
+   * Shows an inline success confirmation that stays visible until it is dismissed or another grant
+   * is staged.
    *
-   * @param message the confirmation text
+   * @param title the confirmation headline
+   * @param lines one line per granted principal, naming the principal and the role it received
    */
-  public void showInlineConfirmation(String message) {
-    setInlineMessage(message, List.of(), false);
+  public void showInlineConfirmation(String title, List<String> lines) {
+    showInlineConfirmation(title, lines, null, null);
+  }
+
+  /**
+   * Shows an inline success confirmation with an optional follow-up action, e.g. revealing the
+   * newly granted principals in the roster.
+   *
+   * @param title       the confirmation headline
+   * @param lines       one line per granted principal, naming the principal and the role it got
+   * @param actionLabel the label of the follow-up action, or {@code null} for no action
+   * @param action      the follow-up action, or {@code null} for no action
+   */
+  public void showInlineConfirmation(String title, List<String> lines, String actionLabel,
+      Runnable action) {
+    InlineAction followUp = actionLabel == null || action == null
+        ? null : new InlineAction(actionLabel, action);
+    setInlineMessage(InlineMessageLevel.SUCCESS, title, lines, followUp);
   }
 
   /**
@@ -177,7 +243,18 @@ public class ProjectSharingComposer extends Div {
    * @param problems one line per failed principal
    */
   public void showInlineError(String title, List<String> problems) {
-    setInlineMessage(title, problems, true);
+    setInlineMessage(InlineMessageLevel.ERROR, title, problems, null);
+  }
+
+  /**
+   * Shows an inline informational note that stays visible until the next staging action, e.g. when
+   * a selected principal already has access to the project.
+   *
+   * @param title a short headline
+   * @param lines one line per note, e.g. the next step the user can take
+   */
+  public void showInlineInfo(String title, List<String> lines) {
+    setInlineMessage(InlineMessageLevel.INFO, title, lines, null);
   }
 
   /**
@@ -196,6 +273,18 @@ public class ProjectSharingComposer extends Div {
     }
     return "%s (%s): %s".formatted(request.displayName(),
         request.type() == PrincipalType.USER ? "user" : "group", reason);
+  }
+
+  /**
+   * A user-readable one-liner naming a principal that was granted access and the role it received.
+   * The success confirmation lists these, so a grant is never confirmed with an anonymous count.
+   *
+   * @param request the grant that was applied
+   * @return a line such as {@code "NGS Lab (group) · editor"}
+   */
+  static String describeGrant(GrantRequest request) {
+    String kind = request.type() == PrincipalType.USER ? "" : " (group)";
+    return "%s%s · %s".formatted(request.displayName(), kind, roleLabel(request.role()));
   }
 
   /**
@@ -229,11 +318,23 @@ public class ProjectSharingComposer extends Div {
     };
   }
 
-  private void setInlineMessage(String title, List<String> lines, boolean error) {
+  private void setInlineMessage(InlineMessageLevel level, String title, List<String> lines,
+      InlineAction action) {
     inlineMessage.removeAll();
-    inlineMessage.removeClassName("inline-message-success");
-    inlineMessage.removeClassName("inline-message-error");
-    inlineMessage.addClassName(error ? "inline-message-error" : "inline-message-success");
+    inlineMessage.removeClassNames("inline-message-success", "inline-message-error",
+        "inline-message-info");
+    inlineMessage.addClassName(switch (level) {
+      case SUCCESS -> "inline-message-success";
+      case ERROR -> "inline-message-error";
+      case INFO -> "inline-message-info";
+    });
+    // Errors interrupt the screen reader; confirmations and notes wait for a pause.
+    liveRegion.getElement().setAttribute("role",
+        level == InlineMessageLevel.ERROR ? "alert" : "status");
+    liveRegion.getElement().setAttribute("aria-live",
+        level == InlineMessageLevel.ERROR ? "assertive" : "polite");
+    liveRegion.setText(announcement(title, lines));
+
     Span titleSpan = new Span(title);
     titleSpan.addClassName("inline-message-title");
     inlineMessage.add(titleSpan);
@@ -242,19 +343,58 @@ public class ProjectSharingComposer extends Div {
       lineSpan.addClassName("inline-message-line");
       inlineMessage.add(lineSpan);
     });
-    inlineMessage.getStyle().remove("display");
+    if (action != null) {
+      Button actionButton = new Button(action.label());
+      actionButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE, ButtonVariant.LUMO_SMALL);
+      actionButton.addClassName("inline-message-action");
+      actionButton.addClickListener(event -> action.action().run());
+      inlineMessage.add(actionButton);
+    }
+    Button dismiss = new Button(VaadinIcon.CLOSE_SMALL.create());
+    dismiss.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE, ButtonVariant.LUMO_SMALL);
+    dismiss.addClassName("inline-message-dismiss");
+    dismiss.getElement().setAttribute("aria-label", "Dismiss notification");
+    dismiss.addClickListener(event -> clearInlineMessage());
+    inlineMessage.add(dismiss);
   }
 
   private void clearInlineMessage() {
     inlineMessage.removeAll();
-    inlineMessage.getStyle().set("display", "none");
+    liveRegion.setText("");
+  }
+
+  /**
+   * Flattens a title and its bullet lines into one plain-text sentence for the live region, so the
+   * screen reader does not read the visual bullet characters. Lines that already end a sentence do
+   * not get a second terminator.
+   */
+  private static String announcement(String title, List<String> lines) {
+    String headline = terminate(title);
+    if (lines.isEmpty()) {
+      return headline;
+    }
+    String body = lines.stream().map(ProjectSharingComposer::terminate)
+        .collect(Collectors.joining(" "));
+    return "%s %s".formatted(headline, body);
+  }
+
+  /**
+   * Ensures a fragment ends the sentence exactly once, so combining fragments never produces
+   * ".." or a missing terminator.
+   */
+  private static String terminate(String fragment) {
+    String trimmed = fragment.strip();
+    while (trimmed.endsWith(".") || trimmed.endsWith(":")) {
+      trimmed = trimmed.substring(0, trimmed.length() - 1).strip();
+    }
+    return trimmed + ".";
   }
 
   private void configurePersonPicker() {
     personPicker.setLabel("Add a person");
     personPicker.setPlaceholder("Search by username, name or ORCID…");
     personPicker.setItemLabelGenerator(UserInfo::platformUserName);
-    personPicker.setRenderer(new ComponentRenderer<>(ProjectSharingComposer::renderUser));
+    personPicker.setRenderer(new ComponentRenderer<>(this::renderPickerUser));
     personPicker.addClassName("person-selection");
     personPicker.setItems(query -> {
       List<SortOrder> sortOrders = query.getSortOrders().stream()
@@ -264,14 +404,26 @@ public class ProjectSharingComposer extends Div {
       sortOrders.add(SortOrder.of("userName").descending());
       return userInformationService.queryActiveUsersWithFilter(query.getFilter().orElse(null),
               query.getOffset(), query.getLimit(), List.copyOf(sortOrders)).stream()
-          .filter(userInfo -> !alreadyGrantedUserIds.contains(userInfo.id()))
-          .filter(userInfo -> !stagedUserIds.contains(userInfo.id()));
+          .filter(userInfo -> !stagedUserIds.contains(userInfo.id()))
+          // Selectable people first, already-granted ones after. Note: this picker pages
+          // server-side, so the ordering is applied within the fetched page. In the common case the
+          // user has narrowed to a page worth of matches with the search box, so this is the same
+          // as a global order; it never drops or duplicates an item.
+          .sorted(Comparator.comparingInt(
+              userInfo -> alreadyGrantedUserRoles.containsKey(userInfo.id()) ? 1 : 0));
     });
     personPicker.addValueChangeListener(event -> {
-      if (event.getValue() != null) {
-        stageUser(event.getValue());
-        personPicker.setValue(null);
+      if (event.getValue() == null) {
+        return;
       }
+      UserInfo userInfo = event.getValue();
+      personPicker.setValue(null);
+      ProjectRole grantedRole = alreadyGrantedUserRoles.get(userInfo.id());
+      if (grantedRole != null) {
+        showAlreadyGranted(userInfo.platformUserName(), grantedRole);
+        return;
+      }
+      stageUser(userInfo);
     });
   }
 
@@ -279,25 +431,35 @@ public class ProjectSharingComposer extends Div {
     groupPicker.setLabel("Add a group");
     groupPicker.setPlaceholder("Search groups…");
     groupPicker.setItemLabelGenerator(GroupInfo::name);
-    groupPicker.setRenderer(new ComponentRenderer<>(ProjectSharingComposer::renderGroupOption));
+    groupPicker.setRenderer(new ComponentRenderer<>(this::renderGroupOption));
     groupPicker.addClassName("group-selection");
     groupPicker.setItems(query -> {
       String filter = query.getFilter().orElse("").toLowerCase();
       return groupInformationService.listPublicDirectory().stream()
-          .filter(groupInfo -> !alreadyGrantedGroupIds.contains(groupInfo.id()))
           .filter(groupInfo -> !stagedGroupIds.contains(groupInfo.id()))
           .filter(groupInfo -> filter.isEmpty()
               || groupInfo.name().toLowerCase().contains(filter)
               || (groupInfo.description() != null
               && groupInfo.description().toLowerCase().contains(filter)))
+          // Selectable groups first, already-granted ones after: the actionable candidates cluster
+          // at the top instead of being interleaved with rows that cannot be selected.
+          .sorted(Comparator.comparingInt(
+              groupInfo -> alreadyGrantedGroupRoles.containsKey(groupInfo.id()) ? 1 : 0))
           .skip(query.getOffset())
           .limit(query.getLimit());
     });
     groupPicker.addValueChangeListener(event -> {
-      if (event.getValue() != null) {
-        stageGroup(event.getValue());
-        groupPicker.setValue(null);
+      if (event.getValue() == null) {
+        return;
       }
+      GroupInfo groupInfo = event.getValue();
+      groupPicker.setValue(null);
+      ProjectRole grantedRole = alreadyGrantedGroupRoles.get(groupInfo.id());
+      if (grantedRole != null) {
+        showAlreadyGranted(groupInfo.name(), grantedRole);
+        return;
+      }
+      stageGroup(groupInfo);
     });
   }
 
@@ -348,7 +510,7 @@ public class ProjectSharingComposer extends Div {
    * Renders a group as a search result: the name plus its type badge on the first line and the
    * description (if any) muted on a second line. Keeps the picker scannable without overloading it.
    */
-  private static Component renderGroupOption(GroupInfo groupInfo) {
+  private Component renderGroupOption(GroupInfo groupInfo) {
     Div option = new Div();
     option.addClassName("group-option");
     // Three stable lines: type badge, name (with avatar), description. Keeping the badge on its
@@ -371,7 +533,48 @@ public class ProjectSharingComposer extends Div {
       description.getElement().setAttribute("title", groupInfo.description());
       option.add(description);
     }
+    if (alreadyGrantedGroupRoles.containsKey(groupInfo.id())) {
+      // Same placement as the person picker: trailing the name row, not appended as an extra
+      // stacked line (which read as a body line of the option rather than a state).
+      nameRow.add(accessState(alreadyGrantedGroupRoles.get(groupInfo.id())));
+      option.addClassName("picker-option-granted");
+    }
     return option;
+  }
+
+  /**
+   * The state marker for a principal that already has access: a check icon, the state and the role
+   * the principal currently holds.
+   *
+   * <p>It is deliberately <em>not</em> a neutral pill. The group dropdown already carries a neutral
+   * type badge ({@code organisational} / {@code User Group}); a second pill of the same shape read
+   * as another attribute instead of a state. The success tint plus the check icon separates "what
+   * kind of group is this" from "does it already have access", and naming the role answers the
+   * question the user actually has. The tooltip carries the next step.</p>
+   *
+   * @param role the role the principal currently holds
+   * @return the rendered state marker
+   */
+  private static Tag accessState(ProjectRole role) {
+    Tag tag = new Tag("Has access · " + roleLabel(role));
+    tag.setTagColor(TagColor.SUCCESS);
+    tag.addClassName("picker-access-state");
+    Icon icon = VaadinIcon.CHECK.create();
+    icon.addClassName("picker-access-state-icon");
+    tag.addComponentAsFirst(icon);
+    tag.setTitle(
+        "Already has access as %s. Change the role in the access roster instead."
+            .formatted(roleLabel(role)));
+    return tag;
+  }
+
+  /**
+   * Explains that the selected principal already has access and how to change it, instead of
+   * staging a grant that the service would reject as a duplicate.
+   */
+  private void showAlreadyGranted(String displayName, ProjectRole grantedRole) {
+    showInlineInfo("%s already has access as %s.".formatted(displayName, roleLabel(grantedRole)),
+        List.of("Change the role from the access roster instead of granting it again."));
   }
 
   /**
@@ -450,21 +653,25 @@ public class ProjectSharingComposer extends Div {
    */
   public void setAlreadyGranted(List<ProjectCollaborator> collaborators,
       List<SharedProjectGroup> sharedGroups) {
-    alreadyGrantedUserIds.clear();
-    collaborators.stream().map(ProjectCollaborator::userId).forEach(alreadyGrantedUserIds::add);
-    alreadyGrantedGroupIds.clear();
-    sharedGroups.stream().map(SharedProjectGroup::groupId)
-        .forEach(alreadyGrantedGroupIds::add);
+    alreadyGrantedUserRoles.clear();
+    collaborators.forEach(
+        collaborator -> alreadyGrantedUserRoles.put(collaborator.userId(),
+            collaborator.projectRole()));
+    alreadyGrantedGroupRoles.clear();
+    sharedGroups.forEach(
+        group -> alreadyGrantedGroupRoles.put(group.groupId(), group.projectRole()));
     clearStagedGrants();
     personPicker.getDataProvider().refreshAll();
     groupPicker.getDataProvider().refreshAll();
   }
 
   /**
-   * Clears the staging area. Called after a successful grant or when the composer is dismissed.
+   * Clears the staging area and any inline confirmation message. Called after a successful grant
+   * or when the composer is dismissed.
    */
   public void reset() {
     clearStagedGrants();
+    clearInlineMessage();
   }
 
   private int stagedGrantCount() {
@@ -494,6 +701,23 @@ public class ProjectSharingComposer extends Div {
   public enum PrincipalType {
     USER,
     GROUP
+  }
+
+  /**
+   * The severity of an inline message. It drives the colour, the icon-less emphasis and how
+   * assistive technology announces the message.
+   */
+  private enum InlineMessageLevel {
+    SUCCESS,
+    ERROR,
+    INFO
+  }
+
+  /**
+   * An optional follow-up action rendered inside an inline confirmation.
+   */
+  private record InlineAction(String label, Runnable action) {
+
   }
 
   /**

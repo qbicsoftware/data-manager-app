@@ -141,6 +141,12 @@ public class ProjectAccessComponent extends PageArea {
    */
   private final Map<String, RoleChange> recentRoleChanges = new HashMap<>();
   /**
+   * Principal IDs that were just granted access in the most recent grant operation. Their roster
+   * rows get a transient marker in the Principal cell (see {@link #principalCell(AccessEntry)}).
+   * Cleared on navigation (setContext) and on the next data reload.
+   */
+  private Set<String> recentlyGrantedIds = Set.of();
+  /**
    * The current roster state mirrored into the URL query parameters.
    */
   private AccessRosterState rosterState = AccessRosterState.defaults();
@@ -286,6 +292,9 @@ public class ProjectAccessComponent extends PageArea {
     accessGrid.setAllRowsVisible(true);
     // Owner and the acting user can never be acted upon, so their checkboxes stay disabled.
     accessGrid.setItemSelectableProvider(this::isActionable);
+    // Highlight of just-granted principals is rendered in the Principal cell itself (see
+    // principalCell): it does not rely on the shadow-boundary part name and therefore never
+    // collides with the row selection highlight.
     accessGrid.addColumn(new ComponentRenderer<>(this::principalCell))
         .setKey("principal")
         .setHeader("Principal")
@@ -318,9 +327,12 @@ public class ProjectAccessComponent extends PageArea {
       throw new ApplicationException("no project id in context " + context);
     }
     this.context = context;
-    // The component is @UIScope: role-change indicators must not leak from a previously shown
-    // project (their ids are not globally unique across projects).
+    // The component is @UIScope: role-change indicators and grant highlights must not leak from
+    // a previously shown project or a stale navigation (their ids are not globally unique across
+    // projects and the inline confirmation is not preserved via query parameters).
     recentRoleChanges.clear();
+    recentlyGrantedIds = Set.of();
+    composer.reset();
     this.canChangeAccess = userPermissions.changeProjectAccess(context.projectId().orElseThrow());
     composer.setVisible(canChangeAccess);
     uiHandle.bind(UI.getCurrent());
@@ -546,6 +558,17 @@ public class ProjectAccessComponent extends PageArea {
     Component principal = entry.isUser() ? userIdentity(entry) : groupIdentity(entry);
     Div cell = new Div(typeTag(entry.type()), principal);
     cell.addClassName("access-principal-cell");
+    // The transient grant highlight lives here (a coloured edge plus a text marker) rather than on
+    // the whole row: the cell is outside the grid's shadow boundary, so the marker cannot be
+    // confused with the row selection highlight, and the text still works for colour-blind users.
+    if (recentlyGrantedIds.contains(entry.id())) {
+      cell.addClassName("access-principal-cell-new");
+      Tag newTag = new Tag("New");
+      newTag.setTagColor(TagColor.SUCCESS);
+      newTag.addClassName("access-new-grant-tag");
+      newTag.setTitle("Access was just granted");
+      cell.add(newTag);
+    }
     cell.getElement().setAttribute("title", tooltip(entry));
     return cell;
   }
@@ -851,16 +874,42 @@ public class ProjectAccessComponent extends PageArea {
     composer.setBusy(true);
     // Run the ACL write on the UI thread (via UiHandle/ui.access): the app uses a
     // VaadinAwareSecurityContextHolderStrategy whose ACL strategy resolves the authenticated
-    // principal from the Vaadin session, which is not available on a raw pool thread. The busy
-    // overlay is sent to the client with the current response before the scheduled task runs.
+    // principal from the Vaadin session. That session is set for ui.access commands but not on a
+    // raw pool thread, so the ACL write stays on the UI thread.
+    //
+    // The busy overlay must be pushed *before* the task runs: the task is queued via ui.access
+    // while this request still holds the session lock, so Vaadin runs it from
+    // VaadinSession.unlock() before the response is pushed. Without this explicit push, the busy
+    // state and the final state would coalesce into a single update and the spinner would never be
+    // rendered.
+    pushBusyState();
     CompletableFuture.runAsync(
         () -> uiHandle.onUiAndPush(() -> onGrantsApplied(applyGrants(requests))),
         taskExecutor);
   }
 
+  /**
+   * Pushes the current (busy) state to the client immediately when server push is enabled, so a
+   * spinner shown before a long-running task is actually rendered (see
+   * {@link #onGrantRequested(GrantRequestedEvent)}).
+   */
+  private static void pushBusyState() {
+    UI currentUi = UI.getCurrent();
+    if (currentUi == null) {
+      return;
+    }
+    var pushConfiguration = currentUi.getPushConfiguration();
+    if (pushConfiguration == null || !pushConfiguration.getPushMode().isEnabled()) {
+      return;
+    }
+    currentUi.push();
+  }
+
   private GrantOutcome applyGrants(List<GrantRequest> requests) {
     ProjectId projectId = context.projectId().orElseThrow();
     int granted = 0;
+    List<String> grantedIds = new ArrayList<>();
+    List<GrantRequest> grantedRequests = new ArrayList<>();
     List<String> problems = new ArrayList<>();
     for (GrantRequest request : requests) {
       try {
@@ -871,15 +920,19 @@ public class ProjectAccessComponent extends PageArea {
               GroupSidProvider.GROUP_SID_PREFIX + request.id(), request.role());
         }
         granted++;
+        grantedIds.add(request.id());
+        grantedRequests.add(request);
       } catch (RuntimeException e) {
         problems.add(ProjectSharingComposer.describeFailure(request, e));
       }
     }
-    return new GrantOutcome(granted, List.copyOf(problems));
+    return new GrantOutcome(granted, List.copyOf(grantedIds), List.copyOf(grantedRequests),
+        List.copyOf(problems));
   }
 
   private void onGrantsApplied(GrantOutcome outcome) {
     composer.setBusy(false);
+    recentlyGrantedIds = Set.copyOf(outcome.grantedIds());
     loadAccess();
     if (!outcome.problems().isEmpty()) {
       composer.showInlineError(outcome.granted() > 0
@@ -887,13 +940,46 @@ public class ProjectAccessComponent extends PageArea {
           : "Access could not be granted:", outcome.problems());
     } else if (outcome.granted() > 0) {
       composer.reset();
-      composer.showInlineConfirmation(outcome.granted() == 1
-          ? "Access granted to 1 principal."
-          : "Access granted to %d principals.".formatted(outcome.granted()));
+      // Name the principals and the role they received: an irreversible permission change is
+      // confirmed with evidence, not with an anonymous count.
+      composer.showInlineConfirmation(
+          outcome.granted() == 1 ? "Access granted"
+              : "Access granted to %d principals".formatted(outcome.granted()),
+          outcome.grantedRequests().stream()
+              .map(ProjectSharingComposer::describeGrant)
+              .toList(),
+          "Show in the roster", this::revealRecentlyGranted);
     }
   }
 
-  private record GrantOutcome(int granted, List<String> problems) {
+  /**
+   * Brings the just-granted principals into view: their roster rows are selected (they cannot be
+   * acted on by the acting user, so the selection is a pure locator) and scrolled to. This closes
+   * the gap between the confirmation and the effect it reports.
+   */
+  private void revealRecentlyGranted() {
+    List<AccessEntry> granted = entries.stream()
+        .filter(entry -> recentlyGrantedIds.contains(entry.id()))
+        .toList();
+    if (granted.isEmpty()) {
+      return;
+    }
+    // A search, type or role filter may hide the new rows. The action promises to show them, so
+    // clear a filter that would swallow the effect instead of silently doing nothing.
+    boolean hiddenByFilter = grid.getListDataView().getItems()
+        .noneMatch(granted::contains);
+    if (hiddenByFilter) {
+      searchField.setValue("");
+      filterSelect.setValue(AccessFilter.ALL);
+      selectRoleFilter(null);
+    }
+    grid.deselectAll();
+    granted.forEach(entry -> grid.select(entry));
+    grid.scrollToItem(granted.get(0));
+  }
+
+  private record GrantOutcome(int granted, List<String> grantedIds, List<GrantRequest> grantedRequests,
+                              List<String> problems) {
 
   }
 

@@ -183,6 +183,124 @@ class ProjectSharingDrawerSpec extends Specification {
     }
   }
 
+  def "an already-granted principal is marked in the picker instead of being hidden"() {
+    given: "a project already shared with one person"
+    projectAccessService.listCollaborators(projectId) >> [
+        new ProjectCollaborator("u-1", projectId, ProjectRole.WRITE)]
+    projectAccessService.listSharedGroups(projectId) >> []
+    userInformationService.findById("u-1") >> Optional.of(user("u-1", "Jane Doe", "jdoe"))
+    drawer.refresh()
+
+    when: "the picker renders that person as a search result"
+    def composer = drawer.@composer
+    def option = composer.renderPickerUser(user("u-1", "Jane Doe", "jdoe"))
+
+    then: "the option carries a state marker that names the role instead of being filtered out"
+    collectComponents(option).any {
+      it.getElement().getClassList().contains("picker-access-state")
+    }
+    collectText(option).any { it.contains("Has access") && it.contains("editor") }
+
+    and: "the marker is not a neutral pill like the group type badge"
+    collectComponents(option).find {
+      it.getElement().getClassList().contains("picker-access-state")
+    }.getElement().getClassList().contains("success")
+
+    and: "a person without access is rendered without the marker"
+    def plain = composer.renderPickerUser(user("u-2", "Ann Other", "aother"))
+    !collectComponents(plain).any {
+      it.getElement().getClassList().contains("picker-access-state")
+    }
+  }
+
+  def "the already-granted marker keeps the principal name at normal contrast"() {
+    given: "a project already shared with one person"
+    projectAccessService.listCollaborators(projectId) >> [
+        new ProjectCollaborator("u-1", projectId, ProjectRole.WRITE)]
+    projectAccessService.listSharedGroups(projectId) >> []
+    userInformationService.findById("u-1") >> Optional.of(user("u-1", "Jane Doe", "jdoe"))
+    drawer.refresh()
+
+    when: "an already-granted person is rendered"
+    def option = drawer.@composer.renderPickerUser(user("u-1", "Jane Doe", "jdoe"))
+
+    then: "the option is not de-emphasised as a whole — only the marker carries the state"
+    !option.getElement().getClassList().contains("tertiary")
+    !option.getElement().getClassList().contains("secondary")
+  }
+
+  def "the already-granted group marker trails the name row instead of stacking as an extra line"() {
+    given: "a project already shared with one group"
+    projectAccessService.listCollaborators(projectId) >> []
+    projectAccessService.listSharedGroups(projectId) >> [
+        new SharedProjectGroup("g-1", "NGS Lab", "sequencing core", projectId,
+            ProjectRole.ADMIN)]
+    drawer.refresh()
+    def groupInfo = new life.qbic.usergroups.api.GroupInfo("g-1", "NGS Lab", "sequencing core",
+        life.qbic.usergroups.api.GroupType.ORG)
+
+    when:
+    def option = drawer.@composer.renderGroupOption(groupInfo)
+
+    then: "the marker names the current role"
+    collectText(option).any { it.contains("Has access") && it.contains("manager") }
+
+    and: "it lives inside the name row, not as a sibling line of the option"
+    def nameRow = collectComponents(option).find {
+      it.getElement().getClassList().contains("group-option-name-row")
+    }
+    nameRow != null
+    collectComponents(nameRow).any {
+      it.getElement().getClassList().contains("picker-access-state")
+    }
+  }
+
+  def "selectable groups are listed before groups that already have access"() {
+    given: "one granted and one selectable group, granted first in the source order"
+    projectAccessService.listCollaborators(projectId) >> []
+    projectAccessService.listSharedGroups(projectId) >> [
+        new SharedProjectGroup("g-granted", "AAA Granted Lab", null, projectId,
+            ProjectRole.READ)]
+    def composer = drawer.@composer
+    composer.setAlreadyGranted([], [
+        new SharedProjectGroup("g-granted", "AAA Granted Lab", null, projectId,
+            ProjectRole.READ)])
+    def directory = [
+        new life.qbic.usergroups.api.GroupInfo("g-granted", "AAA Granted Lab", null,
+            life.qbic.usergroups.api.GroupType.ORG),
+        new life.qbic.usergroups.api.GroupInfo("g-free", "ZZZ Free Lab", null,
+            life.qbic.usergroups.api.GroupType.ORG)]
+    groupInformationService.listPublicDirectory() >> directory
+
+    when: "the picker data provider fetches the first page"
+    def query = new com.vaadin.flow.data.provider.Query<>()
+    def items = composer.@groupPicker.getDataProvider().fetch(query).toList()
+
+    then: "the selectable group comes first even though it sorts later by name"
+    items*.id() == ["g-free", "g-granted"]
+  }
+
+  def "selecting an already-granted principal explains the next step instead of staging it"() {
+    given: "a project already shared with one person"
+    projectAccessService.listCollaborators(projectId) >> [
+        new ProjectCollaborator("u-1", projectId, ProjectRole.WRITE)]
+    projectAccessService.listSharedGroups(projectId) >> []
+    userInformationService.findById("u-1") >> Optional.of(user("u-1", "Jane Doe", "jdoe"))
+    drawer.refresh()
+
+    when: "the person is selected in the picker"
+    def composer = drawer.@composer
+    composer.@personPicker.setValue(user("u-1", "Jane Doe", "jdoe"))
+
+    then: "nothing is staged and an informational note names the role and the alternative"
+    composer.@stagedUsers.getComponentCount() == 0
+    def texts = collectText(composer.@inlineMessage)
+    texts.any { it.contains("already has access") && it.contains("editor") }
+    texts.any { it.contains("Change the role") }
+    and: "no grant is triggered by merely selecting an existing principal"
+    0 * projectAccessService.addCollaborator(*_)
+  }
+
   private static List<String> collectText(Component root) {
     def result = []
     root.children.forEach { child ->
