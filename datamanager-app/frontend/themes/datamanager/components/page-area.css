@@ -656,6 +656,18 @@
   gap: var(--lumo-space-s);
   min-width: 0;
   overflow: hidden;
+  /* This cell is the clip that truncates long names (see the note above), and `overflow: hidden`
+     clips at the padding box. The avatar reserves its focus-ring border with a matching negative
+     margin (`margin: calc(var(--vaadin-focus-ring-width) * -1)`), so its painted circle overhangs
+     its own layout box by that width per side. With no padding here, that overhang is shaved off
+     top and bottom and the avatar renders as a flattened ellipse; horizontally it survives because
+     the row has slack.
+
+     Reserving the same width as padding gives the overhang room while keeping the clipping that
+     stops long names from widening the cell. The custom property is inherited from the global
+     Vaadin layer and tracks the focus-ring width, with a literal fallback in case it resolves to
+     the guaranteed-invalid value. */
+  padding-block: var(--vaadin-focus-ring-width, 2px);
 }
 
 .project-access-component .access-identity {

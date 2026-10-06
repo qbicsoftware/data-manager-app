@@ -378,48 +378,69 @@ observable behaviour and carries the same pending governance check as I11.
 
 ### I13 — Avatar rendered as a flattened ellipse (🟢 Done)
 
-**Problem:** roster, drawer and picker avatars rendered slightly shorter than they are wide — visibly
+**Problem:** avatars in the project access roster rendered slightly shorter than they are wide —
 clipped at the top and bottom rather than a clean circle.
 
-**Measurement:** the coloured identicon core measures an exact **32×32** circle, but the ink
-bounding box *including* the ring is **37 wide × 33 tall** in every roster row — a consistent 4px
-vertical deficit. Sampling just outside the core shows the ring reaches ~3px out on the left/right
-but only ~0–1px at the top/bottom.
+**Measurement:** in the roster, the coloured identicon core measures an exact **32×32** circle, but
+the ink bounding box *including* the ring is **37 wide × 33 tall** in every row — a consistent 4px
+vertical deficit — and the ring is present a few pixels out on the left/right but almost absent top
+and bottom.
 
-**Root cause:** Vaadin's own avatar base styles reserve the focus ring with a transparent border and
-a matching negative margin:
+**Scope:** the roster cell is the affected surface. The Vaadin combo-box item that hosts the sharing
+picker's options carries vertical padding by default (`--vaadin-item-padding`), which already gives
+the overhang room there; the roster cell had none. This entry is therefore scoped to the grid cell.
+
+**Root cause:** two things combine.
+
+1. Vaadin's avatar reserves its focus ring with a transparent border and a matching negative margin,
+   so the **painted** circle is larger than the box it occupies in layout:
+
+   ```css
+   height: var(--_size);                                        /* 36px = --lumo-icon-size-l */
+   border: var(--vaadin-focus-ring-width) solid transparent;    /* 2px */
+   margin: calc(var(--vaadin-focus-ring-width) * -1);           /* -2px */
+   ```
+
+2. `.project-access-component .access-principal-cell` sets `overflow: hidden` to truncate long
+   names, and `overflow: hidden` clips at the **padding box**. The cell had no vertical padding, so
+   the avatar's overhang was shaved top and bottom; horizontally it survived because the row has
+   slack. Hence an ellipse rather than a circle.
+
+The cell is the clip — not `.access-identity`, which has no `overflow` rule at all. This is
+pre-existing, not a regression: `img_4.png` (captured before this work) shows the same squash.
+
+**Fix:** reserve the overhang as padding on the clipping cell, using the same token Vaadin uses for
+its border, so the two cannot drift apart:
 
 ```css
-height: var(--_size);          /* 36px = --lumo-icon-size-l */
-border: var(--vaadin-focus-ring-width) solid transparent;   /* 2px */
-margin: calc(var(--vaadin-focus-ring-width) * -1);          /* -2px */
-```
-
-That makes the **layout** box 32px while the **painted** circle stays 36px, so the avatar overflows
-its own line box by 2px on every side. Wherever a standalone avatar sits in a flex row whose
-overflow is hidden (the roster cell, the picker options), that overhang is shaved off — but only
-vertically, because the rows have horizontal slack. The result is an ellipse.
-
-This is pre-existing, not a regression: `img_4.png` (captured before this work) shows the same
-squash.
-
-**Fix:** neutralise the negative margin on the app's own `.user-avatar` component so the layout box
-matches the painted circle and there is nothing left to clip:
-
-```css
-.user-avatar {
-  margin: 0;
+.project-access-component .access-principal-cell {
+  /* overflow: hidden clips at the padding box; the avatar overhangs its layout box by one
+     focus-ring width per side. */
+  padding-block: var(--vaadin-focus-ring-width, 2px);
 }
 ```
 
-**Deliberately excluded:** `vaadin-avatar-group vaadin-avatar`. The avatar group overlaps its
-avatars using `margin-inline-start` in a shadow `::slotted` rule, and a document rule targeting a
-slotted element **wins** over that, so a blanket `margin: 0` would break the overlap. This affects
-`ProjectSummaryComponent` and `ProjectCollectionComponent`, which render collaborator avatar groups.
+`--vaadin-focus-ring-width` is declared on `html` in Vaadin's global base layer, so it resolves in
+document CSS; the literal is a fallback in case it ever resolves to the guaranteed-invalid value.
+This keeps the clipping that stops long names from widening the cell, and does not alter avatar
+spacing anywhere else in the app.
+
+**Not verified in a browser.** The fix follows from the box model and the measured 4px deficit, but
+the rendering itself has not been observed; it is a CSS-only change, so the unit tests cannot cover
+it.
+
+**Rejected alternative:** setting `margin: 0` on the shared `.user-avatar` component also removes the
+overhang, but it changes avatar box metrics globally to compensate for one component's clip, and it
+cannot be applied to `vaadin-avatar-group vaadin-avatar` (the group overlaps its avatars with a
+shadow `::slotted` `margin-inline-start` rule, which a document rule targeting the slotted element
+would override — breaking the collaborator avatar groups in `ProjectSummaryComponent` and
+`ProjectCollectionComponent`). The cell-scoped fix avoids that hazard entirely.
 
 **Acceptance criteria:**
-- Given an avatar in the roster, picker, drawer or profile header, When it renders, Then its visible
-  extent is as tall as it is wide.
+- Given an avatar in the access roster, When the row renders, Then its visible extent is as tall as it
+  is wide.
+- Given a principal with a long name or group description, When the row renders, Then the name still
+  ellipsizes instead of widening the cell and pushing the Role column out of view.
 - Given a collaborator avatar group, When it renders, Then the avatars still overlap as before.
 
 **Status:** 🟢 Done
