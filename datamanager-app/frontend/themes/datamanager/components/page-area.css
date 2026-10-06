@@ -622,16 +622,23 @@
   border-color: var(--lumo-error-color-30pct);
 }
 
-.project-access-component .access-grid {
-  width: 100%;
+/* A just-granted principal is marked in the Principal cell itself: a green edge plus a text
+   marker. This is deliberately different from the (blue) row selection tint, so "I just selected
+   this" can never be confused with "this was just granted" — and the text marker survives for
+   colour-blind users. */
+.project-access-component .access-principal-cell-new {
+  box-shadow: inset 3px 0 0 var(--lumo-success-color);
+  border-radius: var(--lumo-border-radius-s);
+  padding-left: var(--lumo-space-s);
+  margin-left: calc(-1 * var(--lumo-space-s));
 }
 
-/* Highlight the whole row of principals that were just granted access so the manager can spot
-   them immediately after a successful grant. The part name is applied to every cell of the row
-   (selection, principal and role) and must be styled through the grid's shadow boundary with
-   `::part()`. The primary colour at low opacity gives a subtle, non-intrusive flash. */
-.project-access-component .access-grid::part(recently-granted) {
-  background-color: var(--lumo-primary-color-10pct);
+.project-access-component .access-new-grant-tag {
+  flex: 0 0 auto;
+}
+
+.project-access-component .access-grid {
+  width: 100%;
 }
 
 /* Clip grid cell content so long names/descriptions ellipsize instead of widening the cell and
@@ -660,6 +667,7 @@
 }
 
 .project-access-component .access-type-tag,
+.project-access-component .access-new-grant-tag,
 .project-access-component .access-role-badge,
 .project-access-component .access-identity .user-avatar {
   flex: 0 0 auto;
@@ -1594,11 +1602,33 @@ a.project-dataset-footer, a.project-dataset-footer:hover {
   }
 }
 
-/* -- Inline confirmation that stays visible while the drawer is open -- */
+/* -- Inline confirmation that stays visible until dismissed or superseded -- */
 .project-sharing-composer .inline-message {
-  padding: var(--lumo-space-s) var(--lumo-space-m);
+  position: relative;
+  padding: var(--lumo-space-s) var(--lumo-space-l) var(--lumo-space-s) var(--lumo-space-m);
   border-radius: var(--lumo-border-radius-m);
   font-size: var(--lumo-font-size-s);
+}
+
+/* The message container is only the visual counterpart of the always-attached live region (see
+   `composer-live-region`). Hide it while it carries no message. */
+.project-sharing-composer .inline-message:empty {
+  display: none;
+}
+
+/* Visually hidden, but always rendered and never `display: none` / `visibility: hidden`: a live
+   region must be in the accessibility tree when its text changes, otherwise the update is not
+   announced. */
+.project-sharing-composer .composer-live-region {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  border: 0;
+  clip-path: inset(50%);
 }
 
 .project-sharing-composer .inline-message-title {
@@ -1606,13 +1636,27 @@ a.project-dataset-footer, a.project-dataset-footer:hover {
   font-weight: var(--lumo-font-weight-semibold, 600);
 }
 
+/* Hanging indent: the bullet sits in the gutter and wrapped lines align with the first line
+   instead of running under the bullet. */
 .project-sharing-composer .inline-message-line {
   display: block;
   padding-left: var(--lumo-space-s);
+  text-indent: calc(-1 * var(--lumo-space-s));
 }
 
 .project-sharing-composer .inline-message-line::before {
   content: "• ";
+}
+
+.project-sharing-composer .inline-message-action {
+  margin-top: var(--lumo-space-xs);
+  padding-left: 0;
+}
+
+.project-sharing-composer .inline-message-dismiss {
+  position: absolute;
+  top: var(--lumo-space-xs);
+  right: var(--lumo-space-xs);
 }
 
 .project-sharing-composer .inline-message-success {
@@ -1623,6 +1667,76 @@ a.project-dataset-footer, a.project-dataset-footer:hover {
 .project-sharing-composer .inline-message-error {
   color: var(--lumo-error-text-color);
   background-color: var(--lumo-error-color-10pct);
+}
+
+.project-sharing-composer .inline-message-info {
+  color: var(--lumo-contrast-90pct);
+  background-color: var(--lumo-contrast-5pct);
+}
+
+/* An unstaged, disabled primary button reads as "broken" rather than "nothing to do yet". Show
+   the inactive state in neutral colours so it is unambiguously a no-op. */
+.project-sharing-composer .grant-access-button[disabled] {
+  background-color: var(--lumo-contrast-10pct);
+  color: var(--lumo-disabled-text-color);
+  opacity: 1;
+}
+
+/* -- Already-granted principals in the pickers ------------------------------------------------
+   Principals that already have access stay searchable and are marked instead of being hidden, so
+   a search never dead-ends and the user is told the role must be changed instead.
+
+   The option content is built in the composer's subtree (Flow renders the item content into the
+   light DOM of each `vaadin-combo-box-item`), which is why these rules can stay scoped. The
+   option overlay itself is raised by Vaadin, so only the *content* is styled here. */
+.project-sharing-composer .picker-option,
+.project-sharing-composer .picker-option-plain {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+  min-width: 0;
+  /* The dropdown scroller reserves no space for its own scrollbar, so a trailing marker (or a
+     long name) slides underneath it. The scroller's overflow lives in a shadow root and cannot be
+     reached from the theme, so the reserve is added to the content, which is the full scrollable
+     width. */
+  padding-right: var(--lumo-space-m);
+}
+
+/* The shared user-info component carries page-level spacing (a margin plus a large gap) that
+   wastes width inside a compact dropdown row. Reset it so the marker does not push the name or
+   the ORCID badge out of the option. */
+.project-sharing-composer .picker-option .user-info-component,
+.project-sharing-composer .picker-option-plain .user-info-component {
+  margin: 0;
+  gap: var(--lumo-space-s);
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+/* The state marker is pushed to the trailing edge, so it sits in the same place on every option
+   regardless of how long the name is. */
+.project-sharing-composer .picker-access-state {
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
+.project-sharing-composer .picker-access-state-icon {
+  /* Small check that makes the marker readable without relying on the colour tint alone. */
+  width: var(--lumo-icon-size-s);
+  height: var(--lumo-icon-size-s);
+  margin-right: var(--lumo-space-xs);
+}
+
+/* Group options stack vertically. The marker is appended to the name row, so it cannot stretch to
+   the column width; the row itself needs the scrollbar reserve, and every stacked line needs the
+   same so nothing (description included) is clipped by the overlay scrollbar. */
+.project-sharing-composer .group-option.picker-option-granted {
+  padding-right: var(--lumo-space-m);
+}
+
+.project-sharing-composer .group-option.picker-option-granted .group-option-name-row {
+  align-items: center;
+  gap: var(--lumo-space-s);
 }
 
 .project-sharing-composer .grant-access-button {

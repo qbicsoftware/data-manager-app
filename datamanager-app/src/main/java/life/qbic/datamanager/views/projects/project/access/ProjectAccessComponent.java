@@ -141,9 +141,9 @@ public class ProjectAccessComponent extends PageArea {
    */
   private final Map<String, RoleChange> recentRoleChanges = new HashMap<>();
   /**
-   * Principal IDs that were just granted access in the most recent grant operation, so their
-   * roster rows can be highlighted with a transient background colour. Cleared on navigation
-   * (setContext) and on the next grant or data reload.
+   * Principal IDs that were just granted access in the most recent grant operation. Their roster
+   * rows get a transient marker in the Principal cell (see {@link #principalCell(AccessEntry)}).
+   * Cleared on navigation (setContext) and on the next data reload.
    */
   private Set<String> recentlyGrantedIds = Set.of();
   /**
@@ -292,11 +292,9 @@ public class ProjectAccessComponent extends PageArea {
     accessGrid.setAllRowsVisible(true);
     // Owner and the acting user can never be acted upon, so their checkboxes stay disabled.
     accessGrid.setItemSelectableProvider(this::isActionable);
-    // Highlight the whole row of principals that were just granted access. The generator adds the
-    // part name to every cell in the row (including the selection and role columns), so the row is
-    // highlighted edge to edge. Styled via `vaadin-grid::part(recently-granted)` in the theme.
-    accessGrid.setPartNameGenerator(
-        entry -> recentlyGrantedIds.contains(entry.id()) ? "recently-granted" : null);
+    // Highlight of just-granted principals is rendered in the Principal cell itself (see
+    // principalCell): it does not rely on the shadow-boundary part name and therefore never
+    // collides with the row selection highlight.
     accessGrid.addColumn(new ComponentRenderer<>(this::principalCell))
         .setKey("principal")
         .setHeader("Principal")
@@ -560,6 +558,17 @@ public class ProjectAccessComponent extends PageArea {
     Component principal = entry.isUser() ? userIdentity(entry) : groupIdentity(entry);
     Div cell = new Div(typeTag(entry.type()), principal);
     cell.addClassName("access-principal-cell");
+    // The transient grant highlight lives here (a coloured edge plus a text marker) rather than on
+    // the whole row: the cell is outside the grid's shadow boundary, so the marker cannot be
+    // confused with the row selection highlight, and the text still works for colour-blind users.
+    if (recentlyGrantedIds.contains(entry.id())) {
+      cell.addClassName("access-principal-cell-new");
+      Tag newTag = new Tag("New");
+      newTag.setTagColor(TagColor.SUCCESS);
+      newTag.addClassName("access-new-grant-tag");
+      newTag.setTitle("Access was just granted");
+      cell.add(newTag);
+    }
     cell.getElement().setAttribute("title", tooltip(entry));
     return cell;
   }
@@ -900,6 +909,7 @@ public class ProjectAccessComponent extends PageArea {
     ProjectId projectId = context.projectId().orElseThrow();
     int granted = 0;
     List<String> grantedIds = new ArrayList<>();
+    List<GrantRequest> grantedRequests = new ArrayList<>();
     List<String> problems = new ArrayList<>();
     for (GrantRequest request : requests) {
       try {
@@ -911,11 +921,13 @@ public class ProjectAccessComponent extends PageArea {
         }
         granted++;
         grantedIds.add(request.id());
+        grantedRequests.add(request);
       } catch (RuntimeException e) {
         problems.add(ProjectSharingComposer.describeFailure(request, e));
       }
     }
-    return new GrantOutcome(granted, List.copyOf(grantedIds), List.copyOf(problems));
+    return new GrantOutcome(granted, List.copyOf(grantedIds), List.copyOf(grantedRequests),
+        List.copyOf(problems));
   }
 
   private void onGrantsApplied(GrantOutcome outcome) {
@@ -928,13 +940,46 @@ public class ProjectAccessComponent extends PageArea {
           : "Access could not be granted:", outcome.problems());
     } else if (outcome.granted() > 0) {
       composer.reset();
-      composer.showInlineConfirmation(outcome.granted() == 1
-          ? "Access granted to 1 principal."
-          : "Access granted to %d principals.".formatted(outcome.granted()));
+      // Name the principals and the role they received: an irreversible permission change is
+      // confirmed with evidence, not with an anonymous count.
+      composer.showInlineConfirmation(
+          outcome.granted() == 1 ? "Access granted"
+              : "Access granted to %d principals".formatted(outcome.granted()),
+          outcome.grantedRequests().stream()
+              .map(ProjectSharingComposer::describeGrant)
+              .toList(),
+          "Show in the roster", this::revealRecentlyGranted);
     }
   }
 
-  private record GrantOutcome(int granted, List<String> grantedIds, List<String> problems) {
+  /**
+   * Brings the just-granted principals into view: their roster rows are selected (they cannot be
+   * acted on by the acting user, so the selection is a pure locator) and scrolled to. This closes
+   * the gap between the confirmation and the effect it reports.
+   */
+  private void revealRecentlyGranted() {
+    List<AccessEntry> granted = entries.stream()
+        .filter(entry -> recentlyGrantedIds.contains(entry.id()))
+        .toList();
+    if (granted.isEmpty()) {
+      return;
+    }
+    // A search, type or role filter may hide the new rows. The action promises to show them, so
+    // clear a filter that would swallow the effect instead of silently doing nothing.
+    boolean hiddenByFilter = grid.getListDataView().getItems()
+        .noneMatch(granted::contains);
+    if (hiddenByFilter) {
+      searchField.setValue("");
+      filterSelect.setValue(AccessFilter.ALL);
+      selectRoleFilter(null);
+    }
+    grid.deselectAll();
+    granted.forEach(entry -> grid.select(entry));
+    grid.scrollToItem(granted.get(0));
+  }
+
+  private record GrantOutcome(int granted, List<String> grantedIds, List<GrantRequest> grantedRequests,
+                              List<String> problems) {
 
   }
 

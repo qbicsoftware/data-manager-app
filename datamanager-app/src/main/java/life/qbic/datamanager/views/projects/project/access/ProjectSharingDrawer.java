@@ -152,10 +152,10 @@ public class ProjectSharingDrawer extends Div {
     summary.addClassName("psd-summary");
     summary.add(section("People with access", collaborators.stream()
         .sorted(collaboratorOrder())
-        .map(this::renderCollaborator).toList()));
+        .map(this::renderCollaborator).toList(), "No people have access yet."));
     summary.add(section("Groups with access", groups.stream()
         .sorted(groupOrder())
-        .map(this::renderGroup).toList()));
+        .map(this::renderGroup).toList(), "No groups have access yet."));
   }
 
   /**
@@ -242,7 +242,7 @@ public class ProjectSharingDrawer extends Div {
     return summaryRow(PrincipalType.GROUP, identity, group.projectRole());
   }
 
-  private Component section(String title, List<Component> rows) {
+  private Component section(String title, List<Component> rows, String emptyMessage) {
     Div section = new Div();
     section.addClassName("psd-section");
     Span sectionTitle = new Span(title);
@@ -253,7 +253,7 @@ public class ProjectSharingDrawer extends Div {
     headerRow.addClassName("psd-section-header");
     section.add(headerRow);
     if (rows.isEmpty()) {
-      Span empty = new Span("None yet.");
+      Span empty = new Span(emptyMessage);
       empty.addClassName("secondary");
       section.add(empty);
     } else {
@@ -290,6 +290,7 @@ public class ProjectSharingDrawer extends Div {
 
   private GrantOutcome applyGrants(List<GrantRequest> requests) {
     int granted = 0;
+    List<GrantRequest> grantedRequests = new ArrayList<>();
     List<String> problems = new ArrayList<>();
     for (GrantRequest request : requests) {
       try {
@@ -300,12 +301,13 @@ public class ProjectSharingDrawer extends Div {
               GroupSidProvider.GROUP_SID_PREFIX + request.id(), request.role());
         }
         granted++;
+        grantedRequests.add(request);
       } catch (RuntimeException e) {
         log.error("Could not grant project access for %s".formatted(request.id()), e);
         problems.add(ProjectSharingComposer.describeFailure(request, e));
       }
     }
-    return new GrantOutcome(granted, List.copyOf(problems));
+    return new GrantOutcome(granted, List.copyOf(grantedRequests), List.copyOf(problems));
   }
 
   /**
@@ -322,13 +324,19 @@ public class ProjectSharingDrawer extends Div {
           : "Access could not be granted:";
       composer.showInlineError(title, outcome.problems());
     } else if (outcome.granted() > 0) {
-      composer.showInlineConfirmation(outcome.granted() == 1
-          ? "Access granted to 1 principal."
-          : "Access granted to %d principals.".formatted(outcome.granted()));
+      // Name the principals and the role they received, so the confirmation is evidence rather
+      // than an anonymous count.
+      composer.showInlineConfirmation(
+          outcome.granted() == 1 ? "Access granted"
+              : "Access granted to %d principals".formatted(outcome.granted()),
+          outcome.grantedRequests().stream()
+              .map(ProjectSharingComposer::describeGrant)
+              .toList());
     }
   }
 
-  private record GrantOutcome(int granted, List<String> problems) {
+  private record GrantOutcome(int granted, List<GrantRequest> grantedRequests,
+                              List<String> problems) {
 
   }
 }

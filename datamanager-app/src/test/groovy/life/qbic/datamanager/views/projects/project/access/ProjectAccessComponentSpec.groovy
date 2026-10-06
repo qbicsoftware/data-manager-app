@@ -420,6 +420,162 @@ class ProjectAccessComponentSpec extends Specification {
     1 * projectAccessService.removeCollaborator(projectId, "user-2")
   }
 
+  def "a successful grant names the granted principal and the role instead of a bare count"() {
+    given: "a grant for one person"
+    setContext(true)
+    def event = new GrantRequestedEvent(component.@composer, false,
+        [new GrantRequest(PrincipalType.USER, "user-2", ProjectRole.WRITE, "jdoe")])
+
+    when:
+    component.onGrantRequested(event)
+
+    then: "the confirmation carries the principal and its role as evidence"
+    def texts = textsIn(component.@composer.@inlineMessage)
+    texts.contains("Access granted")
+    texts.any { it.contains("jdoe") && it.contains("editor") }
+  }
+
+  def "a batch grant lists every granted principal and offers to show them in the roster"() {
+    given: "a grant for one person and one group"
+    setContext(true)
+    def event = new GrantRequestedEvent(component.@composer, false, [
+        new GrantRequest(PrincipalType.USER, "user-2", ProjectRole.ADMIN, "jdoe"),
+        new GrantRequest(PrincipalType.GROUP, "g-9", ProjectRole.READ, "NGS Lab")])
+
+    when:
+    component.onGrantRequested(event)
+
+    then: "both principals are named with their role"
+    def texts = textsIn(component.@composer.@inlineMessage)
+    texts.contains("Access granted to 2 principals")
+    texts.any { it.contains("jdoe") && it.contains("manager") }
+    texts.any { it.contains("NGS Lab (group)") && it.contains("member") }
+    and: "a follow-up action points at the effect in the roster"
+    buttonsIn(component.@composer.@inlineMessage).any { it.text == "Show in the roster" }
+  }
+
+  def "the inline confirmation is announced through an always-rendered live region"() {
+    given:
+    setContext(true)
+    def event = new GrantRequestedEvent(component.@composer, false,
+        [new GrantRequest(PrincipalType.USER, "user-2", ProjectRole.READ, "jdoe")])
+
+    when:
+    component.onGrantRequested(event)
+
+    then: "a polite live region carries the result as flat text"
+    def liveRegion = component.@composer.@liveRegion
+    liveRegion.getElement().getAttribute("role") == "status"
+    liveRegion.getElement().getAttribute("aria-live") == "polite"
+    liveRegion.getElement().getAttribute("aria-atomic") == "true"
+    liveRegion.getText().contains("Access granted")
+    liveRegion.getText().contains("jdoe")
+  }
+
+  def "an error result is announced assertively"() {
+    given:
+    setContext(true)
+
+    when:
+    component.@composer.showInlineError("Access could not be granted:",
+        ["jdoe (user): nope."])
+
+    then:
+    def liveRegion = component.@composer.@liveRegion
+    liveRegion.getElement().getAttribute("role") == "alert"
+    liveRegion.getElement().getAttribute("aria-live") == "assertive"
+    liveRegion.getText().contains("jdoe (user): nope")
+    and: "the flattened text ends the sentence exactly once"
+    !liveRegion.getText().contains("..")
+    liveRegion.getText().endsWith("nope.")
+  }
+
+  def "dismissing the confirmation also clears the announcement"() {
+    given:
+    setContext(true)
+    component.@composer.showInlineConfirmation("Access granted", ["jdoe · member"])
+
+    when: "the dismiss control is used"
+    buttonsIn(component.@composer.@inlineMessage)
+        .find { it.getElement().getAttribute("aria-label") == "Dismiss notification" }.click()
+
+    then: "neither the visible message nor the live region still carries text"
+    component.@composer.@inlineMessage.getComponentCount() == 0
+    component.@composer.@liveRegion.getText().isEmpty()
+  }
+
+  def "the follow-up action reveals the newly granted principals in the roster"() {
+    given: "a project whose roster will contain the granted principal"
+    userInformationService.findById("user-2") >> Optional.of(user("user-2", "Jane Doe", "jdoe"))
+    projectAccessService.addCollaborator(projectId, "user-2", ProjectRole.WRITE) >> {
+      collaborators.add(new ProjectCollaborator("user-2", projectId, ProjectRole.WRITE))
+    }
+    setContext(true)
+    def event = new GrantRequestedEvent(component.@composer, false,
+        [new GrantRequest(PrincipalType.USER, "user-2", ProjectRole.WRITE, "jdoe")])
+
+    when:
+    component.onGrantRequested(event)
+    buttonsIn(component.@composer.@inlineMessage)
+        .find { it.text == "Show in the roster" }.click()
+
+    then: "the granted row is selected so it is brought into view"
+    component.@grid.getSelectedItems()*.id() == ["user-2"]
+  }
+
+  def "the follow-up action clears a filter that hides the newly granted principal"() {
+    given: "a role filter that hides the principal about to be granted"
+    userInformationService.findById("user-2") >> Optional.of(user("user-2", "Jane Doe", "jdoe"))
+    projectAccessService.addCollaborator(projectId, "user-2", ProjectRole.WRITE) >> {
+      collaborators.add(new ProjectCollaborator("user-2", projectId, ProjectRole.WRITE))
+    }
+    setContext(true)
+    clickChip(component.@roleStatChips.get(ProjectRole.ADMIN))
+    def event = new GrantRequestedEvent(component.@composer, false,
+        [new GrantRequest(PrincipalType.USER, "user-2", ProjectRole.WRITE, "jdoe")])
+
+    when:
+    component.onGrantRequested(event)
+    buttonsIn(component.@composer.@inlineMessage)
+        .find { it.text == "Show in the roster" }.click()
+
+    then: "the filter no longer hides the granted row and it is selected"
+    component.@rosterState.role().isEmpty()
+    component.@grid.getSelectedItems()*.id() == ["user-2"]
+  }
+
+  def "a freshly granted principal is marked in the principal cell"() {
+    given: "a roster entry for a just-granted principal"
+    setContext(true)
+    component.@recentlyGrantedIds = ["user-2"] as Set
+    def entry = aUser("user-2", "jdoe", "Jane Doe", ProjectRole.READ)
+
+    when:
+    def cell = component.principalCell(entry)
+
+    then: "the cell carries a text marker, not only a colour"
+    cell.getElement().getClassList().contains("access-principal-cell-new")
+    allComponents(cell).any {
+      it instanceof Tag && it.getElement().getClassList().contains("access-new-grant-tag")
+    }
+
+    when: "the grant highlight has expired"
+    component.@recentlyGrantedIds = [] as Set
+    def untouchedCell = component.principalCell(entry)
+
+    then: "an untouched principal is not marked"
+    !untouchedCell.getElement().getClassList().contains("access-principal-cell-new")
+  }
+
+  def "the grid no longer uses a part-name highlight that could be confused with selection"() {
+    given:
+    setContext(true)
+    def entry = aUser("user-2", "jdoe", "Jane Doe", ProjectRole.READ)
+
+    expect: "no recently-granted part name is generated for the roster"
+    component.@grid.getPartNameGenerator().apply(entry) == null
+  }
+
   def "the composer grants several staged principals in one batch"() {
     given:
     setContext(true)
@@ -665,4 +821,6 @@ class ProjectAccessComponentSpec extends Specification {
     return chip.getChildren().collect { (it as com.vaadin.flow.component.html.Span).getText() }
         .join(" ")
   }
+
+
 }
