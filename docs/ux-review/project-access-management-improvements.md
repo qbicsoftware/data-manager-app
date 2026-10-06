@@ -376,6 +376,59 @@ observable behaviour and carries the same pending governance check as I11.
 
 ---
 
+### I13 — Avatar rendered as a flattened ellipse (🟢 Done)
+
+**Problem:** roster, drawer and picker avatars rendered slightly shorter than they are wide — visibly
+clipped at the top and bottom rather than a clean circle.
+
+**Measurement:** the coloured identicon core measures an exact **32×32** circle, but the ink
+bounding box *including* the ring is **37 wide × 33 tall** in every roster row — a consistent 4px
+vertical deficit. Sampling just outside the core shows the ring reaches ~3px out on the left/right
+but only ~0–1px at the top/bottom.
+
+**Root cause:** Vaadin's own avatar base styles reserve the focus ring with a transparent border and
+a matching negative margin:
+
+```css
+height: var(--_size);          /* 36px = --lumo-icon-size-l */
+border: var(--vaadin-focus-ring-width) solid transparent;   /* 2px */
+margin: calc(var(--vaadin-focus-ring-width) * -1);          /* -2px */
+```
+
+That makes the **layout** box 32px while the **painted** circle stays 36px, so the avatar overflows
+its own line box by 2px on every side. Wherever a standalone avatar sits in a flex row whose
+overflow is hidden (the roster cell, the picker options), that overhang is shaved off — but only
+vertically, because the rows have horizontal slack. The result is an ellipse.
+
+This is pre-existing, not a regression: `img_4.png` (captured before this work) shows the same
+squash.
+
+**Fix:** neutralise the negative margin on the app's own `.user-avatar` component so the layout box
+matches the painted circle and there is nothing left to clip:
+
+```css
+.user-avatar {
+  margin: 0;
+}
+```
+
+**Deliberately excluded:** `vaadin-avatar-group vaadin-avatar`. The avatar group overlaps its
+avatars using `margin-inline-start` in a shadow `::slotted` rule, and a document rule targeting a
+slotted element **wins** over that, so a blanket `margin: 0` would break the overlap. This affects
+`ProjectSummaryComponent` and `ProjectCollectionComponent`, which render collaborator avatar groups.
+
+**Acceptance criteria:**
+- Given an avatar in the roster, picker, drawer or profile header, When it renders, Then its visible
+  extent is as tall as it is wide.
+- Given a collaborator avatar group, When it renders, Then the avatars still overlap as before.
+
+**Status:** 🟢 Done
+
+**Traceability:** visual defect repair in `FEAT-USER-GROUPS-08` (#1566) surfaces; no requirement
+change.
+
+---
+
 ### I10 — Two-tab layout consideration (⚪ Deferred)
 
 **Problem:** Showing the full table + share panel simultaneously creates cognitive load. Users
@@ -406,6 +459,7 @@ may not know whether to focus on managing existing access or adding new access.
 | 🟡 Medium | I6 — Action feedback | Medium (user confidence) | Low (toast component) | Strategy doc inline confirm |
 | 🟢 Done | I11 — Grant confirmation quality | High (confidence + a11y) | Low (component + CSS) | I6 (partially supersedes) |
 | 🟢 Done | I12 — Picker marker execution | High (a11y + clarity) | Low (component + CSS) | I11 |
+| 🟢 Done | I13 — Avatar rendered as flattened ellipse | Medium (visual defect) | Low (CSS) | — |
 | 🟢 Low | I7 — Empty state | Low (edge case) | Low (empty state component) | None |
 | 🟢 Low | I8 — Accessibility | Low (compliance) | Medium (audit + fixes) | I1 (role icons) |
 | 🟢 Low | I9 — Group details truncation | Low (visual consistency) | Low (CSS + tooltip) | None |

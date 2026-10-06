@@ -42,6 +42,24 @@ vaadin-avatar-group vaadin-avatar,
   box-shadow: 0 0 0 1px var(--lumo-contrast-30pct);
 }
 
+/* Vaadin's avatar reserves its 2px transparent focus-ring border with a matching negative margin
+   (`margin: -2px`), so the painted circle is 4px larger than the box it occupies in layout.
+   Wherever a standalone avatar sits in a flex row whose overflow is hidden — the access roster
+   cell, the sharing picker options — that overhang is shaved off and the avatar renders as a
+   slightly flattened ellipse instead of a circle.
+
+   Neutralising the margin makes the layout box match the painted circle, so there is nothing left
+   to clip. This does not change the avatar's visual size: the image and the ring stay where they
+   are, only the space reserved for them grows by 4px. The focus ring is drawn by the element's
+   outline/box-shadow and is unaffected by its margin.
+
+   Deliberately NOT applied to `vaadin-avatar-group vaadin-avatar`: the group overlaps its avatars
+   with `margin-inline-start`, and a document rule targeting a slotted element wins over the
+   group's shadow `::slotted` rule, so neutralising the margin there would break the overlap. */
+.user-avatar {
+  margin: 0;
+}
+
 .avatar-with-name {
   display: inline-flex;
   justify-content: start;
