@@ -92,4 +92,25 @@ class InlineEditableFieldSpec extends Specification {
     then: "the lower bound stays at the configured minimum (40ch) regardless of the long content"
     minWidthCh == 40
   }
+
+  def "a single-line field enforces the configured maximum length"() {
+    given: "a username-like field constrained to 20 characters"
+    def field = new InlineEditableField("Username", "jdoe")
+    field.setMaxLength(20)
+
+    expect: "the widget-level limit matches the domain rule"
+    field.maxLengthForTest() == 20
+  }
+
+  def "setting a maximum length on a textarea field is a no-op"() {
+    given: "a textarea field keeps its own generous limit (e.g. 500 for descriptions)"
+    def field = new InlineEditableField(InlineEditableField.InputKind.TEXTAREA, "Description", "text")
+    def before = field.maxLengthForTest()
+
+    when: "a single-line limit is mistakenly applied"
+    field.setMaxLength(20)
+
+    then: "the textarea limit is left untouched"
+    field.maxLengthForTest() == before
+  }
 }

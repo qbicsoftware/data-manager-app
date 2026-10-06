@@ -36,9 +36,11 @@ import life.qbic.datamanager.views.general.dialog.AlertDialog;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.general.oidc.OidcType;
 import life.qbic.identity.api.UserInfo;
+import life.qbic.identity.api.UserNames;
 import life.qbic.identity.application.user.IdentityService;
 import life.qbic.identity.application.user.IdentityService.EmptyUserNameException;
 import life.qbic.identity.application.user.IdentityService.UserNameNotAvailableException;
+import life.qbic.identity.application.user.IdentityService.UserNameTooLongException;
 import life.qbic.logging.api.Logger;
 
 /**
@@ -194,6 +196,17 @@ public class UserProfileComponent extends Div implements Serializable {
 
   private InlineEditableField buildUsernameField() {
     var field = new InlineEditableField("Username", userInfo.platformUserName());
+    field.setMaxLength(UserNames.MAX_LENGTH);
+
+    // Grandfathered usernames predate the length limit and remain valid. Tell their owners how to
+    // resolve the situation instead of silently blocking the unchanged value.
+    if (UserNames.exceedsMaxLength(userInfo.platformUserName())) {
+      var notice = new Span("This username exceeds the current limit of " + UserNames.MAX_LENGTH
+          + " characters. It keeps working, but please choose a shorter one when you change it.");
+      notice.addClassName("inline-editable-field__notice");
+      notice.getElement().setAttribute("role", "note");
+      field.add(notice);
+    }
 
     field.addSaveListener(this::onUsernameSave);
     field.addCancelListener(e -> { /* nothing to do — component handles UI revert */ });
@@ -205,6 +218,15 @@ public class UserProfileComponent extends Div implements Serializable {
     String newName = event.value();
     if (newName.isEmpty()) {
       event.getSource().setError("Please provide a non-empty username");
+      return;
+    }
+
+    // Fast feedback for the common case; the application service remains the authoritative guard.
+    // An unchanged grandfathered value is deliberately allowed through.
+    boolean unchanged = newName.equals(userInfo.platformUserName());
+    if (!unchanged && newName.length() > UserNames.MAX_LENGTH) {
+      event.getSource().setError(
+          "Username must not exceed " + UserNames.MAX_LENGTH + " characters");
       return;
     }
 
@@ -224,6 +246,11 @@ public class UserProfileComponent extends Div implements Serializable {
     }
     if (e instanceof EmptyUserNameException) {
       event.getSource().setError("Please provide a non-empty username");
+      return;
+    }
+    if (e instanceof UserNameTooLongException) {
+      event.getSource().setError(
+          "Username must not exceed " + UserNames.MAX_LENGTH + " characters");
       return;
     }
     throw ApplicationException.wrapping("Unexpected exception in username change.", e);

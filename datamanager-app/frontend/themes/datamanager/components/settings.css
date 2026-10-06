@@ -262,6 +262,15 @@
   color: var(--lumo-body-text-color);
 }
 
+/* Informational notice for grandfathered values that exceed a newly introduced limit.
+   Non-blocking: the value keeps working until the user chooses to change it. */
+.inline-editable-field__notice {
+  flex-basis: 100%;
+  color: var(--lumo-contrast-70pct);
+  font-size: var(--lumo-font-size-s);
+  line-height: 1.4;
+}
+
 .inline-editable-field__edit-btn {
   padding: 0;
   min-height: var(--lumo-size-s);

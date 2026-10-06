@@ -165,6 +165,19 @@ public class InlineEditableField extends Div {
   }
 
   /**
+   * Overrides the maximum length of the single-line edit field (default 80). Callers whose value
+   * is governed by a stricter limit (for example usernames) should set it so the input widget and
+   * the domain rule agree. Has no effect on textarea-backed fields.
+   *
+   * @param maxLength the maximum number of characters the user may type
+   */
+  public void setMaxLength(int maxLength) {
+    if (!textArea) {
+      ((TextField) this.editField).setMaxLength(maxLength);
+    }
+  }
+
+  /**
    * Controls what happens when the user blurs the field while in edit mode:
    * <ul>
    *   <li>{@code true} (default): blur-to-outside commits the draft ({@code SaveEvent} fires,
@@ -370,6 +383,15 @@ public class InlineEditableField extends Div {
    */
   void saveForTest() {
     triggerSave();
+  }
+
+  /**
+   * The maximum length configured on the underlying edit field, for unit tests. Both
+   * {@code TextField} and {@code TextArea} expose {@code maxLength} as an element property but
+   * share no common interface, so the property is read directly.
+   */
+  int maxLengthForTest() {
+    return (int) editField.getElement().getProperty("maxlength", 0.0);
   }
 
   /**

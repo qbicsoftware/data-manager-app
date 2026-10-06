@@ -19,6 +19,7 @@ import life.qbic.identity.domain.model.FullName;
 import life.qbic.identity.domain.model.FullName.FullNameValidationException;
 import life.qbic.identity.domain.model.User;
 import life.qbic.identity.domain.model.UserId;
+import life.qbic.identity.domain.model.UserNamePolicy;
 import life.qbic.identity.domain.registry.DomainRegistry;
 import life.qbic.identity.domain.repository.UserRepository;
 
@@ -62,6 +63,8 @@ public final class IdentityService {
       return registrationResponse;
     }
 
+    userName = normalizeUserName(userName);
+
     var userDomainService = DomainRegistry.instance().userDomainService();
     if (userDomainService.isEmpty()) {
       throw new ApplicationException("User registration failed.");
@@ -95,6 +98,8 @@ public final class IdentityService {
     if (validationResponse.hasFailures()) {
       return validationResponse;
     }
+
+    userName = normalizeUserName(userName);
 
     var userDomainService = DomainRegistry.instance().userDomainService();
     if (userDomainService.isEmpty()) {
@@ -134,6 +139,8 @@ public final class IdentityService {
     }
     if (isNull(userName) || userName.isBlank()) {
       failures.add(new EmptyUserNameException());
+    } else if (userName.strip().length() > UserNamePolicy.maxLength()) {
+      failures.add(new UserNameTooLongException());
     }
     try {
       EncryptedPassword.from(rawPassword);
@@ -164,6 +171,8 @@ public final class IdentityService {
     }
     if (isNull(userName) || userName.isBlank()) {
       failures.add(new EmptyUserNameException());
+    } else if (userName.strip().length() > UserNamePolicy.maxLength()) {
+      failures.add(new UserNameTooLongException());
     }
     if (isNull(oidcIssuer) || oidcIssuer.isBlank()) {
       failures.add(new EmptyOidcIssuerException());
@@ -215,6 +224,7 @@ public final class IdentityService {
     if (isNull(userName) || userName.isBlank()) {
       return ApplicationResponse.failureResponse(new EmptyUserNameException());
     }
+    userName = normalizeUserName(userName);
     UserId id = UserId.from(userId);
     var optionalUser = userRepository.findById(id);
     if (optionalUser.isEmpty()) {
@@ -225,12 +235,26 @@ public final class IdentityService {
     if (user.userName().equals(userName)) {
       return ApplicationResponse.successResponse();
     }
+    // Grandfather clause: the length limit applies to the value the user is switching to, not to
+    // the value already stored. A user whose persisted username predates the limit may keep it
+    // (and re-submit it unchanged) but must pick a compliant one when changing it.
+    if (userName.length() > UserNamePolicy.maxLength()) {
+      return ApplicationResponse.failureResponse(new UserNameTooLongException());
+    }
     if (userRepository.findByUserName(userName).isPresent()) {
       return ApplicationResponse.failureResponse(new UserNameNotAvailableException());
     }
     user.setNewUserName(userName);
     userRepository.updateUser(user);
     return ApplicationResponse.successResponse();
+  }
+
+  /**
+   * Normalizes a username before it is persisted or looked up, so that surrounding whitespace
+   * cannot create distinct usernames or cause spurious availability conflicts.
+   */
+  private static String normalizeUserName(String userName) {
+    return isNull(userName) ? null : userName.strip();
   }
 
   /**
@@ -297,6 +321,21 @@ public final class IdentityService {
 
     public EmptyUserNameException() {
       super();
+    }
+  }
+
+  /**
+   * Indicates that a provided username exceeds {@link UserNamePolicy#maxLength()} characters.
+   *
+   * @since 1.20.0
+   */
+  public static class UserNameTooLongException extends ApplicationException {
+
+    @Serial
+    private static final long serialVersionUID = 7734019832145098761L;
+
+    public UserNameTooLongException() {
+      super("Username must not exceed " + UserNamePolicy.maxLength() + " characters.");
     }
   }
 
