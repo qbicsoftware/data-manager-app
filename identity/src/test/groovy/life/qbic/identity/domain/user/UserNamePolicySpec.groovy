@@ -8,7 +8,7 @@ import spock.lang.Specification
 /**
  * <b>Tests for the {@link UserNamePolicy}</b>
  *
- * @since 1.20.0
+ * @since 1.19.0
  */
 class UserNamePolicySpec extends Specification {
 

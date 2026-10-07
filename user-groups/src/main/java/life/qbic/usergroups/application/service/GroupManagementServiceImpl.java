@@ -19,7 +19,7 @@ import life.qbic.usergroups.domain.model.GroupName;
  * <p>Role gates are enforced by the application service ({@link GroupService} + domain layer):
  * this facade deliberately contains no policy of its own.</p>
  *
- * @since 1.20.0
+ * @since 1.19.0
  */
 public class GroupManagementServiceImpl implements GroupManagementService {
 

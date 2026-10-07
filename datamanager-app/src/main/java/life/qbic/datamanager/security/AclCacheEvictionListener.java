@@ -30,7 +30,7 @@ import tools.jackson.databind.ObjectMapper;
  * types are logged and ignored — an exception must never leave the listener thread because it
  * would terminate consumption for subsequent messages.</p>
  *
- * @since 1.0.0
+ * @since 1.19.0
  */
 @Component
 public class AclCacheEvictionListener {

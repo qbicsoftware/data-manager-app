@@ -23,7 +23,7 @@ import java.util.List;
  * that {@code user-groups-api} never depends on the {@code user-groups} module. The caller
  * passes the acting user id explicitly; role gates are enforced by the application service.</p>
  *
- * @since 1.20.0
+ * @since 1.19.0
  */
 public interface GroupManagementService extends Serializable {
 
@@ -35,7 +35,7 @@ public interface GroupManagementService extends Serializable {
    * @param userId       the user to add as a regular member
    * @throws IllegalArgumentException if the group does not exist, the acting user lacks the
    *                                  required role, or the target is already a member
-   * @since 1.20.0
+   * @since 1.19.0
    */
   void addMember(String groupId, String actingUserId, String userId);
 
@@ -47,7 +47,7 @@ public interface GroupManagementService extends Serializable {
    * @param userId       the member to remove
    * @throws IllegalArgumentException if the group does not exist or the acting user may not
    *                                  remove the given member
-   * @since 1.20.0
+   * @since 1.19.0
    */
   void removeMember(String groupId, String actingUserId, String userId);
 
@@ -59,7 +59,7 @@ public interface GroupManagementService extends Serializable {
    * @param userId       the member to promote to MANAGER
    * @throws IllegalArgumentException if the group does not exist or the acting user is not the
    *                                  OWNER
-   * @since 1.20.0
+   * @since 1.19.0
    */
   void appointManager(String groupId, String actingUserId, String userId);
 
@@ -71,7 +71,7 @@ public interface GroupManagementService extends Serializable {
    * @param userId       the manager to demote
    * @throws IllegalArgumentException if the group does not exist or the acting user is not the
    *                                  OWNER
-   * @since 1.20.0
+   * @since 1.19.0
    */
   void demoteManager(String groupId, String actingUserId, String userId);
 
@@ -89,7 +89,7 @@ public interface GroupManagementService extends Serializable {
    * @throws IllegalArgumentException if the group does not exist, is not an org group, the
    *                                  acting user is not a QBiC administrator, or the target
    *                                  user is unknown
-   * @since 1.22.0
+   * @since 1.19.0
    */
   void appointOrgManager(String groupId, String actingAdminUserId, String userId);
 
@@ -107,7 +107,7 @@ public interface GroupManagementService extends Serializable {
    * @throws IllegalArgumentException if the group does not exist, is not an org group, the
    *                                  acting user is not a QBiC administrator, or the target is
    *                                  not a member
-   * @since 1.22.0
+   * @since 1.19.0
    */
   void removeOrgManager(String groupId, String actingAdminUserId, String userId);
 
@@ -123,7 +123,7 @@ public interface GroupManagementService extends Serializable {
    * @throws IllegalArgumentException if the group does not exist, is not an org group, the
    *                                  acting user is not a QBiC administrator, or the target
    *                                  user is unknown/already a member
-   * @since 1.22.0
+   * @since 1.19.0
    */
   void addOrgMember(String groupId, String actingAdminUserId, String userId);
 
@@ -140,7 +140,7 @@ public interface GroupManagementService extends Serializable {
    * @throws IllegalArgumentException if the group does not exist, is not an org group, the
    *                                  acting user is not a QBiC administrator, or the target is
    *                                  not a member
-   * @since 1.22.0
+   * @since 1.19.0
    */
   void removeOrgMember(String groupId, String actingAdminUserId, String userId);
 
@@ -157,7 +157,7 @@ public interface GroupManagementService extends Serializable {
    * @throws IllegalArgumentException if the group does not exist, is not an org group, the
    *                                  acting user is not a QBiC administrator, or the target is
    *                                  not a manager
-   * @since 1.22.0
+   * @since 1.19.0
    */
   void demoteOrgManager(String groupId, String actingAdminUserId, String userId);
 
@@ -173,7 +173,7 @@ public interface GroupManagementService extends Serializable {
    * @return the number of members in the org group, or {@code 0} if the group does not exist,
    * is not an active org group, or the caller is not a QBiC administrator
    * @throws IllegalArgumentException if the acting user id is blank
-   * @since 1.22.0
+   * @since 1.19.0
    */
   int orgGroupMemberCount(String groupId, String actingAdminUserId);
 
@@ -189,7 +189,7 @@ public interface GroupManagementService extends Serializable {
    * @throws IllegalArgumentException if the group does not exist, is not an org group, the
    *                                  acting user is not a QBiC administrator, or the new name
    *                                  is taken
-   * @since 1.22.0
+   * @since 1.19.0
    */
   void renameOrgGroup(String groupId, String actingAdminUserId, String newName);
 
@@ -203,7 +203,7 @@ public interface GroupManagementService extends Serializable {
    * @param newDescription the new group description
    * @throws IllegalArgumentException if the group does not exist, is not an org group, or the
    *                                  acting user is not a QBiC administrator
-   * @since 1.22.0
+   * @since 1.19.0
    */
   void updateOrgGroupDescription(String groupId, String actingAdminUserId, String newDescription);
 
@@ -218,7 +218,7 @@ public interface GroupManagementService extends Serializable {
    * @param actingAdminUserId the user performing the operation (must be a QBiC administrator)
    * @throws IllegalArgumentException if the group does not exist, is not an org group, or the
    *                                  acting user is not a QBiC administrator
-   * @since 1.22.0
+   * @since 1.19.0
    */
   void dissolveOrgGroup(String groupId, String actingAdminUserId);
 
@@ -230,7 +230,7 @@ public interface GroupManagementService extends Serializable {
    * @param newName      the new group name (must be unique case-insensitively)
    * @throws IllegalArgumentException if the group does not exist, the acting user lacks the
    *                                  required role, or the new name is taken
-   * @since 1.20.0
+   * @since 1.19.0
    */
   void renameGroup(String groupId, String actingUserId, String newName);
 
@@ -242,7 +242,7 @@ public interface GroupManagementService extends Serializable {
    * @param newDescription the new group description
    * @throws IllegalArgumentException if the group does not exist or the acting user lacks the
    *                                  required role
-   * @since 1.20.0
+   * @since 1.19.0
    */
   void updateDescription(String groupId, String actingUserId, String newDescription);
 
@@ -253,7 +253,7 @@ public interface GroupManagementService extends Serializable {
    * @param actingUserId the user performing the operation (must hold OWNER)
    * @throws IllegalArgumentException if the group does not exist or the acting user is not the
    *                                  OWNER
-   * @since 1.20.0
+   * @since 1.19.0
    */
   void dissolveGroup(String groupId, String actingUserId);
 
@@ -266,7 +266,7 @@ public interface GroupManagementService extends Serializable {
    * @param groupId  the id of the group
    * @param viewerId the user requesting the list (must be a member of the group)
    * @return the group's members
-   * @since 1.20.0
+   * @since 1.19.0
    */
   List<GroupMember> listMembers(String groupId, String viewerId);
 }

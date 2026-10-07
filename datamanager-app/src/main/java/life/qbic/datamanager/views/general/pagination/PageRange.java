@@ -10,7 +10,7 @@ import java.util.List;
  * immediate neighbours; gaps are represented by ellipsis {@link Item items}. The logic is pure so it
  * can be unit-tested without a UI context.
  *
- * @since 1.12.0
+ * @since 1.19.0
  */
 public final class PageRange {
 

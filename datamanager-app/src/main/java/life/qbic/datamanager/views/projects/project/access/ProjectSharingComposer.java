@@ -51,7 +51,7 @@ import life.qbic.usergroups.api.GroupType;
  * <p>The composer never uses a modal dialog and never requests group membership data. Already
  * granted principals are filtered out of the pickers.</p>
  *
- * @since 1.20.0
+ * @since 1.19.0
  */
 public class ProjectSharingComposer extends Div {
 

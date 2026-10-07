@@ -48,7 +48,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
  * <p>
  * The component only accepts Excel files (<code>.xlsx</code>).
  *
- * @since 1.11.0
+ * @since 1.19.0
  */
 public class SampleUpdateUpload extends Div implements UserInput {
 

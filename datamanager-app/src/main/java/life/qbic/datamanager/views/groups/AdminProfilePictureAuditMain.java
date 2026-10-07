@@ -49,7 +49,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
  * owner's current picture (historical images are not retained, so this is the picture as of
  * today, not the audited revision).</p>
  *
- * @since 1.22.0
+ * @since 1.19.0
  */
 @Route(value = AppRoutes.GroupsRoutes.ADMIN_PROFILE_PICTURES, layout = GroupsMainLayout.class)
 @SpringComponent

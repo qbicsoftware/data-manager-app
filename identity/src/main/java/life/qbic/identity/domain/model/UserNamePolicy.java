@@ -26,7 +26,7 @@ import life.qbic.identity.domain.model.policy.PolicyStatus;
  * every state the database can hold. This mirrors the established {@link EmailFormatPolicy} and
  * {@link PasswordPolicy} precedent in this bounded context.
  *
- * @since 1.20.0
+ * @since 1.19.0
  */
 public class UserNamePolicy {
 
@@ -49,7 +49,7 @@ public class UserNamePolicy {
    *
    * @param userName the username to validate
    * @return a check report with the validation information
-   * @since 1.20.0
+   * @since 1.19.0
    */
   public PolicyCheckReport validate(String userName) {
     if (isNull(userName) || userName.isBlank()) {
@@ -66,7 +66,7 @@ public class UserNamePolicy {
    * The maximum allowed number of characters of a username.
    *
    * @return the configured maximum username length
-   * @since 1.20.0
+   * @since 1.19.0
    */
   public static int maxLength() {
     return MAX_LENGTH;
@@ -80,7 +80,7 @@ public class UserNamePolicy {
    *
    * @param userName the username to inspect
    * @return {@code true} if the value is longer than {@link #MAX_LENGTH}
-   * @since 1.20.0
+   * @since 1.19.0
    */
   public static boolean exceedsMaxLength(String userName) {
     return UserNames.exceedsMaxLength(userName);
@@ -92,7 +92,7 @@ public class UserNamePolicy {
    * <p>Thrown when a username entering the system is empty or exceeds {@link #MAX_LENGTH}
    * characters. It carries the invalid value for diagnostics.</p>
    *
-   * @since 1.20.0
+   * @since 1.19.0
    */
   public static class UserNameValidationException extends ApplicationException {
 

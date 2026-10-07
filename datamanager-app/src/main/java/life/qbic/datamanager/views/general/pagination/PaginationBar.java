@@ -22,7 +22,7 @@ import java.util.Objects;
  * requested change and reports the new state back via {@link #setListState(int, long, int)}, which
  * re-renders the bar without firing further events.
  *
- * @since 1.12.0
+ * @since 1.19.0
  */
 public class PaginationBar extends Div {
 

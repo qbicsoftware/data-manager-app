@@ -20,7 +20,7 @@ import life.qbic.usergroups.application.policy.directive.InformRemovedGroupMembe
  * the policy is a Spring {@code @Bean} created in the composition root so the dispatcher
  * subscription happens exactly once at startup.
  *
- * @since 1.20.0
+ * @since 1.19.0
  */
 public class MemberAccessPolicy {
 

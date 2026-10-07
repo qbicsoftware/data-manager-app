@@ -46,7 +46,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
  * All side effects (navigation, toast, user-id resolution) are provided through seams so the
  * route logic is unit-testable without a Vaadin {@code UI}.
  *
- * @since 1.21.0
+ * @since 1.19.0
  */
 @Route(value = AppRoutes.GroupsRoutes.NEW_ORG_GROUP, layout = GroupsMainLayout.class)
 @SpringComponent

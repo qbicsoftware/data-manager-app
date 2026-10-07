@@ -14,7 +14,7 @@ import life.qbic.domain.concepts.DomainEvent;
  * <p>Consumed by the notification profile (GROUP-R-10): project owners/admins of affected groups
  * are informed about the membership/profile change (audit trail).</p>
  *
- * @since 1.20.0
+ * @since 1.19.0
  */
 public class GroupProfileUpdated extends DomainEvent {
 
@@ -42,7 +42,7 @@ public class GroupProfileUpdated extends DomainEvent {
    * @param newName           the group name after the change
    * @param triggeredByUserId the user who performed the change
    * @return the new event
-   * @since 1.20.0
+   * @since 1.19.0
    */
   public static GroupProfileUpdated create(String groupId, String oldName, String newName,
       String triggeredByUserId) {

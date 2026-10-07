@@ -17,7 +17,7 @@ import life.qbic.domain.concepts.DomainEvent;
  * (deduplicated); members who joined a group that already carries grants also receive a join
  * digest.</p>
  *
- * @since 1.20.0
+ * @since 1.19.0
  */
 public class MemberAddedToGroup extends DomainEvent {
 
@@ -42,7 +42,7 @@ public class MemberAddedToGroup extends DomainEvent {
    * @param userId            the id of the newly added user
    * @param triggeredByUserId the user who performed the addition
    * @return the new event
-   * @since 1.20.0
+   * @since 1.19.0
    */
   public static MemberAddedToGroup create(String groupId, String userId,
       String triggeredByUserId) {

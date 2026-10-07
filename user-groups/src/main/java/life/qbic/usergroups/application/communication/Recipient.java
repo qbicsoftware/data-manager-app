@@ -6,7 +6,7 @@ package life.qbic.usergroups.application.communication;
  * <p>A recipient of an email sent by the user groups context, providing the mail address and a
  * full name for the salutation.</p>
  *
- * @since 1.20.0
+ * @since 1.19.0
  */
 public record Recipient(String address, String fullName) {
 
