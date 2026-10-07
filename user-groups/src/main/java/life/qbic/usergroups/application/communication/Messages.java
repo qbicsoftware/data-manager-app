@@ -7,7 +7,7 @@ package life.qbic.usergroups.application.communication;
  * The messages are formatted after the existing {@code Messages} pattern of the identity and
  * project management contexts.</p>
  *
- * @since 1.20.0
+ * @since 1.19.0
  */
 public final class Messages {
 
@@ -22,7 +22,7 @@ public final class Messages {
    * @param fullName the recipient's full name for the salutation
    * @param groupName the name of the group the user was added to
    * @return the formatted message body
-   * @since 1.20.0
+   * @since 1.19.0
    */
   public static String addedToGroup(String fullName, String groupName) {
     return String.format("""
@@ -45,7 +45,7 @@ public final class Messages {
    * @param fullName the recipient's full name for the salutation
    * @param groupName the name of the group the user was removed from
    * @return the formatted message body
-   * @since 1.20.0
+   * @since 1.19.0
    */
   public static String removedFromGroup(String fullName, String groupName) {
     return String.format("""

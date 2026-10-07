@@ -7,7 +7,7 @@ package life.qbic.datamanager.profilepicture;
  * user-facing {@code Result} error. The message is for logs and diagnostics only and is never
  * shown to the user.</p>
  *
- * @since 1.22.0
+ * @since 1.19.0
  */
 public class ImageNormalizationException extends RuntimeException {
 

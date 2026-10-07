@@ -74,7 +74,7 @@ public class GroupService {
    * @param userInformationService        the identity lookup port
    * @param groupAdministrationPermission the admin-gate port (org-group operations); never
    *                                      {@code null}
-   * @since 1.21.0
+   * @since 1.19.0
    */
   public GroupService(GroupRepository groupRepository,
       UserInformationService userInformationService,
@@ -165,7 +165,7 @@ public class GroupService {
    * @return a result wrapping the created org-group {@link GroupInfoProjection}, or an error if
    * the caller is not an admin, the name is already taken (case-insensitive) or the admin id is
    * invalid
-   * @since 1.21.0
+   * @since 1.19.0
    */
   @Transactional
   public Result<GroupInfoProjection, ApplicationException> createOrgGroup(String actingAdminUserId,
@@ -240,7 +240,7 @@ public class GroupService {
    * @param actingAdminUserId the user requesting the count; must be a QBiC administrator
    * @return the number of members in the org group, or {@code 0} if the group does not exist,
    * is not active, is not an org group, or the caller is not an administrator
-   * @since 1.22.0
+   * @since 1.19.0
    */
   @Transactional(readOnly = true)
   public int orgGroupMemberCount(String groupId, String actingAdminUserId) {
@@ -391,7 +391,7 @@ public class GroupService {
    * @return a {@link Result} with no value on success, or an error if the group does not exist,
    * the user to add does not exist, is already a member, or the acting user lacks the required
    * role
-   * @since 1.20.0
+   * @since 1.19.0
    */
   @Transactional
   public Result<Void, ApplicationException> addMember(String groupId, String actingUserId,
@@ -441,7 +441,7 @@ public class GroupService {
    * @param userId       the member to remove
    * @return a {@link Result} with no value on success, or an error if the operation is not
    * permitted
-   * @since 1.20.0
+   * @since 1.19.0
    */
   @Transactional
   public Result<Void, ApplicationException> removeMember(String groupId, String actingUserId,
@@ -490,7 +490,7 @@ public class GroupService {
    * @param userId       the member to promote to MANAGER
    * @return a {@link Result} with no value on success, or an error if the operation is not
    * permitted
-   * @since 1.20.0
+   * @since 1.19.0
    */
   @Transactional
   public Result<Void, ApplicationException> appointManager(String groupId, String actingUserId,
@@ -531,7 +531,7 @@ public class GroupService {
    * @param userId       the manager to demote
    * @return a {@link Result} with no value on success, or an error if the operation is not
    * permitted
-   * @since 1.20.0
+   * @since 1.19.0
    */
   @Transactional
   public Result<Void, ApplicationException> demoteManager(String groupId, String actingUserId,
@@ -577,7 +577,7 @@ public class GroupService {
    * @param userId        the user to appoint (non-member or existing regular MEMBER)
    * @return a {@link Result} with no value on success, or an error if the operation is not
    * permitted
-   * @since 1.22.0
+   * @since 1.19.0
    */
   @Transactional
   public Result<Void, ApplicationException> appointOrgManager(String groupId,
@@ -633,7 +633,7 @@ public class GroupService {
    * @param userId        the manager (or member) to remove
    * @return a {@link Result} with no value on success, or an error if the operation is not
    * permitted
-   * @since 1.22.0
+   * @since 1.19.0
    */
   @Transactional
   public Result<Void, ApplicationException> removeOrgManager(String groupId,
@@ -684,7 +684,7 @@ public class GroupService {
    * @param userId         the user to add as a regular member
    * @return a {@link Result} with no value on success, or an error if the operation is not
    * permitted
-   * @since 1.22.0
+   * @since 1.19.0
    */
   @Transactional
   public Result<Void, ApplicationException> addOrgMember(String groupId,
@@ -739,7 +739,7 @@ public class GroupService {
    * @param userId         the member (or manager) to remove
    * @return a {@link Result} with no value on success, or an error if the operation is not
    * permitted
-   * @since 1.22.0
+   * @since 1.19.0
    */
   @Transactional
   public Result<Void, ApplicationException> removeOrgMember(String groupId,
@@ -762,7 +762,7 @@ public class GroupService {
    * @param userId         the manager to demote
    * @return a {@link Result} with no value on success, or an error if the operation is not
    * permitted
-   * @since 1.22.0
+   * @since 1.19.0
    */
   @Transactional
   public Result<Void, ApplicationException> demoteOrgManager(String groupId,
@@ -811,7 +811,7 @@ public class GroupService {
    * @param newName        the new group name
    * @return a {@link Result} with no value on success, or an error if the operation is not
    * permitted or the new name is already taken
-   * @since 1.22.0
+   * @since 1.19.0
    */
   @Transactional
   public Result<Void, ApplicationException> renameOrgGroup(String groupId,
@@ -859,7 +859,7 @@ public class GroupService {
    * @param newDescription the new group description
    * @return a {@link Result} with no value on success, or an error if the operation is not
    * permitted
-   * @since 1.22.0
+   * @since 1.19.0
    */
   @Transactional
   public Result<Void, ApplicationException> updateOrgGroupDescription(String groupId,
@@ -905,7 +905,7 @@ public class GroupService {
    * @param actingAdminUserId the user performing the operation (must be a QBiC administrator)
    * @return a {@link Result} with no value on success, or an error if the operation is not
    * permitted
-   * @since 1.22.0
+   * @since 1.19.0
    */
   @Transactional
   public Result<Void, ApplicationException> dissolveOrgGroup(String groupId,
@@ -948,7 +948,7 @@ public class GroupService {
    * @param newName      the new group name
    * @return a {@link Result} with no value on success, or an error if the operation is not
    * permitted or the new name is already taken
-   * @since 1.20.0
+   * @since 1.19.0
    */
   @Transactional
   public Result<Void, ApplicationException> renameGroup(String groupId, String actingUserId,
@@ -989,7 +989,7 @@ public class GroupService {
    * @param newDescription the new group description
    * @return a {@link Result} with no value on success, or an error if the operation is not
    * permitted
-   * @since 1.20.0
+   * @since 1.19.0
    */
   @Transactional
   public Result<Void, ApplicationException> updateDescription(String groupId, String actingUserId,
@@ -1025,7 +1025,7 @@ public class GroupService {
    * @param actingUserId the user performing the operation (must hold OWNER)
    * @return a {@link Result} with no value on success, or an error if the operation is not
    * permitted
-   * @since 1.20.0
+   * @since 1.19.0
    */
   @Transactional
   public Result<Void, ApplicationException> dissolveGroup(String groupId, String actingUserId) {
@@ -1062,7 +1062,7 @@ public class GroupService {
    * @param viewerId the user requesting the list (must be a member of the group)
    * @return the group's members, or an empty list if the group does not exist, is inactive, or
    * the viewer is not a member
-   * @since 1.20.0
+   * @since 1.19.0
    */
   @Transactional(readOnly = true)
   public List<GroupMemberProjection> listMembers(String groupId, String viewerId) {
@@ -1096,7 +1096,7 @@ public class GroupService {
    * @param groupId       the id of the group
    * @param actingUserId  the user performing the operation
    * @return {@code true} if the user may manage the group's profile picture
-   * @since 1.22.0
+   * @since 1.19.0
    */
   @Transactional(readOnly = true)
   public boolean canManageProfilePicture(String groupId, String actingUserId) {

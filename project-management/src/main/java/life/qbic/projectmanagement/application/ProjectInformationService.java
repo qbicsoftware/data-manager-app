@@ -89,7 +89,7 @@ public class ProjectInformationService {
    *
    * @param filter the results' project title will be applied with this filter
    * @return the total number of matching, accessible project overviews
-   * @since 1.12.0
+   * @since 1.19.0
    */
   public long countOverview(String filter) {
     var accessibleProjectIds = retrieveAccessibleProjectIdsForUser();

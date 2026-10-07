@@ -10,7 +10,7 @@ package life.qbic.identity.api;
  * rule via its username policy) and client modules such as the UI (which must constrain input
  * fields to the same limit) share a single source of truth instead of duplicating the number.
  *
- * @since 1.20.0
+ * @since 1.19.0
  */
 public final class UserNames {
 
@@ -33,7 +33,7 @@ public final class UserNames {
    *
    * @param userName the username to inspect
    * @return {@code true} if the value is longer than {@link #MAX_LENGTH}
-   * @since 1.20.0
+   * @since 1.19.0
    */
   public static boolean exceedsMaxLength(String userName) {
     return userName != null && userName.strip().length() > MAX_LENGTH;

@@ -7,7 +7,7 @@ package life.qbic.usergroups.application.communication;
  * from the concrete mail-sending infrastructure, mirroring the {@code EmailService} ports of the
  * identity and project management contexts.</p>
  *
- * @since 1.20.0
+ * @since 1.19.0
  */
 public interface EmailService {
 

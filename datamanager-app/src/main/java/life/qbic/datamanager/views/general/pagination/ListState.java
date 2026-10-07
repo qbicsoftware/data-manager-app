@@ -15,7 +15,7 @@ import life.qbic.application.commons.SortOrder;
  * @param pageSize the number of items rendered per page
  * @param filter   the active free-text filter, may be blank
  * @param sort     the active sort order
- * @since 1.12.0
+ * @since 1.19.0
  */
 public record ListState(int page, int pageSize, String filter, SortOrder sort) {
 

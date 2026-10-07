@@ -16,7 +16,7 @@ import java.time.Instant;
  * @param reviewedBy          the reviewing administrator, or {@code null}
  * @param reviewedAt          when the entry was reviewed, or {@code null}
  * @param createdAt           when the change happened
- * @since 1.22.0
+ * @since 1.19.0
  */
 public record ProfilePictureAuditEntry(Long id, ProfilePictureOwnerType ownerType, String ownerId,
                                        String action, String actorId, String previousContentHash,

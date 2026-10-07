@@ -15,7 +15,7 @@ import org.jspecify.annotations.NonNull;
  * The body of the sample edit dialog: an export/template section offering the sample metadata
  * download (all or selected) plus the {@link SampleUpdateUpload} used to submit the edited sheet.
  *
- * @since 1.11.0
+ * @since 1.19.0
  */
 public class SampleUpdateComponent extends Div implements UserInput {
 

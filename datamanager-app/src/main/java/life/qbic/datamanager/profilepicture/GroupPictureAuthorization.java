@@ -8,7 +8,7 @@ package life.qbic.datamanager.profilepicture;
  * domain directly. Keeping it a functional port makes {@link ProfilePictureService} testable
  * without the group module.</p>
  *
- * @since 1.22.0
+ * @since 1.19.0
  */
 @FunctionalInterface
 public interface GroupPictureAuthorization {

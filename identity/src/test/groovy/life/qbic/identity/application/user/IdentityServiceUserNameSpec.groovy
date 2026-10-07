@@ -15,7 +15,7 @@ import spock.lang.Specification
 /**
  * <b>Tests for the username length rules enforced by the {@link IdentityService}</b>
  *
- * @since 1.20.0
+ * @since 1.19.0
  */
 class IdentityServiceUserNameSpec extends Specification {
 

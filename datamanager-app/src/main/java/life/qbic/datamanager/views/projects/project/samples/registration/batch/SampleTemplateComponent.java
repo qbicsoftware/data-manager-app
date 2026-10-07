@@ -35,7 +35,7 @@ import reactor.core.publisher.Mono;
  * <strong>Note:</strong> the download in the client will only work if the component is attached to a
  * {@link com.vaadin.flow.component.UI}.
  *
- * @since 1.11.0
+ * @since 1.19.0
  */
 public class SampleTemplateComponent extends Div {
 

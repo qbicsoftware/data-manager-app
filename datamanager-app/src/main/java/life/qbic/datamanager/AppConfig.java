@@ -207,7 +207,7 @@ public class AppConfig {
    *
    * @param groupDataStorage an implementation of the {@link GroupDataStorage} interface
    * @return a Singleton of the group repository
-   * @since 1.0.0
+   * @since 1.19.0
    */
   @Bean
   public GroupRepository groupRepository(GroupDataStorage groupDataStorage) {

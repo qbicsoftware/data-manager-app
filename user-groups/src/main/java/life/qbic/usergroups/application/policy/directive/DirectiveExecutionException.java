@@ -7,7 +7,7 @@ package life.qbic.usergroups.application.policy.directive;
  * user or the group can no longer be resolved). Mirrors {@code DirectiveExecutionException} of
  * the project management context.</p>
  *
- * @since 1.20.0
+ * @since 1.19.0
  */
 public class DirectiveExecutionException extends RuntimeException {
 

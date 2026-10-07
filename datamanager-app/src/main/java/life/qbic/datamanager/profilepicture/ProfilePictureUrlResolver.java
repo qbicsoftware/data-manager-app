@@ -18,7 +18,7 @@ import org.springframework.web.util.UriUtils;
  * built on a background thread (e.g. inside {@code UI.access}) keep the prefix. The controller
  * builds its redirect from the actual {@code HttpServletRequest} instead.</p>
  *
- * @since 1.22.0
+ * @since 1.19.0
  */
 @Component
 public class ProfilePictureUrlResolver {

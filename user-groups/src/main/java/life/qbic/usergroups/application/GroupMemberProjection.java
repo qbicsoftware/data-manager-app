@@ -10,7 +10,7 @@ import life.qbic.usergroups.domain.model.GroupRole;
  *
  * @param userId the user id of the member
  * @param role   the member's role inside the group (OWNER / MANAGER / MEMBER)
- * @since 1.20.0
+ * @since 1.19.0
  */
 public record GroupMemberProjection(String userId, GroupRole role) {
 

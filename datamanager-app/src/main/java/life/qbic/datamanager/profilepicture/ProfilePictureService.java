@@ -35,7 +35,7 @@ import org.springframework.transaction.annotation.Transactional;
  * {@link ImageNormalizationException.Reason} name as their single error parameter so the UI can
  * translate it into a specific message.</p>
  *
- * @since 1.22.0
+ * @since 1.19.0
  */
 @Service
 public class ProfilePictureService {

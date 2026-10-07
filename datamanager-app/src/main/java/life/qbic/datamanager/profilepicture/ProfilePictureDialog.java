@@ -12,7 +12,7 @@ import life.qbic.datamanager.views.general.DialogWindow;
  * <p>Hosts a {@link ProfilePictureCropField} and returns the cropped 256×256 PNG bytes on confirm.
  * The bytes are re-validated server-side by {@link ProfilePictureService}.</p>
  *
- * @since 1.22.0
+ * @since 1.19.0
  */
 public class ProfilePictureDialog extends DialogWindow {
 

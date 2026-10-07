@@ -19,7 +19,7 @@ import life.qbic.usergroups.application.communication.Subject;
  * communication records into the shared infrastructure email model and delegating the actual
  * submission to {@link EmailServiceProvider}.
  *
- * @since 1.20.0
+ * @since 1.19.0
  */
 public class UserGroupsEmailServiceProvider implements EmailService {
 

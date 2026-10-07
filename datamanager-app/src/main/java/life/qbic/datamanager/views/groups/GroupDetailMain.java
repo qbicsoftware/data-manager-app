@@ -65,7 +65,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
  * member of the group, and reroutes to the not-found page otherwise (so no membership
  * information leaks to non-members).
  *
- * @since 1.20.0
+ * @since 1.19.0
  */
 @Route(value = AppRoutes.GroupsRoutes.GROUP_DETAIL, layout = GroupsMainLayout.class)
 @SpringComponent

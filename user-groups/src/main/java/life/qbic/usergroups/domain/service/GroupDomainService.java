@@ -72,7 +72,7 @@ public class GroupDomainService {
    * @param description   the group description (optional)
    * @param createdByUserId the user id of the creating QBiC administrator
    * @param createdAt     the creation timestamp
-   * @since 1.21.0
+   * @since 1.19.0
    */
   public void createOrgGroup(GroupId id, GroupName name, GroupDescription description,
       String createdByUserId, Instant createdAt) {
@@ -136,7 +136,7 @@ public class GroupDomainService {
    * @param joinedAt     the join timestamp
    * @return the updated group, or an empty {@link Optional} if the group does not exist or the
    * operation was rejected (group dissolved or the target is already a member)
-   * @since 1.20.0
+   * @since 1.19.0
    */
   public Optional<UserGroup> addMember(GroupId groupId, String actingUserId, String userId,
       Instant joinedAt) {
@@ -168,7 +168,7 @@ public class GroupDomainService {
    * @param userId       the member to remove
    * @return the updated group, or an empty {@link Optional} if the group does not exist or the
    * operation was rejected
-   * @since 1.20.0
+   * @since 1.19.0
    */
   public Optional<UserGroup> removeMember(GroupId groupId, String actingUserId, String userId) {
     Optional<UserGroup> maybeGroup = groupRepository.findById(groupId);
@@ -202,7 +202,7 @@ public class GroupDomainService {
    * @param userId       the member to promote to MANAGER
    * @return the updated group, or an empty {@link Optional} if the group does not exist or the
    * operation was rejected
-   * @since 1.20.0
+   * @since 1.19.0
    */
   public Optional<UserGroup> appointManager(GroupId groupId, String actingUserId, String userId) {
     Optional<UserGroup> maybeGroup = groupRepository.findById(groupId);
@@ -236,7 +236,7 @@ public class GroupDomainService {
    * @param userId       the manager to demote
    * @return the updated group, or an empty {@link Optional} if the group does not exist or the
    * operation was rejected
-   * @since 1.20.0
+   * @since 1.19.0
    */
   public Optional<UserGroup> demoteManager(GroupId groupId, String actingUserId, String userId) {
     Optional<UserGroup> maybeGroup = groupRepository.findById(groupId);
@@ -272,7 +272,7 @@ public class GroupDomainService {
    * @param joinedAt      the join timestamp for direct appointment
    * @return the updated group, or an empty {@link Optional} if the group does not exist, is
    * dissolved, or the target user id is blank
-   * @since 1.22.0
+   * @since 1.19.0
    */
   public Optional<UserGroup> appointOrgManager(GroupId groupId, String actingAdminUserId,
       String userId, Instant joinedAt) {
@@ -323,7 +323,7 @@ public class GroupDomainService {
    * @param userId        the manager (or member) to remove
    * @return the updated group, or an empty {@link Optional} if the group does not exist, is
    * dissolved, or the target is not a member
-   * @since 1.22.0
+   * @since 1.19.0
    */
   public Optional<UserGroup> removeOrgManager(GroupId groupId, String actingAdminUserId,
       String userId) {
@@ -358,7 +358,7 @@ public class GroupDomainService {
    * @param joinedAt      the join timestamp
    * @return the updated group, or an empty {@link Optional} if the group does not exist, is
    * dissolved, or is already a member
-   * @since 1.22.0
+   * @since 1.19.0
    */
   public Optional<UserGroup> addOrgMember(GroupId groupId, String actingAdminUserId,
       String userId, Instant joinedAt) {
@@ -394,7 +394,7 @@ public class GroupDomainService {
    * @param userId        the manager to demote
    * @return the updated group, or an empty {@link Optional} if the group does not exist, is
    * dissolved, or the target is not a manager
-   * @since 1.22.0
+   * @since 1.19.0
    */
   public Optional<UserGroup> demoteOrgManager(GroupId groupId, String actingAdminUserId,
       String userId) {
@@ -409,7 +409,7 @@ public class GroupDomainService {
    * @param userId        the member to remove
    * @return the updated group, or an empty {@link Optional} if the group does not exist, is
    * dissolved, or the target is not a member
-   * @since 1.22.0
+   * @since 1.19.0
    */
   public Optional<UserGroup> removeOrgMember(GroupId groupId, String actingAdminUserId,
       String userId) {
@@ -424,7 +424,7 @@ public class GroupDomainService {
    * @param newName       the new group name
    * @return the updated group, or an empty {@link Optional} if the group does not exist or is
    * dissolved
-   * @since 1.22.0
+   * @since 1.19.0
    */
   public Optional<UserGroup> renameOrgGroup(GroupId groupId, String actingAdminUserId,
       GroupName newName) {
@@ -439,7 +439,7 @@ public class GroupDomainService {
    * @param newDescription the new group description
    * @return the updated group, or an empty {@link Optional} if the group does not exist or is
    * dissolved
-   * @since 1.22.0
+   * @since 1.19.0
    */
   public Optional<UserGroup> updateOrgGroupDescription(GroupId groupId, String actingAdminUserId,
       GroupDescription newDescription) {
@@ -457,7 +457,7 @@ public class GroupDomainService {
    * @param actingAdminUserId the user id of the acting QBiC administrator
    * @return the dissolved group, or an empty {@link Optional} if the group does not exist or is
    * already dissolved
-   * @since 1.22.0
+   * @since 1.19.0
    */
   public Optional<UserGroup> dissolveOrgGroup(GroupId groupId, String actingAdminUserId) {
     Optional<UserGroup> maybeGroup = groupRepository.findById(groupId);
@@ -486,7 +486,7 @@ public class GroupDomainService {
    * @param newName      the new group name
    * @return the updated group, or an empty {@link Optional} if the group does not exist or is
    * dissolved
-   * @since 1.20.0
+   * @since 1.19.0
    */
   public Optional<UserGroup> renameGroup(GroupId groupId, String actingUserId, GroupName newName) {
     Optional<UserGroup> maybeGroup = groupRepository.findById(groupId);
@@ -517,7 +517,7 @@ public class GroupDomainService {
    * @param newDescription the new group description
    * @return the updated group, or an empty {@link Optional} if the group does not exist or is
    * dissolved
-   * @since 1.20.0
+   * @since 1.19.0
    */
   public Optional<UserGroup> updateDescription(GroupId groupId, String actingUserId,
       GroupDescription newDescription) {
@@ -546,7 +546,7 @@ public class GroupDomainService {
    * @param groupId      the id of the group
    * @param actingUserId the user performing the dissolve (authorization already enforced)
    * @return the dissolved group, or an empty {@link Optional} if the group does not exist
-   * @since 1.20.0
+   * @since 1.19.0
    */
   public Optional<UserGroup> dissolve(GroupId groupId, String actingUserId) {
     Optional<UserGroup> maybeGroup = groupRepository.findById(groupId);

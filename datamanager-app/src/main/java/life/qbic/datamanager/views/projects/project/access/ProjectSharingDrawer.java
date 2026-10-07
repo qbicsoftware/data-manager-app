@@ -46,7 +46,7 @@ import life.qbic.usergroups.api.GroupSidProvider;
  * <p>The panel never exposes group membership data: only group names and descriptions are shown,
  * matching the visibility policy of the user-groups strategy.</p>
  *
- * @since 1.20.0
+ * @since 1.19.0
  */
 public class ProjectSharingDrawer extends Div {
 

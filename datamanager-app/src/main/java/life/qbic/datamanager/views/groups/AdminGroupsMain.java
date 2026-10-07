@@ -52,7 +52,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
  * filtered to {@link GroupType#ORG}: group names and descriptions are public by design
  * (discoverability), so no membership data can leak here.
  *
- * @since 1.21.0
+ * @since 1.19.0
  */
 @Route(value = AppRoutes.GroupsRoutes.ADMIN_GROUPS, layout = GroupsMainLayout.class)
 @SpringComponent

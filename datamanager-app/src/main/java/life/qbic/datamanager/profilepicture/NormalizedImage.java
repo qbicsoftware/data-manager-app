@@ -11,7 +11,7 @@ package life.qbic.datamanager.profilepicture;
  * @param width       the derivative width in pixels; always positive
  * @param height      the derivative height in pixels; always positive
  * @param contentHash the lower-case SHA-256 hex digest of {@code png}; never {@code null}
- * @since 1.22.0
+ * @since 1.19.0
  */
 public record NormalizedImage(byte[] png, int width, int height, String contentHash) {
 

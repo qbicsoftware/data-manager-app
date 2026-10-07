@@ -7,7 +7,7 @@ package life.qbic.datamanager.profilepicture;
  * context owns user profiles and the user-groups context owns group profiles. The owner type is
  * therefore part of the picture's identity — a user id and a group id share no id space.</p>
  *
- * @since 1.22.0
+ * @since 1.19.0
  */
 public enum ProfilePictureOwnerType {
   USER,

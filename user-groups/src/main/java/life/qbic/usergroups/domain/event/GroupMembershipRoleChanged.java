@@ -16,7 +16,7 @@ import life.qbic.usergroups.domain.model.GroupRole;
  * <p>Per the notification profile (GROUP-R-10), role-level changes inside a group are
  * <em>audit-log-only</em> — no email is sent. This event is the audit hook.</p>
  *
- * @since 1.20.0
+ * @since 1.19.0
  */
 public class GroupMembershipRoleChanged extends DomainEvent {
 
@@ -47,7 +47,7 @@ public class GroupMembershipRoleChanged extends DomainEvent {
    * @param newRole           the role after the change
    * @param triggeredByUserId the user who triggered the change (the group OWNER)
    * @return the new event
-   * @since 1.20.0
+   * @since 1.19.0
    */
   public static GroupMembershipRoleChanged create(String groupId, String userId,
       GroupRole previousRole, GroupRole newRole, String triggeredByUserId) {

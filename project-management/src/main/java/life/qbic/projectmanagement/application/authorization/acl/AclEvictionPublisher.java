@@ -17,7 +17,7 @@ import life.qbic.projectmanagement.domain.model.project.ProjectId;
  * <p>This is an application-layer port: implementations belong to the infrastructure layer and
  * must not leak messaging concerns (JMS, broker) through this interface.</p>
  *
- * @since 1.0.0
+ * @since 1.19.0
  */
 public interface AclEvictionPublisher {
 

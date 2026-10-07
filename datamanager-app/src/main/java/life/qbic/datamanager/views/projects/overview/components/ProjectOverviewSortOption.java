@@ -10,7 +10,7 @@ import life.qbic.application.commons.SortOrder;
  * The default ordering remains {@code lastModified} descending — the behaviour stewards know today —
  * until the application supports per-user list preferences that survive a re-login (ADR-0007).
  *
- * @since 1.12.0
+ * @since 1.19.0
  */
 public enum ProjectOverviewSortOption {
 

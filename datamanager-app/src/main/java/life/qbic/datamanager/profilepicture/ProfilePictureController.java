@@ -38,7 +38,7 @@ import org.springframework.web.util.UriUtils;
  * agreed policy. Authentication is enforced here explicitly rather than relying on filter-chain
  * request-matcher ordering, so the endpoint is safe regardless of configuration.</p>
  *
- * @since 1.22.0
+ * @since 1.19.0
  */
 @Controller
 public class ProfilePictureController {
