@@ -2,6 +2,10 @@
 # package ecosystems to update and where the package manifests are located.
 # Please see the documentation for all configuration options:
 # https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
+#
+# NOTE: This file only controls *version upgrades*. CVE detection and reports
+# are handled by .github/workflows/dependency-vulnerability-scan.yml
+# (see docs/security/vulnerability-management.md).
 
 version: 2
 updates:
@@ -9,7 +13,22 @@ updates:
     directory: "/" # Location of package manifests
     schedule:
       interval: "weekly"
+
+  # Root aggregator pom (plugin/dependency management entry point).
   - package-ecosystem: "maven"
     directory: "/"
+    schedule:
+      interval: "weekly"
+
+  # The BOM is where all third-party versions are pinned. Dependabot does not
+  # recurse into submodules, so it must be listed explicitly.
+  - package-ecosystem: "maven"
+    directory: "/datamanager-bom"
+    schedule:
+      interval: "weekly"
+
+  # Deployable application module (Vaadin, Spring Boot starters, ...).
+  - package-ecosystem: "maven"
+    directory: "/datamanager-app"
     schedule:
       interval: "weekly"
