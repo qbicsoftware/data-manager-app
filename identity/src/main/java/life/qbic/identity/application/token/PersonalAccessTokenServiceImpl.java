@@ -40,8 +40,8 @@ public class PersonalAccessTokenServiceImpl implements PersonalAccessTokenServic
   private static PersonalAccessToken convert(
       life.qbic.identity.domain.model.token.PersonalAccessToken token) {
     return new PersonalAccessToken(token.tokenId(),
-        token.description(), token.expirationDate(),
-        token.hasExpired());
+        token.description(), token.creationDate(),
+        token.expirationDate(), token.hasExpired());
   }
 
   @Override

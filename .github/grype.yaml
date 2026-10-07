@@ -1,0 +1,22 @@
+# Grype configuration for the dependency vulnerability scan
+# (see .github/workflows/dependency-vulnerability-scan.yml).
+#
+# This file is the *accepted-risk ledger* for dependency CVEs. An entry here
+# suppresses a finding from the report and the SARIF upload. Suppressions are
+# only allowed when the risk has been assessed and an expiry is recorded:
+#
+#   * Every `reason` MUST contain a ticket reference and an expiry date in the
+#     form `exp:YYYY-MM-DD`.
+#   * The dependency scan workflow re-reviews expired entries (see
+#     docs/security/vulnerability-management.md).
+#
+# Do not add an entry to silence a finding that can be fixed by upgrading a
+# coordinate in datamanager-bom/pom.xml — fix it instead.
+ignore:
+  # Example (keep commented until a risk is actually accepted):
+  #
+  # - vulnerability: CVE-2022-12345
+  #   package:
+  #     name: com.example:some-lib
+  #     version: "1.2.3"
+  #   reason: "Vulnerable code path not reachable; exp:2026-06-30; see issue #1234"

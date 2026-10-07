@@ -118,8 +118,59 @@ public class AppRoutes {
     public static final String DATASETS = "projects/%s/datasets";
 
     /**
-     * The profile page that displays information for the currently logged-in user
+     * The settings page that displays information for the currently logged-in user
      */
-    public static final String PROFILE = "profile";
+    public static final String PROFILE = "settings/profile";
+
+    /**
+     * Settings section to manage personal access tokens
+     */
+    public static final String SETTINGS_API_TOKENS = "settings/api-tokens";
+
+    /**
+     * Settings section to manage credentials for external data source instances
+     */
+    public static final String SETTINGS_EXTERNAL_PROVIDERS = "settings/external-providers";
+  }
+
+  public static class GroupsRoutes {
+
+    private GroupsRoutes() {}
+
+    /**
+     * Path to the top-level Groups area listing the groups a user belongs to.
+     */
+    public static final String MY_GROUPS = "groups";
+
+    /**
+     * Path to the page to create a new ad-hoc group.
+     */
+    public static final String NEW_GROUP = "groups/new";
+
+    /**
+     * Path to the admin-only page to create a new organisational group (FEAT-USER-GROUPS-01).
+     */
+    public static final String ADMIN_GROUPS = "groups/admin";
+
+    /**
+     * Path to the admin-only page to create a new organisational group (FEAT-USER-GROUPS-01).
+     */
+    public static final String NEW_ORG_GROUP = "groups/admin/new";
+
+    /**
+     * Path to the admin-only page to manage the managers of one organisational group
+     * (FEAT-USER-GROUPS-02). The {@code groupId} route parameter identifies the org group.
+     */
+    public static final String ADMIN_GROUP_MANAGERS = "groups/admin/:groupId/managers";
+
+    /**
+     * Path to the page showing one group's details and management surface.
+     */
+    public static final String GROUP_DETAIL = "groups/:groupId";
+
+    /**
+     * Path to the admin-only profile-picture audit trail (set/replace events, force-remove).
+     */
+    public static final String ADMIN_PROFILE_PICTURES = "groups/admin/profile-pictures";
   }
 }

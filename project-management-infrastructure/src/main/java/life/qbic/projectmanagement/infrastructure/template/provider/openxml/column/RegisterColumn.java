@@ -21,11 +21,12 @@ public enum RegisterColumn implements Column {
   SAMPLE_NAME("Sample Name", 0, false, true),
   ANALYSIS("Analysis to be performed", 1, false, true),
   BIOLOGICAL_REPLICATE("Biological Replicate", 2, false, false),
-  CONDITION("Condition", 3, false, true),
-  SPECIES("Species", 4, false, true),
-  SPECIMEN("Specimen", 5, false, true),
-  ANALYTE("Analyte", 6, false, true),
-  COMMENT("Comment", 7, false, false);
+  BATCH("Batch", 3, false, true),
+  CONDITION("Condition", 4, false, true),
+  SPECIES("Species", 5, false, true),
+  SPECIMEN("Specimen", 6, false, true),
+  ANALYTE("Analyte", 7, false, true),
+  COMMENT("Comment", 8, false, false);
 
   private static final ExampleProvider exampleProvider = column -> {
     if (column instanceof RegisterColumn registerColumn) {
@@ -49,6 +50,9 @@ public enum RegisterColumn implements Column {
         case SPECIMEN -> new Helper("Enumeration, Select a value from the dropdown", """
             Name of the biological material from which the analytes would be extracted.
             Note: The values in the dropdown are the predefined values from the experimental design.""");
+        case BATCH -> new Helper("Free text, e.g. Batch1, CohortA, Collection_1", """
+            A defined group of samples that are intended to be processed together
+            or were collected under the same experimental conditions.""");
         case COMMENT -> new Helper("Free text", "Notes about the sample. (Max 500 characters)");
       };
     }

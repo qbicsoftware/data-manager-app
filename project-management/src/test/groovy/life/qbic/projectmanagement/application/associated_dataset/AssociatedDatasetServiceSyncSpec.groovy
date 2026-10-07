@@ -120,7 +120,7 @@ class AssociatedDatasetServiceSyncSpec extends Specification {
     // classes, so stub the interface collaborators and pass nulls for the
     // remaining constructor parameters.
     def overviewLookup = [find: { p, f -> [] }] as ProjectOverviewLookup
-    def projectInfo = new ProjectInformationService(overviewLookup, null, null, null)
+    def projectInfo = new ProjectInformationService(overviewLookup, null, null, null, null)
     def userInfo = [findById: { id -> Optional.empty() }] as UserInformationService
     def experimentInfo = new ExperimentInformationService(null, null, null)
     new AssociatedDatasetService(source, repository, registry, projectInfo, userInfo,

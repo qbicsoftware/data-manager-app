@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNull;
 
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
+import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
@@ -13,7 +14,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
-import life.qbic.datamanager.views.UserMainLayout;
 import life.qbic.datamanager.views.account.PersonalAccessTokenComponent.AddTokenEvent;
 import life.qbic.datamanager.views.account.PersonalAccessTokenComponent.DeleteTokenEvent;
 import life.qbic.datamanager.views.account.PersonalAccessTokenComponent.PersonalAccessTokenFrontendBean;
@@ -21,6 +21,7 @@ import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.general.dialog.AlertDialog;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.notifications.Toast;
+import life.qbic.datamanager.views.settings.SettingsMainLayout;
 import life.qbic.identity.api.PersonalAccessToken;
 import life.qbic.identity.api.PersonalAccessTokenService;
 import life.qbic.identity.api.RawToken;
@@ -34,13 +35,13 @@ import org.springframework.security.core.context.SecurityContextHolder;
  * <p>
  * This component hosts the components necessary to show the {@link PersonalAccessToken} for the
  * current logged-in User via the {@link PersonalAccessTokenComponent}. Additionally, the user can
- * create and delete {@link PersonalAccessToken} via the provided UI elements
+ * create and delete {@link PersonalAccessToken} via the provided UI elements.
  */
-
-@Route(value = "personal-access-token", layout = UserMainLayout.class)
+@Route(value = "settings/api-tokens", layout = SettingsMainLayout.class)
 @SpringComponent
 @UIScope
 @PermitAll
+@PageTitle("Settings · API Tokens")
 public class PersonalAccessTokenMain extends Main implements BeforeEnterObserver {
 
   @Serial
@@ -76,9 +77,10 @@ public class PersonalAccessTokenMain extends Main implements BeforeEnterObserver
 
   private void onDeleteTokenClicked(DeleteTokenEvent deleteTokenEvent) {
     AlertDialog.danger(this,
-        "Personal Access Token will be deleted",
-        "Deleting this Personal Access Token will make it unusable. Proceed?",
-        "Delete token",
+        "Personal Access Token will be revoked",
+        "Revoking this token will make it unusable for API access. "
+            + "Any applications using this token will stop working immediately.",
+        "Revoke token",
         "Keep token",
         () -> {
           var userId = userIdTranslator.translateToUserId(
@@ -90,32 +92,27 @@ public class PersonalAccessTokenMain extends Main implements BeforeEnterObserver
   }
 
   private void onAddTokenClicked(AddTokenEvent addTokenEvent) {
-    AddPersonalAccessTokenDialog addPersonalAccessTokenDialog = new AddPersonalAccessTokenDialog();
-    addPersonalAccessTokenDialog.open();
-    addPersonalAccessTokenDialog.addCancelListener(event -> event.getSource().close());
-    /*Reload the tokens to ensure that if multiple tokens are generated the previously generated tokens are shown within the list*/
-    addPersonalAccessTokenDialog.addConfirmListener(event -> loadGeneratedPersonalAccessTokens());
-    addPersonalAccessTokenDialog.addConfirmListener(event -> {
+    var dialog = new AddPersonalAccessTokenDialog();
+    dialog.addCancelListener(event -> dialog.close());
+    dialog.addConfirmListener(event -> loadGeneratedPersonalAccessTokens());
+    dialog.addConfirmListener(event -> {
       var userId = userIdTranslator.translateToUserId(
               SecurityContextHolder.getContext().getAuthentication())
           .orElseThrow();
       RawToken createdToken = personalAccessTokenService.create(userId,
-          event.personalAccessTokenDTO()
-              .tokenDescription(), event.personalAccessTokenDTO().expirationDate());
+          event.personalAccessTokenDTO().tokenDescription(),
+          event.personalAccessTokenDTO().expirationDuration());
       personalAccessTokenComponent.showCreatedToken(createdToken);
-      event.getSource().close();
-      Toast toast = messageSourceNotificationFactory.toast("personal-access-token.created.success",
-          new Object[]{event.personalAccessTokenDTO().tokenDescription()}, getLocale());
+      dialog.close();
+      Toast toast = messageSourceNotificationFactory.toast(
+          "personal-access-token.created.success",
+          new Object[]{event.personalAccessTokenDTO().tokenDescription()},
+          getLocale());
       toast.open();
     });
+    dialog.open();
   }
 
-  /**
-   * Upon initialization of the main Component, the {@link PersonalAccessTokenComponent} should be
-   * provided with the list of personal access tokens associated with the user
-   *
-   * @param event before navigation event with event details
-   */
   @Override
   public void beforeEnter(BeforeEnterEvent event) {
     loadGeneratedPersonalAccessTokens();

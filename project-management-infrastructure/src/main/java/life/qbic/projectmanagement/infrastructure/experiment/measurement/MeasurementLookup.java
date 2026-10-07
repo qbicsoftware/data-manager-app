@@ -35,6 +35,26 @@ public class MeasurementLookup implements NgsMeasurementLookup, PxpMeasurementLo
   private final PxpMeasurementJpaRepository pxpMeasurementJpaRepository;
   private final IpMeasurementJpaRepository ipMeasurementJpaRepository;
   private static final String MEASUREMENTCODE_PROPERTY = "measurementCode";
+
+  /**
+   * Appends {@code measurementCode ASC} to a user-provided sort as an internal tie-break key.
+   *
+   * <p>The tie-break guarantees a deterministic total order for offset/limit pagination
+   * (measurement codes are unique), so items are never duplicated or dropped across page
+   * boundaries when the primary sort attributes tie. It is consulted only when the primary sort
+   * attributes are exactly equal and never becomes the primary ordering (ADR-0008).</p>
+   *
+   * @param sort the user-selected sort orders
+   * @return the given sort orders with the measurement-code tie-break appended unless already present
+   */
+  private static Sort withMeasurementCodeTieBreaker(Sort sort) {
+    boolean hasMeasurementCodeOrder = sort.stream()
+        .anyMatch(order -> MEASUREMENTCODE_PROPERTY.equals(order.getProperty()));
+    if (hasMeasurementCodeOrder) {
+      return sort;
+    }
+    return sort.and(Sort.by(Direction.ASC, MEASUREMENTCODE_PROPERTY));
+  }
   public MeasurementLookup(NgsMeasurementJpaRepository ngsMeasurementJpaRepository,
       PxpMeasurementJpaRepository pxpMeasurementJpaRepository,
       IpMeasurementJpaRepository ipMeasurementJpaRepository) {
@@ -59,8 +79,7 @@ public class MeasurementLookup implements NgsMeasurementLookup, PxpMeasurementLo
           "Invalid sort keys for ngs measurements: " + invalidSortKeys.stream()
               .map(Order::getProperty).toList());
     }
-    Sort ascendingMeasurementCodeSort = Sort.by(Direction.ASC, MEASUREMENTCODE_PROPERTY);
-    var pageable = new OffsetBasedRequest(offset, limit, ascendingMeasurementCodeSort);
+    var pageable = new OffsetBasedRequest(offset, limit, withMeasurementCodeTieBreaker(sort));
     var filter = mapToDatabaseFilter(measurementFilter);
     return ngsMeasurementJpaRepository.findAll(filter.asSpecification(), pageable)
         .get()
@@ -94,8 +113,7 @@ public class MeasurementLookup implements NgsMeasurementLookup, PxpMeasurementLo
           "Invalid sort keys for ngs measurements: " + invalidSortKeys.stream()
               .map(Order::getProperty).toList());
     }
-    Sort ascendingMeasurementCodeSort = Sort.by(Direction.ASC, MEASUREMENTCODE_PROPERTY);
-    var pageable = new OffsetBasedRequest(offset, limit, ascendingMeasurementCodeSort);
+    var pageable = new OffsetBasedRequest(offset, limit, withMeasurementCodeTieBreaker(sort));
     var filter = mapToDatabaseFilter(measurementFilter);
     return pxpMeasurementJpaRepository.findAll(filter.asSpecification(), pageable)
         .get()
@@ -188,8 +206,7 @@ public class MeasurementLookup implements NgsMeasurementLookup, PxpMeasurementLo
           "Invalid sort keys for ip measurements: " + invalidSortKeys.stream()
               .map(Order::getProperty).toList());
     }
-    Sort ascendingMeasurementCodeSort = Sort.by(Direction.ASC, MEASUREMENTCODE_PROPERTY);
-    var pageable = new OffsetBasedRequest(offset, limit, ascendingMeasurementCodeSort);
+    var pageable = new OffsetBasedRequest(offset, limit, withMeasurementCodeTieBreaker(sort));
     var filter = mapToDatabaseFilter(measurementFilter);
     return ipMeasurementJpaRepository.findAll(filter.asSpecification(), pageable)
         .get()

@@ -1,314 +1,339 @@
 package life.qbic.datamanager.views.account;
 
-import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
-import com.vaadin.flow.component.ClickEvent;
-import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.ComponentEvent;
-import com.vaadin.flow.component.ComponentEventListener;
-import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.contextmenu.ContextMenu;
+import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.H3;
+import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.router.Location;
 import com.vaadin.flow.server.VaadinService;
-import com.vaadin.flow.shared.Registration;
 import java.io.Serial;
 import java.io.Serializable;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.function.Consumer;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.datamanager.profilepicture.ProfilePictureDialog;
+import life.qbic.datamanager.profilepicture.ProfilePictureMessages;
+import life.qbic.datamanager.profilepicture.ProfilePictureOwnerType;
+import life.qbic.datamanager.profilepicture.ProfilePictureService;
 import life.qbic.datamanager.security.OidcLinkController;
-import life.qbic.datamanager.views.account.UserProfileComponent.ChangeUserDetailsDialog.ConfirmEvent;
-import life.qbic.datamanager.views.general.DialogWindow;
-import life.qbic.datamanager.views.general.PageArea;
+import life.qbic.datamanager.views.general.InlineEditableField;
+import life.qbic.datamanager.views.general.InlineEditableField.CancelEvent;
+import life.qbic.datamanager.views.general.InlineEditableField.SaveEvent;
+import life.qbic.datamanager.views.general.dialog.AlertDialog;
+import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.general.oidc.OidcType;
-import life.qbic.datamanager.views.projects.project.access.UserAvatarWithNameComponent;
 import life.qbic.identity.api.UserInfo;
+import life.qbic.identity.api.UserNames;
 import life.qbic.identity.application.user.IdentityService;
 import life.qbic.identity.application.user.IdentityService.EmptyUserNameException;
 import life.qbic.identity.application.user.IdentityService.UserNameNotAvailableException;
+import life.qbic.identity.application.user.IdentityService.UserNameTooLongException;
 import life.qbic.logging.api.Logger;
 
 /**
  * User Profile Component
  * <p>
- * This {@link PageArea} allows the user to manage his profile. The user is able to view a tokens
- * expiration date and description. Additionally,he is able to delete and create personal access
- * tokens. Only after a personal access token is created its raw text is shown to the user with the
- * ability to copy it to the clipboard
+ * Flat, group-based profile view showing the user's personal information and linked accounts.
+ * Semantic groups ("Personal information", "Linked accounts") are separated by subheadings and
+ * whitespace only — no card chrome. Username editing is inline via {@link InlineEditableField}.
  */
-
-public class UserProfileComponent extends PageArea implements Serializable {
+public class UserProfileComponent extends Div implements Serializable {
 
   @Serial
   private static final long serialVersionUID = -65339437186530376L;
-  private static final String TITLE = "My Profile";
   private static final Logger log = logger(UserProfileComponent.class);
   private final transient IdentityService identityService;
+  private final transient ProfilePictureService profilePictureService;
+  private final transient MessageSourceNotificationFactory messageFactory;
+  private final UserInfo userInfo;
   private final Location currentLocation;
-  private UserDetailsCard userDetailsCard;
+  private final transient Consumer<String> usernameChangedListener;
+  private UserAvatar profileAvatar;
+  private transient MenuItem removePictureMenuItem;
 
+  /**
+   * @param usernameChangedListener invoked with the new username after a successful change, so
+   *                                the surrounding layout can refresh dependent UI (e.g. the
+   *                                account overview header) without a page reload
+   */
   public UserProfileComponent(IdentityService identityService,
+      ProfilePictureService profilePictureService,
+      MessageSourceNotificationFactory messageFactory,
       UserInfo userInfo,
-      Location currentLocation) {
+      Location currentLocation,
+      Consumer<String> usernameChangedListener) {
     this.identityService = requireNonNull(identityService,
         "identity service cannot be null");
+    this.profilePictureService = requireNonNull(profilePictureService,
+        "profile picture service cannot be null");
+    this.messageFactory = requireNonNull(messageFactory,
+        "message factory cannot be null");
+    this.userInfo = requireNonNull(userInfo, "userInfo must not be null");
     this.currentLocation = requireNonNull(currentLocation);
-    Span title = new Span(TITLE);
-    addComponentAsFirst(title);
-    title.addClassName("title");
+    this.usernameChangedListener = requireNonNull(usernameChangedListener,
+        "usernameChangedListener must not be null");
     addClassName("user-profile-component");
-    this.setVisible(false);
-    this.showForUser(userInfo);
+    render();
   }
 
-  private void showForUser(UserInfo userInfo) {
-    requireNonNull(userInfo, "userInfo must not be null");
-    if (nonNull(userDetailsCard)) {
-      remove(userDetailsCard);
-    }
-    userDetailsCard = new UserDetailsCard(userInfo, OidcLinkController.ENDPOINT_LINK_ORCID);
-    add(userDetailsCard);
-    this.setVisible(true);
+  private void render() {
+    add(buildPersonalInformationGroup(), buildLinkedAccountsGroup());
   }
 
-  static class UserDetail extends Div {
+  // ── Personal information group ────────────────────────────────
 
-    public UserDetail(String title, Component... components) {
-      addClassName("gap-04");
-      Span titleSpan = new Span(title);
-      titleSpan.addClassName("bold");
-      addClassName("detail");
-      addComponentAsFirst(titleSpan);
-      add(components);
-    }
+  private Div buildPersonalInformationGroup() {
+    var group = settingsGroup("Personal information");
+
+    profileAvatar = new UserAvatar();
+    profileAvatar.setUserId(userInfo.id());
+    profileAvatar.addClassName("profile-picture-block__avatar");
+
+    var settingsButton = new Button(new Icon(VaadinIcon.COG));
+    settingsButton.addClassName("profile-picture-block__overlay-button");
+    settingsButton.setAriaLabel("Profile picture options");
+    settingsButton.getElement().setAttribute("title", "Change picture");
+
+    var menu = new ContextMenu();
+    menu.setTarget(settingsButton);
+    menu.setOpenOnClick(true);
+    menu.addItem(menuItem(new Icon(VaadinIcon.EXCHANGE), "Change"),
+        event -> openPictureDialog());
+    removePictureMenuItem = menu.addItem(menuItem(new Icon(VaadinIcon.CLOSE_SMALL), "Remove"),
+        event -> removeProfilePicture());
+    removePictureMenuItem.setEnabled(hasProfilePicture());
+
+    var avatarWrapper = new Div(profileAvatar, settingsButton);
+    avatarWrapper.addClassName("profile-picture-block__avatar-wrapper");
+
+    var fields = new Div();
+    fields.addClassName("personal-information__fields");
+    fields.add(buildUsernameField());
+    fields.add(buildEmailRow());
+
+    var layout = new Div(fields, avatarWrapper);
+    layout.addClassName("personal-information__layout");
+
+    group.add(layout);
+    return group;
   }
 
-  public static class ChangeUserDetailsDialog extends DialogWindow {
+  private static Div menuItem(Icon icon, String label) {
+    var content = new Div(icon, new Span(label));
+    content.addClassName("profile-picture-menu-item");
+    return content;
+  }
 
-    private final TextField platformUserNameField = new TextField("New username");
+  private boolean hasProfilePicture() {
+    return profilePictureService.findContentHash(ProfilePictureOwnerType.USER, userInfo.id())
+        .isPresent();
+  }
 
-    public ChangeUserDetailsDialog(String currentUserName) {
-      super();
+  private void openPictureDialog() {
+    var dialog = new ProfilePictureDialog();
+    dialog.addPictureSelectedListener(png -> saveProfilePicture(png, dialog));
+    dialog.open();
+  }
 
-      setHeaderTitle("Change username");
-      add(platformUserNameField);
-      setConfirmButtonLabel("Save");
-      addClassName("change-user-details-dialog");
-      platformUserNameField.addClassName("change-user-name");
-      platformUserNameField.setValue(currentUserName);
-    }
-
-    public void setUserNameNotAvailable() {
-      platformUserNameField.setInvalid(true);
-      platformUserNameField.setErrorMessage(
-          String.format("Username %s is not available", platformUserNameField.getValue()));
-    }
-
-    public void setUserNameEmpty() {
-      platformUserNameField.setInvalid(true);
-      platformUserNameField.setErrorMessage("Please provide a non empty username");
-    }
-
-    /**
-     * Overwrite to change what happens on confirm button clicked
-     *
-     * @param clickEvent
-     */
-    @Override
-    protected void onConfirmClicked(ClickEvent<Button> clickEvent) {
-      if (!platformUserNameField.isEmpty()) {
-        fireEvent(
-            new ConfirmEvent(this, clickEvent.isFromClient(), platformUserNameField.getValue()));
-      } else {
-        setUserNameEmpty();
+  private void saveProfilePicture(byte[] png, ProfilePictureDialog dialog) {
+    try {
+      var result = profilePictureService.setUserPicture(userInfo.id(), png);
+      if (result.isError()) {
+        dialog.showError(ProfilePictureMessages.userMessage(result.getError()));
+        return;
       }
+    } catch (RuntimeException e) {
+      log.warn("Saving profile picture failed for user " + userInfo.id() + ": " + e.getMessage());
+      dialog.showError("The picture could not be saved. Please try again.");
+      return;
     }
+    dialog.close();
+    refreshProfileAvatar();
+    messageFactory.toast("profile.picture.change.success", new Object[]{}, getLocale()).open();
+  }
 
-    /**
-     * Overwrite to change what happens on cancel button clicked.
-     *
-     * @param clickEvent
-     */
-    @Override
-    protected void onCancelClicked(ClickEvent<Button> clickEvent) {
-      fireEvent(new CancelEvent(this, clickEvent.isFromClient()));
+  private void removeProfilePicture() {
+    AlertDialog.danger(this,
+        "Remove profile picture?",
+        "Are you sure you want to remove your profile picture? The default placeholder will be "
+            + "shown instead.",
+        "Remove picture",
+        "Keep picture",
+        this::performRemoveProfilePicture)
+        .open();
+  }
+
+  private void performRemoveProfilePicture() {
+    var result = profilePictureService.removeUserPicture(userInfo.id());
+    if (result.isError()) {
+      log.warn("Could not remove profile picture for user " + userInfo.id() + ": "
+          + result.getError().getMessage());
+      return;
     }
+    refreshProfileAvatar();
+    messageFactory.toast("profile.picture.remove.success", new Object[]{}, getLocale()).open();
+  }
 
-    public Registration addCancelListener(ComponentEventListener<CancelEvent> listener) {
-      return addListener(CancelEvent.class, listener);
-    }
-
-    public Registration addConfirmListener(ComponentEventListener<ConfirmEvent> listener) {
-      return addListener(ConfirmEvent.class, listener);
-    }
-
-    public static class ConfirmEvent extends ComponentEvent<ChangeUserDetailsDialog> {
-
-      private final String platformUserName;
-
-      /**
-       * Creates a new event using the given source and indicator whether the event originated from
-       * the client side or the server side.
-       *
-       * @param source           the source component
-       * @param fromClient       <code>true</code> if the event originated from the client
-       *                         side, <code>false</code> otherwise
-       * @param platformUserName The valid new platform username to be associated with the user
-       */
-      public ConfirmEvent(ChangeUserDetailsDialog source, boolean fromClient,
-          String platformUserName) {
-        super(source, fromClient);
-        requireNonNull(platformUserName, "new user display name must not be null");
-        this.platformUserName = platformUserName;
-      }
-
-      public String userName() {
-        return platformUserName;
-      }
-    }
-
-    public static class CancelEvent extends ComponentEvent<ChangeUserDetailsDialog> {
-
-      /**
-       * Creates a new event using the given source and indicator whether the event originated from
-       * the client side or the server side.
-       *
-       * @param source     the source component
-       * @param fromClient <code>true</code> if the event originated from the client
-       *                   side, <code>false</code> otherwise
-       */
-      public CancelEvent(ChangeUserDetailsDialog source, boolean fromClient) {
-        super(source, fromClient);
-      }
+  private void refreshProfileAvatar() {
+    profileAvatar.refresh(ProfilePictureOwnerType.USER, userInfo.id());
+    if (removePictureMenuItem != null) {
+      removePictureMenuItem.setEnabled(hasProfilePicture());
     }
   }
 
-  private class UserDetailsCard extends Div {
+  private InlineEditableField buildUsernameField() {
+    var field = new InlineEditableField("Username", userInfo.platformUserName());
+    field.setMaxLength(UserNames.MAX_LENGTH);
+    field.setCharacterHint("Visible to other users");
 
-    private final UserInfo userInfo;
-
-    private final String orcidLinkingEndpoint;
-
-    public UserDetailsCard(UserInfo userInfo, String orcidLinkingEndpoint) {
-      this.orcidLinkingEndpoint = requireNonNull(orcidLinkingEndpoint);
-      this.userInfo = requireNonNull(userInfo, "userInfo must not be null");
-      addClassNames("flex-horizontal", "gap-03", "fixed-width-1000px", "padding-10");
-
-      UserAvatar userAvatar = new UserAvatar();
-      userAvatar.setName(userInfo.platformUserName());
-      userAvatar.setUserId(userInfo.id());
-      UserAvatarWithNameComponent avatarWithName = new UserAvatarWithNameComponent(userAvatar,
-          userInfo.fullName());
-      avatarWithName.getUserNameComponent().addClassName("bold");
-
-      Span changePlatformUserName = new Span("Change Username");
-      changePlatformUserName.addClickListener(this::onChangePlatformUserNameClicked);
-      changePlatformUserName.addClassName("change-name");
-      Span platformUserName = new Span();
-      UserDetail userNameDetail = new UserDetail("Username: ", platformUserName,
-          changePlatformUserName);
-      Span userEmail = new Span();
-      UserDetail userEmailDetail = new UserDetail("Email: ", userEmail);
-      Div userDetails = new Div();
-      userDetails.add(userNameDetail, userEmailDetail);
-      userDetails.addClassNames("details", "gap-07");
-      add(avatarWithName, userDetails);
-      avatarWithName.addClassName("flex-01");
-      userDetails.addClassNames("flex-03");
-      addClassName("user-details-card");
-
-      platformUserName.setText(userInfo.platformUserName());
-      userEmail.setText(this.userInfo.emailAddress());
-      userAvatar.setName(this.userInfo.platformUserName());
-      userAvatar.setUserId(this.userInfo.id());
-      setLinkedAccounts(userDetails);
+    // Grandfathered usernames predate the length limit and remain valid. Tell their owners how to
+    // resolve the situation instead of silently blocking the unchanged value.
+    if (UserNames.exceedsMaxLength(userInfo.platformUserName())) {
+      field.setNotice("This username exceeds the current limit of " + UserNames.MAX_LENGTH
+          + " characters. It keeps working, but please choose a shorter one when you change it.");
     }
 
-    private void onChangePlatformUserNameClicked(ClickEvent<Span> event) {
-      userDetailsCard.openChangeUserDialog();
+    field.addSaveListener(this::onUsernameSave);
+    field.addCancelListener(e -> { /* nothing to do — component handles UI revert */ });
+
+    return field;
+  }
+
+  private void onUsernameSave(SaveEvent event) {
+    String newName = event.value();
+    if (newName.isEmpty()) {
+      event.getSource().setError("Please provide a non-empty username");
+      return;
     }
 
-    private void openChangeUserDialog() {
-      requireNonNull(userInfo, "userInfo must not be null");
-      ChangeUserDetailsDialog dialog = new ChangeUserDetailsDialog(userInfo.platformUserName());
-      dialog.addConfirmListener(this::onChangeUserDetailsDialogConfirmed);
-      dialog.addCancelListener(event -> event.getSource().close());
-      dialog.open();
+    // Fast feedback for the common case; the application service remains the authoritative guard.
+    // An unchanged grandfathered value is deliberately allowed through.
+    boolean unchanged = newName.equals(userInfo.platformUserName());
+    if (!unchanged && newName.length() > UserNames.MAX_LENGTH) {
+      event.getSource().setError(
+          "Username must not exceed " + UserNames.MAX_LENGTH + " characters");
+      return;
     }
 
-    private void onChangeUserDetailsDialogConfirmed(ConfirmEvent event) {
-      var response = identityService.requestUserNameChange(userInfo.id(), event.userName());
-      if (response.isSuccess()) {
-        event.getSource().close();
-        // Trigger reload of UI reloading the username displayed in the datamanager menu
-        // and within this component
-        UI.getCurrent().getPage().reload();
-        return;
-      }
-
-      RuntimeException e = response.failures().stream().findFirst().orElseThrow();
-      if (e instanceof UserNameNotAvailableException) {
-        event.getSource().setUserNameNotAvailable();
-        return;
-      }
-      if (e instanceof EmptyUserNameException) {
-        event.getSource().setUserNameEmpty();
-        return;
-      }
-      throw ApplicationException.wrapping("Unexpected exception in username change.", e);
+    var response = identityService.requestUserNameChange(userInfo.id(), newName);
+    if (response.isSuccess()) {
+      event.getSource().setValue(newName);
+      event.getSource().cancelEditing();
+      // Refresh the account overview header and other username references in place
+      usernameChangedListener.accept(newName);
+      return;
     }
 
-    private void setLinkedAccounts(Div userDetails) {
-      if (userInfo.oidcId() == null || userInfo.oidcIssuer() == null) {
-        userDetails.add(new UserDetail("Linked Accounts", linkWithOrcidCard()));
-        return;
-      }
-      if (userInfo.oidcIssuer().isEmpty() || userInfo.oidcId().isEmpty()) {
-        userDetails.add(new UserDetail("Linked Accounts", linkWithOrcidCard()));
-        return;
-      }
+    RuntimeException e = response.failures().stream().findFirst().orElseThrow();
+    if (e instanceof UserNameNotAvailableException) {
+      event.getSource().setError("Username \"" + newName + "\" is not available");
+      return;
+    }
+    if (e instanceof EmptyUserNameException) {
+      event.getSource().setError("Please provide a non-empty username");
+      return;
+    }
+    if (e instanceof UserNameTooLongException) {
+      event.getSource().setError(
+          "Username must not exceed " + UserNames.MAX_LENGTH + " characters");
+      return;
+    }
+    throw ApplicationException.wrapping("Unexpected exception in username change.", e);
+  }
+
+  /**
+   * The email address is rendered as plain text: it is not editable, so it must not carry any
+   * edit affordance (no underlined input look). The label column reuses the inline-editable-field
+   * styles so both rows align.
+   */
+  private Div buildEmailRow() {
+    var row = new Div();
+    row.addClassName("inline-editable-field");
+
+    var label = new Span("Email:");
+    label.addClassName("inline-editable-field__label");
+
+    var value = new Span(userInfo.emailAddress());
+    value.addClassName("inline-editable-field__value");
+
+    row.add(label, value);
+    return row;
+  }
+
+  // ── Linked accounts group ─────────────────────────────────────
+
+  private Div buildLinkedAccountsGroup() {
+    var group = settingsGroup("Linked accounts");
+
+    if (userInfo.oidcId() == null || userInfo.oidcIssuer() == null
+        || userInfo.oidcIssuer().isEmpty() || userInfo.oidcId().isEmpty()) {
+      group.add(buildLinkWithOrcidBlock());
+    } else {
       Arrays.stream(OidcType.values())
           .filter(ot -> ot.getIssuer().equals(userInfo.oidcIssuer()))
           .findFirst()
-          .ifPresentOrElse(oidcType -> userDetails.add(
-                  new UserDetail("Linked Accounts", generateLinkedAccountCard(userInfo))),
+          .ifPresentOrElse(
+              oidcType -> group.add(generateLinkedAccountBox(userInfo)),
               () -> log.warn("No issuer was found for OIDC type " + userInfo.oidcIssuer()));
     }
 
-    private Div linkWithOrcidCard() {
-      var linkAccountCard = new Div();
-      var contextPath = VaadinService.getCurrentRequest().getContextPath();
-
-      // Since we have an internal app flow only, the relative path is enough to send submit
-      var returnTo = URLEncoder.encode(currentLocation.getPath(), StandardCharsets.UTF_8);
-
-      var linkAccount = new Anchor("", "Link ORCiD account");
-      linkAccount.setTarget(AnchorTarget.SELF);
-      // Will call the endpoint that starts the OIDC link workflow
-      linkAccount.setHref(contextPath + orcidLinkingEndpoint + "?return=" + returnTo);
-      // Important to exclude the Vaadin router and call the Spring controller
-      linkAccount.setRouterIgnore(true);
-      linkAccountCard.add(linkAccount);
-      return linkAccountCard;
-    }
-
-    private Div generateLinkedAccountCard(UserInfo userInfo) {
-      return new AccountContentBox(userInfo.oidcId(), URI.create(generateOidCRecordURL(
-          userInfo.oidcId())));
-    }
-
-    private String generateOidCRecordURL(String oidcId) {
-      return String.format("https://orcid.org/%s", oidcId);
-    }
+    return group;
   }
 
+  private Div buildLinkWithOrcidBlock() {
+    var block = new Div();
+    block.addClassName("link-account-block");
+
+    var explanation = new Paragraph(
+        "Link your ORCiD account to sign in with ORCiD and connect your public researcher record "
+            + "with this account.");
+    explanation.addClassName("link-account-block__explanation");
+
+    var contextPath = VaadinService.getCurrentRequest().getContextPath();
+    var returnTo = URLEncoder.encode(currentLocation.getPath(), StandardCharsets.UTF_8);
+
+    var linkAccount = new Anchor(
+        contextPath + OidcLinkController.ENDPOINT_LINK_ORCID + "?return=" + returnTo,
+        "Link ORCiD account");
+    linkAccount.setTarget(AnchorTarget.SELF);
+    linkAccount.setRouterIgnore(true);
+    // Render the anchor as a primary button so the call to action is discoverable
+    linkAccount.getElement().setAttribute("theme", "button primary");
+
+    block.add(explanation, linkAccount);
+    return block;
+  }
+
+  private Div generateLinkedAccountBox(UserInfo userInfo) {
+    return new AccountContentBox(userInfo.oidcId(),
+        URI.create(generateOidCRecordURL(userInfo.oidcId())));
+  }
+
+  private String generateOidCRecordURL(String oidcId) {
+    return String.format("https://orcid.org/%s", oidcId);
+  }
+
+  // ── Shared group scaffolding ──────────────────────────────────
+
+  private static Div settingsGroup(String title) {
+    var group = new Div();
+    group.addClassName("settings-group");
+    var heading = new H3(title);
+    heading.addClassName("settings-group__title");
+    group.add(heading);
+    return group;
+  }
 }

@@ -32,6 +32,9 @@
     <module>email-service-provider</module>
     <module>finances-infrastructure</module>
     <module>finances-api</module>
+    <module>user-groups</module>
+    <module>user-groups-api</module>
+    <module>user-groups-infrastructure</module>
   </modules>
   <packaging>pom</packaging>
 

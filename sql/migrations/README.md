@@ -16,6 +16,12 @@ For the three-tier migration documentation structure, see
 |---|---|---|---|---|
 | 1 | [`create-associated-dataset.sql`](create-associated-dataset.sql) | Create `associated_dataset` table for connecting InvenioRDM datasets to projects | [#1467](https://github.com/qbicsoftware/data-manager-app/issues/1467) | `data_management` |
 | 2 | [`extend-dataset-visibility-in-project-overview.sql`](extend-dataset-visibility-in-project-overview.sql) | Add connected-dataset aggregates (count, open/restricted breakdown, last-connected) to `project_overview` view | [#1475](https://github.com/qbicsoftware/data-manager-app/issues/1475) | `data_management` |
+| 3 | [`add-sample-batch-property-and-project-association.sql`](add-sample-batch-property-and-project-association.sql) | Add `batch`, `project_id`, `registrationTime`, `lastModified` to `sample` and backfill from legacy `sample_batches` (additive, non-destructive) | [#1549](https://github.com/qbicsoftware/data-manager-app/issues/1549), [#1550](https://github.com/qbicsoftware/data-manager-app/issues/1550), [#1551](https://github.com/qbicsoftware/data-manager-app/issues/1551) | `data_management` |
+| 4 | [`finalize-sample-batch-removal.sql`](finalize-sample-batch-removal.sql) | Add `project_id` FK, drop `sample.assigned_batch_id`, drop legacy `sample_batches`/`sample_batches_sampleid` (stop-the-world, destructive) | [#1551](https://github.com/qbicsoftware/data-manager-app/issues/1551) | `data_management` |
+| 5 | [`create-pinned-projects.sql`](create-pinned-projects.sql) | Create `pinned_projects` table for per-user pinned-project quick access | FEAT-PINNED-01 (docs-only, no issue) | `data_management` |
+| 6 | [`create-user-groups.sql`](create-user-groups.sql) | Create `user_group` + `group_membership` tables for the user-groups bounded context | [#1561](https://github.com/qbicsoftware/data-manager-app/issues/1561) | `data_management` |
+| 7 | [`create-profile-pictures.sql`](create-profile-pictures.sql) | Create `profile_picture` + `profile_picture_audit` tables for user and user-group profile pictures | FEAT-PROF-PIC-01/02 (proposed, docs-only) | `data_management` |
+| 8 | [`add-profile-picture-audit-review.sql`](add-profile-picture-audit-review.sql) | Add `reviewed`, `reviewed_by`, `reviewed_at` to `profile_picture_audit` (audit review marker) | FEAT-PROFILE-PICTURES (follow-up) | `data_management` |
 
 *Add a row here and drop in the script when a new migration lands.*
 

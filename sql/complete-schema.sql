@@ -375,6 +375,20 @@ CREATE TABLE IF NOT EXISTS `personal_access_tokens`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS `pinned_projects`
+(
+    `userId`               varchar(255) NOT NULL,
+    `projectId`            varchar(255) NOT NULL,
+    `pinnedAt`             datetime(6)  NOT NULL,
+    `projectCodeSnapshot`  varchar(255)  DEFAULT NULL,
+    `projectTitleSnapshot` varchar(255)  DEFAULT NULL,
+    PRIMARY KEY (`userId`, `projectId`),
+    KEY `idx_pinned_projects_user_pinned_at` (`userId`, `pinnedAt`),
+    CONSTRAINT `fk_pinned_projects_project` FOREIGN KEY (`projectId`) REFERENCES `projects_datamanager` (`projectId`) ON DELETE CASCADE
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS `projects_offers`
 (
     `projectIdentifier` varchar(255) NOT NULL,
@@ -510,11 +524,15 @@ CREATE TABLE IF NOT EXISTS `sample`
     `sample_id`           varchar(255) NOT NULL,
     `analysis_method`     varchar(255) DEFAULT NULL,
     `assigned_batch_id`   varchar(255) DEFAULT NULL,
+    `batch`               varchar(255) DEFAULT NULL,
+    `project_id`          varchar(255) DEFAULT NULL,
     `comment`             varchar(255) DEFAULT NULL,
     `experiment_id`       varchar(255) DEFAULT NULL,
     `experimentalGroupId` bigint(20)   DEFAULT NULL,
     `label`               varchar(255) DEFAULT NULL,
+    `lastModified`        datetime(6)  DEFAULT NULL,
     `organism_id`         varchar(255) DEFAULT NULL,
+    `registrationTime`    datetime(6)  DEFAULT NULL,
     `code`                varchar(255) DEFAULT NULL,
     `analyte`             text         DEFAULT NULL,
     `species`             text         DEFAULT NULL,
@@ -1064,6 +1082,72 @@ CREATE TABLE IF NOT EXISTS `user_external_credential`
     UNIQUE KEY `uk_user_src_instance` (`user_id`, `source_type`, `instance_id`),
     KEY `idx_cred_user` (`user_id`),
     KEY `idx_cred_user_src` (`user_id`, `source_type`)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `user_group`
+(
+    `id`          varchar(36)  NOT NULL,
+    `name`        varchar(80)  NOT NULL,
+    `description` varchar(500) DEFAULT NULL,
+    `type`        varchar(16)  NOT NULL,
+    `status`      varchar(16)  NOT NULL,
+    `created_by`  varchar(255) NOT NULL,
+    `created_at`  datetime(6)  NOT NULL,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_user_group_name` (`name`)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `group_membership`
+(
+    `group_id`  varchar(36)  NOT NULL,
+    `user_id`   varchar(255) NOT NULL,
+    `role`      varchar(16)  NOT NULL,
+    `joined_at` datetime(6)  NOT NULL,
+    PRIMARY KEY (`group_id`, `user_id`),
+    KEY `idx_group_membership_user` (`user_id`)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `profile_picture`
+(
+    `id`           bigint(20)   NOT NULL AUTO_INCREMENT,
+    `owner_type`   varchar(16)  NOT NULL,
+    `owner_id`     varchar(255) NOT NULL,
+    `content_type` varchar(32)  NOT NULL,
+    `content_hash` char(64)     NOT NULL,
+    `width`        smallint     NOT NULL,
+    `height`       smallint     NOT NULL,
+    `data`         mediumblob   NOT NULL,
+    `updated_at`   datetime(6)  NOT NULL,
+    `updated_by`   varchar(255) NOT NULL,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_profile_picture_owner` (`owner_type`, `owner_id`)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `profile_picture_audit`
+(
+    `id`                   bigint(20)   NOT NULL AUTO_INCREMENT,
+    `owner_type`           varchar(16)  NOT NULL,
+    `owner_id`             varchar(255) NOT NULL,
+    `action`               varchar(16)  NOT NULL,
+    `actor_id`             varchar(255) NOT NULL,
+    `previous_content_hash` char(64)    DEFAULT NULL,
+    `new_content_hash`     char(64)     NOT NULL,
+    `created_at`           datetime(6)  NOT NULL,
+    `reviewed`             bit(1)       NOT NULL DEFAULT b'0',
+    `reviewed_by`          varchar(255) DEFAULT NULL,
+    `reviewed_at`          datetime(6)  DEFAULT NULL,
+    PRIMARY KEY (`id`),
+    KEY `idx_profile_picture_audit_owner` (`owner_type`, `owner_id`, `created_at`),
+    KEY `idx_profile_picture_audit_created` (`created_at`),
+    KEY `idx_profile_picture_audit_reviewed` (`reviewed`, `created_at`)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;

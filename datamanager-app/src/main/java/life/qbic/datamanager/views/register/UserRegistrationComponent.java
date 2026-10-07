@@ -25,6 +25,7 @@ import java.util.Objects;
 import life.qbic.datamanager.views.login.passwordreset.ResetPasswordMain;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.identity.api.UserInformationService;
+import life.qbic.identity.api.UserNames;
 
 /**
  * User Registration Component
@@ -64,7 +65,9 @@ public class UserRegistrationComponent extends Div {
     this.userInformationService = Objects.requireNonNull(userInformationService);
     addClassName("user-registration-component");
     registerButton.addClassName("primary");
-    username.setHelperText("Your unique user name, visible to other users");
+    username.setMaxLength(UserNames.MAX_LENGTH);
+    username.setHelperText("Your unique user name, visible to other users (max. "
+        + UserNames.MAX_LENGTH + " characters)");
     password.setHelperText("Please provide a password with at least 12 characters");
     add(titleSpan, notificationLayout, fullName, email, username, password, registerButton);
     setFieldValidation();
@@ -101,6 +104,10 @@ public class UserRegistrationComponent extends Div {
         .asRequired("Please provide an user name")
         .withValidator(new RegexpValidator("Please provide a valid user name", ".*\\S+.*"))
         .withValidator((Validator<String>) (value, context) -> {
+          if (value.strip().length() > UserNames.MAX_LENGTH) {
+            return ValidationResult.error(
+                "User name must not exceed " + UserNames.MAX_LENGTH + " characters");
+          }
           if (userInformationService.isUserNameAvailable(value)) {
             return ValidationResult.ok();
           } else {

@@ -25,13 +25,13 @@ import life.qbic.identity.domain.repository.UserRepository;
 import life.qbic.infrastructure.email.EmailServiceProvider;
 import life.qbic.infrastructure.email.identity.IdentityEmailServiceProvider;
 import life.qbic.infrastructure.email.project.ProjectManagementEmailServiceProvider;
+import life.qbic.infrastructure.email.usergroups.UserGroupsEmailServiceProvider;
 import life.qbic.projectmanagement.application.AppContextProvider;
 import life.qbic.projectmanagement.application.OrganisationRepository;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.api.SampleCodeService;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
 import life.qbic.projectmanagement.application.authorization.authorities.AuthorityService;
-import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
 import life.qbic.projectmanagement.application.communication.broadcasting.MessageRouter;
 import life.qbic.projectmanagement.application.concurrent.ElasticScheduler;
 import life.qbic.projectmanagement.application.concurrent.VirtualThreadScheduler;
@@ -40,7 +40,6 @@ import life.qbic.projectmanagement.application.measurement.MeasurementLookupServ
 import life.qbic.projectmanagement.application.policy.AssociatedDatasetConnectedPolicy;
 import life.qbic.projectmanagement.application.policy.AssociatedDatasetRemovedPolicy;
 import life.qbic.projectmanagement.application.policy.AssociatedDatasetsSyncedPolicy;
-import life.qbic.projectmanagement.application.policy.BatchRegisteredPolicy;
 import life.qbic.projectmanagement.application.policy.ExperimentCreatedPolicy;
 import life.qbic.projectmanagement.application.policy.ExperimentUpdatedPolicy;
 import life.qbic.projectmanagement.application.policy.MeasurementCreatedPolicy;
@@ -50,18 +49,12 @@ import life.qbic.projectmanagement.application.policy.ProjectAccessGrantedPolicy
 import life.qbic.projectmanagement.application.policy.ProjectChangedPolicy;
 import life.qbic.projectmanagement.application.policy.ProjectRegisteredPolicy;
 import life.qbic.projectmanagement.application.policy.QCAddedPolicy;
-import life.qbic.projectmanagement.application.policy.SampleDeletedPolicy;
 import life.qbic.projectmanagement.application.policy.SampleRegisteredPolicy;
-import life.qbic.projectmanagement.application.policy.directive.AddSampleToBatch;
 import life.qbic.projectmanagement.application.policy.directive.CreateNewSampleStatisticsEntry;
-import life.qbic.projectmanagement.application.policy.directive.DeleteSampleFromBatch;
 import life.qbic.projectmanagement.application.policy.directive.InformProjectCollaboratorsAboutDatasetConnection;
 import life.qbic.projectmanagement.application.policy.directive.InformProjectCollaboratorsAboutDatasetRemoval;
 import life.qbic.projectmanagement.application.policy.directive.InformProjectCollaboratorsAboutDatasetSync;
 import life.qbic.projectmanagement.application.policy.directive.InformUserAboutGrantedAccess;
-import life.qbic.projectmanagement.application.policy.directive.InformUsersAboutBatchRegistration;
-import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponBatchCreation;
-import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponBatchUpdate;
 import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponDeletionEvent;
 import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponExperimentCreation;
 import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponExperimentUpdate;
@@ -70,7 +63,6 @@ import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUpo
 import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponPurchaseCreation;
 import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponQCCreation;
 import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponSampleCreation;
-import life.qbic.projectmanagement.application.policy.integration.BatchUpdatedPolicy;
 import life.qbic.projectmanagement.application.policy.integration.UserActivated;
 import life.qbic.projectmanagement.application.purchase.ProjectPurchaseService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
@@ -79,6 +71,18 @@ import life.qbic.projectmanagement.domain.repository.ProjectRepository;
 import life.qbic.projectmanagement.infrastructure.organisations.CachedOrganisationRepository;
 import life.qbic.projectmanagement.infrastructure.organisations.RorApi;
 import life.qbic.projectmanagement.infrastructure.organisations.RorApi.RorApiV2;
+import life.qbic.usergroups.api.GroupInformationService;
+import life.qbic.usergroups.api.GroupManagementService;
+import life.qbic.usergroups.api.GroupSidProvider;
+import life.qbic.usergroups.application.GroupService;
+import life.qbic.usergroups.application.policy.MemberAccessPolicy;
+import life.qbic.usergroups.application.policy.directive.InformAddedGroupMember;
+import life.qbic.usergroups.application.policy.directive.InformRemovedGroupMember;
+import life.qbic.usergroups.application.service.GroupInformationServiceImpl;
+import life.qbic.usergroups.application.service.GroupManagementServiceImpl;
+import life.qbic.usergroups.application.service.GroupSidProviderImpl;
+import life.qbic.usergroups.domain.repository.GroupDataStorage;
+import life.qbic.usergroups.domain.repository.GroupRepository;
 import org.jobrunr.scheduling.JobScheduler;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -97,7 +101,8 @@ import reactor.core.scheduler.Scheduler;
  * @since 1.0.0
  */
 @Configuration
-@ComponentScan({"life.qbic.identity.infrastructure", "life.qbic.datamanager.announcements"})
+@ComponentScan({"life.qbic.identity.infrastructure", "life.qbic.usergroups.infrastructure",
+    "life.qbic.datamanager.announcements"})
 public class AppConfig {
   /*
   Wiring up identity application core and policies
@@ -196,6 +201,94 @@ public class AppConfig {
   public UserRepository userRepository(UserDataStorage userDataStorage) {
     return UserRepository.getInstance(userDataStorage);
   }
+
+  /**
+   * Creates the group repository instance.
+   *
+   * @param groupDataStorage an implementation of the {@link GroupDataStorage} interface
+   * @return a Singleton of the group repository
+   * @since 1.19.0
+   */
+  @Bean
+  public GroupRepository groupRepository(GroupDataStorage groupDataStorage) {
+    return GroupRepository.getInstance(groupDataStorage);
+  }
+
+  @Bean
+  public GroupService groupService(GroupRepository groupRepository,
+      UserInformationService userInformationService,
+      life.qbic.usergroups.api.GroupAdministrationPermission groupAdministrationPermission) {
+    return new GroupService(groupRepository, userInformationService,
+        groupAdministrationPermission);
+  }
+
+  @Bean
+  public life.qbic.datamanager.profilepicture.GroupPictureAuthorization groupPictureAuthorization(
+      GroupService groupService) {
+    return groupService::canManageProfilePicture;
+  }
+
+  @Bean
+  public GroupInformationServiceImpl groupInformationService(GroupService groupService) {
+    return new GroupInformationServiceImpl(groupService);
+  }
+
+  @Bean
+  public GroupManagementServiceImpl groupManagementService(GroupService groupService) {
+    return new GroupManagementServiceImpl(groupService);
+  }
+
+  @Bean
+  public GroupSidProviderImpl groupSidProvider(GroupService groupService) {
+    return new GroupSidProviderImpl(groupService);
+  }
+
+  /**
+   * The user groups email provider, implementing the context's {@link EmailService} port with
+   * the shared mail infrastructure.
+   */
+  @Bean
+  public life.qbic.usergroups.application.communication.EmailService userGroupsEmailService(
+      EmailServiceProvider emailServiceProvider) {
+    return new UserGroupsEmailServiceProvider(emailServiceProvider);
+  }
+
+  /**
+   * The added-member notification directive. Exposed as its own {@code @Bean} so the JobRunr
+   * IOC runner can resolve it by class when the enqueued notification job executes (a plain
+   * {@code new} inside the policy bean would not register it in the context).
+   */
+  @Bean
+  public InformAddedGroupMember informAddedGroupMember(
+      life.qbic.usergroups.application.communication.EmailService emailService,
+      JobScheduler jobScheduler, UserInformationService userInformationService,
+      GroupService groupService) {
+    return new InformAddedGroupMember(emailService, jobScheduler, userInformationService,
+        groupService);
+  }
+
+  /**
+   * The removed-member notification directive (see {@link #informAddedGroupMember} for why this
+   * must be a Spring bean, not a local {@code new}).
+   */
+  @Bean
+  public InformRemovedGroupMember informRemovedGroupMember(
+      life.qbic.usergroups.application.communication.EmailService emailService,
+      JobScheduler jobScheduler, UserInformationService userInformationService,
+      GroupService groupService) {
+    return new InformRemovedGroupMember(emailService, jobScheduler, userInformationService,
+        groupService);
+  }
+
+  /**
+   * Registers the user-groups membership notification directives with the domain dispatcher: a
+   * newly added member and a removed member each receive an email.
+   */
+  @Bean
+  public MemberAccessPolicy memberAccessPolicy(InformAddedGroupMember informAddedGroupMember,
+      InformRemovedGroupMember informRemovedGroupMember) {
+    return new MemberAccessPolicy(informAddedGroupMember, informRemovedGroupMember);
+  }
   /*
   Section ends
 
@@ -207,25 +300,6 @@ public class AppConfig {
 
   Section starts below
   */
-  @Bean
-  public BatchRegisteredPolicy batchRegisteredPolicy(
-      life.qbic.projectmanagement.application.communication.EmailService emailService,
-      ProjectAccessService accessService, ProjectInformationService projectInformationService,
-      UserInformationService userInformationService, AppContextProvider appContextProvider,
-      JobScheduler jobScheduler) {
-    var informUsers = new InformUsersAboutBatchRegistration(emailService, accessService,
-        userInformationService, appContextProvider, jobScheduler);
-    var updateProject = new UpdateProjectUponBatchCreation(projectInformationService, jobScheduler);
-    return new BatchRegisteredPolicy(informUsers, updateProject);
-  }
-
-  @Bean
-  public BatchUpdatedPolicy batchUpdatedPolicy(
-      ProjectInformationService projectInformationService, JobScheduler jobScheduler) {
-    var updateProject = new UpdateProjectUponBatchUpdate(projectInformationService, jobScheduler);
-    return new BatchUpdatedPolicy(updateProject);
-  }
-
   @Bean
   public ProjectAccessGrantedPolicy projectAccessGrantedPolicy(
       life.qbic.projectmanagement.application.communication.EmailService emailService,
@@ -251,21 +325,12 @@ public class AppConfig {
 
   @Bean
   public SampleRegisteredPolicy sampleRegisteredPolicy(
-      BatchRegistrationService batchRegistrationService,
       SampleInformationService sampleInformationService,
       ExperimentInformationService experimentInformationService,
       ProjectInformationService projectInformationService, JobScheduler jobScheduler) {
-    var addSampleToBatch = new AddSampleToBatch(batchRegistrationService, jobScheduler);
     var updateProject = new UpdateProjectUponSampleCreation(sampleInformationService,
         experimentInformationService, projectInformationService, jobScheduler);
-    return new SampleRegisteredPolicy(addSampleToBatch, updateProject);
-  }
-
-  @Bean
-  public SampleDeletedPolicy sampleDeletedPolicy(BatchRegistrationService batchRegistrationService,
-      JobScheduler jobScheduler) {
-    var deleteSampleFromBatch = new DeleteSampleFromBatch(batchRegistrationService, jobScheduler);
-    return new SampleDeletedPolicy(deleteSampleFromBatch);
+    return new SampleRegisteredPolicy(updateProject);
   }
 
   @Bean

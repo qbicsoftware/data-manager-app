@@ -3,7 +3,9 @@ package life.qbic.datamanager.views.projects.project.measurements;
 import static java.util.Objects.requireNonNull;
 
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import java.io.InputStream;
 import java.time.LocalDate;
 import java.util.Optional;
@@ -40,6 +42,8 @@ public class MeasurementTemplateComponent extends Div {
 
   private final DownloadComponent downloadComponent;
   private final Supplier<String> projectIdSupplier;
+  private final transient MessageSourceNotificationFactory messageFactory;
+  private final Div buttonContainer = new Div();
 
   public MeasurementTemplateComponent(
       String description, String buttonText,
@@ -54,6 +58,7 @@ public class MeasurementTemplateComponent extends Div {
     requireNonNull(projectIdSupplier);
     this.downloadComponent = new DownloadComponent();
     this.projectIdSupplier = projectIdSupplier;
+    this.messageFactory = messageFactory;
 
     addClassNames("padding-horizontal-05", "padding-vertical-05", "border", "rounded-02",
         "flex-vertical", "gap-03");
@@ -70,9 +75,48 @@ public class MeasurementTemplateComponent extends Div {
           openToast(failureToast);
         })
         .subscribe());
-    var buttonElement = new Div(downloadButton);
+    buttonContainer.addClassName("measurement-template-actions");
+    buttonContainer.add(stylePrimary(downloadButton));
 
-    add(descriptionElement, buttonElement, downloadComponent);
+    add(descriptionElement, buttonContainer, downloadComponent);
+  }
+
+  /**
+   * Adds an additional template export action to this component. Useful when a dialog should
+   * offer multiple scopes for the template export (e.g. "all measurements" vs "selected
+   * measurements"). The first (primary) export remains the one configured in the constructor.
+   *
+   * @param buttonText  the label for the additional export button
+   * @param templateMono a {@link Mono} resolving to the template to export
+   */
+  public void addTemplateExport(String buttonText, Mono<DigitalObject> templateMono) {
+    requireNonNull(buttonText);
+    requireNonNull(templateMono);
+    var failureToast = messageFactory.toast("task.failed", new Object[]{"Template generation"},
+        getLocale());
+    var inProgressToast = messageFactory.pendingTaskToast("measurement.preparing-download",
+        MessageSourceNotificationFactory.EMPTY_PARAMETERS, getLocale());
+    var exportButton = new Button(buttonText, e -> templateMono
+        .doOnSubscribe(ignored -> openToast(inProgressToast))
+        .doOnSuccess(this::triggerDownload).doOnTerminate(() -> closeToast(inProgressToast))
+        .doOnError(throwable -> {
+          closeToast(inProgressToast);
+          openToast(failureToast);
+        })
+        .subscribe());
+    buttonContainer.add(styleSecondary(exportButton));
+  }
+
+  private static Button stylePrimary(Button button) {
+    button.setIcon(VaadinIcon.DOWNLOAD.create());
+    button.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    return button;
+  }
+
+  private static Button styleSecondary(Button button) {
+    button.setIcon(VaadinIcon.DOWNLOAD.create());
+    button.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+    return button;
   }
 
   private void closeToast(Toast toast) {

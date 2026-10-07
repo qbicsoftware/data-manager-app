@@ -14,10 +14,12 @@ import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.landing.LandingPageLayout;
 import life.qbic.datamanager.views.register.UserRegistrationComponent.UserRegistrationInformation;
 import life.qbic.identity.api.UserInformationService;
+import life.qbic.identity.api.UserNames;
 import life.qbic.identity.application.user.IdentityService;
 import life.qbic.identity.application.user.IdentityService.EmptyUserNameException;
 import life.qbic.identity.application.user.IdentityService.UserExistsException;
 import life.qbic.identity.application.user.IdentityService.UserNameNotAvailableException;
+import life.qbic.identity.application.user.IdentityService.UserNameTooLongException;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -94,6 +96,10 @@ public class UserRegistrationMain extends Main {
       } else if (e instanceof EmptyUserNameException) {
         userRegistrationComponent.showError("Username must not be empty",
             "Please try another username");
+        break;
+      } else if (e instanceof UserNameTooLongException) {
+        userRegistrationComponent.showError("Username is too long",
+            "User name must not exceed " + UserNames.MAX_LENGTH + " characters");
         break;
       } else {
         userRegistrationComponent.showError("Registration failed", "Please try again.");

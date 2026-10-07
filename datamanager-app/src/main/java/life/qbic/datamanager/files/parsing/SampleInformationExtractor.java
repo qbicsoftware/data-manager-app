@@ -39,6 +39,7 @@ public class SampleInformationExtractor {
       var species = parsingResult.getValueOrDefault(i, RegisterColumn.SPECIES.headerName(), "");
       var analyte = parsingResult.getValueOrDefault(i, RegisterColumn.ANALYTE.headerName(), "");
       var specimen = parsingResult.getValueOrDefault(i, RegisterColumn.SPECIMEN.headerName(), "");
+      var batch = parsingResult.getValueOrDefault(i, RegisterColumn.BATCH.headerName(), "");
       var comment = parsingResult.getValueOrDefault(i, RegisterColumn.COMMENT.headerName(), "");
 
       var sanitizedHeaderNames = RegisterColumn.headerNames().stream()
@@ -65,6 +66,7 @@ public class SampleInformationExtractor {
           species,
           analyte,
           specimen,
+          batch,
           comment,
           confoundingVariables
       ));
@@ -93,6 +95,7 @@ public class SampleInformationExtractor {
       var species = parsingResult.getValueOrDefault(i, EditColumn.SPECIES.headerName(), "");
       var analyte = parsingResult.getValueOrDefault(i, EditColumn.ANALYTE.headerName(), "");
       var specimen = parsingResult.getValueOrDefault(i, EditColumn.SPECIMEN.headerName(), "");
+      var batch = parsingResult.getValueOrDefault(i, EditColumn.BATCH.headerName(), "");
       var comment = parsingResult.getValueOrDefault(i, EditColumn.COMMENT.headerName(), "");
 
       var sanitizedHeaderNames = EditColumn.headerNames().stream()
@@ -119,6 +122,7 @@ public class SampleInformationExtractor {
           species,
           specimen,
           analyte,
+          batch,
           comment,
           confoundingVariables
       ));
@@ -143,6 +147,7 @@ public class SampleInformationExtractor {
       String species,
       String analyte,
       String specimen,
+      String batch,
       String comment,
       Map<String, String> confoundingVariables
   ) {
@@ -168,6 +173,7 @@ public class SampleInformationExtractor {
       String species,
       String specimen,
       String analyte,
+      String batch,
       String comment,
       Map<String, String> confoundingVariables) {
 

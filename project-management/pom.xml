@@ -30,6 +30,10 @@
       <groupId>life.qbic.datamanager</groupId>
       <artifactId>identity-api</artifactId>
     </dependency>
+    <dependency>
+      <groupId>life.qbic.datamanager</groupId>
+      <artifactId>user-groups-api</artifactId>
+    </dependency>
 
     <!-- Spring dependencies-->
     <dependency>

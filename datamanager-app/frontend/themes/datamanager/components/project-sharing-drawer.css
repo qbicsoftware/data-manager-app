@@ -1,0 +1,178 @@
+/* ────────────────────────────────────────────────────────────────────────────
+ * Project Sharing Drawer (FEAT-USER-GROUPS-08)
+ *
+ * Non-modal, right-anchored panel for quick-sharing a project from the project
+ * list. It is deliberately not a dialog: no focus trap, the list stays visible.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+.project-sharing-drawer .psd-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.3);
+  z-index: 999;
+}
+
+.project-sharing-drawer .psd-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: min(45%, 640px);
+  min-width: 380px;
+  max-width: 100vw;
+  height: 100%;
+  background-color: var(--lumo-base-color);
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.12);
+  z-index: 1000;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.project-sharing-drawer .psd-body {
+  height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.project-sharing-drawer .psd-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--lumo-space-m);
+  padding: var(--lumo-space-m) var(--lumo-space-l);
+  border-bottom: 1px solid var(--lumo-contrast-10pct);
+}
+
+.project-sharing-drawer .psd-title {
+  display: flex;
+  flex-direction: column;
+}
+
+.project-sharing-drawer .psd-content {
+  flex: 1 1 auto;
+  padding: var(--lumo-space-l);
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-l);
+  overflow: auto;
+  min-height: 0;
+}
+
+.project-sharing-drawer .psd-summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+}
+
+.project-sharing-drawer .psd-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-xs);
+}
+
+.project-sharing-drawer .psd-section-title {
+  font-weight: var(--lumo-font-weight-semibold, 600);
+}
+
+.project-sharing-drawer .psd-section-header {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--lumo-space-m);
+}
+
+.project-sharing-drawer .psd-role-header {
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-xs);
+  font-weight: var(--lumo-font-weight-semibold, 600);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Roster row: identity on the left (flexible, ellipsizes), role tag on the right. */
+.project-sharing-drawer .psd-summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: nowrap;
+  gap: var(--lumo-space-m);
+  padding: var(--lumo-space-xs) 0;
+  border-bottom: 1px solid var(--lumo-contrast-10pct);
+  min-width: 0;
+}
+
+.project-sharing-drawer .psd-identity {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.project-sharing-drawer .psd-user-identity,
+.project-sharing-drawer .psd-group-identity {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.project-sharing-drawer .psd-type-tag,
+.project-sharing-drawer .psd-role-tag,
+.project-sharing-drawer .psd-identity .user-avatar {
+  flex: 0 0 auto;
+}
+
+/* Group and user identities share one avatar size so the roster reads uniformly. */
+.project-sharing-drawer .psd-identity .user-avatar {
+  width: var(--lumo-icon-size-l);
+  height: var(--lumo-icon-size-l);
+}
+
+.project-sharing-drawer .psd-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-sharing-drawer .psd-full-name {
+  color: var(--lumo-secondary-text-color);
+  margin-left: var(--lumo-space-xs);
+}
+
+.project-sharing-drawer .psd-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+  flex: 0 0 auto;
+}
+
+/* Prominent shortcut to the full access page, placed in the header. */
+.project-sharing-drawer .psd-manage-access {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lumo-space-xs);
+  color: var(--lumo-primary-color);
+  font-weight: var(--lumo-font-weight-semibold, 600);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.project-sharing-drawer .psd-manage-access:hover,
+.project-sharing-drawer .psd-manage-access:focus-visible {
+  text-decoration: underline;
+}
+
+.project-sharing-drawer .psd-manage-access vaadin-icon {
+  width: var(--lumo-icon-size-s);
+  height: var(--lumo-icon-size-s);
+}
+
+/* On narrow viewports the drawer becomes a full-width sheet (D6). */
+@media (max-width: 600px) {
+  .project-sharing-drawer .psd-panel {
+    width: 100vw;
+    min-width: 0;
+  }
+}

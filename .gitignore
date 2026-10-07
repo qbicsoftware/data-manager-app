@@ -63,3 +63,7 @@ error-screenshots/
 
 # Empty file that is created when changing css?
 /vaadinfrontend/frontend/themes/datamanager/theme-editor.css
+
+# Vaadin/Vite generated bundle artifacts (prod.bundle, types.d.ts) — build output
+*/src/main/bundles/
+types.d.ts

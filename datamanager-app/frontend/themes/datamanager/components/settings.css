@@ -1,0 +1,453 @@
+/* -- Settings Hub (GitHub-style master-detail layout, mirrors Groups) -- */
+
+/* The settings hub is a RouterLayout nested inside UserMainLayout (see @ParentLayout
+   in SettingsMainLayout), so the outer shell - navbar, announcement at the top of the
+   content area, footer - is owned by UserMainLayout/DataManagerLayout. This stylesheet
+   only lays out the two-column hub: the persistent settings navigation (aside, led by the
+   account overview header) and the routed content. */
+
+.settings-main-layout {
+  display: grid;
+  grid-template-columns:
+    minmax(var(--lumo-space-l), 1fr)
+    minmax(240px, 280px)
+    minmax(0, calc(var(--content-shell-max-width) - 280px))
+    minmax(var(--lumo-space-l), 1fr);
+  grid-template-areas:
+    ". account-overview account-overview ."
+    ". aside-area content-area .";
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+/**
+ * The account overview occupies the standalone first grid row of the settings hub, spanning both
+ * central tracks above the aside + content columns. This mirrors GitHub's settings hub, where the
+ * identity heads the whole hub rather than sitting inside the navigation column.
+ *
+ * The row spans the full shell width, so a long full name and a user name of up to 20 characters
+ * fit comfortably beside the avatar without wrapping or truncation - the previous placement inside
+ * the 240-280px navigation column could not fit them.
+ *
+ * The left padding matches the aside's own padding so the avatar aligns with the navigation items
+ * beneath it; the right padding matches the content column's, keeping the row's edges consistent
+ * with the two columns below.
+ *
+ * The bottom padding is deliberately not zero. Vaadin's avatar reserves a transparent focus-ring
+ * border and compensates with a matching negative margin, so its painted circle overhangs its own
+ * layout box by that width on every side. With no bottom padding the overhang reached into the
+ * next grid row, where the sticky aside (opaque background, z-index: 1) painted over it, shaving
+ * the bottom of the avatar ring flat. The padding gives the overhang room within this row.
+ */
+.settings-main-layout .settings-account-overview-area {
+  grid-area: account-overview;
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-m);
+  box-sizing: border-box;
+  padding: var(--lumo-space-l) var(--lumo-space-xl) var(--lumo-space-m) var(--lumo-space-l);
+}
+
+.settings-account-overview {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--lumo-space-m);
+  min-width: 0;
+}
+
+.settings-account-overview__avatar {
+  /* GitHub's settings hub uses a prominent identity avatar (4rem) that reads as a peer of the
+     name block rather than a small icon. The row now spans the full shell width, so the avatar
+     no longer competes with the user name for space. */
+  --vaadin-avatar-size: 4rem;
+  flex-shrink: 0;
+}
+
+.settings-account-overview__names {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-xs);
+  min-width: 0;
+  text-align: left;
+}
+
+/* Full name and user name on one line. The row spans the full shell width, so with a 20-character
+   cap the user name fits beside the name; it wraps at the space between them if it ever does not,
+   rather than splitting mid-token. */
+.settings-account-overview__name-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: var(--lumo-space-xs);
+  min-width: 0;
+}
+
+/* The hint line may wrap anywhere; it is prose, not an identifier. */
+.settings-account-overview__names span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Legibility: --tertiary-text-color (#8d97a4) only reaches 2.95:1 on white, below WCAG AA.
+   --body-text-color clears 12:1 but would read as primary, so use a mid-contrast tone
+   (~5.9:1) that still scans as the secondary line under the bold name. */
+.settings-account-overview__hint {
+  color: #5a6572;
+}
+
+/* The aside is a fixed, non-collapsible column (GitHub-style). No border: separation comes
+   from the shared gutters. The left gutter + the tab's own left padding align menu items
+   with the content area. The aside is sticky: it stays pinned at the top of the content row
+   while the page scrolls. */
+.settings-main-layout .settings-aside-area {
+  grid-area: aside-area;
+  box-sizing: border-box;
+  padding: var(--lumo-space-l);
+  align-self: start;
+  position: sticky;
+  top: 0;
+  min-height: 0;
+  background-color: var(--lumo-base-color);
+  z-index: 1;
+}
+
+/* The content column holds the routed route content. The whole page scrolls natively (no
+   internal scroll region). Content is left-aligned to this column's padding; the surrounding
+   flexible spacing (grid gutters + this padding) provides the margins. */
+.settings-main-layout .settings-content-area {
+  grid-area: content-area;
+  box-sizing: border-box;
+  padding: var(--lumo-space-l) var(--lumo-space-xl);
+  min-width: 0;
+  min-height: 0;
+}
+
+/* The settings hub provides the page spacing; neutralize the base page-area padding/gap so
+   the settings sections share the same uniform look. */
+.settings-main-layout .page-area {
+  padding: 0;
+  gap: 0;
+}
+
+/* -- Settings section blueprint (single settings page layout) -- */
+
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+  width: 100%;
+  /* Left-aligned to the content column padding: the surrounding flexible spacing
+     (grid gutters + content-area padding) provides the margins, so the section's
+     left edge is stable across views and viewport widths. No auto-margin centering. */
+}
+
+.settings-section__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--lumo-space-m);
+}
+
+.settings-section__titles {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-xs);
+  min-width: 0;
+}
+
+.settings-section__title {
+  margin: 0;
+  font-size: var(--lumo-font-size-xl);
+  font-weight: 600;
+  color: var(--lumo-header-text-color);
+}
+
+.settings-section__description {
+  margin: 0;
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-s);
+}
+
+.settings-section__actions {
+  flex-shrink: 0;
+}
+
+.settings-section__content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+}
+
+/* -- Settings aside: navigation -- */
+
+.settings-navigation-component {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.settings-navigation-tabs {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.settings-navigation-tabs vaadin-tab {
+  width: 100%;
+  justify-content: flex-start;
+  --vaadin-tab-padding: var(--lumo-space-m) var(--lumo-space-m);
+  --vaadin-tab-border-radius: var(--lumo-border-radius-m);
+  box-sizing: border-box;
+}
+
+/* Gap between icon and text inside each tab's RouterLink */
+.settings-navigation-tabs vaadin-tab a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lumo-space-m);
+}
+
+.settings-navigation-tabs vaadin-tab:hover {
+  --vaadin-tab-background: var(--lumo-contrast-5pct);
+}
+
+.settings-navigation-tabs vaadin-tab[selected] {
+  --vaadin-tab-background: var(--lumo-primary-color-10pct);
+  --vaadin-tab-text-color: var(--lumo-primary-text-color);
+}
+
+.settings-navigation-tabs vaadin-tab[selected] vaadin-icon {
+  color: var(--lumo-primary-text-color);
+}
+
+/* Adjust spacing on narrow screens. The aside becomes a full-width, non-sticky row, so the
+   navigation sits beside the identity row's column instead of the two sharing one line. */
+@media (max-width: 1024px) {
+  .settings-main-layout {
+    grid-template-areas:
+      ". account-overview ."
+      ". aside-area ."
+      ". content-area .";
+    grid-template-columns: var(--lumo-space-m) minmax(0, 1fr) var(--lumo-space-m);
+  }
+
+  .settings-main-layout .settings-aside-area {
+    position: static;
+    align-self: stretch;
+    padding: var(--lumo-space-m) var(--lumo-space-l) var(--lumo-space-s) var(--lumo-space-l);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: var(--lumo-space-xl);
+  }
+
+  /* The identity row shares the shell padding on narrow screens, where the aside and content
+     columns collapse into the same single column. */
+  .settings-main-layout .settings-account-overview-area {
+    padding: var(--lumo-space-l) var(--lumo-space-l) 0;
+  }
+
+  .settings-main-layout .settings-navigation-component {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+}
+
+/* -- Settings groups: flat semantic grouping within a settings section -- */
+/* Groups are separated by a subheading and whitespace only — no card chrome. */
+
+.settings-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+}
+
+.settings-group__title {
+  margin: 0;
+  font-size: var(--lumo-font-size-s);
+  font-weight: 600;
+  color: var(--lumo-secondary-text-color);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Larger gap between consecutive groups than between rows within a group */
+.settings-group + .settings-group {
+  margin-top: var(--lumo-space-l);
+  padding-top: var(--lumo-space-l);
+  border-top: 1px solid var(--lumo-contrast-10pct);
+}
+
+/* Linked accounts empty state */
+.link-account-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--lumo-space-m);
+}
+
+.link-account-block__explanation {
+  margin: 0;
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-s);
+  max-width: 60ch;
+}
+
+/* Inline-editable field (reusable component) */
+.inline-editable-field {
+  display: flex;
+  align-items: baseline;
+  gap: var(--lumo-space-m);
+}
+
+.inline-editable-field__label {
+  font-weight: 600;
+  color: var(--lumo-header-text-color);
+  min-width: 6rem;
+  flex-shrink: 0;
+}
+
+.inline-editable-field__value-area {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-xs);
+  flex-wrap: wrap;
+  width: 100%;
+  /* Let the value shrink instead of overflowing when the container is narrow. */
+  min-width: 0;
+}
+
+.inline-editable-field__edit-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-xs);
+}
+
+.inline-editable-field__value {
+  color: var(--lumo-body-text-color);
+}
+
+/* Informational notice for grandfathered values that exceed a newly introduced limit.
+   Non-blocking: the value keeps working until the user chooses to change it.
+   Lives inside the wrapping value area, so it takes a full line of its own beneath the value
+   instead of competing with it for horizontal space. */
+.inline-editable-field__notice {
+  flex-basis: 100%;
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-s);
+  line-height: 1.4;
+  /* Breathing room from the value row above (the value area only gaps by --lumo-space-xs). */
+  margin-top: var(--lumo-space-xs);
+  max-width: 60ch;
+}
+
+.inline-editable-field__edit-btn {
+  padding: 0;
+  min-height: var(--lumo-size-s);
+}
+
+/* Same min-width in display and edit mode, so entering edit mode never changes the field's
+   width — the only visual change is the primary focus ring. */
+.inline-editable-field__edit-field {
+  min-width: 12rem;
+  max-width: 24rem;
+  /* Disable Lumo's default dashed border for readonly fields. Lumo keys it off the [readonly]
+     attribute, which only reflects after the web component upgrades — causing the field to gain
+     a dashed border after the first edit cycle that it did not have on page load. */
+  --vaadin-input-field-readonly-border: none;
+}
+
+/* Display mode: no fixed cap — the field sizes to its content (inline width in ch set
+   from Java), but never beyond the available width, so a long value cannot push the edit
+   affordance onto the next line. */
+.inline-editable-field__edit-field[readonly] {
+  max-width: 100%;
+  min-width: 0;
+}
+
+/* Display-mode text parity: after an edit/save cycle the web component has upgraded and the
+   [readonly] attribute is present (on initial render the server sets readonly before the
+   upgrade, so no [readonly] attribute existed yet), which can change how the field renders.
+   Key the display look off the absence of the --active class (set/cleared by the component)
+   instead of the [readonly] attribute so it is timing-independent, and pin the value color so
+   it can never be grayed after an edit cycle. */
+.inline-editable-field__edit-field:not(.inline-editable-field__edit-field--active) {
+  /* keep the value fully opaque, normal body text color (never grayed) */
+  --vaadin-input-field-value-color: var(--lumo-body-text-color);
+  --vaadin-input-field-placeholder-color: var(--lumo-secondary-text-color);
+}
+.inline-editable-field__edit-field:not(.inline-editable-field__edit-field--active)::part(input-field) {
+  color: var(--lumo-body-text-color) !important;
+}
+
+/* Display and edit mode share the same standard Lumo input look (contrasting background), so
+   the field always reads as editable and switching modes never changes its appearance except
+   for the primary focus ring below. Keying this off the --active class instead of the [readonly]
+   attribute also avoids a first-render flash: the server sets readonly as a property, which only
+   reflects to the attribute after the web component upgrades. */
+.inline-editable-field__edit-field::part(input-field) {
+  background-color: var(--lumo-contrast-5pct);
+}
+
+/* Strong primary outline while editing so users immediately see where they are.
+   Uses the box-shadow ring technique (like Lumo's focus ring) since the input-field part
+   has no visible border by default in this theme. */
+.inline-editable-field__edit-field--active::part(input-field) {
+  box-shadow:
+    inset 0 0 0 2px var(--lumo-primary-color-50pct),
+    0 0 0 3px var(--lumo-primary-color-10pct);
+}
+
+/* Full-strength primary ring once the field actually has focus. Vaadin sets the `focused`
+   attribute on the text field host, which is more reliable than :focus-within across browsers. */
+.inline-editable-field__edit-field--active[focused]::part(input-field) {
+  box-shadow:
+    inset 0 0 0 2px var(--lumo-primary-color),
+    0 0 0 3px var(--lumo-primary-color-10pct);
+}
+/* Textarea-backed inline editable fields (long descriptions): fluid width — fill the
+   available container width on large screens, shrink toward the Java-set min-width on
+   smaller screens, and cap at the page's generous maximum (44rem on the group detail page;
+   elsewhere the generic 24rem cap still applies unless overridden). Combined with the
+   readonly vertical-scroll rule below, long values wrap + scroll instead of stretching. */
+/* Textarea-backed inline editable fields (long descriptions): the textarea and the edit
+   button form ONE composed unit on a single line — the textarea flexes to fill the space
+   that remains next to the edit button/controls, so the button is never pushed below it.
+   The field is fluid: it fills the available container width on large screens, shrinks
+   toward the Java-set min-width on smaller screens, and caps at the page's generous maximum
+   (44rem on the group detail page). Long values wrap + scroll vertically (see the readonly
+   rule below). */
+.inline-editable-field--textarea .inline-editable-field__edit-field {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+  max-width: 44rem;
+}
+
+.inline-editable-field--textarea .inline-editable-field__edit-btn,
+.inline-editable-field--textarea .inline-editable-field__edit-controls {
+  flex-shrink: 0; /* the edit/confirm controls stay visible at their natural size */
+}
+
+/* For textarea-backed inline editable fields (e.g. long descriptions): keep the whole
+   unit (textarea + edit button/controls) on ONE line and align the pencil to the top of
+   the field instead of vertically centering it next to a tall input, so the icon sits at
+   the same height as in single-line fields. No wrapping: the button must not drop below
+   the textarea (a flexible row that can never wrap). */
+.inline-editable-field--textarea .inline-editable-field__value-area {
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  min-width: 0;
+  padding-top: var(--lumo-space-xs);
+}
+
+/* Textarea display mode (readonly): keep the field's existing width (the caller controls it
+   via setMinDisplayWidth / the page's 44rem cap), but wrap the text on display instead of
+   letting it overflow horizontally, and show a vertical scrollbar when the content exceeds
+   the visible height. The field's min-height stays as configured (6em).
+   In vaadin-text-area the scroll container IS the input-field part and the native <textarea>
+   is slotted into it (the component already styles ::slotted(textarea){white-space:pre-wrap}),
+   so enabling the vertical scroll happens on the [part=input-field] of the host. */
+.inline-editable-field--textarea .inline-editable-field__edit-field[readonly]::part(input-field) {
+  overflow-y: auto;
+  overflow-x: hidden;
+}

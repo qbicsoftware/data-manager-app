@@ -44,7 +44,9 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
     basePackages = {
         "life.qbic.projectmanagement.infrastructure", // repos here
         "life.qbic.identity",                                  // only if this package really has repos for this EMF
-        "life.qbic.datamanager.announcements"                  // same note
+        "life.qbic.datamanager.announcements",                  // same note
+        "life.qbic.datamanager.profilepicture",                 // profile picture store (presentation support)
+        "life.qbic.usergroups.infrastructure"                  // repos of the user-groups context
     },
     entityManagerFactoryRef = "dataManagementEntityManagerFactory",
     transactionManagerRef   = "dataManagementTransactionManager")
@@ -86,8 +88,8 @@ public class DataManagementDatasourceConfig {
       @Qualifier("dataManagementDataSource") DataSource dataSource) {
     return builder
         .dataSource(dataSource)
-        .packages("life.qbic.projectmanagement", "life.qbic.identity",
-            "life.qbic.datamanager.announcements")
+        .packages("life.qbic.projectmanagement", "life.qbic.identity", "life.qbic.usergroups",
+            "life.qbic.datamanager.announcements", "life.qbic.datamanager.profilepicture")
         .properties(Map.of(
             "hibernate.hbm2ddl.auto", hibernateDdlAuto,
             // Force UTC for all TIMESTAMP ↔ Instant conversions so that event

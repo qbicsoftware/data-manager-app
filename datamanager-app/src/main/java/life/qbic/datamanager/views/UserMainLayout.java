@@ -1,14 +1,16 @@
 package life.qbic.datamanager.views;
 
-import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.router.PageTitle;
+import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.spring.security.AuthenticationContext;
 import jakarta.annotation.security.PermitAll;
 import java.util.Objects;
 import life.qbic.datamanager.announcements.AnnouncementService;
 import life.qbic.datamanager.views.account.PersonalAccessTokenMain;
 import life.qbic.datamanager.views.general.DataManagerMenu;
-import life.qbic.datamanager.views.general.footer.FooterComponentFactory;
+import life.qbic.datamanager.views.general.HomeLink;
+import life.qbic.datamanager.views.general.TopLevelNavigationComponent;
+import life.qbic.datamanager.views.general.footer.FooterComponent;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.identity.api.UserInformationService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,16 +28,17 @@ public class UserMainLayout extends DataManagerLayout {
 
   public UserMainLayout(@Autowired AuthenticationContext authenticationContext,
       @Autowired UserInformationService userInformationService,
-      @Autowired FooterComponentFactory footerComponentFactory,
+      @Autowired FooterComponent footerComponent,
       @Autowired AnnouncementService announcementService) {
-    super(Objects.requireNonNull(footerComponentFactory), announcementService);
-    Span navBarTitle = new Span("Data Manager");
+    super(Objects.requireNonNull(footerComponent), announcementService);
+    RouterLink navBarTitle = new RouterLink("Data Manager", ProjectOverviewMain.class);
     navBarTitle.setClassName("navbar-title");
     addClassName("user-main-layout");
     Objects.requireNonNull(userInformationService);
+    TopLevelNavigationComponent topLevelNavigationComponent = new TopLevelNavigationComponent();
     DataManagerMenu dataManagerMenu = new DataManagerMenu(
         Objects.requireNonNull(authenticationContext));
-    addToNavbar(navBarTitle, dataManagerMenu);
+    addToNavbar(new HomeLink(), navBarTitle, topLevelNavigationComponent, dataManagerMenu);
 
   }
 }

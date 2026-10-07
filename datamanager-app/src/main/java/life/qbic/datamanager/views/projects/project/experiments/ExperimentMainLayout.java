@@ -14,6 +14,8 @@ import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.RouteParam;
+import com.vaadin.flow.router.RouteParameters;
+import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.spring.security.AuthenticationContext;
 import java.util.List;
 import java.util.Optional;
@@ -23,10 +25,12 @@ import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.DataManagerLayout;
 import life.qbic.datamanager.views.general.DataManagerMenu;
-import life.qbic.datamanager.views.general.footer.FooterComponentFactory;
+import life.qbic.datamanager.views.general.HomeLink;
+import life.qbic.datamanager.views.general.footer.FooterComponent;
 import life.qbic.datamanager.views.navigation.ProjectSideNavigationComponent;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
+import life.qbic.datamanager.views.projects.project.info.ProjectInformationMain;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentNavigationComponent.RoutingTab;
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.projectmanagement.application.AddExperimentToProjectService;
@@ -68,11 +72,11 @@ public class ExperimentMainLayout extends DataManagerLayout implements BeforeEnt
       @Autowired AddExperimentToProjectService addExperimentToProjectService,
       @Autowired UserPermissions userPermissions,
       @Autowired SpeciesLookupService ontologyTermInformationService,
-      @Autowired FooterComponentFactory footerComponentFactory,
+      @Autowired FooterComponent footerComponent,
       @Autowired TerminologyService terminologyService,
       @Autowired MessageSourceNotificationFactory messageSourceNotificationFactory,
       @Autowired AnnouncementService announcementService) {
-    super(requireNonNull(footerComponentFactory), announcementService);
+    super(requireNonNull(footerComponent), announcementService);
     requireNonNull(authenticationContext);
     requireNonNull(userInformationService);
     requireNonNull(projectInformationService);
@@ -121,11 +125,20 @@ public class ExperimentMainLayout extends DataManagerLayout implements BeforeEnt
         .ifPresent(
             experiment -> {
               navBarTitle.removeAll();
+              // The project code in the navbar links to the project summary
+              // (projects/:projectId/info) so users can navigate back to the
+              // project's home without opening the drawer.
+              RouterLink projectCodeLink = new RouterLink("", ProjectInformationMain.class);
+              projectCodeLink.setRoute(ProjectInformationMain.class,
+                  new RouteParameters(
+                      new RouteParam(ProjectInformationMain.PROJECT_ID_ROUTE_PARAMETER,
+                          projectId)));
+              projectCodeLink.addClassName("navbar-title-link");
               Text projectCode = new Text(project.orElseThrow().getProjectCode().value() + "  /");
+              projectCodeLink.add(projectCode);
               Text expName = new Text(experiment.getName());
-              Icon book = styleIcon(VaadinIcon.NOTEBOOK);
               Icon beaker = styleIcon(VaadinIcon.FLASK);
-              navBarTitle.add(book, projectCode, beaker, expName);
+              navBarTitle.add(projectCodeLink, beaker, expName);
             });
   }
 
@@ -154,7 +167,7 @@ public class ExperimentMainLayout extends DataManagerLayout implements BeforeEnt
     Span drawerToggleAndTitleBar = new Span();
     DrawerToggle drawerToggle = new DrawerToggle();
     navBarTitle.setClassName("navbar-title");
-    drawerToggleAndTitleBar.add(drawerToggle, navBarTitle);
+    drawerToggleAndTitleBar.add(drawerToggle, new HomeLink(), navBarTitle);
     drawerToggleAndTitleBar.addClassName("drawer-title-bar");
     return drawerToggleAndTitleBar;
   }

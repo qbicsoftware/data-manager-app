@@ -7,21 +7,30 @@
 @import "combobox.css";
 @import "dialog.css";
 @import "connect-dataset-sidebar.css";
+@import "project-sharing-drawer.css";
 @import "sync-results-sidebar.css";
 @import "div.css";
+@import "footer.css";
+@import "groups.css";
 @import "image.css";
 @import "info.css";
 @import "icon.css";
 @import "main.css";
+@import "my-groups.css";
 @import "navbar.css";
 @import "navigation-drawer.css";
 @import "page-area.css";
+@import "profile-picture.css";
+@import "settings.css";
 @import "span.css";
 @import "spreadsheet.css";
 @import "toggle-button.css";
 @import "vaadin-custom.css";
 @import "virtuallist.css";
 @import "toast.css";
+@import "pagination.css";
+@import "measurements-pagination.css";
+@import "rawdata-pagination.css";
 @import "grid-templates.css";
 @import "verification-sidebar.css";
 
@@ -29,6 +38,8 @@ vaadin-avatar-group vaadin-avatar,
 .user-avatar {
   background-color: white;
   border-color: var(--lumo-contrast-20pct);
+  /* The avatar has no border by default, so a thin ring defines its edge. */
+  box-shadow: 0 0 0 1px var(--lumo-contrast-30pct);
 }
 
 .avatar-with-name {

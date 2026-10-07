@@ -1046,7 +1046,6 @@ Icons
 .flex-vertical {
   display: flex;
   flex-direction: column;
-  flex-wrap: wrap;
 }
 
 .white-space-nowrap {
@@ -1207,22 +1206,42 @@ Icons
 
 /*region Single-Purpose Component Styles*/
 /*region Announcements*/
+/* Slim environment notice rendered at the very top of the content area (below the
+   fixed top-level navbar, above the routed content — see DataManagerLayout, where
+   the AnnouncementComponent sits first in the content column). Kept quiet and
+   visually separated from the GitHub-style tab strip above it: reduced vertical
+   padding, moderate breathing room via top/bottom margin, and a softened,
+   card-like treatment (white background + warning-tinted accent + subtle border)
+   instead of a harsh full-bleed block, so it reads as its own notice and never
+   competes with the Projects | Groups | Settings tabs. */
 #announcements {
-  background-color: var(--warning-icon-color);
+  /* Symmetric gutter margin (incl. bottom): the base layout owns the page's default
+     spacing, so whatever follows (content header / content areas) is always separated
+     from the announcement by the same gap — no component has to add its own top margin. */
+  margin: var(--spacing-04);
   padding: var(--spacing-03) var(--spacing-04);
+  background-color: var(--lumo-base-color);
+  color: var(--lumo-contrast-80pct);
+  border: 1px solid var(--warning-color);
+  border-left-width: 4px;
+  border-radius: var(--lumo-border-radius-m);
   text-align: left;
+  font-size: var(--lumo-font-size-s);
+  box-sizing: border-box;
 }
 
 .announcement {
-  margin: var(--spacing-03) 0;
+  margin: 0;
   display: flex;
+  align-items: center;
   gap: var(--spacing-03);
 }
 
 .announcement vaadin-icon {
   min-width: var(--icon-size-s);
   max-width: var(--icon-size-s);
-  color: var(--icon-color);
+  color: var(--warning-color);
+  flex-shrink: 0;
 }
 
 .announcement-text {
@@ -1544,17 +1563,13 @@ states, and modal-like overlays that sit inside a flex container.
 }
 /*endregion*/
 
+/* Context note — compact variant reduces gap to the next sibling
+   (e.g. between the security reassurance and the first card). */
+.context-note--compact {
+  margin-bottom: calc(var(--lumo-space-s) - var(--lumo-space-m));
+}
+
 /* ── External Providers card styling ────── */
-
-/* Give the page breathing room — the .main grid has no
-   inherent padding, so we add it here. */
-.external-providers {
-  padding: var(--lumo-space-l);
-}
-
-.external-providers .external-providers__content {
-  max-width: 800px;
-}
 
 .external-providers .instance-card {
   display: flex;
@@ -1564,10 +1579,6 @@ states, and modal-like overlays that sit inside a flex container.
   border: 1px solid var(--lumo-contrast-20pct);
   border-left-width: 8px;
   overflow: hidden;
-}
-
-.external-providers .instance-card + .instance-card {
-  margin-top: var(--lumo-space-m);
 }
 
 .external-providers .instance-card--connected {
@@ -1616,7 +1627,7 @@ states, and modal-like overlays that sit inside a flex container.
   display: flex;
   flex-direction: column;
   gap: var(--lumo-space-s);
-  padding: var(--lumo-space-m) var(--lumo-space-l) var(--lumo-space-l) var(--lumo-space-l);
+  padding: var(--lumo-space-s) var(--lumo-space-l) var(--lumo-space-l) var(--lumo-space-l);
 }
 
 .external-providers .instance-card__status-line {
@@ -1630,20 +1641,6 @@ states, and modal-like overlays that sit inside a flex container.
   font-size: var(--lumo-font-size-s);
   line-height: 1.5;
   margin: 0;
-}
-
-.external-providers .security-note {
-  color: var(--lumo-tertiary-text-color);
-  font-size: var(--lumo-font-size-xs);
-  font-style: italic;
-}
-
-/* Toolbar — right-aligned with heading */
-
-.external-providers .external-providers__toolbar {
-  display: flex;
-  justify-content: flex-end;
-  padding: var(--lumo-space-m) 0 var(--lumo-space-l) 0;
 }
 
 /* Button group for side-by-side Reconnect + Disconnect */

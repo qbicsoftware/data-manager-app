@@ -113,6 +113,13 @@ public class MeasurementService {
     return measurementLookupService.countMeasurements(projectId, experimentId) != 0;
   }
 
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
+  public Set<String> findMeasuredSampleIds(ProjectId projectId, ExperimentId experimentId,
+      Set<String> sampleIds) {
+    return measurementLookupService.findMeasuredSampleIds(projectId, experimentId, sampleIds);
+  }
+
   public Optional<ProteomicsMeasurement> findProteomicsMeasurement(String measurementCode) {
     return measurementLookupService.findProteomicsMeasurement(measurementCode);
   }

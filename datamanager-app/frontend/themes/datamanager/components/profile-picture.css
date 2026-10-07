@@ -1,0 +1,284 @@
+/* Styles for profile pictures: avatar rows, the crop dialog and Cropper.js host. */
+
+/* Cap the profile content so sparse rows (personal info, linked accounts) do not stretch across
+   the full ~1120px settings column. */
+.user-profile-component {
+  max-width: 45rem;
+}
+
+/* Personal information: fields on the left, avatar anchored to the section's right edge. */
+.personal-information__layout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--lumo-space-xl);
+}
+
+.personal-information__fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+  /* A modest basis (not `auto`) so the fields share the row with the avatar instead of
+     pushing it onto its own line: with `auto` the fields' max-content width wins the
+     flex-wrap decision before any shrinking happens, which dropped the avatar below the
+     fields. The fixed 20rem basis still lets the row wrap to two lines on narrow screens. */
+  flex: 1 1 20rem;
+  min-width: 0;
+}
+
+.profile-picture-block__avatar-wrapper {
+  position: relative;
+  width: 6.5rem;
+  height: 6.5rem;
+  flex: 0 0 auto;
+}
+
+.profile-picture-block__avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+/* Gear button overlaid on the avatar's bottom-right corner; opens the picture context menu.
+   Sized for a comfortable touch target, with a base-colour ring so it stays visible on any
+   avatar (photo or identicon). */
+vaadin-button.profile-picture-block__overlay-button {
+  position: absolute;
+  right: -0.5rem;
+  bottom: -0.5rem;
+  box-sizing: border-box;
+  width: 2.75rem;
+  height: 2.75rem;
+  min-width: 0;
+  padding: 0;
+  border: 2px solid var(--lumo-base-color);
+  border-radius: 50%;
+  background-color: var(--lumo-primary-color);
+  color: var(--lumo-primary-contrast-color);
+  box-shadow: var(--lumo-box-shadow-m);
+  cursor: pointer;
+}
+
+vaadin-button.profile-picture-block__overlay-button:hover {
+  background-color: var(--lumo-primary-color-50pct);
+  color: var(--lumo-primary-contrast-color);
+}
+
+vaadin-button.profile-picture-block__overlay-button:focus-visible,
+vaadin-button.profile-picture-block__overlay-button[focus-ring] {
+  outline: 2px solid var(--lumo-primary-color);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+.profile-picture-block__overlay-button vaadin-icon {
+  width: 1.375rem;
+  height: 1.375rem;
+}
+
+/* Context-menu item content: icon + short label. */
+.profile-picture-menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+}
+
+.profile-picture-menu-item vaadin-icon {
+  width: 1rem;
+  height: 1rem;
+  color: var(--lumo-secondary-text-color);
+}
+
+.my-groups-row__avatar {
+  width: 4rem;
+  height: 4rem;
+  border-radius: 50%;
+  overflow: hidden;
+  flex: 0 0 auto;
+}
+
+/* Avatar thumbnail in the audit grid. */
+.audit-table-avatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+/* Larger screens have room to spare, so give the group avatar more presence. */
+@media (min-width: 1024px) {
+  .my-groups-row__avatar {
+    width: 5rem;
+    height: 5rem;
+  }
+}
+
+@media (min-width: 1400px) {
+  .my-groups-row__avatar {
+    width: 6rem;
+    height: 6rem;
+  }
+}
+
+/* Group-card avatars: a stronger 2px ring plus a soft lift so they sit on the card. */
+.my-groups-row .my-groups-row__avatar {
+  box-shadow: 0 0 0 2px var(--lumo-contrast-20pct), var(--lumo-box-shadow-xs);
+}
+
+.my-groups-row__title {
+  display: flex;
+  align-items: center;
+}
+
+/* ── Crop dialog ─────────────────────────────────────────────── */
+
+.profile-picture-dialog__error {
+  display: block;
+  color: var(--lumo-error-text-color);
+  padding-top: var(--lumo-space-s);
+}
+
+.profile-picture-crop {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+}
+
+.profile-picture-crop__main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--lumo-space-l);
+}
+
+.profile-picture-crop__preview-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--lumo-space-xs);
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.profile-picture-crop__preview-label {
+  font-size: var(--lumo-font-size-s);
+  font-weight: 500;
+  color: var(--lumo-secondary-text-color);
+}
+
+.profile-picture-crop__input {
+  display: none;
+}
+
+.profile-picture-crop__choose {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+  cursor: pointer;
+  padding: var(--lumo-space-s) var(--lumo-space-l);
+  border-radius: var(--lumo-border-radius-m);
+  border: 1px solid var(--lumo-contrast-20pct);
+  background: var(--lumo-base-color);
+}
+
+.profile-picture-crop__choose:hover {
+  background: var(--lumo-contrast-5pct);
+}
+
+.profile-picture-crop.has-image .profile-picture-crop__choose {
+  display: none;
+}
+
+.profile-picture-crop__preview {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 9rem;
+  height: 9rem;
+  padding: var(--lumo-space-s);
+  border-radius: 50%;
+  text-align: center;
+  font-size: var(--lumo-font-size-s);
+  color: var(--lumo-secondary-text-color);
+  background-color: var(--lumo-contrast-5pct);
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  border: 1px dashed var(--lumo-contrast-30pct);
+}
+
+.profile-picture-crop__preview.has-image {
+  border-style: solid;
+  border-color: var(--lumo-contrast-20pct);
+}
+
+.profile-picture-crop__stage {
+  position: relative;
+  flex: 0 1 20rem;
+  width: 20rem;
+  max-width: 20rem;
+  height: 20rem;
+  overflow: hidden;
+  background-color: var(--lumo-contrast-5pct);
+  border: 1px dashed var(--lumo-contrast-30pct);
+  border-radius: var(--lumo-border-radius-m);
+}
+
+.profile-picture-crop.has-image .profile-picture-crop__stage {
+  border-style: solid;
+  border-color: var(--lumo-contrast-20pct);
+}
+
+.profile-picture-crop__image {
+  display: none;
+  max-width: 100%;
+}
+
+.profile-picture-crop.has-image .profile-picture-crop__image {
+  display: block;
+}
+
+/* Crop frame stays visible on any image, and a large spread shadow darkens everything outside
+   the crop square (the stage clips it), so the selected region reads as the focus. */
+.profile-picture-crop__stage .cropper-view-box {
+  outline: 2px solid var(--lumo-primary-color);
+  outline-color: var(--lumo-primary-color);
+  box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.45);
+}
+
+/* Make the resize handles and edges clearly legible so users discover that the crop is
+   adjustable. */
+.profile-picture-crop__stage .cropper-line {
+  background-color: var(--lumo-primary-color);
+  opacity: 1;
+}
+
+.profile-picture-crop__stage .cropper-point {
+  width: 10px;
+  height: 10px;
+  background-color: var(--lumo-primary-color);
+  border: 2px solid var(--lumo-base-color);
+  opacity: 1;
+}
+
+.profile-picture-crop__stage .cropper-dashed {
+  border-color: rgba(255, 255, 255, 0.85);
+  border-style: dashed;
+}
+
+.profile-picture-crop__image {
+  display: block;
+  max-width: 100%;
+}
+
+.profile-picture-crop__hint {
+  font-size: var(--lumo-font-size-s);
+  color: var(--lumo-secondary-text-color);
+  margin-top: var(--lumo-space-s);
+}

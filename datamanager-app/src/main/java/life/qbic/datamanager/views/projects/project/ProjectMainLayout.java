@@ -5,11 +5,12 @@ import static java.util.Objects.requireNonNull;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.Icon;
-import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
+import com.vaadin.flow.router.RouteParam;
+import com.vaadin.flow.router.RouteParameters;
+import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.spring.security.AuthenticationContext;
 import jakarta.annotation.security.PermitAll;
 import life.qbic.datamanager.announcements.AnnouncementService;
@@ -17,10 +18,12 @@ import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.DataManagerLayout;
 import life.qbic.datamanager.views.general.DataManagerMenu;
-import life.qbic.datamanager.views.general.footer.FooterComponentFactory;
+import life.qbic.datamanager.views.general.HomeLink;
+import life.qbic.datamanager.views.general.footer.FooterComponent;
 import life.qbic.datamanager.views.navigation.ProjectSideNavigationComponent;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
+import life.qbic.datamanager.views.projects.project.info.ProjectInformationMain;
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.projectmanagement.application.AddExperimentToProjectService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
@@ -50,7 +53,7 @@ public class ProjectMainLayout extends DataManagerLayout implements BeforeEnterO
   private final transient ProjectInformationService projectInformationService;
 
   private Context context = new Context();
-  private final Span projectTitle = new Span();
+  private final RouterLink projectTitle = new RouterLink("", ProjectInformationMain.class);
 
   public ProjectMainLayout(@Autowired AuthenticationContext authenticationContext,
       @Autowired UserInformationService userInformationService,
@@ -59,11 +62,11 @@ public class ProjectMainLayout extends DataManagerLayout implements BeforeEnterO
       @Autowired AddExperimentToProjectService addExperimentToProjectService,
       @Autowired UserPermissions userPermissions,
       @Autowired SpeciesLookupService speciesLookupService,
-      @Autowired FooterComponentFactory footerComponentFactory,
+      @Autowired FooterComponent footerComponent,
       @Autowired TerminologyService terminologyService,
       @Autowired MessageSourceNotificationFactory messageSourceNotificationFactory,
       @Autowired AnnouncementService announcementService) {
-    super(requireNonNull(footerComponentFactory), announcementService);
+    super(requireNonNull(footerComponent), announcementService);
     requireNonNull(authenticationContext);
     requireNonNull(userInformationService);
     requireNonNull(projectInformationService);
@@ -104,17 +107,16 @@ public class ProjectMainLayout extends DataManagerLayout implements BeforeEnterO
 
               Text projectCode = new Text(project.getProjectCode().value() + " - ");
               Text projectName = new Text(project.getProjectIntent().projectTitle().title());
-              Icon book = styleIcon(VaadinIcon.NOTEBOOK);
 
-              projectTitle.add(book, projectCode, projectName);
+              // The project title in the navbar links to the project summary
+              // (projects/:projectId/info) so users can navigate back to the
+              // project's home without opening the drawer.
+              projectTitle.setRoute(ProjectInformationMain.class,
+                  new RouteParameters(
+                      new RouteParam(ProjectInformationMain.PROJECT_ID_ROUTE_PARAMETER,
+                          projectId.value())));
+              projectTitle.add(projectCode, projectName);
             });
-  }
-
-  private Icon styleIcon(VaadinIcon vaadinIcon) {
-    Icon icon = vaadinIcon.create();
-    icon.addClassName("primary");
-    icon.addClassName("smallest");
-    return icon;
   }
 
   private Span createDrawerToggleAndTitleBar() {
@@ -122,7 +124,7 @@ public class ProjectMainLayout extends DataManagerLayout implements BeforeEnterO
     drawerToggleAndTitleBar.addClassName("drawer-title-bar");
     DrawerToggle drawerToggle = new DrawerToggle();
     projectTitle.setClassName("navbar-title");
-    drawerToggleAndTitleBar.add(drawerToggle, projectTitle);
+    drawerToggleAndTitleBar.add(drawerToggle, new HomeLink(), projectTitle);
 
     initializeDrawer();
     return drawerToggleAndTitleBar;

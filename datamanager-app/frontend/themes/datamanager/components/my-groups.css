@@ -1,0 +1,544 @@
+/* -- My Groups view + New Group creation page (FEAT-USER-GROUPS-10) -- */
+
+/* Row list container */
+.my-groups-component {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.my-groups-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* One membership row */
+.my-groups-row {
+  display: flex;
+  align-items: stretch;
+  box-sizing: border-box;
+  padding: var(--lumo-space-m);
+  background-color: var(--lumo-base-color);
+  border: 1px solid var(--lumo-contrast-20pct);
+  border-radius: var(--lumo-border-radius-m);
+}
+
+/* Left rail: takes the full card height and centers the group avatar, so the picture is
+   prominent and easy to scan down the list. */
+.my-groups-row__avatar-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  padding-right: var(--lumo-space-l);
+}
+
+/* Left column: header (title + badges/actions inline) and description below it */
+.my-groups-row__identity {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-xs);
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+/* Header row: title on the left, badges + actions inline on the same line to the right.
+   The badges/actions are tied to the TITLE, not the description, so a long description
+   never pushes them down or out of alignment. */
+.my-groups-row__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--lumo-space-m);
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.my-groups-row__title {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.my-groups-row__name {
+  font-size: var(--lumo-font-size-m);
+  font-weight: var(--lumo-font-weight-semibold, 600);
+  color: var(--lumo-header-text-color);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-block;
+  max-width: 100%;
+  vertical-align: middle;
+  /* Native link: pointer cursor from the browser; underline on hover/focus. */
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.my-groups-row__name:hover {
+  color: var(--lumo-primary-text-color);
+  text-decoration: underline;
+}
+
+.my-groups-row__name:focus {
+  color: var(--lumo-primary-text-color);
+  text-decoration: underline;
+  border-radius: var(--lumo-border-radius-m);
+  box-shadow: 0 0 0 2px var(--lumo-primary-color-50pct);
+}
+
+/* Badges live on their own line below the title (vertical scan pattern): wrap gracefully
+   when the viewport is narrow. */
+.my-groups-row__badges {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--lumo-space-xs);
+  flex-shrink: 0;
+  margin-top: var(--lumo-space-xs);
+}
+
+.my-groups-row__description {
+  font-size: var(--lumo-font-size-s);
+  color: var(--lumo-secondary-text-color);
+  line-height: var(--lumo-line-height-s);
+  margin: 0;
+  /* Keep long descriptions readable and aligned under the title (not ragged relative to the
+     badge column); cap the width so a long description doesn't span the full card. */
+  max-width: 60ch;
+}
+
+.my-groups-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--lumo-border-radius-m);
+  padding: 0 var(--lumo-space-s);
+  font-size: var(--lumo-font-size-xs);
+  font-weight: var(--lumo-font-weight-semibold, 600);
+  line-height: var(--lumo-line-height-s);
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.my-groups-badge--type-org {
+  background-color: var(--lumo-contrast-10pct);
+  color: var(--lumo-secondary-text-color);
+}
+
+/* Ad-hoc (User Group) badge: same neutral treatment as the org badge so both type badges
+   read equally and don't compete with the role badges (which carry the semantic colour).
+   The distinction stays in the label text ("User Group" vs "organisational"). */
+.my-groups-badge--type-adhoc {
+  background-color: var(--lumo-contrast-10pct);
+  color: var(--lumo-secondary-text-color);
+}
+
+.my-groups-badge--role-owner,
+.my-groups-badge--role-manager {
+  background-color: var(--lumo-success-color-10pct);
+  color: var(--lumo-success-text-color);
+}
+
+.my-groups-badge--role-member {
+  background-color: var(--lumo-contrast-10pct);
+  color: var(--lumo-secondary-text-color);
+}
+
+/* Member-count badge: neutral, informational — the roster size of a group the user belongs
+   to. Kept visually quiet (no tint) so it never competes with the role/type badges. */
+.my-groups-badge--member-count {
+  background-color: transparent;
+  border: 1px solid var(--lumo-contrast-20pct);
+  color: var(--lumo-secondary-text-color);
+}
+
+/* Actions */
+.my-groups-row__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-xs);
+  flex-shrink: 0;
+}
+
+/* Footer row: actions anchored to the bottom of the card, so a long description does not
+   leave a tall empty column beside a top-pinned action. */
+.my-groups-row__footer {
+  display: flex;
+  align-items: center;
+  margin-top: auto;
+}
+
+/* Disabled management stubs (available in FEAT-USER-GROUPS-04) */
+.my-groups-action--disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Tooltip is attached to the wrapper span (disabled buttons do not fire events) */
+.my-groups-action-wrapper {
+  display: inline-flex;
+}
+
+.my-groups-action--leave {
+  flex-shrink: 0;
+}
+
+/* Empty state */
+.my-groups-empty-state {
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-s);
+  padding: var(--lumo-space-m) 0;
+}
+
+/* -- Admin org-group directory (FEAT-USER-GROUPS-01) -- */
+/* The org-group rows reuse the shared group-card anatomy and badges above (`.my-groups-row*`,
+   `.my-groups-badge*`, `.my-groups-action*`), so org group cards and ad-hoc user group cards
+   render identically — including their action buttons. Only the directory-list container and
+   empty state are admin-specific. */
+
+.admin-groups-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.admin-groups-empty-state {
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-s);
+  padding: var(--lumo-space-m) 0;
+}
+
+/* -- Admin org-group management (FEAT-USER-GROUPS-02) -- */
+
+/* The admin page reuses the shared GroupMembersComponent grid (same as ad-hoc groups), so the
+   only admin-specific bits are the back-link above the section. */
+.admin-group-managers-back-link {
+  /* spacing/look inherit from .group-detail-back-link (applied together) */
+}
+
+/* -- New Group page (shareable route settings/groups/new) -- */
+
+.new-group {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.new-group-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-l);
+  width: 100%;
+  max-width: 40rem;
+  box-sizing: border-box;
+  padding: var(--lumo-space-l);
+  background-color: var(--lumo-base-color);
+  border: 1px solid var(--lumo-contrast-20pct);
+  border-radius: var(--lumo-border-radius-m);
+}
+
+.new-group-form__fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+  box-sizing: border-box;
+}
+
+.new-group-form__fields vaadin-text-field,
+.new-group-form__fields vaadin-text-area {
+  width: 100%;
+}
+
+.new-group-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--lumo-space-s);
+  box-sizing: border-box;
+}
+
+/* The name field receives autofocus on page load — give it a clear primary focus ring so
+   the user immediately sees which field is active (same technique as the inline-editable
+   fields in settings.css: the `focused` attribute on the host is more reliable than
+   :focus-within across browsers). */
+.new-group-form__fields vaadin-text-field::part(input-field),
+.new-group-form__fields vaadin-text-area::part(input-field) {
+  transition: box-shadow 120ms ease, background-color 120ms ease;
+}
+
+.new-group-form__fields vaadin-text-field[focused]::part(input-field),
+.new-group-form__fields vaadin-text-area[focused]::part(input-field) {
+  background-color: var(--lumo-base-color);
+  box-shadow:
+    inset 0 0 0 2px var(--lumo-primary-color),
+    0 0 0 3px var(--lumo-primary-color-10pct);
+}
+
+/* Live name-availability indicator (FEAT-USER-GROUPS-03): a suffix icon inside the Name field
+   shows whether the entered name is still free (green check) or already taken (red cross).
+   The icon inherits the Lumo primary sizing; only the tint carries the semantic meaning. */
+.new-group-form__availability-icon {
+  --lumo-icon-size: 1.1rem;
+  margin-left: var(--lumo-space-s);
+}
+
+.new-group-form__availability-icon--available {
+  color: var(--lumo-success-color);
+}
+
+.new-group-form__availability-icon--taken {
+  color: var(--lumo-error-color);
+}
+
+/* Colored helper text next to the availability state: green for "available", red for
+   "already taken". Vaadin renders helpers through ::part(helper-text); the field-level
+   class lets us tint it without affecting the description or error slots. */
+.new-group-form__name-field--taken::part(helper-text) {
+  color: var(--lumo-error-text-color);
+}
+
+.new-group-form__name-field:not(.new-group-form__name-field--taken)::part(helper-text) {
+  color: var(--lumo-success-text-color);
+}
+
+/* -- Owner/manager management controls (FEAT-USER-GROUPS-04, task #1577) -- */
+
+/* Enabled management action buttons. The Manage/Leave actions are LUMO_TERTIARY_INLINE
+   buttons with icons: keep the flex layout and give them a clear hover/focus affordance so
+   they read as clickable (not plain text). */
+.my-groups-action--manage {
+  flex-shrink: 0;
+}
+
+.my-groups-row__actions vaadin-button {
+  color: var(--lumo-primary-text-color);
+}
+
+.my-groups-row__actions vaadin-button:hover {
+  color: var(--lumo-primary-color);
+  background-color: var(--lumo-primary-color-10pct);
+  border-radius: var(--lumo-border-radius-m);
+}
+
+.my-groups-row__actions vaadin-button[focus-ring] {
+  color: var(--lumo-primary-color);
+  background-color: var(--lumo-primary-color-10pct);
+  border-radius: var(--lumo-border-radius-m);
+  box-shadow: 0 0 0 2px var(--lumo-primary-color-50pct);
+}
+
+/* Leave-group is destructive: red text, red hover tint. */
+.my-groups-row__actions .my-groups-action--leave {
+  color: var(--lumo-error-text-color);
+}
+
+.my-groups-row__actions .my-groups-action--leave:hover,
+.my-groups-row__actions .my-groups-action--leave[focus-ring] {
+  color: var(--lumo-error-color);
+  background-color: var(--lumo-error-color-10pct);
+}
+
+/* -- Group detail page (settings/groups/:groupId) — replaces the management dialogs -- */
+
+/* The page content uses the Profile settings conventions (settings-group blocks separated by
+   subheadings and whitespace, no card chrome); only the detail-specific bits live here. */
+
+.group-detail {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Back navigation as a breadcrumb link directly above the section: a settings-aside-style
+   text link (chevron-left), so its purpose (return to the My Groups list) is obvious.
+   Left-aligned flush with the section (both align to the content column padding; the
+   surrounding flexible spacing provides the margins, so the left edge is stable across
+   views and viewport widths). */
+.group-detail-back-link {
+  font-size: var(--lumo-font-size-s);
+  color: var(--lumo-secondary-text-color);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lumo-space-xs);
+  margin: 0 0 var(--lumo-space-s);
+  align-self: flex-start;
+}
+
+.group-detail-back-link:hover {
+  color: var(--lumo-primary-text-color);
+  text-decoration: underline;
+}
+
+/* Member roster on the detail page (inside a settings-group; no card chrome).
+   The roster is a FilterGrid (search + multi-select + toolbar), matching the measurements
+   and raw-data views. */
+.group-members-component {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+  box-sizing: border-box;
+  width: 100%;
+}
+
+/* Member cell in the grid's Member column: user avatar (identicon), full name (fallback:
+   user id) and the username in parentheses with weaker contrast — matching the project
+   access roster and the account overview header. The role badge reuses the My Groups badge
+   styles (owner/manager green, member grey). */
+.group-member-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+  padding: var(--lumo-space-xs) 0;
+  white-space: nowrap;
+}
+
+.group-member-cell__avatar {
+  width: var(--lumo-icon-size-l);
+  height: var(--lumo-icon-size-l);
+  flex-shrink: 0;
+}
+
+.group-member-cell__identity {
+  display: flex;
+  align-items: baseline;
+  gap: var(--lumo-space-xs);
+  min-width: 0;
+}
+
+.group-member-cell__name {
+  color: var(--lumo-body-text-color);
+  font-weight: var(--lumo-font-weight-semibold, 600);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Add-member search results in the ComboBox overlay: identical layout to the roster rows
+   (avatar + full name + username in parentheses) so the suggestions read exactly like the
+   members they will join. */
+.user-search-result {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+  padding: var(--lumo-space-xs) 0;
+  white-space: nowrap;
+}
+
+.user-search-result__avatar {
+  width: var(--lumo-icon-size-l);
+  height: var(--lumo-icon-size-l);
+  flex-shrink: 0;
+}
+
+.user-search-result__identity {
+  display: flex;
+  align-items: baseline;
+  gap: var(--lumo-space-xs);
+  min-width: 0;
+}
+
+.user-search-result__name {
+  color: var(--lumo-body-text-color);
+  font-weight: var(--lumo-font-weight-semibold, 600);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Rows that cannot be acted on (the group owner, or the acting user themselves) are marked
+   with part name `protected-row` via Grid.setPartNameGenerator, which lands on the row's
+   cells (vaadin-grid::part(protected-row) in the grid's shadow DOM — the grid renders plain
+   <tr> rows, not vaadin-grid-row elements). The cells are slightly quieted so the disabled
+   selection checkbox reads as intentional and not a rendering bug. */
+.group-members-component vaadin-grid::part(protected-row) {
+  opacity: 0.65;
+  background-color: var(--lumo-contrast-5pct);
+}
+
+/* Clicking anywhere on an actionable member row toggles its selection (in addition to the
+   selection checkbox). All body rows get a pointer cursor to signal clickability; rows that
+   cannot be acted on (owner / acting user / peer-manager rows) carry Vaadin's built-in
+   `nonselectable-row` part and are explicitly reset to the default cursor, so the hand only
+   appears where a click actually toggles the selection. */
+.group-members-component vaadin-grid::part(row) {
+  cursor: pointer;
+}
+
+.group-members-component vaadin-grid::part(nonselectable-row) {
+  cursor: default;
+}
+
+/* Danger zone: destructive group-level action (dissolve) */
+.group-detail-danger-zone {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+}
+
+/* Subsequent explainer under the dissolve action in the danger zone */
+.group-detail-danger-note {
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-s);
+  line-height: var(--lumo-line-height-s);
+  margin: 0;
+  max-width: 60ch;
+}
+
+/* Inline type-to-confirm guard for the dissolve action. The form replaces the calm danger
+   row when engaged (expand-on-click): the destructive button stays locked until the retyped
+   group name exactly matches. The small top separator signals the state switch inside the
+   same danger zone block. */
+.group-detail-dissolve-confirm {
+  padding-top: var(--lumo-space-m);
+  border-top: 1px solid var(--lumo-contrast-10pct);
+}
+
+.group-detail-dissolve-confirm-input {
+  max-width: 44rem;
+}
+
+/* On the group detail page the editable name/description fields are intentionally wider
+   (display width raised via setMinDisplayWidth). Edit mode must not collapse them back to
+   the generic 24rem cap: widen the cap only for fields on this page. */
+.group-detail .inline-editable-field__edit-field {
+  max-width: 44rem;
+}
+
+/* Settings-group header row: title on the left, a primary action (e.g. Add member) on the
+   same line at the right — the action belongs to the section, not to the roster rows. */
+.group-members-in-settings-group .settings-group__header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--lumo-space-m);
+}
+
+.group-members-in-settings-group .settings-group__header-row .settings-group__title {
+  margin: 0;
+}
+
+.group-members-in-settings-group .settings-group__action {
+  flex-shrink: 0;
+}
+
+/* Admin manager management: the "Managers" settings group carries its action (Assign
+   manager) on the same line as its title — identical to the "Members (N)" group on the
+   group detail page. */
+.admin-group-managers .settings-group__header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--lumo-space-m);
+}
+
+.admin-group-managers .settings-group__header-row .settings-group__title {
+  margin: 0;
+}
+
+.admin-group-managers .settings-group__action {
+  flex-shrink: 0;
+}

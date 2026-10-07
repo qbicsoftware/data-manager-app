@@ -1,0 +1,79 @@
+/* Pagination bar — explicit, page-based list navigation (USER-R-01, ADR-0007). */
+
+.pagination-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: var(--lumo-space-m);
+}
+
+.pagination-bar .pagination-navigation {
+  display: contents;
+}
+
+.pagination-bar .pagination-pages {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-xs);
+  flex-wrap: wrap;
+}
+
+.pagination-bar .pagination-page {
+  min-width: 2.25em;
+  justify-content: center;
+  padding: 0 var(--lumo-space-xs);
+}
+
+.pagination-bar .pagination-page.current {
+  font-weight: bold;
+  background: var(--lumo-primary-color);
+  color: var(--lumo-primary-contrast-color);
+}
+
+.pagination-bar .pagination-ellipsis {
+  color: var(--lumo-tertiary-text-color);
+  padding: 0 var(--lumo-space-xs);
+}
+
+.pagination-bar .pagination-info {
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-s);
+}
+
+.pagination-bar .pagination-controls {
+  display: contents;
+}
+
+/* page-size Select (UX F10): keep a stable width so the bar does not jump between sizes */
+.pagination-bar .pagination-page-size {
+  width: 8rem;
+}
+/* Built-in selection bar of PaginatedGrid — mirrors the measurement selection bar (icon +
+   bold count + clear) so list selection reads consistently across the app. Hidden until a
+   selection exists (toggled in PaginatedGrid.updateSelectionDisplay). */
+.paginated-grid-selection-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+  padding: var(--lumo-space-s) var(--lumo-space-m);
+  border-radius: var(--lumo-border-radius-m);
+  background: color-mix(in srgb, var(--primary-color) 6%, var(--primary-contrast-color));
+}
+
+.paginated-grid-selection-icon {
+  color: var(--primary-color);
+  width: var(--lumo-icon-size-m);
+  height: var(--lumo-icon-size-m);
+}
+
+.paginated-grid-selection-count {
+  color: var(--body-text-color);
+  font-weight: 700;
+}
+
+.paginated-grid-clear-selection {
+  margin-left: var(--lumo-space-s);
+  color: var(--button-text-color);
+  font-weight: 600;
+}

@@ -25,6 +25,7 @@ import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.model.project.ProjectTitle;
 import life.qbic.projectmanagement.domain.repository.ProjectRepository;
+import life.qbic.usergroups.api.GroupSidProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -47,16 +48,19 @@ public class ProjectInformationService {
   private final ProjectRepository projectRepository;
   private final ProjectAccessService projectAccessService;
   private final AuthenticationToUserIdTranslator userIdTranslator;
+  private final GroupSidProvider groupSidProvider;
 
   public ProjectInformationService(@Autowired ProjectOverviewLookup projectOverviewLookup,
       @Autowired ProjectRepository projectRepository,
       @Autowired ProjectAccessService projectAccessService,
-      AuthenticationToUserIdTranslator userIdTranslator) {
+      AuthenticationToUserIdTranslator userIdTranslator,
+      @Autowired GroupSidProvider groupSidProvider) {
     Objects.requireNonNull(projectOverviewLookup);
     this.projectOverviewLookup = projectOverviewLookup;
     this.projectRepository = projectRepository;
     this.projectAccessService = projectAccessService;
     this.userIdTranslator = userIdTranslator;
+    this.groupSidProvider = groupSidProvider;
   }
 
   /**
@@ -72,8 +76,43 @@ public class ProjectInformationService {
   public List<ProjectOverview> queryOverview(String filter, int offset, int limit,
       List<SortOrder> sortOrders) {
     var accessibleProjectIds = retrieveAccessibleProjectIdsForUser();
+    if (accessibleProjectIds.isEmpty()) {
+      return new ArrayList<>();
+    }
     return projectOverviewLookup.query(filter, offset, limit,
         sortOrders, accessibleProjectIds);
+  }
+
+  /**
+   * Counts the number of {@link ProjectOverview}s the user can access that match the provided
+   * filter. Used to compute the total for the paginated project overview pager.
+   *
+   * @param filter the results' project title will be applied with this filter
+   * @return the total number of matching, accessible project overviews
+   * @since 1.19.0
+   */
+  public long countOverview(String filter) {
+    var accessibleProjectIds = retrieveAccessibleProjectIdsForUser();
+    if (accessibleProjectIds.isEmpty()) {
+      return 0;
+    }
+    return projectOverviewLookup.count(filter, accessibleProjectIds);
+  }
+
+  /**
+   * Returns the ids of all projects the currently authenticated user (and their authorities) can
+   * access.
+   *
+   * <p>Exposed so that other access-restricted project queries — such as the pinned-project lookup —
+   * resolve visibility through exactly the same rule as the project overview, instead of duplicating
+   * the ACL sid/authority resolution. Callers must still restrict their queries to the returned ids;
+   * the ids alone disclose nothing.
+   *
+   * @return accessible project ids, empty if the user can access no project
+   * @since 1.19.0
+   */
+  public List<ProjectId> findAccessibleProjectIds() {
+    return retrieveAccessibleProjectIdsForUser();
   }
 
   /* @PostFilter() annotation is not possible for acl secured objects in a paginated context, for more details see:
@@ -94,6 +133,16 @@ public class ProjectInformationService {
         .filter(not(accessibleProjectIds::contains))
         .toList();
     accessibleProjectIds.addAll(accessibleProjectsFromRoles);
+    // user groups ride as GrantedAuthoritySid at the ACL layer but never appear in the
+    // Authentication (they are derived live, not injected at login, strategy §4.3).
+    // Union the caller's group sids or group-granted projects would pass hasPermission(READ)
+    // but never appear in the project overview.
+    List<ProjectId> accessibleProjectsFromGroups = Optional.ofNullable(
+            groupSidProvider.listGroupSidsForUser(optionalUserId.get())).orElse(List.of()).stream()
+        .flatMap(groupSid -> projectAccessService.getAccessibleProjectsForSid(groupSid).stream())
+        .filter(not(accessibleProjectIds::contains))
+        .toList();
+    accessibleProjectIds.addAll(accessibleProjectsFromGroups);
     return accessibleProjectIds;
   }
 

@@ -1,0 +1,196 @@
+package life.qbic.datamanager.views.general
+
+import spock.lang.Specification
+
+/**
+ * Unit tests for the {@link InlineEditableField} blur handling and value semantics.
+ *
+ * <p>Blur-to-outside uses a deferred client-side check (Vaadin's BlurEvent carries no
+ * relatedTarget), so the browser-side decision itself is not testable here. We pin the
+ * server-side contract instead: commit-on-blur fires a SaveEvent and clears the editing chrome,
+ * an unchanged value just exits edit mode quietly, and the {@code setCommitOnBlurToOutside}
+ * toggle switches to cancel-on-blur semantics.</p>
+ */
+class InlineEditableFieldSpec extends Specification {
+
+  def "commit-on-blur-to-outside fires a SaveEvent and leaves edit mode when value changed"() {
+    given: "an editable field in edit mode with a draft"
+    def field = new InlineEditableField("Name", "old value")
+    List<String> saved = []
+    field.addSaveListener { e -> saved << e.value() }
+    field.startEditing()
+    assert saved.isEmpty()
+
+    when: "a draft is typed and blur-to-outside commits"
+    field.setValueInternal("new value")
+    field.attemptBlurCommitForTest()
+
+    then: "the draft is saved and edit mode is left"
+    saved == ["new value"]
+    !field.isEditingForTest()
+  }
+
+  def "commit-on-blur with an unchanged value just exits edit mode silently"() {
+    given: "a field in edit mode with no draft"
+    def field = new InlineEditableField("Name", "same")
+    List<String> saved = []
+    field.addSaveListener { e -> saved << e.value() }
+    field.startEditing()
+
+    when: "blur-to-outside is triggered without changes"
+    field.attemptBlurCommitForTest()
+
+    then: "no SaveEvent fires and edit mode is left quietly"
+    saved.isEmpty()
+    !field.isEditingForTest()
+  }
+
+  def "setCommitOnBlurToOutside(false) reverts instead of saving"() {
+    given: "a field configured to cancel on outside blur"
+    def field = new InlineEditableField("Name", "old value")
+    field.setCommitOnBlurToOutside(false)
+    List<String> saved = []
+    field.addSaveListener { e -> saved << e.value() }
+    field.startEditing()
+    field.setValueInternal("draft")
+
+    when: "blur-to-outside occurs"
+    field.attemptBlurCommitForTest()
+
+    then: "no SaveEvent fires and the value reverts to the committed one"
+    saved.isEmpty()
+    field.getValue() == "old value"
+    !field.isEditingForTest()
+  }
+
+  def "a notice is placed inside the wrapping value area, not the non-wrapping root row"() {
+    given:
+    def field = new InlineEditableField("Username", "jdoe")
+
+    when: "a grandfathered-value notice is set"
+    field.setNotice("This username exceeds the current limit.")
+
+    then: "the notice is a child of the value area (which wraps), so it can span its own line"
+    field.noticeParentClassNamesForTest().contains("inline-editable-field__value-area")
+    field.noticeTextForTest() == "This username exceeds the current limit."
+
+    when: "the notice is cleared with a blank value"
+    field.setNotice("   ")
+
+    then: "it is removed entirely"
+    field.noticeTextForTest() == null
+  }
+
+  def "setting a notice twice reuses the same element instead of stacking notices"() {
+    given:
+    def field = new InlineEditableField("Username", "jdoe")
+
+    when:
+    field.setNotice("first")
+    field.setNotice("second")
+
+    then:
+    field.noticeTextForTest() == "second"
+    field.noticeCountForTest() == 1
+  }
+
+  def "explicit Save still fires a SaveEvent with the trimmed value"() {
+    given:
+    def field = new InlineEditableField("Name", "old")
+    List<String> saved = []
+    field.addSaveListener { e -> saved << e.value() }
+    field.startEditing()
+    field.setValueInternal("  new  ")
+
+    when:
+    field.saveForTest()
+
+    then:
+    saved == ["new"]
+    // the committed value is unchanged until the parent persists and calls setValue
+    field.getValue() == "old"
+  }
+
+  def "a textarea-backed field sets a stable min-width bound instead of growing to fit long content"() {
+    given: "a textarea field with a long multi-line value (like a 500-char group description)"
+    def longDescription = "word ".repeat(120).trim() // ~600 characters, longer than any max len
+    def field = new InlineEditableField(InlineEditableField.InputKind.TEXTAREA, "Description", longDescription)
+    field.setMinDisplayWidth(40)
+
+    when: "the display min-width is applied"
+    int minWidthCh = field.displayWidthForTest()
+
+    then: "the lower bound stays at the configured minimum (40ch) regardless of the long content"
+    minWidthCh == 40
+  }
+
+  def "a single-line field enforces the configured maximum length"() {
+    given: "a username-like field constrained to 20 characters"
+    def field = new InlineEditableField("Username", "jdoe")
+    field.setMaxLength(20)
+
+    expect: "the widget-level limit matches the domain rule"
+    field.maxLengthForTest() == 20
+  }
+
+  def "setting a maximum length on a textarea field is a no-op"() {
+    given: "a textarea field keeps its own generous limit (e.g. 500 for descriptions)"
+    def field = new InlineEditableField(InlineEditableField.InputKind.TEXTAREA, "Description", "text")
+    def before = field.maxLengthForTest()
+
+    when: "a single-line limit is mistakenly applied"
+    field.setMaxLength(20)
+
+    then: "the textarea limit is left untouched"
+    field.maxLengthForTest() == before
+  }
+
+  def "a character hint is hidden in display mode and shown while editing"() {
+    given: "a username field with a 20-character budget"
+    def field = new InlineEditableField("Username", "jdoe")
+    field.setMaxLength(20)
+    field.setCharacterHint("Visible to other users")
+
+    expect: "nothing is shown in display mode"
+    field.helperTextForTest() == null
+
+    when: "the user enters edit mode"
+    field.startEditing()
+
+    then: "the hint announces the limit together with the current usage"
+    field.helperTextForTest() == "Visible to other users (4/20 characters)"
+
+    when: "the user leaves edit mode again"
+    field.cancelEditing()
+
+    then: "the hint is cleared so it does not linger on the profile page"
+    field.helperTextForTest() == null
+  }
+
+  def "a bare counter is shown when no hint text is configured"() {
+    given:
+    def field = new InlineEditableField("Username", "abc")
+    field.setMaxLength(20)
+    field.setCharacterHint("")
+
+    when:
+    field.startEditing()
+
+    then:
+    field.helperTextForTest() == "3/20 characters"
+  }
+
+  def "an over-long grandfathered value is not marked invalid by the length limit"() {
+    given: "a value that predates the limit, longer than the configured maximum"
+    def legacyValue = "a" * 25
+    def field = new InlineEditableField("Username", legacyValue)
+    field.setMaxLength(20)
+
+    when: "the user opens the field for editing without changing anything"
+    field.startEditing()
+
+    then: "the existing value must not be flagged as an error"
+    !field.isInvalidForTest()
+    field.value == legacyValue
+  }
+}

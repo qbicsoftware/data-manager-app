@@ -19,6 +19,8 @@ import life.qbic.identity.domain.event.UserEmailConfirmed;
 import life.qbic.identity.domain.model.translation.EmailConverter;
 import life.qbic.identity.domain.model.translation.FullNameConverter;
 import life.qbic.identity.domain.model.translation.PasswordConverter;
+import life.qbic.identity.domain.model.policy.PolicyStatus;
+import life.qbic.identity.domain.model.UserNamePolicy.UserNameValidationException;
 
 /**
  * <b>User class</b>
@@ -93,6 +95,7 @@ public class User implements Serializable {
    */
   public static User create(FullName fullName, EmailAddress emailAddress,
       String userName, EncryptedPassword encryptedPassword) {
+    validateUserName(userName);
     UserId id = UserId.create();
     Instant registrationDate = Instant.now();
     var user = new User(id, fullName, emailAddress, userName, encryptedPassword, registrationDate,
@@ -118,6 +121,7 @@ public class User implements Serializable {
     if (isNull(oidcIssuer) && nonNull(oidcId)) {
       throw new IllegalStateException("OIDC issuer cannot be null if OIDC identifier is provided");
     }
+    validateUserName(userName);
     UserId id = UserId.create();
     Instant registrationDate = Instant.now();
     var user = new User(id, FullName.from(fullName)
@@ -215,12 +219,25 @@ public class User implements Serializable {
   }
 
   /**
-   * Overrides the previous username and sets a new one
+   * Overrides the previous username and sets a new one.
+   *
+   * <p>The new value is validated against the {@link UserNamePolicy}. Persisted usernames that
+   * predate the length limit are never re-validated on read; only values entering the system pass
+   * through this method.
    *
    * @param userName the new username
+   * @throws UserNamePolicy.UserNameValidationException if the username violates the policy
    */
   public void setNewUserName(String userName) {
+    validateUserName(userName);
     this.userName = userName;
+  }
+
+  private static void validateUserName(String userName) {
+    var report = UserNamePolicy.instance().validate(userName);
+    if (report.status() == PolicyStatus.FAILED) {
+      throw new UserNameValidationException(report.reason(), userName);
+    }
   }
 
   private void activate() {

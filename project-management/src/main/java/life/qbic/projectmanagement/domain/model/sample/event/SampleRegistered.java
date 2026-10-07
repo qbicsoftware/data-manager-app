@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serial;
 import java.util.Objects;
 import life.qbic.domain.concepts.DomainEvent;
-import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 
 /**
@@ -20,37 +19,38 @@ public class SampleRegistered extends DomainEvent {
   @Serial
   private static final long serialVersionUID = 788473395775625302L;
 
+  @JsonProperty("projectId")
+  private final String projectId;
+
   @JsonProperty("experimentId")
   private final String experimentId;
-
-  @JsonProperty("batchId")
-  private final BatchId assignedBatch;
 
   @JsonProperty("sampleId")
   private final SampleId registeredSample;
 
-  private SampleRegistered(String experimentId, BatchId assignedBatch, SampleId registeredSample) {
+  private SampleRegistered(String projectId, String experimentId, SampleId registeredSample) {
+    this.projectId = Objects.requireNonNull(projectId);
     this.experimentId = Objects.requireNonNull(experimentId);
-    this.assignedBatch = Objects.requireNonNull(assignedBatch);
     this.registeredSample = Objects.requireNonNull(registeredSample);
   }
 
   /**
    * Creates a new {@link SampleRegistered} object instance.
    *
-   * @param assignedBatch    the batch reference the sample will be assigned to
+   * @param projectId        the project reference the sample belongs to
+   * @param experimentId     the experiment reference the sample belongs to
    * @param registeredSample the sample reference of the newly registered physical sample
    * @return a new instance of this domain event
    * @since 1.0.0
    */
-  public static SampleRegistered create(String experimentId, BatchId assignedBatch,
+  public static SampleRegistered create(String projectId, String experimentId,
       SampleId registeredSample) {
-    return new SampleRegistered(experimentId, assignedBatch, registeredSample);
+    return new SampleRegistered(projectId, experimentId, registeredSample);
   }
 
-  @JsonGetter("assignedBatch")
-  public BatchId assignedBatch() {
-    return this.assignedBatch;
+  @JsonGetter("projectId")
+  public String projectId() {
+    return this.projectId;
   }
 
   @JsonGetter("registeredSample")
