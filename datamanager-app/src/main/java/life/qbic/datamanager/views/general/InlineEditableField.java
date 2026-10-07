@@ -57,6 +57,15 @@ public class InlineEditableField extends Div {
   private final Button cancelButton;
   private final Div editControls;
 
+  /**
+   * The wrapping container that holds the value, edit affordances and any notice. Notices must
+   * live here rather than on the root: the root is a non-wrapping flex row (label + value), so a
+   * full-width child appended there would be squeezed into a narrow column beside the value.
+   */
+  private final Div valueArea;
+
+  private Span notice;
+
   private boolean editable = true;
   private String currentValue;
   private boolean editing = false;
@@ -152,7 +161,7 @@ public class InlineEditableField extends Div {
     this.editControls.addClassName("inline-editable-field__edit-controls");
     this.editControls.setVisible(false);
 
-    Div valueArea = new Div();
+    this.valueArea = new Div();
     valueArea.addClassName("inline-editable-field__value-area");
     valueArea.add(editField, editButton, editControls);
 
@@ -205,6 +214,33 @@ public class InlineEditableField extends Div {
     // counter until the user leaves the field. EAGER keeps it in sync while typing.
     editField.setValueChangeMode(ValueChangeMode.EAGER);
     applyCharacterHint();
+  }
+
+  /**
+   * Shows a non-blocking informational notice below the value, spanning the full row width.
+   *
+   * <p>Intended for explanatory text that must not disrupt the label/value alignment, such as
+   * telling a user that an existing value is grandfathered under a newly introduced rule. Passing
+   * {@code null} or blank removes the notice.
+   *
+   * @param text the notice text, or {@code null}/blank to clear it
+   */
+  public void setNotice(String text) {
+    if (text == null || text.isBlank()) {
+      if (notice != null) {
+        valueArea.remove(notice);
+        notice = null;
+      }
+      return;
+    }
+    if (notice == null) {
+      notice = new Span();
+      notice.addClassName("inline-editable-field__notice");
+      notice.getElement().setAttribute("role", "note");
+      // Append last so the notice always sits on its own line beneath the value row.
+      valueArea.add(notice);
+    }
+    notice.setText(text);
   }
 
   /**
@@ -476,6 +512,31 @@ public class InlineEditableField extends Div {
    */
   String helperTextForTest() {
     return editField.getElement().getProperty("helperText", (String) null);
+  }
+
+  /**
+   * The CSS classes of the notice's parent, for unit tests. Used to pin that the notice is
+   * attached inside the wrapping value area rather than the non-wrapping root row.
+   */
+  java.util.Set<String> noticeParentClassNamesForTest() {
+    return notice == null ? java.util.Set.of() : notice.getParent().orElseThrow().getClassNames();
+  }
+
+  /**
+   * The current notice text, or {@code null} when no notice is shown, for unit tests.
+   */
+  String noticeTextForTest() {
+    return notice == null ? null : notice.getText();
+  }
+
+  /**
+   * The number of notice elements currently rendered, for unit tests.
+   */
+  int noticeCountForTest() {
+    return (int) getChildren()
+        .flatMap(child -> child.getChildren())
+        .filter(child -> child.getClassNames().contains("inline-editable-field__notice"))
+        .count();
   }
 
   /**

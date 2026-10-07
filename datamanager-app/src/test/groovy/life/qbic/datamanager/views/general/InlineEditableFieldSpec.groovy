@@ -63,6 +63,37 @@ class InlineEditableFieldSpec extends Specification {
     !field.isEditingForTest()
   }
 
+  def "a notice is placed inside the wrapping value area, not the non-wrapping root row"() {
+    given:
+    def field = new InlineEditableField("Username", "jdoe")
+
+    when: "a grandfathered-value notice is set"
+    field.setNotice("This username exceeds the current limit.")
+
+    then: "the notice is a child of the value area (which wraps), so it can span its own line"
+    field.noticeParentClassNamesForTest().contains("inline-editable-field__value-area")
+    field.noticeTextForTest() == "This username exceeds the current limit."
+
+    when: "the notice is cleared with a blank value"
+    field.setNotice("   ")
+
+    then: "it is removed entirely"
+    field.noticeTextForTest() == null
+  }
+
+  def "setting a notice twice reuses the same element instead of stacking notices"() {
+    given:
+    def field = new InlineEditableField("Username", "jdoe")
+
+    when:
+    field.setNotice("first")
+    field.setNotice("second")
+
+    then:
+    field.noticeTextForTest() == "second"
+    field.noticeCountForTest() == 1
+  }
+
   def "explicit Save still fires a SaveEvent with the trimmed value"() {
     given:
     def field = new InlineEditableField("Name", "old")

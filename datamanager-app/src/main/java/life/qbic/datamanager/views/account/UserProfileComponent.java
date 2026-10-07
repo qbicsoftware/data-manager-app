@@ -202,11 +202,8 @@ public class UserProfileComponent extends Div implements Serializable {
     // Grandfathered usernames predate the length limit and remain valid. Tell their owners how to
     // resolve the situation instead of silently blocking the unchanged value.
     if (UserNames.exceedsMaxLength(userInfo.platformUserName())) {
-      var notice = new Span("This username exceeds the current limit of " + UserNames.MAX_LENGTH
+      field.setNotice("This username exceeds the current limit of " + UserNames.MAX_LENGTH
           + " characters. It keeps working, but please choose a shorter one when you change it.");
-      notice.addClassName("inline-editable-field__notice");
-      notice.getElement().setAttribute("role", "note");
-      field.add(notice);
     }
 
     field.addSaveListener(this::onUsernameSave);
