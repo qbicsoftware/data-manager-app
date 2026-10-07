@@ -14,6 +14,7 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.textfield.TextFieldBase;
+import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.shared.Registration;
 import java.io.Serial;
 
@@ -65,6 +66,15 @@ public class InlineEditableField extends Div {
   /** Minimum width (in ch) of the field in display mode, so short values don't collapse. */
   private static final int MIN_DISPLAY_WIDTH_CH = 12;
 
+  /** Unit label appended to the live character counter, e.g. {@code 12/20 characters}. */
+  private static final String CHARACTER_HINT_UNITS = "characters";
+
+  /**
+   * Helper text prefix for the character counter. {@code null} means no counter was configured
+   * at all; an empty string means a bare {@code n/max} counter without a prefix.
+   */
+  private String characterHint;
+
   /** Single-line text field. */
   public InlineEditableField(String label, String initialValue) {
     this(InputKind.TEXT, label, initialValue);
@@ -111,6 +121,9 @@ public class InlineEditableField extends Div {
     // not fight the framework: textarea edits are confirmed with the green save button.
     this.editField.addKeyDownListener(Key.ENTER, e -> triggerSave());
     this.editField.addKeyDownListener(Key.ESCAPE, e -> triggerCancel());
+    // Keep the live character counter in sync while the user types. Only active when a hint was
+    // requested; the listener is harmless otherwise.
+    this.editField.addValueChangeListener(e -> applyCharacterHint());
     // Blur handling: Vaadin's BlurEvent carries no relatedTarget, so we cannot tell server-side
     // whether focus moved to the Save/Cancel buttons or somewhere else. We attach a native
     // focusout listener that asks the browser which way focus went and reports it over RPC
@@ -174,7 +187,24 @@ public class InlineEditableField extends Div {
   public void setMaxLength(int maxLength) {
     if (!textArea) {
       ((TextField) this.editField).setMaxLength(maxLength);
+      applyCharacterHint();
     }
+  }
+
+  /**
+   * Shows a live {@code n/max} character counter in the field's helper text while editing.
+   *
+   * <p>Only meaningful together with {@link #setMaxLength(int)}; the counter is hidden in
+   * display mode so it does not read as a permanent character budget on the profile page.
+   *
+   * @param hint the helper text prefix; {@code null} or blank shows a bare counter
+   */
+  public void setCharacterHint(String hint) {
+    this.characterHint = hint == null || hint.isBlank() ? "" : hint.trim();
+    // The default ON_CHANGE mode only reports the value on blur, which would freeze the
+    // counter until the user leaves the field. EAGER keeps it in sync while typing.
+    editField.setValueChangeMode(ValueChangeMode.EAGER);
+    applyCharacterHint();
   }
 
   /**
@@ -299,6 +329,7 @@ public class InlineEditableField extends Div {
     editing = true;
     clearError();
     editField.setReadOnly(false);
+    applyCharacterHint();
     // Keep the content-sized width: resetting it here would make the field jump to a different
     // width on entering edit mode. The CSS min-width keeps short values comfortably editable.
     editField.getElement().removeAttribute("title");
@@ -318,7 +349,44 @@ public class InlineEditableField extends Div {
     editField.setValue(currentValue);
     editControls.setVisible(false);
     editButton.setVisible(editable);
+    clearCharacterHint();
     applyDisplayWidth();
+  }
+
+  /**
+   * Renders the live {@code n/max} character counter while editing, and clears it otherwise, so
+   * the hint is only shown when it is actionable. No-op when no hint was configured.
+   */
+  private void applyCharacterHint() {
+    if (characterHint == null) {
+      return;
+    }
+    if (!editing) {
+      clearCharacterHint();
+      return;
+    }
+    int maxLength = maxLength();
+    if (maxLength <= 0) {
+      clearCharacterHint();
+      return;
+    }
+    int consumed = editField.getValue() == null ? 0 : editField.getValue().length();
+    String counter = consumed + "/" + maxLength + " " + CHARACTER_HINT_UNITS;
+    editField.setHelperText(
+        characterHint.isEmpty() ? counter : characterHint + " (" + counter + ")");
+  }
+
+  private void clearCharacterHint() {
+    if (characterHint != null) {
+      editField.setHelperText(null);
+    }
+  }
+
+  /**
+   * The maximum length currently configured on the edit field, or {@code 0} if none.
+   */
+  private int maxLength() {
+    return (int) editField.getElement().getProperty("maxlength", 0.0);
   }
 
   /**
@@ -392,6 +460,22 @@ public class InlineEditableField extends Div {
    */
   int maxLengthForTest() {
     return (int) editField.getElement().getProperty("maxlength", 0.0);
+  }
+
+  /**
+   * Whether the underlying edit field currently reports itself as invalid, for unit tests.
+   */
+  boolean isInvalidForTest() {
+    return editField.isInvalid();
+  }
+
+  /**
+   * The helper text currently shown on the edit field, for unit tests. Both {@code TextField} and
+   * {@code TextArea} expose helper text as an element property but share no common interface, so
+   * the property is read directly.
+   */
+  String helperTextForTest() {
+    return editField.getElement().getProperty("helperText", (String) null);
   }
 
   /**

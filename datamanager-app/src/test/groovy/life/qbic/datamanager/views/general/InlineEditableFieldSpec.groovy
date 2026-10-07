@@ -113,4 +113,53 @@ class InlineEditableFieldSpec extends Specification {
     then: "the textarea limit is left untouched"
     field.maxLengthForTest() == before
   }
+
+  def "a character hint is hidden in display mode and shown while editing"() {
+    given: "a username field with a 20-character budget"
+    def field = new InlineEditableField("Username", "jdoe")
+    field.setMaxLength(20)
+    field.setCharacterHint("Visible to other users")
+
+    expect: "nothing is shown in display mode"
+    field.helperTextForTest() == null
+
+    when: "the user enters edit mode"
+    field.startEditing()
+
+    then: "the hint announces the limit together with the current usage"
+    field.helperTextForTest() == "Visible to other users (4/20 characters)"
+
+    when: "the user leaves edit mode again"
+    field.cancelEditing()
+
+    then: "the hint is cleared so it does not linger on the profile page"
+    field.helperTextForTest() == null
+  }
+
+  def "a bare counter is shown when no hint text is configured"() {
+    given:
+    def field = new InlineEditableField("Username", "abc")
+    field.setMaxLength(20)
+    field.setCharacterHint("")
+
+    when:
+    field.startEditing()
+
+    then:
+    field.helperTextForTest() == "3/20 characters"
+  }
+
+  def "an over-long grandfathered value is not marked invalid by the length limit"() {
+    given: "a value that predates the limit, longer than the configured maximum"
+    def legacyValue = "a" * 25
+    def field = new InlineEditableField("Username", legacyValue)
+    field.setMaxLength(20)
+
+    when: "the user opens the field for editing without changing anything"
+    field.startEditing()
+
+    then: "the existing value must not be flagged as an error"
+    !field.isInvalidForTest()
+    field.value == legacyValue
+  }
 }

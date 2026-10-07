@@ -197,6 +197,7 @@ public class UserProfileComponent extends Div implements Serializable {
   private InlineEditableField buildUsernameField() {
     var field = new InlineEditableField("Username", userInfo.platformUserName());
     field.setMaxLength(UserNames.MAX_LENGTH);
+    field.setCharacterHint("Visible to other users");
 
     // Grandfathered usernames predate the length limit and remain valid. Tell their owners how to
     // resolve the situation instead of silently blocking the unchanged value.
