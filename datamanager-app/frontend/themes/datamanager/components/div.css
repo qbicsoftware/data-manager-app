@@ -101,6 +101,56 @@
   margin-bottom: 0.5rem;
 }
 
+/* ── Empty state ──────────────────────────────────────────────────────────
+   Bordered, centred placeholder for a section with no items yet. Distinct
+   from .disclaimer (borderless, centred consent/confirmation prompt): the
+   card chrome is what announces "there is nothing here" instead of letting
+   the copy blend into the page body. */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--lumo-space-s);
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 40rem;
+  margin-inline: auto;
+  padding: var(--lumo-space-xl) var(--lumo-space-l);
+  border: 1px dashed var(--lumo-contrast-30pct);
+  border-radius: var(--lumo-border-radius-m);
+  background-color: var(--lumo-contrast-5pct);
+}
+
+.empty-state__icon {
+  width: var(--lumo-icon-size-l);
+  height: var(--lumo-icon-size-l);
+  color: var(--lumo-primary-color);
+  margin-bottom: var(--lumo-space-xs);
+}
+
+.empty-state__title {
+  /* Reset the inherited browser h3 margins; the card's gap owns the rhythm. */
+  margin: 0;
+  font-size: var(--lumo-font-size-m);
+  font-weight: 600;
+  color: var(--lumo-header-text-color);
+}
+
+.empty-state__text {
+  margin: 0;
+  max-width: 52ch;
+  font-size: var(--lumo-font-size-s);
+  line-height: var(--lumo-line-height-m);
+  color: var(--lumo-secondary-text-color);
+}
+
+.empty-state__action {
+  margin-top: var(--lumo-space-s);
+  /* Match the app's comfortable touch target instead of Lumo's compact default. */
+  min-height: var(--lumo-size-m);
+}
+
 .grid-details-item {
   display: flex;
   flex-direction: column;

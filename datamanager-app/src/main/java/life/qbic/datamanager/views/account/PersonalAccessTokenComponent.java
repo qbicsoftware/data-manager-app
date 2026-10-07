@@ -28,9 +28,8 @@ import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
-import life.qbic.datamanager.views.general.ContextNote;
 import life.qbic.datamanager.views.general.CopyToClipBoardComponent;
-import life.qbic.datamanager.views.general.Disclaimer;
+import life.qbic.datamanager.views.general.EmptyState;
 import life.qbic.datamanager.views.general.InfoBox;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
@@ -54,35 +53,29 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
   @Serial
   private static final long serialVersionUID = -8972242722349756972L;
   private static final String TITLE = "Personal Access Tokens";
-  private final Disclaimer noTokensRegisteredDisclaimer;
+  private final EmptyState noTokensRegisteredEmptyState;
   private final Div createdTokenLayout = new Div();
   private final Div personalAccessTokens = new Div();
+  private final Button generateTokenButton = new Button("Generate new token");
 
   public PersonalAccessTokenComponent() {
     addClassName("personal-access-token-component");
 
     SettingsSection section = new SettingsSection(TITLE, buildDescription());
 
-    // Security reassurance
-    var securityNote = new ContextNote(
-        "Tokens are stored encrypted and grant API access to your data — treat them like passwords.");
-    securityNote.addClassName("context-note--compact");
-    section.addContent(securityNote);
-
-    Button generateTokenButton = new Button("Generate new token");
     generateTokenButton.addClassName("primary");
     generateTokenButton.addClickListener(
         event -> fireEvent(new AddTokenEvent(this, event.isFromClient())));
     section.addAction(generateTokenButton);
 
     Div personalAccessTokenContainer = new Div();
-    noTokensRegisteredDisclaimer = createNoTokensRegisteredDisclaimer();
+    noTokensRegisteredEmptyState = createNoTokensRegisteredEmptyState();
     personalAccessTokenContainer.add(createdTokenLayout, personalAccessTokens);
     personalAccessTokenContainer.addClassName("personal-access-token-container");
     personalAccessTokens.addClassName("personal-access-token-list");
     createdTokenLayout.addClassName("show-created-personal-access-token-layout");
 
-    section.addContent(noTokensRegisteredDisclaimer, personalAccessTokenContainer);
+    section.addContent(noTokensRegisteredEmptyState, personalAccessTokenContainer);
     add(section);
     updateUI();
   }
@@ -178,8 +171,12 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
             + "They allow you to access your own data programmatically. ");
     description.add(intro);
 
+    // One advisory instead of two: the previous italic context note repeated this warning
+    // almost verbatim and added a third right edge to the prose stack.
     var warning = new InfoBox()
-        .setInfoText("Do not share your personal access tokens with anyone you don't want to access your files.");
+        .setInfoText("Treat personal access tokens like passwords: they are stored encrypted "
+            + "and grant API access to your own data. Do not share them with anyone you don't "
+            + "want to access your files.");
     description.add(warning);
 
     return description;
@@ -187,14 +184,16 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
 
   // ── Empty state ────────────────────────────────────────────────
 
-  private Disclaimer createNoTokensRegisteredDisclaimer() {
-    Disclaimer card = Disclaimer.createWithTitle(
-        "Manage your tokens in one place",
-        "Manage data access by registering your first personal access token",
+  private EmptyState createNoTokensRegisteredEmptyState() {
+    var emptyState = new EmptyState(
+        VaadinIcon.KEY,
+        "No personal access tokens yet",
+        "Tokens let scripts, notebooks and pipelines authenticate against the Data Manager API "
+            + "and reach your own data. Create your first token to get started.",
         "Generate new token");
-    card.addDisclaimerConfirmedListener(
+    emptyState.addActionListener(
         event -> fireEvent(new AddTokenEvent(this, event.isFromClient())));
-    return card;
+    return emptyState;
   }
 
   // ── Public API ─────────────────────────────────────────────────
@@ -224,7 +223,12 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
     boolean userCreatedToken = createdTokenLayout.getChildren().findAny().isPresent();
     personalAccessTokens.setVisible(userHasTokens);
     createdTokenLayout.setVisible(userCreatedToken);
-    noTokensRegisteredDisclaimer.setVisible(!userHasTokens && !userCreatedToken);
+    // The section header action and the empty-state action carry the same label and are both
+    // primary, so only ever show one of them. When the list is empty the empty state owns the
+    // call to action; once a token exists the header action takes over.
+    boolean isEmpty = !userHasTokens && !userCreatedToken;
+    noTokensRegisteredEmptyState.setVisible(isEmpty);
+    generateTokenButton.setVisible(!isEmpty);
   }
 
   /**

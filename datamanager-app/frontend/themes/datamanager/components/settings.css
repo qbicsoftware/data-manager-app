@@ -1,11 +1,10 @@
 /* -- Settings Hub (GitHub-style master-detail layout, mirrors Groups) -- */
 
 /* The settings hub is a RouterLayout nested inside UserMainLayout (see @ParentLayout
-   in SettingsMainLayout), so the outer shell — navbar, announcement at the top of the
-   content area, footer — is owned by UserMainLayout/DataManagerLayout. This stylesheet
-   only lays out the two-column hub: the account overview header, the persistent
-   settings navigation
-   (aside) and the routed content. */
+   in SettingsMainLayout), so the outer shell - navbar, announcement at the top of the
+   content area, footer - is owned by UserMainLayout/DataManagerLayout. This stylesheet
+   only lays out the two-column hub: the persistent settings navigation (aside, led by the
+   account overview header) and the routed content. */
 
 .settings-main-layout {
   display: grid;
@@ -15,31 +14,42 @@
     minmax(0, calc(var(--content-shell-max-width) - 280px))
     minmax(var(--lumo-space-l), 1fr);
   grid-template-areas:
-    ". account-overview account-overview ."
     ". aside-area content-area .";
   box-sizing: border-box;
   min-width: 0;
 }
 
 /**
- * The account overview occupies the standalone first grid row of the settings
- * hub (both central tracks), above the aside + content columns.
+ * The account overview opens the aside column, above the settings navigation. It is a compact,
+ * horizontal identity block (avatar beside the name) - not a page header - so the hub reads as
+ * "these are my account settings" without spending a full-width band on it.
+ *
+ * No top margin: the aside's own --lumo-space-l top padding already equals the content area's, so
+ * the identity block starts on the same line as the section title and the first nav tab, keeping
+ * the title/menu/identity alignment line intact.
+ *
+ * The horizontal padding (--lumo-space-s) deliberately does NOT match the tab's left inset
+ * (--lumo-space-m inside the same gutter), so the identity reads as a header above the menu
+ * rather than as one more (icon-less) menu row.
  */
 .settings-main-layout .settings-account-overview-area {
-  grid-area: account-overview;
   display: flex;
   align-items: center;
   gap: var(--lumo-space-m);
+  padding: 0 var(--lumo-space-s) var(--lumo-space-m);
 }
 
 .settings-account-overview {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
+  gap: var(--lumo-space-s);
+  min-width: 0;
 }
 
 .settings-account-overview__avatar {
-  --vaadin-avatar-size: 5.25rem;
+  --vaadin-avatar-size: 3rem;
+  flex-shrink: 0;
 }
 
 .settings-account-overview__names {
@@ -48,6 +58,19 @@
   gap: var(--lumo-space-xs);
   min-width: 0;
   text-align: left;
+}
+
+/* The full name / user name line wraps instead of overflowing the narrow aside column. */
+.settings-account-overview__names span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Legibility: --tertiary-text-color (#8d97a4) only reaches 2.95:1 on white, below WCAG AA.
+   --body-text-color clears 12:1 but would read as primary, so use a mid-contrast tone
+   (~5.9:1) that still scans as the secondary line under the bold name. */
+.settings-account-overview__hint {
+  color: #5a6572;
 }
 
 /* The aside is a fixed, non-collapsible column (GitHub-style). No border: separation comes
@@ -173,11 +196,11 @@
   color: var(--lumo-primary-text-color);
 }
 
-/* Adjust spacing on narrow screens */
+/* Adjust spacing on narrow screens. The aside becomes a full-width, non-sticky row, so the
+   account overview and the navigation sit side by side on one line instead of stacking. */
 @media (max-width: 1024px) {
   .settings-main-layout {
     grid-template-areas:
-      ". account-overview ."
       ". aside-area ."
       ". content-area .";
     grid-template-columns: var(--lumo-space-m) minmax(0, 1fr) var(--lumo-space-m);
@@ -187,6 +210,21 @@
     position: static;
     align-self: stretch;
     padding: var(--lumo-space-m) var(--lumo-space-l) var(--lumo-space-s) var(--lumo-space-l);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: var(--lumo-space-xl);
+  }
+
+  /* The aside is now a row laid out with column-gap, so the top/bottom breathing room of the
+     identity block is no longer needed and would misalign it with the first nav tab. */
+  .settings-main-layout .settings-account-overview-area {
+    padding: 0;
+  }
+
+  .settings-main-layout .settings-navigation-component {
+    flex: 1 1 auto;
+    min-width: 0;
   }
 }
 
