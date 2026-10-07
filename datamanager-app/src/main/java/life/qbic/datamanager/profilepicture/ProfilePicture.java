@@ -13,7 +13,7 @@ import java.time.Instant;
  * @param height      derivative height in pixels
  * @param data        the normalized PNG bytes
  * @param updatedAt   the last write timestamp
- * @since 1.22.0
+ * @since 1.19.0
  */
 public record ProfilePicture(ProfilePictureOwnerType ownerType, String ownerId, String contentType,
                              String contentHash, int width, int height, byte[] data,

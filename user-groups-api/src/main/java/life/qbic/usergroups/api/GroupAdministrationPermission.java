@@ -15,7 +15,7 @@ package life.qbic.usergroups.api;
  * <p>Org groups have no OWNER membership; the QBiC administrator acts as owner-equivalent at the
  * application layer, which is exactly what this port enables (user-groups strategy §3/§4.2).</p>
  *
- * @since 1.21.0
+ * @since 1.19.0
  */
 public interface GroupAdministrationPermission {
 

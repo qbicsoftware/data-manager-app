@@ -31,7 +31,7 @@ import reactor.core.publisher.Mono;
  * experiment. When a selection exists, it is additionally offered as a convenience to download a
  * smaller, targeted template for exactly the selected samples.
  *
- * @since 1.4.0
+ * @since 1.19.0
  */
 public final class EditSampleDialog {
 

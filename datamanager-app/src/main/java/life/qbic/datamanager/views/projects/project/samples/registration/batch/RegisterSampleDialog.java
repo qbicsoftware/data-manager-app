@@ -24,7 +24,7 @@ import reactor.core.publisher.Mono;
  * always offers the blank sample metadata template for download (there is no selection when
  * registering new samples) and a single Excel upload to submit the filled sheet.
  *
- * @since 1.4.0
+ * @since 1.19.0
  */
 public final class RegisterSampleDialog {
 

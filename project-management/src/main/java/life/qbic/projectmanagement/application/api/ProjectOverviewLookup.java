@@ -39,7 +39,7 @@ public interface ProjectOverviewLookup {
    * @param filter     the results' project title will be applied with this filter
    * @param projectIds the projectIds to which the user has access to
    * @return the total number of matching overviews
-   * @since 1.12.0
+   * @since 1.19.0
    */
   long count(String filter, Collection<ProjectId> projectIds);
 

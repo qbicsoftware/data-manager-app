@@ -76,7 +76,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
  * administrator on every {@code beforeEnter} and reroutes to the not-found page otherwise; the
  * service layer re-enforces the admin gate on every mutation.
  *
- * @since 1.22.0
+ * @since 1.19.0
  */
 @Route(value = AppRoutes.GroupsRoutes.ADMIN_GROUP_MANAGERS, layout = GroupsMainLayout.class)
 @SpringComponent

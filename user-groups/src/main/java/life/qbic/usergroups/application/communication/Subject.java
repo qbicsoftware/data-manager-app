@@ -5,7 +5,7 @@ package life.qbic.usergroups.application.communication;
  *
  * <p>The subject line of an email initiated by the user groups context.</p>
  *
- * @since 1.20.0
+ * @since 1.19.0
  */
 public record Subject(String content) {
 

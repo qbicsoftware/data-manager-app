@@ -30,7 +30,7 @@ import org.jspecify.annotations.NonNull;
  * field. Callers must still re-run {@link #validate()} server-side before executing the
  * destructive action (never trust the button state alone).
  *
- * @since 1.20.0
+ * @since 1.19.0
  */
 public class TypeToConfirmInput extends Div implements UserInput {
 

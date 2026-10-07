@@ -15,7 +15,7 @@ import org.jspecify.annotations.NonNull;
  * The body of the sample registration dialog: an export/template section offering the blank sample
  * metadata template plus the {@link SampleRegistrationUpload} used to submit the filled sheet.
  *
- * @since 1.11.0
+ * @since 1.19.0
  */
 public class SampleRegistrationComponent extends Div implements UserInput {
 

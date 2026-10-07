@@ -16,7 +16,7 @@ import java.util.function.Consumer;
  * server-side by {@link ImageNormalizer} — this component is a convenience, never a trust
  * boundary.</p>
  *
- * @since 1.22.0
+ * @since 1.19.0
  */
 @NpmPackage(value = "cropperjs", version = "1.6.3")
 @JsModule("./javascript/profilepicturecropper.js")

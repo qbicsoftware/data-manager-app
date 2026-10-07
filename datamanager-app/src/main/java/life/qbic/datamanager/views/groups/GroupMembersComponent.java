@@ -63,7 +63,7 @@ import life.qbic.usergroups.api.GroupRole;
  * The acting user's role gates which toolbar actions appear (MANAGER sees no owner-only role
  * assignment), matching the application layer's role gates.
  *
- * @since 1.20.0
+ * @since 1.19.0
  */
 public final class GroupMembersComponent extends Div {
 

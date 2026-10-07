@@ -22,7 +22,7 @@ import org.springframework.data.repository.Repository;
  * and administrative force-removal do not write audit rows. The list is exposed to system
  * administrators only, enforced at the application service.</p>
  *
- * @since 1.22.0
+ * @since 1.19.0
  */
 @org.springframework.stereotype.Repository
 public interface ProfilePictureAuditRepository extends

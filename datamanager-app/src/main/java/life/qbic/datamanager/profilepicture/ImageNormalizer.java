@@ -36,7 +36,7 @@ import javax.imageio.stream.ImageInputStream;
  * <p>This class is stateless and thread-safe. It is not a Spring bean; callers construct it
  * directly or receive it through the application service.</p>
  *
- * @since 1.22.0
+ * @since 1.19.0
  */
 public final class ImageNormalizer {
 

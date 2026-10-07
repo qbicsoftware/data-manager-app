@@ -26,7 +26,7 @@ import tools.jackson.databind.ObjectMapper;
  * <p>Follows the {@code MessageDispatcher} precedent from the identity context (topic injected via
  * {@code @Value}, JSON serialization with the tools.jackson mapper).</p>
  *
- * @since 1.0.0
+ * @since 1.19.0
  */
 @Component
 public class AclEvictionMessagePublisher implements AclEvictionPublisher {

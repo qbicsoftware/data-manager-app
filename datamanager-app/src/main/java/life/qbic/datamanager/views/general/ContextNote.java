@@ -22,7 +22,7 @@ import com.vaadin.flow.component.icon.VaadinIcon;
  * add(new ContextNote("Stored encrypted.", VaadinIcon.LOCK.create()));
  * }</pre>
  *
- * @since 1.12.0
+ * @since 1.19.0
  */
 public class ContextNote extends Div {
 

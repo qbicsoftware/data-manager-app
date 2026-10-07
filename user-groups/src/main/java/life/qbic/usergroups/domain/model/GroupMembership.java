@@ -106,7 +106,7 @@ public class GroupMembership implements Serializable {
    * through its role-gated management operations).
    *
    * @param newRole the new role inside the group
-   * @since 1.20.0
+   * @since 1.19.0
    */
   void setRole(GroupRole newRole) {
     this.role = Objects.requireNonNull(newRole, "newRole must not be null");

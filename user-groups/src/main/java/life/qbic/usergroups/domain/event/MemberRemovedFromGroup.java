@@ -16,7 +16,7 @@ import life.qbic.domain.concepts.DomainEvent;
  * email; group managers receive an in-app notice; project owners/admins of affected projects are
  * informed about the membership change.</p>
  *
- * @since 1.20.0
+ * @since 1.19.0
  */
 public class MemberRemovedFromGroup extends DomainEvent {
 
@@ -41,7 +41,7 @@ public class MemberRemovedFromGroup extends DomainEvent {
    * @param userId            the id of the removed user
    * @param triggeredByUserId the user who performed the removal
    * @return the new event
-   * @since 1.20.0
+   * @since 1.19.0
    */
   public static MemberRemovedFromGroup create(String groupId, String userId,
       String triggeredByUserId) {

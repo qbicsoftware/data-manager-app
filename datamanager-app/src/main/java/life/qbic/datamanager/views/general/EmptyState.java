@@ -32,7 +32,7 @@ import com.vaadin.flow.component.icon.VaadinIcon;
  * emptyState.addActionListener(event -> generateToken());
  * }</pre>
  *
- * @since 1.13.0
+ * @since 1.19.0
  */
 public class EmptyState extends Div {
 

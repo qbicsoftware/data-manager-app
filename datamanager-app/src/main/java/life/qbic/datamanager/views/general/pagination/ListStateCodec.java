@@ -13,7 +13,7 @@ import life.qbic.application.commons.SortOrder;
  * {@code sort} (serialised as {@code propertyName:asc|desc}). Absent or invalid values fall back to
  * sensible defaults so that stale or hand-crafted URLs never break the view.
  *
- * @since 1.12.0
+ * @since 1.19.0
  */
 public final class ListStateCodec {
 

@@ -148,7 +148,7 @@ public class UserGroup implements Serializable {
    * @param createdAt     the creation timestamp
    * @return the new org group with an empty roster
    * @throws IllegalArgumentException if the creating user id is null or blank
-   * @since 1.21.0
+   * @since 1.19.0
    */
   public static UserGroup createOrg(GroupId id, GroupName name, GroupDescription description,
       String createdByUserId, Instant createdAt) {
@@ -204,7 +204,7 @@ public class UserGroup implements Serializable {
    * @param joinedAt the join timestamp
    * @throws IllegalStateException    if the group is dissolved
    * @throws IllegalArgumentException if the user to add is already a member
-   * @since 1.20.0
+   * @since 1.19.0
    */
   public void addMember(String userId, Instant joinedAt) {
     if (status == GroupStatus.DISSOLVED) {
@@ -237,7 +237,7 @@ public class UserGroup implements Serializable {
    * member
    * @throws IllegalArgumentException if the acting user removes themselves, or the target is the
    *                                  OWNER
-   * @since 1.20.0
+   * @since 1.19.0
    */
   public boolean removeMember(String actingUserId, String userId) {
     if (actingUserId.equals(userId)) {
@@ -270,7 +270,7 @@ public class UserGroup implements Serializable {
    * @throws IllegalStateException    if the group is dissolved
    * @throws IllegalArgumentException if the user is not a member, or {@code newRole} is
    *                                  {@link GroupRole#OWNER}
-   * @since 1.20.0
+   * @since 1.19.0
    */
   public boolean setRoleOf(String userId, GroupRole newRole) {
     if (status == GroupStatus.DISSOLVED) {
@@ -299,7 +299,7 @@ public class UserGroup implements Serializable {
    * @param newName the new group name
    * @throws IllegalStateException    if the group is dissolved
    * @throws IllegalArgumentException if the new name is null
-   * @since 1.20.0
+   * @since 1.19.0
    */
   public void rename(GroupName newName) {
     if (status == GroupStatus.DISSOLVED) {
@@ -316,7 +316,7 @@ public class UserGroup implements Serializable {
    * @param newDescription the new group description (may be empty, never {@code null})
    * @throws IllegalStateException    if the group is dissolved
    * @throws IllegalArgumentException if the new description is null
-   * @since 1.20.0
+   * @since 1.19.0
    */
   public void updateDescription(GroupDescription newDescription) {
     if (status == GroupStatus.DISSOLVED) {

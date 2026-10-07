@@ -327,7 +327,7 @@ public final class IdentityService {
   /**
    * Indicates that a provided username exceeds {@link UserNamePolicy#maxLength()} characters.
    *
-   * @since 1.20.0
+   * @since 1.19.0
    */
   public static class UserNameTooLongException extends ApplicationException {
 

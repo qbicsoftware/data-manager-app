@@ -26,7 +26,7 @@ import org.jobrunr.scheduling.JobScheduler;
  * The email is sent asynchronously through a JobRunr job so a slow mail server never blocks the
  * membership write-path transaction.
  *
- * @since 1.20.0
+ * @since 1.19.0
  */
 public class InformAddedGroupMember implements DomainEventSubscriber<MemberAddedToGroup> {
 

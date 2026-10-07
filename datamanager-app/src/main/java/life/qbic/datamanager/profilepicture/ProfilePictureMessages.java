@@ -8,7 +8,7 @@ import life.qbic.application.commons.ApplicationException;
  * <p>Validation failures carry the {@link ImageNormalizationException.Reason} name as their single
  * error parameter, which is translated here. Debug messages on the exception are never shown.</p>
  *
- * @since 1.22.0
+ * @since 1.19.0
  */
 public final class ProfilePictureMessages {
 

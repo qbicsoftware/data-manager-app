@@ -109,7 +109,7 @@ public class NewGroupForm extends Div {
    * @param errorToast           invoked on a non-duplicate failure (never {@code null})
    * @param navigateAfterCreate  invoked after a successful creation (never {@code null})
    * @param createOrg            {@code true} to create an organisational (admin-managed) group
-   * @since 1.21.0
+   * @since 1.19.0
    */
   public NewGroupForm(@Nullable Function<String, Boolean> nameAvailabilityCheck,
       GroupService groupService, Supplier<String> currentUserId, Consumer<String> successToast,

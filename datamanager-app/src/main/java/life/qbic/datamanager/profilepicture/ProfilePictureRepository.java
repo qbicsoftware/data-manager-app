@@ -25,7 +25,7 @@ import org.springframework.data.repository.Repository;
  * {@code user_group}: profile pictures are a presentation concern shared by two bounded contexts
  * and must not create a schema dependency between them.</p>
  *
- * @since 1.22.0
+ * @since 1.19.0
  */
 @org.springframework.stereotype.Repository
 public interface ProfilePictureRepository extends Repository<ProfilePictureEntity, Long> {

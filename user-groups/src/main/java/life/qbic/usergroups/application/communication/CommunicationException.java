@@ -7,7 +7,7 @@ package life.qbic.usergroups.application.communication;
  * is deliberately unchecked in the style of the other contexts' communication exceptions, so the
  * notification policy can surface a failure without leaking infrastructure details to callers.</p>
  *
- * @since 1.20.0
+ * @since 1.19.0
  */
 public class CommunicationException extends RuntimeException {
 

@@ -18,7 +18,7 @@ import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessSe
  * the view. Values are URL-encoded by Vaadin's {@link QueryParameters} when written to the browser
  * history, so search terms containing special characters survive natural browser navigation.
  *
- * @since 1.20.0
+ * @since 1.19.0
  */
 public final class AccessRosterStateCodec {
 

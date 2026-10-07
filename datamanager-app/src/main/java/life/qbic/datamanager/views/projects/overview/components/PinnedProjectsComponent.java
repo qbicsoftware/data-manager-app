@@ -313,7 +313,7 @@ public class PinnedProjectsComponent extends Div {
    * Project actions offered for an accessible pinned project. The shortlist does not own the access
    * services; the owning collection component implements these callbacks.
    *
-   * @since 1.20.0
+   * @since 1.19.0
    */
   public interface PinnedProjectActionHandler {
 

@@ -18,7 +18,7 @@ import org.springframework.stereotype.Component;
  * <p>This is the single admin-gate seam for all admin-governed group surfaces (org-group
  * creation here, membership/manager management in story FEAT-USER-GROUPS-02).</p>
  *
- * @since 1.21.0
+ * @since 1.19.0
  */
 @Component
 public class QbicGroupAdministrationPermission implements GroupAdministrationPermission {
