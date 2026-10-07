@@ -2,6 +2,8 @@ package life.qbic.datamanager.views.account;
 
 import static java.util.Objects.requireNonNull;
 
+import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
@@ -10,15 +12,23 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import life.qbic.datamanager.views.account.PersonalAccessTokenComponent.AddTokenEvent;
+import life.qbic.datamanager.views.account.PersonalAccessTokenComponent.DeleteAllExpiredTokensEvent;
 import life.qbic.datamanager.views.account.PersonalAccessTokenComponent.DeleteTokenEvent;
 import life.qbic.datamanager.views.account.PersonalAccessTokenComponent.PersonalAccessTokenFrontendBean;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.general.dialog.AlertDialog;
+import life.qbic.datamanager.views.general.dialog.AppDialog;
+import life.qbic.datamanager.views.general.dialog.DialogBody;
+import life.qbic.datamanager.views.general.dialog.DialogFooter;
+import life.qbic.datamanager.views.general.dialog.DialogHeader;
+import life.qbic.datamanager.views.general.icon.IconFactory;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.settings.SettingsMainLayout;
@@ -68,6 +78,7 @@ public class PersonalAccessTokenMain extends Main implements BeforeEnterObserver
     add(personalAccessTokenComponent);
     personalAccessTokenComponent.addTokenListener(this::onAddTokenClicked);
     personalAccessTokenComponent.addDeleteTokenListener(this::onDeleteTokenClicked);
+    personalAccessTokenComponent.addDeleteAllExpiredTokensListener(this::onDeleteAllExpiredTokenClicked);
     log.debug(String.format(
         "New instance for %s(#%s) created with %s(#%s)",
         this.getClass().getSimpleName(), System.identityHashCode(this),
@@ -89,6 +100,62 @@ public class PersonalAccessTokenMain extends Main implements BeforeEnterObserver
           personalAccessTokenService.delete(deleteTokenEvent.tokenId(), userId);
           loadGeneratedPersonalAccessTokens();
         }).open();
+  }
+
+  private void onDeleteAllExpiredTokenClicked(DeleteAllExpiredTokensEvent deleteAllExpiredTokenEvents) {
+    var userId = userIdTranslator.translateToUserId(
+            SecurityContextHolder.getContext().getAuthentication())
+        .orElseThrow();
+    var accessTokens = personalAccessTokenService.findAll(userId);
+    var expiredTokens= accessTokens.stream().filter(PersonalAccessToken::expired).toList();
+    if (expiredTokens.isEmpty()) {
+      Toast toast = messageSourceNotificationFactory.toast(
+          "personal-access-token.no.expired.tokens",
+          new Object[]{},
+          getLocale());
+      toast.open();
+    } else {
+      showDeletionDialog(expiredTokens, userId);
+    }
+  }
+
+  private void showDeletionDialog(List<PersonalAccessToken> expiredTokens, String userId) {
+    var confirmDialog = AppDialog.small();
+    DialogHeader.withIcon(confirmDialog,
+        "Remove all Expired Tokens?",
+        IconFactory.warningIcon());
+    Div dialogBody = new Div();
+    dialogBody.addClassName("personal-access-token-remove-expired-tokens-dialog-body");
+    dialogBody.add(new Span("The following expired tokens will be removed: "));
+    for (PersonalAccessToken token : expiredTokens) {
+      dialogBody.add(new Span(beautifyExpiredTokenString(token)));
+    }
+    DialogBody.withoutUserInput(confirmDialog, dialogBody);
+    var expiredTokenIds = expiredTokens.stream().map(PersonalAccessToken::tokenId).toList();
+    DialogFooter.with(confirmDialog, "Cancel",
+        "Delete " + expiredTokenIds.size() + " tokens");
+    confirmDialog.registerConfirmAction(() -> {
+      expiredTokenIds.forEach(
+          expiredTokenId -> personalAccessTokenService.delete(expiredTokenId, userId));
+      loadGeneratedPersonalAccessTokens();
+      confirmDialog.close();
+      Toast toast = messageSourceNotificationFactory.toast(
+          "personal-access-token.deleted.expired.tokens.success",
+          new Object[]{expiredTokens.size()},
+          getLocale());
+      toast.open();
+    });
+    confirmDialog.registerCancelAction(confirmDialog::close);
+    confirmDialog.open();
+  }
+
+  private String beautifyExpiredTokenString(PersonalAccessToken token){
+    DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("MMM d, yyyy").withZone(ZoneId.systemDefault());
+    return "\n"
+        + token.description()
+        + " - "
+        + "Expired on "
+        + DATE_FORMATTER.format(token.expiration());
   }
 
   private void onAddTokenClicked(AddTokenEvent addTokenEvent) {
