@@ -14,41 +14,53 @@
     minmax(0, calc(var(--content-shell-max-width) - 280px))
     minmax(var(--lumo-space-l), 1fr);
   grid-template-areas:
+    ". account-overview account-overview ."
     ". aside-area content-area .";
   box-sizing: border-box;
   min-width: 0;
 }
 
 /**
- * The account overview opens the aside column, above the settings navigation. It is a compact,
- * horizontal identity block (avatar beside the name) - not a page header - so the hub reads as
- * "these are my account settings" without spending a full-width band on it.
+ * The account overview occupies the standalone first grid row of the settings hub, spanning both
+ * central tracks above the aside + content columns. This mirrors GitHub's settings hub, where the
+ * identity heads the whole hub rather than sitting inside the navigation column.
  *
- * No top margin: the aside's own --lumo-space-l top padding already equals the content area's, so
- * the identity block starts on the same line as the section title and the first nav tab, keeping
- * the title/menu/identity alignment line intact.
+ * The row spans the full shell width, so a long full name and a user name of up to 20 characters
+ * fit comfortably beside the avatar without wrapping or truncation - the previous placement inside
+ * the 240-280px navigation column could not fit them.
  *
- * The horizontal padding (--lumo-space-s) deliberately does NOT match the tab's left inset
- * (--lumo-space-m inside the same gutter), so the identity reads as a header above the menu
- * rather than as one more (icon-less) menu row.
+ * The left padding matches the aside's own padding so the avatar aligns with the navigation items
+ * beneath it; the right padding matches the content column's, keeping the row's edges consistent
+ * with the two columns below.
+ *
+ * The bottom padding is deliberately not zero. Vaadin's avatar reserves a transparent focus-ring
+ * border and compensates with a matching negative margin, so its painted circle overhangs its own
+ * layout box by that width on every side. With no bottom padding the overhang reached into the
+ * next grid row, where the sticky aside (opaque background, z-index: 1) painted over it, shaving
+ * the bottom of the avatar ring flat. The padding gives the overhang room within this row.
  */
 .settings-main-layout .settings-account-overview-area {
+  grid-area: account-overview;
   display: flex;
   align-items: center;
   gap: var(--lumo-space-m);
-  padding: 0 var(--lumo-space-s) var(--lumo-space-m);
+  box-sizing: border-box;
+  padding: var(--lumo-space-l) var(--lumo-space-xl) var(--lumo-space-m) var(--lumo-space-l);
 }
 
 .settings-account-overview {
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: var(--lumo-space-s);
+  gap: var(--lumo-space-m);
   min-width: 0;
 }
 
 .settings-account-overview__avatar {
-  --vaadin-avatar-size: 3rem;
+  /* GitHub's settings hub uses a prominent identity avatar (4rem) that reads as a peer of the
+     name block rather than a small icon. The row now spans the full shell width, so the avatar
+     no longer competes with the user name for space. */
+  --vaadin-avatar-size: 4rem;
   flex-shrink: 0;
 }
 
@@ -60,7 +72,18 @@
   text-align: left;
 }
 
-/* The full name / user name line wraps instead of overflowing the narrow aside column. */
+/* Full name and user name on one line. The row spans the full shell width, so with a 20-character
+   cap the user name fits beside the name; it wraps at the space between them if it ever does not,
+   rather than splitting mid-token. */
+.settings-account-overview__name-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: var(--lumo-space-xs);
+  min-width: 0;
+}
+
+/* The hint line may wrap anywhere; it is prose, not an identifier. */
 .settings-account-overview__names span {
   min-width: 0;
   overflow-wrap: anywhere;
@@ -197,10 +220,11 @@
 }
 
 /* Adjust spacing on narrow screens. The aside becomes a full-width, non-sticky row, so the
-   account overview and the navigation sit side by side on one line instead of stacking. */
+   navigation sits beside the identity row's column instead of the two sharing one line. */
 @media (max-width: 1024px) {
   .settings-main-layout {
     grid-template-areas:
+      ". account-overview ."
       ". aside-area ."
       ". content-area .";
     grid-template-columns: var(--lumo-space-m) minmax(0, 1fr) var(--lumo-space-m);
@@ -216,10 +240,10 @@
     column-gap: var(--lumo-space-xl);
   }
 
-  /* The aside is now a row laid out with column-gap, so the top/bottom breathing room of the
-     identity block is no longer needed and would misalign it with the first nav tab. */
+  /* The identity row shares the shell padding on narrow screens, where the aside and content
+     columns collapse into the same single column. */
   .settings-main-layout .settings-account-overview-area {
-    padding: 0;
+    padding: var(--lumo-space-l) var(--lumo-space-l) 0;
   }
 
   .settings-main-layout .settings-navigation-component {
@@ -288,6 +312,8 @@
   gap: var(--lumo-space-xs);
   flex-wrap: wrap;
   width: 100%;
+  /* Let the value shrink instead of overflowing when the container is narrow. */
+  min-width: 0;
 }
 
 .inline-editable-field__edit-controls {
@@ -298,6 +324,20 @@
 
 .inline-editable-field__value {
   color: var(--lumo-body-text-color);
+}
+
+/* Informational notice for grandfathered values that exceed a newly introduced limit.
+   Non-blocking: the value keeps working until the user chooses to change it.
+   Lives inside the wrapping value area, so it takes a full line of its own beneath the value
+   instead of competing with it for horizontal space. */
+.inline-editable-field__notice {
+  flex-basis: 100%;
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-s);
+  line-height: 1.4;
+  /* Breathing room from the value row above (the value area only gaps by --lumo-space-xs). */
+  margin-top: var(--lumo-space-xs);
+  max-width: 60ch;
 }
 
 .inline-editable-field__edit-btn {
@@ -316,10 +356,12 @@
   --vaadin-input-field-readonly-border: none;
 }
 
-/* Display mode: no width cap — the field sizes to its content (inline width in ch set
-   from Java). */
+/* Display mode: no fixed cap — the field sizes to its content (inline width in ch set
+   from Java), but never beyond the available width, so a long value cannot push the edit
+   affordance onto the next line. */
 .inline-editable-field__edit-field[readonly] {
-  max-width: none;
+  max-width: 100%;
+  min-width: 0;
 }
 
 /* Display-mode text parity: after an edit/save cycle the web component has upgraded and the

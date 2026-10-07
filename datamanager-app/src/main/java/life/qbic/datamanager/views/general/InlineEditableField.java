@@ -14,6 +14,7 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.textfield.TextFieldBase;
+import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.shared.Registration;
 import java.io.Serial;
 
@@ -56,6 +57,15 @@ public class InlineEditableField extends Div {
   private final Button cancelButton;
   private final Div editControls;
 
+  /**
+   * The wrapping container that holds the value, edit affordances and any notice. Notices must
+   * live here rather than on the root: the root is a non-wrapping flex row (label + value), so a
+   * full-width child appended there would be squeezed into a narrow column beside the value.
+   */
+  private final Div valueArea;
+
+  private Span notice;
+
   private boolean editable = true;
   private String currentValue;
   private boolean editing = false;
@@ -64,6 +74,15 @@ public class InlineEditableField extends Div {
 
   /** Minimum width (in ch) of the field in display mode, so short values don't collapse. */
   private static final int MIN_DISPLAY_WIDTH_CH = 12;
+
+  /** Unit label appended to the live character counter, e.g. {@code 12/20 characters}. */
+  private static final String CHARACTER_HINT_UNITS = "characters";
+
+  /**
+   * Helper text prefix for the character counter. {@code null} means no counter was configured
+   * at all; an empty string means a bare {@code n/max} counter without a prefix.
+   */
+  private String characterHint;
 
   /** Single-line text field. */
   public InlineEditableField(String label, String initialValue) {
@@ -111,6 +130,9 @@ public class InlineEditableField extends Div {
     // not fight the framework: textarea edits are confirmed with the green save button.
     this.editField.addKeyDownListener(Key.ENTER, e -> triggerSave());
     this.editField.addKeyDownListener(Key.ESCAPE, e -> triggerCancel());
+    // Keep the live character counter in sync while the user types. Only active when a hint was
+    // requested; the listener is harmless otherwise.
+    this.editField.addValueChangeListener(e -> applyCharacterHint());
     // Blur handling: Vaadin's BlurEvent carries no relatedTarget, so we cannot tell server-side
     // whether focus moved to the Save/Cancel buttons or somewhere else. We attach a native
     // focusout listener that asks the browser which way focus went and reports it over RPC
@@ -139,7 +161,7 @@ public class InlineEditableField extends Div {
     this.editControls.addClassName("inline-editable-field__edit-controls");
     this.editControls.setVisible(false);
 
-    Div valueArea = new Div();
+    this.valueArea = new Div();
     valueArea.addClassName("inline-editable-field__value-area");
     valueArea.add(editField, editButton, editControls);
 
@@ -162,6 +184,63 @@ public class InlineEditableField extends Div {
 
   public boolean isEditable() {
     return editable;
+  }
+
+  /**
+   * Overrides the maximum length of the single-line edit field (default 80). Callers whose value
+   * is governed by a stricter limit (for example usernames) should set it so the input widget and
+   * the domain rule agree. Has no effect on textarea-backed fields.
+   *
+   * @param maxLength the maximum number of characters the user may type
+   */
+  public void setMaxLength(int maxLength) {
+    if (!textArea) {
+      ((TextField) this.editField).setMaxLength(maxLength);
+      applyCharacterHint();
+    }
+  }
+
+  /**
+   * Shows a live {@code n/max} character counter in the field's helper text while editing.
+   *
+   * <p>Only meaningful together with {@link #setMaxLength(int)}; the counter is hidden in
+   * display mode so it does not read as a permanent character budget on the profile page.
+   *
+   * @param hint the helper text prefix; {@code null} or blank shows a bare counter
+   */
+  public void setCharacterHint(String hint) {
+    this.characterHint = hint == null || hint.isBlank() ? "" : hint.trim();
+    // The default ON_CHANGE mode only reports the value on blur, which would freeze the
+    // counter until the user leaves the field. EAGER keeps it in sync while typing.
+    editField.setValueChangeMode(ValueChangeMode.EAGER);
+    applyCharacterHint();
+  }
+
+  /**
+   * Shows a non-blocking informational notice below the value, spanning the full row width.
+   *
+   * <p>Intended for explanatory text that must not disrupt the label/value alignment, such as
+   * telling a user that an existing value is grandfathered under a newly introduced rule. Passing
+   * {@code null} or blank removes the notice.
+   *
+   * @param text the notice text, or {@code null}/blank to clear it
+   */
+  public void setNotice(String text) {
+    if (text == null || text.isBlank()) {
+      if (notice != null) {
+        valueArea.remove(notice);
+        notice = null;
+      }
+      return;
+    }
+    if (notice == null) {
+      notice = new Span();
+      notice.addClassName("inline-editable-field__notice");
+      notice.getElement().setAttribute("role", "note");
+      // Append last so the notice always sits on its own line beneath the value row.
+      valueArea.add(notice);
+    }
+    notice.setText(text);
   }
 
   /**
@@ -286,6 +365,7 @@ public class InlineEditableField extends Div {
     editing = true;
     clearError();
     editField.setReadOnly(false);
+    applyCharacterHint();
     // Keep the content-sized width: resetting it here would make the field jump to a different
     // width on entering edit mode. The CSS min-width keeps short values comfortably editable.
     editField.getElement().removeAttribute("title");
@@ -305,7 +385,44 @@ public class InlineEditableField extends Div {
     editField.setValue(currentValue);
     editControls.setVisible(false);
     editButton.setVisible(editable);
+    clearCharacterHint();
     applyDisplayWidth();
+  }
+
+  /**
+   * Renders the live {@code n/max} character counter while editing, and clears it otherwise, so
+   * the hint is only shown when it is actionable. No-op when no hint was configured.
+   */
+  private void applyCharacterHint() {
+    if (characterHint == null) {
+      return;
+    }
+    if (!editing) {
+      clearCharacterHint();
+      return;
+    }
+    int maxLength = maxLength();
+    if (maxLength <= 0) {
+      clearCharacterHint();
+      return;
+    }
+    int consumed = editField.getValue() == null ? 0 : editField.getValue().length();
+    String counter = consumed + "/" + maxLength + " " + CHARACTER_HINT_UNITS;
+    editField.setHelperText(
+        characterHint.isEmpty() ? counter : characterHint + " (" + counter + ")");
+  }
+
+  private void clearCharacterHint() {
+    if (characterHint != null) {
+      editField.setHelperText(null);
+    }
+  }
+
+  /**
+   * The maximum length currently configured on the edit field, or {@code 0} if none.
+   */
+  private int maxLength() {
+    return (int) editField.getElement().getProperty("maxlength", 0.0);
   }
 
   /**
@@ -370,6 +487,56 @@ public class InlineEditableField extends Div {
    */
   void saveForTest() {
     triggerSave();
+  }
+
+  /**
+   * The maximum length configured on the underlying edit field, for unit tests. Both
+   * {@code TextField} and {@code TextArea} expose {@code maxLength} as an element property but
+   * share no common interface, so the property is read directly.
+   */
+  int maxLengthForTest() {
+    return (int) editField.getElement().getProperty("maxlength", 0.0);
+  }
+
+  /**
+   * Whether the underlying edit field currently reports itself as invalid, for unit tests.
+   */
+  boolean isInvalidForTest() {
+    return editField.isInvalid();
+  }
+
+  /**
+   * The helper text currently shown on the edit field, for unit tests. Both {@code TextField} and
+   * {@code TextArea} expose helper text as an element property but share no common interface, so
+   * the property is read directly.
+   */
+  String helperTextForTest() {
+    return editField.getElement().getProperty("helperText", (String) null);
+  }
+
+  /**
+   * The CSS classes of the notice's parent, for unit tests. Used to pin that the notice is
+   * attached inside the wrapping value area rather than the non-wrapping root row.
+   */
+  java.util.Set<String> noticeParentClassNamesForTest() {
+    return notice == null ? java.util.Set.of() : notice.getParent().orElseThrow().getClassNames();
+  }
+
+  /**
+   * The current notice text, or {@code null} when no notice is shown, for unit tests.
+   */
+  String noticeTextForTest() {
+    return notice == null ? null : notice.getText();
+  }
+
+  /**
+   * The number of notice elements currently rendered, for unit tests.
+   */
+  int noticeCountForTest() {
+    return (int) getChildren()
+        .flatMap(child -> child.getChildren())
+        .filter(child -> child.getClassNames().contains("inline-editable-field__notice"))
+        .count();
   }
 
   /**

@@ -22,10 +22,12 @@ import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.landing.LandingPageLayout;
 import life.qbic.datamanager.views.register.UserRegistrationOrcIdComponent.UserRegistrationOrcIdInformation;
 import life.qbic.identity.api.UserInformationService;
+import life.qbic.identity.api.UserNames;
 import life.qbic.identity.application.user.IdentityService;
 import life.qbic.identity.application.user.IdentityService.EmptyUserNameException;
 import life.qbic.identity.application.user.IdentityService.UserExistsException;
 import life.qbic.identity.application.user.IdentityService.UserNameNotAvailableException;
+import life.qbic.identity.application.user.IdentityService.UserNameTooLongException;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.authorization.QbicOidcUser;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -112,6 +114,10 @@ public class RegistrationOrcIdMain extends Main implements BeforeEnterObserver,
         userRegistrationOrcIdComponent.showError("Username must not be empty",
             "Please try another username");
         break;
+      } else if (e instanceof UserNameTooLongException) {
+        userRegistrationOrcIdComponent.showError("Username is too long",
+            "User name must not exceed " + UserNames.MAX_LENGTH + " characters");
+        break;
       } else {
         userRegistrationOrcIdComponent.showError("Registration failed", "Please try again.");
         break;
@@ -138,9 +144,23 @@ public class RegistrationOrcIdMain extends Main implements BeforeEnterObserver,
           buildFullName(oidcUser.getGivenName(), oidcUser.getMiddleName(),
               oidcUser.getFamilyName()));
       Optional.ofNullable(oidcUser.getEmail()).ifPresent(userRegistrationOrcIdComponent::setEmail);
-      Optional.ofNullable(oidcUser.getPreferredUsername()).ifPresent(
-          userRegistrationOrcIdComponent::setUsername);
+      Optional.ofNullable(oidcUser.getPreferredUsername())
+          .map(RegistrationOrcIdMain::truncateToUserNameLimit)
+          .ifPresent(
+              userRegistrationOrcIdComponent::setUsername);
     }
+  }
+
+  /**
+   * The ORCID {@code preferred_username} claim may exceed the platform's username length limit.
+   * Truncating it keeps the prefill a valid starting point instead of pre-filling the form with a
+   * value that cannot be submitted. The user remains free to edit it before registering.
+   */
+  private static String truncateToUserNameLimit(String preferredUsername) {
+    String stripped = preferredUsername.strip();
+    return stripped.length() <= UserNames.MAX_LENGTH
+        ? stripped
+        : stripped.substring(0, UserNames.MAX_LENGTH);
   }
 
   @Override

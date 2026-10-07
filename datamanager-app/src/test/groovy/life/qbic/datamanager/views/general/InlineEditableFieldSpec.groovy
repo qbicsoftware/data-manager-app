@@ -63,6 +63,37 @@ class InlineEditableFieldSpec extends Specification {
     !field.isEditingForTest()
   }
 
+  def "a notice is placed inside the wrapping value area, not the non-wrapping root row"() {
+    given:
+    def field = new InlineEditableField("Username", "jdoe")
+
+    when: "a grandfathered-value notice is set"
+    field.setNotice("This username exceeds the current limit.")
+
+    then: "the notice is a child of the value area (which wraps), so it can span its own line"
+    field.noticeParentClassNamesForTest().contains("inline-editable-field__value-area")
+    field.noticeTextForTest() == "This username exceeds the current limit."
+
+    when: "the notice is cleared with a blank value"
+    field.setNotice("   ")
+
+    then: "it is removed entirely"
+    field.noticeTextForTest() == null
+  }
+
+  def "setting a notice twice reuses the same element instead of stacking notices"() {
+    given:
+    def field = new InlineEditableField("Username", "jdoe")
+
+    when:
+    field.setNotice("first")
+    field.setNotice("second")
+
+    then:
+    field.noticeTextForTest() == "second"
+    field.noticeCountForTest() == 1
+  }
+
   def "explicit Save still fires a SaveEvent with the trimmed value"() {
     given:
     def field = new InlineEditableField("Name", "old")
@@ -91,5 +122,75 @@ class InlineEditableFieldSpec extends Specification {
 
     then: "the lower bound stays at the configured minimum (40ch) regardless of the long content"
     minWidthCh == 40
+  }
+
+  def "a single-line field enforces the configured maximum length"() {
+    given: "a username-like field constrained to 20 characters"
+    def field = new InlineEditableField("Username", "jdoe")
+    field.setMaxLength(20)
+
+    expect: "the widget-level limit matches the domain rule"
+    field.maxLengthForTest() == 20
+  }
+
+  def "setting a maximum length on a textarea field is a no-op"() {
+    given: "a textarea field keeps its own generous limit (e.g. 500 for descriptions)"
+    def field = new InlineEditableField(InlineEditableField.InputKind.TEXTAREA, "Description", "text")
+    def before = field.maxLengthForTest()
+
+    when: "a single-line limit is mistakenly applied"
+    field.setMaxLength(20)
+
+    then: "the textarea limit is left untouched"
+    field.maxLengthForTest() == before
+  }
+
+  def "a character hint is hidden in display mode and shown while editing"() {
+    given: "a username field with a 20-character budget"
+    def field = new InlineEditableField("Username", "jdoe")
+    field.setMaxLength(20)
+    field.setCharacterHint("Visible to other users")
+
+    expect: "nothing is shown in display mode"
+    field.helperTextForTest() == null
+
+    when: "the user enters edit mode"
+    field.startEditing()
+
+    then: "the hint announces the limit together with the current usage"
+    field.helperTextForTest() == "Visible to other users (4/20 characters)"
+
+    when: "the user leaves edit mode again"
+    field.cancelEditing()
+
+    then: "the hint is cleared so it does not linger on the profile page"
+    field.helperTextForTest() == null
+  }
+
+  def "a bare counter is shown when no hint text is configured"() {
+    given:
+    def field = new InlineEditableField("Username", "abc")
+    field.setMaxLength(20)
+    field.setCharacterHint("")
+
+    when:
+    field.startEditing()
+
+    then:
+    field.helperTextForTest() == "3/20 characters"
+  }
+
+  def "an over-long grandfathered value is not marked invalid by the length limit"() {
+    given: "a value that predates the limit, longer than the configured maximum"
+    def legacyValue = "a" * 25
+    def field = new InlineEditableField("Username", legacyValue)
+    field.setMaxLength(20)
+
+    when: "the user opens the field for editing without changing anything"
+    field.startEditing()
+
+    then: "the existing value must not be flagged as an error"
+    !field.isInvalidForTest()
+    field.value == legacyValue
   }
 }

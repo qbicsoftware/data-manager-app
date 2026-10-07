@@ -25,13 +25,14 @@ import org.springframework.security.core.context.SecurityContextHolder;
  * "Projects | Groups | Settings" navigation + account menu), the announcement banner and the
  * footer.
  * <p>
- * This layout itself only provides the two-column settings hub: a persistent, non-collapsible
- * aside column on the left and the currently selected settings section in the content area on the
- * right. The aside opens with the {@link AccountOverviewHeader} (avatar, name, user name and the
- * "your account settings" hint) above the {@link SettingsNavigationComponent}, so the page reads
- * as "these are my account settings" and the identity sits with the navigation that acts on it
- * instead of occupying a standalone band across the hub. The selected aside tab is kept in sync
- * with the active route via {@link #beforeEnter(BeforeEnterEvent)}.
+ * This layout itself only provides the settings hub: an identity row across the top, and below it
+ * the two-column master-detail area - a persistent, non-collapsible aside column on the left and
+ * the currently selected settings section in the content area on the right. The identity row is
+ * headed by the {@link AccountOverviewHeader} (avatar, name, user name and the "your account
+ * settings" hint) and closely mirrors GitHub's settings hub: the identity heads the whole hub
+ * rather than sitting inside the navigation column, so a long name has the full shell width. The
+ * selected aside tab is kept in sync with the active route via
+ * {@link #beforeEnter(BeforeEnterEvent)}.
  */
 @PermitAll
 @ParentLayout(UserMainLayout.class)
@@ -51,12 +52,14 @@ public class SettingsMainLayout extends Div implements RouterLayout, BeforeEnter
         "userIdTranslator must not be null");
     addClassName("settings-main-layout");
     accountOverviewArea.addClassName("settings-account-overview-area");
-    // The account overview leads the aside, directly above the settings menu: the identity is
-    // what the menu below acts on, so the hub opens with "who am I" followed by "where to go".
-    Div asideArea = new Div(accountOverviewArea, settingsNavigationComponent);
+    Div asideArea = new Div(settingsNavigationComponent);
     asideArea.addClassName("settings-aside-area");
     contentSlot.addClassName("settings-content-area");
-    add(asideArea, contentSlot);
+    // The account overview is its own row above the menu and the content, matching GitHub's
+    // settings hub: the identity heads the whole hub instead of being squeezed into the narrow
+    // navigation column. The full shell width means a long full name and a user name of up to 20
+    // characters fit beside the avatar without wrapping or truncation.
+    add(accountOverviewArea, asideArea, contentSlot);
     renderAccountOverview();
   }
 

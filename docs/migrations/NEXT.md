@@ -1,6 +1,6 @@
 # Migration: Next release
 
-**Current pom version:** 1.15.2  
+**Current pom version:** 1.18.0  
 **Target release version:** TBD *(renamed to `released/v<version>.md` at release cut)*  
 **Status:** under development
 
@@ -37,36 +37,6 @@ with apply / verify / rollback detail.
 
 *Document any new, removed, or renamed `application.properties` entries here.
 If there are none this release, delete this section.*
-
-### New routing property for the datasets view
-
-This release adds a new routing property used by the dataset notification
-emails (dataset connected / updated / removed):
-
-```properties
-# Route to the project's connected-datasets view (used by dataset notification emails)
-routing.projects.datasets.endpoint=/projects/%s/datasets
-```
-
-The emails previously linked to the project info page via
-`routing.projects.info.endpoint` (`/projects/%s/info`); they now link straight
-into the project's datasets view (`/projects/%s/datasets`, matching the
-`projects/:projectId?/datasets` Vaadin route).
-
-**This is a purely additive, non-breaking configuration change** — the
-`/projects/%s/info` property continues to be used for the project-access-grant
-email and is unchanged. The new property ships with the default value above
-and does not require an environment variable or secret.
-
-**Operator action:**
-
-1. Add the property above to your `application.properties` (or copy the
-   updated `application.properties.template`).
-2. Restart the application.
-3. Verify a dataset connect/sync/removal notification email links to
-   `…/projects/<project-id>/datasets` instead of `…/projects/<project-id>/info`.
-
-No schema migration is associated with this entry.
 
 ---
 
@@ -493,6 +463,89 @@ DROP INDEX IF EXISTS `idx_profile_picture_audit_reviewed`
 ### Operator notes
 
 - Additive and safe while live; existing rows default to not reviewed.
+
+---
+
+## Username length limit (application-level policy, no schema migration)
+
+| Field | Value |
+|---|---|
+| **Story** | — (app-level policy change; see PR) |
+| **Feature** | — |
+| **ADRs** | none |
+| **Scope** | application-level validation only — **no DDL, no migration script** |
+| **Script** | none |
+| **Target datasource** | none |
+
+### What it does
+
+Introduces a maximum username length of **20 characters**, enforced in the domain
+(`UserNamePolicy`) and the application service (`IdentityService`) and mirrored in the
+registration and profile-edit forms (`UserNames.MAX_LENGTH`).
+
+Usernames must remain readable as compact display handles throughout the application
+(project sharing, group membership, collaborators), so unbounded usernames defeat their
+purpose.
+
+The limit is enforced only for values **entering** the system:
+
+- new registrations (password and ORCID), and
+- username changes in profile settings.
+
+Usernames that already exist and exceed the limit are **grandfathered**: they keep working,
+can be re-saved unchanged, and are only required to be compliant when the user chooses a
+*different* username. The profile page shows those users an informational notice.
+
+**There is deliberately no schema change.** The `users.userName` column stays
+`varchar(255)`, because a hard `CHECK`/column-length constraint would reject the currently
+grandfathered row and would make reading it fail. A database-level constraint can be added
+in a later release, but only **after** every over-long username has been remediated (see
+below).
+
+### Identify affected users
+
+Run before and after the release to track remaining grandfathered usernames:
+
+```sql
+SELECT id, userName, CHAR_LENGTH(userName) AS len
+  FROM users
+ WHERE userName IS NULL OR CHAR_LENGTH(userName) > 20
+ ORDER BY len DESC;
+```
+
+### Apply
+
+Nothing to apply — deploy the application as usual.
+
+### Verify
+
+```sql
+-- Should return the same rows as before the release: the migration must not touch data.
+SELECT id, userName, CHAR_LENGTH(userName) AS len
+  FROM users
+ WHERE userName IS NOT NULL AND CHAR_LENGTH(userName) > 20;
+```
+
+After deploying, verify through the UI that:
+
+1. A new registration is rejected with a clear message when the username exceeds 20 characters,
+   and the username field stops accepting input at 20 characters.
+2. An existing over-long username still logs in and is displayed unchanged.
+3. The profile page for such a user shows the informational notice.
+4. Saving that profile without changing the username succeeds (no error).
+
+### Rollback
+
+No data change, so there is nothing to reverse. Reverting the application version restores the
+previous (unbounded) behaviour. No over-long username is ever modified by this change.
+
+### Operator notes
+
+- **Non-destructive and safe while live.** No table, column, or row is modified.
+- **Deliberately no DB constraint yet.** Adding one requires all over-long usernames to be
+  remediated first; otherwise inserts/updates for those rows — and the migration itself — can fail.
+- **Coordinate with the affected users.** Ask anyone with an over-long username to shorten it at
+  their convenience; it is not urgent, because their current handle keeps working.
 
 ---
 
