@@ -16,7 +16,7 @@ REPORT="${1:-grype.json}"
 OUT="dependency-vulnerability-report.md"
 
 if [[ ! -f "$REPORT" ]]; then
-  echo "::error file=${REPORT}::Grype report not found. Did the SBOM scan run?"
+  echo "::error file=${REPORT}::Grype report not found. Did the SBOM scan run?" >&2
   exit 1
 fi
 
