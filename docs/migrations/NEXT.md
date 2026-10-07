@@ -547,6 +547,7 @@ previous (unbounded) behaviour. No over-long username is ever modified by this c
 - **Coordinate with the affected users.** Ask anyone with an over-long username to shorten it at
   their convenience; it is not urgent, because their current handle keeps working.
 
+
 ---
 
 ## Migration #<next>: <title>
