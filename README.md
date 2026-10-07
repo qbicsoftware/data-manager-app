@@ -8,6 +8,8 @@ that enables FAIR-compliant data access.
 [![Build Maven Package](https://github.com/qbicsoftware/data-manager-app/actions/workflows/build_package.yml/badge.svg)](https://github.com/qbicsoftware/data-manager-app/actions/workflows/build_package.yml)
 [![Run Maven Tests](https://github.com/qbicsoftware/data-manager-app/actions/workflows/run_tests.yml/badge.svg)](https://github.com/qbicsoftware/data-manager-app/actions/workflows/run_tests.yml)
 [![CodeQL](https://github.com/qbicsoftware/data-manager-app/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/qbicsoftware/data-manager-app/actions/workflows/codeql-analysis.yml)
+[![dependency vulnerabilities](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/sven1103/f5e93bb0d626259382b1c2be861734f0/raw/vulnerabilities.json)](https://github.com/qbicsoftware/data-manager-app/security/code-scanning)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/qbicsoftware/data-manager-app/badge)](https://scorecard.dev/viewer/?uri=github.com/qbicsoftware/data-manager-app)
 [![release](https://img.shields.io/github/v/release/qbicsoftware/data-manager-app?include_prereleases)](https://github.com/qbicsoftware/data-manager-app/releases)
 
 [![license](https://img.shields.io/github/license/qbicsoftware/data-manager-app)](https://github.com/qbicsoftware/data-manager-app/blob/main/LICENSE)
