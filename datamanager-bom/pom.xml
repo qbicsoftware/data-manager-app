@@ -256,7 +256,7 @@
 
       <dependency>
         <groupId>life.qbic</groupId>
-        <artifactId>openbis-api</artifactId>
+        <artifactId>zzzz-openbis-api</artifactId>
         <version>20.10.7.3</version>
         <classifier>r1700646105</classifier>
         <scope>compile</scope>
