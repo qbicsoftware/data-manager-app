@@ -67,13 +67,17 @@ jobs:
       # `verify` (part of the `sigcheck` profile), producing a .sigstore.json
       # bundle next to each JAR. Scorecard's Signed-Releases check looks for
       # these bundles among the assets attached to the GitHub release below.
+      #
+      # Only the JAR bundles are collected: the plugin also signs the per-module
+      # SBOM (`target/bom.json`), but every module emits a bundle with the same
+      # `bom.json.sigstore.json` basename and release asset names must be unique.
       - name: Collect release assets
         run: |
           set -euo pipefail
           {
             find . -path '*/target/*.jar' \
               -not -name '*-sources.jar' -not -name '*-javadoc.jar'
-            find . -path '*/target/*.sigstore.json'
+            find . -path '*/target/*.jar.sigstore.json'
           } | sort > release-assets.txt
           echo "Release assets:"
           cat release-assets.txt
@@ -85,10 +89,20 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
 
-      - name: Create GitHub Release
+      - name: Create or update GitHub Release
+        # Idempotent so a re-run after a partial failure does not fail on an
+        # existing release; --clobber replaces assets already uploaded.
         run: |
-          xargs gh release create "${{ github.event.inputs.versionTag }}" \
-            --generate-notes --fail-on-no-commits < release-assets.txt
+          set -euo pipefail
+          tag="${{ github.event.inputs.versionTag }}"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "Release $tag already exists; updating assets."
+          else
+            gh release create "$tag" --generate-notes --fail-on-no-commits
+          fi
+          if [ -s release-assets.txt ]; then
+            xargs gh release upload "$tag" --clobber < release-assets.txt
+          fi
         env:
           GH_TOKEN: ${{ github.token }}
 
