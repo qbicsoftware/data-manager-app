@@ -37,9 +37,6 @@ jobs:
           java-version: '21'
           settings-path: ${{ github.workspace }}
 
-      - name: Install Cosign
-        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
-
       - name: Load local Maven repository cache
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
@@ -66,17 +63,10 @@ jobs:
           MAVEN_REPO_USERNAME: ${{ secrets.NEXUS_USERNAME }}
           MAVEN_REPO_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
 
-      # Sign the final build artifacts (after the deploy repackage step) and emit
-      # a .sigstore.json bundle next to each. Scorecard's Signed-Releases check
-      # looks for these bundles among the assets attached to the GitHub release.
-      - name: Sign build artifacts (keyless)
-        run: |
-          set -euo pipefail
-          while IFS= read -r jar; do
-            cosign sign-blob --yes --bundle "${jar}.sigstore.json" "$jar"
-          done < <(find . -path '*/target/*.jar' \
-            -not -name '*-sources.jar' -not -name '*-javadoc.jar' | sort)
-
+      # The deployed artifacts are signed by the sigstore Maven plugin during
+      # `verify` (part of the `sigcheck` profile), producing a .sigstore.json
+      # bundle next to each JAR. Scorecard's Signed-Releases check looks for
+      # these bundles among the assets attached to the GitHub release below.
       - name: Collect release assets
         run: |
           set -euo pipefail
