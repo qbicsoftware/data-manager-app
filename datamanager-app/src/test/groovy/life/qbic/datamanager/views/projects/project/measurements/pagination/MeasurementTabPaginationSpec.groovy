@@ -192,6 +192,21 @@ class MeasurementTabPaginationSpec extends Specification {
         container.selectionBar().getParent().get() instanceof com.vaadin.flow.component.html.Span
     }
 
+    def "applying an external state never activates a hidden tab"() {
+        given: "only proteomics measurements exist, so the NGS tab is hidden and PXP is active"
+        def container = newContainer()
+        container.setTabVisible(MeasurementDomain.NGS, false)
+        def refreshes = []
+        container.addRefreshRequestedListener(event -> refreshes << event.domain())
+
+        when: "a URL/reload without a tab parameter resolves back to the hidden NGS tab"
+        container.applyExternalState(MeasurementListState.defaultWith(MeasurementDomain.NGS))
+
+        then: "the active tab falls back to the first visible (populated) tab"
+        container.activeTab() == MeasurementDomain.PXP
+        refreshes == [MeasurementDomain.PXP]
+    }
+
     def "hiding the active tab falls back to the first remaining visible tab and refreshes it"() {
         given: "only proteomics measurements exist (NGS has none)"
         def container = newContainer()

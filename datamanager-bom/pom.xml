@@ -10,7 +10,7 @@
 
   <groupId>life.qbic.datamanager</groupId>
   <artifactId>datamanager-bom</artifactId>
-  <version>1.18.0</version>
+  <version>1.19.2</version>
   <packaging>pom</packaging>
   <name>DataManager BOM</name>
   <description>Bill of Materials for DataManager artifacts</description>
@@ -22,7 +22,7 @@
     <docx4j.version>11.5.14</docx4j.version>
     <jobrunr.version>8.7.1</jobrunr.version>
     <shedlock.version>7.7.0</shedlock.version>
-    <vaadin.version>25.2.5</vaadin.version>
+    <vaadin.version>25.3.1</vaadin.version>
     <ro-crate-java.version>1.1.1</ro-crate-java.version>
     <snakeyaml.version>2.5</snakeyaml.version>
 
@@ -256,7 +256,7 @@
 
       <dependency>
         <groupId>life.qbic</groupId>
-        <artifactId>openbis-api</artifactId>
+        <artifactId>zzzz-openbis-api</artifactId>
         <version>20.10.7.3</version>
         <classifier>r1700646105</classifier>
         <scope>compile</scope>
