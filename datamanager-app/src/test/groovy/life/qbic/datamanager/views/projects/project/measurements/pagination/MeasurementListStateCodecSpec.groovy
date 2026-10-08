@@ -24,6 +24,20 @@ class MeasurementListStateCodecSpec extends Specification {
         state.activeState().sort() == DEFAULT_SORT
     }
 
+    def "an absent tab parameter keeps the currently shown tab"() {
+        given: "the container currently shows the proteomics tab (e.g. NGS has no measurements)"
+        def current = MeasurementListState.defaultWith(MeasurementDomain.PXP)
+
+        when: "the URL has no tab parameter but carries the active tab's list state"
+        def state = MeasurementListStateCodec.parse(
+            QueryParameters.fromString("page=3&size=48"), current)
+
+        then: "the active tab is kept instead of being reset to NGS"
+        state.activeTab() == MeasurementDomain.PXP
+        state.stateOf(MeasurementDomain.PXP).page() == 3
+        state.stateOf(MeasurementDomain.PXP).pageSize() == 48
+    }
+
     def "parses the active tab and its list state from the URL"() {
         given:
         def current = MeasurementListState.defaultWith(MeasurementDomain.NGS)

@@ -1077,14 +1077,16 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
     history.setHistoryStateChangeHandler(listStateHistoryHandler);
     String basePath = String.format(ProjectRoutes.MEASUREMENTS, projectID, experimentId);
     measurementDetailsComponent.setBasePath(basePath);
+
+    // setContext resets the per-tab list state to defaults when a new experiment is shown and
+    // hides the tabs of domains without measurements; parse the URL state afterwards so an absent
+    // tab parameter keeps the tab the container actually shows and so the initial fetch reflects
+    // the tab/page/size/filter/sort of a reloaded or shared link instead of the defaults
+    // (USER-R-03, ADR-0008).
+    reloadMeasurements();
     MeasurementListState urlState = MeasurementListStateCodec.parse(
         event.getLocation().getQueryParameters(),
         measurementDetailsComponent.getTabPagination().listState());
-
-    // setContext resets the per-tab list state to defaults when a new experiment is shown; apply
-    // the URL state afterwards so the initial fetch reflects the tab/page/size/filter/sort of a
-    // reloaded or shared link instead of the defaults (USER-R-03, ADR-0008).
-    reloadMeasurements();
     measurementDetailsComponent.getTabPagination().applyExternalState(urlState);
 
     asyncService.getProjectCode(context.projectId().orElseThrow().value())

@@ -300,6 +300,15 @@ public class MeasurementTabPagination extends Div {
    */
   public void applyExternalState(MeasurementListState state) {
     this.listState = state;
+    // A hidden tab (a domain without measurements) must never become active: doing so renders an
+    // empty grid while the tab badge of a populated tab stays visible. This mirrors the fallback
+    // of setTabVisible for the programmatic URL/history path (shared link or reload without a
+    // tab parameter, or a stale tab parameter of a now empty domain).
+    if (!isTabVisible(state.activeTab())) {
+      firstVisibleDomain().ifPresent(fallback -> {
+        this.listState = this.listState.withTab(fallback, this.listState.stateOf(fallback));
+      });
+    }
     suppressTabSwitchEvents = true;
     try {
       selectTabForActiveDomain();
@@ -384,6 +393,13 @@ public class MeasurementTabPagination extends Div {
         .filter(entry -> entry.getValue().isVisible())
         .map(Map.Entry::getKey)
         .findFirst();
+  }
+
+  private boolean isTabVisible(MeasurementDomain domain) {
+    Tab tab = tabsByDomain.get(domain);
+    // a domain without a registered tab is treated as visible; selectTabForActiveDomain is a
+    // no-op for it, so it cannot render a wrong grid anyway
+    return tab == null || tab.isVisible();
   }
 
   private void writeUrl(boolean push) {

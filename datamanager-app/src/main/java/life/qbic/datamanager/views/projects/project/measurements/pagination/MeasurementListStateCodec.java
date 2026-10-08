@@ -39,8 +39,13 @@ public final class MeasurementListStateCodec {
    *         the remaining tabs retain their passed-in state
    */
   public static MeasurementListState parse(QueryParameters parameters, MeasurementListState current) {
-    MeasurementDomain activeTab = MeasurementDomain.fromUrlValue(
-        parameters.getSingleParameter(TAB_PARAMETER).orElse(null));
+    // An absent tab parameter means "keep the tab currently shown". On the first load of a view
+    // instance the container may already have fallen back to another tab because the default NGS
+    // tab has no measurements; hardcoding NGS here would re-select that hidden, empty tab and
+    // render an empty grid next to a populated tab badge (USER-R-03, ADR-0008).
+    MeasurementDomain activeTab = parameters.getSingleParameter(TAB_PARAMETER)
+        .map(MeasurementDomain::fromUrlValue)
+        .orElse(current.activeTab());
     SortOrder defaultSort = MeasurementSort.DEFAULT;
     ListState activeState = switch (activeTab) {
       case NGS -> ListStateCodec.parse(parameters, defaultSort, MeasurementSort.NGS_SORTS,
