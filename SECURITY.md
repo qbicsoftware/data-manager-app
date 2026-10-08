@@ -6,15 +6,14 @@ safe.
 
 ## Supported Versions
 
-Security fixes are provided for the latest released minor version and the
-current `main` branch. Older releases are supported on a best-effort basis and
-we may ask you to upgrade before we can address an issue.
+Security fixes are provided for the latest release only. The project maintains
+a single release line, so older releases are not supported and we may ask you
+to upgrade before we can address an issue.
 
 | Version | Supported |
 |---|---|
 | Latest release | :white_check_mark: |
-| `main` branch | :white_check_mark: |
-| Older releases | :warning: best effort |
+| Older releases | :x: |
 
 ## Reporting a Vulnerability
 
