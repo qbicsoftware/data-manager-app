@@ -21,7 +21,7 @@
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
-      <artifactId>openbis-api</artifactId>
+      <artifactId>zzzz-openbis-api</artifactId>
       <classifier>r1700646105</classifier>
     </dependency>
     <dependency>
