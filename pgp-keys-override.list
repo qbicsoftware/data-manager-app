@@ -2,28 +2,13 @@
 # groupId:artifactId:version =  *,any,badSig,noKey,noSig
 # wildcards * are allowed in artifactId/version
 
-# Cyclone DX for SBOMs (build-time, via cyclonedx-maven-plugin)
-org.cyclonedx:cyclonedx-core-java:jar:9.0.5 = 0x5D283C23D9D9DC2D9C2130E6AADF2C18DCF95764
-org.cyclonedx:cyclonedx-core-java:pom:9.0.5 = 0x5D283C23D9D9DC2D9C2130E6AADF2C18DCF95764
-org.cyclonedx:cyclonedx-maven-plugin:2.9.3 = 0xFA77DCFEF2EE6EB2DEBEDD2C012579464D01C06A
+# Allow your reactor modules (produced in this build)
+life.qbic:*:* = noSig
+life.qbic.logging:*:* = noSig
+life.qbic.datamanager:*:* = noSig
 
-# Distributed locking with shedlock
-net.javacrumbs.shedlock:*:* = 0x0E519FB002B9DE71010C6BA9BBF5AC5A3CDBFD37
-
-# Unsigned deps accepted without a signature
-javax.inject:javax.inject:1 = noSig
-javax.inject:javax.inject:jar:1 = noSig
-
-# java-rdfa 1.0.0-BETA1 via license-maven-plugin -> odfdom-java (build-time)
-net.rootdev:java-rdfa:pom:1.0.0-BETA1 = 0x061CDB85C08734C99056F3CC45ABE382CC1B7074
-net.rootdev:java-rdfa:jar:1.0.0-BETA1 = 0x061CDB85C08734C99056F3CC45ABE382CC1B7074
-
-# jgroups via artemis-core-client
-org.jgroups:jgroups:pom:5.3.13.Final = noSig
-org.jgroups:jgroups:jar:5.3.13.Final = noSig
-
-# jte template engine
-gg.jte:*:* = 0x1D7DC2587E655C72EB4463F2E082500F4BE1F6DD
+# apicatalog / titanium-* family (JCS, RDF-API, RDF-N-Quads, JSON-LD)
+com.apicatalog:*:* = 0x6C3AE02ABF8203EEAC80DC215ACE4C100AABD0E8
 
 # itu (ethlo time)
 # 1.7.0 via ro-crate-java -> json-schema-validator (runtime)
@@ -46,6 +31,25 @@ com.github.fslev:json-compare:*:* = 0x5815EC222883A6717E1E6A3DA22E5FC97CDB6427
 com.github.package-url:packageurl-java:jar:1.5.0 = 0x5D283C23D9D9DC2D9C2130E6AADF2C18DCF95764
 com.github.package-url:packageurl-java:pom:1.5.0 = 0x5D283C23D9D9DC2D9C2130E6AADF2C18DCF95764
 
+# Google Android annotations
+com.google.android:*:* = 0x0F07D1201BDDAB67CFB84EB479752DB6C966F0B8
+
+# Google HTTP / OAuth clients via sigstore-maven-plugin (build-time)
+com.google.api.grpc:proto-google-common-protos:jar:2.74.0 = 0x47504B76CF89C15C0512D9AFE16AB52D79FD224F
+com.google.api.grpc:proto-google-common-protos:pom:2.74.0 = 0x47504B76CF89C15C0512D9AFE16AB52D79FD224F
+com.google.http-client:google-http-client-apache-v5:jar:2.2.0 = 0x47504B76CF89C15C0512D9AFE16AB52D79FD224F
+com.google.http-client:google-http-client-apache-v5:pom:2.2.0 = 0x47504B76CF89C15C0512D9AFE16AB52D79FD224F
+com.google.http-client:google-http-client-gson:jar:2.2.0 = 0x47504B76CF89C15C0512D9AFE16AB52D79FD224F
+com.google.http-client:google-http-client-gson:pom:2.2.0 = 0x47504B76CF89C15C0512D9AFE16AB52D79FD224F
+com.google.http-client:google-http-client:2.2.0 = 0x47504B76CF89C15C0512D9AFE16AB52D79FD224F
+com.google.http-client:google-http-client:jar:2.2.0 = 0x47504B76CF89C15C0512D9AFE16AB52D79FD224F
+com.google.oauth-client:google-oauth-client-java6:jar:1.39.0 = 0x47504B76CF89C15C0512D9AFE16AB52D79FD224F
+com.google.oauth-client:google-oauth-client-java6:pom:1.39.0 = 0x47504B76CF89C15C0512D9AFE16AB52D79FD224F
+com.google.oauth-client:google-oauth-client-jetty:jar:1.39.0 = 0x47504B76CF89C15C0512D9AFE16AB52D79FD224F
+com.google.oauth-client:google-oauth-client-jetty:pom:1.39.0 = 0x47504B76CF89C15C0512D9AFE16AB52D79FD224F
+com.google.oauth-client:google-oauth-client:jar:1.39.0 = 0x47504B76CF89C15C0512D9AFE16AB52D79FD224F
+com.google.oauth-client:google-oauth-client:pom:1.39.0 = 0x47504B76CF89C15C0512D9AFE16AB52D79FD224F
+
 # asn-one via pem-keystore -> artemis-core-client
 com.hierynomus:asn-one:jar:0.6.0 = 0xB200B4AA914DE0340741F598EBE906E1F4ACA3B7
 com.hierynomus:asn-one:pom:0.6.0 = 0xB200B4AA914DE0340741F598EBE906E1F4ACA3B7
@@ -62,86 +66,19 @@ com.nimbusds:nimbus-jose-jwt:jar:10.3.1 = 0x82F0964816AD7319CB0CCCF93EFD9D223D71
 com.nimbusds:nimbus-jose-jwt:pom:10.3.1 = 0x82F0964816AD7319CB0CCCF93EFD9D223D715E9A
 com.nimbusds:*:* = 0x82F0964816AD7319CB0CCCF93EFD9D223D715E9A
 
-# pem-keystore via artemis-core-client
-de.dentrassi.crypto:pem-keystore:jar:3.0.0 = 0xCAFE8E040FD28E7873171932BBE1070F76B97956
-de.dentrassi.crypto:pem-keystore:pom:3.0.0 = 0xCAFE8E040FD28E7873171932BBE1070F76B97956
+# Square / OkHttp / Okio
+com.squareup.okio:*:* = 0x1D217F8475EEE9F19AB8DD6B793FD5751A0F0780
 
-# fastcsv via sonar-maven-plugin
-de.siegmar:fastcsv:3.7.0 = 0x206DF7C48E3D6CB145DDA835FF844A3256C7FB01
+# Vaadin
+com.vaadin.external.atmosphere:*:* = 0xED4D232CC28A17F20CD25CA1C63D0B42CDFB97DA
+com.vaadin.external.gwt:*:* = 0xED4D232CC28A17F20CD25CA1C63D0B42CDFB97DA
+com.vaadin.external:gentyref:jar:1.2.0.vaadin1 = 0xCC57399D74CD7E4768ED6FA4CA62973FBF0451C0
+com.vaadin.external:gentyref:pom:1.2.0.vaadin1 = 0xCC57399D74CD7E4768ED6FA4CA62973FBF0451C0
+com.vaadin.servletdetector:*:* = 0xED4D232CC28A17F20CD25CA1C63D0B42CDFB97DA
+com.vaadin:*:* = 0xED4D232CC28A17F20CD25CA1C63D0B42CDFB97DA
 
-# java-json-canonicalization (JJCS) via sigstore-maven-plugin (build-time)
-io.github.erdtman:java-json-canonicalization:jar:1.1 = 0x4556208EBE484FBA3984DC3D3D4FA1A9DB2FB4F4
-io.github.erdtman:java-json-canonicalization:pom:1.1 = 0x4556208EBE484FBA3984DC3D3D4FA1A9DB2FB4F4
-
-# ayza / sude via sonar-maven-plugin
-io.github.hakky54:ayza:10.0.3 = 0xE5138A8E9F2E7E42D38B14D99AEE152CDCCEBFCB
-io.github.hakky54:sude:2.0.2 = 0xE5138A8E9F2E7E42D38B14D99AEE152CDCCEBFCB
-
-# perfmark-api via sigstore-maven-plugin (build-time)
-io.perfmark:perfmark-api:jar:0.27.0 = 0xC6F7D1C804C821F49AF3BFC13AD93C3C677A106E
-io.perfmark:perfmark-api:pom:0.27.0 = 0xC6F7D1C804C821F49AF3BFC13AD93C3C677A106E
-
-# Swagger
-io.swagger.core.v3:*:* = 0x3E61D8C230332482009D7F0EDB901B24CAD38BC4
-
-# javax.cache via ehcache
-javax.cache:cache-api:1.1.1 = 0xBE6B997EB563F4898C3C406B8DB9FA0B0718BBF9
-
-# mbassador via docx4j
-net.engio:mbassador:jar:1.3.2 = 0x5EAF6E9410A71E27B18EB3B90AC90C378C525192
-net.engio:mbassador:pom:1.3.2 =0x5EAF6E9410A71E27B18EB3B90AC90C378C525192
-
-# zip4j via ro-crate-java
-net.lingala.zip4j:zip4j:jar:2.11.5 = 0x36F4C680FC3E50E14C90FCBFA0B475EFD9448513
-net.lingala.zip4j:zip4j:pom:2.11.5 = 0x36F4C680FC3E50E14C90FCBFA0B475EFD9448513
-net.lingala.zip4j:*:* = 0x2A35D0FCBF518BC0F8EEBECA414FF73A7737AD60
-
-# Ehcache (JCache)
-org.ehcache:*:* = 0x7FCE178313EAC3BDFC4A75A95E1D8523FE7EAC7B
-
-# Roaster (Forge)
-org.jboss.forge.roaster:*:* = 0x001A438334F162E6AFB27F3BA9F900C1C0FE3ED9
-
-# jctools
-org.jctools:*:* = 0x9B5D41D28D8231A341B6713BC8C127A0EC7665D6
-
-# jetbrains annotations via vaadin-maven-plugin
-org.jetbrains:annotations:jar:13.0 = 0x2E3A1AFFE42B5F53AF19F780BCF4173966770193
-org.jetbrains:annotations:pom:13.0 = 0x2E3A1AFFE42B5F53AF19F780BCF4173966770193
-
-# nuiton-processor via license-maven-plugin (build-time)
-org.nuiton.processor:nuiton-processor:jar:1.3 = 0x8C91FA79AE8556710867A977E9056E22014A6ED2
-org.nuiton.processor:nuiton-processor:pom:1.3 = 0x8C91FA79AE8556710867A977E9056E22014A6ED2
-
-# odfdom-java via license-maven-plugin (build-time)
-org.odftoolkit:odfdom-java:jar:0.12.0 = 0x38986C6D418B8E8DB39B96E2FCB440888750FA22
-org.odftoolkit:odfdom-java:pom:0.12.0 = 0x38986C6D418B8E8DB39B96E2FCB440888750FA22
-
-# org.json via license-maven-plugin -> odfdom-java (build-time)
-org.json:json:jar:20231013 = 0xFB35C8D02B4724DADA23DE0AFD116C1969FCCFF3
-org.json:json:pom:20231013 = 0xFB35C8D02B4724DADA23DE0AFD116C1969FCCFF3
-
-# RoaringBitmap via license-maven-plugin -> odfdom-java -> jena-core (build-time)
-org.roaringbitmap:RoaringBitmap:jar:1.0.0 = 0x015479E1055341431B4545AB72475FD306B9CAB7
-org.roaringbitmap:RoaringBitmap:pom:1.0.0 = 0x015479E1055341431B4545AB72475FD306B9CAB7
-
-# jaxb-svg11 via docx4j
-org.plutext:jaxb-svg11:jar:11.4.0 = 0x4F12076DB0F61138303CC361C641C2A9AFA87A3B
-org.plutext:jaxb-svg11:pom:11.4.0 = 0x4F12076DB0F61138303CC361C641C2A9AFA87A3B
-
-# tomlj via spring-boot-maven-plugin
-org.tomlj:tomlj:jar:1.0.0 = 0x80F6D6B0D90C6747753344CAB5A9E81B565E89E0
-org.tomlj:tomlj:pom:1.0.0 = 0x80F6D6B0D90C6747753344CAB5A9E81B565E89E0
-
-# Allow your reactor modules (produced in this build)
-life.qbic:*:* = noSig
-life.qbic.logging:*:* = noSig
-life.qbic.datamanager:*:* = noSig
-
-# accept unsigned (documented exceptions)
-# jboss-logging via hibernate-core
-org.jboss.logging:jboss-logging:jar:3.6.3.Final = 0x6D2AF456B8CB597387901C786F29F72839B3A8E7
-org.jboss.logging:jboss-logging:pom:3.6.3.Final = 0x6D2AF456B8CB597387901C786F29F72839B3A8E7
+# HikariCP
+com.zaxxer:HikariCP:* = 0xF3A90E6B10E809F851AB4FC54CC08E7F47C3EC76
 
 # Commons IO, Commons Logging, and Commons Codec (via docx4j / spring-core / poi)
 commons-io:commons-io:jar:2.22.0 = 0xF4DD59C90148BDC52BEB90A4530AA5F25C25011F
@@ -151,18 +88,30 @@ commons-logging:commons-logging:pom:1.3.6 = 0xF4DD59C90148BDC52BEB90A4530AA5F25C
 commons-codec:commons-codec:jar:1.21.0 = 0xF4DD59C90148BDC52BEB90A4530AA5F25C25011F
 commons-codec:commons-codec:pom:1.21.0 = 0xF4DD59C90148BDC52BEB90A4530AA5F25C25011F
 
+# pem-keystore via artemis-core-client
+de.dentrassi.crypto:pem-keystore:jar:3.0.0 = 0xCAFE8E040FD28E7873171932BBE1070F76B97956
+de.dentrassi.crypto:pem-keystore:pom:3.0.0 = 0xCAFE8E040FD28E7873171932BBE1070F76B97956
+
+# fastcsv via sonar-maven-plugin
+de.siegmar:fastcsv:3.7.0 = 0x206DF7C48E3D6CB145DDA835FF844A3256C7FB01
+
 # Sigstore (sigstore-maven-plugin / sigstore-java, build-time)
 dev.sigstore:*:* = 0x300b49c14dfa7e0ad9d8515400e008229f5daf37
 
-# Jackson 3 (tools.jackson.dataformat)
-tools.jackson.dataformat:*:* = 0x28118C070CB22A0175A2E8D43D12CA2AC19F3181
+# ro-crate-java (via project-management-infrastructure)
+edu.kit.datamanager:ro-crate-java:1.1.1 = 0x7F4A46364B8A81FB341BEAA99FA30EAD50347761
+edu.kit.datamanager:ro-crate-java:*:* = 0x7F4A46364B8A81FB341BEAA99FA30EAD50347761
 
-# SnakeYAML Engine via jackson-dataformat-yaml
-org.snakeyaml:snakeyaml-engine:jar:3.0.1 = 0x2FC53E6B1F681184F4CCD637F5C81DE10A0B8ECC
-org.snakeyaml:snakeyaml-engine:pom:3.0.1 = 0x2FC53E6B1F681184F4CCD637F5C81DE10A0B8ECC
+# jte template engine
+gg.jte:*:* = 0x1D7DC2587E655C72EB4463F2E082500F4BE1F6DD
 
-# GMavenPlus plugin
-org.codehaus.gmavenplus:*:* = 0x0867FACD3788F7B0BB24CD1FD90C38195BEDB15F
+# java-json-canonicalization (JJCS) via sigstore-maven-plugin (build-time)
+io.github.erdtman:java-json-canonicalization:jar:1.1 = 0x4556208EBE484FBA3984DC3D3D4FA1A9DB2FB4F4
+io.github.erdtman:java-json-canonicalization:pom:1.1 = 0x4556208EBE484FBA3984DC3D3D4FA1A9DB2FB4F4
+
+# ayza / sude via sonar-maven-plugin
+io.github.hakky54:ayza:10.0.3 = 0xE5138A8E9F2E7E42D38B14D99AEE152CDCCEBFCB
+io.github.hakky54:sude:2.0.2 = 0xE5138A8E9F2E7E42D38B14D99AEE152CDCCEBFCB
 
 # gRPC (Google) via sigstore-maven-plugin (build-time)
 io.grpc:grpc-api:jar:1.83.1 = 0xB02335AA54CCF21E52BBF9ABD9C565AA72BA2FDD
@@ -182,56 +131,38 @@ io.grpc:grpc-stub:pom:1.83.1 = 0xB02335AA54CCF21E52BBF9ABD9C565AA72BA2FDD
 io.grpc:grpc-util:jar:1.83.1 = 0xB02335AA54CCF21E52BBF9ABD9C565AA72BA2FDD
 io.grpc:grpc-util:pom:1.83.1 = 0xB02335AA54CCF21E52BBF9ABD9C565AA72BA2FDD
 
-# Google HTTP / OAuth clients via sigstore-maven-plugin (build-time)
-com.google.api.grpc:proto-google-common-protos:jar:2.74.0 = 0x47504B76CF89C15C0512D9AFE16AB52D79FD224F
-com.google.api.grpc:proto-google-common-protos:pom:2.74.0 = 0x47504B76CF89C15C0512D9AFE16AB52D79FD224F
-com.google.http-client:google-http-client-apache-v5:jar:2.2.0 = 0x47504B76CF89C15C0512D9AFE16AB52D79FD224F
-com.google.http-client:google-http-client-apache-v5:pom:2.2.0 = 0x47504B76CF89C15C0512D9AFE16AB52D79FD224F
-com.google.http-client:google-http-client-gson:jar:2.2.0 = 0x47504B76CF89C15C0512D9AFE16AB52D79FD224F
-com.google.http-client:google-http-client-gson:pom:2.2.0 = 0x47504B76CF89C15C0512D9AFE16AB52D79FD224F
-com.google.http-client:google-http-client:2.2.0 = 0x47504B76CF89C15C0512D9AFE16AB52D79FD224F
-com.google.http-client:google-http-client:jar:2.2.0 = 0x47504B76CF89C15C0512D9AFE16AB52D79FD224F
-com.google.oauth-client:google-oauth-client-java6:jar:1.39.0 = 0x47504B76CF89C15C0512D9AFE16AB52D79FD224F
-com.google.oauth-client:google-oauth-client-java6:pom:1.39.0 = 0x47504B76CF89C15C0512D9AFE16AB52D79FD224F
-com.google.oauth-client:google-oauth-client-jetty:jar:1.39.0 = 0x47504B76CF89C15C0512D9AFE16AB52D79FD224F
-com.google.oauth-client:google-oauth-client-jetty:pom:1.39.0 = 0x47504B76CF89C15C0512D9AFE16AB52D79FD224F
-com.google.oauth-client:google-oauth-client:jar:1.39.0 = 0x47504B76CF89C15C0512D9AFE16AB52D79FD224F
-com.google.oauth-client:google-oauth-client:pom:1.39.0 = 0x47504B76CF89C15C0512D9AFE16AB52D79FD224F
-
-# Square / OkHttp / Okio
-com.squareup.okio:*:* = 0x1D217F8475EEE9F19AB8DD6B793FD5751A0F0780
-
-# Xerces
-xerces:xercesImpl:* = 0x6CB87B18A453990EAC9453F87D713008CC07E9AD
-
-# Apache Jena
-org.apache.jena:*:* = 0xD99038A1731B8B31B71549EF04C95136D236A58F
-
-# Google Android annotations
-com.google.android:*:* = 0x0F07D1201BDDAB67CFB84EB479752DB6C966F0B8
-
-# Jansi
-org.fusesource.jansi:jansi:* = 0xEA23DB1360D9029481E7F2EFECDFEA3CB4493B94
-
 # Opencensus (via gRPC)
 io.opencensus:*:* = 0x600EA202B1EC682F4A788E5AAC7A514BC9F9BB70
 
-# SonarSource scanner libs + plugin
-org.sonarsource.scanner.lib:*:* = 0x679F1EE92B19609DE816FDE81DB198F93525EC1A
-org.sonarsource.scanner.maven:*:* = 0x679F1EE92B19609DE816FDE81DB198F93525EC1A
+# perfmark-api via sigstore-maven-plugin (build-time)
+io.perfmark:perfmark-api:jar:0.27.0 = 0xC6F7D1C804C821F49AF3BFC13AD93C3C677A106E
+io.perfmark:perfmark-api:pom:0.27.0 = 0xC6F7D1C804C821F49AF3BFC13AD93C3C677A106E
 
-# JobRunr
-org.jobrunr:*:* = 0x841496C7067739E5EEAE6626031C0B38EEB33EF8
+# Swagger
+io.swagger.core.v3:*:* = 0x3E61D8C230332482009D7F0EDB901B24CAD38BC4
 
-# HikariCP
-com.zaxxer:HikariCP:* = 0xF3A90E6B10E809F851AB4FC54CC08E7F47C3EC76
+# javax.cache via ehcache
+javax.cache:cache-api:1.1.1 = 0xBE6B997EB563F4898C3C406B8DB9FA0B0718BBF9
 
-# AspectJ
-org.aspectj:*:* = 0xDB5D8331654BFCC24475252F30C4AFF0AF1DADE1
+# Unsigned deps accepted without a signature
+javax.inject:javax.inject:1 = noSig
+javax.inject:javax.inject:jar:1 = noSig
 
-# Hibernate ORM
-org.hibernate.orm:*:* = 0x1452F35849B50750F6A3BBB4B54011358B352F85
-org.hibernate.models:*:* = 0x1452F35849B50750F6A3BBB4B54011358B352F85
+# mbassador via docx4j
+net.engio:mbassador:jar:1.3.2 = 0x5EAF6E9410A71E27B18EB3B90AC90C378C525192
+net.engio:mbassador:pom:1.3.2 =0x5EAF6E9410A71E27B18EB3B90AC90C378C525192
+
+# Distributed locking with shedlock
+net.javacrumbs.shedlock:*:* = 0x0E519FB002B9DE71010C6BA9BBF5AC5A3CDBFD37
+
+# zip4j via ro-crate-java
+net.lingala.zip4j:zip4j:jar:2.11.5 = 0x36F4C680FC3E50E14C90FCBFA0B475EFD9448513
+net.lingala.zip4j:zip4j:pom:2.11.5 = 0x36F4C680FC3E50E14C90FCBFA0B475EFD9448513
+net.lingala.zip4j:*:* = 0x2A35D0FCBF518BC0F8EEBECA414FF73A7737AD60
+
+# java-rdfa 1.0.0-BETA1 via license-maven-plugin -> odfdom-java (build-time)
+net.rootdev:java-rdfa:pom:1.0.0-BETA1 = 0x061CDB85C08734C99056F3CC45ABE382CC1B7074
+net.rootdev:java-rdfa:jar:1.0.0-BETA1 = 0x061CDB85C08734C99056F3CC45ABE382CC1B7074
 
 # Apache ActiveMQ Artemis
 org.apache.activemq:*:* = 0x28417C95E8906D108392822354A43F3254868410
@@ -240,24 +171,93 @@ org.apache.artemis:*:* = 0x3DB8CCBCCF07EE368F7C48D6F41830B875BB8633
 org.apache.artemis:artemis-jms-server:jar:2.57.0 = 0x28417C95E8906D108392822354A43F3254868410
 org.apache.artemis:artemis-jms-server:pom:2.57.0 = 0x28417C95E8906D108392822354A43F3254868410
 
+# Apache Jena
+org.apache.jena:*:* = 0xD99038A1731B8B31B71549EF04C95136D236A58F
+
+# AspectJ
+org.aspectj:*:* = 0xDB5D8331654BFCC24475252F30C4AFF0AF1DADE1
+
+# GMavenPlus plugin
+org.codehaus.gmavenplus:*:* = 0x0867FACD3788F7B0BB24CD1FD90C38195BEDB15F
+
+# Cyclone DX for SBOMs (build-time, via cyclonedx-maven-plugin)
+org.cyclonedx:cyclonedx-core-java:jar:9.0.5 = 0x5D283C23D9D9DC2D9C2130E6AADF2C18DCF95764
+org.cyclonedx:cyclonedx-core-java:pom:9.0.5 = 0x5D283C23D9D9DC2D9C2130E6AADF2C18DCF95764
+org.cyclonedx:cyclonedx-maven-plugin:2.9.3 = 0xFA77DCFEF2EE6EB2DEBEDD2C012579464D01C06A
+
 # docx4j + shaded apache components (same key)
 org.docx4j:*:* = 0x4F12076DB0F61138303CC361C641C2A9AFA87A3B
 org.docx4j.org.apache:*:* = 0x4F12076DB0F61138303CC361C641C2A9AFA87A3B
 
-# apicatalog / titanium-* family (JCS, RDF-API, RDF-N-Quads, JSON-LD)
-com.apicatalog:*:* = 0x6C3AE02ABF8203EEAC80DC215ACE4C100AABD0E8
+# Ehcache (JCache)
+org.ehcache:*:* = 0x7FCE178313EAC3BDFC4A75A95E1D8523FE7EAC7B
 
-# ro-crate-java (via project-management-infrastructure)
-edu.kit.datamanager:ro-crate-java:1.1.1 = 0x7F4A46364B8A81FB341BEAA99FA30EAD50347761
-edu.kit.datamanager:ro-crate-java:*:* = 0x7F4A46364B8A81FB341BEAA99FA30EAD50347761
+# Jansi
+org.fusesource.jansi:jansi:* = 0xEA23DB1360D9029481E7F2EFECDFEA3CB4493B94
+
+# Hibernate ORM
+org.hibernate.orm:*:* = 0x1452F35849B50750F6A3BBB4B54011358B352F85
+org.hibernate.models:*:* = 0x1452F35849B50750F6A3BBB4B54011358B352F85
+
+# Roaster (Forge)
+org.jboss.forge.roaster:*:* = 0x001A438334F162E6AFB27F3BA9F900C1C0FE3ED9
+
+# accept unsigned (documented exceptions)
+# jboss-logging via hibernate-core
+org.jboss.logging:jboss-logging:jar:3.6.3.Final = 0x6D2AF456B8CB597387901C786F29F72839B3A8E7
+org.jboss.logging:jboss-logging:pom:3.6.3.Final = 0x6D2AF456B8CB597387901C786F29F72839B3A8E7
+
+# jctools
+org.jctools:*:* = 0x9B5D41D28D8231A341B6713BC8C127A0EC7665D6
+
+# jetbrains annotations via vaadin-maven-plugin
+org.jetbrains:annotations:jar:13.0 = 0x2E3A1AFFE42B5F53AF19F780BCF4173966770193
+org.jetbrains:annotations:pom:13.0 = 0x2E3A1AFFE42B5F53AF19F780BCF4173966770193
+
+# jgroups via artemis-core-client
+org.jgroups:jgroups:pom:5.3.13.Final = noSig
+org.jgroups:jgroups:jar:5.3.13.Final = noSig
+
+# JobRunr
+org.jobrunr:*:* = 0x841496C7067739E5EEAE6626031C0B38EEB33EF8
+
+# org.json via license-maven-plugin -> odfdom-java (build-time)
+org.json:json:jar:20231013 = 0xFB35C8D02B4724DADA23DE0AFD116C1969FCCFF3
+org.json:json:pom:20231013 = 0xFB35C8D02B4724DADA23DE0AFD116C1969FCCFF3
+
+# nuiton-processor via license-maven-plugin (build-time)
+org.nuiton.processor:nuiton-processor:jar:1.3 = 0x8C91FA79AE8556710867A977E9056E22014A6ED2
+org.nuiton.processor:nuiton-processor:pom:1.3 = 0x8C91FA79AE8556710867A977E9056E22014A6ED2
+
+# odfdom-java via license-maven-plugin (build-time)
+org.odftoolkit:odfdom-java:jar:0.12.0 = 0x38986C6D418B8E8DB39B96E2FCB440888750FA22
+org.odftoolkit:odfdom-java:pom:0.12.0 = 0x38986C6D418B8E8DB39B96E2FCB440888750FA22
+
+# jaxb-svg11 via docx4j
+org.plutext:jaxb-svg11:jar:11.4.0 = 0x4F12076DB0F61138303CC361C641C2A9AFA87A3B
+org.plutext:jaxb-svg11:pom:11.4.0 = 0x4F12076DB0F61138303CC361C641C2A9AFA87A3B
+
+# RoaringBitmap via license-maven-plugin -> odfdom-java -> jena-core (build-time)
+org.roaringbitmap:RoaringBitmap:jar:1.0.0 = 0x015479E1055341431B4545AB72475FD306B9CAB7
+org.roaringbitmap:RoaringBitmap:pom:1.0.0 = 0x015479E1055341431B4545AB72475FD306B9CAB7
 
 # Selenium (integration tests)
 org.seleniumhq.selenium:*:* = 0x81BE0C38ACE8AEDC7735A05F4C2AFF633F3A7223
 
-# Vaadin
-com.vaadin.external.atmosphere:*:* = 0xED4D232CC28A17F20CD25CA1C63D0B42CDFB97DA
-com.vaadin.external.gwt:*:* = 0xED4D232CC28A17F20CD25CA1C63D0B42CDFB97DA
-com.vaadin.external:gentyref:jar:1.2.0.vaadin1 = 0xCC57399D74CD7E4768ED6FA4CA62973FBF0451C0
-com.vaadin.external:gentyref:pom:1.2.0.vaadin1 = 0xCC57399D74CD7E4768ED6FA4CA62973FBF0451C0
-com.vaadin.servletdetector:*:* = 0xED4D232CC28A17F20CD25CA1C63D0B42CDFB97DA
-com.vaadin:*:* = 0xED4D232CC28A17F20CD25CA1C63D0B42CDFB97DA
+# SnakeYAML Engine via jackson-dataformat-yaml
+org.snakeyaml:snakeyaml-engine:jar:3.0.1 = 0x2FC53E6B1F681184F4CCD637F5C81DE10A0B8ECC
+org.snakeyaml:snakeyaml-engine:pom:3.0.1 = 0x2FC53E6B1F681184F4CCD637F5C81DE10A0B8ECC
+
+# SonarSource scanner libs + plugin
+org.sonarsource.scanner.lib:*:* = 0x679F1EE92B19609DE816FDE81DB198F93525EC1A
+org.sonarsource.scanner.maven:*:* = 0x679F1EE92B19609DE816FDE81DB198F93525EC1A
+
+# tomlj via spring-boot-maven-plugin
+org.tomlj:tomlj:jar:1.0.0 = 0x80F6D6B0D90C6747753344CAB5A9E81B565E89E0
+org.tomlj:tomlj:pom:1.0.0 = 0x80F6D6B0D90C6747753344CAB5A9E81B565E89E0
+
+# Jackson 3 (tools.jackson.dataformat)
+tools.jackson.dataformat:*:* = 0x28118C070CB22A0175A2E8D43D12CA2AC19F3181
+
+# Xerces
+xerces:xercesImpl:* = 0x6CB87B18A453990EAC9453F87D713008CC07E9AD
