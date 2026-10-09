@@ -355,6 +355,30 @@
           </execution>
         </executions>
       </plugin>
+
+      <!--
+          Aggregate the per-module JaCoCo execution data into a single report.
+          Tests in datamanager-app exercise classes from other modules (e.g. project-management,
+          identity, user-groups), so a per-module report would under-report coverage.
+          The resulting report path is referenced via sonar.coverage.jacoco.xmlReportPaths.
+      -->
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>report-aggregate</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>report-aggregate</goal>
+            </goals>
+            <configuration>
+              <!-- Include this module's own classes; by default report-aggregate only covers dependencies -->
+              <includeCurrentProject>true</includeCurrentProject>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
 

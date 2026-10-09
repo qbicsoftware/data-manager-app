@@ -58,10 +58,15 @@
     <commons-lang3.version>3.18.0</commons-lang3.version>
     <artemis.version>2.55.0</artemis.version>
     <snakeyaml.version>2.5</snakeyaml.version>
+    <!--    Code coverage -->
+    <jacoco.version>0.8.14</jacoco.version>
+
     <!--    SonarCloud properties for CI -->
     <sonar.host.url>https://sonarcloud.io</sonar.host.url>
     <sonar.organization>qbicsoftware</sonar.organization>
     <sonar.projectKey>qbicsoftware_data-manager-app</sonar.projectKey>
+    <!-- Aggregated coverage report produced by the `report-aggregate` goal in datamanager-app -->
+    <sonar.coverage.jacoco.xmlReportPaths>${maven.multiModuleProjectDirectory}/datamanager-app/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
   </properties>
 
 
@@ -243,6 +248,26 @@
         <groupId>org.sonarsource.scanner.maven</groupId>
         <artifactId>sonar-maven-plugin</artifactId>
         <version>5.7.0.6970</version>
+      </plugin>
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>${jacoco.version}</version>
+        <executions>
+          <execution>
+            <id>prepare-agent</id>
+            <goals>
+              <goal>prepare-agent</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>report</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>report</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>
