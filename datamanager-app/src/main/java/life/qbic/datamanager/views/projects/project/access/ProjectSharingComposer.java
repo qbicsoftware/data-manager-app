@@ -293,7 +293,7 @@ public class ProjectSharingComposer extends Div {
    * @param role the project role
    * @return the tag colour for the role
    */
-  static TagColor roleColor(ProjectRole role) {
+  public static TagColor roleColor(ProjectRole role) {
     return switch (role) {
       case READ -> TagColor.CONTRAST;
       case WRITE, ADMIN -> TagColor.PRIMARY;
@@ -309,7 +309,7 @@ public class ProjectSharingComposer extends Div {
    * @param role the project role
    * @return the display label (member / editor / manager / owner)
    */
-  static String roleLabel(ProjectRole role) {
+  public static String roleLabel(ProjectRole role) {
     return switch (role) {
       case READ -> "member";
       case WRITE -> "editor";
