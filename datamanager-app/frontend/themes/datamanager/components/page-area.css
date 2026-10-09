@@ -862,20 +862,26 @@ a.project-collection-component .project-overview-item:hover {
    border-box), so it matches the flat, shadow-free card language used everywhere else:
    .pinned-project-card and .pat-card use 1px contrast-20pct + radius, .my-groups-row the same.
 
+   The pinned shortlist cards sit directly above the list and share that chrome, so they get the
+   same frame. A pinned project the user can no longer access keeps its neutral dashed border:
+   :not(.no-access) stops the frame from promising a target that is not there.
+
    The keyboard variant uses :has(:focus-visible), *not* :focus-within — clicking the roster
    disclosure focuses its summary, and :focus-within kept the frame after the mouse left the card.
    A pointer interaction does not match :focus-visible, so the frame now clears correctly while
    keyboard focus still shows it. */
 .project-card-wrapper:hover,
-.project-card-wrapper:has(:focus-visible) {
+.project-card-wrapper:has(:focus-visible),
+.pinned-project-card:not(.no-access):hover,
+.pinned-project-card:not(.no-access):has(:focus-visible) {
   border-color: var(--lumo-primary-color);
 }
 
 /* The wrapper owns the card's visual styling. It deliberately mirrors .pinned-project-card,
    .pat-card and .my-groups-row: a 1px contrast border and rounded corners, no drop shadow.
- The card body inside provides only padding and the content flow; the footer link shares the
- same rounded shape with a subtle top-border divider. Within the responsive .project-card-grid
- the inter-card spacing comes from the grid gap, so the wrapper margins are zeroed there. */
+   The card body inside provides only padding and the content flow; the footer link shares the
+   same rounded shape with a subtle top-border divider. Within the responsive .project-card-grid
+   the inter-card spacing comes from the grid gap, so the wrapper margins are zeroed there. */
 .project-card-wrapper {
   background-color: var(--lumo-base-color);
   border: 1px solid var(--lumo-contrast-20pct);
@@ -1047,6 +1053,7 @@ a.project-collection-component .project-overview-item:hover {
   background-color: var(--lumo-base-color);
   overflow: hidden;
   min-width: 0;
+  transition: border-color 150ms ease;
 }
 
 .pinned-project-card.no-access {
@@ -1071,19 +1078,10 @@ a.pinned-project-card-body:hover {
   cursor: pointer;
   min-width: 0;
   flex: 1;
-  transition: background-color 150ms ease;
-}
-
-.pinned-project-card-body:hover {
-  background-color: var(--lumo-contrast-5pct);
 }
 
 .pinned-project-card.no-access .pinned-project-card-body {
   cursor: default;
-}
-
-.pinned-project-card.no-access .pinned-project-card-body:hover {
-  background-color: transparent;
 }
 
 .pinned-project-title {
