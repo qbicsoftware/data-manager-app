@@ -11,10 +11,13 @@ life.qbic.datamanager:*:* = noSig
 com.apicatalog:*:* = 0x6C3AE02ABF8203EEAC80DC215ACE4C100AABD0E8
 
 # itu (ethlo time)
-# 1.7.0 via ro-crate-java -> json-schema-validator (runtime)
+# 1.7.0 via ro-crate-java 1.x -> json-schema-validator (runtime)
+# 1.14.0 via ro-crate-java 2.x -> json-schema-validator (runtime)
 # 1.10.2 via cyclonedx-maven-plugin (build-time)
 com.ethlo.time:itu:jar:1.7.0 = 0xB286846C341BB72D1E5F85CAB460E7C4ED66826D
 com.ethlo.time:itu:pom:1.7.0 = 0xB286846C341BB72D1E5F85CAB460E7C4ED66826D
+com.ethlo.time:itu:jar:1.14.0 = 0xB18679A17A21DE79FF9DE8B0636D10E7975B6E6F
+com.ethlo.time:itu:pom:1.14.0 = 0xB18679A17A21DE79FF9DE8B0636D10E7975B6E6F
 com.ethlo.time:itu:jar:1.10.2 = 0x8E68968CE7C85B314DF175FD9CC6720FBB1B27BA
 com.ethlo.time:itu:pom:1.10.2 = 0x8E68968CE7C85B314DF175FD9CC6720FBB1B27BA
 
