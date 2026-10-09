@@ -357,8 +357,8 @@ class ProjectAccessServiceSpec extends Specification {
         new ProjectAccessServiceImpl.GroupGrantRow(projectTwo.value(), "GROUP_group-2",
             BasePermission.READ.mask),
     ]
-    groupInformationService.findGroupById("group-1") >> Optional.of(
-        new GroupInfo("group-1", "NGS Lab", "the sequencing lab", GroupType.ORG))
+    // group-1's response is declared together with its cardinality below: a then-block interaction
+    // re-declaring the same call shadows this stub and would return the default (null) response.
     groupInformationService.findGroupById("group-2") >> Optional.of(
         new GroupInfo("group-2", "Core Facility", null, GroupType.ADHOC))
 
@@ -376,7 +376,8 @@ class ProjectAccessServiceSpec extends Specification {
     result[projectOne][0].projectId == projectOne
 
     and: "group information is resolved once even though the group has several ACE rows"
-    1 * groupInformationService.findGroupById("group-1")
+    1 * groupInformationService.findGroupById("group-1") >> Optional.of(
+        new GroupInfo("group-1", "NGS Lab", "the sequencing lab", GroupType.ORG))
   }
 
   def "batch listSharedGroups orders groups by granted role and then by name"() {
