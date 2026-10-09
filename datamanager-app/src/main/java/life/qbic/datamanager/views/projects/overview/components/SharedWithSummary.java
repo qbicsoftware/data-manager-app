@@ -53,6 +53,9 @@ public class SharedWithSummary extends Div {
    */
   private static final int MAXIMUM_NUMBER_OF_SHOWN_GROUP_CHIPS = 2;
 
+  /** HTML attribute carrying the native hover tooltip. */
+  private static final String TITLE_ATTRIBUTE = "title";
+
   /**
    * Creates the access summary for one project.
    *
@@ -136,7 +139,7 @@ public class SharedWithSummary extends Div {
       line.add(people);
     }
 
-    line.getElement().setAttribute("title", buildTooltip(groups, collaborators));
+    line.getElement().setAttribute(TITLE_ATTRIBUTE, buildTooltip(groups, collaborators));
     return line;
   }
 
@@ -217,7 +220,7 @@ public class SharedWithSummary extends Div {
     var identity = new Div(avatar, name);
     identity.addClassName("psd-group-identity");
     if (group.groupName() != null && !group.groupName().isBlank()) {
-      identity.getElement().setAttribute("title", group.groupName());
+      identity.getElement().setAttribute(TITLE_ATTRIBUTE, group.groupName());
     }
     return rosterRow("Group", TagColor.TEAL, identity, group.projectRole());
   }
@@ -231,7 +234,7 @@ public class SharedWithSummary extends Div {
     name.addClassName("bold");
     var identity = new Div(avatar, name);
     identity.addClassName("psd-user-identity");
-    identity.getElement().setAttribute("title", collaborator.userName());
+    identity.getElement().setAttribute(TITLE_ATTRIBUTE, collaborator.userName());
     return rosterRow("User", TagColor.CONTRAST, identity, role);
   }
 

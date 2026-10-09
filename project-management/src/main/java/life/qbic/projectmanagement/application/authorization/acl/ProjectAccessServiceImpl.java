@@ -5,7 +5,6 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -29,6 +28,7 @@ import org.springframework.security.acls.domain.BasePermission;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.acls.domain.GrantedAuthoritySid;
 import org.springframework.security.acls.domain.ObjectIdentityImpl;
@@ -60,6 +60,7 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
    * Reads every group grant of the given projects in one round trip. Groups ride as
    * {@link GrantedAuthoritySid}s with the reserved {@code GROUP_} prefix (strategy §4.3), so the
    * grant rows can be selected directly from the ACL tables instead of reading one ACL per card.
+   * The project list is a bound IN parameter, so the statement itself is constant.
    */
   private static final String SELECT_PROJECT_GROUP_GRANTS = """
       SELECT oi.object_id_identity AS project_id,
@@ -69,15 +70,10 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
              JOIN acl_class c ON c.id = oi.object_id_class
              JOIN acl_entry e ON e.acl_object_identity = oi.id
              JOIN acl_sid s ON s.id = e.sid
-      WHERE c.class = ? AND s.principal = 0 AND s.sid LIKE 'GROUP\\_%'
+      WHERE c.class = :className AND s.principal = 0 AND s.sid LIKE 'GROUP\\_%'
+        AND oi.object_id_identity IN (:projectIds)
       """;
 
-  /**
-   * The concrete {@link BasePermission}s a stored ACE mask can be composed of. Masks are expanded
-   * bit by bit so the resulting permission set has the same shape as the one the Java ACL model
-   * produces for {@link AccessControlEntry#getPermission()}; a cumulative mask (e.g. READ + WRITE)
-   * is therefore recognised by {@link ProjectRole#fromPermissions}.
-   */
   /**
    * Principal counterpart of {@link #SELECT_PROJECT_GROUP_GRANTS}: reads the user grants of the
    * given projects in one round trip so collaborator roles can be resolved without one ACL read per
@@ -91,14 +87,27 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
              JOIN acl_class c ON c.id = oi.object_id_class
              JOIN acl_entry e ON e.acl_object_identity = oi.id
              JOIN acl_sid s ON s.id = e.sid
-      WHERE c.class = ? AND s.principal = 1
+      WHERE c.class = :className AND s.principal = 1
+        AND oi.object_id_identity IN (:projectIds)
       """;
+
+  /**
+   * The concrete {@link BasePermission}s a stored ACE mask can be composed of. Masks are expanded
+   * bit by bit so the resulting permission set has the same shape as the one the Java ACL model
+   * produces for {@link AccessControlEntry#getPermission()}; a cumulative mask (e.g. READ + WRITE)
+   * is therefore recognised by {@link ProjectRole#fromPermissions}.
+   */
 
   private static final List<Permission> BASE_PERMISSIONS = List.of(
       BasePermission.READ, BasePermission.WRITE, BasePermission.CREATE,
       BasePermission.DELETE, BasePermission.ADMINISTRATION);
   private final MutableAclService aclService;
   private final JdbcTemplate jdbcTemplate;
+  /**
+   * Used by the batched grant queries: the project list is bound as an IN parameter instead of
+   * being concatenated into the statement.
+   */
+  private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
   private final GroupInformationService groupInformationService;
   private @org.springframework.context.annotation.Lazy AclCache aclCache;
   private AclEvictionPublisher aclEvictionPublisher;
@@ -108,6 +117,7 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
       JdbcTemplate jdbcTemplate, @Autowired GroupInformationService groupInformationService) {
     this.aclService = aclService;
     this.jdbcTemplate = jdbcTemplate;
+    this.namedParameterJdbcTemplate = new NamedParameterJdbcTemplate(jdbcTemplate);
     this.groupInformationService = groupInformationService;
   }
 
@@ -672,15 +682,11 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
    * the aggregation and role resolution above can be exercised without a database.
    */
   List<GroupGrantRow> queryProjectGroupGrants(Collection<String> projectIdValues) {
-    String placeholders = String.join(", ", Collections.nCopies(projectIdValues.size(), "?"));
-    List<Object> arguments = new ArrayList<>();
-    arguments.add(Project.class.getName());
-    arguments.addAll(projectIdValues);
-    return jdbcTemplate.query(
-        SELECT_PROJECT_GROUP_GRANTS + " AND oi.object_id_identity IN (" + placeholders + ")",
+    Map<String, Object> parameters = Map.of("className", Project.class.getName(),
+        "projectIds", projectIdValues);
+    return namedParameterJdbcTemplate.query(SELECT_PROJECT_GROUP_GRANTS, parameters,
         (resultSet, rowNumber) -> new GroupGrantRow(resultSet.getString("project_id"),
-            resultSet.getString("group_sid"), resultSet.getInt("permission_mask")),
-        arguments.toArray());
+            resultSet.getString("group_sid"), resultSet.getInt("permission_mask")));
   }
 
   @Override
@@ -734,15 +740,11 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
    * Reads the raw user grant rows for the given project id values in a single query.
    */
   List<UserGrantRow> queryProjectUserGrants(Collection<String> projectIdValues) {
-    String placeholders = String.join(", ", Collections.nCopies(projectIdValues.size(), "?"));
-    List<Object> arguments = new ArrayList<>();
-    arguments.add(Project.class.getName());
-    arguments.addAll(projectIdValues);
-    return jdbcTemplate.query(
-        SELECT_PROJECT_USER_GRANTS + " AND oi.object_id_identity IN (" + placeholders + ")",
+    Map<String, Object> parameters = Map.of("className", Project.class.getName(),
+        "projectIds", projectIdValues);
+    return namedParameterJdbcTemplate.query(SELECT_PROJECT_USER_GRANTS, parameters,
         (resultSet, rowNumber) -> new UserGrantRow(resultSet.getString("project_id"),
-            resultSet.getString("user_id"), resultSet.getInt("permission_mask")),
-        arguments.toArray());
+            resultSet.getString("user_id"), resultSet.getInt("permission_mask")));
   }
 
   /**

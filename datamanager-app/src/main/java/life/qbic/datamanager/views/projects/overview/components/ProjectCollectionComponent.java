@@ -422,9 +422,8 @@ public class ProjectCollectionComponent extends PageArea {
         new ProjectOverviewItem(overview, pinnedProjectIds.contains(overview.projectId()),
             this::handlePinToggle, this::openSharingDrawer,
             userPermissions.changeProjectAccess(overview.projectId()),
-            accessSummary.groups(overview.projectId()),
-            accessSummary.collaboratorRoles(overview.projectId()),
-            expandedAccessProjectIds.contains(overview.projectId().value()),
+            accessSummary.forProject(overview.projectId(),
+                expandedAccessProjectIds.contains(overview.projectId().value())),
             expanded -> setAccessSummaryExpanded(overview.projectId(), expanded))));
   }
 
@@ -593,13 +592,19 @@ public class ProjectCollectionComponent extends PageArea {
       return new PageAccessSummary(Map.of(), Map.of());
     }
 
-    List<SharedProjectGroup> groups(ProjectId projectId) {
-      return groupsByProject.getOrDefault(projectId, List.of());
+    CardAccessSummary forProject(ProjectId projectId, boolean expanded) {
+      return new CardAccessSummary(groupsByProject.getOrDefault(projectId, List.of()),
+          collaboratorRolesByProject.getOrDefault(projectId, Map.of()), expanded);
     }
+  }
 
-    Map<String, ProjectRole> collaboratorRoles(ProjectId projectId) {
-      return collaboratorRolesByProject.getOrDefault(projectId, Map.of());
-    }
+  /**
+   * The access summary inputs for one card: the group grants, the collaborator roles by user id,
+   * and whether the section is currently expanded.
+   */
+  record CardAccessSummary(List<SharedProjectGroup> groups,
+      Map<String, ProjectRole> collaboratorRoles, boolean expanded) {
+
   }
 
   /**
@@ -655,22 +660,19 @@ public class ProjectCollectionComponent extends PageArea {
 
     public ProjectOverviewItem(ProjectOverview projectOverview, boolean pinned,
         ToggleHandler toggleHandler, ShareHandler shareHandler, boolean canManageAccess,
-        List<SharedProjectGroup> sharedGroups, Map<String, ProjectRole> collaboratorRoles,
-        boolean accessSummaryExpanded,
+        CardAccessSummary accessSummary,
         AccessSummaryToggleHandler accessSummaryToggleHandler) {
       this.projectOverview = Objects.requireNonNull(projectOverview);
       Objects.requireNonNull(toggleHandler);
       Objects.requireNonNull(shareHandler);
-      Objects.requireNonNull(sharedGroups);
-      Objects.requireNonNull(collaboratorRoles);
+      Objects.requireNonNull(accessSummary);
       // The card body is a container, not a link: navigation lives on the title link and the
       // access summary owns its own disclosure. Nested interactive controls inside one big
       // RouterLink are invalid HTML and were the reason every affordance so far had to be bolted
       // on as an absolutely positioned sibling.
       var wrapper = new Div();
       wrapper.addClassName("project-card-wrapper");
-      wrapper.add(buildCardBody(sharedGroups, collaboratorRoles, accessSummaryExpanded,
-          accessSummaryToggleHandler));
+      wrapper.add(buildCardBody(accessSummary, accessSummaryToggleHandler));
       attachDatasetFooter(wrapper);
       wrapper.add(buildTopRightControl(pinned, toggleHandler, shareHandler, canManageAccess));
       add(wrapper);
@@ -764,8 +766,7 @@ public class ProjectCollectionComponent extends PageArea {
      * target now that the whole card is no longer one anchor. The access summary sits outside the
      * link, which is what allows it to be an interactive disclosure.</p>
      */
-    private Div buildCardBody(List<SharedProjectGroup> sharedGroups,
-        Map<String, ProjectRole> collaboratorRoles, boolean accessSummaryExpanded,
+    private Div buildCardBody(CardAccessSummary accessSummary,
         AccessSummaryToggleHandler accessSummaryToggleHandler) {
       var body = new Div();
       body.addClassName("project-overview-item");
@@ -780,8 +781,9 @@ public class ProjectCollectionComponent extends PageArea {
       link.add(buildProjectDetails());
       body.add(link);
 
-      body.add(new SharedWithSummary(sharedGroups, projectOverview.collaboratorUserInfos(),
-          collaboratorRoles, accessSummaryExpanded, accessSummaryToggleHandler));
+      body.add(new SharedWithSummary(accessSummary.groups(),
+          projectOverview.collaboratorUserInfos(), accessSummary.collaboratorRoles(),
+          accessSummary.expanded(), accessSummaryToggleHandler));
       return body;
     }
 
