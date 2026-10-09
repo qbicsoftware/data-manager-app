@@ -752,6 +752,12 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         && context.projectId().isPresent()
         && this.context.projectId().get().equals(context.projectId().get());
     this.context = context;
+    // Establish tab visibility for the new context first: applyExternalState must not activate a
+    // tab that is hidden because its domain has no measurements (it falls back to the first
+    // visible tab otherwise). Doing this before applying the defaults keeps the default NGS tab
+    // when the new experiment has genomics measurements, and picks the first populated tab
+    // otherwise.
+    refreshTabVisibility();
     if (!sameExperiment) {
       // reset per-tab state to defaults on a new experiment
       MeasurementListState defaults = MeasurementListState.defaultWith(MeasurementDomain.NGS);
@@ -759,7 +765,6 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     } else {
       tabPagination.refreshActiveTab();
     }
-    refreshTabVisibility();
   }
 
   private void refreshTabVisibility() {

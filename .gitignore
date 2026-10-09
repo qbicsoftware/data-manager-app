@@ -14,6 +14,10 @@ opencode.json
 # Any local PKCS12 stores
 *.p12
 
+# Maven Wrapper JAR is downloaded on demand by ./mvnw (see the auto-download
+# logic in mvnw) and is intentionally not checked in to avoid binaries in source.
+.mvn/wrapper/maven-wrapper.jar
+
 */target/
 .idea/
 .settings

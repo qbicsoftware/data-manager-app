@@ -5,25 +5,17 @@
 Data Manager - A web-based multi-omics data management platform for the biomedical life sciences
 that enables FAIR-compliant data access.
 
-[![Build Maven Package](https://github.com/qbicsoftware/data-manager-app/actions/workflows/build_package.yml/badge.svg)](https://github.com/qbicsoftware/data-manager-app/actions/workflows/build_package.yml)
-[![Run Maven Tests](https://github.com/qbicsoftware/data-manager-app/actions/workflows/run_tests.yml/badge.svg)](https://github.com/qbicsoftware/data-manager-app/actions/workflows/run_tests.yml)
-[![CodeQL](https://github.com/qbicsoftware/data-manager-app/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/qbicsoftware/data-manager-app/actions/workflows/codeql-analysis.yml)
-[![dependency vulnerabilities](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/sven1103/f5e93bb0d626259382b1c2be861734f0/raw/vulnerabilities.json)](https://github.com/qbicsoftware/data-manager-app/security/code-scanning)
-[![OpenSSF Scorecard](https://img.shields.io/ossf-scorecard/github.com/qbicsoftware/data-manager-app?label=openssf+scorecard)](https://scorecard.dev/viewer/?uri=github.com/qbicsoftware/data-manager-app)
 [![release](https://img.shields.io/github/v/release/qbicsoftware/data-manager-app?include_prereleases)](https://github.com/qbicsoftware/data-manager-app/releases)
-
 [![license](https://img.shields.io/github/license/qbicsoftware/data-manager-app)](https://github.com/qbicsoftware/data-manager-app/blob/main/LICENSE)
 ![language](https://img.shields.io/badge/language-groovy,%20java-blue.svg)
 [![DOI](https://zenodo.org/badge/468238683.svg)](https://zenodo.org/doi/10.5281/zenodo.10371779)
 
-[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=qbicsoftware_data-manager-app&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=qbicsoftware_data-manager-app)
-[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=qbicsoftware_data-manager-app&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=qbicsoftware_data-manager-app)
+[![dependency vulnerabilities](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/sven1103/f5e93bb0d626259382b1c2be861734f0/raw/vulnerabilities.json)](https://github.com/qbicsoftware/data-manager-app/security/code-scanning)
+[![OpenSSF Scorecard](https://img.shields.io/ossf-scorecard/github.com/qbicsoftware/data-manager-app?label=openssf+scorecard)](https://scorecard.dev/viewer/?uri=github.com/qbicsoftware/data-manager-app)
+
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=qbicsoftware_data-manager-app&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=qbicsoftware_data-manager-app)
 [![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=qbicsoftware_data-manager-app&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=qbicsoftware_data-manager-app)
 [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=qbicsoftware_data-manager-app&metric=bugs)](https://sonarcloud.io/summary/new_code?id=qbicsoftware_data-manager-app)
-[![Duplicated Lines (%)](https://sonarcloud.io/api/project_badges/measure?project=qbicsoftware_data-manager-app&metric=duplicated_lines_density)](https://sonarcloud.io/summary/new_code?id=qbicsoftware_data-manager-app)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=qbicsoftware_data-manager-app&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=qbicsoftware_data-manager-app)
-
 </div>
 
 ## Overview:
