@@ -53,17 +53,19 @@ public class ROCreateBuilder {
   public static RoCrate buildRoCrate(Path buildDir, ResearchProject researchProject) {
     WordprocessingMLPackage docxContent = new ResearchProjectDocxBuilder().buildFrom(
         researchProject);
-    var crate = new RoCrateBuilder(
-        "QBiC-project-%s-ro-crate".formatted(researchProject.identifier()),
-        "Description of the project %s with the title '%s', managed on the Data Manager, Quantitative Biology Center, University of Tübingen.".formatted(
-            researchProject.identifier(), researchProject.name()))
+    var crate = new RoCrateBuilder()
+        .addName("QBiC-project-%s-ro-crate".formatted(researchProject.identifier()))
+        .addDescription(
+            "Description of the project %s with the title '%s', managed on the Data Manager, Quantitative Biology Center, University of Tübingen.".formatted(
+                researchProject.identifier(), researchProject.name()))
         .addContextualEntity(
             licenseCCBY())// default is CC BY 4.0 international (https://creativecommons.org/licenses/by/4.0/)
         .addContextualEntity(qbicOrganisation())
         .addDataEntity(
             new FileEntityBuilder()
-                .setSource(DocxFileSupplier.supplying(docxContent)
-                    .getFile(buildDir.resolve(SUMMARY_FILENAME_DOCX.value()).toString()))
+                .setLocation(DocxFileSupplier.supplying(docxContent)
+                    .getFile(buildDir.resolve(SUMMARY_FILENAME_DOCX.value()).toString())
+                    .toPath())
                 .setId(SUMMARY_FILENAME_DOCX.value())
                 .addProperty("name", "Project Summary")
                 .addProperty("encodingFormat",
@@ -71,8 +73,9 @@ public class ROCreateBuilder {
                 .build())
         .addDataEntity(
             new FileEntityBuilder()
-                .setSource(YamlFileSupplier.supplying(researchProject)
-                    .getFile(buildDir.resolve(SUMMARY_FILENAME_YAML.value()).toString()))
+                .setLocation(YamlFileSupplier.supplying(researchProject)
+                    .getFile(buildDir.resolve(SUMMARY_FILENAME_YAML.value()).toString())
+                    .toPath())
                 .setId(SUMMARY_FILENAME_YAML.value())
                 .addProperty("name", "Project Summary")
                 .addProperty("encodingFormat", MimeTypes.YAML.value())

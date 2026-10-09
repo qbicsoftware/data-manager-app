@@ -2,8 +2,8 @@ package life.qbic.projectmanagement.infrastructure.api.fair.rocrate;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
-import edu.kit.datamanager.ro_crate.writer.RoCrateWriter;
-import edu.kit.datamanager.ro_crate.writer.ZipWriter;
+import edu.kit.datamanager.ro_crate.writer.CrateWriter;
+import edu.kit.datamanager.ro_crate.writer.WriteZipStrategy;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -55,7 +55,10 @@ public class RoCrateFactory implements DigitalObjectFactory {
 
     try {
       var roCrate = ROCreateBuilder.buildRoCrate(buildDir, researchProject);
-      var roCrateZipWriter = new RoCrateWriter(new ZipWriter());
+      // Disable automatic provenance so the exported crate keeps its previous
+      // content. ro-crate-java >= 2.1.0 adds tool/action provenance entities by default.
+      var roCrateZipWriter = new CrateWriter<>(new WriteZipStrategy())
+          .withAutomaticProvenance(null);
       var zippedRoCrateFile = zippedRoCrateDir.resolve(
           "project-summary-ro-crate.zip");
       roCrateZipWriter.save(roCrate, zippedRoCrateFile.toString());
