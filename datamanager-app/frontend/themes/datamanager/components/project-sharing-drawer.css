@@ -58,29 +58,37 @@
   min-height: 0;
 }
 
-.project-sharing-drawer .psd-summary {
+/* The read-only roster markup (psd-*) is shared by the sharing drawer and the collapsible
+   access summary on the project overview cards, so a principal renders identically in both.
+   The card scope is added alongside the drawer scope in the selectors below. */
+.project-sharing-drawer .psd-summary,
+.project-card-access-summary .psd-summary {
   display: flex;
   flex-direction: column;
   gap: var(--lumo-space-m);
 }
 
-.project-sharing-drawer .psd-section {
+.project-sharing-drawer .psd-section,
+.project-card-access-summary .psd-section {
   display: flex;
   flex-direction: column;
   gap: var(--lumo-space-xs);
 }
 
-.project-sharing-drawer .psd-section-title {
+.project-sharing-drawer .psd-section-title,
+.project-card-access-summary .psd-section-title {
   font-weight: var(--lumo-font-weight-semibold, 600);
 }
 
-.project-sharing-drawer .psd-section-header {
+.project-sharing-drawer .psd-section-header,
+.project-card-access-summary .psd-section-header {
   display: flex;
   justify-content: space-between;
   gap: var(--lumo-space-m);
 }
 
-.project-sharing-drawer .psd-role-header {
+.project-sharing-drawer .psd-role-header,
+.project-card-access-summary .psd-role-header {
   color: var(--lumo-secondary-text-color);
   font-size: var(--lumo-font-size-xs);
   font-weight: var(--lumo-font-weight-semibold, 600);
@@ -89,7 +97,8 @@
 }
 
 /* Roster row: identity on the left (flexible, ellipsizes), role tag on the right. */
-.project-sharing-drawer .psd-summary-row {
+.project-sharing-drawer .psd-summary-row,
+.project-card-access-summary .psd-summary-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -100,7 +109,8 @@
   min-width: 0;
 }
 
-.project-sharing-drawer .psd-identity {
+.project-sharing-drawer .psd-identity,
+.project-card-access-summary .psd-identity {
   display: flex;
   align-items: center;
   gap: var(--lumo-space-s);
@@ -109,7 +119,9 @@
 }
 
 .project-sharing-drawer .psd-user-identity,
-.project-sharing-drawer .psd-group-identity {
+.project-sharing-drawer .psd-group-identity,
+.project-card-access-summary .psd-user-identity,
+.project-card-access-summary .psd-group-identity {
   display: flex;
   align-items: center;
   gap: var(--lumo-space-s);
@@ -119,24 +131,30 @@
 
 .project-sharing-drawer .psd-type-tag,
 .project-sharing-drawer .psd-role-tag,
-.project-sharing-drawer .psd-identity .user-avatar {
+.project-sharing-drawer .psd-identity .user-avatar,
+.project-card-access-summary .psd-type-tag,
+.project-card-access-summary .psd-role-tag,
+.project-card-access-summary .psd-identity .user-avatar {
   flex: 0 0 auto;
 }
 
 /* Group and user identities share one avatar size so the roster reads uniformly. */
-.project-sharing-drawer .psd-identity .user-avatar {
+.project-sharing-drawer .psd-identity .user-avatar,
+.project-card-access-summary .psd-identity .user-avatar {
   width: var(--lumo-icon-size-l);
   height: var(--lumo-icon-size-l);
 }
 
-.project-sharing-drawer .psd-name {
+.project-sharing-drawer .psd-name,
+.project-card-access-summary .psd-name {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.project-sharing-drawer .psd-full-name {
+.project-sharing-drawer .psd-full-name,
+.project-card-access-summary .psd-full-name {
   color: var(--lumo-secondary-text-color);
   margin-left: var(--lumo-space-xs);
 }

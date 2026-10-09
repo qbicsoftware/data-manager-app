@@ -6,10 +6,10 @@ import static life.qbic.datamanager.views.projects.overview.components.ProjectOv
 import static life.qbic.datamanager.views.projects.overview.components.ProjectOverviewSortOption.LAST_MODIFIED_DESC;
 import static life.qbic.datamanager.views.projects.overview.components.ProjectOverviewSortOption.TITLE_ASC;
 import static life.qbic.datamanager.views.projects.overview.components.ProjectOverviewSortOption.TITLE_DESC;
+import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.UI;
-import com.vaadin.flow.component.avatar.AvatarGroup;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.contextmenu.ContextMenu;
@@ -31,12 +31,16 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.application.commons.time.DateTimeFormat;
 import life.qbic.datamanager.views.AppRoutes.ProjectRoutes;
-import life.qbic.datamanager.views.account.UserAvatar.UserAvatarGroupItem;
 import life.qbic.datamanager.views.general.Card;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.ProjectCodeBadge;
@@ -53,11 +57,15 @@ import life.qbic.datamanager.views.projects.project.datasets.ConnectedDatasetsMa
 import life.qbic.datamanager.views.projects.project.info.ProjectInformationMain;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.identity.api.UserInformationService;
+import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.PinnedProjectService;
 import life.qbic.projectmanagement.application.PinnedProjectService.PinOutcome;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectOverview;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
+import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.ProjectCollaborator;
+import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.ProjectRole;
+import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.SharedProjectGroup;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.usergroups.api.GroupInformationService;
 import org.springframework.security.task.DelegatingSecurityContextAsyncTaskExecutor;
@@ -83,6 +91,7 @@ public class ProjectCollectionComponent extends PageArea {
 
   @Serial
   private static final long serialVersionUID = 8579375312838977742L;
+  private static final Logger log = logger(ProjectCollectionComponent.class);
   private static final String EMPTY_PROJECT_COLLECTION_MESSAGE =
       "You don't have any projects yet. Start by creating your first project.";
   private static final String EMPTY_SEARCH_RESULT_MESSAGE = "No projects found.";
@@ -122,6 +131,11 @@ public class ProjectCollectionComponent extends PageArea {
    * change without querying the project list again.
    */
   private List<ProjectOverview> currentOverviews = List.of();
+  /**
+   * Project ids whose access summary the user has expanded. Kept across card re-renders (pagination,
+   * filtering, sorting, pin toggles) so expanding a section is not undone by an unrelated refresh.
+   */
+  private final Set<String> expandedAccessProjectIds = new HashSet<>();
   /**
    * The currently applied list state; {@code null} until the first list state has been applied
    * (initial page load), which guarantees the initial load is never skipped as "unchanged".
@@ -402,11 +416,51 @@ public class ProjectCollectionComponent extends PageArea {
   private void renderCards(List<ProjectOverview> overviews) {
     this.currentOverviews = overviews;
     var pinnedProjectIds = pinnedProjectsComponent.pinnedProjectIds();
+    PageAccessSummary accessSummary = loadPageAccessSummary(overviews);
     projectCards.removeAll();
     overviews.forEach(overview -> projectCards.add(
         new ProjectOverviewItem(overview, pinnedProjectIds.contains(overview.projectId()),
             this::handlePinToggle, this::openSharingDrawer,
-            userPermissions.changeProjectAccess(overview.projectId()))));
+            userPermissions.changeProjectAccess(overview.projectId()),
+            accessSummary.groups(overview.projectId()),
+            accessSummary.collaboratorRoles(overview.projectId()),
+            expandedAccessProjectIds.contains(overview.projectId().value()),
+            expanded -> setAccessSummaryExpanded(overview.projectId(), expanded))));
+  }
+
+  /**
+   * Resolves the access summary data (group grants and collaborator roles) for a whole page of
+   * overviews in two batched service calls. The access summary is supplementary information: if the
+   * lookup fails the cards must still render, so the failure is logged and the summaries degrade to
+   * "no members" instead of blanking the project list.
+   */
+  private PageAccessSummary loadPageAccessSummary(List<ProjectOverview> overviews) {
+    if (overviews.isEmpty()) {
+      return PageAccessSummary.empty();
+    }
+    try {
+      List<ProjectId> projectIds = overviews.stream().map(ProjectOverview::projectId).toList();
+      Map<ProjectId, List<SharedProjectGroup>> groups =
+          projectAccessService.listSharedGroups(projectIds);
+      Map<ProjectId, Map<String, ProjectRole>> collaboratorRoles = new LinkedHashMap<>();
+      projectAccessService.listCollaborators(projectIds).forEach((projectId, collaborators) ->
+          collaboratorRoles.put(projectId, collaborators.stream().collect(Collectors.toMap(
+              ProjectCollaborator::userId, ProjectCollaborator::projectRole,
+              (first, second) -> first))));
+      return new PageAccessSummary(groups, collaboratorRoles);
+    } catch (RuntimeException e) {
+      log.warn("Could not resolve the access summary for the project overview cards: %s"
+          .formatted(e.getMessage()));
+      return PageAccessSummary.empty();
+    }
+  }
+
+  private void setAccessSummaryExpanded(ProjectId projectId, boolean expanded) {
+    if (expanded) {
+      expandedAccessProjectIds.add(projectId.value());
+    } else {
+      expandedAccessProjectIds.remove(projectId.value());
+    }
   }
 
   /**
@@ -528,6 +582,36 @@ public class ProjectCollectionComponent extends PageArea {
   }
 
   /**
+   * The access summary data for one rendered page of project overviews, resolved in two batched
+   * service calls rather than one lookup per card.
+   */
+  private record PageAccessSummary(
+      Map<ProjectId, List<SharedProjectGroup>> groupsByProject,
+      Map<ProjectId, Map<String, ProjectRole>> collaboratorRolesByProject) {
+
+    static PageAccessSummary empty() {
+      return new PageAccessSummary(Map.of(), Map.of());
+    }
+
+    List<SharedProjectGroup> groups(ProjectId projectId) {
+      return groupsByProject.getOrDefault(projectId, List.of());
+    }
+
+    Map<String, ProjectRole> collaboratorRoles(ProjectId projectId) {
+      return collaboratorRolesByProject.getOrDefault(projectId, Map.of());
+    }
+  }
+
+  /**
+   * Callback invoked when the user expands or collapses the access summary on a project card.
+   */
+  @FunctionalInterface
+  interface AccessSummaryToggleHandler {
+
+    void onToggle(boolean expanded);
+  }
+
+  /**
    * Callback invoked when the user chooses "Share project…" on a project card.
    */
   @FunctionalInterface
@@ -565,23 +649,28 @@ public class ProjectCollectionComponent extends PageArea {
   private static class ProjectOverviewItem extends Div {
 
     private static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
-    private static final int MAXIMUM_NUMBER_OF_SHOWN_AVATARS = 3;
     private final Span tags = new Span();
     private final Div projectDetails = new Div();
-    private final AvatarGroup usersWithAccess = new AvatarGroup();
     private final transient ProjectOverview projectOverview;
 
     public ProjectOverviewItem(ProjectOverview projectOverview, boolean pinned,
-        ToggleHandler toggleHandler, ShareHandler shareHandler, boolean canManageAccess) {
+        ToggleHandler toggleHandler, ShareHandler shareHandler, boolean canManageAccess,
+        List<SharedProjectGroup> sharedGroups, Map<String, ProjectRole> collaboratorRoles,
+        boolean accessSummaryExpanded,
+        AccessSummaryToggleHandler accessSummaryToggleHandler) {
       this.projectOverview = Objects.requireNonNull(projectOverview);
       Objects.requireNonNull(toggleHandler);
       Objects.requireNonNull(shareHandler);
-      // Both RouterLinks (card body + footer) must share a single parent so they render
-      // as one unified card. Using a wrapper Div prevents event propagation between
-      // clicks on the footer and clicks on the card body.
+      Objects.requireNonNull(sharedGroups);
+      Objects.requireNonNull(collaboratorRoles);
+      // The card body is a container, not a link: navigation lives on the title link and the
+      // access summary owns its own disclosure. Nested interactive controls inside one big
+      // RouterLink are invalid HTML and were the reason every affordance so far had to be bolted
+      // on as an absolutely positioned sibling.
       var wrapper = new Div();
       wrapper.addClassName("project-card-wrapper");
-      wrapper.add(projectInfoLink(pinned));
+      wrapper.add(buildCardBody(sharedGroups, collaboratorRoles, accessSummaryExpanded,
+          accessSummaryToggleHandler));
       attachDatasetFooter(wrapper);
       wrapper.add(buildTopRightControl(pinned, toggleHandler, shareHandler, canManageAccess));
       add(wrapper);
@@ -666,24 +755,37 @@ public class ProjectCollectionComponent extends PageArea {
     }
 
     /**
-     * Builds the card-body RouterLink (navigates to project info).
+     * Builds the card body: a plain container holding the navigational title/metadata link and the
+     * collapsible access summary.
      *
-     * <p>The card body is a RouterLink, not a Div-with-addClickListener, so the
-     * footer RouterLink (a sibling, not a child) cannot have its click propagate up to the card
-     * body. This is the fix for the "footer click navigates to project info first, then to
-     * datasets" bug.</p>
-     *
-     * <p>The card body carries the {@code project-overview-item} class so the
-     * existing page-area.css card styles (shadow, border-radius, padding) apply to it
-     * directly.</p>
+     * <p>The padding and card styling stay on the {@code project-overview-item} container so the
+     * existing page-area.css card rules keep applying. The title link is deliberately large (code,
+     * title, tags, last-modified, PI and responsible) so "open the project" remains a comfortable
+     * target now that the whole card is no longer one anchor. The access summary sits outside the
+     * link, which is what allows it to be an interactive disclosure.</p>
      */
-    private RouterLink projectInfoLink(boolean pinned) {
+    private Div buildCardBody(List<SharedProjectGroup> sharedGroups,
+        Map<String, ProjectRole> collaboratorRoles, boolean accessSummaryExpanded,
+        AccessSummaryToggleHandler accessSummaryToggleHandler) {
+      var body = new Div();
+      body.addClassName("project-overview-item");
+
       var link = new RouterLink("", ProjectInformationMain.class,
           new RouteParameters(PROJECT_ID_ROUTE_PARAMETER, projectOverview.projectId().value()));
-      link.addClassName("project-overview-item");
+      link.addClassName("project-card-title-link");
 
-      link.add(createHeader(projectOverview.projectCode(), projectOverview.projectTitle(), pinned));
+      setMeasurementDependentTags();
+      link.add(createHeader(projectOverview.projectCode(), projectOverview.projectTitle(), false));
+      link.add(buildLastModified());
+      link.add(buildProjectDetails());
+      body.add(link);
 
+      body.add(new SharedWithSummary(sharedGroups, projectOverview.collaboratorUserInfos(),
+          collaboratorRoles, accessSummaryExpanded, accessSummaryToggleHandler));
+      return body;
+    }
+
+    private Span buildLastModified() {
       Instant instant = projectOverview.lastModified();
       Span lastModified = new Span(
           String.format("Last modified on %s",
@@ -691,8 +793,10 @@ public class ProjectCollectionComponent extends PageArea {
                       ZoneId.systemDefault())
                   .format(instant)));
       lastModified.addClassName("tertiary");
-      link.add(lastModified);
+      return lastModified;
+    }
 
+    private Div buildProjectDetails() {
       projectDetails.addClassName("details");
       Span principalInvestigator = new Span(
           String.format("Principal Investigator: %s", projectOverview.principalInvestigatorName()));
@@ -702,17 +806,7 @@ public class ProjectCollectionComponent extends PageArea {
             String.format("Project Responsible: %s", projectOverview.projectResponsibleName()));
       }
       projectDetails.add(principalInvestigator, projectResponsible);
-      link.add(projectDetails);
-
-      usersWithAccess.setMaxItemsVisible(MAXIMUM_NUMBER_OF_SHOWN_AVATARS);
-      link.add(usersWithAccess);
-
-      setMeasurementDependentTags();
-      projectOverview.collaboratorUserInfos().stream()
-          .map(userInfo -> new UserAvatarGroupItem(userInfo.userName(), userInfo.userId()))
-          .forEach(usersWithAccess::add);
-
-      return link;
+      return projectDetails;
     }
 
     /**
