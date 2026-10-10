@@ -9,7 +9,20 @@
   box-sizing: border-box;
 }
 
+/* Outer list holds the semantic groups ("Groups you own" / "Groups you belong to"). It carries
+   no gap of its own: consecutive `.settings-group` sections are separated by their shared
+   `+` rule (margin + hairline border), so adding a flex gap here would double the spacing. */
 .my-groups-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* One semantic group's rows (owned, or belongs-to). Spacing between rows lives here, separate
+   from the section separation above. */
+.my-groups-rows {
   display: flex;
   flex-direction: column;
   gap: var(--lumo-space-s);
