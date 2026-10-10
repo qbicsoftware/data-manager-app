@@ -3,8 +3,8 @@
 /* The groups hub is a RouterLayout nested inside UserMainLayout (see @ParentLayout
    in GroupsMainLayout), so the outer shell — navbar, announcement at the top of the
    content area, footer — is owned by UserMainLayout/DataManagerLayout. This
-   stylesheet only lays out the two-column hub: the persistent groups navigation
-   (aside) and the routed content. */
+   stylesheet only lays out the hub: the full-width groups overview header on top, then the
+   two-column area with the persistent groups navigation (aside) and the routed content. */
 
 .groups-main-layout {
   display: grid;
@@ -14,9 +14,68 @@
     minmax(0, calc(var(--content-shell-max-width) - 280px))
     minmax(var(--lumo-space-l), 1fr);
   grid-template-areas:
+    ". groups-overview groups-overview ."
     ". aside-area content-area .";
   box-sizing: border-box;
   min-width: 0;
+}
+
+/* The overview header occupies the standalone first grid row of the groups hub, spanning both
+   central tracks above the aside + content columns (mirrors the settings account-overview row).
+   The left padding matches the aside's own padding so the icon aligns with the navigation items
+   beneath it; the right padding matches the content column's. The bottom padding keeps the
+   header from crowding the sticky aside in the next row. */
+.groups-main-layout .groups-overview-area {
+  grid-area: groups-overview;
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-m);
+  box-sizing: border-box;
+  padding: var(--lumo-space-l) var(--lumo-space-xl) var(--lumo-space-m) var(--lumo-space-l);
+}
+
+.groups-overview-header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--lumo-space-m);
+  min-width: 0;
+}
+
+/* Group-coloured identity tile: a peer of the settings account avatar (4rem), so both hubs open
+   with the same visual weight. Decorative; the title and count carry the meaning. */
+.groups-overview-header__icon {
+  --vaadin-icon-size: 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 4rem;
+  height: 4rem;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background-color: var(--lumo-primary-color-10pct);
+  color: var(--lumo-primary-color);
+}
+
+.groups-overview-header__texts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-xs);
+  min-width: 0;
+  text-align: left;
+}
+
+.groups-overview-header__title {
+  font-size: var(--lumo-font-size-m);
+  font-weight: 600;
+  color: var(--lumo-header-text-color);
+}
+
+/* Live membership count. Same accessible mid-contrast tone as the settings hint (#5a6572 clears
+   WCAG AA on white, unlike --tertiary-text-color). */
+.groups-overview-header__count {
+  font-size: var(--lumo-font-size-s);
+  color: #5a6572;
 }
 
 /* The aside is a fixed, non-collapsible column (GitHub-style). No border: separation comes
@@ -97,9 +156,16 @@
 @media (max-width: 1024px) {
   .groups-main-layout {
     grid-template-areas:
+      ". groups-overview ."
       ". aside-area ."
       ". content-area .";
     grid-template-columns: var(--lumo-space-m) minmax(0, 1fr) var(--lumo-space-m);
+  }
+
+  /* The overview row shares the shell padding on narrow screens, where the aside and content
+     columns collapse into the same single column. */
+  .groups-main-layout .groups-overview-area {
+    padding: var(--lumo-space-l) var(--lumo-space-l) 0;
   }
 
   .groups-main-layout .groups-aside-area {
