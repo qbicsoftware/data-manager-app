@@ -19,6 +19,7 @@ import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.BeforeEvent;
 import com.vaadin.flow.router.HasUrlParameter;
+import com.vaadin.flow.router.Location;
 import com.vaadin.flow.router.OptionalParameter;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
@@ -172,6 +173,11 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
       log.debug(
           "Authenticated user accessed the login page; redirecting to the project overview.");
       event.rerouteTo(ProjectOverviewMain.class);
+      // rerouteTo renders the target but keeps the /login URL in the address bar (a rerouted
+      // navigation is PROGRAMMATIC and does not push history state), so update the URL explicitly
+      // to reflect that the user is now on the project overview.
+      event.getUI().getPage().getHistory()
+          .replaceState(null, new Location(ProjectRoutes.PROJECTS));
     }
   }
 

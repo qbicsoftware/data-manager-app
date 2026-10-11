@@ -1,6 +1,9 @@
 package life.qbic.datamanager.views.login
 
 import com.vaadin.flow.component.UI
+import com.vaadin.flow.component.page.History
+import com.vaadin.flow.component.page.Page
+import com.vaadin.flow.dom.Element
 import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.Location
 import com.vaadin.flow.router.NavigationTrigger
@@ -31,7 +34,10 @@ class LoginLayoutSpec extends Specification {
   // Held as a field so the mock is not garbage collected: Vaadin stores the current UI in a
   // weak reference, so a local-only mock could disappear mid-test.
   UI ui
+  Page page
+  History history
   Router router
+
   LoginLayout loginLayout
 
   def setup() {
@@ -48,6 +54,14 @@ class LoginLayoutSpec extends Specification {
     // The OIDC registration section embeds an Image whose download handler builds a stream
     // resource URI through UI.getCurrentOrThrow(), so a current UI must be installed.
     ui = Mock(UI)
+    // Page(UI) registers a page-visibility listener on ui.getElement(), so that element must be
+    // real; Page/History have no no-arg constructors and this classpath has no Objenesis, so they
+    // are created through their real constructors via constructorArgs.
+    ui.getElement() >> new Element("div")
+    page = Mock(Page, constructorArgs: [ui])
+    history = Mock(History, constructorArgs: [ui])
+    ui.getPage() >> page
+    page.getHistory() >> history
     UI.setCurrent(ui)
 
     def identityService = new IdentityService(Stub(UserRepository))
@@ -66,12 +80,17 @@ class LoginLayoutSpec extends Specification {
         new UsernamePasswordAuthenticationToken("user", "n/a",
             AuthorityUtils.createAuthorityList("ROLE_USER")))
     def event = beforeEnterEvent()
+    Location updatedLocation
 
     when: "the login view is entered"
     loginLayout.beforeEnter(event)
 
     then: "the navigation is rerouted to the project overview"
     event.reroutedTo == ProjectOverviewMain
+
+    and: "the browser URL is updated to the projects route"
+    1 * history.replaceState(null, _ as Location) >> { args -> updatedLocation = args[1] }
+    updatedLocation.path == "projects/list"
   }
 
   def "anonymous session keeps access to the login form"() {
@@ -84,8 +103,9 @@ class LoginLayoutSpec extends Specification {
     when: "the login view is entered"
     loginLayout.beforeEnter(event)
 
-    then: "the login form stays available"
+    then: "the login form stays available and the URL is left alone"
     event.reroutedTo == null
+    0 * history.replaceState(_, _)
   }
 
   def "request without authentication keeps access to the login form"() {
@@ -96,8 +116,9 @@ class LoginLayoutSpec extends Specification {
     when: "the login view is entered"
     loginLayout.beforeEnter(event)
 
-    then: "the login form stays available"
+    then: "the login form stays available and the URL is left alone"
     event.reroutedTo == null
+    0 * history.replaceState(_, _)
   }
 
   private CapturingBeforeEnterEvent beforeEnterEvent() {
