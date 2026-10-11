@@ -15,6 +15,8 @@ import com.vaadin.flow.component.login.AbstractLogin.ForgotPasswordEvent;
 import com.vaadin.flow.component.login.AbstractLogin.LoginEvent;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.BeforeEvent;
 import com.vaadin.flow.router.HasUrlParameter;
 import com.vaadin.flow.router.OptionalParameter;
@@ -32,12 +34,16 @@ import life.qbic.datamanager.views.general.oidc.OidcType;
 import life.qbic.datamanager.views.landing.LandingPageLayout;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.InformationMessage;
+import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.datamanager.views.register.UserRegistrationMain;
 import life.qbic.identity.application.user.IdentityService;
 import life.qbic.identity.application.user.UserNotFoundException;
 import life.qbic.logging.api.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 /**
  * <b>Defines the layout and look of the login view. </b>
@@ -49,7 +55,8 @@ import org.springframework.beans.factory.annotation.Value;
 @CssImport("./styles/views/login/login-view.css")
 @AnonymousAllowed
 @UIScope
-public class LoginLayout extends VerticalLayout implements HasUrlParameter<String> {
+public class LoginLayout extends VerticalLayout implements HasUrlParameter<String>,
+    BeforeEnterObserver {
 
   private static final Logger log = logger(LoginLayout.class);
   private final String emailConfirmationParameter;
@@ -149,6 +156,30 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
   @Override
   public void setParameter(BeforeEvent event, @OptionalParameter String parameter) {
     handle(event);
+  }
+
+  /**
+   * Prevents authenticated users from seeing the login page again. Without this, a logged-in user
+   * navigating to {@code /login} would be presented with the login form and could submit the login
+   * action a second time, which can cause unwanted side effects (see issue #1304).
+   * <p>
+   * Anonymous sessions are backed by an {@link AnonymousAuthenticationToken} and must not count as
+   * authenticated, otherwise unauthenticated users would never see the login form.
+   */
+  @Override
+  public void beforeEnter(BeforeEnterEvent event) {
+    if (isAuthenticated()) {
+      log.debug(
+          "Authenticated user accessed the login page; redirecting to the project overview.");
+      event.rerouteTo(ProjectOverviewMain.class);
+    }
+  }
+
+  private static boolean isAuthenticated() {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    return authentication != null
+        && authentication.isAuthenticated()
+        && !(authentication instanceof AnonymousAuthenticationToken);
   }
 
   private void initFields() {
