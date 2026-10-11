@@ -13,22 +13,32 @@ updates:
     directory: "/" # Location of package manifests
     schedule:
       interval: "weekly"
+    groups:
+      # Consolidate all GitHub Actions updates into a single pull request.
+      github-actions:
+        patterns:
+          - "*"
 
-  # Root aggregator pom (plugin/dependency management entry point).
+  # All Maven modules are covered by a single update entry so that updates can
+  # be grouped across them (a group is scoped to one update entry). Dependabot
+  # does not recurse into submodules, so every directory must be listed:
+  #   - "/"                root aggregator pom (plugin/dependency management)
+  #   - "/datamanager-bom" where all third-party versions are pinned
+  #   - "/datamanager-app" deployable application module (Vaadin, Spring Boot, ...)
   - package-ecosystem: "maven"
-    directory: "/"
+    directories:
+      - "/"
+      - "/datamanager-bom"
+      - "/datamanager-app"
     schedule:
       interval: "weekly"
-
-  # The BOM is where all third-party versions are pinned. Dependabot does not
-  # recurse into submodules, so it must be listed explicitly.
-  - package-ecosystem: "maven"
-    directory: "/datamanager-bom"
-    schedule:
-      interval: "weekly"
-
-  # Deployable application module (Vaadin, Spring Boot starters, ...).
-  - package-ecosystem: "maven"
-    directory: "/datamanager-app"
-    schedule:
-      interval: "weekly"
+    groups:
+      # Consolidate all minor and patch Maven updates into a single pull request.
+      # Major updates do not match this group and are therefore raised as
+      # individual pull requests (one pull request per major version bump).
+      maven-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"

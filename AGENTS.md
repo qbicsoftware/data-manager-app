@@ -604,7 +604,7 @@ Follow the patterns in `service_api.md`:
 
 - Projects can be exported as **RO-Crate** bundles (see `docs/fair/research-objects.md`).
 - The `ROCreateBuilder` and `RoCrateFactory` in `project-management-infrastructure` produce crate
-  metadata. The `ro-crate-java` library (1.1.1) is used.
+  metadata. The `ro-crate-java` library (2.1.2) is used.
 
 ---
 
