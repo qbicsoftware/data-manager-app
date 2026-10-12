@@ -266,13 +266,13 @@ row is **not** part of this change.
 
 - **Row 1 (primary / shell — exists today, unchanged):** brand (Data Manager), `Projects · Groups ·
   Settings`, account menu. Sticky.
-- **Row 2 (in-project — new; replaces the drawer):** the project destinations `Summary · Datasets ·
-  Access`, with project tools such as Ontology Search at the trailing edge. Active item marked by
+- **Row 2 (in-project — new; replaces the drawer):** the project destinations `Summary · Samples ·
+  Datasets · Access`, with project tools such as Ontology Search at the trailing edge. Active item marked by
   weight plus a bottom rule. **This row contains nothing project-specific**, so it starts at a fixed
   origin and renders identical geometry in every project.
 - **Row 3 (context strip — always visible):** the breadcrumb `Projects / CODE / Project title`,
-  extended with the experiment crumb when the user is inside an experiment, plus the four experiment
-  views `Design · Samples · Measurements · Raw Data` with count badges and no arrows.
+  extended with the experiment crumb when the user is inside an experiment, plus the three experiment
+  views `Design · Samples · Dataset` with count badges and no arrows.
 - **One navigation model for both layers:** the user always sees where they are in the
   project → experiment → view hierarchy. No arrows implying a wizard.
 - Each experiment view tab gets a distinct, meaningful icon and noun labels with counts.
@@ -490,9 +490,10 @@ self-contained demo view. It is deliberately isolated so it cannot affect produc
   loaded via `@CssImport`, with every selector namespaced under `.pt-app` so nothing leaks into the
   production theme.
 - **Navigation model it renders:** row 1 = the existing primary navigation (`Projects · Groups ·
-  Settings`); row 2 = the new in-project navigation (`Summary · Datasets · Access`, Ontology Search
-  as a tool) with no project-specific content; row 3 = the always-visible context strip carrying the
-  project identity plus the breadcrumb and, inside an experiment, the experiment views. The
+  Settings`); row 2 = the new in-project navigation (`Summary · Samples · Datasets · Access`,
+  Ontology Search as a tool) with no project-specific content; row 3 = the always-visible context
+  strip carrying the project identity plus the breadcrumb and, inside an experiment, the experiment
+  views. The
   experiment list lives in the `Summary` experiments band, **not** behind its own navigation item.
 - **It is navigable end to end.** The prototype routes in-view between dummy `Samples`,
   `Measurements`, `Dataset`, `Design`, `Datasets`, `Access` and `Ontology search` pages so the
@@ -539,14 +540,14 @@ below.
 The three rows already established for the project page are reused unchanged:
 
 1. Row 1 — primary / shell navigation (exists today).
-2. Row 2 — in-project navigation `Summary · Datasets · Access` (new; replaces the drawer). This is
+2. Row 2 — in-project navigation `Summary · Samples · Datasets · Access` (new; replaces the drawer). This is
    the **second navigation level** and is enough for project-level destination switching.
 3. Context strip / breadcrumb — `Projects / CODE / Project title / Experiment title`, carrying the
-   four experiment views (`Design · Samples · Measurements · Dataset`) when inside an experiment.
+   three experiment views (`Design · Samples · Dataset`) when inside an experiment.
    This is the **breadcrumb** that already exists in the prototype and is the only experiment-level
    orientation element.
 
-**No additional navigation level is introduced.** The four experiment views must not become a third
+**No additional navigation level is introduced.** The experiment views must not become a third
 navigation row; they stay within the existing context strip.
 
 ### Onboarding order is a hard dependency chain
@@ -592,21 +593,46 @@ to attention (state the fact *and* route to the detail), extended to the data it
 > Human reaction: the experiment UI on the project page and the one reached from the experiments
 > navigation looked like the same thing, so the difference was unclear.
 
-The two surfaces must have one job each and must not duplicate each other:
+The surfaces must have one job each and must not duplicate each other:
 
 | Surface | Question it answers | Contains |
 |---|---|---|
 | Project → `Summary` | *How is the project doing, and what is in it?* | Identity, **project rollup**, the **experiment list with inline snapshots** (samples / measurements / primary data) and Add experiment, then project metadata. |
-| Experiment (via breadcrumb) | *Where is this one experiment?* | The per-experiment pipeline (done / next / locked) and its own At-a-glance snapshot, plus the experiment's views. |
+| Project → `Samples` | *Where is a given sample, and what do I have overall?* | One **flat, paginated, read-only** sample list across all experiments, with an Experiment column, **quick-filter buttons per experiment**, and export. |
+| Project → `Datasets` | *Where are the measurements and their primary data?* | Measurement metadata and registered primary data shown **together**, plus connected (external) datasets; read-only + export. |
+| Experiment (via breadcrumb) | *Where is this one experiment?* | The per-experiment pipeline (done / next / locked) and its own At-a-glance snapshot, plus the experiment's `Design · Samples · Dataset` views. |
 
 The project page is the landing page and owns the experiment list; there is **no separate
 "Experiments" navigation destination**. An experiment card with a snapshot is not rendered a second
 time anywhere. The Summary's project rollup stays at project scope (aggregate counts and attention)
 and does not repeat the per-experiment pipeline, which belongs to the experiment page.
 
+### Project-level data surfaces (stakeholder decisions 2026-10-12)
+
+> Decisions taken together with the data steward and project owner.
+
+- **Samples get a project-level overview.** Row 2 becomes `Summary · Samples · Datasets · Access`.
+  The Samples page is a flat, paginated, **read-only** list with an Experiment column and
+  **quick-filter buttons per experiment**, plus export. It reuses the paginated sample list
+  (FEAT-PAG-LIST-02) at project scope; `SampleInformationService.findSamplesByProjectId` already
+  supports the query.
+- **Measurements are absorbed into Datasets.** There is no separate Measurements destination:
+  measurement metadata and registered primary data are shown together, so a measurement and its data
+  are one fact. The experiment view likewise merges its Measurements and Dataset views into one
+  `Dataset` view (`Design · Samples · Dataset`). A project-wide measurement filter is a small
+  extension of the existing experiment-keyed `MeasurementFilter`.
+- **Project-level data is read-only + export.** Registration stays experiment-scoped.
+- **One flat list, not grouped sections.** Experiment attribution is a column plus quick-filter
+  buttons, never grouping — grouping would recreate the experiment list inside the data list.
+- The project rollup counts and attention rows link into these project-level lists.
+
+**Open question (blocking the settings part):** exactly which edits move to a "settings" section —
+all sample/measurement metadata editing, or only project metadata (funding, contacts)? And is that
+settings surface project-scoped or experiment-scoped?
+
 ### Remaining question
 
-- How the four experiment views are reached within the existing context strip (the breadcrumb /
+- How the experiment views are reached within the existing context strip (the breadcrumb /
   experiment-view pills already prototyped) vs. an in-page segmented control. To be settled against
   the real `ExperimentMainLayout`, but **no new navigation row** is in scope.
 

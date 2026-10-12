@@ -36,8 +36,8 @@ import org.springframework.context.annotation.Profile;
  *       ({@code Summary · Datasets · Access}), marking the active item with weight plus a bottom
  *       rule.</li>
  *   <li>A third, lighter context strip carries the project identity plus — only while inside an
- *       experiment — the experiment crumb and the four experiment views
- *       ({@code Design · Samples · Measurements · Dataset}).</li>
+ *       experiment — the experiment crumb and the three experiment views
+ *       ({@code Design · Samples · Dataset}).</li>
  *   <li>The navigation row contains nothing project-specific, so it starts at a fixed origin and
  *       renders the same geometry in every project regardless of title length.</li>
  *   <li>Content is one centered column with a fluid gutter on wide screens.</li>
@@ -49,8 +49,11 @@ import org.springframework.context.annotation.Profile;
  *       content they affect; identifiers use one monospace face.</li>
  *   <li>An empty state that is an invitation to act, with the actions inline.</li>
  *   <li>An <em>Experiments hub</em> that leads with onboarding when no experiment exists, and a
- *       pipeline that <em>gates</em> Samples, Measurements and Primary data behind their
- *       prerequisites — a locked step is a neutral state, not attention.</li>
+ *       pipeline that <em>gates</em> Samples and the Dataset (measurement metadata + primary data)
+ *       behind their prerequisites — a locked step is a neutral state, not attention.</li>
+ *   <li>Project-level <em>Samples</em> (one flat, read-only list with an Experiment column and
+ *       quick-filter buttons) and <em>Datasets</em> (measurement metadata and registered primary
+ *       data together, plus connected datasets).</li>
  * </ul>
  *
  * <h3>Prototype affordances (not part of the design)</h3>
@@ -106,13 +109,13 @@ public class ProjectPagePrototypeDemo extends Div {
    */
   private enum Page {
     SUMMARY("Summary", false),
+    SAMPLES("Samples", false),
     DATASETS("Datasets", false),
     ACCESS("Access", false),
     ONTOLOGY("Ontology search", false),
     DESIGN("Design", true),
-    SAMPLES("Samples", true),
-    MEASUREMENTS("Measurements", true),
-    DATASET("Dataset", true);
+    EXP_SAMPLES("Samples", true),
+    EXP_DATASET("Dataset", true);
 
     private final String label;
     private final boolean experimentScoped;
@@ -150,9 +153,9 @@ public class ProjectPagePrototypeDemo extends Div {
 
   private static final List<AttentionIssue> ATTENTION_ISSUES = List.of(
       new AttentionIssue(0, "6 of 24 measurements have no primary data attached",
-          "Open measurements", Page.MEASUREMENTS, 6),
+          "Open dataset", Page.EXP_DATASET, 6),
       new AttentionIssue(1, "12 of 30 measurements have no primary data attached",
-          "Open measurements", Page.MEASUREMENTS, 12));
+          "Open dataset", Page.EXP_DATASET, 12));
 
   private List<AttentionIssue> issuesFor(int index) {
     return ATTENTION_ISSUES.stream()
@@ -221,6 +224,8 @@ public class ProjectPagePrototypeDemo extends Div {
   private boolean longTitle = false;
   private Page page = Page.SUMMARY;
   private int experimentIndex = 0;
+  private int sampleFilter = -1;
+  private int datasetFilter = -1;
 
   // ── Construction ────────────────────────────────────────────────────────
 
@@ -368,8 +373,8 @@ public class ProjectPagePrototypeDemo extends Div {
     // The in-project surfaces that used to live in the drawer.
     Div nav = new Div();
     nav.addClassName("pt-subnav__nav");
-    nav.add(navItem("Summary", Page.SUMMARY), navItem("Datasets", Page.DATASETS),
-        navItem("Access", Page.ACCESS));
+    nav.add(navItem("Summary", Page.SUMMARY), navItem("Samples", Page.SAMPLES),
+        navItem("Datasets", Page.DATASETS), navItem("Access", Page.ACCESS));
 
     Div tools = new Div();
     tools.addClassName("pt-subnav__tools");
@@ -421,9 +426,8 @@ public class ProjectPagePrototypeDemo extends Div {
       Div views = new Div();
       views.addClassName("pt-expviews");
       views.add(expView("Design", null, Page.DESIGN),
-          expView("Samples", experiment.samples(), Page.SAMPLES),
-          expView("Measurements", experiment.measurements(), Page.MEASUREMENTS),
-          expView("Dataset", experiment.datasets(), Page.DATASET));
+          expView("Samples", experiment.samples(), Page.EXP_SAMPLES),
+          expView("Dataset", experiment.measurements(), Page.EXP_DATASET));
       row.add(views);
     }
 
@@ -475,13 +479,13 @@ public class ProjectPagePrototypeDemo extends Div {
     switch (page) {
       case SUMMARY -> wrapper.add(identityBand(), progressBand(emptyState),
           experimentsBand(emptyState), metadataBand());
+      case SAMPLES -> wrapper.add(projectSamplesPage());
       case DATASETS -> wrapper.add(datasetsPage());
       case ACCESS -> wrapper.add(accessPage());
       case ONTOLOGY -> wrapper.add(ontologyPage());
       case DESIGN -> wrapper.add(designPage());
-      case SAMPLES -> wrapper.add(samplesPage());
-      case MEASUREMENTS -> wrapper.add(measurementsPage());
-      case DATASET -> wrapper.add(datasetPage());
+      case EXP_SAMPLES -> wrapper.add(samplesPage());
+      case EXP_DATASET -> wrapper.add(datasetPage());
     }
     return wrapper;
   }
@@ -711,19 +715,16 @@ public class ProjectPagePrototypeDemo extends Div {
     if (empty) {
       return List.of(
           new Stage("Experiment created", 0, "experiments", Stage.State.TODO, Page.DESIGN),
-          new Stage("Samples registered", 0, "samples", Stage.State.TODO, Page.SAMPLES),
-          new Stage("Measurements registered", 0, "measurements", Stage.State.TODO,
-              Page.MEASUREMENTS),
-          new Stage("Primary data registered", 0, "datasets", Stage.State.TODO, Page.DATASET),
-          new Stage("Sample QC uploaded", 0, "reports", Stage.State.TODO, Page.SAMPLES));
+          new Stage("Samples registered", 0, "samples", Stage.State.TODO, Page.EXP_SAMPLES),
+          new Stage("Dataset", 0, "measurements", Stage.State.TODO, Page.EXP_DATASET),
+          new Stage("Sample QC uploaded", 0, "reports", Stage.State.TODO, Page.EXP_SAMPLES));
     }
     return List.of(
         new Stage("Experiment created", 3, "experiments", Stage.State.DONE, Page.DESIGN),
-        new Stage("Samples registered", 84, "samples", Stage.State.DONE, Page.SAMPLES),
-        new Stage("Measurements registered", 54, "measurements", Stage.State.ATTENTION,
-            Page.MEASUREMENTS),
-        new Stage("Primary data registered", 2, "datasets", Stage.State.ATTENTION, Page.DATASET),
-        new Stage("Sample QC uploaded", 4, "reports", Stage.State.TODO, Page.SAMPLES));
+        new Stage("Samples registered", 84, "samples", Stage.State.DONE, Page.EXP_SAMPLES),
+        new Stage("Dataset", 18, "measurements with data", Stage.State.ATTENTION,
+            Page.EXP_DATASET),
+        new Stage("Sample QC uploaded", 4, "reports", Stage.State.TODO, Page.EXP_SAMPLES));
   }
 
   // Experiments band ──────────────────────────────────────────────────────
@@ -811,7 +812,7 @@ public class ProjectPagePrototypeDemo extends Div {
     if (!experiment.isStarted()) {
       // Neutral state, not attention: routes to the first thing to do.
       facets.add(actionFacet("Not started", false, null,
-          () -> openExperiment(index, Page.SAMPLES)));
+          () -> openExperiment(index, Page.EXP_SAMPLES)));
     } else if (!issues.isEmpty()) {
       // The experiment carries its own attention badge, so the project rollup is never the only
       // indication that something is outstanding here.
@@ -830,9 +831,8 @@ public class ProjectPagePrototypeDemo extends Div {
 
     Div actions = new Div();
     actions.addClassName("pt-exp__actions");
-    actions.add(button("Samples", false, () -> openExperiment(index, Page.SAMPLES)),
-        button("Measurements", false, () -> openExperiment(index, Page.MEASUREMENTS)),
-        button("Dataset", false, () -> openExperiment(index, Page.DATASET)));
+    actions.add(button("Samples", false, () -> openExperiment(index, Page.EXP_SAMPLES)),
+        button("Dataset", false, () -> openExperiment(index, Page.EXP_DATASET)));
 
     entry.add(identity, counts, actions);
     entry.add(experimentSnapshot(experiment, index));
@@ -857,10 +857,7 @@ public class ProjectPagePrototypeDemo extends Div {
    * each nested view; clicking a panel goes to the full view.
    */
   private Div experimentSnapshot(Experiment experiment, int index) {
-    int missing = issuesFor(index).stream()
-        .filter(issue -> issue.target() == Page.MEASUREMENTS || issue.target() == Page.DATASET)
-        .mapToInt(AttentionIssue::affected)
-        .findFirst().orElse(0);
+    int missing = missingFor(index);
     int withData = Math.max(0, experiment.measurements() - missing);
 
     Div wrap = new Div();
@@ -868,16 +865,20 @@ public class ProjectPagePrototypeDemo extends Div {
     wrap.add(snapshotPanel("Samples", experiment.samples(), "samples",
         experiment.samples() == 0 ? "Nothing registered yet"
             : "Registered · " + experiment.lastActivity(),
-        samplePreview(experiment), Page.SAMPLES, index));
-    wrap.add(snapshotPanel("Measurements", experiment.measurements(), "measurements",
+        samplePreview(experiment), Page.EXP_SAMPLES, index));
+    wrap.add(snapshotPanel("Dataset", experiment.measurements(), "measurements",
         experiment.measurements() == 0 ? "Nothing registered yet"
             : withData + " of " + experiment.measurements() + " have primary data",
-        measurementPreview(experiment, missing), Page.MEASUREMENTS, index));
-    wrap.add(snapshotPanel("Primary data", experiment.datasets(), "with data",
-        experiment.datasets() == 0 ? "Nothing attached yet"
-            : "Across " + withData + " measurements · " + (withData * 4) + " GB",
-        dataPreview(experiment), Page.DATASET, index));
+        datasetPreview(experiment, missing), Page.EXP_DATASET, index));
     return wrap;
+  }
+
+  /** How many of an experiment's measurements still lack primary data. */
+  private int missingFor(int index) {
+    return issuesFor(index).stream()
+        .filter(issue -> issue.target() == Page.EXP_DATASET)
+        .mapToInt(AttentionIssue::affected)
+        .findFirst().orElse(0);
   }
 
   private Div snapshotPanel(String label, int count, String unit, String status,
@@ -934,7 +935,8 @@ public class ProjectPagePrototypeDemo extends Div {
     return rows;
   }
 
-  private List<List<CellView>> measurementPreview(Experiment experiment, int missing) {
+  /** Measurement metadata and its primary data as one fact. */
+  private List<List<CellView>> datasetPreview(Experiment experiment, int missing) {
     if (experiment.measurements() == 0) {
       return List.of(row(muted("No measurements to show yet")));
     }
@@ -943,20 +945,7 @@ public class ProjectPagePrototypeDemo extends Div {
     for (int i = 1; i <= shown; i++) {
       boolean miss = i <= missing;
       rows.add(row(mono(String.format("Q2IMMU-MS-%03d", i)),
-          miss ? attention("No data") : done("With data")));
-    }
-    return rows;
-  }
-
-  private List<List<CellView>> dataPreview(Experiment experiment) {
-    if (experiment.datasets() == 0) {
-      return List.of(row(muted("No primary data yet")));
-    }
-    int shown = Math.min(3, experiment.datasets());
-    List<List<CellView>> rows = new ArrayList<>();
-    for (int i = 1; i <= shown; i++) {
-      rows.add(row(mono(String.format("Q2IMMU-MS-%03d", i)),
-          text("3 files"), text("4.2 GB")));
+          miss ? attention("Not attached") : done("3 files · 4.2 GB")));
     }
     return rows;
   }
@@ -997,61 +986,6 @@ public class ProjectPagePrototypeDemo extends Div {
     return facet;
   }
 
-  // Empty experiments band ────────────────────────────────────────────────
-
-  private Div emptyExperimentsBand() {
-    Div band = new Div();
-    band.addClassName("pt-band");
-
-    Div empty = new Div();
-    empty.addClassName("pt-empty");
-    H3 title = new H3();
-    title.addClassName("pt-empty__title");
-    title.setText("This project has no experiments yet");
-    Paragraph text = new Paragraph(
-        "An experiment groups the samples, measurements and primary data for one research question. "
-            + "Most people start with the experiment design, then register samples.");
-    text.addClassName("pt-empty__text");
-
-    UnorderedList checklist = new UnorderedList();
-    checklist.addClassName("pt-checklist");
-    checklist.add(checklistItem(1, "Create the first experiment",
-        "Give it a name; you can add the full design later.", Page.DESIGN));
-    checklist.add(checklistItem(2, "Register samples",
-        "Upload an Excel template with the sample metadata.", Page.SAMPLES));
-    checklist.add(checklistItem(3, "Register measurement metadata",
-        "Pick the template matching the measurement type.", Page.MEASUREMENTS));
-    checklist.add(checklistItem(4, "Register primary data",
-        "Link the measurement data produced by the facility.", Page.DATASET));
-
-    empty.add(title, text, checklist);
-    band.add(empty);
-    return band;
-  }
-
-  private ListItem checklistItem(int step, String action, String description, Page target) {
-    ListItem item = new ListItem();
-    item.addClassName("pt-checklist__item");
-    item.getElement().setAttribute("role", "link");
-    item.getElement().setAttribute("tabindex", "0");
-    Span number = new Span(step + ".");
-    number.addClassName("pt-checklist__step");
-    Div body = new Div();
-    body.addClassName("pt-checklist__body");
-    Span label = new Span(action);
-    label.addClassName("pt-strong");
-    Paragraph detail = new Paragraph(description);
-    detail.addClassName("pt-checklist__action");
-    detail.getStyle().set("margin", "0");
-    detail.getStyle().set("color", "var(--pt-ink-muted)");
-    body.add(label, detail);
-    Span link = new Span("Start");
-    link.addClassName("pt-checklist__cta");
-    item.add(number, body, link);
-    item.addClickListener(event -> navigate(target));
-    return item;
-  }
-
   // ── Experiments hub and pipeline gating ──────────────────────────────────
 
   /** A step in the experiment pipeline; locked means its prerequisite is missing. */
@@ -1064,19 +998,17 @@ public class ProjectPagePrototypeDemo extends Div {
     if (emptyState) {
       return List.of(
           new Step("Experiment", "Create one to begin", StepState.ACTIVE, Page.DESIGN),
-          new Step("Samples", "Locked until an experiment exists", StepState.LOCKED, Page.SAMPLES),
-          new Step("Measurements", "Locked until samples exist", StepState.LOCKED,
-              Page.MEASUREMENTS),
-          new Step("Primary data", "Locked until measurements exist", StepState.LOCKED,
-              Page.DATASET),
-          new Step("Sample QC", "Optional", StepState.LOCKED, Page.SAMPLES));
+          new Step("Samples", "Locked until an experiment exists", StepState.LOCKED,
+              Page.EXP_SAMPLES),
+          new Step("Dataset", "Locked until samples exist", StepState.LOCKED, Page.EXP_DATASET),
+          new Step("Sample QC", "Optional", StepState.LOCKED, Page.EXP_SAMPLES));
     }
     return List.of(
         new Step("Experiment", "3 created", StepState.DONE, Page.DESIGN),
-        new Step("Samples", "84 registered", StepState.DONE, Page.SAMPLES),
-        new Step("Measurements", "2 experiments with gaps", StepState.ATTENTION, Page.MEASUREMENTS),
-        new Step("Primary data", "Missing for 18 measurements", StepState.ATTENTION, Page.DATASET),
-        new Step("Sample QC", "4 reports", StepState.ACTIVE, Page.SAMPLES));
+        new Step("Samples", "84 registered", StepState.DONE, Page.EXP_SAMPLES),
+        new Step("Dataset", "Missing data for 18 measurements", StepState.ATTENTION,
+            Page.EXP_DATASET),
+        new Step("Sample QC", "4 reports", StepState.ACTIVE, Page.EXP_SAMPLES));
   }
 
   /** The pipeline of one experiment; later stages are locked until their prerequisite exists. */
@@ -1090,21 +1022,18 @@ public class ProjectPagePrototypeDemo extends Div {
         new Step("Design", "Defined", StepState.DONE, Page.DESIGN),
         new Step("Samples",
             hasSamples ? experiment.samples() + " registered" : "Nothing registered yet",
-            hasSamples ? StepState.DONE : StepState.ACTIVE, Page.SAMPLES),
-        new Step("Measurements",
-            hasMeasurements ? experiment.measurements() + " registered"
+            hasSamples ? StepState.DONE : StepState.ACTIVE, Page.EXP_SAMPLES),
+        new Step("Dataset",
+            hasMeasurements
+                ? experiment.measurements() + " measurements · "
+                    + experiment.datasets() + " with data"
                 : hasSamples ? "Ready to register" : "Register samples first",
-            hasMeasurements ? StepState.DONE : hasSamples ? StepState.ACTIVE : StepState.LOCKED,
-            Page.MEASUREMENTS),
-        new Step("Primary data",
-            hasData ? experiment.datasets() + " of " + experiment.measurements() + " attached"
-                : hasMeasurements ? "Nothing attached yet" : "Register measurements first",
-            hasData ? (dataGap ? StepState.ATTENTION : StepState.DONE)
-                : hasMeasurements ? StepState.ACTIVE : StepState.LOCKED,
-            Page.DATASET),
+            hasMeasurements ? (dataGap ? StepState.ATTENTION : StepState.DONE)
+                : hasSamples ? StepState.ACTIVE : StepState.LOCKED,
+            Page.EXP_DATASET),
         new Step("Sample QC",
             experiment.qc() > 0 ? experiment.qc() + " reports" : "Optional",
-            experiment.qc() > 0 ? StepState.DONE : StepState.LOCKED, Page.SAMPLES));
+            experiment.qc() > 0 ? StepState.DONE : StepState.LOCKED, Page.EXP_SAMPLES));
   }
 
   private Div experimentPreamble(Experiment experiment) {
@@ -1223,120 +1152,47 @@ public class ProjectPagePrototypeDemo extends Div {
     return band;
   }
 
-  private Div measurementsPage() {
-    Experiment experiment = emptyState ? null : selectedExperiment();
-    if (experiment == null) {
-      return emptyPage("Measurements", "No experiment yet",
-          "No measurements registered yet",
-          "Register the measurement metadata and attach the primary data produced by the facility.",
-          button("Register measurements", true, null), button("Download template", false, null));
-    }
-    if (experiment.samples() == 0) {
-      return lockedPage("Measurements", experiment.name() + " · 0 samples",
-          "Register samples first",
-          "Measurements are made on samples. Register the samples for this experiment before adding "
-              + "measurement metadata.",
-          "Go to samples", Page.SAMPLES);
-    }
-    if (experiment.measurements() == 0) {
-      return emptyPage("Measurements", experiment.name(),
-          "No measurements registered yet",
-          "Register the measurement metadata and attach the primary data produced by the facility.",
-          button("Register measurements", true, null), button("Download template", false, null));
-    }
-    String issueText = issuesFor(experimentIndex).stream()
-        .filter(issue -> issue.target() == Page.MEASUREMENTS)
-        .map(AttentionIssue::text)
-        .findFirst()
-        .orElse(null);
-    int affected = issuesFor(experimentIndex).stream()
-        .filter(issue -> issue.target() == Page.MEASUREMENTS)
-        .mapToInt(AttentionIssue::affected)
-        .findFirst()
-        .orElse(0);
-
-    Div band = pageBand("Measurements",
-        experiment.name() + " · " + experiment.measurements() + " measurements",
-        button("Register measurements", true, null), button("Download template", false, null));
-    band.add(experimentPreamble(experiment));
-
-    List<List<CellView>> rows = measurementRows(experiment, affected);
-    band.add(table(new String[]{"Measurement ID", "Label", "Type", "Instrument", "Samples",
-        "Primary data", "QC"}, rows));
-
-    if (issueText != null) {
-      band.add(note(issueText + ". Use “Attach data” on a row to link the measurement data."));
-    } else {
-      band.add(note("Showing " + rows.size() + " of " + experiment.measurements()
-          + " measurements. No outstanding issues for this experiment."));
-    }
-    return band;
-  }
-
   /**
-   * Representative measurement rows for one experiment. The number of rows shown as missing follows
-   * that experiment's own outstanding count, so the page agrees with the callout that links to it.
-   */
-  private List<List<CellView>> measurementRows(Experiment experiment, int affected) {
-    int shown = Math.min(experiment.measurements(), Math.max(8, affected));
-    List<List<CellView>> rows = new ArrayList<>();
-    for (int i = 1; i <= shown; i++) {
-      boolean missing = i <= affected;
-      rows.add(row(
-          mono(String.format("Q2IMMU-MS-%03d", i)),
-          text("Measurement " + i),
-          text("Immunopeptidomics"),
-          text("timsTOF Pro"),
-          text("2"),
-          missing ? attention("Missing") : done("Connected"),
-          missing ? muted("Pending") : done("Passed")));
-    }
-    return rows;
-  }
-
-  /**
-   * The experiment's dataset. A dataset is 1:1 with its experiment, so this page is simply "the data
-   * of this experiment" — of kind <em>primary</em> — broken down by the measurements that produced
-   * it. Datasets hosted elsewhere appear below as connected datasets, whose relationship to the
-   * experiment is deliberately left unclassified.
+   * The experiment's dataset. Measurement metadata and registered primary data are shown together,
+   * because a measurement and its data are one fact. A dataset is 1:1 with its experiment.
    */
   private Div datasetPage() {
     Experiment experiment = emptyState ? null : selectedExperiment();
     if (experiment == null) {
       return emptyPage("Dataset", "No experiment yet",
-          "No primary data registered yet",
-          "Primary data is the output of the measurements. Link the measurement data produced by "
-              + "the facility, or upload it directly.",
-          button("Register primary data", true, null), button("Upload files", false, null));
+          "No measurements registered yet",
+          "Register the measurement metadata and attach the primary data produced by the facility.",
+          button("Register measurements", true, null), button("Download template", false, null));
+    }
+    if (experiment.samples() == 0) {
+      return lockedPage("Dataset", experiment.name() + " · 0 samples",
+          "Register samples first",
+          "Measurements are made on samples. Register the samples for this experiment before "
+              + "adding measurement metadata.",
+          "Go to samples", Page.EXP_SAMPLES);
     }
     if (experiment.measurements() == 0) {
-      return lockedPage("Dataset", experiment.name() + " · 0 measurements",
-          "Register measurements first",
-          "Primary data is the output of measurements. Register measurements for this experiment "
-              + "before attaching data.",
-          "Go to measurements", Page.MEASUREMENTS);
-    }
-    if (experiment.datasets() == 0) {
       return emptyPage("Dataset", experiment.name(),
-          "No primary data registered yet",
-          "Primary data is the output of the measurements. Link the measurement data produced by "
-              + "the facility, or upload it directly.",
-          button("Register primary data", true, null), button("Upload files", false, null));
+          "No measurements registered yet",
+          "Register the measurement metadata and attach the primary data produced by the facility.",
+          button("Register measurements", true, null), button("Download template", false, null));
     }
-    int affected = issuesFor(experimentIndex).stream()
-        .filter(issue -> issue.target() == Page.MEASUREMENTS)
-        .mapToInt(AttentionIssue::affected)
+    int missing = missingFor(experimentIndex);
+    String issueText = issuesFor(experimentIndex).stream()
+        .filter(issue -> issue.target() == Page.EXP_DATASET)
+        .map(AttentionIssue::text)
         .findFirst()
-        .orElse(0);
+        .orElse(null);
 
-    Div band = pageBand("Dataset", experiment.name() + " · primary data",
-        button("Register primary data", true, null));
+    Div band = pageBand("Dataset", experiment.name() + " · measurements and primary data",
+        button("Register measurements", true, null), button("Download template", false, null));
     band.add(experimentPreamble(experiment));
-    band.add(datasetFacts(experiment, affected));
-    band.add(table(new String[]{"Measurement", "Files", "File types", "Size", "State"},
-        datasetRows(experiment, affected)));
-    band.add(note("The dataset aggregates the primary data of this experiment's measurements. "
-        + "Its scope is the experiment because the design is what makes the data analysable."));
+    band.add(datasetFacts(experiment, missing));
+    band.add(table(new String[]{"Measurement ID", "Label", "Type", "Instrument", "Samples",
+        "Files", "Size", "State"}, measurementDataRows(experiment, missing)));
+    band.add(note(issueText != null
+        ? issueText + ". Use “Attach data” on a row to link the primary data."
+        : "Measurement metadata and primary data for this experiment. No outstanding issues."));
 
     Div connectedHead = new Div();
     connectedHead.addClassName("pt-band__head");
@@ -1366,18 +1222,21 @@ public class ProjectPagePrototypeDemo extends Div {
     return facts;
   }
 
-  /** Per-measurement primary data: the parts the experiment dataset is made of. */
-  private List<List<CellView>> datasetRows(Experiment experiment, int affected) {
-    int shown = Math.min(experiment.measurements(), Math.max(8, affected));
+  /** One row per measurement: metadata and its primary data together. */
+  private List<List<CellView>> measurementDataRows(Experiment experiment, int missing) {
+    int shown = Math.min(experiment.measurements(), Math.max(8, missing));
     List<List<CellView>> rows = new ArrayList<>();
     for (int i = 1; i <= shown; i++) {
-      boolean missing = i <= affected;
+      boolean miss = i <= missing;
       rows.add(row(
           mono(String.format("Q2IMMU-MS-%03d", i)),
-          missing ? attention("0") : text("3"),
-          missing ? muted("—") : text(".d, .tsv"),
-          missing ? muted("—") : text("4.2 GB"),
-          missing ? attention("Not attached") : done("Registered")));
+          text("Measurement " + i),
+          text("Immunopeptidomics"),
+          text("timsTOF Pro"),
+          text("2"),
+          miss ? attention("0") : text("3"),
+          miss ? muted("—") : text("4.2 GB"),
+          miss ? attention("Not attached") : done("Registered")));
     }
     return rows;
   }
@@ -1414,33 +1273,29 @@ public class ProjectPagePrototypeDemo extends Div {
     return band;
   }
 
+  /**
+   * Project-level Datasets: measurement metadata and registered primary data across all
+   * experiments, plus datasets connected from outside. Read-only and exportable.
+   */
   private Div datasetsPage() {
     if (emptyState) {
       return emptyPage("Datasets", "No experiment yet",
-          "No data yet",
-          "Create an experiment first; its dataset follows from the measurements you register.",
-          button("Add experiment", true, null));
+          "No measurements yet",
+          "Create an experiment first; its measurement metadata and primary data follow from it.",
+          button("Create experiment", true, () -> createOrAddExperiment(true)));
     }
     Div band = pageBand("Datasets",
-        "The data produced in this project, and datasets connected to it",
-        button("Register primary data", true, null));
+        "Measurement metadata and registered primary data across the project",
+        button("Export", false, null));
 
-    // Produced here: one dataset per experiment, because a dataset is 1:1 with its experiment.
-    Div producedHead = new Div();
-    producedHead.addClassName("pt-band__head");
-    H3 producedTitle = new H3();
-    producedTitle.addClassName("pt-band__title");
-    producedTitle.setText("Produced in this project");
-    producedHead.add(producedTitle, new Span("One dataset per experiment, of kind primary."));
-    band.add(producedHead);
-    band.add(table(new String[]{"Experiment", "Kind", "Measurements with data", "Files", "Size"},
-        List.of(
-            row(text("Immunopeptidomics pilot"), text("Primary"), text("18 of 24"), text("54"),
-                text("76 GB")),
-            row(text("Solely Immuno"), text("Primary"), text("18 of 30"), text("54"),
-                text("71 GB")),
-            row(text("Smoke test edit immunopeptidomics"), muted("—"), muted("0 of 0"),
-                muted("—"), muted("—")))));
+    band.add(experimentFilter(datasetFilter, value -> {
+      datasetFilter = value;
+      refresh();
+    }));
+    band.add(table(new String[]{"Measurement ID", "Experiment", "Type", "Instrument", "Samples",
+        "Primary data", "Size", "State"}, projectDatasetRows()));
+    band.add(note("Read-only overview: each row is a measurement and the primary data attached to "
+        + "it. Registering and editing happens inside an experiment."));
 
     Div connectedHead = new Div();
     connectedHead.addClassName("pt-band__head");
@@ -1458,9 +1313,116 @@ public class ProjectPagePrototypeDemo extends Div {
             row(text("Reference peptide list"), text("Zenodo"), done("Open"), muted("—"),
                 text("3 weeks ago")))));
     band.add(note("“Connected” states only that the dataset is linked here. It may be an analysis "
-        + "result, related material, or something else — the relationship is not classified. Open "
-        + "datasets can be downloaded directly; restricted ones require a data access request."));
+        + "result, related material, or something else — the relationship is not classified."));
     return band;
+  }
+
+  private List<List<CellView>> projectDatasetRows() {
+    List<List<CellView>> rows = new ArrayList<>();
+    int counter = 1;
+    for (int e = 0; e < POPULATED_EXPERIMENTS.size(); e++) {
+      if (datasetFilter >= 0 && datasetFilter != e) {
+        continue;
+      }
+      Experiment exp = POPULATED_EXPERIMENTS.get(e);
+      int missing = missingFor(e);
+      int shown = Math.min(exp.measurements(), 6);
+      for (int i = 1; i <= shown; i++) {
+        boolean miss = i <= missing;
+        rows.add(row(
+            mono(String.format("Q2IMMU-MS-%03d", counter++)),
+            text(exp.name()),
+            text("Immunopeptidomics"),
+            text("timsTOF Pro"),
+            text("2"),
+            miss ? attention("Not attached") : done("3 files"),
+            miss ? muted("—") : text("4.2 GB"),
+            miss ? attention("Missing") : done("Registered")));
+      }
+    }
+    if (rows.isEmpty()) {
+      rows.add(row(muted("No measurements to show.")));
+    }
+    return rows;
+  }
+
+  /**
+   * Project-level Samples: one flat, read-only, exportable list across all experiments, with an
+   * Experiment column and quick-filter buttons. Registration/editing stays inside an experiment.
+   */
+  private Div projectSamplesPage() {
+    if (emptyState) {
+      return emptyPage("Samples", "No experiment yet",
+          "No samples yet",
+          "Samples belong to an experiment. Create the first experiment, then register samples "
+              + "there.",
+          button("Create experiment", true, () -> createOrAddExperiment(true)));
+    }
+    Div band = pageBand("Samples", "Every sample in the project, across all experiments",
+        button("Export", false, null));
+
+    band.add(experimentFilter(sampleFilter, value -> {
+      sampleFilter = value;
+      refresh();
+    }));
+    band.add(table(new String[]{"Sample ID", "Experiment", "Sample name", "Species", "Tissue",
+        "Condition", "Replicates"}, projectSampleRows()));
+    band.add(note("Read-only overview. Registering and editing samples happens inside an "
+        + "experiment."));
+    return band;
+  }
+
+  private List<List<CellView>> projectSampleRows() {
+    List<List<CellView>> rows = new ArrayList<>();
+    int counter = 1;
+    String[] names = {"P1_ctrl_T0", "P1_treat_T0", "P1_ctrl_T1", "P2_ctrl_T0"};
+    for (int e = 0; e < POPULATED_EXPERIMENTS.size(); e++) {
+      if (sampleFilter >= 0 && sampleFilter != e) {
+        continue;
+      }
+      Experiment exp = POPULATED_EXPERIMENTS.get(e);
+      int shown = Math.min(exp.samples(), 6);
+      for (int i = 0; i < shown; i++) {
+        rows.add(row(
+            mono(String.format("Q2IMMU-%04d", counter++)),
+            text(exp.name()),
+            text(names[i % names.length]),
+            text("Homo sapiens"),
+            text("Tumour organoid"),
+            text(i % 2 == 0 ? "Untreated" : "Treated"),
+            text(String.valueOf((i % 3) + 1))));
+      }
+    }
+    if (rows.isEmpty()) {
+      rows.add(row(muted("No samples to show.")));
+    }
+    return rows;
+  }
+
+  /** Quick-filter buttons over the experiments; -1 means "all experiments". */
+  private Div experimentFilter(int selected, java.util.function.IntConsumer onSelect) {
+    Div filters = new Div();
+    filters.addClassName("pt-filters");
+    filters.add(textSpan("Filter", "pt-filters__label"));
+    filters.add(filterChip("All experiments", selected < 0, () -> onSelect.accept(-1)));
+    for (int i = 0; i < POPULATED_EXPERIMENTS.size(); i++) {
+      final int index = i;
+      filters.add(filterChip(POPULATED_EXPERIMENTS.get(i).name(), selected == i,
+          () -> onSelect.accept(index)));
+    }
+    return filters;
+  }
+
+  private Span filterChip(String text, boolean selected, Runnable onClick) {
+    Span chip = new Span(text);
+    chip.addClassName("pt-filter");
+    if (selected) {
+      chip.addClassName("pt-filter--selected");
+    }
+    chip.getElement().setAttribute("role", "button");
+    chip.getElement().setAttribute("tabindex", "0");
+    chip.addClickListener(event -> onClick.run());
+    return chip;
   }
 
   private Div accessPage() {

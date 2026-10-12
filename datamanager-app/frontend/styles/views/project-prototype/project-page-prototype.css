@@ -674,7 +674,7 @@
 
 .pt-rail {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
   gap: 0;
   list-style: none;
   margin: 0;
@@ -1392,7 +1392,7 @@
 .pt-snapshot {
   grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
   gap: 0.75rem;
   width: 100%;
   margin-top: 0.25rem;
@@ -1483,4 +1483,42 @@
   .pt-snapshot {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+/* ── Quick experiment filters (project-level Samples / Datasets) ─────────── */
+
+.pt-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.85rem;
+}
+
+.pt-filters__label {
+  font-size: var(--pt-fs-meta);
+  color: var(--pt-ink-muted);
+  margin-right: 0.15rem;
+}
+
+.pt-filter {
+  padding: 0.2rem 0.65rem;
+  border: 1px solid var(--pt-line-strong);
+  border-radius: 999px;
+  background: #fff;
+  font-size: 0.75rem;
+  color: var(--pt-ink-muted);
+  cursor: pointer;
+}
+
+.pt-filter:hover {
+  border-color: var(--pt-accent);
+  color: var(--pt-accent-ink);
+}
+
+.pt-filter--selected {
+  background: var(--pt-accent);
+  border-color: var(--pt-accent);
+  color: #fff;
+  font-weight: var(--font-weight-semi-bold, 600);
 }
