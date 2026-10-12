@@ -103,6 +103,16 @@ public class ProjectPagePrototypeDemo extends Div {
   /** A table cell with a display tone, so dummy pages read like the real surfaces. */
   private record CellView(String text, String tone) {}
 
+  /** One key/value line in the side panel. */
+  private record DetailField(String label, String value) {}
+
+  /** A titled group of fields; headings reuse the stakeholder spec's categories. */
+  private record DetailGroup(String heading, List<DetailField> fields) {}
+
+  /** The side-panel content for a selected record. */
+  private record Detail(String title, String subtitle, List<String> chips,
+      List<DetailGroup> groups) {}
+
   /**
    * The in-prototype pages. This mirrors the real route structure (project-level surfaces plus the
    * four experiment views) without touching any real route.
@@ -226,6 +236,9 @@ public class ProjectPagePrototypeDemo extends Div {
   private int experimentIndex = 0;
   private int sampleFilter = -1;
   private int datasetFilter = -1;
+  private boolean showAllColumns = false;
+  private String datasetType = "Immunopeptidomics";
+  private Detail detail = null;
 
   // ── Construction ────────────────────────────────────────────────────────
 
@@ -264,6 +277,9 @@ public class ProjectPagePrototypeDemo extends Div {
     buildContextRow();
     body.removeAll();
     body.add(buildBody());
+    if (detail != null) {
+      add(buildDetailPanel());
+    }
   }
 
   // ── Prototype chrome ────────────────────────────────────────────────────
@@ -1274,8 +1290,9 @@ public class ProjectPagePrototypeDemo extends Div {
   }
 
   /**
-   * Project-level Datasets: measurement metadata and registered primary data across all
-   * experiments, plus datasets connected from outside. Read-only and exportable.
+   * Project-level Datasets: identity + status list, segmented by measurement type (NGS /
+   * Proteomics / Immunopeptidomics) exactly like the production solution. Type-specific attributes
+   * are not columns; they live in the side panel. The full table is an opt-in power mode.
    */
   private Div datasetsPage() {
     if (emptyState) {
@@ -1286,25 +1303,49 @@ public class ProjectPagePrototypeDemo extends Div {
     }
     Div band = pageBand("Datasets",
         "Measurement metadata and registered primary data across the project",
-        button("Export", false, null));
+        button("Export", false, null),
+        button(showAllColumns ? "Fewer columns" : "Show all columns", false,
+            () -> {
+              showAllColumns = !showAllColumns;
+              refresh();
+            }));
 
+    band.add(typeTabs());
     band.add(experimentFilter(datasetFilter, value -> {
       datasetFilter = value;
       refresh();
     }));
-    band.add(table(new String[]{"Measurement ID", "Experiment", "Type", "Instrument", "Samples",
-        "Primary data", "Size", "State"}, projectDatasetRows()));
-    band.add(note("Read-only overview: each row is a measurement and the primary data attached to "
-        + "it. Registering and editing happens inside an experiment."));
 
-    Div connectedHead = new Div();
-    connectedHead.addClassName("pt-band__head");
-    H3 connectedTitle = new H3();
-    connectedTitle.addClassName("pt-band__title");
-    connectedTitle.setText("Connected datasets");
-    connectedHead.add(connectedTitle, new Span("Hosted elsewhere and linked here."));
-    band.add(connectedHead);
-    band.add(table(new String[]{"Title", "Repository", "Access", "Related to", "Connected on"},
+    if (showAllColumns) {
+      band.add(table(fullDatasetHeaders(), fullDatasetRows()));
+      band.add(note("Full table (power mode) for on-screen metadata curation. The default is "
+          + "identity + status; type-specific fields are in the side panel."));
+      return band;
+    }
+
+    List<Detail> details = datasetDetails();
+    band.add(clickableTable(datasetIdentityHeaders(), datasetIdentityRows(),
+        index -> {
+          if (index < details.size()) {
+            openDetail(details.get(index));
+          }
+        }));
+    band.add(note("Identity and status only — select a row for the full measurement metadata. "
+        + "Type-specific fields (e.g. MHC antibody, charge range) live in the side panel."));
+    band.add(connectedDatasetsSection());
+    return band;
+  }
+
+  private Div connectedDatasetsSection() {
+    Div section = new Div();
+    Div head = new Div();
+    head.addClassName("pt-band__head");
+    H3 title = new H3();
+    title.addClassName("pt-band__title");
+    title.setText("Connected datasets");
+    head.add(title, new Span("Hosted elsewhere and linked here."));
+    section.add(head);
+    section.add(table(new String[]{"Title", "Repository", "Access", "Related to", "Connected on"},
         List.of(
             row(text("Proteome reanalysis — immunopeptidome"), text("Zenodo"), done("Open"),
                 text("Immunopeptidomics pilot"), text("2 days ago")),
@@ -1312,43 +1353,212 @@ public class ProjectPagePrototypeDemo extends Div {
                 text("Project"), text("5 days ago")),
             row(text("Reference peptide list"), text("Zenodo"), done("Open"), muted("—"),
                 text("3 weeks ago")))));
-    band.add(note("“Connected” states only that the dataset is linked here. It may be an analysis "
-        + "result, related material, or something else — the relationship is not classified."));
-    return band;
+    section.add(note("“Connected” states only that the dataset is linked here. It may be an "
+        + "analysis result, related material, or something else — unclassified."));
+    return section;
   }
 
-  private List<List<CellView>> projectDatasetRows() {
+  private Div typeTabs() {
+    Div tabs = new Div();
+    tabs.addClassName("pt-tabs");
+    for (String type : List.of("NGS", "Proteomics", "Immunopeptidomics")) {
+      Button tab = new Button(type);
+      tab.addClassName("pt-tab");
+      if (type.equals(datasetType)) {
+        tab.addClassName("pt-tab--active");
+      }
+      tab.addClickListener(event -> {
+        datasetType = type;
+        refresh();
+      });
+      tabs.add(tab);
+    }
+    return tabs;
+  }
+
+  private String[] datasetIdentityHeaders() {
+    return new String[]{"Measurement ID", "Measurement name", "Experiment", "Instrument",
+        "Samples", "Primary data", "Registration"};
+  }
+
+  private List<List<CellView>> datasetIdentityRows() {
     List<List<CellView>> rows = new ArrayList<>();
     int counter = 1;
-    for (int e = 0; e < POPULATED_EXPERIMENTS.size(); e++) {
-      if (datasetFilter >= 0 && datasetFilter != e) {
+    for (Experiment exp : experimentsForType(datasetType)) {
+      if (datasetFilter >= 0 && !POPULATED_EXPERIMENTS.get(datasetFilter).equals(exp)) {
         continue;
       }
-      Experiment exp = POPULATED_EXPERIMENTS.get(e);
-      int missing = missingFor(e);
+      int missing = missingFor(POPULATED_EXPERIMENTS.indexOf(exp));
       int shown = Math.min(exp.measurements(), 6);
       for (int i = 1; i <= shown; i++) {
         boolean miss = i <= missing;
         rows.add(row(
-            mono(String.format("Q2IMMU-MS-%03d", counter++)),
+            mono(String.format("Q2IMMU-%s-%03d", typeCode(datasetType), counter++)),
+            text("Measurement " + i),
             text(exp.name()),
-            text("Immunopeptidomics"),
-            text("timsTOF Pro"),
-            text("2"),
-            miss ? attention("Not attached") : done("3 files"),
-            miss ? muted("—") : text("4.2 GB"),
-            miss ? attention("Missing") : done("Registered")));
+            text(instrumentFor(datasetType)),
+            text(String.valueOf((i % 3) + 1)),
+            miss ? attention("Not attached") : done("Attached"),
+            text("12 Sep 2026")));
       }
     }
     if (rows.isEmpty()) {
-      rows.add(row(muted("No measurements to show.")));
+      rows.add(row(muted("No measurements of this type.")));
     }
     return rows;
   }
 
+  private List<Detail> datasetDetails() {
+    List<Detail> details = new ArrayList<>();
+    int counter = 1;
+    for (Experiment exp : experimentsForType(datasetType)) {
+      if (datasetFilter >= 0 && !POPULATED_EXPERIMENTS.get(datasetFilter).equals(exp)) {
+        continue;
+      }
+      int shown = Math.min(exp.measurements(), 6);
+      for (int i = 1; i <= shown; i++) {
+        String id = String.format("Q2IMMU-%s-%03d", typeCode(datasetType), counter++);
+        details.add(new Detail("Measurement " + i, id + " · " + datasetType,
+            List.of(datasetType, "Primary data attached"),
+            measurementDetailGroups(datasetType, id)));
+      }
+    }
+    return details;
+  }
+
+  private String[] fullDatasetHeaders() {
+    return switch (datasetType) {
+      case "NGS" -> new String[]{"Measurement ID", "Measurement name", "Samples", "Facility",
+          "Instrument", "Organisation", "Read type", "Library kit", "Flow cell", "Run protocol",
+          "Registration", "Comment"};
+      case "Proteomics" -> new String[]{"Measurement ID", "Measurement name", "Samples",
+          "Organisation", "Facility", "MS device", "Technical replicate", "Digestion enzyme",
+          "Digestion method", "Injection volume", "LCMS method", "LC column", "Enrichment",
+          "Registration", "Comment"};
+      default -> new String[]{"Measurement ID", "Measurement name", "Samples", "Organisation",
+          "Facility", "Instrument", "MHC antibody", "MHC typing method", "Enrichment method",
+          "LCMS method", "LC column", "Data acquisition", "Mass range", "Retention time range",
+          "Charge range", "Ion mobility range", "Sample mass (mg)", "Sample volume (µl)",
+          "Cycle/fraction", "Prep date", "MS run date", "Registration", "Comment"};
+    };
+  }
+
+  private List<List<CellView>> fullDatasetRows() {
+    List<List<CellView>> rows = new ArrayList<>();
+    int counter = 1;
+    for (Experiment exp : experimentsForType(datasetType)) {
+      if (datasetFilter >= 0 && !POPULATED_EXPERIMENTS.get(datasetFilter).equals(exp)) {
+        continue;
+      }
+      int shown = Math.min(exp.measurements(), 4);
+      for (int i = 1; i <= shown; i++) {
+        rows.add(fullDatasetRow(i, counter++));
+      }
+    }
+    if (rows.isEmpty()) {
+      rows.add(row(muted("No measurements of this type.")));
+    }
+    return rows;
+  }
+
+  private List<CellView> fullDatasetRow(int label, int counter) {
+    String id = String.format("Q2IMMU-%s-%03d", typeCode(datasetType), counter);
+    return switch (datasetType) {
+      case "NGS" -> row(mono(id), text("Measurement " + label), text("2"),
+          text("QBiC MS Facility"), text("Illumina NovaSeq"), text("QBiC"), text("Paired-end"),
+          text("TruSeq"), text("NovaSeq S1"), text("Runs 1–2"), text("12 Sep 2026"),
+          text("—"));
+      case "Proteomics" -> row(mono(id), text("Measurement " + label), text("2"), text("QBiC"),
+          text("QBiC MS Facility"), text("timsTOF Pro"), text("TR1"), text("Trypsin"),
+          text("FASP"), text("2 µl"), text("MSV035"), text("Aurora"), text("—"),
+          text("12 Sep 2026"), text("—"));
+      default -> row(mono(id), text("Measurement " + label), text("2"), text("QBiC"),
+          text("QBiC MS Facility"), text("timsTOF Pro"), text("W6/32"), text("DNA seq-based"),
+          text("immunoaffinity purification"), text("MSV035"), text("Aurora"), text("DIA"),
+          text("300–1800 m/z"), text("60 min"), text("2–4"), text("0.6–1.6"), text("2.5"),
+          text("20"), text("Fraction01"), text("11 Sep 2026"), text("12 Sep 2026"),
+          text("12 Sep 2026"), text("—"));
+    };
+  }
+
+  private List<DetailGroup> measurementDetailGroups(String type, String id) {
+    if (type.equals("NGS")) {
+      return List.of(
+          group("Measurement Identity", field("QBiC Measurement Id", id),
+              field("Measurement Name", "NGS run")),
+          group("Instrument", field("Instrument", "Illumina NovaSeq"),
+              field("Read type", "Paired-end"), field("Library kit", "TruSeq"),
+              field("Flow cell", "NovaSeq S1"), field("Run protocol", "Runs 1–2")),
+          group("Organisational Provenance", field("Facility", "QBiC MS Facility"),
+              field("Organisation", "QBiC")),
+          group("Notes", field("Comment", "—")));
+    }
+    if (type.equals("Proteomics")) {
+      return List.of(
+          group("Measurement Identity", field("QBiC Measurement Id", id),
+              field("Measurement Name", "PX run")),
+          group("Sample Properties", field("Samples", "2")),
+          group("Instrument", field("MS Device", "timsTOF Pro"),
+              field("LCMS Method", "MSV035"), field("LC Column", "Aurora")),
+          group("Sample Preparation", field("Digestion Enzyme", "Trypsin"),
+              field("Digestion Method", "FASP"), field("Enrichment", "—"),
+              field("Injection Volume", "2 µl")),
+          group("Organisational Provenance", field("Facility", "QBiC MS Facility"),
+              field("Organisation", "QBiC")),
+          group("Notes", field("Comment", "—")));
+    }
+    return List.of(
+        group("Sample Identity", field("QBiC Sample Id", "Q2IMMU-0001"),
+            field("Sample Name", "P1_ctrl_T0")),
+        group("Measurement Identity", field("QBiC Measurement Id", id),
+            field("Measurement Name", "IP run")),
+        group("Sample Properties", field("Sample Mass (mg)", "2.5"),
+            field("Sample Volume (µl)", "20"), field("Cycle/Fraction Name", "Fraction01")),
+        group("Analyte Properties", field("Enrichment method", "immunoaffinity purification"),
+            field("MHC Antibody", "W6/32"),
+            field("MHC Typing Method", "DNA seq-based with Optitype")),
+        group("Organisational Provenance", field("Facility", "QBiC MS Facility"),
+            field("Organisation URL", "https://ror.org/03a1kwz48")),
+        group("Instrument", field("Data Acquisition", "DIA"),
+            field("Instrument", "timsTOF Pro"), field("LCMS Method", "MSV035"),
+            field("LC Column", "Aurora Ultimate")),
+        group("Run Parameters", field("Charge range", "2–4"),
+            field("Mass range (m/z)", "300–1800"),
+            field("Retention time range (min)", "60"),
+            field("Ion mobility range (1/k0)", "0.6–1.6")),
+        group("Notes", field("Comment", "—")));
+  }
+
+  private static List<Experiment> experimentsForType(String type) {
+    return POPULATED_EXPERIMENTS.stream()
+        .filter(exp -> exp.domains().stream().anyMatch(domain -> domainToType(domain).equals(type)))
+        .toList();
+  }
+
+  private static String domainToType(String domain) {
+    return switch (domain) {
+      case "Genomics" -> "NGS";
+      case "Proteomics" -> "Proteomics";
+      default -> "Immunopeptidomics";
+    };
+  }
+
+  private static String typeCode(String type) {
+    return switch (type) {
+      case "NGS" -> "NGS";
+      case "Proteomics" -> "PXM";
+      default -> "IPX";
+    };
+  }
+
+  private static String instrumentFor(String type) {
+    return type.equals("NGS") ? "Illumina NovaSeq" : "timsTOF Pro";
+  }
+
+
   /**
-   * Project-level Samples: one flat, read-only, exportable list across all experiments, with an
-   * Experiment column and quick-filter buttons. Registration/editing stays inside an experiment.
+   * Project-level Samples: identity + status list, read-only and exportable, with quick filters.
+   * Selecting a row opens the full sample in the side panel; the full table is opt-in.
    */
   private Div projectSamplesPage() {
     if (emptyState) {
@@ -1359,23 +1569,48 @@ public class ProjectPagePrototypeDemo extends Div {
           button("Create experiment", true, () -> createOrAddExperiment(true)));
     }
     Div band = pageBand("Samples", "Every sample in the project, across all experiments",
-        button("Export", false, null));
-
+        button("Export", false, null),
+        button(showAllColumns ? "Fewer columns" : "Show all columns", false,
+            () -> {
+              showAllColumns = !showAllColumns;
+              refresh();
+            }));
     band.add(experimentFilter(sampleFilter, value -> {
       sampleFilter = value;
       refresh();
     }));
-    band.add(table(new String[]{"Sample ID", "Experiment", "Sample name", "Species", "Tissue",
-        "Condition", "Replicates"}, projectSampleRows()));
-    band.add(note("Read-only overview. Registering and editing samples happens inside an "
-        + "experiment."));
+
+    if (showAllColumns) {
+      band.add(table(fullSampleHeaders(), fullSampleRows()));
+      band.add(note("Full table (power mode) for on-screen metadata curation."));
+      return band;
+    }
+
+    List<Detail> details = sampleDetails();
+    band.add(clickableTable(sampleIdentityHeaders(), sampleIdentityRows(),
+        index -> {
+          if (index < details.size()) {
+            openDetail(details.get(index));
+          }
+        }));
+    band.add(note("Identity and status only — select a row for the full sample. Registering and "
+        + "editing samples happens inside an experiment."));
     return band;
   }
 
-  private List<List<CellView>> projectSampleRows() {
+  private String[] sampleIdentityHeaders() {
+    return new String[]{"Sample ID", "Sample name", "Experiment", "Condition", "Species",
+        "Status"};
+  }
+
+  private String[] fullSampleHeaders() {
+    return new String[]{"Sample ID", "Sample name", "Experiment", "Analysis",
+        "Biological replicate", "Batch", "Condition", "Species", "Specimen", "Analyte",
+        "Comment"};
+  }
+
+  private List<List<CellView>> sampleIdentityRows() {
     List<List<CellView>> rows = new ArrayList<>();
-    int counter = 1;
-    String[] names = {"P1_ctrl_T0", "P1_treat_T0", "P1_ctrl_T1", "P2_ctrl_T0"};
     for (int e = 0; e < POPULATED_EXPERIMENTS.size(); e++) {
       if (sampleFilter >= 0 && sampleFilter != e) {
         continue;
@@ -1384,19 +1619,91 @@ public class ProjectPagePrototypeDemo extends Div {
       int shown = Math.min(exp.samples(), 6);
       for (int i = 0; i < shown; i++) {
         rows.add(row(
-            mono(String.format("Q2IMMU-%04d", counter++)),
+            mono(sampleIdentity(e, i)),
+            text(sampleName(i)),
             text(exp.name()),
-            text(names[i % names.length]),
+            text(sampleCondition(i)),
             text("Homo sapiens"),
-            text("Tumour organoid"),
-            text(i % 2 == 0 ? "Untreated" : "Treated"),
-            text(String.valueOf((i % 3) + 1))));
+            i < Math.max(1, shown - 1) ? done("Measured") : attention("Not measured")));
       }
     }
     if (rows.isEmpty()) {
       rows.add(row(muted("No samples to show.")));
     }
     return rows;
+  }
+
+  private List<List<CellView>> fullSampleRows() {
+    List<List<CellView>> rows = new ArrayList<>();
+    for (int e = 0; e < POPULATED_EXPERIMENTS.size(); e++) {
+      if (sampleFilter >= 0 && sampleFilter != e) {
+        continue;
+      }
+      Experiment exp = POPULATED_EXPERIMENTS.get(e);
+      int shown = Math.min(exp.samples(), 4);
+      for (int i = 0; i < shown; i++) {
+        rows.add(row(
+            mono(sampleIdentity(e, i)),
+            text(sampleName(i)),
+            text(exp.name()),
+            text("Immunopeptidomics"),
+            text(String.valueOf((i % 3) + 1)),
+            text("Batch1"),
+            text(sampleCondition(i)),
+            text("Homo sapiens"),
+            text("Tumour organoid"),
+            text("Peptide"),
+            text("—")));
+      }
+    }
+    if (rows.isEmpty()) {
+      rows.add(row(muted("No samples to show.")));
+    }
+    return rows;
+  }
+
+  private List<Detail> sampleDetails() {
+    List<Detail> details = new ArrayList<>();
+    for (int e = 0; e < POPULATED_EXPERIMENTS.size(); e++) {
+      if (sampleFilter >= 0 && sampleFilter != e) {
+        continue;
+      }
+      Experiment exp = POPULATED_EXPERIMENTS.get(e);
+      int shown = Math.min(exp.samples(), 6);
+      for (int i = 0; i < shown; i++) {
+        String id = sampleIdentity(e, i);
+        details.add(new Detail(sampleName(i), id + " · " + exp.name(),
+            List.of(sampleCondition(i)),
+            List.of(
+                group("Sample Identity",
+                    field("QBiC Sample Id", id),
+                    field("Sample Name", sampleName(i))),
+                group("Sample Properties",
+                    field("Condition", sampleCondition(i)),
+                    field("Biological Replicate", String.valueOf((i % 3) + 1)),
+                    field("Batch", "Batch1")),
+                group("Sample Origin",
+                    field("Species", "Homo sapiens"),
+                    field("Specimen", "Tumour organoid"),
+                    field("Analyte", "Peptide")),
+                group("Analysis", field("Analysis to be performed", "Immunopeptidomics")),
+                group("Notes", field("Comment", "—")))));
+      }
+    }
+    return details;
+  }
+
+  private static String sampleIdentity(int experimentIndex, int offset) {
+    return String.format("Q2IMMU-%04d", experimentIndex * 100 + offset + 1);
+  }
+
+  private static String sampleCondition(int offset) {
+    return offset % 2 == 0 ? "Untreated" : "Treated";
+  }
+
+  private static String sampleName(int offset) {
+    String[] names = {"P1_ctrl_T0", "P1_treat_T0", "P1_ctrl_T1", "P2_ctrl_T0"};
+    return names[offset % names.length];
   }
 
   /** Quick-filter buttons over the experiments; -1 means "all experiments". */
@@ -1423,6 +1730,107 @@ public class ProjectPagePrototypeDemo extends Div {
     chip.getElement().setAttribute("tabindex", "0");
     chip.addClickListener(event -> onClick.run());
     return chip;
+  }
+
+  // ── Side panel (detail) ──────────────────────────────────────────────────
+
+  /** A table whose rows open the side panel; the index maps to a parallel detail list. */
+  private Div clickableTable(String[] headers, List<List<CellView>> rows,
+      java.util.function.IntConsumer onRowClick) {
+    Div table = new Div();
+    table.addClassName("pt-table");
+    Div head = new Div();
+    head.addClassName("pt-table__row");
+    head.addClassName("pt-table__row--head");
+    for (String header : headers) {
+      head.add(cell(new CellView(header, "head")));
+    }
+    table.add(head);
+    for (int i = 0; i < rows.size(); i++) {
+      Div rowDiv = new Div();
+      rowDiv.addClassName("pt-table__row");
+      rowDiv.addClassName("pt-table__row--clickable");
+      rows.get(i).forEach(cellView -> rowDiv.add(cell(cellView)));
+      final int index = i;
+      rowDiv.addClickListener(event -> onRowClick.accept(index));
+      table.add(rowDiv);
+    }
+    return table;
+  }
+
+  private void openDetail(Detail selected) {
+    this.detail = selected;
+    refresh();
+  }
+
+  private void closeDetail() {
+    this.detail = null;
+    refresh();
+  }
+
+  /** The side panel keeps the list context: the full record, grouped by the spec's categories. */
+  private Div buildDetailPanel() {
+    Div overlay = new Div();
+    overlay.addClassName("pt-overlay");
+
+    Div panel = new Div();
+    panel.addClassName("pt-panel");
+
+    Div head = new Div();
+    head.addClassName("pt-panel__head");
+    Div titles = new Div();
+    H2 title = new H2();
+    title.addClassName("pt-panel__title");
+    title.setText(detail.title());
+    Span subtitle = new Span(detail.subtitle());
+    subtitle.addClassName("pt-panel__subtitle");
+    titles.add(title, subtitle);
+    Button close = new Button("Close");
+    close.addClassName("pt-btn");
+    close.addClassName("pt-btn--text");
+    close.addClickListener(event -> closeDetail());
+    head.add(titles, close);
+    panel.add(head);
+
+    if (detail.chips() != null && !detail.chips().isEmpty()) {
+      Div chips = new Div();
+      chips.addClassName("pt-chips");
+      detail.chips().forEach(text -> chips.add(chip(text, null)));
+      panel.add(chips);
+    }
+
+    Div groups = new Div();
+    groups.addClassName("pt-panel__groups");
+    for (DetailGroup group : detail.groups()) {
+      Div groupDiv = new Div();
+      groupDiv.addClassName("pt-panel__group");
+      H3 heading = new H3();
+      heading.addClassName("pt-panel__group-title");
+      heading.setText(group.heading());
+      groupDiv.add(heading);
+      for (DetailField field : group.fields()) {
+        Div fieldRow = new Div();
+        fieldRow.addClassName("pt-panel__field");
+        Span label = new Span(field.label());
+        label.addClassName("pt-panel__label");
+        Span value = new Span(field.value());
+        value.addClassName("pt-panel__value");
+        fieldRow.add(label, value);
+        groupDiv.add(fieldRow);
+      }
+      groups.add(groupDiv);
+    }
+    panel.add(groups);
+    overlay.add(panel);
+    return overlay;
+  }
+
+  private static DetailField field(String label, String value) {
+    return new DetailField(label, value);
+  }
+
+  private static DetailGroup group(String heading, DetailField... fields) {
+    return new DetailGroup(heading, List.of(fields));
   }
 
   private Div accessPage() {

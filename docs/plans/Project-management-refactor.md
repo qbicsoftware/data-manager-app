@@ -630,6 +630,46 @@ and does not repeat the per-experiment pipeline, which belongs to the experiment
 all sample/measurement metadata editing, or only project metadata (funding, contacts)? And is that
 settings surface project-scoped or experiment-scoped?
 
+### How wide records are presented (strategy, 2026-10-12)
+
+Samples carry ~10 user attributes; measurements carry far more and are type-specific (NGS ~12,
+proteomics ~15, **immunopeptidomics 22** per the stakeholder spec). A union table would exceed 35
+columns and be mostly empty. A flat list is therefore the wrong default.
+
+**Three tiers: Scan → Inspect → Extract**
+
+1. **Scan (list): identity + status only.** The list answers *which record do I need?* — not *what
+does this record say?*.
+2. **Inspect (detail): the full attribute set**, opened per record in a **side panel** (keeps the
+list context). Attributes are grouped by the stakeholder spec's categories: Sample Identity,
+Sample Properties, Sample Provenance, Analyte Properties, Organisational Provenance, Measurement
+Provenance, Instrument, Run Parameters, Notes.
+3. **Extract (export):** the complete record set via the existing Excel/TSV templates.
+
+**Domain-aware, never unioned.** The Datasets surface segments by measurement type using the
+**tab approach already implemented in production** (NGS / Proteomics / Immunopeptidomics). Only the
+common identity columns are shown; type-specific fields live in the detail panel.
+
+**Power mode (opt-in).** The production paginated grid can be offered as a "show all columns"
+mode for power users who want to scan/curate the full table online instead of exporting first.
+
+#### Provisional identity blocks (educated guess — to validate with the data steward)
+
+| Record | List columns |
+|---|---|
+| Sample | QBiC Sample Id · Sample name · Experiment · Condition (experimental group) · Species · Batch · Biological replicate · **Status** |
+| Measurement | QBiC Measurement Id · Measurement name · Experiment · Type · Instrument · # samples · **Primary data** · Registration date |
+
+The guess is: *key + human label + experiment context + 1–2 biological/technical discriminators +
+status*. Type-specific fields (e.g. MHC antibody, charge range) are deliberately excluded.
+
+#### Provisional status set (educated guess)
+
+- **Sample:** `Measured` (linked to at least one measurement) vs `Not measured`.
+- **Measurement:** `Primary data` attached vs missing; `QC` passed vs pending where available.
+
+Status is the only "attribute-like" thing that earns a list column, because it drives attention.
+
 ### Remaining question
 
 - How the experiment views are reached within the existing context strip (the breadcrumb /
