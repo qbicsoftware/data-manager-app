@@ -1,7 +1,11 @@
 package life.qbic.datamanager.views.demo;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dependency.CssImport;
+import com.vaadin.flow.component.html.Abbr;
+import com.vaadin.flow.component.html.Anchor;
+import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.H2;
@@ -16,6 +20,8 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.spring.annotation.UIScope;
+import life.qbic.datamanager.views.general.oidc.OidcLogo;
+import life.qbic.datamanager.views.general.oidc.OidcType;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.context.annotation.Profile;
@@ -79,24 +85,38 @@ public class ProjectPagePrototypeDemo extends Div {
     enum State { DONE, ATTENTION, TODO }
   }
 
+  /**
+   * One experiment as the project page presents it: identity, the counts that make it actionable,
+   * and the recent activity the inline snapshots summarise.
+   *
+   * @param samplesActivity   the verb for the samples panel status, either {@code "Registered"} or
+   *                          {@code "Modified"}; {@code null} when the experiment has no samples
+   * @param daysSinceActivity how long ago something in this experiment last changed. Used as the
+   *                          relative age of the newest row in both snapshots
+   */
   private record Experiment(
       String name,
       List<String> domains,
       int samples,
       int measurements,
       int datasets,
-      int qc,
-      String lastActivity) {
+      String samplesActivity,
+      int daysSinceActivity) {
 
     boolean isStarted() {
       return samples + measurements + datasets > 0;
     }
   }
 
-  private record Contact(String role, String name, String email, String orcid) {
+  private record Contact(String roleAbbreviation, String role, String name, String email,
+                         String orcid) {
 
-    boolean hasOidc() {
+    boolean hasOrcid() {
       return orcid != null && !orcid.isBlank();
+    }
+
+    String orcidUrl() {
+      return "https://orcid.org/" + orcid;
     }
   }
 
@@ -123,6 +143,7 @@ public class ProjectPagePrototypeDemo extends Div {
     DATASETS("Datasets", false),
     ACCESS("Access", false),
     ONTOLOGY("Ontology search", false),
+    SETTINGS("Project settings", false),
     DESIGN("Design", true),
     EXP_SAMPLES("Samples", true),
     EXP_DATASET("Dataset", true);
@@ -142,11 +163,11 @@ public class ProjectPagePrototypeDemo extends Div {
 
   private static final List<Experiment> POPULATED_EXPERIMENTS = List.of(
       new Experiment("Immunopeptidomics pilot",
-          List.of("Immunopeptidomics"), 48, 24, 18, 3, "2 days ago"),
+          List.of("Immunopeptidomics"), 48, 24, 18, "Modified", 2),
       new Experiment("Solely Immuno",
-          List.of("Immunopeptidomics", "Proteomics"), 36, 30, 18, 1, "5 days ago"),
+          List.of("Immunopeptidomics", "Proteomics"), 36, 30, 18, "Registered", 5),
       new Experiment("Smoke test edit immunopeptidomics",
-          List.of("Genomics"), 0, 0, 0, 0, "not started"));
+          List.of("Genomics"), 0, 0, 0, null, 0));
 
   /**
    * One outstanding item, attributed to the experiment it belongs to.
@@ -238,7 +259,18 @@ public class ProjectPagePrototypeDemo extends Div {
   private int datasetFilter = -1;
   private boolean showAllColumns = false;
   private String datasetType = "Immunopeptidomics";
+  /**
+   * Whether a design exists for the experiment. Prototype-only switch: a real view reads this from
+   * the domain. It exists so the defect this prototype was fixed for stays demonstrable — a design
+   * can be created without the user being able to see that it happened.
+   */
+  private boolean designDefined = true;
   private Detail detail = null;
+  /** Which contact card is open for editing, or {@code null} when all are read-only. */
+  private String editingContact = null;
+
+  /** Which page-local section of the Project settings page is open. */
+  private String settingsSection = CONTACTS_SECTION;
 
   // ── Construction ────────────────────────────────────────────────────────
 
@@ -295,6 +327,8 @@ public class ProjectPagePrototypeDemo extends Div {
             + "row 2 is the proposed in-project navigation. Controls below are demo-only.");
     bar.add(label, note, spacerBefore());
 
+    // Prototype-only chrome, so it is deliberately shaped differently from the product's buttons:
+    // at full accent it was the same blue as the page's one primary action and competed with it.
     Button populated = toggle("Populated project", !emptyState, () -> {
       emptyState = false;
       page = Page.SUMMARY;
@@ -309,7 +343,11 @@ public class ProjectPagePrototypeDemo extends Div {
       longTitle = !longTitle;
       refresh();
     });
-    bar.add(populated, empty, longTitleToggle);
+    Button designToggle = toggle("No design yet", !designDefined, () -> {
+      designDefined = !designDefined;
+      refresh();
+    });
+    bar.add(populated, empty, longTitleToggle, designToggle);
     return bar;
   }
 
@@ -386,7 +424,9 @@ public class ProjectPagePrototypeDemo extends Div {
     row.addClassName("pt-subnav__row");
     row.addClassName("pt-shell");
 
-    // The in-project surfaces that used to live in the drawer.
+    // Navigation rows carry navigation, not numbers. The counts were repeated in the context-strip
+    // pills, the pipeline cards and the snapshot panels; omitting them from BOTH navigation layers
+    // removes the duplication at its source instead of shuffling it between rows.
     Div nav = new Div();
     nav.addClassName("pt-subnav__nav");
     nav.add(navItem("Summary", Page.SUMMARY), navItem("Samples", Page.SAMPLES),
@@ -394,7 +434,12 @@ public class ProjectPagePrototypeDemo extends Div {
 
     Div tools = new Div();
     tools.addClassName("pt-subnav__tools");
-    tools.add(navItem("Ontology search", Page.ONTOLOGY));
+    // "Project settings", never bare "Settings": row 1 already carries a shell-level "Settings"
+    // tab (the account/groups hub) and two adjacent rows both saying "Settings" gave no hint which
+    // scope applied. Scoping the label matches the plan's rule for actions ("Edit contacts", not
+    // "Edit") and keeps row 1 untouched.
+    tools.add(navItem("Ontology search", Page.ONTOLOGY),
+        navItem("Project settings", Page.SETTINGS));
 
     row.add(nav, tools);
     bar.add(row);
@@ -436,20 +481,44 @@ public class ProjectPagePrototypeDemo extends Div {
         crumb(projectTitle(), () -> navigate(Page.SUMMARY)));
     row.add(crumbs);
 
+    // While inside an experiment the strip carries the experiment's OWN views. They are both the
+    // "you are here" marker for experiment scope and the switcher between Design / Samples /
+    // Dataset, so the active view is marked and every pill is operable by pointer and keyboard.
+    // They carry no counts: repeating a number here, in the pipeline card and in the snapshot panel
+    // put it on screen three times.
     if (page.isExperimentScoped() && !emptyState) {
       Experiment experiment = selectedExperiment();
-      crumbs.add(sep(), crumb(experiment.name(),
-          () -> openExperiment(experimentIndex, Page.DESIGN)));
+      Span experimentCrumb = new Span(experiment.name());
+      experimentCrumb.addClassName("pt-crumb");
+      experimentCrumb.addClassName("pt-crumb--current");
+      experimentCrumb.getElement().setAttribute("title", experiment.name());
+      crumbs.add(sep(), experimentCrumb);
 
       Div views = new Div();
       views.addClassName("pt-expviews");
-      views.add(expView("Design", null, Page.DESIGN),
-          expView("Samples", experiment.samples(), Page.EXP_SAMPLES),
-          expView("Dataset", experiment.measurements(), Page.EXP_DATASET));
+      views.add(expView("Design", Page.DESIGN), expView("Samples", Page.EXP_SAMPLES),
+          expView("Dataset", Page.EXP_DATASET));
       row.add(views);
     }
 
     contextRow.add(row);
+  }
+
+  /**
+   * One experiment view: the strip's switcher between Design / Samples / Dataset, marking the active
+   * view and operable by pointer and keyboard.
+   */
+  private Div expView(String label, Page target) {
+    Div view = new Div();
+    view.addClassName("pt-expview");
+    view.getElement().setAttribute("role", "button");
+    view.getElement().setAttribute("tabindex", "0");
+    view.add(textSpan(label, null));
+    if (page == target) {
+      view.getElement().setAttribute("aria-current", "page");
+    }
+    activateOnClickAndKeys(view, () -> openExperiment(experimentIndex, target));
+    return view;
   }
 
   private Span sep() {
@@ -470,26 +539,8 @@ public class ProjectPagePrototypeDemo extends Div {
     span.getElement().setAttribute("title", text);
     span.getElement().setAttribute("role", "link");
     span.getElement().setAttribute("tabindex", "0");
-    span.addClickListener(event -> onClick.run());
+    activateOnClickAndKeys(span, onClick);
     return span;
-  }
-
-  private Div expView(String label, Integer count, Page target) {
-    Div view = new Div();
-    view.addClassName("pt-expview");
-    view.getElement().setAttribute("role", "button");
-    view.getElement().setAttribute("tabindex", "0");
-    view.add(textSpan(label, null));
-    if (count != null) {
-      Span badge = new Span(String.valueOf(count));
-      badge.addClassName("pt-expview__count");
-      view.add(badge);
-    }
-    if (page == target) {
-      view.getElement().setAttribute("aria-current", "page");
-    }
-    view.addClickListener(event -> openExperiment(experimentIndex, target));
-    return view;
   }
 
   // ── Body router ─────────────────────────────────────────────────────────
@@ -504,6 +555,7 @@ public class ProjectPagePrototypeDemo extends Div {
       case DATASETS -> wrapper.add(datasetsPage());
       case ACCESS -> wrapper.add(accessPage());
       case ONTOLOGY -> wrapper.add(ontologyPage());
+      case SETTINGS -> wrapper.add(settingsPage());
       case DESIGN -> wrapper.add(designPage());
       case EXP_SAMPLES -> wrapper.add(samplesPage());
       case EXP_DATASET -> wrapper.add(datasetPage());
@@ -542,7 +594,12 @@ public class ProjectPagePrototypeDemo extends Div {
     }
     heading.add(title, meta);
 
-    // The objective sits directly under the title: expanded, clamped to three lines.
+    // Contacts sit between the title/meta block and the prose on purpose: who owns the project is
+    // the kind of fact a reader scans for, and below a three-line abstract it read as an appendix.
+    // Keeping it in the heading column also leaves the right-hand action column free for actions.
+    heading.add(contactsRow());
+
+    // The objective sits under the identity block: expanded, clamped to three lines.
     Div objective = new Div();
     objective.addClassName("pt-objective");
     Paragraph text = new Paragraph(emptyState ? OBJECTIVE_SHORT : OBJECTIVE_LONG);
@@ -571,8 +628,113 @@ public class ProjectPagePrototypeDemo extends Div {
 
     top.add(actions);
     band.add(top);
-    band.add(peopleRow());
     return band;
+  }
+
+  /**
+   * Contacts sit directly under the title so the people responsible for a project are visible without
+   * scrolling. Each contact is compressed to one line: role abbreviation as a badge, the person's
+   * name, and two icon links. The ORCID iD itself is deliberately not shown as text — it is visual
+   * clutter for everyone but the person who owns it — so the ORCID logo carries the link to the
+   * public record instead. The envelope carries a {@code mailto:} link, keeping the address
+   * available on hover/focus without spending a line on it.
+   */
+  private Div contactsRow() {
+    Div people = new Div();
+    people.addClassName("pt-people");
+    people.add(textSpan("Contacts", "pt-people__label"));
+    for (Contact contact : projectContacts()) {
+      people.add(contactChip(contact));
+    }
+    // A link, not an editor: editing project metadata is rare and never urgent, so it belongs on the
+    // Settings page rather than in a dialog beside the title. Scoped to what it edits, per the plan's
+    // "scope edit labels" rule, and it actually navigates — the landing page stays read-only.
+    people.add(settingsLink("Edit contacts", CONTACTS_SECTION));
+    return people;
+  }
+
+  private Button settingsLink(String label, String section) {
+    Button link = new Button(label);
+    link.addClassName("pt-btn");
+    link.addClassName("pt-btn--text");
+    link.addClickListener(event -> {
+      this.settingsSection = section;
+      navigate(Page.SETTINGS);
+    });
+    return link;
+  }
+
+  private List<Contact> projectContacts() {
+    return List.of(
+        new Contact("PI", "Principal investigator", "Steffen Greiner",
+            "steffen.greiner@qbic.uni-tuebingen.de", "0009-0006-0929-9338"),
+        new Contact("PM", "Project manager", "Wow Cool", "wow@cool.dude", null),
+        new Contact("Resp.", "Project responsible", "Lena Vogt",
+            "lena.vogt@qbic.uni-tuebingen.de", "0000-0002-1825-0097"));
+  }
+
+  /**
+   * One contact, compressed to a single line: {@code [PI] Steffen Greiner · orcid · mail}. The role is
+   * abbreviated because the full title is four times as wide and the abbreviation is unambiguous in
+   * context; the full role is exposed to assistive tech and as a tooltip.
+   */
+  private Div contactChip(Contact contact) {
+    Div chip = new Div();
+    chip.addClassName("pt-contact-chip");
+
+    Abbr role = new Abbr(contact.roleAbbreviation());
+    role.addClassName("pt-contact-chip__role");
+    role.getElement().setAttribute("title", contact.role());
+    role.getElement().setAttribute("aria-label", contact.role());
+
+    Span name = new Span(contact.name());
+    name.addClassName("pt-contact-chip__name");
+
+    chip.add(role, name);
+
+    // No placeholder when an ORCID is missing: it sits in the middle of the chip and pulls the
+    // name and the envelope apart, so it reads as a person/avatar rather than as absent data. A
+    // missing iD is simply not shown; the row stays compact and the two present chips stay aligned.
+    if (contact.hasOrcid()) {
+      Anchor orcid = new Anchor(contact.orcidUrl());
+      orcid.addClassName("pt-contact-chip__icon");
+      orcid.setTarget(AnchorTarget.BLANK);
+      orcid.getElement().setAttribute("title", "ORCID: " + contact.orcid());
+      orcid.getElement().setAttribute("aria-label",
+          "Open ORCID record %s of %s in a new tab".formatted(contact.orcid(), contact.name()));
+      orcidLogo(orcid);
+      chip.add(orcid);
+    }
+
+    Anchor mail = new Anchor("mailto:" + contact.email(),
+        icon(VaadinIcon.ENVELOPE, "pt-contact-chip__glyph"));
+    mail.addClassName("pt-contact-chip__icon");
+    mail.getElement().setAttribute("title", contact.email());
+    mail.getElement().setAttribute("aria-label", "Email %s at %s".formatted(contact.name(),
+        contact.email()));
+    chip.add(mail);
+
+    return chip;
+  }
+
+  /**
+   * Adds the ORCID logo to the given anchor once it is attached.
+   *
+   * <p>{@link OidcLogo} extends {@code Image} and resolves its source through a stream
+   * resource, which requires a current {@code UI}. This prototype builds its whole body in the
+   * constructor — before attachment — so the logo cannot be created eagerly: doing so throws
+   * {@code IllegalStateException: No currently active UI found}. Deferring to the attach event
+   * keeps the real {@code OidcLogo} component (and therefore visual parity with the app) while
+   * letting the prototype stay constructible without a UI.</p>
+   */
+  private static void orcidLogo(Anchor anchor) {
+    anchor.addAttachListener(event -> {
+      if (anchor.getChildren().findAny().isEmpty()) {
+        OidcLogo logo = new OidcLogo(OidcType.ORCID);
+        logo.addClassName("pt-contact-chip__logo");
+        anchor.add(logo);
+      }
+    });
   }
 
   /**
@@ -589,7 +751,7 @@ public class ProjectPagePrototypeDemo extends Div {
     chip.getElement().setAttribute("tabindex", "0");
     chip.getElement().setAttribute("title", "Show which experiments need attention");
     chip.add(textSpan(text, null), icon(VaadinIcon.ANGLE_RIGHT, null));
-    chip.addClickListener(event -> showAttentionDetail());
+    activateOnClickAndKeys(chip, this::showAttentionDetail);
     return chip;
   }
 
@@ -597,28 +759,6 @@ public class ProjectPagePrototypeDemo extends Div {
     Span span = new Span("·");
     span.addClassName("pt-meta__sep");
     return span;
-  }
-
-  private Div peopleRow() {
-    Div people = new Div();
-    people.addClassName("pt-people");
-    people.add(new Span("Shared with"));
-    for (String name : List.of("Steffen Greiner", "Wow Cool", "Lena Vogt", "Amir Rahman")) {
-      people.add(initials(initialsOf(name)));
-    }
-    people.add(new Span("+7 others"));
-    return people;
-  }
-
-  private static String initialsOf(String name) {
-    String[] parts = name.split("\\s+");
-    StringBuilder initials = new StringBuilder();
-    for (String part : parts) {
-      if (!part.isBlank()) {
-        initials.append(Character.toUpperCase(part.charAt(0)));
-      }
-    }
-    return initials.toString();
   }
 
   // Progress band ─────────────────────────────────────────────────────────
@@ -667,10 +807,19 @@ public class ProjectPagePrototypeDemo extends Div {
       }
       item.getElement().setAttribute("role", "link");
       item.getElement().setAttribute("tabindex", "0");
-      // Numbers are legitimate here: this genuinely is a sequence.
-      Span marker = new Span(stage.state() == Stage.State.DONE ? "✓"
-          : stage.state() == Stage.State.ATTENTION ? "!" : String.valueOf(i + 1));
+      // Numbers are legitimate here: this genuinely is a sequence. Done and attention use glyphs
+      // instead of ordinals. The attention glyph is the same warning triangle the exception rows
+      // use, because a bold "!" in a small circle is read as "1" (or "l") and made the third step
+      // look like an unnumbered error rather than outstanding work.
+      Span marker = new Span();
       marker.addClassName("pt-rail__marker");
+      if (stage.state() == Stage.State.DONE) {
+        marker.add(icon(VaadinIcon.CHECK, "pt-rail__glyph"));
+      } else if (stage.state() == Stage.State.ATTENTION) {
+        marker.add(icon(VaadinIcon.WARNING, "pt-rail__glyph"));
+      } else {
+        marker.setText(String.valueOf(i + 1));
+      }
       Span label = new Span(stage.label());
       label.addClassName("pt-rail__label");
       Span count = new Span(stage.count() + " " + stage.unit());
@@ -728,8 +877,45 @@ public class ProjectPagePrototypeDemo extends Div {
     Span go = new Span(action);
     go.addClassName("pt-exception__action");
     row.add(go);
-    row.addClickListener(event -> onClick.run());
+    activateOnClickAndKeys(row, onClick);
     return row;
+  }
+
+  /**
+   * Makes an element that carries {@code role="button"}/{@code role="link"} and
+   * {@code tabindex="0"} actually reachable by keyboard.
+   *
+   * <p>A {@code tabindex} alone only puts the element in the tab order: the browser fires
+   * {@code click} for a real {@code <button>} on Enter and Space, but for a {@code <div>} nothing
+   * happens. Focus was reachable and activation was not, which is the most misleading version of
+   * this bug — the element looks operable to a keyboard user and then silently does nothing.
+   * Enter and Space are the two keys the button role promises, so both are wired here.</p>
+   */
+  private static void activateOnClickAndKeys(Component element, Runnable action) {
+    element.getElement().addEventListener("click", event -> action.run());
+    activateOnKeydown(element, action);
+    // Records that this element carries the FULL activation contract (pointer + Enter/Space). It is
+    // the one thing a test cannot otherwise observe from outside: a `role` attribute is just a
+    // string, so without a marker an "every role=button is really operable" check has to reach into
+    // Flow's internal listener registry. The marker keeps that assertion honest and public.
+    element.getElement().setAttribute("data-activation", "full");
+  }
+
+  /**
+   * Adds Enter/Space activation to an element that advertises {@code role="button"} /
+   * {@code role="link"}.
+   *
+   * <p>Registered on the element rather than through {@code addClickListener} so the same helper
+   * serves components whose type differs (Div, Span, ListItem) without a cast or type parameter.</p>
+   */
+  private static void activateOnKeydown(Component element, Runnable action) {
+    // Enter is delivered as a filtered keydown rather than left to the browser's native
+    // click-on-Enter: the rows here are <div>s, not <button>s, and a <div> with role="button" gets
+    // no native activation at all. Space is listed alongside it because the button role promises
+    // both; preventDefault stops Space from scrolling the page instead.
+    element.getElement().addEventListener("keydown", event -> action.run())
+        .setFilter("event.key === ' ' || event.key === 'Enter'")
+        .addEventData("event.preventDefault()");
   }
 
   private static List<Stage> stages(boolean empty) {
@@ -737,15 +923,14 @@ public class ProjectPagePrototypeDemo extends Div {
       return List.of(
           new Stage("Experiment created", 0, "experiments", Stage.State.TODO, Page.DESIGN),
           new Stage("Samples registered", 0, "samples", Stage.State.TODO, Page.EXP_SAMPLES),
-          new Stage("Dataset", 0, "measurements", Stage.State.TODO, Page.EXP_DATASET),
-          new Stage("Sample QC uploaded", 0, "reports", Stage.State.TODO, Page.EXP_SAMPLES));
+          new Stage("Dataset", 0, "measurements", Stage.State.TODO, Page.EXP_DATASET));
     }
     return List.of(
         new Stage("Experiment created", 3, "experiments", Stage.State.DONE, Page.DESIGN),
         new Stage("Samples registered", 84, "samples", Stage.State.DONE, Page.EXP_SAMPLES),
-        new Stage("Dataset", 18, "measurements with data", Stage.State.ATTENTION,
-            Page.EXP_DATASET),
-        new Stage("Sample QC uploaded", 4, "reports", Stage.State.TODO, Page.EXP_SAMPLES));
+        // 36 = 18 of 24 + 18 of 30, i.e. the sum over experiments of those with primary data.
+        new Stage("Dataset", 36, "measurements with data", Stage.State.ATTENTION,
+            Page.EXP_DATASET));
   }
 
   // Experiments band ──────────────────────────────────────────────────────
@@ -754,6 +939,10 @@ public class ProjectPagePrototypeDemo extends Div {
    * The experiments section of the project landing page, and the single home of the experiment
    * list. With no experiment it is onboarding; otherwise every experiment is a card with an inline
    * snapshot. There is no separate experiments page and no second experiment list.
+   *
+   * <p>Deliberately carries no action of its own: "Add experiment" already sits in the hero next to
+   * the title, and the same action twice on one page (here ~700px lower) reads as two different
+   * controls and leaves the page without a single obvious primary.</p>
    */
   private Div experimentsBand(boolean empty) {
     Div band = new Div();
@@ -764,11 +953,7 @@ public class ProjectPagePrototypeDemo extends Div {
     H2 title = new H2();
     title.addClassName("pt-band__title");
     title.setText("Experiments");
-    Div actions = new Div();
-    actions.addClassName("pt-band__actions");
-    actions.add(button(empty ? "Create experiment" : "Add experiment", true,
-        () -> createOrAddExperiment(empty)));
-    head.add(title, actions);
+    head.add(title);
     band.add(head);
 
     if (empty) {
@@ -789,7 +974,7 @@ public class ProjectPagePrototypeDemo extends Div {
       text.addClassName("pt-onboard__text");
       hero.add(heroTitle, text);
       band.add(hero);
-      band.add(pipeline(projectPipeline(), "What happens after you create it?", false));
+      band.add(pipeline(projectPipeline(), "What happens after you create it?", false, false));
       return band;
     }
 
@@ -848,7 +1033,6 @@ public class ProjectPagePrototypeDemo extends Div {
     counts.add(countFact(experiment.samples(), "samples"));
     counts.add(countFact(experiment.measurements(), "measurements"));
     counts.add(countFact(experiment.datasets(), "datasets"));
-    counts.add(countFact(experiment.qc(), "QC reports"));
 
     Div actions = new Div();
     actions.addClassName("pt-exp__actions");
@@ -876,6 +1060,26 @@ public class ProjectPagePrototypeDemo extends Div {
    * An inline "at a glance" overview of an experiment's samples, measurements and primary data.
    * It exists so the user can see what is there from the project/experiments page without opening
    * each nested view; clicking a panel goes to the full view.
+   *
+   * <p>The rows are the <b>most recently registered or modified</b> records, newest first, capped at
+   * three. That is the only ordering this panel can honour and still mean something: the raw list
+   * order (sample code) is already implied by the count next to it, so showing the three lowest
+   * identifiers tells the user nothing they cannot infer. Recency answers the question the panel
+   * exists for — <em>what has happened in this experiment since I last looked?</em> Clicking through
+   * opens the full list, which is sortable by registration and modification time.</p>
+   *
+   * <p>Checked against the domain: {@code Sample} carries {@code registrationTime} and
+   * {@code lastModified}, and {@code SamplePreviewSortKey} exposes both as sort keys. Measurements
+   * only carry a registration date, so their panel ranks by registration; there is no measurement
+   * "modified" indicator yet.</p>
+   */
+  /**
+   * The snapshot panels: a count, a status line and the newest three records, opening the full view.
+   *
+   * <p>Carries its own "At a glance" heading. The heading was previously emitted by whichever page
+   * happened to render the panels, so it existed on the experiment page and not on the project page,
+   * and moving the panels broke it. Owning the heading means the two surfaces cannot disagree about
+   * whether the section is titled.</p>
    */
   private Div experimentSnapshot(Experiment experiment, int index) {
     int missing = missingFor(index);
@@ -884,13 +1088,23 @@ public class ProjectPagePrototypeDemo extends Div {
     Div wrap = new Div();
     wrap.addClassName("pt-snapshot");
     wrap.add(snapshotPanel("Samples", experiment.samples(), "samples",
-        experiment.samples() == 0 ? "Nothing registered yet"
-            : "Registered · " + experiment.lastActivity(),
+        experiment.samplesActivity() == null ? "Nothing registered yet"
+            : experiment.samplesActivity() + " · " + daysAgo(experiment.daysSinceActivity()),
+        new String[]{"Sample ID", "Sample name", "Changed"},
         samplePreview(experiment), Page.EXP_SAMPLES, index));
+    // Parallel wording with the Samples panel: both status lines now read "<state> · <how long
+    // ago>". Previously Samples showed recency and Dataset showed completeness, so the two panels
+    // answered different kinds of question in the same slot.
     wrap.add(snapshotPanel("Dataset", experiment.measurements(), "measurements",
         experiment.measurements() == 0 ? "Nothing registered yet"
-            : withData + " of " + experiment.measurements() + " have primary data",
+            : withData + " of " + experiment.measurements() + " with primary data · "
+                + daysAgo(experiment.daysSinceActivity()),
+        new String[]{"Measurement ID", "Primary data", "Changed"},
         datasetPreview(experiment, missing), Page.EXP_DATASET, index));
+
+    // NOTE: no heading here. This method also renders the per-experiment panels on the project page,
+    // where an "At a glance" heading per entry would repeat three times. The heading belongs to the
+    // section that owns the snapshot, so the experiment page adds it and the project page does not.
     return wrap;
   }
 
@@ -902,7 +1116,11 @@ public class ProjectPagePrototypeDemo extends Div {
         .findFirst().orElse(0);
   }
 
-  private Div snapshotPanel(String label, int count, String unit, String status,
+  /**
+   * One panel of the glance region: a count, a status line, the newest three records, and a way to
+   * the full list.
+   */
+  private Div snapshotPanel(String label, int count, String unit, String status, String[] columns,
       List<List<CellView>> rows, Page target, int index) {
     Div panel = new Div();
     panel.addClassName("pt-snap");
@@ -911,9 +1129,11 @@ public class ProjectPagePrototypeDemo extends Div {
     head.addClassName("pt-snap__head");
     Span labelSpan = new Span(label);
     labelSpan.addClassName("pt-snap__label");
-    Span open = new Span("Open");
+    head.add(labelSpan);
+
+    Span open = new Span("Open " + label.toLowerCase());
     open.addClassName("pt-snap__open");
-    head.add(labelSpan, open);
+    head.add(open);
 
     Div metric = new Div();
     metric.addClassName("pt-snap__metric");
@@ -926,8 +1146,18 @@ public class ProjectPagePrototypeDemo extends Div {
     Span statusSpan = new Span(status);
     statusSpan.addClassName("pt-snap__status");
 
+    // The column header lives INSIDE the list, directly above the rows, so header and values share
+    // one grid. As a sibling it inherited the flex column of the panel and floated between the
+    // status line and the list, aligned by nothing in particular.
     Div list = new Div();
     list.addClassName("pt-snap__rows");
+    Div columnHead = new Div();
+    columnHead.addClassName("pt-snap__row");
+    columnHead.addClassName("pt-snap__row--cols");
+    for (String column : columns) {
+      columnHead.add(cell(new CellView(column, null)));
+    }
+    list.add(columnHead);
     rows.forEach(rowCells -> {
       Div rowDiv = new Div();
       rowDiv.addClassName("pt-snap__row");
@@ -938,10 +1168,118 @@ public class ProjectPagePrototypeDemo extends Div {
     panel.add(head, metric, statusSpan, list);
     panel.getElement().setAttribute("role", "button");
     panel.getElement().setAttribute("tabindex", "0");
-    panel.addClickListener(event -> openExperiment(index, target));
+    activateOnClickAndKeys(panel, () -> openExperiment(index, target));
     return panel;
   }
 
+  /** The glance region: one panel per pipeline step, in pipeline order, so the step strip and the
+   * region below it are the same three things.
+   *
+   * <p>Previously the region carried only Samples and Dataset. Design therefore had no body slot at
+   * all, and a design could be created while the page showed no new content anywhere: its payload
+   * only appeared as the three loose cards at the very bottom, which have no heading and no link to
+   * the Design step. Making the region a <em>subset</em> of the steps was the defect; this makes it a
+   * 1:1 and gives Design a first-class slot.</p>
+   */
+  private Div glancePanels(Experiment experiment, int index, Page currentView) {
+    int missing = missingFor(index);
+    int withData = Math.max(0, experiment.measurements() - missing);
+
+    Div wrap = new Div();
+    wrap.addClassName("pt-snapshot");
+
+    // Only the steps the user is NOT on. The design's payload belongs to the Design page, and
+    // reproducing it here put the whole design on the Samples and Dataset pages, under a heading
+    // nobody was looking for, while pushing the panels they WERE looking for into a second row.
+    if (currentView != Page.DESIGN) {
+      wrap.add(designSnapshotPanel());
+    }
+    if (currentView != Page.EXP_SAMPLES) {
+      wrap.add(snapshotPanel("Samples", experiment.samples(), "samples",
+          experiment.samplesActivity() == null ? "Nothing registered yet"
+              : experiment.samplesActivity() + " · " + daysAgo(experiment.daysSinceActivity()),
+          new String[]{"Sample ID", "Sample name", "Changed"},
+          samplePreview(experiment), Page.EXP_SAMPLES, index));
+    }
+    if (currentView != Page.EXP_DATASET) {
+      wrap.add(snapshotPanel("Dataset", experiment.measurements(), "measurements",
+          experiment.measurements() == 0 ? "Nothing registered yet"
+              : withData + " of " + experiment.measurements() + " with primary data · "
+                  + daysAgo(experiment.daysSinceActivity()),
+          new String[]{"Measurement ID", "Primary data", "Changed"},
+          datasetPreview(experiment, missing), Page.EXP_DATASET, index));
+    }
+    return wrap;
+  }
+
+  /**
+   * The Design step as a compact glance panel: its state, a one-line summary, and a way in.
+   *
+   * <p>Never its payload. The groups, variables and confounding variables are the Design page's own
+   * content; rendering them here put the full design on every experiment view, under a heading the
+   * user was not looking for.</p>
+   *
+   * <p>When no design exists this is still the only invitation to create one, so it keeps the inline
+   * action — that is how a created design becomes visible without a reload.</p>
+   */
+  private Div designSnapshotPanel() {
+    Div panel = new Div();
+    panel.addClassName("pt-snap");
+    panel.addClassName("pt-snap--design");
+
+    Div head = new Div();
+    head.addClassName("pt-snap__head");
+    Span label = new Span("Design");
+    label.addClassName("pt-snap__label");
+    Span state = new Span(designDefined ? "Defined" : "Not defined");
+    // Not a link, and must not look like one: it shares the panel with a real action, and styling both
+    // in the accent colour made a status look clickable. It is meta text, so it reads as meta.
+    state.addClassName("pt-snap__state");
+    head.add(label, state);
+    panel.add(head);
+
+    if (!designDefined) {
+      Span summary = new Span("No design yet — the groups, variables and confounding variables "
+          + "every sample and measurement is scoped by.");
+      summary.addClassName("pt-snap__status");
+      panel.add(summary);
+
+      Div actions = new Div();
+      actions.addClassName("pt-snap__actions");
+      // Creation is an in-place state transition, never a navigation: the user stays where they are
+      // and watches this panel change.
+      actions.add(button("Define design", true, () -> {
+        designDefined = true;
+        refresh();
+      }));
+      panel.add(actions);
+      return panel;
+    }
+
+    Span summary = new Span("2 groups · 3 variables · 2 confounding variables");
+    summary.addClassName("pt-snap__status");
+    panel.add(summary);
+
+    Span open = new Span("Open design");
+    open.addClassName("pt-snap__open");
+    Div actions = new Div();
+    actions.addClassName("pt-snap__actions");
+    actions.add(open);
+    panel.add(actions);
+
+    panel.getElement().setAttribute("role", "button");
+    panel.getElement().setAttribute("tabindex", "0");
+    activateOnClickAndKeys(panel, () -> navigate(Page.DESIGN));
+    return panel;
+  }
+
+  /**
+   * The three most recently registered or modified samples, newest first.
+   *
+   * <p>Prototype-only canned data: the numbers are the highest identifiers and the ages are derived
+   * from the experiment's activity, not read from a query. A real implementation orders by
+   * {@code registrationTime}/{@code lastModified} descending and takes the first page.</p>
+   */
   private List<List<CellView>> samplePreview(Experiment experiment) {
     if (experiment.samples() == 0) {
       return List.of(row(muted("No samples to show yet")));
@@ -949,26 +1287,52 @@ public class ProjectPagePrototypeDemo extends Div {
     String[] names = {"P1_ctrl_T0", "P1_treat_T0", "P1_ctrl_T1"};
     int shown = Math.min(3, experiment.samples());
     List<List<CellView>> rows = new ArrayList<>();
-    for (int i = 1; i <= shown; i++) {
-      rows.add(row(mono(String.format("Q2IMMU-%04d", i)),
-          text(names[(i - 1) % names.length])));
+    for (int i = 0; i < shown; i++) {
+      // Newest first, so the numbering counts down from the last registered sample.
+      int number = experiment.samples() - i;
+      rows.add(row(mono(String.format("Q2IMMU-%04d", number)),
+          text(names[number % names.length]),
+          muted(rowAge(experiment, i))));
     }
     return rows;
   }
 
-  /** Measurement metadata and its primary data as one fact. */
+  /**
+   * The three most recently registered measurements with their primary data, newest first.
+   *
+   * <p>The newest measurements are the ones still awaiting data: the facility registers metadata
+   * first and attaches primary data afterwards, so the backlog sits at the top of the registration
+   * order. That makes the panel agree with the attention callout instead of contradicting it.</p>
+   */
   private List<List<CellView>> datasetPreview(Experiment experiment, int missing) {
     if (experiment.measurements() == 0) {
       return List.of(row(muted("No measurements to show yet")));
     }
     int shown = Math.min(3, experiment.measurements());
     List<List<CellView>> rows = new ArrayList<>();
-    for (int i = 1; i <= shown; i++) {
-      boolean miss = i <= missing;
-      rows.add(row(mono(String.format("Q2IMMU-MS-%03d", i)),
-          miss ? attention("Not attached") : done("3 files · 4.2 GB")));
+    for (int i = 0; i < shown; i++) {
+      boolean miss = i < missing;
+      rows.add(row(mono(String.format("Q2IMMU-MS-%03d", experiment.measurements() - i)),
+          miss ? attention("Not attached") : done("3 files · 4.2 GB"),
+          muted(rowAge(experiment, i))));
     }
     return rows;
+  }
+
+  /**
+   * Prototype-only: the {@code index}-th newest row is dated backwards from the experiment's last
+   * activity, so the rows stay consistent with the status line above them.
+   */
+  private static String rowAge(Experiment experiment, int index) {
+    return daysAgo(experiment.daysSinceActivity() + index);
+  }
+
+  /** Prototype-only relative age label: {@code just now}, {@code 1 day ago}, {@code n days ago}. */
+  private static String daysAgo(int days) {
+    if (days <= 0) {
+      return "just now";
+    }
+    return days + (days == 1 ? " day ago" : " days ago");
   }
 
   private Span domainChip(String domain) {
@@ -1003,7 +1367,7 @@ public class ProjectPagePrototypeDemo extends Div {
     facet.getElement().setAttribute("role", "button");
     facet.getElement().setAttribute("tabindex", "0");
     facet.add(textSpan(label, null));
-    facet.addClickListener(event -> onClick.run());
+    activateOnClickAndKeys(facet, onClick);
     return facet;
   }
 
@@ -1012,61 +1376,123 @@ public class ProjectPagePrototypeDemo extends Div {
   /** A step in the experiment pipeline; locked means its prerequisite is missing. */
   private enum StepState { DONE, ACTIVE, ATTENTION, LOCKED }
 
-  private record Step(String label, String detail, StepState state, Page target) {}
+  /**
+   * A step in the experiment pipeline: an explicit ordinal, a label, a detail line and the state.
+   *
+   * <p>The ordinal is not decoration. The four cards are a genuine sequence with prerequisites, so
+   * numbered markers state the ordering that tint and left-to-right position alone could not; the
+   * state is carried by the marker glyph (✓ / ! / ●), never by colour alone.</p>
+   *
+   * @param action an action label that makes a non-DONE step read as a route rather than a status,
+   *               or {@code null} when the step is complete or merely informational
+   */
+  private record Step(String ordinal, String label, String detail, StepState state, Page target,
+      String action) {}
 
   /** The project-level pipeline, with locked downstream steps while no experiment exists. */
   private List<Step> projectPipeline() {
     if (emptyState) {
       return List.of(
-          new Step("Experiment", "Create one to begin", StepState.ACTIVE, Page.DESIGN),
-          new Step("Samples", "Locked until an experiment exists", StepState.LOCKED,
-              Page.EXP_SAMPLES),
-          new Step("Dataset", "Locked until samples exist", StepState.LOCKED, Page.EXP_DATASET),
-          new Step("Sample QC", "Optional", StepState.LOCKED, Page.EXP_SAMPLES));
+          new Step("1", "Experiment", "Create one to begin", StepState.ACTIVE, Page.DESIGN,
+              null),
+          new Step("2", "Samples", "Locked until an experiment exists", StepState.LOCKED,
+              Page.EXP_SAMPLES, null),
+          new Step("3", "Dataset", "Locked until samples exist", StepState.LOCKED,
+              Page.EXP_DATASET, null));
     }
     return List.of(
-        new Step("Experiment", "3 created", StepState.DONE, Page.DESIGN),
-        new Step("Samples", "84 registered", StepState.DONE, Page.EXP_SAMPLES),
-        new Step("Dataset", "Missing data for 18 measurements", StepState.ATTENTION,
-            Page.EXP_DATASET),
-        new Step("Sample QC", "4 reports", StepState.ACTIVE, Page.EXP_SAMPLES));
+        new Step("1", "Experiment", "3 created", StepState.DONE, Page.DESIGN, null),
+        new Step("2", "Samples", "84 registered", StepState.DONE, Page.EXP_SAMPLES, null),
+        new Step("3", "Dataset", "Missing data for 18 measurements", StepState.ATTENTION,
+            Page.EXP_DATASET, "Open dataset"));
   }
 
-  /** The pipeline of one experiment; later stages are locked until their prerequisite exists. */
+  /**
+   * The pipeline of one experiment; later stages are locked until their prerequisite exists.
+   *
+   * <p>The Dataset step states the <b>gap</b> when one exists, not a ratio. "24 measurements · 18
+   * with data" asked the user to subtract in their head and read good news from the result, and the
+   * amber border was the only signal that anything was wrong. "6 measurements have no primary data"
+   * names the problem and the count that has to reach zero; the number of measurements that DO have
+   * data is already carried by the step, the pill and the snapshot panel.</p>
+   */
   private List<Step> experimentPipeline(Experiment experiment) {
     boolean hasSamples = experiment.samples() > 0;
     boolean hasMeasurements = experiment.measurements() > 0;
-    boolean hasData = experiment.datasets() > 0;
-    boolean dataGap = hasMeasurements && experiment.datasets() < experiment.measurements();
+    int missingData = missingFor(experimentIndex);
+    boolean dataGap = missingData > 0;
 
     return List.of(
-        new Step("Design", "Defined", StepState.DONE, Page.DESIGN),
-        new Step("Samples",
+        new Step("1", "Design",
+            designDefined ? "Defined" : "Not defined yet",
+            designDefined ? StepState.DONE : StepState.ACTIVE, Page.DESIGN, null),
+        new Step("2", "Samples",
             hasSamples ? experiment.samples() + " registered" : "Nothing registered yet",
-            hasSamples ? StepState.DONE : StepState.ACTIVE, Page.EXP_SAMPLES),
-        new Step("Dataset",
+            hasSamples ? StepState.DONE : StepState.ACTIVE, Page.EXP_SAMPLES, null),
+        new Step("3", "Dataset",
             hasMeasurements
-                ? experiment.measurements() + " measurements · "
-                    + experiment.datasets() + " with data"
+                ? dataGap
+                    ? missingData + " measurements have no primary data"
+                    : experiment.measurements() + " measurements, all with primary data"
                 : hasSamples ? "Ready to register" : "Register samples first",
             hasMeasurements ? (dataGap ? StepState.ATTENTION : StepState.DONE)
                 : hasSamples ? StepState.ACTIVE : StepState.LOCKED,
-            Page.EXP_DATASET),
-        new Step("Sample QC",
-            experiment.qc() > 0 ? experiment.qc() + " reports" : "Optional",
-            experiment.qc() > 0 ? StepState.DONE : StepState.LOCKED, Page.EXP_SAMPLES));
+            Page.EXP_DATASET, dataGap ? "Open dataset" : null));
   }
 
-  private Div experimentPreamble(Experiment experiment) {
-    return pipeline(experimentPipeline(experiment),
-        "This experiment's path — later steps unlock as the earlier ones are done", true);
+  /** The pipeline and, for a started experiment, its snapshot — one reusable unit. */
+  private Div experimentOverview(Experiment experiment) {
+    Div wrap = new Div();
+    wrap.addClassName("pt-overview");
+    // The caption described a locked downstream step. Only the pipeline that actually HAS locked
+    // steps states that; on a populated experiment every step is reachable, and the sentence left
+    // the user looking for a lock that was not there.
+    wrap.add(pipeline(experimentPipeline(experiment), "Steps in order — click one to open it",
+        true, currentExperimentView()));
+    if (experiment.isStarted()) {
+      // The plan requires the experiment page to carry the snapshot under its pipeline. Making that
+      // part of this unit instead of a separate call per view is what stops one view (Design) from
+      // having it while another (Samples) does not.
+      Div glance = new Div();
+      glance.addClassName("pt-subband");
+      Div head = new Div();
+      head.addClassName("pt-band__head");
+      H3 title = new H3();
+      title.addClassName("pt-band__title");
+      title.setText("At a glance");
+      Span hint = new Span("One panel per step, in step order. Click any panel to open it.");
+      hint.addClassName("pt-band__hint");
+      head.add(title, hint);
+      glance.add(head, glancePanels(experiment, experimentIndex, page));
+      wrap.add(glance);
+    }
+    return wrap;
+  }
+
+  /**
+   * Whether the strip should mark the step the user is on. Only experiment-scoped views have such a
+   * step: the project page's pipeline describes a sequence the user is not currently inside, and on
+   * the Summary the marked card would be an arbitrary one of three steps.
+   */
+  private boolean currentExperimentView() {
+    return page == Page.DESIGN || page == Page.EXP_SAMPLES || page == Page.EXP_DATASET;
   }
 
   /**
    * Renders the ordered steps. A locked step is deliberately neutral (dashed, muted) rather than
    * amber, so it cannot be confused with an attention gap.
+   *
+   * @param highlightCurrent marks the step the user is currently viewing. On an experiment page the
+   *                       strip doubles as the switcher between Design / Samples / Dataset, and its
+   *                       badges carried only the step's <em>state</em> (done / attention / locked).
+   *                       Nothing said where the user was, so after navigating the only feedback was
+   *                       that the page content below had changed — and the Design card looked
+   *                       identical whether it was the view being read or the view being left.
+   *                       Position is carried by a visible rule, a tint and the ring, never by
+   *                       colour alone, and it is a separate signal from the state marker.
    */
-  private Div pipeline(List<Step> steps, String caption, boolean navigable) {
+  private Div pipeline(List<Step> steps, String caption, boolean navigable,
+      boolean highlightCurrent) {
     Div wrap = new Div();
     wrap.addClassName("pt-pipeline");
     if (caption != null) {
@@ -1080,6 +1506,17 @@ public class ProjectPagePrototypeDemo extends Div {
       Div node = new Div();
       node.addClassName("pt-step");
       node.addClassName("pt-step--" + step.state().name().toLowerCase());
+
+      boolean isCurrent = highlightCurrent && step.target() != null && step.target() == page;
+      if (isCurrent) {
+        node.addClassName("pt-step--current");
+        // role=tab would be the literal mapping, but the cards lead to three whole views rather than
+        // panels of one view, so they stay buttons and the current one is announced with
+        // aria-current. "step", not "page": these are three views WITHIN one experiment, and "page"
+        // would tell a screen reader each is a separate page — the exact ambiguity the strip exists
+        // to remove.
+        node.getElement().setAttribute("aria-current", "step");
+      }
 
       Span marker = new Span();
       marker.addClassName("pt-step__marker");
@@ -1099,10 +1536,40 @@ public class ProjectPagePrototypeDemo extends Div {
       detail.addClassName("pt-step__detail");
       node.add(marker, label, detail);
 
+      // "You are here" is spelled out as well as drawn. A tint alone would have repeated exactly the
+      // mistake the step states were already fixed for: colour as the only carrier of meaning.
+      if (isCurrent) {
+        Span here = new Span("You are here");
+        here.addClassName("pt-step__here");
+        node.add(here);
+      }
+
+      // An actionable step says so. Without this the amber card was a status the user had to
+      // interpret and discover was clickable; "Open dataset" states both the problem (the detail
+      // line) and the way out.
+      //
+      // It is appended AFTER "You are here", and that order matters: the current step can also be
+      // the attention step, and the two labels used to run together into "YOU ARE HEREOpen dataset"
+      // — one unreadable token stating two different things (where you are, and what to do). Both
+      // are block-level in the stylesheet so they cannot share a line.
+      if (step.action() != null) {
+        Span action = new Span(step.action());
+        action.addClassName("pt-step__action");
+        node.add(action);
+      }
+
+      // Presence is carried by the marker glyph, never by the colour alone: the ordinal says which
+      // step this is, and the detail/action spell out what to do. The tint is redundant
+      // reinforcement for people who perceive it.
+      Span ordinal = new Span(step.ordinal());
+      ordinal.addClassName("pt-step__ordinal");
+      node.add(ordinal);
+
       if (navigable && step.state() != StepState.LOCKED && step.target() != null) {
         node.getElement().setAttribute("role", "button");
         node.getElement().setAttribute("tabindex", "0");
-        node.addClickListener(event -> openExperiment(experimentIndex, step.target()));
+        activateOnClickAndKeys(node,
+            () -> openExperiment(experimentIndex, step.target()));
       } else if (step.state() == StepState.LOCKED) {
         node.getElement().setAttribute("title", step.detail());
       }
@@ -1153,7 +1620,7 @@ public class ProjectPagePrototypeDemo extends Div {
     }
     Div band = pageBand("Samples", experiment.name() + " · " + experiment.samples() + " samples",
         button("Register samples", true, null), button("Download template", false, null));
-    band.add(experimentPreamble(experiment));
+    band.add(experimentOverview(experiment));
     band.add(table(new String[]{"Sample ID", "Sample name", "Species", "Tissue", "Condition",
             "Replicates"},
         List.of(
@@ -1217,7 +1684,7 @@ public class ProjectPagePrototypeDemo extends Div {
               showAllColumns = !showAllColumns;
               refresh();
             }));
-    band.add(experimentPreamble(experiment));
+    band.add(experimentOverview(experiment));
     band.add(datasetFacts(experiment, missing));
 
     if (types.size() > 1) {
@@ -1261,13 +1728,23 @@ public class ProjectPagePrototypeDemo extends Div {
 
   private Div datasetFacts(Experiment experiment, int affected) {
     int withData = experiment.measurements() - affected;
+    // Wrapped in a card of its own. Rendered bare into the band, the four labels floated free
+    // between the glance panels and the measurement table with no container, no divider and no
+    // background — they sat directly under the Samples panel, so "Kind: Primary" read as a SAMPLE
+    // metric. A surface makes plain that these numbers describe the dataset.
+    Div card = new Div();
+    card.addClassName("pt-factcard");
+    Span cap = new Span("Dataset summary");
+    cap.addClassName("pt-factcard__title");
+    card.add(cap);
     Div facts = new Div();
     facts.addClassName("pt-facts");
     facts.add(fact("Kind", "Primary"));
     facts.add(fact("Measurements with data", withData + " of " + experiment.measurements()));
     facts.add(fact("Files", String.valueOf(withData * 3)));
     facts.add(fact("Total size", withData * 4 + " GB"));
-    return facts;
+    card.add(facts);
+    return card;
   }
 
   /** One row per measurement: metadata and its primary data together. */
@@ -1324,19 +1801,29 @@ public class ProjectPagePrototypeDemo extends Div {
       return emptyPage("Experiment design",
           experiment == null ? "No experiment yet" : experiment.name(),
           "The design is not complete yet",
-          "Define the experimental groups, variables and confounding variables for this experiment.",
-          button("Edit design", true, null));
+          "Define the experimental groups, variables and confounding variables for this "
+              + "experiment.",
+          button("Define design", true, () -> {
+            designDefined = true;
+            refresh();
+          }));
     }
     Div band = pageBand("Experiment design", experiment.name(),
-        button("Edit design", true, null));
-    band.add(experimentPreamble(experiment));
-
-    H2 glance = new H2();
-    glance.addClassName("pt-band__title");
-    glance.setText("At a glance");
-    band.add(glance);
-    band.add(experimentSnapshot(experiment, experimentIndex));
-
+        button(designDefined ? "Edit design" : "Define design", true, () -> {
+          // The design action is scoped and in-place: pressing it changes THIS page's design state
+          // rather than routing away to an editor whose result the page would not show.
+          designDefined = true;
+          refresh();
+        }));
+    band.add(experimentOverview(experiment));
+    if (!designDefined) {
+      // The step strip says the design is missing and the button says what to do about it; a separate
+      // empty block restating the absence would be the third statement of one fact.
+      return band;
+    }
+    // The design itself, in the three categories the stakeholder spec defines. This is the payload's
+    // ONLY home: it is the Design page's content. It previously lived in a glance panel that rendered
+    // on every experiment view, which put the whole design on the Samples and Dataset pages too.
     Div grid = new Div();
     grid.addClassName("pt-detail-grid");
     grid.add(detailBlock("Experimental groups",
@@ -1867,7 +2354,7 @@ public class ProjectPagePrototypeDemo extends Div {
     }
     chip.getElement().setAttribute("role", "button");
     chip.getElement().setAttribute("tabindex", "0");
-    chip.addClickListener(event -> onClick.run());
+    activateOnClickAndKeys(chip, onClick);
     return chip;
   }
 
@@ -1984,6 +2471,272 @@ public class ProjectPagePrototypeDemo extends Div {
     return band;
   }
 
+  // ── Project settings ──────────────────────────────────────────────────
+
+  private static final String DESCRIPTION_SECTION = "Description";
+  private static final String FUNDING_SECTION = "Funding";
+  private static final String CONTACTS_SECTION = "Contacts";
+  private static final String DANGER_SECTION = "Project deletion";
+
+  private static final List<String> SETTINGS_SECTIONS = List.of(
+      DESCRIPTION_SECTION, FUNDING_SECTION, CONTACTS_SECTION, DANGER_SECTION);
+
+  /**
+   * The Project settings page: where project metadata is <em>changed</em>, as opposed to the
+   * landing page, which only shows it.
+   *
+   * <p>This is the deliberate answer to "who edits contacts, and how?": a dedicated page with
+   * page-local sub-navigation, not a dialog. Editing is rare and never urgent, so it does not belong
+   * beside the title competing with the content; and keeping every project-metadata editor in one
+   * place teaches the rule once instead of scattering one-off dialogs per band. Because it is a real
+   * in-view route (like every other page in this prototype), the landing page can link straight to
+   * it rather than offering a dead button.</p>
+   */
+  private Div settingsPage() {
+    Div page = new Div();
+    page.addClassName("pt-settings-page");
+
+    // The page names itself, so the label is unambiguous even without the navigation row in view.
+    Div head = new Div();
+    head.addClassName("pt-settings__pagehead");
+    H1 h1 = new H1();
+    h1.addClassName("pt-title");
+    h1.setText("Project settings");
+    Paragraph sub = new Paragraph("Metadata for " + projectTitle()
+        + ". These values are shown read-only on the project page.");
+    sub.addClassName("pt-settings__subtitle");
+    head.add(h1, sub);
+    page.add(head);
+
+    Div layout = new Div();
+    layout.addClassName("pt-settings");
+
+    // Page-local sub-navigation: sections of this page, not app-wide destinations.
+    Div nav = new Div();
+    nav.addClassName("pt-settings__nav");
+    for (String section : SETTINGS_SECTIONS) {
+      Button item = new Button(section);
+      item.addClassName("pt-settings__navitem");
+      if (section.equals(settingsSection)) {
+        item.getElement().setAttribute("aria-current", "true");
+      }
+      item.addClickListener(event -> {
+        this.settingsSection = section;
+        refresh();
+      });
+      nav.add(item);
+    }
+
+    Div content = new Div();
+    content.addClassName("pt-settings__content");
+    switch (settingsSection) {
+      case DESCRIPTION_SECTION -> settingsDescription(content);
+      case FUNDING_SECTION -> settingsFunding(content);
+      case DANGER_SECTION -> settingsDanger(content);
+      default -> settingsContacts(content);
+    }
+
+    layout.add(nav, content);
+    page.add(layout);
+    return page;
+  }
+
+  /** Contacts: the same people as on the landing page, but here with their identifiers editable. */
+  private void settingsContacts(Div content) {
+    content.add(settingsHeading("Contacts",
+        "The people accountable for this project. Shown read-only on the project page."));
+
+    for (Contact contact : projectContacts()) {
+      Div card = new Div();
+      card.addClassName("pt-settings__card");
+
+      Div head = new Div();
+      head.addClassName("pt-settings__cardhead");
+      Span role = new Span(contact.role());
+      role.addClassName("pt-settings__cardtitle");
+      head.add(role);
+
+      boolean editing = contact.roleAbbreviation().equals(editingContact);
+      Div actions = new Div();
+      actions.addClassName("pt-settings__cardactions");
+      if (editing) {
+        actions.add(button("Save", true, () -> {
+          this.editingContact = null;
+          refresh();
+        }), button("Cancel", false, () -> {
+          this.editingContact = null;
+          refresh();
+        }));
+      } else {
+        actions.add(button("Edit " + contact.roleAbbreviation(), false, () -> {
+          this.editingContact = contact.roleAbbreviation();
+          refresh();
+        }));
+      }
+      head.add(actions);
+      card.add(head);
+
+      // Editing happens in place: the same fields the read-only view shows, swapped for inputs.
+      // No dialog, and no separate "edit mode" page state to get lost in.
+      if (editing) {
+        Div form = new Div();
+        form.addClassName("pt-settings__form");
+        form.add(editField("Name", contact.name()),
+            editField("Email", contact.email()),
+            editField("ORCID iD", contact.hasOrcid() ? contact.orcid() : ""));
+        Paragraph hint = new Paragraph(
+            "An ORCID iD is required for the FAIR badge. Leave it empty if the person has none.");
+        hint.addClassName("pt-settings__hint");
+        form.add(hint);
+        card.add(form);
+      } else {
+        Div grid = new Div();
+        grid.addClassName("pt-facts");
+        grid.add(settingField("Name", contact.name(), false));
+        grid.add(settingField("Email", contact.email(), false));
+        grid.add(settingField("ORCID iD",
+            contact.hasOrcid() ? contact.orcid() : "Not recorded", !contact.hasOrcid()));
+        card.add(grid);
+      }
+
+      content.add(card);
+    }
+
+    Div note = new Div();
+    note.addClassName("pt-note");
+    note.setText("An ORCID iD is required for the FAIR badge on the project page. "
+        + "Contacts without one are listed without an ORCID link.");
+    content.add(note);
+  }
+
+  private Div editField(String label, String value) {
+    Div field = new Div();
+    field.addClassName("pt-settings__field");
+    Span labelSpan = new Span(label);
+    labelSpan.addClassName("pt-fact__label");
+    TextField input = new TextField();
+    input.addClassName("pt-settings__input");
+    input.setValue(value == null ? "" : value);
+    input.setPlaceholder(label);
+    field.add(labelSpan, input);
+    return field;
+  }
+
+  private void settingsDescription(Div content) {
+    content.add(settingsHeading("Description",
+        "The objective and design summary shown at the top of the project page."));
+    Div card = new Div();
+    card.addClassName("pt-settings__card");
+    boolean editing = editingContact != null && editingContact.equals(DESCRIPTION_SECTION);
+    card.add(settingsCardHead("Project description", editing, DESCRIPTION_SECTION));
+    if (editing) {
+      Div form = new Div();
+      form.addClassName("pt-settings__form");
+      form.add(editField("Project title", projectTitle()),
+          editField("Objective", OBJECTIVE_SHORT));
+      card.add(form);
+    } else {
+      Div grid = new Div();
+      grid.addClassName("pt-facts");
+      grid.add(settingField("Project title", projectTitle(), false));
+      grid.add(settingField("Objective", OBJECTIVE_SHORT, false));
+      card.add(grid);
+    }
+    content.add(card);
+  }
+
+  private void settingsFunding(Div content) {
+    content.add(settingsHeading("Funding",
+        "Grant or funding reference recorded for this project."));
+    Div card = new Div();
+    card.addClassName("pt-settings__card");
+    boolean editing = editingContact != null && editingContact.equals(FUNDING_SECTION);
+    card.add(settingsCardHead("Funding information", editing, FUNDING_SECTION));
+    if (editing) {
+      Div form = new Div();
+      form.addClassName("pt-settings__form");
+      form.add(editField("Funding", "123 (Test grant)"),
+          editField("Data access", "Restricted — request required"));
+      card.add(form);
+    } else {
+      Div grid = new Div();
+      grid.addClassName("pt-facts");
+      grid.add(settingField("Funding", "123 (Test grant)", false));
+      grid.add(settingField("Data access", "Restricted — request required", false));
+      card.add(grid);
+    }
+    content.add(card);
+  }
+
+  /** Card heading with the edit affordance for that card, so the action is scoped to what it edits. */
+  private Div settingsCardHead(String title, boolean editing, String sectionKey) {
+    Div head = new Div();
+    head.addClassName("pt-settings__cardhead");
+    Span span = new Span(title);
+    span.addClassName("pt-settings__cardtitle");
+    Div actions = new Div();
+    actions.addClassName("pt-settings__cardactions");
+    if (editing) {
+      actions.add(button("Save", true, () -> {
+        this.editingContact = null;
+        refresh();
+      }), button("Cancel", false, () -> {
+        this.editingContact = null;
+        refresh();
+      }));
+    } else {
+      actions.add(button("Edit", false, () -> {
+        this.editingContact = sectionKey;
+        refresh();
+      }));
+    }
+    head.add(span, actions);
+    return head;
+  }
+
+  private void settingsDanger(Div content) {
+    content.add(settingsHeading("Project deletion",
+        "Deleting a project removes its experiments, samples and measurement metadata."));
+    Div card = new Div();
+    card.addClassName("pt-settings__card");
+    card.addClassName("pt-settings__card--danger");
+    Span title = new Span("Delete this project");
+    title.addClassName("pt-settings__cardtitle");
+    Paragraph text = new Paragraph(
+        "This cannot be undone. Registered data in the repository is not deleted.");
+    text.addClassName("pt-settings__text");
+    Div actions = new Div();
+    actions.addClassName("pt-settings__cardactions");
+    actions.add(button("Delete project", false, null));
+    card.add(title, text, actions);
+    content.add(card);
+  }
+
+  private Div settingsHeading(String title, String subtitle) {
+    Div head = new Div();
+    head.addClassName("pt-settings__head");
+    H2 h2 = new H2();
+    h2.addClassName("pt-band__title");
+    h2.setText(title);
+    Paragraph p = new Paragraph(subtitle);
+    p.addClassName("pt-settings__subtitle");
+    head.add(h2, p);
+    return head;
+  }
+
+  private Div settingField(String label, String value, boolean muted) {
+    Div field = new Div();
+    Span labelSpan = new Span(label);
+    labelSpan.addClassName("pt-fact__label");
+    Paragraph valueParagraph = new Paragraph(value);
+    valueParagraph.addClassName("pt-fact__value");
+    if (muted) {
+      valueParagraph.addClassName("pt-fact__value--muted");
+    }
+    field.add(labelSpan, valueParagraph);
+    return field;
+  }
+
   private Div ontologyPage() {
     Div band = pageBand("Ontology search",
         "Look up ontology terms used in sample and measurement metadata", List.of());
@@ -2012,7 +2765,9 @@ public class ProjectPagePrototypeDemo extends Div {
     title.setText("Project details");
     Div actions = new Div();
     actions.addClassName("pt-band__actions");
-    actions.add(button("Edit project details", false, null));
+    // Same pattern as the contact row: the landing page shows project metadata read-only and links
+    // out to the one place that edits it.
+    actions.add(settingsLink("Edit project details", FUNDING_SECTION));
     head.add(title, actions);
     band.add(head);
 
@@ -2023,26 +2778,6 @@ public class ProjectPagePrototypeDemo extends Div {
     facts.add(fact("Data access", "Restricted — request required"));
     facts.add(fact("Primary data type", "Immunopeptidomics"));
     band.add(facts);
-
-    Div contactsHead = new Div();
-    contactsHead.addClassName("pt-band__head");
-    H3 contactsTitle = new H3();
-    contactsTitle.addClassName("pt-band__title");
-    contactsTitle.setText("Contacts");
-    Div contactActions = new Div();
-    contactActions.addClassName("pt-band__actions");
-    contactActions.add(button("Edit contacts", false, null));
-    contactsHead.add(contactsTitle, contactActions);
-    band.add(contactsHead);
-
-    Div contacts = new Div();
-    contacts.addClassName("pt-contacts");
-    contacts.add(contactCard(new Contact("Principal investigator", "Steffen Greiner",
-        "steffen.greiner@qbic.uni-tuebingen.de", "0009-0006-0929-9338")));
-    contacts.add(contactCard(new Contact("Project manager", "Wow Cool", "wow@cool.dude", null)));
-    contacts.add(contactCard(new Contact("Project responsible", "Lena Vogt",
-        "lena.vogt@qbic.uni-tuebingen.de", "0000-0002-1825-0097")));
-    band.add(contacts);
 
     return band;
   }
@@ -2055,31 +2790,6 @@ public class ProjectPagePrototypeDemo extends Div {
     valueParagraph.addClassName("pt-fact__value");
     fact.add(labelSpan, valueParagraph);
     return fact;
-  }
-
-  private Div contactCard(Contact contact) {
-    Div card = new Div();
-    card.addClassName("pt-contact");
-    Paragraph role = new Paragraph(contact.role());
-    role.addClassName("pt-contact__role");
-    Paragraph name = new Paragraph(contact.name());
-    name.addClassName("pt-contact__name");
-    Paragraph email = new Paragraph(contact.email());
-    email.addClassName("pt-contact__line");
-    card.add(role, name, email);
-    if (contact.hasOidc()) {
-      Paragraph orcid = new Paragraph();
-      orcid.addClassName("pt-contact__line");
-      Span pid = new Span(contact.orcid());
-      pid.addClassName("pt-id");
-      orcid.add(pid, new Span("  ORCID verified"));
-      card.add(orcid);
-    } else {
-      Paragraph missing = new Paragraph("No ORCID on file");
-      missing.addClassName("pt-contact__line");
-      card.add(missing);
-    }
-    return card;
   }
 
   // ── Page scaffolding ────────────────────────────────────────────────────
@@ -2100,7 +2810,12 @@ public class ProjectPagePrototypeDemo extends Div {
     h1.addClassName("pt-title");
     h1.setText(title);
     heading.add(h1);
-    if (subtitle != null) {
+    // Exactly one line under the H1. The H1 names the VIEW ("Experiment design"), so this line
+    // carries the SCOPE; the experiment name belongs here exactly once. An earlier version also
+    // appended it above the H1, which printed it twice.
+    if (!emptyState && page.isExperimentScoped()) {
+      heading.add(scopeLead());
+    } else if (subtitle != null) {
       Paragraph p = new Paragraph(subtitle);
       p.addClassName("pt-page__subtitle");
       heading.add(p);
@@ -2117,10 +2832,48 @@ public class ProjectPagePrototypeDemo extends Div {
     band.add(head);
     return band;
   }
+  /**
+   * The scope line under the H1: the project followed by the experiment being viewed.
+   *
+   * <p>The H1 names the VIEW ("Experiment design"), so this line carries the SCOPE. Putting the
+   * experiment name here <em>and</em> in the old duplicated subtitle printed it twice; and it must be
+   * built from the page's own state rather than from a page title, because page titles carry
+   * suffixes like `· 48 samples` that do not belong in a scope line.</p>
+   */
+  private Paragraph scopeLead() {
+    Paragraph lead = new Paragraph();
+    lead.addClassName("pt-page__subtitle");
+    lead.add(textSpan(projectTitle(), null));
+    // An inline separator element, not the breadcrumb one: this is a scope line, and the crumb
+    // separator carries no spacing and rendered as `Immunotest/Immunopeptidomics pilot`.
+    Span slash = new Span("/");
+    slash.addClassName("pt-page__sep");
+    lead.add(slash);
+    lead.add(scopeLink(selectedExperiment().name(),
+        () -> openExperiment(experimentIndex, Page.DESIGN)));
+    return lead;
+  }
+
+  /** The clickable scope name under the H1, activated by pointer and by Enter/Space. */
+  private Span scopeLink(String text, Runnable onClick) {
+    Span link = new Span(text);
+    link.addClassName("pt-page__scope");
+    link.getElement().setAttribute("role", "link");
+    link.getElement().setAttribute("tabindex", "0");
+    link.getElement().setAttribute("title", text);
+    activateOnClickAndKeys(link, onClick);
+    return link;
+  }
 
   private Div emptyPage(String title, String subtitle, String emptyTitle, String emptyText,
       Button... actions) {
     Div band = pageBand(title, subtitle, List.of());
+    // The pipeline belongs to the page furniture, not to the populated branch. Rendered only when
+    // data existed, an experiment with no samples was the one case where the user could not see
+    // which step was locked and why — the gating promise was invisible exactly where it mattered.
+    if (!emptyState && page.isExperimentScoped()) {
+      band.add(experimentOverview(selectedExperiment()));
+    }
     Div empty = new Div();
     empty.addClassName("pt-empty");
     H3 h3 = new H3();
@@ -2204,6 +2957,12 @@ public class ProjectPagePrototypeDemo extends Div {
     return note;
   }
 
+  // ── Design detail blocks ─────────────────────────────────────────────────
+
+  /**
+   * One named category of the design. Used only by the Design page — the design's groups, variables
+   * and confounding variables are that page's content, not a summary to repeat on other steps.
+   */
   private Div detailBlock(String title, List<String> items) {
     Div block = new Div();
     block.addClassName("pt-detail");
