@@ -674,6 +674,42 @@ status*. Type-specific fields (e.g. MHC antibody, charge range) are deliberately
 
 Status is the only "attribute-like" thing that earns a list column, because it drives attention.
 
+### Routing and URL-addressable state (implementation consideration, 2026-10-12)
+
+> Note from review: the prototype does **not** use real routes — it is one dev-only view that switches
+> pages in component state. That is fine for a throwaway prototype, but the implementation must use
+> real routes so bookmarking, sharing, browser back/forward and reload persistence work.
+
+The app already has the requirement and the mechanism:
+
+- **USER-R-03** — list view state (page, size, filter, sort) reflected in the browser URL.
+- **ADR-0007** — paginated lists with URL-restorable list state (list-state codec).
+- **ADR-0009** — paginated measurement lists with identifier-based cross-page selection.
+- Implemented today in `SampleInformationMain` / `RawDataMain` via `ListStateCodec` and
+  `History.pushState` (`onHistoryStateChange`).
+
+For the new surfaces this means:
+
+1. **One real route per surface**, with identity in path parameters (`projectId`, `experimentId`).
+   Every prototype surface maps to a bookmarkable route: project `Summary · Samples · Datasets ·
+   Access`, and experiment `Design · Samples · Dataset`.
+2. **View-affecting state goes into query parameters**, not only component state:
+   - active experiment view and active measurement-type tab,
+   - experiment filter and any search query,
+   - list state (page, size, sort) — reuse the existing codec, do **not** invent a second one,
+   - the "show all columns" power mode,
+   - optionally the selected record for the side panel (e.g. `?record=Q2IMMU-MS-001`), so a single
+     record is deep-linkable and shareable.
+3. **Back/forward restores the previous state and reloads do not reset filters:** read query
+   parameters on `BeforeEnter` / history change and rebuild the view from them.
+4. **One shared list-state codec** across views (extend the ADR-0007 mechanism) rather than
+   per-view parsing.
+
+**Governance note:** USER-R-03 covers *list* state. Deep-linking the selected record, the
+measurement-type tab and the power mode are additional URL-addressable state not yet covered by a
+requirement — decide whether to extend USER-R-03 or add a dedicated requirement/ADR when this work
+is scheduled.
+
 ### Remaining question
 
 - How the experiment views are reached within the existing context strip (the breadcrumb /
