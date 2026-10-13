@@ -430,14 +430,16 @@ public class ProjectPagePrototypeDemo extends Div {
 
     Div crumbs = new Div();
     crumbs.addClassName("pt-crumbs");
-    Span code = new Span("Q2IMMU");
+    Span code = crumb("Q2IMMU", () -> navigate(Page.SUMMARY));
     code.addClassName("pt-code");
-    crumbs.add(new Span("Projects"), sep(), code, crumb(projectTitle()));
+    crumbs.add(crumb("Projects", () -> navigate(Page.SUMMARY)), sep(), code,
+        crumb(projectTitle(), () -> navigate(Page.SUMMARY)));
     row.add(crumbs);
 
     if (page.isExperimentScoped() && !emptyState) {
       Experiment experiment = selectedExperiment();
-      crumbs.add(sep(), crumb(experiment.name()));
+      crumbs.add(sep(), crumb(experiment.name(),
+          () -> openExperiment(experimentIndex, Page.DESIGN)));
 
       Div views = new Div();
       views.addClassName("pt-expviews");
@@ -461,11 +463,14 @@ public class ProjectPagePrototypeDemo extends Div {
    * and keeps the full text reachable via the tooltip, so the crumb never pushes the experiment
    * views out of the strip.
    */
-  private Span crumb(String text) {
+  private Span crumb(String text, Runnable onClick) {
     Span span = new Span(text);
     span.addClassName("pt-crumb");
+    span.addClassName("pt-crumb--link");
     span.getElement().setAttribute("title", text);
-    span.getStyle().set("cursor", "pointer");
+    span.getElement().setAttribute("role", "link");
+    span.getElement().setAttribute("tabindex", "0");
+    span.addClickListener(event -> onClick.run());
     return span;
   }
 
@@ -1200,15 +1205,42 @@ public class ProjectPagePrototypeDemo extends Div {
         .findFirst()
         .orElse(null);
 
+    List<String> types = typesForExperiment(experiment);
+    if (!types.contains(datasetType)) {
+      datasetType = types.get(0);
+    }
+
     Div band = pageBand("Dataset", experiment.name() + " · measurements and primary data",
-        button("Register measurements", true, null), button("Download template", false, null));
+        button("Register measurements", true, null),
+        button(showAllColumns ? "Fewer columns" : "Show all columns", false,
+            () -> {
+              showAllColumns = !showAllColumns;
+              refresh();
+            }));
     band.add(experimentPreamble(experiment));
     band.add(datasetFacts(experiment, missing));
-    band.add(table(new String[]{"Measurement ID", "Label", "Type", "Instrument", "Samples",
-        "Files", "Size", "State"}, measurementDataRows(experiment, missing)));
+
+    if (types.size() > 1) {
+      band.add(typeTabs(types));
+    }
+
+    if (showAllColumns) {
+      band.add(table(fullDatasetHeaders(), fullDatasetRowsForExperiment(experiment)));
+    } else {
+      List<Detail> details = experimentMeasurementDetails(experiment, datasetType, missing);
+      band.add(clickableTable(new String[]{"Measurement ID", "Measurement name", "Type",
+              "Instrument", "Samples", "Primary data"},
+          experimentMeasurementRows(experiment, datasetType, missing),
+          index -> {
+            if (index < details.size()) {
+              openDetail(details.get(index));
+            }
+          }));
+    }
     band.add(note(issueText != null
         ? issueText + ". Use “Attach data” on a row to link the primary data."
-        : "Measurement metadata and primary data for this experiment. No outstanding issues."));
+        : "Identity and status only — select a row for the full measurement metadata. "
+            + "Type-specific fields live in the side panel."));
 
     Div connectedHead = new Div();
     connectedHead.addClassName("pt-band__head");
@@ -1245,16 +1277,45 @@ public class ProjectPagePrototypeDemo extends Div {
     for (int i = 1; i <= shown; i++) {
       boolean miss = i <= missing;
       rows.add(row(
-          mono(String.format("Q2IMMU-MS-%03d", i)),
+          mono(String.format("Q2IMMU-%s-%03d", typeCode(datasetType), i)),
           text("Measurement " + i),
-          text("Immunopeptidomics"),
-          text("timsTOF Pro"),
+          text(datasetType),
+          text(instrumentFor(datasetType)),
           text("2"),
           miss ? attention("0") : text("3"),
           miss ? muted("—") : text("4.2 GB"),
           miss ? attention("Not attached") : done("Registered")));
     }
     return rows;
+  }
+
+  private List<List<CellView>> experimentMeasurementRows(Experiment experiment, String type,
+      int missing) {
+    int shown = Math.min(experiment.measurements(), Math.max(8, missing));
+    List<List<CellView>> rows = new ArrayList<>();
+    for (int i = 1; i <= shown; i++) {
+      boolean miss = i <= missing;
+      rows.add(row(
+          mono(String.format("Q2IMMU-%s-%03d", typeCode(type), i)),
+          text("Measurement " + i),
+          text(type),
+          text(instrumentFor(type)),
+          text("2"),
+          miss ? attention("Not attached") : done("Attached")));
+    }
+    return rows;
+  }
+
+  private List<Detail> experimentMeasurementDetails(Experiment experiment, String type,
+      int missing) {
+    int shown = Math.min(experiment.measurements(), Math.max(8, missing));
+    List<Detail> details = new ArrayList<>();
+    for (int i = 1; i <= shown; i++) {
+      String id = String.format("Q2IMMU-%s-%03d", typeCode(type), i);
+      details.add(new Detail("Measurement " + i, id + " · " + experiment.name(),
+          List.of(type), measurementDetailGroups(type, id)));
+    }
+    return details;
   }
 
   private Div designPage() {
@@ -1294,6 +1355,11 @@ public class ProjectPagePrototypeDemo extends Div {
    * Proteomics / Immunopeptidomics) exactly like the production solution. Type-specific attributes
    * are not columns; they live in the side panel. The full table is an opt-in power mode.
    */
+  /**
+   * Project-level Datasets: a dataset is 1:1 with an experiment, so the page starts with one
+   * overview row per experiment (kind, counts, primary-data completeness, status). Opening a row
+   * dives into that experiment's measurement-level view.
+   */
   private Div datasetsPage() {
     if (emptyState) {
       return emptyPage("Datasets", "No experiment yet",
@@ -1302,36 +1368,17 @@ public class ProjectPagePrototypeDemo extends Div {
           button("Create experiment", true, () -> createOrAddExperiment(true)));
     }
     Div band = pageBand("Datasets",
-        "Measurement metadata and registered primary data across the project",
-        button("Export", false, null),
-        button(showAllColumns ? "Fewer columns" : "Show all columns", false,
-            () -> {
-              showAllColumns = !showAllColumns;
-              refresh();
-            }));
+        "One dataset per experiment — measurement metadata and registered primary data together",
+        button("Export", false, null));
 
-    band.add(typeTabs());
-    band.add(experimentFilter(datasetFilter, value -> {
-      datasetFilter = value;
-      refresh();
-    }));
-
-    if (showAllColumns) {
-      band.add(table(fullDatasetHeaders(), fullDatasetRows()));
-      band.add(note("Full table (power mode) for on-screen metadata curation. The default is "
-          + "identity + status; type-specific fields are in the side panel."));
-      return band;
-    }
-
-    List<Detail> details = datasetDetails();
-    band.add(clickableTable(datasetIdentityHeaders(), datasetIdentityRows(),
-        index -> {
-          if (index < details.size()) {
-            openDetail(details.get(index));
-          }
-        }));
-    band.add(note("Identity and status only — select a row for the full measurement metadata. "
-        + "Type-specific fields (e.g. MHC antibody, charge range) live in the side panel."));
+    band.add(datasetOverviewStats());
+    band.add(clickableTable(
+        new String[]{"Experiment", "Kind", "Measurements", "Primary data", "Files", "Size",
+            "Status"},
+        datasetExperimentRows(),
+        index -> openExperiment(index, Page.EXP_DATASET)));
+    band.add(note("A dataset is 1:1 with its experiment. Open one to dive into its measurements "
+        + "and primary data."));
     band.add(connectedDatasetsSection());
     return band;
   }
@@ -1358,10 +1405,10 @@ public class ProjectPagePrototypeDemo extends Div {
     return section;
   }
 
-  private Div typeTabs() {
+  private Div typeTabs(List<String> types) {
     Div tabs = new Div();
     tabs.addClassName("pt-tabs");
-    for (String type : List.of("NGS", "Proteomics", "Immunopeptidomics")) {
+    for (String type : types) {
       Button tab = new Button(type);
       tab.addClassName("pt-tab");
       if (type.equals(datasetType)) {
@@ -1555,6 +1602,97 @@ public class ProjectPagePrototypeDemo extends Div {
     return type.equals("NGS") ? "Illumina NovaSeq" : "timsTOF Pro";
   }
 
+  private static List<String> typesForExperiment(Experiment experiment) {
+    List<String> types = new ArrayList<>();
+    for (String domain : experiment.domains()) {
+      String type = domainToType(domain);
+      if (!types.contains(type)) {
+        types.add(type);
+      }
+    }
+    if (types.isEmpty()) {
+      types.add("Immunopeptidomics");
+    }
+    return types;
+  }
+
+  private Div sampleOverviewStats() {
+    int total = POPULATED_EXPERIMENTS.stream().mapToInt(Experiment::samples).sum();
+    int experiments = (int) POPULATED_EXPERIMENTS.stream()
+        .filter(exp -> exp.samples() > 0)
+        .count();
+    int notMeasured = experiments;
+    int measured = Math.max(0, total - notMeasured);
+    Div stats = new Div();
+    stats.addClassName("pt-rollup");
+    stats.add(stat(total, "samples"));
+    stats.add(stat(experiments, "experiments"));
+    stats.add(stat(measured, "measured"));
+    stats.add(stat(notMeasured, "not measured"));
+    return stats;
+  }
+
+  private Div datasetOverviewStats() {
+    int totalMeasurements = POPULATED_EXPERIMENTS.stream().mapToInt(Experiment::measurements).sum();
+    int withData = 0;
+    int missing = 0;
+    for (int i = 0; i < POPULATED_EXPERIMENTS.size(); i++) {
+      int gap = missingFor(i);
+      missing += gap;
+      withData += Math.max(0, POPULATED_EXPERIMENTS.get(i).measurements() - gap);
+    }
+    Div stats = new Div();
+    stats.addClassName("pt-rollup");
+    stats.add(stat(POPULATED_EXPERIMENTS.size(), "datasets"));
+    stats.add(stat(totalMeasurements, "measurements"));
+    stats.add(stat(withData, "with primary data"));
+    stats.add(stat(missing, "missing data"));
+    return stats;
+  }
+
+  private Div stat(int value, String label) {
+    Div fact = new Div();
+    fact.addClassName("pt-rollup__fact");
+    Span number = new Span(String.valueOf(value));
+    number.addClassName("pt-rollup__value");
+    Span unit = new Span(label);
+    unit.addClassName("pt-rollup__label");
+    fact.add(number, unit);
+    return fact;
+  }
+
+  private List<List<CellView>> datasetExperimentRows() {
+    List<List<CellView>> rows = new ArrayList<>();
+    for (int i = 0; i < POPULATED_EXPERIMENTS.size(); i++) {
+      Experiment exp = POPULATED_EXPERIMENTS.get(i);
+      if (!exp.isStarted()) {
+        rows.add(row(text(exp.name()), text("Primary"), muted("0 measurements"), muted("—"),
+            muted("—"), muted("—"), muted("Not started")));
+        continue;
+      }
+      int gap = missingFor(i);
+      int withData = Math.max(0, exp.measurements() - gap);
+      rows.add(row(
+          text(exp.name()),
+          text("Primary"),
+          text(exp.measurements() + " measurements"),
+          text(withData + " of " + exp.measurements()),
+          text((withData * 3) + " files"),
+          text((withData * 4) + " GB"),
+          gap > 0 ? attention("Missing data") : done("Complete")));
+    }
+    return rows;
+  }
+
+  private List<List<CellView>> fullDatasetRowsForExperiment(Experiment experiment) {
+    List<List<CellView>> rows = new ArrayList<>();
+    int shown = Math.min(experiment.measurements(), Math.max(8, missingFor(experimentIndex)));
+    for (int i = 1; i <= shown; i++) {
+      rows.add(fullDatasetRow(i, i));
+    }
+    return rows;
+  }
+
 
   /**
    * Project-level Samples: identity + status list, read-only and exportable, with quick filters.
@@ -1575,6 +1713,7 @@ public class ProjectPagePrototypeDemo extends Div {
               showAllColumns = !showAllColumns;
               refresh();
             }));
+    band.add(sampleOverviewStats());
     band.add(experimentFilter(sampleFilter, value -> {
       sampleFilter = value;
       refresh();

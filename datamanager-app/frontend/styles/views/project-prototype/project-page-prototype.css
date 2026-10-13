@@ -332,6 +332,15 @@
   white-space: nowrap;
 }
 
+.pt-crumb--link {
+  cursor: pointer;
+}
+
+.pt-crumb--link:hover {
+  color: var(--pt-accent-ink);
+  text-decoration: underline;
+}
+
 .pt-crumbs a {
   color: var(--pt-ink-muted);
   text-decoration: none;
@@ -1357,6 +1366,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
   gap: 0.75rem;
+  margin-bottom: 1rem;
 }
 
 .pt-rollup__fact {
