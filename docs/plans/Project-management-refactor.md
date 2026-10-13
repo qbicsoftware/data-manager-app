@@ -612,18 +612,22 @@ and does not repeat the per-experiment pipeline, which belongs to the experiment
 > Decisions taken together with the data steward and project owner.
 
 - **Samples get a project-level overview.** Row 2 becomes `Summary · Samples · Datasets · Access`.
-  The Samples page is a flat, paginated, **read-only** list with an Experiment column and
-  **quick-filter buttons per experiment**, plus export. It reuses the paginated sample list
-  (FEAT-PAG-LIST-02) at project scope; `SampleInformationService.findSamplesByProjectId` already
-  supports the query.
-- **Measurements are absorbed into Datasets.** There is no separate Measurements destination:
-  measurement metadata and registered primary data are shown together, so a measurement and its data
-  are one fact. The experiment view likewise merges its Measurements and Dataset views into one
-  `Dataset` view (`Design · Samples · Dataset`). A project-wide measurement filter is a small
-  extension of the existing experiment-keyed `MeasurementFilter`.
+  The Samples page starts with **overview stats** (total samples, experiments, measured, not
+  measured), then a flat, paginated, **read-only** list with an Experiment column and **quick-filter
+  buttons per experiment**, plus export. It reuses the paginated sample list (FEAT-PAG-LIST-02) at
+  project scope; `SampleInformationService.findSamplesByProjectId` already supports the query.
+- **Datasets start at the dataset level, because a dataset is 1:1 with an experiment.** The
+  project `Datasets` page begins with **one overview row per experiment** (kind `primary`,
+  measurement count, primary-data completeness, files, size, status) plus overview stats. Opening a
+  row **dives into** the experiment's measurement-level view, which is where measurement metadata
+  and registered primary data are shown together — so a measurement and its data are one fact. The
+  experiment view likewise merges its Measurements and Dataset views into one `Dataset` view
+  (`Design · Samples · Dataset`). A project-wide measurement filter is a small extension of the
+  existing experiment-keyed `MeasurementFilter`.
 - **Project-level data is read-only + export.** Registration stays experiment-scoped.
-- **One flat list, not grouped sections.** Experiment attribution is a column plus quick-filter
-  buttons, never grouping — grouping would recreate the experiment list inside the data list.
+- **Measurement-level lists are flat, not grouped.** Once inside a dataset, experiment attribution is
+  a column plus quick-filter buttons, never grouping — grouping would recreate the experiment list
+  inside the data list.
 - The project rollup counts and attention rows link into these project-level lists.
 
 **Open question (blocking the settings part):** exactly which edits move to a "settings" section —
