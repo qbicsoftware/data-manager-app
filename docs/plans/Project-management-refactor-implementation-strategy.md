@@ -292,7 +292,26 @@ that paginated reads are non-blocking is contradicted by the code.
   separate read store, no event-driven projections). Composing in the application layer was
   rejected (N+1 and inconsistent numbers between bands).
 - **D11 — Indexing:** keep the single `idx_sample_experiment`; add a composite
-  `sample(project_id, experiment_id)` only if `EXPLAIN` during validation shows a scan.
+  `sample(project_id, experiment_id)` only if `EXPLAIN` during validation shows a scan. **Closed
+  (2026-10-14):** validation `EXPLAIN` showed the index is used, so no composite index is added.
+
+### 4.3 Schema validation (2026-10-14)
+
+The read-model migration was applied to the central test schema and the checks in *Verify*
+(`NEXT.md`) plus the read-model cross-checks were run. All results clean:
+
+- all three views created;
+- `experiment_progress` agrees with the existing `project_measurements` view per project
+  (measurement-count cross-check returned no mismatches);
+- `sample_count` matches the raw `sample` table per experiment (no mismatches);
+- `measured + not_measured = total` in `v_project_sample_overview`, no inconsistent rows;
+- `measurements_with_primary_data <= measurement_count` everywhere;
+- `remote_measurement_data` contains `deleted = true` rows, confirming the filter is load-bearing;
+- `EXPLAIN` showed index usage → **D11 closed**.
+
+**Provision note:** validation was executed by the project owner against the central test DB; the
+agent has no database credentials. The migration remains additive and idempotent, so re-running it
+is safe.
 
 ---
 
