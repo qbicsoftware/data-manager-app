@@ -298,6 +298,10 @@ public class RawDataTabPagination extends Div {
    */
   public void applyExternalState(RawDataListState state) {
     this.listState = state;
+    if (!isTabVisible(state.activeTab())) {
+      firstVisibleDomain().ifPresent(fallback -> this.listState = this.listState.withTab(fallback,
+          this.listState.stateOf(fallback)));
+    }
     suppressTabSwitchEvents = true;
     try {
       selectTabForActiveDomain();
@@ -306,6 +310,13 @@ public class RawDataTabPagination extends Div {
     }
     refreshActiveTab();
     updateSelectionBar();
+  }
+
+  private boolean isTabVisible(RawDataDomain domain) {
+    Tab tab = tabsByDomain.get(domain);
+    // a domain without a registered tab is treated as visible; selectTabForActiveDomain is a
+    // no-op for it, so it cannot render a wrong grid anyway
+    return tab == null || tab.isVisible();
   }
 
   private void selectTabForActiveDomain() {
