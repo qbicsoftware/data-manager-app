@@ -129,6 +129,20 @@ class ProjectPagePrototypeConstructorSpec extends Specification {
     statuses(view).contains("Nothing registered yet")
   }
 
+  def "each data card carries a glyph that maps it to its subject, without carrying the meaning"() {
+    given: "the project summary, where every experiment carries a Samples and a Dataset card"
+    def view = enterProject()
+
+    expect: "the two surfaces are told apart by shape as well as by their label"
+    // Cards are built Samples then Dataset, per experiment entry, and the pilot is the first entry.
+    glyphs(view) == ["vaadin:flask", "vaadin:database"] * 3
+
+    and: "the glyph is decoration: the label stays the only name, so shape never carries meaning alone"
+    def icons = elementsWithClass(view, "pt-snap__icon")
+    icons.size() == 6
+    icons.every { it.element.getAttribute("aria-hidden") == "true" }
+  }
+
   def "a not-started experiment shows no preview rows rather than a lower sample code"() {
     given:
     def view = enterProject()
@@ -673,6 +687,16 @@ class ProjectPagePrototypeConstructorSpec extends Specification {
 
   private static List<String> currentCrumbs(com.vaadin.flow.component.Component c) {
     classTexts(c, "pt-crumb--current")
+  }
+
+  /** The icon name of every data-card glyph, in document order. */
+  private static List<String> glyphs(com.vaadin.flow.component.Component c) {
+    def out = []
+    if (c.classNames.any { it == "pt-snap__icon" }) {
+      out << c.element.getAttribute("icon")
+    }
+    c.children.toList().each { out.addAll(glyphs(it)) }
+    out
   }
 
   /** Every element that advertises itself as operable via role=button or role=link. */

@@ -1221,6 +1221,24 @@ public class ProjectPagePrototypeDemo extends Div implements BeforeEnterObserver
   }
 
   /**
+   * The decorative glyph that maps a data card to its subject at a glance.
+   *
+   * <p>Keyed on the card's label because the label IS the surface's identity here — the two cards are
+   * exactly Samples and Dataset. It is decoration only: the label already names the surface, so the
+   * glyph is redundant reinforcement for people who scan shapes, and it must never become the only
+   * carrier of meaning. Hence {@code aria-hidden}.</p>
+   */
+  private static Icon surfaceGlyph(String label) {
+    Icon glyph = icon(switch (label) {
+      case "Samples" -> VaadinIcon.FLASK;
+      case "Dataset" -> VaadinIcon.DATABASE;
+      default -> VaadinIcon.RECORDS;
+    }, "pt-snap__icon");
+    glyph.getElement().setAttribute("aria-hidden", "true");
+    return glyph;
+  }
+
+  /**
    * One data card: a label, a lifecycle state tag, a count, a status line, the newest three records
    * and a way to the full list. The same markup serves the experiment overview and the
    * per-experiment snapshot on the project page, so the two cannot drift into different idioms for
@@ -1237,7 +1255,7 @@ public class ProjectPagePrototypeDemo extends Div implements BeforeEnterObserver
     identity.addClassName("pt-snap__id");
     Span labelSpan = new Span(label);
     labelSpan.addClassName("pt-snap__label");
-    identity.add(labelSpan);
+    identity.add(surfaceGlyph(label), labelSpan);
     if (stateLabel != null) {
       identity.add(stateTag(stateLabel, stateTone));
     }
@@ -1568,7 +1586,7 @@ public class ProjectPagePrototypeDemo extends Div implements BeforeEnterObserver
     identity.addClassName("pt-snap__id");
     Span labelSpan = new Span(label);
     labelSpan.addClassName("pt-snap__label");
-    identity.add(labelSpan, stateTag(state, tone));
+    identity.add(surfaceGlyph(label), labelSpan, stateTag(state, tone));
     head.add(identity);
     panel.add(head);
 

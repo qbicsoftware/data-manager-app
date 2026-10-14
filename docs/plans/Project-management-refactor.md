@@ -731,6 +731,11 @@ Resolution, implemented in the prototype:
   signal. Both were wrong; the strip switcher is the one that stays.
 - **The card footer carries the action, on a shared baseline.** Cards stretch to a common height so
   their actions line up; ragged bottoms on peer cards read as two unrelated boxes.
+- **A glyph maps each data card to its subject** (2026-10-14). Samples carries a flask, Dataset a
+  database, so the two cards are told apart by shape rather than only by reading their labels — the
+  two were previously near-identical boxes whose only difference was a word. The glyph is decorative
+  (`aria-hidden`) and monochrome on purpose: the label already names the surface, so shape must not
+  become the only carrier of meaning — the same rule the state tags follow for colour.
 
 ### One scope at a time: two chrome rows (review 2026-10-14)
 

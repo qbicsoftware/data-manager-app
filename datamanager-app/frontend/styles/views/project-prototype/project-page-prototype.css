@@ -1641,6 +1641,17 @@
   color: var(--pt-ink);
 }
 
+/*
+ * The glyph that maps a data card to its subject. Decorative — the label carries the meaning, so this
+ * is redundant reinforcement for people who scan shapes. Monochrome on purpose: a colour difference
+ * here would make colour the way the two cards are told apart, which they must not rely on. Its size
+ * comes from the design system's `.icon-size-xs`.
+ */
+.pt-snap__icon {
+  flex: 0 0 auto;
+  color: var(--pt-ink-muted);
+}
+
 .pt-snap__open {
   font-size: 0.75rem;
   color: var(--pt-accent-ink);
