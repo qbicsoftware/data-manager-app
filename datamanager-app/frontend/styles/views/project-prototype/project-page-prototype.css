@@ -941,8 +941,11 @@
 
 .pt-exp {
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) auto;
-  gap: 0.75rem 1.5rem;
+  /* One column: the identity, then the snapshot cards underneath. The entry used to carry counts and
+   * Samples/Dataset buttons beside the identity — the cards state the same numbers and are the way
+   * in, so the entry was saying everything twice. */
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.75rem;
   align-items: center;
   padding: 0.9rem 1rem;
   border: 1px solid var(--pt-line);
@@ -970,37 +973,6 @@
   flex-wrap: wrap;
   gap: 0.35rem;
   margin-top: 0.35rem;
-}
-
-.pt-exp__counts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  margin: 0;
-  font-size: var(--pt-fs-meta);
-  color: var(--pt-ink-muted);
-}
-
-.pt-exp__count {
-  display: inline-flex;
-  flex-direction: column;
-  gap: 0.1rem;
-}
-
-.pt-exp__count .pt-strong {
-  font-variant-numeric: tabular-nums;
-  color: var(--pt-ink);
-}
-
-.pt-exp__count span {
-  color: var(--pt-ink-subtle);
-  font-size: 0.75rem;
-}
-
-.pt-exp__actions {
-  display: inline-flex;
-  gap: 0.35rem;
-  flex-wrap: wrap;
 }
 
 /* ── Metadata band ─────────────────────────────────────────────────────── */

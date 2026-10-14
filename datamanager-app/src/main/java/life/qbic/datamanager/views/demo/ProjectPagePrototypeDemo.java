@@ -90,8 +90,8 @@ public class ProjectPagePrototypeDemo extends Div implements BeforeEnterObserver
   }
 
   /**
-   * One experiment as the project page presents it: identity, the counts that make it actionable,
-   * and the recent activity the inline snapshots summarise.
+   * One experiment as the project page presents it: identity, and the recent activity the inline
+   * snapshots summarise.
    *
    * @param samplesActivity   the verb for the samples panel status, either {@code "Registered"} or
    *                          {@code "Modified"}; {@code null} when the experiment has no samples
@@ -103,12 +103,11 @@ public class ProjectPagePrototypeDemo extends Div implements BeforeEnterObserver
       List<String> domains,
       int samples,
       int measurements,
-      int datasets,
       String samplesActivity,
       int daysSinceActivity) {
 
     boolean isStarted() {
-      return samples + measurements + datasets > 0;
+      return samples + measurements > 0;
     }
   }
 
@@ -168,11 +167,11 @@ public class ProjectPagePrototypeDemo extends Div implements BeforeEnterObserver
 
   private static final List<Experiment> POPULATED_EXPERIMENTS = List.of(
       new Experiment("Immunopeptidomics pilot",
-          List.of("Immunopeptidomics"), 48, 24, 18, "Modified", 2),
+          List.of("Immunopeptidomics"), 48, 24, "Modified", 2),
       new Experiment("Solely Immuno",
-          List.of("Immunopeptidomics", "Proteomics"), 36, 30, 18, "Registered", 5),
+          List.of("Immunopeptidomics", "Proteomics"), 36, 30, "Registered", 5),
       new Experiment("Smoke test edit immunopeptidomics",
-          List.of("Genomics"), 0, 0, 0, null, 0));
+          List.of("Genomics"), 0, 0, null, 0));
 
   /**
    * One outstanding item, attributed to the experiment it belongs to.
@@ -1114,30 +1113,11 @@ public class ProjectPagePrototypeDemo extends Div implements BeforeEnterObserver
     }
     identity.add(name, facets);
 
-    Div counts = new Div();
-    counts.addClassName("pt-exp__counts");
-    counts.add(countFact(experiment.samples(), "samples"));
-    counts.add(countFact(experiment.measurements(), "measurements"));
-    counts.add(countFact(experiment.datasets(), "datasets"));
-
-    Div actions = new Div();
-    actions.addClassName("pt-exp__actions");
-    actions.add(button("Samples", false, () -> openExperiment(index, Page.EXP_SAMPLES)),
-        button("Dataset", false, () -> openExperiment(index, Page.EXP_DATASET)));
-
-    entry.add(identity, counts, actions);
+    // No counts and no Samples/Dataset buttons: the snapshot cards below state the same numbers and
+    // are themselves the way in, so the entry was saying everything twice.
+    entry.add(identity);
     entry.add(experimentSnapshot(experiment, index));
     return entry;
-  }
-
-  private Div countFact(int value, String unit) {
-    Div fact = new Div();
-    fact.addClassName("pt-exp__count");
-    Span number = new Span(String.valueOf(value));
-    number.addClassName("pt-strong");
-    Span label = new Span(unit);
-    fact.add(number, label);
-    return fact;
   }
 
   // Experiment snapshot ────────────────────────────────────────────────────
