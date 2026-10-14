@@ -171,19 +171,40 @@ class ProjectPagePrototypeConstructorSpec extends Specification {
     classTexts(view, "pt-step__ordinal") == ["1", "2", "3"]
   }
 
-  def "the experiment views are offered once, not by a chrome switcher as well"() {
-    given: "an experiment-scoped view"
+  def "the context strip switches between the experiment's views and marks the current one"() {
+    given: "the experiment overview"
     def view = enterPilot()
 
-    expect: "the context strip carries no experiment-view switcher"
-    classTexts(view, "pt-expview").isEmpty()
-    activeViews(view).isEmpty()
+    expect: "the switcher is there, with the overview marked as the view being read"
+    classTexts(view, "pt-expview") == ["Overview", "Samples", "Dataset"]
+    activeViews(view) == ["Overview"]
 
-    and: "the overview navigates with its own cards instead"
+    and: "the overview still navigates with its own cards as well"
     classTexts(view, "pt-snap__label") == ["Samples", "Dataset"]
     elementsWithClass(view, "pt-snap").every {
       it.element.getAttribute("role") == "button"
     }
+
+    when: "the user opens Samples"
+    markCurrent(view, "EXP_SAMPLES")
+
+    then: "the mark follows, and the dataset is one click away from here"
+    activeViews(view) == ["Samples"]
+    classTexts(view, "pt-expview").contains("Dataset")
+
+    when: "and then the dataset"
+    markCurrent(view, "EXP_DATASET")
+
+    then: "the switcher keeps every view of the experiment reachable from anywhere in it"
+    activeViews(view) == ["Dataset"]
+    classTexts(view, "pt-expview") == ["Overview", "Samples", "Dataset"]
+  }
+
+  def "the prototype routes by view and experiment, so browser Back and Forward work"() {
+    expect: "the route carries both parameters, and entering it re-renders the view"
+    def route = ProjectPagePrototypeDemo.getAnnotation(com.vaadin.flow.router.Route)
+    route.value() == "test-view/project-page"
+    com.vaadin.flow.router.BeforeEnterObserver.isAssignableFrom(ProjectPagePrototypeDemo)
   }
 
   def "a card with nothing to open is not dressed as clickable"() {

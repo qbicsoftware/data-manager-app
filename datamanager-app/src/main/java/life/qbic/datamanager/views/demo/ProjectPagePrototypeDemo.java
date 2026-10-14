@@ -1,6 +1,7 @@
 package life.qbic.datamanager.views.demo;
 
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.html.Abbr;
@@ -17,6 +18,9 @@ import com.vaadin.flow.component.html.UnorderedList;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.BeforeEnterObserver;
+import com.vaadin.flow.router.QueryParameters;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.spring.annotation.UIScope;
@@ -24,6 +28,7 @@ import life.qbic.datamanager.views.general.oidc.OidcLogo;
 import life.qbic.datamanager.views.general.oidc.OidcType;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.springframework.context.annotation.Profile;
 
 /**
@@ -64,7 +69,8 @@ import org.springframework.context.annotation.Profile;
  * <h3>Prototype affordances (not part of the design)</h3>
  * <p>The dashed bar at the top switches between the populated and the freshly-created (empty)
  * project and toggles a near-worst-case project title. Those controls are deliberately excluded from
- * any production consideration. All routing is in-view state, not real Vaadin routes.</p>
+ * any production consideration. Navigation is real routing: the view and the experiment are route
+ * query, so the browser's Back and Forward buttons walk the prototype like any other page.</p>
  *
  * @see docs/plans/Project-management-refactor.md
  * @since 1.20.0
@@ -75,7 +81,7 @@ import org.springframework.context.annotation.Profile;
 @AnonymousAllowed
 @org.springframework.stereotype.Component
 @CssImport("./styles/views/project-prototype/project-page-prototype.css")
-public class ProjectPagePrototypeDemo extends Div {
+public class ProjectPagePrototypeDemo extends Div implements BeforeEnterObserver {
 
   // ── Canned data ─────────────────────────────────────────────────────────
 
@@ -279,6 +285,47 @@ public class ProjectPagePrototypeDemo extends Div {
     refresh();
   }
 
+  /**
+   * Re-renders for the location the browser asked for, so Back and Forward walk the prototype's
+   * history like any other page. The view and the experiment are carried as query parameters, which
+   * keeps the route itself static — a parameterised route template is one more thing that can fail to
+   * resolve, and this prototype does not need it.
+   */
+  @Override
+  public void beforeEnter(BeforeEnterEvent event) {
+    QueryParameters query = event.getLocation().getQueryParameters();
+    this.page = parsePage(query.getSingleParameter("view").orElse(Page.SUMMARY.name()));
+    this.experimentIndex = clampExperiment(
+        query.getSingleParameter("experiment").map(ProjectPagePrototypeDemo::parseInt).orElse(0));
+    refresh();
+  }
+
+  private static int parseInt(String value) {
+    try {
+      return Integer.parseInt(value);
+    } catch (NumberFormatException notANumber) {
+      return 0;
+    }
+  }
+
+  /** An unknown or absent view falls back to the project summary rather than failing the route. */
+  private static Page parsePage(String name) {
+    for (Page candidate : Page.values()) {
+      if (candidate.name().equals(name)) {
+        return candidate;
+      }
+    }
+    return Page.SUMMARY;
+  }
+
+  /** Keeps a hand-typed or stale experiment index inside the canned data instead of throwing. */
+  private static int clampExperiment(int index) {
+    if (index < 0 || index >= POPULATED_EXPERIMENTS.size()) {
+      return 0;
+    }
+    return index;
+  }
+
   /** The project title currently in play, so the navigation and the page header always agree. */
   private String projectTitle() {
     if (emptyState) {
@@ -292,14 +339,28 @@ public class ProjectPagePrototypeDemo extends Div {
   }
 
   private void navigate(Page target) {
-    this.page = target;
-    refresh();
+    openExperiment(experimentIndex, target);
   }
 
+  /**
+   * Opens a view by pushing a real location, so the browser's Back and Forward buttons work.
+   *
+   * <p>Without a UI — the constructor specs build the view directly — there is no history to push, so
+   * the state is applied in place and the view re-renders. That keeps the specs able to drive the
+   * prototype without a running browser, while the browser gets real routing.</p>
+   */
   private void openExperiment(int index, Page target) {
-    this.experimentIndex = index;
-    this.page = target;
-    refresh();
+    UI ui = UI.getCurrent();
+    if (ui == null) {
+      this.experimentIndex = clampExperiment(index);
+      this.page = target;
+      refresh();
+      return;
+    }
+    Map<String, String> query = target.isExperimentScoped()
+        ? Map.of("view", target.name(), "experiment", String.valueOf(clampExperiment(index)))
+        : Map.of("view", target.name());
+    ui.navigate(ProjectPagePrototypeDemo.class, QueryParameters.simple(query));
   }
 
   private void refresh() {
@@ -330,13 +391,11 @@ public class ProjectPagePrototypeDemo extends Div {
     // at full accent it was the same blue as the page's one primary action and competed with it.
     Button populated = toggle("Populated project", !emptyState, () -> {
       emptyState = false;
-      page = Page.SUMMARY;
-      refresh();
+      navigate(Page.SUMMARY);
     });
     Button empty = toggle("New / empty project", emptyState, () -> {
       emptyState = true;
-      page = Page.SUMMARY;
-      refresh();
+      navigate(Page.SUMMARY);
     });
     Button longTitleToggle = toggle("Long project title", longTitle, () -> {
       longTitle = !longTitle;
@@ -487,6 +546,15 @@ public class ProjectPagePrototypeDemo extends Div {
       crumbs.add(sep(), page == Page.DESIGN
           ? currentCrumb(experiment.name())
           : crumb(experiment.name(), () -> openExperiment(experimentIndex, Page.DESIGN)));
+
+      // The experiment's own views, in the chrome. This is the switcher that moves the user sideways
+      // between the overview and the two data views without walking back up to the overview first,
+      // and it marks the current view so the strip answers "where am I" as well as "where to".
+      Div views = new Div();
+      views.addClassName("pt-expviews");
+      views.add(expView("Overview", Page.DESIGN), expView("Samples", Page.EXP_SAMPLES),
+          expView("Dataset", Page.EXP_DATASET));
+      row.add(views);
     }
 
     contextRow.add(row);
@@ -508,6 +576,24 @@ public class ProjectPagePrototypeDemo extends Div {
     span.addClassName("pt-crumb--current");
     span.getElement().setAttribute("title", text);
     return span;
+  }
+
+  /**
+   * One experiment view in the context strip. It is the switcher between the overview and the two
+   * data views — the only one, now that the in-page rail is gone — and it marks the active view, so
+   * the chrome answers both "where can I go" and "where am I".
+   */
+  private Div expView(String label, Page target) {
+    Div view = new Div();
+    view.addClassName("pt-expview");
+    view.getElement().setAttribute("role", "button");
+    view.getElement().setAttribute("tabindex", "0");
+    view.add(textSpan(label, null));
+    if (page == target) {
+      view.getElement().setAttribute("aria-current", "page");
+    }
+    activateOnClickAndKeys(view, () -> openExperiment(experimentIndex, target));
+    return view;
   }
 
   /**

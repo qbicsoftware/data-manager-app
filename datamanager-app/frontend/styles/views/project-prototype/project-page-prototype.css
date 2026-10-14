@@ -368,6 +368,41 @@
   color: var(--pt-ink-subtle);
 }
 
+/*
+ * The experiment's view switcher (Overview / Samples / Dataset), shown only inside an experiment.
+ * It is the switcher between the experiment's own views, so the active one is given a raised surface
+ * and weight while the others stay flat.
+ */
+.pt-expviews {
+  margin-left: auto;
+  display: inline-flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.pt-expview {
+  font: inherit;
+  padding: 0.25rem 0.65rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--pt-ink-muted);
+  cursor: pointer;
+}
+
+.pt-expview:hover {
+  background: #fff;
+  border-color: var(--pt-line);
+  color: var(--pt-ink);
+}
+
+.pt-expview[aria-current="page"] {
+  background: #fff;
+  border-color: var(--pt-line-strong);
+  color: var(--pt-ink);
+  font-weight: var(--font-weight-semi-bold, 600);
+}
+
 /* ── Bands ─────────────────────────────────────────────────────────────── */
 
 .pt-body {
@@ -471,7 +506,8 @@
 .pt-app .pt-btn,
 .pt-app .pt-toggle,
 .pt-app .pt-subnav__item,
-.pt-app .pt-primary-tab {
+.pt-app .pt-primary-tab,
+.pt-app .pt-expview {
   min-width: 0;
   min-height: 0;
   height: auto;
@@ -1333,6 +1369,7 @@
   .pt-toggle,
   .pt-subnav__item,
   .pt-primary-tab,
+  .pt-expview,
   .pt-exp {
     transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
   }
