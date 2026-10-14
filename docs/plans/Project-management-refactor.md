@@ -491,10 +491,10 @@ self-contained demo view. It is deliberately isolated so it cannot affect produc
   production theme.
 - **Navigation model it renders:** two chrome rows, never three. A constant identity bar carries the
   wordmark, the breadcrumb and the account; **one** navigation row carries the views of the entity
-  named at the end of the breadcrumb — the projects control panel (`Projects · Groups · Settings`), a
-  project (`Summary · Samples · Datasets · Access` plus tools), or an experiment
-  (`Overview · Samples · Dataset`). Two scopes are never navigable at once. The experiment list lives
-  in the `Summary` experiments band, **not** behind its own navigation item.
+  named at the end of the breadcrumb — Home (the projects list, and the default landing, whose views
+  are `Projects · Groups · Settings`), a project (`Summary · Samples · Datasets · Access` plus tools),
+  or an experiment (`Overview · Samples · Dataset`). Two scopes are never navigable at once. The
+  experiment list lives in the `Summary` experiments band, **not** behind its own navigation item.
 - **It is navigable end to end, with real browser history.** Every dummy surface — project `Summary`,
   `Samples`, `Datasets`, `Access`, `Ontology search`, `Settings`, and the experiment's `Overview`,
   `Samples` and `Dataset` — is reached by pushing a location (`?view=…&experiment=…`), so Back and
@@ -748,9 +748,15 @@ Resolution: **stop rendering three scopes at once.**
 
 - **Two chrome rows.** A constant identity bar (wordmark, breadcrumb, account) over exactly one
   navigation row, whose contents are the views of the entity named at the end of the breadcrumb.
-- **The control panel is a scope, not a fixed band.** At the top level the navigation row *is*
-  `Projects · Groups · Settings`, so the shell destinations appear where they belong and nowhere
-  else. The prototype gained a minimal projects-list page so this scope is demonstrable.
+- **Home is a scope, not a fixed band.** The top-level destination is **Home**, named in the
+  breadcrumb — the top bar's job — and its navigation row lists *Home's own views*:
+  `Projects · Groups · Settings`. The shell destinations therefore appear where they belong and
+  nowhere else. Home shows the projects list and is the **default landing**: the app opens on the
+  projects list, not inside a project. A minimal projects-list page was added so this scope is
+  demonstrable, and selecting a project there swaps the navigation row to that project's views, so the
+  change runs in both directions.
+- **The page title names the content, not the place.** Home's H1 is `Projects`, because that is what
+  the page is; `Home` is where it sits in the navigation. One name per question.
 - **The "you are here" chain is continuous.** Every level marks its current item in the same idiom.
   The previous design blanked the project row on descent and changed idiom at the experiment level.
 - **The label collision dissolves structurally.** `Samples`/`Datasets` (project) and

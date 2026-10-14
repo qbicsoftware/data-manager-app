@@ -43,8 +43,8 @@ import org.springframework.context.annotation.Profile;
  * <ul>
  *   <li>No left navigation drawer. Two chrome rows: a constant identity bar carrying the wordmark,
  *       the breadcrumb and the account, and <em>one</em> navigation row whose contents are the views
- *       of the entity named at the end of the breadcrumb — the projects control panel, a project, or
- *       an experiment. Two scopes are never navigable at once.</li>
+ *       of the entity named at the end of the breadcrumb — Home (the projects list, and the default
+ *       landing), a project, or an experiment. Two scopes are never navigable at once.</li>
  *   <li>The breadcrumb is the only place the project and the experiment are named, and every ancestor
  *       crumb is the way back up.</li>
  *   <li>The navigation row carries no counts and no project-specific content, so its geometry is the
@@ -142,7 +142,7 @@ public class ProjectPagePrototypeDemo extends Div implements BeforeEnterObserver
    * four experiment views) without touching any real route.
    */
   private enum Page {
-    PROJECTS("Projects", false),
+    HOME("Projects", false),
     SUMMARY("Summary", false),
     SAMPLES("Samples", false),
     DATASETS("Datasets", false),
@@ -257,7 +257,7 @@ public class ProjectPagePrototypeDemo extends Div implements BeforeEnterObserver
 
   private boolean emptyState = false;
   private boolean longTitle = false;
-  private Page page = Page.SUMMARY;
+  private Page page = Page.HOME;
   private int experimentIndex = 0;
   private int sampleFilter = -1;
   private int datasetFilter = -1;
@@ -293,7 +293,7 @@ public class ProjectPagePrototypeDemo extends Div implements BeforeEnterObserver
   @Override
   public void beforeEnter(BeforeEnterEvent event) {
     QueryParameters query = event.getLocation().getQueryParameters();
-    this.page = parsePage(query.getSingleParameter("view").orElse(Page.SUMMARY.name()));
+    this.page = parsePage(query.getSingleParameter("view").orElse(Page.HOME.name()));
     this.experimentIndex = clampExperiment(
         query.getSingleParameter("experiment").map(ProjectPagePrototypeDemo::parseInt).orElse(0));
     refresh();
@@ -314,7 +314,7 @@ public class ProjectPagePrototypeDemo extends Div implements BeforeEnterObserver
         return candidate;
       }
     }
-    return Page.SUMMARY;
+    return Page.HOME;
   }
 
   /** Keeps a hand-typed or stale experiment index inside the canned data instead of throwing. */
@@ -453,7 +453,7 @@ public class ProjectPagePrototypeDemo extends Div implements BeforeEnterObserver
     brand.getElement().setAttribute("role", "link");
     brand.getElement().setAttribute("tabindex", "0");
     brand.getElement().setAttribute("title", "All projects");
-    activateOnClickAndKeys(brand, () -> navigate(Page.PROJECTS));
+    activateOnClickAndKeys(brand, () -> navigate(Page.HOME));
 
     row.add(brand, breadcrumbs());
 
@@ -477,12 +477,12 @@ public class ProjectPagePrototypeDemo extends Div implements BeforeEnterObserver
     Div crumbs = new Div();
     crumbs.addClassName("pt-crumbs");
 
-    if (page == Page.PROJECTS) {
-      crumbs.add(currentCrumb("Projects"));
+    if (page == Page.HOME) {
+      crumbs.add(currentCrumb("Home"));
       return crumbs;
     }
 
-    crumbs.add(crumb("Projects", () -> navigate(Page.PROJECTS)), sep());
+    crumbs.add(crumb("Home", () -> navigate(Page.HOME)), sep());
 
     if (page.isExperimentScoped() && !emptyState) {
       Span code = crumb("Q2IMMU", () -> navigate(Page.SUMMARY));
@@ -518,10 +518,10 @@ public class ProjectPagePrototypeDemo extends Div implements BeforeEnterObserver
     Div nav = new Div();
     nav.addClassName("pt-subnav__nav");
 
-    if (page == Page.PROJECTS) {
-      // The control panel. Groups and Settings are shell destinations this prototype does not model,
-      // so they are shown but deliberately not operable.
-      nav.add(navItem("Projects", Page.PROJECTS), navPlaceholder("Groups"),
+    if (page == Page.HOME) {
+      // Home hosts the projects list, so its views are Projects, Groups and Settings. The last two
+      // are shell destinations this prototype does not model: shown, but deliberately not operable.
+      nav.add(navItem("Projects", Page.HOME), navPlaceholder("Groups"),
           navPlaceholder("Settings"));
       row.add(nav);
       bar.add(row);
@@ -612,7 +612,7 @@ public class ProjectPagePrototypeDemo extends Div implements BeforeEnterObserver
     Div wrapper = new Div();
     wrapper.addClassName("pt-shell");
     switch (page) {
-      case PROJECTS -> wrapper.add(projectsPage());
+      case HOME -> wrapper.add(projectsPage());
       case SUMMARY -> wrapper.add(identityBand(), progressBand(emptyState),
           experimentsBand(emptyState), metadataBand());
       case SAMPLES -> wrapper.add(projectSamplesPage());
@@ -628,9 +628,10 @@ public class ProjectPagePrototypeDemo extends Div implements BeforeEnterObserver
   }
 
   /**
-   * The control panel: the projects list. It exists so the navigation model is demonstrable end to
-   * end — it is the scope in which {@code Projects · Groups · Settings} is the navigation, and the
-   * scope the breadcrumb's first crumb returns to. Deliberately not modelled in detail.
+   * Home: the projects list, and the default landing. It is the scope in which
+   * {@code Home · Groups · Settings} is the navigation, and the scope the breadcrumb's first crumb
+   * returns to. Selecting a project is what swaps the navigation row to that project's views, so
+   * this screen is what makes the scope change demonstrable in both directions.
    */
   private Div projectsPage() {
     Div band = pageBand("Projects", "All projects you can access",

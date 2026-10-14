@@ -13,9 +13,23 @@ import spock.lang.Specification
  */
 class ProjectPagePrototypeConstructorSpec extends Specification {
 
+  def "the prototype lands on Home, which shows the projects list"() {
+    when: "the view is constructed with no location of its own"
+    def view = new ProjectPagePrototypeDemo()
+
+    then: "Home is the scope, the top bar says so, and its row lists Home's own views"
+    classTexts(view, "pt-subnav__item") == ["Projects", "Groups", "Settings"]
+    activeNavItem(view) == ["Projects"]
+    currentCrumbs(view) == ["Home"]
+
+    and: "the projects list is what Home shows, and it is selectable"
+    headings(view).contains("Projects")
+    elementsWithClass(view, "pt-table__row--clickable").size() == 1
+  }
+
   def "constructs the summary page in populated state without an active UI"() {
     when:
-    def view = new ProjectPagePrototypeDemo()
+    def view = enterProject()
 
     then:
     noExceptionThrown()
@@ -77,7 +91,7 @@ class ProjectPagePrototypeConstructorSpec extends Specification {
 
   def "snapshot rows are the newest records first, with a column header saying what the time means"() {
     given: "the populated project page"
-    def view = new ProjectPagePrototypeDemo()
+    def view = enterProject()
 
     expect: "the Samples header explains the trailing column"
     rowTexts(view, "Samples").first() == ["Sample ID", "Sample name", "Changed"]
@@ -103,7 +117,7 @@ class ProjectPagePrototypeConstructorSpec extends Specification {
 
   def "the snapshot status names whether the samples were registered or modified"() {
     when: "the populated project page renders"
-    def view = new ProjectPagePrototypeDemo()
+    def view = enterProject()
 
     then: "the pilot reports a modification, not a registration"
     statuses(view).contains("Modified · 2 days ago")
@@ -117,7 +131,7 @@ class ProjectPagePrototypeConstructorSpec extends Specification {
 
   def "a not-started experiment shows no preview rows rather than a lower sample code"() {
     given:
-    def view = new ProjectPagePrototypeDemo()
+    def view = enterProject()
 
     expect: "the empty state is stated, never faked with placeholder data"
     textsIn(view).contains("No samples to show yet")
@@ -201,14 +215,16 @@ class ProjectPagePrototypeConstructorSpec extends Specification {
   }
 
   def "the navigation row carries the views of whatever the breadcrumb ends on"() {
-    given: "the control panel, where the navigation is the shell's own destinations"
+    given: "the prototype, positioned at each scope in turn"
     def view = new ProjectPagePrototypeDemo()
-    invokeNavigate(view, "PROJECTS")
 
-    expect:
+    when: "Home is opened"
+    invokeNavigate(view, "HOME")
+
+    then: "the navigation row is the shell's own destinations"
     classTexts(view, "pt-subnav__item") == ["Projects", "Groups", "Settings"]
     activeNavItem(view) == ["Projects"]
-    currentCrumbs(view) == ["Projects"]
+    currentCrumbs(view) == ["Home"]
 
     when: "a project is opened"
     invokeNavigate(view, "SUMMARY")
@@ -239,14 +255,14 @@ class ProjectPagePrototypeConstructorSpec extends Specification {
   }
 
   def "the projects list offers the demo project as an operable row, so the swap runs both ways"() {
-    given: "a project page"
-    def view = new ProjectPagePrototypeDemo()
+    given: "the project page"
+    def view = enterProject()
 
     expect: "the navigation row is the project's views"
     classTexts(view, "pt-subnav__item").contains("Summary")
 
-    when: "the user goes up to the control panel"
-    invokeNavigate(view, "PROJECTS")
+    when: "the user goes up to Home"
+    invokeNavigate(view, "HOME")
 
     then: "the navigation row is the shell's destinations"
     classTexts(view, "pt-subnav__item") == ["Projects", "Groups", "Settings"]
@@ -497,6 +513,16 @@ class ProjectPagePrototypeConstructorSpec extends Specification {
     return view
   }
 
+  /**
+   * The project summary. No longer where the prototype lands — Home is — so a spec that asserts
+   * project scope has to say so rather than relying on the default.
+   */
+  private static ProjectPagePrototypeDemo enterProject() {
+    def view = new ProjectPagePrototypeDemo()
+    invokeNavigate(view, "SUMMARY")
+    return view
+  }
+
   private static Class pageType(view) {
     view.class.declaredClasses.find { it.simpleName == "Page" }
   }
@@ -687,7 +713,7 @@ class ProjectPagePrototypeConstructorSpec extends Specification {
 
   def "the two Settings destinations can never be confused, because only one is on screen"() {
     given: "a project-scoped page"
-    def view = new ProjectPagePrototypeDemo()
+    def view = enterProject()
 
     expect: "the project navigation scopes its label, and no unscoped Settings sits beside it"
     buttonLabels(view).contains("Project settings")
@@ -700,8 +726,8 @@ class ProjectPagePrototypeConstructorSpec extends Specification {
     headings(view).contains("Project settings")
     buttonLabels(view).containsAll(["Description", "Funding", "Contacts", "Project deletion"])
 
-    when: "the control panel is opened instead"
-    invokeNavigate(view, "PROJECTS")
+    when: "Home is opened instead"
+    invokeNavigate(view, "HOME")
 
     then: "there the shell's destinations are the navigation, and the project's scope is not claimed"
     classTexts(view, "pt-subnav__item") == ["Projects", "Groups", "Settings"]
