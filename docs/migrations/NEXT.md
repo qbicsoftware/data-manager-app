@@ -21,7 +21,7 @@ For the migration documentation structure, see [`README.md`](README.md).
 
 | # | Script | Description | Risk |
 |---|---|---|---|
-|   |   | *No schema migrations yet* |   |
+| 1 | *(automatic — bundled with JobRunr)* | **JobRunr 8.7.1 → 9.0.x** auto-applies its bundled migration `v017__change_job_stats_view_to_sql_security_invoker.sql` on first startup: the `jobrunr_jobs_stats` view is recreated with `SQL SECURITY INVOKER` (MariaDB/MySQL). Atomic `CREATE OR REPLACE VIEW`; no table/index DDL, no downtime. Applied once and recorded in `jobrunr_migrations`. | Low |
 
 Each row links to its incremental script. The sections below expand each entry
 with apply / verify / rollback detail.
