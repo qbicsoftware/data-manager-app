@@ -777,12 +777,14 @@ public class ProjectPagePrototypeDemo extends Div implements BeforeEnterObserver
   }
 
   private List<Contact> projectContacts() {
+    // Resp. / PM / PI, as the project owner specified (2026-10-14): the person answerable for the
+    // project reads first, ahead of the project manager and the principal investigator.
     return List.of(
-        new Contact("PI", "Principal investigator", "Steffen Greiner",
-            "steffen.greiner@qbic.uni-tuebingen.de", "0009-0006-0929-9338"),
-        new Contact("PM", "Project manager", "Wow Cool", "wow@cool.dude", null),
         new Contact("Resp.", "Project responsible", "Lena Vogt",
-            "lena.vogt@qbic.uni-tuebingen.de", "0000-0002-1825-0097"));
+            "lena.vogt@qbic.uni-tuebingen.de", "0000-0002-1825-0097"),
+        new Contact("PM", "Project manager", "Wow Cool", "wow@cool.dude", null),
+        new Contact("PI", "Principal investigator", "Steffen Greiner",
+            "steffen.greiner@qbic.uni-tuebingen.de", "0009-0006-0929-9338"));
   }
 
   /**

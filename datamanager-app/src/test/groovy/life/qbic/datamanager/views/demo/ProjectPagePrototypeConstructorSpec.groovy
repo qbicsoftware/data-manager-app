@@ -35,8 +35,10 @@ class ProjectPagePrototypeConstructorSpec extends Specification {
     noExceptionThrown()
     view.classNames.any { it == "pt-app" }
 
-    and: "the contact chips expose the role abbreviations"
-    contactRoles(view).sort() == ["PI", "PM", "Resp."]
+    and: "the contact chips expose the role abbreviations, in the order the project owner set"
+    // Resp. / PM / PI — asserted unsorted, so the ORDER is pinned and not merely the set. Sorting
+    // here would have passed either way and let the order drift back.
+    contactRoles(view) == ["Resp.", "PM", "PI"]
 
     and: "only the contacts that actually have an ORCID get an ORCID link"
     orcidLinks(view) == 2

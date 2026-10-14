@@ -383,9 +383,11 @@ So the same word, "dataset", names two unrelated things — and in the UI it is 
 
 Four bands, top to bottom:
 
-1. **Identity band** — code + title (once), status chip, last activity, collaborator avatars +
-   Share, primary actions (`Add experiment`, `Export`). The objective sits directly beneath,
-   expanded but clamped to ~3 lines with "Show more" — never a collapsed grey bar.
+1. **Identity band** — code + title (once), status chip, last activity, the project's contacts +
+   Share, primary actions (`Add experiment`, `Export`). Contacts are ordered **Resp. · PM · PI**
+   (project owner, 2026-10-14): the person answerable for the project reads first, not the principal
+   investigator by default. The objective sits directly beneath, expanded but clamped to ~3 lines
+   with "Show more" — never a collapsed grey bar.
 2. **Progress band** — the missing piece. A lightweight read model repurposing/extending the existing
    counts into project-level pipeline stages
    (`experiment created → samples registered → dataset`), rendered as a compact step indicator with
