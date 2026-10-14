@@ -53,9 +53,11 @@
 --
 -- CONSUMPTION
 --
--- Read-only. Map to explicit read-model records via a Spring Data projection or
--- JdbcClient — NOT to a managed JPA @Entity, because the query service may run
--- the read on a scheduler thread (reactive boundary policy, strategy §4.1).
+-- Read-only. Mapping follows the established ProjectOverview pattern: a flat
+-- @Immutable @Entity over the view is acceptable because it carries no lazy
+-- associations, so it is fully hydrated before any scheduler thread hop. Do NOT
+-- add associations to a view-backed read entity. Detached records / JdbcClient
+-- are the fallback for any non-flat shape (reactive boundary policy, §4.1).
 -- =============================================================================
 
 

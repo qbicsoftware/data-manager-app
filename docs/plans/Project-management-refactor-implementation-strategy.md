@@ -193,8 +193,11 @@ Rules it must follow (so it stays honest):
 3. **One query per surface, not N+1.** The progress/dataset rollups are served by a single SQL
    projection rather than composing 7 per-experiment calls. For a landing page this is a
    correctness (consistency) *and* performance requirement.
-4. **Read models are not domain entities.** `ProjectOverview` is an `@Entity` bound to a SQL view;
-   new projections should be explicit query results, ideally not managed entities.
+4. **Read models are flat, and may be view-backed entities.** A read model may be a managed
+   `@Immutable @Entity` bound to a SQL view — the established `ProjectOverview` pattern — **only
+   if it carries no lazy associations**, so it is fully hydrated before any thread hop. A shape
+   that is not flat must be a detached record/DTO. Never add an association to a view-backed read
+   entity. See *4.2 Resolved decisions* for the chosen mapping mechanism.
 5. **`AsyncProjectService` stays the command boundary.** Writes (create experiment, register
    samples, edit metadata, project update/delete) keep their current shape. If a write is reused by
    the new page, call the existing endpoint — do not duplicate it.
@@ -227,9 +230,10 @@ Consequences for the query service:
    (reuse `ReactiveSecurityContextUtils`) or perform its ACL check at the query boundary; otherwise
    `@PreAuthorize`/ACL evaluates against no principal after a scheduler hop. This is a silent
    authorization bug, not a compile error. **Hard rule.**
-4. **Read models must be fully hydrated, entity-free DTOs.** A scheduler hop with a managed JPA
-   entity or lazy proxy causes `LazyInitializationException`. The async decision therefore
-   *forces* the read-model rule in clause 4 above. **Hard rule.**
+4. **Read models must be fully hydrated before the thread hop.** A managed entity is not
+   forbidden — `ProjectOverview` is one — but it must be **flat** (no lazy associations), because a
+   scheduler hop with an uninitialised proxy causes `LazyInitializationException`. This is the same
+   requirement as §4 clause 4. **Hard rule.**
 5. **One shared scheduler.** Reuse `elasticScheduler`; do not create per-service schedulers, and be
    deliberate about `subscribeOn` vs `publishOn`.
 6. **Do not mirror the command ceremony.** `requestId`, sealed request/response and `Retry` are for
@@ -245,8 +249,8 @@ cheap disciplines hold now**:
 - **One bridge, at the edge.** All reactive→synchronous conversion happens in exactly one shared
   adapter, and services never call `.block()`. If the blocking scatters across views, "refactor
   later" becomes many refactors.
-- **Read models stay fully hydrated and entity-free** (hard rule 4), so the JPA call is safe on
-  whatever thread executes it.
+- **Read models stay fully hydrated and flat** (hard rule 4), so the JPA call is safe on whatever
+  thread executes it.
 
 Because the progress band is a single projection rather than a fan-out (clause 3), the blocked query
 stays one fast read. **Revisit the async loader when** UI-thread time becomes measurable: slow list
@@ -256,6 +260,24 @@ the adapter changes, not the query service.
 **Verdict:** the architecture is *a query service whose **contract** is reactive*, not *an async
 query service*. Over this stack the async is thread-offload plus parallel composition; any claim
 that paginated reads are non-blocking is contradicted by the code.
+
+### 4.2 Resolved decisions (2026-10-14)
+
+- **D4 — Query service shape:** a new application-layer query service (working name
+  `ProjectQueryService`), not an extension of `ProjectInformationService` or
+  `SampleInformationService`. To be recorded as an ADR.
+- **D5 — `AsyncProjectService` read ownership:** keep it as the command boundary; freeze new
+  project-level reads onto the query service and do **not** churn the existing experiment-scoped
+  reads (`getSamplePreviews`, `getRawDatasetInformation*`, `countRawData*`) in this effort; migrate
+  them opportunistically later.
+- **D6 — View mapping mechanism:** follow the `ProjectOverview` pattern — a flat
+  `@Immutable @Entity` (Spring Data repository + `Specification`) per view. Records / `JdbcClient`
+  remain the fallback for non-flat shapes, not the default. No second persistence idiom is
+  introduced. (Corrects the earlier over-strict "entity-free" wording: the real rule is *flat, no
+  lazy associations*. `ProjectOverview` is itself a managed entity and is safe for exactly that
+  reason.)
+- **D7 — Reactive→sync bridge:** one shared adapter in `datamanager-app`; the existing eight
+  `.block()` sites migrate onto it over time.
 
 ---
 
