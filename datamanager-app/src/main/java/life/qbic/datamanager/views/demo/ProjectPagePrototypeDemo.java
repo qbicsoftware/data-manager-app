@@ -635,15 +635,16 @@ public class ProjectPagePrototypeDemo extends Div implements BeforeEnterObserver
   private Div projectsPage() {
     Div band = pageBand("Projects", "All projects you can access",
         button("New project", true, null));
-    band.add(table(
+    // Selecting a project is what swaps the navigation row from the shell's destinations to the
+    // project's — the scope change this stub exists to make demonstrable, in both directions.
+    band.add(clickableTable(
         new String[]{"Project", "Experiments", "Samples", "Datasets", "Attention"},
-        List.of(
-            row(text("Q2IMMU · Immunotest"), text("3"), text("84"), text("72"),
-                attention("2 experiments")),
-            row(text("Q2PROT · Proteomics pilot"), text("1"), text("36"), text("30"),
-                done("None")))));
-    band.add(note("Prototype: the projects list is a stub. It exists so the scope-contextual "
-        + "navigation can be exercised from the top level down."));
+        List.of(row(text("Q2IMMU · Immunotest"), text("3"), text("84"), text("72"),
+            attention("2 experiments"))),
+        index -> navigate(Page.SUMMARY)));
+    band.add(note("Prototype: one project is modelled, so this list has one selectable row. "
+        + "Selecting it enters the project and replaces the navigation row with the project's "
+        + "views; the crumb returns here."));
     return band;
   }
 
@@ -2449,7 +2450,12 @@ public class ProjectPagePrototypeDemo extends Div implements BeforeEnterObserver
       rowDiv.addClassName("pt-table__row--clickable");
       rows.get(i).forEach(cellView -> rowDiv.add(cell(cellView)));
       final int index = i;
-      rowDiv.addClickListener(event -> onRowClick.accept(index));
+      // A row that behaves like a control must be operable like one. Without this it was mouse-only,
+      // which contradicts the prototype's own rule that anything advertising a role honours the
+      // keyboard — and the projects list is now the way back into a project.
+      rowDiv.getElement().setAttribute("role", "button");
+      rowDiv.getElement().setAttribute("tabindex", "0");
+      activateOnClickAndKeys(rowDiv, () -> onRowClick.accept(index));
       table.add(rowDiv);
     }
     return table;

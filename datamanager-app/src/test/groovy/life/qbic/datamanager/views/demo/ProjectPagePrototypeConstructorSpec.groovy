@@ -238,6 +238,39 @@ class ProjectPagePrototypeConstructorSpec extends Specification {
     !classTexts(view, "pt-subnav__item").contains("Datasets")
   }
 
+  def "the projects list offers the demo project as an operable row, so the swap runs both ways"() {
+    given: "a project page"
+    def view = new ProjectPagePrototypeDemo()
+
+    expect: "the navigation row is the project's views"
+    classTexts(view, "pt-subnav__item").contains("Summary")
+
+    when: "the user goes up to the control panel"
+    invokeNavigate(view, "PROJECTS")
+
+    then: "the navigation row is the shell's destinations"
+    classTexts(view, "pt-subnav__item") == ["Projects", "Groups", "Settings"]
+
+    and: "the demo project is offered as a real control, not as decoration"
+    def rows = elementsWithClass(view, "pt-table__row--clickable")
+    rows.size() == 1
+    rows.first().element.getTextRecursively().contains("Q2IMMU")
+    rows.every { it.element.getAttribute("role") == "button" }
+    // data-activation is set by the one helper that wires pointer AND keyboard together, so this is
+    // the observable half of "selecting the row enters the project". A click cannot be dispatched
+    // from here: Div has no Vaadin click(), unlike Button.
+    rows.every { it.element.getAttribute("data-activation") == "full" }
+    rows.every { keyFilters(it).any { f -> f.contains("Enter") && f.contains("' '") } }
+
+    when: "the project is entered again"
+    invokeNavigate(view, "SUMMARY")
+
+    then: "the navigation row swaps back to the project's views"
+    classTexts(view, "pt-subnav__item") == ["Summary", "Samples", "Datasets", "Access",
+        "Ontology search", "Project settings"]
+    activeNavItem(view) == ["Summary"]
+  }
+
   def "the prototype routes by view and experiment, so browser Back and Forward work"() {
     expect: "the route carries both parameters, and entering it re-renders the view"
     def route = ProjectPagePrototypeDemo.getAnnotation(com.vaadin.flow.router.Route)
