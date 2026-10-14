@@ -492,23 +492,24 @@ self-contained demo view. It is deliberately isolated so it cannot affect produc
 - **Navigation model it renders:** row 1 = the existing primary navigation (`Projects · Groups ·
   Settings`); row 2 = the new in-project navigation (`Summary · Samples · Datasets · Access`,
   Ontology Search as a tool) with no project-specific content; row 3 = the always-visible context
-  strip carrying the project identity plus the breadcrumb and, inside an experiment, the experiment
-  views. The
+  strip carrying the project identity, the breadcrumb (`Projects / CODE / Project / Experiment`) and,
+  inside an experiment, the experiment-view switcher (`Overview · Samples · Dataset`). The
   experiment list lives in the `Summary` experiments band, **not** behind its own navigation item.
-- **It is navigable end to end.** The prototype routes in-view between dummy `Samples`,
-  `Measurements`, `Dataset`, `Design`, `Datasets`, `Access` and `Ontology search` pages so the
-  navigation can be exercised the way the final product would work. No real route or service is
-  touched; the routing is component state. The vocabulary follows the decided data model: the
+- **It is navigable end to end, with real browser history.** Every dummy surface — project `Summary`,
+  `Samples`, `Datasets`, `Access`, `Ontology search`, `Settings`, and the experiment's `Overview`,
+  `Samples` and `Dataset` — is reached by pushing a location (`?view=…&experiment=…`), so Back and
+  Forward walk the prototype like any other page. No real route or service is touched: the target of
+  that navigation is the prototype itself. The vocabulary follows the decided data model: the
   experiment view is `Dataset` (kind `primary`), and the project page separates *Produced in this
   project* from *Connected datasets*.
 - **The Experiments hub gates the pipeline.** With no experiment it opens on an onboarding hero
-  ("Create your first experiment") and renders the pipeline `Experiment → Samples → Measurements →
-  Primary data → Sample QC` with every downstream step **locked** (neutral dashed, not amber). A
-  not-started experiment blocks Measurements with "Register samples first" and Dataset with
-  "Register measurements first", each routing to the step that unblocks it. A locked step is a
-  prerequisite, never an exception, so it is visually distinct from the per-experiment attention
-  badge. Each experiment view also shows its own pipeline, so the user always sees what is done, what
-  is next and what is not yet reachable.
+  ("Create your first experiment") and renders the pipeline `Experiment → Samples → Dataset` with
+  every downstream step **locked** (neutral dashed, not amber). Sample QC is deliberately absent:
+  there is no sample-QC integration yet, so the prototype does not promise a step the product cannot
+  perform. A locked step is a prerequisite, never an exception, so it is visually distinct from the
+  per-experiment attention badge. This project-level pipeline is now the **only** rail in the
+  prototype; the experiment's own numbered rail was removed (see *The experiment overview is the
+  landing*).
 - **The attention state is an entry point, not a label.** Every progress-rail stage is clickable and
   routes to its own surface, and each exception callout routes straight to the page where the work
   continues while naming that destination in the row (e.g. “Open measurements”). This is the answer
@@ -528,6 +529,37 @@ self-contained demo view. It is deliberately isolated so it cannot affect produc
 The prototype is a discussion aid, not an implementation. It does not discharge the governance gate
 below.
 
+### The prototype is evidence, not specification (rule, 2026-10-14)
+
+The risk at this point is not that the prototype is complex; it is that the complexity is
+**copyable**. The prototype lives in the same Maven module as the production views, so nothing at
+compile time stops a real view from importing it, and a 3 000-line view with canned data is exactly
+the kind of thing that gets lifted "just to start from somewhere".
+
+Rules that follow:
+
+1. **The decision lives here; the prototype does not.** Anything the prototype demonstrates must be
+   written down in this document, or in an ADR, before it counts as decided. If deleting the
+   prototype would lose an answer, that answer was never recorded.
+2. **Implementation starts from an approved Story, never from the prototype.** No prototype behaviour
+   is implemented in production until it exists as a Story with acceptance criteria in
+   `docs/features.md`, under a parent Feature and requirement IDs. The prototype is evidence that
+   Story cites, not an artifact to port.
+3. **Do not refactor the prototype into production shape.** Extracting services, naming things
+   properly, replacing the canned data — all of it makes the prototype easier to copy and harder to
+   delete. One monolithic view with canned data and a `Demo` suffix is self-evidently not production.
+   That is the safety mechanism, not a defect.
+4. **The prototype's stylesheet is not a design system.** A visual rule that survives review lands in
+   `data-manager-app-design-system`, not copied out of
+   `project-prototype/project-page-prototype.css`.
+
+**The boundary is enforced, not merely documented.** `views/demo/package-info.java` states the
+contract, and `PrototypeIsolationSpec` fails the build when a production source references the
+prototype package, borrows a `pt-*` selector, or when a prototype view loses its
+`@Profile("development")`. This is deliberately a *detection* guard: the durable fix is to move the
+prototype into its own module, wired into `datamanager-app` only under the `development` profile, so
+that production cannot import it at all. That is a module-boundary decision and is left open here.
+
 ## Experiment page — navigation and onboarding (AI proposal, revised per stakeholder input 2026-10-10)
 
 > **Human direction (project owner):** the breadcrumb already covers experiment-level orientation;
@@ -542,10 +574,10 @@ The three rows already established for the project page are reused unchanged:
 1. Row 1 — primary / shell navigation (exists today).
 2. Row 2 — in-project navigation `Summary · Samples · Datasets · Access` (new; replaces the drawer). This is
    the **second navigation level** and is enough for project-level destination switching.
-3. Context strip / breadcrumb — `Projects / CODE / Project title / Experiment title`, carrying the
-   three experiment views (`Design · Samples · Dataset`) when inside an experiment.
-   This is the **breadcrumb** that already exists in the prototype and is the only experiment-level
-   orientation element.
+3. Context strip — `Projects / CODE / Project title / Experiment title`, plus the experiment-view
+   switcher (`Overview · Samples · Dataset`) when inside an experiment. The breadcrumb owns the
+   experiment's name; the switcher moves between the experiment's views. Both live in the strip and
+   neither adds a navigation row.
 
 **No additional navigation level is introduced.** The experiment views must not become a third
 navigation row; they stay within the existing context strip.
@@ -583,10 +615,117 @@ must never pick one experiment arbitrarily; the experiment page is where detail 
 
 Therefore the counts on an experiment entry are not enough. Each experiment entry carries an
 **inline snapshot** — Samples / Measurements / Primary data — showing the count, a one-line status
-and a few representative rows (e.g. `Q2IMMU-0001`, `Q2IMMU-MS-001`). The experiment page repeats the
+and a few representative rows. The experiment page repeats the
 same snapshot under its pipeline, so status and content are visible without opening a nested view;
 clicking a snapshot opens the full view. This is the same principle the project page already applies
 to attention (state the fact *and* route to the detail), extended to the data itself.
+
+#### What the preview rows are (project owner, 2026-10-13)
+
+> Human direction: the preview rows must be **the last three registered or modified** records —
+> otherwise it is not clear what the information is meant to show the user.
+
+The preview is therefore a **recency preview**, and ordering is part of the design rather than an
+incidental choice:
+
+- Rows are ordered by **registration or modification time, descending** — the newest three only.
+- A row shows the identifier, its label, and **when it last changed**. The trailing column is
+  labelled (`Changed`, `Sample ID`, `Measurement ID`) so the timestamp cannot be misread as part of
+  the record, which is what made the earlier draft ambiguous.
+- The one-line status states the verb explicitly, e.g. `Modified · 2 days ago` or
+  `Registered · 5 days ago`, instead of a bare `Registered · <relative time>` that read as if the
+  displayed rows had all just been created.
+- Both panels use **parallel wording** — `<state> · <how long ago>` — so they do not silently answer
+  two different kinds of question in the same slot (Samples previously showed recency while Dataset
+  showed completeness).
+- **Ranking by recency must support the attention caveat, not contradict it.** In the measurements
+  panel the backlog (measurements without primary data) sits at the *top* of the registration order,
+  because metadata is registered before primary data is attached. So the Dataset preview showing
+  `Not attached` on its newest rows agrees with the experiment's attention callout. If a future
+  change makes attached data the more recent event, the preview and the callout will disagree —
+  re-check this ordering then.
+
+Feasibility, verified against the domain at the time of writing: `Sample` carries both
+`registrationTime` and `lastModified`, and `SamplePreviewSortKey` already exposes
+`REGISTRATION_TIME` and `MODIFICATION_TIME` as sort keys. Measurements carry a registration date
+(`NGSMeasurement.registrationTime` / `ProteomicsMeasurement.registration`, exposed as
+`registrationDate()`) but **no last-modified timestamp**, so the Dataset preview ranks by
+registration only. Adding a measurement modification time would be a schema change and is not part
+of this work.
+
+### The experiment page must state what is next (UI review 2026-10-13)
+
+> Finding: the experiment surface failed the one job this plan assigns it — telling the user what is
+> done, what is next and how to continue. The pipeline's amber step hid a six-measurement gap inside
+> a ratio (`24 measurements · 18 with data`) with no sentence and no route, so a reader who does not
+> perceive the amber tint, or does not do the subtraction, reads it as good news.
+
+Rules that follow, implemented in the prototype:
+
+- **An outstanding step states the gap, not a ratio.** `6 measurements have no primary data` is a
+  count that has to reach zero; `24 measurements · 18 with data` is arithmetic homework. The
+  measurement total is already carried by the count on the snapshot panel.
+- **An outstanding surface names its route** — a card carrying a gap carries the one action that
+  clears it (`Open dataset`, `Go to samples`), so it reads as a way forward rather than a status to
+  decode. This was written for the pipeline's amber step and survived the move to evidence cards.
+- **State is never carried by colour alone.** Every card states its lifecycle in the same text tag
+  (`Defined`, `Not started`, `Registered`, `Locked`, `Ready to register`, `Needs attention`,
+  `Complete`), and a locked card additionally carries the padlock and a dashed edge. The tag is the
+  signal; the tint is redundant reinforcement.
+- **Nothing advertising `role="button"`/`role="link"` plus `tabindex` may ignore the keyboard.** A
+  `tabindex` only puts an element in the tab order — a `div` gets no native activation on Enter or
+  Space, so focus was reachable and activation was not. Every operable element is wired for pointer
+  *and* both keys. A card that contains a real button is *not* itself `role="button"`: two targets
+  for one gesture is worse than one.
+- **Superseded (2026-10-14):** "steps are numbered" and "the pipeline renders on gated pages too"
+  both described the experiment's numbered rail, which no longer exists. The ordering they expressed
+  is carried by the project-level onboarding pipeline and by the data cards' lifecycle tags.
+
+### One number appears once (UI review 2026-10-13)
+
+The same counts appeared in the context-strip pills, in the pipeline cards *and* in the snapshot
+panels. Resolution:
+
+- **Navigation rows carry navigation, not numbers.** Neither the in-project row nor the experiment
+  view strip is badged; the counts live in the data cards.
+- **The experiment view strip marks the active view** (`Overview` / `Samples` / `Dataset`). It is both
+  the "you are here" marker for experiment scope and the switcher between the views, which also
+  removes the previous state where no in-project item was active while inside an experiment. It is
+  the **only** switcher — see *The experiment overview is the landing* for why the in-page rail was
+  dropped, and why removing this one as well was wrong.
+- **The breadcrumb owns the experiment's name.** It reads `Projects / CODE / Project / Experiment`;
+  the header carries the view name and nothing else. An earlier draft also put a "scope line" under
+  the H1 naming the project and the experiment, which printed both names twice — it has been removed,
+  and the crumb (a link on the sub-pages, current on the overview) is what keeps the experiment
+  reachable from within.
+- **A section heading belongs to the section that owns the content.** `Data at a glance` is emitted
+  by the overview's data section, never per card — otherwise the project page would repeat it once
+  per experiment entry.
+
+### The experiment overview is the landing, and it is the hub (review 2026-10-14)
+
+> Finding: the experiment offered `Design · Samples · Dataset` three ways at once — a context-strip
+> switcher, an in-page numbered rail, and the panels below them — and a design that existed could
+> still not be seen at a glance, because the landing was the design form rather than an overview.
+
+Resolution, implemented in the prototype:
+
+- **One landing, and it leads with the design.** The experiment's entry view is an **overview**: the
+  design comes first — its payload, or the invitation that creates it — followed by the two data
+  surfaces it scopes (Samples, Dataset) as cards. "Design" is no longer a separate destination, and
+  the payload's only home is the overview.
+- **The cards are the navigation.** Each card states what it holds and what to do next and opens its
+  surface. An experiment that is not finished names the missing prerequisite as state (`Locked`,
+  `Ready to register`) and carries the one action that unblocks it (`Go to samples`,
+  `Register samples`), so an incomplete experiment says *what is missing* rather than only *that it is
+  incomplete*.
+- **Exactly one switcher, in the chrome.** The numbered rail inside the experiment page is
+  **removed** — it restated the same states a second time inside a page the chrome was already
+  traversing. An intermediate pass removed the context-strip switcher as well, which left the
+  overview as the only door to the data views and lost the persistent "which experiment am I in"
+  signal. Both were wrong; the strip switcher is the one that stays.
+- **The card footer carries the action, on a shared baseline.** Cards stretch to a common height so
+  their actions line up; ragged bottoms on peer cards read as two unrelated boxes.
 
 ### One home per question (stakeholder review 2026-10-12)
 
@@ -600,7 +739,7 @@ The surfaces must have one job each and must not duplicate each other:
 | Project → `Summary` | *How is the project doing, and what is in it?* | Identity, **project rollup**, the **experiment list with inline snapshots** (samples / measurements / primary data) and Add experiment, then project metadata. |
 | Project → `Samples` | *Where is a given sample, and what do I have overall?* | One **flat, paginated, read-only** sample list across all experiments, with an Experiment column, **quick-filter buttons per experiment**, and export. |
 | Project → `Datasets` | *Where are the measurements and their primary data?* | Measurement metadata and registered primary data shown **together**, plus connected (external) datasets; read-only + export. |
-| Experiment (via breadcrumb) | *Where is this one experiment?* | The per-experiment pipeline (done / next / locked) and its own At-a-glance snapshot, plus the experiment's `Design · Samples · Dataset` views. |
+| Experiment (via breadcrumb) | *Where is this one experiment?* | The overview: the **design** (its payload, or the invitation to create it) followed by the **Samples** and **Dataset** cards with their state, counts and next action. The experiment's `Overview · Samples · Dataset` views are switched from the context strip. |
 
 The project page is the landing page and owns the experiment list; there is **no separate
 "Experiments" navigation destination**. An experiment card with a snapshot is not rendered a second
@@ -622,7 +761,7 @@ and does not repeat the per-experiment pipeline, which belongs to the experiment
   row **dives into** the experiment's measurement-level view, which is where measurement metadata
   and registered primary data are shown together — so a measurement and its data are one fact. The
   experiment view likewise merges its Measurements and Dataset views into one `Dataset` view
-  (`Design · Samples · Dataset`). A project-wide measurement filter is a small extension of the
+  (`Overview · Samples · Dataset`). A project-wide measurement filter is a small extension of the
   existing experiment-keyed `MeasurementFilter`.
 - **Project-level data is read-only + export.** Registration stays experiment-scoped.
 - **Measurement-level lists are flat, not grouped.** Once inside a dataset, experiment attribution is
@@ -676,9 +815,11 @@ Status is the only "attribute-like" thing that earns a list column, because it d
 
 ### Routing and URL-addressable state (implementation consideration, 2026-10-12)
 
-> Note from review: the prototype does **not** use real routes — it is one dev-only view that switches
-> pages in component state. That is fine for a throwaway prototype, but the implementation must use
-> real routes so bookmarking, sharing, browser back/forward and reload persistence work.
+> Note from review: the prototype originally switched pages in component state, and now pushes a
+> real location per view (`?view=…&experiment=…`) so browser Back and Forward work. That demonstrates
+> the requirement, but it is **not** the production mechanism: the prototype drives one dev-only
+> route with query parameters, whereas implementation needs one real route per surface with identity
+> in the path, as below.
 
 The app already has the requirement and the mechanism:
 
@@ -692,7 +833,7 @@ For the new surfaces this means:
 
 1. **One real route per surface**, with identity in path parameters (`projectId`, `experimentId`).
    Every prototype surface maps to a bookmarkable route: project `Summary · Samples · Datasets ·
-   Access`, and experiment `Design · Samples · Dataset`.
+   Access`, and experiment `Overview · Samples · Dataset`.
 2. **View-affecting state goes into query parameters**, not only component state:
    - active experiment view and active measurement-type tab,
    - experiment filter and any search query,
@@ -710,11 +851,16 @@ measurement-type tab and the power mode are additional URL-addressable state not
 requirement — decide whether to extend USER-R-03 or add a dedicated requirement/ADR when this work
 is scheduled.
 
-### Remaining question
+### Resolved: how the experiment views are reached (2026-10-14)
 
-- How the experiment views are reached within the existing context strip (the breadcrumb /
-  experiment-view pills already prototyped) vs. an in-page segmented control. To be settled against
-  the real `ExperimentMainLayout`, but **no new navigation row** is in scope.
+Settled in favour of the **context-strip switcher** (`Overview · Samples · Dataset`), which marks the
+active view. No in-page segmented control and no new navigation row: the numbered rail inside the
+experiment page was removed because it restated what the strip already carries, and the strip is what
+keeps the overview and the two data views one click from each other.
+
+The prototype addresses the overview as its own view (`view=DESIGN`, labelled `Overview`). Whether
+implementation keeps that as a distinct route or treats it as the experiment's default entry point is
+a real-routing decision, to be settled against `ExperimentMainLayout`.
 
 ## Governance gate (blocking, per AGENTS.md §0 and §12)
 
