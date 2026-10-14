@@ -27,6 +27,7 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import life.qbic.datamanager.views.general.oidc.OidcLogo;
 import life.qbic.datamanager.views.general.oidc.OidcType;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import org.springframework.context.annotation.Profile;
@@ -174,11 +175,30 @@ public class ProjectPagePrototypeDemo extends Div implements BeforeEnterObserver
           List.of("Genomics"), 0, 0, null, 0));
 
   /**
-   * Connected (externally hosted) datasets. Canned, like the rest of the prototype's data: the plan
-   * carries an open item on modelling these per experiment, at which point this constant goes away
-   * and the count is derived instead.
+   * A connected dataset: an asset hosted elsewhere and linked to this project. It is identified by
+   * its title, because that is what a reader recognises — "the data management plan", "the
+   * reanalysis result" — unlike primary data, where volume and type are what matter.
    */
-  private static final int CONNECTED_DATASETS = 2;
+  private record ConnectedAsset(String title, String repository, String access, String relatedTo,
+      int linkedDaysAgo) {}
+
+  /**
+   * Connected assets. Canned, like the rest of the prototype's data: the plan carries an open item on
+   * modelling these per experiment, at which point this list gets derived instead of declared. One
+   * list for the whole prototype, so the two connected-dataset tables and the project standing cannot
+   * disagree about what is linked.
+   */
+  private static final List<ConnectedAsset> CONNECTED_ASSETS = List.of(
+      new ConnectedAsset("Data management plan", "Zenodo", "Open", "Project", 14),
+      new ConnectedAsset("Proteome reanalysis — immunopeptidome", "Zenodo", "Open",
+          "Immunopeptidomics pilot", 2),
+      new ConnectedAsset("Preliminary QC report", "InvenioRDM", "Restricted", "Project", 5));
+
+  /**
+   * Prototype-only: how long ago this reader last looked at the project. It is what makes "1 added
+   * since you last looked" possible; a real view would read it per user and project.
+   */
+  private static final int LAST_LOOKED_DAYS = 4;
 
   /**
    * One outstanding item, attributed to the experiment it belongs to.
@@ -964,30 +984,138 @@ public class ProjectPagePrototypeDemo extends Div implements BeforeEnterObserver
    * to open anything. The rail's own Dataset stage deliberately does not do this job: it routes to
    * the experiment whose data is outstanding, which is where the work continues.
    */
+  /**
+   * The project's dataset standing: the primary data and the connected assets, each stated the way
+   * it is actually used. Primary data is what analysis consumes, so its volume and type matter;
+   * connected assets are things a reader recognises by name, so their titles matter. Both close with
+   * what has appeared since the reader last looked, which is the question the summary owes them:
+   * "is anything new since I was here?".
+   *
+   * <p>The rail above deliberately does not do this job: its {@code dataset} stage answers "how many
+   * measurements still lack primary data" and routes to the experiment where that work continues.</p>
+   */
   private Div datasetStanding() {
-    Div row = new Div();
-    row.addClassName("pt-progress__datasets");
+    Div wrap = new Div();
+    wrap.addClassName("pt-datasets");
 
+    Div head = new Div();
+    head.addClassName("pt-datasets__head");
     Span label = new Span("Datasets");
-    label.addClassName("pt-progress__datasets-label");
-
-    // A dataset is 1:1 with its experiment, so the project's primary datasets are its experiments —
-    // the same one row per experiment the Datasets tab shows.
-    Span stat = new Span();
-    stat.addClassName("pt-progress__datasets-stat");
-    Span separator = new Span("·");
-    separator.addClassName("pt-progress__datasets-sep");
-    stat.add(strong(String.valueOf(POPULATED_EXPERIMENTS.size())), new Span("primary"), separator,
-        strong(String.valueOf(CONNECTED_DATASETS)), new Span("connected"));
-
+    label.addClassName("pt-datasets__label");
     Span open = new Span("Open datasets");
-    open.addClassName("pt-progress__datasets-link");
+    open.addClassName("pt-datasets__link");
     open.getElement().setAttribute("role", "link");
     open.getElement().setAttribute("tabindex", "0");
     activateOnClickAndKeys(open, () -> navigate(Page.DATASETS));
+    head.add(label, open);
 
-    row.add(label, stat, open);
-    return row;
+    Div grid = new Div();
+    grid.addClassName("pt-datasets__grid");
+    grid.add(primaryDataStanding(), connectedAssetsStanding());
+
+    wrap.add(head, grid);
+    return wrap;
+  }
+
+  /** Primary data, as analysis sees it: what type it is, and how much of it there is. */
+  private Div primaryDataStanding() {
+    Div card = new Div();
+    card.addClassName("pt-datasets__card");
+    card.add(cardTitle("Primary data — for analysis"));
+    List<String> types = measuredTypes();
+    card.add(cardFact(types.isEmpty() ? "No primary data yet" : String.join(" · ", types)));
+    card.add(cardFact(primaryDataGigabytes() + " GB in " + primaryDataFiles() + " files"));
+    // The completeness question lives in the rail above, so it is not restated here.
+    return card;
+  }
+
+  /** Connected assets, as a reader recognises them: by title. */
+  private Div connectedAssetsStanding() {
+    Div card = new Div();
+    card.addClassName("pt-datasets__card");
+
+    int fresh = newConnectedAssets();
+    card.add(cardTitle("Connected assets — " + CONNECTED_ASSETS.size()
+        + ", hosted elsewhere" + (fresh > 0 ? ", " + fresh + " new" : "")));
+
+    if (CONNECTED_ASSETS.isEmpty()) {
+      card.add(cardFact("None linked yet"));
+      return card;
+    }
+    CONNECTED_ASSETS.stream()
+        .sorted(Comparator.comparingInt(ConnectedAsset::linkedDaysAgo))
+        .limit(3)
+        .forEach(asset -> card.add(cardFact(asset.title() + " · " + asset.repository())));
+
+    Span meta = new Span(fresh > 0
+        ? fresh + " added since you last looked " + daysAgo(LAST_LOOKED_DAYS)
+        : "Nothing new since you last looked " + daysAgo(LAST_LOOKED_DAYS));
+    meta.addClassName("pt-datasets__meta");
+    if (fresh > 0) {
+      meta.addClassName("pt-datasets__meta--fresh");
+    }
+    card.add(meta);
+    return card;
+  }
+
+  /** The measurement types the project's primary data actually covers. */
+  private static List<String> measuredTypes() {
+    return POPULATED_EXPERIMENTS.stream()
+        .filter(experiment -> experiment.measurements() > 0)
+        .flatMap(experiment -> experiment.domains().stream())
+        .distinct()
+        .toList();
+  }
+
+  /**
+   * Primary data is sized from what carries data, at the same 4 GB and 3 files per measurement the
+   * dataset page uses, so the project rollup and the experiment page cannot disagree.
+   */
+  private int primaryDataGigabytes() {
+    return measurementsWithPrimaryData() * 4;
+  }
+
+  private int primaryDataFiles() {
+    return measurementsWithPrimaryData() * 3;
+  }
+
+  private int measurementsWithPrimaryData() {
+    int total = 0;
+    for (int i = 0; i < POPULATED_EXPERIMENTS.size(); i++) {
+      total += Math.max(0, POPULATED_EXPERIMENTS.get(i).measurements() - missingFor(i));
+    }
+    return total;
+  }
+
+  private static int newConnectedAssets() {
+    return (int) CONNECTED_ASSETS.stream()
+        .filter(asset -> asset.linkedDaysAgo() < LAST_LOOKED_DAYS)
+        .count();
+  }
+
+  private static Span cardTitle(String text) {
+    Span span = new Span(text);
+    span.addClassName("pt-datasets__card-title");
+    return span;
+  }
+
+  private static Span cardFact(String text) {
+    Span span = new Span(text);
+    span.addClassName("pt-datasets__card-fact");
+    return span;
+  }
+
+  /** The connected assets as rows, so both tables read from the one list. */
+  private static List<List<CellView>> connectedAssetRows() {
+    return CONNECTED_ASSETS.stream()
+        .map(asset -> row(text(asset.title()), text(asset.repository()), access(asset.access()),
+            text(asset.relatedTo()), muted(daysAgo(asset.linkedDaysAgo()))))
+        .toList();
+  }
+
+  /** Restricted access is the exception worth noticing; open is the unremarkable case. */
+  private static CellView access(String access) {
+    return "Restricted".equals(access) ? attention(access) : done(access);
   }
 
   /**
@@ -1850,12 +1978,8 @@ public class ProjectPagePrototypeDemo extends Div implements BeforeEnterObserver
     connectedHead.add(connectedTitle,
         new Span("Hosted externally. The relationship to this experiment is not classified."));
     band.add(connectedHead);
-    band.add(table(new String[]{"Title", "Repository", "Access", "Related to"},
-        List.of(
-            row(text("Proteome reanalysis — immunopeptidome"), text("Zenodo"), done("Open"),
-                text("This experiment")),
-            row(text("Preliminary QC report"), text("InvenioRDM"), attention("Restricted"),
-                text("Project")))));
+    band.add(table(new String[]{"Title", "Repository", "Access", "Related to", "Connected on"},
+        connectedAssetRows()));
     return band;
   }
 
@@ -1995,13 +2119,7 @@ public class ProjectPagePrototypeDemo extends Div implements BeforeEnterObserver
     head.add(title, new Span("Hosted elsewhere and linked here."));
     section.add(head);
     section.add(table(new String[]{"Title", "Repository", "Access", "Related to", "Connected on"},
-        List.of(
-            row(text("Proteome reanalysis — immunopeptidome"), text("Zenodo"), done("Open"),
-                text("Immunopeptidomics pilot"), text("2 days ago")),
-            row(text("Preliminary QC report"), text("InvenioRDM"), attention("Restricted"),
-                text("Project"), text("5 days ago")),
-            row(text("Reference peptide list"), text("Zenodo"), done("Open"), muted("—"),
-                text("3 weeks ago")))));
+        connectedAssetRows()));
     section.add(note("“Connected” states only that the dataset is linked here. It may be an "
         + "analysis result, related material, or something else — unclassified."));
     return section;

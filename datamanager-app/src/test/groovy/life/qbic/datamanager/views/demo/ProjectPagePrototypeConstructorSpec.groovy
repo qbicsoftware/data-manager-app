@@ -143,32 +143,45 @@ class ProjectPagePrototypeConstructorSpec extends Specification {
     icons.every { it.element.getAttribute("aria-hidden") == "true" }
   }
 
-  def "the project's standing states its datasets and offers the way into the Datasets tab"() {
+  def "the project's standing states both kinds of dataset, each the way it is used"() {
     given: "the populated project summary"
     def view = enterProject()
 
-    expect: "the dataset picture is stated, both kinds of it"
-    def row = firstClassElement(view, "pt-progress__datasets")
-    row != null
-    firstClassElement(row, "pt-progress__datasets-label").element.getTextRecursively() == "Datasets"
-    // One primary dataset per experiment, plus the connected (externally hosted) ones. This is not a
-    // repeat of the rail: the rail's Dataset stage answers "how many measurements carry data", and
-    // routes to the experiment whose data is outstanding.
-    firstClassElement(row, "pt-progress__datasets-stat").element.getTextRecursively() ==~
-        /\d+primary·\d+connected/
+    expect: "the two kinds are separate cards, because they are read for different reasons"
+    classTexts(view, "pt-datasets__card-title") == [
+        "Primary data — for analysis",
+        "Connected assets — 3, hosted elsewhere, 1 new"]
+
+    and: "primary data is stated by type and volume — what analysis needs — and NOT by completeness"
+    // Completeness ("how many measurements still lack data") belongs to the rail above; restating it
+    // here would be the summary saying one thing twice.
+    classTexts(view, "pt-datasets__card-fact").take(2) == [
+        "Immunopeptidomics · Proteomics",
+        "144 GB in 108 files"]
+
+    and: "connected assets are stated by title, because that is how a reader recognises an asset"
+    // Newest first: an asset is worth naming in the order it arrived.
+    classTexts(view, "pt-datasets__card-fact").drop(2) == [
+        "Proteome reanalysis — immunopeptidome · Zenodo",
+        "Preliminary QC report · InvenioRDM",
+        "Data management plan · Zenodo"]
+
+    and: "and the card says what has appeared since the reader last looked"
+    classTexts(view, "pt-datasets__meta") == ["1 added since you last looked 4 days ago"]
+    firstClassElement(view, "pt-datasets__meta").element.getAttribute("class")
+        .contains("pt-datasets__meta--fresh")
 
     and: "the way into the Datasets tab is a real, keyboard-operable link"
-    def link = firstClassElement(row, "pt-progress__datasets-link")
+    def link = firstClassElement(view, "pt-datasets__link")
     link.element.getTextRecursively() == "Open datasets"
     link.element.getAttribute("role") == "link"
-    link.element.getAttribute("tabindex") == "0"
     link.element.getAttribute("data-activation") == "full"
 
     when: "the project holds nothing"
     clickButton(view, "New / empty project")
 
     then: "there is no dataset picture to state"
-    firstClassElement(view, "pt-progress__datasets") == null
+    firstClassElement(view, "pt-datasets") == null
   }
 
   def "a not-started experiment shows no preview rows rather than a lower sample code"() {

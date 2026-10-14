@@ -392,11 +392,25 @@ Four bands, top to bottom:
    counts and warnings ("2 experiments without samples", "1 measurement without primary data").
    Sample QC is deliberately absent: there is no QC integration yet, so the rail must not promise a
    step the product cannot perform.
-   Beneath the stages sits the **dataset standing** — one primary dataset per experiment plus the
-   connected (externally hosted) datasets — with a direct link into the project `Datasets` tab. That
-   link is not a duplicate of the rail's `dataset` stage: the stage routes to the *experiment* whose
-   data is outstanding, which is where the work continues, and the project-level tab previously had
-   no fast path from the summary at all.
+   Beneath the stages sits the **dataset standing**, in two cards, because the two kinds of dataset are
+   used differently (project owner, 2026-10-14):
+   - **Primary data — for analysis.** Stated by **type and volume** (`Immunopeptidomics · Proteomics`,
+     `144 GB in 108 files`), because that is what analysis needs of it. Deliberately *not* by
+     completeness: “how many measurements still lack data” is the rail's own `dataset` stage, and
+     restating it here would be the summary saying one thing twice.
+   - **Connected assets — hosted elsewhere.** Stated by **title** (`Data management plan · Zenodo`),
+     because that is how a reader recognises an asset — a data management plan, a result — and the
+     title, not the size, is what identifies it. Newest first.
+
+   Both cards close with what has arrived **since the reader last looked** (`1 added since you last
+   looked 4 days ago`), which is the question the summary owes a returning reader: *is anything new
+   since I was here?* The block links on to the project `Datasets` tab — not a duplicate of the rail's
+   `dataset` stage, which routes to the *experiment* whose data is outstanding, and which previously
+   left the project-level tab with no fast path from the summary at all.
+
+   The connected assets are one canned list shared by the standing and the two connected-dataset
+   tables, so the three surfaces cannot disagree about what is linked. Modelling them per experiment
+   remains open.
 3. **Experiments band** — replace the name-only list with cards: name, domain tags, and an inline
    `Samples` / `Dataset` snapshot under each (counts, a one-line status, the newest rows, and the way
    into the view). Add-experiment lives here. The card carries **no separate stat row and no

@@ -670,45 +670,31 @@
 }
 
 /*
- * The project's dataset standing: the statistic plus the way into the Datasets tab. It sits with the
- * rail rather than with the exceptions, because both state where the project stands; the exceptions
- * are a separate, alerting block.
+ * The project's dataset standing: two cards, because the two kinds of dataset are used differently.
+ * Primary data is what analysis consumes, so it is stated by type and volume. Connected assets are
+ * recognised by title, and they are the things that appear between visits — so both close with what
+ * has arrived since the reader last looked, which is the question the summary owes them.
  */
-.pt-progress__datasets {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.5rem 1rem;
+.pt-datasets {
   margin-top: 1.25rem;
   padding-top: 1rem;
   border-top: 1px solid var(--pt-line);
 }
 
-.pt-progress__datasets-label {
+.pt-datasets__head {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: 0.6rem;
+}
+
+.pt-datasets__label {
   font-size: var(--pt-fs-meta);
   font-weight: var(--font-weight-semi-bold, 600);
   color: var(--pt-ink);
 }
 
-.pt-progress__datasets-stat {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.35rem;
-  font-size: var(--pt-fs-meta);
-  color: var(--pt-ink-muted);
-}
-
-.pt-progress__datasets-stat .pt-strong {
-  color: var(--pt-ink);
-  font-variant-numeric: tabular-nums;
-}
-
-.pt-progress__datasets-sep {
-  color: var(--pt-ink-subtle);
-}
-
-.pt-progress__datasets-link {
+.pt-datasets__link {
   margin-left: auto;
   font-size: var(--pt-fs-meta);
   color: var(--pt-accent-ink);
@@ -718,8 +704,48 @@
   text-underline-offset: 2px;
 }
 
-.pt-progress__datasets-link:hover {
+.pt-datasets__link:hover {
   text-decoration-color: currentColor;
+}
+
+.pt-datasets__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  align-items: start;
+}
+
+.pt-datasets__card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--pt-line);
+  border-radius: 10px;
+  background: var(--pt-sunken);
+}
+
+.pt-datasets__card-title {
+  font-size: var(--pt-fs-meta);
+  font-weight: var(--font-weight-semi-bold, 600);
+  color: var(--pt-ink);
+}
+
+.pt-datasets__card-fact {
+  font-size: var(--pt-fs-meta);
+  color: var(--pt-ink-muted);
+}
+
+.pt-datasets__meta {
+  margin-top: 0.2rem;
+  font-size: 0.75rem;
+  color: var(--pt-ink-subtle);
+}
+
+/* There is news. The sentence already says so; the weight and colour only reinforce it. */
+.pt-datasets__meta--fresh {
+  color: var(--pt-accent-ink);
+  font-weight: var(--font-weight-semi-bold, 600);
 }
 
 .pt-rail {
