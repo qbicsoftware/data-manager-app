@@ -840,14 +840,23 @@
   color: var(--pt-ink-subtle);
 }
 
-.pt-progress__exceptions {
-  margin-top: 1.25rem;
+/*
+ * The outstanding issues, directly under the band title and OUTSIDE the progress card. They are a
+ * statement about the project, made before any numbers — not a detail of the rail. Rendered only when
+ * something is outstanding, so the heading never becomes furniture readers learn to skip.
+ */
+.pt-attention {
+  margin-bottom: 1rem;
   padding: 0.75rem 0.9rem;
   border-radius: 8px;
   background: var(--pt-attention-bg);
   border: 1px solid #ecd39a;
   font-size: var(--pt-fs-meta);
   color: var(--pt-attention);
+}
+
+.pt-attention__title {
+  font-weight: var(--font-weight-semi-bold, 600);
 }
 
 /*
@@ -892,15 +901,6 @@
   color: var(--pt-attention);
   white-space: nowrap;
   text-decoration: underline;
-}
-
-.pt-progress__exceptions ul {
-  margin: 0.35rem 0 0;
-  padding-left: 1.1rem;
-}
-
-.pt-progress__exceptions li {
-  margin-top: 0.15rem;
 }
 
 /* ── Tables (dummy in-project pages) ───────────────────────────────────── */

@@ -143,6 +143,29 @@ class ProjectPagePrototypeConstructorSpec extends Specification {
     icons.every { it.element.getAttribute("aria-hidden") == "true" }
   }
 
+  def "Needs attention sits outside the progress card, directly under the band title"() {
+    given: "the populated project summary, where an experiment has data outstanding"
+    def view = enterProject()
+
+    expect: "the block is a sibling of the title and the card, not a child of the card"
+    // Asserted on the band's own child order, because "outside the card" and "directly under the
+    // title" are exactly the two things the block got wrong.
+    def attention = firstClassElement(view, "pt-attention")
+    attention != null
+    def band = attention.element.getParent()
+    band.getClassList().contains("pt-band")
+    band.getChildCount() == 3
+    band.getChild(0).getClassList().contains("pt-band__head")
+    band.getChild(1).getClassList().contains("pt-attention")
+    band.getChild(2).getClassList().contains("pt-progress")
+
+    when: "the project holds nothing"
+    clickButton(view, "New / empty project")
+
+    then: "there is nothing outstanding to report, so the block is absent"
+    firstClassElement(view, "pt-attention") == null
+  }
+
   def "the project's standing states both kinds of dataset, each the way it is used"() {
     given: "the populated project summary"
     def view = enterProject()

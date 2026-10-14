@@ -392,6 +392,10 @@ Four bands, top to bottom:
    counts and warnings ("2 experiments without samples", "1 measurement without primary data").
    Sample QC is deliberately absent: there is no QC integration yet, so the rail must not promise a
    step the product cannot perform.
+   **"Needs attention" sits directly under the band title and OUTSIDE the progress card**, and only
+   when something is actually outstanding. It is a statement about the project, made before any
+   numbers — and a heading that is always present is a heading readers learn to skip.
+
    Beneath the stages sits the **dataset standing**, in two cards, because the two kinds of dataset are
    used differently (project owner, 2026-10-14):
    - **Primary data — for analysis.** Stated by **type and volume** (`Immunopeptidomics · Proteomics`,

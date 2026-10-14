@@ -253,7 +253,7 @@ public class ProjectPagePrototypeDemo extends Div implements BeforeEnterObserver
    */
   private void showAttentionDetail() {
     getElement().executeJs(
-        "const el = this.querySelector('.pt-progress__exceptions');"
+        "const el = this.querySelector('.pt-attention');"
             + "if (el) el.scrollIntoView({block: 'center'});");
   }
 
@@ -887,6 +887,12 @@ public class ProjectPagePrototypeDemo extends Div implements BeforeEnterObserver
     head.add(heading);
     band.add(head);
 
+    // Directly under the title and outside the card: the reader is told what is outstanding before
+    // they are shown any numbers, and only when there is something to tell.
+    if (!empty && !ATTENTION_ISSUES.isEmpty()) {
+      band.add(attentionBlock());
+    }
+
     Div progress = new Div();
     progress.addClassName("pt-progress");
 
@@ -957,20 +963,7 @@ public class ProjectPagePrototypeDemo extends Div implements BeforeEnterObserver
     progress.add(rail);
 
     if (!empty) {
-      // The dataset picture sits with the rail rather than with the exceptions: both are the project's
-      // state, while the exceptions are a separate, alerting block.
       progress.add(datasetStanding());
-
-      Div exceptions = new Div();
-      exceptions.addClassName("pt-progress__exceptions");
-      exceptions.add(new Span("Needs attention"));
-      // One row per issue, each naming its experiment and routing into it.
-      for (AttentionIssue issue : ATTENTION_ISSUES) {
-        String context = POPULATED_EXPERIMENTS.get(issue.experimentIndex()).name();
-        exceptions.add(attentionRow(context, issue.text(), issue.action(),
-            () -> openExperiment(issue.experimentIndex(), issue.target())));
-      }
-      progress.add(exceptions);
     }
 
     band.add(progress);
@@ -978,12 +971,29 @@ public class ProjectPagePrototypeDemo extends Div implements BeforeEnterObserver
   }
 
   /**
-   * The project's dataset standing: one primary dataset per experiment, plus the connected
-   * (externally hosted) datasets. It carries the way into the Datasets tab, so the project page can
-   * answer "what data does this project hold, and where do I go to see it" without the reader having
-   * to open anything. The rail's own Dataset stage deliberately does not do this job: it routes to
-   * the experiment whose data is outstanding, which is where the work continues.
+   * The outstanding issues, one row each, naming its experiment and routing into it.
+   *
+   * <p>It sits directly under the band title and outside the progress card: it is a statement about
+   * the project, addressed to the reader before any numbers, not a detail of the rail. And it is
+   * rendered only when something is actually outstanding — a standing "Needs attention" heading would
+   * train readers to ignore it.</p>
    */
+  private Div attentionBlock() {
+    Div block = new Div();
+    block.addClassName("pt-attention");
+
+    Span title = new Span("Needs attention");
+    title.addClassName("pt-attention__title");
+    block.add(title);
+
+    for (AttentionIssue issue : ATTENTION_ISSUES) {
+      String context = POPULATED_EXPERIMENTS.get(issue.experimentIndex()).name();
+      block.add(attentionRow(context, issue.text(), issue.action(),
+          () -> openExperiment(issue.experimentIndex(), issue.target())));
+    }
+    return block;
+  }
+
   /**
    * The project's dataset standing: the primary data and the connected assets, each stated the way
    * it is actually used. Primary data is what analysis consumes, so its volume and type matter;
