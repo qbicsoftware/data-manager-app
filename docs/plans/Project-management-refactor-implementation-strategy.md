@@ -278,6 +278,21 @@ that paginated reads are non-blocking is contradicted by the code.
   reason.)
 - **D7 — Reactive→sync bridge:** one shared adapter in `datamanager-app`; the existing eight
   `.block()` sites migrate onto it over time.
+- **D8 — Cross-experiment measurement counting:** a measurement is counted in **every** experiment
+  it measures samples of (per-experiment attribution). Consequence: project totals may double-count
+  a cross-experiment measurement. **Finding for the PO:** `MeasurementService.isSampleFromProject`
+  checks *project* membership only, not a single experiment, so the plan's "a dataset is 1:1 with
+  its experiment" is product intent, not a rule — decide whether to accept cross-experiment
+  measurements or add a registration guard.
+- **D9 — Primary-data counting:** `remote_measurement_data` is 1:1 with a measurement
+  (`LocalRawDatasetRepositoryImpl.saveAll` upserts one row per measurement, keyed by
+  measurementCode, and re-sync resets `deleted = false`). `measurements_with_primary_data` = the
+  number of measurements with a non-deleted data row.
+- **D10 — Read-model source of truth:** SQL views over the same database (strongly consistent; no
+  separate read store, no event-driven projections). Composing in the application layer was
+  rejected (N+1 and inconsistent numbers between bands).
+- **D11 — Indexing:** keep the single `idx_sample_experiment`; add a composite
+  `sample(project_id, experiment_id)` only if `EXPLAIN` during validation shows a scan.
 
 ---
 
@@ -391,12 +406,10 @@ for everything else.
 
 ## 9. Risks and open questions
 
-1. **Read-model source of truth:** should progress be computed from SQL views (fast, needs schema
-   approval) or composed in the application layer (no schema change, N+1)? The strategy recommends
-   a view for the landing page; the ADR must confirm.
-2. **Primary-data count semantics:** "measurements without primary data" needs one definition with
-   `deleted=false`. Is a raw-data entry 1:1 with a measurement? (Evidence points yes; must be
-   confirmed against `remote_measurement_data` and the `LocalRawDataset*Entry` mapping.)
+1. ~~Read-model source of truth~~ — **resolved (D10):** SQL views, consumed as flat `@Immutable`
+   read entities. Composing in the application layer was rejected (N+1 and inconsistent numbers).
+2. ~~Primary-data count semantics~~ — **resolved (D9):** `remote_measurement_data` is 1:1 with a
+   measurement; `measurements_with_primary_data` counts measurements with a non-deleted data row.
 3. **Measurement last-modified:** recency preview for datasets ranks by registration only until a
    modification timestamp exists. Acceptable, or a schema change?
 4. **Per-user last-seen:** new persistence; where does it live (user preference vs project state)?
