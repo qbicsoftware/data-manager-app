@@ -175,38 +175,6 @@
   color: var(--pt-accent);
 }
 
-/* Primary tabs: the app's existing GitHub-style underline navigation. */
-.pt-primary-tabs {
-  display: inline-flex;
-  align-items: stretch;
-  gap: 0.25rem;
-}
-
-.pt-primary-tab {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.4rem 0.7rem;
-  color: var(--pt-ink-muted);
-  font-size: var(--pt-fs-body);
-  font-weight: var(--font-weight-medium, 500);
-  cursor: pointer;
-  background: none;
-  border: 0;
-  border-bottom: 2px solid transparent;
-  font-family: inherit;
-  white-space: nowrap;
-}
-
-.pt-primary-tab:hover {
-  color: var(--pt-ink);
-}
-
-.pt-primary-tab[aria-current="page"] {
-  color: var(--pt-accent-ink);
-  font-weight: var(--font-weight-semi-bold, 600);
-  border-bottom-color: var(--pt-accent);
-}
-
 .pt-global__right {
   margin-left: auto;
   display: inline-flex;
@@ -291,6 +259,13 @@
   border-bottom-color: var(--pt-accent);
 }
 
+/* A shell destination this prototype does not model: shaped like a nav item, but it must not look
+ * or behave like something the user can activate. */
+.pt-subnav__item--inert {
+  color: var(--pt-ink-subtle);
+  cursor: default;
+}
+
 .pt-subnav__tools {
   margin-left: auto;
   display: inline-flex;
@@ -299,28 +274,16 @@
   flex: 0 0 auto;
 }
 
-/* ── Row 3: experiment context + experiment views (lighter) ────────────── */
-
-.pt-context {
-  background: var(--pt-sunken);
-  border-bottom: 1px solid var(--pt-line);
-}
-
-.pt-context__row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem 0.75rem;
-  min-height: 2.5rem;
-  font-size: var(--pt-fs-meta);
-  color: var(--pt-ink-muted);
-}
+/* ── Breadcrumb: the only place the project and the experiment are named ── */
 
 .pt-crumbs {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
   min-width: 0;
+  /* The identity bar is chrome, so the breadcrumb reads as meta rather than as content. */
+  font-size: var(--pt-fs-meta);
+  color: var(--pt-ink-muted);
 }
 
 /*
@@ -366,41 +329,6 @@
 
 .pt-crumbs__sep {
   color: var(--pt-ink-subtle);
-}
-
-/*
- * The experiment's view switcher (Overview / Samples / Dataset), shown only inside an experiment.
- * It is the switcher between the experiment's own views, so the active one is given a raised surface
- * and weight while the others stay flat.
- */
-.pt-expviews {
-  margin-left: auto;
-  display: inline-flex;
-  gap: 0.25rem;
-  flex-wrap: wrap;
-}
-
-.pt-expview {
-  font: inherit;
-  padding: 0.25rem 0.65rem;
-  border: 1px solid transparent;
-  border-radius: 999px;
-  background: transparent;
-  color: var(--pt-ink-muted);
-  cursor: pointer;
-}
-
-.pt-expview:hover {
-  background: #fff;
-  border-color: var(--pt-line);
-  color: var(--pt-ink);
-}
-
-.pt-expview[aria-current="page"] {
-  background: #fff;
-  border-color: var(--pt-line-strong);
-  color: var(--pt-ink);
-  font-weight: var(--font-weight-semi-bold, 600);
 }
 
 /* ── Bands ─────────────────────────────────────────────────────────────── */
@@ -505,9 +433,7 @@
  */
 .pt-app .pt-btn,
 .pt-app .pt-toggle,
-.pt-app .pt-subnav__item,
-.pt-app .pt-primary-tab,
-.pt-app .pt-expview {
+.pt-app .pt-subnav__item {
   min-width: 0;
   min-height: 0;
   height: auto;
@@ -1368,8 +1294,6 @@
   .pt-btn,
   .pt-toggle,
   .pt-subnav__item,
-  .pt-primary-tab,
-  .pt-expview,
   .pt-exp {
     transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
   }

@@ -489,12 +489,12 @@ self-contained demo view. It is deliberately isolated so it cannot affect produc
 - **Styles:** `datamanager-app/frontend/styles/views/project-prototype/project-page-prototype.css`,
   loaded via `@CssImport`, with every selector namespaced under `.pt-app` so nothing leaks into the
   production theme.
-- **Navigation model it renders:** row 1 = the existing primary navigation (`Projects · Groups ·
-  Settings`); row 2 = the new in-project navigation (`Summary · Samples · Datasets · Access`,
-  Ontology Search as a tool) with no project-specific content; row 3 = the always-visible context
-  strip carrying the project identity, the breadcrumb (`Projects / CODE / Project / Experiment`) and,
-  inside an experiment, the experiment-view switcher (`Overview · Samples · Dataset`). The
-  experiment list lives in the `Summary` experiments band, **not** behind its own navigation item.
+- **Navigation model it renders:** two chrome rows, never three. A constant identity bar carries the
+  wordmark, the breadcrumb and the account; **one** navigation row carries the views of the entity
+  named at the end of the breadcrumb — the projects control panel (`Projects · Groups · Settings`), a
+  project (`Summary · Samples · Datasets · Access` plus tools), or an experiment
+  (`Overview · Samples · Dataset`). Two scopes are never navigable at once. The experiment list lives
+  in the `Summary` experiments band, **not** behind its own navigation item.
 - **It is navigable end to end, with real browser history.** Every dummy surface — project `Summary`,
   `Samples`, `Datasets`, `Access`, `Ontology search`, `Settings`, and the experiment's `Overview`,
   `Samples` and `Dataset` — is reached by pushing a location (`?view=…&experiment=…`), so Back and
@@ -568,6 +568,11 @@ that production cannot import it at all. That is a module-boundary decision and 
 > because samples, measurements and primary data cannot be registered without one.
 
 ### Navigation
+
+> **Superseded (2026-10-14):** the three-row model below was replaced by two rows with one
+> scope-contextual navigation row — see *One scope at a time: two chrome rows*. The constraint it
+> states still holds: **no additional navigation row is introduced.** The one row changes its
+> contents with scope instead of a second row being added.
 
 The three rows already established for the project page are reused unchanged:
 
@@ -727,6 +732,39 @@ Resolution, implemented in the prototype:
 - **The card footer carries the action, on a shared baseline.** Cards stretch to a common height so
   their actions line up; ragged bottoms on peer cards read as two unrelated boxes.
 
+### One scope at a time: two chrome rows (review 2026-10-14)
+
+> Finding: the hierarchy broke at the third level. Measured from the rendered tree, the project row
+> carried an active item on the project page but **nothing at all** inside an experiment; the shell's
+> `Projects` was hardcoded active regardless of location; and the experiment level marked itself with
+> a different control (a pill) than the two levels above it (underlined tabs).
+
+> Human direction (project owner): the shell row is the *control panel* — once a project is selected
+> there is no reason to navigate to `Groups` or `Settings` from inside it. Likewise, inside an
+> experiment the project's cross-experiment `Samples`/`Datasets` are not what the user is doing; they
+> need the experiment's own views, and a way back up.
+
+Resolution: **stop rendering three scopes at once.**
+
+- **Two chrome rows.** A constant identity bar (wordmark, breadcrumb, account) over exactly one
+  navigation row, whose contents are the views of the entity named at the end of the breadcrumb.
+- **The control panel is a scope, not a fixed band.** At the top level the navigation row *is*
+  `Projects · Groups · Settings`, so the shell destinations appear where they belong and nowhere
+  else. The prototype gained a minimal projects-list page so this scope is demonstrable.
+- **The "you are here" chain is continuous.** Every level marks its current item in the same idiom.
+  The previous design blanked the project row on descent and changed idiom at the experiment level.
+- **The label collision dissolves structurally.** `Samples`/`Datasets` (project) and
+  `Samples`/`Dataset` (experiment) are never on screen together — the repetition was a symptom of
+  showing two scopes at once, so no renaming is required.
+- **The breadcrumb owns identity and the way up.** Every ancestor crumb is a link; only the entity
+  being viewed is not.
+- **Cost, accepted deliberately:** a cross-scope jump costs one extra click. For a data-management
+  tool that is a feature — it prevents working at the wrong scope by accident.
+
+**Superseded by this:** the "row 1 / row 2 / row 3" model, the always-visible context strip, and the
+"Resolved" question about whether the experiment views live in the strip. They do — the strip *is* the
+navigation row now.
+
 ### One home per question (stakeholder review 2026-10-12)
 
 > Human reaction: the experiment UI on the project page and the one reached from the experiments
@@ -852,6 +890,10 @@ requirement — decide whether to extend USER-R-03 or add a dedicated requiremen
 is scheduled.
 
 ### Resolved: how the experiment views are reached (2026-10-14)
+
+> **Superseded the same day** by *One scope at a time: two chrome rows*. The answer is still "the
+> switcher, not an in-page segmented control" — but the switcher is now the navigation row itself
+> rather than a separate strip, so there is no third band.
 
 Settled in favour of the **context-strip switcher** (`Overview · Samples · Dataset`), which marks the
 active view. No in-page segmented control and no new navigation row: the numbered rail inside the

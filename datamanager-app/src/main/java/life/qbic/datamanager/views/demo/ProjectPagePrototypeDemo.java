@@ -41,15 +41,14 @@ import org.springframework.context.annotation.Profile;
  *
  * <h3>What this prototype demonstrates</h3>
  * <ul>
- *   <li>No left navigation drawer. Navigation is a set of top rows: row 1 is the primary
- *       navigation the app already has ({@code Projects · Groups · Settings}); row 2 is the new
- *       <em>in-project</em> navigation that replaces the drawer
- *       ({@code Summary · Datasets · Access}), marking the active item with weight plus a bottom
- *       rule.</li>
- *   <li>A third, lighter context strip carries the project identity plus — only while inside an
- *       experiment — the experiment crumb.</li>
- *   <li>The navigation row contains nothing project-specific, so it starts at a fixed origin and
- *       renders the same geometry in every project regardless of title length.</li>
+ *   <li>No left navigation drawer. Two chrome rows: a constant identity bar carrying the wordmark,
+ *       the breadcrumb and the account, and <em>one</em> navigation row whose contents are the views
+ *       of the entity named at the end of the breadcrumb — the projects control panel, a project, or
+ *       an experiment. Two scopes are never navigable at once.</li>
+ *   <li>The breadcrumb is the only place the project and the experiment are named, and every ancestor
+ *       crumb is the way back up.</li>
+ *   <li>The navigation row carries no counts and no project-specific content, so its geometry is the
+ *       same in every project regardless of title length.</li>
  *   <li>Content is one centered column with a fluid gutter on wide screens.</li>
  *   <li>An experiment landing that leads with the design — its payload, or the invitation to create
  *       it — and follows with the samples and dataset at a glance. Those cards are the navigation,
@@ -143,6 +142,7 @@ public class ProjectPagePrototypeDemo extends Div implements BeforeEnterObserver
    * four experiment views) without touching any real route.
    */
   private enum Page {
+    PROJECTS("Projects", false),
     SUMMARY("Summary", false),
     SAMPLES("Samples", false),
     DATASETS("Datasets", false),
@@ -254,7 +254,6 @@ public class ProjectPagePrototypeDemo extends Div implements BeforeEnterObserver
   // ── View state ──────────────────────────────────────────────────────────
 
   private final Div body = new Div();
-  private final Div contextRow = new Div();
 
   private boolean emptyState = false;
   private boolean longTitle = false;
@@ -365,8 +364,7 @@ public class ProjectPagePrototypeDemo extends Div implements BeforeEnterObserver
 
   private void refresh() {
     removeAll();
-    add(buildProtobar(), buildGlobalBar(), buildProjectRow(), contextRow, body);
-    buildContextRow();
+    add(buildProtobar(), buildIdentityBar(), buildNavRow(), body);
     body.removeAll();
     body.add(buildBody());
     if (detail != null) {
@@ -383,8 +381,9 @@ public class ProjectPagePrototypeDemo extends Div implements BeforeEnterObserver
     Span label = new Span("Prototype");
     label.addClassName("pt-protobar__label");
     Span note = new Span(
-        "Project landing page & in-project navigation. Row 1 is the existing primary navigation; "
-            + "row 2 is the proposed in-project navigation. Controls below are demo-only.");
+        "Two chrome rows: a constant identity bar (wordmark, breadcrumb, account) and one "
+            + "navigation row whose contents are the views of whatever the breadcrumb ends on. "
+            + "Controls below are demo-only.");
     bar.add(label, note, spacerBefore());
 
     // Prototype-only chrome, so it is deliberately shaped differently from the product's buttons:
@@ -423,9 +422,20 @@ public class ProjectPagePrototypeDemo extends Div implements BeforeEnterObserver
     return spacer;
   }
 
-  // ── Row 1: primary navigation (already provided by the app) ─────────────
+  // ── Chrome: a constant identity bar over ONE scope-contextual navigation row ──
 
-  private Div buildGlobalBar() {
+  /*
+   * Two chrome rows, never three. The identity bar is constant — wordmark, breadcrumb, account — and
+   * the navigation row below it carries the views of the entity named at the end of the breadcrumb:
+   * the projects control panel, a project, or an experiment.
+   *
+   * That invariant is the point. There is exactly one answer to "what does this row do", so two
+   * scopes can never be navigable at once. Showing the shell, the project and the experiment together
+   * made the shell and the project read as peers, blanked the project row inside an experiment, and
+   * printed "Samples"/"Datasets" at two levels of the same visual authority.
+   */
+
+  private Div buildIdentityBar() {
     Div bar = new Div();
     bar.addClassName("pt-global");
     Div row = new Div();
@@ -439,12 +449,13 @@ public class ProjectPagePrototypeDemo extends Div implements BeforeEnterObserver
     wordmark.add(dot);
     Div brand = new Div(wordmark);
     brand.addClassName("pt-brand");
+    // The wordmark is the conventional way back to the control panel, so it is made one.
+    brand.getElement().setAttribute("role", "link");
+    brand.getElement().setAttribute("tabindex", "0");
+    brand.getElement().setAttribute("title", "All projects");
+    activateOnClickAndKeys(brand, () -> navigate(Page.PROJECTS));
 
-    // Projects · Groups · Settings — rendered by TopLevelNavigationComponent in the real app.
-    Div tabs = new Div();
-    tabs.addClassName("pt-primary-tabs");
-    tabs.add(primaryTab("Projects", true), primaryTab("Groups", false),
-        primaryTab("Settings", false));
+    row.add(brand, breadcrumbs());
 
     Div right = new Div();
     right.addClassName("pt-global__right");
@@ -452,50 +463,86 @@ public class ProjectPagePrototypeDemo extends Div implements BeforeEnterObserver
     account.addClassName("pt-account");
     right.add(account);
 
-    row.add(brand, tabs, right);
+    row.add(right);
     bar.add(row);
     return bar;
   }
 
-  private Button primaryTab(String label, boolean current) {
-    Button tab = new Button(label);
-    tab.addClassName("pt-primary-tab");
-    if (current) {
-      tab.getElement().setAttribute("aria-current", "page");
+  /**
+   * The breadcrumb: the only place the project and the experiment are named, and the way back up.
+   * Every ancestor is a link and only the entity being viewed is not — which is what lets the
+   * navigation row swap its contents by scope without the user losing track of where they are.
+   */
+  private Div breadcrumbs() {
+    Div crumbs = new Div();
+    crumbs.addClassName("pt-crumbs");
+
+    if (page == Page.PROJECTS) {
+      crumbs.add(currentCrumb("Projects"));
+      return crumbs;
     }
-    return tab;
+
+    crumbs.add(crumb("Projects", () -> navigate(Page.PROJECTS)), sep());
+
+    if (page.isExperimentScoped() && !emptyState) {
+      Span code = crumb("Q2IMMU", () -> navigate(Page.SUMMARY));
+      code.addClassName("pt-code");
+      Experiment experiment = selectedExperiment();
+      crumbs.add(code, crumb(projectTitle(), () -> navigate(Page.SUMMARY)), sep());
+      crumbs.add(page == Page.DESIGN
+          ? currentCrumb(experiment.name())
+          : crumb(experiment.name(), () -> openExperiment(experimentIndex, Page.DESIGN)));
+    } else {
+      // The project is the current location, so neither half of it links to itself.
+      Span code = new Span("Q2IMMU");
+      code.addClassName("pt-crumb");
+      code.addClassName("pt-code");
+      code.getElement().setAttribute("title", "Q2IMMU");
+      crumbs.add(code, currentCrumb(projectTitle()));
+    }
+    return crumbs;
   }
 
-  // ── Row 2: in-project navigation (new; replaces the left drawer) ────────
-
-  /*
-   * Navigation only. The project identity deliberately does NOT live here: if it
-   * shared this row, a 180-character title would shift "Datasets" and "Access" to
-   * a different x-position in every project, so the same target would never be in
-   * the same place twice. The row therefore starts at a fixed origin and always
-   * renders the same geometry, whatever the project is called.
+  /**
+   * The one navigation row. It carries the views of the entity named at the end of the breadcrumb —
+   * the control panel, a project, or an experiment. Items carry no counts: numbers belong to the
+   * content, not to the navigation.
    */
-  private Div buildProjectRow() {
+  private Div buildNavRow() {
     Div bar = new Div();
     bar.addClassName("pt-subnav");
     Div row = new Div();
     row.addClassName("pt-subnav__row");
     row.addClassName("pt-shell");
 
-    // Navigation rows carry navigation, not numbers. The counts were repeated in the context-strip
-    // pills, the pipeline cards and the snapshot panels; omitting them from BOTH navigation layers
-    // removes the duplication at its source instead of shuffling it between rows.
     Div nav = new Div();
     nav.addClassName("pt-subnav__nav");
+
+    if (page == Page.PROJECTS) {
+      // The control panel. Groups and Settings are shell destinations this prototype does not model,
+      // so they are shown but deliberately not operable.
+      nav.add(navItem("Projects", Page.PROJECTS), navPlaceholder("Groups"),
+          navPlaceholder("Settings"));
+      row.add(nav);
+      bar.add(row);
+      return bar;
+    }
+
+    if (page.isExperimentScoped() && !emptyState) {
+      nav.add(navItem("Overview", Page.DESIGN), navItem("Samples", Page.EXP_SAMPLES),
+          navItem("Dataset", Page.EXP_DATASET));
+      row.add(nav);
+      bar.add(row);
+      return bar;
+    }
+
     nav.add(navItem("Summary", Page.SUMMARY), navItem("Samples", Page.SAMPLES),
         navItem("Datasets", Page.DATASETS), navItem("Access", Page.ACCESS));
 
     Div tools = new Div();
     tools.addClassName("pt-subnav__tools");
-    // "Project settings", never bare "Settings": row 1 already carries a shell-level "Settings"
-    // tab (the account/groups hub) and two adjacent rows both saying "Settings" gave no hint which
-    // scope applied. Scoping the label matches the plan's rule for actions ("Edit contacts", not
-    // "Edit") and keeps row 1 untouched.
+    // "Project settings", never bare "Settings": the control panel carries a shell-level "Settings",
+    // and two destinations differing by one word give no hint which scope applies.
     tools.add(navItem("Ontology search", Page.ONTOLOGY),
         navItem("Project settings", Page.SETTINGS));
 
@@ -504,60 +551,25 @@ public class ProjectPagePrototypeDemo extends Div implements BeforeEnterObserver
     return bar;
   }
 
+  /** A navigation item. The current one states where the user is and does not link to itself. */
   private Button navItem(String label, Page target) {
     Button item = new Button(label);
     item.addClassName("pt-subnav__item");
     if (page == target) {
       item.getElement().setAttribute("aria-current", "page");
+    } else {
+      item.addClickListener(event -> navigate(target));
     }
-    item.addClickListener(event -> navigate(target));
     return item;
   }
 
-  // ── Row 3: project + experiment context ─────────────────────────────────
-
-  /*
-   * The context strip carries the project identity (code + title), so the project
-   * name is always on screen without occupying any space in the navigation row.
-   * While inside an experiment it additionally carries the experiment crumb.
-   */
-  private void buildContextRow() {
-    contextRow.removeAll();
-    contextRow.addClassName("pt-context");
-    contextRow.setVisible(true);
-
-    Div row = new Div();
-    row.addClassName("pt-context__row");
-    row.addClassName("pt-shell");
-
-    Div crumbs = new Div();
-    crumbs.addClassName("pt-crumbs");
-    Span code = crumb("Q2IMMU", () -> navigate(Page.SUMMARY));
-    code.addClassName("pt-code");
-    crumbs.add(crumb("Projects", () -> navigate(Page.SUMMARY)), sep(), code,
-        crumb(projectTitle(), () -> navigate(Page.SUMMARY)));
-    row.add(crumbs);
-
-    // The breadcrumb names the experiment: it is the one persistent statement of WHICH experiment is
-    // being viewed, and the way back UP from its sub-pages. It is the only such statement — the page
-    // header used to repeat it, and that second line was the duplication.
-    if (page.isExperimentScoped() && !emptyState) {
-      Experiment experiment = selectedExperiment();
-      crumbs.add(sep(), page == Page.DESIGN
-          ? currentCrumb(experiment.name())
-          : crumb(experiment.name(), () -> openExperiment(experimentIndex, Page.DESIGN)));
-
-      // The experiment's own views, in the chrome. This is the switcher that moves the user sideways
-      // between the overview and the two data views without walking back up to the overview first,
-      // and it marks the current view so the strip answers "where am I" as well as "where to".
-      Div views = new Div();
-      views.addClassName("pt-expviews");
-      views.add(expView("Overview", Page.DESIGN), expView("Samples", Page.EXP_SAMPLES),
-          expView("Dataset", Page.EXP_DATASET));
-      row.add(views);
-    }
-
-    contextRow.add(row);
+  /** A shell destination outside this prototype: shaped like a nav item, but not operable. */
+  private Span navPlaceholder(String label) {
+    Span item = new Span(label);
+    item.addClassName("pt-subnav__item");
+    item.addClassName("pt-subnav__item--inert");
+    item.getElement().setAttribute("title", label + " is outside the scope of this prototype");
+    return item;
   }
 
   private Span sep() {
@@ -579,27 +591,9 @@ public class ProjectPagePrototypeDemo extends Div implements BeforeEnterObserver
   }
 
   /**
-   * One experiment view in the context strip. It is the switcher between the overview and the two
-   * data views — the only one, now that the in-page rail is gone — and it marks the active view, so
-   * the chrome answers both "where can I go" and "where am I".
-   */
-  private Div expView(String label, Page target) {
-    Div view = new Div();
-    view.addClassName("pt-expview");
-    view.getElement().setAttribute("role", "button");
-    view.getElement().setAttribute("tabindex", "0");
-    view.add(textSpan(label, null));
-    if (page == target) {
-      view.getElement().setAttribute("aria-current", "page");
-    }
-    activateOnClickAndKeys(view, () -> openExperiment(experimentIndex, target));
-    return view;
-  }
-
-  /**
    * A breadcrumb crumb whose text can be long (project titles allow 180 characters). It truncates
-   * and keeps the full text reachable via the tooltip, so the crumb never pushes the experiment
-   * views out of the strip.
+   * and keeps the full text reachable via the tooltip, so the breadcrumb never crowds the identity
+   * bar.
    */
   private Span crumb(String text, Runnable onClick) {
     Span span = new Span(text);
@@ -618,6 +612,7 @@ public class ProjectPagePrototypeDemo extends Div implements BeforeEnterObserver
     Div wrapper = new Div();
     wrapper.addClassName("pt-shell");
     switch (page) {
+      case PROJECTS -> wrapper.add(projectsPage());
       case SUMMARY -> wrapper.add(identityBand(), progressBand(emptyState),
           experimentsBand(emptyState), metadataBand());
       case SAMPLES -> wrapper.add(projectSamplesPage());
@@ -630,6 +625,26 @@ public class ProjectPagePrototypeDemo extends Div implements BeforeEnterObserver
       case EXP_DATASET -> wrapper.add(datasetPage());
     }
     return wrapper;
+  }
+
+  /**
+   * The control panel: the projects list. It exists so the navigation model is demonstrable end to
+   * end — it is the scope in which {@code Projects · Groups · Settings} is the navigation, and the
+   * scope the breadcrumb's first crumb returns to. Deliberately not modelled in detail.
+   */
+  private Div projectsPage() {
+    Div band = pageBand("Projects", "All projects you can access",
+        button("New project", true, null));
+    band.add(table(
+        new String[]{"Project", "Experiments", "Samples", "Datasets", "Attention"},
+        List.of(
+            row(text("Q2IMMU · Immunotest"), text("3"), text("84"), text("72"),
+                attention("2 experiments")),
+            row(text("Q2PROT · Proteomics pilot"), text("1"), text("36"), text("30"),
+                done("None")))));
+    band.add(note("Prototype: the projects list is a stub. It exists so the scope-contextual "
+        + "navigation can be exercised from the top level down."));
+    return band;
   }
 
   // Identity band ─────────────────────────────────────────────────────────

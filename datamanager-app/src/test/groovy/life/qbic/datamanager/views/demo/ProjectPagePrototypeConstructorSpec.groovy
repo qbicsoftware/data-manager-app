@@ -171,13 +171,13 @@ class ProjectPagePrototypeConstructorSpec extends Specification {
     classTexts(view, "pt-step__ordinal") == ["1", "2", "3"]
   }
 
-  def "the context strip switches between the experiment's views and marks the current one"() {
+  def "the navigation row is the experiment's views, and marks the current one"() {
     given: "the experiment overview"
     def view = enterPilot()
 
-    expect: "the switcher is there, with the overview marked as the view being read"
-    classTexts(view, "pt-expview") == ["Overview", "Samples", "Dataset"]
-    activeViews(view) == ["Overview"]
+    expect: "the experiment's views are the navigation, with the overview marked"
+    classTexts(view, "pt-subnav__item") == ["Overview", "Samples", "Dataset"]
+    activeNavItem(view) == ["Overview"]
 
     and: "the overview still navigates with its own cards as well"
     classTexts(view, "pt-snap__label") == ["Samples", "Dataset"]
@@ -189,15 +189,53 @@ class ProjectPagePrototypeConstructorSpec extends Specification {
     markCurrent(view, "EXP_SAMPLES")
 
     then: "the mark follows, and the dataset is one click away from here"
-    activeViews(view) == ["Samples"]
-    classTexts(view, "pt-expview").contains("Dataset")
+    activeNavItem(view) == ["Samples"]
+    classTexts(view, "pt-subnav__item").contains("Dataset")
 
     when: "and then the dataset"
     markCurrent(view, "EXP_DATASET")
 
     then: "the switcher keeps every view of the experiment reachable from anywhere in it"
-    activeViews(view) == ["Dataset"]
-    classTexts(view, "pt-expview") == ["Overview", "Samples", "Dataset"]
+    activeNavItem(view) == ["Dataset"]
+    classTexts(view, "pt-subnav__item") == ["Overview", "Samples", "Dataset"]
+  }
+
+  def "the navigation row carries the views of whatever the breadcrumb ends on"() {
+    given: "the control panel, where the navigation is the shell's own destinations"
+    def view = new ProjectPagePrototypeDemo()
+    invokeNavigate(view, "PROJECTS")
+
+    expect:
+    classTexts(view, "pt-subnav__item") == ["Projects", "Groups", "Settings"]
+    activeNavItem(view) == ["Projects"]
+    currentCrumbs(view) == ["Projects"]
+
+    when: "a project is opened"
+    invokeNavigate(view, "SUMMARY")
+
+    then: "the row becomes the project's views, and the project is named in the breadcrumb"
+    classTexts(view, "pt-subnav__item") == ["Summary", "Samples", "Datasets", "Access",
+        "Ontology search", "Project settings"]
+    activeNavItem(view) == ["Summary"]
+    currentCrumbs(view) == ["Immunotest"]
+
+    when: "an experiment inside it is opened"
+    markCurrent(view, "EXP_SAMPLES")
+
+    then: "the row becomes the experiment's views — the project's are replaced, not duplicated"
+    classTexts(view, "pt-subnav__item") == ["Overview", "Samples", "Dataset"]
+    activeNavItem(view) == ["Samples"]
+    // The crumb chain ends at the experiment and the experiment stays reachable from it: inside an
+    // experiment the marked item is the VIEW in the navigation row, not a crumb.
+    currentCrumbs(view).isEmpty()
+    elementsWithClass(view, "pt-crumb--link").any {
+      it.element.getTextRecursively().contains("Immunopeptidomics pilot")
+    }
+
+    and: "the project's aggregate 'Datasets' is not reachable from inside the experiment"
+    // Two scopes' navigation is never on screen at once, which is what made the project's
+    // 'Samples'/'Datasets' and the experiment's 'Samples'/'Dataset' read as the same thing.
+    !classTexts(view, "pt-subnav__item").contains("Datasets")
   }
 
   def "the prototype routes by view and experiment, so browser Back and Forward work"() {
@@ -563,14 +601,14 @@ class ProjectPagePrototypeConstructorSpec extends Specification {
     return null
   }
 
-  /** The experiment views marked as the current page, by their visible label. */
-  private static List<String> activeViews(com.vaadin.flow.component.Component c) {
+  /** The navigation-row item marked as the current location, by its visible label. */
+  private static List<String> activeNavItem(com.vaadin.flow.component.Component c) {
     def out = []
-    if (c.classNames.any { it == "pt-expview" }
+    if (c.classNames.any { it == "pt-subnav__item" }
         && c.element.getAttribute("aria-current") == "page") {
       out << c.element.getTextRecursively()
     }
-    c.children.toList().each { out.addAll(activeViews(it)) }
+    c.children.toList().each { out.addAll(activeNavItem(it)) }
     out
   }
 
@@ -614,22 +652,26 @@ class ProjectPagePrototypeConstructorSpec extends Specification {
     n
   }
 
-  def "settings is scoped as 'Project settings' so it cannot be confused with the shell Settings tab"() {
-    given:
+  def "the two Settings destinations can never be confused, because only one is on screen"() {
+    given: "a project-scoped page"
     def view = new ProjectPagePrototypeDemo()
 
-    expect: "the in-project navigation uses the scoped label"
+    expect: "the project navigation scopes its label, and no unscoped Settings sits beside it"
     buttonLabels(view).contains("Project settings")
+    !classTexts(view, "pt-subnav__item").contains("Settings")
 
-    and: "the shell-level tab keeps its unscoped name, untouched by the rename"
-    buttonLabels(view).contains("Settings")
-
-    when: "the page is opened"
+    when: "the project settings page is opened"
     invokeNavigate(view, "SETTINGS")
 
     then: "the page titles itself and its sections are reachable"
     headings(view).contains("Project settings")
     buttonLabels(view).containsAll(["Description", "Funding", "Contacts", "Project deletion"])
+
+    when: "the control panel is opened instead"
+    invokeNavigate(view, "PROJECTS")
+
+    then: "there the shell's destinations are the navigation, and the project's scope is not claimed"
+    classTexts(view, "pt-subnav__item") == ["Projects", "Groups", "Settings"]
   }
 
   private static List<String> headings(com.vaadin.flow.component.Component c) {
