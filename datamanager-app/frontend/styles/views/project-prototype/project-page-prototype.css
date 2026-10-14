@@ -1,0 +1,1992 @@
+/*
+ * Prototype styles for the reworked project landing page and in-project navigation.
+ *
+ * Scope: this stylesheet is only loaded by the development-only demo view
+ * `life.qbic.datamanager.views.demo.ProjectPagePrototypeDemo`
+ * (route: test-view/project-page). Every selector is namespaced under `.pt-app`
+ * so nothing here can leak into the production views.
+ *
+ * Design intent (see docs/plans/Project-management-refactor.md):
+ *   - no left navigation drawer; in-project navigation is a SECOND top row
+ *   - row 1 is the primary navigation the app already has (Projects · Groups ·
+ *     Settings) and is shown here only for context
+ *   - row 2 is the new in-project navigation: project identity (code · name)
+ *     plus Summary · Datasets · Access, with Ontology Search as a tool
+ *   - row 3 is the lighter experiment context strip, shown only inside an experiment
+ *   - content is a centered column with a fluid gutter on wide screens
+ *   - one deliberate focal element: the experiment progress rail
+ *   - hierarchy carried by an actual type scale, not by grey-vs-dark only
+ *   - exactly one solid primary action per band
+ *
+ * Deliberate choice: the typeface is inherited from the app on purpose. A new
+ * webfont would misrepresent the product in a stakeholder prototype; the finding
+ * was the broken *scale and hierarchy*, so those are what this file fixes.
+ */
+
+.pt-app {
+  /* Surfaces and lines */
+  --pt-canvas: #ffffff;
+  --pt-sunken: #f4f7fb;
+  --pt-line: var(--lumo-contrast-10pct, #dbe3ec);
+  --pt-line-strong: var(--lumo-contrast-20pct, #b9c6d4);
+
+  /* Ink (page-local name so the prototype does not depend on theme churn).
+   *
+   * --pt-ink-subtle was #7b8b9d: measured 3.77:1 on white and 3.43:1 on --pt-sunken, both of which
+   * FAIL the WCAG AA 4.5:1 floor for normal text. It was also the colour of the smallest text on the
+   * page — the column headers, step details and unit labels — i.e. exactly the labels a reader needs.
+   * Darkened to #5d6d7e, which measures 5.44:1 on white and 4.95:1 on --pt-sunken, so it clears AA on
+   * both surfaces while staying visibly lighter than --pt-ink and --pt-ink-muted. */
+  --pt-ink: #1b2733;
+  --pt-ink-muted: #56677a;
+  --pt-ink-subtle: #5d6d7e;
+
+  /* Accents. All text variants chosen to clear WCAG AA on white. */
+  --pt-accent: var(--primary-color, #1676f3);
+  --pt-accent-ink: #0b5cc4;
+  --pt-done: #157f43;
+  --pt-attention: #8a5a00;
+  --pt-attention-bg: #fff6e5;
+
+  /* Type scale */
+  --pt-fs-title: clamp(1.5rem, 1.15rem + 1.1vw, 1.9rem);
+  --pt-fs-section: 1rem;
+  --pt-fs-body: 0.875rem;
+  --pt-fs-meta: 0.8125rem;
+  --pt-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+
+  /* Layout */
+  --pt-shell: 1400px;
+  --pt-gutter: clamp(1rem, 4vw, 3.5rem);
+  --pt-band-gap: clamp(1.5rem, 2.5vw, 2.5rem);
+
+  box-sizing: border-box;
+  display: block;
+  min-height: 100vh;
+  background: var(--pt-canvas);
+  color: var(--pt-ink);
+  font-size: var(--pt-fs-body);
+  line-height: 1.5;
+}
+
+.pt-app *,
+.pt-app *::before,
+.pt-app *::after {
+  box-sizing: border-box;
+}
+
+.pt-app :focus-visible {
+  outline: 2px solid var(--pt-accent);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+/* ── Prototype chrome (clearly not part of the design) ─────────────────── */
+
+.pt-protobar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  padding: 0.6rem var(--pt-gutter);
+  background: var(--pt-sunken);
+  border-bottom: 1px dashed var(--pt-line-strong);
+  font-size: var(--pt-fs-meta);
+  color: var(--pt-ink-muted);
+}
+
+.pt-protobar__label {
+  color: var(--pt-ink);
+  font-weight: var(--font-weight-semi-bold, 600);
+}
+
+.pt-strong {
+  color: var(--pt-ink);
+  font-weight: var(--font-weight-semi-bold, 600);
+}
+
+.pt-protobar__spacer {
+  flex: 1 1 auto;
+}
+
+.pt-toggle {
+  font: inherit;
+  padding: 0.3rem 0.7rem;
+  border: 1px solid var(--pt-line-strong);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--pt-ink-muted);
+  cursor: pointer;
+}
+
+.pt-toggle:hover {
+  border-color: var(--pt-accent);
+  color: var(--pt-accent-ink);
+}
+
+.pt-toggle[aria-pressed="true"] {
+  /* Deliberately NOT the accent: at full accent this prototype-only control was the same blue as
+   * the page's single primary action and read as a peer of it. A tinted fill keeps the pressed
+   * state obvious without claiming primary-action weight. */
+  background: #e4eefb;
+  border-color: var(--pt-accent);
+  color: var(--pt-accent-ink);
+  font-weight: var(--font-weight-semi-bold, 600);
+}
+
+/* ── Centered shell ────────────────────────────────────────────────────── */
+
+.pt-shell {
+  max-width: var(--pt-shell);
+  margin-inline: auto;
+  padding-inline: var(--pt-gutter);
+  width: 100%;
+}
+
+/* ── Row 1: primary navigation (already provided by the app) ───────────── */
+
+.pt-global {
+  border-bottom: 1px solid var(--pt-line);
+  background: #fff;
+}
+
+.pt-global__row {
+  display: flex;
+  align-items: stretch;
+  gap: 0.75rem;
+  min-height: 3.25rem;
+}
+
+.pt-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-right: 0.5rem;
+}
+
+.pt-wordmark {
+  font-weight: var(--font-weight-semi-bold, 600);
+  font-size: 0.9375rem;
+  color: var(--pt-ink);
+  white-space: nowrap;
+}
+
+.pt-wordmark__dot {
+  color: var(--pt-accent);
+}
+
+.pt-global__right {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.pt-account {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.25rem 0.5rem 0.25rem 0.25rem;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.pt-account:hover {
+  background: var(--pt-sunken);
+}
+
+.pt-account__name {
+  font-size: var(--pt-fs-meta);
+  color: var(--pt-ink-muted);
+}
+
+/* ── Row 2: in-project navigation (new; replaces the left drawer) ───────── */
+
+.pt-subnav {
+  border-bottom: 1px solid var(--pt-line);
+  background: #fff;
+}
+
+.pt-subnav__row {
+  display: flex;
+  align-items: stretch;
+  gap: 1.5rem;
+  min-height: 3rem;
+}
+
+/*
+ * Project code chip. The code is fixed at 5 characters (Q2 + 3), so unlike the
+ * project title it can never overflow. It is used in the context strip, not in the
+ * navigation row.
+ */
+.pt-code {
+  font-family: var(--pt-mono);
+  font-size: var(--pt-fs-meta);
+  color: var(--pt-ink-muted);
+  flex: 0 0 auto;
+}
+
+.pt-subnav__nav {
+  display: inline-flex;
+  align-items: stretch;
+  gap: 1.5rem;
+  /* Navigation starts at a fixed origin and never depends on project metadata. */
+  flex: 0 0 auto;
+}
+
+.pt-subnav__item {
+  position: relative;
+  padding: 0.7rem 0 0.65rem;
+  color: var(--pt-ink-muted);
+  font-size: var(--pt-fs-body);
+  cursor: pointer;
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+  background: none;
+  border-top: 0;
+  border-left: 0;
+  border-right: 0;
+  font-family: inherit;
+}
+
+.pt-subnav__item:hover {
+  color: var(--pt-ink);
+}
+
+.pt-subnav__item[aria-current="page"] {
+  color: var(--pt-ink);
+  font-weight: var(--font-weight-semi-bold, 600);
+  border-bottom-color: var(--pt-accent);
+}
+
+/* A shell destination this prototype does not model: shaped like a nav item, but it must not look
+ * or behave like something the user can activate. */
+.pt-subnav__item--inert {
+  color: var(--pt-ink-subtle);
+  cursor: default;
+}
+
+.pt-subnav__tools {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex: 0 0 auto;
+}
+
+/* ── Breadcrumb: the only place the project and the experiment are named ── */
+
+.pt-crumbs {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+  /* The identity bar is chrome, so the breadcrumb reads as meta rather than as content. */
+  font-size: var(--pt-fs-meta);
+  color: var(--pt-ink-muted);
+}
+
+/*
+ * Crumbs can carry long text (project titles allow 180 characters), so they truncate
+ * rather than push the experiment views out of the strip.
+ */
+.pt-crumb {
+  max-width: 42ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A clickable element must look clickable. The experiment crumb was a plain link-styled control, so
+ * nothing on screen hinted it could be activated. Keyboard activation lives in the Java helper. */
+.pt-crumb--link {
+  cursor: pointer;
+  color: var(--pt-accent-ink);
+  text-decoration: underline;
+  text-decoration-color: var(--pt-line-strong);
+  text-underline-offset: 2px;
+}
+
+.pt-crumb--link:hover {
+  text-decoration-color: currentColor;
+}
+
+/* The experiment being viewed: named in the breadcrumb, and visibly not a link to itself there. */
+.pt-crumb--current {
+  color: var(--pt-ink);
+  font-weight: var(--font-weight-semi-bold, 600);
+}
+
+.pt-crumbs a {
+  color: var(--pt-ink-muted);
+  text-decoration: none;
+}
+
+.pt-crumbs a:hover {
+  color: var(--pt-accent-ink);
+  text-decoration: underline;
+}
+
+.pt-crumbs__sep {
+  color: var(--pt-ink-subtle);
+}
+
+/* ── Bands ─────────────────────────────────────────────────────────────── */
+
+.pt-body {
+  display: block;
+  padding-block: var(--pt-band-gap) clamp(2rem, 5vw, 4rem);
+}
+
+.pt-band {
+  padding-block: var(--pt-band-gap);
+  border-top: 1px solid var(--pt-line);
+}
+
+.pt-band:first-child {
+  border-top: 0;
+  padding-top: clamp(1.25rem, 3vw, 2rem);
+}
+
+/* The overview's own sections are one page's content, not three pages stacked, so they sit closer
+ * than full page bands do. */
+.pt-band--glance {
+  padding-block: 1.25rem;
+}
+
+.pt-band__head {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+/* Near-black, 16px: a section title, not a grey secondary label. */
+.pt-band__title {
+  margin: 0;
+  font-size: var(--pt-fs-section);
+  font-weight: var(--font-weight-semi-bold, 600);
+  color: var(--pt-ink);
+  letter-spacing: -0.005em;
+}
+
+.pt-band__actions {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pt-band__hint {
+  font-size: var(--pt-fs-meta);
+  color: var(--pt-ink-muted);
+}
+
+/* The design's state, as a tag: text AND a tint, never a tint alone. */
+.pt-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.5rem;
+  border: 1px solid var(--pt-line);
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: var(--font-weight-semi-bold, 600);
+  color: var(--pt-ink-muted);
+}
+
+.pt-tag__icon {
+  width: 0.7rem;
+  height: 0.7rem;
+  margin-right: 0.25rem;
+}
+
+.pt-tag--done {
+  border-color: var(--pt-done);
+  color: var(--pt-done);
+}
+
+.pt-tag--active {
+  border-color: var(--pt-accent);
+  color: var(--pt-accent-ink);
+}
+
+.pt-tag--attention {
+  border-color: var(--pt-attention);
+  color: var(--pt-attention);
+}
+
+/* The padlock already says this; the dashed edge repeats the prototype's "prerequisite missing"
+ * language, so a locked tag cannot be mistaken for a neutral status. */
+.pt-tag--locked {
+  border-style: dashed;
+  border-color: var(--pt-line-strong);
+  color: var(--pt-ink-muted);
+}
+
+/* ── Buttons: one solid primary, everything else quiet ────────────────── */
+
+/*
+ * This prototype uses Vaadin buttons (which render as <vaadin-button> with the
+ * Lumo theme). Lumo imposes a fixed `--lumo-button-size` min-height/min-width
+ * and its own font sizing, which would inflate the compact controls below.
+ * Neutralise that here; every rule is scoped under `.pt-app`.
+ */
+.pt-app .pt-btn,
+.pt-app .pt-toggle,
+.pt-app .pt-subnav__item {
+  min-width: 0;
+  min-height: 0;
+  height: auto;
+  line-height: 1.5;
+  font-weight: inherit;
+  box-shadow: none;
+}
+
+.pt-btn {
+  font: inherit;
+  padding: 0.4rem 0.8rem;
+  border: 1px solid var(--pt-line-strong);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--pt-ink-muted);
+  cursor: pointer;
+}
+
+.pt-btn:hover {
+  border-color: var(--pt-ink-subtle);
+  color: var(--pt-ink);
+}
+
+.pt-btn--primary {
+  background: var(--pt-accent);
+  border-color: var(--pt-accent);
+  color: #fff;
+  font-weight: var(--font-weight-semi-bold, 600);
+}
+
+.pt-btn--primary,
+.pt-btn--primary:hover {
+  color: #fff;
+}
+
+.pt-btn--primary:hover {
+  background: var(--pt-accent-ink);
+  border-color: var(--pt-accent-ink);
+  color: #fff;
+}
+
+.pt-btn--text {
+  border-color: transparent;
+  background: transparent;
+  padding-inline: 0.4rem;
+  color: var(--pt-accent-ink);
+}
+
+.pt-btn--text:hover {
+  border-color: transparent;
+  background: var(--pt-sunken);
+  color: var(--pt-accent-ink);
+}
+
+/* ── Identity band ─────────────────────────────────────────────────────── */
+
+.pt-identity__top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.pt-identity__heading {
+  min-width: 0;
+  flex: 1 1 26rem;
+}
+
+.pt-title {
+  margin: 0;
+  font-size: var(--pt-fs-title);
+  line-height: 1.15;
+  font-weight: var(--font-weight-bold, 700);
+  color: var(--pt-ink);
+  letter-spacing: -0.015em;
+}
+
+.pt-title__code {
+  font-family: var(--pt-mono);
+  font-size: 0.62em;
+  font-weight: var(--font-weight-medium, 500);
+  color: var(--pt-ink-subtle);
+}
+
+.pt-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.75rem;
+  margin-top: 0.5rem;
+  font-size: var(--pt-fs-meta);
+  color: var(--pt-ink-muted);
+}
+
+.pt-meta__sep {
+  color: var(--pt-line-strong);
+}
+
+.pt-chips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.pt-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.1rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  border: 1px solid var(--pt-line-strong);
+  color: var(--pt-ink-muted);
+  background: #fff;
+}
+
+.pt-chip--domain-genomics {
+  border-color: #e9c2d4;
+  background: #fdf1f7;
+  color: #8c2f5c;
+}
+
+.pt-chip--domain-proteomics {
+  border-color: #cfc6ea;
+  background: #f5f2fd;
+  color: #4b3a8f;
+}
+
+.pt-chip--domain-immuno {
+  border-color: #e8d19a;
+  background: #fdf7e8;
+  color: #7a5a05;
+}
+
+.pt-chip--attention {
+  border-color: #ecd39a;
+  background: var(--pt-attention-bg);
+  color: var(--pt-attention);
+}
+
+/* An interactive chip: renders as a link and states where it goes. */
+.pt-chip--action {
+  cursor: pointer;
+  gap: 0.25rem;
+}
+
+.pt-chip--action:hover {
+  border-color: var(--pt-attention);
+}
+
+/* People: initials chips, no avatar-stack-without-names */
+.pt-people {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.85rem;
+  font-size: var(--pt-fs-meta);
+  color: var(--pt-ink-muted);
+}
+
+/* The objective follows the identity block, so it needs the air the contacts row used to provide. */
+.pt-identity__heading .pt-objective {
+  margin-top: 1.25rem;
+}
+
+.pt-people__label {
+  font-size: var(--pt-fs-meta);
+  color: var(--pt-ink-subtle);
+}
+
+.pt-initials {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 999px;
+  background: var(--pt-sunken);
+  border: 1px solid var(--pt-line-strong);
+  font-size: 0.6875rem;
+  font-weight: var(--font-weight-semi-bold, 600);
+  color: var(--pt-ink-muted);
+}
+
+/* Objective: expanded by default, clamped, with an explicit affordance. */
+.pt-objective {
+  margin-top: 1.5rem;
+  max-width: 68ch;
+}
+
+.pt-objective__text {
+  margin: 0;
+  color: var(--pt-ink-muted);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+.pt-objective__text.is-expanded {
+  -webkit-line-clamp: unset;
+  display: block;
+}
+
+.pt-objective__toggle {
+  margin-top: 0.4rem;
+}
+
+/* ── Progress band: the one loud element (a genuine sequence) ─────────── */
+
+.pt-progress {
+  border: 1px solid var(--pt-line);
+  border-radius: 10px;
+  padding: clamp(1rem, 2.5vw, 1.5rem);
+  background: #fff;
+}
+
+.pt-progress__intro {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.pt-progress__headline {
+  font-size: 0.9375rem;
+  color: var(--pt-ink);
+}
+
+.pt-progress__headline .pt-strong {
+  color: var(--pt-ink);
+}
+
+/*
+ * The project's dataset standing: two cards, because the two kinds of dataset are used differently.
+ * Primary data is what analysis consumes, so it is stated by type and volume. Connected assets are
+ * recognised by title, and they are the things that appear between visits — so both close with what
+ * has arrived since the reader last looked, which is the question the summary owes them.
+ */
+.pt-datasets {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--pt-line);
+}
+
+.pt-datasets__head {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: 0.6rem;
+}
+
+.pt-datasets__label {
+  font-size: var(--pt-fs-meta);
+  font-weight: var(--font-weight-semi-bold, 600);
+  color: var(--pt-ink);
+}
+
+.pt-datasets__link {
+  margin-left: auto;
+  font-size: var(--pt-fs-meta);
+  color: var(--pt-accent-ink);
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: var(--pt-line-strong);
+  text-underline-offset: 2px;
+}
+
+.pt-datasets__link:hover {
+  text-decoration-color: currentColor;
+}
+
+.pt-datasets__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  align-items: start;
+}
+
+.pt-datasets__card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--pt-line);
+  border-radius: 10px;
+  background: var(--pt-sunken);
+}
+
+.pt-datasets__card-title {
+  font-size: var(--pt-fs-meta);
+  font-weight: var(--font-weight-semi-bold, 600);
+  color: var(--pt-ink);
+}
+
+.pt-datasets__card-fact {
+  font-size: var(--pt-fs-meta);
+  color: var(--pt-ink-muted);
+}
+
+.pt-datasets__meta {
+  margin-top: 0.2rem;
+  font-size: 0.75rem;
+  color: var(--pt-ink-subtle);
+}
+
+/* There is news. The sentence already says so; the weight and colour only reinforce it. */
+.pt-datasets__meta--fresh {
+  color: var(--pt-accent-ink);
+  font-weight: var(--font-weight-semi-bold, 600);
+}
+
+.pt-rail {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pt-rail__step {
+  position: relative;
+  padding-right: 1rem;
+}
+
+/* Rail stages are clickable: each one is the entry point to its own surface. */
+.pt-rail__step--link {
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.pt-rail__step--link:hover .pt-rail__label {
+  color: var(--pt-accent-ink);
+  text-decoration: underline;
+}
+
+.pt-rail__step::before {
+  content: "";
+  position: absolute;
+  top: 0.5rem;
+  left: 1.25rem;
+  right: 0;
+  height: 2px;
+  background: var(--pt-line-strong);
+}
+
+.pt-rail__step:last-child::before {
+  display: none;
+}
+
+.pt-rail__marker {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 999px;
+  border: 2px solid var(--pt-line-strong);
+  background: #fff;
+  font-size: 0.6875rem;
+  color: var(--pt-ink-subtle);
+}
+
+.pt-rail__step--done .pt-rail__marker {
+  background: var(--pt-done);
+  border-color: var(--pt-done);
+  color: #fff;
+}
+
+.pt-rail__step--done::before {
+  background: var(--pt-done);
+}
+
+.pt-rail__step--attention .pt-rail__marker {
+  background: var(--pt-attention-bg);
+  border-color: var(--pt-attention);
+  color: var(--pt-attention);
+}
+
+/* The rail's glyphs scale to the marker; the ordinal stays a text glyph. */
+.pt-rail__glyph {
+  width: 0.8rem;
+  height: 0.8rem;
+  color: inherit;
+}
+
+.pt-rail__label {
+  display: block;
+  margin-top: 0.6rem;
+  font-size: var(--pt-fs-meta);
+  color: var(--pt-ink);
+  padding-right: 0.5rem;
+}
+
+.pt-rail__count {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.75rem;
+  color: var(--pt-ink-subtle);
+}
+
+/*
+ * The outstanding issues, directly under the band title and OUTSIDE the progress card. They are a
+ * statement about the project, made before any numbers — not a detail of the rail. Rendered only when
+ * something is outstanding, so the heading never becomes furniture readers learn to skip.
+ */
+.pt-attention {
+  margin-bottom: 1rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 8px;
+  background: var(--pt-attention-bg);
+  border: 1px solid #ecd39a;
+  font-size: var(--pt-fs-meta);
+  color: var(--pt-attention);
+}
+
+.pt-attention__title {
+  font-weight: var(--font-weight-semi-bold, 600);
+}
+
+/*
+ * Exception callouts are entry points, not labels: the whole row routes to where
+ * the work continues, so "needs attention" always answers "and now what?".
+ */
+.pt-exception {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: 6px;
+  background: #fff;
+  border: 1px solid #ecd39a;
+  cursor: pointer;
+}
+
+.pt-exception:hover {
+  border-color: var(--pt-attention);
+}
+
+.pt-exception .icon-size-xs {
+  flex: 0 0 auto;
+  color: var(--pt-attention);
+}
+
+/* The affected experiment is named in the row, so multi-experiment attention stays readable. */
+.pt-exception__context {
+  flex: 0 0 auto;
+  font-weight: var(--font-weight-semi-bold, 600);
+  color: var(--pt-ink);
+  white-space: nowrap;
+  padding-right: 0.5rem;
+  border-right: 1px solid #ecd39a;
+}
+
+/* The trailing action states the destination, so the row is self-explanatory. */
+.pt-exception__action {
+  margin-left: auto;
+  font-weight: var(--font-weight-semi-bold, 600);
+  color: var(--pt-attention);
+  white-space: nowrap;
+  text-decoration: underline;
+}
+
+/* ── Tables (dummy in-project pages) ───────────────────────────────────── */
+
+.pt-table {
+  border: 1px solid var(--pt-line);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.pt-table__row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 0;
+  border-top: 1px solid var(--pt-line);
+}
+
+.pt-table__row:first-child {
+  border-top: 0;
+}
+
+.pt-table__row--head {
+  background: var(--pt-sunken);
+}
+
+.pt-table__cell {
+  padding: 0.55rem 0.75rem;
+  font-size: var(--pt-fs-meta);
+  color: var(--pt-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pt-cell--head {
+  font-weight: var(--font-weight-semi-bold, 600);
+  color: var(--pt-ink-muted);
+}
+
+.pt-cell--mono {
+  font-family: var(--pt-mono);
+  font-size: 0.8125rem;
+}
+
+.pt-cell--muted {
+  color: var(--pt-ink-subtle);
+}
+
+.pt-cell--attention {
+  color: var(--pt-attention);
+  font-weight: var(--font-weight-semi-bold, 600);
+}
+
+.pt-cell--done {
+  color: var(--pt-done);
+}
+
+.pt-note {
+  display: block;
+  margin-top: 0.6rem;
+  font-size: var(--pt-fs-meta);
+  color: var(--pt-ink-muted);
+}
+
+/* ── Page header subtitle ──────────────────────────────────────────────── */
+
+/* The scope line sits under the H1: project / experiment, with the experiment a real link. */
+.pt-page__subtitle {
+  margin: 0.35rem 0 0;
+  font-size: var(--pt-fs-body);
+  color: var(--pt-ink-muted);
+}
+
+/*
+ * Scope-line separator. The breadcrumb separator (`.pt-crumbs__sep`) has no horizontal spacing, so
+ * reusing it rendered the scope as `Immunotest/Immunopeptidomics pilot`.
+ */
+.pt-searchfield {
+  width: min(100%, 32rem);
+}
+
+/* ── Design detail blocks ──────────────────────────────────────────────── */
+
+/* The design's three categories, on the Design page. One row of three peers; the content is short
+   and equal in kind, so equal tracks keep them comparable. */
+.pt-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.pt-detail {
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--pt-line);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.pt-detail__list {
+  margin: 0.5rem 0 0;
+  padding-left: 1.1rem;
+  font-size: var(--pt-fs-meta);
+  color: var(--pt-ink-muted);
+}
+
+.pt-detail__list li {
+  margin-top: 0.2rem;
+}
+
+/* ── Experiment entries ────────────────────────────────────────────────── */
+
+.pt-experiments {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.pt-exp {
+  display: grid;
+  /* One column: the identity, then the snapshot cards underneath. The entry used to carry counts and
+   * Samples/Dataset buttons beside the identity — the cards state the same numbers and are the way
+   * in, so the entry was saying everything twice. */
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--pt-line);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.pt-exp:hover {
+  border-color: var(--pt-line-strong);
+}
+
+.pt-exp__name {
+  font-weight: var(--font-weight-semi-bold, 600);
+  color: var(--pt-ink);
+  margin: 0;
+}
+
+.pt-exp__name:hover {
+  color: var(--pt-accent-ink);
+  text-decoration: underline;
+}
+
+.pt-exp__facets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+}
+
+/* ── Metadata band ─────────────────────────────────────────────────────── */
+
+.pt-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 1.25rem 2rem;
+  margin: 0;
+}
+
+/*
+ * A band of statistics on its own surface. Loose in a band the labels floated between unrelated
+ * components with nothing tying them together, and the one nearest the Samples panel read as a
+ * sample metric.
+ */
+.pt-factcard {
+  margin-top: 1rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--pt-line);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.pt-factcard__title {
+  display: block;
+  margin-bottom: 0.75rem;
+  font-size: var(--pt-fs-section);
+  font-weight: var(--font-weight-semi-bold, 600);
+  color: var(--pt-ink);
+}
+
+.pt-fact__label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--pt-ink-subtle);
+  margin-bottom: 0.2rem;
+}
+
+.pt-fact__value {
+  margin: 0;
+  color: var(--pt-ink);
+}
+
+.pt-fact__value--muted {
+  color: var(--pt-ink-subtle);
+}
+
+/* Contacts, compressed to one line per person directly under the title/meta block.
+   Each entry is [role badge] Name [orcid icon] [mail icon]; the ORCID iD and the e-mail
+   address are carried by the icon links (title attribute + aria-label) instead of by text. */
+.pt-contact-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.2rem 0.6rem 0.2rem 0.2rem;
+  border: 1px solid var(--pt-line);
+  border-radius: 999px;
+  background: var(--pt-canvas);
+}
+
+.pt-contact-chip__role {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.9rem;
+  padding: 0.1rem 0.3rem;
+  border-radius: 999px;
+  background: var(--pt-sunken);
+  border: 1px solid var(--pt-line-strong);
+  font-size: 0.6875rem;
+  font-weight: var(--font-weight-semi-bold, 600);
+  letter-spacing: 0.02em;
+  color: var(--pt-ink-muted);
+}
+
+.pt-contact-chip__name {
+  font-weight: var(--font-weight-medium, 500);
+  color: var(--pt-ink);
+}
+
+.pt-contact-chip__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* 2rem square: comfortably above the 24px minimum and near the 44px touch guideline once the
+     chip's own padding is counted. The two links sit adjacent, so the target matters — a mis-tap
+     between "open the ORCID record" and "write an e-mail" is the failure mode to avoid. */
+  min-width: 2rem;
+  min-height: 2rem;
+  border-radius: 8px;
+  color: var(--pt-ink-subtle);
+}
+
+.pt-contact-chip__icon:focus-visible {
+  outline: 2px solid var(--pt-accent-ink);
+  outline-offset: 1px;
+}
+
+.pt-contact-chip__icon:hover,
+.pt-contact-chip__icon:focus-visible {
+  background: var(--pt-sunken);
+  color: var(--pt-accent-ink);
+}
+
+.pt-contact-chip__logo {
+  width: 1.05rem;
+  height: 1.05rem;
+  display: block;
+}
+
+.pt-contact-chip__glyph {
+  width: 1.05rem;
+  height: 1.05rem;
+}
+
+/* ── Settings page ────────────────────────────────────────────────────── */
+
+.pt-settings__pagehead {
+  margin-bottom: clamp(1.25rem, 2.5vw, 2rem);
+}
+
+.pt-settings__pagehead .pt-settings__subtitle {
+  max-width: 46rem;
+}
+
+/* Two columns: page-local section navigation + the section itself. This is the shape the plan
+   specifies ("left sub-navigation, page-local, not the removed app drawer"). */
+.pt-settings {
+  display: grid;
+  grid-template-columns: minmax(12rem, 16rem) minmax(0, 1fr);
+  gap: clamp(1.5rem, 3vw, 3rem);
+  align-items: start;
+}
+
+@media (max-width: 46rem) {
+  .pt-settings {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pt-settings__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  position: sticky;
+  top: 1rem;
+}
+
+.pt-settings__navitem {
+  justify-content: flex-start;
+  height: auto;
+  padding: 0.5rem 0.7rem;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--pt-ink-muted);
+  font-size: var(--pt-fs-body);
+  font-weight: var(--font-weight-regular, 400);
+  cursor: pointer;
+  text-align: left;
+}
+
+.pt-settings__navitem:hover {
+  background: var(--pt-sunken);
+  color: var(--pt-ink);
+}
+
+.pt-settings__navitem[aria-current="true"] {
+  background: var(--pt-sunken);
+  color: var(--pt-ink);
+  font-weight: var(--font-weight-semi-bold, 600);
+}
+
+.pt-settings__content {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.pt-settings__head {
+  margin: 0;
+}
+
+.pt-settings__subtitle {
+  margin: 0.35rem 0 0;
+  font-size: var(--pt-fs-body);
+  color: var(--pt-ink-muted);
+  max-width: 46rem;
+}
+
+.pt-settings__card {
+  padding: 1.1rem 1.25rem;
+  border: 1px solid var(--pt-line);
+  border-radius: 10px;
+  background: var(--pt-canvas);
+}
+
+.pt-settings__cardtitle {
+  display: block;
+  font-weight: var(--font-weight-semi-bold, 600);
+  color: var(--pt-ink);
+}
+
+/* Card heading row: title left, the scoped edit affordance right. */
+.pt-settings__cardhead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.85rem;
+}
+
+.pt-settings__cardhead .pt-settings__cardactions {
+  margin-top: 0;
+}
+
+.pt-settings__form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 1rem 2rem;
+}
+
+.pt-settings__field {
+  min-width: 0;
+}
+
+.pt-settings__input {
+  width: 100%;
+}
+
+.pt-settings__hint {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--pt-ink-subtle);
+}
+
+.pt-settings__text {
+  margin: 0;
+  font-size: var(--pt-fs-meta);
+  color: var(--pt-ink-muted);
+  max-width: 46rem;
+}
+
+.pt-settings__cardactions {
+  margin-top: 1rem;
+}
+
+/* Destructive actions are sectioned off rather than styled as a loud primary. */
+.pt-settings__card--danger {
+  border-color: #e7c9c9;
+  background: #fdf7f7;
+}
+
+.pt-settings__card--danger .pt-settings__cardtitle {
+  color: #8a1f1f;
+}
+
+.pt-settings__card--danger .pt-btn {
+  border-color: #c98484;
+  color: #8a1f1f;
+}
+
+/* ── Empty state: an invitation with the action inline ────────────────── */
+
+.pt-empty {
+  border: 1px solid var(--pt-line);
+  border-radius: 10px;
+  padding: clamp(1.25rem, 3vw, 2rem);
+  background: var(--pt-sunken);
+}
+
+.pt-empty__title {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+  font-weight: var(--font-weight-semi-bold, 600);
+  color: var(--pt-ink);
+}
+
+.pt-empty__text {
+  margin: 0;
+  max-width: 60ch;
+  color: var(--pt-ink-muted);
+}
+
+/* ── Motion: only where it answers an action ──────────────────────────── */
+
+@media (prefers-reduced-motion: no-preference) {
+  .pt-btn,
+  .pt-toggle,
+  .pt-subnav__item,
+  .pt-exp {
+    transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+  }
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────── */
+
+@media (max-width: 1100px) {
+  .pt-rail {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem 0;
+  }
+
+  .pt-rail__step::before {
+    display: none;
+  }
+
+  .pt-exp {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 720px) {
+  .pt-subnav__row {
+    gap: 1rem;
+  }
+
+  .pt-subnav__nav {
+    gap: 1rem;
+    overflow-x: auto;
+  }
+
+  .pt-rail {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pt-global__right .pt-account__name {
+    display: none;
+  }
+}
+
+/* ── Experiments hub: onboarding hero + gated pipeline ─────────────────── */
+
+.pt-onboard {
+  padding: clamp(1.25rem, 3vw, 2rem);
+  border: 1px solid var(--pt-line);
+  border-radius: 12px;
+  background: linear-gradient(180deg, var(--pt-sunken), #fff 70%);
+}
+
+.pt-onboard__title {
+  margin: 0 0 0.5rem;
+  font-size: clamp(1.15rem, 1rem + 0.6vw, 1.4rem);
+  font-weight: var(--font-weight-semi-bold, 600);
+  color: var(--pt-ink);
+  letter-spacing: -0.01em;
+}
+
+.pt-onboard__text {
+  margin: 0 0 1rem;
+  max-width: 60ch;
+  color: var(--pt-ink-muted);
+}
+
+/*
+ * The experiment pipeline is a genuine sequence, so numbered/connected steps are legitimate.
+ * States: done (green), active (accent, the next step), attention (amber gap), locked (neutral,
+ * dashed — a prerequisite is missing). Locked is deliberately NOT amber so it cannot be read as an
+ * exception.
+ */
+.pt-pipeline {
+  margin-top: 1.25rem;
+}
+
+.pt-pipeline__caption {
+  display: block;
+  margin-bottom: 0.75rem;
+  font-size: var(--pt-fs-meta);
+  color: var(--pt-ink-muted);
+}
+
+.pt-pipeline__track {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr));
+  gap: 0.75rem;
+}
+
+.pt-step {
+  position: relative;
+  padding: 0.9rem;
+  border: 1px solid var(--pt-line);
+  border-radius: 10px;
+  background: #fff;
+}
+
+/*
+ * Step ordinal. The four cards are a real sequence with prerequisites, and left-to-right position
+ * plus a tint carried that badly; the number states the order outright. It is the position in the
+ * pipeline, not a repetition of the state, so it is quiet and placed away from the state marker.
+ */
+.pt-step__ordinal {
+  position: absolute;
+  top: 0.85rem;
+  right: 0.9rem;
+  font-family: var(--pt-mono);
+  font-size: 0.7rem;
+  /* --pt-ink-muted, not --pt-ink-subtle: at 0.7rem this is the smallest text in the strip, and the
+   * subtle ink measured close to the AA floor at this size. Muted clears it with margin. */
+  color: var(--pt-ink-muted);
+}
+
+/*
+ * The action label that turns an outstanding step into a route: "Open dataset". Without it the amber
+ * card was a status the user had to decode and then discover was clickable.
+ *
+ * Block-level so it always takes its own line under the detail (and under "You are here" when the
+ * current step is also the attention step).
+ */
+.pt-step__action {
+  display: block;
+  margin-top: 0.45rem;
+  font-size: 0.75rem;
+  font-weight: var(--font-weight-semi-bold, 600);
+  color: var(--pt-accent-ink);
+  text-decoration: underline;
+  text-decoration-color: var(--pt-line-strong);
+  text-underline-offset: 2px;
+}
+
+.pt-step[role="button"] .pt-step__action {
+  text-decoration-color: currentColor;
+}
+
+.pt-step__marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 999px;
+  border: 2px solid var(--pt-line-strong);
+  background: #fff;
+  color: var(--pt-ink-subtle);
+  font-size: 0.7rem;
+  font-weight: var(--font-weight-bold, 700);
+}
+
+.pt-step__label {
+  display: block;
+  margin-top: 0.5rem;
+  font-weight: var(--font-weight-semi-bold, 600);
+  color: var(--pt-ink);
+}
+
+.pt-step__detail {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.75rem;
+  color: var(--pt-ink-subtle);
+}
+
+.pt-step__lock {
+  width: 0.65rem;
+  height: 0.65rem;
+}
+
+.pt-step--done .pt-step__marker {
+  background: var(--pt-done);
+  border-color: var(--pt-done);
+  color: #fff;
+}
+
+.pt-step--attention {
+  border-color: #ecd39a;
+  background: var(--pt-attention-bg);
+}
+
+/*
+ * An attention step must not rely on its tint to be noticed, so its border is strengthened and the
+ * action label is the darker attention ink rather than the accent. Amber alone failed anyone who
+ * does not perceive it, and read as decoration to everyone else.
+ */
+.pt-step--attention .pt-step__action {
+  color: var(--pt-attention);
+}
+
+.pt-step--attention .pt-step__detail {
+  color: var(--pt-ink);
+  font-weight: var(--font-weight-medium, 500);
+}
+
+.pt-step--attention .pt-step__marker {
+  border-color: var(--pt-attention);
+  color: var(--pt-attention);
+}
+
+.pt-step--active {
+  border-color: var(--pt-accent);
+  box-shadow: 0 0 0 1px var(--pt-accent);
+}
+
+.pt-step--active .pt-step__marker {
+  border-color: var(--pt-accent);
+  color: var(--pt-accent);
+}
+
+.pt-step--locked {
+  border-style: dashed;
+  background: var(--pt-sunken);
+}
+
+.pt-step--locked .pt-step__label {
+  color: var(--pt-ink-subtle);
+}
+
+.pt-step[role="button"] {
+  cursor: pointer;
+}
+
+.pt-step[role="button"]:hover {
+  border-color: var(--pt-ink-subtle);
+}
+
+/* A blocked surface states the prerequisite and routes to it; it is not an error. */
+.pt-gate {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.4rem;
+  max-width: 60ch;
+  padding: 1.5rem;
+  border: 1px dashed var(--pt-line-strong);
+  border-radius: 12px;
+  background: var(--pt-sunken);
+}
+
+.pt-gate__icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--pt-ink-subtle);
+}
+
+.pt-gate__title {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--pt-ink);
+}
+
+.pt-gate__text {
+  margin: 0;
+  color: var(--pt-ink-muted);
+}
+
+.pt-gate .pt-band__actions {
+  margin: 0.5rem 0 0;
+}
+
+/* ── Project-level experiment rollup (distinct from the experiment pipeline) ─ */
+
+/*
+ * The project page summarises experiments as aggregate facts and routes to the Experiments page.
+ * It deliberately does NOT repeat the experiment cards or the per-experiment pipeline, so the two
+ * surfaces have one job each.
+ */
+.pt-rollup {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.pt-rollup__fact {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--pt-line);
+  border-radius: 10px;
+  background: var(--pt-sunken);
+}
+
+.pt-rollup__value {
+  font-size: 1.5rem;
+  font-weight: var(--font-weight-bold, 700);
+  line-height: 1;
+  color: var(--pt-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.pt-rollup__label {
+  font-size: var(--pt-fs-meta);
+  color: var(--pt-ink-muted);
+}
+
+/* ── Experiment snapshot: inline overview of samples / measurements / data ─ */
+
+/*
+ * The snapshot is the answer to "I cannot see samples, measurements or data without
+ * drilling into a nested view". It sits on the experiment entry and on the experiment
+ * page itself, shows the counts plus a few rows, and routes to the full view.
+ */
+.pt-snapshot {
+  grid-column: 1 / -1;
+  display: grid;
+  /* Two equal tracks for the two data cards. `auto-fit` computes its track count from the
+   * container width, so a wide page would give each card a fraction of the row instead of half. */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  /*
+   * The two cards stretch to a common height so their footers — the button, or the "open" line —
+   * share one baseline. The earlier `start` was for a "reduced" current-view panel that no longer
+   * exists; with two peer cards, ragged bottoms read as two unrelated boxes.
+   */
+  align-items: stretch;
+  gap: 0.75rem;
+  width: 100%;
+  margin-top: 0.25rem;
+}
+
+.pt-snap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--pt-line);
+  border-radius: 10px;
+  background: var(--pt-sunken);
+  cursor: pointer;
+}
+
+.pt-snap:hover {
+  border-color: var(--pt-accent);
+  background: #fff;
+}
+
+.pt-snap__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.pt-snap__label {
+  font-size: var(--pt-fs-meta);
+  font-weight: var(--font-weight-semi-bold, 600);
+  color: var(--pt-ink);
+}
+
+/*
+ * The glyph that maps a data card to its subject. Decorative — the label carries the meaning, so this
+ * is redundant reinforcement for people who scan shapes. Monochrome on purpose: a colour difference
+ * here would make colour the way the two cards are told apart, which they must not rely on. Its size
+ * comes from the design system's `.icon-size-xs`.
+ */
+.pt-snap__icon {
+  flex: 0 0 auto;
+  color: var(--pt-ink-muted);
+}
+
+.pt-snap__open {
+  font-size: 0.75rem;
+  color: var(--pt-accent-ink);
+}
+
+.pt-snap__metric {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+}
+
+.pt-snap__value {
+  font-size: 1.5rem;
+  font-weight: var(--font-weight-bold, 700);
+  line-height: 1;
+  color: var(--pt-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Panel label and unit sit on the pale panel fill, so they use the AA-corrected subtle ink. */
+.pt-snap__unit {
+  font-size: var(--pt-fs-meta);
+  color: var(--pt-ink-subtle);
+}
+
+.pt-snap__status {
+  font-size: 0.75rem;
+  color: var(--pt-ink-muted);
+}
+
+/*
+ * A card with a real button inside must not look clickable as a whole: two targets for one gesture is
+ * worse than one. It states the next step rather than a count, so the populated cards' cursor and
+ * hover affordances are removed.
+ */
+.pt-snap--invite {
+  cursor: default;
+}
+
+.pt-snap--invite:hover {
+  border-color: var(--pt-line);
+  background: var(--pt-sunken);
+}
+
+/* A card whose prerequisite is missing wears that state, not just the word "Locked". */
+.pt-snap--locked,
+.pt-snap--locked:hover {
+  border-style: dashed;
+  border-color: var(--pt-line-strong);
+}
+
+/* The label and its state tag travel together on the left of the card head. */
+.pt-snap__id {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.pt-snap__text {
+  font-size: 0.75rem;
+  color: var(--pt-ink-subtle);
+}
+
+/* Pinned to the foot of the card, so two stretched cards put their actions on one baseline. */
+.pt-snap__actions {
+  display: flex;
+  margin-top: auto;
+  padding-top: 0.35rem;
+}
+
+.pt-snap__rows {
+  display: grid;
+  /*
+   * ONE grid for the whole panel, with every row flattened into it via `display: contents` below.
+   * Header and data rows previously each carried their own grid-template, and since `auto` /
+   * `max-content` tracks are sized per grid, the two grids resolved to different column widths —
+   * which is exactly why the headers did not sit over their values. Sharing the tracks means the
+   * alignment cannot drift again.
+   */
+  grid-template-columns: minmax(0, 1fr) 7.5rem 4.5rem;
+  gap: 0.15rem 0.5rem;
+  min-width: 0;
+  margin-top: 0.15rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid var(--pt-line);
+  font-size: 0.75rem;
+  color: var(--pt-ink-muted);
+  white-space: nowrap;
+}
+
+/*
+ * Flattened so the cells take their columns from the single grid above. `display: contents` drops
+ * the row box but keeps the DOM, so the descendant selectors for header cells still match.
+ */
+.pt-snap__row {
+  display: contents;
+}
+
+/* Header row labels the columns it heads; not decoration, but it must not shout. */
+.pt-snap__row--cols .pt-table__cell {
+  padding-top: 0.3rem;
+  font-size: 0.6875rem;
+  color: var(--pt-ink-subtle);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  /*
+   * Must truncate like the data cells below it. This was `overflow: visible; text-overflow: clip`,
+   * which let a header wider than its column run straight into the next one — the screenshot shows
+   * "SAMPLE IDSAMPLE NAME" as a single smeared label. A header that cannot be read is worse than one
+   * that is abbreviated, so it ellipsises and keeps the full text in the title attribute.
+   */
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pt-snap__row .pt-table__cell {
+  padding: 0;
+  /* Required with `display: contents` on the row: the wrapper no longer clips, so the cell itself
+   * must be allowed to shrink below its content width for the label column to ellipsise. */
+  min-width: 0;
+}
+
+/* The timestamp column is a fixed-ish string; truncating it would make it useless, and letting it
+ * wrap would break the row rhythm. */
+.pt-snap__row .pt-table__cell:last-child {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 1100px) {
+  .pt-snapshot {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+/* ── Quick experiment filters (project-level Samples / Datasets) ─────────── */
+
+.pt-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.85rem;
+}
+
+.pt-filters__label {
+  font-size: var(--pt-fs-meta);
+  color: var(--pt-ink-muted);
+  margin-right: 0.15rem;
+}
+
+.pt-filter {
+  padding: 0.2rem 0.65rem;
+  border: 1px solid var(--pt-line-strong);
+  border-radius: 999px;
+  background: #fff;
+  font-size: 0.75rem;
+  color: var(--pt-ink-muted);
+  cursor: pointer;
+}
+
+.pt-filter:hover {
+  border-color: var(--pt-accent);
+  color: var(--pt-accent-ink);
+}
+
+.pt-filter--selected {
+  background: var(--pt-accent);
+  border-color: var(--pt-accent);
+  color: #fff;
+  font-weight: var(--font-weight-semi-bold, 600);
+}
+
+/* ── Measurement-type tabs (mirrors the production tab approach) ────────── */
+
+.pt-tabs {
+  display: inline-flex;
+  gap: 0.25rem;
+  margin-bottom: 0.85rem;
+  border-bottom: 1px solid var(--pt-line);
+}
+
+.pt-tab {
+  padding: 0.4rem 0.75rem;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  font: inherit;
+  color: var(--pt-ink-muted);
+  cursor: pointer;
+}
+
+.pt-tab:hover {
+  color: var(--pt-ink);
+}
+
+.pt-tab--active {
+  color: var(--pt-accent-ink);
+  font-weight: var(--font-weight-semi-bold, 600);
+  border-bottom-color: var(--pt-accent);
+}
+
+.pt-table__row--clickable {
+  cursor: pointer;
+}
+
+.pt-table__row--clickable:hover {
+  background: var(--pt-sunken);
+}
+
+/* ── Side panel: full record without leaving the list ──────────────────── */
+
+.pt-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  justify-content: flex-end;
+  background: rgba(20, 28, 38, 0.28);
+}
+
+.pt-panel {
+  width: min(440px, 94vw);
+  height: 100%;
+  padding: 1.25rem 1.25rem 2rem;
+  overflow-y: auto;
+  background: #fff;
+  border-left: 1px solid var(--pt-line);
+  box-shadow: -12px 0 30px rgba(20, 28, 38, 0.12);
+}
+
+.pt-panel__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.pt-panel__title {
+  margin: 0;
+  font-size: 1.15rem;
+  color: var(--pt-ink);
+}
+
+.pt-panel__subtitle {
+  display: block;
+  margin-top: 0.2rem;
+  font-family: var(--pt-mono);
+  font-size: var(--pt-fs-meta);
+  color: var(--pt-ink-muted);
+}
+
+.pt-panel__groups {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.pt-panel__group {
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--pt-line);
+}
+
+.pt-panel__group-title {
+  margin: 0 0 0.4rem;
+  font-size: 0.8125rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--pt-ink-subtle);
+}
+
+.pt-panel__field {
+  display: grid;
+  grid-template-columns: minmax(0, 42%) minmax(0, 1fr);
+  gap: 0.5rem;
+  padding: 0.2rem 0;
+  font-size: var(--pt-fs-meta);
+}
+
+.pt-panel__label {
+  color: var(--pt-ink-muted);
+}
+
+.pt-panel__value {
+  color: var(--pt-ink);
+  word-break: break-word;
+}
