@@ -239,35 +239,35 @@ class ProjectPagePrototypeConstructorSpec extends Specification {
     classTexts(view, "pt-snap__value") == ["48", "24"]
   }
 
-  def "the page names the experiment once: the header scope line, not the breadcrumb too"() {
+  def "the breadcrumb names the experiment, and the header does not repeat it"() {
     given: "the experiment overview"
     def view = enterPilot()
 
-    expect: "the scope line carries the experiment, and is not a self-link on the page it opens"
-    def scope = firstClassElement(view, "pt-page__scope")
-    scope.text == "Immunopeptidomics pilot"
-    scope.element.getAttribute("role") == null
-    def scopeLine = firstClassElement(view, "pt-page__subtitle").element.getTextRecursively()
-    scopeLine.count("Immunopeptidomics pilot") == 1
-    // The regression: the project AND the experiment each appeared here and in the breadcrumb, so
-    // the chrome and the header looked like they described two different things.
-    !scopeLine.contains("Immunotest")
-    !scopeLine.contains("48 samples")
-
-    and: "the breadcrumb stops at the project, so no name is printed twice"
-    currentCrumbs(view).isEmpty()
+    expect: "the breadcrumb carries the experiment, as the current location rather than a link"
+    currentCrumbs(view) == ["Immunopeptidomics pilot"]
     def crumbs = firstClassElement(view, "pt-crumbs").element.getTextRecursively()
     crumbs.contains("Immunotest")
-    !crumbs.contains("Immunopeptidomics pilot")
+    crumbs.contains("Immunopeptidomics pilot")
+
+    and: "the header says the view name and nothing that restates the breadcrumb"
+    // The regression: the project AND the experiment each appeared in the breadcrumb and again in a
+    // scope line under the H1, so the chrome and the header looked like two different contexts.
+    firstClassElement(view, "pt-page__subtitle") == null
 
     when: "the user opens a sub-page"
     markCurrent(view, "EXP_SAMPLES")
 
-    then: "the scope name becomes the link back to the overview"
-    def link = firstClassElement(view, "pt-page__scope")
-    link.text == "Immunopeptidomics pilot"
-    link.element.getAttribute("role") == "link"
-    link.element.getAttribute("tabindex") == "0"
+    then: "the experiment crumb becomes the link back UP to the overview"
+    currentCrumbs(view).isEmpty()
+    def back = elementsWithClass(view, "pt-crumb--link").find {
+      it.element.getTextRecursively().contains("Immunopeptidomics pilot")
+    }
+    back != null
+    back.element.getAttribute("role") == "link"
+    back.element.getAttribute("tabindex") == "0"
+
+    and: "and the header still does not restate it"
+    firstClassElement(view, "pt-page__subtitle") == null
   }
 
   def "the design's payload has exactly one home: the Design page"() {

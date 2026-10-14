@@ -479,15 +479,34 @@ public class ProjectPagePrototypeDemo extends Div {
         crumb(projectTitle(), () -> navigate(Page.SUMMARY)));
     row.add(crumbs);
 
-    // The breadcrumb stops at the project. The experiment is named by the page header's scope line
-    // and nowhere else: stating it here too put the same name on screen twice, 150px apart, which
-    // read as two different things rather than as one context.
+    // The breadcrumb names the experiment: it is the one persistent statement of WHICH experiment is
+    // being viewed, and the way back UP from its sub-pages. It is the only such statement — the page
+    // header used to repeat it, and that second line was the duplication.
+    if (page.isExperimentScoped() && !emptyState) {
+      Experiment experiment = selectedExperiment();
+      crumbs.add(sep(), page == Page.DESIGN
+          ? currentCrumb(experiment.name())
+          : crumb(experiment.name(), () -> openExperiment(experimentIndex, Page.DESIGN)));
+    }
+
     contextRow.add(row);
   }
 
   private Span sep() {
     Span span = new Span("/");
     span.addClassName("pt-crumbs__sep");
+    return span;
+  }
+
+  /**
+   * The crumb for the page being viewed: named, but not a link to itself. Used for the experiment
+   * while its overview is open, where the crumb is the current location rather than a destination.
+   */
+  private Span currentCrumb(String text) {
+    Span span = new Span(text);
+    span.addClassName("pt-crumb");
+    span.addClassName("pt-crumb--current");
+    span.getElement().setAttribute("title", text);
     return span;
   }
 
@@ -2761,12 +2780,10 @@ public class ProjectPagePrototypeDemo extends Div {
     h1.addClassName("pt-title");
     h1.setText(title);
     heading.add(h1);
-    // Exactly one line under the H1. The H1 names the VIEW ("Experiment design"), so this line
-    // carries the SCOPE; the experiment name belongs here exactly once. An earlier version also
-    // appended it above the H1, which printed it twice.
-    if (!emptyState && page.isExperimentScoped()) {
-      heading.add(scopeLead());
-    } else if (subtitle != null) {
+    // The H1 names the VIEW. The experiment is named by the breadcrumb and nowhere else, so an
+    // experiment-scoped page carries no scope line even though its callers pass a subtitle; that
+    // second line under the H1 was exactly the duplication. Project pages keep their subtitle.
+    if (subtitle != null && !page.isExperimentScoped()) {
       Paragraph p = new Paragraph(subtitle);
       p.addClassName("pt-page__subtitle");
       heading.add(p);
@@ -2782,39 +2799,6 @@ public class ProjectPagePrototypeDemo extends Div {
 
     band.add(head);
     return band;
-  }
-  /**
-   * The scope line under the H1: the experiment being viewed.
-   *
-   * <p>Only the experiment. The project is already named by the breadcrumb, and repeating it here
-   * printed both names twice on one screen. The experiment name is a link back to the overview on
-   * the sub-pages, and plain current text on the overview itself, where it would otherwise link to
-   * the page the reader is already on.</p>
-   */
-  private Paragraph scopeLead() {
-    Paragraph lead = new Paragraph();
-    lead.addClassName("pt-page__subtitle");
-    String name = selectedExperiment().name();
-    if (page == Page.DESIGN) {
-      Span current = new Span(name);
-      current.addClassName("pt-page__scope");
-      current.getElement().setAttribute("title", name);
-      lead.add(current);
-    } else {
-      lead.add(scopeLink(name, () -> openExperiment(experimentIndex, Page.DESIGN)));
-    }
-    return lead;
-  }
-
-  /** The clickable scope name under the H1, activated by pointer and by Enter/Space. */
-  private Span scopeLink(String text, Runnable onClick) {
-    Span link = new Span(text);
-    link.addClassName("pt-page__scope");
-    link.getElement().setAttribute("role", "link");
-    link.getElement().setAttribute("tabindex", "0");
-    link.getElement().setAttribute("title", text);
-    activateOnClickAndKeys(link, onClick);
-    return link;
   }
 
   private Div emptyPage(String title, String subtitle, String emptyTitle, String emptyText,

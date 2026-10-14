@@ -348,6 +348,12 @@
   text-decoration-color: currentColor;
 }
 
+/* The experiment being viewed: named in the breadcrumb, and visibly not a link to itself there. */
+.pt-crumb--current {
+  color: var(--pt-ink);
+  font-weight: var(--font-weight-semi-bold, 600);
+}
+
 .pt-crumbs a {
   color: var(--pt-ink-muted);
   text-decoration: none;
@@ -931,20 +937,6 @@
  * Scope-line separator. The breadcrumb separator (`.pt-crumbs__sep`) has no horizontal spacing, so
  * reusing it rendered the scope as `Immunotest/Immunopeptidomics pilot`.
  */
-/* The experiment name is a real link, so it says what it is. */
-.pt-page__scope {
-  color: var(--pt-accent-ink);
-  cursor: pointer;
-  text-decoration: underline;
-  text-decoration-color: var(--pt-line-strong);
-  text-underline-offset: 2px;
-  font-weight: var(--font-weight-medium, 500);
-}
-
-.pt-page__scope:hover {
-  text-decoration-color: currentColor;
-}
-
 .pt-searchfield {
   width: min(100%, 32rem);
 }
