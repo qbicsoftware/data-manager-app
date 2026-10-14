@@ -174,6 +174,13 @@ public class ProjectPagePrototypeDemo extends Div implements BeforeEnterObserver
           List.of("Genomics"), 0, 0, null, 0));
 
   /**
+   * Connected (externally hosted) datasets. Canned, like the rest of the prototype's data: the plan
+   * carries an open item on modelling these per experiment, at which point this constant goes away
+   * and the count is derived instead.
+   */
+  private static final int CONNECTED_DATASETS = 2;
+
+  /**
    * One outstanding item, attributed to the experiment it belongs to.
    *
    * <p>Attention is inherently <em>per experiment</em>: several experiments can carry outstanding
@@ -930,6 +937,10 @@ public class ProjectPagePrototypeDemo extends Div implements BeforeEnterObserver
     progress.add(rail);
 
     if (!empty) {
+      // The dataset picture sits with the rail rather than with the exceptions: both are the project's
+      // state, while the exceptions are a separate, alerting block.
+      progress.add(datasetStanding());
+
       Div exceptions = new Div();
       exceptions.addClassName("pt-progress__exceptions");
       exceptions.add(new Span("Needs attention"));
@@ -944,6 +955,39 @@ public class ProjectPagePrototypeDemo extends Div implements BeforeEnterObserver
 
     band.add(progress);
     return band;
+  }
+
+  /**
+   * The project's dataset standing: one primary dataset per experiment, plus the connected
+   * (externally hosted) datasets. It carries the way into the Datasets tab, so the project page can
+   * answer "what data does this project hold, and where do I go to see it" without the reader having
+   * to open anything. The rail's own Dataset stage deliberately does not do this job: it routes to
+   * the experiment whose data is outstanding, which is where the work continues.
+   */
+  private Div datasetStanding() {
+    Div row = new Div();
+    row.addClassName("pt-progress__datasets");
+
+    Span label = new Span("Datasets");
+    label.addClassName("pt-progress__datasets-label");
+
+    // A dataset is 1:1 with its experiment, so the project's primary datasets are its experiments —
+    // the same one row per experiment the Datasets tab shows.
+    Span stat = new Span();
+    stat.addClassName("pt-progress__datasets-stat");
+    Span separator = new Span("·");
+    separator.addClassName("pt-progress__datasets-sep");
+    stat.add(strong(String.valueOf(POPULATED_EXPERIMENTS.size())), new Span("primary"), separator,
+        strong(String.valueOf(CONNECTED_DATASETS)), new Span("connected"));
+
+    Span open = new Span("Open datasets");
+    open.addClassName("pt-progress__datasets-link");
+    open.getElement().setAttribute("role", "link");
+    open.getElement().setAttribute("tabindex", "0");
+    activateOnClickAndKeys(open, () -> navigate(Page.DATASETS));
+
+    row.add(label, stat, open);
+    return row;
   }
 
   /**

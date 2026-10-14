@@ -386,13 +386,22 @@ Four bands, top to bottom:
 1. **Identity band** — code + title (once), status chip, last activity, collaborator avatars +
    Share, primary actions (`Add experiment`, `Export`). The objective sits directly beneath,
    expanded but clamped to ~3 lines with "Show more" — never a collapsed grey bar.
-2. **Progress band** — the missing piece. A lightweight read model repurposing/ extending the
-   existing counts into per-experiment pipeline stages (experiment designed → samples registered →
-   measurements registered → primary data registered → QC uploaded), rendered as a compact step indicator
-   with counts and warnings ("2 experiments without samples", "1 measurement without primary data").
-3. **Experiments band** — replace the name-only list with cards: name, domain tags, `n` samples /
-   `n` measurements / `n` datasets, last activity, QC count, and direct jumps into Samples /
-   Measurements / Raw Data. Add-experiment lives here.
+2. **Progress band** — the missing piece. A lightweight read model repurposing/extending the existing
+   counts into project-level pipeline stages
+   (`experiment created → samples registered → dataset`), rendered as a compact step indicator with
+   counts and warnings ("2 experiments without samples", "1 measurement without primary data").
+   Sample QC is deliberately absent: there is no QC integration yet, so the rail must not promise a
+   step the product cannot perform.
+   Beneath the stages sits the **dataset standing** — one primary dataset per experiment plus the
+   connected (externally hosted) datasets — with a direct link into the project `Datasets` tab. That
+   link is not a duplicate of the rail's `dataset` stage: the stage routes to the *experiment* whose
+   data is outstanding, which is where the work continues, and the project-level tab previously had
+   no fast path from the summary at all.
+3. **Experiments band** — replace the name-only list with cards: name, domain tags, and an inline
+   `Samples` / `Dataset` snapshot under each (counts, a one-line status, the newest rows, and the way
+   into the view). Add-experiment lives here. The card carries **no separate stat row and no
+   Samples/Dataset buttons**: the snapshot cards state the same numbers and are themselves the way
+   in, so both were the entry saying everything twice.
 4. **Metadata band** — design, funding, contacts, read-only with inline edit affordances; anything
    heavy moves to Settings.
 

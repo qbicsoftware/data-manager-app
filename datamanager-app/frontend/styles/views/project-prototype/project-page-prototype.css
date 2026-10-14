@@ -669,6 +669,59 @@
   color: var(--pt-ink);
 }
 
+/*
+ * The project's dataset standing: the statistic plus the way into the Datasets tab. It sits with the
+ * rail rather than with the exceptions, because both state where the project stands; the exceptions
+ * are a separate, alerting block.
+ */
+.pt-progress__datasets {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem 1rem;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--pt-line);
+}
+
+.pt-progress__datasets-label {
+  font-size: var(--pt-fs-meta);
+  font-weight: var(--font-weight-semi-bold, 600);
+  color: var(--pt-ink);
+}
+
+.pt-progress__datasets-stat {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem;
+  font-size: var(--pt-fs-meta);
+  color: var(--pt-ink-muted);
+}
+
+.pt-progress__datasets-stat .pt-strong {
+  color: var(--pt-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.pt-progress__datasets-sep {
+  color: var(--pt-ink-subtle);
+}
+
+.pt-progress__datasets-link {
+  margin-left: auto;
+  font-size: var(--pt-fs-meta);
+  color: var(--pt-accent-ink);
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: var(--pt-line-strong);
+  text-underline-offset: 2px;
+}
+
+.pt-progress__datasets-link:hover {
+  text-decoration-color: currentColor;
+}
+
 .pt-rail {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));

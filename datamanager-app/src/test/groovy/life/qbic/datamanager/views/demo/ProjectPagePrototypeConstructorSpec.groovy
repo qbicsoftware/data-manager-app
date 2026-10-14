@@ -143,6 +143,34 @@ class ProjectPagePrototypeConstructorSpec extends Specification {
     icons.every { it.element.getAttribute("aria-hidden") == "true" }
   }
 
+  def "the project's standing states its datasets and offers the way into the Datasets tab"() {
+    given: "the populated project summary"
+    def view = enterProject()
+
+    expect: "the dataset picture is stated, both kinds of it"
+    def row = firstClassElement(view, "pt-progress__datasets")
+    row != null
+    firstClassElement(row, "pt-progress__datasets-label").element.getTextRecursively() == "Datasets"
+    // One primary dataset per experiment, plus the connected (externally hosted) ones. This is not a
+    // repeat of the rail: the rail's Dataset stage answers "how many measurements carry data", and
+    // routes to the experiment whose data is outstanding.
+    firstClassElement(row, "pt-progress__datasets-stat").element.getTextRecursively() ==~
+        /\d+primary·\d+connected/
+
+    and: "the way into the Datasets tab is a real, keyboard-operable link"
+    def link = firstClassElement(row, "pt-progress__datasets-link")
+    link.element.getTextRecursively() == "Open datasets"
+    link.element.getAttribute("role") == "link"
+    link.element.getAttribute("tabindex") == "0"
+    link.element.getAttribute("data-activation") == "full"
+
+    when: "the project holds nothing"
+    clickButton(view, "New / empty project")
+
+    then: "there is no dataset picture to state"
+    firstClassElement(view, "pt-progress__datasets") == null
+  }
+
   def "a not-started experiment shows no preview rows rather than a lower sample code"() {
     given:
     def view = enterProject()
