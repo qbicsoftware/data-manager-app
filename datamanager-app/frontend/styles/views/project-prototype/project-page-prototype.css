@@ -348,12 +348,6 @@
   text-decoration-color: currentColor;
 }
 
-/* The experiment the user is currently in: not a link, and visibly not one. */
-.pt-crumb--current {
-  color: var(--pt-ink);
-  font-weight: var(--font-weight-semi-bold, 600);
-}
-
 .pt-crumbs a {
   color: var(--pt-ink-muted);
   text-decoration: none;
@@ -366,41 +360,6 @@
 
 .pt-crumbs__sep {
   color: var(--pt-ink-subtle);
-}
-
-/*
- * The experiment's view switcher (Design / Samples / Dataset), shown only inside an experiment.
- * These pills are the "you are here" marker for experiment scope as well as the switcher, so the
- * active view is given a raised surface and weight while the others stay flat.
- */
-.pt-expviews {
-  margin-left: auto;
-  display: inline-flex;
-  gap: 0.25rem;
-  flex-wrap: wrap;
-}
-
-.pt-expview {
-  font: inherit;
-  padding: 0.25rem 0.65rem;
-  border: 1px solid transparent;
-  border-radius: 999px;
-  background: transparent;
-  color: var(--pt-ink-muted);
-  cursor: pointer;
-}
-
-.pt-expview:hover {
-  background: #fff;
-  border-color: var(--pt-line);
-  color: var(--pt-ink);
-}
-
-.pt-expview[aria-current="page"] {
-  background: #fff;
-  border-color: var(--pt-line-strong);
-  color: var(--pt-ink);
-  font-weight: var(--font-weight-semi-bold, 600);
 }
 
 /* ── Bands ─────────────────────────────────────────────────────────────── */
@@ -420,15 +379,10 @@
   padding-top: clamp(1.25rem, 3vw, 2rem);
 }
 
-/*
- * A band inside a band. "At a glance" needed to be a section of the experiment page without
- * starting a new page band; as a bare 16px heading with ~16px of air it read as a caption of the
- * step cards above it instead of the heading of the panels below it.
- */
-.pt-subband {
-  margin-top: 1.5rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid var(--pt-line);
+/* The overview's own sections are one page's content, not three pages stacked, so they sit closer
+ * than full page bands do. */
+.pt-band--glance {
+  padding-block: 1.25rem;
 }
 
 .pt-band__head {
@@ -459,6 +413,47 @@
   color: var(--pt-ink-muted);
 }
 
+/* The design's state, as a tag: text AND a tint, never a tint alone. */
+.pt-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.5rem;
+  border: 1px solid var(--pt-line);
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: var(--font-weight-semi-bold, 600);
+  color: var(--pt-ink-muted);
+}
+
+.pt-tag__icon {
+  width: 0.7rem;
+  height: 0.7rem;
+  margin-right: 0.25rem;
+}
+
+.pt-tag--done {
+  border-color: var(--pt-done);
+  color: var(--pt-done);
+}
+
+.pt-tag--active {
+  border-color: var(--pt-accent);
+  color: var(--pt-accent-ink);
+}
+
+.pt-tag--attention {
+  border-color: var(--pt-attention);
+  color: var(--pt-attention);
+}
+
+/* The padlock already says this; the dashed edge repeats the prototype's "prerequisite missing"
+ * language, so a locked tag cannot be mistaken for a neutral status. */
+.pt-tag--locked {
+  border-style: dashed;
+  border-color: var(--pt-line-strong);
+  color: var(--pt-ink-muted);
+}
+
 /* ── Buttons: one solid primary, everything else quiet ────────────────── */
 
 /*
@@ -470,8 +465,7 @@
 .pt-app .pt-btn,
 .pt-app .pt-toggle,
 .pt-app .pt-subnav__item,
-.pt-app .pt-primary-tab,
-.pt-app .pt-expview {
+.pt-app .pt-primary-tab {
   min-width: 0;
   min-height: 0;
   height: auto;
@@ -937,11 +931,6 @@
  * Scope-line separator. The breadcrumb separator (`.pt-crumbs__sep`) has no horizontal spacing, so
  * reusing it rendered the scope as `Immunotest/Immunopeptidomics pilot`.
  */
-.pt-page__sep {
-  margin: 0 0.45rem;
-  color: var(--pt-ink-subtle);
-}
-
 /* The experiment name is a real link, so it says what it is. */
 .pt-page__scope {
   color: var(--pt-accent-ink);
@@ -1352,7 +1341,6 @@
   .pt-toggle,
   .pt-subnav__item,
   .pt-primary-tab,
-  .pt-expview,
   .pt-exp {
     transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
   }
@@ -1514,53 +1502,6 @@
   color: var(--pt-ink-subtle);
 }
 
-/*
- * "You are here" in the step strip. The cards double as the Design / Samples / Dataset switcher, and
- * the state marker answered "is this step done?" but never "which step am I on?". The label is the
- * primary signal and the ring/tint below are redundant reinforcement, so position survives being
- * read without colour — the same rule the step states already follow.
- *
- * Block-level, not inline-block: the current step can also be the attention step, and an inline
- * "You are here" sat on the same line as the step's action link, rendering "YOU ARE HEREOpen
- * dataset" as one unreadable token stating two different things. Stacking them is the fix.
- */
-.pt-step__here {
-  display: block;
-  margin-top: 0.4rem;
-  font-size: 0.6875rem;
-  font-weight: var(--font-weight-semi-bold, 600);
-  color: var(--pt-accent-ink);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-
-/*
- * The current step. Two rings plus a left rule, deliberately stronger than .pt-step--active (the
- * "next step to do" state): those two can apply to the SAME card, and when they did they were
- * indistinguishable. This one only ever means "the view you are looking at".
- */
-.pt-step--current {
-  border-color: var(--pt-accent);
-  box-shadow: 0 0 0 1px var(--pt-accent), inset 0.2rem 0 0 var(--pt-accent);
-  background: #fff;
-}
-
-.pt-step--current .pt-step__label {
-  color: var(--pt-accent-ink);
-}
-
-/* The exception marker keeps its meaning: a current step that needs attention is still amber. */
-.pt-step--current.pt-step--attention {
-  background: var(--pt-attention-bg);
-  border-color: var(--pt-attention);
-  box-shadow: 0 0 0 1px var(--pt-attention), inset 0.2rem 0 0 var(--pt-attention);
-}
-
-.pt-step--current.pt-step--attention .pt-step__label,
-.pt-step--current.pt-step--attention .pt-step__here {
-  color: var(--pt-attention);
-}
-
 .pt-step__lock {
   width: 0.65rem;
   height: 0.65rem;
@@ -1704,21 +1645,15 @@
 .pt-snapshot {
   grid-column: 1 / -1;
   display: grid;
-  /*
-   * A FIXED two-column grid, not `auto-fit`. With `auto-fit` the track count is computed from the
-   * container width, so a wide page produced ~5 tracks; the full-width Design panel then spanned all
-   * five and left Samples and Dataset one fifth of the row each (~250px), which is what made the two
-   * panels overflow their own tables and sit visibly narrower than the panel above them. Two equal
-   * tracks give the two panels half the region each, flush with the Design panel's left and right
-   * edges, which is the alignment the region was missing.
-   */
+  /* Two equal tracks for the two data cards. `auto-fit` computes its track count from the
+   * container width, so a wide page would give each card a fraction of the row instead of half. */
   grid-template-columns: repeat(2, minmax(0, 1fr));
   /*
-   * Panels size to their own content. Stretched to the row's tallest neighbour, the reduced
-   * current-view panel was a tall empty framed box, which reads as "content failed to load" rather
-   * than as a deliberately small summary.
+   * The two cards stretch to a common height so their footers — the button, or the "open" line —
+   * share one baseline. The earlier `start` was for a "reduced" current-view panel that no longer
+   * exists; with two peer cards, ragged bottoms read as two unrelated boxes.
    */
-  align-items: start;
+  align-items: stretch;
   gap: 0.75rem;
   width: 100%;
   margin-top: 0.25rem;
@@ -1738,51 +1673,6 @@
 .pt-snap:hover {
   border-color: var(--pt-accent);
   background: #fff;
-}
-
-/*
- * The panel for the step the user is already reading. It stays in the region so the region is always
- * one panel per step in step order, but it is reduced to a summary instead of repeating the page.
- *
- * A muted SOLID border, not dashed: dashed is this prototype's language for "prerequisite missing"
- * (see .pt-step--locked, .pt-gate), so a dashed current-view card read as broken or incomplete.
- */
-
-
-/* Where the full list is — a fact the step card cannot state, unlike "you are here". */
-
-/*
- * The Design panel is a peer of Samples and Dataset, so it is one column wide like them: full width
- * plus a coloured border made it the loudest thing in a region where it is one of three equals, and
- * it forced the other two into a ragged half-empty row.
- */
-.pt-snap--design {
-  cursor: default;
-}
-
-.pt-snap--design[role="button"] {
-  cursor: pointer;
-}
-
-.pt-snap--design[role="button"]:hover {
-  border-color: var(--pt-accent);
-}
-
-/* A status, not an action: shares the panel with "Edit design", so it must not borrow its styling. */
-.pt-snap__state {
-  font-size: 0.75rem;
-  color: var(--pt-ink-subtle);
-}
-
-
-
-
-
-
-
-.pt-snap__actions {
-  display: flex;
-  margin-top: 0.35rem;
 }
 
 .pt-snap__head {
@@ -1826,6 +1716,46 @@
 .pt-snap__status {
   font-size: 0.75rem;
   color: var(--pt-ink-muted);
+}
+
+/*
+ * A card with a real button inside must not look clickable as a whole: two targets for one gesture is
+ * worse than one. It states the next step rather than a count, so the populated cards' cursor and
+ * hover affordances are removed.
+ */
+.pt-snap--invite {
+  cursor: default;
+}
+
+.pt-snap--invite:hover {
+  border-color: var(--pt-line);
+  background: var(--pt-sunken);
+}
+
+/* A card whose prerequisite is missing wears that state, not just the word "Locked". */
+.pt-snap--locked,
+.pt-snap--locked:hover {
+  border-style: dashed;
+  border-color: var(--pt-line-strong);
+}
+
+/* The label and its state tag travel together on the left of the card head. */
+.pt-snap__id {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.pt-snap__text {
+  font-size: 0.75rem;
+  color: var(--pt-ink-subtle);
+}
+
+/* Pinned to the foot of the card, so two stretched cards put their actions on one baseline. */
+.pt-snap__actions {
+  display: flex;
+  margin-top: auto;
+  padding-top: 0.35rem;
 }
 
 .pt-snap__rows {
