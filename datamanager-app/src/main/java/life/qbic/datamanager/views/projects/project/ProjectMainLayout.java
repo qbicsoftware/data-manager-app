@@ -77,7 +77,9 @@ public class ProjectMainLayout extends DataManagerLayout implements BeforeEnterO
     this.dataManagerMenu = new DataManagerMenu(requireNonNull(authenticationContext));
 
     breadcrumbs.addClassName("app-crumbs");
-    Span identityBar = new Span(brand(), breadcrumbs, dataManagerMenu);
+    Span identityBarRow = new Span(brand(), breadcrumbs, dataManagerMenu);
+    identityBarRow.addClassName("app-identity-bar-row");
+    Div identityBar = new Div(identityBarRow);
     identityBar.addClassName("app-identity-bar");
     navigationContainer.addClassName("app-navigation");
     Div chrome = new Div(identityBar, navigationContainer);

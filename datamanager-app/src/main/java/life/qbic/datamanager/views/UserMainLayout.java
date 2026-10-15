@@ -55,8 +55,10 @@ public class UserMainLayout extends DataManagerLayout implements BeforeEnterObse
     home.addClassNames("app-crumb", "app-crumb-current");
     breadcrumbs.add(home);
 
-    Span identityBar = new Span(brand(), breadcrumbs,
+    Span identityBarRow = new Span(brand(), breadcrumbs,
         new DataManagerMenu(Objects.requireNonNull(authenticationContext)));
+    identityBarRow.addClassName("app-identity-bar-row");
+    Div identityBar = new Div(identityBarRow);
     identityBar.addClassName("app-identity-bar");
 
     Div chrome = new Div(identityBar, navigation);
