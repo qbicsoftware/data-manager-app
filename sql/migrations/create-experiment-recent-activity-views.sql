@@ -30,6 +30,10 @@
 --    experiment (see experiment_progress / D8).
 --  * Primary-data columns come from remote_measurement_data, joined on the measurementCode
 --    (the known drift) and excluding deleted rows.
+--  * COLLATION DRIFT: every string equality pins utf8mb4_unicode_ci on one operand. See
+--    the long note in create-project-page-read-models.sql (trap 5): instances have been
+--    found mixing latin1_swedish_ci, utf8mb4_general_ci and utf8mb4_unicode_ci, and a
+--    column-to-column compare across them raises "Illegal mix of collations".
 --
 -- CONSUMPTION
 --
@@ -105,8 +109,8 @@ FROM (
                s.experiment_id,
                s.project_id
         FROM ngs_measurements m
-                 JOIN specific_measurement_metadata_ngs smm ON smm.measurement_id = m.measurement_id
-                 JOIN sample s ON s.sample_id = smm.sample_id
+                 JOIN specific_measurement_metadata_ngs smm ON smm.measurement_id = m.measurement_id COLLATE utf8mb4_unicode_ci
+                 JOIN sample s ON s.sample_id = smm.sample_id COLLATE utf8mb4_unicode_ci
         WHERE s.experiment_id IS NOT NULL
         UNION
         SELECT 'PXP',
@@ -117,8 +121,8 @@ FROM (
                s.experiment_id,
                s.project_id
         FROM proteomics_measurement p
-                 JOIN specific_measurement_metadata_pxp smm ON smm.measurement_id = p.measurement_id
-                 JOIN sample s ON s.sample_id = smm.sample_id
+                 JOIN specific_measurement_metadata_pxp smm ON smm.measurement_id = p.measurement_id COLLATE utf8mb4_unicode_ci
+                 JOIN sample s ON s.sample_id = smm.sample_id COLLATE utf8mb4_unicode_ci
         WHERE s.experiment_id IS NOT NULL
         UNION
         SELECT 'IP',
@@ -129,12 +133,12 @@ FROM (
                s.experiment_id,
                s.project_id
         FROM ip_measurements ip
-                 JOIN specific_measurement_metadata_ip smm ON smm.measurement_id = ip.measurement_id
-                 JOIN sample s ON s.sample_id = smm.sample_id
+                 JOIN specific_measurement_metadata_ip smm ON smm.measurement_id = ip.measurement_id COLLATE utf8mb4_unicode_ci
+                 JOIN sample s ON s.sample_id = smm.sample_id COLLATE utf8mb4_unicode_ci
         WHERE s.experiment_id IS NOT NULL
     ) x
              LEFT JOIN remote_measurement_data rmd
-                       ON rmd.measurement_id = x.measurement_code AND rmd.deleted = FALSE
+                       ON rmd.measurement_id = x.measurement_code COLLATE utf8mb4_unicode_ci AND rmd.deleted = FALSE
 ) ranked
 WHERE rn <= 3;
 

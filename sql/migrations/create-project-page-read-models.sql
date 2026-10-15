@@ -51,6 +51,22 @@
 --
 --  4. deleted rows in remote_measurement_data are excluded (deleted = FALSE).
 --
+--  5. COLLATION DRIFT. The hand-written DDL pins every app table to
+--     utf8mb4_unicode_ci, but tables created outside it (Hibernate ddl-auto, or an
+--     instance whose server default is utf8mb4_general_ci) end up on
+--     utf8mb4_general_ci. A column-to-column comparison across them raises
+--     "Illegal mix of collations". A real instance was found carrying all three of
+--     latin1_swedish_ci (sample, ngs_measurements, specific_measurement_metadata_ngs,
+--     proteomics_measurement), utf8mb4_general_ci (experiments_datamanager,
+--     experimental_group) and utf8mb4_unicode_ci (projects_datamanager,
+--     remote_measurement_data, associated_dataset) -- often within one join chain.
+--     EVERY string equality below therefore pins utf8mb4_unicode_ci on one operand,
+--     so the comparison is decided by the explicit collation rather than by whichever
+--     collations the two columns happen to carry. latin1 converts up to utf8mb4, so
+--     this is lossless. Aligning the instance (ALTER TABLE ... CONVERT TO CHARACTER
+--     SET utf8mb4 COLLATE utf8mb4_unicode_ci) is still the right long-term fix; this
+--     makes the read models not depend on it, and it is harmless once aligned.
+--
 -- CONSUMPTION
 --
 -- Read-only. Mapping follows the established ProjectOverview pattern: a flat
@@ -76,8 +92,8 @@ SELECT 'NGS' AS measurement_type,
        m.projectId       AS project_id,
        s.experiment_id
 FROM ngs_measurements m
-         JOIN specific_measurement_metadata_ngs smm ON smm.measurement_id = m.measurement_id
-         JOIN sample s ON s.sample_id = smm.sample_id
+         JOIN specific_measurement_metadata_ngs smm ON smm.measurement_id = m.measurement_id COLLATE utf8mb4_unicode_ci
+         JOIN sample s ON s.sample_id = smm.sample_id COLLATE utf8mb4_unicode_ci
 WHERE s.experiment_id IS NOT NULL
 UNION
 SELECT 'PXP',
@@ -86,8 +102,8 @@ SELECT 'PXP',
        p.projectId,
        s.experiment_id
 FROM proteomics_measurement p
-         JOIN specific_measurement_metadata_pxp smm ON smm.measurement_id = p.measurement_id
-         JOIN sample s ON s.sample_id = smm.sample_id
+         JOIN specific_measurement_metadata_pxp smm ON smm.measurement_id = p.measurement_id COLLATE utf8mb4_unicode_ci
+         JOIN sample s ON s.sample_id = smm.sample_id COLLATE utf8mb4_unicode_ci
 WHERE s.experiment_id IS NOT NULL
 UNION
 SELECT 'IP',
@@ -96,8 +112,8 @@ SELECT 'IP',
        ip.projectId,
        s.experiment_id
 FROM ip_measurements ip
-         JOIN specific_measurement_metadata_ip smm ON smm.measurement_id = ip.measurement_id
-         JOIN sample s ON s.sample_id = smm.sample_id
+         JOIN specific_measurement_metadata_ip smm ON smm.measurement_id = ip.measurement_id COLLATE utf8mb4_unicode_ci
+         JOIN sample s ON s.sample_id = smm.sample_id COLLATE utf8mb4_unicode_ci
 WHERE s.experiment_id IS NOT NULL;
 
 
@@ -135,10 +151,10 @@ FROM experiments_datamanager e
         SELECT sample_id FROM specific_measurement_metadata_pxp
         UNION
         SELECT sample_id FROM specific_measurement_metadata_ip
-    ) ms ON ms.sample_id = s.sample_id
+    ) ms ON ms.sample_id = s.sample_id COLLATE utf8mb4_unicode_ci
     WHERE s.experiment_id IS NOT NULL
     GROUP BY s.experiment_id
-) smp ON smp.experiment_id = e.id
+) smp ON smp.experiment_id COLLATE utf8mb4_unicode_ci = e.id
          LEFT JOIN (
     SELECT ve.experiment_id,
            COUNT(DISTINCT ve.measurement_type, ve.measurement_id) AS measurement_count,
@@ -147,7 +163,7 @@ FROM experiments_datamanager e
            COUNT(DISTINCT CASE WHEN ve.measurement_type = 'IP'  THEN ve.measurement_id END) AS ip_measurement_count
     FROM v_measurement_experiment ve
     GROUP BY ve.experiment_id
-) me ON me.experiment_id = e.id
+) me ON me.experiment_id COLLATE utf8mb4_unicode_ci = e.id
          LEFT JOIN (
     SELECT ve.experiment_id,
            COUNT(DISTINCT ve.measurement_type, ve.measurement_id) AS measurements_with_primary_data,
@@ -155,10 +171,10 @@ FROM experiments_datamanager e
            COALESCE(SUM(rmd.total_filesize_bytes), 0)             AS primary_data_bytes
     FROM v_measurement_experiment ve
              JOIN remote_measurement_data rmd
-                  ON rmd.measurement_id = ve.measurement_code
+                  ON rmd.measurement_id = ve.measurement_code COLLATE utf8mb4_unicode_ci
                       AND rmd.deleted = FALSE
     GROUP BY ve.experiment_id
-) pd ON pd.experiment_id = e.id;
+) pd ON pd.experiment_id COLLATE utf8mb4_unicode_ci = e.id;
 
 
 -- -----------------------------------------------------------------------------
@@ -185,15 +201,17 @@ SELECT s.project_id,
        s.registrationTime    AS registration_time,
        s.lastModified        AS last_modified,
        CASE
-           WHEN EXISTS (SELECT 1 FROM specific_measurement_metadata_ngs x WHERE x.sample_id = s.sample_id)
-               OR EXISTS (SELECT 1 FROM specific_measurement_metadata_pxp x WHERE x.sample_id = s.sample_id)
-               OR EXISTS (SELECT 1 FROM specific_measurement_metadata_ip x WHERE x.sample_id = s.sample_id)
+           WHEN EXISTS (SELECT 1 FROM specific_measurement_metadata_ngs x WHERE x.sample_id = s.sample_id COLLATE utf8mb4_unicode_ci)
+               OR EXISTS (SELECT 1 FROM specific_measurement_metadata_pxp x WHERE x.sample_id = s.sample_id COLLATE utf8mb4_unicode_ci)
+               OR EXISTS (SELECT 1 FROM specific_measurement_metadata_ip x WHERE x.sample_id = s.sample_id COLLATE utf8mb4_unicode_ci)
                THEN TRUE
            ELSE FALSE
            END                AS measured
 FROM sample s
-         LEFT JOIN experiments_datamanager e ON e.id = s.experiment_id
-         LEFT JOIN experimental_group g ON g.experimentalGroupId = s.experimentalGroupId
+         LEFT JOIN experiments_datamanager e
+                   ON e.id COLLATE utf8mb4_unicode_ci = s.experiment_id
+         LEFT JOIN experimental_group g
+                   ON g.experimentalGroupId COLLATE utf8mb4_unicode_ci = s.experimentalGroupId
 WHERE s.project_id IS NOT NULL;
 
 

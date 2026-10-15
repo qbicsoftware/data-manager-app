@@ -68,6 +68,18 @@ the summary progress band and the project Datasets overview.
 All three are views: non-destructive, always consistent, no write path. No table or column
 is created, altered or dropped.
 
+> **Collation drift is handled explicitly.** Instances have been found carrying
+> `latin1_swedish_ci` (`sample`, `ngs_measurements`, `specific_measurement_metadata_ngs`,
+> `proteomics_measurement`), `utf8mb4_general_ci` (`experiments_datamanager`,
+> `experimental_group`) and `utf8mb4_unicode_ci` (`projects_datamanager`,
+> `remote_measurement_data`, `associated_dataset`) at the same time. A column-to-column `=`
+> across them raises `Illegal mix of collations`. Every string equality in these views
+> therefore pins `COLLATE utf8mb4_unicode_ci` on one operand, so the comparison no longer
+> depends on the columns' own collations. It is lossless (`latin1` converts up to
+> `utf8mb4`) and harmless once an instance is aligned. Aligning the instance with
+> `ALTER TABLE … CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci` remains the
+> correct long-term fix, and is tracked separately — it is **not** part of this migration.
+
 > **Two source data facts the read models depend on.** Please read before reviewing numbers:
 >
 > 1. `remote_measurement_data.measurement_id` holds the **measurementCode**, not the
