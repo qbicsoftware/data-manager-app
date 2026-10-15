@@ -27,19 +27,18 @@ import life.qbic.datamanager.views.general.pagination.Selection;
  * A paginated, tabbed raw dataset list container (FEAT-PAG-LIST-04, USER-R-01/-R-02/-R-03).
  *
  * <p>Hosts three tabs (NGS / PxP / IP), each rendering its current page as an in-memory grid,
- * a single shared {@link PaginationBar} that reflects the active tab's page, and a shared
- * selection display with a "Clear selection" affordance. The component is a pure view
- * coordinator: it never queries data itself — the owning view wires a
- * {@link RefreshRequestedEvent} listener that performs the lookup and reports back via
- * {@link #onPageLoaded(RawDataDomain, int, long)}.</p>
+ * a single shared {@link PaginationBar} that reflects the active tab's page, and a shared selection
+ * display with a "Clear selection" affordance. The component is a pure view coordinator: it never
+ * queries data itself — the owning view wires a {@link RefreshRequestedEvent} listener that
+ * performs the lookup and reports back via {@link #onPageLoaded(RawDataDomain, int, long)}.</p>
  *
  * <p>The container owns the list state ({@link RawDataListState}) and mirrors it into the
- * browser URL (USER-R-03): {@code pushState} for page/page-size/sort changes,
- * {@code replaceState} for debounced search input and tab switches. The route base path is
- * injected by the route view via {@link #setBasePath(String)} so the container can build
- * complete locations; the route view additionally owns the History-API handler plumbing
- * (beforeEnter/beforeLeave) and calls {@link #applyExternalState(RawDataListState)} when the
- * browser history changes (back/forward, shared links).</p>
+ * browser URL (USER-R-03): {@code pushState} for page/page-size/sort changes, {@code replaceState}
+ * for debounced search input and tab switches. The route base path is injected by the route view
+ * via {@link #setBasePath(String)} so the container can build complete locations; the route view
+ * additionally owns the History-API handler plumbing (beforeEnter/beforeLeave) and calls
+ * {@link #applyExternalState(RawDataListState)} when the browser history changes (back/forward,
+ * shared links).</p>
  *
  * @since 1.19.0
  */
@@ -157,8 +156,8 @@ public class RawDataTabPagination extends Div {
   }
 
   /**
-   * Places the selection bar below the search/toolbar row of the currently active tab.
-   * Call once after all tabs have been added.
+   * Places the selection bar below the search/toolbar row of the currently active tab. Call once
+   * after all tabs have been added.
    */
   public void attachSelectionBar() {
     Tab tab = tabs.getSelectedTab();
@@ -174,8 +173,8 @@ public class RawDataTabPagination extends Div {
   }
 
   /**
-   * Re-parents the shared selection bar into the given tab's content so it is shown and
-   * sticks below that tab's search/toolbar row.
+   * Re-parents the shared selection bar into the given tab's content so it is shown and sticks
+   * below that tab's search/toolbar row.
    */
   private void attachSelectionBarTo(Tab tab) {
     domainOf(tab).ifPresent(domain -> {
@@ -192,8 +191,8 @@ public class RawDataTabPagination extends Div {
   }
 
   /**
-   * The selection bar component (count, Clear, Gmail-style select-all). It is re-parented
-   * into the active tab's content; exposed for the owning view if further wiring is needed.
+   * The selection bar component (count, Clear, Gmail-style select-all). It is re-parented into the
+   * active tab's content; exposed for the owning view if further wiring is needed.
    */
   public Div selectionBar() {
     return selectionContainer;
@@ -232,8 +231,8 @@ public class RawDataTabPagination extends Div {
   }
 
   /**
-   * Applies a search term to the given tab: resets to page 1 and replaces the URL entry
-   * (debounced search must not spam history).
+   * Applies a search term to the given tab: resets to page 1 and replaces the URL entry (debounced
+   * search must not spam history).
    */
   public void applySearch(RawDataDomain domain, String searchTerm) {
     ListState current = listState.stateOf(domain);
@@ -293,11 +292,15 @@ public class RawDataTabPagination extends Div {
   }
 
   /**
-   * Applies an externally provided state (initial load, URL back/forward, shared link) and asks
-   * the owning view to re-fetch the active tab's page.
+   * Applies an externally provided state (initial load, URL back/forward, shared link) and asks the
+   * owning view to re-fetch the active tab's page.
    */
   public void applyExternalState(RawDataListState state) {
     this.listState = state;
+    if (!isTabVisible(state.activeTab())) {
+      firstVisibleDomain().ifPresent(fallback -> this.listState = this.listState.withTab(fallback,
+          this.listState.stateOf(fallback)));
+    }
     suppressTabSwitchEvents = true;
     try {
       selectTabForActiveDomain();
@@ -306,6 +309,13 @@ public class RawDataTabPagination extends Div {
     }
     refreshActiveTab();
     updateSelectionBar();
+  }
+
+  private boolean isTabVisible(RawDataDomain domain) {
+    Tab tab = tabsByDomain.get(domain);
+    // a domain without a registered tab is treated as visible; selectTabForActiveDomain is a
+    // no-op for it, so it cannot render a wrong grid anyway
+    return tab == null || tab.isVisible();
   }
 
   private void selectTabForActiveDomain() {
@@ -327,8 +337,8 @@ public class RawDataTabPagination extends Div {
   }
 
   /**
-   * Asks the owning view to re-fetch the currently active tab's page (used after a context
-   * change and on initial/external state application).
+   * Asks the owning view to re-fetch the currently active tab's page (used after a context change
+   * and on initial/external state application).
    */
   public void refreshActiveTab() {
     fireEvent(new RefreshRequestedEvent(this, listState.activeTab()));
@@ -364,8 +374,8 @@ public class RawDataTabPagination extends Div {
   /**
    * Hides/shows a tab (an experiment without raw datasets of a domain hides its tab).
    * <p>If the currently active tab is being hidden, the selection is automatically moved to the
-   * first remaining visible tab (in registration order NGS → PxP → IP), so the view never ends
-   * up showing an empty hidden tab while other tabs contain datasets.</p>
+   * first remaining visible tab (in registration order NGS → PxP → IP), so the view never ends up
+   * showing an empty hidden tab while other tabs contain datasets.</p>
    */
   public void setTabVisible(RawDataDomain domain, boolean visible) {
     Tab tab = tabsByDomain.get(domain);
@@ -404,9 +414,8 @@ public class RawDataTabPagination extends Div {
   // ---- selection -----------------------------------------------------------
 
   /**
-   * Attaches the selection whose count is displayed. The owning view switches this on tab
-   * changes; the container reacts to {@link Selection} mutations via
-   * {@link #updateSelectionBar()}.
+   * Attaches the selection whose count is displayed. The owning view switches this on tab changes;
+   * the container reacts to {@link Selection} mutations via {@link #updateSelectionBar()}.
    */
   public void setSelection(Selection selection) {
     this.selection = Objects.requireNonNull(selection, "selection must not be null");
@@ -452,15 +461,17 @@ public class RawDataTabPagination extends Div {
   }
 
   /**
-   * Fired after the user cleared the selection; the owning view reconciles its grids so
-   * the row checkboxes reflect the empty selection.
+   * Fired after the user cleared the selection; the owning view reconciles its grids so the row
+   * checkboxes reflect the empty selection.
    */
   public void addSelectionClearedListener(
       ComponentEventListener<SelectionClearedEvent> listener) {
     addListener(SelectionClearedEvent.class, listener);
   }
 
-  /** Fired when the user asks to select every dataset matching the active filter. */
+  /**
+   * Fired when the user asks to select every dataset matching the active filter.
+   */
   public static class SelectAllResultsRequestedEvent extends
       com.vaadin.flow.component.ComponentEvent<RawDataTabPagination> {
 
@@ -480,7 +491,9 @@ public class RawDataTabPagination extends Div {
     }
   }
 
-  /** Fired when the user clears the selection via the "Clear selection" affordance. */
+  /**
+   * Fired when the user clears the selection via the "Clear selection" affordance.
+   */
   public static class SelectionClearedEvent extends
       com.vaadin.flow.component.ComponentEvent<RawDataTabPagination> {
 
@@ -492,7 +505,10 @@ public class RawDataTabPagination extends Div {
     }
   }
 
-  /** Fired when the active tab needs to be re-rendered (initial load, back/forward, paging, search, sort, tab switch). */
+  /**
+   * Fired when the active tab needs to be re-rendered (initial load, back/forward, paging, search,
+   * sort, tab switch).
+   */
   public static class RefreshRequestedEvent extends
       com.vaadin.flow.component.ComponentEvent<RawDataTabPagination> {
 
@@ -506,12 +522,12 @@ public class RawDataTabPagination extends Div {
     }
 
     /**
-     * @param scrollGridTopIntoView whether the owning view should scroll the rendered grid's
-     *                              top into viewport after the refetch. Only pager-driven
-     *                              page/page-size changes request this (the pager sits below
-     *                              the grid, so after paging the user is left at the bottom);
-     *                              search/sort/tab actions are triggered at the top and must
-     *                              not yank the viewport.
+     * @param scrollGridTopIntoView whether the owning view should scroll the rendered grid's top
+     *                              into viewport after the refetch. Only pager-driven
+     *                              page/page-size changes request this (the pager sits below the
+     *                              grid, so after paging the user is left at the bottom);
+     *                              search/sort/tab actions are triggered at the top and must not
+     *                              yank the viewport.
      */
     public RefreshRequestedEvent(RawDataTabPagination source, RawDataDomain domain,
         boolean scrollGridTopIntoView) {

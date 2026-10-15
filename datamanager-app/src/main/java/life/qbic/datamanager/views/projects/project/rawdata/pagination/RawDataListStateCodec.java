@@ -38,8 +38,9 @@ public final class RawDataListStateCodec {
    *         the remaining tabs retain their passed-in state
    */
   public static RawDataListState parse(QueryParameters parameters, RawDataListState current) {
-    RawDataDomain activeTab = RawDataDomain.fromUrlValue(
-        parameters.getSingleParameter(TAB_PARAMETER).orElse(null));
+    RawDataDomain activeTab = parameters.getSingleParameter(TAB_PARAMETER)
+        .map(RawDataDomain::fromUrlValue)
+        .orElse(current.activeTab());
     ListState activeState = ListStateCodec.parse(parameters, RawDataSort.DEFAULT, RawDataSort.SORTS,
         RawDataListStateDefaults.DEFAULT_PAGE_SIZE);
     return current.withTab(activeTab, activeState);

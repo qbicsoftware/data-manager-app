@@ -212,4 +212,19 @@ class RawDataTabPaginationSpec extends Specification {
         container.activeTab() == RawDataDomain.IP
         refreshes == [RawDataDomain.PXP, RawDataDomain.IP]
     }
+
+    def "applying an external state never activates a hidden tab"() {
+        given: "only PxP raw data exists, so the NGS tab is hidden and PxP is active"
+        def container = newContainer()
+        container.setTabVisible(RawDataDomain.NGS, false)
+        def refreshes = []
+        container.addRefreshRequestedListener(event -> refreshes << event.domain())
+
+        when: "a URL/reload without a tab parameter resolves back to the hidden NGS tab"
+        container.applyExternalState(RawDataListState.defaultWith(RawDataDomain.NGS))
+
+        then: "the active tab falls back to the first visible (populated) tab"
+        container.activeTab() == RawDataDomain.PXP
+        refreshes == [RawDataDomain.PXP]
+    }
 }

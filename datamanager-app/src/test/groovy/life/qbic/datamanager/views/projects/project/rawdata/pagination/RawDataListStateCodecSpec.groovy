@@ -109,4 +109,18 @@ class RawDataListStateCodecSpec extends Specification {
         state.activeState().page() == 2 // page is still honoured
         state.activeState().sort() == DEFAULT_SORT // unknown sort falls back to default
     }
+
+    def "an absent tab parameter keeps the currently shown tab"() {
+        given: "the container currently shows the PxP tab (e.g. NGS has no raw data)"
+        def current = RawDataListState.defaultWith(RawDataDomain.PXP)
+
+        when: "the URL has no tab parameter but carries the active tab's list state"
+        def state = RawDataListStateCodec.parse(
+                QueryParameters.fromString("page=3&size=48"), current)
+
+        then:
+        state.activeTab() == RawDataDomain.PXP
+        state.stateOf(RawDataDomain.PXP).page() == 3
+        state.stateOf(RawDataDomain.PXP).pageSize() == 48
+    }
 }
