@@ -18,7 +18,7 @@ import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.DataManagerLayout;
 import life.qbic.datamanager.views.general.DataManagerMenu;
 import life.qbic.datamanager.views.general.footer.FooterComponent;
-import life.qbic.datamanager.views.navigation.ProjectScopeNavigationComponent;
+import life.qbic.datamanager.views.navigation.AppNavigationComponent;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.datamanager.views.projects.project.info.ProjectInformationMain;
 import life.qbic.projectmanagement.application.ProjectInformationService;
@@ -41,7 +41,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  *   <li>an identity bar — the {@code Data Manager} wordmark, the breadcrumb
  *       ({@code Home / CODE / Title}, extended with the experiment crumb when inside one) and the
  *       account menu;</li>
- *   <li>one scope-contextual navigation row ({@link ProjectScopeNavigationComponent}).</li>
+ *   <li>one scope-contextual navigation row ({@link AppNavigationComponent}).</li>
  * </ol>
  *
  * <p>Breadcrumb and identity band both name the project on purpose: the breadcrumb is the way up,
@@ -62,7 +62,7 @@ public class ProjectMainLayout extends DataManagerLayout implements BeforeEnterO
   private final transient UserPermissions userPermissions;
 
   private final Span breadcrumbs = new Span();
-  private final Span scopeNavigationContainer = new Span();
+  private final Span navigationContainer = new Span();
 
   public ProjectMainLayout(@Autowired AuthenticationContext authenticationContext,
       @Autowired ProjectInformationService projectInformationService,
@@ -76,12 +76,12 @@ public class ProjectMainLayout extends DataManagerLayout implements BeforeEnterO
     this.userPermissions = requireNonNull(userPermissions);
     this.dataManagerMenu = new DataManagerMenu(requireNonNull(authenticationContext));
 
-    breadcrumbs.addClassName("project-shell-crumbs");
+    breadcrumbs.addClassName("app-crumbs");
     Span identityBar = new Span(brand(), breadcrumbs, dataManagerMenu);
-    identityBar.addClassName("project-shell-identity-bar");
-    scopeNavigationContainer.addClassName("project-shell-navigation");
-    Div chrome = new Div(identityBar, scopeNavigationContainer);
-    chrome.addClassName("project-shell-chrome");
+    identityBar.addClassName("app-identity-bar");
+    navigationContainer.addClassName("app-navigation");
+    Div chrome = new Div(identityBar, navigationContainer);
+    chrome.addClassName("app-chrome");
     addToNavbar(chrome);
     addClassNames("project-main-layout", "project-shell");
   }
@@ -97,7 +97,7 @@ public class ProjectMainLayout extends DataManagerLayout implements BeforeEnterO
 
     String projectCode = project.getProjectCode().value();
     String projectTitle = project.getProjectIntent().projectTitle().title();
-    scopeNavigationContainer.removeAll();
+    navigationContainer.removeAll();
     beforeEnterEvent.getRouteParameters().get(EXPERIMENT_ID_ROUTE_PARAMETER)
         .ifPresentOrElse(
             experimentId -> renderExperimentScope(projectId, projectCode, projectTitle, experimentId,
@@ -112,9 +112,9 @@ public class ProjectMainLayout extends DataManagerLayout implements BeforeEnterO
     breadcrumbs.add(homeCrumb(), separator(), codeSpan(projectCode), separator(),
         currentCrumb(projectTitle));
     boolean canViewAccess = userPermissions.readProject(projectId);
-    var navigation = ProjectScopeNavigationComponent.forProject(projectId.value(), canViewAccess);
+    var navigation = AppNavigationComponent.forProject(projectId.value(), canViewAccess);
     navigation.setActive(navigationTarget);
-    scopeNavigationContainer.add(navigation);
+    navigationContainer.add(navigation);
   }
 
   private void renderExperimentScope(ProjectId projectId, String projectCode, String projectTitle,
@@ -126,19 +126,19 @@ public class ProjectMainLayout extends DataManagerLayout implements BeforeEnterO
     breadcrumbs.removeAll();
     breadcrumbs.add(homeCrumb(), separator(), codeLink(projectCode, projectId), separator(),
         titleLink(projectTitle, projectId), separator(), currentCrumb(experimentName));
-    var navigation = ProjectScopeNavigationComponent.forExperiment(projectId.value(), experimentId);
+    var navigation = AppNavigationComponent.forExperiment(projectId.value(), experimentId);
     navigation.setActive(navigationTarget);
-    scopeNavigationContainer.add(navigation);
+    navigationContainer.add(navigation);
   }
 
   private static Span brand() {
     Span brand = new Span();
-    brand.addClassName("project-shell-brand");
+    brand.addClassName("app-brand");
     RouterLink wordmark = new RouterLink();
     wordmark.setRoute(ProjectOverviewMain.class);
-    wordmark.addClassName("project-shell-wordmark");
+    wordmark.addClassName("app-wordmark");
     Span dot = new Span(".");
-    dot.addClassName("project-shell-wordmark-dot");
+    dot.addClassName("app-wordmark-dot");
     wordmark.add(new Span("Data Manager"), dot);
     brand.add(wordmark);
     return brand;
@@ -146,40 +146,40 @@ public class ProjectMainLayout extends DataManagerLayout implements BeforeEnterO
 
   private static RouterLink homeCrumb() {
     RouterLink home = new RouterLink("Home", ProjectOverviewMain.class);
-    home.addClassName("project-shell-crumb");
+    home.addClassName("app-crumb");
     return home;
   }
 
   private static Span codeSpan(String code) {
     Span span = new Span(code);
-    span.addClassNames("project-shell-crumb", "project-shell-crumb-code");
+    span.addClassNames("app-crumb", "app-crumb-code");
     return span;
   }
 
   private static RouterLink codeLink(String code, ProjectId projectId) {
     RouterLink link = new RouterLink(code, ProjectInformationMain.class,
         projectRouteParameters(projectId));
-    link.addClassNames("project-shell-crumb", "project-shell-crumb-code");
+    link.addClassNames("app-crumb", "app-crumb-code");
     return link;
   }
 
   private static RouterLink titleLink(String title, ProjectId projectId) {
     RouterLink link = new RouterLink(title, ProjectInformationMain.class,
         projectRouteParameters(projectId));
-    link.addClassName("project-shell-crumb");
+    link.addClassName("app-crumb");
     return link;
   }
 
   private static Span currentCrumb(String text) {
     Span span = new Span(text);
-    span.addClassNames("project-shell-crumb", "project-shell-crumb-current");
+    span.addClassNames("app-crumb", "app-crumb-current");
     span.getElement().setAttribute("title", text);
     return span;
   }
 
   private static Span separator() {
     Span span = new Span("/");
-    span.addClassName("project-shell-crumb-separator");
+    span.addClassName("app-crumb-separator");
     return span;
   }
 
