@@ -3,6 +3,7 @@ package life.qbic.datamanager.views.projects.project;
 import static java.util.Objects.requireNonNull;
 
 import com.vaadin.flow.component.Text;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -82,7 +83,9 @@ public class ProjectMainLayout extends DataManagerLayout implements BeforeEnterO
     Span identityBar = new Span(createIdentityBar(), dataManagerMenu);
     identityBar.addClassName("project-shell-identity-bar");
     scopeNavigationContainer.addClassName("project-shell-navigation");
-    addToNavbar(identityBar, scopeNavigationContainer);
+    Div chrome = new Div(identityBar, scopeNavigationContainer);
+    chrome.addClassName("project-shell-chrome");
+    addToNavbar(chrome);
     addClassNames("project-main-layout", "project-shell");
   }
 

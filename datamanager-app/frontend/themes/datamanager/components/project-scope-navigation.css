@@ -1,6 +1,12 @@
 /* Project shell: two chrome rows — an identity bar over one scope-contextual navigation row.
    Replaces the retired left drawer and the experiment tab bar (implementation strategy, Phase 1). */
 
+.project-shell-chrome {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
 .project-shell-identity-bar {
   display: inline-flex;
   justify-content: space-between;
