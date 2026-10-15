@@ -11,6 +11,8 @@ import life.qbic.projectmanagement.application.api.ProjectQueryService.SortOrder
 import life.qbic.projectmanagement.application.query.ExperimentProgress;
 import life.qbic.projectmanagement.application.query.ProjectPageReadRepository;
 import life.qbic.projectmanagement.application.query.ProjectSampleOverview;
+import life.qbic.projectmanagement.application.query.RecentMeasurement;
+import life.qbic.projectmanagement.application.query.RecentSample;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
@@ -38,12 +40,18 @@ public class ProjectPageReadRepositoryImpl implements ProjectPageReadRepository 
 
   private final ExperimentProgressRepository experimentProgressRepository;
   private final ProjectSampleOverviewRepository sampleOverviewRepository;
+  private final RecentSampleRepository recentSampleRepository;
+  private final RecentMeasurementRepository recentMeasurementRepository;
 
   public ProjectPageReadRepositoryImpl(
       @Autowired ExperimentProgressRepository experimentProgressRepository,
-      @Autowired ProjectSampleOverviewRepository sampleOverviewRepository) {
+      @Autowired ProjectSampleOverviewRepository sampleOverviewRepository,
+      @Autowired RecentSampleRepository recentSampleRepository,
+      @Autowired RecentMeasurementRepository recentMeasurementRepository) {
     this.experimentProgressRepository = experimentProgressRepository;
     this.sampleOverviewRepository = sampleOverviewRepository;
+    this.recentSampleRepository = recentSampleRepository;
+    this.recentMeasurementRepository = recentMeasurementRepository;
   }
 
   @Override
@@ -64,6 +72,18 @@ public class ProjectPageReadRepositoryImpl implements ProjectPageReadRepository 
   @PreAuthorize(PROJECT_READ)
   public long countProjectSamples(String projectId, ProjectSampleFilter filter) {
     return sampleOverviewRepository.count(specification(projectId, filter));
+  }
+
+  @Override
+  @PreAuthorize(PROJECT_READ)
+  public List<RecentSample> findRecentSamples(String projectId) {
+    return recentSampleRepository.findAllByProjectId(projectId);
+  }
+
+  @Override
+  @PreAuthorize(PROJECT_READ)
+  public List<RecentMeasurement> findRecentMeasurements(String projectId) {
+    return recentMeasurementRepository.findAllByProjectId(projectId);
   }
 
   private static Specification<ProjectSampleOverview> specification(String projectId,

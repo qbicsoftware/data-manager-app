@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Objects;
 import life.qbic.projectmanagement.application.query.ExperimentProgress;
 import life.qbic.projectmanagement.application.query.ProjectSampleOverview;
+import life.qbic.projectmanagement.application.query.RecentMeasurement;
+import life.qbic.projectmanagement.application.query.RecentSample;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -57,6 +59,26 @@ public interface ProjectQueryService {
    * @throws AccessDeniedException  if the caller lacks {@code READ} on the project
    */
   Mono<Long> countProjectSamples(String projectId, ProjectSampleFilter filter);
+
+  /**
+   * Streams the newest samples of every experiment in the project (at most three per experiment),
+   * newest first — the Samples snapshot panel of the experiment cards.
+   *
+   * @param projectId the project identifier
+   * @throws RequestFailedException if the request could not be executed
+   * @throws AccessDeniedException  if the caller lacks {@code READ} on the project
+   */
+  Flux<RecentSample> getRecentSamples(String projectId);
+
+  /**
+   * Streams the newest measurements of every experiment in the project (at most three per
+   * experiment), newest first — the Dataset snapshot panel of the experiment cards.
+   *
+   * @param projectId the project identifier
+   * @throws RequestFailedException if the request could not be executed
+   * @throws AccessDeniedException  if the caller lacks {@code READ} on the project
+   */
+  Flux<RecentMeasurement> getRecentMeasurements(String projectId);
 
   /**
    * Filter and sort for the project sample list.

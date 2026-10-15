@@ -2,6 +2,7 @@ package life.qbic.datamanager.views.projects.project.info;
 
 import static java.util.Objects.requireNonNull;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.UI;
@@ -11,25 +12,33 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.router.RouteParam;
 import com.vaadin.flow.router.RouteParameters;
-import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.shared.Registration;
 import java.io.Serial;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import life.qbic.datamanager.views.general.ReactiveUiBridge;
-import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
+import life.qbic.datamanager.views.projects.project.measurements.MeasurementMain;
+import life.qbic.datamanager.views.projects.project.samples.SampleInformationMain;
 import life.qbic.projectmanagement.application.api.ProjectQueryService;
 import life.qbic.projectmanagement.application.query.ExperimentProgress;
+import life.qbic.projectmanagement.application.query.RecentMeasurement;
+import life.qbic.projectmanagement.application.query.RecentSample;
+import reactor.core.publisher.Mono;
 
 /**
- * Experiments section of the project page: one card per experiment, carrying its sample, measurement
- * and primary-data counts, plus the {@code Add experiment} action and a way into the experiment.
+ * Experiments section of the project page — the prototype's experiment entries.
  *
- * <p>This replaces the former name-only experiments rail in the right column. The counts come from
- * the {@code experiment_progress} read model through {@link ProjectQueryService}, so the section and
- * the progress section above it cannot disagree about the same numbers.</p>
+ * <p>Each entry is {@code name + domain chips + attention}, followed by two snapshot panels: the
+ * newest samples and the newest measurements (with their primary-data status). The panels are the
+ * way into the full views and state the same numbers the progress section does, so the entry does
+ * not repeat them as separate counts.</p>
  *
- * <p>Inline per-experiment record previews (last three registered/modified) are a planned follow-up;
- * they need additional query methods and are deliberately not part of this increment.</p>
+ * <p>Snapshot rows come from the {@code experiment_recent_sample} / {@code experiment_recent_measurement}
+ * read models through {@link ProjectQueryService}.</p>
  *
  * @since 1.19.0
  */
@@ -71,35 +80,199 @@ public class ProjectExperimentsSection extends Div {
     }
     content.removeAll();
     content.add(message("Loading experiments …"));
-    ReactiveUiBridge.onUi(ui,
-        projectQueryService.getExperimentProgress(projectId).collectList(),
-        this::render,
-        error -> {
-          content.removeAll();
-          content.add(message("Experiments could not be loaded."));
-        });
+    Mono<Snapshot> snapshot = Mono.zip(
+            projectQueryService.getExperimentProgress(projectId).collectList(),
+            projectQueryService.getRecentSamples(projectId).collectList(),
+            projectQueryService.getRecentMeasurements(projectId).collectList())
+        .map(values -> new Snapshot(values.getT1(), values.getT2(), values.getT3()));
+    ReactiveUiBridge.onUi(ui, snapshot, this::render, error -> {
+      content.removeAll();
+      content.add(message("Experiments could not be loaded."));
+    });
   }
 
-  private void render(List<ExperimentProgress> experiments) {
+  private void render(Snapshot snapshot) {
     content.removeAll();
     Div header = new Div(heading("Experiments"));
     header.addClassName("project-experiments-header");
     content.add(header);
 
-    if (experiments.isEmpty()) {
+    if (snapshot.progress().isEmpty()) {
       content.add(onboarding());
       return;
     }
+    Map<String, List<RecentSample>> samplesByExperiment = snapshot.samples().stream()
+        .collect(Collectors.groupingBy(RecentSample::experimentId));
+    Map<String, List<RecentMeasurement>> measurementsByExperiment = snapshot.measurements().stream()
+        .collect(Collectors.groupingBy(RecentMeasurement::experimentId));
+
     Div cards = new Div();
     cards.addClassName("project-experiments-cards");
-    experiments.forEach(experiment -> cards.add(experimentCard(experiment)));
+    for (ExperimentProgress experiment : snapshot.progress()) {
+      cards.add(experimentCard(experiment,
+          samplesByExperiment.getOrDefault(experiment.experimentId(), List.of()),
+          measurementsByExperiment.getOrDefault(experiment.experimentId(), List.of())));
+    }
     content.add(cards);
   }
 
-  /**
-   * Onboarding hero shown when the project has no experiment yet. The action is the same one the
-   * identity band raises, so the empty state and the band cannot diverge.
-   */
+  private Div experimentCard(ExperimentProgress experiment, List<RecentSample> samples,
+      List<RecentMeasurement> measurements) {
+    Div card = new Div();
+    card.addClassName("project-experiment-card");
+
+    Div identity = new Div();
+    identity.addClassName("project-exp-identity");
+    Span name = new Span(experiment.experimentName());
+    name.addClassName("project-exp-name");
+    Div facets = new Div();
+    facets.addClassName("project-exp-facets");
+    domains(experiment).forEach(domain -> facets.add(chip(domain, "project-exp-chip--domain")));
+    if (experiment.sampleCount() == 0) {
+      facets.add(chip("Not started", "project-exp-chip--neutral"));
+    } else if (experiment.measurementsWithoutPrimaryData() > 0) {
+      facets.add(chip("Needs attention", "project-exp-chip--attention"));
+    }
+    identity.add(name, facets);
+    card.add(identity);
+
+    Div panels = new Div();
+    panels.addClassName("project-exp-snapshot");
+    panels.add(samplesPanel(experiment, samples));
+    panels.add(datasetPanel(experiment, measurements));
+    card.add(panels);
+    return card;
+  }
+
+  private Div samplesPanel(ExperimentProgress experiment, List<RecentSample> samples) {
+    boolean started = experiment.sampleCount() > 0;
+    String status = samples.isEmpty()
+        ? "Nothing registered yet"
+        : "Registered · " + relativeTime(samples.getFirst().changed());
+    List<List<String>> rows = samples.stream()
+        .map(sample -> List.of(sample.sampleCode(), sample.sampleName(),
+            relativeTime(sample.changed())))
+        .toList();
+    return snapshotPanel("Samples", "samples", experiment.sampleCount(),
+        started ? "Registered" : "Not started", started ? "done" : "active",
+        status, new String[]{"Sample ID", "Sample name", "Changed"}, rows,
+        "No samples to show yet",
+        () -> navigate(SampleInformationMain.class, experiment.experimentId()));
+  }
+
+  private Div datasetPanel(ExperimentProgress experiment, List<RecentMeasurement> measurements) {
+    int total = experiment.measurementCount();
+    int withData = experiment.measurementsWithPrimaryData();
+    int missing = experiment.measurementsWithoutPrimaryData();
+    boolean hasSamples = experiment.sampleCount() > 0;
+
+    String state;
+    String tone;
+    if (!hasSamples) {
+      state = "Locked";
+      tone = "locked";
+    } else if (total == 0) {
+      state = "Ready to register";
+      tone = "active";
+    } else if (missing > 0) {
+      state = "Needs attention";
+      tone = "attention";
+    } else {
+      state = "Complete";
+      tone = "done";
+    }
+    String status = total == 0
+        ? "Nothing registered yet"
+        : withData + " of " + total + " with primary data · " + relativeTime(newest(measurements));
+
+    List<List<String>> rows = measurements.stream()
+        .map(measurement -> List.of(measurement.measurementCode(), primaryDataLabel(measurement),
+            relativeTime(measurement.changed())))
+        .toList();
+    return snapshotPanel("Dataset", "measurements", total, state, tone, status,
+        new String[]{"Measurement ID", "Primary data", "Changed"}, rows,
+        "No measurements to show yet",
+        () -> navigate(MeasurementMain.class, experiment.experimentId()));
+  }
+
+  private Div snapshotPanel(String label, String unit, int count, String state, String tone,
+      String status, String[] columns, List<List<String>> rows, String emptyRow, Runnable open) {
+    Div panel = new Div();
+    panel.addClassName("project-exp-panel");
+
+    Div head = new Div();
+    head.addClassName("project-exp-panel-head");
+    Span labelSpan = new Span(label);
+    labelSpan.addClassName("project-exp-panel-label");
+    head.add(labelSpan);
+    Span stateTag = new Span(state);
+    stateTag.addClassNames("project-exp-panel-state", "project-exp-panel-state--" + tone);
+    head.add(stateTag);
+    Span openHint = new Span("Open " + label.toLowerCase());
+    openHint.addClassName("project-exp-panel-open");
+    head.add(openHint);
+    panel.add(head);
+
+    Div metric = new Div();
+    metric.addClassName("project-exp-panel-metric");
+    Span value = new Span(Integer.toString(count));
+    value.addClassName("project-exp-panel-value");
+    Span unitSpan = new Span(unit);
+    unitSpan.addClassName("project-exp-panel-unit");
+    metric.add(value, unitSpan);
+    panel.add(metric);
+
+    Span statusSpan = new Span(status);
+    statusSpan.addClassName("project-exp-panel-status");
+    panel.add(statusSpan);
+
+    Div list = new Div();
+    list.addClassName("project-exp-panel-rows");
+    list.add(row(columns, true));
+    if (rows.isEmpty()) {
+      list.add(row(new String[]{emptyRow}, false));
+    } else {
+      rows.forEach(cells -> list.add(row(cells.toArray(new String[0]), false)));
+    }
+    panel.add(list);
+
+    activateOnClickAndKeys(panel, open);
+    return panel;
+  }
+
+  private static Div row(String[] cells, boolean header) {
+    Div row = new Div();
+    row.addClassName("project-exp-panel-row");
+    for (String cell : cells) {
+      Span span = new Span(cell);
+      if (header) {
+        span.addClassName("project-exp-panel-cell-header");
+      }
+      row.add(span);
+    }
+    return row;
+  }
+
+  private void navigate(Class<? extends Component> target, String experimentId) {
+    RouteParameters parameters = new RouteParameters(
+        new RouteParam(PROJECT_ID_PARAMETER, projectId),
+        new RouteParam(EXPERIMENT_ID_PARAMETER, experimentId));
+    getUI().ifPresent(ui -> ui.navigate(target, parameters));
+  }
+
+  /** Makes a plain element operable by pointer and by Enter/Space, as the prototype requires. */
+  private static void activateOnClickAndKeys(Component element, Runnable action) {
+    element.getElement().setAttribute("role", "button");
+    element.getElement().setAttribute("tabindex", "0");
+    element.getElement().addEventListener("click", event -> action.run());
+    element.getElement().addEventListener("keydown", event -> {
+      String key = event.getEventData().path("event.key").asText("");
+      if ("Enter".equals(key) || " ".equals(key)) {
+        action.run();
+      }
+    }).addEventData("event.key");
+  }
+
   private Div onboarding() {
     Div hero = new Div();
     hero.addClassName("project-experiments-onboarding");
@@ -112,30 +285,6 @@ public class ProjectExperimentsSection extends Div {
     return hero;
   }
 
-  private Div experimentCard(ExperimentProgress experiment) {
-    Div card = new Div();
-    card.addClassName("project-experiment-card");
-
-    Span name = new Span(experiment.experimentName());
-    name.addClassName("project-experiment-card-name");
-    card.add(name);
-
-    Div stats = new Div();
-    stats.addClassName("project-experiment-card-stats");
-    stats.add(stat("Samples", experiment.sampleCount()));
-    stats.add(stat("Measurements", experiment.measurementCount()));
-    stats.add(stat("Without primary data", experiment.measurementsWithoutPrimaryData()));
-    card.add(stats);
-
-    RouterLink open = new RouterLink("Open experiment", ExperimentInformationMain.class,
-        new RouteParameters(
-            new RouteParam(PROJECT_ID_PARAMETER, projectId),
-            new RouteParam(EXPERIMENT_ID_PARAMETER, experiment.experimentId())));
-    open.addClassName("project-experiment-card-open");
-    card.add(open);
-    return card;
-  }
-
   private Button addExperimentButton() {
     Button add = new Button("Add experiment");
     add.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
@@ -145,15 +294,64 @@ public class ProjectExperimentsSection extends Div {
     return add;
   }
 
-  private static Div stat(String label, int value) {
-    Div fact = new Div();
-    fact.addClassName("project-experiment-card-stat");
-    Span number = new Span(Integer.toString(value));
-    number.addClassName("project-experiment-card-stat-value");
-    Span caption = new Span(label);
-    caption.addClassName("project-experiment-card-stat-label");
-    fact.add(number, caption);
-    return fact;
+  private static List<String> domains(ExperimentProgress experiment) {
+    List<String> domains = new ArrayList<>();
+    if (experiment.ngsMeasurementCount() > 0) {
+      domains.add("Genomics");
+    }
+    if (experiment.pxpMeasurementCount() > 0) {
+      domains.add("Proteomics");
+    }
+    if (experiment.ipMeasurementCount() > 0) {
+      domains.add("Immunopeptidomics");
+    }
+    return domains;
+  }
+
+  private static String primaryDataLabel(RecentMeasurement measurement) {
+    if (!measurement.hasPrimaryData()) {
+      return "Not attached";
+    }
+    return measurement.primaryDataFiles() + " files · " + humanReadableBytes(
+        measurement.primaryDataBytes() == null ? 0L : measurement.primaryDataBytes());
+  }
+
+  private static String humanReadableBytes(long bytes) {
+    if (bytes >= 1_000_000_000L) {
+      return "%.1f GB".formatted(bytes / 1_000_000_000.0);
+    }
+    if (bytes >= 1_000_000L) {
+      return "%.1f MB".formatted(bytes / 1_000_000.0);
+    }
+    if (bytes >= 1_000L) {
+      return "%.1f KB".formatted(bytes / 1_000.0);
+    }
+    return bytes + " B";
+  }
+
+  private static Instant newest(List<RecentMeasurement> measurements) {
+    return measurements.stream()
+        .map(RecentMeasurement::changed)
+        .filter(java.util.Objects::nonNull)
+        .max(Instant::compareTo)
+        .orElse(null);
+  }
+
+  private static String relativeTime(Instant instant) {
+    if (instant == null) {
+      return "unknown";
+    }
+    long days = Duration.between(instant, Instant.now()).toDays();
+    if (days <= 0) {
+      return "just now";
+    }
+    return days + (days == 1 ? " day ago" : " days ago");
+  }
+
+  private static Span chip(String text, String modifier) {
+    Span chip = new Span(text);
+    chip.addClassNames("project-exp-chip", modifier);
+    return chip;
   }
 
   private static Span heading(String text) {
@@ -166,6 +364,12 @@ public class ProjectExperimentsSection extends Div {
     Span message = new Span(text);
     message.addClassName("project-experiments-message");
     return message;
+  }
+
+  /** The section's data: per-experiment progress plus the newest rows for the snapshot panels. */
+  private record Snapshot(List<ExperimentProgress> progress, List<RecentSample> samples,
+                          List<RecentMeasurement> measurements) {
+
   }
 
   /** Fired when the user asks to create a new experiment. */

@@ -38,6 +38,21 @@ public interface ProjectPageReadRepository {
       ProjectSampleFilter filter);
 
   /**
+   * Returns the newest samples of every experiment in the project (at most three per experiment).
+   *
+   * @param projectId the project identifier
+   */
+  List<RecentSample> findRecentSamples(String projectId);
+
+  /**
+   * Returns the newest measurements of every experiment in the project (at most three per
+   * experiment), with their primary-data status.
+   *
+   * @param projectId the project identifier
+   */
+  List<RecentMeasurement> findRecentMeasurements(String projectId);
+
+  /**
    * Counts the project samples matching the filter.
    *
    * @param projectId the project identifier

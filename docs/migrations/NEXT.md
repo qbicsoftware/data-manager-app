@@ -23,6 +23,7 @@ For the migration documentation structure, see [`README.md`](README.md).
 |---|---|---|---|
 | 1 | *(automatic — bundled with JobRunr)* | **JobRunr 8.7.1 → 9.0.x** auto-applies its bundled migration `v017__change_job_stats_view_to_sql_security_invoker.sql` on first startup: the `jobrunr_jobs_stats` view is recreated with `SQL SECURITY INVOKER` (MariaDB/MySQL). Atomic `CREATE OR REPLACE VIEW`; no table/index DDL, no downtime. Applied once and recorded in `jobrunr_migrations`. | Low |
 | 2 | [`create-project-page-read-models.sql`](../sql/migrations/create-project-page-read-models.sql) | Create the project-page read-model views `experiment_progress`, `v_project_sample_overview`, `v_measurement_experiment`, plus a supporting index on `sample(experiment_id)`. Views + one index only; no table or column changes. | Low (non-destructive) |
+| 3 | [`create-experiment-recent-activity-views.sql`](../sql/migrations/create-experiment-recent-activity-views.sql) | Create the recent-activity views `experiment_recent_sample` and `experiment_recent_measurement` (newest three per experiment, via `ROW_NUMBER`) for the experiment snapshot panels. Views only. | Low (non-destructive; needs MariaDB 10.2+) |
 
 Each row links to its incremental script. The sections below expand each entry
 with apply / verify / rollback detail.
@@ -159,6 +160,69 @@ was drafted alongside the read models but is **deliberately not included** in th
 where per-user view state belongs is still an open decision (cf. ADR-0008, user preferences
 vs project state). **Do not apply it** until that decision is recorded; it will be promoted
 to a numbered migration in a later release.
+
+---
+
+## Migration #3: Recent-activity read models (experiment snapshot panels)
+
+| Field | Value |
+|---|---|
+| **Story** | TBD (governance gate skipped at project-owner direction) |
+| **Feature** | TBD (`FEAT-PROJECT-*`) |
+| **ADRs** | TBD (read-model / query-service ADR) |
+| **Scope** | create 2 views |
+| **Script** | [`sql/migrations/create-experiment-recent-activity-views.sql`](../sql/migrations/create-experiment-recent-activity-views.sql) |
+| **Target datasource** | `data_management` |
+
+### What it does
+
+Adds the read models behind the experiment snapshot panels on the project page: the newest three
+samples and the newest three measurements per experiment.
+
+- **`experiment_recent_sample`** — newest samples per experiment, ordered by
+  `COALESCE(lastModified, registrationTime)` descending, with the sample code as tie-break.
+- **`experiment_recent_measurement`** — newest measurements per experiment across the three type
+tables (union), ordered by registration descending, left-joined to `remote_measurement_data`
+(joined on the measurementCode, `deleted = FALSE`) so each row carries its primary-data file count
+and size. A measurement measuring samples of more than one experiment is attributed to each (D8).
+
+Both use `ROW_NUMBER() OVER (PARTITION BY experiment_id ORDER BY …) <= 3`, so a page renders from one
+query per view instead of a per-experiment N+1. **Requires MariaDB 10.2+.**
+
+### Pre-flight
+
+```sql
+SELECT VERSION();
+```
+
+### Apply
+
+```bash
+mysql -u <user> -h <host> -P <port> data_management \
+    < sql/migrations/create-experiment-recent-activity-views.sql
+```
+
+### Verify
+
+```sql
+-- At most three rows per experiment (empty = good).
+SELECT experiment_id, COUNT(*) AS n FROM experiment_recent_sample
+ GROUP BY experiment_id HAVING n > 3;
+SELECT experiment_id, COUNT(*) AS n FROM experiment_recent_measurement
+ GROUP BY experiment_id HAVING n > 3;
+```
+
+### Rollback
+
+```sql
+DROP VIEW IF EXISTS experiment_recent_measurement;
+DROP VIEW IF EXISTS experiment_recent_sample;
+```
+
+### Operator notes
+
+- Non-destructive and safe on a live database; no downtime, no data movement.
+- Needs MariaDB 10.2 or newer (window functions).
 
 ---
 

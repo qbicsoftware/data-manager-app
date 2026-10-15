@@ -10,6 +10,8 @@ import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.query.ExperimentProgress;
 import life.qbic.projectmanagement.application.query.ProjectPageReadRepository;
 import life.qbic.projectmanagement.application.query.ProjectSampleOverview;
+import life.qbic.projectmanagement.application.query.RecentMeasurement;
+import life.qbic.projectmanagement.application.query.RecentSample;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.core.context.SecurityContext;
@@ -84,6 +86,30 @@ public class ProjectQueryServiceImpl implements ProjectQueryService {
         .contextWrite(reactiveSecurity(securityContext))
         .retryWhen(defaultRetryStrategy())
         .onErrorMap(cause -> mapToQueryException(cause, "Request to count project samples failed"));
+  }
+
+  @Override
+  public Flux<RecentSample> getRecentSamples(String projectId) {
+    Objects.requireNonNull(projectId, "projectId must not be null");
+    SecurityContext securityContext = SecurityContextHolder.getContext();
+    return applySecurityContextMany(Flux.defer(
+            () -> Flux.fromIterable(readRepository.findRecentSamples(projectId))))
+        .subscribeOn(scheduler)
+        .contextWrite(reactiveSecurity(securityContext))
+        .retryWhen(defaultRetryStrategy())
+        .onErrorMap(cause -> mapToQueryException(cause, "Request for recent samples failed"));
+  }
+
+  @Override
+  public Flux<RecentMeasurement> getRecentMeasurements(String projectId) {
+    Objects.requireNonNull(projectId, "projectId must not be null");
+    SecurityContext securityContext = SecurityContextHolder.getContext();
+    return applySecurityContextMany(Flux.defer(
+            () -> Flux.fromIterable(readRepository.findRecentMeasurements(projectId))))
+        .subscribeOn(scheduler)
+        .contextWrite(reactiveSecurity(securityContext))
+        .retryWhen(defaultRetryStrategy())
+        .onErrorMap(cause -> mapToQueryException(cause, "Request for recent measurements failed"));
   }
 
   private static Retry defaultRetryStrategy() {
