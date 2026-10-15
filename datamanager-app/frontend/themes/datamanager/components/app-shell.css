@@ -53,6 +53,19 @@
   color: var(--lumo-primary-color);
 }
 
+.app-account {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.25rem 0.5rem 0.25rem 0.25rem;
+  border-radius: 999px;
+}
+
+.app-account-name {
+  font-size: var(--lumo-font-size-s);
+  color: var(--lumo-secondary-text-color);
+}
+
 .app-crumbs {
   display: inline-flex;
   align-items: center;

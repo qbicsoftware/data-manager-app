@@ -40,8 +40,8 @@ public class DataManagerMenu extends Div {
   }
 
   private void initializeUserSubMenuItems(AuthenticationContext authenticationContext) {
-    initializeAvatar();
-    MenuItem userMenuItem = projectMenu.addItem(userAvatar);
+    String fullName = initializeAvatar();
+    MenuItem userMenuItem = projectMenu.addItem(account(userAvatar, fullName));
     SubMenu userSubMenu = userMenuItem.getSubMenu();
     // Account settings stay reachable from the avatar for discoverability/familiarity
     // (GitHub keeps Settings in the user menu too), with the top-level Settings tab as the
@@ -73,15 +73,34 @@ public class DataManagerMenu extends Div {
     return item;
   }
 
-  private void initializeAvatar() {
+  /**
+   * The account control: the avatar with the user's name beside it, the way the prototype's
+   * identity bar presents the signed-in user. Activating it opens the account submenu.
+   */
+  private static Span account(UserAvatar avatar, String fullName) {
+    Span account = new Span(avatar);
+    if (!fullName.isBlank()) {
+      Span name = new Span(fullName);
+      name.addClassName("app-account-name");
+      account.add(name);
+    }
+    account.addClassName("app-account");
+    return account;
+  }
+
+  private String initializeAvatar() {
     var principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
     var userId = "";
+    var fullName = "";
     if (principal instanceof QbicUserDetails qbicUserDetails) {
       userId = qbicUserDetails.getUserId();
+      fullName = qbicUserDetails.fullName();
     }
     if (principal instanceof QbicOidcUser qbicOidcUser) {
       userId = qbicOidcUser.getQbicUserId();
+      fullName = qbicOidcUser.getFullName();
     }
     userAvatar.setUserId(userId);
+    return fullName;
   }
 }
