@@ -111,6 +111,7 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectUp
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectUpdateResponse;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.RequestFailedException;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.UnknownRequestException;
+import life.qbic.projectmanagement.application.api.ProjectQueryService;
 import life.qbic.projectmanagement.application.contact.PersonLookupService;
 import life.qbic.projectmanagement.domain.model.project.Contact;
 import life.qbic.projectmanagement.domain.model.project.Contact.OidcInformation;
@@ -154,6 +155,7 @@ public class ProjectSummaryComponent extends PageArea {
   private final Section fundingInformationSection;
   private final Section projectContactsSection;
   private final DownloadComponent downloadComponent;
+  private final ProjectProgressSection projectProgressSection;
   private final transient AsyncProjectService asyncProjectService;
   private final RequestCache requestCache;
   private final MessageSourceNotificationFactory messageSourceNotificationFactory;
@@ -171,6 +173,7 @@ public class ProjectSummaryComponent extends PageArea {
       UserPermissions userPermissions,
       MessageSourceNotificationFactory notificationFactory,
       AsyncProjectService asyncProjectService,
+      ProjectQueryService projectQueryService,
       RequestCache requestCache,
       MessageSourceNotificationFactory messageSourceNotificationFactory) {
     this.projectInformationService = Objects.requireNonNull(projectInformationService);
@@ -186,9 +189,12 @@ public class ProjectSummaryComponent extends PageArea {
     this.asyncProjectService = Objects.requireNonNull(asyncProjectService);
     this.requestCache = Objects.requireNonNull(requestCache);
     this.downloadComponent = new DownloadComponent();
+    this.projectProgressSection = new ProjectProgressSection(
+        Objects.requireNonNull(projectQueryService));
 
     addClassName("project-details-component");
 
+    add(projectProgressSection);
     add(headerSection);
     add(projectDesignSection);
     add(experimentInformationSection);
@@ -292,6 +298,7 @@ public class ProjectSummaryComponent extends PageArea {
     // The header section only contains the RO-Crate action, which we want to enable always
     loadScope(id -> true, projectId, headerSection).forEach(UserScopeStrategy::execute);
     loadExperimentInfo(projectId.value());
+    projectProgressSection.setProjectId(projectId.value());
   }
 
   private void loadExperimentInfo(String projectId) {
