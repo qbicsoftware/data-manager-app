@@ -51,6 +51,14 @@
 --
 --  4. deleted rows in remote_measurement_data are excluded (deleted = FALSE).
 --
+--  4b. A measurementCode is assumed unique per measurement record, but the database does not
+--      enforce it: a real instance had two measurement rows sharing one code. Primary-data
+--      VOLUME is therefore summed per (experiment, measurementCode) -- the grain
+--      remote_measurement_data is actually keyed by -- while the COUNT of measurements with
+--      primary data counts measurement records. Counting volume per record would double it.
+--      Values can legitimately be 0: total_filesize_bytes is 0 for many synced measurements, so
+--      "0.0 GB in 24 files" means the sizes were never recorded, not that the arithmetic failed.
+--
 --  5. COLLATION DRIFT. The hand-written DDL pins every app table to
 --     utf8mb4_unicode_ci, but tables created outside it (Hibernate ddl-auto, or an
 --     instance whose server default is utf8mb4_general_ci) end up on
@@ -136,9 +144,9 @@ SELECT e.id                                           AS experiment_id,
        COALESCE(me.ip_measurement_count, 0)           AS ip_measurement_count,
 
        -- Primary data (measurement data attached; deleted excluded)
-       COALESCE(pd.measurements_with_primary_data, 0) AS measurements_with_primary_data,
-       COALESCE(pd.primary_data_files, 0)             AS primary_data_files,
-       COALESCE(pd.primary_data_bytes, 0)             AS primary_data_bytes
+       COALESCE(pd_count.measurements_with_primary_data, 0) AS measurements_with_primary_data,
+       COALESCE(pd_volume.primary_data_files, 0)            AS primary_data_files,
+       COALESCE(pd_volume.primary_data_bytes, 0)            AS primary_data_bytes
 FROM experiments_datamanager e
          LEFT JOIN (
     SELECT s.experiment_id,
@@ -164,17 +172,33 @@ FROM experiments_datamanager e
     FROM v_measurement_experiment ve
     GROUP BY ve.experiment_id
 ) me ON me.experiment_id COLLATE utf8mb4_unicode_ci = e.id
+         -- How many measurement records carry primary data. Counted per measurement record,
+         -- because that is what the rail and the experiment card state.
          LEFT JOIN (
     SELECT ve.experiment_id,
-           COUNT(DISTINCT ve.measurement_type, ve.measurement_id) AS measurements_with_primary_data,
-           COALESCE(SUM(rmd.file_count), 0)                       AS primary_data_files,
-           COALESCE(SUM(rmd.total_filesize_bytes), 0)             AS primary_data_bytes
+           COUNT(DISTINCT ve.measurement_type, ve.measurement_id) AS measurements_with_primary_data
     FROM v_measurement_experiment ve
              JOIN remote_measurement_data rmd
                   ON rmd.measurement_id = ve.measurement_code COLLATE utf8mb4_unicode_ci
                       AND rmd.deleted = FALSE
     GROUP BY ve.experiment_id
-) pd ON pd.experiment_id COLLATE utf8mb4_unicode_ci = e.id;
+) pd_count ON pd_count.experiment_id COLLATE utf8mb4_unicode_ci = e.id
+         -- How much primary data there is. remote_measurement_data is keyed by the
+         -- measurementCode, so it is summed once per (experiment, code): two measurement
+         -- records sharing one code must not double the volume. Such duplicates exist in the
+         -- wild (two codes in a real instance had two measurement rows each), and while they
+         -- happen to be unattributed today, counting them per record would silently inflate
+         -- the file and byte totals the moment they are attributed.
+         LEFT JOIN (
+    SELECT codes.experiment_id,
+           COALESCE(SUM(rmd.file_count), 0)           AS primary_data_files,
+           COALESCE(SUM(rmd.total_filesize_bytes), 0) AS primary_data_bytes
+    FROM (SELECT DISTINCT experiment_id, measurement_code FROM v_measurement_experiment) codes
+             JOIN remote_measurement_data rmd
+                  ON rmd.measurement_id = codes.measurement_code COLLATE utf8mb4_unicode_ci
+                      AND rmd.deleted = FALSE
+    GROUP BY codes.experiment_id
+) pd_volume ON pd_volume.experiment_id COLLATE utf8mb4_unicode_ci = e.id;
 
 
 -- -----------------------------------------------------------------------------
