@@ -64,3 +64,24 @@
 .project-experiments-message {
   color: var(--lumo-secondary-text-color);
 }
+
+/* Onboarding hero shown when the project has no experiment yet. */
+.project-experiments-onboarding {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--lumo-space-s);
+  padding: var(--lumo-space-m);
+  border: 1px dashed var(--lumo-contrast-20pct);
+  border-radius: var(--lumo-border-radius-m);
+}
+
+.project-experiments-onboarding-title {
+  font-size: var(--lumo-font-size-l);
+  font-weight: 600;
+  color: var(--lumo-header-text-color);
+}
+
+.project-experiments-onboarding-text {
+  color: var(--lumo-secondary-text-color);
+}

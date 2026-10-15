@@ -82,19 +82,34 @@ public class ProjectExperimentsSection extends Div {
 
   private void render(List<ExperimentProgress> experiments) {
     content.removeAll();
-    Div header = new Div(heading("Experiments"), addExperimentButton());
+    Div header = new Div(heading("Experiments"));
     header.addClassName("project-experiments-header");
     content.add(header);
 
     if (experiments.isEmpty()) {
-      content.add(message("No experiment yet. Create the first experiment to start registering "
-          + "samples and measurements."));
+      content.add(onboarding());
       return;
     }
     Div cards = new Div();
     cards.addClassName("project-experiments-cards");
     experiments.forEach(experiment -> cards.add(experimentCard(experiment)));
     content.add(cards);
+  }
+
+  /**
+   * Onboarding hero shown when the project has no experiment yet. The action is the same one the
+   * identity band raises, so the empty state and the band cannot diverge.
+   */
+  private Div onboarding() {
+    Div hero = new Div();
+    hero.addClassName("project-experiments-onboarding");
+    Span title = new Span("Create your first experiment");
+    title.addClassName("project-experiments-onboarding-title");
+    Span text = new Span("Experiments are where samples, measurements and primary data live — "
+        + "all of it starts with one experiment.");
+    text.addClassName("project-experiments-onboarding-text");
+    hero.add(title, text, addExperimentButton());
+    return hero;
   }
 
   private Div experimentCard(ExperimentProgress experiment) {
