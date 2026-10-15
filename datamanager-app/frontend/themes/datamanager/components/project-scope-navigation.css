@@ -1,5 +1,5 @@
-/* Project shell: two chrome rows — an identity bar over one scope-contextual navigation row.
-   Replaces the retired left drawer and the experiment tab bar (implementation strategy, Phase 1). */
+/* Project shell chrome — the prototype's two rows: an identity bar (wordmark + breadcrumb +
+   account) over one scope-contextual navigation row. Replaces the retired drawer and tab bar. */
 
 .project-shell-chrome {
   display: flex;
@@ -7,61 +7,122 @@
   width: 100%;
 }
 
-.project-shell-identity-bar {
-  display: inline-flex;
-  justify-content: space-between;
+.project-shell-identity-bar,
+.project-scope-navigation-strip {
+  display: flex;
+  align-items: center;
   width: 100%;
-  align-items: center;
-  padding-right: var(--lumo-space-m);
+  max-width: var(--content-shell-max-width);
+  margin-inline: auto;
+  padding-inline: var(--lumo-space-m);
+  box-sizing: border-box;
 }
 
-.project-shell-identity {
+.project-shell-identity-bar {
+  gap: var(--lumo-space-m);
+  min-height: 3.25rem;
+}
+
+.project-shell-identity-bar .data-manager-menu {
+  margin-left: auto;
+}
+
+.project-shell-brand {
   display: inline-flex;
   align-items: center;
-  column-gap: var(--lumo-space-s);
+  gap: var(--lumo-space-s);
 }
 
-.project-shell-title {
-  font-weight: bold;
-  font-size: var(--lumo-font-size-l);
+.project-shell-wordmark {
+  font-weight: 600;
+  font-size: var(--lumo-font-size-m);
   color: var(--lumo-header-text-color);
   text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  column-gap: var(--lumo-space-s);
+  white-space: nowrap;
 }
 
-.project-shell-title[href]:hover,
-.project-shell-title[href]:focus {
+.project-shell-wordmark-dot {
+  color: var(--lumo-primary-color);
+}
+
+.project-shell-crumbs {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+  font-size: var(--lumo-font-size-s);
+  color: var(--lumo-secondary-text-color);
+}
+
+.project-shell-crumb {
+  max-width: 42ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--lumo-secondary-text-color);
+  text-decoration: none;
+}
+
+a.project-shell-crumb:hover,
+a.project-shell-crumb:focus {
   color: var(--lumo-primary-text-color);
   text-decoration: underline;
 }
 
-.project-shell-navigation {
-  width: 100%;
+.project-shell-crumb-code {
+  font-family: monospace;
 }
 
+.project-shell-crumb-current {
+  color: var(--lumo-body-text-color);
+  font-weight: 600;
+}
+
+.project-shell-crumb-separator {
+  color: var(--lumo-contrast-40pct);
+}
+
+/* Row 2: the scope-contextual navigation. Items carry no counts; the current one is marked by
+   aria-current (weight plus the accent rule), never a filled pill. */
 .project-scope-navigation-strip {
-  display: flex;
+  gap: var(--lumo-space-l);
+  min-height: 3rem;
+  border-top: 1px solid var(--lumo-contrast-10pct);
+  border-bottom: 1px solid var(--lumo-contrast-10pct);
+}
+
+.project-scope-navigation-items {
+  display: inline-flex;
+  align-items: stretch;
+  gap: var(--lumo-space-l);
+  flex: 0 0 auto;
+}
+
+.project-scope-navigation-tools {
+  margin-left: auto;
+  display: inline-flex;
   align-items: center;
-  column-gap: var(--lumo-space-l);
-  padding-inline: var(--lumo-space-m);
+  gap: var(--lumo-space-m);
+  flex: 0 0 auto;
 }
 
 .project-scope-navigation-item {
-  padding-block: var(--lumo-space-xs);
+  display: inline-flex;
+  align-items: center;
+  padding-block: var(--lumo-space-s);
   color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-m);
   text-decoration: none;
+  white-space: nowrap;
   border-bottom: 2px solid transparent;
-  font-weight: 500;
 }
 
-.project-scope-navigation-item:hover,
-.project-scope-navigation-item:focus {
-  color: var(--lumo-primary-text-color);
+.project-scope-navigation-item:hover {
+  color: var(--lumo-body-text-color);
 }
 
-.project-scope-navigation-item.is-active {
-  color: var(--lumo-header-text-color);
+.project-scope-navigation-item[aria-current="page"] {
+  color: var(--lumo-body-text-color);
+  font-weight: 600;
   border-bottom-color: var(--lumo-primary-color);
 }

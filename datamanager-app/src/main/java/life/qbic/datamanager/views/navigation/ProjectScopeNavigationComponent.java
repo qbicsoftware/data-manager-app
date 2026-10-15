@@ -20,34 +20,33 @@ import life.qbic.datamanager.views.projects.project.rawdata.RawDataMain;
 import life.qbic.datamanager.views.projects.project.samples.SampleInformationMain;
 
 /**
- * Scope-contextual navigation row of the project shell.
+ * Scope-contextual navigation row of the project shell — the prototype's second chrome row.
  *
- * <p>The shell shows exactly one navigation row, and its contents are the views of the entity named
- * at the end of the identity bar's breadcrumb:</p>
+ * <p>Its contents are the views of the entity named at the end of the breadcrumb: the project's own
+ * views for project scope, the experiment's views for experiment scope. Two scopes are never
+ * navigable at once, so the row never shows two meanings of the same word.</p>
  *
- * <ul>
- *   <li>{@link #forProject(String, boolean)} — the project's own views
- *       (<em>Summary · Datasets · Access · Ontology search</em>).</li>
- *   <li>{@link #forExperiment(String, String)} — the experiment's views
- *       (<em>Overview · Samples · Measurements · Raw data</em>).</li>
- * </ul>
- *
- * <p>Two scopes are never navigable at once, and the row contains no entity-specific content, so it
- * renders identical geometry in every project. Each item is a real {@link RouterLink}; the active
- * item is set explicitly by the layout from the routing target, because several routes share a
- * location prefix (e.g. an experiment overview prefixes its sub-views).</p>
+ * <p>Styling follows the prototype: each item is a plain link with a transparent bottom rule; the
+ * current one is marked by {@code aria-current="page"} (weight plus the accent rule), never a filled
+ * pill. Project-scoped tools (ontology search) sit in a right-aligned tools group, so navigation
+ * starts at a fixed origin and does not depend on project metadata.</p>
  *
  * @since 1.19.0
  */
 public class ProjectScopeNavigationComponent extends Div {
 
-  private final Nav nav = new Nav();
+  private final Div items = new Div();
+  private final Div tools = new Div();
   private final Map<Class<?>, RouterLink> links = new LinkedHashMap<>();
 
   private ProjectScopeNavigationComponent() {
     addClassName("project-scope-navigation");
+    Nav nav = new Nav();
     nav.getElement().setAttribute("aria-label", "Project navigation");
     nav.addClassName("project-scope-navigation-strip");
+    items.addClassName("project-scope-navigation-items");
+    tools.addClassName("project-scope-navigation-tools");
+    nav.add(items, tools);
     add(nav);
   }
 
@@ -61,12 +60,12 @@ public class ProjectScopeNavigationComponent extends Div {
     Objects.requireNonNull(projectId, "projectId must not be null");
     var component = new ProjectScopeNavigationComponent();
     var parameters = projectParameters(projectId);
-    component.addLink("Summary", ProjectInformationMain.class, parameters);
-    component.addLink("Datasets", ConnectedDatasetsMain.class, parameters);
+    component.addItem("Summary", ProjectInformationMain.class, parameters, false);
+    component.addItem("Datasets", ConnectedDatasetsMain.class, parameters, false);
     if (canViewAccess) {
-      component.addLink("Access", ProjectAccessMain.class, parameters);
+      component.addItem("Access", ProjectAccessMain.class, parameters, false);
     }
-    component.addLink("Ontology search", OntologyLookupMainComponent.class, parameters);
+    component.addItem("Ontology search", OntologyLookupMainComponent.class, parameters, true);
     return component;
   }
 
@@ -82,30 +81,36 @@ public class ProjectScopeNavigationComponent extends Div {
     Objects.requireNonNull(experimentId, "experimentId must not be null");
     var component = new ProjectScopeNavigationComponent();
     var parameters = experimentParameters(projectId, experimentId);
-    component.addLink("Overview", ExperimentInformationMain.class, parameters);
-    component.addLink("Samples", SampleInformationMain.class, parameters);
-    component.addLink("Measurements", MeasurementMain.class, parameters);
-    component.addLink("Raw data", RawDataMain.class, parameters);
+    component.addItem("Overview", ExperimentInformationMain.class, parameters, false);
+    component.addItem("Samples", SampleInformationMain.class, parameters, false);
+    component.addItem("Measurements", MeasurementMain.class, parameters, false);
+    component.addItem("Raw data", RawDataMain.class, parameters, false);
     return component;
   }
 
-  private void addLink(String label, Class<? extends Component> target, RouteParameters parameters) {
+  private void addItem(String label, Class<? extends Component> target, RouteParameters parameters,
+      boolean tool) {
     var link = new RouterLink();
     link.add(new Span(label));
     link.setRoute(target, parameters);
     link.addClassName("project-scope-navigation-item");
     links.put(target, link);
-    nav.add(link);
+    (tool ? tools : items).add(link);
   }
 
   /**
-   * Marks the navigation item whose view is the current routing target as active.
+   * Marks the item whose view is the current routing target as the current page.
    *
    * @param navigationTarget the target class of the route being entered
    */
   public void setActive(Class<?> navigationTarget) {
-    links.forEach((target, link) ->
-        link.getElement().getClassList().set("is-active", target.equals(navigationTarget)));
+    links.forEach((target, link) -> {
+      if (target.equals(navigationTarget)) {
+        link.getElement().setAttribute("aria-current", "page");
+      } else {
+        link.getElement().removeAttribute("aria-current");
+      }
+    });
   }
 
   private static RouteParameters projectParameters(String projectId) {

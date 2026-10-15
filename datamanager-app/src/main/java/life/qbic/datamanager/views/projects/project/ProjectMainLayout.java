@@ -2,11 +2,8 @@ package life.qbic.datamanager.views.projects.project;
 
 import static java.util.Objects.requireNonNull;
 
-import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.Icon;
-import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
@@ -20,9 +17,9 @@ import life.qbic.datamanager.announcements.AnnouncementService;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.DataManagerLayout;
 import life.qbic.datamanager.views.general.DataManagerMenu;
-import life.qbic.datamanager.views.general.HomeLink;
 import life.qbic.datamanager.views.general.footer.FooterComponent;
 import life.qbic.datamanager.views.navigation.ProjectScopeNavigationComponent;
+import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.datamanager.views.projects.project.info.ProjectInformationMain;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
@@ -35,21 +32,20 @@ import org.springframework.beans.factory.annotation.Autowired;
 /**
  * <b>Project shell layout</b>
  *
- * <p>The single layout for everything inside a project — project-scoped views (summary, datasets,
- * access, ontology search) and experiment-scoped views (overview, samples, measurements, raw data)
- * alike. It replaces the former separate {@code ProjectMainLayout} (drawer-based) and
- * {@code ExperimentMainLayout} (drawer + tab bar) so the chrome no longer shifts when navigating
- * into an experiment.</p>
+ * <p>The single layout for everything inside a project — project-scoped views and experiment-scoped
+ * views alike. It replaces the former separate {@code ProjectMainLayout} (drawer-based) and
+ * {@code ExperimentMainLayout} (drawer + tab bar).</p>
  *
- * <p>Two chrome rows, never more (implementation strategy, Phase 1):</p>
+ * <p>Two chrome rows, in the prototype's style:</p>
  * <ol>
- *   <li>an identity bar — home link, project/experiment identity, account menu;</li>
- *   <li>one scope-contextual navigation row ({@link ProjectScopeNavigationComponent}) whose contents
- *       are the views of the entity named in the identity bar.</li>
+ *   <li>an identity bar — the {@code Data Manager} wordmark, the breadcrumb
+ *       ({@code Home / CODE / Title}, extended with the experiment crumb when inside one) and the
+ *       account menu;</li>
+ *   <li>one scope-contextual navigation row ({@link ProjectScopeNavigationComponent}).</li>
  * </ol>
  *
- * <p>The left navigation drawer is retired. There is no experiment-level tab bar: the experiment's
- * views live in the same single navigation row.</p>
+ * <p>Breadcrumb and identity band both name the project on purpose: the breadcrumb is the way up,
+ * the band is the page's title. Only the entity being viewed is not a link.</p>
  *
  * @since 1.19.0
  */
@@ -65,7 +61,7 @@ public class ProjectMainLayout extends DataManagerLayout implements BeforeEnterO
   private final transient ExperimentInformationService experimentInformationService;
   private final transient UserPermissions userPermissions;
 
-  private final RouterLink identity = new RouterLink();
+  private final Span breadcrumbs = new Span();
   private final Span scopeNavigationContainer = new Span();
 
   public ProjectMainLayout(@Autowired AuthenticationContext authenticationContext,
@@ -80,7 +76,8 @@ public class ProjectMainLayout extends DataManagerLayout implements BeforeEnterO
     this.userPermissions = requireNonNull(userPermissions);
     this.dataManagerMenu = new DataManagerMenu(requireNonNull(authenticationContext));
 
-    Span identityBar = new Span(createIdentityBar(), dataManagerMenu);
+    breadcrumbs.addClassName("project-shell-crumbs");
+    Span identityBar = new Span(brand(), breadcrumbs, dataManagerMenu);
     identityBar.addClassName("project-shell-identity-bar");
     scopeNavigationContainer.addClassName("project-shell-navigation");
     Div chrome = new Div(identityBar, scopeNavigationContainer);
@@ -98,58 +95,92 @@ public class ProjectMainLayout extends DataManagerLayout implements BeforeEnterO
     Project project = projectInformationService.find(projectId).orElseThrow(
         () -> new ApplicationException("Unknown project " + projectIdValue));
 
+    String projectCode = project.getProjectCode().value();
+    String projectTitle = project.getProjectIntent().projectTitle().title();
     scopeNavigationContainer.removeAll();
     beforeEnterEvent.getRouteParameters().get(EXPERIMENT_ID_ROUTE_PARAMETER)
         .ifPresentOrElse(
-            experimentIdValue -> showExperimentScope(project, projectId, experimentIdValue,
+            experimentId -> renderExperimentScope(projectId, projectCode, projectTitle, experimentId,
                 beforeEnterEvent.getNavigationTarget()),
-            () -> showProjectScope(project, projectId, beforeEnterEvent.getNavigationTarget()));
+            () -> renderProjectScope(projectId, projectCode, projectTitle,
+                beforeEnterEvent.getNavigationTarget()));
   }
 
-  private void showProjectScope(Project project, ProjectId projectId,
+  private void renderProjectScope(ProjectId projectId, String projectCode, String projectTitle,
       Class<?> navigationTarget) {
-    setProjectIdentity(project, projectId);
+    breadcrumbs.removeAll();
+    breadcrumbs.add(homeCrumb(), separator(), codeSpan(projectCode), separator(),
+        currentCrumb(projectTitle));
     boolean canViewAccess = userPermissions.readProject(projectId);
     var navigation = ProjectScopeNavigationComponent.forProject(projectId.value(), canViewAccess);
     navigation.setActive(navigationTarget);
     scopeNavigationContainer.add(navigation);
   }
 
-  private void showExperimentScope(Project project, ProjectId projectId, String experimentId,
-      Class<?> navigationTarget) {
-    setExperimentIdentity(project, projectId, ExperimentId.parse(experimentId));
-    var navigation = ProjectScopeNavigationComponent.forExperiment(projectId.value(),
-        experimentId);
+  private void renderExperimentScope(ProjectId projectId, String projectCode, String projectTitle,
+      String experimentId, Class<?> navigationTarget) {
+    String experimentName = experimentInformationService
+        .find(projectId.value(), ExperimentId.parse(experimentId))
+        .map(Experiment::getName)
+        .orElse("");
+    breadcrumbs.removeAll();
+    breadcrumbs.add(homeCrumb(), separator(), codeLink(projectCode, projectId), separator(),
+        titleLink(projectTitle, projectId), separator(), currentCrumb(experimentName));
+    var navigation = ProjectScopeNavigationComponent.forExperiment(projectId.value(), experimentId);
     navigation.setActive(navigationTarget);
     scopeNavigationContainer.add(navigation);
   }
 
-  private Span createIdentityBar() {
-    Span identityBar = new Span();
-    identityBar.addClassName("project-shell-identity");
-    identity.setClassName("project-shell-title");
-    identityBar.add(new HomeLink(), identity);
-    return identityBar;
+  private static Span brand() {
+    Span brand = new Span();
+    brand.addClassName("project-shell-brand");
+    RouterLink wordmark = new RouterLink();
+    wordmark.setRoute(ProjectOverviewMain.class);
+    wordmark.addClassName("project-shell-wordmark");
+    Span dot = new Span(".");
+    dot.addClassName("project-shell-wordmark-dot");
+    wordmark.add(new Span("Data Manager"), dot);
+    brand.add(wordmark);
+    return brand;
   }
 
-  private void setProjectIdentity(Project project, ProjectId projectId) {
-    identity.setRoute(ProjectInformationMain.class, projectRouteParameters(projectId));
-    identity.removeAll();
-    identity.add(new Text(project.getProjectCode().value() + " — "
-        + project.getProjectIntent().projectTitle().title()));
+  private static RouterLink homeCrumb() {
+    RouterLink home = new RouterLink("Home", ProjectOverviewMain.class);
+    home.addClassName("project-shell-crumb");
+    return home;
   }
 
-  private void setExperimentIdentity(Project project, ProjectId projectId,
-      ExperimentId experimentId) {
-    identity.setRoute(ProjectInformationMain.class, projectRouteParameters(projectId));
-    String experimentName = experimentInformationService.find(projectId.value(), experimentId)
-        .map(Experiment::getName)
-        .orElse("");
-    Icon beaker = VaadinIcon.FLASK.create();
-    beaker.addClassNames("primary", "smallest");
-    identity.removeAll();
-    identity.add(new Text(project.getProjectCode().value() + " / "), beaker,
-        new Text(experimentName));
+  private static Span codeSpan(String code) {
+    Span span = new Span(code);
+    span.addClassNames("project-shell-crumb", "project-shell-crumb-code");
+    return span;
+  }
+
+  private static RouterLink codeLink(String code, ProjectId projectId) {
+    RouterLink link = new RouterLink(code, ProjectInformationMain.class,
+        projectRouteParameters(projectId));
+    link.addClassNames("project-shell-crumb", "project-shell-crumb-code");
+    return link;
+  }
+
+  private static RouterLink titleLink(String title, ProjectId projectId) {
+    RouterLink link = new RouterLink(title, ProjectInformationMain.class,
+        projectRouteParameters(projectId));
+    link.addClassName("project-shell-crumb");
+    return link;
+  }
+
+  private static Span currentCrumb(String text) {
+    Span span = new Span(text);
+    span.addClassNames("project-shell-crumb", "project-shell-crumb-current");
+    span.getElement().setAttribute("title", text);
+    return span;
+  }
+
+  private static Span separator() {
+    Span span = new Span("/");
+    span.addClassName("project-shell-crumb-separator");
+    return span;
   }
 
   private static RouteParameters projectRouteParameters(ProjectId projectId) {
