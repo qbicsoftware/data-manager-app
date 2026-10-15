@@ -2,6 +2,7 @@ package life.qbic.datamanager.views.projects.project.info;
 
 import static java.util.Objects.requireNonNull;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.UI;
@@ -19,23 +20,27 @@ import java.util.ArrayList;
 import java.util.List;
 import life.qbic.datamanager.views.general.ReactiveUiBridge;
 import life.qbic.datamanager.views.projects.project.datasets.ConnectedDatasetsMain;
+import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementMain;
+import life.qbic.datamanager.views.projects.project.samples.SampleInformationMain;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectOverview;
 import life.qbic.projectmanagement.application.api.ProjectQueryService;
+import life.qbic.projectmanagement.application.associated_dataset.AssociatedDatasetService;
+import life.qbic.projectmanagement.application.associated_dataset.ConnectedDatasetView;
 import life.qbic.projectmanagement.application.query.ExperimentProgress;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 
 /**
  * "Where the project stands" — the prototype's progress band.
  *
- * <p>Structure (top to bottom): the band title; the attention block (only when something is
- * outstanding, and outside the card); then the progress card with a headline sentence, an ordered
- * rail of three stages ({@code Experiment created → Samples registered → Dataset}) and the
- * dataset-standing block.</p>
+ * <p>Structure (top to bottom): the band title; the attention card (only when something is
+ * outstanding); then the progress card with a headline sentence, a rail of three stages
+ * ({@code Experiment created -> Samples registered -> Dataset}) on a connector line, and the
+ * dataset standing (primary data and connected assets).</p>
  *
  * <p>This is a genuine sequence, so the rail numbers its steps and marks done / attention with
- * glyphs instead of ordinals.</p>
+ * glyphs instead of ordinals. Each step routes to its surface.</p>
  *
  * @since 1.19.0
  */
@@ -46,15 +51,19 @@ public class ProjectProgressSection extends Div {
 
   private final transient ProjectQueryService projectQueryService;
   private final transient ProjectInformationService projectInformationService;
+  private final transient AssociatedDatasetService associatedDatasetService;
   private final Div content = new Div();
   private String projectId;
 
   public ProjectProgressSection(ProjectQueryService projectQueryService,
-      ProjectInformationService projectInformationService) {
+      ProjectInformationService projectInformationService,
+      AssociatedDatasetService associatedDatasetService) {
     this.projectQueryService = requireNonNull(projectQueryService,
         "projectQueryService must not be null");
     this.projectInformationService = requireNonNull(projectInformationService,
         "projectInformationService must not be null");
+    this.associatedDatasetService = requireNonNull(associatedDatasetService,
+        "associatedDatasetService must not be null");
     addClassName("project-progress-section");
     content.addClassName("project-progress-content");
     add(content);
@@ -78,11 +87,12 @@ public class ProjectProgressSection extends Div {
     content.removeAll();
     content.add(heading());
     content.add(message("Loading project status …"));
-    ProjectOverview overview = projectInformationService.findOverview(ProjectId.parse(projectId))
-        .orElse(null);
+    ProjectId id = ProjectId.parse(projectId);
+    ProjectOverview overview = projectInformationService.findOverview(id).orElse(null);
+    List<ConnectedDatasetView> connected = associatedDatasetService.listConnectedDatasetViews(id);
     ReactiveUiBridge.onUi(ui,
         projectQueryService.getExperimentProgress(projectId).collectList(),
-        progress -> render(progress, overview),
+        progress -> render(progress, overview, connected),
         error -> {
           content.removeAll();
           content.add(heading());
@@ -90,7 +100,8 @@ public class ProjectProgressSection extends Div {
         });
   }
 
-  private void render(List<ExperimentProgress> progress, ProjectOverview overview) {
+  private void render(List<ExperimentProgress> progress, ProjectOverview overview,
+      List<ConnectedDatasetView> connected) {
     content.removeAll();
     content.add(heading());
     fireEvent(new ProgressLoadedEvent(this, false, progress));
@@ -106,7 +117,7 @@ public class ProjectProgressSection extends Div {
     card.addClassName("project-progress-card");
     card.add(headline(progress));
     card.add(rail(progress));
-    card.add(datasetsStanding(progress, overview));
+    card.add(datasetsStanding(progress, overview, connected));
     content.add(card);
   }
 
@@ -116,7 +127,7 @@ public class ProjectProgressSection extends Div {
     return heading;
   }
 
-  // ── Attention block (outside the card) ──────────────────────────────────
+  // ── Attention card ─────────────────────────────────────────────────────
 
   private Div attentionBlock(List<ExperimentProgress> attention) {
     Div block = new Div();
@@ -144,7 +155,7 @@ public class ProjectProgressSection extends Div {
     return row;
   }
 
-  // ── Headline ────────────────────────────────────────────────────────────
+  // ── Headline ───────────────────────────────────────────────────────────
 
   private Div headline(List<ExperimentProgress> progress) {
     Div intro = new Div();
@@ -160,24 +171,27 @@ public class ProjectProgressSection extends Div {
     return intro;
   }
 
-  // ── Rail of three stages ────────────────────────────────────────────────
+  // ── Rail of three stages ───────────────────────────────────────────────
 
   private OrderedList rail(List<ExperimentProgress> progress) {
     int samples = progress.stream().mapToInt(ExperimentProgress::sampleCount).sum();
     int withData = progress.stream().mapToInt(ExperimentProgress::measurementsWithPrimaryData).sum();
     int missing = progress.stream().mapToInt(ExperimentProgress::measurementsWithoutPrimaryData).sum();
+    String firstExperiment = progress.isEmpty() ? null : progress.getFirst().experimentId();
 
     OrderedList rail = new OrderedList();
     rail.addClassName("project-progress-rail");
-    rail.add(step(1, "Experiment created", progress.size(), "experiments", State.DONE));
-    rail.add(step(2, "Samples registered", samples, "samples",
-        samples > 0 ? State.DONE : State.TODO));
-    rail.add(step(3, "Dataset", withData, "measurements with data",
-        missing > 0 ? State.ATTENTION : State.DONE));
+    rail.add(step(1, "Experiment created", progress.size(), "experiment", "experiments",
+        State.DONE, ExperimentInformationMain.class, firstExperiment));
+    rail.add(step(2, "Samples registered", samples, "sample", "samples",
+        samples > 0 ? State.DONE : State.TODO, SampleInformationMain.class, firstExperiment));
+    rail.add(step(3, "Dataset", withData, "measurement with data", "measurements with data",
+        missing > 0 ? State.ATTENTION : State.DONE, MeasurementMain.class, firstExperiment));
     return rail;
   }
 
-  private ListItem step(int ordinal, String label, int count, String unit, State state) {
+  private ListItem step(int ordinal, String label, int count, String singular, String plural,
+      State state, Class<? extends Component> target, String experimentId) {
     ListItem item = new ListItem();
     item.addClassName("project-progress-step");
     item.addClassName("project-progress-step--" + state.css());
@@ -197,15 +211,20 @@ public class ProjectProgressSection extends Div {
 
     Span labelSpan = new Span(label);
     labelSpan.addClassName("project-progress-step-label");
-    Span countSpan = new Span(count + " " + unit);
+    Span countSpan = new Span(count + " " + (count == 1 ? singular : plural));
     countSpan.addClassName("project-progress-step-count");
     item.add(head, labelSpan, countSpan);
+    if (experimentId != null) {
+      item.addClassName("project-progress-step--link");
+      activateOnClickAndKeys(item, () -> navigate(target, experimentId));
+    }
     return item;
   }
 
-  // ── Dataset standing ────────────────────────────────────────────────────
+  // ── Dataset standing ───────────────────────────────────────────────────
 
-  private Div datasetsStanding(List<ExperimentProgress> progress, ProjectOverview overview) {
+  private Div datasetsStanding(List<ExperimentProgress> progress, ProjectOverview overview,
+      List<ConnectedDatasetView> connected) {
     Div wrap = new Div();
     wrap.addClassName("project-progress-datasets");
 
@@ -222,7 +241,7 @@ public class ProjectProgressSection extends Div {
     Div grid = new Div();
     grid.addClassName("project-progress-datasets-grid");
     grid.add(primaryDataCard(progress));
-    grid.add(connectedAssetsCard(overview));
+    grid.add(connectedAssetsCard(connected));
     wrap.add(head, grid);
     return wrap;
   }
@@ -239,13 +258,18 @@ public class ProjectProgressSection extends Div {
     return card;
   }
 
-  private Div connectedAssetsCard(ProjectOverview overview) {
+  private static Div connectedAssetsCard(List<ConnectedDatasetView> connected) {
     Div card = new Div();
     card.addClassName("project-progress-datasets-card");
-    int count = overview == null ? 0 : overview.connectedDatasetCount();
-    card.add(cardTitle("Connected assets — " + count
-        + (count == 1 ? ", hosted elsewhere" : ", hosted elsewhere")));
-    card.add(cardFact(count == 0 ? "None linked yet" : count + " linked"));
+    int count = connected.size();
+    card.add(cardTitle("Connected assets — " + count + ", hosted elsewhere"));
+    if (connected.isEmpty()) {
+      card.add(cardFact("None linked yet"));
+      return card;
+    }
+    connected.stream()
+        .limit(3)
+        .forEach(asset -> card.add(cardFact(asset.title() + " · " + asset.resourceProvider())));
     return card;
   }
 
@@ -281,8 +305,7 @@ public class ProjectProgressSection extends Div {
 
   // ── Helpers ─────────────────────────────────────────────────────────────
 
-  private void navigate(Class<? extends com.vaadin.flow.component.Component> target,
-      String experimentId) {
+  private void navigate(Class<? extends Component> target, String experimentId) {
     RouteParameters parameters = new RouteParameters(
         new RouteParam(PROJECT_ID_PARAMETER, projectId),
         new RouteParam(EXPERIMENT_ID_PARAMETER, experimentId));
@@ -293,8 +316,7 @@ public class ProjectProgressSection extends Div {
     return new RouteParameters(new RouteParam(PROJECT_ID_PARAMETER, projectId));
   }
 
-  private static void activateOnClickAndKeys(com.vaadin.flow.component.Component element,
-      Runnable action) {
+  private static void activateOnClickAndKeys(Component element, Runnable action) {
     element.getElement().setAttribute("role", "link");
     element.getElement().setAttribute("tabindex", "0");
     element.getElement().addEventListener("click", event -> action.run());
@@ -316,12 +338,6 @@ public class ProjectProgressSection extends Div {
     Span span = new Span(text);
     span.addClassName("project-progress-strong");
     return span;
-  }
-
-  private static Span separator() {
-    Span separator = new Span("·");
-    separator.addClassName("project-progress-separator");
-    return separator;
   }
 
   private static Span message(String text) {

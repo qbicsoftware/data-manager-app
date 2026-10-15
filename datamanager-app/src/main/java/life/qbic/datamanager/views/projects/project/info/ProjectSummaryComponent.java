@@ -117,6 +117,7 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectUp
 import life.qbic.projectmanagement.application.api.AsyncProjectService.RequestFailedException;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.UnknownRequestException;
 import life.qbic.projectmanagement.application.api.ProjectQueryService;
+import life.qbic.projectmanagement.application.associated_dataset.AssociatedDatasetService;
 import life.qbic.projectmanagement.application.contact.PersonLookupService;
 import life.qbic.projectmanagement.application.query.ExperimentProgress;
 import life.qbic.projectmanagement.domain.model.project.Contact;
@@ -182,6 +183,7 @@ public class ProjectSummaryComponent extends PageArea {
       MessageSourceNotificationFactory notificationFactory,
       AsyncProjectService asyncProjectService,
       ProjectQueryService projectQueryService,
+      AssociatedDatasetService associatedDatasetService,
       RequestCache requestCache,
       MessageSourceNotificationFactory messageSourceNotificationFactory) {
     this.projectInformationService = Objects.requireNonNull(projectInformationService);
@@ -197,7 +199,8 @@ public class ProjectSummaryComponent extends PageArea {
     this.requestCache = Objects.requireNonNull(requestCache);
     this.downloadComponent = new DownloadComponent();
     this.projectProgressSection = new ProjectProgressSection(
-        Objects.requireNonNull(projectQueryService), projectInformationService);
+        Objects.requireNonNull(projectQueryService), projectInformationService,
+        Objects.requireNonNull(associatedDatasetService));
     this.projectExperimentsSection = new ProjectExperimentsSection(
         Objects.requireNonNull(projectQueryService));
     this.projectExperimentsSection.addAddExperimentListener(
