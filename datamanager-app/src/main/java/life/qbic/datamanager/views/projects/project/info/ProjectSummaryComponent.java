@@ -402,11 +402,33 @@ public class ProjectSummaryComponent extends PageArea {
     Span name = new Span(contact.fullName());
     name.addClassName("project-contact-name");
     chip.add(roleChip, name);
+
+    // The ORCID iD is not shown as text — it is clutter for everyone but its owner — so the logo
+    // carries the link to the public record instead. A missing iD is simply not shown, so the
+    // remaining chips stay aligned.
+    contact.oidcInformation().flatMap(oidc -> Arrays.stream(OidcType.values())
+            .filter(type -> type.getIssuer().equals(oidc.oidcIssuer()))
+            .findFirst()
+            .map(type -> orcidLink(type, oidc.oidcId())))
+        .ifPresent(chip::add);
+
     var mail = new Anchor("mailto:" + contact.emailAddress());
+    mail.getElement().setAttribute("title", contact.emailAddress());
     mail.add(new Icon(VaadinIcon.ENVELOPE));
     mail.addClassName("project-contact-action");
     chip.add(mail);
     return chip;
+  }
+
+  private Anchor orcidLink(OidcType type, String oidcId) {
+    Anchor orcid = new Anchor(type.getUrlFor(oidcId));
+    orcid.setTarget(AnchorTarget.BLANK);
+    orcid.getElement().setAttribute("title", "ORCID: " + oidcId);
+    OidcLogo logo = new OidcLogo(type);
+    logo.addClassName("icon-size-m");
+    orcid.add(logo);
+    orcid.addClassName("project-contact-action");
+    return orcid;
   }
 
   private void showEditContactsDialog(Project project) {
@@ -432,34 +454,6 @@ public class ProjectSummaryComponent extends PageArea {
       handleSubmission(project.getId().value(), manager, investigator, responsible);
     });
     dialog.open();
-  }
-
-  private Div renderContactInfo(Contact contact) {
-    var contactInfo = new Div();
-    contactInfo.addClassNames("flex-vertical", "width-full");
-    var name = new Span(contact.fullName());
-    var email = new Anchor("mailto:" + contact.emailAddress(), contact.emailAddress());
-    contactInfo.add(name, email);
-    //Account for contacts without oidc or oidcissuer set
-    if (contact.oidcInformation().isEmpty()) {
-      return contactInfo;
-    }
-    OidcInformation oidcInformation = contact.oidcInformation().orElseThrow();
-    var optionalOidcType = Arrays.stream(OidcType.values())
-        .filter(ot -> ot.getIssuer().equals(oidcInformation.oidcIssuer()))
-        .findFirst();
-    if (optionalOidcType.isPresent()) {
-      OidcType oidcType = optionalOidcType.orElseThrow();
-      String oidcUrl = oidcType.getUrlFor(oidcInformation.oidcId());
-      Anchor oidcLink = new Anchor(oidcUrl, oidcInformation.oidcId());
-      oidcLink.setTarget(AnchorTarget.BLANK);
-      OidcLogo oidcLogo = new OidcLogo(oidcType);
-      oidcLogo.addClassName("icon-size-m");
-      Span oidcSpan = new Span(oidcLogo, oidcLink);
-      oidcSpan.addClassNames("gap-02", "flex-align-items-center", "flex-horizontal");
-      contactInfo.add(oidcSpan);
-    }
-    return contactInfo;
   }
 
 
