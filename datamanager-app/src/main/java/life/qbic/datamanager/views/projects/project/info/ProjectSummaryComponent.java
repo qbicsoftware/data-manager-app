@@ -20,6 +20,8 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.router.RouteParam;
+import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.data.binder.Validator;
 import com.vaadin.flow.function.SerializablePredicate;
 import com.vaadin.flow.shared.Registration;
@@ -90,6 +92,7 @@ import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.projects.ProjectInformation;
 import life.qbic.datamanager.views.projects.edit.EditContactsComponent;
 import life.qbic.datamanager.views.projects.edit.ProjectDesignForm;
+import life.qbic.datamanager.views.projects.project.settings.ProjectSettingsMain;
 import life.qbic.datamanager.views.strategy.scope.ReadScopeStrategy;
 import life.qbic.datamanager.views.strategy.scope.UserScopeStrategy;
 import life.qbic.datamanager.views.strategy.scope.WriteScopeStrategy;
@@ -154,9 +157,6 @@ public class ProjectSummaryComponent extends PageArea {
   public static final String SAVE_BUTTON_TEXT = "Save";
   private static final Logger log = logger(ProjectSummaryComponent.class);
   private final transient ProjectInformationService projectInformationService;
-  private final transient PersonLookupService personLookupService;
-  private final transient UserPermissions userPermissions;
-  private final transient MessageSourceNotificationFactory notificationFactory;
   private final Section headerSection;
   private final DownloadComponent downloadComponent;
   private final ProjectProgressSection projectProgressSection;
@@ -164,32 +164,17 @@ public class ProjectSummaryComponent extends PageArea {
   private final Div identityMeta = new Div();
   private transient String identityLastModified = "";
   private final transient AsyncProjectService asyncProjectService;
-  private final RequestCache requestCache;
-  private final MessageSourceNotificationFactory messageSourceNotificationFactory;
-  private final Map<String, Toast> pendingTaskToasts = new HashMap<>();
-  private Toast taskInProgressToast;
-  private Context context;
-  private transient List<? extends UserScopeStrategy> scopes;
   private final Div projectMetadataBand = new Div();
+  private Context context;
 
   @Autowired
   public ProjectSummaryComponent(ProjectInformationService projectInformationService,
-      PersonLookupService personLookupService,
-      UserPermissions userPermissions,
-      MessageSourceNotificationFactory notificationFactory,
       AsyncProjectService asyncProjectService,
       ProjectQueryService projectQueryService,
-      AssociatedDatasetService associatedDatasetService,
-      RequestCache requestCache,
-      MessageSourceNotificationFactory messageSourceNotificationFactory) {
+      AssociatedDatasetService associatedDatasetService) {
     this.projectInformationService = Objects.requireNonNull(projectInformationService);
-    this.personLookupService = requireNonNull(personLookupService,
-        "person lookup service must not be null");
     this.headerSection = new SectionBuilder().build();
-    this.userPermissions = Objects.requireNonNull(userPermissions);
-    this.notificationFactory = Objects.requireNonNull(notificationFactory);
     this.asyncProjectService = Objects.requireNonNull(asyncProjectService);
-    this.requestCache = Objects.requireNonNull(requestCache);
     this.downloadComponent = new DownloadComponent();
     this.projectProgressSection = new ProjectProgressSection(
         Objects.requireNonNull(projectQueryService), projectInformationService,
@@ -208,81 +193,8 @@ public class ProjectSummaryComponent extends PageArea {
     add(projectExperimentsSection);
     add(projectMetadataBand);
     add(downloadComponent);
-    this.messageSourceNotificationFactory = messageSourceNotificationFactory;
   }
 
-  private static ProjectInformation convertToInfo(Project project) {
-    var info = new ProjectInformation();
-
-    // General Info
-    info.setProjectTitle(project.getProjectIntent().projectTitle().title());
-    info.setProjectObjective(project.getProjectIntent().objective().objective());
-    info.setProjectId(project.getProjectCode().value());
-
-    // Funding
-    project.funding().ifPresent(
-        funding -> info.setFundingEntry(new FundingEntry(funding.grant(), funding.grantId())));
-
-    // Contacts
-    project.getResponsiblePerson().ifPresent(contact -> info.setResponsiblePerson(
-        convert(contact)));
-    info.setPrincipalInvestigator(convert(project.getPrincipalInvestigator()));
-    info.setProjectManager(convert(project.getProjectManager()));
-
-    return info;
-  }
-
-  private static life.qbic.datamanager.views.general.contact.Contact convert(Contact contact) {
-    return new life.qbic.datamanager.views.general.contact.Contact(contact.fullName(),
-        contact.emailAddress(), contact.oidcInformation().map(OidcInformation::oidcId).orElse(null),
-        contact.oidcInformation().map(OidcInformation::oidcIssuer).orElse(null));
-  }
-
-
-  private static List<? extends UserScopeStrategy> loadScope(Predicate<ProjectId> hasWriteScope,
-      ProjectId id,
-      Section... sections) {
-    if (hasWriteScope.test(id)) {
-      return loadWriteScope(sections);
-    } else {
-      return loadReadScope(sections);
-    }
-  }
-
-  private static List<? extends UserScopeStrategy> loadReadScope(Section[] sections) {
-    return Arrays.stream(sections).map(ReadScopeStrategy::new).toList();
-  }
-
-  private static List<? extends UserScopeStrategy> loadWriteScope(Section[] sections) {
-    return Arrays.stream(sections).map(WriteScopeStrategy::new).toList();
-  }
-
-  private static SerializablePredicate<FundingEntry> incompletePredicate() {
-    return (FundingEntry entry) ->
-        !((entry.getLabel().isBlank() && !entry.getReferenceId().isBlank()) ||
-            (!entry.getLabel().isBlank() && entry.getReferenceId().isBlank()));
-  }
-
-  private static boolean isEmpty(FundingInformation funding) {
-    if (funding == null) {
-      return true;
-    }
-    return funding.grant().isBlank() && funding.grantId().isBlank();
-  }
-
-  private static boolean isEmpty(ProjectContact contact) {
-    if (contact == null) {
-      return true;
-    }
-    return contact.email().isBlank() && contact.fullName().isBlank();
-  }
-
-  private static FundingInformation convertFrom(FundingEntry entry) {
-    if (entry == null) {
-      return new FundingInformation("", "");
-    }
-    return new FundingInformation(entry.getLabel(), entry.getReferenceId());
-  }
 
   public void setContext(Context context) {
     this.context = Objects.requireNonNull(context);
@@ -293,9 +205,6 @@ public class ProjectSummaryComponent extends PageArea {
     var fullProject = projectInformationService.find(projectId)
         .orElseThrow(() -> new ApplicationException("No project found"));
     setContent(projectOverview, fullProject);
-    this.scopes = List.of();
-    // The header section only contains the RO-Crate action, which we want to enable always
-    loadScope(id -> true, projectId, headerSection).forEach(UserScopeStrategy::execute);
     projectProgressSection.setProjectId(projectId.value());
     projectExperimentsSection.setProjectId(projectId.value());
   }
@@ -325,53 +234,12 @@ public class ProjectSummaryComponent extends PageArea {
   }
 
 
-  private void reloadInformation(Context context) {
-    var projectId = context.projectId()
-        .orElseThrow(() -> new ApplicationException("No project id provided"));
-    var projectOverview = projectInformationService.findOverview(projectId)
-        .orElseThrow(() -> new ApplicationException("No project with given ID found"));
-    var fullProject = projectInformationService.find(projectId)
-        .orElseThrow(() -> new ApplicationException("No project found"));
-    buildMetadataBand(projectOverview, fullProject);
-    // apply scope strategy again
-    this.scopes.forEach(UserScopeStrategy::execute);
-  }
-
-
   private void setContent(ProjectOverview projectOverview, Project fullProject) {
     Objects.requireNonNull(projectOverview);
     buildHeaderSection(projectOverview, fullProject);
     buildMetadataBand(projectOverview, fullProject);
   }
 
-  private Optional<ProjectContact> toProjectContacts(
-      life.qbic.datamanager.views.general.contact.Contact contact) {
-    if (contact == null) {
-      return Optional.empty();
-    }
-    return Optional.of(new ProjectContact(contact.fullName(), contact.email(), contact.oidc(),
-        contact.oidcIssuer()));
-  }
-
-  private void handleSubmission(String projectId, ProjectContact manager,
-      ProjectContact investigator, ProjectContact responsible) {
-    if (responsible != null) {
-      submitMultiple(
-          List.of(
-              new ProjectUpdateRequest(projectId, new ProjectManager(manager)),
-              new ProjectUpdateRequest(projectId,
-                  new PrincipalInvestigator(investigator)),
-              new ProjectUpdateRequest(projectId,
-                  new ProjectResponsible(responsible))));
-    } else {
-      submitRequest(new ProjectResponsibleDeletionRequest(projectId));
-      submitMultiple(
-          List.of(
-              new ProjectUpdateRequest(projectId, new ProjectManager(manager)),
-              new ProjectUpdateRequest(projectId,
-                  new PrincipalInvestigator(investigator))));
-    }
-  }
 
   /**
    * The contacts row of the identity band: "Contacts", one chip per role, and "Edit contacts".
@@ -389,7 +257,7 @@ public class ProjectSummaryComponent extends PageArea {
     Button edit = new Button("Edit contacts");
     edit.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
     edit.addClassName("project-contacts-edit");
-    edit.addClickListener(event -> showEditContactsDialog(project));
+    edit.addClickListener(event -> openProjectSettings(project.getId().value()));
     row.add(edit);
     return row;
   }
@@ -431,40 +299,6 @@ public class ProjectSummaryComponent extends PageArea {
     return orcid;
   }
 
-  private void showEditContactsDialog(Project project) {
-    var editContacts = new EditContactsComponent(convertToInfo(project),
-        Utility.tryToLoadFromPrincipal().orElse(null), personLookupService);
-    AppDialog dialog = AppDialog.medium();
-    DialogHeader.with(dialog, "Edit Contacts");
-    DialogFooter.with(dialog, CANCEL_BUTTON_TEXT, SAVE_BUTTON_TEXT);
-    DialogBody.with(dialog, editContacts, editContacts);
-
-    dialog.registerCancelAction(dialog::close);
-    dialog.registerConfirmAction(() -> {
-      dialog.close();
-      var manager = toProjectContacts(
-          editContacts.getIfValidManager().orElseThrow()).orElseThrow();
-      var responsible = toProjectContacts(
-          editContacts.getIfValidProjectResponsible().orElseThrow()).orElseThrow();
-      var investigator = toProjectContacts(
-          editContacts.getIfValidInvestigator().orElseThrow()).orElseThrow();
-      if (isEmpty(responsible)) {
-        responsible = null;
-      }
-      handleSubmission(project.getId().value(), manager, investigator, responsible);
-    });
-    dialog.open();
-  }
-
-
-  private void handleSubmission(String projectId, FundingInformation funding) {
-    if (isEmpty(funding)) {
-      submitRequest(new FundingInformationDeletionRequest(projectId));
-      return;
-    }
-    submitRequest(new FundingInformationCreationRequest(projectId, funding));
-  }
-
 
   /**
    * Submits multiple {@link ProjectUpdateRequest} to the service.
@@ -472,226 +306,27 @@ public class ProjectSummaryComponent extends PageArea {
    * @param requests a {@link Collection} of {@link ProjectUpdateRequest}.
    * @since 1.10.0
    */
-  private void submitMultiple(Collection<ProjectUpdateRequest> requests) {
-    var requestId = UUID.randomUUID().toString();
-    var publishers = requests.stream().map(asyncProjectService::update).toList();
-    Flux.merge(publishers)
-        .doOnError(UnknownRequestException.class, this::handleUnknownRequest)
-        .doOnError(RequestFailedException.class, this::handleRequestFailed)
-        .doOnError(AccessDeniedException.class, this::handleAccessDenied)
-        .doOnSubscribe(
-            subscription -> notifyUser(requestId))
-        .doOnCancel(() -> log.debug("Cancelled project update request"))
-        .doOnTerminate(() -> cleanPendingTask(requestId))
-        .doOnComplete(this::handleSuccess)
-        .subscribe(this::removeFromCache);
-  }
 
-  private void submitRequest(FundingInformationCreationRequest request) {
-    asyncProjectService.create(request)
-        .doOnError(UnknownRequestException.class, this::handleUnknownRequest)
-        .doOnError(RequestFailedException.class, this::handleRequestFailed)
-        .doOnError(AccessDeniedException.class, this::handleAccessDenied)
-        .doOnSubscribe(subscription -> notifyUser(request.requestId()))
-        .doOnCancel(() -> log.debug("Cancelled project delete request"))
-        .doOnTerminate(() -> cleanPendingTask(request.requestId()))
-        .doOnSuccess(this::handleSuccess)
-        .subscribe();
-  }
-
-  private void submitRequest(ProjectDeletionRequest request) {
-    asyncProjectService.delete(request)
-        .doOnError(UnknownRequestException.class, this::handleUnknownRequest)
-        .doOnError(RequestFailedException.class, this::handleRequestFailed)
-        .doOnError(AccessDeniedException.class, this::handleAccessDenied)
-        .doOnSubscribe(subscription -> notifyUser(request.requestId()))
-        .doOnCancel(() -> log.debug("Cancelled project delete request"))
-        .doOnTerminate(() -> cleanPendingTask(request.requestId()))
-        .doOnSuccess(this::handleSuccess)
-        .subscribe();
-  }
-
-
-  private void submitRequest(FundingInformationDeletionRequest request) {
-    asyncProjectService.delete(request)
-        .doOnError(UnknownRequestException.class, this::handleUnknownRequest)
-        .doOnError(RequestFailedException.class, this::handleRequestFailed)
-        .doOnError(AccessDeniedException.class, this::handleAccessDenied)
-        .doOnSubscribe(subscription -> notifyUser(request.requestId()))
-        .doOnCancel(() -> log.debug("Cancelled project delete request"))
-        .doOnTerminate(() -> cleanPendingTask(request.requestId()))
-        .doOnSuccess(this::handleSuccess)
-        .subscribe();
-  }
-
-  private void submitRequest(ProjectResponsibleDeletionRequest request) {
-    asyncProjectService.delete(request)
-        .doOnError(UnknownRequestException.class, this::handleUnknownRequest)
-        .doOnError(RequestFailedException.class, this::handleRequestFailed)
-        .doOnError(AccessDeniedException.class, this::handleAccessDenied)
-        .doOnSubscribe(
-            subscription -> notifyUser(request.requestId()))
-        .doOnCancel(() -> log.debug("Cancelled project update request: " + request))
-        .doOnTerminate(() -> cleanPendingTask(request.requestId()))
-        .doOnSuccess(this::handleSuccess)
-        .subscribe();
-  }
-
-  private void submitRequest(ProjectUpdateRequest request) {
-    requestCache.store(request);
-
-    asyncProjectService.update(request)
-        .doOnError(UnknownRequestException.class, this::handleUnknownRequest)
-        .doOnError(RequestFailedException.class, this::handleRequestFailed)
-        .doOnError(AccessDeniedException.class, this::handleAccessDenied)
-        .doOnSubscribe(
-            subscription -> notifyUser(request.requestId()))
-        .doOnCancel(() -> log.debug("Cancelled project update request: " + request))
-        .doOnTerminate(() -> cleanPendingTask(request.requestId()))
-        .doOnSuccess(this::handleSuccess)
-        .subscribe(this::removeFromCache);
-  }
-
-  private void cleanPendingTask(String requestId) {
-    getUI().ifPresent(ui -> ui.access(() -> {
-      closePendingTaskToast(requestId);
-      removePendingTaskToast(requestId);
-    }));
-  }
-
-  private void notifyUser(String requestId) {
-    getUI().ifPresent(ui -> ui.access(() -> {
-      taskInProgressToast = messageSourceNotificationFactory.pendingTaskToast("task.in-progress",
-          new Object[]{"Updating project"}, getLocale());
-      taskInProgressToast.open();
-      addPendingTaskToast(requestId, taskInProgressToast);
-    }));
-  }
-
-  private void closePendingTaskToast(String requestId) {
-    if (pendingTaskToasts.containsKey(requestId)) {
-      pendingTaskToasts.get(requestId).close();
-    }
-  }
-
-  private void removePendingTaskToast(String requestId) {
-    pendingTaskToasts.remove(requestId);
-  }
-
-  private void addPendingTaskToast(String requestId, Toast toast) {
-    if (pendingTaskToasts.containsKey(requestId)) {
-      return;
-    }
-    pendingTaskToasts.put(requestId, toast);
-  }
-
-  private void removeFromCache(ProjectUpdateResponse response) {
-    getUI().ifPresent(ui -> ui.access(() -> {
-      try {
-        requestCache.remove(response.requestId());
-      } catch (CacheException e) {
-        log.error(e.getMessage());
-      }
-    }));
-  }
-
-  private void handleSuccess() {
-    getUI().ifPresent(ui -> ui.access(() -> {
-      var toast = notificationFactory.toast(PROJECT_UPDATED_SUCCESS,
-          new String[]{}, getLocale());
-      toast.open();
-      ui.push();
-      reloadInformation(context);
-    }));
-  }
-
-  private void handleSuccess(ProjectDeletionResponse response) {
-    getUI().ifPresent(ui -> ui.access(() -> {
-      var toast = notificationFactory.toast(PROJECT_UPDATED_SUCCESS,
-          new String[]{}, getLocale());
-      toast.open();
-      reloadInformation(context);
-    }));
-  }
-
-  private void handleSuccess(ProjectResponsibleDeletionResponse response) {
-    getUI().ifPresent(ui -> ui.access(() -> {
-      var toast = notificationFactory.toast(PROJECT_UPDATED_SUCCESS,
-          new String[]{}, getLocale());
-      toast.open();
-      reloadInformation(context);
-    }));
-  }
-
-  private void handleSuccess(FundingInformationCreationResponse response) {
-    getUI().ifPresent(ui -> ui.access(() -> {
-      var toast = notificationFactory.toast(PROJECT_UPDATED_SUCCESS,
-          new String[]{}, getLocale());
-      toast.open();
-      reloadInformation(context);
-    }));
-  }
-
-  private void handleSuccess(FundingInformationDeletionResponse response) {
-    getUI().ifPresent(ui -> ui.access(() -> {
-      var toast = notificationFactory.toast(PROJECT_UPDATED_SUCCESS,
-          new String[]{}, getLocale());
-      toast.open();
-      reloadInformation(context);
-    }));
-  }
 
   /*
   Handler for successful project updates
    */
-  private void handleSuccess(ProjectUpdateResponse response) {
-    handleSuccess();
-  }
 
   /*
   Handler for request failures. This covers failures the user can
   re-try it again, so the last request needs to be cached in the current user
   session and ui scope.
    */
-  private void handleRequestFailed(RequestFailedException error) {
-    log.error("request failed", error);
-    getUI().ifPresent(
-        ui -> ui.access(() -> requestCache.get(error.getRequestId()).ifPresentOrElse(request -> {
-          // do sth with the cache
-          var toast = notificationFactory.toast("project.updated.error.retry",
-              new String[]{}, getLocale());
-          toast.open();
-        }, () -> {
-          var toast = notificationFactory.toast("project.updated.error",
-              new String[]{}, getLocale());
-          toast.open();
-        })));
-  }
 
   /*
   Handler for unknown requests. This happens when the wrong service method
   has been called, so be sure to check the requests the service API can handle.
    */
-  private void handleUnknownRequest(UnknownRequestException error) {
-    log.error("unknown request", error);
-    getUI().ifPresent(ui -> ui.access(() -> {
-      var toast = notificationFactory.toast("project.updated.error",
-          new String[]{}, getLocale());
-      toast.open();
-    }));
-  }
 
   /*
   Handler for access denied exceptions. This usually happens, when the service method called
   requires rights the current logged-in user does not have.
    */
-  private void handleAccessDenied(AccessDeniedException e) {
-    log.error("access denied", e);
-    getUI().ifPresent(ui -> ui.access(() -> {
-      var toast = notificationFactory.toast("access.denied", new String[]{}, getLocale());
-      toast.open();
-    }));
-  }
 
   /**
    * The "Project details" band: the project's storable facts, read-only, with one link to the
@@ -699,6 +334,16 @@ public class ProjectSummaryComponent extends PageArea {
    * Settings; that surface does not exist yet, so the link opens a dialog hosting the same two
    * forms (design and funding) the summary used to inline.
    */
+  /**
+   * Project metadata is edited on the Project settings page, never in a dialog beside the title:
+   * editing is rare and never urgent, so it does not compete with the content, and every editor
+   * lives in one place instead of one dialog per band.
+   */
+  private void openProjectSettings(String projectId) {
+    getUI().ifPresent(ui -> ui.navigate(ProjectSettingsMain.class,
+        new RouteParameters(new RouteParam("projectId", projectId))));
+  }
+
   private void buildMetadataBand(ProjectOverview projectOverview, Project project) {
     projectMetadataBand.removeAll();
     projectMetadataBand.addClassName("project-metadata");
@@ -710,7 +355,7 @@ public class ProjectSummaryComponent extends PageArea {
     Button edit = new Button("Edit project details");
     edit.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
     edit.addClassName("project-metadata-edit");
-    edit.addClickListener(event -> showEditProjectDetailsDialog(project));
+    edit.addClickListener(event -> openProjectSettings(project.getId().value()));
     head.add(title, edit);
 
     Div facts = new Div();
@@ -753,47 +398,6 @@ public class ProjectSummaryComponent extends PageArea {
    * Edits the things the metadata band states: the project design (title, objective, design) and
    * its funding.
    */
-  private void showEditProjectDetailsDialog(Project project) {
-    var designForm = new ProjectDesignForm();
-    designForm.setContent(convertToInfo(project));
-
-    var fundingField = FundingField.createHorizontal("Funding");
-    var fundingForm = FundingInputForm.create(new BoundFundingField(fundingField,
-        Validator.from(incompletePredicate(),
-            "Please provide complete information for both, grant and grand ID.")));
-    fundingForm.setContent(
-        convertToInfo(project).getFundingEntry().orElse(new FundingEntry("", "")));
-
-    var body = new Div(designForm, fundingForm);
-    body.addClassName("project-metadata-edit-body");
-
-    UserInput input = new UserInput() {
-      @Override
-      public InputValidation validate() {
-        return designForm.validate().and(fundingForm.validate());
-      }
-
-      @Override
-      public boolean hasChanges() {
-        return designForm.hasChanges() || fundingForm.hasChanges();
-      }
-    };
-
-    AppDialog dialog = AppDialog.medium();
-    DialogHeader.with(dialog, "Edit project details");
-    DialogFooter.with(dialog, CANCEL_BUTTON_TEXT, SAVE_BUTTON_TEXT);
-    DialogBody.with(dialog, body, input);
-    dialog.registerCancelAction(dialog::close);
-    dialog.registerConfirmAction(() -> {
-      dialog.close();
-      submitRequest(
-          new ProjectUpdateRequest(project.getId().value(), designForm.getProjectDesign()));
-      handleSubmission(project.getId().value(),
-          convertFrom(fundingForm.getIfValid().orElseThrow()));
-    });
-    dialog.open();
-  }
-
 
   private void buildHeaderSection(ProjectOverview projectOverview, Project project) {
     Objects.requireNonNull(projectOverview);

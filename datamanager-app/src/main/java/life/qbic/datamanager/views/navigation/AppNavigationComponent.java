@@ -21,6 +21,7 @@ import life.qbic.datamanager.views.projects.project.measurements.MeasurementMain
 import life.qbic.datamanager.views.projects.project.ontology.OntologyLookupMainComponent;
 import life.qbic.datamanager.views.projects.project.rawdata.RawDataMain;
 import life.qbic.datamanager.views.projects.project.samples.SampleInformationMain;
+import life.qbic.datamanager.views.projects.project.settings.ProjectSettingsMain;
 
 /**
  * The application's single navigation row (chrome row 2), in the prototype's style.
@@ -77,6 +78,9 @@ public class AppNavigationComponent extends Div {
       component.addItem("Access", ProjectAccessMain.class, parameters);
     }
     component.addTool("Ontology search", OntologyLookupMainComponent.class, parameters);
+    // "Project settings", never bare "Settings": the shell carries a shell-level "Settings", and
+    // two destinations differing by one word give no hint which scope applies.
+    component.addTool("Project settings", ProjectSettingsMain.class, parameters);
     return component;
   }
 
@@ -119,7 +123,7 @@ public class AppNavigationComponent extends Div {
    */
   public AppNavigationComponent addTool(String label, Class<? extends Component> target,
       RouteParameters parameters) {
-    add(label, target, parameters, tools);
+    links.put(target, add(label, target, parameters, tools));
     return this;
   }
 
