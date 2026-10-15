@@ -13,17 +13,12 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
-import java.util.List;
-import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
-import life.qbic.datamanager.configuration.UploadConfiguration;
-import life.qbic.datamanager.files.export.download.ByteArrayDownloadStreamProvider;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.general.dialog.AlertDialog;
-import life.qbic.datamanager.views.general.download.DownloadComponent;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.projects.project.ProjectMainLayout;
@@ -31,38 +26,24 @@ import life.qbic.datamanager.views.projects.project.experiments.ExperimentInform
 import life.qbic.datamanager.views.projects.project.experiments.experiment.create.AddExperimentDialog;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.create.AddExperimentDialog.ExperimentAddEvent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.create.AddExperimentDialog.ExperimentDraft;
-import life.qbic.datamanager.views.projects.project.info.OfferListComponent.DeleteOfferClickEvent;
-import life.qbic.datamanager.views.projects.project.info.OfferListComponent.DownloadOfferClickEvent;
-import life.qbic.datamanager.views.projects.project.info.OfferListComponent.OfferInfo;
-import life.qbic.datamanager.views.projects.project.info.OfferListComponent.UploadOfferClickEvent;
-import life.qbic.datamanager.views.projects.project.info.QualityControlListComponent.DeleteQualityControlEvent;
-import life.qbic.datamanager.views.projects.project.info.QualityControlListComponent.DownloadQualityControlEvent;
-import life.qbic.datamanager.views.projects.project.info.QualityControlListComponent.QualityControl;
-import life.qbic.datamanager.views.projects.purchase.UploadPurchaseDialog;
-import life.qbic.datamanager.views.projects.quality_control.UploadQualityControlDialog;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.AddExperimentToProjectService;
-import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
-import life.qbic.projectmanagement.application.purchase.OfferDTO;
-import life.qbic.projectmanagement.application.purchase.ProjectPurchaseService;
-import life.qbic.projectmanagement.application.sample.qualitycontrol.QualityControlReport;
-import life.qbic.projectmanagement.application.sample.qualitycontrol.QualityControlService;
-import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
-import life.qbic.projectmanagement.domain.model.project.purchase.Offer;
-import life.qbic.projectmanagement.domain.model.sample.qualitycontrol.QualityControlUpload;
 import org.springframework.beans.factory.annotation.Autowired;
 
 
 /**
  * Project Information Main Component
  * <p>
- * This component hosts the components necessary to show and update the {@link Project} information
- * via the provided {@link ProjectId} in the URL
+ * This component hosts the summary of a {@link Project} identified by the {@link ProjectId} in the
+ * URL. The project page is a single centred column: the summary owns the identity, progress and
+ * experiments sections; the former right-hand rails (experiments, offers, sample QC) have been
+ * removed. Offers move to the project settings surface when it exists; the offer and QC upload
+ * dialogs are kept for reuse there.
  */
 
 @SpringComponent
@@ -77,64 +58,32 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
   private static final long serialVersionUID = 5797835576569148873L;
   private static final Logger log = logger(ProjectInformationMain.class);
   private final transient AddExperimentToProjectService addExperimentToProjectService;
-  private final transient ExperimentInformationService experimentInformationService;
   private final transient SpeciesLookupService ontologyTermInformationService;
-  private final transient ProjectPurchaseService projectPurchaseService;
-  private final transient QualityControlService qualityControlService;
   private final transient UserPermissions userPermissions;
   private final ProjectSummaryComponent projectSummaryComponent;
-  private final DownloadComponent downloadComponent;
-  private final OfferListComponent offerListComponent;
-  private final QualityControlListComponent qualityControlListComponent;
   private final transient MessageSourceNotificationFactory messageSourceNotificationFactory;
   private final transient TerminologyService terminologyService;
   private Context context;
-  private final UploadConfiguration uploadConfiguration;
 
   public ProjectInformationMain(@Autowired ProjectSummaryComponent projectSummaryComponent,
       @Autowired UserPermissions userPermissions,
       @Autowired AddExperimentToProjectService addExperimentToProjectService,
       @Autowired SpeciesLookupService ontologyTermInformationService,
-      @Autowired ExperimentInformationService experimentInformationService,
-      @Autowired ProjectPurchaseService projectPurchaseService,
-      @Autowired QualityControlService qualityControlService,
       @Autowired TerminologyService terminologyService,
-      MessageSourceNotificationFactory messageSourceNotificationFactory,
-      UploadConfiguration uploadConfiguration) {
+      MessageSourceNotificationFactory messageSourceNotificationFactory) {
     this.projectSummaryComponent = requireNonNull(projectSummaryComponent);
     this.userPermissions = requireNonNull(userPermissions, "userPermissions must not be null");
     this.addExperimentToProjectService = requireNonNull(addExperimentToProjectService,
         "addExperimentToProjectService must not be null");
     this.ontologyTermInformationService = requireNonNull(ontologyTermInformationService,
         "ontologyTermInformationService must not be null");
-    this.experimentInformationService = requireNonNull(experimentInformationService,
-        "experimentInformationService must not be null");
-    this.projectPurchaseService = requireNonNull(projectPurchaseService,
-        "projectPurchaseService must not be null");
-    this.qualityControlService = requireNonNull(qualityControlService,
-        "qualityControlService must not be null");
     this.messageSourceNotificationFactory = requireNonNull(messageSourceNotificationFactory,
         "messageSourceNotificationFactory must not be null");
-    this.uploadConfiguration = requireNonNull(uploadConfiguration);
-
-    downloadComponent = new DownloadComponent();
-    offerListComponent = getConfiguredOfferList();
-    qualityControlListComponent = getConfiguredQualityControlList();
+    this.terminologyService = requireNonNull(terminologyService);
 
     this.projectSummaryComponent.addAddExperimentListener(event -> showAddExperimentDialog());
     addClassName("project");
-    add(this.projectSummaryComponent, offerListComponent,
-        qualityControlListComponent, downloadComponent);
-    this.terminologyService = terminologyService;
-  }
-
-  private static void refreshOffers(ProjectPurchaseService projectPurchaseService, String projectId,
-      OfferListComponent offerListComponent) {
-    List<OfferInfo> offers = projectPurchaseService.linkedOffers(projectId)
-        .stream()
-        .map(offer -> new OfferInfo(offer.id(), offer.getFileName(), offer.isSigned()))
-        .toList();
-    offerListComponent.setOffers(offers);
+    add(this.projectSummaryComponent);
   }
 
   /**
@@ -160,161 +109,9 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
     }
   }
 
-  private OfferListComponent getConfiguredOfferList() {
-    OfferListComponent component = new OfferListComponent();
-    component.addDeleteOfferClickListener(this::onDeleteOfferClicked);
-    component.addDownloadOfferClickListener(this::onDownloadOfferClicked);
-    component.addUploadOfferClickListener(
-        event -> onUploadOfferClicked(event, projectPurchaseService,
-            context.projectId().orElseThrow().value()));
-    return component;
-  }
-
-  private void onDownloadOfferClicked(DownloadOfferClickEvent downloadOfferClickEvent) {
-    String projectId = context.projectId().orElseThrow().value();
-    Offer offer = projectPurchaseService.getOfferWithContent(projectId,
-        downloadOfferClickEvent.offerId()).orElseThrow();
-
-    downloadComponent.trigger(new ByteArrayDownloadStreamProvider() {
-      @Override
-      public byte[] getBytes() {
-        return offer.fileContent();
-      }
-
-      @Override
-      public String getFilename() {
-        return offer.getFileName();
-      }
-
-      @Override
-      public Optional<Long> contentLength() {
-        return Optional.of((long) offer.fileContent().length);
-      }
-    });
-  }
-
-  private void onDeleteOfferClicked(DeleteOfferClickEvent deleteOfferClickEvent) {
-    AlertDialog.danger(this,
-        "Offer will be deleted",
-        "Are you sure you want to delete this offer?",
-        "Delete offer",
-        "Keep offer",
-        () -> {
-          projectPurchaseService.deleteOffer(context.projectId().orElseThrow().value(),
-              deleteOfferClickEvent.offerId());
-          deleteOfferClickEvent.getSource().remove(deleteOfferClickEvent.offerId());
-          downloadComponent.removeHref();
-        }).open();
-  }
-
-  private void onUploadOfferClicked(UploadOfferClickEvent uploadOfferClickEvent,
-      ProjectPurchaseService projectPurchaseService,
-      String projectId) {
-    UploadPurchaseDialog dialog = new UploadPurchaseDialog(uploadConfiguration);
-    dialog.addConfirmListener(confirmEvent -> {
-      List<OfferDTO> offerDTOs = confirmEvent.getSource().purchaseItems().stream()
-          .map(it -> new OfferDTO(it.signed(), it.fileName(), it.content()))
-          .toList();
-      projectPurchaseService.addPurchases(projectId, offerDTOs);
-      refreshOffers(projectPurchaseService, projectId, uploadOfferClickEvent.getSource());
-      confirmEvent.getSource().close();
-    });
-    dialog.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
-    dialog.open();
-  }
-
-  private QualityControlListComponent getConfiguredQualityControlList() {
-    QualityControlListComponent component = new QualityControlListComponent();
-    component.addDeleteQualityControlListener(this::onDeleteQualityControlClicked);
-    component.addDownloadQualityControlListener(this::onDownloadQualityControlClicked);
-    component.addUploadQualityControlListener(
-        event -> onUploadQualityControlClicked());
-    return component;
-  }
-
-  private void onDownloadQualityControlClicked(
-      DownloadQualityControlEvent downloadQualityControlEvent) {
-    String projectId = context.projectId().orElseThrow().value();
-
-    QualityControlUpload qualityControlUpload = qualityControlService.getQualityControlWithContent(
-        projectId, downloadQualityControlEvent.qualityControlId()).orElseThrow();
-
-    downloadComponent.trigger(new ByteArrayDownloadStreamProvider() {
-      @Override
-      public String getFilename() {
-        return qualityControlUpload.getFileName();
-      }
-
-      @Override
-      public Optional<Long> contentLength() {
-        return Optional.of((long) qualityControlUpload.fileContent().length);
-      }
-
-      @Override
-      public byte[] getBytes() {
-        return qualityControlUpload.fileContent();
-      }
-    });
-  }
-
-  private void onDeleteQualityControlClicked(DeleteQualityControlEvent deleteQualityControlEvent) {
-    AlertDialog.danger(this,
-        "Quality control will be deleted",
-        "Are you sure you want to delete this file?",
-        "Delete file",
-        "Keep file",
-        () -> {
-          qualityControlService.deleteQualityControl(context.projectId().orElseThrow().value(),
-              deleteQualityControlEvent.qualityControlId());
-          downloadComponent.removeHref();
-          refreshQualityControls();
-        }).open();
-  }
-
-  private void onUploadQualityControlClicked() {
-    UploadQualityControlDialog dialog = new UploadQualityControlDialog(
-        context.projectId().orElseThrow(), experimentInformationService, uploadConfiguration);
-    dialog.addConfirmListener(confirmEvent -> {
-      List<QualityControlReport> qualityControlReports = confirmEvent.getSource()
-          .qualityControlItems()
-          .stream()
-          .map(it -> new QualityControlReport(it.fileName(), it.experimentId(), it.content()))
-          .toList();
-      qualityControlService.addQualityControls(context.projectId().orElseThrow().toString(),
-          qualityControlReports);
-      refreshQualityControls();
-      confirmEvent.getSource().close();
-    });
-    dialog.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
-    dialog.open();
-  }
-
-  private void refreshQualityControls() {
-    List<QualityControl> qualityControls = qualityControlService.linkedQualityControls(
-            context.projectId().orElseThrow().value())
-        .stream()
-        .map(qualityControl -> {
-          String experimentName = getExperimentNameFromQualityControl(qualityControl);
-          return new QualityControl(qualityControl.id(), qualityControl.getFileName(),
-              experimentName);
-        })
-        .toList();
-    qualityControlListComponent.setQualityControls(qualityControls);
-  }
-
-  private String getExperimentNameFromQualityControl(QualityControlUpload qualityControl) {
-    return qualityControl.experimentId().map(
-        experimentId -> experimentInformationService.find(context.projectId().orElseThrow().value(),
-                experimentId).map(Experiment::getName)
-            .orElse("")).orElse("");
-  }
-
   private void setContext(Context context) {
     this.context = context;
     projectSummaryComponent.setContext(context);
-    refreshOffers(projectPurchaseService, context.projectId().orElseThrow().value(),
-        offerListComponent);
-    refreshQualityControls();
   }
 
   private void onExperimentAddEvent(ExperimentAddEvent event) {

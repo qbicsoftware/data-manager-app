@@ -230,21 +230,8 @@ vaadin-app-layout:not([drawer-opened])::part(drawer) {
   border-radius: var(--lumo-border-radius-m);
 }
 
-.main.project .project-details-component {
-  grid-area: projectdetails;
-}
-
-.main.project .experiment-list-component {
-  grid-area: experimentlist;
-}
-
-.main.project .offer-list-component {
-  grid-area: offerlist;
-}
-
-.main.project .quality-control-list-component {
-  grid-area: qualitycontrollist;
-}
+/* The project page is a single-column grid now; the former named grid areas
+   (projectdetails / experimentlist / offerlist / qualitycontrollist) are gone. */
 
 /* Slim hero row: the greeting and the description share one baseline and wrap
    only on narrow screens, so the welcome text keeps the grid row above the
