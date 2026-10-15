@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import life.qbic.datamanager.views.general.ReactiveUiBridge;
+import life.qbic.datamanager.views.general.utils.Utility;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementMain;
 import life.qbic.datamanager.views.projects.project.samples.SampleInformationMain;
 import life.qbic.projectmanagement.application.api.ProjectQueryService;
@@ -236,7 +237,7 @@ public class ProjectExperimentsSection extends Div {
     }
     panel.add(list);
 
-    activateOnClickAndKeys(panel, open);
+    Utility.activateOnClickAndKeys(panel, "button", open);
     return panel;
   }
 
@@ -258,19 +259,6 @@ public class ProjectExperimentsSection extends Div {
         new RouteParam(PROJECT_ID_PARAMETER, projectId),
         new RouteParam(EXPERIMENT_ID_PARAMETER, experimentId));
     getUI().ifPresent(ui -> ui.navigate(target, parameters));
-  }
-
-  /** Makes a plain element operable by pointer and by Enter/Space, as the prototype requires. */
-  private static void activateOnClickAndKeys(Component element, Runnable action) {
-    element.getElement().setAttribute("role", "button");
-    element.getElement().setAttribute("tabindex", "0");
-    element.getElement().addEventListener("click", event -> action.run());
-    element.getElement().addEventListener("keydown", event -> {
-      String key = event.getEventData().path("event.key").asText("");
-      if ("Enter".equals(key) || " ".equals(key)) {
-        action.run();
-      }
-    }).addEventData("event.key");
   }
 
   private Div onboarding() {

@@ -19,6 +19,7 @@ import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 import life.qbic.datamanager.views.general.ReactiveUiBridge;
+import life.qbic.datamanager.views.general.utils.Utility;
 import life.qbic.datamanager.views.projects.project.datasets.ConnectedDatasetsMain;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementMain;
@@ -151,7 +152,8 @@ public class ProjectProgressSection extends Div {
     Span action = new Span("Open dataset");
     action.addClassName("project-progress-attention-action");
     row.add(context, text, action);
-    activateOnClickAndKeys(row, () -> navigate(MeasurementMain.class, entry.experimentId()));
+    Utility.activateOnClickAndKeys(row, "link",
+        () -> navigate(MeasurementMain.class, entry.experimentId()));
     return row;
   }
 
@@ -216,7 +218,7 @@ public class ProjectProgressSection extends Div {
     item.add(head, labelSpan, countSpan);
     if (experimentId != null) {
       item.addClassName("project-progress-step--link");
-      activateOnClickAndKeys(item, () -> navigate(target, experimentId));
+      Utility.activateOnClickAndKeys(item, "link", () -> navigate(target, experimentId));
     }
     return item;
   }
@@ -234,7 +236,7 @@ public class ProjectProgressSection extends Div {
     label.addClassName("project-progress-datasets-label");
     Span open = new Span("Open datasets");
     open.addClassName("project-progress-datasets-link");
-    activateOnClickAndKeys(open, () -> getUI().ifPresent(
+    Utility.activateOnClickAndKeys(open, "link", () -> getUI().ifPresent(
         ui -> ui.navigate(ConnectedDatasetsMain.class, projectParameters())));
     head.add(label, open);
 
@@ -314,18 +316,6 @@ public class ProjectProgressSection extends Div {
 
   private RouteParameters projectParameters() {
     return new RouteParameters(new RouteParam(PROJECT_ID_PARAMETER, projectId));
-  }
-
-  private static void activateOnClickAndKeys(Component element, Runnable action) {
-    element.getElement().setAttribute("role", "link");
-    element.getElement().setAttribute("tabindex", "0");
-    element.getElement().addEventListener("click", event -> action.run());
-    element.getElement().addEventListener("keydown", event -> {
-      String key = event.getEventData().path("event.key").asText("");
-      if ("Enter".equals(key) || " ".equals(key)) {
-        action.run();
-      }
-    }).addEventData("event.key");
   }
 
   private static Icon icon(VaadinIcon vaadinIcon) {

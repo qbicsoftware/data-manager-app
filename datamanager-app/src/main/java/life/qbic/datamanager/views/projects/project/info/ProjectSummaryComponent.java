@@ -851,12 +851,32 @@ public class ProjectSummaryComponent extends PageArea {
     identityMeta.add(new Span(experiments == 1 ? "1 experiment" : experiments + " experiments"));
     if (attention > 0) {
       identityMeta.add(separator());
-      Span chip = new Span(attention == 1
-          ? "1 experiment needs attention"
-          : attention + " experiments need attention");
-      chip.addClassName("project-identity-attention");
-      identityMeta.add(chip);
+      identityMeta.add(attentionChip(attention));
     }
+  }
+
+  /**
+   * The attention rollup. Attention can hit several experiments at once, so the chip is a
+   * project-level count that brings the reader to the per-experiment rows rather than jumping
+   * into one arbitrary experiment.
+   */
+  private Div attentionChip(int attention) {
+    Div chip = new Div();
+    chip.addClassName("project-identity-attention");
+    chip.addClassName("project-identity-attention--action");
+    chip.getElement().setAttribute("title", "Show which experiments need attention");
+    chip.add(new Span(attention == 1
+        ? "1 experiment needs attention"
+        : attention + " experiments need attention"));
+    chip.add(VaadinIcon.ANGLE_RIGHT.create());
+    Utility.activateOnClickAndKeys(chip, "button", this::scrollToAttention);
+    return chip;
+  }
+
+  private void scrollToAttention() {
+    getUI().ifPresent(ui -> ui.getPage().executeJs(
+        "document.querySelector('.project-progress-attention')"
+            + "?.scrollIntoView({behavior: 'smooth', block: 'center'})"));
   }
 
   private static Span separator() {

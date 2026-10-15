@@ -25,6 +25,18 @@
   font-weight: 600;
 }
 
+.project-identity-attention--action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  cursor: pointer;
+}
+
+.project-identity-attention--action:hover,
+.project-identity-attention--action:focus-visible {
+  text-decoration: underline;
+}
+
 .project-objective {
   margin-top: var(--lumo-space-s);
   display: flex;
