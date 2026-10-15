@@ -131,14 +131,15 @@ public class ProjectProgressSection extends Div {
   private Div attentionRow(ExperimentProgress entry) {
     Div row = new Div();
     row.addClassName("project-progress-attention-row");
+    row.add(icon(VaadinIcon.WARNING));
     Span context = new Span(entry.experimentName());
     context.addClassName("project-progress-attention-context");
     Span text = new Span(entry.measurementsWithoutPrimaryData() + " of " + entry.measurementCount()
-        + " measurements have no primary data");
+        + " measurements have no primary data attached");
     text.addClassName("project-progress-attention-text");
-    Span action = new Span("Open measurements");
+    Span action = new Span("Open dataset");
     action.addClassName("project-progress-attention-action");
-    row.add(context, separator(), text, separator(), action);
+    row.add(context, text, action);
     activateOnClickAndKeys(row, () -> navigate(MeasurementMain.class, entry.experimentId()));
     return row;
   }
@@ -154,7 +155,7 @@ public class ProjectProgressSection extends Div {
       long withSamples = progress.stream().filter(entry -> entry.sampleCount() > 0).count();
       intro.add(strong(withSamples + " of " + progress.size()
               + (progress.size() == 1 ? " experiment" : " experiments")),
-          new Span(" have registered samples"));
+          new Span(progress.size() == 1 ? " has registered samples" : " have registered samples"));
     }
     return intro;
   }
@@ -181,6 +182,8 @@ public class ProjectProgressSection extends Div {
     item.addClassName("project-progress-step");
     item.addClassName("project-progress-step--" + state.css());
 
+    Div head = new Div();
+    head.addClassName("project-progress-step-head");
     Span marker = new Span();
     marker.addClassName("project-progress-marker");
     switch (state) {
@@ -188,11 +191,15 @@ public class ProjectProgressSection extends Div {
       case ATTENTION -> marker.add(icon(VaadinIcon.WARNING));
       case TODO -> marker.setText(Integer.toString(ordinal));
     }
+    Span connector = new Span();
+    connector.addClassName("project-progress-connector");
+    head.add(marker, connector);
+
     Span labelSpan = new Span(label);
     labelSpan.addClassName("project-progress-step-label");
     Span countSpan = new Span(count + " " + unit);
     countSpan.addClassName("project-progress-step-count");
-    item.add(marker, labelSpan, countSpan);
+    item.add(head, labelSpan, countSpan);
     return item;
   }
 

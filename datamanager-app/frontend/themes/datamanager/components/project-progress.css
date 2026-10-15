@@ -1,5 +1,5 @@
-/* "Where the project stands" — the prototype's progress band: band title, attention block outside
-   the card, then a card with a headline, an ordered rail of three stages and the dataset standing. */
+/* "Where the project stands" — the prototype's progress band: band title, an amber attention card,
+   then a card with a headline, a rail of three stages on a connector line and the dataset standing. */
 
 .project-progress-section {
   display: block;
@@ -19,27 +19,36 @@
   color: var(--lumo-secondary-text-color);
 }
 
-/* ── Attention block (outside the card) ───────────────────────────────── */
+/* ── Attention card ───────────────────────────────────────────────────── */
 
 .project-progress-attention {
-  margin-bottom: var(--lumo-space-s);
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+  padding: var(--lumo-space-m);
+  margin-bottom: var(--lumo-space-m);
+  background-color: var(--lumo-warning-color-10pct, var(--lumo-contrast-5pct));
+  border: 1px solid var(--lumo-warning-color, var(--lumo-contrast-20pct));
+  border-radius: var(--lumo-border-radius-m);
 }
 
 .project-progress-attention-title {
-  display: block;
   font-weight: 600;
-  color: var(--lumo-error-text-color);
-  margin-bottom: var(--lumo-space-xs);
+  color: var(--lumo-warning-text-color, var(--lumo-error-text-color));
 }
 
 .project-progress-attention-row {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: var(--lumo-space-xs);
-  font-size: var(--lumo-font-size-s);
-  color: var(--lumo-secondary-text-color);
+  gap: var(--lumo-space-s);
+  padding: var(--lumo-space-s) var(--lumo-space-m);
+  background-color: var(--lumo-base-color);
+  border-radius: var(--lumo-border-radius-m);
   cursor: pointer;
+}
+
+.project-progress-attention-row .project-progress-glyph {
+  color: var(--lumo-warning-text-color, var(--lumo-error-text-color));
 }
 
 .project-progress-attention-row:hover .project-progress-attention-action,
@@ -52,7 +61,13 @@
   color: var(--lumo-body-text-color);
 }
 
+.project-progress-attention-text {
+  color: var(--lumo-secondary-text-color);
+}
+
 .project-progress-attention-action {
+  margin-left: auto;
+  font-weight: 600;
   color: var(--lumo-primary-text-color);
 }
 
@@ -65,7 +80,7 @@
 .project-progress-card {
   display: flex;
   flex-direction: column;
-  gap: var(--lumo-space-m);
+  gap: var(--lumo-space-l);
   padding: var(--lumo-space-m);
   border: 1px solid var(--lumo-contrast-10pct);
   border-radius: var(--lumo-border-radius-m);
@@ -81,18 +96,25 @@
   color: var(--lumo-body-text-color);
 }
 
-/* Rail: a genuine sequence, so the steps are numbered; done / attention use glyphs. */
+/* Rail: a genuine sequence — markers sit on a horizontal connector line, labels below. */
 .project-progress-rail {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--lumo-space-l);
+  gap: var(--lumo-space-m);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
 .project-progress-step {
-  display: inline-flex;
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-xs);
+  min-width: 0;
+}
+
+.project-progress-step-head {
+  display: flex;
   align-items: center;
   gap: var(--lumo-space-s);
 }
@@ -101,12 +123,14 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex: 0 0 auto;
   width: 1.75rem;
   height: 1.75rem;
   border-radius: 999px;
-  border: 1px solid var(--lumo-contrast-20pct);
+  border: 1px solid var(--lumo-contrast-40pct);
   font-size: var(--lumo-font-size-xs);
   color: var(--lumo-secondary-text-color);
+  background-color: var(--lumo-base-color);
 }
 
 .project-progress-step--done .project-progress-marker {
@@ -117,6 +141,20 @@
 .project-progress-step--attention .project-progress-marker {
   border-color: var(--lumo-warning-color, var(--lumo-contrast-40pct));
   color: var(--lumo-warning-text-color, var(--lumo-error-text-color));
+}
+
+.project-progress-connector {
+  flex: 1 1 auto;
+  height: 2px;
+  background-color: var(--lumo-contrast-20pct);
+}
+
+.project-progress-step--done .project-progress-connector {
+  background-color: var(--lumo-success-color, var(--lumo-contrast-40pct));
+}
+
+.project-progress-step:last-child .project-progress-connector {
+  visibility: hidden;
 }
 
 .project-progress-glyph {
@@ -172,7 +210,7 @@
   gap: var(--lumo-space-xs);
   flex: 1 1 18rem;
   padding: var(--lumo-space-m);
-  border: 1px solid var(--lumo-contrast-10pct);
+  background-color: var(--lumo-contrast-5pct);
   border-radius: var(--lumo-border-radius-m);
 }
 
