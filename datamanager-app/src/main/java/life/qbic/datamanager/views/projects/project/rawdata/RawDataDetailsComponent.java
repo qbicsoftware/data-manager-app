@@ -597,6 +597,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
         && context.projectId().isPresent()
         && this.context.projectId().get().equals(context.projectId().get());
     this.context = context;
+    refreshTabVisibility();
     if (!sameExperiment) {
       // reset per-tab state to defaults on a new experiment
       RawDataListState defaults = RawDataListState.defaultWith(RawDataDomain.NGS);
@@ -604,7 +605,6 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
     } else {
       tabPagination.refreshActiveTab();
     }
-    refreshTabVisibility();
   }
 
   private void refreshTabVisibility() {
