@@ -51,7 +51,7 @@ import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.Toast;
-import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
+import life.qbic.datamanager.views.projects.project.ProjectMainLayout;
 import life.qbic.datamanager.views.projects.project.measurements.pagination.MeasurementDomain;
 import life.qbic.datamanager.views.projects.project.measurements.pagination.MeasurementListState;
 import life.qbic.datamanager.views.projects.project.measurements.pagination.MeasurementListStateCodec;
@@ -102,7 +102,7 @@ import reactor.core.publisher.Mono;
  * associated with an {@link Experiment} within a {@link Project} via the provided
  * {@link ExperimentId} and {@link ProjectId} in the URL
  */
-@Route(value = "projects/:projectId?/experiments/:experimentId?/measurements", layout = ExperimentMainLayout.class)
+@Route(value = "projects/:projectId?/experiments/:experimentId?/measurements", layout = ProjectMainLayout.class)
 @PermitAll
 public class MeasurementMain extends Main implements BeforeEnterObserver, BeforeLeaveObserver {
 

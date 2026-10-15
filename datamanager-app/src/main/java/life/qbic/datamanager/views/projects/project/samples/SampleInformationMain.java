@@ -48,7 +48,7 @@ import life.qbic.datamanager.views.general.icon.IconFactory;
 import life.qbic.datamanager.views.general.pagination.ListState;
 import life.qbic.datamanager.views.general.pagination.ListStateCodec;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
-import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
+import life.qbic.datamanager.views.projects.project.ProjectMainLayout;
 import life.qbic.datamanager.views.projects.project.samples.SampleDetailsComponent.SampleDeletionRequested;
 import life.qbic.datamanager.views.projects.project.samples.SampleDetailsComponent.SampleEditRequested;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.EditSampleDialog;
@@ -84,7 +84,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * provided {@link ProjectId} in the URL
  */
 
-@Route(value = "projects/:projectId?/experiments/:experimentId?/samples", layout = ExperimentMainLayout.class)
+@Route(value = "projects/:projectId?/experiments/:experimentId?/samples", layout = ProjectMainLayout.class)
 @SpringComponent
 @UIScope
 @PermitAll
