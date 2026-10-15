@@ -897,9 +897,9 @@ public class ProjectSummaryComponent extends PageArea {
 
   private void buildHeaderSection(ProjectOverview projectOverview) {
     Objects.requireNonNull(projectOverview);
-    var header = new SectionHeader(
-        new SectionTitle("%s - %s".formatted(projectOverview.projectCode(),
-            projectOverview.projectTitle()), Size.LARGE));
+    // The project identity (code + title) is shown once, in the shell's identity bar. The summary
+    // header is a metadata strip: export action, collaborators, tags and last-modified note.
+    var header = new SectionHeader();
     var crateExportBtn = new Button("Export Project Summary");
 
     crateExportBtn.addClickListener(event -> triggerRoCrateDownload());
