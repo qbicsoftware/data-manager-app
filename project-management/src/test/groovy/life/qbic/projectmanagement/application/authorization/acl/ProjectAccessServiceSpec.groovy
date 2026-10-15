@@ -342,6 +342,161 @@ class ProjectAccessServiceSpec extends Specification {
     1 * aclService.updateAcl(acl)
   }
 
+  def "batch listSharedGroups resolves a whole page of grants in one pass"() {
+    given: "two projects with group grants and a spy so the SQL layer can be stubbed"
+    def pageService = Spy(ProjectAccessServiceImpl,
+        constructorArgs: [aclService, jdbcTemplate, groupInformationService])
+    def projectOne = ProjectId.create()
+    def projectTwo = ProjectId.create()
+    pageService.queryProjectGroupGrants(_) >> [
+        // two ACE rows for the same group must accumulate into one WRITE grant
+        new ProjectAccessServiceImpl.GroupGrantRow(projectOne.value(), "GROUP_group-1",
+            BasePermission.READ.mask),
+        new ProjectAccessServiceImpl.GroupGrantRow(projectOne.value(), "GROUP_group-1",
+            BasePermission.WRITE.mask),
+        new ProjectAccessServiceImpl.GroupGrantRow(projectTwo.value(), "GROUP_group-2",
+            BasePermission.READ.mask),
+    ]
+    // group-1's response is declared together with its cardinality below: a then-block interaction
+    // re-declaring the same call shadows this stub and would return the default (null) response.
+    groupInformationService.findGroupById("group-2") >> Optional.of(
+        new GroupInfo("group-2", "Core Facility", null, GroupType.ADHOC))
+
+    when:
+    Map<ProjectId, List<SharedProjectGroup>> result =
+        pageService.listSharedGroups([projectOne, projectTwo])
+
+    then: "each project maps to its own groups"
+    result[projectOne]*.groupName == ["NGS Lab"]
+    result[projectTwo]*.groupName == ["Core Facility"]
+
+    and: "accumulated ACE masks resolve to the highest granted role"
+    result[projectOne][0].projectRole == ProjectRole.WRITE
+    result[projectTwo][0].projectRole == ProjectRole.READ
+    result[projectOne][0].projectId == projectOne
+
+    and: "group information is resolved once even though the group has several ACE rows"
+    1 * groupInformationService.findGroupById("group-1") >> Optional.of(
+        new GroupInfo("group-1", "NGS Lab", "the sequencing lab", GroupType.ORG))
+  }
+
+  def "batch listSharedGroups orders groups by granted role and then by name"() {
+    given:
+    def pageService = Spy(ProjectAccessServiceImpl,
+        constructorArgs: [aclService, jdbcTemplate, groupInformationService])
+    def project = ProjectId.create()
+    pageService.queryProjectGroupGrants(_) >> [
+        new ProjectAccessServiceImpl.GroupGrantRow(project.value(), "GROUP_read",
+            BasePermission.READ.mask),
+        new ProjectAccessServiceImpl.GroupGrantRow(project.value(), "GROUP_admin",
+            (BasePermission.READ.mask | BasePermission.WRITE.mask
+                | BasePermission.ADMINISTRATION.mask)),
+    ]
+    groupInformationService.findGroupById("read") >> Optional.of(
+        new GroupInfo("read", "Reading Group", null, GroupType.ADHOC))
+    groupInformationService.findGroupById("admin") >> Optional.of(
+        new GroupInfo("admin", "Admin Group", null, GroupType.ADHOC))
+
+    when:
+    def result = pageService.listSharedGroups([project])
+
+    then: "the strongest role is listed first"
+    result[project]*.groupName == ["Admin Group", "Reading Group"]
+    result[project]*.projectRole == [ProjectRole.ADMIN, ProjectRole.READ]
+  }
+
+  def "batch listSharedGroups skips groups that no longer resolve"() {
+    given: "a grant whose group was dissolved after the ACE was written"
+    def pageService = Spy(ProjectAccessServiceImpl,
+        constructorArgs: [aclService, jdbcTemplate, groupInformationService])
+    def project = ProjectId.create()
+    pageService.queryProjectGroupGrants(_) >> [
+        new ProjectAccessServiceImpl.GroupGrantRow(project.value(), "GROUP_gone",
+            BasePermission.READ.mask)]
+    groupInformationService.findGroupById("gone") >> Optional.empty()
+
+    when:
+    def result = pageService.listSharedGroups([project])
+
+    then: "the stale grant does not leak a nameless entry onto the card"
+    result[project].isEmpty()
+  }
+
+  def "batch listSharedGroups short-circuits on an empty request"() {
+    when:
+    def result = service.listSharedGroups([])
+
+    then: "no ACL query is issued and an empty map is returned"
+    result.isEmpty()
+    0 * jdbcTemplate.query(*_)
+  }
+
+  def "batch listSharedGroups maps a project without group grants to an empty list"() {
+    given:
+    def pageService = Spy(ProjectAccessServiceImpl,
+        constructorArgs: [aclService, jdbcTemplate, groupInformationService])
+    def projectWithGroups = ProjectId.create()
+    def projectWithoutGroups = ProjectId.create()
+    pageService.queryProjectGroupGrants(_) >> [
+        new ProjectAccessServiceImpl.GroupGrantRow(projectWithGroups.value(), "GROUP_group-1",
+            BasePermission.READ.mask)]
+    groupInformationService.findGroupById("group-1") >> Optional.of(
+        new GroupInfo("group-1", "NGS Lab", null, GroupType.ORG))
+
+    when:
+    def result = pageService.listSharedGroups([projectWithGroups, projectWithoutGroups])
+
+    then:
+    result[projectWithGroups].size() == 1
+    result[projectWithoutGroups].isEmpty()
+  }
+
+  def "batch listCollaborators resolves the role per user and project"() {
+    given:
+    def pageService = Spy(ProjectAccessServiceImpl,
+        constructorArgs: [aclService, jdbcTemplate, groupInformationService])
+    def projectOne = ProjectId.create()
+    def projectTwo = ProjectId.create()
+    pageService.queryProjectUserGrants(_) >> [
+        new ProjectAccessServiceImpl.UserGrantRow(projectOne.value(), "user-1",
+            BasePermission.READ.mask),
+        new ProjectAccessServiceImpl.UserGrantRow(projectOne.value(), "user-1",
+            BasePermission.WRITE.mask),
+        new ProjectAccessServiceImpl.UserGrantRow(projectOne.value(), "user-2",
+            (BasePermission.READ.mask | BasePermission.WRITE.mask
+                | BasePermission.CREATE.mask | BasePermission.DELETE.mask
+                | BasePermission.ADMINISTRATION.mask)),
+        new ProjectAccessServiceImpl.UserGrantRow(projectTwo.value(), "user-3",
+            BasePermission.READ.mask),
+    ]
+
+    when:
+    def result = pageService.listCollaborators([projectOne, projectTwo])
+
+    then: "accumulated masks resolve to the highest granted role, strongest first"
+    result[projectOne]*.userId == ["user-2", "user-1"]
+    result[projectOne]*.projectRole == [ProjectRole.OWNER, ProjectRole.WRITE]
+    result[projectTwo]*.userId == ["user-3"]
+    result[projectTwo][0].projectRole == ProjectRole.READ
+    result[projectTwo][0].projectId == projectTwo
+  }
+
+  def "batch listCollaborators omits a user whose role cannot be resolved"() {
+    given: "a principal with a corrupt ACE mask that maps to no project role"
+    def pageService = Spy(ProjectAccessServiceImpl,
+        constructorArgs: [aclService, jdbcTemplate, groupInformationService])
+    def project = ProjectId.create()
+    pageService.queryProjectUserGrants(_) >> [
+        new ProjectAccessServiceImpl.UserGrantRow(project.value(), "user-1",
+            BasePermission.CREATE.mask)]
+
+    when:
+    def result = pageService.listCollaborators([project])
+
+    then: "the user is omitted rather than shown with a guessed role"
+    result[project].isEmpty()
+  }
+
   /**
    * Minimal {@link AccessControlEntry} for the in-memory ACL stub.
    */

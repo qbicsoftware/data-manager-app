@@ -5,6 +5,10 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -18,11 +22,13 @@ import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.service.event.ProjectAccessGranted;
+import life.qbic.usergroups.api.GroupInfo;
 import life.qbic.usergroups.api.GroupInformationService;
 import org.springframework.security.acls.domain.BasePermission;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.acls.domain.GrantedAuthoritySid;
 import org.springframework.security.acls.domain.ObjectIdentityImpl;
@@ -49,8 +55,59 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
   private static final Logger log = logger(ProjectAccessServiceImpl.class);
   public static final String SELECT_IDENTITY = "SELECT @@IDENTITY";
   public static final String GROUP_SID_PREFIX = "GROUP_";
+
+  /**
+   * Reads every group grant of the given projects in one round trip. Groups ride as
+   * {@link GrantedAuthoritySid}s with the reserved {@code GROUP_} prefix (strategy §4.3), so the
+   * grant rows can be selected directly from the ACL tables instead of reading one ACL per card.
+   * The project list is a bound IN parameter, so the statement itself is constant.
+   */
+  private static final String SELECT_PROJECT_GROUP_GRANTS = """
+      SELECT oi.object_id_identity AS project_id,
+             s.sid                  AS group_sid,
+             e.mask                 AS permission_mask
+      FROM acl_object_identity oi
+             JOIN acl_class c ON c.id = oi.object_id_class
+             JOIN acl_entry e ON e.acl_object_identity = oi.id
+             JOIN acl_sid s ON s.id = e.sid
+      WHERE c.class = :className AND s.principal = 0 AND s.sid LIKE 'GROUP\\_%'
+        AND oi.object_id_identity IN (:projectIds)
+      """;
+
+  /**
+   * Principal counterpart of {@link #SELECT_PROJECT_GROUP_GRANTS}: reads the user grants of the
+   * given projects in one round trip so collaborator roles can be resolved without one ACL read per
+   * project.
+   */
+  private static final String SELECT_PROJECT_USER_GRANTS = """
+      SELECT oi.object_id_identity AS project_id,
+             s.sid                  AS user_id,
+             e.mask                 AS permission_mask
+      FROM acl_object_identity oi
+             JOIN acl_class c ON c.id = oi.object_id_class
+             JOIN acl_entry e ON e.acl_object_identity = oi.id
+             JOIN acl_sid s ON s.id = e.sid
+      WHERE c.class = :className AND s.principal = 1
+        AND oi.object_id_identity IN (:projectIds)
+      """;
+
+  /**
+   * The concrete {@link BasePermission}s a stored ACE mask can be composed of. Masks are expanded
+   * bit by bit so the resulting permission set has the same shape as the one the Java ACL model
+   * produces for {@link AccessControlEntry#getPermission()}; a cumulative mask (e.g. READ + WRITE)
+   * is therefore recognised by {@link ProjectRole#fromPermissions}.
+   */
+
+  private static final List<Permission> BASE_PERMISSIONS = List.of(
+      BasePermission.READ, BasePermission.WRITE, BasePermission.CREATE,
+      BasePermission.DELETE, BasePermission.ADMINISTRATION);
   private final MutableAclService aclService;
   private final JdbcTemplate jdbcTemplate;
+  /**
+   * Used by the batched grant queries: the project list is bound as an IN parameter instead of
+   * being concatenated into the statement.
+   */
+  private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
   private final GroupInformationService groupInformationService;
   private @org.springframework.context.annotation.Lazy AclCache aclCache;
   private AclEvictionPublisher aclEvictionPublisher;
@@ -60,6 +117,7 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
       JdbcTemplate jdbcTemplate, @Autowired GroupInformationService groupInformationService) {
     this.aclService = aclService;
     this.jdbcTemplate = jdbcTemplate;
+    this.namedParameterJdbcTemplate = new NamedParameterJdbcTemplate(jdbcTemplate);
     this.groupInformationService = groupInformationService;
   }
 
@@ -561,6 +619,164 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
         })
         .filter(Objects::nonNull)
         .toList();
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  @PreAuthorize("isFullyAuthenticated()")
+  public Map<ProjectId, List<SharedProjectGroup>> listSharedGroups(
+      Collection<ProjectId> projectIds) {
+    if (projectIds == null || projectIds.isEmpty()) {
+      return Map.of();
+    }
+    // Preserve request order and drop duplicates so the caller's ordering is not disturbed.
+    Map<String, ProjectId> requested = new LinkedHashMap<>();
+    for (ProjectId projectId : projectIds) {
+      if (projectId != null) {
+        requested.putIfAbsent(projectId.value(), projectId);
+      }
+    }
+    if (requested.isEmpty()) {
+      return Map.of();
+    }
+
+    List<GroupGrantRow> rows = queryProjectGroupGrants(requested.keySet());
+
+    // projectId -> groupId -> accumulated permissions
+    Map<String, Map<String, Set<Permission>>> grantsByProject = new LinkedHashMap<>();
+    for (GroupGrantRow row : rows) {
+      if (!requested.containsKey(row.projectId())) {
+        continue;
+      }
+      String groupId = row.groupSid().substring(GROUP_SID_PREFIX.length());
+      grantsByProject.computeIfAbsent(row.projectId(), key -> new LinkedHashMap<>())
+          .computeIfAbsent(groupId, key -> new HashSet<>())
+          .addAll(permissionsFromMask(row.permissionMask()));
+    }
+
+    Map<String, Optional<GroupInfo>> groupCache = new HashMap<>();
+    Map<ProjectId, List<SharedProjectGroup>> result = new LinkedHashMap<>();
+    requested.forEach((projectIdValue, projectId) -> result.put(projectId,
+        grantsByProject.getOrDefault(projectIdValue, Map.of()).entrySet().stream()
+            .map(groupGrant -> {
+              Optional<GroupInfo> groupInfo = groupCache.computeIfAbsent(groupGrant.getKey(),
+                  groupInformationService::findGroupById);
+              if (groupInfo.isEmpty()) {
+                return null;
+              }
+              ProjectRole role = ProjectRole.fromPermissions(groupGrant.getValue())
+                  .orElseGet(() -> fallbackRole(groupGrant.getValue()));
+              return new SharedProjectGroup(groupGrant.getKey(), groupInfo.get().name(),
+                  groupInfo.get().description(), projectId, role);
+            })
+            .filter(Objects::nonNull)
+            .sorted(Comparator
+                .comparingInt((SharedProjectGroup group) -> roleRank(group.projectRole()))
+                .thenComparing(SharedProjectGroup::groupName, String.CASE_INSENSITIVE_ORDER))
+            .toList()));
+    return result;
+  }
+
+  /**
+   * Reads the raw group grant rows for the given project id values in a single query. Extracted so
+   * the aggregation and role resolution above can be exercised without a database.
+   */
+  List<GroupGrantRow> queryProjectGroupGrants(Collection<String> projectIdValues) {
+    Map<String, Object> parameters = Map.of("className", Project.class.getName(),
+        "projectIds", projectIdValues);
+    return namedParameterJdbcTemplate.query(SELECT_PROJECT_GROUP_GRANTS, parameters,
+        (resultSet, rowNumber) -> new GroupGrantRow(resultSet.getString("project_id"),
+            resultSet.getString("group_sid"), resultSet.getInt("permission_mask")));
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  @PreAuthorize("isFullyAuthenticated()")
+  public Map<ProjectId, List<ProjectCollaborator>> listCollaborators(
+      Collection<ProjectId> projectIds) {
+    if (projectIds == null || projectIds.isEmpty()) {
+      return Map.of();
+    }
+    Map<String, ProjectId> requested = new LinkedHashMap<>();
+    for (ProjectId projectId : projectIds) {
+      if (projectId != null) {
+        requested.putIfAbsent(projectId.value(), projectId);
+      }
+    }
+    if (requested.isEmpty()) {
+      return Map.of();
+    }
+
+    List<UserGrantRow> rows = queryProjectUserGrants(requested.keySet());
+
+    // projectId -> userId -> accumulated permissions
+    Map<String, Map<String, Set<Permission>>> grantsByProject = new LinkedHashMap<>();
+    for (UserGrantRow row : rows) {
+      if (!requested.containsKey(row.projectId())) {
+        continue;
+      }
+      grantsByProject.computeIfAbsent(row.projectId(), key -> new LinkedHashMap<>())
+          .computeIfAbsent(row.userId(), key -> new HashSet<>())
+          .addAll(permissionsFromMask(row.permissionMask()));
+    }
+
+    Map<ProjectId, List<ProjectCollaborator>> result = new LinkedHashMap<>();
+    requested.forEach((projectIdValue, projectId) -> result.put(projectId,
+        grantsByProject.getOrDefault(projectIdValue, Map.of()).entrySet().stream()
+            // Only resolvable roles are surfaced, matching listCollaborators(ProjectId).
+            .map(userGrant -> ProjectRole.fromPermissions(userGrant.getValue())
+                .map(role -> new ProjectCollaborator(userGrant.getKey(), projectId, role))
+                .orElse(null))
+            .filter(Objects::nonNull)
+            .sorted(Comparator
+                .comparingInt((ProjectCollaborator collaborator) ->
+                    roleRank(collaborator.projectRole()))
+                .thenComparing(ProjectCollaborator::userId))
+            .toList()));
+    return result;
+  }
+
+  /**
+   * Reads the raw user grant rows for the given project id values in a single query.
+   */
+  List<UserGrantRow> queryProjectUserGrants(Collection<String> projectIdValues) {
+    Map<String, Object> parameters = Map.of("className", Project.class.getName(),
+        "projectIds", projectIdValues);
+    return namedParameterJdbcTemplate.query(SELECT_PROJECT_USER_GRANTS, parameters,
+        (resultSet, rowNumber) -> new UserGrantRow(resultSet.getString("project_id"),
+            resultSet.getString("user_id"), resultSet.getInt("permission_mask")));
+  }
+
+  /**
+   * Expands a stored ACE mask into the concrete permission bits it is composed of.
+   */
+  private static Set<Permission> permissionsFromMask(int mask) {
+    return BASE_PERMISSIONS.stream()
+        .filter(permission -> (mask & permission.getMask()) == permission.getMask())
+        .collect(Collectors.toSet());
+  }
+
+  /**
+   * Roster order: highest privilege first (owner &gt; admin &gt; write &gt; read). Mirrors the
+   * ordering used by the sharing drawer so every surface agrees on group order.
+   */
+  private static int roleRank(ProjectRole role) {
+    return switch (role) {
+      case OWNER -> 0;
+      case ADMIN -> 1;
+      case WRITE -> 2;
+      case READ -> 3;
+    };
+  }
+
+  /** One group grant row as read from the ACL tables. */
+  record GroupGrantRow(String projectId, String groupSid, int permissionMask) {
+
+  }
+
+  /** One user grant row as read from the ACL tables. */
+  record UserGrantRow(String projectId, String userId, int permissionMask) {
+
   }
 
   /**

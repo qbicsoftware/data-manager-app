@@ -106,6 +106,63 @@ class MyGroupsComponentSpec extends Specification {
 
     then:
     textOf(component).contains("No groups yet.")
+    sectionHeadings().isEmpty()
+  }
+
+  def "separates owned groups from groups the caller only belongs to"() {
+    given: "an owned group, an ad-hoc membership and an org membership the caller manages"
+    memberships = [
+        membership("g1", "Owned Lab", null, GroupType.ADHOC, GroupRole.OWNER),
+        membership("g2", "Sprint Team", null, GroupType.ADHOC, GroupRole.MEMBER),
+        membership("g3", "NGS Core", null, GroupType.ORG, GroupRole.MANAGER),
+    ]
+
+    when:
+    component.refresh()
+
+    then: "both sections are labelled with their counts, owned first"
+    sectionHeadings() == ["Groups you own (1)", "Groups you belong to (2)"]
+
+    and: "the owned row comes first, then the merely-belonged rows in supplier order"
+    def rows = renderedRows()
+    rows.size() == 3
+    textOf(rows[0]).contains("Owned Lab")
+    textOf(rows[1]).contains("Sprint Team")
+    textOf(rows[2]).contains("NGS Core")
+  }
+
+  def "omits the owned section when the caller owns no group"() {
+    given: "only non-owner memberships"
+    memberships = [membership("g1", "Sprint Team", null, GroupType.ADHOC, GroupRole.MEMBER)]
+
+    when:
+    component.refresh()
+
+    then: "only the belongs-to section is shown; no empty own heading floats above nothing"
+    sectionHeadings() == ["Groups you belong to (1)"]
+  }
+
+  def "omits the belongs-to section when the caller owns every group"() {
+    given: "only owned groups"
+    memberships = [membership("g1", "Owned Lab", null, GroupType.ADHOC, GroupRole.OWNER)]
+
+    when:
+    component.refresh()
+
+    then:
+    sectionHeadings() == ["Groups you own (1)"]
+  }
+
+  def "an org group never appears under groups you own, even when managed"() {
+    given: "an org manager (org groups carry no OWNER membership)"
+    memberships = [membership("org-1", "NGS Core", null, GroupType.ORG, GroupRole.MANAGER)]
+
+    when:
+    component.refresh()
+
+    then:
+    sectionHeadings() == ["Groups you belong to (1)"]
+    textOf(renderedRows()[0]).contains("NGS Core")
   }
 
   def "renders an enabled Leave group action for an ad-hoc plain member and asks for confirmation"() {
@@ -314,8 +371,33 @@ class MyGroupsComponentSpec extends Specification {
     new MyGroupMembership(groupId, name, description, type, role, 1 as int)
   }
 
+  /**
+   * Collects the membership rows. Rows are nested inside their semantic group
+   * ("Groups you own" / "Groups you belong to"), so the traversal descends instead of reading
+   * the list's direct children. Encounter order is preserved (owned rows first).
+   */
   private List<Div> renderedRows() {
-    component.@groupList.children.toList() as List<Div>
+    List<Div> rows = []
+    collectRows(component.@groupList, rows)
+    return rows
+  }
+
+  private static void collectRows(Component component, List<Div> rows) {
+    if (component instanceof Div div && div.classNames.contains("my-groups-row")) {
+      rows << div
+    }
+    component.children.forEach { child -> collectRows(child, rows) }
+  }
+
+  /** The visible group subheadings, in render order. */
+  private List<String> sectionHeadings() {
+    List<String> headings = []
+    allDescendants(component.@groupList).each { child ->
+      if (child.classNames.contains("my-groups-section__title")) {
+        headings << child.element.text
+      }
+    }
+    return headings
   }
 
   private static List<Component> rowChildren(Div row) {

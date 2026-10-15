@@ -7,6 +7,7 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Span;
 import life.qbic.datamanager.views.account.UserAvatar;
 import com.vaadin.flow.router.RouterLink;
@@ -27,9 +28,15 @@ import life.qbic.usergroups.api.MyGroupMembership;
 /**
  * <b>My Groups list component</b>
  * <p>
- * Renders the group memberships of the current user ("My Groups"). Each membership is shown as a
- * row with the group name, its description (when present), a type badge (Org / User Group), the
- * caller's role badge (Owner / Manager / Member) and the group's total member count.
+ * Renders the group memberships of the current user ("My Groups") in two semantic groups: groups
+ * the caller <em>owns</em> (ad-hoc groups where the caller is OWNER) and groups the caller merely
+ * <em>belongs to</em> (MANAGER/MEMBER memberships, ad-hoc or organisational). A group without an
+ * OWNER membership (e.g. an org group) never appears under "Groups you own". A section is omitted
+ * entirely when it has no memberships, so a section heading never floats above an empty list.
+ * <p>
+ * Each membership is shown as a row with the group name, its description (when present), a type
+ * badge (Org / User Group), the caller's role badge (Owner / Manager / Member) and the group's
+ * total member count.
  * <p>
  * Actions are role-gated:
  * <ul>
@@ -109,7 +116,42 @@ public class MyGroupsComponent extends Div implements Serializable {
       groupList.add(emptyState);
       return;
     }
-    memberships.forEach(membership -> groupList.add(buildRow(membership)));
+    // Owned groups first (the caller's strongest relationship), then groups the caller is merely
+    // part of. Org groups carry no OWNER membership, so they only ever land in the second group.
+    List<MyGroupMembership> owned = memberships.stream()
+        .filter(membership -> membership.myRole() == GroupRole.OWNER)
+        .toList();
+    List<MyGroupMembership> belongsTo = memberships.stream()
+        .filter(membership -> membership.myRole() != GroupRole.OWNER)
+        .toList();
+    if (!owned.isEmpty()) {
+      groupList.add(buildSection(sectionTitle("Groups you own", owned.size()), owned));
+    }
+    if (!belongsTo.isEmpty()) {
+      groupList.add(buildSection(sectionTitle("Groups you belong to", belongsTo.size()),
+          belongsTo));
+    }
+  }
+
+  private static String sectionTitle(String label, int count) {
+    return label + " (" + count + ")";
+  }
+
+  /**
+   * Builds one semantic group (subheading + its membership rows). Reuses the shared
+   * {@code settings-group} subheading pattern (as the group detail page does), so the two lists
+   * are separated by a subheading and whitespace only - no card chrome.
+   */
+  private Div buildSection(String title, List<MyGroupMembership> memberships) {
+    Div section = new Div();
+    section.addClassNames("settings-group", "my-groups-section");
+    H3 heading = new H3(title);
+    heading.addClassNames("settings-group__title", "my-groups-section__title");
+    Div rows = new Div();
+    rows.addClassName("my-groups-rows");
+    memberships.forEach(membership -> rows.add(buildRow(membership)));
+    section.add(heading, rows);
+    return section;
   }
 
   private Div buildRow(MyGroupMembership membership) {

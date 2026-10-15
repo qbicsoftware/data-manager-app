@@ -2,6 +2,7 @@ package life.qbic.projectmanagement.application.authorization.acl;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -61,6 +62,44 @@ public interface ProjectAccessService {
    * @return the shared groups with their granted project role
    */
   List<SharedProjectGroup> listSharedGroups(ProjectId projectId);
+
+  /**
+   * Lists the user groups shared onto each of the given projects.
+   *
+   * <p>Batched sibling of {@link #listSharedGroups(ProjectId)} for list surfaces (for example the
+   * project overview cards) that render many projects at once. The group grants of all requested
+   * projects are read in a single query and group information is resolved once per group, so the
+   * batch does not issue one ACL read per card.</p>
+   *
+   * <p>The same visibility policy as the single-project method applies: only the group identity,
+   * display name, description and granted project role are exposed — never the member roster. The
+   * caller is responsible for only requesting projects the user is allowed to see; the overview
+   * list is already access-filtered before it reaches this method. Only publicly discoverable
+   * group metadata is returned.</p>
+   *
+   * @param projectIds the projects to inspect
+   * @return the shared groups per requested project, ordered by granted role (highest first) and
+   *     then by group name; projects without group grants map to an empty list
+   * @since 1.19.0
+   */
+  Map<ProjectId, List<SharedProjectGroup>> listSharedGroups(Collection<ProjectId> projectIds);
+
+  /**
+   * Lists the user collaborators and their granted role for each of the given projects.
+   *
+   * <p>Batched sibling of {@link #listCollaborators(ProjectId)} for list surfaces that need the
+   * role of many collaborators across many projects at once (for example the project overview
+   * cards). Only resolvable project roles are returned; a principal with an incomplete or corrupt
+   * ACE set is omitted rather than shown with a guessed role, matching the single-project method.</p>
+   *
+   * <p>The caller is responsible for only requesting projects the user is allowed to see.</p>
+   *
+   * @param projectIds the projects to inspect
+   * @return the collaborators per requested project, ordered by granted role (highest first) and
+   *     then by user id; projects without collaborators map to an empty list
+   * @since 1.19.0
+   */
+  Map<ProjectId, List<ProjectCollaborator>> listCollaborators(Collection<ProjectId> projectIds);
 
   void removeProject(ProjectId projectId);
 

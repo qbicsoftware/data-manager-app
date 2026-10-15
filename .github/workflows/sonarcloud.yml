@@ -37,11 +37,14 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      # Build the project using Maven
+      # Build the project (runs tests and generates the aggregated JaCoCo coverage report at
+      # datamanager-app/target/site/jacoco-aggregate/jacoco.xml during the `verify` phase).
       - name: Build with Maven
-        run: mvn clean install
+        run: mvn clean verify
 
-      # Run SonarCloud analysis
+      # Run SonarCloud analysis. The JaCoCo `report-aggregate` goal runs in the `verify` phase
+      # above, so the report Sonar consumes (sonar.coverage.jacoco.xmlReportPaths) is already
+      # present on disk here.
       - name: SonarCloud Scan
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }} # Use the token stored in GitHub secrets

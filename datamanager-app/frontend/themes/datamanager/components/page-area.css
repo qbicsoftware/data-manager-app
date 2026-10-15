@@ -827,24 +827,67 @@ a.project-collection-component .project-overview-item:hover {
   row-gap: var(--lumo-space-s);
   text-overflow: ellipsis;
   white-space: normal;
+  /* The card body is a container, not a link: navigation lives on the title link below, and the
+     access summary owns its own disclosure. A pointer cursor here would promise a click target
+     that does not exist. */
+  cursor: default;
+}
+
+/* The navigational target: code, title, measurement tags, last-modified and the people metadata
+   form one large link so opening a project stays a comfortable click after the card body stopped
+   being an anchor. */
+.project-collection-component a.project-card-title-link,
+.project-collection-component a.project-card-title-link *,
+.project-collection-component a.project-card-title-link:hover {
+  text-decoration: none;
+  box-sizing: border-box;
+}
+
+.project-collection-component a.project-card-title-link {
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--lumo-space-s);
+  color: inherit;
   cursor: pointer;
-  transition: background-color 150ms ease;
+  border-radius: var(--lumo-border-radius-s);
 }
 
-.project-collection-component .project-overview-item:hover {
-  background-color: var(--lumo-contrast-5pct);
+.project-collection-component a.project-card-title-link:focus-visible {
+  outline: 2px solid var(--lumo-primary-color);
+  outline-offset: 4px;
 }
 
-/* The wrapper now owns the card's visual styling (shadow, rounded corners,
- * spacing between cards). The card body RouterLink inside it provides only
- * padding and the content flow; the footer RouterLink (when present) shares
- * the same rounded shape with a subtle top-border divider.
- * Within the responsive .project-card-grid the inter-card spacing comes from
- * the grid gap, so the wrapper margins are zeroed there. */
+/* Hover affordance is a primary-colour frame drawn by the border itself. A border on a rounded
+   box is always rounded, needs no box-shadow, and cannot affect layout (the wrapper is
+   border-box), so it matches the flat, shadow-free card language used everywhere else:
+   .pinned-project-card and .pat-card use 1px contrast-20pct + radius, .my-groups-row the same.
+
+   The pinned shortlist cards sit directly above the list and share that chrome, so they get the
+   same frame. A pinned project the user can no longer access keeps its neutral dashed border:
+   :not(.no-access) stops the frame from promising a target that is not there.
+
+   The keyboard variant uses :has(:focus-visible), *not* :focus-within — clicking the roster
+   disclosure focuses its summary, and :focus-within kept the frame after the mouse left the card.
+   A pointer interaction does not match :focus-visible, so the frame now clears correctly while
+   keyboard focus still shows it. */
+.project-card-wrapper:hover,
+.project-card-wrapper:has(:focus-visible),
+.pinned-project-card:not(.no-access):hover,
+.pinned-project-card:not(.no-access):has(:focus-visible) {
+  border-color: var(--lumo-primary-color);
+}
+
+/* The wrapper owns the card's visual styling. It deliberately mirrors .pinned-project-card,
+   .pat-card and .my-groups-row: a 1px contrast border and rounded corners, no drop shadow.
+   The card body inside provides only padding and the content flow; the footer link shares the
+   same rounded shape with a subtle top-border divider. Within the responsive .project-card-grid
+   the inter-card spacing comes from the grid gap, so the wrapper margins are zeroed there. */
 .project-card-wrapper {
-  border: black;
+  background-color: var(--lumo-base-color);
+  border: 1px solid var(--lumo-contrast-20pct);
   border-radius: var(--lumo-border-radius-m);
-  box-shadow: var(--lumo-box-shadow-s);
+  box-sizing: border-box;
+  transition: border-color 150ms ease;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -1010,6 +1053,7 @@ a.project-collection-component .project-overview-item:hover {
   background-color: var(--lumo-base-color);
   overflow: hidden;
   min-width: 0;
+  transition: border-color 150ms ease;
 }
 
 .pinned-project-card.no-access {
@@ -1034,19 +1078,10 @@ a.pinned-project-card-body:hover {
   cursor: pointer;
   min-width: 0;
   flex: 1;
-  transition: background-color 150ms ease;
-}
-
-.pinned-project-card-body:hover {
-  background-color: var(--lumo-contrast-5pct);
 }
 
 .pinned-project-card.no-access .pinned-project-card-body {
   cursor: default;
-}
-
-.pinned-project-card.no-access .pinned-project-card-body:hover {
-  background-color: transparent;
 }
 
 .pinned-project-title {
@@ -1121,6 +1156,94 @@ a.pinned-project-card-body:hover {
   flex-direction: column;
   row-gap: var(--lumo-space-s);
   color: var(--lumo-secondary-text-color);
+}
+
+/* ---------------------------------------------------------------------------
+ * Shared-with summary on the overview cards (FEAT-USER-GROUPS-12 / GROUP-R-11).
+ * Groups are rendered as names, never as avatars: a user or group without a
+ * custom picture resolves to a deterministic identicon that carries no
+ * information at this size. The chips deliberately do not reuse the .tag
+ * palette — violet/pink/gold are already bound to the measurement domains.
+ * --------------------------------------------------------------------------- */
+.project-card-access-summary {
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-s);
+  min-width: 0;
+}
+
+.project-card-access-details::part(summary) {
+  padding: 0;
+  font-size: inherit;
+  font-weight: normal;
+}
+
+.project-card-access-line {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  column-gap: var(--lumo-space-xs);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.project-card-access-icon {
+  flex: 0 0 auto;
+  width: var(--lumo-icon-size-s);
+  height: var(--lumo-icon-size-s);
+  color: var(--lumo-secondary-text-color);
+}
+
+.project-card-access-label {
+  flex: 0 0 auto;
+  font-weight: 600;
+}
+
+.project-card-access-chips {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  column-gap: var(--lumo-space-xs);
+  min-width: 0;
+}
+
+/* Access chips are visually distinct from the measurement tags: outline instead of a filled
+   domain colour, so "who can see this" is never confused with "what omics data is in here". */
+.project-card-access-chip {
+  display: inline-block;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 14ch;
+  padding: 0 var(--lumo-space-xs);
+  border: 1px solid var(--lumo-contrast-20pct);
+  border-radius: var(--lumo-border-radius-s);
+  background-color: var(--lumo-base-color);
+  color: var(--lumo-secondary-text-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.project-card-access-more,
+.project-card-access-separator,
+.project-card-access-people {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+/* Expanded state: the roster markup and styling are shared with the sharing drawer's read-only
+   summary (see project-sharing-drawer.css, psd-* rules). Only the indent and the width cap are
+   card-specific: the card is full-width, so an unconstrained roster would push the role tag to the
+   far edge and break the visual pairing between a principal and its role. */
+.project-card-access-content {
+  padding: var(--lumo-space-s) 0 0 var(--lumo-space-m);
+  max-width: 34rem;
+}
+
+/* A fixed role column keeps every role tag (and the "Role" header) on one vertical line, so the
+   role can be read straight across from its principal. Scoped to the card so the drawer roster is
+   untouched. */
+.project-card-access-summary .psd-role-tag {
+  min-width: 5.5rem;
 }
 
 .project-details-component .header {
