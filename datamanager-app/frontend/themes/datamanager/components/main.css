@@ -224,11 +224,8 @@ vaadin-app-layout:not([drawer-opened])::part(drawer) {
  * stretches via flex from .main.ontology-lookup-main (grid-templates.css).
  */
 
-.main.project .page-area {
-  border: 1px solid;
-  border-color: var(--lumo-contrast-10pct);
-  border-radius: var(--lumo-border-radius-m);
-}
+/* The project page's bands are borderless; separation is whitespace, and only the cards/panels
+   (and the attention alert) carry a border. */
 
 /* The project page is a single-column grid now; the former named grid areas
    (projectdetails / experimentlist / offerlist / qualitycontrollist) are gone. */

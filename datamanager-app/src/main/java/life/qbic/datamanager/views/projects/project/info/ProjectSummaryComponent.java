@@ -18,6 +18,7 @@ import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.data.binder.Validator;
 import com.vaadin.flow.function.SerializablePredicate;
@@ -158,7 +159,6 @@ public class ProjectSummaryComponent extends PageArea {
   private final Section projectDesignSection;
   private final Section experimentInformationSection;
   private final Section fundingInformationSection;
-  private final Section projectContactsSection;
   private final DownloadComponent downloadComponent;
   private final ProjectProgressSection projectProgressSection;
   private final ProjectExperimentsSection projectExperimentsSection;
@@ -191,7 +191,6 @@ public class ProjectSummaryComponent extends PageArea {
     this.projectDesignSection = new SectionBuilder().build();
     this.experimentInformationSection = new SectionBuilder().build();
     this.fundingInformationSection = new SectionBuilder().build();
-    this.projectContactsSection = new SectionBuilder().build();
     this.userPermissions = Objects.requireNonNull(userPermissions);
     this.notificationFactory = Objects.requireNonNull(notificationFactory);
     this.asyncProjectService = Objects.requireNonNull(asyncProjectService);
@@ -214,7 +213,6 @@ public class ProjectSummaryComponent extends PageArea {
     add(projectDesignSection);
     add(experimentInformationSection);
     add(fundingInformationSection);
-    add(projectContactsSection);
     add(downloadComponent);
     this.messageSourceNotificationFactory = messageSourceNotificationFactory;
   }
@@ -308,7 +306,7 @@ public class ProjectSummaryComponent extends PageArea {
         .orElseThrow(() -> new ApplicationException("No project found"));
     setContent(projectOverview, fullProject);
     this.scopes = loadScope(userPermissions::editProject, projectId, projectDesignSection,
-        fundingInformationSection, projectContactsSection);
+        fundingInformationSection);
     this.scopes.forEach(UserScopeStrategy::execute);
     // The header section only contains the RO-Crate action, which we want to enable always
     loadScope(id -> true, projectId, headerSection).forEach(UserScopeStrategy::execute);
@@ -405,7 +403,6 @@ public class ProjectSummaryComponent extends PageArea {
         .orElseThrow(() -> new ApplicationException("No project found"));
     reloadProjectDesign(projectOverview, fullProject);
     reloadFundingInfoSection(fullProject);
-    reloadProjectContactsSection(fullProject);
     // apply scope strategy again
     this.scopes.forEach(UserScopeStrategy::execute);
   }
@@ -418,17 +415,12 @@ public class ProjectSummaryComponent extends PageArea {
     buildFundingInformationSection(project, convertToInfo(project));
   }
 
-  private void reloadProjectContactsSection(Project project) {
-    buildProjectContactsInfoSection(project);
-  }
-
   private void setContent(ProjectOverview projectOverview, Project fullProject) {
     Objects.requireNonNull(projectOverview);
     buildHeaderSection(projectOverview, fullProject);
     buildDesignSection(projectOverview, fullProject);
     buildExperimentInformationSection();
     buildFundingInformationSection(fullProject, convertToInfo(fullProject));
-    buildProjectContactsInfoSection(fullProject);
   }
 
   private Optional<ProjectContact> toProjectContacts(
@@ -460,66 +452,65 @@ public class ProjectSummaryComponent extends PageArea {
     }
   }
 
-  private void buildProjectContactsInfoSection(Project project) {
-    // set up the edit button, that opens the dialog for editing contacts
-    var editButton = createButtonWithListener(listener -> {
-      var editContacts = new EditContactsComponent(convertToInfo(project),
-          Utility.tryToLoadFromPrincipal().orElse(null), personLookupService);
-      AppDialog dialog = AppDialog.medium();
-      DialogHeader.with(dialog, "Edit Contacts");
-      DialogFooter.with(dialog, CANCEL_BUTTON_TEXT, SAVE_BUTTON_TEXT);
-      DialogBody.with(dialog, editContacts, editContacts);
+  /**
+   * The contacts row of the identity band: "Contacts", one chip per role, and "Edit contacts".
+   * Editing stays in a dialog until the project settings surface exists.
+   */
+  private Div contactsRow(Project project) {
+    Div row = new Div();
+    row.addClassName("project-contacts");
+    Span label = new Span("Contacts");
+    label.addClassName("project-contacts-label");
+    row.add(label);
+    project.getResponsiblePerson().ifPresent(contact -> row.add(contactChip("Resp.", contact)));
+    row.add(contactChip("PM", project.getProjectManager()));
+    row.add(contactChip("PI", project.getPrincipalInvestigator()));
+    Button edit = new Button("Edit contacts");
+    edit.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+    edit.addClassName("project-contacts-edit");
+    edit.addClickListener(event -> showEditContactsDialog(project));
+    row.add(edit);
+    return row;
+  }
 
-      dialog.registerCancelAction(dialog::close);
-      dialog.registerConfirmAction(() -> {
-        dialog.close();
-        var manager = toProjectContacts(
-            editContacts.getIfValidManager().orElseThrow()).orElseThrow();
-        var responsible = toProjectContacts(
-            editContacts.getIfValidProjectResponsible().orElseThrow()).orElseThrow();
-        var investigator = toProjectContacts(
-            editContacts.getIfValidInvestigator().orElseThrow()).orElseThrow();
-        if (isEmpty(responsible)) {
-          // we infer that the information has been removed for deletion
-          // which might be risky and I will the future me: I told you so.
-          responsible = null;
-        }
-        handleSubmission(project.getId().value(), manager, investigator, responsible);
-      });
-      dialog.open();
+  private Span contactChip(String role, Contact contact) {
+    Span chip = new Span();
+    chip.addClassName("project-contact");
+    Span roleChip = new Span(role);
+    roleChip.addClassName("project-contact-role");
+    Span name = new Span(contact.fullName());
+    name.addClassName("project-contact-name");
+    chip.add(roleChip, name);
+    var mail = new Anchor("mailto:" + contact.emailAddress());
+    mail.add(new Icon(VaadinIcon.ENVELOPE));
+    mail.addClassName("project-contact-action");
+    chip.add(mail);
+    return chip;
+  }
+
+  private void showEditContactsDialog(Project project) {
+    var editContacts = new EditContactsComponent(convertToInfo(project),
+        Utility.tryToLoadFromPrincipal().orElse(null), personLookupService);
+    AppDialog dialog = AppDialog.medium();
+    DialogHeader.with(dialog, "Edit Contacts");
+    DialogFooter.with(dialog, CANCEL_BUTTON_TEXT, SAVE_BUTTON_TEXT);
+    DialogBody.with(dialog, editContacts, editContacts);
+
+    dialog.registerCancelAction(dialog::close);
+    dialog.registerConfirmAction(() -> {
+      dialog.close();
+      var manager = toProjectContacts(
+          editContacts.getIfValidManager().orElseThrow()).orElseThrow();
+      var responsible = toProjectContacts(
+          editContacts.getIfValidProjectResponsible().orElseThrow()).orElseThrow();
+      var investigator = toProjectContacts(
+          editContacts.getIfValidInvestigator().orElseThrow()).orElseThrow();
+      if (isEmpty(responsible)) {
+        responsible = null;
+      }
+      handleSubmission(project.getId().value(), manager, investigator, responsible);
     });
-    // create the section with header and content
-    projectContactsSection.setHeader(
-        new SectionHeader(new SectionTitle("Project Contacts"), new ActionBar(editButton)));
-    var piBox = new DetailBox();
-    var piBoxHeader = new Header(VaadinIcon.USER.create(), "Principal Investigator");
-    piBox.setHeader(piBoxHeader);
-    piBox.addClassName(FIXED_MEDIUM_WIDTH_CSS);
-    var principalInvestigator = project.getPrincipalInvestigator();
-    piBox.setContent(renderContactInfo(principalInvestigator));
-
-    var pmBox = new DetailBox();
-    var pmBoxHeader = new Header(VaadinIcon.USER.create(), "Project Manager");
-    pmBox.setHeader(pmBoxHeader);
-    pmBox.addClassName(FIXED_MEDIUM_WIDTH_CSS);
-    var projectManager = project.getProjectManager();
-    pmBox.setContent(renderContactInfo(projectManager));
-
-    projectContactsSection.setContent(new SectionContent(piBox, pmBox));
-
-    // If no responsible person has been defined, we do not want to show empty sections.
-    if (project.getResponsiblePerson().isPresent()) {
-      var prBox = new DetailBox();
-      var prBoxHeader = new Header(VaadinIcon.USER.create(), "Project Responsible");
-      prBox.setHeader(prBoxHeader);
-      prBox.addClassName(FIXED_MEDIUM_WIDTH_CSS);
-      var responsible = project.getResponsiblePerson().orElseThrow();
-      prBox.setContent(renderContactInfo(responsible));
-      projectContactsSection.content().add(prBox);
-    }
-
-    projectContactsSection.content().removeClassName("flex-vertical");
-    projectContactsSection.content().addClassNames("flex-horizontal");
+    dialog.open();
   }
 
   private Div renderContactInfo(Contact contact) {
@@ -937,6 +928,7 @@ public class ProjectSummaryComponent extends PageArea {
     var sectionContent = new SectionContent();
     sectionContent.add(identityMeta);
     sectionContent.add(objectiveBlock(project));
+    sectionContent.add(contactsRow(project));
     headerSection.setHeader(header);
     headerSection.setContent(sectionContent);
   }

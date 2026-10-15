@@ -51,3 +51,39 @@
 .project-objective-toggle {
   padding-inline: 0;
 }
+
+/* Contacts row of the identity band. */
+.project-contacts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--lumo-space-s);
+  margin-top: var(--lumo-space-s);
+  font-size: var(--lumo-font-size-s);
+}
+
+.project-contacts-label {
+  color: var(--lumo-secondary-text-color);
+}
+
+.project-contact {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lumo-space-xs);
+  padding: 2px var(--lumo-space-s);
+  border: 1px solid var(--lumo-contrast-10pct);
+  border-radius: 999px;
+}
+
+.project-contact-role {
+  font-weight: 600;
+  color: var(--lumo-secondary-text-color);
+}
+
+.project-contact-name {
+  color: var(--lumo-body-text-color);
+}
+
+.project-contact-action {
+  color: var(--lumo-secondary-text-color);
+}
