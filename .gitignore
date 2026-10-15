@@ -73,3 +73,6 @@ error-screenshots/
 # Vaadin/Vite generated bundle artifacts (prod.bundle, types.d.ts) — build output
 */src/main/bundles/
 types.d.ts
+
+# collation repair (sql/repair) writes a foreign-key backup next to where it is run
+collation-repair-*-fk-backup.sql
