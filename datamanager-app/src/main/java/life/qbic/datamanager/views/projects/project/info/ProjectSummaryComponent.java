@@ -8,9 +8,11 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.avatar.AvatarGroup;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.AnchorTarget;
@@ -23,6 +25,7 @@ import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.InputStream;
+import java.io.Serial;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -114,6 +117,7 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.RequestFa
 import life.qbic.projectmanagement.application.api.AsyncProjectService.UnknownRequestException;
 import life.qbic.projectmanagement.application.api.ProjectQueryService;
 import life.qbic.projectmanagement.application.contact.PersonLookupService;
+import life.qbic.projectmanagement.application.query.ExperimentProgress;
 import life.qbic.projectmanagement.domain.model.project.Contact;
 import life.qbic.projectmanagement.domain.model.project.Contact.OidcInformation;
 import life.qbic.projectmanagement.domain.model.project.Project;
@@ -158,6 +162,8 @@ public class ProjectSummaryComponent extends PageArea {
   private final DownloadComponent downloadComponent;
   private final ProjectProgressSection projectProgressSection;
   private final ProjectExperimentsSection projectExperimentsSection;
+  private final Div identityMeta = new Div();
+  private transient String identityLastModified = "";
   private final transient AsyncProjectService asyncProjectService;
   private final RequestCache requestCache;
   private final MessageSourceNotificationFactory messageSourceNotificationFactory;
@@ -195,6 +201,10 @@ public class ProjectSummaryComponent extends PageArea {
         Objects.requireNonNull(projectQueryService));
     this.projectExperimentsSection = new ProjectExperimentsSection(
         Objects.requireNonNull(projectQueryService));
+    this.projectExperimentsSection.addAddExperimentListener(
+        event -> fireEvent(new AddExperimentRequestedEvent(this, event.isFromClient())));
+    this.projectProgressSection.addProgressLoadedListener(
+        event -> updateIdentityMeta(event.progress()));
 
     addClassName("project-details-component");
 
@@ -312,8 +322,23 @@ public class ProjectSummaryComponent extends PageArea {
    * the creation workflow.
    */
   public Registration addAddExperimentListener(
-      ComponentEventListener<ProjectExperimentsSection.AddExperimentRequestedEvent> listener) {
-    return projectExperimentsSection.addAddExperimentListener(listener);
+      ComponentEventListener<AddExperimentRequestedEvent> listener) {
+    return addListener(AddExperimentRequestedEvent.class, listener);
+  }
+
+  /**
+   * Fired when the user asks to create a new experiment, from either the identity band action or the
+   * experiments section. The owning page runs the creation workflow.
+   */
+  public static class AddExperimentRequestedEvent extends
+      ComponentEvent<ProjectSummaryComponent> {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
+
+    public AddExperimentRequestedEvent(ProjectSummaryComponent source, boolean fromClient) {
+      super(source, fromClient);
+    }
   }
 
   private void loadExperimentInfo(String projectId) {
@@ -399,7 +424,7 @@ public class ProjectSummaryComponent extends PageArea {
 
   private void setContent(ProjectOverview projectOverview, Project fullProject) {
     Objects.requireNonNull(projectOverview);
-    buildHeaderSection(projectOverview);
+    buildHeaderSection(projectOverview, fullProject);
     buildDesignSection(projectOverview, fullProject);
     buildExperimentInformationSection();
     buildFundingInformationSection(fullProject, convertToInfo(fullProject));
@@ -638,24 +663,10 @@ public class ProjectSummaryComponent extends PageArea {
         new SectionHeader(new SectionTitle("Project Design"), new ActionBar(editButton)));
     var content = new SectionContent();
 
-    // Set up the objective details
-    var details = new Details();
-    details.removeAll();
-    var objectiveTitle = Heading.withIconAndText(VaadinIcon.MODAL_LIST.create(), "Objective");
-    var objective = new SimpleParagraph(project.getProjectIntent().objective().objective());
-    details.setSummary(objectiveTitle);
-    details.add(objective);
-    var collapsibleDetails = new CollapsibleDetails(details);
-    collapsibleDetails.collapse();
-    collapsibleDetails.addClassNames("background-color-grey", "padding-left-05", "padding-right-05",
-        "line-height-01", "max-width-55rem", "text-justify", "border", "border-color-none",
-        "rounded-03");
-
     content.add(
         Heading.withIconAndText(VaadinIcon.NOTEBOOK.create(), "Project ID and Title"));
     content.add(new SimpleParagraph("%s - %s".formatted(projectInformation.projectCode(),
         projectInformation.projectTitle())));
-    content.add(collapsibleDetails);
     projectDesignSection.setContent(content);
   }
 
@@ -895,29 +906,88 @@ public class ProjectSummaryComponent extends PageArea {
     return appDialog;
   }
 
-  private void buildHeaderSection(ProjectOverview projectOverview) {
+  private void buildHeaderSection(ProjectOverview projectOverview, Project project) {
     Objects.requireNonNull(projectOverview);
-    var header = new SectionHeader(
-        new SectionTitle("%s - %s".formatted(projectOverview.projectCode(),
-            projectOverview.projectTitle()), Size.LARGE));
-    var crateExportBtn = new Button("Export Project Summary");
 
+    // Identity band: <title> <code>, the way the prototype names the project in its band.
+    SectionTitle title = new SectionTitle();
+    title.setSize(Size.LARGE);
+    Span titleText = new Span(projectOverview.projectTitle());
+    Span code = new Span(projectOverview.projectCode());
+    code.addClassName("project-identity-code");
+    title.add(titleText, code);
+
+    Button crateExportBtn = new Button("Export summary");
     crateExportBtn.addClickListener(event -> triggerRoCrateDownload());
+    Button addExperimentBtn = new Button("Add experiment");
+    addExperimentBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    addExperimentBtn.addClickListener(click -> fireEvent(
+        new AddExperimentRequestedEvent(this, click.isFromClient())));
 
-    ActionBar actionBar = new ActionBar(crateExportBtn);
-    header.setActionBar(actionBar);
+    SectionHeader header = new SectionHeader(title,
+        new ActionBar(addExperimentBtn, crateExportBtn));
     header.setSmallTrailingMargin();
 
-    var sectionContent = new SectionContent();
-    sectionContent.add(createAvatarGroup(projectOverview.collaboratorUserInfos()));
-    sectionContent.add(createTags(projectOverview));
+    identityMeta.addClassName("project-identity-meta");
+    identityLastModified = "Last modified on %s".formatted(DateTimeFormat.asJavaFormatter(
+            DateTimeFormat.SIMPLE_DATE_SHORT, ZoneId.systemDefault())
+        .format(projectOverview.lastModified()));
+    renderIdentityMeta(0, 0);
 
-    header.setSectionNote(new SectionNote(
-        "Last modified on %s".formatted(DateTimeFormat.asJavaFormatter(
-                DateTimeFormat.SIMPLE_DATE_SHORT, ZoneId.systemDefault())
-            .format(projectOverview.lastModified()))));
+    var sectionContent = new SectionContent();
+    sectionContent.add(identityMeta);
+    sectionContent.add(objectiveBlock(project));
     headerSection.setHeader(header);
     headerSection.setContent(sectionContent);
+  }
+
+  private void updateIdentityMeta(List<ExperimentProgress> progress) {
+    int attention = (int) progress.stream()
+        .filter(entry -> entry.measurementsWithoutPrimaryData() > 0)
+        .count();
+    renderIdentityMeta(progress.size(), attention);
+  }
+
+  private void renderIdentityMeta(int experiments, int attention) {
+    identityMeta.removeAll();
+    identityMeta.add(new Span(identityLastModified));
+    identityMeta.add(separator());
+    identityMeta.add(new Span(experiments == 1 ? "1 experiment" : experiments + " experiments"));
+    if (attention > 0) {
+      identityMeta.add(separator());
+      Span chip = new Span(attention == 1
+          ? "1 experiment needs attention"
+          : attention + " experiments need attention");
+      chip.addClassName("project-identity-attention");
+      identityMeta.add(chip);
+    }
+  }
+
+  private static Span separator() {
+    Span separator = new Span("\u00b7");
+    separator.addClassName("project-identity-separator");
+    return separator;
+  }
+
+  /**
+   * The objective under the identity block: expanded by default, clamped to a few lines with a
+   * "Show more" toggle, exactly as the prototype presents it (never a collapsed grey bar).
+   */
+  private static Div objectiveBlock(Project project) {
+    Div block = new Div();
+    block.addClassName("project-objective");
+    Span text = new Span(project.getProjectIntent().objective().objective());
+    text.addClassName("project-objective-text");
+    Button toggle = new Button("Show more");
+    toggle.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+    toggle.addClassName("project-objective-toggle");
+    toggle.addClickListener(click -> {
+      boolean expanded = text.hasClassName("is-expanded");
+      text.getClassNames().set("is-expanded", !expanded);
+      toggle.setText(expanded ? "Show more" : "Show less");
+    });
+    block.add(text, toggle);
+    return block;
   }
 
   private InputStream forSummary(ProjectId projectId) {

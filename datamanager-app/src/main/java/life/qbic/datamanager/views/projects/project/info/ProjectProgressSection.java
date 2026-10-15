@@ -2,9 +2,13 @@ package life.qbic.datamanager.views.projects.project.info;
 
 import static java.util.Objects.requireNonNull;
 
+import com.vaadin.flow.component.ComponentEvent;
+import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.shared.Registration;
+import java.io.Serial;
 import java.util.List;
 import life.qbic.datamanager.views.general.ReactiveUiBridge;
 import life.qbic.projectmanagement.application.api.ProjectQueryService;
@@ -58,8 +62,14 @@ public class ProjectProgressSection extends Div {
         });
   }
 
+  public Registration addProgressLoadedListener(
+      ComponentEventListener<ProgressLoadedEvent> listener) {
+    return addListener(ProgressLoadedEvent.class, listener);
+  }
+
   private void render(List<ExperimentProgress> progress) {
     content.removeAll();
+    fireEvent(new ProgressLoadedEvent(this, false, progress));
     content.add(heading("Where the project stands"));
 
     Div stages = new Div();
@@ -78,6 +88,25 @@ public class ProjectProgressSection extends Div {
         .toList();
     if (!attention.isEmpty()) {
       content.add(attentionBlock(attention));
+    }
+  }
+
+  /** Fired after the project progress has been loaded and rendered. */
+  public static class ProgressLoadedEvent extends ComponentEvent<ProjectProgressSection> {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
+
+    private final transient List<ExperimentProgress> progress;
+
+    public ProgressLoadedEvent(ProjectProgressSection source, boolean fromClient,
+        List<ExperimentProgress> progress) {
+      super(source, fromClient);
+      this.progress = List.copyOf(progress);
+    }
+
+    public List<ExperimentProgress> progress() {
+      return progress;
     }
   }
 

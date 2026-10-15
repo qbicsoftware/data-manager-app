@@ -1,0 +1,53 @@
+/* Project identity band: title + code, meta line, and the clamped objective. */
+
+.project-identity-code {
+  color: var(--lumo-secondary-text-color);
+  font-weight: 400;
+  font-size: var(--lumo-font-size-m);
+  margin-inline-start: var(--lumo-space-s);
+}
+
+.project-identity-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--lumo-space-xs);
+  font-size: var(--lumo-font-size-s);
+  color: var(--lumo-secondary-text-color);
+}
+
+.project-identity-separator {
+  color: var(--lumo-contrast-40pct);
+}
+
+.project-identity-attention {
+  color: var(--lumo-warning-text-color, var(--lumo-error-text-color));
+  font-weight: 600;
+}
+
+.project-objective {
+  margin-top: var(--lumo-space-s);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--lumo-space-xs);
+}
+
+/* Expanded by default, clamped to a few lines — never a collapsed grey bar. */
+.project-objective-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  max-width: 60rem;
+  line-height: var(--lumo-line-height-m);
+}
+
+.project-objective-text.is-expanded {
+  -webkit-line-clamp: unset;
+  overflow: visible;
+}
+
+.project-objective-toggle {
+  padding-inline: 0;
+}
