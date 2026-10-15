@@ -1,0 +1,54 @@
+/* Project details band — the prototype's read-only facts with one link to the edit surface.
+   The summary states what the project is; editing it happens elsewhere. */
+
+.project-metadata {
+  display: block;
+  width: 100%;
+  padding-top: var(--lumo-space-l);
+  border-top: 1px solid var(--lumo-contrast-10pct);
+}
+
+.project-metadata-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--lumo-space-m);
+  margin-bottom: var(--lumo-space-m);
+}
+
+.project-metadata-title {
+  margin: 0;
+  font-size: var(--lumo-font-size-l);
+  font-weight: 600;
+  color: var(--lumo-header-text-color);
+}
+
+.project-metadata-edit {
+  margin-left: auto;
+}
+
+.project-metadata-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: var(--lumo-space-m) var(--lumo-space-xl);
+}
+
+.project-metadata-fact {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.project-metadata-fact-label {
+  font-size: var(--lumo-font-size-xs);
+  color: var(--lumo-secondary-text-color);
+}
+
+.project-metadata-fact-value {
+  color: var(--lumo-body-text-color);
+}
+
+.project-metadata-edit-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-l);
+}

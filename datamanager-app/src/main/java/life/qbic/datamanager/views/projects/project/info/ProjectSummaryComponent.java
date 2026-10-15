@@ -66,6 +66,7 @@ import life.qbic.datamanager.views.general.dialog.AppDialog;
 import life.qbic.datamanager.views.general.dialog.DialogBody;
 import life.qbic.datamanager.views.general.dialog.DialogFooter;
 import life.qbic.datamanager.views.general.dialog.DialogHeader;
+import life.qbic.datamanager.views.general.dialog.InputValidation;
 import life.qbic.datamanager.views.general.dialog.UserInput;
 import life.qbic.datamanager.views.general.download.DownloadComponent;
 import life.qbic.datamanager.views.general.funding.BoundFundingField;
@@ -157,9 +158,6 @@ public class ProjectSummaryComponent extends PageArea {
   private final transient UserPermissions userPermissions;
   private final transient MessageSourceNotificationFactory notificationFactory;
   private final Section headerSection;
-  private final Section projectDesignSection;
-  private final Section experimentInformationSection;
-  private final Section fundingInformationSection;
   private final DownloadComponent downloadComponent;
   private final ProjectProgressSection projectProgressSection;
   private final ProjectExperimentsSection projectExperimentsSection;
@@ -172,9 +170,7 @@ public class ProjectSummaryComponent extends PageArea {
   private Toast taskInProgressToast;
   private Context context;
   private transient List<? extends UserScopeStrategy> scopes;
-  private DetailBox speciesDetailBox;
-  private DetailBox specimenDetailBox;
-  private DetailBox analyteDetailBox;
+  private final Div projectMetadataBand = new Div();
 
   @Autowired
   public ProjectSummaryComponent(ProjectInformationService projectInformationService,
@@ -190,9 +186,6 @@ public class ProjectSummaryComponent extends PageArea {
     this.personLookupService = requireNonNull(personLookupService,
         "person lookup service must not be null");
     this.headerSection = new SectionBuilder().build();
-    this.projectDesignSection = new SectionBuilder().build();
-    this.experimentInformationSection = new SectionBuilder().build();
-    this.fundingInformationSection = new SectionBuilder().build();
     this.userPermissions = Objects.requireNonNull(userPermissions);
     this.notificationFactory = Objects.requireNonNull(notificationFactory);
     this.asyncProjectService = Objects.requireNonNull(asyncProjectService);
@@ -213,9 +206,7 @@ public class ProjectSummaryComponent extends PageArea {
     add(headerSection);
     add(projectProgressSection);
     add(projectExperimentsSection);
-    add(projectDesignSection);
-    add(experimentInformationSection);
-    add(fundingInformationSection);
+    add(projectMetadataBand);
     add(downloadComponent);
     this.messageSourceNotificationFactory = messageSourceNotificationFactory;
   }
@@ -247,12 +238,6 @@ public class ProjectSummaryComponent extends PageArea {
         contact.oidcInformation().map(OidcInformation::oidcIssuer).orElse(null));
   }
 
-  private static Button createButtonWithListener(
-      ComponentEventListener<ClickEvent<Button>> listener) {
-    var button = new Button("Edit");
-    button.addClickListener(listener);
-    return button;
-  }
 
   private static List<? extends UserScopeStrategy> loadScope(Predicate<ProjectId> hasWriteScope,
       ProjectId id,
@@ -308,12 +293,9 @@ public class ProjectSummaryComponent extends PageArea {
     var fullProject = projectInformationService.find(projectId)
         .orElseThrow(() -> new ApplicationException("No project found"));
     setContent(projectOverview, fullProject);
-    this.scopes = loadScope(userPermissions::editProject, projectId, projectDesignSection,
-        fundingInformationSection);
-    this.scopes.forEach(UserScopeStrategy::execute);
+    this.scopes = List.of();
     // The header section only contains the RO-Crate action, which we want to enable always
     loadScope(id -> true, projectId, headerSection).forEach(UserScopeStrategy::execute);
-    loadExperimentInfo(projectId.value());
     projectProgressSection.setProjectId(projectId.value());
     projectExperimentsSection.setProjectId(projectId.value());
   }
@@ -342,60 +324,6 @@ public class ProjectSummaryComponent extends PageArea {
     }
   }
 
-  private void loadExperimentInfo(String projectId) {
-    AtomicReference<Snapshot> speciesSnapshot = new AtomicReference<>();
-    AtomicReference<Snapshot> specimenSnapshot = new AtomicReference<>();
-    AtomicReference<Snapshot> analyteSnapshot = new AtomicReference<>();
-    asyncProjectService.getExperiments(projectId)
-        .doOnSubscribe(it -> {
-          speciesSnapshot.set(speciesDetailBox.snapshot());
-          specimenSnapshot.set(specimenDetailBox.snapshot());
-          analyteSnapshot.set(analyteDetailBox.snapshot());
-
-          speciesDetailBox.setContent(new LoadingContent());
-          specimenDetailBox.setContent(new LoadingContent());
-          analyteDetailBox.setContent(new LoadingContent());
-        })
-        .collectList()
-        .doOnSuccess(experiments -> {
-          var species = new HashSet<OntologyTerm>();
-          var specimen = new HashSet<OntologyTerm>();
-          var analytes = new HashSet<OntologyTerm>();
-          experiments.forEach(experiment -> {
-            species.addAll(experiment.species());
-            specimen.addAll(experiment.specimen());
-            analytes.addAll(experiment.analytes());
-          });
-          renderExperimentInfo(species, specimen, analytes);
-        })
-        .doOnError(error -> {
-          speciesDetailBox.restore(speciesSnapshot.get());
-          specimenDetailBox.restore(specimenSnapshot.get());
-          analyteDetailBox.restore(analyteSnapshot.get());
-        })
-        .doOnError(AccessDeniedException.class, this::handleAccessDenied)
-        .doOnError(RequestFailedException.class, this::handleRequestFailed)
-        .doOnError(UnknownRequestException.class, this::handleUnknownRequest)
-        .doFinally(it -> {
-          speciesSnapshot.set(null);
-          specimenSnapshot.set(null);
-          analyteSnapshot.set(null);
-        })
-        .subscribe();
-  }
-
-  private void renderExperimentInfo(Set<OntologyTerm> species,
-      Set<OntologyTerm> specimen,
-      Set<OntologyTerm> analytes) {
-    getUI().ifPresent(ui -> ui.access(() -> {
-      speciesDetailBox.setContent(new LoadingContent());
-      speciesDetailBox.setContent(buildOntologyInfo(species));
-      specimenDetailBox.setContent(new LoadingContent());
-      specimenDetailBox.setContent(buildOntologyInfo(specimen));
-      analyteDetailBox.setContent(new LoadingContent());
-      analyteDetailBox.setContent(buildOntologyInfo(analytes));
-    }));
-  }
 
   private void reloadInformation(Context context) {
     var projectId = context.projectId()
@@ -404,26 +332,16 @@ public class ProjectSummaryComponent extends PageArea {
         .orElseThrow(() -> new ApplicationException("No project with given ID found"));
     var fullProject = projectInformationService.find(projectId)
         .orElseThrow(() -> new ApplicationException("No project found"));
-    reloadProjectDesign(projectOverview, fullProject);
-    reloadFundingInfoSection(fullProject);
+    buildMetadataBand(projectOverview, fullProject);
     // apply scope strategy again
     this.scopes.forEach(UserScopeStrategy::execute);
   }
 
-  private void reloadProjectDesign(ProjectOverview projectOverview, Project project) {
-    buildDesignSection(projectOverview, project);
-  }
-
-  private void reloadFundingInfoSection(Project project) {
-    buildFundingInformationSection(project, convertToInfo(project));
-  }
 
   private void setContent(ProjectOverview projectOverview, Project fullProject) {
     Objects.requireNonNull(projectOverview);
     buildHeaderSection(projectOverview, fullProject);
-    buildDesignSection(projectOverview, fullProject);
-    buildExperimentInformationSection();
-    buildFundingInformationSection(fullProject, convertToInfo(fullProject));
+    buildMetadataBand(projectOverview, fullProject);
   }
 
   private Optional<ProjectContact> toProjectContacts(
@@ -544,48 +462,6 @@ public class ProjectSummaryComponent extends PageArea {
     return contactInfo;
   }
 
-  private void buildFundingInformationSection(Project fullProject,
-      ProjectInformation projectInformation) {
-    var editButton = createButtonWithListener(listener -> {
-      var dialog = AppDialog.small();
-      DialogHeader.with(dialog, "Edit funding information");
-      DialogFooter.with(dialog, CANCEL_BUTTON_TEXT, SAVE_BUTTON_TEXT);
-
-      var fundingField = FundingField.createHorizontal("Funding");
-      var form = FundingInputForm.create(new BoundFundingField(fundingField,
-          Validator.from(incompletePredicate(),
-              "Please provide complete information for both, grant and grand ID.")));
-      form.setContent(projectInformation.getFundingEntry().orElse(new FundingEntry("", "")));
-
-      dialog.registerConfirmAction(() -> {
-        dialog.close();
-        var funding = convertFrom(form.getIfValid().orElseThrow());
-        handleSubmission(fullProject.getId().value(), funding);
-      });
-
-      dialog.registerCancelAction(dialog::close);
-
-      DialogBody.with(dialog, form, form);
-      dialog.open();
-    });
-
-    fundingInformationSection.setHeader(
-        new SectionHeader(new SectionTitle("Funding Information"),
-            new ActionBar(editButton)));
-
-    if (fullProject.funding().isEmpty()) {
-      fundingInformationSection.setContent(
-          new SectionContent(new Span("No funding information provided.")));
-    } else {
-      var grantIconLabel = new IconLabel(VaadinIcon.MONEY.create(), "Grant");
-      var funding = fullProject.funding().orElseThrow();
-      grantIconLabel.setInformation("%s (%s)".formatted(funding.grant(), funding.grantId()));
-      grantIconLabel.setTooltipText(
-          "Information about what grant served as funding for the project.");
-      fundingInformationSection.setContent(new SectionContent(grantIconLabel));
-    }
-
-  }
 
   private void handleSubmission(String projectId, FundingInformation funding) {
     if (isEmpty(funding)) {
@@ -595,74 +471,6 @@ public class ProjectSummaryComponent extends PageArea {
     submitRequest(new FundingInformationCreationRequest(projectId, funding));
   }
 
-  private void buildExperimentInformationSection() {
-    experimentInformationSection.setHeader(
-        new SectionHeader(new SectionTitle("Experiment Information")));
-    speciesDetailBox = new DetailBox();
-    var speciesHeader = new Header("Species");
-    speciesDetailBox.setHeader(speciesHeader);
-    speciesDetailBox.setContent(new EmptyContent());
-    speciesDetailBox.addClassNames(FIXED_MEDIUM_WIDTH_CSS);
-
-    specimenDetailBox = new DetailBox();
-    var specimenHeader = new Header("Specimen");
-    specimenDetailBox.setHeader(specimenHeader);
-    specimenDetailBox.setContent(new EmptyContent());
-    specimenDetailBox.addClassName(FIXED_MEDIUM_WIDTH_CSS);
-
-    analyteDetailBox = new DetailBox();
-    var analyteHeader = new Header("Analytes");
-    analyteDetailBox.setHeader(analyteHeader);
-    analyteDetailBox.setContent(new EmptyContent());
-    analyteDetailBox.addClassName(FIXED_MEDIUM_WIDTH_CSS);
-
-    var sectionContent = new SectionContent();
-    sectionContent.add(speciesDetailBox);
-    sectionContent.add(specimenDetailBox);
-    sectionContent.add(analyteDetailBox);
-    sectionContent.removeClassName("flex-vertical");
-    sectionContent.addClassName("flex-horizontal");
-    experimentInformationSection.setContent(sectionContent);
-  }
-
-  private Div buildOntologyInfo(Set<OntologyTerm> terms) {
-    var container = new Div();
-    terms.stream().map(this::convert).forEach(container::add);
-    container.addClassNames("flex-vertical", "width-full", "gap-03");
-    return container;
-  }
-
-  private OntologyTermDisplay convert(OntologyTerm term) {
-    return new OntologyTermDisplay(term.label(), term.oboId().toString(), term.id().toString());
-  }
-
-
-  private void buildDesignSection(ProjectOverview projectInformation, Project project) {
-    var editButton = new Button("Edit");
-    editButton.addClickListener(listener -> {
-      var form = new ProjectDesignForm();
-      form.setContent(convertToInfo(project));
-      AppDialog dialog = createEditDesignDialog(form, form);
-      dialog.registerCancelAction(dialog::close);
-      dialog.registerConfirmAction(() -> {
-        dialog.close();
-        submitRequest(
-            new ProjectUpdateRequest(project.getId().value(), form.getProjectDesign()));
-      });
-      dialog.open();
-      add(dialog);
-    });
-
-    projectDesignSection.setHeader(
-        new SectionHeader(new SectionTitle("Project Design"), new ActionBar(editButton)));
-    var content = new SectionContent();
-
-    content.add(
-        Heading.withIconAndText(VaadinIcon.NOTEBOOK.create(), "Project ID and Title"));
-    content.add(new SimpleParagraph("%s - %s".formatted(projectInformation.projectCode(),
-        projectInformation.projectTitle())));
-    projectDesignSection.setContent(content);
-  }
 
   /**
    * Submits multiple {@link ProjectUpdateRequest} to the service.
@@ -891,14 +699,107 @@ public class ProjectSummaryComponent extends PageArea {
     }));
   }
 
-  private AppDialog createEditDesignDialog(Component body, UserInput input) {
-    var appDialog = AppDialog.medium();
-    DialogHeader.with(appDialog, "Edit Project Design");
-    DialogFooter.with(appDialog, CANCEL_BUTTON_TEXT, SAVE_BUTTON_TEXT);
+  /**
+   * The "Project details" band: the project's storable facts, read-only, with one link to the
+   * place that edits them. The prototype keeps the summary read-only and routes the edit to
+   * Settings; that surface does not exist yet, so the link opens a dialog hosting the same two
+   * forms (design and funding) the summary used to inline.
+   */
+  private void buildMetadataBand(ProjectOverview projectOverview, Project project) {
+    projectMetadataBand.removeAll();
+    projectMetadataBand.addClassName("project-metadata");
 
-    DialogBody.with(appDialog, body, input);
-    return appDialog;
+    Div head = new Div();
+    head.addClassName("project-metadata-head");
+    Span title = new Span("Project details");
+    title.addClassName("project-metadata-title");
+    Button edit = new Button("Edit project details");
+    edit.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+    edit.addClassName("project-metadata-edit");
+    edit.addClickListener(event -> showEditProjectDetailsDialog(project));
+    head.add(title, edit);
+
+    Div facts = new Div();
+    facts.addClassName("project-metadata-facts");
+    facts.add(fact("Project ID", projectOverview.projectCode()));
+    facts.add(fact("Funding", project.funding()
+        .map(funding -> "%s (%s)".formatted(funding.grant(), funding.grantId()))
+        .orElse("No funding information provided.")));
+    facts.add(fact("Primary data type", primaryDataTypes(projectOverview)));
+
+    projectMetadataBand.add(head, facts);
   }
+
+  private static Div fact(String label, String value) {
+    Div fact = new Div();
+    fact.addClassName("project-metadata-fact");
+    Span labelSpan = new Span(label);
+    labelSpan.addClassName("project-metadata-fact-label");
+    Span valueSpan = new Span(value);
+    valueSpan.addClassName("project-metadata-fact-value");
+    fact.add(labelSpan, valueSpan);
+    return fact;
+  }
+
+  private static String primaryDataTypes(ProjectOverview overview) {
+    List<String> types = new ArrayList<>();
+    if (overview.ngsMeasurementCount() > 0) {
+      types.add("Genomics");
+    }
+    if (overview.pxpMeasurementCount() > 0) {
+      types.add("Proteomics");
+    }
+    if (overview.ipMeasurementCount() > 0) {
+      types.add("Immunopeptidomics");
+    }
+    return types.isEmpty() ? "No primary data yet" : String.join(" \u00b7 ", types);
+  }
+
+  /**
+   * Edits the things the metadata band states: the project design (title, objective, design) and
+   * its funding.
+   */
+  private void showEditProjectDetailsDialog(Project project) {
+    var designForm = new ProjectDesignForm();
+    designForm.setContent(convertToInfo(project));
+
+    var fundingField = FundingField.createHorizontal("Funding");
+    var fundingForm = FundingInputForm.create(new BoundFundingField(fundingField,
+        Validator.from(incompletePredicate(),
+            "Please provide complete information for both, grant and grand ID.")));
+    fundingForm.setContent(
+        convertToInfo(project).getFundingEntry().orElse(new FundingEntry("", "")));
+
+    var body = new Div(designForm, fundingForm);
+    body.addClassName("project-metadata-edit-body");
+
+    UserInput input = new UserInput() {
+      @Override
+      public InputValidation validate() {
+        return designForm.validate().and(fundingForm.validate());
+      }
+
+      @Override
+      public boolean hasChanges() {
+        return designForm.hasChanges() || fundingForm.hasChanges();
+      }
+    };
+
+    AppDialog dialog = AppDialog.medium();
+    DialogHeader.with(dialog, "Edit project details");
+    DialogFooter.with(dialog, CANCEL_BUTTON_TEXT, SAVE_BUTTON_TEXT);
+    DialogBody.with(dialog, body, input);
+    dialog.registerCancelAction(dialog::close);
+    dialog.registerConfirmAction(() -> {
+      dialog.close();
+      submitRequest(
+          new ProjectUpdateRequest(project.getId().value(), designForm.getProjectDesign()));
+      handleSubmission(project.getId().value(),
+          convertFrom(fundingForm.getIfValid().orElseThrow()));
+    });
+    dialog.open();
+  }
+
 
   private void buildHeaderSection(ProjectOverview projectOverview, Project project) {
     Objects.requireNonNull(projectOverview);
@@ -930,8 +831,8 @@ public class ProjectSummaryComponent extends PageArea {
 
     var sectionContent = new SectionContent();
     sectionContent.add(identityMeta);
-    sectionContent.add(objectiveBlock(project));
     sectionContent.add(contactsRow(project));
+    sectionContent.add(objectiveBlock(project));
     headerSection.setHeader(header);
     headerSection.setContent(sectionContent);
   }
@@ -1032,41 +933,5 @@ public class ProjectSummaryComponent extends PageArea {
     return avatarGroup;
   }
 
-  private Div createTags(ProjectOverview projectOverview) {
-    var tags = new Div();
-    tags.addClassNames("tag-list", "gap-03");
-    buildTags(projectOverview).forEach(tags::add);
-    return tags;
-  }
-
-  private List<Tag> buildTags(ProjectOverview projectInformation) {
-    var tags = new ArrayList<Tag>();
-    if (projectInformation.ngsMeasurementCount() > 0) {
-      tags.add(TagFactory.forMeasurement(GENOMICS));
-    }
-    if (projectInformation.pxpMeasurementCount() > 0) {
-      tags.add(TagFactory.forMeasurement(PROTEOMICS));
-    }
-    if (projectInformation.ipMeasurementCount() > 0) {
-      tags.add(TagFactory.forMeasurement(IMMUNOPEPTIDOMICS));
-    }
-    return tags;
-  }
-
-
-  private static class LoadingContent extends Div {
-
-    LoadingContent() {
-      addClassNames("vertical-list", "gap-small");
-      add("Loading information ...");
-    }
-  }
-  private static class EmptyContent extends Div {
-
-    EmptyContent() {
-      addClassNames("flex-vertical", "width-full", "gap-03");
-      add("No information available");
-    }
-  }
 
 }

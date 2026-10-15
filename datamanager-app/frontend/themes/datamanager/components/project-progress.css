@@ -4,7 +4,9 @@
 .project-progress-section {
   display: block;
   width: 100%;
+  padding-top: var(--lumo-space-l);
   margin-bottom: var(--lumo-space-l);
+  border-top: 1px solid var(--lumo-contrast-10pct);
 }
 
 .project-progress-heading {
