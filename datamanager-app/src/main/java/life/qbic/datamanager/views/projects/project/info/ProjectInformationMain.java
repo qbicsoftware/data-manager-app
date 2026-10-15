@@ -28,9 +28,6 @@ import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactor
 import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.projects.project.ProjectMainLayout;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
-import life.qbic.datamanager.views.projects.project.experiments.ExperimentListComponent;
-import life.qbic.datamanager.views.projects.project.experiments.ExperimentListComponent.AddExperimentClickEvent;
-import life.qbic.datamanager.views.projects.project.experiments.ExperimentListComponent.ExperimentSelectionEvent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.create.AddExperimentDialog;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.create.AddExperimentDialog.ExperimentAddEvent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.create.AddExperimentDialog.ExperimentDraft;
@@ -86,7 +83,6 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
   private final transient QualityControlService qualityControlService;
   private final transient UserPermissions userPermissions;
   private final ProjectSummaryComponent projectSummaryComponent;
-  private final ExperimentListComponent experimentListComponent;
   private final DownloadComponent downloadComponent;
   private final OfferListComponent offerListComponent;
   private final QualityControlListComponent qualityControlListComponent;
@@ -96,7 +92,6 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
   private final UploadConfiguration uploadConfiguration;
 
   public ProjectInformationMain(@Autowired ProjectSummaryComponent projectSummaryComponent,
-      @Autowired ExperimentListComponent experimentListComponent,
       @Autowired UserPermissions userPermissions,
       @Autowired AddExperimentToProjectService addExperimentToProjectService,
       @Autowired SpeciesLookupService ontologyTermInformationService,
@@ -107,8 +102,6 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
       MessageSourceNotificationFactory messageSourceNotificationFactory,
       UploadConfiguration uploadConfiguration) {
     this.projectSummaryComponent = requireNonNull(projectSummaryComponent);
-    this.experimentListComponent = requireNonNull(experimentListComponent,
-        "experimentListComponent must not be null");
     this.userPermissions = requireNonNull(userPermissions, "userPermissions must not be null");
     this.addExperimentToProjectService = requireNonNull(addExperimentToProjectService,
         "addExperimentToProjectService must not be null");
@@ -128,10 +121,9 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
     offerListComponent = getConfiguredOfferList();
     qualityControlListComponent = getConfiguredQualityControlList();
 
-    this.experimentListComponent.addExperimentSelectionListener(this::onExperimentSelectionEvent);
-    this.experimentListComponent.addAddButtonListener(this::onAddExperimentClicked);
+    this.projectSummaryComponent.addAddExperimentListener(event -> showAddExperimentDialog());
     addClassName("project");
-    add(this.projectSummaryComponent, offerListComponent, experimentListComponent,
+    add(this.projectSummaryComponent, offerListComponent,
         qualityControlListComponent, downloadComponent);
     this.terminologyService = terminologyService;
   }
@@ -317,19 +309,9 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
             .orElse("")).orElse("");
   }
 
-  private void onAddExperimentClicked(AddExperimentClickEvent event) {
-    log.debug("Add experiment clicked: " + event);
-    showAddExperimentDialog();
-  }
-
-  private void onExperimentSelectionEvent(ExperimentSelectionEvent event) {
-    routeToExperiment(event.getExperimentId());
-  }
-
   private void setContext(Context context) {
     this.context = context;
     projectSummaryComponent.setContext(context);
-    experimentListComponent.setContext(context);
     refreshOffers(projectPurchaseService, context.projectId().orElseThrow().value(),
         offerListComponent);
     refreshQualityControls();

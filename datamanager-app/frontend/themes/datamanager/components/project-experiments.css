@@ -1,0 +1,66 @@
+/* Experiments section of the project page — cards moved out of the retired right rail. */
+
+.project-experiments-section {
+  display: block;
+  width: 100%;
+  margin-bottom: var(--lumo-space-l);
+}
+
+.project-experiments-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--lumo-space-s);
+}
+
+.project-experiments-heading {
+  font-size: var(--lumo-font-size-l);
+  font-weight: 600;
+  color: var(--lumo-header-text-color);
+}
+
+.project-experiments-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lumo-space-m);
+}
+
+.project-experiment-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+  min-width: 16rem;
+  padding: var(--lumo-space-m);
+  border: 1px solid var(--lumo-contrast-10pct);
+  border-radius: var(--lumo-border-radius-m);
+}
+
+.project-experiment-card-name {
+  font-weight: 600;
+  color: var(--lumo-header-text-color);
+}
+
+.project-experiment-card-stats {
+  display: flex;
+  gap: var(--lumo-space-m);
+}
+
+.project-experiment-card-stat {
+  display: flex;
+  flex-direction: column;
+}
+
+.project-experiment-card-stat-value {
+  font-size: var(--lumo-font-size-l);
+  font-weight: 600;
+  color: var(--lumo-header-text-color);
+}
+
+.project-experiment-card-stat-label {
+  font-size: var(--lumo-font-size-xs);
+  color: var(--lumo-secondary-text-color);
+}
+
+.project-experiments-message {
+  color: var(--lumo-secondary-text-color);
+}

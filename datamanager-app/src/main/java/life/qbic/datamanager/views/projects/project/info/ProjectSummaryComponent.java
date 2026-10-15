@@ -19,6 +19,7 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.data.binder.Validator;
 import com.vaadin.flow.function.SerializablePredicate;
+import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.InputStream;
@@ -156,6 +157,7 @@ public class ProjectSummaryComponent extends PageArea {
   private final Section projectContactsSection;
   private final DownloadComponent downloadComponent;
   private final ProjectProgressSection projectProgressSection;
+  private final ProjectExperimentsSection projectExperimentsSection;
   private final transient AsyncProjectService asyncProjectService;
   private final RequestCache requestCache;
   private final MessageSourceNotificationFactory messageSourceNotificationFactory;
@@ -191,11 +193,14 @@ public class ProjectSummaryComponent extends PageArea {
     this.downloadComponent = new DownloadComponent();
     this.projectProgressSection = new ProjectProgressSection(
         Objects.requireNonNull(projectQueryService));
+    this.projectExperimentsSection = new ProjectExperimentsSection(
+        Objects.requireNonNull(projectQueryService));
 
     addClassName("project-details-component");
 
-    add(projectProgressSection);
     add(headerSection);
+    add(projectProgressSection);
+    add(projectExperimentsSection);
     add(projectDesignSection);
     add(experimentInformationSection);
     add(fundingInformationSection);
@@ -299,6 +304,16 @@ public class ProjectSummaryComponent extends PageArea {
     loadScope(id -> true, projectId, headerSection).forEach(UserScopeStrategy::execute);
     loadExperimentInfo(projectId.value());
     projectProgressSection.setProjectId(projectId.value());
+    projectExperimentsSection.setProjectId(projectId.value());
+  }
+
+  /**
+   * Delegates the "add experiment" action of the experiments section to the owning page, which runs
+   * the creation workflow.
+   */
+  public Registration addAddExperimentListener(
+      ComponentEventListener<ProjectExperimentsSection.AddExperimentRequestedEvent> listener) {
+    return projectExperimentsSection.addAddExperimentListener(listener);
   }
 
   private void loadExperimentInfo(String projectId) {
