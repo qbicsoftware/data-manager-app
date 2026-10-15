@@ -35,6 +35,19 @@
 --   2d. Add every captured foreign key back.
 --   2e. Verify: no table left behind, and the constraint count matches 2a.
 --
+-- REQUIRES ALTER ROUTINE
+--
+-- 2b-2d need a stored procedure to loop over the discovered statements, so this script needs
+-- the ALTER ROUTINE privilege. Application database users usually do not have it:
+--
+--   [42000][1370] alter routine command denied to user 'qbicuser'@'%' for routine
+--                 'data_management._collation_repair_drop_fks'
+--
+-- If that is you, use sql/repair/normalize-collations.sh instead. It asks the database the
+-- same questions, writes the statements to files, and runs them as plain SQL -- no routine
+-- privileges required. Either way, run Step 3 (recreate-views.sql) and re-apply the two
+-- sql/migrations/ scripts afterwards.
+--
 -- BEFORE RUNNING
 --   * Back up:  mysqldump --single-transaction --routines --triggers --events \
 --                   -u <user> -h <host> <database> > before-collation-repair.sql

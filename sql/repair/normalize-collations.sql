@@ -79,23 +79,31 @@ ORDER BY COLLATION_NAME, TABLE_NAME, COLUMN_NAME;
 -- -----------------------------------------------------------------------------
 -- STEP 2. Convert the application tables (48 of them).
 -- -----------------------------------------------------------------------------
--- Run sql/repair/normalize-collations-step2.sql. It is self-contained and does the three
--- things this step needs, in this order:
+-- Run sql/repair/normalize-collations.sh, or sql/repair/normalize-collations-step2.sql if you
+-- have ALTER ROUTINE. Either is self-contained and does the same three things, in this order:
 --
---   2a. DROP the 31 foreign key constraints. MariaDB refuses to change the character set
---       of a column that participates in a foreign key, even with
---       FOREIGN_KEY_CHECKS=0 -- that check is structural, not validation:
+--   2a. DROP the foreign key constraints. MariaDB refuses to change the character set of a
+--       column that participates in a foreign key, even with FOREIGN_KEY_CHECKS=0 -- that
+--       check is structural, not validation:
 --
 --         [HY000][1832] Cannot change column 'experimentId': used in a foreign key
 --                       constraint 'data_management/FK25vvdiupupuwmehr3o97dh7fg'
 --
---   2b. ALTER TABLE ... CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci for
---       each of the 48 tables.
+--       The constraint set is read from information_schema, not from a file: instances drift
+--       from sql/complete-schema.sql in both directions, and a hardcoded list fails with
 --
---   2c. ADD the same 31 constraints back, copied verbatim from sql/complete-schema.sql.
+--         [42000][1091] Can't DROP FOREIGN KEY `FKgfrw5hlq3iy6ntf32wy0e8hr`; check that it exists
 --
--- That file is the source of truth for the conversion. It also carries the constraint-count
--- verification (Step 2d, expected: 31) and documents the library-owned tables.
+--   2b. ALTER TABLE ... CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci for every
+--       base table that needs it, excluding jobrunr_* and shedlock.
+--
+--   2c. ADD the same constraints back, reconstructed from information_schema.
+--
+-- The shell script is the recommended path: it needs no routine privileges. The .sql file
+-- loops with a stored procedure and therefore needs ALTER ROUTINE.
+--
+-- Recommended:  ./sql/repair/normalize-collations.sh <database> [mysql args...]
+-- Alternative:  mysql ... < sql/repair/normalize-collations-step2.sql
 
 
 -- -----------------------------------------------------------------------------
