@@ -1,5 +1,5 @@
-/* Project progress section — first consumer of the project-page read models.
-   Incremental step of the project-page rework; the surrounding page is unchanged. */
+/* "Where the project stands" — the prototype's progress band: band title, attention block outside
+   the card, then a card with a headline, an ordered rail of three stages and the dataset standing. */
 
 .project-progress-section {
   display: block;
@@ -15,50 +15,173 @@
   margin-bottom: var(--lumo-space-s);
 }
 
-.project-progress-stages {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--lumo-space-m);
-}
-
-.project-progress-stage {
-  display: flex;
-  flex-direction: column;
-  min-width: 8rem;
-  padding: var(--lumo-space-s) var(--lumo-space-m);
-  border-radius: var(--lumo-border-radius-m);
-  background-color: var(--lumo-contrast-5pct);
-}
-
-.project-progress-stage-value {
-  font-size: var(--lumo-font-size-xl);
-  font-weight: 600;
-  color: var(--lumo-header-text-color);
-}
-
-.project-progress-stage-label {
-  font-size: var(--lumo-font-size-s);
+.project-progress-message {
   color: var(--lumo-secondary-text-color);
 }
 
+/* ── Attention block (outside the card) ───────────────────────────────── */
+
 .project-progress-attention {
-  margin-top: var(--lumo-space-m);
-  padding: var(--lumo-space-s) var(--lumo-space-m);
-  border-left: 3px solid var(--lumo-warning-color, var(--lumo-contrast-50pct));
-  background-color: var(--lumo-warning-color-10pct, var(--lumo-contrast-5pct));
+  margin-bottom: var(--lumo-space-s);
 }
 
 .project-progress-attention-title {
   display: block;
   font-weight: 600;
+  color: var(--lumo-error-text-color);
   margin-bottom: var(--lumo-space-xs);
 }
 
 .project-progress-attention-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--lumo-space-xs);
+  font-size: var(--lumo-font-size-s);
+  color: var(--lumo-secondary-text-color);
+  cursor: pointer;
+}
+
+.project-progress-attention-row:hover .project-progress-attention-action,
+.project-progress-attention-row:focus-visible .project-progress-attention-action {
+  text-decoration: underline;
+}
+
+.project-progress-attention-context {
+  font-weight: 600;
+  color: var(--lumo-body-text-color);
+}
+
+.project-progress-attention-action {
+  color: var(--lumo-primary-text-color);
+}
+
+.project-progress-separator {
+  color: var(--lumo-contrast-40pct);
+}
+
+/* ── Progress card ────────────────────────────────────────────────────── */
+
+.project-progress-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+  padding: var(--lumo-space-m);
+  border: 1px solid var(--lumo-contrast-10pct);
+  border-radius: var(--lumo-border-radius-m);
+}
+
+.project-progress-headline {
+  font-size: var(--lumo-font-size-m);
+  color: var(--lumo-secondary-text-color);
+}
+
+.project-progress-strong {
+  font-weight: 600;
+  color: var(--lumo-body-text-color);
+}
+
+/* Rail: a genuine sequence, so the steps are numbered; done / attention use glyphs. */
+.project-progress-rail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lumo-space-l);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.project-progress-step {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+}
+
+.project-progress-marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--lumo-contrast-20pct);
+  font-size: var(--lumo-font-size-xs);
+  color: var(--lumo-secondary-text-color);
+}
+
+.project-progress-step--done .project-progress-marker {
+  border-color: var(--lumo-success-color, var(--lumo-contrast-40pct));
+  color: var(--lumo-success-text-color, var(--lumo-secondary-text-color));
+}
+
+.project-progress-step--attention .project-progress-marker {
+  border-color: var(--lumo-warning-color, var(--lumo-contrast-40pct));
+  color: var(--lumo-warning-text-color, var(--lumo-error-text-color));
+}
+
+.project-progress-glyph {
+  width: var(--lumo-icon-size-s);
+  height: var(--lumo-icon-size-s);
+}
+
+.project-progress-step-label {
+  font-weight: 600;
+  color: var(--lumo-body-text-color);
+}
+
+.project-progress-step-count {
   font-size: var(--lumo-font-size-s);
   color: var(--lumo-secondary-text-color);
 }
 
-.project-progress-message {
+/* ── Dataset standing ─────────────────────────────────────────────────── */
+
+.project-progress-datasets {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+}
+
+.project-progress-datasets-head {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+}
+
+.project-progress-datasets-label {
+  font-weight: 600;
+  color: var(--lumo-header-text-color);
+}
+
+.project-progress-datasets-link {
+  margin-left: auto;
+  font-size: var(--lumo-font-size-s);
+  color: var(--lumo-primary-text-color);
+  cursor: pointer;
+}
+
+.project-progress-datasets-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lumo-space-m);
+}
+
+.project-progress-datasets-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-xs);
+  flex: 1 1 18rem;
+  padding: var(--lumo-space-m);
+  border: 1px solid var(--lumo-contrast-10pct);
+  border-radius: var(--lumo-border-radius-m);
+}
+
+.project-progress-datasets-card-title {
+  font-weight: 600;
+  color: var(--lumo-header-text-color);
+}
+
+.project-progress-datasets-card-fact {
+  font-size: var(--lumo-font-size-s);
   color: var(--lumo-secondary-text-color);
 }

@@ -197,7 +197,7 @@ public class ProjectSummaryComponent extends PageArea {
     this.requestCache = Objects.requireNonNull(requestCache);
     this.downloadComponent = new DownloadComponent();
     this.projectProgressSection = new ProjectProgressSection(
-        Objects.requireNonNull(projectQueryService));
+        Objects.requireNonNull(projectQueryService), projectInformationService);
     this.projectExperimentsSection = new ProjectExperimentsSection(
         Objects.requireNonNull(projectQueryService));
     this.projectExperimentsSection.addAddExperimentListener(
