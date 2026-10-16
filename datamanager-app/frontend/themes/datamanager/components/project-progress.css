@@ -101,6 +101,10 @@
 /* Rail: a genuine sequence — markers sit on a horizontal connector line, labels below. */
 .project-progress-rail {
   display: flex;
+  /* Centred, and sized to its own content. Stretched across the card the connectors became the
+     dominant feature of the band -- the markers stood half a screen apart and the line read as a
+     rule with three dots on it rather than as a sequence of stages. */
+  justify-content: center;
   gap: var(--lumo-space-m);
   margin: 0;
   padding: 0;
@@ -108,20 +112,14 @@
 }
 
 .project-progress-step {
-  flex: 1 1 0;
+  /* Each stage is only as wide as its own label and count, which keeps the connectors short. The
+     connector still fills whatever is left of the stage, so the line runs from marker to marker
+     rather than stopping at the text. */
+  flex: 0 1 auto;
   display: flex;
   flex-direction: column;
   gap: var(--lumo-space-xs);
   min-width: 0;
-}
-
-/* The last stage does not stretch. Every stage used to take an equal share, so the final marker and
-   the unused connector slot after it reserved a third of the card whether or not anything followed
-   them -- leaving the rail hugging the left with a quarter of the card empty on its right. Sized to
-   its own content it ends where its text ends: the markers stay evenly spaced, because the two
-   before it share what is left, and the rail reaches the card's right edge. */
-.project-progress-step:last-child {
-  flex: 0 0 auto;
 }
 
 .project-progress-step-head {
