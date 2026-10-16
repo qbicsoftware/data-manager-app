@@ -14,11 +14,13 @@ it needs no paging, filtering or selection, and it is read-only.
 
 /* --- Vertical rhythm ---
 
-   One gap between bands and one inside them, so the page reads as a stack of equal steps. It used to
-   have four accidental gaps -- 81px above the first band, 62px below it, 65px from a band's note to
-   its content, and 101px before the footer -- because each band carried its own vertical padding on
-   top of the Section header's default trailing margin. The page's row gap is now the only thing
-   between bands, and the bands add nothing of their own. */
+   One gap between bands and one inside them, so the page reads as a stack of equal steps.
+
+   Two values govern it, and nothing else may: the page's row gap between bands, and one header-to-
+   content margin. The bands used to carry a 36px trailing margin of their own -- Section adds
+   .margin-bottom-07 to itself, which is right when bands are unrelated blocks but wrong here, where
+   the page's rhythm is the page's business -- and on top of that each band added padding, so the
+   real gaps were 81px, 62px, 65px and 101px. */
 
 .main.project.datasets {
   row-gap: var(--spacing-05);
@@ -27,9 +29,21 @@ it needs no paging, filtering or selection, and it is read-only.
   padding-bottom: var(--spacing-06);
 }
 
+.main.project.datasets .section {
+  margin-bottom: 0;
+}
+
 /* Header to content, one value for every band. */
 .main.project.datasets .section-header {
   margin-bottom: var(--spacing-04);
+}
+
+/* The empty state is the app's shared component and centres itself in a 40rem card. Centred under
+   a left-aligned band title it opened a second left edge 325px to the right of the first -- and the
+   band titles, the page title and the announcement all share one. Bounded, but on that edge. */
+.main.project.datasets .empty-state {
+  margin-inline: 0;
+  max-width: 44rem;
 }
 
 /* --- The page band. The horizontal inset belongs to the shell (see variables.css,
