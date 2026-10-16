@@ -159,6 +159,10 @@
 
 .project-progress-connector {
   flex: 1 1 auto;
+  /* The connector's length IS the distance between two markers, so this is the knob for the rail's
+     rhythm -- a stage's width follows from it. A floor rather than a width: a stage whose label or
+     count is wider still widens the line instead of cramping the text beside it. */
+  min-width: 15rem;
   height: 2px;
   background-color: var(--lumo-contrast-20pct);
 }
