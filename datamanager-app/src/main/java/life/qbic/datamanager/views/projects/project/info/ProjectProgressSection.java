@@ -54,6 +54,14 @@ public class ProjectProgressSection extends Div {
   private static final String PROJECT_ID_PARAMETER = "projectId";
   private static final String EXPERIMENT_ID_PARAMETER = "experimentId";
 
+  /**
+   * Document id of the per-experiment attention list, so the identity band can link straight to it.
+   *
+   * <p>The two live in sibling components and neither knows the other's DOM, so the id is the
+   * contract between them. Unique per page, since a page renders one progress band.</p>
+   */
+  public static final String ATTENTION_LIST_ID = "project-attention";
+
   private final transient ProjectQueryService projectQueryService;
   private final transient ProjectInformationService projectInformationService;
   private final transient AssociatedDatasetService associatedDatasetService;
@@ -137,6 +145,7 @@ public class ProjectProgressSection extends Div {
   private Div attentionBlock(List<ExperimentProgress> attention) {
     Div block = new Div();
     block.addClassName("project-progress-attention");
+    block.setId(ATTENTION_LIST_ID);
     Span title = new Span("Needs attention");
     title.addClassName("project-progress-attention-title");
     block.add(title);

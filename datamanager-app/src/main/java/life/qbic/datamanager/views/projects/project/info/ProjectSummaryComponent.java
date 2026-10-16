@@ -86,7 +86,6 @@ import life.qbic.datamanager.views.general.section.SectionNote;
 import life.qbic.datamanager.views.general.section.SectionTitle;
 import life.qbic.datamanager.views.general.section.SectionTitle.Size;
 import life.qbic.datamanager.views.general.utils.Restorable.Snapshot;
-import life.qbic.datamanager.views.general.utils.Utility;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.projects.ProjectInformation;
@@ -509,23 +508,18 @@ public class ProjectSummaryComponent extends PageArea {
    * project-level count that brings the reader to the per-experiment rows rather than jumping
    * into one arbitrary experiment.
    */
-  private Div attentionChip(int attention) {
-    Div chip = new Div();
+  private Anchor attentionChip(int attention) {
+    // A real anchor to the per-experiment list rather than a button that scrolls a script: the jump
+    // is the browser's, it works before any client-side code has run, the destination is visible in
+    // the URL and can be bookmarked or shared, and the back button returns the reader here.
+    Anchor chip = new Anchor("#" + ProjectProgressSection.ATTENTION_LIST_ID);
     chip.addClassName("project-identity-attention");
-    chip.addClassName("project-identity-attention--action");
     chip.getElement().setAttribute("title", "Show which experiments need attention");
     chip.add(new Span(attention == 1
         ? "1 experiment needs attention"
         : attention + " experiments need attention"));
     chip.add(VaadinIcon.ANGLE_RIGHT.create());
-    Utility.activateOnClickAndKeys(chip, "button", this::scrollToAttention);
     return chip;
-  }
-
-  private void scrollToAttention() {
-    getUI().ifPresent(ui -> ui.getPage().executeJs(
-        "document.querySelector('.project-progress-attention')"
-            + "?.scrollIntoView({behavior: 'smooth', block: 'center'})"));
   }
 
   private static Span separator() {
