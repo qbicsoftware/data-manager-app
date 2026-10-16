@@ -1,6 +1,10 @@
 /* Application shell chrome — the prototype's two rows, shared by the Home scope (projects, groups,
    settings) and the project scope: an identity bar (wordmark + breadcrumb + account) over one
-   navigation row. Replaces the old single-row top navigation and the retired project drawer. */
+   navigation row. Replaces the old single-row top navigation and the retired project drawer.
+
+   This element also carries the app-wide zoom, from main.css: it is added with addToNavbar and so
+   is a sibling of #main-layout rather than a descendant, and the two only share a coordinate
+   space if both name the zoom. Do not "fix" a width here with padding -- check the zoom first. */
 
 .app-chrome {
   display: flex;

@@ -13,7 +13,25 @@ vaadin-app-layout:not([drawer-opened])::part(drawer) {
   display: flex;
   flex-direction: column;
   height: 100%;
-  /*Default design of components is too big for smaller screens*/
+}
+
+/* App-wide zoom. It has to name both roots of the shell, because they are not in one DOM tree:
+   the navbar's chrome is added with addToNavbar and lives in the app layout's navbar slot, while
+   the announcement, the routed content and the footer live in #main-layout, which is the app
+   layout's content.
+
+   Zoom defines its own coordinate space, so a length inside it renders at 90% of the same length
+   outside it. With the zoom on #main-layout alone, --content-shell-max-width was two widths at
+   once -- 1368px of content in the chrome, 1231px in the page below it -- and the two, each
+   centred on the viewport, could never line up. The page content sat 68px further in on each side
+   than the navigation row above it.
+
+   Naming both roots is deliberate and is the smaller of two fixes. The alternative is to delete
+   the zoom and let the app render at 100%, which is the honest reading of a value whose comment
+   says the design is "too big for smaller screens"; that grows every page by 11%, and is a
+   decision about density rather than about alignment. See app-shell.css. */
+#main-layout,
+.app-chrome {
   zoom: 90%;
 }
 
