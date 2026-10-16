@@ -24,6 +24,7 @@ import life.qbic.datamanager.views.general.utils.Utility;
 import life.qbic.datamanager.views.projects.project.datasets.ConnectedDatasetsMain;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementMain;
+import life.qbic.datamanager.views.projects.project.rawdata.RawDataMain;
 import life.qbic.datamanager.views.projects.project.samples.SampleInformationMain;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectOverview;
@@ -252,7 +253,8 @@ public class ProjectProgressSection extends Div {
 
     Div grid = new Div();
     grid.addClassName("project-progress-datasets-grid");
-    grid.add(primaryDataCard(progress));
+    grid.add(primaryDataCard(progress,
+        progress.isEmpty() ? null : progress.getFirst().experimentId()));
     grid.add(connectedAssetsCard(connected));
     wrap.add(head, grid);
     return wrap;
@@ -269,7 +271,7 @@ public class ProjectProgressSection extends Div {
    * be acted on, and pairing it with a byte total only invites the reader to divide the two (see
    * the migration's trap 4c).</p>
    */
-  private static Div primaryDataCard(List<ExperimentProgress> progress) {
+  private Div primaryDataCard(List<ExperimentProgress> progress, String experimentId) {
     Div card = new Div();
     card.addClassName("project-progress-datasets-card");
     card.add(cardTitle("Primary data — for analysis"));
@@ -278,7 +280,26 @@ public class ProjectProgressSection extends Div {
     if (!present.isEmpty()) {
       card.add(cardFact(volumeByAssayType(present)));
     }
+    // Raw data is where these bytes actually are. Measurements, one step earlier in the workflow,
+    // is the metadata surface, and the rail's Dataset stage already goes there, so sending this
+    // card to the same place would leave the data itself with no shortcut.
+    if (experimentId != null) {
+      makeNavigable(card, "Open raw data", () -> navigate(RawDataMain.class, experimentId));
+    }
     return card;
+  }
+
+  /**
+   * Makes a whole card the way into its surface, the way the rail steps are.
+   *
+   * <p>Role and keyboard handling come from the same helper the rail and the attention rows use, so
+   * a card is reachable by Tab and activated by Enter or Space without a separate implementation
+   * drifting from theirs.</p>
+   */
+  private static void makeNavigable(Div card, String description, Runnable action) {
+    card.addClassName("project-progress-datasets-card--link");
+    card.getElement().setAttribute("title", description);
+    Utility.activateOnClickAndKeys(card, "link", action);
   }
 
   /**
@@ -355,9 +376,11 @@ public class ProjectProgressSection extends Div {
     return "%.1f GB".formatted(bytes / 1_000_000_000.0);
   }
 
-  private static Div connectedAssetsCard(List<ConnectedDatasetView> connected) {
+  private Div connectedAssetsCard(List<ConnectedDatasetView> connected) {
     Div card = new Div();
     card.addClassName("project-progress-datasets-card");
+    makeNavigable(card, "Open connected datasets", () -> getUI().ifPresent(
+        ui -> ui.navigate(ConnectedDatasetsMain.class, projectParameters())));
     if (connected.isEmpty()) {
       card.add(cardTitle("Connected assets — none, hosted elsewhere"));
       card.add(cardFact("None linked yet"));

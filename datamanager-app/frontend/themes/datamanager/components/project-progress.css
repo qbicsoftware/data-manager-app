@@ -230,6 +230,23 @@
   min-width: 0;
 }
 
+/* A card is the way into its surface, like the rail stages above it. The whole card is the target,
+   so the hover has to read as "this is one thing" rather than as a row highlight. */
+.project-progress-datasets-card--link {
+  cursor: pointer;
+}
+
+.project-progress-datasets-card--link:hover,
+.project-progress-datasets-card--link:focus-visible {
+  border-color: var(--lumo-contrast-20pct);
+  background-color: var(--lumo-contrast-10pct);
+}
+
+.project-progress-datasets-card--link:focus-visible {
+  outline: 2px solid var(--lumo-primary-color);
+  outline-offset: 2px;
+}
+
 .project-progress-datasets-card-title {
   font-weight: 600;
   color: var(--lumo-header-text-color);
