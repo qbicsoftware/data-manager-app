@@ -456,7 +456,7 @@ public class ProjectSummaryComponent extends PageArea {
     title.setSize(Size.LARGE);
     Span titleText = new Span(projectOverview.projectTitle());
     Span code = new Span(projectOverview.projectCode());
-    code.addClassName("project-identity-code");
+    code.addClassNames("project-identity-code", "identifier");
     title.add(titleText, code);
 
     Button crateExportBtn = new Button("Export summary");

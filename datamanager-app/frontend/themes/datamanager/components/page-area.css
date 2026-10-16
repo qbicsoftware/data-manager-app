@@ -422,7 +422,7 @@
 }
 
 .created-token__value {
-  font-family: monospace;
+  font-family: var(--font-family-monospace);
   font-size: var(--lumo-font-size-m);
   word-break: break-all;
   flex: 1;

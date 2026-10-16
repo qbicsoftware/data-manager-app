@@ -91,7 +91,7 @@ a.app-crumb:focus {
 }
 
 .app-crumb-code {
-  font-family: monospace;
+  font-family: var(--font-family-monospace);
 }
 
 .app-crumb-current {

@@ -25,6 +25,12 @@ First some general property definitions
   --font-weight-medium: 500;
   --font-weight-semi-bold: 600;
   --font-weight-bold: 700;
+  /* One monospace stack for every identifier the app renders -- project codes, sample IDs,
+     measurement codes, personal access tokens. Four stacks used to coexist for that one job: a
+     bare `monospace`, "Source Code Pro for Powerline", and var(--lumo-font-family-monospace),
+     which Lumo never defines and which therefore always fell through to the next name. */
+  --font-family-monospace: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+      "Source Code Pro for Powerline", monospace;
   --border-color-default: var(--shade-color-30pct);
   --border-color-light: var(--shade-color-10pct);
   --border-color-dialog: var(--border-color-light);

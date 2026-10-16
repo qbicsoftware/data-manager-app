@@ -1,8 +1,11 @@
 /* Project identity band: title + code, meta line, and the clamped objective. */
 
+/* The project identifier beside the title. Monospace comes from .identifier; the weight is 500
+   rather than 400 because a regular-weight monospace glyph sits thin next to the bold title, and
+   500 is what the prototype uses for the same element (.pt-title__code). */
 .project-identity-code {
   color: var(--lumo-secondary-text-color);
-  font-weight: 400;
+  font-weight: 500;
   font-size: var(--lumo-font-size-m);
   margin-inline-start: var(--lumo-space-s);
 }

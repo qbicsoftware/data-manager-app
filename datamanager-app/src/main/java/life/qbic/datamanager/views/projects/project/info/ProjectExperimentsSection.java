@@ -232,7 +232,7 @@ public class ProjectExperimentsSection extends Div {
     list.addClassName("project-exp-panel-rows");
     list.add(row(columns, true));
     if (rows.isEmpty()) {
-      list.add(row(new String[]{emptyRow}, false));
+      list.add(placeholderRow(emptyRow));
     } else {
       rows.forEach(cells -> list.add(row(cells.toArray(new String[0]), false)));
     }
@@ -264,13 +264,25 @@ public class ProjectExperimentsSection extends Div {
   private static Div row(String[] cells, boolean header) {
     Div row = new Div();
     row.addClassName("project-exp-panel-row");
-    for (String cell : cells) {
-      Span span = new Span(cell);
+    for (int index = 0; index < cells.length; index++) {
+      Span span = new Span(cells[index]);
       if (header) {
         span.addClassName("project-exp-panel-cell-header");
+      } else if (index == 0) {
+        // The first column is the record's identifier in both panels -- Sample ID, Measurement
+        // ID -- so it takes the same treatment as the project code above.
+        span.addClassName("identifier");
       }
       row.add(span);
     }
+    return row;
+  }
+
+  /** A message standing in for rows. Not a record, so it takes none of the row's cell classes. */
+  private static Div placeholderRow(String text) {
+    Div row = new Div();
+    row.addClassName("project-exp-panel-row");
+    row.add(new Span(text));
     return row;
   }
 
