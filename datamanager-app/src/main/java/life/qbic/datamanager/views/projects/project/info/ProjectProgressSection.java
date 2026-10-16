@@ -17,6 +17,8 @@ import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.shared.Registration;
 import java.io.Serial;
 import java.util.List;
+import life.qbic.datamanager.views.general.DataSetTagFactory;
+import life.qbic.datamanager.views.general.DataSetTagFactory.TagType;
 import life.qbic.datamanager.views.general.ReactiveUiBridge;
 import life.qbic.datamanager.views.general.utils.Utility;
 import life.qbic.datamanager.views.projects.project.datasets.ConnectedDatasetsMain;
@@ -362,20 +364,43 @@ public class ProjectProgressSection extends Div {
       card.add(cardFact("None linked yet"));
       return card;
     }
-    // Titles from external repositories run to a full sentence. Clamped to one line with the full
-    // text in the tooltip, so three entries stay scannable instead of collapsing into prose.
-    connected.stream()
-        .limit(3)
-        .forEach(asset -> card.add(truncatedCardFact(
-            asset.title() + " · " + asset.resourceProvider())));
+    connected.stream().limit(3).forEach(asset -> card.add(connectedAssetRow(asset)));
     return card;
   }
 
-  private static Span truncatedCardFact(String text) {
-    Span fact = cardFact(text);
-    fact.addClassName("project-progress-datasets-card-fact--truncated");
-    fact.getElement().setAttribute("title", text);
-    return fact;
+  /**
+   * One connected asset: what kind it is, its name, and where it is hosted.
+   *
+   * <p>The name is clamped, because a repository title runs to a full sentence, but it is clamped
+   * on its own. Appending the provider to it put the two in one string, so the ellipsis ate the
+   * provider first -- the single field that makes the three rows comparable -- and left the card
+   * reading as an undifferentiated block of text.</p>
+   *
+   * <p>The kind is the repository's own vocabulary term (InvenioRDM resource types), not a label
+   * invented here, and it is rendered with the same tag the connected-datasets page uses so that
+   * "Dataset" or "Software" reads identically in both places.</p>
+   */
+  private static Div connectedAssetRow(ConnectedDatasetView asset) {
+    Div row = new Div();
+    row.addClassName("project-progress-connected-asset");
+
+    String resourceType = asset.resourceType();
+    if (resourceType != null && !resourceType.isBlank()) {
+      row.add(DataSetTagFactory.create(TagType.DATA_SET_TYPE, resourceType));
+    }
+
+    Span title = new Span(asset.title());
+    title.addClassName("project-progress-connected-asset-title");
+    title.getElement().setAttribute("title", asset.title());
+    row.add(title);
+
+    String provider = asset.resourceProvider();
+    if (provider != null && !provider.isBlank()) {
+      Span providerSpan = new Span(provider);
+      providerSpan.addClassName("project-progress-connected-asset-provider");
+      row.add(providerSpan);
+    }
+    return row;
   }
 
   private static Span cardTitle(String text) {

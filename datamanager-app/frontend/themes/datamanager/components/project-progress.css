@@ -238,12 +238,29 @@
   color: var(--lumo-secondary-text-color);
 }
 
-/* Repository titles run to a full sentence; clamped to one line so three entries stay scannable.
-   The full title stays available in the tooltip. */
-.project-progress-datasets-card-fact--truncated {
+/* One connected asset: kind, name, provider. Three columns rather than one concatenated sentence,
+   so the names line up under each other and the provider stays visible however long a title runs.
+   The kind is the repository's own vocabulary term, in the same tag the connected-datasets page
+   uses, so the two surfaces agree on what a "Dataset" looks like. */
+.project-progress-connected-asset {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+  font-size: var(--lumo-font-size-s);
+}
+
+.project-progress-connected-asset-title {
+  flex: 1 1 auto;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: var(--lumo-body-text-color);
+}
+
+.project-progress-connected-asset-provider {
+  flex: 0 0 auto;
+  color: var(--lumo-secondary-text-color);
 }
 
 .project-progress-step--link {
