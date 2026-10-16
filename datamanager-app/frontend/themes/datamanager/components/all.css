@@ -1357,9 +1357,14 @@ Older stuff -
   align-items: center;
 }
 
+/* A section title is the most important text in its band, so it takes the heading colour. It used
+   to take --secondary-text-color, which resolves to --shade-color-50pct (#8d97a4) -- roughly 3:1
+   against white. That is the floor for large text and below it at the sizes actually used, so
+   every section title read as greyed-out rather than as a heading. --heading-text-color exists
+   for exactly this and was previously reached only by the .text-heading-color utility. */
 .section-title {
   font-weight: bold;
-  color: var(--secondary-text-color);
+  color: var(--heading-text-color);
   margin-bottom: 0.5rem;
 }
 
