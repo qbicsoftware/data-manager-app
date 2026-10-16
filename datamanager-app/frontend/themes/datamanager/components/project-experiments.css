@@ -137,7 +137,7 @@
 }
 
 .project-exp-panel-state--attention {
-  background-color: var(--lumo-warning-color-10pct, var(--lumo-contrast-10pct));
+  background-color: var(--attention-surface, var(--lumo-contrast-10pct));
   color: var(--lumo-warning-text-color, var(--lumo-error-text-color));
 }
 

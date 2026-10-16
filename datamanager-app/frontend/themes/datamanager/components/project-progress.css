@@ -32,8 +32,8 @@
   scroll-margin-top: var(--lumo-space-l);
   padding: var(--lumo-space-m);
   margin-bottom: var(--lumo-space-m);
-  background-color: var(--lumo-warning-color-10pct, var(--lumo-contrast-5pct));
-  border: 1px solid var(--lumo-warning-color, var(--lumo-contrast-20pct));
+  background-color: var(--attention-surface, var(--lumo-contrast-5pct));
+  border: 1px solid var(--attention-border, var(--lumo-contrast-20pct));
   border-radius: var(--lumo-border-radius-m);
 }
 
@@ -52,6 +52,8 @@
   cursor: pointer;
 }
 
+/* The glyph keeps Lumo's warning ink. The tint behind it got lighter, the glyph did not, so it now
+   sits at 5.5:1 rather than the 5.25:1 it had on the stronger fill. */
 .project-progress-attention-row .project-progress-glyph {
   color: var(--lumo-warning-text-color, var(--lumo-error-text-color));
 }
@@ -155,8 +157,8 @@
 }
 
 .project-progress-step--attention .project-progress-marker {
-  border-color: var(--lumo-warning-color, var(--lumo-contrast-40pct));
-  background-color: var(--lumo-warning-color-10pct, var(--lumo-contrast-5pct));
+  border-color: var(--attention-border, var(--lumo-contrast-40pct));
+  background-color: var(--attention-surface, var(--lumo-contrast-5pct));
   color: var(--lumo-warning-text-color, var(--lumo-error-text-color));
 }
 
