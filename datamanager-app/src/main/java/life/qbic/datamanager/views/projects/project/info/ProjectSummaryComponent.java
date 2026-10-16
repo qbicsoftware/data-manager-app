@@ -329,12 +329,6 @@ public class ProjectSummaryComponent extends PageArea {
    */
 
   /**
-   * The "Project details" band: the project's storable facts, read-only, with one link to the
-   * place that edits them. The prototype keeps the summary read-only and routes the edit to
-   * Settings; that surface does not exist yet, so the link opens a dialog hosting the same two
-   * forms (design and funding) the summary used to inline.
-   */
-  /**
    * Project metadata is edited on the Project settings page, never in a dialog beside the title:
    * editing is rare and never urgent, so it does not compete with the content, and every editor
    * lives in one place instead of one dialog per band.
@@ -360,27 +354,48 @@ public class ProjectSummaryComponent extends PageArea {
 
     Div facts = new Div();
     facts.addClassName("project-metadata-facts");
-    facts.add(fact("Project ID", projectOverview.projectCode()));
-    facts.add(fact("Funding", project.funding()
-        .map(funding -> "%s (%s)".formatted(funding.grant(), funding.grantId()))
-        .orElse("No funding information provided.")));
-    facts.add(fact("Primary data type", primaryDataTypes(projectOverview)));
+    // Funding leads: it is the only fact here with an editor behind it, and the one most often
+    // missing. The project code is deliberately absent -- the identity band already prints it.
+    facts.add(fundingFact(project));
+    facts.add(assayTypesFact(projectOverview));
+    facts.add(datasetAccessFact(projectOverview));
 
     projectMetadataBand.add(head, facts);
   }
 
-  private static Div fact(String label, String value) {
-    Div fact = new Div();
-    fact.addClassName("project-metadata-fact");
-    Span labelSpan = new Span(label);
-    labelSpan.addClassName("project-metadata-fact-label");
-    Span valueSpan = new Span(value);
-    valueSpan.addClassName("project-metadata-fact-value");
-    fact.add(labelSpan, valueSpan);
-    return fact;
+  /**
+   * The funding fact. Absence is rendered as an absent value, not as a sentence: the band is a row
+   * of values, and a gap a curator can act on should look like a gap.
+   */
+  private static Div fundingFact(Project project) {
+    return project.funding()
+        .map(funding -> {
+          String grant = funding.grant() == null ? "" : funding.grant().strip();
+          String grantId = funding.grantId() == null ? "" : funding.grantId().strip();
+          if (grant.isEmpty() && grantId.isEmpty()) {
+            return fact("Funding", "Not recorded", true);
+          }
+          if (grant.isEmpty()) {
+            return fact("Funding", grantId);
+          }
+          if (grantId.isEmpty()) {
+            return fact("Funding", grant);
+          }
+          return fact("Funding", "%s (%s)".formatted(grant, grantId));
+        })
+        .orElseGet(() -> fact("Funding", "Not recorded", true));
   }
 
-  private static String primaryDataTypes(ProjectOverview overview) {
+  /**
+   * The assay types present in the project, derived from which measurement tables carry rows.
+   *
+   * <p>This is a technology class -- Genomics, Proteomics, Immunopeptidomics -- and deliberately
+   * not an analysis type such as RNA-Seq or 16S. The analysis method is not modelled yet, and it
+   * belongs on the measurement rather than on the sample, so it must not be inferred here: the
+   * sample does not know whether its DNA was sequenced as WGS or as a 16S amplicon, and one
+   * extract can legitimately yield both.
+   */
+  private static Div assayTypesFact(ProjectOverview overview) {
     List<String> types = new ArrayList<>();
     if (overview.ngsMeasurementCount() > 0) {
       types.add("Genomics");
@@ -391,14 +406,48 @@ public class ProjectSummaryComponent extends PageArea {
     if (overview.ipMeasurementCount() > 0) {
       types.add("Immunopeptidomics");
     }
-    return types.isEmpty() ? "No primary data yet" : String.join(" \u00b7 ", types);
+    return types.isEmpty()
+        ? fact("Assay types", "None recorded", true)
+        : fact("Assay types", String.join(" \u00b7 ", types));
   }
 
   /**
-   * Edits the things the metadata band states: the project design (title, objective, design) and
-   * its funding.
+   * Data access, read from the access levels of the datasets connected to the project. The project
+   * itself carries no access level, so the honest reading of the prototype's "Data access" fact is
+   * the distribution across its connected datasets.
    */
+  private static Div datasetAccessFact(ProjectOverview overview) {
+    int connected = overview.connectedDatasetCount();
+    if (connected == 0) {
+      return fact("Data access", "No datasets connected yet", true);
+    }
+    return fact("Data access", "%d dataset%s \u00b7 %d open, %d restricted".formatted(
+        connected, connected == 1 ? "" : "s",
+        overview.openDatasetCount(), overview.restrictedDatasetCount()));
+  }
 
+  private static Div fact(String label, String value) {
+    return fact(label, value, false);
+  }
+
+  private static Div fact(String label, String value, boolean missing) {
+    Div fact = new Div();
+    fact.addClassName("project-metadata-fact");
+    Span labelSpan = new Span(label);
+    labelSpan.addClassName("project-metadata-fact-label");
+    Span valueSpan = new Span(value);
+    valueSpan.addClassName("project-metadata-fact-value");
+    if (missing) {
+      valueSpan.addClassName("project-metadata-fact-value--missing");
+    }
+    fact.add(labelSpan, valueSpan);
+    return fact;
+  }
+
+  /**
+   * The identity band: title and code, the activity line, the contacts and the objective. All of
+   * it is read-only; the affordances route to the settings page.
+   */
   private void buildHeaderSection(ProjectOverview projectOverview, Project project) {
     Objects.requireNonNull(projectOverview);
 

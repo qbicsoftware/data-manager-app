@@ -47,6 +47,13 @@
   color: var(--lumo-body-text-color);
 }
 
+/* An absent fact reads as an absent value rather than as a sentence printed where a value belongs:
+   the band is a row of values, and a gap a curator can act on should look like a gap. */
+.project-metadata-fact-value--missing {
+  font-style: italic;
+  color: var(--lumo-secondary-text-color);
+}
+
 .project-metadata-edit-body {
   display: flex;
   flex-direction: column;
