@@ -1440,12 +1440,12 @@ a.pinned-project-card-body:hover {
 /* Profile styles moved to settings.css */
 
 /*
- * Datasets view: Connected Resources section.
- * Placed into the `datasets-content` grid area defined in grid-templates.css
- * for `.main.project.datasets`, which spans the full available width.
+ * Datasets view: the connected resources band.
+ * No grid area any more: the page stacks its bands in document order (see
+ * grid-templates.css .main.project.datasets), so this class is now only a hook.
  */
 .datasets-content {
-  grid-area: datasets-content;
+  display: block;
 }
 
 /*

@@ -21,9 +21,15 @@ import life.qbic.datamanager.views.general.dialog.AlertDialog;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.projects.project.ProjectMainLayout;
+import life.qbic.datamanager.views.general.section.ActionBar;
+import life.qbic.datamanager.views.general.section.Section;
+import life.qbic.datamanager.views.general.section.SectionHeader;
+import life.qbic.datamanager.views.general.section.SectionNote;
+import life.qbic.datamanager.views.general.section.SectionTitle;
 import life.qbic.identity.api.AuthenticationToUserIdTranslator;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
+import life.qbic.projectmanagement.application.api.ProjectQueryService;
 import life.qbic.projectmanagement.application.associated_dataset.AssociatedDatasetService;
 import life.qbic.projectmanagement.application.associated_dataset.ConnectedDatasetView;
 import life.qbic.projectmanagement.application.associated_dataset.ExternalCredentialService;
@@ -33,19 +39,26 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 /**
- * <b>Associated Datasets view</b>
+ * <b>Datasets view</b>
  *
- * <p>The main view for the "Connect associated datasets with Data Manager
- * projects" feature (FEAT-DATSET-01). Provides:
- * <ul>
- *   <li>an "All datasets" section showing the datasets currently
- *       connected to the selected project, or an empty-state guide when
- *       no datasets are connected yet;</li>
- *   <li>a sliding connect-datasets sidebar that searches InvenioRDM
- *       instances, lets the user pick results to connect, and optionally
- *       associates them with a project experiment.</li>
- * </ul>
+ * <p>The project's datasets, both halves of them. The page is the umbrella: a project has
+ * <em>primary</em> datasets -- the measurement data of its experiments, one per experiment and
+ * assay type -- and <em>connected</em> datasets, which are hosted elsewhere and linked here and
+ * can be anything from an analysis result to a data management plan, a poster or a project
+ * report. "Datasets" without a qualifier means both, which is why neither half is named here
+ * without one.</p>
  *
+ * <p>Structure (top to bottom): the page band naming the page; the primary datasets
+ * ({@link PrimaryDatasetsComponent}, read from the project's experiment progress); then the
+ * connected datasets ({@link ConnectedResourcesComponent}), which keeps its own action bar for
+ * connecting, syncing and removing.</p>
+ *
+ * <p>The route keeps its {@code .../datasets} path and its shell: the page used to show only the
+ * connected half.</p>
+ *
+ * <p>The connection feature itself (FEAT-DATSET-01) also provides the sliding connect-datasets
+ * sidebar that searches InvenioRDM instances, lets the user pick results to connect, and
+ * optionally associates them with a project experiment.</p>
  *
  * @since 1.12.0
  */
@@ -53,7 +66,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 @UIScope
 @Route(value = "projects/:projectId?/datasets", layout = ProjectMainLayout.class)
 @PermitAll
-public class ConnectedDatasetsMain extends Main implements BeforeEnterObserver {
+public class ProjectDatasetsMain extends Main implements BeforeEnterObserver {
 
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
 
@@ -63,6 +76,7 @@ public class ConnectedDatasetsMain extends Main implements BeforeEnterObserver {
   private final transient MessageSourceNotificationFactory notificationFactory;
   private final transient ExternalCredentialService externalCredentialService;
 
+  private final PrimaryDatasetsComponent primaryDatasetsComponent;
   private final ConnectedResourcesComponent connectedResourcesComponent;
   private final AuthenticationToUserIdTranslator authenticationToUserIdTranslator;
   private ConnectDatasetSidebar connectDatasetSidebar;
@@ -72,13 +86,14 @@ public class ConnectedDatasetsMain extends Main implements BeforeEnterObserver {
   private final UiHandle uiHandle = new UiHandle();
 
   @Autowired
-  public ConnectedDatasetsMain(
+  public ProjectDatasetsMain(
       AssociatedDatasetService associatedDatasetService,
       ExperimentInformationService experimentInformationService,
       UserPermissions userPermissions,
       MessageSourceNotificationFactory notificationFactory,
       AuthenticationToUserIdTranslator authenticationToUserIdTranslator,
-      ExternalCredentialService externalCredentialService
+      ExternalCredentialService externalCredentialService,
+      ProjectQueryService projectQueryService
       ) {
     this.associatedDatasetService = requireNonNull(associatedDatasetService,
         "associatedDatasetService must not be null");
@@ -94,6 +109,8 @@ public class ConnectedDatasetsMain extends Main implements BeforeEnterObserver {
 
     addClassName("project");
     addClassName("datasets");
+    primaryDatasetsComponent = new PrimaryDatasetsComponent(
+        requireNonNull(projectQueryService, "projectQueryService must not be null"));
     connectedResourcesComponent = new ConnectedResourcesComponent(associatedDatasetService);
     connectedResourcesComponent.addConnectDatasetsClickListener(e -> openConnectSidebar());
     connectedResourcesComponent.addRemoveDatasetClickListener(
@@ -101,7 +118,21 @@ public class ConnectedDatasetsMain extends Main implements BeforeEnterObserver {
     connectedResourcesComponent.addSyncDatasetClickListener(
         e -> onSyncDatasets(List.of(e.getDatasetId())));
     connectedResourcesComponent.addSyncAllDatasetsClickListener(e -> onSyncAllDatasets());
-    add(connectedResourcesComponent);
+    add(pageBand(), primaryDatasetsComponent, connectedResourcesComponent);
+  }
+
+  /**
+   * The page band. It names the page and both of its halves; the halves title themselves, so a
+   * third heading here would only repeat them.
+   */
+  private static Section pageBand() {
+    var header = new SectionHeader(new SectionTitle("Datasets", SectionTitle.Size.LARGE),
+        new ActionBar(),
+        new SectionNote("The measurement data of this project's experiments, and the datasets "
+            + "connected to it."));
+    Section band = new Section.SectionBuilder().withHeader(header).build();
+    band.addClassName("project-datasets-page-head");
+    return band;
   }
 
   @Override
@@ -118,7 +149,7 @@ public class ConnectedDatasetsMain extends Main implements BeforeEnterObserver {
 
   // ── Helpers ───────────────────────────────────────────────────────────
 
-  private static final Logger log = LoggerFactory.logger(ConnectedDatasetsMain.class);
+  private static final Logger log = LoggerFactory.logger(ProjectDatasetsMain.class);
 
   /** Resolves the current Spring Security user to a DM user ID. */
   private String resolveCurrentUserId() {
@@ -145,6 +176,7 @@ public class ConnectedDatasetsMain extends Main implements BeforeEnterObserver {
 
   private void setContext(
       life.qbic.projectmanagement.domain.model.project.ProjectId parsedProjectId) {
+    primaryDatasetsComponent.setProjectId(parsedProjectId.value());
     connectedResourcesComponent.setWriteAllowed(userPermissions.editProject(parsedProjectId));
     connectedResourcesComponent.setContext(context);
     if (connectDatasetSidebar != null) {

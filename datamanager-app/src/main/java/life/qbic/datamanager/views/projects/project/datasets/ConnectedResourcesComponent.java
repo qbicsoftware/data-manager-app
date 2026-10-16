@@ -33,8 +33,7 @@ import life.qbic.projectmanagement.application.associated_dataset.ConnectedDatas
 /**
  * <b>Connected Datasets Component</b>
  *
- * <p>Renders the connected datasets section within the associated
- * datasets view. Contains:</p>
+ * <p>Renders the connected datasets band of the datasets page. Contains:</p>
  * <ul>
  *   <li>an action bar with a primary "Connect Datasets" button;</li>
  *   <li>a <b>rich row card list</b> of connected datasets, with high-priority
@@ -98,13 +97,13 @@ public class ConnectedResourcesComponent extends Div {
     var actionBar = new ActionBar(connectButton, syncAllButton);
 
     var note = new SectionNote(
-        "External datasets connected to this project and its experiments. "
-            + "Click any DOI or access link to open the record on the source.");
-    // Large, because this is the page heading: every other project page titles itself at
-    // --lumo-font-size-xxl, and a medium title here made the Datasets page look like a band of
-    // the previous one rather than a page of its own.
+        "Datasets hosted elsewhere and linked here. \u201cConnected\u201d states only that the link "
+            + "exists: one can be an analysis result, a data management plan, a poster, a project "
+            + "report, or something else entirely.");
+    // Medium: this is a band of the Datasets page now, not the page heading. The page itself
+    // titles at LARGE, above both halves.
     var header = new SectionHeader(
-        new SectionTitle("Connected datasets", SectionTitle.Size.LARGE),
+        new SectionTitle("Connected datasets", SectionTitle.Size.MEDIUM),
         actionBar,
         note
     );

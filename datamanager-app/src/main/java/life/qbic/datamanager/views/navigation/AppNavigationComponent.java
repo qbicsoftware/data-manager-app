@@ -14,7 +14,7 @@ import life.qbic.datamanager.views.account.UserProfileMain;
 import life.qbic.datamanager.views.groups.MyGroupsMain;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.datamanager.views.projects.project.access.ProjectAccessMain;
-import life.qbic.datamanager.views.projects.project.datasets.ConnectedDatasetsMain;
+import life.qbic.datamanager.views.projects.project.datasets.ProjectDatasetsMain;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
 import life.qbic.datamanager.views.projects.project.info.ProjectInformationMain;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementMain;
@@ -73,10 +73,10 @@ public class AppNavigationComponent extends Div {
     var parameters = projectParameters(projectId);
     var component = new AppNavigationComponent()
         .addItem("Summary", ProjectInformationMain.class, parameters)
-        // Qualified, because the bare word is the umbrella: a project has primary datasets (its own
-        // measurement data) and connected datasets (results, posters, reports, plans). This page shows
-        // only the second kind, so naming it "Datasets" made the whole look like the part.
-        .addItem("Connected datasets", ConnectedDatasetsMain.class, parameters);
+        // The umbrella. The page shows the project's own primary datasets and the datasets
+        // connected to it, and qualifies both inside; the bare word is the only label that
+        // covers what the page actually is.
+        .addItem("Datasets", ProjectDatasetsMain.class, parameters);
     if (canViewAccess) {
       component.addItem("Access", ProjectAccessMain.class, parameters);
     }

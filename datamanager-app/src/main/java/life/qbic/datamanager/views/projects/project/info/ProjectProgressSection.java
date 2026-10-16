@@ -25,10 +25,9 @@ import life.qbic.datamanager.views.general.DataSetTagFactory;
 import life.qbic.datamanager.views.general.DataSetTagFactory.TagType;
 import life.qbic.datamanager.views.general.ReactiveUiBridge;
 import life.qbic.datamanager.views.general.utils.Utility;
-import life.qbic.datamanager.views.projects.project.datasets.ConnectedDatasetsMain;
+import life.qbic.datamanager.views.projects.project.datasets.ProjectDatasetsMain;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementMain;
-import life.qbic.datamanager.views.projects.project.rawdata.RawDataMain;
 import life.qbic.datamanager.views.projects.project.samples.SampleInformationMain;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectOverview;
@@ -266,8 +265,7 @@ public class ProjectProgressSection extends Div {
 
     Div grid = new Div();
     grid.addClassName("project-progress-datasets-grid");
-    grid.add(primaryDataCard(progress,
-        progress.isEmpty() ? null : progress.getFirst().experimentId()));
+    grid.add(primaryDataCard(progress));
     grid.add(connectedAssetsCard(connected));
     wrap.add(head, grid);
     return wrap;
@@ -284,7 +282,7 @@ public class ProjectProgressSection extends Div {
    * be acted on, and pairing it with a byte total only invites the reader to divide the two (see
    * the migration's trap 4c).</p>
    */
-  private Div primaryDataCard(List<ExperimentProgress> progress, String experimentId) {
+  private Div primaryDataCard(List<ExperimentProgress> progress) {
     Div card = new Div();
     card.addClassName("project-progress-datasets-card");
     card.add(cardTitle("Primary data — for analysis"));
@@ -293,12 +291,11 @@ public class ProjectProgressSection extends Div {
     if (!present.isEmpty()) {
       card.add(cardFact(volumeByAssayType(present)));
     }
-    // Raw data is where these bytes actually are. Measurements, one step earlier in the workflow,
-    // is the metadata surface, and the rail's Dataset stage already goes there, so sending this
-    // card to the same place would leave the data itself with no shortcut.
-    if (experimentId != null) {
-      makeNavigable(card, "Open raw data", () -> navigate(RawDataMain.class, experimentId));
-    }
+    // The card summarises the project's primary datasets, so it opens the page that lists them
+    // one by experiment and assay type. It used to open the raw files of the first experiment,
+    // which answered a narrower question and only ever for one of them.
+    makeNavigable(card, "Open primary datasets", () -> getUI().ifPresent(
+        ui -> ui.navigate(ProjectDatasetsMain.class, projectParameters())));
     return card;
   }
 
@@ -377,7 +374,7 @@ public class ProjectProgressSection extends Div {
     Div card = new Div();
     card.addClassName("project-progress-datasets-card");
     makeNavigable(card, "Open connected datasets", () -> getUI().ifPresent(
-        ui -> ui.navigate(ConnectedDatasetsMain.class, projectParameters())));
+        ui -> ui.navigate(ProjectDatasetsMain.class, projectParameters())));
     if (connected.isEmpty()) {
       card.add(cardTitle("Connected datasets — none, hosted elsewhere"));
       card.add(cardFact("None linked yet"));

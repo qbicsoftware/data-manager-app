@@ -78,15 +78,15 @@
 }
 
 /*
- * Override for the Associated Datasets view (FEAT-DATSET-01).
- * The dataset view has a single full-width child, so collapse the
- * two-column project grid into a single 1fr column.
- * See grid-templates.css.
+ * Override for the Datasets page.
+ * The page used to hold a single full-width child, so the two-column project grid was collapsed
+ * into one named area. It now stacks three bands -- the page heading, the primary datasets and
+ * the connected datasets -- so it returns to the ordinary single-column flow and lets them
+ * auto-place in document order.
  */
 .main.project.datasets {
   grid-template-columns: 1fr;
   grid-template-rows: auto;
-  grid-template-areas: "datasets-content";
 }
 
 /*

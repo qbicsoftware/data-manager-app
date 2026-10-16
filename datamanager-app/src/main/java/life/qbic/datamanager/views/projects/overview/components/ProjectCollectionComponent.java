@@ -53,7 +53,7 @@ import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactor
 import life.qbic.datamanager.views.projects.overview.components.PinnedProjectsComponent.ToggleHandler;
 import life.qbic.datamanager.views.projects.project.access.ProjectAccessMain;
 import life.qbic.datamanager.views.projects.project.access.ProjectSharingDrawer;
-import life.qbic.datamanager.views.projects.project.datasets.ConnectedDatasetsMain;
+import life.qbic.datamanager.views.projects.project.datasets.ProjectDatasetsMain;
 import life.qbic.datamanager.views.projects.project.info.ProjectInformationMain;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.identity.api.UserInformationService;
@@ -915,8 +915,8 @@ public class ProjectCollectionComponent extends PageArea {
 
       // ── Wrap in RouterLink (native <a> semantics) ─────────────
       // Anchored to the per-project datasets route already registered
-      // for ConnectedDatasetsMain.
-      var link = new RouterLink("", ConnectedDatasetsMain.class,
+      // for ProjectDatasetsMain.
+      var link = new RouterLink("", ProjectDatasetsMain.class,
           new RouteParameters(PROJECT_ID_ROUTE_PARAMETER, projectOverview.projectId().value()));
       link.addClassName("project-dataset-footer");
       link.add(content);

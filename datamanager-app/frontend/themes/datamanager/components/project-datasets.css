@@ -1,0 +1,178 @@
+/*****************************************
+
+Project Datasets page — projects/:projectId/datasets
+
+The page is the umbrella for both halves of a project's datasets: its own primary datasets (the
+measurement data of its experiments, read from the experiment progress view) and the datasets
+connected to it. The two bands are siblings of equal weight — see .project-datasets-primary and
+.datasets-content — so neither may look like a sub-part of the other.
+
+The list is a plain grid, not a Vaadin grid: it is short (one row per experiment and assay type),
+it needs no paging, filtering or selection, and it is read-only.
+
+*****************************************/
+
+/* --- The page band. The connected band brings its own padding, so the heading and the primary
+       datasets band carry the same horizontal measure and the three line up. --- */
+
+.project-datasets-page-head {
+  padding: var(--spacing-05) var(--spacing-07) 0 var(--spacing-07);
+}
+
+/* --- The primary datasets band --- */
+
+.project-datasets-primary {
+  padding: 0 var(--spacing-07) var(--spacing-05) var(--spacing-07);
+}
+
+.project-datasets-primary-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-04);
+}
+
+/* --- The headline figures --- */
+
+.project-datasets-rollup {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: var(--spacing-03);
+}
+
+.project-datasets-stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-01);
+  padding: var(--spacing-03) var(--spacing-04);
+  border: 1px solid var(--border-color-light);
+  border-radius: 10px;
+  background: var(--shade-color-5pct);
+}
+
+.project-datasets-stat-value {
+  font-size: var(--lumo-font-size-xl);
+  font-weight: var(--font-weight-bold);
+  line-height: 1;
+  color: var(--heading-text-color);
+  font-variant-numeric: tabular-nums;
+}
+
+.project-datasets-stat-label {
+  font-size: var(--lumo-font-size-xs);
+  color: var(--secondary-text-color);
+}
+
+/* --- One row per primary dataset --- */
+
+.project-datasets-table {
+  border: 1px solid var(--border-color-light);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+/* Columns size by weight rather than equally: the experiment name is the longest value in the
+   list and the figures are all short, so equal columns would spend most of the width on numbers.
+   minmax(0, …) lets a long experiment name ellipsize instead of widening the page. */
+.project-datasets-table-row {
+  display: grid;
+  grid-template-columns: minmax(0, 2.5fr) minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, 1fr)
+      minmax(0, 1fr) minmax(0, 1fr);
+  border-top: 1px solid var(--border-color-light);
+}
+
+.project-datasets-table-row:first-child {
+  border-top: 0;
+}
+
+.project-datasets-table-row--head .project-datasets-cell {
+  font-size: var(--lumo-font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--secondary-text-color);
+}
+
+.project-datasets-table-row--head {
+  background: var(--shade-color-5pct);
+}
+
+.project-datasets-table-row--clickable {
+  cursor: pointer;
+}
+
+.project-datasets-table-row--clickable:hover {
+  background: var(--shade-color-5pct);
+}
+
+.project-datasets-table-row--clickable:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: -2px;
+}
+
+.project-datasets-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-02);
+  min-width: 0;
+  padding: var(--spacing-03);
+  font-size: var(--lumo-font-size-s);
+  color: var(--body-text-color);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A figure that is not a figure. Muted and italic, the same treatment the project details band
+   gives a fact that was never recorded. */
+.project-datasets-cell--missing {
+  color: var(--secondary-text-color);
+  font-style: italic;
+}
+
+/* Coverage state as a pill: two states that have to be told apart while scanning one column. */
+.project-datasets-state {
+  padding: 0.1rem var(--spacing-03);
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: var(--lumo-font-size-xs);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+}
+
+.project-datasets-state--done {
+  color: var(--success-text-color);
+  background: hsla(145, 85%, 25%, 0.08);
+  border-color: hsla(145, 85%, 25%, 0.25);
+}
+
+.project-datasets-state--attention {
+  color: var(--warning-text-color);
+  background: var(--attention-surface);
+  border-color: var(--attention-border);
+}
+
+/* --- Notes, messages and the empty state --- */
+
+.project-datasets-note {
+  font-size: var(--lumo-font-size-s);
+  line-height: 1.5;
+  color: var(--secondary-text-color);
+}
+
+.project-datasets-message {
+  font-size: var(--lumo-font-size-s);
+  color: var(--secondary-text-color);
+}
+
+.project-datasets-empty {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-02);
+  padding: var(--spacing-05);
+  border: 1px dashed var(--border-color-light);
+  border-radius: 10px;
+  background: var(--shade-color-5pct);
+}
+
+.project-datasets-empty-title {
+  font-weight: var(--font-weight-medium);
+  color: var(--heading-text-color);
+}
