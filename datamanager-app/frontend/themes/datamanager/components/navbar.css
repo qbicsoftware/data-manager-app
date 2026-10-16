@@ -18,7 +18,10 @@
 
 .data-manager-menu {
   display: inline-flex;
-  justify-content: space-between;
+  /* The name is a label beside the avatar, not a row of its own. Without this the name stretched
+     to the avatar's height and its text sat at the top of that box -- about 7px above the avatar's
+     centre and the brand's baseline. */
+  align-items: center;
   column-gap: var(--spacing-03);
 }
 

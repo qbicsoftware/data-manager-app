@@ -1215,10 +1215,18 @@ Icons
    instead of a harsh full-bleed block, so it reads as its own notice and never
    competes with the Projects | Groups | Settings tabs. */
 #announcements {
-  /* Symmetric gutter margin (incl. bottom): the base layout owns the page's default
-     spacing, so whatever follows (content header / content areas) is always separated
-     from the announcement by the same gap — no component has to add its own top margin. */
-  margin: var(--spacing-04);
+  /* Capped to the content column, like the chrome and the page content. It used to be a near
+     full-bleed card spanning the viewport minus 1rem, which put its left edge about 200px left of
+     the chrome's first item and of everything on the page below it.
+
+     The block margin stays symmetric: the base layout owns the page's default spacing, so whatever
+     follows (content header / content areas) is always separated from the announcement by the same
+     gap, and no component adds a top margin of its own. */
+  box-sizing: border-box;
+  width: 100%;
+  max-width: calc(var(--content-shell-max-width) - 2 * var(--content-shell-gutter));
+  margin-inline: auto;
+  margin-block: var(--spacing-04);
   padding: var(--spacing-03) var(--spacing-04);
   background-color: var(--lumo-base-color);
   color: var(--lumo-contrast-80pct);
@@ -1227,7 +1235,6 @@ Icons
   border-radius: var(--lumo-border-radius-m);
   text-align: left;
   font-size: var(--lumo-font-size-s);
-  box-sizing: border-box;
 }
 
 .announcement {

@@ -15,25 +15,20 @@ vaadin-app-layout:not([drawer-opened])::part(drawer) {
   height: 100%;
 }
 
-/* App-wide zoom. It has to name both roots of the shell, because they are not in one DOM tree:
-   the navbar's chrome is added with addToNavbar and lives in the app layout's navbar slot, while
-   the announcement, the routed content and the footer live in #main-layout, which is the app
-   layout's content.
+/* No app-wide zoom.
 
-   Zoom defines its own coordinate space, so a length inside it renders at 90% of the same length
-   outside it. With the zoom on #main-layout alone, --content-shell-max-width was two widths at
-   once -- 1368px of content in the chrome, 1231px in the page below it -- and the two, each
-   centred on the viewport, could never line up. The page content sat 68px further in on each side
-   than the navigation row above it.
+   There was one -- zoom: 90% on #main-layout, to fit more on small screens -- but the chrome is
+   added with addToNavbar, so it was never inside it. Zoom is its own coordinate space, so
+   --content-shell-max-width was 1368px in the header and 1231px in the page below it, and the two,
+   each centred on the viewport, could not line up.
 
-   Naming both roots is deliberate and is the smaller of two fixes. The alternative is to delete
-   the zoom and let the app render at 100%, which is the honest reading of a value whose comment
-   says the design is "too big for smaller screens"; that grows every page by 11%, and is a
-   decision about density rather than about alignment. See app-shell.css. */
-#main-layout,
-.app-chrome {
-  zoom: 90%;
-}
+   Naming both roots fixed that and made the chrome small enough to be hard to read: a username at
+   12.6px, because --lumo-font-size-s is 14px and 90% of it is below what that size is for. At 100%
+   every surface renders as designed and still shares one coordinate space.
+
+   If the density is too loose, lower --content-shell-max-width. Do not reintroduce a zoom: it
+   silently rescales the cap and every rem in the theme, and only for whatever happens to sit
+   inside the element that carries it. */
 
 .landing-page-layout .landing-page-content {
   /*Static resources have to be loaded in css form the Meta-INF directory see vaadin cheatsheet
