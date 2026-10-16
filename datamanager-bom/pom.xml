@@ -22,13 +22,13 @@
     <docx4j.version>11.5.14</docx4j.version>
     <jobrunr.version>9.0.1</jobrunr.version>
     <shedlock.version>7.10.1</shedlock.version>
-    <vaadin.version>25.3.1</vaadin.version>
+    <vaadin.version>25.3.2</vaadin.version>
     <ro-crate-java.version>2.1.2</ro-crate-java.version>
     <snakeyaml.version>2.5</snakeyaml.version>
 
     <!-- overwritten spring boot properties (need to be set in importing pom as well)-->
     <jakarta.persistence.version>3.2.0</jakarta.persistence.version>
-    <spock.version>2.4-groovy-5.0</spock.version>
+    <spock.version>2.5-groovy-5.0</spock.version>
     <spring-boot.version>4.1.1</spring-boot.version>
     <commons-lang3.version>3.18.0</commons-lang3.version>
     <artemis.version>2.55.0</artemis.version>
