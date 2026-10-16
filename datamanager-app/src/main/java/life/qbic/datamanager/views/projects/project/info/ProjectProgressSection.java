@@ -203,7 +203,8 @@ public class ProjectProgressSection extends Div {
         samples > 0 ? State.DONE : State.TODO, SampleInformationMain.class, firstExperiment));
     // "8 of 272", not "8". The other steps state how much there is; this one also has to state
     // how much is missing, and a count without its denominator cannot do that.
-    rail.add(step(3, "Dataset",
+    // Plural: a project already has one primary dataset per assay type, not one in total.
+    rail.add(step(3, "Primary datasets",
         "%d of %s".formatted(withData,
             pluralise(measurements, "measurement", "measurements")),
         missing > 0 ? State.ATTENTION : State.DONE, MeasurementMain.class, firstExperiment));
@@ -391,7 +392,7 @@ public class ProjectProgressSection extends Div {
     makeNavigable(card, "Open connected datasets", () -> getUI().ifPresent(
         ui -> ui.navigate(ConnectedDatasetsMain.class, projectParameters())));
     if (connected.isEmpty()) {
-      card.add(cardTitle("Connected assets — none, hosted elsewhere"));
+      card.add(cardTitle("Connected datasets — none, hosted elsewhere"));
       card.add(cardFact("None linked yet"));
       return card;
     }
@@ -400,8 +401,8 @@ public class ProjectProgressSection extends Div {
     // into the card title; when they do not, each row keeps its own.
     String sharedProvider = sharedProvider(connected);
     card.add(cardTitle(sharedProvider == null
-        ? "Connected assets — %d, hosted elsewhere".formatted(connected.size())
-        : "Connected assets — %d from %s".formatted(connected.size(), sharedProvider)));
+        ? "Connected datasets — %d, hosted elsewhere".formatted(connected.size())
+        : "Connected datasets — %d from %s".formatted(connected.size(), sharedProvider)));
 
     boolean perRowProvider = sharedProvider == null;
     Div rows = new Div();

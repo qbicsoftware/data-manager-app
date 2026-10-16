@@ -73,7 +73,10 @@ public class AppNavigationComponent extends Div {
     var parameters = projectParameters(projectId);
     var component = new AppNavigationComponent()
         .addItem("Summary", ProjectInformationMain.class, parameters)
-        .addItem("Datasets", ConnectedDatasetsMain.class, parameters);
+        // Qualified, because the bare word is the umbrella: a project has primary datasets (its own
+        // measurement data) and connected datasets (results, posters, reports, plans). This page shows
+        // only the second kind, so naming it "Datasets" made the whole look like the part.
+        .addItem("Connected datasets", ConnectedDatasetsMain.class, parameters);
     if (canViewAccess) {
       component.addItem("Access", ProjectAccessMain.class, parameters);
     }

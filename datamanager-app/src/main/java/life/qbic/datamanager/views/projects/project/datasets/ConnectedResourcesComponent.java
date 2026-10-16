@@ -33,7 +33,7 @@ import life.qbic.projectmanagement.application.associated_dataset.ConnectedDatas
 /**
  * <b>Connected Datasets Component</b>
  *
- * <p>Renders the "Datasets" section within the associated
+ * <p>Renders the connected datasets section within the associated
  * datasets view. Contains:</p>
  * <ul>
  *   <li>an action bar with a primary "Connect Datasets" button;</li>
@@ -104,7 +104,7 @@ public class ConnectedResourcesComponent extends Div {
     // --lumo-font-size-xxl, and a medium title here made the Datasets page look like a band of
     // the previous one rather than a page of its own.
     var header = new SectionHeader(
-        new SectionTitle("All datasets", SectionTitle.Size.LARGE),
+        new SectionTitle("Connected datasets", SectionTitle.Size.LARGE),
         actionBar,
         note
     );
