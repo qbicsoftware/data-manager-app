@@ -100,8 +100,11 @@ public class ConnectedResourcesComponent extends Div {
     var note = new SectionNote(
         "External datasets connected to this project and its experiments. "
             + "Click any DOI or access link to open the record on the source.");
+    // Large, because this is the page heading: every other project page titles itself at
+    // --lumo-font-size-xxl, and a medium title here made the Datasets page look like a band of
+    // the previous one rather than a page of its own.
     var header = new SectionHeader(
-        new SectionTitle("All datasets"),
+        new SectionTitle("All datasets", SectionTitle.Size.LARGE),
         actionBar,
         note
     );

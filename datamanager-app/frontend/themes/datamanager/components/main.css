@@ -58,9 +58,15 @@ vaadin-app-layout:not([drawer-opened])::part(drawer) {
   height: 100%;
 }
 
+/* Page titles. These rules are five near-identical copies (here, the sample/measurement and
+   raw-data variants below, and .page-area .title) that all resolved their colour from
+   --lumo-secondary-text-color, i.e. the muted grey used for supporting text. A 1.75rem bold
+   heading in supporting-text grey reads as disabled, and it made every page header sit lighter
+   than the .section-title headings on the pages that used those instead. They now take
+   --heading-text-color, matching .section-title. */
 .main .title {
   font-weight: bold;
-  color: var(--lumo-secondary-text-color);
+  color: var(--heading-text-color);
   font-size: var(--lumo-font-size-xxl);
   margin-bottom: 0.5rem;
 }
@@ -183,7 +189,7 @@ vaadin-app-layout:not([drawer-opened])::part(drawer) {
 .main.sample .sample-main-header .title,
 .main.measurement .measurement-main-content .title {
   font-weight: bold;
-  color: var(--lumo-secondary-text-color);
+  color: var(--heading-text-color);
   font-size: var(--lumo-font-size-xxl);
   margin-bottom: 0.5rem;
 }
@@ -321,7 +327,7 @@ vaadin-app-layout:not([drawer-opened])::part(drawer) {
 
 .main.raw-data .raw-data-main-content .title {
   font-weight: bold;
-  color: var(--lumo-secondary-text-color);
+  color: var(--heading-text-color);
   font-size: var(--lumo-font-size-xxl);
   margin-bottom: 0;
 }
@@ -374,7 +380,7 @@ vaadin-app-layout:not([drawer-opened])::part(drawer) {
 
 .main.sample .sample-main-content .title {
   font-weight: bold;
-  color: var(--lumo-secondary-text-color);
+  color: var(--heading-text-color);
   font-size: var(--lumo-font-size-xxl);
   margin-bottom: 0.5rem;
 }

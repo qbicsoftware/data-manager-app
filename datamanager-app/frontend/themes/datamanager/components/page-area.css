@@ -12,9 +12,12 @@
   gap: var(--spacing-03);
 }
 
+/* Page titles inside a PageArea. Same treatment as .main .title and .section-title: this is the
+   page heading, not supporting text, so it takes --heading-text-color rather than the muted grey
+   it used to share with captions. */
 .page-area .title {
   font-weight: bold;
-  color: var(--lumo-secondary-text-color);
+  color: var(--heading-text-color);
   font-size: var(--lumo-font-size-xxl);
   margin-bottom: 0.5rem;
 }
