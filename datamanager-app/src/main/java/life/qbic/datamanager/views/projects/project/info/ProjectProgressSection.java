@@ -16,6 +16,8 @@ import com.vaadin.flow.router.RouteParam;
 import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.shared.Registration;
 import java.io.Serial;
+import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import life.qbic.datamanager.views.general.DataSetTagFactory;
 import life.qbic.datamanager.views.general.DataSetTagFactory.TagType;
@@ -245,11 +247,9 @@ public class ProjectProgressSection extends Div {
     head.addClassName("project-progress-datasets-head");
     Span label = new Span("Datasets");
     label.addClassName("project-progress-datasets-label");
-    Span open = new Span("Open datasets");
-    open.addClassName("project-progress-datasets-link");
-    Utility.activateOnClickAndKeys(open, "link", () -> getUI().ifPresent(
-        ui -> ui.navigate(ConnectedDatasetsMain.class, projectParameters())));
-    head.add(label, open);
+    // No section-level link: it sat above both cards and only served one of them, so its scope was
+    // never clear. The cards are clickable now and each names its own destination.
+    head.add(label);
 
     Div grid = new Div();
     grid.addClassName("project-progress-datasets-grid");
@@ -395,9 +395,34 @@ public class ProjectProgressSection extends Div {
         : "Connected assets — %d from %s".formatted(connected.size(), sharedProvider)));
 
     boolean perRowProvider = sharedProvider == null;
-    connected.stream().limit(3)
+    // Most recent activity first. The question this card answers is "is anything happening here",
+    // and ordering by connection date buried the record that was synced this morning.
+    connected.stream()
+        .sorted(Comparator.comparing(ProjectProgressSection::lastActivity).reversed())
+        .limit(3)
         .forEach(asset -> card.add(connectedAssetRow(asset, perRowProvider)));
     return card;
+  }
+
+  /**
+   * The most recent activity on a connected dataset: its last sync if it has ever been synced,
+   * otherwise the moment it was connected.
+   *
+   * <p>Both count as activity -- a record connected last year but synced this morning is fresh,
+   * and that is what a reader scanning the card wants to know.</p>
+   */
+  private static Instant lastActivity(ConnectedDatasetView asset) {
+    return asset.lastSyncedAt() != null ? asset.lastSyncedAt() : asset.connectedOn();
+  }
+
+  /**
+   * Says which kind of activity the timestamp reports. "Connected" and "synced" are different
+   * events, and a reader judging whether a record is current needs to know which one they are
+   * looking at.
+   */
+  private static String activityLabel(ConnectedDatasetView asset) {
+    return (asset.lastSyncedAt() != null ? "synced " : "connected ")
+        + Utility.relativeTime(lastActivity(asset));
   }
 
   /**
@@ -432,15 +457,25 @@ public class ProjectProgressSection extends Div {
     Div row = new Div();
     row.addClassName("project-progress-connected-asset");
 
+    // The type sits in a reserved column even when the source gives none. A chip of varying width
+    // prepended to the title pushed the titles out of line with each other, which defeats the
+    // point of giving the type a column at all.
+    Span typeCell = new Span();
+    typeCell.addClassName("project-progress-connected-asset-type");
     String resourceType = asset.resourceType();
     if (resourceType != null && !resourceType.isBlank()) {
-      row.add(DataSetTagFactory.create(TagType.DATA_SET_TYPE, resourceType));
+      typeCell.add(DataSetTagFactory.create(TagType.DATA_SET_TYPE, resourceType));
     }
+    row.add(typeCell);
 
     Span title = new Span(asset.title());
     title.addClassName("project-progress-connected-asset-title");
     title.getElement().setAttribute("title", asset.title());
     row.add(title);
+
+    Span activity = new Span(activityLabel(asset));
+    activity.addClassName("project-progress-connected-asset-activity");
+    row.add(activity);
 
     String provider = asset.resourceProvider();
     if (showProvider && provider != null && !provider.isBlank()) {

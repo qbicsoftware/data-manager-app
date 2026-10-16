@@ -198,13 +198,6 @@
   color: var(--lumo-header-text-color);
 }
 
-.project-progress-datasets-link {
-  margin-left: auto;
-  font-size: var(--lumo-font-size-s);
-  color: var(--lumo-primary-text-color);
-  cursor: pointer;
-}
-
 .project-progress-datasets-grid {
   display: flex;
   flex-wrap: wrap;
@@ -268,6 +261,15 @@
   font-size: var(--lumo-font-size-s);
 }
 
+/* A reservation, not a fixed width: the terms come from the repository's vocabulary, so a longer
+   one must not be clipped. Reserving room for the common terms keeps every title on one vertical
+   edge, which is the whole reason the type has a column. */
+.project-progress-connected-asset-type {
+  flex: 0 0 auto;
+  display: inline-flex;
+  min-width: 5.5rem;
+}
+
 .project-progress-connected-asset-title {
   flex: 1 1 auto;
   min-width: 0;
@@ -275,6 +277,15 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--lumo-body-text-color);
+}
+
+/* When the record was last touched. Right-aligned so the timestamps line up even though
+   "synced" and "connected" are different lengths. */
+.project-progress-connected-asset-activity {
+  flex: 0 0 auto;
+  text-align: right;
+  white-space: nowrap;
+  color: var(--lumo-secondary-text-color);
 }
 
 .project-progress-connected-asset-provider {

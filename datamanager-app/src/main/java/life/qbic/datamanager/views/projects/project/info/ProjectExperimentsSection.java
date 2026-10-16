@@ -16,7 +16,6 @@ import com.vaadin.flow.router.RouteParam;
 import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.shared.Registration;
 import java.io.Serial;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -150,10 +149,10 @@ public class ProjectExperimentsSection extends Div {
     boolean started = experiment.sampleCount() > 0;
     String status = samples.isEmpty()
         ? "Nothing registered yet"
-        : "Registered · " + relativeTime(samples.getFirst().changed());
+        : "Registered · " + Utility.relativeTime(samples.getFirst().changed());
     List<List<String>> rows = samples.stream()
         .map(sample -> List.of(sample.sampleCode(), sample.sampleName(),
-            relativeTime(sample.changed())))
+            Utility.relativeTime(sample.changed())))
         .toList();
     return snapshotPanel("Samples", "samples", experiment.sampleCount(),
         started ? "Registered" : "Not started", started ? "done" : "active",
@@ -185,11 +184,12 @@ public class ProjectExperimentsSection extends Div {
     }
     String status = total == 0
         ? "Nothing registered yet"
-        : withData + " of " + total + " with primary data · " + relativeTime(newest(measurements));
+        : withData + " of " + total + " with primary data · "
+            + Utility.relativeTime(newest(measurements));
 
     List<List<String>> rows = measurements.stream()
         .map(measurement -> List.of(measurement.measurementCode(), primaryDataLabel(measurement),
-            relativeTime(measurement.changed())))
+            Utility.relativeTime(measurement.changed())))
         .toList();
     return snapshotPanel("Dataset", "measurements", total, state, tone, status,
         new String[]{"Measurement ID", "Primary data", "Changed"}, rows,
@@ -355,17 +355,6 @@ public class ProjectExperimentsSection extends Div {
         .filter(java.util.Objects::nonNull)
         .max(Instant::compareTo)
         .orElse(null);
-  }
-
-  private static String relativeTime(Instant instant) {
-    if (instant == null) {
-      return "unknown";
-    }
-    long days = Duration.between(instant, Instant.now()).toDays();
-    if (days <= 0) {
-      return "just now";
-    }
-    return days + (days == 1 ? " day ago" : " days ago");
   }
 
   private static Span chip(String text, String modifier) {

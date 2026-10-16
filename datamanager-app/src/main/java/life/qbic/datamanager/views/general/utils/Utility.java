@@ -3,6 +3,8 @@ package life.qbic.datamanager.views.general.utils;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
 import life.qbic.datamanager.views.general.contact.Contact;
 import life.qbic.projectmanagement.application.authorization.QbicOidcUser;
@@ -49,6 +51,30 @@ public class Utility {
         action.run();
       }
     }).addEventData("event.key");
+  }
+
+  /**
+   * How long ago something happened, at the coarsest resolution that still says something useful:
+   * hours while it is under a day, days after that.
+   *
+   * <p>Shared rather than per view, because two surfaces on one page describing recency by
+   * different rules is exactly the kind of inconsistency a reader notices without being able to
+   * name it.</p>
+   */
+  public static String relativeTime(Instant instant) {
+    if (instant == null) {
+      return "unknown";
+    }
+    Duration since = Duration.between(instant, Instant.now());
+    if (since.toHours() < 1) {
+      return "just now";
+    }
+    if (since.toDays() < 1) {
+      long hours = since.toHours();
+      return hours + (hours == 1 ? " hour ago" : " hours ago");
+    }
+    long days = since.toDays();
+    return days + (days == 1 ? " day ago" : " days ago");
   }
 
   public static Optional<Contact> tryToLoadFromPrincipal() {
