@@ -10,6 +10,8 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.router.RouteParam;
 import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.shared.Registration;
@@ -205,7 +207,7 @@ public class ProjectExperimentsSection extends Div {
     head.addClassName("project-exp-panel-head");
     Span labelSpan = new Span(label);
     labelSpan.addClassName("project-exp-panel-label");
-    head.add(labelSpan);
+    head.add(surfaceIcon(label), labelSpan);
     Span stateTag = new Span(state);
     stateTag.addClassNames("project-exp-panel-state", "project-exp-panel-state--" + tone);
     head.add(stateTag);
@@ -239,6 +241,25 @@ public class ProjectExperimentsSection extends Div {
 
     Utility.activateOnClickAndKeys(panel, "button", open);
     return panel;
+  }
+
+  /**
+   * The decorative glyph that maps a panel to its subject at a glance: Samples is a flask,
+   * Dataset a database.
+   *
+   * <p>Decoration only. The label already names the surface, so the glyph is redundant
+   * reinforcement for people who scan shapes, and it must never become the only carrier of
+   * meaning -- hence {@code aria-hidden}. Mirrors the prototype's {@code surfaceGlyph}.</p>
+   */
+  private static Icon surfaceIcon(String label) {
+    Icon glyph = switch (label) {
+      case "Samples" -> VaadinIcon.FLASK.create();
+      case "Dataset" -> VaadinIcon.DATABASE.create();
+      default -> VaadinIcon.RECORDS.create();
+    };
+    glyph.addClassName("project-exp-panel-icon");
+    glyph.getElement().setAttribute("aria-hidden", "true");
+    return glyph;
   }
 
   private static Div row(String[] cells, boolean header) {
