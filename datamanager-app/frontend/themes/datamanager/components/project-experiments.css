@@ -76,16 +76,6 @@
   color: var(--lumo-secondary-text-color);
 }
 
-.project-exp-chip--neutral {
-  background-color: var(--lumo-contrast-10pct);
-  color: var(--lumo-secondary-text-color);
-}
-
-.project-exp-chip--attention {
-  background-color: var(--lumo-warning-color-10pct, var(--lumo-contrast-10pct));
-  color: var(--lumo-warning-text-color, var(--lumo-error-text-color));
-}
-
 /* ── Snapshot panels ──────────────────────────────────────────────────── */
 
 .project-exp-snapshot {

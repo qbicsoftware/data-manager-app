@@ -131,11 +131,10 @@ public class ProjectExperimentsSection extends Div {
     Div facets = new Div();
     facets.addClassName("project-exp-facets");
     domains(experiment).forEach(domain -> facets.add(chip(domain, "project-exp-chip--domain")));
-    if (experiment.sampleCount() == 0) {
-      facets.add(chip("Not started", "project-exp-chip--neutral"));
-    } else if (experiment.measurementsWithoutPrimaryData() > 0) {
-      facets.add(chip("Needs attention", "project-exp-chip--attention"));
-    }
+    // No status chip. Every state it could report -- "Not started" and "Needs attention" -- is
+    // already tagged on the panel that owns it, one line below, beside the count and the route
+    // into that surface. Stating it here too said the same thing twice in one band, and said it
+    // more weakly: nothing here named where the work actually is.
     identity.add(name, facets);
     card.add(identity);
 
