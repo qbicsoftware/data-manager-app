@@ -106,10 +106,10 @@
 /* Rail: a genuine sequence — markers sit on a horizontal connector line, labels below. */
 .project-progress-rail {
   display: flex;
-  /* Centred, and sized to its own content. Stretched across the card the connectors became the
-     dominant feature of the band -- the markers stood half a screen apart and the line read as a
-     rule with three dots on it rather than as a sequence of stages. */
-  justify-content: center;
+  /* Starts where everything else in the band starts. Centring it put the rail's own left edge out of
+     line with the headline above it and the Datasets heading below, so the band had two left edges
+     and neither looked deliberate. Sized to its own content, so it is left-aligned without being
+     stretched: the stages sit together at the spacing the connector sets. */
   gap: var(--lumo-space-m);
   margin: 0;
   padding: 0;
