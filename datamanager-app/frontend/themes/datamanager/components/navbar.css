@@ -26,6 +26,10 @@
 .data-manager-menu .menubar::part(container) {
   display: inline-flex;
   column-gap: var(--spacing-03);
+  /* The avatar is the outermost item of the identity bar, so its right edge is the shell's right
+     edge -- the same edge the navigation row and the page content end on. Any trailing inset the
+     menu bar adds would push it inwards and break that. */
+  padding-inline-end: 0;
 }
 
 .data-manager-menu .user-avatar {

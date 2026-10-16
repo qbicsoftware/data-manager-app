@@ -25,6 +25,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
  * also top-level navigation tabs; the avatar menu additionally keeps Settings for users
  * accustomed to reaching account settings from the avatar (GitHub-style), while collaborative
  * surfaces (My Groups) stay in their top-level hub.
+ *
+ * <p>The signed-in user's name sits before the avatar and is <em>not</em> part of the menu item, so
+ * only the avatar is interactive. Naming the user and opening a menu are two different things, and
+ * a label that opens a menu gives text an affordance it does not have.</p>
  */
 public class DataManagerMenu extends Div {
 
@@ -32,16 +36,24 @@ public class DataManagerMenu extends Div {
   UserAvatar userAvatar = new UserAvatar();
 
   public DataManagerMenu(AuthenticationContext authenticationContext) {
-    initializeUserSubMenuItems(Objects.requireNonNull(authenticationContext));
-    add(projectMenu);
-    projectMenu.addClassName("menubar");
-    addClassName("data-manager-menu");
-    projectMenu.addThemeVariants(MenuBarVariant.LUMO_TERTIARY_INLINE);
-  }
-
-  private void initializeUserSubMenuItems(AuthenticationContext authenticationContext) {
+    Objects.requireNonNull(authenticationContext);
     String fullName = initializeAvatar();
-    MenuItem userMenuItem = projectMenu.addItem(account(userAvatar, fullName));
+    addClassName("data-manager-menu");
+
+    // Name first, avatar second, so the avatar is the outermost item in the identity bar. The two
+    // are siblings: the name is a plain label, the avatar is the whole menu item.
+    if (!fullName.isBlank()) {
+      Span name = new Span(fullName);
+      name.addClassName("app-account-name");
+      add(name);
+    }
+
+    MenuItem userMenuItem = projectMenu.addItem(userAvatar);
+    // The avatar carries no text of its own, so it needs a name and a hint. The tooltip is the
+    // hint; the aria-label is the name, since "Open user menu" is what activating it does.
+    userMenuItem.getElement().setAttribute("title", "Open user menu");
+    userMenuItem.getElement().setAttribute("aria-label", "Open user menu");
+
     SubMenu userSubMenu = userMenuItem.getSubMenu();
     // Account settings stay reachable from the avatar for discoverability/familiarity
     // (GitHub keeps Settings in the user menu too), with the top-level Settings tab as the
@@ -49,6 +61,10 @@ public class DataManagerMenu extends Div {
     userSubMenu.addItem(settingsItem(),
         event -> getUI().ifPresent(ui -> ui.navigate(UserProfileMain.class)));
     userSubMenu.addItem(logoutItem(), event -> authenticationContext.logout());
+
+    projectMenu.addClassName("menubar");
+    projectMenu.addThemeVariants(MenuBarVariant.LUMO_TERTIARY_INLINE);
+    add(projectMenu);
   }
 
   private static Span settingsItem() {
@@ -71,21 +87,6 @@ public class DataManagerMenu extends Div {
     item.getStyle().set("align-items", "center");
     item.getStyle().set("gap", "var(--spacing-02)");
     return item;
-  }
-
-  /**
-   * The account control: the avatar with the user's name beside it, the way the prototype's
-   * identity bar presents the signed-in user. Activating it opens the account submenu.
-   */
-  private static Span account(UserAvatar avatar, String fullName) {
-    Span account = new Span(avatar);
-    if (!fullName.isBlank()) {
-      Span name = new Span(fullName);
-      name.addClassName("app-account-name");
-      account.add(name);
-    }
-    account.addClassName("app-account");
-    return account;
   }
 
   private String initializeAvatar() {
