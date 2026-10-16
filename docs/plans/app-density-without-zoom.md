@@ -97,18 +97,35 @@ short here — the theme's type is `rem`-driven except for a single `font-size: 
 app's own spacing tokens are already `rem` — which is what makes C low-risk for this codebase
 specifically, rather than merely tidier.
 
-### D. Adopt Lumo's compact preset — *try this first*
+C is the structural fix, and it is also the prerequisite for a design one. Once the zoom is gone and
+there is a single coordinate space, replacing the percentage with *chosen* `rem` values per token
+(0.875rem body rather than 90% of 1rem, 0.8125rem small rather than 0.7875rem) is a mechanical
+follow-up that states the intent outright. That refinement is B, done with `rem` values so it still
+composes with the user's font-size preference — and it is much easier to make once C has removed the
+second coordinate space. B is therefore the follow-up to C, not its alternative.
+
+### D. Adopt Lumo's compact preset — *not a replacement; see the numbers*
 
 Lumo ships one: `Lumo.COMPACT_STYLESHEET` (Vaadin ≥ 24,
 `vaadin-lumo-theme-*/META-INF/resources/lumo/presets/compact.css`), applied with `@StyleSheet`. The
 Vaadin docs describe it as reducing font sizes "and proportionally all Vaadin components".
 
-It is a *designed* density, not 90% of the current one — it sets `font-size-m` to `0.875rem` (87.5%)
-and changes the space ratios more aggressively (`space-m` → `0.625rem`, 62.5% of `1rem`). So it is
-denser than the zoom and will change the app's proportions.
+It is proportional in a different sense than the zoom is. Against what the app renders today:
 
-**Try it first because it is nearly free:** if its density is acceptable, the app stops carrying a
-custom scale entirely and options B and C become moot. Ten minutes against a screenshot.
+| family | compact | today (Lumo × 0.9) | delta |
+|---|---|---|---|
+| control heights `size-*` | 2 / 2.5 / 2.75rem | 2.25 / 2.75 / 3.5 × 0.9 | **within ±5%** |
+| body and small type `m`/`s`/`xs` | 14 / 13 / 12px | 14.4 / 12.6 / 11.7px | **within ±3%** |
+| display type `xl`/`xxl`/`xxxl` | 18 / 22 / 28px | 19.8 / 25.2 / 36px | −9% to −22% |
+| `space-m` / `space-s` | 10 / 5px | 14.4 / 7.2px | **−31%** |
+| `line-height-m` | 1.4 | 1.625 | −14% |
+
+So it keeps the controls and the reading text where they are, tightens the padding by a third, and
+shrinks the display sizes. That is a different *rhythm*, not the same design 10% smaller — the cards
+would get visibly tighter while the buttons stayed the same size.
+
+Worth ten minutes only if reconsidering the rhythm is on the table. It is not a drop-in for the
+density the app has, and spending a screenshot round to prove that would be wasteful.
 
 ## 4. The token set
 
@@ -181,10 +198,12 @@ the `px` literals, so a screenshot diff is a complete finding list rather than n
 
 ## 7. Order
 
-1. **Decide the density.** `--app-zoom: 0.9` was never chosen; it was inherited. Pick the intended
-   root size (or accept the compact preset). Everything below depends on this number.
+1. **Decide the density.** `--app-zoom: 0.9` was never chosen; it was inherited. Pick the number the
+   app should render at, and record it as a decision rather than a default. Everything below depends
+   on it.
 2. **Baseline capture** (§6.1).
-3. **Try the compact preset** on a throwaway branch (§3 D). If it fits, take it and skip to 7.
+3. **Consider the compact preset** only if reconsidering the rhythm is wanted (§3 D — it is not a
+   replacement for the current density). Otherwise skip to 4.
 4. **Set the root size** (§3 C) and restate the `px` geometry (§5) — these are one change, because
    the second is unreadable without the first.
 5. **Delete the zoom and its three supporting mechanisms.**
