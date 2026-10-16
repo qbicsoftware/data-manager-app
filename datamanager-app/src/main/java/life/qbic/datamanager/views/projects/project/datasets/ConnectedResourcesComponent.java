@@ -7,7 +7,7 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.H3;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.shared.Registration;
@@ -21,6 +21,7 @@ import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.DataSetTagFactory;
 import life.qbic.datamanager.views.general.DataSetTagFactory.TagType;
+import life.qbic.datamanager.views.general.EmptyState;
 import life.qbic.datamanager.views.general.section.ActionBar;
 import life.qbic.datamanager.views.general.section.Section;
 import life.qbic.datamanager.views.general.section.SectionContent;
@@ -33,8 +34,7 @@ import life.qbic.projectmanagement.application.associated_dataset.ConnectedDatas
 /**
  * <b>Connected Datasets Component</b>
  *
- * <p>Renders the "Datasets" section within the associated
- * datasets view. Contains:</p>
+ * <p>Renders the connected datasets band of the datasets page. Contains:</p>
  * <ul>
  *   <li>an action bar with a primary "Connect Datasets" button;</li>
  *   <li>a <b>rich row card list</b> of connected datasets, with high-priority
@@ -71,6 +71,7 @@ public class ConnectedResourcesComponent extends Div {
 
   private final AssociatedDatasetService associatedDatasetService;
   private final Section section;
+  private final SectionNote semanticsNote;
   private final Div cardsContainer;
   private final Button connectButton;
   private final Button syncAllButton;
@@ -79,9 +80,12 @@ public class ConnectedResourcesComponent extends Div {
 
   private boolean writeAllowed = false;
 
+  /** Whether the last refresh found nothing connected. Drives the action bar, see updateActions. */
+  private boolean empty = true;
+
   public ConnectedResourcesComponent(AssociatedDatasetService associatedDatasetService) {
     this.associatedDatasetService = associatedDatasetService;
-    addClassNames("padding-horizontal-07", "padding-vertical-04", "flex-vertical");
+    addClassNames("padding-vertical-04", "flex-vertical");
     addClassName("datasets-content");
 
     // ── Action bar (always visible) ──────────────────────────────────
@@ -98,10 +102,14 @@ public class ConnectedResourcesComponent extends Div {
     var actionBar = new ActionBar(connectButton, syncAllButton);
 
     var note = new SectionNote(
-        "External datasets connected to this project and its experiments. "
-            + "Click any DOI or access link to open the record on the source.");
+        "Datasets hosted elsewhere and linked here. \u201cConnected\u201d states only that the link "
+            + "exists: one can be an analysis result, a data management plan, a poster, a project "
+            + "report, or something else entirely.");
+    semanticsNote = note;
+    // Medium: this is a band of the Datasets page now, not the page heading. The page itself
+    // titles at LARGE, above both halves.
     var header = new SectionHeader(
-        new SectionTitle("All datasets"),
+        new SectionTitle("Connected datasets", SectionTitle.Size.MEDIUM),
         actionBar,
         note
     );
@@ -132,7 +140,19 @@ public class ConnectedResourcesComponent extends Div {
   /** Controls whether the "Remove" button is rendered on each card. */
   public void setWriteAllowed(boolean writeAllowed) {
     this.writeAllowed = writeAllowed;
-    syncAllButton.setVisible(writeAllowed);
+    updateActions();
+  }
+
+  /**
+   * What the band offers, given whether it has anything to act on.
+   *
+   * <p>With nothing connected there is nothing to sync and nothing to manage, and the empty state
+   * below carries the one call to action. Showing "Connect Datasets" here as well would be the same
+   * invitation twice, a few hundred pixels apart.</p>
+   */
+  private void updateActions() {
+    connectButton.setVisible(!empty);
+    syncAllButton.setVisible(writeAllowed && !empty);
   }
 
   /** Reloads connected datasets and re-renders the content area. */
@@ -146,6 +166,13 @@ public class ConnectedResourcesComponent extends Div {
 
     List<ConnectedDatasetView> datasets = associatedDatasetService.listConnectedDatasetViews(
         context.projectId().orElseThrow());
+
+    empty = datasets.isEmpty();
+    updateActions();
+    // The note explains what "connected" means. With nothing connected there is no list for it to
+    // be about, and the empty state below is already explaining the feature; showing both put two
+    // overlapping explanations above an empty region.
+    semanticsNote.setVisible(!empty);
 
     cardsContainer.removeAll();
     if (datasets.isEmpty()) {
@@ -206,38 +233,14 @@ public class ConnectedResourcesComponent extends Div {
 
   // ── Empty state ─────────────────────────────────────────────────────
 
-  private Div buildEmptyState() {
-    var wrapper = new Div();
-    wrapper.addClassNames("flex-vertical", "items-center");
-    wrapper.getStyle().set("padding", "var(--lumo-space-xl) 0");
-    wrapper.getStyle().set("text-align", "center");
-
-    var icon = VaadinIcon.DATABASE.create();
-    icon.getStyle().set("font-size", "64px");
-    icon.getStyle().set("color", "var(--lumo-contrast-30pct)");
-    icon.getStyle().set("margin-bottom", "var(--lumo-space-m)");
-    wrapper.add(icon);
-
-    var heading = new H3("No datasets connected");
-    heading.getStyle().set("margin", "0 0 var(--lumo-space-s) 0");
-    wrapper.add(heading);
-
-    var explanation = new Span(
-        "Connect open datasets from InvenioRDM repositories (Zenodo, FDAT) "
-            + "to this project so that you and your collaborators can keep "
-            + "an overview of all associated data in one place.");
-    explanation.addClassName("normal-body-text");
-    explanation.addClassName("color-secondary");
-    explanation.getStyle().set("max-width", "480px");
-    explanation.getStyle().set("margin-bottom", "var(--lumo-space-m)");
-    wrapper.add(explanation);
-
-    var cta = new Button("Connect Datasets", VaadinIcon.PLUS_CIRCLE.create());
-    cta.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    cta.addClickListener(e -> fireConnectDatasetsClick());
-    wrapper.add(cta);
-
-    return wrapper;
+  private Component buildEmptyState() {
+    var emptyState = new EmptyState(VaadinIcon.DATABASE, "No datasets connected",
+        "Connect open datasets from InvenioRDM repositories (Zenodo, FDAT) to this project, so "
+            + "that you and your collaborators can keep an overview of all associated data in "
+            + "one place.",
+        "Connect Datasets");
+    emptyState.addActionListener(event -> fireConnectDatasetsClick());
+    return emptyState;
   }
 
   // ─ Card builder ────────────────────────────────────────────────────

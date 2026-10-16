@@ -1,0 +1,221 @@
+/* Experiments section of the project page — the prototype's experiment entries with their
+   Samples / Dataset snapshot panels. */
+
+.project-experiments-section {
+  display: block;
+  width: 100%;
+  padding-top: var(--lumo-space-l);
+  margin-bottom: var(--lumo-space-l);
+  border-top: 1px solid var(--lumo-contrast-10pct);
+}
+
+.project-experiments-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--lumo-space-s);
+}
+
+.project-experiments-heading {
+  font-size: var(--lumo-font-size-l);
+  font-weight: 600;
+  color: var(--lumo-header-text-color);
+}
+
+.project-experiments-message {
+  color: var(--lumo-secondary-text-color);
+}
+
+.project-experiments-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-l);
+}
+
+/* ── Experiment entry ─────────────────────────────────────────────────── */
+
+.project-experiment-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+  padding: var(--lumo-space-m);
+  border: 1px solid var(--lumo-contrast-10pct);
+  border-radius: var(--lumo-border-radius-m);
+}
+
+.project-exp-identity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--lumo-space-s);
+}
+
+.project-exp-name {
+  font-weight: 600;
+  font-size: var(--lumo-font-size-l);
+  color: var(--lumo-header-text-color);
+}
+
+.project-exp-facets {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--lumo-space-xs);
+}
+
+.project-exp-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--lumo-space-s);
+  border-radius: 999px;
+  font-size: var(--lumo-font-size-xs);
+}
+
+.project-exp-chip--domain {
+  background-color: var(--lumo-contrast-5pct);
+  color: var(--lumo-secondary-text-color);
+}
+
+/* ── Snapshot panels ──────────────────────────────────────────────────── */
+
+.project-exp-snapshot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lumo-space-m);
+}
+
+.project-exp-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-xs);
+  /* Shares the card threshold with the dataset cards, so the two halves of the page break together
+     rather than at 656px and 592px. min-width is 0, not a hard floor: the flex basis already
+     decides when to wrap, and a fixed floor would push the card off-screen on a phone. */
+  flex: 1 1 var(--card-readable-width);
+  min-width: 0;
+  padding: var(--lumo-space-m);
+  border: 1px solid var(--lumo-contrast-10pct);
+  border-radius: var(--lumo-border-radius-m);
+  cursor: pointer;
+}
+
+.project-exp-panel:hover,
+.project-exp-panel:focus-visible {
+  background-color: var(--lumo-contrast-5pct);
+  outline: none;
+}
+
+.project-exp-panel-head {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+}
+
+/* Reads the panel as "the samples panel" / "the dataset panel" before the words are parsed.
+   Decorative only -- the label beside it carries the meaning, so it is aria-hidden. */
+.project-exp-panel-icon {
+  flex: 0 0 auto;
+  color: var(--lumo-secondary-text-color);
+}
+
+.project-exp-panel-label {
+  font-weight: 600;
+  color: var(--lumo-header-text-color);
+}
+
+.project-exp-panel-state {
+  padding: 1px var(--lumo-space-s);
+  border-radius: 999px;
+  font-size: var(--lumo-font-size-xs);
+  background-color: var(--lumo-contrast-10pct);
+  color: var(--lumo-secondary-text-color);
+}
+
+.project-exp-panel-state--done {
+  background-color: var(--lumo-success-color-10pct, var(--lumo-contrast-10pct));
+  color: var(--lumo-success-text-color, var(--lumo-secondary-text-color));
+}
+
+.project-exp-panel-state--attention {
+  background-color: var(--attention-surface, var(--lumo-contrast-10pct));
+  color: var(--lumo-warning-text-color, var(--lumo-error-text-color));
+}
+
+.project-exp-panel-state--active {
+  background-color: var(--lumo-primary-color-10pct, var(--lumo-contrast-10pct));
+  color: var(--lumo-primary-text-color);
+}
+
+.project-exp-panel-state--locked {
+  background-color: var(--lumo-contrast-5pct);
+  color: var(--lumo-secondary-text-color);
+}
+
+.project-exp-panel-open {
+  margin-left: auto;
+  font-size: var(--lumo-font-size-s);
+  color: var(--lumo-primary-text-color);
+}
+
+.project-exp-panel-metric {
+  display: flex;
+  align-items: baseline;
+  gap: var(--lumo-space-xs);
+}
+
+.project-exp-panel-value {
+  font-size: var(--lumo-font-size-xl);
+  font-weight: 600;
+  color: var(--lumo-header-text-color);
+}
+
+.project-exp-panel-unit {
+  font-size: var(--lumo-font-size-s);
+  color: var(--lumo-secondary-text-color);
+}
+
+.project-exp-panel-status {
+  font-size: var(--lumo-font-size-s);
+  color: var(--lumo-secondary-text-color);
+}
+
+.project-exp-panel-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.project-exp-panel-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) max-content;
+  gap: var(--lumo-space-s);
+  font-size: var(--lumo-font-size-s);
+}
+
+.project-exp-panel-cell-header {
+  font-size: var(--lumo-font-size-xs);
+  font-weight: 600;
+  color: var(--lumo-secondary-text-color);
+}
+
+/* ── Onboarding hero (no experiment yet) ──────────────────────────────── */
+
+.project-experiments-onboarding {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--lumo-space-s);
+  padding: var(--lumo-space-m);
+  border: 1px dashed var(--lumo-contrast-20pct);
+  border-radius: var(--lumo-border-radius-m);
+}
+
+.project-experiments-onboarding-title {
+  font-size: var(--lumo-font-size-l);
+  font-weight: 600;
+  color: var(--lumo-header-text-color);
+}
+
+.project-experiments-onboarding-text {
+  color: var(--lumo-secondary-text-color);
+}

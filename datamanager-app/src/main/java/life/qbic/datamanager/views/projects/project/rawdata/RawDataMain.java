@@ -23,7 +23,7 @@ import life.qbic.datamanager.views.account.PersonalAccessTokenMain;
 import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
-import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
+import life.qbic.datamanager.views.projects.project.ProjectMainLayout;
 import life.qbic.datamanager.views.projects.project.rawdata.pagination.RawDataListState;
 import life.qbic.datamanager.views.projects.project.rawdata.pagination.RawDataListStateCodec;
 import life.qbic.logging.api.Logger;
@@ -51,7 +51,7 @@ import org.springframework.beans.factory.annotation.Value;
 
 @SpringComponent
 @UIScope
-@Route(value = "projects/:projectId?/experiments/:experimentId?/rawdata", layout = ExperimentMainLayout.class)
+@Route(value = "projects/:projectId?/experiments/:experimentId?/rawdata", layout = ProjectMainLayout.class)
 @PermitAll
 public class RawDataMain extends Main implements BeforeEnterObserver, BeforeLeaveObserver {
 

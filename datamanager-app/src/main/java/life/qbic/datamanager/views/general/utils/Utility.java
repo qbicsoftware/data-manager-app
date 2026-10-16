@@ -1,7 +1,10 @@
 package life.qbic.datamanager.views.general.utils;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
 import life.qbic.datamanager.views.general.contact.Contact;
 import life.qbic.projectmanagement.application.authorization.QbicOidcUser;
@@ -27,6 +30,72 @@ public class Utility {
     int maxLength = textArea.getMaxLength();
     int consumedLength = textArea.getValue().length();
     textArea.setHelperText(consumedLength + "/" + maxLength);
+  }
+
+  /**
+   * Size in the unit that keeps the number readable. Decimal units, matching the rest of the app.
+   *
+   * <p>This is only the unit ladder. Whether {@code 0} means "nothing" or "not recorded" is a
+   * reader's question, not a formatter's, so the zero policy stays with the caller: a measurement
+   * carrying data whose size the sync never recorded is indistinguishable from empty data in the
+   * read model (migration trap 4d), and rendering that as "0 B" is the documented failure.</p>
+   */
+  public static String humanReadableSize(long bytes) {
+    if (bytes < 1_000) {
+      return bytes + " B";
+    }
+    if (bytes < 1_000_000) {
+      return "%.1f kB".formatted(bytes / 1_000.0);
+    }
+    if (bytes < 1_000_000_000) {
+      return "%.1f MB".formatted(bytes / 1_000_000.0);
+    }
+    return "%.1f GB".formatted(bytes / 1_000_000_000.0);
+  }
+
+  /**
+   * Makes a plain element operable by pointer and by Enter/Space, so every clickable surface in
+   * the app is keyboard-operable the same way. The caller owns the cursor and hover styling.
+   *
+   * @param element the element to make interactive
+   * @param role    the ARIA role to expose, e.g. {@code "button"} for an action and {@code "link"}
+   *                for a navigation target
+   * @param action  what activation does
+   */
+  public static void activateOnClickAndKeys(Component element, String role, Runnable action) {
+    element.getElement().setAttribute("role", role);
+    element.getElement().setAttribute("tabindex", "0");
+    element.getElement().addEventListener("click", event -> action.run());
+    element.getElement().addEventListener("keydown", event -> {
+      String key = event.getEventData().path("event.key").asText("");
+      if ("Enter".equals(key) || " ".equals(key)) {
+        action.run();
+      }
+    }).addEventData("event.key");
+  }
+
+  /**
+   * How long ago something happened, at the coarsest resolution that still says something useful:
+   * hours while it is under a day, days after that.
+   *
+   * <p>Shared rather than per view, because two surfaces on one page describing recency by
+   * different rules is exactly the kind of inconsistency a reader notices without being able to
+   * name it.</p>
+   */
+  public static String relativeTime(Instant instant) {
+    if (instant == null) {
+      return "unknown";
+    }
+    Duration since = Duration.between(instant, Instant.now());
+    if (since.toHours() < 1) {
+      return "just now";
+    }
+    if (since.toDays() < 1) {
+      long hours = since.toHours();
+      return hours + (hours == 1 ? " hour ago" : " hours ago");
+    }
+    long days = since.toDays();
+    return days + (days == 1 ? " day ago" : " days ago");
   }
 
   public static Optional<Contact> tryToLoadFromPrincipal() {

@@ -12,9 +12,21 @@
   gap: var(--spacing-03);
 }
 
+/* Inside a capped shell the shell owns the horizontal gutter (see variables.css,
+   --content-shell-gutter), so a page area adds none of its own -- otherwise its bands sit one
+   inset further in than the chrome above them. Both selectors are needed: the summary is a
+   page area inside the shell, the settings page is the shell itself. */
+.main.project > .page-area,
+.main.project.page-area {
+  padding-inline: 0;
+}
+
+/* Page titles inside a PageArea. Same treatment as .main .title and .section-title: this is the
+   page heading, not supporting text, so it takes --heading-text-color rather than the muted grey
+   it used to share with captions. */
 .page-area .title {
   font-weight: bold;
-  color: var(--lumo-secondary-text-color);
+  color: var(--heading-text-color);
   font-size: var(--lumo-font-size-xxl);
   margin-bottom: 0.5rem;
 }
@@ -422,7 +434,7 @@
 }
 
 .created-token__value {
-  font-family: monospace;
+  font-family: var(--font-family-monospace);
   font-size: var(--lumo-font-size-m);
   word-break: break-all;
   flex: 1;
@@ -467,7 +479,7 @@
    Below the breakpoint the grid collapses and the composer (first in the DOM) sits on top. */
 .project-access-component .access-body {
   display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(360px, 520px);
+  grid-template-columns: minmax(0, 2fr) minmax(22.5rem, 32.5rem);
   align-items: start;
   gap: var(--lumo-space-l);
   min-width: 0;
@@ -1437,12 +1449,12 @@ a.pinned-project-card-body:hover {
 /* Profile styles moved to settings.css */
 
 /*
- * Datasets view: Connected Resources section.
- * Placed into the `datasets-content` grid area defined in grid-templates.css
- * for `.main.project.datasets`, which spans the full available width.
+ * Datasets view: the connected resources band.
+ * No grid area any more: the page stacks its bands in document order (see
+ * grid-templates.css .main.project.datasets), so this class is now only a hook.
  */
 .datasets-content {
-  grid-area: datasets-content;
+  display: block;
 }
 
 /*

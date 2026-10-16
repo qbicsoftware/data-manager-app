@@ -6,8 +6,7 @@
   justify-content: space-between;
   border: 1px solid var(--lumo-contrast-20pct);
   column-gap: var(--lumo-space-l);
-  font-family: "Source Code Pro for Powerline", monospace;
-
+  font-family: var(--font-family-monospace);
 }
 
 .experiment-list-item {
@@ -220,12 +219,19 @@ span.inline {
   color: #007A7A;
 }
 
-/* Project code badge — monospace identifier rendered next to a project title.
- * Subtle enough not to compete with measurement tags, but visually distinct
- * from normal text so users learn to scan for it as a code (same convention
- * as GitHub issue keys, Jira IDs, GitLab commit hashes). */
+/* The app's identifier treatment, shared by project codes, sample IDs and measurement codes.
+ * Monospace holds digits and the easily-confused glyphs (0/O, 1/l) in the same shape from one
+ * record to the next, which is what lets a reader scan a column of codes instead of reading
+ * each one. Same convention as GitHub issue keys, Jira IDs and GitLab commit hashes. */
+.identifier {
+  font-family: var(--font-family-monospace);
+  letter-spacing: 0.01em;
+}
+
+/* Project code badge — the identifier treatment plus a chip, for lists where the code has to
+ * stand out of running text rather than sit in a column of its own. */
 .project-code-badge {
-  font-family: var(--lumo-font-family-monospace, "Source Code Pro for Powerline", monospace);
+  font-family: var(--font-family-monospace);
   font-size: var(--lumo-font-size-xs);
   font-weight: 500;
   padding: 0.15em 0.4em;

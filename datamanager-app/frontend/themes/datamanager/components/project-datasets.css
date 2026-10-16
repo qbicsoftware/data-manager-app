@@ -1,0 +1,224 @@
+/*****************************************
+
+Project Datasets page — projects/:projectId/datasets
+
+The page is the umbrella for both halves of a project's datasets: its own primary datasets (the
+measurement data of its experiments, read from the experiment progress view) and the datasets
+connected to it. The two bands are siblings of equal weight — see .project-datasets-primary and
+.datasets-content — so neither may look like a sub-part of the other.
+
+The list is a plain grid, not a Vaadin grid: it is short (one row per experiment and assay type),
+it needs no paging, filtering or selection, and it is read-only.
+
+*****************************************/
+
+/* --- Vertical rhythm ---
+
+   Three relationships, named, because they are not the same distance:
+
+     page title  "Datasets"
+         |  A  the title introduces the first band
+     band title  "Primary datasets"
+         |  B  a title is closest to its own content
+     [ the band's content ]
+         |  C  the two bands are separate things
+     band title  "Connected datasets"
+         |  B
+     [ the band's content ]
+
+   A uniform grid row gap was doing all three, which made the page title look like the first of three
+   equal bands and pushed it 113px away from the band it introduces. A and C differ for that reason;
+   B is the tightest because a title belongs to what follows it.
+
+   Two other things used to add to this page's spacing and are switched off: Section adds a 36px
+   trailing margin to itself (right for unrelated blocks, wrong here), and the page band's header
+   kept its trailing margin even though that band has no content to separate itself from. */
+
+.main.project.datasets {
+  row-gap: 0;
+  /* Breathing room before the footer, which the page used to leave to whatever the last band's
+     empty state happened to pad itself with. */
+  padding-bottom: var(--spacing-06);
+}
+
+.main.project.datasets .section {
+  margin-bottom: 0;
+}
+
+/* B: a band title to its own content. */
+.main.project.datasets .section-header {
+  margin-bottom: var(--spacing-04);
+}
+
+/* The page band holds nothing but its title, so its header's trailing margin separated it from
+   nothing. Scoped through .main.project.datasets to outrank the band rule above, which it would
+   otherwise tie with and lose to. */
+.main.project.datasets .project-datasets-page-head .section-header {
+  margin-bottom: 0;
+}
+
+/* The empty state is the app's shared component and centres itself in a 40rem card. Centred under
+   a left-aligned band title it opened a second left edge 325px to the right of the first -- and the
+   band titles, the page title and the announcement all share one. Bounded, but on that edge. */
+.main.project.datasets .empty-state {
+  margin-inline: 0;
+  max-width: 44rem;
+}
+
+/* --- The page band. The horizontal inset belongs to the shell (see variables.css,
+       --content-shell-gutter), so a band never sets its own; that is what put the heading, the
+       primary datasets and the connected datasets on three different left edges. --- */
+
+.project-datasets-page-head {
+  padding: var(--spacing-05) 0 0 0;
+}
+
+/* --- The primary datasets band --- */
+
+.project-datasets-primary {
+  /* A: the page title to the first band it introduces. */
+  margin-top: var(--spacing-05);
+  padding: 0;
+}
+
+/* C: band to band, the loosest of the three so the bands read as separate. */
+.main.project.datasets .datasets-content {
+  margin-top: var(--spacing-07);
+}
+
+.project-datasets-primary-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-04);
+}
+
+/* --- The headline figures --- */
+
+.project-datasets-rollup {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: var(--spacing-03);
+}
+
+.project-datasets-stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-01);
+  padding: var(--spacing-03) var(--spacing-04);
+  border: 1px solid var(--border-color-light);
+  border-radius: 10px;
+  background: var(--shade-color-5pct);
+}
+
+.project-datasets-stat-value {
+  font-size: var(--lumo-font-size-xl);
+  font-weight: var(--font-weight-bold);
+  line-height: 1;
+  color: var(--heading-text-color);
+  font-variant-numeric: tabular-nums;
+}
+
+.project-datasets-stat-label {
+  font-size: var(--lumo-font-size-xs);
+  color: var(--secondary-text-color);
+}
+
+/* --- One row per primary dataset --- */
+
+.project-datasets-table {
+  border: 1px solid var(--border-color-light);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+/* Columns size by weight rather than equally: the experiment name is the longest value in the
+   list and the figures are all short, so equal columns would spend most of the width on numbers.
+   minmax(0, …) lets a long experiment name ellipsize instead of widening the page. */
+.project-datasets-table-row {
+  display: grid;
+  grid-template-columns: minmax(0, 2.5fr) minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, 1fr)
+      minmax(0, 1fr) minmax(0, 1fr);
+  border-top: 1px solid var(--border-color-light);
+}
+
+.project-datasets-table-row:first-child {
+  border-top: 0;
+}
+
+.project-datasets-table-row--head .project-datasets-cell {
+  font-size: var(--lumo-font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--secondary-text-color);
+}
+
+.project-datasets-table-row--head {
+  background: var(--shade-color-5pct);
+}
+
+.project-datasets-table-row--clickable {
+  cursor: pointer;
+}
+
+.project-datasets-table-row--clickable:hover {
+  background: var(--shade-color-5pct);
+}
+
+.project-datasets-table-row--clickable:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: -2px;
+}
+
+.project-datasets-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-02);
+  min-width: 0;
+  padding: var(--spacing-03);
+  font-size: var(--lumo-font-size-s);
+  color: var(--body-text-color);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A figure that is not a figure. Muted and italic, the same treatment the project details band
+   gives a fact that was never recorded. */
+.project-datasets-cell--missing {
+  color: var(--secondary-text-color);
+  font-style: italic;
+}
+
+/* Coverage state as a pill: two states that have to be told apart while scanning one column. */
+.project-datasets-state {
+  padding: 0.1rem var(--spacing-03);
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: var(--lumo-font-size-xs);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+}
+
+.project-datasets-state--done {
+  color: var(--success-text-color);
+  background: hsla(145, 85%, 25%, 0.08);
+  border-color: hsla(145, 85%, 25%, 0.25);
+}
+
+.project-datasets-state--attention {
+  color: var(--warning-text-color);
+  background: var(--attention-surface);
+  border-color: var(--attention-border);
+}
+
+/* --- Notes, messages and the empty state --- */
+
+.project-datasets-note {
+  font-size: var(--lumo-font-size-s);
+  line-height: 1.5;
+  color: var(--secondary-text-color);
+}
+
+.project-datasets-message {
+  font-size: var(--lumo-font-size-s);
+  color: var(--secondary-text-color);
+}
