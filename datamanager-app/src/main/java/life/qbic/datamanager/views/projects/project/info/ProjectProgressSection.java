@@ -257,35 +257,41 @@ public class ProjectProgressSection extends Div {
   }
 
   /**
-   * Primary data, as analysis sees it: how completely it covers the registered measurements, and
-   * how much of it there is per assay type.
+   * Primary data, as analysis sees it: how much of it there is, and where it sits.
    *
-   * <p>Coverage leads because it is the part a reader can act on -- "8 of 272" is a to-do list,
-   * whereas a byte total is trivia. Volume is then split per assay type rather than summed into
-   * one number, because a project total hides whether the mass sits in one modality or is spread
-   * across all three. The file count that used to sit here is gone: it is not comparable across
-   * assay types, it cannot be acted on, and pairing it with a byte total only invites the reader
-   * to divide the two (see the migration's trap 4c).</p>
+   * <p>This card answers "what data exists": a total, then where it sits per assay type. It
+   * deliberately does NOT state coverage. "8 of 284 measurements" is a project-grain number that
+   * hides which experiment is behind -- the question a reader actually has -- and it is already
+   * answered at the right grain by the attention card and the experiment snapshot panels. The
+   * file count that used to sit here is gone: it is not comparable across assay types, it cannot
+   * be acted on, and pairing it with a byte total only invites the reader to divide the two (see
+   * the migration's trap 4c).</p>
    */
   private static Div primaryDataCard(List<ExperimentProgress> progress) {
     Div card = new Div();
     card.addClassName("project-progress-datasets-card");
     card.add(cardTitle("Primary data — for analysis"));
-    card.add(cardFact(coverage(progress)));
-    card.add(cardFact(volumeByAssayType(progress)));
+    List<AssayType> present = assayTypesWithPrimaryData(progress);
+    card.add(cardFact(totalVolume(progress, present)));
+    if (!present.isEmpty()) {
+      card.add(cardFact(volumeByAssayType(present)));
+    }
     return card;
   }
 
-  private static String coverage(List<ExperimentProgress> progress) {
-    int measurements = progress.stream().mapToInt(ExperimentProgress::measurementCount).sum();
-    if (measurements == 0) {
-      return "No measurements registered yet";
+  /**
+   * The headline volume.
+   *
+   * <p>"Size not recorded" is a different statement from "0 B". A real project holds measurements
+   * carrying primary data whose sizes the sync never recorded, and the read model cannot tell
+   * that apart from empty data (migration trap 4d), so the card must not claim 0.</p>
+   */
+  private static String totalVolume(List<ExperimentProgress> progress, List<AssayType> present) {
+    if (present.isEmpty()) {
+      return "No primary data attached yet";
     }
-    int withData = progress.stream()
-        .mapToInt(ExperimentProgress::measurementsWithPrimaryData).sum();
-    return "%d of %s %s primary data".formatted(withData,
-        pluralise(measurements, "measurement", "measurements"),
-        withData == 1 ? "has" : "have");
+    long bytes = progress.stream().mapToLong(ExperimentProgress::primaryDataBytes).sum();
+    return bytes > 0 ? humanReadableSize(bytes) + " in total" : "Size not recorded";
   }
 
   private record AssayType(String label, int measurementsWithData, long bytes) {
@@ -311,24 +317,18 @@ public class ProjectProgressSection extends Div {
   }
 
   /**
-   * The volume, per assay type.
+   * Where the volume sits, per assay type.
    *
-   * <p>A type whose size was never recorded shows "—", not "0 B": those are different claims,
-   * and a real project reports 0 bytes for every measurement it holds. When no size was recorded
-   * anywhere, the types are still named but the gap is stated once, since a row of dashes is
-   * noise rather than information.</p>
+   * <p>A type whose size was never recorded is named without a figure when nothing was measured,
+   * or as "—" when its siblings were: the headline already states the gap, so a dash per type
+   * would only repeat it, but a bare name beside figures would read as a zero.</p>
    */
-  private static String volumeByAssayType(List<ExperimentProgress> progress) {
-    List<AssayType> present = assayTypesWithPrimaryData(progress);
-    if (present.isEmpty()) {
-      return "No primary data attached yet";
-    }
-    if (present.stream().allMatch(type -> type.bytes() == 0)) {
-      return String.join(" · ", present.stream().map(AssayType::label).toList())
-          + " — size not recorded";
-    }
+  private static String volumeByAssayType(List<AssayType> present) {
+    boolean anyRecorded = present.stream().anyMatch(type -> type.bytes() > 0);
     return String.join(" · ", present.stream()
-        .map(type -> type.label() + " " + humanReadableSize(type.bytes()))
+        .map(type -> anyRecorded
+            ? type.label() + " " + humanReadableSize(type.bytes())
+            : type.label())
         .toList());
   }
 
