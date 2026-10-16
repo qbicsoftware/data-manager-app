@@ -12,6 +12,15 @@
   gap: var(--spacing-03);
 }
 
+/* Inside a capped shell the shell owns the horizontal gutter (see variables.css,
+   --content-shell-gutter), so a page area adds none of its own -- otherwise its bands sit one
+   inset further in than the chrome above them. Both selectors are needed: the summary is a
+   page area inside the shell, the settings page is the shell itself. */
+.main.project > .page-area,
+.main.project.page-area {
+  padding-inline: 0;
+}
+
 /* Page titles inside a PageArea. Same treatment as .main .title and .section-title: this is the
    page heading, not supporting text, so it takes --heading-text-color rather than the muted grey
    it used to share with captions. */

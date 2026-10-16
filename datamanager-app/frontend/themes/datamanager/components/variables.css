@@ -126,6 +126,16 @@ First some general property definitions
      (grid-templates.css .main.project-overview). */
   --content-shell-max-width: 1400px;
 
+  /* The horizontal inset of that shell, on every surface that carries it: the chrome's two rows,
+     the footer, and the capped page shells. One value, because four used to coexist on the same
+     vertical axis -- 1rem in the header, 1.5rem on the project pages, 2rem in the footer, 2.5rem
+     on the datasets page -- so the page content never lined up with the navigation row above it
+     and there was no vertical anchor down the left edge.
+
+     The shell owns the gutter, and the bands inside it add none. A band that sets its own inline
+     padding is how those four values came to exist. */
+  --content-shell-gutter: var(--lumo-space-m);
+
   /* The width below which a card in a side-by-side pair stops being readable and should take a row
      of its own. Used as the flex basis of the project page's card grids so they all break at the
      same point: the datasets cards used 18rem and the experiment panels 20rem, which stacked at

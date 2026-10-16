@@ -80,7 +80,7 @@ public class ConnectedResourcesComponent extends Div {
 
   public ConnectedResourcesComponent(AssociatedDatasetService associatedDatasetService) {
     this.associatedDatasetService = associatedDatasetService;
-    addClassNames("padding-horizontal-07", "padding-vertical-04", "flex-vertical");
+    addClassNames("padding-vertical-04", "flex-vertical");
     addClassName("datasets-content");
 
     // ── Action bar (always visible) ──────────────────────────────────

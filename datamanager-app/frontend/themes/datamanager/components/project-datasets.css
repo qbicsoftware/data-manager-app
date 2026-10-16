@@ -12,17 +12,18 @@ it needs no paging, filtering or selection, and it is read-only.
 
 *****************************************/
 
-/* --- The page band. The connected band brings its own padding, so the heading and the primary
-       datasets band carry the same horizontal measure and the three line up. --- */
+/* --- The page band. The horizontal inset belongs to the shell (see variables.css,
+       --content-shell-gutter), so a band never sets its own; that is what put the heading, the
+       primary datasets and the connected datasets on three different left edges. --- */
 
 .project-datasets-page-head {
-  padding: var(--spacing-05) var(--spacing-07) 0 var(--spacing-07);
+  padding: var(--spacing-05) 0 0 0;
 }
 
 /* --- The primary datasets band --- */
 
 .project-datasets-primary {
-  padding: 0 var(--spacing-07) var(--spacing-05) var(--spacing-07);
+  padding: 0 0 var(--spacing-05) 0;
 }
 
 .project-datasets-primary-body {

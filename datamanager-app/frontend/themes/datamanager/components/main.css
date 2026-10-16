@@ -240,7 +240,9 @@ vaadin-app-layout:not([drawer-opened])::part(drawer) {
    only on narrow screens, so the welcome text keeps the grid row above the
    project collection as small as possible (the freed space goes to the grid). */
 .main.project-overview .title-and-description {
-  padding: var(--spacing-03) var(--lumo-space-m);
+  /* The horizontal inset now comes from the shell (grid-templates.css .main.project-overview),
+     so the welcome row starts on the same vertical anchor as the project collection below it. */
+  padding: var(--spacing-03) 0;
   flex-direction: row;
   flex-wrap: wrap;
   align-items: baseline;
@@ -263,7 +265,7 @@ vaadin-app-layout:not([drawer-opened])::part(drawer) {
 .main.project-overview .title-and-description.detailed-welcome {
   flex-direction: column;
   align-items: flex-start;
-  padding: var(--lumo-space-m);
+  padding: var(--lumo-space-m) 0;
 }
 
 .main.project-overview .title-and-description.detailed-welcome .project-overview-title {

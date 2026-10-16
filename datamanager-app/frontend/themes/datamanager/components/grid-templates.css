@@ -16,6 +16,8 @@
   margin-left: auto;
   margin-right: auto;
   width: 100%;
+  box-sizing: border-box;
+  padding-inline: var(--content-shell-gutter);
 }
 
 /* The access page is centered and capped so the two-column roster does not stretch
@@ -27,6 +29,8 @@
   margin-left: auto;
   margin-right: auto;
   width: 100%;
+  box-sizing: border-box;
+  padding-inline: var(--content-shell-gutter);
 }
 
 /* Grid items default to min-width:auto; allow the page content to shrink so long content
@@ -75,6 +79,11 @@
   margin-left: auto;
   margin-right: auto;
   width: 100%;
+  box-sizing: border-box;
+  /* The shell owns the horizontal gutter; the bands inside it add none. That is what makes the
+     content line up with the chrome's two rows, which are capped at the same width with the same
+     inset -- see the Content shell block in variables.css. */
+  padding-inline: var(--content-shell-gutter);
 }
 
 /*
