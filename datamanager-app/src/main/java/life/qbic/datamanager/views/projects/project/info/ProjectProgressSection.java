@@ -358,29 +358,54 @@ public class ProjectProgressSection extends Div {
   private static Div connectedAssetsCard(List<ConnectedDatasetView> connected) {
     Div card = new Div();
     card.addClassName("project-progress-datasets-card");
-    int count = connected.size();
-    card.add(cardTitle("Connected assets — " + count + ", hosted elsewhere"));
     if (connected.isEmpty()) {
+      card.add(cardTitle("Connected assets — none, hosted elsewhere"));
       card.add(cardFact("None linked yet"));
       return card;
     }
-    connected.stream().limit(3).forEach(asset -> card.add(connectedAssetRow(asset)));
+    // A project's assets almost always come from one repository, so naming it on every row repeats
+    // the same word three times beside the fields that actually differ. When they agree it moves
+    // into the card title; when they do not, each row keeps its own.
+    String sharedProvider = sharedProvider(connected);
+    card.add(cardTitle(sharedProvider == null
+        ? "Connected assets — %d, hosted elsewhere".formatted(connected.size())
+        : "Connected assets — %d from %s".formatted(connected.size(), sharedProvider)));
+
+    boolean perRowProvider = sharedProvider == null;
+    connected.stream().limit(3)
+        .forEach(asset -> card.add(connectedAssetRow(asset, perRowProvider)));
     return card;
   }
 
   /**
-   * One connected asset: what kind it is, its name, and where it is hosted.
+   * The provider every connected asset agrees on, or null when they disagree or it is unknown.
+   *
+   * <p>Read from the whole list rather than the three rows on show: the card title describes the
+   * project's assets, not the excerpt below it. Assets with no provider at all count as a
+   * disagreement, so nothing is claimed that the data does not support.</p>
+   */
+  private static String sharedProvider(List<ConnectedDatasetView> connected) {
+    List<String> providers = connected.stream()
+        .map(ConnectedDatasetView::resourceProvider)
+        .filter(provider -> provider != null && !provider.isBlank())
+        .distinct()
+        .toList();
+    return providers.size() == 1 ? providers.getFirst() : null;
+  }
+
+  /**
+   * One connected asset: what kind it is, its name, and -- when they differ -- where it is hosted.
    *
    * <p>The name is clamped, because a repository title runs to a full sentence, but it is clamped
    * on its own. Appending the provider to it put the two in one string, so the ellipsis ate the
    * provider first -- the single field that makes the three rows comparable -- and left the card
-   * reading as an undifferentiated block of text.</p>
+   * reading as an undifferentiated block of text. The full title stays in the tooltip.</p>
    *
    * <p>The kind is the repository's own vocabulary term (InvenioRDM resource types), not a label
    * invented here, and it is rendered with the same tag the connected-datasets page uses so that
    * "Dataset" or "Software" reads identically in both places.</p>
    */
-  private static Div connectedAssetRow(ConnectedDatasetView asset) {
+  private static Div connectedAssetRow(ConnectedDatasetView asset, boolean showProvider) {
     Div row = new Div();
     row.addClassName("project-progress-connected-asset");
 
@@ -395,7 +420,7 @@ public class ProjectProgressSection extends Div {
     row.add(title);
 
     String provider = asset.resourceProvider();
-    if (provider != null && !provider.isBlank()) {
+    if (showProvider && provider != null && !provider.isBlank()) {
       Span providerSpan = new Span(provider);
       providerSpan.addClassName("project-progress-connected-asset-provider");
       row.add(providerSpan);
