@@ -24,13 +24,28 @@
   display: flex;
   align-items: center;
   width: 100%;
-  /* Post-zoom geometry: the content column these rows have to line up with is inside the app zoom
-     (main.css), so the cap and the gutter are stated in the same rendered pixels rather than in the
-     design's own. The type inside keeps the design's scale -- see variables.css --app-zoom. */
-  max-width: var(--content-shell-rendered-width);
+  max-width: var(--content-shell-max-width);
   margin-inline: auto;
-  padding-inline: var(--content-shell-rendered-gutter);
+  padding-inline: var(--content-shell-gutter);
   box-sizing: border-box;
+}
+
+/* The post-zoom geometry, and only where zoom actually applies.
+
+   Zoom is honoured by Chrome, Edge, Safari and Opera, and by Firefox from 126 -- but Firefox below
+   126, including ESR 115, ignores the declaration silently: no error, no fallback. Stating the cap
+   as a literal (1400 x 0.9) means the post-zoom column applies whether or not the zoom does, so
+   without this guard such an engine gave the chrome a 1260px column and the page a 1400px one,
+   which is the misalignment this work started from, reintroduced for one engine only.
+
+   Gated, both cases come out aligned: with zoom the content renders at 1260 and this side is told
+   1260; without it the content renders at 1400 and this side falls back to 1400. */
+@supports (zoom: 1) {
+  .app-identity-bar-row,
+  .app-subnav-strip {
+    max-width: var(--content-shell-rendered-width);
+    padding-inline: var(--content-shell-rendered-gutter);
+  }
 }
 
 .app-identity-bar-row {
