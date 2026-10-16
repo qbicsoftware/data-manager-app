@@ -282,7 +282,9 @@ public class ProjectSummaryComponent extends PageArea {
 
     var mail = new Anchor("mailto:" + contact.emailAddress());
     mail.getElement().setAttribute("title", contact.emailAddress());
-    mail.add(new Icon(VaadinIcon.ENVELOPE));
+    Icon envelope = new Icon(VaadinIcon.ENVELOPE);
+    envelope.addClassName("project-contact-glyph");
+    mail.add(envelope);
     mail.addClassName("project-contact-action");
     chip.add(mail);
     return chip;
@@ -293,7 +295,7 @@ public class ProjectSummaryComponent extends PageArea {
     orcid.setTarget(AnchorTarget.BLANK);
     orcid.getElement().setAttribute("title", "ORCID: " + oidcId);
     OidcLogo logo = new OidcLogo(type);
-    logo.addClassName("icon-size-m");
+    logo.addClassName("project-contact-logo");
     orcid.add(logo);
     orcid.addClassName("project-contact-action");
     return orcid;
