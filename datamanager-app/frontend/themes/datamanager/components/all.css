@@ -850,7 +850,9 @@ Colors
 }
 
 .dialog-step-icon-arrow {
-  font-size: 12px;
+  /* 0.75rem, not 12px: a px size here would stop following the app's density and render 11% larger
+     than every other glyph in the stepper. */
+  font-size: 0.75rem;
 }
 
 /*endregion*/
@@ -1266,6 +1268,16 @@ vaadin-menu-bar-overlay vaadin-context-menu-item[theme~="no-prefix"]::part(check
   width: 0;
   margin: 0;
   padding: 0;
+}
+
+/* The account menu's overlay is attached to the document body rather than to the chrome, but it is
+   part of the chrome and reads at the chrome's type size -- the design's, not the app's density.
+   rem resolves against the root, so the Lumo sizes it consumes have to be restated against its own
+   font size; em is then the unit. See app-shell.css for the same statement about the rows. */
+vaadin-menu-bar-overlay {
+  font-size: calc(1rem / var(--app-density));
+  --lumo-font-size-s: 0.875em;
+  --lumo-font-size-m: 1em;
 }
 
 /* Tighten left padding since there's no prefix now */

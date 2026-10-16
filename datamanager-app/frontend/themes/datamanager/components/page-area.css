@@ -479,7 +479,7 @@
    Below the breakpoint the grid collapses and the composer (first in the DOM) sits on top. */
 .project-access-component .access-body {
   display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(360px, 520px);
+  grid-template-columns: minmax(0, 2fr) minmax(22.5rem, 32.5rem);
   align-items: start;
   gap: var(--lumo-space-l);
   min-width: 0;

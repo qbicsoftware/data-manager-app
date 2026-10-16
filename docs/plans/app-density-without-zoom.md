@@ -1,19 +1,46 @@
 # App density without the zoom
 
-**Status:** proposal · **Owner:** TBD · **Story / Feature / ADR:** TBD
+**Status:** decided · mechanism implemented (see §0) · **Owner:** TBD · **Story / Feature / ADR:** TBD
 
-The app renders inside `zoom: 0.9` (`main.css`, `#main-layout`). This is a density choice: at 100%
-the design's type and spacing carry less content than a project page needs. The zoom is a *hack* in
-the specific sense that it states an accident ("everything is 10% too big") instead of an intent
-("body text is 14.5px"), and it does so by creating a second coordinate space inside one
-application.
+The app renders at **90% of Lumo's design**. This is a density choice: at 100% the design's type and
+spacing carry less content than a project page needs.
 
-This document is the plan to replace it: the mechanism, the token set, how to verify nothing was
-missed, and the order.
+It used to be expressed as `zoom: 0.9` on the page container, which is a *hack* in the specific
+sense that it states an accident ("everything is 10% too big") instead of an intent ("the app's
+base type is 14.4px"), and it does so by creating a second coordinate space inside one application.
 
 ---
 
-## 1. What the zoom is, and what is inside it
+## 0. Decisions taken
+
+| decision | value | why |
+|---|---|---|
+| the density number | **0.9** — kept, and now a decision rather than a default | it is what every approved screen was reviewed at; changing it would invalidate those judgements |
+| the mechanism | the **root font size** (§3 C), not a zoom and not hand-overridden tokens | one number moves the type, spacing and control-height scales together, in one coordinate space |
+| Lumo's compact preset | **not taken** (§3 D) | it is a different rhythm — control heights unchanged, `space-m` 31% tighter, leading 14% tighter — not the same design 10% smaller |
+| the chrome | keeps the **design's** type scale, divided by the density | the header is the wayfinding layer; at 90% its 14px user name renders at 12.6px, below what that size is for |
+
+Implemented in `variables.css` (`--app-density`), `main.css` (the root font size), `app-shell.css`
+and `navbar.css` (the chrome's own scale), plus `all.css` for the account menu's overlay, which is
+attached to the document body but is chrome.
+
+**Preserved exactly** by restating them in `rem`: the shell column (1400px → `87.5rem`, rendering
+1260px as before), the settings and groups hub asides (280px → `17.5rem`), the access page's roster
+columns (360/520px → `22.5rem`/`32.5rem`), and the three standalone page widths in `main.css`.
+
+**Deferred:** the remaining fixed `px` box sizes in components — `card.css`, `dialog.css`,
+`connect-dataset-sidebar.css`, the spinners, and two utility widths in `all.css` (§5). These render
+11% larger than they did, because `px` is absolute and no longer scaled. That is arguably the
+correct behaviour for a fixed size, and it is a visible change, so it is a decision rather than a
+sweep: convert them with the same `Npx → (N/16)rem` rule to preserve the rendering, or accept that
+fixed sizes are now fixed.
+
+---
+
+## 1. What the zoom was, and what was inside it
+
+*(Describes the state before §0 was implemented, which is why the plan below is still the record of
+why it changed.)*
 
 ```css
 #main-layout { zoom: var(--app-zoom); }   /* --app-zoom: 0.9 */

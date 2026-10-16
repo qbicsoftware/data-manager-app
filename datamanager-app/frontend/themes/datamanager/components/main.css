@@ -9,23 +9,27 @@ vaadin-app-layout:not([drawer-opened])::part(drawer) {
   display: none;
 }
 
-/* The app-wide zoom. It is a density choice -- at 100% the design's type and spacing are too big
-   for the amount of content a project page carries -- and it is why the page you look at renders
-   smaller than --lumo-font-size-s and --content-shell-max-width literally say.
+/* The app's density, applied where rem is defined.
 
-   The chrome is NOT inside it: it is added with addToNavbar, so it lives in the app layout's navbar
-   slot and is a sibling of #main-layout, not a descendant. It therefore keeps the design's own
-   type scale, which is the readability the top row should have, while its column width and gutter
-   are stated post-zoom in app-shell.css so they land on the same pixels as this side.
+   Lumo's size-carrying tokens are rem-based and the app's own spacing tokens are too, so setting the
+   root font size moves the type scale, the spacing scale and the control heights together -- the
+   proportionality a zoom gives, without a second coordinate space, without shrinking 1px hairlines,
+   and without depending on an engine honouring `zoom`. The em-based families (icons, radii) follow
+   their own font size and need nothing.
 
-   Naming both roots here instead would align too, but it shrinks the chrome with the content --
-   a 12.6px user name, below what --lumo-font-size-s is for. Do not do that, and do not put the cap
-   on only one side of the boundary: that is what made the header 1400px and the page 1260px. */
+   Percent rather than a px size on purpose: it composes with the reader's own browser font-size
+   setting instead of overriding it, which is the whole reason the design is expressed in rem.
+
+   The chrome is the one surface that does not take this scale -- see app-shell.css, which divides
+   the design's sizes by --app-density so the header keeps the type size it was designed for. */
+html {
+  font-size: calc(var(--app-density) * 100%);
+}
+
 #main-layout {
   display: flex;
   flex-direction: column;
   height: 100%;
-  zoom: var(--app-zoom);
 }
 
 .landing-page-layout .landing-page-content {
@@ -101,7 +105,7 @@ vaadin-app-layout:not([drawer-opened])::part(drawer) {
   display: flex;
   flex-direction: column;
   gap: var(--lumo-space-l);
-  width: clamp(450px, 450px, 15vw);
+  width: clamp(28.125rem, 28.125rem, 15vw);
   padding-bottom: var(--lumo-space-xl);
   padding-inline: var(--lumo-space-l);
 }
@@ -118,7 +122,7 @@ vaadin-app-layout:not([drawer-opened])::part(drawer) {
 .main.legal-notice {
   padding: var(--lumo-space-xl);
   height: fit-content;
-  width: clamp(700px, 60vw, 100%);
+  width: clamp(43.75rem, 60vw, 100%);
   display: flex;
   margin: auto;
 }
@@ -126,7 +130,7 @@ vaadin-app-layout:not([drawer-opened])::part(drawer) {
 .main.data-privacy-agreement {
   padding: var(--lumo-space-xl);
   height: fit-content;
-  width: clamp(700px, 50vw, 100%);
+  width: clamp(43.75rem, 50vw, 100%);
   display: flex;
   margin: auto;
 }

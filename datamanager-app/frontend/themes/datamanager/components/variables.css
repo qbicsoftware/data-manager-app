@@ -120,10 +120,10 @@ First some general property definitions
   --spacing-12: 6rem;
 
   /* --- Content shell --- */
-  /* Max width of centered page content on large screens. The white space around the shell
-     is created by the layout (margin-inline: auto) and grows/shrinks with the viewport,
-     so pages stay readable on very wide monitors. */
-  --content-shell-max-width: 1400px;
+  /* The shell's column, in the design's own unit: 87.5rem is 1400px at the design's 16px root, and
+     1260px at the app's 14.4px root -- which is the width it has been rendering at all along. Stated
+     in rem so it follows --app-density by itself, instead of needing a second, post-zoom value. */
+  --content-shell-max-width: 87.5rem;
 
   /* The horizontal inset of that shell, on every surface that carries it: the chrome's two rows,
      the footer, and the capped page shells. One value, because four used to coexist on the same
@@ -135,21 +135,21 @@ First some general property definitions
      padding is how those four values came to exist. */
   --content-shell-gutter: var(--lumo-space-m);
 
-  /* The app renders inside a zoom (see main.css), which is a density choice: at 100% the design's
-     type and spacing are too big for the amount of content a project page carries.
+  /* --- Density --- */
+  /* The app renders at 90% of Lumo's design. That is a decision about this app -- at 100% the
+     design's type and spacing carry less content than a project page needs -- and not a preference
+     of any engine.
 
-     Zoom is its own coordinate space, so a length inside it renders at zoom x that length outside
-     it. The chrome is NOT inside it -- it is added with addToNavbar, so it sits beside #main-layout
-     rather than in it -- so the chrome's shell geometry has to be stated in post-zoom terms to land
-     on the same column as the content. That is what these two are for.
+     It is applied once, as the root font size (main.css), because every size-carrying Lumo token is
+     rem-based: the type scale, the spacing scale and the control heights all resolve against the
+     root, and the em-based families (icons, radii) follow their own font size. One number moves the
+     whole design together, exactly as the design intends.
 
-     Before them the header's column was 1400px and the page's was 90% of 1400 = 1260px, so the two
-     were both centred on the viewport and neither edge agreed. The chrome keeps its own type scale
-     -- it is outside the zoom, so its 16px navigation and 14px user name render at their designed
-     size -- while its column and its gutter come out on exactly the same pixels as the page's. */
-  --app-zoom: 0.9;
-  --content-shell-rendered-width: calc(var(--content-shell-max-width) * var(--app-zoom));
-  --content-shell-rendered-gutter: calc(var(--content-shell-gutter) * var(--app-zoom));
+     It used to be `zoom: 0.9` on the page container, which scaled the rendered result rather than
+     the unit: it shrank 1px hairlines to 0.9px, it made --content-shell-max-width mean two different
+     widths depending on which side of the shell boundary it was written on, and engines that ignore
+     zoom rendered the app 11% larger, silently. See docs/plans/app-density-without-zoom.md. */
+  --app-density: 0.9;
 
   /* The width below which a card in a side-by-side pair stops being readable and should take a row
      of its own. Used as the flex basis of the project page's card grids so they all break at the

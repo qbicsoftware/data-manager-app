@@ -37,6 +37,9 @@
 
 .data-manager-menu .user-avatar {
   cursor: pointer;
+  /* 36px: the design's --lumo-size-m. Vaadin sizes the avatar from 1lh + padding by default, which
+     would follow the app's density; this pins it to the chrome's own scale instead. */
+  --vaadin-avatar-size: calc(2.25rem / var(--app-density));
 }
 
 /*Increase gap between menu items*/

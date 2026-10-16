@@ -2,9 +2,14 @@
    settings) and the project scope: an identity bar (wordmark + breadcrumb + account) over one
    navigation row. Replaces the old single-row top navigation and the retired project drawer.
 
-   Outside the app zoom by construction (addToNavbar), so this is the one part of the shell whose
-   type renders at the design's own size. Its column is stated post-zoom in the rule below so that
-   it still lines up with the page content. */
+   The chrome's type renders at the design's own scale, not the app's density: the header is the
+   wayfinding layer, and at 90% its 14px user name renders at 12.6px, which is below what that size
+   is for. The sizes below are therefore the design's size divided by --app-density.
+
+   The chrome can afford to do this because it is a sibling of #main-layout, not a descendant: it is
+   added with addToNavbar, so the root font size that carries the density applies to it just the
+   same, and it simply asks for larger numbers. Its column still comes from the shared
+   --content-shell-max-width, in rem, so one value gives both surfaces the same rendered width. */
 
 .app-chrome {
   display: flex;
@@ -30,23 +35,9 @@
   box-sizing: border-box;
 }
 
-/* The post-zoom geometry, and only where zoom actually applies.
-
-   Zoom is honoured by Chrome, Edge, Safari and Opera, and by Firefox from 126 -- but Firefox below
-   126, including ESR 115, ignores the declaration silently: no error, no fallback. Stating the cap
-   as a literal (1400 x 0.9) means the post-zoom column applies whether or not the zoom does, so
-   without this guard such an engine gave the chrome a 1260px column and the page a 1400px one,
-   which is the misalignment this work started from, reintroduced for one engine only.
-
-   Gated, both cases come out aligned: with zoom the content renders at 1260 and this side is told
-   1260; without it the content renders at 1400 and this side falls back to 1400. */
-@supports (zoom: 1) {
-  .app-identity-bar-row,
-  .app-subnav-strip {
-    max-width: var(--content-shell-rendered-width);
-    padding-inline: var(--content-shell-rendered-gutter);
-  }
-}
+/* No post-zoom geometry and no @supports guard: rem is root-relative, so one value gives the chrome
+   and the page the same rendered column whatever their own type scale is. That is what the previous
+   pair of tokens existed to express, and what the engine-support branch existed to work around. */
 
 .app-identity-bar-row {
   gap: var(--lumo-space-m);
@@ -65,7 +56,9 @@
 
 .app-wordmark {
   font-weight: 600;
-  font-size: var(--lumo-font-size-m);
+  /* 16px: the design's --lumo-font-size-m, divided by the density so it renders at the design's size
+     rather than at the app's. */
+  font-size: calc(1rem / var(--app-density));
   color: var(--lumo-header-text-color);
   text-decoration: none;
   white-space: nowrap;
@@ -78,16 +71,20 @@
 /* The signed-in user's name. A label, not a control: it sits before the avatar and is not part
    of the menu item, so it opens nothing and takes no pointer cursor. */
 .app-account-name {
-  font-size: var(--lumo-font-size-s);
+  /* 14px, as above. */
+  font-size: calc(0.875rem / var(--app-density));
   color: var(--lumo-secondary-text-color);
 }
 
 .app-crumbs {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  /* em, not rem: the crumb row sets its own font size, so its gap should follow that and not the
+     root. */
+  gap: 0.4em;
   min-width: 0;
-  font-size: var(--lumo-font-size-s);
+  /* 14px, as above. */
+  font-size: calc(0.875rem / var(--app-density));
   color: var(--lumo-secondary-text-color);
 }
 
@@ -146,7 +143,8 @@ a.app-crumb:focus {
   align-items: center;
   padding-block: var(--lumo-space-s);
   color: var(--lumo-secondary-text-color);
-  font-size: var(--lumo-font-size-m);
+  /* 16px, as above. */
+  font-size: calc(1rem / var(--app-density));
   text-decoration: none;
   white-space: nowrap;
   border-bottom: 2px solid transparent;
