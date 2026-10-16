@@ -17,8 +17,10 @@ import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.shared.Registration;
 import java.io.Serial;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import life.qbic.datamanager.views.MeasurementType;
 import life.qbic.datamanager.views.general.DataSetTagFactory;
 import life.qbic.datamanager.views.general.DataSetTagFactory.TagType;
 import life.qbic.datamanager.views.general.ReactiveUiBridge;
@@ -33,6 +35,7 @@ import life.qbic.projectmanagement.application.ProjectOverview;
 import life.qbic.projectmanagement.application.api.ProjectQueryService;
 import life.qbic.projectmanagement.application.associated_dataset.AssociatedDatasetService;
 import life.qbic.projectmanagement.application.associated_dataset.ConnectedDatasetView;
+import life.qbic.projectmanagement.application.query.AssayType;
 import life.qbic.projectmanagement.application.query.ExperimentProgress;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 
@@ -285,7 +288,7 @@ public class ProjectProgressSection extends Div {
     Div card = new Div();
     card.addClassName("project-progress-datasets-card");
     card.add(cardTitle("Primary data — for analysis"));
-    List<AssayType> present = assayTypesWithPrimaryData(progress);
+    List<AssayTypeTotal> present = assayTypesWithPrimaryData(progress);
     card.add(cardFact(totalVolume(progress, present)));
     if (!present.isEmpty()) {
       card.add(cardFact(volumeByAssayType(present)));
@@ -319,34 +322,30 @@ public class ProjectProgressSection extends Div {
    * carrying primary data whose sizes the sync never recorded, and the read model cannot tell
    * that apart from empty data (migration trap 4d), so the card must not claim 0.</p>
    */
-  private static String totalVolume(List<ExperimentProgress> progress, List<AssayType> present) {
+  private static String totalVolume(List<ExperimentProgress> progress, List<AssayTypeTotal> present) {
     if (present.isEmpty()) {
       return "No primary data attached yet";
     }
     long bytes = progress.stream().mapToLong(ExperimentProgress::primaryDataBytes).sum();
-    return bytes > 0 ? humanReadableSize(bytes) + " in total" : "Size not recorded";
+    return bytes > 0 ? Utility.humanReadableSize(bytes) + " in total" : "Size not recorded";
   }
 
-  private record AssayType(String label, int measurementsWithData, long bytes) {
+  /** One assay type's share of the project's primary data. */
+  private record AssayTypeTotal(AssayType type, int measurementsWithData, long bytes) {
 
+    String label() {
+      return MeasurementType.from(type).getType();
+    }
   }
 
-  /** The assay types that actually carry primary data, in the order the rail names them. */
-  private static List<AssayType> assayTypesWithPrimaryData(List<ExperimentProgress> progress) {
-    return List.of(
-            new AssayType("Genomics",
-                progress.stream()
-                    .mapToInt(ExperimentProgress::ngsMeasurementsWithPrimaryData).sum(),
-                progress.stream().mapToLong(ExperimentProgress::ngsPrimaryDataBytes).sum()),
-            new AssayType("Proteomics",
-                progress.stream()
-                    .mapToInt(ExperimentProgress::pxpMeasurementsWithPrimaryData).sum(),
-                progress.stream().mapToLong(ExperimentProgress::pxpPrimaryDataBytes).sum()),
-            new AssayType("Immunopeptidomics",
-                progress.stream()
-                    .mapToInt(ExperimentProgress::ipMeasurementsWithPrimaryData).sum(),
-                progress.stream().mapToLong(ExperimentProgress::ipPrimaryDataBytes).sum()))
-        .stream().filter(type -> type.measurementsWithData() > 0).toList();
+  /** The assay types that actually carry primary data, in declaration order. */
+  private static List<AssayTypeTotal> assayTypesWithPrimaryData(List<ExperimentProgress> progress) {
+    return Arrays.stream(AssayType.values())
+        .map(type -> new AssayTypeTotal(type,
+            progress.stream().mapToInt(entry -> entry.measurementsWithPrimaryData(type)).sum(),
+            progress.stream().mapToLong(entry -> entry.primaryDataBytes(type)).sum()))
+        .filter(total -> total.measurementsWithData() > 0)
+        .toList();
   }
 
   /**
@@ -356,34 +355,22 @@ public class ProjectProgressSection extends Div {
    * or as "—" when its siblings were: the headline already states the gap, so a dash per type
    * would only repeat it, but a bare name beside figures would read as a zero.</p>
    */
-  private static String volumeByAssayType(List<AssayType> present) {
+  private static String volumeByAssayType(List<AssayTypeTotal> present) {
     boolean anyRecorded = present.stream().anyMatch(type -> type.bytes() > 0);
     return String.join(" · ", present.stream()
         .map(type -> anyRecorded
-            ? type.label() + " " + humanReadableSize(type.bytes())
+            ? type.label() + " " + sizeOrDash(type.bytes())
             : type.label())
         .toList());
   }
 
   /**
-   * Size in the unit that keeps the number readable. Decimal units, matching the rest of the app.
+   * Size in the unit that keeps the number readable.
    *
    * <p>Zero means "not recorded" at this point in the flow; see {@link #volumeByAssayType}.</p>
    */
-  private static String humanReadableSize(long bytes) {
-    if (bytes <= 0) {
-      return "—";
-    }
-    if (bytes < 1_000) {
-      return bytes + " B";
-    }
-    if (bytes < 1_000_000) {
-      return "%.1f kB".formatted(bytes / 1_000.0);
-    }
-    if (bytes < 1_000_000_000) {
-      return "%.1f MB".formatted(bytes / 1_000_000.0);
-    }
-    return "%.1f GB".formatted(bytes / 1_000_000_000.0);
+  private static String sizeOrDash(long bytes) {
+    return bytes <= 0 ? "—" : Utility.humanReadableSize(bytes);
   }
 
   private Div connectedAssetsCard(List<ConnectedDatasetView> connected) {

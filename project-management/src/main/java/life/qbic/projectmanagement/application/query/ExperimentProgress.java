@@ -4,6 +4,8 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.util.Arrays;
+import java.util.List;
 import org.hibernate.annotations.Immutable;
 
 /**
@@ -176,5 +178,54 @@ public class ExperimentProgress {
   /** @see #primaryDataBytes() */
   public long ipPrimaryDataBytes() {
     return ipPrimaryDataBytes;
+  }
+
+  /**
+   * Number of measurements of the given assay type registered for this experiment.
+   *
+   * <p>Every consumer of the per-type figures goes through these three readers rather than picking
+   * the {@code ngs}/{@code pxp}/{@code ip} field by hand; the same trick used to be repeated in
+   * three view classes.</p>
+   *
+   * @param assayType the technology class to read
+   */
+  public int measurementCount(AssayType assayType) {
+    return switch (assayType) {
+      case GENOMICS -> ngsMeasurementCount;
+      case PROTEOMICS -> pxpMeasurementCount;
+      case IMMUNOPEPTIDOMICS -> ipMeasurementCount;
+    };
+  }
+
+  /** @see #measurementCount(AssayType) */
+  public int measurementsWithPrimaryData(AssayType assayType) {
+    return switch (assayType) {
+      case GENOMICS -> ngsMeasurementsWithPrimaryData;
+      case PROTEOMICS -> pxpMeasurementsWithPrimaryData;
+      case IMMUNOPEPTIDOMICS -> ipMeasurementsWithPrimaryData;
+    };
+  }
+
+  /** @see #measurementCount(AssayType) */
+  public int measurementsWithoutPrimaryData(AssayType assayType) {
+    return Math.max(0, measurementCount(assayType) - measurementsWithPrimaryData(assayType));
+  }
+
+  /** @see #measurementCount(AssayType) */
+  public long primaryDataBytes(AssayType assayType) {
+    return switch (assayType) {
+      case GENOMICS -> ngsPrimaryDataBytes;
+      case PROTEOMICS -> pxpPrimaryDataBytes;
+      case IMMUNOPEPTIDOMICS -> ipPrimaryDataBytes;
+    };
+  }
+
+  /**
+   * The assay types this experiment actually has measurements of, in declaration order.
+   *
+   * <p>A type with no measurement is not a dataset, and must not be listed as an empty one.</p>
+   */
+  public List<AssayType> assayTypes() {
+    return Arrays.stream(AssayType.values()).filter(type -> measurementCount(type) > 0).toList();
   }
 }

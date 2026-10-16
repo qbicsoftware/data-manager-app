@@ -17,10 +17,10 @@ import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.shared.Registration;
 import java.io.Serial;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import life.qbic.datamanager.views.MeasurementType;
 import life.qbic.datamanager.views.general.ReactiveUiBridge;
 import life.qbic.datamanager.views.general.utils.Utility;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementMain;
@@ -315,38 +315,17 @@ public class ProjectExperimentsSection extends Div {
   }
 
   private static List<String> domains(ExperimentProgress experiment) {
-    List<String> domains = new ArrayList<>();
-    if (experiment.ngsMeasurementCount() > 0) {
-      domains.add("Genomics");
-    }
-    if (experiment.pxpMeasurementCount() > 0) {
-      domains.add("Proteomics");
-    }
-    if (experiment.ipMeasurementCount() > 0) {
-      domains.add("Immunopeptidomics");
-    }
-    return domains;
+    return experiment.assayTypes().stream()
+        .map(type -> MeasurementType.from(type).getType())
+        .toList();
   }
 
   private static String primaryDataLabel(RecentMeasurement measurement) {
     if (!measurement.hasPrimaryData()) {
       return "Not attached";
     }
-    return measurement.primaryDataFiles() + " files · " + humanReadableBytes(
+    return measurement.primaryDataFiles() + " files · " + Utility.humanReadableSize(
         measurement.primaryDataBytes() == null ? 0L : measurement.primaryDataBytes());
-  }
-
-  private static String humanReadableBytes(long bytes) {
-    if (bytes >= 1_000_000_000L) {
-      return "%.1f GB".formatted(bytes / 1_000_000_000.0);
-    }
-    if (bytes >= 1_000_000L) {
-      return "%.1f MB".formatted(bytes / 1_000_000.0);
-    }
-    if (bytes >= 1_000L) {
-      return "%.1f KB".formatted(bytes / 1_000.0);
-    }
-    return bytes + " B";
   }
 
   private static Instant newest(List<RecentMeasurement> measurements) {

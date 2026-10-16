@@ -33,6 +33,27 @@ public class Utility {
   }
 
   /**
+   * Size in the unit that keeps the number readable. Decimal units, matching the rest of the app.
+   *
+   * <p>This is only the unit ladder. Whether {@code 0} means "nothing" or "not recorded" is a
+   * reader's question, not a formatter's, so the zero policy stays with the caller: a measurement
+   * carrying data whose size the sync never recorded is indistinguishable from empty data in the
+   * read model (migration trap 4d), and rendering that as "0 B" is the documented failure.</p>
+   */
+  public static String humanReadableSize(long bytes) {
+    if (bytes < 1_000) {
+      return bytes + " B";
+    }
+    if (bytes < 1_000_000) {
+      return "%.1f kB".formatted(bytes / 1_000.0);
+    }
+    if (bytes < 1_000_000_000) {
+      return "%.1f MB".formatted(bytes / 1_000_000.0);
+    }
+    return "%.1f GB".formatted(bytes / 1_000_000_000.0);
+  }
+
+  /**
    * Makes a plain element operable by pointer and by Enter/Space, so every clickable surface in
    * the app is keyboard-operable the same way. The caller owns the cursor and hover styling.
    *

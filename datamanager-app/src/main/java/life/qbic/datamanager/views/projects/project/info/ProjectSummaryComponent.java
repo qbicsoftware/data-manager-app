@@ -32,7 +32,6 @@ import java.io.Serial;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -62,6 +61,7 @@ import life.qbic.datamanager.views.general.DetailBox.Header;
 import life.qbic.datamanager.views.general.Heading;
 import life.qbic.datamanager.views.general.IconLabel;
 import life.qbic.datamanager.views.general.OntologyTermDisplay;
+import life.qbic.datamanager.views.MeasurementType;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.dialog.AppDialog;
@@ -122,6 +122,7 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.UnknownRe
 import life.qbic.projectmanagement.application.api.ProjectQueryService;
 import life.qbic.projectmanagement.application.associated_dataset.AssociatedDatasetService;
 import life.qbic.projectmanagement.application.contact.PersonLookupService;
+import life.qbic.projectmanagement.application.query.AssayType;
 import life.qbic.projectmanagement.application.query.ExperimentProgress;
 import life.qbic.projectmanagement.domain.model.project.Contact;
 import life.qbic.projectmanagement.domain.model.project.Contact.OidcInformation;
@@ -397,16 +398,10 @@ public class ProjectSummaryComponent extends PageArea {
    * extract can legitimately yield both.
    */
   private static Div assayTypesFact(ProjectOverview overview) {
-    List<String> types = new ArrayList<>();
-    if (overview.ngsMeasurementCount() > 0) {
-      types.add("Genomics");
-    }
-    if (overview.pxpMeasurementCount() > 0) {
-      types.add("Proteomics");
-    }
-    if (overview.ipMeasurementCount() > 0) {
-      types.add("Immunopeptidomics");
-    }
+    List<String> types = Arrays.stream(AssayType.values())
+        .filter(type -> overview.measurementCount(type) > 0)
+        .map(type -> MeasurementType.from(type).getType())
+        .toList();
     return types.isEmpty()
         ? fact("Assay types", "None recorded", true)
         : fact("Assay types", String.join(" \u00b7 ", types));
