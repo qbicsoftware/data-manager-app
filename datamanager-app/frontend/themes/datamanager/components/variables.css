@@ -113,6 +113,12 @@ First some general property definitions
      (grid-templates.css .main.project-overview). */
   --content-shell-max-width: 1400px;
 
+  /* The width below which a card in a side-by-side pair stops being readable and should take a row
+     of its own. Used as the flex basis of the project page's card grids so they all break at the
+     same point: the datasets cards used 18rem and the experiment panels 20rem, which stacked at
+     different widths and left the page ragged while shrinking. */
+  --card-readable-width: 26rem;
+
   /* --- Toast dark-surface tokens --- */
   --toast-background-color: #223348;
   --toast-text-color: rgba(235, 244, 255, 0.9);

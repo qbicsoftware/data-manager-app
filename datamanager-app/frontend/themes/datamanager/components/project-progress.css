@@ -218,7 +218,9 @@
   display: flex;
   flex-direction: column;
   gap: var(--lumo-space-xs);
-  flex: 1 1 18rem;
+  /* The basis is the readable minimum, so a pair stops sharing the width and stacks before either
+     card is squeezed past the point where its content still makes sense. */
+  flex: 1 1 var(--card-readable-width);
   padding: var(--lumo-space-m);
   /* A hairline as well as the tint, or the cards read as loose grey rectangles on a near-white
      page with nothing tying them to the "Datasets" heading above them. */

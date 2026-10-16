@@ -88,8 +88,11 @@
   display: flex;
   flex-direction: column;
   gap: var(--lumo-space-xs);
-  flex: 1 1 20rem;
-  min-width: 18rem;
+  /* Shares the card threshold with the dataset cards, so the two halves of the page break together
+     rather than at 656px and 592px. min-width is 0, not a hard floor: the flex basis already
+     decides when to wrap, and a fixed floor would push the card off-screen on a phone. */
+  flex: 1 1 var(--card-readable-width);
+  min-width: 0;
   padding: var(--lumo-space-m);
   border: 1px solid var(--lumo-contrast-10pct);
   border-radius: var(--lumo-border-radius-m);
