@@ -1,6 +1,10 @@
 /* Application shell chrome — the prototype's two rows, shared by the Home scope (projects, groups,
    settings) and the project scope: an identity bar (wordmark + breadcrumb + account) over one
-   navigation row. Replaces the old single-row top navigation and the retired project drawer. */
+   navigation row. Replaces the old single-row top navigation and the retired project drawer.
+
+   Outside the app zoom by construction (addToNavbar), so this is the one part of the shell whose
+   type renders at the design's own size. Its column is stated post-zoom in the rule below so that
+   it still lines up with the page content. */
 
 .app-chrome {
   display: flex;
@@ -20,9 +24,12 @@
   display: flex;
   align-items: center;
   width: 100%;
-  max-width: var(--content-shell-max-width);
+  /* Post-zoom geometry: the content column these rows have to line up with is inside the app zoom
+     (main.css), so the cap and the gutter are stated in the same rendered pixels rather than in the
+     design's own. The type inside keeps the design's scale -- see variables.css --app-zoom. */
+  max-width: var(--content-shell-rendered-width);
   margin-inline: auto;
-  padding-inline: var(--content-shell-gutter);
+  padding-inline: var(--content-shell-rendered-gutter);
   box-sizing: border-box;
 }
 

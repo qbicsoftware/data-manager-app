@@ -122,8 +122,7 @@ First some general property definitions
   /* --- Content shell --- */
   /* Max width of centered page content on large screens. The white space around the shell
      is created by the layout (margin-inline: auto) and grows/shrinks with the viewport,
-     so pages stay readable on very wide monitors. Must match the project overview
-     (grid-templates.css .main.project-overview). */
+     so pages stay readable on very wide monitors. */
   --content-shell-max-width: 1400px;
 
   /* The horizontal inset of that shell, on every surface that carries it: the chrome's two rows,
@@ -135,6 +134,22 @@ First some general property definitions
      The shell owns the gutter, and the bands inside it add none. A band that sets its own inline
      padding is how those four values came to exist. */
   --content-shell-gutter: var(--lumo-space-m);
+
+  /* The app renders inside a zoom (see main.css), which is a density choice: at 100% the design's
+     type and spacing are too big for the amount of content a project page carries.
+
+     Zoom is its own coordinate space, so a length inside it renders at zoom x that length outside
+     it. The chrome is NOT inside it -- it is added with addToNavbar, so it sits beside #main-layout
+     rather than in it -- so the chrome's shell geometry has to be stated in post-zoom terms to land
+     on the same column as the content. That is what these two are for.
+
+     Before them the header's column was 1400px and the page's was 90% of 1400 = 1260px, so the two
+     were both centred on the viewport and neither edge agreed. The chrome keeps its own type scale
+     -- it is outside the zoom, so its 16px navigation and 14px user name render at their designed
+     size -- while its column and its gutter come out on exactly the same pixels as the page's. */
+  --app-zoom: 0.9;
+  --content-shell-rendered-width: calc(var(--content-shell-max-width) * var(--app-zoom));
+  --content-shell-rendered-gutter: calc(var(--content-shell-gutter) * var(--app-zoom));
 
   /* The width below which a card in a side-by-side pair stops being readable and should take a row
      of its own. Used as the flex basis of the project page's card grids so they all break at the
