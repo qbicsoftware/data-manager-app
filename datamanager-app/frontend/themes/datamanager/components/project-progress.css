@@ -288,10 +288,11 @@
   color: var(--lumo-body-text-color);
 }
 
-/* When the record was last touched. The cell fills its column and the text sits at the end of it,
-   so the timestamps line up on the right however short the word before them is. */
+/* When the record was last touched. Left-aligned, so the column opens on the same vertical line as
+   the type and the title beside it. Right-aligning it lined the timestamps up on their trailing
+   "ago" instead and left their leading words -- which is where "synced" and "connected" differ,
+   and the part being read -- jumping 19px between rows. */
 .project-progress-connected-asset-activity {
-  text-align: right;
   white-space: nowrap;
   color: var(--lumo-secondary-text-color);
 }
