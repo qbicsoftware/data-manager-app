@@ -250,28 +250,37 @@
   color: var(--lumo-secondary-text-color);
 }
 
-/* One connected asset: kind, name, provider. Three columns rather than one concatenated sentence,
-   so the names line up under each other and the provider stays visible however long a title runs.
-   The kind is the repository's own vocabulary term, in the same tag the connected-datasets page
-   uses, so the two surfaces agree on what a "Dataset" looks like. */
-.project-progress-connected-asset {
-  display: flex;
+/* Connected assets as a grid, not a stack of flex rows. Grid sizes each column across ALL the rows,
+   so the type and the timestamp line up vertically whatever the vocabulary term or the relative
+   time happens to be. A per-row layout can only reserve a guess at the type width, and the
+   InvenioRDM vocabulary holds terms ("Computational notebook", "Project management plan") far
+   longer than the common ones -- the guess breaks the first time one appears. */
+.project-progress-connected-assets {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr) max-content;
+  gap: var(--lumo-space-xs) var(--lumo-space-s);
   align-items: center;
-  gap: var(--lumo-space-s);
   font-size: var(--lumo-font-size-s);
 }
 
-/* A reservation, not a fixed width: the terms come from the repository's vocabulary, so a longer
-   one must not be clipped. Reserving room for the common terms keeps every title on one vertical
-   edge, which is the whole reason the type has a column. */
+.project-progress-connected-assets--with-provider {
+  grid-template-columns: max-content minmax(0, 1fr) max-content max-content;
+}
+
+/* display: contents, so each row's cells become items of the grid above -- that is what lets the
+   columns size across rows. The row itself carries no box and no semantics, so nothing is lost. */
+.project-progress-connected-asset {
+  display: contents;
+}
+
+/* The kind comes from the repository's own vocabulary term, in the same tag the connected-datasets
+   page uses, so the two surfaces agree on what a "Dataset" looks like. */
 .project-progress-connected-asset-type {
-  flex: 0 0 auto;
   display: inline-flex;
-  min-width: 5.5rem;
+  align-self: center;
 }
 
 .project-progress-connected-asset-title {
-  flex: 1 1 auto;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -279,17 +288,16 @@
   color: var(--lumo-body-text-color);
 }
 
-/* When the record was last touched. Right-aligned so the timestamps line up even though
-   "synced" and "connected" are different lengths. */
+/* When the record was last touched. The cell fills its column and the text sits at the end of it,
+   so the timestamps line up on the right however short the word before them is. */
 .project-progress-connected-asset-activity {
-  flex: 0 0 auto;
   text-align: right;
   white-space: nowrap;
   color: var(--lumo-secondary-text-color);
 }
 
 .project-progress-connected-asset-provider {
-  flex: 0 0 auto;
+  white-space: nowrap;
   color: var(--lumo-secondary-text-color);
 }
 

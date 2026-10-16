@@ -395,12 +395,18 @@ public class ProjectProgressSection extends Div {
         : "Connected assets — %d from %s".formatted(connected.size(), sharedProvider)));
 
     boolean perRowProvider = sharedProvider == null;
+    Div rows = new Div();
+    rows.addClassName("project-progress-connected-assets");
+    if (perRowProvider) {
+      rows.addClassName("project-progress-connected-assets--with-provider");
+    }
     // Most recent activity first. The question this card answers is "is anything happening here",
     // and ordering by connection date buried the record that was synced this morning.
     connected.stream()
         .sorted(Comparator.comparing(ProjectProgressSection::lastActivity).reversed())
         .limit(3)
-        .forEach(asset -> card.add(connectedAssetRow(asset, perRowProvider)));
+        .forEach(asset -> rows.add(connectedAssetRow(asset, perRowProvider)));
+    card.add(rows);
     return card;
   }
 
@@ -457,9 +463,9 @@ public class ProjectProgressSection extends Div {
     Div row = new Div();
     row.addClassName("project-progress-connected-asset");
 
-    // The type sits in a reserved column even when the source gives none. A chip of varying width
-    // prepended to the title pushed the titles out of line with each other, which defeats the
-    // point of giving the type a column at all.
+    // The type always occupies its column, even when the source gives none. A chip of varying
+    // width prepended to the title pushed the titles out of line with each other, which defeats
+    // the point of giving the type a column at all.
     Span typeCell = new Span();
     typeCell.addClassName("project-progress-connected-asset-type");
     String resourceType = asset.resourceType();
