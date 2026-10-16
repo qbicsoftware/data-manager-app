@@ -1368,6 +1368,16 @@ Older stuff -
   margin-bottom: 0.5rem;
 }
 
+/* Inside a header, the title's own bottom margin is dropped: SectionHeader already supplies a
+   trailing margin, and the title is a centred flex item in section-header-row. So the margin did
+   not sit under the title where it was meant to -- align-items: center turned it into extra row
+   height with the title shifted up inside it, and the header's margin then added again. The
+   project title ended up roughly 16px above its activity line for no reason. The prototype zeroes
+   the title margin for the same reason (.pt-title { margin: 0 }) and lets the container space it. */
+.section-header .section-title {
+  margin-bottom: 0;
+}
+
 
 
 .sub-header {
