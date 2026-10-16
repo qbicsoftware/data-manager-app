@@ -12,6 +12,26 @@ it needs no paging, filtering or selection, and it is read-only.
 
 *****************************************/
 
+/* --- Vertical rhythm ---
+
+   One gap between bands and one inside them, so the page reads as a stack of equal steps. It used to
+   have four accidental gaps -- 81px above the first band, 62px below it, 65px from a band's note to
+   its content, and 101px before the footer -- because each band carried its own vertical padding on
+   top of the Section header's default trailing margin. The page's row gap is now the only thing
+   between bands, and the bands add nothing of their own. */
+
+.main.project.datasets {
+  row-gap: var(--spacing-05);
+  /* Breathing room before the footer, which the page used to leave to whatever the last band's
+     empty state happened to pad itself with. */
+  padding-bottom: var(--spacing-06);
+}
+
+/* Header to content, one value for every band. */
+.main.project.datasets .section-header {
+  margin-bottom: var(--spacing-04);
+}
+
 /* --- The page band. The horizontal inset belongs to the shell (see variables.css,
        --content-shell-gutter), so a band never sets its own; that is what put the heading, the
        primary datasets and the connected datasets on three different left edges. --- */
@@ -23,7 +43,7 @@ it needs no paging, filtering or selection, and it is read-only.
 /* --- The primary datasets band --- */
 
 .project-datasets-primary {
-  padding: 0 0 var(--spacing-05) 0;
+  padding: 0;
 }
 
 .project-datasets-primary-body {
@@ -161,19 +181,4 @@ it needs no paging, filtering or selection, and it is read-only.
 .project-datasets-message {
   font-size: var(--lumo-font-size-s);
   color: var(--secondary-text-color);
-}
-
-.project-datasets-empty {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-02);
-  padding: var(--spacing-05);
-  border: 1px dashed var(--border-color-light);
-  border-radius: 10px;
-  background: var(--shade-color-5pct);
-}
-
-.project-datasets-empty-title {
-  font-weight: var(--font-weight-medium);
-  color: var(--heading-text-color);
 }

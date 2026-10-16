@@ -5,6 +5,7 @@ import static java.util.Objects.requireNonNull;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.router.RouteParam;
 import com.vaadin.flow.router.RouteParameters;
 import java.io.Serial;
@@ -12,7 +13,11 @@ import java.util.Comparator;
 import java.util.List;
 import life.qbic.datamanager.views.MeasurementType;
 import life.qbic.datamanager.views.TagFactory;
+import life.qbic.datamanager.views.general.EmptyState;
 import life.qbic.datamanager.views.general.ReactiveUiBridge;
+import life.qbic.datamanager.views.general.section.Section;
+import life.qbic.datamanager.views.general.section.SectionHeader;
+import life.qbic.datamanager.views.general.section.SectionTitle;
 import life.qbic.datamanager.views.general.utils.Utility;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementMain;
 import life.qbic.projectmanagement.application.api.ProjectQueryService;
@@ -56,8 +61,14 @@ public class PrimaryDatasetsComponent extends Div {
     this.projectQueryService = requireNonNull(projectQueryService,
         "projectQueryService must not be null");
     addClassName("project-datasets-primary");
+    // The band titles itself. Without it the page had one named half and one nameless block above
+    // it, which read as a band plus an orphan rather than as two halves of one page.
+    var header = new SectionHeader(
+        new SectionTitle("Primary datasets", SectionTitle.Size.MEDIUM));
+    Section section = new Section.SectionBuilder().withHeader(header).build();
     body.addClassName("project-datasets-primary-body");
-    add(body);
+    section.content().add(body);
+    add(section);
   }
 
   /** Sets the project to report on and loads its datasets. */
@@ -241,19 +252,13 @@ public class PrimaryDatasetsComponent extends Div {
 
   // ── Empty state and messages ──────────────────────────────────────────
 
-  private static Div emptyState() {
-    Div empty = new Div();
-    empty.addClassName("project-datasets-empty");
-    empty.add(heading("No primary datasets yet"));
-    empty.add(note("A dataset appears here as soon as an experiment has measurements registered: "
-        + "the measurement data of an experiment is its primary dataset."));
-    return empty;
-  }
-
-  private static Span heading(String text) {
-    Span heading = new Span(text);
-    heading.addClassName("project-datasets-empty-title");
-    return heading;
+  private static EmptyState emptyState() {
+    // No action: nothing on this page can produce a measurement, and the component's own rule is
+    // that an empty state offers no action when the item has to be created elsewhere rather than a
+    // dead end. The experiment is created on the summary page.
+    return new EmptyState(VaadinIcon.FLASK, "No primary datasets yet",
+        "A dataset appears here as soon as an experiment has measurements registered: the "
+            + "measurement data of an experiment is its primary dataset.");
   }
 
   private static Span note(String text) {

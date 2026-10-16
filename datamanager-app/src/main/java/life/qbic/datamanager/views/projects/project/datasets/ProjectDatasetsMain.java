@@ -21,10 +21,8 @@ import life.qbic.datamanager.views.general.dialog.AlertDialog;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.projects.project.ProjectMainLayout;
-import life.qbic.datamanager.views.general.section.ActionBar;
 import life.qbic.datamanager.views.general.section.Section;
 import life.qbic.datamanager.views.general.section.SectionHeader;
-import life.qbic.datamanager.views.general.section.SectionNote;
 import life.qbic.datamanager.views.general.section.SectionTitle;
 import life.qbic.identity.api.AuthenticationToUserIdTranslator;
 import life.qbic.logging.api.Logger;
@@ -122,14 +120,11 @@ public class ProjectDatasetsMain extends Main implements BeforeEnterObserver {
   }
 
   /**
-   * The page band. It names the page and both of its halves; the halves title themselves, so a
-   * third heading here would only repeat them.
+   * The page band. It names the page; each half titles itself below, so the page carries no
+   * subtitle that would repeat them.
    */
   private static Section pageBand() {
-    var header = new SectionHeader(new SectionTitle("Datasets", SectionTitle.Size.LARGE),
-        new ActionBar(),
-        new SectionNote("The measurement data of this project's experiments, and the datasets "
-            + "connected to it."));
+    var header = new SectionHeader(new SectionTitle("Datasets", SectionTitle.Size.LARGE));
     Section band = new Section.SectionBuilder().withHeader(header).build();
     band.addClassName("project-datasets-page-head");
     return band;
