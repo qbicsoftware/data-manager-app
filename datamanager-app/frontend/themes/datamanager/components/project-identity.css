@@ -92,8 +92,21 @@
   border-radius: 999px;
 }
 
+/* The role is a chip, not a prefix. As plain semibold text it read as part of the person's name --
+   "PI Cool Dude2" scans as a name whose first word happens to be odd -- and the three roles were
+   indistinguishable at a glance. A pill is visibly a label rather than a name part, which is the
+   prototype's answer for the same chip. */
 .project-contact-role {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.1rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  background-color: var(--lumo-contrast-10pct);
+  font-size: var(--lumo-font-size-xs);
   font-weight: 600;
+  letter-spacing: 0.02em;
   color: var(--lumo-secondary-text-color);
 }
 

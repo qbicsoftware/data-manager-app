@@ -115,6 +115,15 @@
   min-width: 0;
 }
 
+/* The last stage does not stretch. Every stage used to take an equal share, so the final marker and
+   the unused connector slot after it reserved a third of the card whether or not anything followed
+   them -- leaving the rail hugging the left with a quarter of the card empty on its right. Sized to
+   its own content it ends where its text ends: the markers stay evenly spaced, because the two
+   before it share what is left, and the rail reaches the card's right edge. */
+.project-progress-step:last-child {
+  flex: 0 0 auto;
+}
+
 .project-progress-step-head {
   display: flex;
   align-items: center;
