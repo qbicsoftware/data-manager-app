@@ -56,8 +56,9 @@ experiment (the N+1 the current service layer would force).
 
 - **`experiment_progress`** — one row per experiment: `sample_count`,
   `measured_sample_count`, `measurement_count` (plus per-type NGS/PXP/IP),
-  `measurements_with_primary_data`, `primary_data_files`, `primary_data_bytes`. Serves both
-the summary progress band and the project Datasets overview.
+  `measurements_with_primary_data` (plus per-type NGS/PXP/IP) and `primary_data_bytes` (plus
+  per-type NGS/PXP/IP). Serves both the summary progress band and the project Datasets
+  overview. There is deliberately **no file count**: see fact 3 below.
 - **`v_project_sample_overview`** — one row per sample in a project, with experiment
   attribution, condition and a `measured` flag; feeds the project Samples list and stats.
 - **`v_measurement_experiment`** — helper that maps a measurement to the experiment(s) it
@@ -87,6 +88,15 @@ is created, altered or dropped.
 >    the existing `v_*_measurement_sample_json` views. This column name is a drift.
 > 2. "Measurements without primary data" is computed as
 >    `measurement_count - measurements_with_primary_data`. `deleted = FALSE` is enforced.
+> 3. **`primary_data_bytes` can legitimately be 0, and there is no file count to fall back on.**
+>    `total_filesize_bytes` is 0 for many synced measurements — a real project had 24
+>    primary-data files across 8 measurements and 0 total bytes. That means the sizes were never
+>    recorded, not that the arithmetic failed, and the view cannot tell the two apart. Anything
+>    rendering this must distinguish "0 bytes" from "unmeasured" rather than printing `0 B`.
+>    A file count is deliberately not exposed: it is not comparable across assay types (one NGS
+>    measurement is a couple of large files, one proteomics measurement is hundreds of small
+>    ones), it cannot be acted on, and pairing it with a byte total invites the reader to divide
+>    the two. A mock-up that read `0.0 GB in 24 files` is the failure mode.
 >
 > A measurement that measures samples from more than one experiment is attributed to each
 > experiment and counted in each (see *Verify*).

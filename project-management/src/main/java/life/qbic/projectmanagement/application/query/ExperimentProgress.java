@@ -56,11 +56,26 @@ public class ExperimentProgress {
   @Column(name = "measurements_with_primary_data")
   private int measurementsWithPrimaryData;
 
-  @Column(name = "primary_data_files")
-  private long primaryDataFiles;
+  @Column(name = "ngs_measurements_with_primary_data")
+  private int ngsMeasurementsWithPrimaryData;
+
+  @Column(name = "pxp_measurements_with_primary_data")
+  private int pxpMeasurementsWithPrimaryData;
+
+  @Column(name = "ip_measurements_with_primary_data")
+  private int ipMeasurementsWithPrimaryData;
 
   @Column(name = "primary_data_bytes")
   private long primaryDataBytes;
+
+  @Column(name = "ngs_primary_data_bytes")
+  private long ngsPrimaryDataBytes;
+
+  @Column(name = "pxp_primary_data_bytes")
+  private long pxpPrimaryDataBytes;
+
+  @Column(name = "ip_primary_data_bytes")
+  private long ipPrimaryDataBytes;
 
   protected ExperimentProgress() {
     // for JPA
@@ -119,13 +134,47 @@ public class ExperimentProgress {
     return Math.max(0, measurementCount - measurementsWithPrimaryData);
   }
 
-  /** Total number of primary-data files across all measurements of this experiment. */
-  public long primaryDataFiles() {
-    return primaryDataFiles;
+  /**
+   * Number of measurements with primary data, per measurement type. Used to decide which assay
+   * types the dataset overview should name.
+   */
+  public int ngsMeasurementsWithPrimaryData() {
+    return ngsMeasurementsWithPrimaryData;
   }
 
-  /** Total size of primary data across all measurements of this experiment, in bytes. */
+  /** @see #ngsMeasurementsWithPrimaryData() */
+  public int pxpMeasurementsWithPrimaryData() {
+    return pxpMeasurementsWithPrimaryData;
+  }
+
+  /** @see #ngsMeasurementsWithPrimaryData() */
+  public int ipMeasurementsWithPrimaryData() {
+    return ipMeasurementsWithPrimaryData;
+  }
+
+  /**
+   * Total size of primary data across all measurements of this experiment, in bytes.
+   *
+   * <p>{@code 0} is ambiguous: it means either no data or data whose size the sync never
+   * recorded. It is common -- a real project had 8 measurements with primary data and 0 total
+   * bytes. Callers must not render it as "0 B"; see the migration's trap 4d.</p>
+   */
   public long primaryDataBytes() {
     return primaryDataBytes;
+  }
+
+  /** @see #primaryDataBytes() */
+  public long ngsPrimaryDataBytes() {
+    return ngsPrimaryDataBytes;
+  }
+
+  /** @see #primaryDataBytes() */
+  public long pxpPrimaryDataBytes() {
+    return pxpPrimaryDataBytes;
+  }
+
+  /** @see #primaryDataBytes() */
+  public long ipPrimaryDataBytes() {
+    return ipPrimaryDataBytes;
   }
 }

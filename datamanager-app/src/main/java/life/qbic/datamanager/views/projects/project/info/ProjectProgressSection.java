@@ -16,7 +16,6 @@ import com.vaadin.flow.router.RouteParam;
 import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.shared.Registration;
 import java.io.Serial;
-import java.util.ArrayList;
 import java.util.List;
 import life.qbic.datamanager.views.general.ReactiveUiBridge;
 import life.qbic.datamanager.views.general.utils.Utility;
@@ -177,22 +176,31 @@ public class ProjectProgressSection extends Div {
 
   private OrderedList rail(List<ExperimentProgress> progress) {
     int samples = progress.stream().mapToInt(ExperimentProgress::sampleCount).sum();
+    int measurements = progress.stream().mapToInt(ExperimentProgress::measurementCount).sum();
     int withData = progress.stream().mapToInt(ExperimentProgress::measurementsWithPrimaryData).sum();
     int missing = progress.stream().mapToInt(ExperimentProgress::measurementsWithoutPrimaryData).sum();
     String firstExperiment = progress.isEmpty() ? null : progress.getFirst().experimentId();
 
     OrderedList rail = new OrderedList();
     rail.addClassName("project-progress-rail");
-    rail.add(step(1, "Experiment created", progress.size(), "experiment", "experiments",
+    rail.add(step(1, "Experiment created", pluralise(progress.size(), "experiment", "experiments"),
         State.DONE, ExperimentInformationMain.class, firstExperiment));
-    rail.add(step(2, "Samples registered", samples, "sample", "samples",
+    rail.add(step(2, "Samples registered", pluralise(samples, "sample", "samples"),
         samples > 0 ? State.DONE : State.TODO, SampleInformationMain.class, firstExperiment));
-    rail.add(step(3, "Dataset", withData, "measurement with data", "measurements with data",
+    // "8 of 272", not "8". The other steps state how much there is; this one also has to state
+    // how much is missing, and a count without its denominator cannot do that.
+    rail.add(step(3, "Dataset",
+        "%d of %s".formatted(withData,
+            pluralise(measurements, "measurement", "measurements")),
         missing > 0 ? State.ATTENTION : State.DONE, MeasurementMain.class, firstExperiment));
     return rail;
   }
 
-  private ListItem step(int ordinal, String label, int count, String singular, String plural,
+  private static String pluralise(int count, String singular, String plural) {
+    return count + " " + (count == 1 ? singular : plural);
+  }
+
+  private ListItem step(int ordinal, String label, String count,
       State state, Class<? extends Component> target, String experimentId) {
     ListItem item = new ListItem();
     item.addClassName("project-progress-step");
@@ -213,7 +221,7 @@ public class ProjectProgressSection extends Div {
 
     Span labelSpan = new Span(label);
     labelSpan.addClassName("project-progress-step-label");
-    Span countSpan = new Span(count + " " + (count == 1 ? singular : plural));
+    Span countSpan = new Span(count);
     countSpan.addClassName("project-progress-step-count");
     item.add(head, labelSpan, countSpan);
     if (experimentId != null) {
@@ -248,16 +256,101 @@ public class ProjectProgressSection extends Div {
     return wrap;
   }
 
+  /**
+   * Primary data, as analysis sees it: how completely it covers the registered measurements, and
+   * how much of it there is per assay type.
+   *
+   * <p>Coverage leads because it is the part a reader can act on -- "8 of 272" is a to-do list,
+   * whereas a byte total is trivia. Volume is then split per assay type rather than summed into
+   * one number, because a project total hides whether the mass sits in one modality or is spread
+   * across all three. The file count that used to sit here is gone: it is not comparable across
+   * assay types, it cannot be acted on, and pairing it with a byte total only invites the reader
+   * to divide the two (see the migration's trap 4c).</p>
+   */
   private static Div primaryDataCard(List<ExperimentProgress> progress) {
     Div card = new Div();
     card.addClassName("project-progress-datasets-card");
     card.add(cardTitle("Primary data — for analysis"));
-    List<String> types = measuredTypes(progress);
-    card.add(cardFact(types.isEmpty() ? "No primary data yet" : String.join(" · ", types)));
-    long files = progress.stream().mapToLong(ExperimentProgress::primaryDataFiles).sum();
-    long bytes = progress.stream().mapToLong(ExperimentProgress::primaryDataBytes).sum();
-    card.add(cardFact(humanReadableGigabytes(bytes) + " GB in " + files + " files"));
+    card.add(cardFact(coverage(progress)));
+    card.add(cardFact(volumeByAssayType(progress)));
     return card;
+  }
+
+  private static String coverage(List<ExperimentProgress> progress) {
+    int measurements = progress.stream().mapToInt(ExperimentProgress::measurementCount).sum();
+    if (measurements == 0) {
+      return "No measurements registered yet";
+    }
+    int withData = progress.stream()
+        .mapToInt(ExperimentProgress::measurementsWithPrimaryData).sum();
+    return "%d of %s %s primary data".formatted(withData,
+        pluralise(measurements, "measurement", "measurements"),
+        withData == 1 ? "has" : "have");
+  }
+
+  private record AssayType(String label, int measurementsWithData, long bytes) {
+
+  }
+
+  /** The assay types that actually carry primary data, in the order the rail names them. */
+  private static List<AssayType> assayTypesWithPrimaryData(List<ExperimentProgress> progress) {
+    return List.of(
+            new AssayType("Genomics",
+                progress.stream()
+                    .mapToInt(ExperimentProgress::ngsMeasurementsWithPrimaryData).sum(),
+                progress.stream().mapToLong(ExperimentProgress::ngsPrimaryDataBytes).sum()),
+            new AssayType("Proteomics",
+                progress.stream()
+                    .mapToInt(ExperimentProgress::pxpMeasurementsWithPrimaryData).sum(),
+                progress.stream().mapToLong(ExperimentProgress::pxpPrimaryDataBytes).sum()),
+            new AssayType("Immunopeptidomics",
+                progress.stream()
+                    .mapToInt(ExperimentProgress::ipMeasurementsWithPrimaryData).sum(),
+                progress.stream().mapToLong(ExperimentProgress::ipPrimaryDataBytes).sum()))
+        .stream().filter(type -> type.measurementsWithData() > 0).toList();
+  }
+
+  /**
+   * The volume, per assay type.
+   *
+   * <p>A type whose size was never recorded shows "—", not "0 B": those are different claims,
+   * and a real project reports 0 bytes for every measurement it holds. When no size was recorded
+   * anywhere, the types are still named but the gap is stated once, since a row of dashes is
+   * noise rather than information.</p>
+   */
+  private static String volumeByAssayType(List<ExperimentProgress> progress) {
+    List<AssayType> present = assayTypesWithPrimaryData(progress);
+    if (present.isEmpty()) {
+      return "No primary data attached yet";
+    }
+    if (present.stream().allMatch(type -> type.bytes() == 0)) {
+      return String.join(" · ", present.stream().map(AssayType::label).toList())
+          + " — size not recorded";
+    }
+    return String.join(" · ", present.stream()
+        .map(type -> type.label() + " " + humanReadableSize(type.bytes()))
+        .toList());
+  }
+
+  /**
+   * Size in the unit that keeps the number readable. Decimal units, matching the rest of the app.
+   *
+   * <p>Zero means "not recorded" at this point in the flow; see {@link #volumeByAssayType}.</p>
+   */
+  private static String humanReadableSize(long bytes) {
+    if (bytes <= 0) {
+      return "—";
+    }
+    if (bytes < 1_000) {
+      return bytes + " B";
+    }
+    if (bytes < 1_000_000) {
+      return "%.1f kB".formatted(bytes / 1_000.0);
+    }
+    if (bytes < 1_000_000_000) {
+      return "%.1f MB".formatted(bytes / 1_000_000.0);
+    }
+    return "%.1f GB".formatted(bytes / 1_000_000_000.0);
   }
 
   private static Div connectedAssetsCard(List<ConnectedDatasetView> connected) {
@@ -269,24 +362,20 @@ public class ProjectProgressSection extends Div {
       card.add(cardFact("None linked yet"));
       return card;
     }
+    // Titles from external repositories run to a full sentence. Clamped to one line with the full
+    // text in the tooltip, so three entries stay scannable instead of collapsing into prose.
     connected.stream()
         .limit(3)
-        .forEach(asset -> card.add(cardFact(asset.title() + " · " + asset.resourceProvider())));
+        .forEach(asset -> card.add(truncatedCardFact(
+            asset.title() + " · " + asset.resourceProvider())));
     return card;
   }
 
-  private static List<String> measuredTypes(List<ExperimentProgress> progress) {
-    List<String> types = new ArrayList<>();
-    if (progress.stream().anyMatch(entry -> entry.ngsMeasurementCount() > 0)) {
-      types.add("Genomics");
-    }
-    if (progress.stream().anyMatch(entry -> entry.pxpMeasurementCount() > 0)) {
-      types.add("Proteomics");
-    }
-    if (progress.stream().anyMatch(entry -> entry.ipMeasurementCount() > 0)) {
-      types.add("Immunopeptidomics");
-    }
-    return types;
+  private static Span truncatedCardFact(String text) {
+    Span fact = cardFact(text);
+    fact.addClassName("project-progress-datasets-card-fact--truncated");
+    fact.getElement().setAttribute("title", text);
+    return fact;
   }
 
   private static Span cardTitle(String text) {
@@ -299,10 +388,6 @@ public class ProjectProgressSection extends Div {
     Span fact = new Span(text);
     fact.addClassName("project-progress-datasets-card-fact");
     return fact;
-  }
-
-  private static String humanReadableGigabytes(long bytes) {
-    return "%.1f".formatted(bytes / 1_000_000_000.0);
   }
 
   // ── Helpers ─────────────────────────────────────────────────────────────

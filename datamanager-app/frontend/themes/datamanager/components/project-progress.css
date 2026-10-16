@@ -135,13 +135,18 @@
   background-color: var(--lumo-base-color);
 }
 
+/* Done and attention markers are FILLED, the way the prototype draws them. An outlined marker
+   leaves the glyph sitting on white, and the warning triangle is the only state indicator on the
+   step, so it has to clear the non-text contrast bar on its own. */
 .project-progress-step--done .project-progress-marker {
   border-color: var(--lumo-success-color, var(--lumo-contrast-40pct));
-  color: var(--lumo-success-text-color, var(--lumo-secondary-text-color));
+  background-color: var(--lumo-success-color, var(--lumo-contrast-40pct));
+  color: var(--lumo-base-color);
 }
 
 .project-progress-step--attention .project-progress-marker {
   border-color: var(--lumo-warning-color, var(--lumo-contrast-40pct));
+  background-color: var(--lumo-warning-color-10pct, var(--lumo-contrast-5pct));
   color: var(--lumo-warning-text-color, var(--lumo-error-text-color));
 }
 
@@ -204,6 +209,9 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--lumo-space-m);
+  /* Cards size to their own content. Stretching them to a common height left the shorter card
+     two-thirds empty grey, which reads as content that failed to load. */
+  align-items: start;
 }
 
 .project-progress-datasets-card {
@@ -212,8 +220,12 @@
   gap: var(--lumo-space-xs);
   flex: 1 1 18rem;
   padding: var(--lumo-space-m);
+  /* A hairline as well as the tint, or the cards read as loose grey rectangles on a near-white
+     page with nothing tying them to the "Datasets" heading above them. */
+  border: 1px solid var(--lumo-contrast-10pct);
   background-color: var(--lumo-contrast-5pct);
   border-radius: var(--lumo-border-radius-m);
+  min-width: 0;
 }
 
 .project-progress-datasets-card-title {
@@ -224,6 +236,14 @@
 .project-progress-datasets-card-fact {
   font-size: var(--lumo-font-size-s);
   color: var(--lumo-secondary-text-color);
+}
+
+/* Repository titles run to a full sentence; clamped to one line so three entries stay scannable.
+   The full title stays available in the tooltip. */
+.project-progress-datasets-card-fact--truncated {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .project-progress-step--link {
