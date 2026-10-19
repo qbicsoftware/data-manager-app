@@ -83,6 +83,39 @@ public class ExperimentProgress {
     // for JPA
   }
 
+  /**
+   * Full constructor for the JDBC read path.
+   *
+   * <p>The JPA view mapping uses the protected no-arg constructor. The project-page read
+   * repository maps its project-scoped progress query explicitly, because that query is
+   * parameterised by project and therefore no longer reads the {@code experiment_progress}
+   * view.</p>
+   */
+  public ExperimentProgress(String experimentId, String projectId, String experimentName,
+      int sampleCount, int measuredSampleCount, int measurementCount, int ngsMeasurementCount,
+      int pxpMeasurementCount, int ipMeasurementCount, int measurementsWithPrimaryData,
+      int ngsMeasurementsWithPrimaryData, int pxpMeasurementsWithPrimaryData,
+      int ipMeasurementsWithPrimaryData, long primaryDataBytes, long ngsPrimaryDataBytes,
+      long pxpPrimaryDataBytes, long ipPrimaryDataBytes) {
+    this.experimentId = experimentId;
+    this.projectId = projectId;
+    this.experimentName = experimentName;
+    this.sampleCount = sampleCount;
+    this.measuredSampleCount = measuredSampleCount;
+    this.measurementCount = measurementCount;
+    this.ngsMeasurementCount = ngsMeasurementCount;
+    this.pxpMeasurementCount = pxpMeasurementCount;
+    this.ipMeasurementCount = ipMeasurementCount;
+    this.measurementsWithPrimaryData = measurementsWithPrimaryData;
+    this.ngsMeasurementsWithPrimaryData = ngsMeasurementsWithPrimaryData;
+    this.pxpMeasurementsWithPrimaryData = pxpMeasurementsWithPrimaryData;
+    this.ipMeasurementsWithPrimaryData = ipMeasurementsWithPrimaryData;
+    this.primaryDataBytes = primaryDataBytes;
+    this.ngsPrimaryDataBytes = ngsPrimaryDataBytes;
+    this.pxpPrimaryDataBytes = pxpPrimaryDataBytes;
+    this.ipPrimaryDataBytes = ipPrimaryDataBytes;
+  }
+
   public String experimentId() {
     return experimentId;
   }

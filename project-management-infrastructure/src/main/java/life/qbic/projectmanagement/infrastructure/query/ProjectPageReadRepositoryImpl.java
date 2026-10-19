@@ -3,6 +3,7 @@ package life.qbic.projectmanagement.infrastructure.query;
 import jakarta.persistence.criteria.Predicate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import life.qbic.application.commons.OffsetBasedRequest;
 import life.qbic.projectmanagement.application.api.ProjectQueryService.ProjectSampleFilter;
 import life.qbic.projectmanagement.application.api.ProjectQueryService.ProjectSampleSortKey;
@@ -16,12 +17,17 @@ import life.qbic.projectmanagement.application.query.RecentSample;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Component;
 
 /**
- * JPA implementation of {@link ProjectPageReadRepository}, backed by the project-page read-model
- * views ({@code experiment_progress}, {@code v_project_sample_overview}).
+ * Read-side implementation of {@link ProjectPageReadRepository}. Experiment progress is served by a
+ * project-scoped SQL query ({@link ExperimentProgressQuery#BY_PROJECT}); the sample and
+ * recent-activity reads remain backed by their read-model views ({@code v_project_sample_overview},
+ * {@code experiment_recent_sample}, {@code experiment_recent_measurement}).
  *
  * <p>Access control sits here, on the read port (mirroring {@code LocalRawDatasetLookupService}).
  * The caller of the port is the reactive {@link
@@ -38,17 +44,41 @@ public class ProjectPageReadRepositoryImpl implements ProjectPageReadRepository 
       + "'life.qbic.projectmanagement.domain.model.project.Project', 'READ')";
   private static final String SAMPLE_CODE = "sampleCode";
 
-  private final ExperimentProgressRepository experimentProgressRepository;
+  /**
+   * Maps the project-scoped progress query ({@link ExperimentProgressQuery#BY_PROJECT}) onto the
+   * flat {@link ExperimentProgress} read model. Column aliases match the entity's view columns.
+   */
+  private static final RowMapper<ExperimentProgress> EXPERIMENT_PROGRESS_ROW_MAPPER =
+      (resultSet, rowNumber) -> new ExperimentProgress(
+          resultSet.getString("experiment_id"),
+          resultSet.getString("project_id"),
+          resultSet.getString("experiment_name"),
+          resultSet.getInt("sample_count"),
+          resultSet.getInt("measured_sample_count"),
+          resultSet.getInt("measurement_count"),
+          resultSet.getInt("ngs_measurement_count"),
+          resultSet.getInt("pxp_measurement_count"),
+          resultSet.getInt("ip_measurement_count"),
+          resultSet.getInt("measurements_with_primary_data"),
+          resultSet.getInt("ngs_measurements_with_primary_data"),
+          resultSet.getInt("pxp_measurements_with_primary_data"),
+          resultSet.getInt("ip_measurements_with_primary_data"),
+          resultSet.getLong("primary_data_bytes"),
+          resultSet.getLong("ngs_primary_data_bytes"),
+          resultSet.getLong("pxp_primary_data_bytes"),
+          resultSet.getLong("ip_primary_data_bytes"));
+
+  private final NamedParameterJdbcTemplate jdbcTemplate;
   private final ProjectSampleOverviewRepository sampleOverviewRepository;
   private final RecentSampleRepository recentSampleRepository;
   private final RecentMeasurementRepository recentMeasurementRepository;
 
   public ProjectPageReadRepositoryImpl(
-      @Autowired ExperimentProgressRepository experimentProgressRepository,
+      @Autowired JdbcTemplate jdbcTemplate,
       @Autowired ProjectSampleOverviewRepository sampleOverviewRepository,
       @Autowired RecentSampleRepository recentSampleRepository,
       @Autowired RecentMeasurementRepository recentMeasurementRepository) {
-    this.experimentProgressRepository = experimentProgressRepository;
+    this.jdbcTemplate = new NamedParameterJdbcTemplate(jdbcTemplate);
     this.sampleOverviewRepository = sampleOverviewRepository;
     this.recentSampleRepository = recentSampleRepository;
     this.recentMeasurementRepository = recentMeasurementRepository;
@@ -57,7 +87,10 @@ public class ProjectPageReadRepositoryImpl implements ProjectPageReadRepository 
   @Override
   @PreAuthorize(PROJECT_READ)
   public List<ExperimentProgress> findExperimentProgress(String projectId) {
-    return experimentProgressRepository.findAllByProjectId(projectId);
+    // Project-scoped in SQL: the filter is applied inside the derivation, not after it. See
+    // ExperimentProgressQuery for why the experiment_progress view could not be used directly.
+    return jdbcTemplate.query(ExperimentProgressQuery.BY_PROJECT,
+        Map.of("projectId", projectId), EXPERIMENT_PROGRESS_ROW_MAPPER);
   }
 
   @Override
