@@ -61,9 +61,9 @@ public class ProjectExperimentsSection extends Div {
     add(content);
   }
 
-  public void setProjectId(String projectId) {
+  public void setProjectId(String projectId, Mono<List<ExperimentProgress>> progress) {
     this.projectId = requireNonNull(projectId, "projectId must not be null");
-    reload();
+    reload(requireNonNull(progress, "progress must not be null"));
   }
 
   /**
@@ -75,15 +75,17 @@ public class ProjectExperimentsSection extends Div {
     return addListener(AddExperimentRequestedEvent.class, listener);
   }
 
-  private void reload() {
+  private void reload(Mono<List<ExperimentProgress>> progress) {
     UI ui = UI.getCurrent();
     if (ui == null) {
       return;
     }
     content.removeAll();
     content.add(message("Loading experiments …"));
+    // `progress` is the page's single shared stream (cached by the parent); the recent rows are
+    // specific to this section.
     Mono<Snapshot> snapshot = Mono.zip(
-            projectQueryService.getExperimentProgress(projectId).collectList(),
+            progress,
             projectQueryService.getRecentSamples(projectId).collectList(),
             projectQueryService.getRecentMeasurements(projectId).collectList())
         .map(values -> new Snapshot(values.getT1(), values.getT2(), values.getT3()));

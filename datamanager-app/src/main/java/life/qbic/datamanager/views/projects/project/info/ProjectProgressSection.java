@@ -29,14 +29,13 @@ import life.qbic.datamanager.views.projects.project.datasets.ProjectDatasetsMain
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementMain;
 import life.qbic.datamanager.views.projects.project.samples.SampleInformationMain;
-import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectOverview;
-import life.qbic.projectmanagement.application.api.ProjectQueryService;
 import life.qbic.projectmanagement.application.associated_dataset.AssociatedDatasetService;
 import life.qbic.projectmanagement.application.associated_dataset.ConnectedDatasetView;
 import life.qbic.projectmanagement.application.query.AssayType;
 import life.qbic.projectmanagement.application.query.ExperimentProgress;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import reactor.core.publisher.Mono;
 
 /**
  * "Where the project stands" — the prototype's progress band.
@@ -64,19 +63,11 @@ public class ProjectProgressSection extends Div {
    */
   public static final String ATTENTION_LIST_ID = "project-attention";
 
-  private final transient ProjectQueryService projectQueryService;
-  private final transient ProjectInformationService projectInformationService;
   private final transient AssociatedDatasetService associatedDatasetService;
   private final Div content = new Div();
   private String projectId;
 
-  public ProjectProgressSection(ProjectQueryService projectQueryService,
-      ProjectInformationService projectInformationService,
-      AssociatedDatasetService associatedDatasetService) {
-    this.projectQueryService = requireNonNull(projectQueryService,
-        "projectQueryService must not be null");
-    this.projectInformationService = requireNonNull(projectInformationService,
-        "projectInformationService must not be null");
+  public ProjectProgressSection(AssociatedDatasetService associatedDatasetService) {
     this.associatedDatasetService = requireNonNull(associatedDatasetService,
         "associatedDatasetService must not be null");
     addClassName("project-progress-section");
@@ -84,9 +75,19 @@ public class ProjectProgressSection extends Div {
     add(content);
   }
 
-  public void setProjectId(String projectId) {
+  /**
+   * Loads the band for {@code projectId} from data the owning page already holds.
+   *
+   * <p>The {@link ProjectOverview} and the shared {@code progress} stream are supplied by the
+   * parent rather than fetched here, so the summary page issues one progress query and one
+   * overview read for both of its sections instead of one each. The parent caches the stream, so
+   * the two subscribers share a single execution.</p>
+   */
+  public void setProjectId(String projectId, ProjectOverview overview,
+      Mono<List<ExperimentProgress>> progress) {
     this.projectId = requireNonNull(projectId, "projectId must not be null");
-    reload();
+    reload(requireNonNull(overview, "overview must not be null"),
+        requireNonNull(progress, "progress must not be null"));
   }
 
   public Registration addProgressLoadedListener(
@@ -94,7 +95,7 @@ public class ProjectProgressSection extends Div {
     return addListener(ProgressLoadedEvent.class, listener);
   }
 
-  private void reload() {
+  private void reload(ProjectOverview overview, Mono<List<ExperimentProgress>> progress) {
     UI ui = UI.getCurrent();
     if (ui == null) {
       return;
@@ -103,11 +104,9 @@ public class ProjectProgressSection extends Div {
     content.add(heading());
     content.add(message("Loading project status …"));
     ProjectId id = ProjectId.parse(projectId);
-    ProjectOverview overview = projectInformationService.findOverview(id).orElse(null);
     List<ConnectedDatasetView> connected = associatedDatasetService.listConnectedDatasetViews(id);
-    ReactiveUiBridge.onUi(ui,
-        projectQueryService.getExperimentProgress(projectId).collectList(),
-        progress -> render(progress, overview, connected),
+    ReactiveUiBridge.onUi(ui, progress,
+        loaded -> render(loaded, overview, connected),
         error -> {
           content.removeAll();
           content.add(heading());

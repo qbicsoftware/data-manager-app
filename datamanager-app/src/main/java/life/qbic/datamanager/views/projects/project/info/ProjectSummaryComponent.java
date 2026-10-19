@@ -131,6 +131,7 @@ import life.qbic.projectmanagement.domain.model.project.ProjectCode;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 /**
  * <b>Project Summary Component</b>
@@ -157,6 +158,7 @@ public class ProjectSummaryComponent extends PageArea {
   public static final String SAVE_BUTTON_TEXT = "Save";
   private static final Logger log = logger(ProjectSummaryComponent.class);
   private final transient ProjectInformationService projectInformationService;
+  private final transient ProjectQueryService projectQueryService;
   private final Section headerSection;
   private final DownloadComponent downloadComponent;
   private final ProjectProgressSection projectProgressSection;
@@ -173,14 +175,13 @@ public class ProjectSummaryComponent extends PageArea {
       ProjectQueryService projectQueryService,
       AssociatedDatasetService associatedDatasetService) {
     this.projectInformationService = Objects.requireNonNull(projectInformationService);
+    this.projectQueryService = Objects.requireNonNull(projectQueryService);
     this.headerSection = new SectionBuilder().build();
     this.asyncProjectService = Objects.requireNonNull(asyncProjectService);
     this.downloadComponent = new DownloadComponent();
     this.projectProgressSection = new ProjectProgressSection(
-        Objects.requireNonNull(projectQueryService), projectInformationService,
         Objects.requireNonNull(associatedDatasetService));
-    this.projectExperimentsSection = new ProjectExperimentsSection(
-        Objects.requireNonNull(projectQueryService));
+    this.projectExperimentsSection = new ProjectExperimentsSection(this.projectQueryService);
     this.projectExperimentsSection.addAddExperimentListener(
         event -> fireEvent(new AddExperimentRequestedEvent(this, event.isFromClient())));
     this.projectProgressSection.addProgressLoadedListener(
@@ -205,8 +206,15 @@ public class ProjectSummaryComponent extends PageArea {
     var fullProject = projectInformationService.find(projectId)
         .orElseThrow(() -> new ApplicationException("No project found"));
     setContent(projectOverview, fullProject);
-    projectProgressSection.setProjectId(projectId.value());
-    projectExperimentsSection.setProjectId(projectId.value());
+    // The progress query is shared, not duplicated: both sections used to issue it independently
+    // and the progress section also re-read the overview the page already held. cache() makes the
+    // two subscribers share one execution.
+    Mono<List<ExperimentProgress>> progress = projectQueryService
+        .getExperimentProgress(projectId.value())
+        .collectList()
+        .cache();
+    projectProgressSection.setProjectId(projectId.value(), projectOverview, progress);
+    projectExperimentsSection.setProjectId(projectId.value(), progress);
   }
 
   /**
