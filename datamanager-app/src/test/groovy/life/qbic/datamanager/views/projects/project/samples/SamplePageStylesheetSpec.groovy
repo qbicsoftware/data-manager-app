@@ -38,6 +38,9 @@ class SamplePageStylesheetSpec extends Specification {
 
     private static final Pattern COMMENT = Pattern.compile(/(?s)\/\*.*?\*\//)
 
+    /** A whole CSS rule: selector list, then the declaration block. */
+    private static final Pattern CSS_RULE = Pattern.compile(/[^{}]+\{[^{}]*\}/)
+
     /**
      * Resolves the theme directory whether the spec runs from the repository root or from the
      * module directory, mirroring how {@link life.qbic.datamanager.views.demo.PrototypeIsolationSpec}
@@ -141,5 +144,43 @@ class SamplePageStylesheetSpec extends Specification {
 
         expect: "no rule is invalid this way, since it would break the production frontend build"
         offenders.isEmpty()
+    }
+
+    /**
+     * The grid rows are a navigation surface -- clicking anywhere on one opens its record -- so the
+     * browser sees a slightly imprecise click as a click-and-drag and selects the text underneath.
+     * That smears a blue highlight across several rows and looks like a rendering fault. The grid
+     * only suppresses text selection while reordering, resizing or range-selecting, so the resting
+     * state has to opt out itself.
+     *
+     * <p>The failure is invisible to every other check: the CSS is valid, the build passes and the
+     * layout is right. It only shows up when a human drags slightly while clicking, which is why it
+     * is pinned here rather than left to review.</p>
+     */
+    def "grid cell text cannot be selected, since row clicks are for opening records"() {
+        given: "the sample page stylesheet, with comments blanked"
+        def code = COMMENT.matcher(new File(themeDir(), SAMPLE_PAGE_CSS).text).replaceAll { m ->
+            m.group().replaceAll(/[^\n]/, " ")
+        }
+
+        expect: "the cell part turns text selection off"
+        // `user-select` inherits, so the cell part covers the slotted text; the extra
+        // `vaadin-grid-cell-content` selector is belt-and-braces for the slotted element itself.
+        def declarations = code.readLines().findAll { it.contains("user-select: none") }
+        declarations.size() == 1
+
+        and: "the rule doing it targets the grid's cells"
+        // Read the whole rule, not just the line with the declaration: the selector may sit on a
+        // separate line from the property.
+        def rules = []
+        def ruleMatcher = CSS_RULE.matcher(code)
+        while (ruleMatcher.find()) {
+            if (ruleMatcher.group().contains("user-select: none")) {
+                rules.add(ruleMatcher.group())
+            }
+        }
+        rules.size() == 1
+        rules.first().contains("vaadin-grid::part(body-cell)")
+        rules.first().contains("user-select: none")
     }
 }

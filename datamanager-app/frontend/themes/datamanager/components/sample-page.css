@@ -318,6 +318,25 @@
   cursor: default;
 }
 
+/* Clicking anywhere on a row opens its record, so a click that drifts a pixel or two is a
+   click-and-drag as far as the browser is concerned -- and a drag over text selects it. The result
+   is the smeared blue highlight across several rows. The grid only suppresses text selection while
+   reordering, resizing or range-selecting (vaadin-grid-base-styles.js sets `user-select: none` for
+   `:host([reordering])`, `#scroller[range-selecting]` and `[draggable-source]`), so in the resting
+   state cell text stays selectable and the browser has no reason to hold back.
+
+   The tell that this is native selection and not a style: the checkbox and chevron columns never
+   highlight, because they are Lumo controls and Lumo already sets `user-select: none` on those
+   (button-base-styles, checkable-field). Only bare text highlights.
+
+   The grid is a navigation surface; the record's values are shown in full in the detail panel,
+   which is ordinary selectable text, and bulk output goes through *Export*. So giving up selection
+   in the cells costs nothing that is not available elsewhere. */
+.sample-details-component vaadin-grid::part(body-cell),
+.sample-details-component vaadin-grid vaadin-grid-cell-content {
+  user-select: none;
+}
+
 .sample-details-component .sample-details-button {
   flex: none;
 }
