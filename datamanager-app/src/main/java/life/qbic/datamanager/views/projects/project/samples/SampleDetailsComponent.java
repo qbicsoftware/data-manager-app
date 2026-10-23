@@ -2,6 +2,9 @@ package life.qbic.datamanager.views.projects.project.samples;
 
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
+import com.vaadin.flow.component.Key;
+import com.vaadin.flow.component.ShortcutRegistration;
+import com.vaadin.flow.component.Shortcuts;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.CheckboxGroup;
@@ -48,6 +51,8 @@ import life.qbic.datamanager.views.general.pagination.PaginatedGrid;
 import life.qbic.datamanager.views.general.pagination.PaginationBar;
 import life.qbic.datamanager.views.general.pagination.Selection;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
+import life.qbic.logging.api.Logger;
+import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.SamplePreviewFilter;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
@@ -81,19 +86,53 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
 
   @Serial
   private static final long serialVersionUID = 2893730975944372088L;
+
+  private static final Logger log = LoggerFactory.logger(SampleDetailsComponent.class);
   private final transient AsyncProjectService asyncProjectService;
   private final MessageSourceNotificationFactory messageFactory;
-
   private final UiHandle uiHandle = new UiHandle();
 
   private final DownloadComponent downloadComponent = new DownloadComponent();
 
   private final AtomicReference<String> clientTimeZone = new AtomicReference<>("UTC");
+
+  /**
+   * Banner shown above the grid when a page load failed, so a failed load is never rendered as
+   * "no samples registered".
+   */
+  private final Div errorState = new Div();
   private PaginatedGrid<SamplePreview> paginatedGrid;
   private final String projectId;
   private final String experimentId;
   private final String projectCode;
   private final TextField searchField = new TextField();
+
+  /**
+   * Master-detail wrapper: holds the grid and, while a record is open, the detail panel beside it.
+   */
+  private final Div detailLayout = new Div();
+
+  /**
+   * The full record of the currently open sample. Read-only: mutation stays with the bulk actions.
+   */
+  private final SampleDetailPanel detailPanel = new SampleDetailPanel();
+
+  /**
+   * Backdrop for the drawer mode (below the inline breakpoint). Present but hidden while the panel
+   * is an inline column, where it must not block the list.
+   */
+  private final Div detailBackdrop = new Div();
+
+  /**
+   * Registration for the Esc shortcut, tracked so it is removed when the panel closes and never
+   * fires while no record is open.
+   */
+  private ShortcutRegistration escShortcut;
+
+  /**
+   * The *Details* button of the row that opened the panel, so focus can be returned to it on close.
+   */
+  private final AtomicReference<Button> detailsButtonInvoker = new AtomicReference<>();
   private final Icon selectionIcon = VaadinIcon.CHECK_SQUARE_O.create();
   private final Span selectionDisplay = new Span();
   private final Button selectAllResultsButton = new Button();
@@ -159,9 +198,38 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     paginatedGrid.addSelectionChangeListener(event -> updateSelectionBar());
 
     Div toolbar = createToolbar(sampleGrid);
-    add(toolbar, selectionBar, paginatedGrid, paginationBar);
+    configureErrorState();
+    detailLayout.addClassName("sample-detail-layout");
+    // Backdrop for the drawer mode only. It lives inside the layout so the stylesheet can scope it
+    // to the open state, and it is position:fixed, so it never becomes a grid item.
+    detailBackdrop.addClassName("sample-detail-backdrop");
+    detailBackdrop.addClickListener(event -> closeDetail());
+    detailLayout.add(paginatedGrid, detailPanel, detailBackdrop);
+    detailPanel.addCloseListener(event -> closeDetail());
+    add(toolbar, selectionBar, errorState, detailLayout, paginationBar);
 
     updateSelectionBar();
+  }
+
+  /**
+   * Builds the failure banner shown above the grid when a page load failed. The banner is the
+   * inline counterpart to the global error page: the page stays usable, the failure is stated, and
+   * a retry re-runs the load.
+   */
+  private void configureErrorState() {
+    errorState.addClassName("sample-error-state");
+    errorState.setVisible(false);
+    errorState.getElement().setAttribute("role", "alert");
+
+    Span message = new Span("Samples could not be loaded.");
+    message.addClassName("sample-error-state-message");
+
+    Button retry = new Button("Try again");
+    retry.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+    retry.addClassName("sample-error-state-retry");
+    retry.addClickListener(event -> paginatedGrid.refresh());
+
+    errorState.add(message, retry);
   }
 
   private Div createToolbar(Grid<SamplePreview> grid) {
@@ -175,8 +243,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     return toolbar;
   }
 
-  private void configureSelectionBar() {
-    selectionIcon.addClassName("sample-selection-icon");
+  private void configureSelectionBar() {    selectionIcon.addClassName("sample-selection-icon");
     selectionDisplay.addClassName("sample-selection-count");
     selectAllResultsButton.addClassName("sample-select-all-results");
     clearSelectionButton.addClassName("sample-clear-selection");
@@ -419,6 +486,60 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
         .collect(Collectors.toSet());
   }
 
+  private ComponentRenderer<Div, SamplePreview> createDetailsRenderer() {
+    return new ComponentRenderer<>(preview -> {
+      Button details = new Button(VaadinIcon.ANGLE_RIGHT.create());
+      details.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+      details.addClassName("sample-details-button");
+      // The label carries the sample code so a screen-reader row list stays meaningful: a bare
+      // "Open details" repeated per row would not say which sample it belongs to.
+      details.getElement().setAttribute("aria-label",
+          "Open details for " + preview.sampleCode());
+      details.addClickListener(event -> {
+        detailsButtonInvoker.set(details);
+        openDetail(preview);
+      });
+      Div wrapper = new Div(details);
+      wrapper.addClassName("sample-details-cell");
+      return wrapper;
+    });
+  }
+
+  /**
+   * Opens the detail panel for the given sample. The panel is independent of the grid's bulk
+   * selection: opening a record never adds it to the selection, so a subsequent bulk delete cannot
+   * hit a sample the user only inspected.
+   */
+  private void openDetail(SamplePreview preview) {
+    detailPanel.show(preview, instant -> formatTime(instant, DateTimeFormat.SIMPLE_DATE_TIME_SHORT));
+    detailLayout.addClassName("sample-detail-layout--open");
+    // Esc closes the record. The listener is attached only while a record is open, so the key is
+    // free for the page's other controls at all other times, and it is removed on close to avoid
+    // accumulating registrations.
+    if (escShortcut != null) {
+      escShortcut.remove();
+    }
+    escShortcut = Shortcuts.addShortcutListener(this,
+        event -> closeDetail(), Key.ESCAPE);
+  }
+
+  /**
+   * Closes the detail panel and returns focus to the *Details* button of the row that opened it,
+   * so keyboard users keep their place in the list.
+   */
+  private void closeDetail() {
+    detailPanel.close();
+    detailLayout.removeClassName("sample-detail-layout--open");
+    if (escShortcut != null) {
+      escShortcut.remove();
+      escShortcut = null;
+    }
+    Button invoker = detailsButtonInvoker.getAndSet(null);
+    if (invoker != null) {
+      invoker.getElement().executeJs("this.focus()");
+    }
+  }
+
   private static ComponentRenderer<Div, SamplePreview> createConditionRenderer() {
     return new ComponentRenderer<>(SampleDetailsComponent::createTagCollection,
         SampleDetailsComponent::fillTagCollection);
@@ -449,6 +570,10 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
 
   private Grid<SamplePreview> createSamplePreviewGrid() {
     Grid<SamplePreview> sampleGrid = new Grid<>();
+    // Identity columns only. The full record is read in the detail panel, so the grid stays
+    // scannable: the omitted columns are constant per experiment (species, specimen, analyte,
+    // analysis method) or are audit values (registration/modification time). They remain
+    // reachable through the Show/Hide Columns menu, which is built from the grid's own columns.
     var sampleIdColumn = sampleGrid.addColumn(SamplePreview::sampleCode)
         .setHeader("Sample ID")
         .setSortProperty("sampleId")
@@ -458,15 +583,14 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
         .setTooltipGenerator(SamplePreview::sampleCode)
         .setFrozen(true);
     sampleGrid.addColumn(SamplePreview::sampleName)
-        .setHeader("Sample Name")
+        .setHeader("Sample name")
         .setSortProperty("sampleName")
         .setTooltipGenerator(SamplePreview::sampleName)
         .setAutoWidth(true)
         .setResizable(true);
-    sampleGrid.addColumn(SamplePreview::biologicalReplicate)
-        .setHeader("Biological Replicate")
-        .setSortProperty("biologicalReplicate")
-        .setTooltipGenerator(SamplePreview::biologicalReplicate)
+    sampleGrid.addColumn(createConditionRenderer())
+        .setHeader("Condition")
+        .setSortProperty("condition")
         .setAutoWidth(true)
         .setResizable(true);
     sampleGrid.addColumn(SamplePreview::batchLabel)
@@ -475,58 +599,83 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
         .setTooltipGenerator(SamplePreview::batchLabel)
         .setAutoWidth(true)
         .setResizable(true);
-    sampleGrid.addColumn(createConditionRenderer())
-        .setHeader("Condition")
-        .setSortProperty("condition")
+    sampleGrid.addColumn(createDetailsRenderer())
+        .setHeader("")
         .setAutoWidth(true)
-        .setResizable(true);
+        .setFlexGrow(0);
+    sampleGrid.addClassName("sample-grid");
+    sampleGrid.setColumnReorderingAllowed(true);
+    // The columns retired from the default view stay available through the Show/Hide Columns menu,
+    // so a power user can restore the flat table without a separate surface. They are appended
+    // hidden: the grid is created with the identity set visible.
+    addHiddenDetailColumns(sampleGrid);
+    sampleGrid.sort(GridSortOrder.asc(sampleIdColumn).build());
+    return sampleGrid;
+  }
+
+  /**
+   * Appends the columns retired from the default identity view, hidden. They keep their sort
+   * properties and tooltips so that restoring them via the Show/Hide Columns menu yields the same
+   * table the page showed before the rework.
+   */
+  private void addHiddenDetailColumns(Grid<SamplePreview> sampleGrid) {
+    sampleGrid.addColumn(SamplePreview::biologicalReplicate)
+        .setHeader("Biological Replicate")
+        .setSortProperty("biologicalReplicate")
+        .setTooltipGenerator(SamplePreview::biologicalReplicate)
+        .setAutoWidth(true)
+        .setResizable(true)
+        .setVisible(false);
     sampleGrid.addColumn(preview -> preview.species().getLabel())
         .setHeader("Species")
         .setSortProperty("species")
         .setTooltipGenerator(preview -> preview.species().formatted())
         .setAutoWidth(true)
-        .setResizable(true);
+        .setResizable(true)
+        .setVisible(false);
     sampleGrid.addColumn(preview -> preview.specimen().getLabel())
         .setHeader("Specimen")
         .setSortProperty("specimen")
         .setTooltipGenerator(preview -> preview.specimen().formatted())
-        .setAutoWidth(true);
+        .setAutoWidth(true)
+        .setVisible(false);
     sampleGrid.addColumn(preview -> preview.analyte().getLabel())
         .setHeader("Analyte")
         .setSortProperty("analyte")
         .setTooltipGenerator(preview -> preview.analyte().formatted())
         .setAutoWidth(true)
-        .setResizable(true);
+        .setResizable(true)
+        .setVisible(false);
     sampleGrid.addColumn(preview -> preview.analysisMethod().label())
         .setHeader("Analysis to Perform")
         .setSortProperty("analysisMethod")
         .setTooltipGenerator(samplePreview -> samplePreview.analysisMethod().label())
         .setAutoWidth(true)
-        .setResizable(true);
+        .setResizable(true)
+        .setVisible(false);
     sampleGrid.addColumn(preview -> formatTime(preview.registrationTime(),
             DateTimeFormat.SIMPLE_DATE_TIME_SHORT))
         .setHeader("Registration time")
         .setSortProperty("registrationTime")
         .setComparator(SamplePreview::registrationTime)
         .setAutoWidth(true)
-        .setResizable(true);
+        .setResizable(true)
+        .setVisible(false);
     sampleGrid.addColumn(preview -> formatTime(preview.lastModified(),
             DateTimeFormat.SIMPLE_DATE_TIME_SHORT))
         .setHeader("Modification time")
         .setSortProperty("lastModified")
         .setComparator(SamplePreview::lastModified)
         .setAutoWidth(true)
-        .setResizable(true);
+        .setResizable(true)
+        .setVisible(false);
     sampleGrid.addColumn(SamplePreview::comment)
         .setHeader("Comment")
         .setSortProperty("comment")
         .setTooltipGenerator(SamplePreview::comment)
         .setAutoWidth(true)
-        .setResizable(true);
-    sampleGrid.addClassName("sample-grid");
-    sampleGrid.setColumnReorderingAllowed(true);
-    sampleGrid.sort(GridSortOrder.asc(sampleIdColumn).build());
-    return sampleGrid;
+        .setResizable(true)
+        .setVisible(false);
   }
 
   private String formatTime(Instant instant, DateTimeFormat dateTimeFormat) {
@@ -546,12 +695,25 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     int offset = (state.page() - 1) * state.pageSize();
     int limit = state.pageSize();
     SamplePreviewFilter filter = new SamplePreviewFilter(state.filter(), apiSortOrders(state));
-    int total = asyncProjectService.countSamples(projectId, experimentId, filter).blockOptional()
-        .orElse(0);
-    List<SamplePreview> page = asyncProjectService.getSamplePreviews(projectId, experimentId,
-            offset, limit, filter)
-        .collectList().blockOptional().orElse(List.of());
-    return new PaginatedGrid.Page<>(page, total);
+    try {
+      int total = asyncProjectService.countSamples(projectId, experimentId, filter)
+          .blockOptional()
+          .orElseThrow(() -> new IllegalStateException("sample count returned no value"));
+      List<SamplePreview> page = asyncProjectService.getSamplePreviews(projectId, experimentId,
+              offset, limit, filter)
+          .collectList()
+          .blockOptional()
+          .orElseThrow(() -> new IllegalStateException("sample page returned no value"));
+      errorState.setVisible(false);
+      return new PaginatedGrid.Page<>(page, total);
+    } catch (RuntimeException e) {
+      // A backend failure used to be swallowed into an empty page, which made a failed load
+      // indistinguishable from "no samples registered". Surface it as an error state instead: the
+      // grid renders empty, but the banner above it says the load failed and offers a retry.
+      log.error("Could not load the sample page", e);
+      errorState.setVisible(true);
+      return new PaginatedGrid.Page<>(List.of(), 0);
+    }
   }
 
   /**

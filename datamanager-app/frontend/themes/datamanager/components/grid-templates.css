@@ -47,12 +47,30 @@
     "rawdatadetails rawdatadownloadinformation";
 }
 
+/* The sample list is a capped, centred shell like the project page and the
+experiment overview: it previously carried no shell geometry, so its content did
+not line up with the chrome rows above it. The shell owns the cap and the
+gutter; the bands inside add none. The second row takes `auto` rather than a
+height floor because the milestone/gate band and the pager change the page
+height, and a floor left dead space below short lists. */
+/* The sample list is a capped, centred shell like the project page and the
+experiment overview: it previously carried no shell geometry, so its content did
+not line up with the chrome rows above it. The shell owns the cap and the
+gutter; the bands inside add none.
+
+The page stacks its bands in document order (header, milestone/gate, grid,
+pager), so it is a flex column rather than the two-row grid whose second row was
+reserved for the grid. That reservation is what let a short list leave dead
+space below it. */
 .main.sample {
-  grid-template-columns: 100%;
-  grid-template-rows: minmax(min-content, 10%) auto;
-  grid-template-areas:
-    "."
-    "sampledetails";
+  display: flex;
+  flex-direction: column;
+  max-width: var(--content-shell-max-width);
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  box-sizing: border-box;
+  padding-inline: var(--content-shell-gutter);
 }
 
 .main.experiment {
@@ -198,13 +216,5 @@
     "rawdatadownloadinformation"
     "rawdatadetails";
     grid-template-rows: minmax(min-content, 20%) minmax(min-content, 20%) minmax(60vh, 1fr);
-  }
-
-  .main.sample {
-    grid-template-columns: minmax(min-content, 1fr);
-    grid-template-areas:
-    "."
-    "sampledetails";
-    grid-template-rows: minmax(min-content, 10%) auto;
   }
 }

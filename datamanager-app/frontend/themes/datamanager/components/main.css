@@ -135,7 +135,6 @@ html {
   margin: auto;
 }
 
-.main.sample .page-area,
 .main.measurement .page-area {
   border: 1px solid;
   border-color: var(--lumo-contrast-10pct);
@@ -143,8 +142,6 @@ html {
 }
 
 /*We want to show disclaimer centralized over the whole main width and height independent of defined areas */
-.main.sample .no-experimental-groups-registered-disclaimer,
-.main.sample .no-samples-registered-disclaimer,
 .main.measurement .no-samples-registered-disclaimer,
 .main.measurement .no-measurements-registered-disclaimer {
   grid-column-start: 1;
@@ -174,15 +171,10 @@ html {
 }
 
 
-.main.sample .sample-details-component {
-  grid-area: sampledetails;
-}
-
 .main.measurement .measurement-details-component {
   grid-area: measurementdetails;
 }
 
-.main.sample .sample-main-content,
 .main.measurement .measurement-main-content {
   display: flex;
   flex-direction: column;
@@ -191,7 +183,6 @@ html {
   justify-content: space-between;
 }
 
-.main.sample .sample-main-header,
 .main.measurement .measurement-main-content .measurement-main-header {
   display: flex;
   align-items: center;
@@ -201,7 +192,6 @@ html {
   column-gap: var(--lumo-space-m);
 }
 
-.main.sample .sample-main-header .title,
 .main.measurement .measurement-main-content .title {
   font-weight: bold;
   color: var(--heading-text-color);
@@ -209,14 +199,12 @@ html {
   margin-bottom: 0.5rem;
 }
 
-.main.sample .sample-main-header .buttonsAndInfo,
 .main.measurement .measurement-main-content .buttonsAndInfo {
   display: flex;
   flex-direction: column;
   row-gap: var(--lumo-space-m);
 }
 
-.main.sample .sample-main-header .buttonsAndInfo .info,
 .main.measurement .measurement-main-content .buttonsAndInfo .info {
   border-radius: var(--lumo-border-radius-m);
   column-gap: var(--spacing-03);
@@ -357,62 +345,20 @@ html {
   padding-bottom: var(--lumo-space-m);
 }
 
-.main.sample .page-area {
-  border: 1px solid;
-  border-color: var(--lumo-contrast-10pct);
-  border-radius: var(--lumo-border-radius-m);
-}
-
-/*We want to show disclaimer centralized over the whole main width and height independent of defined areas */
-.main.sample .no-samples-registered-disclaimer {
-  grid-column-start: 1;
-  grid-column-end: -1;
-  grid-row-start: 1;
-  grid-row-end: -1;
-}
-
-/*We want to show disclaimer centralized over the whole main width and height independent of defined areas */
-.main.sample .no-experimental-groups-registered-disclaimer {
-  grid-column-start: 1;
-  grid-column-end: -1;
-  grid-row-start: 1;
-  grid-row-end: -1;
-}
+/* The sample page's bands are borderless, like the project page: separation is whitespace, and
+   the grid carries its own hairline. The bordered page-area box made the page read as one more
+   framed panel among the chrome rows instead of the page's own surface. The measurement page
+   keeps its border -- that page has not been reworked. */
 
 .main.sample .sample-main-content {
   display: flex;
   flex-direction: column;
   row-gap: var(--lumo-space-m);
-  padding: var(--lumo-space-m);
-  justify-content: space-between;
-}
-
-.main.sample .sample-main-content .sample-main-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  column-gap: var(--lumo-space-m);
-}
-
-.main.sample .sample-main-content .title {
-  font-weight: bold;
-  color: var(--heading-text-color);
-  font-size: var(--lumo-font-size-xxl);
-  margin-bottom: 0.5rem;
-}
-
-.main.sample .sample-main-content .buttonAndField {
-  display: inline-flex;
-  justify-content: space-between;
-  gap: var(--lumo-space-m);
 }
 
 .main.sample .sample-details-component {
-  grid-area: sampledetails;
-  /* Grid items stretch to fill their area by default; an explicit height: 100%
-     would re-introduce the percentage-resolution trap that broke the grid
-     on short viewports. min-height: 0 allows shrinking within the track. */
+  /* Grid items stretch to fill their area by default; min-height: 0 allows shrinking within the
+     flexible column so the grid cannot push the pager off the page on short viewports. */
   min-height: 0;
 }
 
