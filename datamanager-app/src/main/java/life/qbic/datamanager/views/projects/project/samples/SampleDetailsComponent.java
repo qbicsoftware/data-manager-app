@@ -113,6 +113,13 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   private final Div detailLayout = new Div();
 
   /**
+   * The grid and its pager as one column of the master-detail layout. They must stay together: a
+   * pager placed after the whole layout lands off-screen whenever a record is open, because the
+   * layout is as tall as the taller column and the panel's height is capped near the viewport.
+   */
+  private final Div listColumn = new Div();
+
+  /**
    * The full record of the currently open sample. Read-only: mutation stays with the bulk actions.
    */
   private final SampleDetailPanel detailPanel = new SampleDetailPanel();
@@ -207,14 +214,17 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
 
     Div toolbar = createToolbar(sampleGrid);
     configureErrorState();
+    configureRowActivation(sampleGrid);
+    listColumn.addClassName("sample-detail-list");
+    listColumn.add(paginatedGrid, paginationBar);
     detailLayout.addClassName("sample-detail-layout");
     // Backdrop for the drawer mode only. It lives inside the layout so the stylesheet can scope it
     // to the open state, and it is position:fixed, so it never becomes a grid item.
     detailBackdrop.addClassName("sample-detail-backdrop");
     detailBackdrop.addClickListener(event -> closeDetail());
-    detailLayout.add(paginatedGrid, detailPanel, detailBackdrop);
+    detailLayout.add(listColumn, detailPanel, detailBackdrop);
     detailPanel.addCloseListener(event -> closeDetail());
-    add(toolbar, selectionBar, errorState, detailLayout, paginationBar);
+    add(toolbar, selectionBar, errorState, detailLayout);
 
     updateSelectionBar();
   }
@@ -350,6 +360,26 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
           ? "open-detail-row"
           : null;
     });
+  }
+
+  /**
+   * Opens the detail panel when the user clicks anywhere on a row, so reading a record does not
+   * require aiming at a small icon at the far right of a wide row.
+   *
+   * <p>This deliberately does not touch the grid's selection. Vaadin only toggles selection on a row
+   * click when the selection column's {@code autoSelect} is enabled, and it is not -- which is why
+   * the other row-click lists in this app ({@code GroupMembersComponent},
+   * {@code ConnectDatasetSidebar}) add an explicit listener of their own. Selection therefore stays
+   * on the checkbox, and opening a record can never add it to a bulk selection, so a later Delete
+   * cannot hit a sample the user only inspected.</p>
+   *
+   * <p>Vaadin does not fire an item click when the clicked cell holds a focusable element, so the
+   * selection checkbox and the row's own Details button keep their own behaviour instead of also
+   * opening the panel. The Details button stays because keyboard users need it: the item-click event
+   * is bound to the mouse click only, so Enter on a focused row does not open the panel.</p>
+   */
+  private void configureRowActivation(Grid<SamplePreview> grid) {
+    grid.addItemClickListener(event -> openDetail(event.getItem(), null));
   }
 
   private void configureActions() {
@@ -518,8 +548,8 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
       details.getElement().setAttribute("aria-label",
           "Open details for " + preview.sampleCode());
       details.addClickListener(event -> {
-        detailsButtonInvoker.set(details);
-        openDetail(preview);
+        // The invoker is handed over so focus can return here when the panel closes.
+        openDetail(preview, details);
       });
       Div wrapper = new Div(details);
       wrapper.addClassName("sample-details-cell");
@@ -528,11 +558,14 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   }
 
   /**
-   * Opens the detail panel for the given sample. The panel is independent of the grid's bulk
-   * selection: opening a record never adds it to the selection, so a subsequent bulk delete cannot
-   * hit a sample the user only inspected.
+   * Opens the detail panel for the given sample.
+   *
+   * @param preview the sample to show
+   * @param invoker the control that opened the panel, or {@code null} when the row itself was
+   *                clicked; focus is returned to it on close
    */
-  private void openDetail(SamplePreview preview) {
+  private void openDetail(SamplePreview preview, Button invoker) {
+    detailsButtonInvoker.set(invoker);
     detailPanel.show(preview, instant -> formatTime(instant, DateTimeFormat.SIMPLE_DATE_TIME_SHORT));
     detailLayout.addClassName("sample-detail-layout--open");
     openDetailSampleId.set(preview.sampleId().value());

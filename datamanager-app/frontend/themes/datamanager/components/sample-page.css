@@ -294,18 +294,45 @@
 
 /* ── Details affordance in the grid ───────────────────────────────────────── */
 
+/* The whole row opens the record, not just the chevron: the chevron sits at the far right of a
+   wide row, so making it the only target means the user has to aim. It stays visible as the
+   affordance (and is the keyboard path -- Vaadin binds item-click to the mouse only), but any
+   empty part of the row activates the same action, which is the large, forgiving target. */
+.sample-details-component vaadin-grid::part(body-cell) {
+  cursor: pointer;
+}
+
+/* The checkbox cell and the chevron cell keep their own behaviour, so neither gets the row's
+   pointer cursor: a click on the checkbox must select rather than open, and the chevron is its own
+   control. Vaadin also does not fire an item click from a cell holding a focusable element, so
+   these two already behave correctly; this only stops them *looking* like the rest of the row. */
+.sample-details-component vaadin-grid::part(body-cell) .sample-details-cell,
+.sample-details-component vaadin-grid::part(body-cell) vaadin-checkbox {
+  cursor: default;
+}
+
 .sample-details-component .sample-details-button {
   flex: none;
 }
 
 /* A row whose record is open in the panel is marked with the part name `open-detail-row` via
    Grid.setPartNameGenerator. The tint anchors the panel back to its row: the row is deliberately
-   NOT added to the grid's bulk selection when it is opened (see SampleDetailsComponent), so
+   NOT added to the grid's bulk selection when it is opened (selection stays on the checkbox), so
    without this cue nothing on screen links the two. The left border is the stronger, more
    legible half of the cue, since a pale background alone is easy to miss. */
 .sample-details-component vaadin-grid::part(open-detail-row) {
   background-color: var(--primary-color-10pct);
   box-shadow: inset 2px 0 0 0 var(--primary-color);
+}
+
+/* The grid and its pager form one column of the master-detail layout, so the pager sits directly
+   under the rows and is part of the same scrolling column as the grid -- not below the whole
+   layout, where the panel's height would push it off screen. */
+.sample-detail-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+  min-width: 0;
 }
 
 /* ── Responsive: the panel becomes a drawer when the list cannot sit beside it ─ */
