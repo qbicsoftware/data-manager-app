@@ -28,6 +28,17 @@ class SamplePageStylesheetSpec extends Specification {
     private static final Pattern VAR_USE = Pattern.compile(/var\(\s*(--[a-zA-Z0-9-]+)/)
 
     /**
+     * Matches a {@code ::part()} pseudo-element that is trailed by a descendant selector, which is
+     * invalid CSS. After the closing parenthesis only a pseudo-class/pseudo-element ({@code :}), a
+     * comma or the declaration block ({@code \{}) may follow -- anything else after whitespace is a
+     * descendant (or child) combinator, and both browsers and lightningcss drop the rule.
+     */
+    private static final Pattern PART_TRAILED_BY_SELECTOR =
+            Pattern.compile(/::part\([^)]*\)\s+[^,{}\s]/)
+
+    private static final Pattern COMMENT = Pattern.compile(/(?s)\/\*.*?\*\//)
+
+    /**
      * Resolves the theme directory whether the spec runs from the repository root or from the
      * module directory, mirroring how {@link life.qbic.datamanager.views.demo.PrototypeIsolationSpec}
      * locates its sources.
@@ -93,5 +104,42 @@ class SamplePageStylesheetSpec extends Specification {
         expect: "the sample page is imported exactly once"
         def imports = custom.readLines().findAll { it.contains(SAMPLE_PAGE_CSS) }
         imports.size() == 1
+    }
+
+    /**
+     * Guards a failure mode that reached a developer's machine as a broken build: a rule written as
+     * {@code vaadin-grid::part(body-cell) .sample-details-cell} is invalid CSS. The compiler and the
+     * unit tests are indifferent to it, but the production frontend build runs the stylesheet
+     * through lightningcss, which rejects it and fails the whole {@code mvn package} -- so the
+     * damage lands only on a full build, which is precisely the build that is easiest to skip while
+     * iterating.
+     *
+     * <p>The tell is structural, so it can be checked without a CSS parser: after a {@code ::part()}
+     * pseudo-element only a pseudo-class, pseudo-element, comma or block may follow. Cell content is
+     * styled by descendant selectors on the grid instead, because it is light DOM.</p>
+     */
+    def "no theme rule trails a ::part() pseudo-element with a descendant selector"() {
+        given: "every theme stylesheet, with comments removed"
+        // Comments are stripped first: several of them quote the offending shape while explaining
+        // it, and prose is not a selector.
+        def offenders = []
+        themeDir().listFiles({ f -> f.name.endsWith(".css") } as FileFilter).each { f ->
+            // Comments are blanked out rather than removed: a comment quotes the offending shape
+            // verbatim while explaining it, but deleting it outright would shift line numbers and
+            // send the reader to the wrong place. Replacing every non-newline character with a
+            // space keeps the text the same length and the line numbering intact.
+            def code = COMMENT.matcher(f.text).replaceAll { m ->
+                m.group().replaceAll(/[^\n]/, " ")
+            }
+            def lines = code.readLines()
+            def matcher = PART_TRAILED_BY_SELECTOR.matcher(code)
+            while (matcher.find()) {
+                def line = code.substring(0, matcher.start()).count("\n") + 1
+                offenders.add("${f.name}:${line}: ${lines[line - 1].trim()}")
+            }
+        }
+
+        expect: "no rule is invalid this way, since it would break the production frontend build"
+        offenders.isEmpty()
     }
 }

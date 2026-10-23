@@ -304,10 +304,17 @@
 
 /* The checkbox cell and the chevron cell keep their own behaviour, so neither gets the row's
    pointer cursor: a click on the checkbox must select rather than open, and the chevron is its own
-   control. Vaadin also does not fire an item click from a cell holding a focusable element, so
-   these two already behave correctly; this only stops them *looking* like the rest of the row. */
-.sample-details-component vaadin-grid::part(body-cell) .sample-details-cell,
-.sample-details-component vaadin-grid::part(body-cell) vaadin-checkbox {
+   control. Vaadin also does not fire an item click from a cell holding a focusable element
+   (gridConnector.ts: a click is dropped when the cell content contains something focusable), so
+   these two already behave correctly; this only stops them *looking* like the rest of the row.
+
+   These must NOT be written as `::part(body-cell) .sample-details-cell`. A descendant selector may
+   not trail a `::part()` pseudo-element -- the rule is invalid CSS, and lightningcss rejects it
+   outright during the production frontend build. Cell content is light DOM anyway (the grid slots
+   `vaadin-grid-cell-content` into itself), so a plain descendant selector of the grid reaches it
+   and, at (0,2,1), outranks the (0,1,2) `::part(body-cell)` rule above. */
+.sample-details-component vaadin-grid .sample-details-cell,
+.sample-details-component vaadin-grid vaadin-checkbox {
   cursor: default;
 }
 
