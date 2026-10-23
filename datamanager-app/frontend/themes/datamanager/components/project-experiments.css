@@ -54,6 +54,11 @@
   font-weight: 600;
   font-size: var(--lumo-font-size-l);
   color: var(--lumo-header-text-color);
+  text-decoration: none;
+}
+
+.project-exp-name:hover {
+  text-decoration: underline;
 }
 
 .project-exp-facets {
@@ -136,9 +141,9 @@
   color: var(--lumo-success-text-color, var(--lumo-secondary-text-color));
 }
 
-.project-exp-panel-state--attention {
-  background-color: var(--attention-surface, var(--lumo-contrast-10pct));
-  color: var(--lumo-warning-text-color, var(--lumo-error-text-color));
+.project-exp-panel-state--incomplete {
+  background-color: var(--info-surface, var(--lumo-contrast-10pct));
+  color: var(--info-text-color, var(--lumo-error-text-color));
 }
 
 .project-exp-panel-state--active {
@@ -152,9 +157,20 @@
 }
 
 .project-exp-panel-open {
-  margin-left: auto;
   font-size: var(--lumo-font-size-s);
   color: var(--lumo-primary-text-color);
+}
+
+/* The Dataset panel's completeness ring, top-right of the panel head. The "Open" hint is no longer
+   right-aligned: the ring owns the auto margin, so both panels' heads start at the same left edge
+   and only the ring sits at the right. */
+.project-exp-panel-accessory {
+  margin-left: auto;
+}
+
+.project-exp-panel-accessory .completeness-ring {
+  --completeness-ring-size: 2.5rem;
+  --completeness-ring-font-size: var(--lumo-font-size-xs);
 }
 
 .project-exp-panel-metric {
@@ -198,24 +214,27 @@
   color: var(--lumo-secondary-text-color);
 }
 
-/* ── Onboarding hero (no experiment yet) ──────────────────────────────── */
+/* ── Empty experiments list ───────────────────────────────────────────── */
 
-.project-experiments-onboarding {
+/* The dashed hero that used to live here is gone with the component: it framed the page's only
+   primary action in a dashed border, which reads as "drop target / unfinished", and sat below the
+   progress band that had already asked for the same thing. The one call to action is now in the
+   progress band's own headline. */
+.project-experiments-empty {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--lumo-space-s);
-  padding: var(--lumo-space-m);
-  border: 1px dashed var(--lumo-contrast-20pct);
-  border-radius: var(--lumo-border-radius-m);
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--lumo-space-xs);
+  padding: var(--lumo-space-m) 0;
 }
 
-.project-experiments-onboarding-title {
-  font-size: var(--lumo-font-size-l);
-  font-weight: 600;
-  color: var(--lumo-header-text-color);
-}
-
-.project-experiments-onboarding-text {
+.project-experiments-empty-text {
   color: var(--lumo-secondary-text-color);
+}
+
+/* A text link rather than a second primary button: the progress band above already holds the one
+   primary action, and this is the same destination reached from where the reader is standing. */
+.project-experiments-empty-action {
+  font-weight: 600;
+  color: var(--lumo-primary-text-color);
 }

@@ -54,6 +54,11 @@ public class AppRoutes {
     public static final String PROJECTS = "projects/list";
 
     /**
+     * Path to the project creation wizard.
+     */
+    public static final String PROJECT_CREATION = "projects/create";
+
+    /**
      * Path to the page that shows a selected project's information
      */
     public static final String PROJECT_INFO = "projects/%s/info";

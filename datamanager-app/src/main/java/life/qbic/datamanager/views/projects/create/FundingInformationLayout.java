@@ -43,9 +43,23 @@ public class FundingInformationLayout extends Div implements
     Span fundingInformationTitle = new Span(TITLE);
     fundingInformationTitle.addClassNames("title");
     Span fundingInformationDescription = new Span(
-        "Specify the name and id of the research project grant, if present.");
+        "Specify the name and ID of the research project grant, if present.");
     add(fundingInformationTitle, fundingInformationDescription, fundingField);
     addClassName("funding-information-layout");
+  }
+
+  /**
+   * Adds a short note directly under the section title, above the description. The project
+   * creation wizard uses it to mark the step as optional: a qualifier belongs below the heading it
+   * qualifies, not above it.
+   *
+   * @param hint the note to display
+   */
+  public void setStepHint(String hint) {
+    Span hintSpan = new Span(hint);
+    hintSpan.addClassName("step-hint");
+    // Index 1 is directly after the title, which initLayout adds first.
+    getElement().insertChild(1, hintSpan.getElement());
   }
 
   private void initFieldValidators() {
