@@ -12,6 +12,17 @@
  * milestone.
  * ──────────────────────────────────────────────────────────────────────────── */
 
+/* The geometry of the detail column. Defined here rather than in variables.css because these
+   values belong to this page alone -- the master-detail column exists nowhere else. The width
+   fits the longest ontology label on one line beside its label, which is what makes the panel
+   scannable; the breakpoint is where the grid would otherwise lose too much width to stay a
+   list. NOTE: the var() below is referenced as a grid track, so an undefined value would make
+   the whole `grid-template-columns` declaration invalid and silently collapse the two-column
+   layout into a single stacked column. */
+:root {
+  --sample-detail-panel-width: 24rem;
+}
+
 /* ── A. Header band ───────────────────────────────────────────────────────── */
 
 .sample-main-header {
@@ -26,6 +37,27 @@
   color: var(--heading-text-color);
   font-size: var(--lumo-font-size-xxl);
   font-weight: var(--font-weight-semi-bold);
+}
+
+/* The title and the status line are separate lines: they are two spans (an H1-equivalent and a
+   caption), so without an explicit column direction they sit inline and weld into
+   "Samples299 samples registered". */
+.sample-header-title-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-02);
+  min-width: 0;
+}
+
+.sample-header-title-block .title {
+  /* The page title is the flex item here, so the generic .page-area/.main heading margins would
+     add space that the gap already provides. */
+  margin-bottom: 0;
+}
+
+.sample-status-line {
+  color: var(--secondary-text-color);
+  font-size: var(--lumo-font-size-s);
 }
 
 /* ── B. Prerequisite gate (groups missing) ────────────────────────────────── */
@@ -123,6 +155,25 @@
   flex-wrap: wrap;
 }
 
+/* ── Load-failure banner ──────────────────────────────────────────────────── */
+
+/* A failed page load must not look like an empty list: the banner states the failure and offers a
+   retry, so the failure is distinguishable from "no samples registered". */
+.sample-error-state {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+  padding: var(--lumo-space-s) var(--lumo-space-m);
+  border: 1px solid var(--error-color-10pct);
+  border-radius: var(--lumo-border-radius-m);
+  background-color: var(--error-color-10pct);
+}
+
+.sample-error-state-message {
+  color: var(--error-text-color);
+  font-weight: var(--font-weight-medium);
+}
+
 /* ── D/F. Grid + detail panel (master-detail) ─────────────────────────────── */
 
 /* One column by default; the panel takes its own column only while a record is
@@ -180,6 +231,9 @@
   overflow-wrap: anywhere;
 }
 
+/* The record's values must not compete with the panel title (the reviewer's point: bold values
+   rendered nearly as large as the H2 left the panel without a dominant title). The values carry
+   normal weight; the title keeps the weight. */
 .sample-detail-panel-title:focus-visible {
   outline: 2px solid var(--primary-color);
   outline-offset: 2px;
@@ -211,12 +265,17 @@
   margin: 0;
   font-size: var(--lumo-font-size-xs);
   font-weight: var(--font-weight-semi-bold);
-  color: var(--secondary-text-color);
+  /* The group headings sat at the palest ink on the screen, which left the panel without a
+     readable structure. --field-label-text-color is the app's label ink and clears the contrast
+     floor that --secondary-text-color does not for a heading this small. */
+  color: var(--field-label-text-color);
 }
 
 .sample-detail-field {
   display: flex;
   flex-direction: column;
+  /* Tighter than the gap between fields, so a label cannot read as belonging to the value above
+     it. The fields themselves are separated by the group's gap. */
   gap: var(--spacing-01);
 }
 
@@ -227,6 +286,9 @@
 
 .sample-detail-field-value {
   color: var(--body-text-color);
+  /* Normal weight: the panel's title is the only bold element, so the record does not compete
+     with its own heading. */
+  font-weight: var(--font-weight-regular);
   overflow-wrap: anywhere;
 }
 
@@ -234,6 +296,16 @@
 
 .sample-details-component .sample-details-button {
   flex: none;
+}
+
+/* A row whose record is open in the panel is marked with the part name `open-detail-row` via
+   Grid.setPartNameGenerator. The tint anchors the panel back to its row: the row is deliberately
+   NOT added to the grid's bulk selection when it is opened (see SampleDetailsComponent), so
+   without this cue nothing on screen links the two. The left border is the stronger, more
+   legible half of the cue, since a pale background alone is easy to miss. */
+.sample-details-component vaadin-grid::part(open-detail-row) {
+  background-color: var(--primary-color-10pct);
+  box-shadow: inset 2px 0 0 0 var(--primary-color);
 }
 
 /* ── Responsive: the panel becomes a drawer when the list cannot sit beside it ─ */

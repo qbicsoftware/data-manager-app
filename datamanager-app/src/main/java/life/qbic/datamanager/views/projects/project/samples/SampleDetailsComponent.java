@@ -130,6 +130,13 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   private ShortcutRegistration escShortcut;
 
   /**
+   * The sample ID of the record currently open in the detail panel, so its row can be marked. The
+   * panel is deliberately independent of the grid's selection, so this is the only visual link
+   * between the open record and the row it came from.
+   */
+  private final AtomicReference<String> openDetailSampleId = new AtomicReference<>();
+
+  /**
    * The *Details* button of the row that opened the panel, so focus can be returned to it on close.
    */
   private final AtomicReference<Button> detailsButtonInvoker = new AtomicReference<>();
@@ -183,6 +190,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     configureSearch();
     configureSort(sampleGrid);
     configureSelectionReconciliation(sampleGrid);
+    configureRowHighlight(sampleGrid);
     configureSelectionBar();
     configureActions();
     configurePagination();
@@ -327,6 +335,20 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
           Set.of(((SamplePreview) item).sampleId().value())));
       multi.getRemovedSelection().forEach(item -> paginatedGrid.deselect(
           Set.of(((SamplePreview) item).sampleId().value())));
+    });
+  }
+
+  /**
+   * Marks the row whose record is open in the detail panel, so the panel can be traced back to its
+   * row. Uses the grid's part-name generator (as the group members grid does for its protected
+   * rows), which the stylesheet consumes as {@code vaadin-grid::part(open-detail-row)}.
+   */
+  private void configureRowHighlight(Grid<SamplePreview> grid) {
+    grid.setPartNameGenerator(preview -> {
+      String openId = openDetailSampleId.get();
+      return openId != null && openId.equals(preview.sampleId().value())
+          ? "open-detail-row"
+          : null;
     });
   }
 
@@ -513,6 +535,9 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   private void openDetail(SamplePreview preview) {
     detailPanel.show(preview, instant -> formatTime(instant, DateTimeFormat.SIMPLE_DATE_TIME_SHORT));
     detailLayout.addClassName("sample-detail-layout--open");
+    openDetailSampleId.set(preview.sampleId().value());
+    // Re-render the rows so the open row gains its marker (and the previously open one loses it).
+    paginatedGrid.grid().getDataProvider().refreshAll();
     // Esc closes the record. The listener is attached only while a record is open, so the key is
     // free for the page's other controls at all other times, and it is removed on close to avoid
     // accumulating registrations.
@@ -530,6 +555,8 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   private void closeDetail() {
     detailPanel.close();
     detailLayout.removeClassName("sample-detail-layout--open");
+    openDetailSampleId.set(null);
+    paginatedGrid.grid().getDataProvider().refreshAll();
     if (escShortcut != null) {
       escShortcut.remove();
       escShortcut = null;
