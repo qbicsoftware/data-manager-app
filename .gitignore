@@ -4,6 +4,7 @@
 # Local agent config files/folders
 .opencode/
 opencode.json
+.pi/
 
 # Any local run configuration file
 .run
