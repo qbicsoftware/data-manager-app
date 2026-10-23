@@ -637,6 +637,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver, 
   private void showRegisterGroupsDisclaimer() {
     Experiment experiment = currentExperiment();
     prerequisiteGate.update(0, variablesOf(experiment));
+    prerequisiteGate.setActionVisible(canWrite());
     prerequisiteGate.setVisible(true);
     milestoneBand.setVisible(false);
     content.setVisible(true);
@@ -657,7 +658,10 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver, 
     boolean dismissed = RegistrationMilestoneBand.isDismissed(experimentId);
     milestoneBand.setExperiment(experimentId, experiment.getExperimentalGroups().size(),
         variablesOf(experiment));
-    milestoneBand.setVisible(!dismissed && canWrite());
+    // The milestone states an achievement, so it is shown to everyone; only its action depends on
+    // write permission. Hiding the whole band would withhold the explanation, not just the button.
+    milestoneBand.setActionVisible(canWrite());
+    milestoneBand.setVisible(!dismissed);
     // The page stays visible in this state, so the user sees the header, the scope and the
     // achievement. Only the grid is withheld: there is nothing to list yet.
     content.setVisible(true);

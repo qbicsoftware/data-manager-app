@@ -43,6 +43,7 @@ public class RegistrationMilestoneBand extends Div {
   private static final String DISMISS_KEY_PREFIX = "sampleMilestoneDismissed:";
 
   private final Span body = new Span();
+  private final Div actions = new Div();
   private String experimentId;
 
   public RegistrationMilestoneBand() {
@@ -79,12 +80,11 @@ public class RegistrationMilestoneBand extends Div {
     review.addClickListener(
         event -> fireEvent(new ReviewDesignRequested(this, event.isFromClient())));
 
-    Div actions = new Div(register, review);
+    // The field is used by setActionVisible(), so the local is added to it rather than shadowing it.
+    actions.add(register, review);
     actions.addClassName("sample-milestone-actions");
 
     add(header, body, actions);
-    // Starts unpopulated: an empty milestone must never render before setExperiment() has stated
-    // the facts that unlocked it.
   }
 
   /**
@@ -100,6 +100,17 @@ public class RegistrationMilestoneBand extends Div {
         + "condition. Register your first batch with the metadata template.")
         .formatted(pluralise(groupCount, "experimental group"),
             pluralise(variableCount, "variable")));
+  }
+
+  /**
+   * Hides the milestone's action buttons, leaving the achievement and its explanation in place.
+   * Used for read-only users: they still need to know registration is unlocked, but neither
+   * registration nor design editing is theirs to perform.
+   *
+   * @param canWrite whether the current user may register samples in this project
+   */
+  public void setActionVisible(boolean canWrite) {
+    actions.setVisible(canWrite);
   }
 
   private static String pluralise(int count, String noun) {

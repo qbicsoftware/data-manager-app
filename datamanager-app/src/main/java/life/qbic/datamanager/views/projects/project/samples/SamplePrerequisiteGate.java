@@ -36,7 +36,6 @@ public class SamplePrerequisiteGate extends Div {
   private final Span evidence = new Span();
   private final Button defineDesign = new Button("Define experimental design",
       VaadinIcon.ARROW_RIGHT.create());
-
   public SamplePrerequisiteGate() {
     addClassName("sample-gate");
     setVisible(false);
@@ -81,6 +80,17 @@ public class SamplePrerequisiteGate extends Div {
 
   private static String pluralise(int count, String noun) {
     return count == 1 ? "1 " + noun : "%d %ss".formatted(count, noun);
+  }
+
+  /**
+   * Hides the gate's action. Used for read-only users, who cannot define the design themselves: the
+   * prerequisite and its evidence still have to be stated, but offering a button that can only fail
+   * would be a dead control.
+   *
+   * @param canDefineDesign whether the current user may change the experimental design
+   */
+  public void setActionVisible(boolean canDefineDesign) {
+    defineDesign.setVisible(canDefineDesign);
   }
 
   public Registration addDefineDesignRequestedListener(

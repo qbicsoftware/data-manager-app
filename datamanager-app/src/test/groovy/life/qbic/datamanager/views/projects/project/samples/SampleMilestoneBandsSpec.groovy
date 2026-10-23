@@ -80,6 +80,19 @@ class SampleMilestoneBandsSpec extends Specification {
         registerRequested
     }
 
+    def "the gate hides its action for a user who cannot change the design"() {
+        given: "a gate"
+        def gate = new SamplePrerequisiteGate()
+
+        when: "the action is hidden (a read-only user)"
+        gate.setActionVisible(false)
+
+        then: "the prerequisite and its evidence are still stated"
+        def text = gate.element.getTextRecursively()
+        text.contains("Define experimental design first")
+        text.contains("0 experimental groups")
+    }
+
     def "the gate exposes the route to the experimental design"() {
         given: "a gate"
         def gate = new SamplePrerequisiteGate()
