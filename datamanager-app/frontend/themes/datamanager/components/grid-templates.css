@@ -16,6 +16,8 @@
   margin-left: auto;
   margin-right: auto;
   width: 100%;
+  box-sizing: border-box;
+  padding-inline: var(--content-shell-gutter);
 }
 
 /* The access page is centered and capped so the two-column roster does not stretch
@@ -27,6 +29,8 @@
   margin-left: auto;
   margin-right: auto;
   width: 100%;
+  box-sizing: border-box;
+  padding-inline: var(--content-shell-gutter);
 }
 
 /* Grid items default to min-width:auto; allow the page content to shrink so long content
@@ -53,9 +57,20 @@
 
 .main.experiment {
   grid-template-columns: 1fr;
-  grid-template-rows: minmax(60vh, 1fr);
+  grid-template-rows: auto;
   grid-template-areas:
     "experimentdetails";
+  /* The overview is a capped, centred shell like the project page and the experiment edit
+     surfaces. It previously carried no shell geometry at all while its content capped itself at
+     80rem and added its own padding, so the page sat roughly 54px further in than the navigation
+     row and the footer above and below it -- the exact drift the Content shell block in
+     variables.css records. The shell owns the cap and the gutter; the page area inside adds none. */
+  max-width: var(--content-shell-max-width);
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  box-sizing: border-box;
+  padding-inline: var(--content-shell-gutter);
 }
 
 .main.measurement {
@@ -66,25 +81,66 @@
     "measurementdetails";
 }
 
+/* The project summary page is a single centred column. The former fixed 80/25
+   two-column grid with the experiments/offers/QC rails is retired. */
 .main.project {
-  grid-template-columns: minmax(min-content, 80%) minmax(min-content, 25%);
+  grid-template-columns: 1fr;
   grid-template-rows: auto;
-  grid-template-areas:
-    "projectdetails experimentlist"
-    "projectdetails offerlist"
-    "projectdetails qualitycontrollist";
+  max-width: var(--content-shell-max-width);
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  box-sizing: border-box;
+  /* The shell owns the horizontal gutter; the bands inside it add none. That is what makes the
+     content line up with the chrome's two rows, which are capped at the same width with the same
+     inset -- see the Content shell block in variables.css. */
+  padding-inline: var(--content-shell-gutter);
 }
 
 /*
- * Override for the Associated Datasets view (FEAT-DATSET-01).
- * The dataset view has a single full-width child, so collapse the
- * two-column project grid into a single 1fr column.
- * See grid-templates.css.
+ * Override for the Datasets page.
+ * The page used to hold a single full-width child, so the two-column project grid was collapsed
+ * into one named area. It now stacks three bands -- the page heading, the primary datasets and
+ * the connected datasets -- so it returns to the ordinary single-column flow and lets them
+ * auto-place in document order.
  */
 .main.project.datasets {
   grid-template-columns: 1fr;
   grid-template-rows: auto;
-  grid-template-areas: "datasets-content";
+}
+
+/* The experiment edit surfaces are capped, centred columns like the project page, so their forms do
+   not stretch across very wide screens. The shell owns the horizontal gutter, so the page area
+   inside adds none and its bands line up with the chrome above them. Both surfaces share the
+   geometry so switching between Setup and Experimental design does not shift the content column. */
+.main.experiment-design,
+.main.experiment-setup {
+  grid-template-columns: 1fr;
+  grid-template-rows: auto;
+  max-width: var(--content-shell-max-width);
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  box-sizing: border-box;
+  padding-inline: var(--content-shell-gutter);
+}
+
+.main.experiment-design > .page-area,
+.main.experiment-setup > .page-area {
+  padding-inline: 0;
+}
+
+/* The experiment creation page is capped and centred like the edit page, so create and edit share
+   one column width. */
+.main.experiment-create {
+  grid-template-columns: 1fr;
+  grid-template-rows: auto;
+  max-width: var(--content-shell-max-width);
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  box-sizing: border-box;
+  padding-inline: var(--content-shell-gutter);
 }
 
 /*
@@ -108,9 +164,13 @@
 
 .grid-experimental-variable-input {
   display: grid;
-  grid-template-areas: "nameunit levels" "delete levels";
-  grid-template-columns: 2fr 1fr;
-  grid-template-rows: 1fr minmax(min-content, max-content);
+  /* Name/unit and the delete action share the top row; the levels span the full width below. The
+     former "nameunit levels / delete levels" template left the short left column two-thirds empty
+     beside a tall levels panel. */
+  grid-template-areas: "nameunit delete" "levels levels";
+  grid-template-columns: 1fr auto;
+  grid-template-rows: min-content minmax(min-content, 1fr);
+  align-items: start;
 }
 
 
@@ -120,7 +180,7 @@
     grid-template-columns: minmax(min-content, 1fr);
     grid-template-areas:
     "experimentdetails";
-    grid-template-rows: minmax(60vh, 1fr);
+    grid-template-rows: auto;
   }
 
   .main.measurement {
@@ -129,16 +189,6 @@
     "."
     "measurementdetails";
     grid-template-rows: minmax(min-content, 10%) auto;
-  }
-
-  .main.project {
-    grid-template-columns: minmax(min-content, 1fr);
-    grid-template-areas:
-    "projectdetails"
-    "experimentlist"
-    "offerlist"
-    "qualitycontrollist";
-    grid-template-rows: minmax(min-content, 60%) minmax(min-content, 20%) minmax(min-content, 20%);
   }
 
   .main.raw-data {

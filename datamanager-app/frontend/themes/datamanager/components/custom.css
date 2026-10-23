@@ -6,10 +6,12 @@
 @import "card.css";
 @import "combobox.css";
 @import "dialog.css";
+@import "field-focus.css";
 @import "connect-dataset-sidebar.css";
 @import "project-sharing-drawer.css";
 @import "sync-results-sidebar.css";
 @import "div.css";
+@import "stepper.css";
 @import "footer.css";
 @import "groups.css";
 @import "image.css";
@@ -18,6 +20,13 @@
 @import "main.css";
 @import "my-groups.css";
 @import "navbar.css";
+@import "app-shell.css";
+@import "project-progress.css";
+@import "project-experiments.css";
+@import "project-datasets.css";
+@import "project-metadata.css";
+@import "project-settings.css";
+@import "project-identity.css";
 @import "navigation-drawer.css";
 @import "page-area.css";
 @import "profile-picture.css";

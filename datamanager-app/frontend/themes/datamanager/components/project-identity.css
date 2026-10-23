@@ -1,0 +1,163 @@
+/* Project identity band: title + code, meta line, and the clamped objective. */
+
+/* The project identifier beside the title. Monospace comes from .identifier; the weight is 500
+   rather than 400 because a regular-weight monospace glyph sits thin next to the bold title, and
+   500 is what the prototype uses for the same element (.pt-title__code). */
+.project-identity-code {
+  color: var(--lumo-secondary-text-color);
+  font-weight: 500;
+  font-size: var(--lumo-font-size-m);
+  margin-inline-start: var(--lumo-space-s);
+}
+
+.project-identity-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--lumo-space-xs);
+  font-size: var(--lumo-font-size-s);
+  color: var(--lumo-secondary-text-color);
+}
+
+.project-identity-separator {
+  color: var(--lumo-contrast-40pct);
+}
+
+/* The not-complete rollup as a chip, following the prototype's .pt-chip: a surface of its own, so it
+   reads as a control rather than as coloured text that happens to be clickable. Tone matches the
+   list it leads to, so the chip and its destination look like the same thing. */
+.project-identity-incomplete {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lumo-space-xs);
+  padding: 0.1rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid var(--info-border, var(--lumo-contrast-20pct));
+  background-color: var(--info-surface, var(--lumo-contrast-5pct));
+  color: var(--info-text-color, var(--lumo-error-text-color));
+  font-size: var(--lumo-font-size-xs);
+  font-weight: 600;
+  white-space: nowrap;
+  /* It is an anchor, so the browser would underline it. The chip's own surface already says it is a
+     control; an underline as well makes it look like a link that escaped into a badge. */
+  text-decoration: none;
+}
+
+.project-identity-incomplete:hover,
+.project-identity-incomplete:focus-visible {
+  border-color: var(--info-text-color, var(--lumo-error-text-color));
+  text-decoration: none;
+}
+
+.project-identity-incomplete vaadin-icon {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
+.project-objective {
+  margin-top: var(--lumo-space-s);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--lumo-space-xs);
+}
+
+/* Expanded by default, clamped to a few lines — never a collapsed grey bar. */
+.project-objective-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  max-width: 60rem;
+  line-height: var(--lumo-line-height-m);
+}
+
+.project-objective-text.is-expanded {
+  -webkit-line-clamp: unset;
+  overflow: visible;
+}
+
+.project-objective-toggle {
+  padding-inline: 0;
+}
+
+/* Contacts row of the identity band. */
+.project-contacts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--lumo-space-s);
+  margin-top: var(--lumo-space-s);
+  font-size: var(--lumo-font-size-s);
+}
+
+.project-contacts-label {
+  color: var(--lumo-secondary-text-color);
+}
+
+.project-contact {
+  display: inline-flex;
+  align-items: center;
+  /* 8px, not 4px: the chip packs a role, a name and up to two links, and at the tighter gap the
+     solid ORCID disc touched the name it followed. */
+  gap: var(--lumo-space-s);
+  padding: 2px var(--lumo-space-s);
+  border: 1px solid var(--lumo-contrast-10pct);
+  border-radius: 999px;
+}
+
+/* The role is a chip, not a prefix. As plain semibold text it read as part of the person's name --
+   "PI Cool Dude2" scans as a name whose first word happens to be odd -- and the three roles were
+   indistinguishable at a glance. A pill is visibly a label rather than a name part, which is the
+   prototype's answer for the same chip. */
+.project-contact-role {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.1rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  background-color: var(--lumo-contrast-10pct);
+  font-size: var(--lumo-font-size-xs);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--lumo-secondary-text-color);
+}
+
+.project-contact-name {
+  color: var(--lumo-body-text-color);
+}
+
+/* The two links (ORCID record, e-mail) sit adjacent, so each gets its own square target rather
+   than a bare glyph: a mis-tap between "open the ORCID record" and "write an e-mail" is the
+   failure this avoids. The box is transparent until hover, so what shows is the spacing. */
+.project-contact-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.75rem;
+  min-height: 1.75rem;
+  border-radius: var(--lumo-border-radius-s);
+  color: var(--lumo-secondary-text-color);
+}
+
+.project-contact-action:hover,
+.project-contact-action:focus-visible {
+  background-color: var(--lumo-contrast-5pct);
+  color: var(--lumo-primary-text-color);
+}
+
+/* Both glyphs step down from the 1.5rem icon default, which beside 0.875rem text made the links
+   the loudest thing in the chip rather than the person's name. */
+.project-contact-glyph {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* The ORCID mark is a filled disc, so it reads heavier than a stroke of the same size and goes
+   smaller still -- 1.05rem, the size the prototype uses for it. */
+.project-contact-logo {
+  display: block;
+  width: 1.05rem;
+  height: 1.05rem;
+}

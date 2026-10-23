@@ -40,10 +40,10 @@ vaadin-multi-select-combo-box::part(toggle-button)::before {
   color: var(--lumo-primary-color);
 }
 
-/* Hide toggle button */
-vaadin-multi-select-combo-box.no-chevron::part(toggle-button) {
-  display: none;
-}
+/* The toggle button (chevron) is kept on multi-select combo boxes: it is the only control that
+   says the field opens a list. A `.no-chevron` opt-out used to exist and was applied to the
+   ontology origin fields, but opening those is now bounded by their two-character minimum query,
+   so the affordance costs a prompt to type rather than an unbounded request. */
 
 vaadin-number-field::part(decrease-button), vaadin-number-field::part(increase-button) {
   color: var(--lumo-primary-color);

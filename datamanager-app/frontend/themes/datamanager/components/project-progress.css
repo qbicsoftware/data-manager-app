@@ -1,0 +1,400 @@
+/* "Where the project stands" — the prototype's progress band: band title, a not-complete card,
+   then a card with a headline, a rail of three stages on a connector line and the dataset standing. */
+
+.project-progress-section {
+  display: block;
+  width: 100%;
+  padding-top: var(--lumo-space-l);
+  margin-bottom: var(--lumo-space-l);
+  border-top: 1px solid var(--lumo-contrast-10pct);
+}
+
+.project-progress-heading {
+  display: block;
+  font-size: var(--lumo-font-size-l);
+  font-weight: 600;
+  color: var(--lumo-header-text-color);
+  margin-bottom: var(--lumo-space-s);
+}
+
+.project-progress-message {
+  color: var(--lumo-secondary-text-color);
+}
+
+/* ── Not-complete card ────────────────────────────────────────────────── */
+
+.project-progress-incomplete {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+  /* Reached by anchor from the identity band, so leave room above: without it the heading lands
+     flush under the band the reader just left. */
+  scroll-margin-top: var(--lumo-space-l);
+  padding: var(--lumo-space-m);
+  margin-bottom: var(--lumo-space-m);
+  background-color: var(--info-surface, var(--lumo-contrast-5pct));
+  border: 1px solid var(--info-border, var(--lumo-contrast-20pct));
+  border-radius: var(--lumo-border-radius-m);
+}
+
+.project-progress-incomplete-title {
+  font-weight: 600;
+  color: var(--info-text-color, var(--lumo-error-text-color));
+}
+
+.project-progress-incomplete-row {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+  padding: var(--lumo-space-s) var(--lumo-space-m);
+  background-color: var(--lumo-base-color);
+  border-radius: var(--lumo-border-radius-m);
+  cursor: pointer;
+}
+
+.project-progress-incomplete-row .project-progress-glyph {
+  color: var(--info-color, var(--lumo-error-text-color));
+}
+
+.project-progress-incomplete-row:hover .project-progress-incomplete-action,
+.project-progress-incomplete-row:focus-visible .project-progress-incomplete-action {
+  text-decoration: underline;
+}
+
+.project-progress-incomplete-context {
+  font-weight: 600;
+  color: var(--lumo-body-text-color);
+}
+
+.project-progress-incomplete-text {
+  color: var(--lumo-secondary-text-color);
+}
+
+.project-progress-incomplete-action {
+  margin-left: auto;
+  font-weight: 600;
+  color: var(--lumo-primary-text-color);
+}
+
+.project-progress-separator {
+  color: var(--lumo-contrast-40pct);
+}
+
+/* ── Progress card ────────────────────────────────────────────────────── */
+
+.project-progress-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-l);
+  padding: var(--lumo-space-m);
+  border: 1px solid var(--lumo-contrast-10pct);
+  border-radius: var(--lumo-border-radius-m);
+}
+
+.project-progress-headline {
+  font-size: var(--lumo-font-size-m);
+  color: var(--lumo-secondary-text-color);
+}
+
+.project-progress-strong {
+  font-weight: 600;
+  color: var(--lumo-body-text-color);
+}
+
+/* The empty state's call to action. It used to be the experiments section's own onboarding hero,
+   which put the page's only primary button below an informational card and two dataset tiles. It
+   belongs in the headline that names the absence: the sentence and the way to act on it are one
+   statement, so they are one card. */
+.project-progress-headline--empty {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--lumo-space-s) var(--lumo-space-m);
+}
+
+.project-progress-empty-text {
+  flex: 1 1 var(--card-readable-width);
+}
+
+.project-progress-empty-action {
+  flex: 0 0 auto;
+}
+
+/* Rail: a genuine sequence — markers sit on a horizontal connector line, labels below. */
+.project-progress-rail {
+  display: flex;
+  /* Starts where everything else in the band starts. Centring it put the rail's own left edge out of
+     line with the headline above it and the Datasets heading below, so the band had two left edges
+     and neither looked deliberate. Sized to its own content, so it is left-aligned without being
+     stretched: the stages sit together at the spacing the connector sets. */
+  gap: var(--lumo-space-m);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.project-progress-step {
+  /* Each stage is only as wide as its own label and count, which keeps the connectors short. The
+     connector still fills whatever is left of the stage, so the line runs from marker to marker
+     rather than stopping at the text. */
+  flex: 0 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-xs);
+  min-width: 0;
+}
+
+.project-progress-step-head {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+  /* Tall enough for the completeness ring that marks the Primary datasets stage, so every stage's
+     connector sits on the same line even though the ring is taller than the round markers. */
+  min-height: 2.75rem;
+}
+
+/* The Primary datasets stage's marker: the project's primary-data coverage at a glance, with the
+   step's own count beside it. */
+.project-progress-step-ring {
+  --completeness-ring-size: 2.75rem;
+  --completeness-ring-font-size: var(--lumo-font-size-xs);
+}
+
+.project-progress-marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--lumo-contrast-40pct);
+  font-size: var(--lumo-font-size-xs);
+  color: var(--lumo-secondary-text-color);
+  background-color: var(--lumo-base-color);
+}
+
+/* Done and not-complete markers are FILLED, the way the prototype draws them. An outlined marker
+   leaves the glyph sitting on white, and the state glyph is the only state indicator on the
+   step, so it has to clear the non-text contrast bar on its own. */
+.project-progress-step--done .project-progress-marker {
+  border-color: var(--lumo-success-color, var(--lumo-contrast-40pct));
+  background-color: var(--lumo-success-color, var(--lumo-contrast-40pct));
+  color: var(--lumo-base-color);
+}
+
+.project-progress-step--incomplete .project-progress-marker {
+  border-color: var(--info-border, var(--lumo-contrast-40pct));
+  background-color: var(--info-surface, var(--lumo-contrast-5pct));
+  color: var(--info-text-color, var(--lumo-error-text-color));
+}
+
+.project-progress-connector {
+  flex: 1 1 auto;
+  /* The connector's length IS the distance between two markers, so this is the knob for the rail's
+     rhythm -- a stage's width follows from it. A floor rather than a width: a stage whose label or
+     count is wider still widens the line instead of cramping the text beside it. */
+  min-width: 15rem;
+  height: 2px;
+  background-color: var(--lumo-contrast-20pct);
+}
+
+/* Measured facts: an active step marker is a filled primary disc; the element must not inherit
+   the info surface used by the not-complete card. */
+
+.project-progress-step--active .project-progress-marker {
+  border-color: var(--lumo-primary-color);
+  background-color: var(--lumo-primary-color);
+  color: var(--lumo-primary-contrast-color);
+}
+
+/* The active marker holds a glyph, not the ordinal, so the ordinal readers use instead would be
+   lost. Keeping the ordinal in the label's accessible name avoids that. */
+.project-progress-step--active .project-progress-step-label {
+  color: var(--heading-text-color);
+}
+
+.project-progress-step--active .project-progress-step-detail {
+  color: var(--lumo-body-text-color);
+  font-weight: 600;
+}
+
+/* A locked stage is pending a prerequisite, not disabled and not broken. It is drawn quieter than
+   the stage that can actually be started, so the rail's weight points at the one available move. */
+.project-progress-step--locked .project-progress-marker {
+  border-style: dashed;
+  border-color: var(--lumo-contrast-30pct);
+  color: var(--lumo-secondary-text-color);
+}
+
+.project-progress-step--locked .project-progress-step-label {
+  color: var(--lumo-secondary-text-color);
+  font-weight: 500;
+}
+
+.project-progress-step--locked .project-progress-step-detail {
+  color: var(--lumo-secondary-text-color);
+}
+
+.project-progress-step--locked .project-progress-connector {
+  background-color: var(--lumo-contrast-10pct);
+}
+
+.project-progress-step--active .project-progress-connector {
+  background-color: var(--lumo-primary-color-10pct);
+}
+
+.project-progress-step--done .project-progress-connector {
+  background-color: var(--lumo-success-color, var(--lumo-contrast-40pct));
+}
+
+.project-progress-step:last-child .project-progress-connector {
+  visibility: hidden;
+}
+
+.project-progress-glyph {
+  width: var(--lumo-icon-size-s);
+  height: var(--lumo-icon-size-s);
+}
+
+.project-progress-step-label {
+  font-weight: 600;
+  color: var(--lumo-body-text-color);
+}
+
+.project-progress-step-detail {
+  font-size: var(--lumo-font-size-s);
+  color: var(--lumo-secondary-text-color);
+}
+
+/* ── Dataset standing ─────────────────────────────────────────────────── */
+
+.project-progress-datasets {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+}
+
+.project-progress-datasets-head {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+}
+
+.project-progress-datasets-label {
+  font-weight: 600;
+  color: var(--lumo-header-text-color);
+}
+
+.project-progress-datasets-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lumo-space-m);
+  /* Cards size to their own content. Stretching them to a common height left the shorter card
+     two-thirds empty grey, which reads as content that failed to load. */
+  align-items: start;
+}
+
+.project-progress-datasets-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-xs);
+  /* The basis is the readable minimum, so a pair stops sharing the width and stacks before either
+     card is squeezed past the point where its content still makes sense. */
+  flex: 1 1 var(--card-readable-width);
+  padding: var(--lumo-space-m);
+  /* A hairline as well as the tint, or the cards read as loose grey rectangles on a near-white
+     page with nothing tying them to the "Datasets" heading above them. */
+  border: 1px solid var(--lumo-contrast-10pct);
+  background-color: var(--lumo-contrast-5pct);
+  border-radius: var(--lumo-border-radius-m);
+  min-width: 0;
+}
+
+/* A card is the way into its surface, like the rail stages above it. The whole card is the target,
+   so the hover has to read as "this is one thing" rather than as a row highlight. */
+.project-progress-datasets-card--link {
+  cursor: pointer;
+}
+
+.project-progress-datasets-card--link:hover,
+.project-progress-datasets-card--link:focus-visible {
+  border-color: var(--lumo-contrast-20pct);
+  background-color: var(--lumo-contrast-10pct);
+}
+
+.project-progress-datasets-card--link:focus-visible {
+  outline: 2px solid var(--lumo-primary-color);
+  outline-offset: 2px;
+}
+
+.project-progress-datasets-card-title {
+  font-weight: 600;
+  color: var(--lumo-header-text-color);
+}
+
+.project-progress-datasets-card-fact {
+  font-size: var(--lumo-font-size-s);
+  color: var(--lumo-secondary-text-color);
+}
+
+/* Connected assets as a grid, not a stack of flex rows. Grid sizes each column across ALL the rows,
+   so the type and the timestamp line up vertically whatever the vocabulary term or the relative
+   time happens to be. A per-row layout can only reserve a guess at the type width, and the
+   InvenioRDM vocabulary holds terms ("Computational notebook", "Project management plan") far
+   longer than the common ones -- the guess breaks the first time one appears. */
+.project-progress-connected-assets {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr) max-content;
+  gap: var(--lumo-space-xs) var(--lumo-space-s);
+  align-items: center;
+  font-size: var(--lumo-font-size-s);
+}
+
+.project-progress-connected-assets--with-provider {
+  grid-template-columns: max-content minmax(0, 1fr) max-content max-content;
+}
+
+/* display: contents, so each row's cells become items of the grid above -- that is what lets the
+   columns size across rows. The row itself carries no box and no semantics, so nothing is lost. */
+.project-progress-connected-asset {
+  display: contents;
+}
+
+/* The kind comes from the repository's own vocabulary term, in the same tag the connected-datasets
+   page uses, so the two surfaces agree on what a "Dataset" looks like. */
+.project-progress-connected-asset-type {
+  display: inline-flex;
+  align-self: center;
+}
+
+.project-progress-connected-asset-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--lumo-body-text-color);
+}
+
+/* When the record was last touched. Left-aligned, so the column opens on the same vertical line as
+   the type and the title beside it. Right-aligning it lined the timestamps up on their trailing
+   "ago" instead and left their leading words -- which is where "synced" and "connected" differ,
+   and the part being read -- jumping 19px between rows. */
+.project-progress-connected-asset-activity {
+  white-space: nowrap;
+  color: var(--lumo-secondary-text-color);
+}
+
+.project-progress-connected-asset-provider {
+  white-space: nowrap;
+  color: var(--lumo-secondary-text-color);
+}
+
+.project-progress-step--link {
+  cursor: pointer;
+}
+
+.project-progress-step--link:hover .project-progress-step-label,
+.project-progress-step--link:focus-visible .project-progress-step-label {
+  text-decoration: underline;
+}

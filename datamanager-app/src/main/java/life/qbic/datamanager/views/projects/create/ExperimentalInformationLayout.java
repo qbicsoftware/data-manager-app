@@ -32,6 +32,10 @@ public class ExperimentalInformationLayout extends Div implements
     HasBinderValidation<ExperimentalInformation> {
 
   private final Binder<ExperimentalInformation> experimentalInformationBinder;
+  private final TextField nameField;
+  private final MultiSelectComboBox<OntologyTerm> speciesBox;
+  private final MultiSelectComboBox<OntologyTerm> specimenBox;
+  private final MultiSelectComboBox<OntologyTerm> analyteBox;
 
   public ExperimentalInformationLayout(
       SpeciesLookupService ontologyTermInformationService, TerminologyService terminologyService) {
@@ -41,12 +45,12 @@ public class ExperimentalInformationLayout extends Div implements
     OntologyComboboxFactory ontologyComboboxFactory = new OntologyComboboxFactory(
         ontologyTermInformationService, terminologyService);
 
-    MultiSelectComboBox<OntologyTerm> speciesBox = ontologyComboboxFactory.speciesBox();
+    speciesBox = ontologyComboboxFactory.speciesBox();
     speciesBox.addClassName("box-flexgrow");
-    MultiSelectComboBox<OntologyTerm> specimenBox = ontologyComboboxFactory.specimenBox();
+    specimenBox = ontologyComboboxFactory.specimenBox();
     specimenBox.addClassName("box-flexgrow");
-    MultiSelectComboBox<OntologyTerm> analyteBox = ontologyComboboxFactory.analyteBox();
-    TextField nameField = nameField();
+    analyteBox = ontologyComboboxFactory.analyteBox();
+    nameField = nameField();
 
     experimentalInformationBinder = new Binder<>(ExperimentalInformation.class);
 
@@ -79,6 +83,30 @@ public class ExperimentalInformationLayout extends Div implements
         specimenRow,
         analyteBox);
     addClassName("experiment-information-layout");
+
+    // This step is optional and the wizard reads a completely empty step as "no experiment", so
+    // the fields must not advertise themselves as required (the combo boxes set the indicator in
+    // OntologyComboboxFactory). Validation is deliberately left alone: the bindings keep their
+    // asRequired rules, which is what makes a *partly* filled step fail instead of silently
+    // creating an experiment with no species.
+    nameField.setRequired(false);
+    speciesBox.setRequired(false);
+    specimenBox.setRequired(false);
+    analyteBox.setRequired(false);
+  }
+
+  /**
+   * Adds a short note directly under the section title, above the description. The project
+   * creation wizard uses it to mark the step as optional: a qualifier belongs below the heading it
+   * qualifies, not above it.
+   *
+   * @param hint the note to display
+   */
+  public void setStepHint(String hint) {
+    Span hintSpan = new Span(hint);
+    hintSpan.addClassName("step-hint");
+    // Index 1 is directly after the title, which the constructor adds first.
+    getElement().insertChild(1, hintSpan.getElement());
   }
 
   private static Component title() {
@@ -89,14 +117,15 @@ public class ExperimentalInformationLayout extends Div implements
 
   private static Component description() {
     return new Span(
-        "Specify the experiment name and sample origin information of the samples.");
+        "Species, specimen and analyte become the controlled options for sample origin in the "
+            + "sample-registration template, so sample annotations stay consistent and use public "
+            + "ontology terms.");
   }
 
   private static TextField nameField() {
     TextField experimentNameField = new TextField("Experiment Name");
     experimentNameField.addClassName("experiment-name-field");
     experimentNameField.setPlaceholder("Please enter a name for your experiment");
-    experimentNameField.setRequired(true);
     return experimentNameField;
   }
 
@@ -105,6 +134,17 @@ public class ExperimentalInformationLayout extends Div implements
     ExperimentalInformation experimentalInformation = new ExperimentalInformation();
     experimentalInformationBinder.writeBeanIfValid(experimentalInformation);
     return experimentalInformation;
+  }
+
+  /**
+   * Whether nothing has been entered at all. An empty optional step means "no experiment", so the
+   * wizard can skip it without failing its required-field validation.
+   */
+  public boolean isEmpty() {
+    return (nameField.getValue() == null || nameField.getValue().isBlank())
+        && speciesBox.getValue().isEmpty()
+        && specimenBox.getValue().isEmpty()
+        && analyteBox.getValue().isEmpty();
   }
 
 

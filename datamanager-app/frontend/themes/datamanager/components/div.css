@@ -187,37 +187,7 @@
   gap: var(--spacing-03);
 }
 
-.project-creation-stepper-arrow {
-  align-items: end;
-  color: var(--lumo-contrast-60pct);
-  display: flex;
-  margin-inline: var(--lumo-space-l);
-}
-
-.stepper {
-  margin-top: 0.5rem;
-  display: inline-flex;
-  /*Employ same padding as defined for dialog layout*/
-  padding-inline: 4rem;
-}
-
-.stepper .step {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  white-space: nowrap;
-  gap: var(--spacing-03);
-}
-
-.stepper .step[selected] > vaadin-avatar {
-  background-color: var(--lumo-primary-color-50pct);
-  color: white;
-}
-
-.stepper .step > vaadin-avatar {
-  background-color: var(--lumo-contrast-60pct);
-  color: white;
-}
+/* Stepper styling lives in stepper.css — one definition of step appearance. */
 
 .ontology-entry-collection {
   display: inline-flex;

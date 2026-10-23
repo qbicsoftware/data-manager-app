@@ -4,6 +4,7 @@
 # Local agent config files/folders
 .opencode/
 opencode.json
+.pi/
 
 # Any local run configuration file
 .run
@@ -45,6 +46,9 @@ logs
 */webapp/frontend/index.html
 */package.json
 */tsconfig.json
+# Vaadin's plugin writes tsconfig.json via a temp file it renames into place; a crash can leave
+the numbered temp behind. Same category as tsconfig.json itself, which is generated.
+*/tsconfig.json.*.bak
 */webpack.config.js
 */webpack.generated.js
 
@@ -73,3 +77,6 @@ error-screenshots/
 # Vaadin/Vite generated bundle artifacts (prod.bundle, types.d.ts) — build output
 */src/main/bundles/
 types.d.ts
+
+# collation repair (sql/repair) writes a foreign-key backup next to where it is run
+collation-repair-*-fk-backup.sql

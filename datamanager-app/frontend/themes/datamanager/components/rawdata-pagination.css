@@ -49,15 +49,8 @@
   min-width: 12rem;
 }
 
-.rawdata-tab-pagination .rawdata-search::part(input-field) {
-  transition: box-shadow 120ms ease, background-color 120ms ease;
-}
-
-.rawdata-tab-pagination .rawdata-search:focus-within::part(input-field) {
-  background-color: var(--primary-color-10pct);
-  box-shadow: 0 0 0 2px var(--primary-color) inset;
-}
-
+/* The search field's focus ring comes from field-focus.css, like every other field. This used
+   to be a fourth variant (blue-tinted fill + inset ring, keyed off :focus-within). */
 .rawdata-tab-pagination .rawdata-search:focus-within [part='suffix'] vaadin-icon {
   color: var(--primary-color);
 }
