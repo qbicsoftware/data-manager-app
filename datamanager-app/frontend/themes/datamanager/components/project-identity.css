@@ -23,18 +23,18 @@
   color: var(--lumo-contrast-40pct);
 }
 
-/* The attention rollup as a chip, following the prototype's .pt-chip: a surface of its own, so it
-   reads as a control rather than as amber text that happens to be clickable. Tone matches the
-   attention list it leads to, so the chip and its destination look like the same thing. */
-.project-identity-attention {
+/* The not-complete rollup as a chip, following the prototype's .pt-chip: a surface of its own, so it
+   reads as a control rather than as coloured text that happens to be clickable. Tone matches the
+   list it leads to, so the chip and its destination look like the same thing. */
+.project-identity-incomplete {
   display: inline-flex;
   align-items: center;
   gap: var(--lumo-space-xs);
   padding: 0.1rem 0.55rem;
   border-radius: 999px;
-  border: 1px solid var(--attention-border, var(--lumo-contrast-20pct));
-  background-color: var(--attention-surface, var(--lumo-contrast-5pct));
-  color: var(--lumo-warning-text-color, var(--lumo-error-text-color));
+  border: 1px solid var(--info-border, var(--lumo-contrast-20pct));
+  background-color: var(--info-surface, var(--lumo-contrast-5pct));
+  color: var(--info-text-color, var(--lumo-error-text-color));
   font-size: var(--lumo-font-size-xs);
   font-weight: 600;
   white-space: nowrap;
@@ -43,13 +43,13 @@
   text-decoration: none;
 }
 
-.project-identity-attention:hover,
-.project-identity-attention:focus-visible {
-  border-color: var(--lumo-warning-text-color, var(--lumo-error-text-color));
+.project-identity-incomplete:hover,
+.project-identity-incomplete:focus-visible {
+  border-color: var(--info-text-color, var(--lumo-error-text-color));
   text-decoration: none;
 }
 
-.project-identity-attention vaadin-icon {
+.project-identity-incomplete vaadin-icon {
   width: 0.9rem;
   height: 0.9rem;
 }

@@ -186,6 +186,8 @@ public class ProjectSummaryComponent extends PageArea {
         event -> fireEvent(new AddExperimentRequestedEvent(this, event.isFromClient())));
     this.projectProgressSection.addProgressLoadedListener(
         event -> updateIdentityMeta(event.progress()));
+    this.projectProgressSection.addCreateExperimentListener(
+        event -> fireEvent(new AddExperimentRequestedEvent(this, event.isFromClient())));
 
     addClassName("project-details-component");
 
@@ -465,7 +467,7 @@ public class ProjectSummaryComponent extends PageArea {
 
     Button crateExportBtn = new Button("Export summary");
     crateExportBtn.addClickListener(event -> triggerRoCrateDownload());
-    Button addExperimentBtn = new Button("Add experiment");
+    Button addExperimentBtn = new Button("Create experiment");
     addExperimentBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     addExperimentBtn.addClickListener(click -> fireEvent(
         new AddExperimentRequestedEvent(this, click.isFromClient())));
@@ -489,38 +491,38 @@ public class ProjectSummaryComponent extends PageArea {
   }
 
   private void updateIdentityMeta(List<ExperimentProgress> progress) {
-    int attention = (int) progress.stream()
+    int incomplete = (int) progress.stream()
         .filter(entry -> entry.measurementsWithoutPrimaryData() > 0)
         .count();
-    renderIdentityMeta(progress.size(), attention);
+    renderIdentityMeta(progress.size(), incomplete);
   }
 
-  private void renderIdentityMeta(int experiments, int attention) {
+  private void renderIdentityMeta(int experiments, int incomplete) {
     identityMeta.removeAll();
     identityMeta.add(new Span(identityLastModified));
     identityMeta.add(separator());
     identityMeta.add(new Span(experiments == 1 ? "1 experiment" : experiments + " experiments"));
-    if (attention > 0) {
+    if (incomplete > 0) {
       identityMeta.add(separator());
-      identityMeta.add(attentionChip(attention));
+      identityMeta.add(incompleteChip(incomplete));
     }
   }
 
   /**
-   * The attention rollup. Attention can hit several experiments at once, so the chip is a
-   * project-level count that brings the reader to the per-experiment rows rather than jumping
-   * into one arbitrary experiment.
+   * The not-complete rollup. It can hit several experiments at once, so the chip is a project-level
+   * count that brings the reader to the per-experiment rows rather than jumping into one arbitrary
+   * experiment.
    */
-  private Anchor attentionChip(int attention) {
+  private Anchor incompleteChip(int incomplete) {
     // A real anchor to the per-experiment list rather than a button that scrolls a script: the jump
     // is the browser's, it works before any client-side code has run, the destination is visible in
     // the URL and can be bookmarked or shared, and the back button returns the reader here.
-    Anchor chip = new Anchor("#" + ProjectProgressSection.ATTENTION_LIST_ID);
-    chip.addClassName("project-identity-attention");
-    chip.getElement().setAttribute("title", "Show which experiments need attention");
-    chip.add(new Span(attention == 1
-        ? "1 experiment needs attention"
-        : attention + " experiments need attention"));
+    Anchor chip = new Anchor("#" + ProjectProgressSection.INCOMPLETE_LIST_ID);
+    chip.addClassName("project-identity-incomplete");
+    chip.getElement().setAttribute("title", "Show which experiments are not complete yet");
+    chip.add(new Span(incomplete == 1
+        ? "1 experiment not complete yet"
+        : incomplete + " experiments not complete yet"));
     chip.add(VaadinIcon.ANGLE_RIGHT.create());
     return chip;
   }

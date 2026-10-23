@@ -79,12 +79,12 @@ class VariableLevelsInput extends Div implements UserInput, CanSnapshot,
   LevelField addEmptyLevel() {
     LevelField levelField = new LevelField();
     addLevel(levelField);
-    levelField.focus();
     return levelField;
   }
 
   /**
-   * Adds a filled field. Moves the focus to the added field.
+   * Adds a filled field for loading existing data. It deliberately does not move focus: focusing
+   * each field while populating the form scrolled the page down on entry.
    *
    * @param value the value to put into the added field
    * @return the added field
@@ -94,7 +94,6 @@ class VariableLevelsInput extends Div implements UserInput, CanSnapshot,
     LevelField levelField = new LevelField();
     levelField.setValue(value);
     addLevel(levelField);
-    levelField.focus();
     return levelField;
   }
 
@@ -120,7 +119,6 @@ class VariableLevelsInput extends Div implements UserInput, CanSnapshot,
     registerLevelFieldListeners(levelField);
     // when an empty field is added, the validation is outdated and removed.
     setInvalid(false);
-    levelField.focus();
   }
 
   /**
@@ -136,7 +134,6 @@ class VariableLevelsInput extends Div implements UserInput, CanSnapshot,
     registerLevelFieldListeners(levelField);
     // when a field is added, the validation is outdated and removed.
     setInvalid(false);
-    levelField.focus();
   }
 
   private void registerLevelFieldListeners(LevelField levelField) {
@@ -150,7 +147,7 @@ class VariableLevelsInput extends Div implements UserInput, CanSnapshot,
   private void removeLevelField(LevelField levelField) {
     levelsContainer.remove(levelField);
     if (levelsContainer.isEmpty()) {
-      addEmptyLevel();
+      addEmptyLevel().focus();
     }
   }
 
@@ -164,9 +161,12 @@ class VariableLevelsInput extends Div implements UserInput, CanSnapshot,
     var body = new Div();
     body.addClassNames(bodyClassNames);
 
-    final String levelsContainerCss = "flex-horizontal gap-03 column-gap-03 width-full max-height-x10 scroll-vertical";
+    // The list grows with the card instead of scrolling inside a fixed 10em box: the internal
+    // scrollbar clipped the last level mid-glyph and made the panel boundary look broken.
+    final String levelsContainerCss = "flex-horizontal gap-03 column-gap-03 width-full";
     levelsContainer.setId("levels-container"); //needed for labelling
     levelsContainer.addClassNames(levelsContainerCss);
+    levelsContainer.getStyle().set("flex-wrap", "wrap");
     ButtonFactory buttonFactory = new ButtonFactory();
 
     String labelCss = "form-label input-label";
@@ -176,7 +176,7 @@ class VariableLevelsInput extends Div implements UserInput, CanSnapshot,
 
     var addLevelButton = buttonFactory.createTertirayButton("Add Level",
         VaadinIcon.PLUS.create());
-    addLevelButton.addClickListener(clickEvent -> addEmptyLevel());
+    addLevelButton.addClickListener(clickEvent -> addEmptyLevel().focus());
 
     body.add(levelsContainer, addLevelButton);
     addLevelButton.addClassNames("width-max-content justify-self-start");
@@ -220,7 +220,7 @@ class VariableLevelsInput extends Div implements UserInput, CanSnapshot,
       if (levelsContainer.size() > nextFocus) {
         levelsContainer.getAt(nextFocus).focus();
       } else {
-        addEmptyLevel();
+        addEmptyLevel().focus();
       }
     }, Key.ENTER).listenOn(this);
   }

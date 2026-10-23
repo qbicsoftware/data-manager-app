@@ -6,6 +6,8 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.ListItem;
 import com.vaadin.flow.component.html.OrderedList;
@@ -21,6 +23,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import life.qbic.datamanager.views.MeasurementType;
+import life.qbic.datamanager.views.general.CompletenessRing;
 import life.qbic.datamanager.views.general.DataSetTagFactory;
 import life.qbic.datamanager.views.general.DataSetTagFactory.TagType;
 import life.qbic.datamanager.views.general.ReactiveUiBridge;
@@ -40,13 +43,20 @@ import reactor.core.publisher.Mono;
 /**
  * "Where the project stands" — the prototype's progress band.
  *
- * <p>Structure (top to bottom): the band title; the attention card (only when something is
+ * <p>Structure (top to bottom): the band title; the not-complete card (only when something is
  * outstanding); then the progress card with a headline sentence, a rail of three stages
  * ({@code Experiment created -> Samples registered -> Dataset}) on a connector line, and the
  * dataset standing (primary data and connected assets).</p>
  *
- * <p>This is a genuine sequence, so the rail numbers its steps and marks done / attention with
+ * <p>This is a genuine sequence, so the rail numbers its steps and marks done / not-complete with
  * glyphs instead of ordinals. Each step routes to its surface.</p>
+ *
+ * <p><b>Label vs. detail.</b> A step is two strings, and the split is what keeps the rail honest:
+ * the <em>label</em> names the thing and never changes with state ("Experiment", "Samples",
+ * "Dataset"); the <em>detail</em> states the state and is the only part that varies ("Create one to
+ * begin", "3 created", "Unlocks once an experiment exists"). A single merged label cannot do this:
+ * "Experiment created" is a status occupying the identity slot, so it asserts an outcome whatever
+ * the marker says and reads as a false claim on the empty project. Keep the label a noun.</p>
  *
  * @since 1.19.0
  */
@@ -56,12 +66,13 @@ public class ProjectProgressSection extends Div {
   private static final String EXPERIMENT_ID_PARAMETER = "experimentId";
 
   /**
-   * Document id of the per-experiment attention list, so the identity band can link straight to it.
+   * Document id of the per-experiment not-complete list, so the identity band can link straight to
+   * it.
    *
    * <p>The two live in sibling components and neither knows the other's DOM, so the id is the
    * contract between them. Unique per page, since a page renders one progress band.</p>
    */
-  public static final String ATTENTION_LIST_ID = "project-attention";
+  public static final String INCOMPLETE_LIST_ID = "project-incomplete";
 
   private final transient AssociatedDatasetService associatedDatasetService;
   private final Div content = new Div();
@@ -120,11 +131,11 @@ public class ProjectProgressSection extends Div {
     content.add(heading());
     fireEvent(new ProgressLoadedEvent(this, false, progress));
 
-    List<ExperimentProgress> attention = progress.stream()
+    List<ExperimentProgress> incomplete = progress.stream()
         .filter(entry -> entry.measurementsWithoutPrimaryData() > 0)
         .toList();
-    if (!attention.isEmpty()) {
-      content.add(attentionBlock(attention));
+    if (!incomplete.isEmpty()) {
+      content.add(incompleteBlock(incomplete));
     }
 
     Div card = new Div();
@@ -141,30 +152,32 @@ public class ProjectProgressSection extends Div {
     return heading;
   }
 
-  // ── Attention card ─────────────────────────────────────────────────────
+  // ── Not-complete card ──────────────────────────────────────────────────
 
-  private Div attentionBlock(List<ExperimentProgress> attention) {
+  private Div incompleteBlock(List<ExperimentProgress> incomplete) {
     Div block = new Div();
-    block.addClassName("project-progress-attention");
-    block.setId(ATTENTION_LIST_ID);
-    Span title = new Span("Needs attention");
-    title.addClassName("project-progress-attention-title");
+    block.addClassName("project-progress-incomplete");
+    block.setId(INCOMPLETE_LIST_ID);
+    // "Not complete yet", not "Needs attention": missing primary data is a normal, time-dependent
+    // stage of the process, not a problem, so the card informs rather than alarms.
+    Span title = new Span("Not complete yet");
+    title.addClassName("project-progress-incomplete-title");
     block.add(title);
-    attention.forEach(entry -> block.add(attentionRow(entry)));
+    incomplete.forEach(entry -> block.add(incompleteRow(entry)));
     return block;
   }
 
-  private Div attentionRow(ExperimentProgress entry) {
+  private Div incompleteRow(ExperimentProgress entry) {
     Div row = new Div();
-    row.addClassName("project-progress-attention-row");
-    row.add(icon(VaadinIcon.WARNING));
+    row.addClassName("project-progress-incomplete-row");
+    row.add(icon(VaadinIcon.INFO_CIRCLE));
     Span context = new Span(entry.experimentName());
-    context.addClassName("project-progress-attention-context");
+    context.addClassName("project-progress-incomplete-context");
     Span text = new Span(entry.measurementsWithoutPrimaryData() + " of " + entry.measurementCount()
         + " measurements have no primary data attached");
-    text.addClassName("project-progress-attention-text");
+    text.addClassName("project-progress-incomplete-text");
     Span action = new Span("Open dataset");
-    action.addClassName("project-progress-attention-action");
+    action.addClassName("project-progress-incomplete-action");
     row.add(context, text, action);
     Utility.activateOnClickAndKeys(row, "link",
         () -> navigate(MeasurementMain.class, entry.experimentId()));
@@ -177,7 +190,17 @@ public class ProjectProgressSection extends Div {
     Div intro = new Div();
     intro.addClassName("project-progress-headline");
     if (progress.isEmpty()) {
-      intro.add(new Span("Nothing has been registered yet. "), strong("Start with one experiment"));
+      // The sentence states the project's condition; the button states the action. They must not
+      // say the same thing: the empty state used to read "Create one experiment to begin" next to a
+      // "Create experiment" button, so the headline spent its one line repeating the control beside
+      // it. The roadmap (what comes after) is the rail's job, one line below.
+      intro.addClassName("project-progress-headline--empty");
+      Span text = new Span("No experiment yet.");
+      text.addClassName("project-progress-empty-text");
+      Button create = new Button("Create experiment", click -> requestCreate());
+      create.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+      create.addClassName("project-progress-empty-action");
+      intro.add(text, create);
     } else {
       long withSamples = progress.stream().filter(entry -> entry.sampleCount() > 0).count();
       intro.add(strong(withSamples + " of " + progress.size()
@@ -190,61 +213,137 @@ public class ProjectProgressSection extends Div {
   // ── Rail of three stages ───────────────────────────────────────────────
 
   private OrderedList rail(List<ExperimentProgress> progress) {
+    OrderedList rail = new OrderedList();
+    rail.addClassName("project-progress-rail");
+    if (progress.isEmpty()) {
+      // Nothing registered yet: this is the state the user is most often in and the one that most
+      // needs leading, so the pipeline states each step's *prerequisite* rather than a count of
+      // zero. Step 1 is ACTIVE (a filled primary marker, clickable) and the two downstream stages
+      // are LOCKED. No label here claims an outcome -- see the label/detail note on this class.
+      rail.add(step(1, "Experiment", "Create one to begin", State.ACTIVE,
+          this::requestCreate));
+      rail.add(step(2, "Samples", "Unlocks once an experiment exists", State.LOCKED, null));
+      rail.add(step(3, "Dataset", "Unlocks once samples exist", State.LOCKED, null));
+      return rail;
+    }
+
     int samples = progress.stream().mapToInt(ExperimentProgress::sampleCount).sum();
     int measurements = progress.stream().mapToInt(ExperimentProgress::measurementCount).sum();
     int withData = progress.stream().mapToInt(ExperimentProgress::measurementsWithPrimaryData).sum();
     int missing = progress.stream().mapToInt(ExperimentProgress::measurementsWithoutPrimaryData).sum();
-    String firstExperiment = progress.isEmpty() ? null : progress.getFirst().experimentId();
+    String firstExperiment = progress.getFirst().experimentId();
 
-    OrderedList rail = new OrderedList();
-    rail.addClassName("project-progress-rail");
-    rail.add(step(1, "Experiment created", pluralise(progress.size(), "experiment", "experiments"),
-        State.DONE, ExperimentInformationMain.class, firstExperiment));
-    rail.add(step(2, "Samples registered", pluralise(samples, "sample", "samples"),
-        samples > 0 ? State.DONE : State.TODO, SampleInformationMain.class, firstExperiment));
-    // "8 of 272", not "8". The other steps state how much there is; this one also has to state
-    // how much is missing, and a count without its denominator cannot do that.
-    // Plural: a project already has one primary dataset per assay type, not one in total.
-    rail.add(step(3, "Primary datasets",
-        "%d of %s".formatted(withData,
-            pluralise(measurements, "measurement", "measurements")),
-        missing > 0 ? State.ATTENTION : State.DONE, MeasurementMain.class, firstExperiment));
+    // At least one entity exists, so every step now reports what actually happened and the locks are
+    // gone. A count of zero is still written as a sentence ("None registered yet") rather than as
+    // "0 samples": a bare zero reads like a status, which is exactly what the empty state must not
+    // do -- the difference being that here the step is reachable and the zero is a real result.
+    rail.add(step(1, "Experiment", pluralise(progress.size(), "experiment created",
+            "experiments created"),
+        State.DONE, () -> navigate(ExperimentInformationMain.class, firstExperiment)));
+    rail.add(step(2, "Samples", samples > 0
+            ? pluralise(samples, "sample registered", "samples registered")
+            : "None registered yet",
+        samples > 0 ? State.DONE : State.TODO,
+        () -> navigate(SampleInformationMain.class, firstExperiment)));
+    // The stage's marker is a completeness ring: it carries the primary-data coverage at a glance,
+    // with the detail beside it, instead of a warning triangle that only says "something is wrong".
+    rail.add(stepWithMarker(
+        primaryDatasetsRing(withData, measurements, missing),
+        "Dataset",
+        datasetDetail(withData, measurements, missing),
+        missing > 0 ? State.INCOMPLETE : State.DONE,
+        () -> navigate(MeasurementMain.class, firstExperiment)));
     return rail;
+  }
+
+  /** What the Dataset stage reports once at least one experiment exists. */
+  private static String datasetDetail(int withData, int measurements, int missing) {
+    if (measurements == 0) {
+      return "None registered yet";
+    }
+    String total = pluralise(measurements, "measurement", "measurements");
+    // Both branches are "N of M ...", so the two states read as the same measure with a different
+    // ending -- and each stays grammatical for a single measurement.
+    return missing == 0
+        ? withData + " of " + total + " with data"
+        : missing + " of " + total + " still need data";
+  }
+
+  private static CompletenessRing primaryDatasetsRing(int withData, int measurements, int missing) {
+    CompletenessRing ring = new CompletenessRing(withData, measurements,
+        measurements == 0
+            ? "No measurements registered yet"
+            : missing + " of " + measurements + " measurements still need primary data");
+    ring.addClassName("project-progress-step-ring");
+    return ring;
   }
 
   private static String pluralise(int count, String singular, String plural) {
     return count + " " + (count == 1 ? singular : plural);
   }
 
-  private ListItem step(int ordinal, String label, String count,
-      State state, Class<? extends Component> target, String experimentId) {
+  private ListItem step(int ordinal, String label, String detail,
+      State state, Runnable onOpen) {
+    Span marker = new Span();
+    marker.addClassName("project-progress-marker");
+    switch (state) {
+      case DONE -> marker.add(icon(VaadinIcon.CHECK));
+      case INCOMPLETE -> marker.add(icon(VaadinIcon.INFO_CIRCLE));
+      case ACTIVE -> marker.setText(Integer.toString(ordinal));
+      case LOCKED -> marker.add(icon(VaadinIcon.LOCK));
+      case TODO -> marker.setText(Integer.toString(ordinal));
+    }
+    return stepWithMarker(marker, label, detail, state, onOpen);
+  }
+
+  private ListItem stepWithMarker(Component marker, String label, String detail,
+      State state, Runnable onOpen) {
     ListItem item = new ListItem();
     item.addClassName("project-progress-step");
     item.addClassName("project-progress-step--" + state.css());
 
     Div head = new Div();
     head.addClassName("project-progress-step-head");
-    Span marker = new Span();
-    marker.addClassName("project-progress-marker");
-    switch (state) {
-      case DONE -> marker.add(icon(VaadinIcon.CHECK));
-      case ATTENTION -> marker.add(icon(VaadinIcon.WARNING));
-      case TODO -> marker.setText(Integer.toString(ordinal));
-    }
     Span connector = new Span();
     connector.addClassName("project-progress-connector");
     head.add(marker, connector);
 
     Span labelSpan = new Span(label);
     labelSpan.addClassName("project-progress-step-label");
-    Span countSpan = new Span(count);
-    countSpan.addClassName("project-progress-step-count");
-    item.add(head, labelSpan, countSpan);
-    if (experimentId != null) {
+    Span detailSpan = new Span(detail);
+    detailSpan.addClassName("project-progress-step-detail");
+    item.add(head, labelSpan, detailSpan);
+    if (onOpen != null) {
       item.addClassName("project-progress-step--link");
-      Utility.activateOnClickAndKeys(item, "link", () -> navigate(target, experimentId));
+      Utility.activateOnClickAndKeys(item, "link", onOpen);
     }
     return item;
+  }
+
+  private void requestCreate() {
+    // The owning page owns the creation workflow: this is the same request the experiments section
+    // raises, so the two call-to-actions cannot drift into different destinations.
+    fireEvent(new CreateExperimentRequestedEvent(this, true));
+  }
+
+  /**
+   * Raised when the user asks to create an experiment from the progress band. The band does not
+   * navigate itself; the page wires this and the experiments section to the same route.
+   */
+  public Registration addCreateExperimentListener(
+      ComponentEventListener<CreateExperimentRequestedEvent> listener) {
+    return addListener(CreateExperimentRequestedEvent.class, listener);
+  }
+
+  public static class CreateExperimentRequestedEvent extends
+      ComponentEvent<ProjectProgressSection> {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
+
+    public CreateExperimentRequestedEvent(ProjectProgressSection source, boolean fromClient) {
+      super(source, fromClient);
+    }
   }
 
   // ── Dataset standing ───────────────────────────────────────────────────
@@ -276,7 +375,7 @@ public class ProjectProgressSection extends Div {
    * <p>This card answers "what data exists": a total, then where it sits per assay type. It
    * deliberately does NOT state coverage. "8 of 284 measurements" is a project-grain number that
    * hides which experiment is behind -- the question a reader actually has -- and it is already
-   * answered at the right grain by the attention card and the experiment snapshot panels. The
+   * answered at the right grain by the not-complete card and the experiment snapshot panels. The
    * file count that used to sit here is gone: it is not comparable across assay types, it cannot
    * be acted on, and pairing it with a byte total only invites the reader to divide the two (see
    * the migration's trap 4c).</p>
@@ -301,7 +400,7 @@ public class ProjectProgressSection extends Div {
   /**
    * Makes a whole card the way into its surface, the way the rail steps are.
    *
-   * <p>Role and keyboard handling come from the same helper the rail and the attention rows use, so
+   * <p>Role and keyboard handling come from the same helper the rail and the not-complete rows use, so
    * a card is reachable by Tab and activated by Enter or Space without a separate implementation
    * drifting from theirs.</p>
    */
@@ -529,7 +628,7 @@ public class ProjectProgressSection extends Div {
   }
 
   private enum State {
-    DONE("done"), ATTENTION("attention"), TODO("todo");
+    DONE("done"), INCOMPLETE("incomplete"), ACTIVE("active"), LOCKED("locked"), TODO("todo");
 
     private final String css;
 

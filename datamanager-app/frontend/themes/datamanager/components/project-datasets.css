@@ -204,10 +204,10 @@ it needs no paging, filtering or selection, and it is read-only.
   border-color: hsla(145, 85%, 25%, 0.25);
 }
 
-.project-datasets-state--attention {
-  color: var(--warning-text-color);
-  background: var(--attention-surface);
-  border-color: var(--attention-border);
+.project-datasets-state--incomplete {
+  color: var(--info-text-color);
+  background: var(--info-surface);
+  border-color: var(--info-border);
 }
 
 /* --- Notes, messages and the empty state --- */

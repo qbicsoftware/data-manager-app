@@ -1,4 +1,4 @@
-/* "Where the project stands" — the prototype's progress band: band title, an amber attention card,
+/* "Where the project stands" — the prototype's progress band: band title, a not-complete card,
    then a card with a headline, a rail of three stages on a connector line and the dataset standing. */
 
 .project-progress-section {
@@ -21,9 +21,9 @@
   color: var(--lumo-secondary-text-color);
 }
 
-/* ── Attention card ───────────────────────────────────────────────────── */
+/* ── Not-complete card ────────────────────────────────────────────────── */
 
-.project-progress-attention {
+.project-progress-incomplete {
   display: flex;
   flex-direction: column;
   gap: var(--lumo-space-s);
@@ -32,17 +32,17 @@
   scroll-margin-top: var(--lumo-space-l);
   padding: var(--lumo-space-m);
   margin-bottom: var(--lumo-space-m);
-  background-color: var(--attention-surface, var(--lumo-contrast-5pct));
-  border: 1px solid var(--attention-border, var(--lumo-contrast-20pct));
+  background-color: var(--info-surface, var(--lumo-contrast-5pct));
+  border: 1px solid var(--info-border, var(--lumo-contrast-20pct));
   border-radius: var(--lumo-border-radius-m);
 }
 
-.project-progress-attention-title {
+.project-progress-incomplete-title {
   font-weight: 600;
-  color: var(--lumo-warning-text-color, var(--lumo-error-text-color));
+  color: var(--info-text-color, var(--lumo-error-text-color));
 }
 
-.project-progress-attention-row {
+.project-progress-incomplete-row {
   display: flex;
   align-items: center;
   gap: var(--lumo-space-s);
@@ -52,27 +52,25 @@
   cursor: pointer;
 }
 
-/* The glyph keeps Lumo's warning ink. The tint behind it got lighter, the glyph did not, so it now
-   sits at 5.5:1 rather than the 5.25:1 it had on the stronger fill. */
-.project-progress-attention-row .project-progress-glyph {
-  color: var(--lumo-warning-text-color, var(--lumo-error-text-color));
+.project-progress-incomplete-row .project-progress-glyph {
+  color: var(--info-color, var(--lumo-error-text-color));
 }
 
-.project-progress-attention-row:hover .project-progress-attention-action,
-.project-progress-attention-row:focus-visible .project-progress-attention-action {
+.project-progress-incomplete-row:hover .project-progress-incomplete-action,
+.project-progress-incomplete-row:focus-visible .project-progress-incomplete-action {
   text-decoration: underline;
 }
 
-.project-progress-attention-context {
+.project-progress-incomplete-context {
   font-weight: 600;
   color: var(--lumo-body-text-color);
 }
 
-.project-progress-attention-text {
+.project-progress-incomplete-text {
   color: var(--lumo-secondary-text-color);
 }
 
-.project-progress-attention-action {
+.project-progress-incomplete-action {
   margin-left: auto;
   font-weight: 600;
   color: var(--lumo-primary-text-color);
@@ -103,6 +101,25 @@
   color: var(--lumo-body-text-color);
 }
 
+/* The empty state's call to action. It used to be the experiments section's own onboarding hero,
+   which put the page's only primary button below an informational card and two dataset tiles. It
+   belongs in the headline that names the absence: the sentence and the way to act on it are one
+   statement, so they are one card. */
+.project-progress-headline--empty {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--lumo-space-s) var(--lumo-space-m);
+}
+
+.project-progress-empty-text {
+  flex: 1 1 var(--card-readable-width);
+}
+
+.project-progress-empty-action {
+  flex: 0 0 auto;
+}
+
 /* Rail: a genuine sequence — markers sit on a horizontal connector line, labels below. */
 .project-progress-rail {
   display: flex;
@@ -131,6 +148,16 @@
   display: flex;
   align-items: center;
   gap: var(--lumo-space-s);
+  /* Tall enough for the completeness ring that marks the Primary datasets stage, so every stage's
+     connector sits on the same line even though the ring is taller than the round markers. */
+  min-height: 2.75rem;
+}
+
+/* The Primary datasets stage's marker: the project's primary-data coverage at a glance, with the
+   step's own count beside it. */
+.project-progress-step-ring {
+  --completeness-ring-size: 2.75rem;
+  --completeness-ring-font-size: var(--lumo-font-size-xs);
 }
 
 .project-progress-marker {
@@ -147,8 +174,8 @@
   background-color: var(--lumo-base-color);
 }
 
-/* Done and attention markers are FILLED, the way the prototype draws them. An outlined marker
-   leaves the glyph sitting on white, and the warning triangle is the only state indicator on the
+/* Done and not-complete markers are FILLED, the way the prototype draws them. An outlined marker
+   leaves the glyph sitting on white, and the state glyph is the only state indicator on the
    step, so it has to clear the non-text contrast bar on its own. */
 .project-progress-step--done .project-progress-marker {
   border-color: var(--lumo-success-color, var(--lumo-contrast-40pct));
@@ -156,10 +183,10 @@
   color: var(--lumo-base-color);
 }
 
-.project-progress-step--attention .project-progress-marker {
-  border-color: var(--attention-border, var(--lumo-contrast-40pct));
-  background-color: var(--attention-surface, var(--lumo-contrast-5pct));
-  color: var(--lumo-warning-text-color, var(--lumo-error-text-color));
+.project-progress-step--incomplete .project-progress-marker {
+  border-color: var(--info-border, var(--lumo-contrast-40pct));
+  background-color: var(--info-surface, var(--lumo-contrast-5pct));
+  color: var(--info-text-color, var(--lumo-error-text-color));
 }
 
 .project-progress-connector {
@@ -170,6 +197,51 @@
   min-width: 15rem;
   height: 2px;
   background-color: var(--lumo-contrast-20pct);
+}
+
+/* Measured facts: an active step marker is a filled primary disc; the element must not inherit
+   the info surface used by the not-complete card. */
+
+.project-progress-step--active .project-progress-marker {
+  border-color: var(--lumo-primary-color);
+  background-color: var(--lumo-primary-color);
+  color: var(--lumo-primary-contrast-color);
+}
+
+/* The active marker holds a glyph, not the ordinal, so the ordinal readers use instead would be
+   lost. Keeping the ordinal in the label's accessible name avoids that. */
+.project-progress-step--active .project-progress-step-label {
+  color: var(--heading-text-color);
+}
+
+.project-progress-step--active .project-progress-step-detail {
+  color: var(--lumo-body-text-color);
+  font-weight: 600;
+}
+
+/* A locked stage is pending a prerequisite, not disabled and not broken. It is drawn quieter than
+   the stage that can actually be started, so the rail's weight points at the one available move. */
+.project-progress-step--locked .project-progress-marker {
+  border-style: dashed;
+  border-color: var(--lumo-contrast-30pct);
+  color: var(--lumo-secondary-text-color);
+}
+
+.project-progress-step--locked .project-progress-step-label {
+  color: var(--lumo-secondary-text-color);
+  font-weight: 500;
+}
+
+.project-progress-step--locked .project-progress-step-detail {
+  color: var(--lumo-secondary-text-color);
+}
+
+.project-progress-step--locked .project-progress-connector {
+  background-color: var(--lumo-contrast-10pct);
+}
+
+.project-progress-step--active .project-progress-connector {
+  background-color: var(--lumo-primary-color-10pct);
 }
 
 .project-progress-step--done .project-progress-connector {
@@ -190,7 +262,7 @@
   color: var(--lumo-body-text-color);
 }
 
-.project-progress-step-count {
+.project-progress-step-detail {
   font-size: var(--lumo-font-size-s);
   color: var(--lumo-secondary-text-color);
 }

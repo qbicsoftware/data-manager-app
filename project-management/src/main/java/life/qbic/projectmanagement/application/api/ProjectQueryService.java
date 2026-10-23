@@ -38,6 +38,15 @@ public interface ProjectQueryService {
   Flux<ExperimentProgress> getExperimentProgress(String projectId);
 
   /**
+   * Streams the progress of a single experiment. Emits nothing if the experiment does not belong to
+   * the project.
+   *
+   * @param projectId    the project identifier
+   * @param experimentId the experiment identifier
+   */
+  Mono<ExperimentProgress> getExperimentProgress(String projectId, String experimentId);
+
+  /**
    * Streams a page of {@link ProjectSampleOverview} for the project, matching the filter.
    *
    * @param projectId the project identifier
@@ -71,6 +80,15 @@ public interface ProjectQueryService {
   Flux<RecentSample> getRecentSamples(String projectId);
 
   /**
+   * Streams the newest samples of one experiment (at most three), newest first — the Samples card
+   * of the experiment overview.
+   *
+   * @param projectId    the project identifier
+   * @param experimentId the experiment identifier
+   */
+  Flux<RecentSample> getRecentSamples(String projectId, String experimentId);
+
+  /**
    * Streams the newest measurements of every experiment in the project (at most three per
    * experiment), newest first — the Dataset snapshot panel of the experiment cards.
    *
@@ -79,6 +97,15 @@ public interface ProjectQueryService {
    * @throws AccessDeniedException  if the caller lacks {@code READ} on the project
    */
   Flux<RecentMeasurement> getRecentMeasurements(String projectId);
+
+  /**
+   * Streams the newest measurements of one experiment (at most three), newest first — the Dataset
+   * card of the experiment overview.
+   *
+   * @param projectId    the project identifier
+   * @param experimentId the experiment identifier
+   */
+  Flux<RecentMeasurement> getRecentMeasurements(String projectId, String experimentId);
 
   /**
    * Filter and sort for the project sample list.

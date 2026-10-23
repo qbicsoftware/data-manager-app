@@ -50,19 +50,19 @@
   align-items: baseline;
 }
 
-.experiment-details-component .sample-source-display {
+.experiment-design-component .sample-source-display {
   flex-direction: row;
   display: flex;
   justify-content: space-between;
 }
 
-.experiment-details-component .sample-source-display .sample-source {
+.experiment-design-component .sample-source-display .sample-source {
   flex-direction: column;
   display: flex;
   row-gap: var(--lumo-space-m);
 }
 
-.experiment-details-component .sample-source-display .sample-source .header {
+.experiment-design-component .sample-source-display .sample-source .header {
   display: inline-flex;
   justify-content: start;
   align-items: start;
@@ -71,7 +71,7 @@
   font-weight: 500;
 }
 
-.experiment-details-component .sample-source-display .sample-source .ontologies {
+.experiment-design-component .sample-source-display .sample-source .ontologies {
   display: flex;
   row-gap: var(--spacing-03);
   align-items: center;
@@ -79,26 +79,31 @@
   flex-direction: column;
 }
 
-.experiment-details-component .sample-source-display .sample-source .ontologies .ontology {
+.experiment-design-component .sample-source-display .sample-source .ontologies .ontology {
   display: inline-flex;
   gap: var(--spacing-03);
   align-items: center;
   width: 100%;
 }
 
-.experiment-details-component .sample-source-display .icon-with-list vaadin-icon {
+.experiment-design-component .sample-source-display .icon-with-list vaadin-icon {
   color: var(--lumo-primary-color);
   margin-right: 1em;
   margin-top: 0.5em;
 }
 
-.experiment-details-component .header {
+/* Shared shell for both experiment edit surfaces. They are separate routes and separate components,
+   but they deliberately render the same page grammar (back link, H1, one scrolling content column),
+   so the shell rules target both: duplicating them per component let the two drift apart. */
+.experiment-design-component .header,
+.experiment-setup-component .header {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
 }
 
-.experiment-details-component .details-content {
+.experiment-design-component .details-content,
+.experiment-setup-component .details-content {
   padding: var(--lumo-space-m);
   display: flex;
   flex-direction: column;
@@ -107,17 +112,17 @@
   font-size: var(--lumo-font-size-s);
 }
 
-.experiment-details-component .details-content .experimental-sheet {
+.experiment-design-component .details-content .experimental-sheet {
   width: 100%;
   height: 100%;
 }
 
-.experiment-details-component .details-content .experimental-groups-container {
+.experiment-design-component .details-content .experimental-groups-container {
   width: 100%;
   height: 100%;
 }
 
-.experiment-details-component .sample-registration-possible {
+.experiment-design-component .sample-registration-possible {
   margin-bottom: var(--lumo-space-m);
 }
 
@@ -1398,11 +1403,8 @@ a.pinned-project-card-body:hover {
   min-width: 12rem;
 }
 
-.sample-details-component .sample-search:focus-within::part(input-field) {
-  background-color: var(--primary-color-10pct);
-  box-shadow: 0 0 0 2px var(--primary-color) inset;
-}
-
+/* The search field's focus ring comes from field-focus.css, like every other field in the app.
+   The blue suffix icon is the search-specific affordance and stays. */
 .sample-details-component .sample-search:focus-within [part='suffix'] vaadin-icon {
   color: var(--primary-color);
 }
@@ -1904,4 +1906,634 @@ a.project-dataset-footer, a.project-dataset-footer:hover {
 
 .project-access-component .project-role-static {
   font-size: var(--lumo-font-size-s);
+}
+
+/*
+ * Inline experiment design form and experimental groups. Extracted from the former
+ * add/edit experiment dialogs and the experimental groups dialog; editing is inline on the
+ * design route (project owner, 2026-10-19).
+ */
+.experiment-design-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+  width: 100%;
+  box-sizing: border-box;
+  padding-top: var(--lumo-space-m);
+}
+
+.experiment-design-form .full-width-input {
+  width: 100%;
+}
+
+.experiment-design-form .experiment-design-description {
+  color: var(--lumo-secondary-text-color);
+}
+
+.experiment-design-form-inline {
+  padding-top: 0;
+}
+
+/* The design page header: the way back to the overview above the view name, so the edit case is
+   unmistakable and its exit is visible without scrolling. */
+.experiment-design-title-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-xs);
+}
+
+.experiment-design-back {
+  align-self: flex-start;
+  padding: 0;
+}
+.experiment-design-section-header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: var(--lumo-space-m);
+  margin-top: var(--lumo-space-m);
+}
+
+.experiment-design-section-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-xs);
+}
+
+.experiment-design-section-action {
+  flex: none;
+}
+
+.experiment-design-section-title {
+  font-size: var(--lumo-font-size-l);
+  font-weight: var(--font-weight-semi-bold);
+  color: var(--lumo-header-text-color);
+}
+
+.experiment-design-section-purpose {
+  max-width: 60rem;
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-s);
+}
+
+/* The link from one edit surface to the other, inside the purpose sentence. It is an inline link in
+   running text, so it must not adopt the block treatment of the action buttons beside it. */
+.experiment-design-cross-link {
+  color: var(--lumo-primary-text-color);
+  text-decoration: underline;
+  white-space: nowrap;
+}
+
+/*
+ * Transparency text for the design form: the purpose of the sample origins, the edit contract, and
+ * the per-field list of terms already in use by registered samples.
+ */
+.experiment-design-purpose,
+.experiment-design-contract {
+  max-width: 60rem;
+  color: var(--lumo-secondary-text-color);
+}
+
+.experiment-design-contract,
+.experiment-design-usage,
+.experimental-variables-note {
+  font-size: var(--lumo-font-size-s);
+}
+
+.experiment-design-usage {
+  color: var(--lumo-secondary-text-color);
+}
+
+.experimental-variables-note {
+  color: var(--lumo-secondary-text-color);
+}
+
+/* Project creation page — the former AddProjectDialog became a page wizard. */
+.main.project-create {
+  grid-template-columns: 1fr;
+  grid-template-rows: auto;
+  max-width: var(--content-shell-max-width);
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  box-sizing: border-box;
+  padding-inline: var(--content-shell-gutter);
+}
+
+.project-create-band {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+}
+
+.project-create-title {
+  font-size: var(--lumo-font-size-xxl);
+  font-weight: bold;
+  color: var(--heading-text-color);
+}
+
+.project-create-hint {
+  max-width: 60rem;
+  color: var(--lumo-secondary-text-color);
+}
+
+.project-creation-wizard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+  padding-block: var(--lumo-space-m);
+}
+
+.project-creation-content {
+  min-height: 40vh;
+}
+
+.project-creation-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--lumo-space-m);
+}
+
+/* A short note under a section title and above its description — the project creation wizard uses
+   it to mark a step as optional. Lumo's secondary text is about 5.3:1 on white, so it clears AA
+   even at this size, and the measure is capped for readability. */
+.step-hint {
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-s);
+  max-width: 70ch;
+}
+
+/* The step layouts were styled under the deleted dialog; re-scope them to the wizard. */
+.project-creation-wizard .collaborators-layout,
+.project-creation-wizard .experiment-information-layout,
+.project-creation-wizard .funding-information-layout,
+.project-creation-wizard .project-design-layout {
+  width: 100%;
+  gap: 1em;
+  display: flex;
+  flex-direction: column;
+}
+
+.project-creation-wizard .experiment-information-layout .experiment-name-field {
+  width: 50%;
+}
+
+.project-creation-wizard .funding-information-layout .funding-field .grant-label-field {
+  min-width: 15vw;
+}
+
+.project-creation-wizard .funding-information-layout .funding-field .input-fields {
+  width: 100%;
+  gap: var(--lumo-space-xl);
+  display: inline-flex;
+}
+
+.project-creation-wizard .project-design-layout .description-field {
+  height: 100%;
+  width: 100%;
+  min-height: 15vh;
+}
+
+.project-creation-wizard .project-design-layout .title-field {
+  width: 100%;
+  margin-left: var(--lumo-space-m);
+}
+
+.project-creation-wizard .project-design-layout .code-field {
+  max-width: 20%;
+}
+
+.project-creation-wizard .project-design-layout .search-field {
+  max-width: 30%;
+}
+
+.project-creation-wizard .project-design-layout .code-and-title {
+  width: 100%;
+  gap: var(--spacing-03);
+  display: inline-flex;
+  align-items: baseline;
+}
+
+.experimental-groups-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+  width: 100%;
+}
+
+.experimental-groups-section-content {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.experimental-groups-section-content .group-collection {
+  display: grid;
+  gap: 1rem;
+}
+
+/* The missing-variables prerequisite, shown in place of the group form. It states the reason and
+   carries the one action that resolves it, instead of presenting inputs that cannot be completed. */
+.experimental-groups-locked {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--lumo-space-s);
+  padding: var(--lumo-space-m);
+  border: 1px dashed var(--lumo-contrast-30pct);
+  border-radius: var(--lumo-border-radius-m);
+}
+
+/* Not a warning tone: nothing is wrong, a prerequisite is simply not met yet. The dashed border and
+   the stated reason carry that; the colour stays neutral. */
+.experimental-groups-locked-title {
+  font-weight: var(--font-weight-semi-bold);
+  color: var(--lumo-header-text-color);
+}
+
+.experimental-groups-locked-text {
+  color: var(--lumo-secondary-text-color);
+  max-inline-size: 60ch;
+}
+
+.experimental-groups-section-content .experimental-group-entry {
+  display: grid;
+  grid: auto auto auto auto / auto 1fr 175px auto;
+  column-gap: 1rem;
+  align-items: baseline;
+}
+
+.experimental-groups-section-content .add-new-group-action {
+  display: flex;
+  column-gap: 1rem;
+  color: var(--lumo-primary-color);
+}
+
+.experimental-groups-section-content .add-new-group-action span {
+  cursor: pointer;
+}
+
+.experimental-groups-save {
+  justify-self: start;
+}
+
+/* Every section's primary action sits at the top-right of its content, so the metadata save, the
+   variables save, the groups save and the confounding save align on one line. */
+.inline-section-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--lumo-space-s);
+}
+
+/* Experiment creation surface (a route, not a dialog). */
+.experiment-create-band {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+  width: 100%;
+  max-width: 66rem;
+  margin: 0 auto;
+  padding: var(--lumo-space-l) var(--lumo-space-m);
+  box-sizing: border-box;
+}
+
+.experiment-create-title {
+  font-size: var(--lumo-font-size-xl);
+  font-weight: var(--font-weight-semi-bold);
+}
+
+.experiment-create-hint {
+  color: var(--lumo-secondary-text-color);
+}
+
+/* The experiment create form's submit row. It sits below the form, not in the section header:
+   one button here submits the whole form, so it follows form conventions rather than the edit
+   page's per-section top-right placement. */
+.experiment-create-actions {
+  display: flex;
+  gap: var(--lumo-space-m);
+  justify-content: flex-end;
+}
+
+/* Sticky so the submit stays in reach while the form is taller than the screen. The scroll port is
+   the app layout's content part (it is the nearest ancestor with `overflow: auto`), and nothing
+   between it and this row clips, so `bottom: 0` pins the row to the foot of the viewport and lets
+   it settle into normal flow once the form's end scrolls into view.
+   The opaque background hides form content passing behind it, and the hairline separates the row
+   from that content. */
+.experiment-create-actions--sticky {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  padding-block: var(--lumo-space-s);
+  background-color: var(--lumo-base-color);
+  border-top: 1px solid var(--lumo-contrast-10pct);
+}
+
+/*
+ * Experiment overview — the read-only experiment landing (design band + data-at-a-glance cards).
+ *
+ * Compact by intent: this page is the launch pad, so the setup and design bands must not push the
+ * sample and dataset cards below the fold. Spacing is one step tighter than the default rhythm, both
+ * between bands and inside them, while the cards keep enough padding to still read as cards.
+ *
+ * It carries no max-width and no inline padding of its own: the .main.experiment shell owns both, so
+ * this page lines up with the navigation row and the footer on the same vertical axis. Adding either
+ * here is what puts the content back out of alignment — see the Content shell block in variables.css.
+ */
+.experiment-overview-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.experiment-overview-title {
+  font-size: var(--lumo-font-size-xxl);
+  font-weight: var(--font-weight-semi-bold);
+}
+
+/* The page head: view name over the experiment name, the same shape as the project settings page
+   (title + subtitle). The subtitle is allowed to wrap — a truncated name is the problem it exists to
+   solve, so unlike the 42ch breadcrumb crumb it must not ellipsise. */
+.experiment-overview-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-xs);
+}
+
+.experiment-overview-subtitle {
+  margin: 0;
+  color: var(--lumo-secondary-text-color);
+}
+
+.experiment-overview-band {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+  padding: var(--lumo-space-m);
+  border: 1px solid var(--lumo-contrast-10pct);
+  border-radius: var(--lumo-border-radius-l);
+  background-color: var(--lumo-base-color);
+}
+
+.experiment-overview-band-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--lumo-space-m);
+}
+
+/* The band's edit action sits at the top-right of the band it addresses, matching the project
+   summary's "Edit project details" head row. margin-left: auto pins it to the far edge whatever
+   else the head carries (the Design band adds a state tag). */
+.experiment-overview-actions {
+  display: flex;
+  align-items: baseline;
+  gap: var(--lumo-space-s);
+  margin-left: auto;
+}
+
+.experiment-overview-band-title {
+  font-size: var(--lumo-font-size-l);
+  font-weight: var(--font-weight-semi-bold);
+}
+
+.experiment-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: var(--lumo-space-m);
+}
+
+/* The ordered step pair that unlocks registration. Numbered markers because the sequence is the
+   message: variables must exist before a condition can name one level per variable. */
+.experiment-overview-steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+}
+
+.experiment-overview-step {
+  display: flex;
+  align-items: baseline;
+  gap: var(--lumo-space-s);
+}
+
+.experiment-overview-step-marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  border-radius: 50%;
+  border: 1px solid var(--lumo-contrast-30pct);
+  font-size: var(--lumo-font-size-s);
+  font-weight: var(--font-weight-semi-bold);
+  color: var(--lumo-secondary-text-color);
+}
+
+/* Done steps take the success tone. The check glyph is what carries the state; the colour only
+   reinforces it, so the pair is still readable without colour. */
+.experiment-overview-step--done .experiment-overview-step-marker {
+  border-color: var(--lumo-success-color);
+  background-color: var(--lumo-success-color-10pct);
+  color: var(--lumo-success-text-color);
+}
+
+.experiment-overview-step-label {
+  font-weight: var(--font-weight-semi-bold);
+}
+
+.experiment-overview-step-detail {
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-s);
+}
+
+.experiment-overview-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-xs);
+}
+
+.experiment-overview-detail-title {
+  font-weight: var(--font-weight-semi-bold);
+  color: var(--lumo-header-text-color);
+}
+
+.experiment-overview-detail-item {
+  font-size: var(--lumo-font-size-s);
+}
+
+.experiment-overview-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+  gap: var(--lumo-space-m);
+  align-items: stretch;
+}
+
+.experiment-overview-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+  padding: var(--lumo-space-m);
+  border: 1px solid var(--lumo-contrast-10pct);
+  border-radius: var(--lumo-border-radius-l);
+  cursor: pointer;
+}
+
+.experiment-overview-card:hover,
+.experiment-overview-card:focus-visible {
+  border-color: var(--lumo-primary-color-50pct);
+}
+
+.experiment-overview-card-head {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+}
+
+.experiment-overview-card-label {
+  font-weight: 600;
+  color: var(--lumo-header-text-color);
+}
+
+.experiment-overview-card-icon {
+  color: var(--lumo-secondary-text-color);
+}
+
+.experiment-overview-card-metric {
+  display: flex;
+  align-items: baseline;
+  gap: var(--lumo-space-xs);
+}
+
+.experiment-overview-card-value {
+  font-size: var(--lumo-font-size-xxl);
+  font-weight: var(--font-weight-semi-bold);
+}
+
+.experiment-overview-card-unit {
+  color: var(--lumo-secondary-text-color);
+}
+
+.experiment-overview-card-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-xs);
+}
+
+.experiment-overview-card-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: var(--lumo-space-s);
+  font-size: var(--lumo-font-size-s);
+}
+
+.experiment-overview-card-cell-header {
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-xs);
+  text-transform: uppercase;
+}
+
+.experiment-overview-card-row .identifier {
+  font-family: var(--monospace-font, monospace);
+}
+
+.experiment-overview-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lumo-space-xs);
+  padding: 1px var(--lumo-space-s);
+  border-radius: 999px;
+  font-size: var(--lumo-font-size-xs);
+  background-color: var(--lumo-contrast-10pct);
+  color: var(--lumo-secondary-text-color);
+}
+
+.experiment-overview-tag--done {
+  background-color: var(--lumo-success-color-10pct, var(--lumo-contrast-10pct));
+  color: var(--lumo-success-text-color, var(--lumo-secondary-text-color));
+}
+
+.experiment-overview-tag--incomplete {
+  background-color: var(--info-surface, var(--lumo-contrast-10pct));
+  color: var(--info-text-color, var(--lumo-error-text-color));
+}
+
+.experiment-overview-tag--active {
+  background-color: var(--lumo-primary-color-10pct, var(--lumo-contrast-10pct));
+  color: var(--lumo-primary-text-color);
+}
+
+.experiment-overview-tag--locked {
+  background-color: var(--lumo-contrast-5pct);
+  color: var(--lumo-secondary-text-color);
+}
+
+.experiment-overview-tag-icon {
+  width: 1em;
+  height: 1em;
+}
+
+.experiment-overview-note {
+  color: var(--lumo-secondary-text-color);
+}
+
+.experiment-overview-hint {
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-s);
+}
+
+.experiment-overview-message {
+  color: var(--lumo-secondary-text-color);
+}
+
+/*
+ * Completeness ring — the Dataset card's proportion-to-complete signal. The ring and the gap
+ * sentence are one unit: the arc is the proportion, the sentence states what is outstanding, so the
+ * ring never carries the meaning alone.
+ */
+.experiment-overview-card-accessory {
+  margin-left: auto;
+}
+
+.completeness-ring {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: var(--completeness-ring-size, 3.5rem);
+  height: var(--completeness-ring-size, 3.5rem);
+}
+
+.completeness-ring__dial,
+.completeness-ring__svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.completeness-ring__track {
+  stroke: var(--lumo-contrast-10pct);
+}
+
+.completeness-ring__value {
+  stroke: var(--info-color, var(--lumo-primary-color));
+}
+
+.completeness-ring--complete .completeness-ring__value {
+  stroke: var(--success-color, var(--lumo-success-color, var(--lumo-primary-color)));
+}
+
+.completeness-ring--none .completeness-ring__track {
+  stroke: var(--lumo-contrast-20pct);
+}
+
+.completeness-ring__centre {
+  position: absolute;
+  font-size: var(--completeness-ring-font-size, var(--lumo-font-size-s));
+  font-weight: var(--font-weight-semi-bold);
+  line-height: 1;
+  color: var(--lumo-header-text-color);
 }

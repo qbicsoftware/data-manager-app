@@ -229,7 +229,7 @@ public class PrimaryDatasetsComponent extends Div {
     boolean missing = dataset.missing() > 0;
     Span state = new Span(missing ? "Missing data" : "Complete");
     state.addClassNames("project-datasets-state",
-        missing ? "project-datasets-state--attention" : "project-datasets-state--done");
+        missing ? "project-datasets-state--incomplete" : "project-datasets-state--done");
     Span cell = cell(null);
     cell.add(state);
     return cell;

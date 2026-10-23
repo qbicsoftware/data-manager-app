@@ -1,11 +1,12 @@
 package life.qbic.datamanager.views.projects.project.experiments;
 
 import static java.util.Objects.requireNonNull;
-import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.router.RouteParam;
+import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
@@ -14,21 +15,21 @@ import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.projects.project.ProjectMainLayout;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentDetailsComponent;
-import life.qbic.logging.api.Logger;
-import life.qbic.projectmanagement.domain.model.experiment.Experiment;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentOverviewComponent;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.create.CreateExperimentMain;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
-import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
- * Experiment Information Main Component
- * <p>
- * This component hosts the components necessary to show and update the {@link Experiment}
- * information associated with a {@link Project} via the provided {@link ProjectId} in the URL
+ * Experiment landing.
+ *
+ * <p>Renders the read-only {@link ExperimentOverviewComponent}: design first, then the data surfaces.
+ * The design editor stays at {@code /design}, reachable from the overview (project owner,
+ * 2026-10-19).</p>
+ *
+ * @since 1.19.0
  */
-
 @SpringComponent
 @UIScope
 @Route(value = "projects/:projectId?/experiments/:experimentId?", layout = ProjectMainLayout.class)
@@ -37,55 +38,40 @@ public class ExperimentInformationMain extends Main implements BeforeEnterObserv
 
   @Serial
   private static final long serialVersionUID = -3443064087502678981L;
-  private static final Logger log = logger(ExperimentInformationMain.class);
-  public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
+
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
-  private final ExperimentDetailsComponent experimentDetailsComponent;
+  public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
+
+  private final ExperimentOverviewComponent overviewComponent;
   private transient Context context;
 
-  public ExperimentInformationMain(
-      @Autowired ExperimentDetailsComponent experimentDetailsComponent) {
-    requireNonNull(experimentDetailsComponent);
-    this.experimentDetailsComponent = experimentDetailsComponent;
+  public ExperimentInformationMain(@Autowired ExperimentOverviewComponent overviewComponent) {
+    this.overviewComponent = requireNonNull(overviewComponent);
     addClassName("experiment");
-    add(experimentDetailsComponent);
-    log.debug(String.format(
-        "New instance for %s(#%s) created with %s(#%s)",
-        this.getClass().getSimpleName(), System.identityHashCode(this),
-        experimentDetailsComponent.getClass().getSimpleName(),
-        System.identityHashCode(experimentDetailsComponent)
-    ));
+    add(overviewComponent);
   }
-
-
-  /**
-   * Extracts {@link ExperimentId} from the provided URL before the user accesses the page
-   * <p>
-   * This method is responsible for checking if the provided {@link ExperimentId} is valid and
-   * triggering its propagation to the components within the {@link ExperimentInformationMain}
-   */
 
   @Override
   public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
-    String projectID = beforeEnterEvent.getRouteParameters().get(PROJECT_ID_ROUTE_PARAMETER)
-        .orElseThrow();
-    if (!ProjectId.isValid(projectID)) {
-      throw new ApplicationException("invalid project id " + projectID);
+    String projectIdValue = beforeEnterEvent.getRouteParameters().get(PROJECT_ID_ROUTE_PARAMETER)
+        .orElseThrow(() -> new ApplicationException("Missing project id in route"));
+    if (!ProjectId.isValid(projectIdValue)) {
+      throw new ApplicationException("invalid project id " + projectIdValue);
     }
-    ProjectId parsedProjectId = ProjectId.parse(projectID);
-    this.context = new Context().with(parsedProjectId);
-    String experimentId = beforeEnterEvent.getRouteParameters().get(EXPERIMENT_ID_ROUTE_PARAMETER)
-        .orElseThrow();
-    if (!ExperimentId.isValid(experimentId)) {
-      throw new ApplicationException("invalid experiment id " + experimentId);
+    String experimentIdValue = beforeEnterEvent.getRouteParameters()
+        .get(EXPERIMENT_ID_ROUTE_PARAMETER)
+        .orElseThrow(() -> new ApplicationException("Missing experiment id in route"));
+    // Defensive guard against the static "create" segment matching this parameter route.
+    if ("create".equals(experimentIdValue)) {
+      beforeEnterEvent.rerouteTo(CreateExperimentMain.class, new RouteParameters(
+          new RouteParam(PROJECT_ID_ROUTE_PARAMETER, projectIdValue)));
+      return;
     }
-    ExperimentId parsedExperimentId = ExperimentId.parse(experimentId);
-    this.context = context.with(parsedExperimentId);
-    initializeComponentsWithContext();
-  }
-
-  private void initializeComponentsWithContext() {
-    experimentDetailsComponent.setContext(context);
-    add(experimentDetailsComponent);
+    if (!ExperimentId.isValid(experimentIdValue)) {
+      throw new ApplicationException("invalid experiment id " + experimentIdValue);
+    }
+    this.context = new Context().with(ProjectId.parse(projectIdValue))
+        .with(ExperimentId.parse(experimentIdValue));
+    overviewComponent.setContext(context);
   }
 }

@@ -20,6 +20,9 @@ import life.qbic.datamanager.views.general.DataManagerMenu;
 import life.qbic.datamanager.views.general.footer.FooterComponent;
 import life.qbic.datamanager.views.navigation.AppNavigationComponent;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
+import life.qbic.datamanager.views.projects.project.experiments.ExperimentDesignMain;
+import life.qbic.datamanager.views.projects.project.experiments.ExperimentSetupMain;
+import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
 import life.qbic.datamanager.views.projects.project.info.ProjectInformationMain;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
@@ -101,6 +104,7 @@ public class ProjectMainLayout extends DataManagerLayout implements BeforeEnterO
     String projectTitle = project.getProjectIntent().projectTitle().title();
     navigationContainer.removeAll();
     beforeEnterEvent.getRouteParameters().get(EXPERIMENT_ID_ROUTE_PARAMETER)
+        .filter(ExperimentId::isValid)
         .ifPresentOrElse(
             experimentId -> renderExperimentScope(projectId, projectCode, projectTitle, experimentId,
                 beforeEnterEvent.getNavigationTarget()),
@@ -127,9 +131,26 @@ public class ProjectMainLayout extends DataManagerLayout implements BeforeEnterO
         .orElse("");
     breadcrumbs.removeAll();
     breadcrumbs.add(homeCrumb(), separator(), codeLink(projectCode, projectId), separator(),
-        titleLink(projectTitle, projectId), separator(), currentCrumb(experimentName));
+        titleLink(projectTitle, projectId), separator());
+    // The two edit surfaces are their own views, so the crumb chain names which one is open and
+    // keeps the experiment as the way back up to the overview (the nav only highlights Overview).
+    // A bare "Edit experiment" would no longer say which of the two the user is looking at.
+    if (navigationTarget.equals(ExperimentDesignMain.class)) {
+      breadcrumbs.add(experimentLink(experimentName, projectId, experimentId), separator(),
+          currentCrumb("Experimental design"));
+    } else if (navigationTarget.equals(ExperimentSetupMain.class)) {
+      breadcrumbs.add(experimentLink(experimentName, projectId, experimentId), separator(),
+          currentCrumb("Experiment setup"));
+    } else {
+      breadcrumbs.add(currentCrumb(experimentName));
+    }
     var navigation = AppNavigationComponent.forExperiment(projectId.value(), experimentId);
-    navigation.setActive(navigationTarget);
+    // Both edit surfaces are sub-surfaces of the overview: keep Overview marked while either is
+    // open, since the nav row has no item for them.
+    navigation.setActive(navigationTarget.equals(ExperimentDesignMain.class)
+        || navigationTarget.equals(ExperimentSetupMain.class)
+        ? ExperimentInformationMain.class
+        : navigationTarget);
     navigationContainer.add(navigation);
   }
 
@@ -169,6 +190,16 @@ public class ProjectMainLayout extends DataManagerLayout implements BeforeEnterO
     RouterLink link = new RouterLink(title, ProjectInformationMain.class,
         projectRouteParameters(projectId));
     link.addClassName("app-crumb");
+    return link;
+  }
+
+  private static RouterLink experimentLink(String name, ProjectId projectId, String experimentId) {
+    RouterLink link = new RouterLink(name, ExperimentInformationMain.class,
+        new RouteParameters(
+            new RouteParam(PROJECT_ID_ROUTE_PARAMETER, projectId.value()),
+            new RouteParam(EXPERIMENT_ID_ROUTE_PARAMETER, experimentId)));
+    link.addClassName("app-crumb");
+    link.getElement().setAttribute("title", name);
     return link;
   }
 

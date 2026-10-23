@@ -61,6 +61,14 @@ public class ProjectQueryServiceImpl implements ProjectQueryService {
   }
 
   @Override
+  public Mono<ExperimentProgress> getExperimentProgress(String projectId, String experimentId) {
+    Objects.requireNonNull(experimentId, "experimentId must not be null");
+    return getExperimentProgress(projectId)
+        .filter(progress -> experimentId.equals(progress.experimentId()))
+        .next();
+  }
+
+  @Override
   public Flux<ProjectSampleOverview> getProjectSamples(String projectId, int offset, int limit,
       ProjectSampleFilter filter) {
     Objects.requireNonNull(projectId, "projectId must not be null");
@@ -110,6 +118,20 @@ public class ProjectQueryServiceImpl implements ProjectQueryService {
         .contextWrite(reactiveSecurity(securityContext))
         .retryWhen(defaultRetryStrategy())
         .onErrorMap(cause -> mapToQueryException(cause, "Request for recent measurements failed"));
+  }
+
+  @Override
+  public Flux<RecentSample> getRecentSamples(String projectId, String experimentId) {
+    Objects.requireNonNull(experimentId, "experimentId must not be null");
+    return getRecentSamples(projectId)
+        .filter(sample -> experimentId.equals(sample.experimentId()));
+  }
+
+  @Override
+  public Flux<RecentMeasurement> getRecentMeasurements(String projectId, String experimentId) {
+    Objects.requireNonNull(experimentId, "experimentId must not be null");
+    return getRecentMeasurements(projectId)
+        .filter(measurement -> experimentId.equals(measurement.experimentId()));
   }
 
   private static Retry defaultRetryStrategy() {

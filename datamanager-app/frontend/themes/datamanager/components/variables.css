@@ -61,22 +61,28 @@ First some general property definitions
   --warning-text-color: hsla(36, 100%, 30%, 1);
   --warning-color: hsla(36, 100%, 50%, 1);
 
-  /* --- Attention surfaces --- */
-  /* Lumo's warning pair is a fully saturated yellow, and louder than its name suggests: the fill
-     token is called --lumo-warning-color-10pct but is 25% alpha, which lands on #fff2bf over white,
-     and the border is #ffcc00 at full strength. Against the neutral surfaces around it that reads as
-     a shout rather than a note. These are the same hue, quieter -- a 15% fill and a half-strength
-     border, so #fff7d9 and #ffe57f.
-
-     Contrast improves rather than suffers: Lumo's warning ink (#995200) measured 5.25:1 on the old
-     fill and 5.49:1 on this one, because the background moved towards white while the text did not.
-     Both clear 4.5:1, which is what the small text on these badges needs. */
-  --attention-surface: hsla(48, 100%, 50%, 0.15);
-  --attention-border: hsla(48, 100%, 50%, 0.5);
-  --primary-color: hsl(214, 100%, 48%);
-  --primary-color-10pct: hsla(214, 100%, 48%, 0.2);
-  --primary-color-20pct: hsla(214, 100%, 48%, 0.2);
-  --primary-contrast-color: rgb(255, 255, 255);
+  /* --- Info: in progress / not complete yet ---
+     "Still in progress" is information, not a call to action and not a problem. It gets its own
+     hue, distinct from the interactive primary blue (#1676F3) so an info badge never reads as a
+     link, and distinct from amber, which stays reserved for genuine warnings (the test-instance
+     banner, failed syncs). Surface is a 12% tint, border 40%, ink deep enough to clear 4.5:1 on
+     the tint for the small text these badges carry. */
+  --info-color: hsl(199, 90%, 38%);
+  --info-surface: hsla(199, 90%, 38%, 0.12);
+  --info-border: hsla(199, 90%, 38%, 0.4);
+  --info-text-color: hsl(199, 95%, 26%);
+  /* --- Primary ---
+     One source: Lumo's own primary tokens. These used to be hand-written hsl() values that
+     happened to equal Lumo's light-scheme primary, but their derivatives differed (Lumo's
+     -10pct is a 60%-lightness 13% tint, ours was 48%/20%) and ours carried no dark-scheme
+     handling. That let two rings/badges drawn from the two families drift apart unnoticed.
+     Aliasing removes the drift; the -20pct has no Lumo equivalent and is derived instead. */
+  --primary-color: var(--lumo-primary-color);
+  --primary-color-10pct: var(--lumo-primary-color-10pct);
+  --primary-color-20pct: color-mix(in srgb, var(--lumo-primary-color) 20%, transparent);
+  --primary-color-50pct: var(--lumo-primary-color-50pct);
+  --primary-contrast-color: var(--lumo-primary-contrast-color);
+  /* Deliberately more vivid than Lumo's primary text (43% lightness) for link legibility. */
   --primary-text-color: #1676f3;
   --secondary-text-color: var(--shade-color-50pct);
   --tertiary-text-color: hsla(214, 45%, 20%, 0.52);
@@ -96,7 +102,7 @@ First some general property definitions
   --background-color-10pct: var(--shade-color-10pct);
 
   --primary-icon-color: var(--primary-color);
-  --info-icon-color: rgba(22, 118, 243, 1);
+  --info-icon-color: var(--info-color);
   --error-icon-color: var(--error-color);
   --success-icon-color: var(--success-color);
   --warning-icon-color: rgba(254, 201, 1, 1);

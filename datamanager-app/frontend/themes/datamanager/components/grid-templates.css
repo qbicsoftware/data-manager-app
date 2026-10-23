@@ -57,9 +57,20 @@
 
 .main.experiment {
   grid-template-columns: 1fr;
-  grid-template-rows: minmax(60vh, 1fr);
+  grid-template-rows: auto;
   grid-template-areas:
     "experimentdetails";
+  /* The overview is a capped, centred shell like the project page and the experiment edit
+     surfaces. It previously carried no shell geometry at all while its content capped itself at
+     80rem and added its own padding, so the page sat roughly 54px further in than the navigation
+     row and the footer above and below it -- the exact drift the Content shell block in
+     variables.css records. The shell owns the cap and the gutter; the page area inside adds none. */
+  max-width: var(--content-shell-max-width);
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  box-sizing: border-box;
+  padding-inline: var(--content-shell-gutter);
 }
 
 .main.measurement {
@@ -98,6 +109,40 @@
   grid-template-rows: auto;
 }
 
+/* The experiment edit surfaces are capped, centred columns like the project page, so their forms do
+   not stretch across very wide screens. The shell owns the horizontal gutter, so the page area
+   inside adds none and its bands line up with the chrome above them. Both surfaces share the
+   geometry so switching between Setup and Experimental design does not shift the content column. */
+.main.experiment-design,
+.main.experiment-setup {
+  grid-template-columns: 1fr;
+  grid-template-rows: auto;
+  max-width: var(--content-shell-max-width);
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  box-sizing: border-box;
+  padding-inline: var(--content-shell-gutter);
+}
+
+.main.experiment-design > .page-area,
+.main.experiment-setup > .page-area {
+  padding-inline: 0;
+}
+
+/* The experiment creation page is capped and centred like the edit page, so create and edit share
+   one column width. */
+.main.experiment-create {
+  grid-template-columns: 1fr;
+  grid-template-rows: auto;
+  max-width: var(--content-shell-max-width);
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  box-sizing: border-box;
+  padding-inline: var(--content-shell-gutter);
+}
+
 /*
  * Ontology lookup main: the grid-area name in the legacy CSS never matched any
  * component (class `ontology-lookup-component` vs area `ontologylookupcomponent`),
@@ -119,9 +164,13 @@
 
 .grid-experimental-variable-input {
   display: grid;
-  grid-template-areas: "nameunit levels" "delete levels";
-  grid-template-columns: 2fr 1fr;
-  grid-template-rows: 1fr minmax(min-content, max-content);
+  /* Name/unit and the delete action share the top row; the levels span the full width below. The
+     former "nameunit levels / delete levels" template left the short left column two-thirds empty
+     beside a tall levels panel. */
+  grid-template-areas: "nameunit delete" "levels levels";
+  grid-template-columns: 1fr auto;
+  grid-template-rows: min-content minmax(min-content, 1fr);
+  align-items: start;
 }
 
 
@@ -131,7 +180,7 @@
     grid-template-columns: minmax(min-content, 1fr);
     grid-template-areas:
     "experimentdetails";
-    grid-template-rows: minmax(60vh, 1fr);
+    grid-template-rows: auto;
   }
 
   .main.measurement {

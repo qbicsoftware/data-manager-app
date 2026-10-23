@@ -115,7 +115,7 @@ html {
   gap: var(--spacing-03);
 }
 
-.main.experiment .experiment-details-component {
+.main.experiment .experiment-design-component {
   grid-area: experimentdetails;
 }
 
@@ -246,7 +246,7 @@ html {
  */
 
 /* The project page's bands are borderless; separation is whitespace, and only the cards/panels
-   (and the attention alert) carry a border. */
+   (and the not-complete card) carry a border. */
 
 /* The project page is a single-column grid now; the former named grid areas
    (projectdetails / experimentlist / offerlist / qualitycontrollist) are gone. */

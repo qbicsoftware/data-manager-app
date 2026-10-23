@@ -40,7 +40,7 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
   private Snapshot initialState;
 
   public ExperimentalVariablesInput() {
-    addVariableButton.addClickListener(e -> addVariable());
+    addVariableButton.addClickListener(e -> addVariableAndFocus());
     markInitialized();
   }
 
@@ -104,13 +104,21 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
   }
 
   public void addVariable() {
-    VariableRow variableRow = VariableRow.empty();
-    addRow(variableRow);
+    addRow(VariableRow.empty());
   }
 
   public void addVariable(ExperimentalVariableInformation variableInformation) {
-    VariableRow variableRow = VariableRow.filled(variableInformation);
+    addRow(VariableRow.filled(variableInformation));
+  }
+
+  /**
+   * Adds an empty row and moves focus to it: the explicit "Add Variable" action. Loading existing
+   * variables must not focus, or the page scrolls down to the last loaded row on entry.
+   */
+  private void addVariableAndFocus() {
+    VariableRow variableRow = VariableRow.empty();
     addRow(variableRow);
+    variableRow.focus();
   }
 
   private void addRow(VariableRow variableRow) {
@@ -132,7 +140,6 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
         .mapToInt(variablesInput::indexOf)
         .max().orElse(-1);
     variablesInput.addComponentAtIndex(Math.max(0, maxRowIndex + 1), variableRow);
-    variableRow.focus();
   }
 
   private static AppDialog confirmVariableDeletionDialog(String variableName) {
