@@ -1,5 +1,8 @@
 package life.qbic.datamanager.views.projects.project.samples
 
+import com.vaadin.flow.component.Component
+import com.vaadin.flow.component.button.Button
+
 import spock.lang.Specification
 
 /**
@@ -104,5 +107,85 @@ class SampleMilestoneBandsSpec extends Specification {
 
         then: "the page is told to route to the design surface"
         designRequested
+    }
+
+    def "the milestone's own buttons fire the events the page listens for"() {
+        given: "a milestone band with the listeners the page attaches"
+        def band = new RegistrationMilestoneBand()
+        def registered = false
+        def designRequested = false
+        band.addRegisterListener({ registered = true })
+        band.addReviewDesignListener({ designRequested = true })
+
+        when: "the primary action button is clicked"
+        button(band, "sample-milestone-action").click()
+
+        then: "registration is requested"
+        registered
+
+        when: "the design review button is clicked"
+        button(band, "sample-milestone-review").click()
+
+        then: "the design surface is requested"
+        designRequested
+    }
+
+    def "dismissing the milestone hides it"() {
+        given: "a visible milestone band"
+        def band = new RegistrationMilestoneBand()
+        band.setVisible(true)
+
+        when: "the dismiss control is clicked"
+        button(band, "sample-milestone-dismiss").click()
+
+        then: "the band is hidden, so the achievement is not permanent furniture"
+        !band.isVisible()
+    }
+
+    def "nothing is reported as dismissed outside a session"() {
+        expect: "without a Vaadin session there is no dismissal to remember"
+        !RegistrationMilestoneBand.isDismissed("experiment-1")
+        !RegistrationMilestoneBand.isDismissed(null)
+    }
+
+    def "the milestone's action can be hidden while its explanation stays"() {
+        given: "a milestone band"
+        def band = new RegistrationMilestoneBand()
+
+        when: "the action is hidden for a read-only user"
+        band.setActionVisible(false)
+
+        then: "the achievement is still explained"
+        band.element.textRecursively.contains("Sample registration is unlocked")
+    }
+
+    def "the gate's own action button asks the page to route to the design surface"() {
+        given: "a gate with the listener the page attaches"
+        def gate = new SamplePrerequisiteGate()
+        def designRequested = false
+        gate.addDefineDesignRequestedListener({ designRequested = true })
+
+        when: "the action button is clicked"
+        button(gate, "sample-gate-action").click()
+
+        then: "the page is told to route"
+        designRequested
+    }
+
+    private static Button button(Component root, String className) {
+        def found = descendantsOf(root).find {
+            it instanceof Button && it.getClassNames().contains(className)
+        }
+        assert found != null: "no button carrying class ${className}"
+        return (Button) found
+    }
+
+    private static List<Component> descendantsOf(Component root) {
+        def found = []
+        root.getChildren().forEach { child ->
+            found.add(child)
+            found.addAll(descendantsOf(child))
+        }
+        return found
     }
 }
