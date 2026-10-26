@@ -3,7 +3,6 @@ package life.qbic.datamanager.views.projects.project.samples;
 import static java.util.Objects.requireNonNull;
 
 import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -24,6 +23,8 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
@@ -32,11 +33,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.SortOrder;
+import life.qbic.application.commons.time.DateTimeFormat;
 import life.qbic.datamanager.configuration.UploadConfiguration;
+import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.AppRoutes.ProjectRoutes;
 import life.qbic.datamanager.views.Context;
-import life.qbic.datamanager.views.general.Disclaimer;
-import life.qbic.datamanager.views.general.DisclaimerConfirmedEvent;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.general.dialog.AlertDialog;
 import life.qbic.datamanager.views.general.dialog.AppDialog;
@@ -110,8 +111,22 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver, 
   private final transient DeletionService deletionService;
   private transient Component sampleDetailsComponent;
   private final Div content = new Div();
-  private final Disclaimer noGroupsDefinedDisclaimer;
-  private final Disclaimer noSamplesRegisteredDisclaimer;
+
+  /**
+   * Milestone band: groups exist, nothing registered yet. See {@link RegistrationMilestoneBand}.
+   */
+  private final RegistrationMilestoneBand milestoneBand = new RegistrationMilestoneBand();
+
+  /**
+   * Prerequisite gate: no experimental group yet. See {@link SamplePrerequisiteGate}.
+   */
+  private final SamplePrerequisiteGate prerequisiteGate = new SamplePrerequisiteGate();
+
+  /**
+   * Header status line: states what is registered, so the page always says where it stands.
+   */
+  private final Span statusLine = new Span();
+
   private final transient ProjectInformationService projectInformationService;
   private final transient MessageSourceNotificationFactory notificationFactory;
   private final transient SampleValidationService sampleValidationService;
@@ -120,7 +135,9 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver, 
   private final transient UploadConfiguration uploadConfiguration;
   private final transient MeasurementService measurementService;
   private final transient SampleInformationService sampleInformationService;
+  private final transient UserPermissions userPermissions;
   private final MessageSourceNotificationFactory messageFactory;
+  private final Button registerButton;
   private transient Context context;
 
   public SampleInformationMain(@Autowired ExperimentInformationService experimentInformationService,
@@ -133,7 +150,8 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver, 
       MessageSourceNotificationFactory messageSourceNotificationFactory,
       UploadConfiguration uploadConfiguration,
       @Autowired MeasurementService measurementService,
-      @Autowired SampleInformationService sampleInformationService) {
+      @Autowired SampleInformationService sampleInformationService,
+      @Autowired UserPermissions userPermissions) {
     this.asyncProjectService = requireNonNull(asyncProjectService);
     this.deletionService = requireNonNull(deletionService);
     this.experimentInformationService = requireNonNull(experimentInformationService);
@@ -144,35 +162,40 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver, 
     this.uploadConfiguration = requireNonNull(uploadConfiguration);
     this.measurementService = requireNonNull(measurementService);
     this.sampleInformationService = requireNonNull(sampleInformationService);
+    this.userPermissions = requireNonNull(userPermissions);
 
     addClassName("sample");
 
     DownloadComponent downloadComponent = new DownloadComponent();
     this.sampleDetailsComponent = new Div();
 
-    noGroupsDefinedDisclaimer = createNoGroupsDefinedDisclaimer();
-    noGroupsDefinedDisclaimer.setVisible(false);
-
-    noSamplesRegisteredDisclaimer = createNoSamplesRegisteredDisclaimer();
-    noSamplesRegisteredDisclaimer.setVisible(false);
-
     Span titleField = new Span();
-    titleField.setText("View Samples");
+    titleField.setText("Samples");
     titleField.addClassNames("title");
 
-    Button registerButton = new Button("Register Samples", VaadinIcon.PLUS.create());
+    statusLine.addClassName("sample-status-line");
+
+    Button registerButton = new Button("Register samples", VaadinIcon.PLUS.create());
     registerButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     registerButton.addClassName("sample-register-button");
     registerButton.addClickListener(clicked -> openRegistrationDialog());
+    this.registerButton = registerButton;
 
+    Div titleBlock = new Div(titleField, statusLine);
+    titleBlock.addClassName("sample-header-title-block");
 
-    Div header = new Div(titleField, registerButton);
+    Div header = new Div(titleBlock, registerButton);
     header.addClassName("sample-main-header");
+
+    // The gate is the only path forward from "no groups", so it is never dismissible; the
+    // milestone states an achievement and can be dismissed for the session.
+    prerequisiteGate.addDefineDesignRequestedListener(event -> routeToExperimentDesign());
+    milestoneBand.addRegisterListener(event -> openRegistrationDialog());
+    milestoneBand.addReviewDesignListener(event -> routeToExperimentDesign());
 
     content.add(header);
     content.addClassName("sample-main-content");
-    add(noGroupsDefinedDisclaimer, noSamplesRegisteredDisclaimer);
-    add(content);
+    add(prerequisiteGate, milestoneBand, content);
     add(sampleDetailsComponent);
     add(downloadComponent);
 
@@ -245,41 +268,15 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver, 
     }
   }
 
-  private Disclaimer createNoSamplesRegisteredDisclaimer() {
-    Disclaimer noSamplesDefinedCard = Disclaimer.createWithTitle(
-        "Manage your samples in one place",
-        "Start your project by registering the first sample batch", "Register batch");
-    noSamplesDefinedCard.addClassName("no-samples-registered-disclaimer");
-    noSamplesDefinedCard.addDisclaimerConfirmedListener(
-        event -> openRegistrationDialog());
-    return noSamplesDefinedCard;
-  }
-
-  private Disclaimer createNoGroupsDefinedDisclaimer() {
-    Disclaimer noGroupsDefindedDisclaimer = Disclaimer.createWithTitle(
-        "Design your experiment first",
-        "Start the sample registration process by defining experimental groups",
-        "Add groups");
-    noGroupsDefindedDisclaimer.addClassName("no-experimental-groups-registered-disclaimer");
-    noGroupsDefindedDisclaimer.addDisclaimerConfirmedListener(this::onNoGroupsDefinedClicked);
-    return noGroupsDefindedDisclaimer;
-  }
-
-  private void onNoGroupsDefinedClicked(DisclaimerConfirmedEvent event) {
-    routeToExperimentalGroupCreation(event, context.experimentId().orElseThrow().value());
-  }
-
-  private void routeToExperimentalGroupCreation(ComponentEvent<?> componentEvent,
-      String experimentId) {
-    if (componentEvent.isFromClient()) {
-      String routeToExperimentPage = String.format(ProjectRoutes.EXPERIMENT,
-          context.projectId().orElseThrow().value(),
-          experimentId);
-      log.debug(String.format(
-          "Rerouting to experiment page for experiment %s of project %s: %s",
-          experimentId, context.projectId().orElseThrow().value(), routeToExperimentPage));
-      componentEvent.getSource().getUI().ifPresent(ui -> ui.navigate(routeToExperimentPage));
-    }
+  /**
+   * Routes to the experimental design surface, where the missing experimental group lives (gate) or
+   * where the design that unlocked registration can be reviewed (milestone).
+   */
+  private void routeToExperimentDesign() {
+    String routeToExperimentPage = String.format(ProjectRoutes.EXPERIMENT,
+        context.projectId().orElseThrow().value(),
+        context.experimentId().orElseThrow().value());
+    getUI().ifPresent(ui -> ui.navigate(routeToExperimentPage));
   }
 
   private void displayUpdateSuccess() {
@@ -632,25 +629,120 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver, 
     return result == null;
   }
 
+  /**
+   * Blocked state: the experiment has no experimental group, so nothing can be registered yet. The
+   * page stays visible (header and context) and only the grid is withheld -- the user must be able
+   * to see where they are, and the gate is the single path forward.
+   */
   private void showRegisterGroupsDisclaimer() {
-    content.setVisible(false);
+    Experiment experiment = currentExperiment();
+    prerequisiteGate.update(0, variablesOf(experiment));
+    prerequisiteGate.setActionVisible(canWrite());
+    prerequisiteGate.setVisible(true);
+    milestoneBand.setVisible(false);
+    content.setVisible(true);
     sampleDetailsComponent.setVisible(false);
-    noSamplesRegisteredDisclaimer.setVisible(false);
-    noGroupsDefinedDisclaimer.setVisible(true);
+    registerButton.setVisible(false);
+    updateStatusLine(0, null);
   }
 
+  /**
+   * Unlocked, nothing registered: the state the page previously expressed by hiding itself. The
+   * milestone band names the achievement, states the facts that unlocked it, and carries the single
+   * primary action; the grid area holds text only, so exactly one call to action is on screen.
+   */
   private void showRegisterBatchDisclaimer() {
-    content.setVisible(false);
+    Experiment experiment = currentExperiment();
+    String experimentId = context.experimentId().orElseThrow().value();
+    prerequisiteGate.setVisible(false);
+    boolean dismissed = RegistrationMilestoneBand.isDismissed(experimentId);
+    milestoneBand.setExperiment(experimentId, experiment.getExperimentalGroups().size(),
+        variablesOf(experiment));
+    // The milestone states an achievement, so it is shown to everyone; only its action depends on
+    // write permission. Hiding the whole band would withhold the explanation, not just the button.
+    milestoneBand.setActionVisible(canWrite());
+    milestoneBand.setVisible(!dismissed);
+    // The page stays visible in this state, so the user sees the header, the scope and the
+    // achievement. Only the grid is withheld: there is nothing to list yet.
+    content.setVisible(true);
     sampleDetailsComponent.setVisible(false);
-    noGroupsDefinedDisclaimer.setVisible(false);
-    noSamplesRegisteredDisclaimer.setVisible(true);
+    // A read-only user is shown the state but not the action: registration would only fail.
+    registerButton.setVisible(canWrite());
+    updateStatusLine(0, null);
   }
 
+  /**
+   * Populated state: samples exist. Both bands are absent -- the milestone states a transition and
+   * is therefore never shown as furniture to a returning user.
+   */
   private void showBatchAndSampleInformation() {
-    noSamplesRegisteredDisclaimer.setVisible(false);
-    noGroupsDefinedDisclaimer.setVisible(false);
+    prerequisiteGate.setVisible(false);
+    milestoneBand.setVisible(false);
     content.setVisible(true);
     sampleDetailsComponent.setVisible(true);
+    registerButton.setVisible(canWrite());
+    // The header states the experiment's registration total, which a search does not change.
+    // It must not be written from the grid's page total: that total counts only the samples
+    // matching the active filter, so searching silently relabelled a match count as a count of
+    // registered samples -- "24 samples registered" for an experiment holding 299.
+    updateStatusLine(registeredSampleCount(), null);
+  }
+
+  /**
+   * The number of samples registered in the current experiment, regardless of any active search.
+   *
+   * <p>Distinct from the grid's page total, which counts only what the filter matches. The API
+   * resolves this to {@link reactor.core.publisher.Mono#empty()} when the experiment holds no
+   * samples, so an absent value means zero.</p>
+   *
+   * @return the experiment's registered sample count
+   */
+  private long registeredSampleCount() {
+    return asyncProjectService
+        .countSamples(context.projectId().orElseThrow().value(),
+            context.experimentId().orElseThrow().value())
+        .blockOptional()
+        .orElse(0);
+  }
+
+  /**
+   * @return whether the current user may change sample data in this project. The page used to offer
+   * registration, editing and deletion to every user, so a read-only user was handed actions that
+   * could only fail.
+   */
+  private boolean canWrite() {
+    return context != null && context.projectId().map(userPermissions::editProject).orElse(false);
+  }
+
+  private static int variablesOf(Experiment experiment) {
+    return experiment.variables() == null ? 0 : experiment.variables().size();
+  }
+
+  private Experiment currentExperiment() {
+    return experimentInformationService.find(context.projectId().orElseThrow().value(),
+        context.experimentId().orElseThrow()).orElseThrow();
+  }
+
+  /**
+   * States what the page currently holds, so a populated page always answers "how many samples are
+   * there?" above the fold.
+   *
+   * @param count    the total number of registered samples
+   * @param lastRegistered the most recent registration time, or {@code null} when unknown
+   */
+  private void updateStatusLine(long count, Instant lastRegistered) {
+    if (count <= 0) {
+      statusLine.setText("0 samples registered");
+      return;
+    }
+    String countText = count == 1 ? "1 sample registered" : "%d samples registered".formatted(count);
+    if (lastRegistered == null) {
+      statusLine.setText(countText);
+      return;
+    }
+    statusLine.setText(countText + " \u00b7 last registered "
+        + DateTimeFormat.asJavaFormatter(DateTimeFormat.SIMPLE_DATE_TIME_SHORT, ZoneId.systemDefault())
+            .format(lastRegistered));
   }
 
   private void reloadSampleInformation() {
@@ -676,6 +768,11 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver, 
       if (sampleDetailsComponent instanceof SampleDetailsComponent component) {
         writeUrl(component.listState());
       }
+      // Deliberately no status-line update here. This event fires on every page, filter and sort
+      // change, and its total is the count matching the active filter; letting it write the header
+      // made the header report search results as registrations. The header is written once per
+      // populated load in showBatchAndSampleInformation() from the unfiltered count instead, and
+      // the filtered total is stated beside the search field by SampleDetailsComponent.
     });
     sampleDetailsComponent = sampleDetails;
     add(sampleDetailsComponent);

@@ -1,0 +1,415 @@
+/* ────────────────────────────────────────────────────────────────────────────
+ * Sample page (experiment scope)
+ *
+ * The page is identity-first: a header band stating what is registered, an
+ * optional milestone/gate band naming the state of sample registration, the
+ * grid, and a detail panel that renders one sample's full record beside the
+ * list (inline at >= 1100px, drawer below).
+ *
+ * Bands are borderless and separated by whitespace, matching the project page
+ * (see the .main.project shell in grid-templates.css). Only the milestone band
+ * and the grid carry a hairline, so the one loud element on the page is the
+ * milestone.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+/* The geometry of the detail column. Defined here rather than in variables.css because these
+   values belong to this page alone -- the master-detail column exists nowhere else. The width
+   fits the longest ontology label on one line beside its label, which is what makes the panel
+   scannable; the breakpoint is where the grid would otherwise lose too much width to stay a
+   list. NOTE: the var() below is referenced as a grid track, so an undefined value would make
+   the whole `grid-template-columns` declaration invalid and silently collapse the two-column
+   layout into a single stacked column. */
+:root {
+  --sample-detail-panel-width: 24rem;
+}
+
+/* ── A. Header band ───────────────────────────────────────────────────────── */
+
+.sample-main-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--lumo-space-m);
+  flex-wrap: wrap;
+}
+
+.sample-main-header .title {
+  color: var(--heading-text-color);
+  font-size: var(--lumo-font-size-xxl);
+  font-weight: var(--font-weight-semi-bold);
+}
+
+/* The title and the status line are separate lines: they are two spans (an H1-equivalent and a
+   caption), so without an explicit column direction they sit inline and weld into
+   "Samples299 samples registered". */
+.sample-header-title-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-02);
+  min-width: 0;
+}
+
+.sample-header-title-block .title {
+  /* The page title is the flex item here, so the generic .page-area/.main heading margins would
+     add space that the gap already provides. */
+  margin-bottom: 0;
+}
+
+/* These two lines are read, not decoration, so they use the body ink. `--secondary-text-color`
+   is `--shade-color-50pct`, which measures 2.96:1 against the page background and fails WCAG AA
+   (4.5:1 for normal text) -- the header read as barely present. `--body-text-color` measures
+   12.64:1. The hierarchy is carried by size and weight instead, which is how the rest of this
+   page already does it (see .sample-detail-group-title, raised for the same reason). */
+.sample-status-line {
+  color: var(--body-text-color);
+  font-size: var(--lumo-font-size-s);
+}
+
+/* Result feedback for an active search, stated directly under the field that caused it. The page
+   has two other counts, and neither serves this purpose: the header states the experiment's
+   registration total, which must not move while searching, and the pager that carries the
+   filtered total sits below the fold once the list is full. */
+.sample-result-summary {
+  color: var(--body-text-color);
+  font-size: var(--lumo-font-size-s);
+}
+
+/* ── B. Prerequisite gate (groups missing) ────────────────────────────────── */
+
+/* A missing prerequisite is a normal step, not an error: neutral surface and a
+   dashed border, and never in the warning palette. */
+.sample-gate {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--lumo-space-s);
+  padding: var(--lumo-space-m);
+  border: 1px dashed var(--border-color-default);
+  border-radius: var(--lumo-border-radius-m);
+  background-color: var(--shade-color-5pct);
+}
+
+.sample-gate-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+}
+
+.sample-gate-icon {
+  color: var(--icon-color);
+  width: var(--icon-size-m);
+  height: var(--icon-size-m);
+  flex: none;
+}
+
+.sample-gate-title {
+  margin: 0;
+  font-size: var(--lumo-font-size-l);
+  font-weight: var(--font-weight-semi-bold);
+  color: var(--heading-text-color);
+}
+
+.sample-gate-body {
+  color: var(--body-text-color);
+}
+
+.sample-gate-evidence {
+  color: var(--secondary-text-color);
+  font-size: var(--lumo-font-size-s);
+}
+
+.sample-gate-action {
+  margin-top: var(--lumo-space-xs);
+}
+
+/* ── B. Registration milestone (unlocked, nothing registered yet) ─────────── */
+
+/* The one loud element on the page: it states an achievement that just became
+   true and carries the page's single primary action. */
+.sample-milestone {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+  padding: var(--lumo-space-m);
+  border: 1px solid var(--primary-color-20pct);
+  border-radius: var(--lumo-border-radius-m);
+  background-color: var(--primary-color-10pct);
+}
+
+.sample-milestone-header {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+}
+
+.sample-milestone-tag {
+  flex: none;
+}
+
+.sample-milestone-title {
+  margin: 0;
+  font-size: var(--lumo-font-size-l);
+  font-weight: var(--font-weight-semi-bold);
+  color: var(--heading-text-color);
+}
+
+.sample-milestone-dismiss {
+  margin-left: auto;
+  flex: none;
+}
+
+.sample-milestone-body {
+  color: var(--body-text-color);
+}
+
+.sample-milestone-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+  flex-wrap: wrap;
+}
+
+/* ── Load-failure banner ──────────────────────────────────────────────────── */
+
+/* A failed page load must not look like an empty list: the banner states the failure and offers a
+   retry, so the failure is distinguishable from "no samples registered". */
+.sample-error-state {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+  padding: var(--lumo-space-s) var(--lumo-space-m);
+  border: 1px solid var(--error-color-10pct);
+  border-radius: var(--lumo-border-radius-m);
+  background-color: var(--error-color-10pct);
+}
+
+.sample-error-state-message {
+  color: var(--error-text-color);
+  font-weight: var(--font-weight-medium);
+}
+
+/* ── D/F. Grid + detail panel (master-detail) ─────────────────────────────── */
+
+/* One column by default; the panel takes its own column only while a record is
+   open and only when there is room to show the list beside it. */
+.sample-detail-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--lumo-space-l);
+  min-width: 0;
+}
+
+@media (min-width: 1100px) {
+  .sample-detail-layout--open {
+    grid-template-columns: minmax(0, 1fr) var(--sample-detail-panel-width);
+  }
+
+  .sample-detail-panel {
+    position: sticky;
+    top: var(--lumo-space-m);
+    max-height: calc(100vh - 8rem);
+    overflow-y: auto;
+  }
+}
+
+.sample-detail-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+  padding: var(--lumo-space-m);
+  border: 1px solid var(--lumo-contrast-10pct);
+  border-radius: var(--lumo-border-radius-m);
+  background-color: var(--lumo-base-color);
+  min-width: 0;
+}
+
+.sample-detail-panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--lumo-space-s);
+}
+
+.sample-detail-panel-heading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-01);
+  min-width: 0;
+}
+
+.sample-detail-panel-title {
+  margin: 0;
+  font-size: var(--lumo-font-size-l);
+  font-weight: var(--font-weight-semi-bold);
+  color: var(--heading-text-color);
+  overflow-wrap: anywhere;
+}
+
+/* The record's values must not compete with the panel title (the reviewer's point: bold values
+   rendered nearly as large as the H2 left the panel without a dominant title). The values carry
+   normal weight; the title keeps the weight. */
+.sample-detail-panel-title:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+.sample-detail-panel-subtitle {
+  font-family: var(--font-family-monospace);
+  font-size: var(--lumo-font-size-s);
+  color: var(--secondary-text-color);
+}
+
+.sample-detail-panel-close {
+  flex: none;
+}
+
+.sample-detail-panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+}
+
+.sample-detail-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+}
+
+.sample-detail-group-title {
+  margin: 0;
+  font-size: var(--lumo-font-size-xs);
+  font-weight: var(--font-weight-semi-bold);
+  /* The group headings sat at the palest ink on the screen, which left the panel without a
+     readable structure. --field-label-text-color is the app's label ink and clears the contrast
+     floor that --secondary-text-color does not for a heading this small. */
+  color: var(--field-label-text-color);
+}
+
+.sample-detail-field {
+  display: flex;
+  flex-direction: column;
+  /* Tighter than the gap between fields, so a label cannot read as belonging to the value above
+     it. The fields themselves are separated by the group's gap. */
+  gap: var(--spacing-01);
+}
+
+.sample-detail-field-label {
+  font-size: var(--lumo-font-size-xs);
+  color: var(--secondary-text-color);
+}
+
+.sample-detail-field-value {
+  color: var(--body-text-color);
+  /* Normal weight: the panel's title is the only bold element, so the record does not compete
+     with its own heading. */
+  font-weight: var(--font-weight-regular);
+  overflow-wrap: anywhere;
+}
+
+/* ── Details affordance in the grid ───────────────────────────────────────── */
+
+/* The whole row opens the record, not just the chevron: the chevron sits at the far right of a
+   wide row, so making it the only target means the user has to aim. It stays visible as the
+   affordance (and is the keyboard path -- Vaadin binds item-click to the mouse only), but any
+   empty part of the row activates the same action, which is the large, forgiving target. */
+.sample-details-component vaadin-grid::part(body-cell) {
+  cursor: pointer;
+}
+
+/* The checkbox cell and the chevron cell keep their own behaviour, so neither gets the row's
+   pointer cursor: a click on the checkbox must select rather than open, and the chevron is its own
+   control. Vaadin also does not fire an item click from a cell holding a focusable element
+   (gridConnector.ts: a click is dropped when the cell content contains something focusable), so
+   these two already behave correctly; this only stops them *looking* like the rest of the row.
+
+   These must NOT be written as `::part(body-cell) .sample-details-cell`. A descendant selector may
+   not trail a `::part()` pseudo-element -- the rule is invalid CSS, and lightningcss rejects it
+   outright during the production frontend build. Cell content is light DOM anyway (the grid slots
+   `vaadin-grid-cell-content` into itself), so a plain descendant selector of the grid reaches it
+   and, at (0,2,1), outranks the (0,1,2) `::part(body-cell)` rule above. */
+.sample-details-component vaadin-grid .sample-details-cell,
+.sample-details-component vaadin-grid vaadin-checkbox {
+  cursor: default;
+}
+
+/* Clicking anywhere on a row opens its record, so a click that drifts a pixel or two is a
+   click-and-drag as far as the browser is concerned -- and a drag over text selects it. The result
+   is the smeared blue highlight across several rows. The grid only suppresses text selection while
+   reordering, resizing or range-selecting (vaadin-grid-base-styles.js sets `user-select: none` for
+   `:host([reordering])`, `#scroller[range-selecting]` and `[draggable-source]`), so in the resting
+   state cell text stays selectable and the browser has no reason to hold back.
+
+   The tell that this is native selection and not a style: the checkbox and chevron columns never
+   highlight, because they are Lumo controls and Lumo already sets `user-select: none` on those
+   (button-base-styles, checkable-field). Only bare text highlights.
+
+   The grid is a navigation surface; the record's values are shown in full in the detail panel,
+   which is ordinary selectable text, and bulk output goes through *Export*. So giving up selection
+   in the cells costs nothing that is not available elsewhere. */
+.sample-details-component vaadin-grid::part(body-cell),
+.sample-details-component vaadin-grid vaadin-grid-cell-content {
+  user-select: none;
+}
+
+.sample-details-component .sample-details-button {
+  flex: none;
+}
+
+/* A row whose record is open in the panel is marked with the part name `open-detail-row` via
+   Grid.setPartNameGenerator. The tint anchors the panel back to its row: the row is deliberately
+   NOT added to the grid's bulk selection when it is opened (selection stays on the checkbox), so
+   without this cue nothing on screen links the two. The left border is the stronger, more
+   legible half of the cue, since a pale background alone is easy to miss. */
+.sample-details-component vaadin-grid::part(open-detail-row) {
+  background-color: var(--primary-color-10pct);
+  box-shadow: inset 2px 0 0 0 var(--primary-color);
+}
+
+/* The grid and its pager form one column of the master-detail layout, so the pager sits directly
+   under the rows and is part of the same scrolling column as the grid -- not below the whole
+   layout, where the panel's height would push it off screen. */
+.sample-detail-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+  min-width: 0;
+}
+
+/* ── Responsive: the panel becomes a drawer when the list cannot sit beside it ─ */
+
+/* The backdrop exists only for the drawer mode: below the inline breakpoint, where the panel is an
+   overlay. Above it the panel is a column beside the list, and a backdrop would cover the very
+   list the reader is scanning, so it never renders there. It is also scoped to the open state, so
+   a closed panel leaves nothing behind. */
+.sample-detail-backdrop {
+  display: none;
+}
+
+@media (max-width: 1099px) {
+  .sample-detail-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(24rem, 94vw);
+    max-width: 100vw;
+    z-index: 1000;
+    border-radius: 0;
+    overflow-y: auto;
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.12);
+  }
+
+  .sample-detail-layout--open .sample-detail-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.3);
+    z-index: 999;
+  }
+
+  .sample-detail-layout--open {
+    /* Keep the grid from being pushed by the fixed panel. */
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+

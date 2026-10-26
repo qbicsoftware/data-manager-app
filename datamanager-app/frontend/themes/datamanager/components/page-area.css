@@ -21,6 +21,13 @@
   padding-inline: 0;
 }
 
+/* The sample page now carries the same shell (see .main.sample in grid-templates.css), so its page
+   area adds no inline padding either -- otherwise the grid starts one inset further in than the
+   header band above it. */
+.main.sample > .page-area {
+  padding-inline: 0;
+}
+
 /* Page titles inside a PageArea. Same treatment as .main .title and .section-title: this is the
    page heading, not supporting text, so it takes --heading-text-color rather than the muted grey
    it used to share with captions. */
