@@ -147,6 +147,54 @@ class SamplePageStylesheetSpec extends Specification {
     }
 
     /**
+     * Guards the readability of the page's status lines.
+     *
+     * <p>Both were written with {@code --secondary-text-color}, which resolves to
+     * {@code --shade-color-50pct} ({@code #8d97a4}): 2.96:1 against the page background, below the
+     * 4.5:1 WCAG AA floor for normal text. The information was present and correct, but barely
+     * legible. {@code --body-text-color} is {@code #263446}, 12.64:1.</p>
+     *
+     * <p>This is deliberately not a claim that the token is wrong everywhere -- it is used in 149
+     * places across the theme, which is a design-system decision, not this spec's business. It only
+     * asserts that text the user has to read <em>on this page</em> does not rely on it.</p>
+     */
+    def "the sample page's status lines use readable ink, not the 50 percent shade"() {
+        given: "the sample page stylesheet, with comments blanked"
+        def code = COMMENT.matcher(new File(themeDir(), SAMPLE_PAGE_CSS).text).replaceAll { m ->
+            m.group().replaceAll(/[^\n]/, " ")
+        }
+
+        when: "the rules for the two status lines are collected"
+        def wanted = ["sample-result-summary", "sample-status-line"]
+        def rules = [:]
+        def matcher = CSS_RULE.matcher(code)
+        while (matcher.find()) {
+            def rule = matcher.group()
+            def selector = rule.substring(0, rule.indexOf('{')).replaceAll(/[{}\n]/, " ")
+            // Split the selector into class tokens so a match is an exact class name rather than a
+            // prefix of a longer one (a contains() check would also accept "...-line-extra").
+            def classNames = selector.split(/[\s,]+/).findAll { it.startsWith(".") }
+                .collect { it.substring(1) }
+            wanted.each { name ->
+                if (classNames.contains(name)) {
+                    rules[name] = rule
+                }
+            }
+        }
+
+        then: "both rules are found, so the check is not vacuous"
+        rules.keySet().containsAll(wanted)
+
+        and: "neither relies on the token that fails the contrast floor"
+        rules.each { name, rule ->
+            assert !rule.contains("var(--secondary-text-color)"):
+                "${name} uses --secondary-text-color (2.96:1, fails WCAG AA)"
+            assert rule.contains("var(--body-text-color)"):
+                "${name} should use --body-text-color (12.64:1)"
+        }
+    }
+
+    /**
      * The grid rows are a navigation surface -- clicking anywhere on one opens its record -- so the
      * browser sees a slightly imprecise click as a click-and-drag and selects the text underneath.
      * That smears a blue highlight across several rows and looks like a rendering fault. The grid

@@ -806,14 +806,22 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     int limit = state.pageSize();
     SamplePreviewFilter filter = new SamplePreviewFilter(state.filter(), apiSortOrders(state));
     try {
+      // An absent count means zero, not failure. `countSamples` resolves to Mono.empty() whenever
+      // the count is zero -- the documented "no samples" signal -- so treating an absent value as an
+      // error reported every search that matched nothing as a backend fault: a red "Samples could
+      // not be loaded." banner for a perfectly good empty result. A genuine failure arrives as a
+      // Mono.error, which still throws here and is still caught below; only the empty case changes.
       int total = asyncProjectService.countSamples(projectId, experimentId, filter)
           .blockOptional()
-          .orElseThrow(() -> new IllegalStateException("sample count returned no value"));
+          .orElse(0);
+      // Same principle as the count above: an absent value means no rows, not a failure. In
+      // practice collectList() always emits a (possibly empty) list, so this only removes a latent
+      // trap of the same shape rather than changing reachable behaviour.
       List<SamplePreview> page = asyncProjectService.getSamplePreviews(projectId, experimentId,
               offset, limit, filter)
           .collectList()
           .blockOptional()
-          .orElseThrow(() -> new IllegalStateException("sample page returned no value"));
+          .orElse(List.of());
       errorState.setVisible(false);
       return new PaginatedGrid.Page<>(page, total);
     } catch (RuntimeException e) {

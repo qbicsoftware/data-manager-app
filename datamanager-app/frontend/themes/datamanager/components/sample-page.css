@@ -55,18 +55,22 @@
   margin-bottom: 0;
 }
 
+/* These two lines are read, not decoration, so they use the body ink. `--secondary-text-color`
+   is `--shade-color-50pct`, which measures 2.96:1 against the page background and fails WCAG AA
+   (4.5:1 for normal text) -- the header read as barely present. `--body-text-color` measures
+   12.64:1. The hierarchy is carried by size and weight instead, which is how the rest of this
+   page already does it (see .sample-detail-group-title, raised for the same reason). */
 .sample-status-line {
-  color: var(--secondary-text-color);
+  color: var(--body-text-color);
   font-size: var(--lumo-font-size-s);
 }
 
 /* Result feedback for an active search, stated directly under the field that caused it. The page
    has two other counts, and neither serves this purpose: the header states the experiment's
    registration total, which must not move while searching, and the pager that carries the
-   filtered total sits below the fold once the list is full. Same quiet caption styling as the
-   header status line, because it is the same kind of information. */
+   filtered total sits below the fold once the list is full. */
 .sample-result-summary {
-  color: var(--secondary-text-color);
+  color: var(--body-text-color);
   font-size: var(--lumo-font-size-s);
 }
 
