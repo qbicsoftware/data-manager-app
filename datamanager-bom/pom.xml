@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-dependencies</artifactId>
-    <version>4.1.1</version>
+    <version>4.1.2</version>
   </parent>
 
   <groupId>life.qbic.datamanager</groupId>
@@ -20,15 +20,15 @@
     <!--    custom properties, not spring boot managed-->
     <apache.poi.version>5.5.1</apache.poi.version>
     <docx4j.version>11.5.14</docx4j.version>
-    <jobrunr.version>9.0.1</jobrunr.version>
+    <jobrunr.version>9.0.2</jobrunr.version>
     <shedlock.version>7.10.1</shedlock.version>
-    <vaadin.version>25.3.1</vaadin.version>
-    <ro-crate-java.version>2.1.2</ro-crate-java.version>
+    <vaadin.version>25.3.3</vaadin.version>
+    <ro-crate-java.version>2.1.3</ro-crate-java.version>
     <snakeyaml.version>2.5</snakeyaml.version>
 
     <!-- overwritten spring boot properties (need to be set in importing pom as well)-->
     <jakarta.persistence.version>3.2.0</jakarta.persistence.version>
-    <spock.version>2.4-groovy-5.0</spock.version>
+    <spock.version>2.5-groovy-5.0</spock.version>
     <spring-boot.version>4.1.1</spring-boot.version>
     <commons-lang3.version>3.18.0</commons-lang3.version>
     <artemis.version>2.55.0</artemis.version>
