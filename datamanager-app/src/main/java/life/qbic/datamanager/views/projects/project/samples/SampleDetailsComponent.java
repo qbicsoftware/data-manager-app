@@ -154,6 +154,16 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   private final Div selectionBar = new Div(selectionIcon, selectionDisplay, selectAllResultsButton,
       clearSelectionButton);
   private long totalItemsActive;
+
+  /**
+   * Number of samples matching the active search, stated next to the field that produced it. The
+   * header cannot carry this number -- the header states the experiment's registration total, which
+   * does not change while searching -- and the pager that owns the filtered total sits below the
+   * fold once the page is full, so neither answers "did my search match anything?" where the user is
+   * actually looking.
+   */
+  private final Span resultSummary = new Span();
+
   private final PaginationBar paginationBar =
       new PaginationBar(ListStateCodec.ALLOWED_PAGE_SIZES, ListStateCodec.DEFAULT_PAGE_SIZE,
           "samples");
@@ -199,6 +209,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     configureSelectionReconciliation(sampleGrid);
     configureRowHighlight(sampleGrid);
     configureSelectionBar();
+    configureResultSummary();
     configureActions();
     configurePagination();
 
@@ -207,6 +218,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
       paginationBar.setListState(event.getPage(), event.getTotal(),
           paginatedGrid.listState().pageSize());
       paginationBar.setVisible(event.getTotal() > 0);
+      updateResultSummary(event.getTotal());
       applySelectionToGrid();
       updateSelectionBar();
     });
@@ -224,7 +236,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     detailBackdrop.addClickListener(event -> closeDetail());
     detailLayout.add(listColumn, detailPanel, detailBackdrop);
     detailPanel.addCloseListener(event -> closeDetail());
-    add(toolbar, selectionBar, errorState, detailLayout);
+    add(toolbar, resultSummary, selectionBar, errorState, detailLayout);
 
     updateSelectionBar();
   }
@@ -286,6 +298,44 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
       }
       paginatedGrid.setListState(paginatedGrid.listState().withFilter(filter).withPage(1));
     });
+  }
+
+  /**
+   * Prepares the search-result summary. It is a live region rather than a plain span: the count
+   * changes as the user types, and without an explicit role that change is silent to a screen
+   * reader. It is {@code polite}, not {@code assertive}, so typing is never interrupted mid-word.
+   */
+  private void configureResultSummary() {
+    resultSummary.addClassName("sample-result-summary");
+    resultSummary.getElement().setAttribute("role", "status");
+    resultSummary.getElement().setAttribute("aria-live", "polite");
+    resultSummary.setVisible(false);
+  }
+
+  /**
+   * States how many samples the active search matches, so the effect of typing is visible beside
+   * the field instead of only in the pager below the grid.
+   *
+   * <p>Hidden while no search is active: with no filter this number is the experiment's registered
+   * total, which the header already states, so showing it here would be a second copy of one
+   * fact.</p>
+   *
+   * <p>Hidden as well when the search matches nothing. The grid's own empty state already says so in
+   * the area where the missing rows would be, and it adds the way out ("Clear the search"); stating
+   * it a second time directly above would be noise, not feedback.</p>
+   *
+   * @param matching the number of samples matching the active filter
+   */
+  private void updateResultSummary(long matching) {
+    String filter = paginatedGrid.listState().filter();
+    if (filter == null || filter.isBlank() || matching <= 0) {
+      resultSummary.setVisible(false);
+      return;
+    }
+    resultSummary.setText(matching == 1
+        ? "1 matching sample"
+        : "%d matching samples".formatted(matching));
+    resultSummary.setVisible(true);
   }
 
   private void configureSort(Grid<SamplePreview> grid) {

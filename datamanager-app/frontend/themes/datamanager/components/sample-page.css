@@ -60,6 +60,16 @@
   font-size: var(--lumo-font-size-s);
 }
 
+/* Result feedback for an active search, stated directly under the field that caused it. The page
+   has two other counts, and neither serves this purpose: the header states the experiment's
+   registration total, which must not move while searching, and the pager that carries the
+   filtered total sits below the fold once the list is full. Same quiet caption styling as the
+   header status line, because it is the same kind of information. */
+.sample-result-summary {
+  color: var(--secondary-text-color);
+  font-size: var(--lumo-font-size-s);
+}
+
 /* ── B. Prerequisite gate (groups missing) ────────────────────────────────── */
 
 /* A missing prerequisite is a normal step, not an error: neutral surface and a

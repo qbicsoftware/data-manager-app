@@ -681,6 +681,28 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver, 
     content.setVisible(true);
     sampleDetailsComponent.setVisible(true);
     registerButton.setVisible(canWrite());
+    // The header states the experiment's registration total, which a search does not change.
+    // It must not be written from the grid's page total: that total counts only the samples
+    // matching the active filter, so searching silently relabelled a match count as a count of
+    // registered samples -- "24 samples registered" for an experiment holding 299.
+    updateStatusLine(registeredSampleCount(), null);
+  }
+
+  /**
+   * The number of samples registered in the current experiment, regardless of any active search.
+   *
+   * <p>Distinct from the grid's page total, which counts only what the filter matches. The API
+   * resolves this to {@link reactor.core.publisher.Mono#empty()} when the experiment holds no
+   * samples, so an absent value means zero.</p>
+   *
+   * @return the experiment's registered sample count
+   */
+  private long registeredSampleCount() {
+    return asyncProjectService
+        .countSamples(context.projectId().orElseThrow().value(),
+            context.experimentId().orElseThrow().value())
+        .blockOptional()
+        .orElse(0);
   }
 
   /**
@@ -746,9 +768,11 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver, 
       if (sampleDetailsComponent instanceof SampleDetailsComponent component) {
         writeUrl(component.listState());
       }
-      // The pager owns the authoritative total, so the header states the same number the pager
-      // does rather than issuing a second count query.
-      updateStatusLine(event.getTotal(), null);
+      // Deliberately no status-line update here. This event fires on every page, filter and sort
+      // change, and its total is the count matching the active filter; letting it write the header
+      // made the header report search results as registrations. The header is written once per
+      // populated load in showBatchAndSampleInformation() from the unfiltered count instead, and
+      // the filtered total is stated beside the search field by SampleDetailsComponent.
     });
     sampleDetailsComponent = sampleDetails;
     add(sampleDetailsComponent);
