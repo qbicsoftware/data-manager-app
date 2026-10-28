@@ -18,8 +18,9 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
-import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.AppRoutes.ProjectRoutes;
@@ -33,7 +34,6 @@ import life.qbic.datamanager.views.projects.project.samples.SampleInformationMai
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.api.ProjectQueryService;
-import life.qbic.projectmanagement.application.query.AssayType;
 import life.qbic.projectmanagement.application.query.ExperimentProgress;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
@@ -51,14 +51,14 @@ import org.springframework.beans.factory.annotation.Autowired;
  * represent a measurement whose data had not arrived, because its views inner-join the data table.
  * </p>
  *
- * <p>The page therefore leads with the process rather than with a table: a status line stating how
- * many entries exist and how many are still waiting, then the entries themselves with the second
- * step as a column. The stage band appears only while something is outstanding — a permanent band
- * stating "everything is fine" is furniture a returning reader learns to skip.</p>
+ * <p>The page therefore leads with the datasets: one card per measurement method, each stating how
+ * many entries it holds, how many wait for data and how much data has arrived. Choosing a card
+ * activates the list below it. The datasets are the structure, not a filter — an earlier revision
+ * offered them in a dropdown, and a reader who did not open it reasonably concluded the page showed
+ * all measurements.</p>
  *
- * <p>Segmenting by measurement method is the outer structure because a measurement dataset is the
- * experiment's data for <em>one</em> method: an experiment has one per method it measured, not one
- * in total.</p>
+ * <p>A measurement dataset is the experiment's data for <em>one</em> method, so an experiment has
+ * one per method it measured, not one in total.</p>
  *
  * @since 1.21.0
  */
@@ -76,13 +76,15 @@ public class MeasurementDatasetMain extends Main
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
 
+  private static final String DATASET_PARAMETER = "dataset";
+
   private static final Logger log = LoggerFactory.logger(MeasurementDatasetMain.class);
 
   private final transient ProjectQueryService queryService;
 
   private final H1 title = new H1("Measurement Dataset");
   private final Span statusLine = new Span();
-  private final Div stageBand = new Div();
+  private final MeasurementDatasetSelector datasetSelector = new MeasurementDatasetSelector();
   private final Div content = new Div();
 
   private History.HistoryStateChangeHandler routerHistoryStateChangeHandler;
@@ -106,10 +108,7 @@ public class MeasurementDatasetMain extends Main
     Div header = new Div(titleBlock);
     header.addClassName("measurement-dataset-header");
 
-    stageBand.addClassName("measurement-dataset-stage-band");
-    stageBand.setVisible(false);
-
-    content.add(header, stageBand);
+    content.add(header);
     content.addClassName("measurement-dataset-content");
     add(content);
   }
@@ -142,6 +141,15 @@ public class MeasurementDatasetMain extends Main
     suppressUrlWrite = true;
     try {
       render(projectIdValue, experimentIdValue);
+      // The active dataset is addressable too: a link to "the proteomics dataset of this
+      // experiment" has to survive a reload and a share.
+      event.getLocation().getQueryParameters().getSingleParameter(DATASET_PARAMETER)
+          .map(MeasurementDatasetSegment::fromUrlValue)
+          .filter(segment -> datasetSelectorContains(segment))
+          .ifPresent(segment -> {
+            datasetSelector.selectSilently(segment);
+            detailsComponent.activate(segment);
+          });
       if (detailsComponent != null) {
         ListState urlState = ListStateCodec.parse(event.getLocation().getQueryParameters(),
             MeasurementDataSort.DEFAULT, MeasurementDataSort.allowedSortOrders());
@@ -164,8 +172,7 @@ public class MeasurementDatasetMain extends Main
             "Unknown experiment " + experimentId + " in project " + projectId));
 
     int total = progress.measurementCount();
-    int waiting = progress.measurementsWithoutPrimaryData();
-    updateHeaderAndStage(total, waiting);
+    updateHeader(total);
 
     removeDetailsComponent();
     if (total == 0) {
@@ -178,71 +185,43 @@ public class MeasurementDatasetMain extends Main
 
     detailsComponent = new MeasurementDatasetDetailsComponent(queryService, projectId,
         experimentId);
-    detailsComponent.applySegments(segmentsWithMeasurements(progress));
     detailsComponent.addPageLoadedListener(event -> writeUrl(detailsComponent.listState()));
+
+    List<MeasurementDatasetSelector.DatasetSummary> summaries =
+        MeasurementDatasetSelector.DatasetSummary.of(progress);
+    datasetSelector.setDatasets(summaries);
+    datasetSelector.addSelectionChangedListener(event -> {
+      detailsComponent.activate(event.segment());
+      writeUrl(detailsComponent.listState());
+    });
+    // The first dataset is active by default, so the page never shows cards with nothing below
+    // them. A dataset named in the URL is applied afterwards, in beforeEnter, where the query
+    // parameters are available.
+    MeasurementDatasetSegment initial = summaries.getFirst().segment();
+    datasetSelector.selectSilently(initial);
+    detailsComponent.activate(initial);
+
+    if (datasetSelector.getParent().isEmpty()) {
+      content.add(datasetSelector);
+    }
     add(detailsComponent);
   }
 
   /**
-   * The methods that actually hold measurements.
+   * States the experiment's totals once, above the selector.
    *
-   * <p>Derived from measurement counts, never from data presence: a method whose data has not
-   * arrived yet still has a dataset to show. Hiding such a segment was the defect class that made
-   * the proteomics tab disappear from the raw-data page.</p>
+   * <p>The waiting count used to appear both here and in a stage band, which was the same number
+   * twice. It now lives in the per-dataset cards, where it is attributable to a dataset instead of
+   * being an experiment-wide figure the reader cannot reconcile with the list below it.</p>
    */
-  private static List<MeasurementDatasetSegment> segmentsWithMeasurements(
-      ExperimentProgress progress) {
-    List<MeasurementDatasetSegment> segments = new ArrayList<>();
-    for (AssayType assayType : progress.assayTypes()) {
-      segments.add(MeasurementDatasetSegment.from(assayType));
-    }
-    return segments;
-  }
-
-  private void updateHeaderAndStage(int total, int waiting) {
+  private void updateHeader(int total) {
     if (total == 0) {
       statusLine.setText("No measurement metadata registered yet");
-    } else {
-      String entries = total == 1 ? "1 measurement entry" : "%d measurement entries".formatted(total);
-      statusLine.setText(waiting == 0
-          ? entries + " \u00b7 all with data available"
-          : entries + " \u00b7 " + (waiting == 1
-              ? "1 waiting for data"
-              : "%d waiting for data".formatted(waiting)));
-    }
-    renderStageBand(waiting > 0, waiting);
-  }
-
-  /**
-   * The stage band states the outstanding work as a gap that has to reach zero, and names the
-   * dependency behind it.
-   *
-   * <p>It is shown only while something is waiting. When everything has data, there is no
-   * outstanding step to report, and a band saying so would be a permanent fixture that readers
-   * learn to skip — the same reasoning that removed the milestone band once samples existed.</p>
-   */
-  private void renderStageBand(boolean outstanding, int waiting) {
-    stageBand.removeAll();
-    stageBand.setVisible(outstanding);
-    if (!outstanding) {
       return;
     }
-    Span icon = new Span(VaadinIcon.CLOCK.create());
-    icon.addClassName("measurement-dataset-stage-icon");
-
-    Span heading = new Span(waiting == 1
-        ? "1 measurement is waiting for its data"
-        : "%d measurements are waiting for their data".formatted(waiting));
-    heading.addClassName("measurement-dataset-stage-heading");
-
-    Span body = new Span(
-        "Measurement metadata is registered here; the data files are produced by the facility and "
-            + "appear once they have been uploaded and scanned. This view updates automatically.");
-    body.addClassName("measurement-dataset-stage-body");
-
-    Div text = new Div(heading, body);
-    text.addClassName("measurement-dataset-stage-text");
-    stageBand.add(icon, text);
+    statusLine.setText(total == 1
+        ? "1 measurement entry in 1 measurement dataset"
+        : "%d measurement entries".formatted(total));
   }
 
   private Div emptyState() {
@@ -325,6 +304,16 @@ public class MeasurementDatasetMain extends Main
         .forEach(content::remove);
   }
 
+  /**
+   * Whether the selector currently offers the given dataset.
+   *
+   * <p>A URL naming a method the experiment never measured must not switch the page to an empty
+   * list: it is a stale or hand-crafted link, and the page falls back to a dataset that exists.</p>
+   */
+  private boolean datasetSelectorContains(MeasurementDatasetSegment segment) {
+    return datasetSelector.getRenderedSegments().contains(segment);
+  }
+
   private void writeUrl(ListState state) {
     if (basePath == null || suppressUrlWrite) {
       return;
@@ -333,8 +322,15 @@ public class MeasurementDatasetMain extends Main
     if (ui == null) {
       return;
     }
+    Map<String, List<String>> parameters = new LinkedHashMap<>();
+    MeasurementDatasetSegment selected = datasetSelector.selected();
+    if (selected != null) {
+      // First, so the URL reads dataset-then-list-state rather than burying the structure.
+      parameters.put(DATASET_PARAMETER, List.of(selected.urlValue()));
+    }
+    parameters.putAll(ListStateCodec.toQueryParameters(state).getParameters());
     var location = new com.vaadin.flow.router.Location(basePath,
-        ListStateCodec.toQueryParameters(state));
+        new com.vaadin.flow.router.QueryParameters(parameters));
     ui.getPage().getHistory().pushState(null, location);
   }
 

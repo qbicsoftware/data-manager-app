@@ -122,10 +122,12 @@ public class MeasurementDataDetailPanel extends Div implements Serializable {
         field("Measurement name", row.measurementName(), false),
         field("Registration date", format(formatter, row.registeredAt()), false))));
 
+    // One field, not two: "Sample pool —" beside "Samples 1 sample" stated the same fact twice and
+    // the dash read as missing data rather than as "not pooled".
     groups.add(new DetailGroup("Sample", List.of(
-        field("Sample pool", row.samplePool(), false),
-        field("Samples", row.sampleCount() == 1 ? "1 sample" : row.sampleCount() + " samples",
-            false))));
+        field("Samples measured", row.sampleCount() == 1
+            ? "1 sample"
+            : row.sampleCount() + " samples", false))));
 
     groups.add(new DetailGroup("Organisational provenance", List.of(
         field("Facility", row.facility(), false))));

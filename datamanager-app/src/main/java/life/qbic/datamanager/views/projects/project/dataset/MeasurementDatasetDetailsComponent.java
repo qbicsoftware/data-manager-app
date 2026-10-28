@@ -87,7 +87,7 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
   private final Grid<MeasurementDataRow> grid = new Grid<>();
   private final PaginatedGrid<MeasurementDataRow> paginatedGrid;
   private final PaginationBar paginationBar = new PaginationBar(
-      ListStateCodec.ALLOWED_PAGE_SIZES, ListStateCodec.DEFAULT_PAGE_SIZE, "measurement data");
+      ListStateCodec.ALLOWED_PAGE_SIZES, ListStateCodec.DEFAULT_PAGE_SIZE, "measurement entries");
   private final TextField searchField = new TextField();
 
   /**
@@ -96,8 +96,6 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
    */
   private final Select<DataStatusFilter> dataStatusFilter = new Select<>();
 
-  private final Select<MeasurementDatasetSegment> segmentFilter = new Select<>();
-  private final Div segmentTabs = new Div();
   private final AtomicReference<String> clientTimeZone = new AtomicReference<>("UTC");
 
   private final Span statusLine = new Span();
@@ -133,7 +131,7 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
     addClassNames("measurement-dataset-details", "measurement-dataset-details-content");
 
     paginatedGrid = new PaginatedGrid<>(grid, this::loadPage,
-        MeasurementDataRow::measurementId, "measurement data", MeasurementDataSort.DEFAULT,
+        MeasurementDataRow::measurementId, "measurement entries", MeasurementDataSort.DEFAULT,
         false, false, false);
     paginatedGrid.addClassNames("width-full");
 
@@ -147,6 +145,10 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
     configureSelectionBar();
     configurePagination();
     configureErrorState();
+
+    // Selection changes must update the bar immediately. Without this the bar only refreshed on a
+    // page load, so checking a row showed a selected row and no selection bar at all.
+    paginatedGrid.addSelectionChangeListener(event -> updateSelectionBar());
 
     paginatedGrid.addPageLoadedListener(event -> {
       totalItemsActive = event.getTotal();
@@ -165,7 +167,7 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
     detailLayout.add(listColumn, detailPanel, detailBackdrop);
     detailPanel.addCloseListener(event -> closeDetail());
 
-    add(segmentTabs, createToolbar(), selectionBar, errorState, detailLayout);
+    add(createToolbar(), selectionBar, errorState, detailLayout);
     updateSelectionBar();
   }
 
@@ -187,7 +189,11 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
     grid.addClassName("measurement-dataset-grid");
     grid.setColumnReorderingAllowed(true);
 
-    var idColumn = grid.addColumn(MeasurementDataRow::measurementCode)
+    // A measurement code is a technical identifier with an embedded nano-timestamp; at full length
+    // it is unreadable to a human and wide enough to push every other column out. The grid shows a
+    // bounded form and keeps the whole value in the tooltip and in the detail panel. Searching for
+    // the full code still works, because the filter runs in the database, not on the rendered text.
+    var idColumn = grid.addColumn(row -> shortMeasurementCode(row.measurementCode()))
         .setHeader("Measurement ID")
         .setSortProperty("measurementId")
         .setComparator(MeasurementDataRow::measurementCode)
@@ -201,9 +207,11 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
         .setTooltipGenerator(MeasurementDataRow::measurementName)
         .setAutoWidth(true)
         .setResizable(true);
-    grid.addColumn(row -> row.samplePool() == null || row.samplePool().isBlank()
-            ? row.sampleCount() == 1 ? "1 sample" : row.sampleCount() + " samples"
-            : row.samplePool())
+    // The counted samples, never the pool label: samplePool holds an internal value such as "2.0",
+    // and mixing that with the computed text produced a column reading 2.0, 1.0, 1 sample.
+    grid.addColumn(row -> row.sampleCount() == 1
+            ? "1 sample"
+            : row.sampleCount() + " samples")
         .setHeader("Samples")
         .setSortProperty("samplePool")
         .setAutoWidth(true)
@@ -328,7 +336,7 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
 
   private Div createToolbar() {
     searchField.addClassName("measurement-dataset-search");
-    Div toolbar = new Div(searchField, segmentFilter, dataStatusFilter);
+    Div toolbar = new Div(searchField, dataStatusFilter);
     toolbar.addClassName("measurement-dataset-toolbar");
     Div toolbarRight = new Div();
     toolbarRight.addClassName("measurement-dataset-toolbar-right");
@@ -362,19 +370,6 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
         return;
       }
       activeDataStatus = value;
-      paginatedGrid.setListState(paginatedGrid.listState().withPage(1));
-    });
-
-    // The segment filter only appears when the experiment measured more than one method: with a
-    // single method a "filter" that cannot change anything is a dead control.
-    segmentFilter.setLabel("Measurement method");
-    segmentFilter.setVisible(false);
-    segmentFilter.addValueChangeListener(event -> {
-      MeasurementDatasetSegment value = event.getValue();
-      if (value == null || value == activeSegment) {
-        return;
-      }
-      activeSegment = value;
       paginatedGrid.setListState(paginatedGrid.listState().withPage(1));
     });
   }
@@ -627,32 +622,21 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
   }
 
   /**
-   * Applies the segments that actually hold measurements, and selects the first one.
+   * Activates one measurement dataset, which is what the list below shows.
    *
-   * <p>Segment visibility is derived from the measurements, never from data presence: a method
-   * whose data has not arrived yet still has a dataset to show, and hiding its segment was the
-   * class of defect that made the proteomics tab disappear from the raw-data page.</p>
+   * <p>The datasets are the page's structure, not a filter: the reader chooses which dataset they
+   * are looking at, and the list answers for that dataset only. An earlier revision offered them in
+   * a dropdown, which was correct and invisible — a reader who did not open it concluded the page
+   * showed all measurements.</p>
    *
-   * @param available the segments that hold at least one measurement
+   * @param segment the dataset to show; {@code null} means no dataset is selected yet
    */
-  public void applySegments(List<MeasurementDatasetSegment> available) {
-    segmentTabs.removeAll();
-    if (available.isEmpty()) {
-      segmentFilter.setVisible(false);
+  public void activate(MeasurementDatasetSegment segment) {
+    if (segment == activeSegment) {
       return;
     }
-    if (available.size() > 1) {
-      segmentFilter.setItems(available);
-      segmentFilter.setItemLabelGenerator(MeasurementDatasetSegment::label);
-      segmentFilter.setVisible(true);
-      if (activeSegment == null || !available.contains(activeSegment)) {
-        activeSegment = available.getFirst();
-        segmentFilter.setValue(activeSegment);
-      }
-    } else {
-      segmentFilter.setVisible(false);
-      activeSegment = available.getFirst();
-    }
+    this.activeSegment = segment;
+    paginatedGrid.setListState(paginatedGrid.listState().withPage(1));
   }
 
   /**
@@ -672,9 +656,6 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
               ? "1 waiting for data"
               : "%d waiting for data".formatted(waiting);
       statusLine.setText(entries + " \u00b7 " + pending);
-    }
-    if (statusLine.getParent().isEmpty()) {
-      addComponentAsFirst(statusLine);
     }
     statusLine.addClassName("measurement-dataset-status-line");
   }
@@ -717,6 +698,21 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
     return DateTimeFormat.asJavaFormatter(DateTimeFormat.SIMPLE_DATE_TIME_SHORT,
             ZoneId.of(clientTimeZone.get()))
         .format(instant);
+  }
+
+  /**
+   * Shortens a measurement code for display. The code is {@code <prefix><sample>-<timestamp>}; the
+   * timestamp is what makes it unreadable and wide, so the displayed form keeps the prefix and cuts
+   * the tail with an ellipsis. The full value stays available in the tooltip and the detail panel.
+   */
+  static String shortMeasurementCode(String measurementCode) {
+    if (measurementCode == null || measurementCode.isBlank()) {
+      return "\u2014";
+    }
+    int maxLength = 18;
+    return measurementCode.length() <= maxLength
+        ? measurementCode
+        : measurementCode.substring(0, maxLength - 1) + "\u2026";
   }
 
   private static String textOrDash(String value) {
