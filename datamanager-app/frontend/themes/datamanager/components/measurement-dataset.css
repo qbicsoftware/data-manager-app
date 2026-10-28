@@ -1,0 +1,345 @@
+/* ────────────────────────────────────────────────────────────────────────────
+ * Measurement Dataset page (experiment scope)
+ *
+ * One surface for the two ordered process steps that were previously two pages:
+ * the registered measurement metadata, and the data produced by it.
+ *
+ * Bands are borderless and separated by whitespace, matching the project page and
+ * the samples page. Only the stage band (outstanding work) and the detail panel
+ * carry a surface, so the page has exactly one loud element at a time.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  --measurement-data-detail-panel-width: 24rem;
+}
+
+/* ── Page shell ───────────────────────────────────────────────────────────── */
+
+.measurement-dataset {
+  max-width: var(--content-shell-max-width);
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  box-sizing: border-box;
+  padding-inline: var(--content-shell-gutter);
+  display: block;
+}
+
+.measurement-dataset-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+  min-width: 0;
+}
+
+/* ── Header ───────────────────────────────────────────────────────────────── */
+
+.measurement-dataset-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--lumo-space-m);
+  flex-wrap: wrap;
+}
+
+.measurement-dataset-header-title-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-02);
+  min-width: 0;
+}
+
+.measurement-dataset-title {
+  color: var(--heading-text-color);
+  font-size: var(--lumo-font-size-xxl);
+  font-weight: var(--font-weight-semi-bold);
+  margin: 0;
+}
+
+/* Read, not decoration: the status line uses body ink because
+   --secondary-text-color measures 2.96:1 and fails WCAG AA for normal text. */
+.measurement-dataset-header-status {
+  color: var(--body-text-color);
+  font-size: var(--lumo-font-size-s);
+}
+
+/* ── Stage band: the outstanding second step ──────────────────────────────── */
+
+/* Shown only while something is waiting. A permanent band stating that all is
+   well is furniture a returning reader learns to skip. */
+.measurement-dataset-stage-band {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--lumo-space-m);
+  padding: var(--lumo-space-m);
+  border: 1px solid var(--primary-color-20pct);
+  border-radius: var(--lumo-border-radius-m);
+  background-color: var(--primary-color-10pct);
+}
+
+.measurement-dataset-stage-icon {
+  color: var(--primary-color);
+  flex-shrink: 0;
+}
+
+.measurement-dataset-stage-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-02);
+  min-width: 0;
+}
+
+.measurement-dataset-stage-heading {
+  color: var(--heading-text-color);
+  font-size: var(--lumo-font-size-l);
+  font-weight: var(--font-weight-semi-bold);
+}
+
+.measurement-dataset-stage-body {
+  color: var(--body-text-color);
+  font-size: var(--lumo-font-size-s);
+  max-width: 78ch;
+}
+
+/* ── Toolbar ──────────────────────────────────────────────────────────────── */
+
+.measurement-dataset-toolbar {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--lumo-space-s);
+  flex-wrap: wrap;
+}
+
+.measurement-dataset-search {
+  flex: 1 1 18rem;
+  min-width: 12rem;
+}
+
+.measurement-dataset-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+  margin-left: auto;
+}
+
+/* ── Selection bar ────────────────────────────────────────────────────────── */
+
+/* Sticky so the count and the clear action stay visible while a full page of rows
+   is scrolled: USER-R-02 requires the number of selected items to always be
+   visible, which a bar below a long grid is not. */
+.measurement-dataset-selection-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+  padding: var(--lumo-space-xs) var(--lumo-space-s);
+  border-radius: var(--lumo-border-radius-s);
+  background-color: var(--primary-color-10pct);
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+}
+
+.measurement-dataset-selection-icon {
+  color: var(--primary-color);
+}
+
+.measurement-dataset-selection-count {
+  font-weight: var(--font-weight-medium);
+  color: var(--body-text-color);
+}
+
+/* ── Error state ──────────────────────────────────────────────────────────── */
+
+/* A failed load must never be rendered as "no measurement data": every entry
+   waiting is a legitimate and very different state. */
+.measurement-dataset-error-state {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+  padding: var(--lumo-space-s) var(--lumo-space-m);
+  border: 1px solid var(--error-color);
+  border-radius: var(--lumo-border-radius-s);
+  background-color: var(--error-color-10pct);
+}
+
+.measurement-dataset-error-state-message {
+  color: var(--error-text-color);
+  font-weight: var(--font-weight-medium);
+}
+
+/* ── Empty state ──────────────────────────────────────────────────────────── */
+
+.measurement-dataset-empty-state {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+  padding: var(--lumo-space-l);
+  border: 1px dashed var(--border-color-default);
+  border-radius: var(--lumo-border-radius-m);
+  background-color: var(--shade-color-5pct);
+}
+
+.measurement-dataset-empty-heading {
+  color: var(--heading-text-color);
+  font-size: var(--lumo-font-size-l);
+  font-weight: var(--font-weight-semi-bold);
+}
+
+.measurement-dataset-empty-body,
+.measurement-dataset-empty-prerequisite {
+  color: var(--body-text-color);
+  font-size: var(--lumo-font-size-s);
+  max-width: 78ch;
+}
+
+.measurement-dataset-empty-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+  align-items: flex-start;
+  margin-top: var(--lumo-space-s);
+}
+
+/* ── Grid ─────────────────────────────────────────────────────────────────── */
+
+/* The data status is the one status column. It never relies on colour alone: the
+   cell states "Waiting" or "Available · n files · size" in text, and the tint
+   only reinforces it. */
+.measurement-dataset-status {
+  font-size: var(--lumo-font-size-s);
+  font-weight: var(--font-weight-medium);
+}
+
+.measurement-dataset-status--waiting {
+  color: var(--warning-text-color);
+}
+
+.measurement-dataset-status--available {
+  color: var(--success-text-color);
+}
+
+.measurement-dataset-details-cell {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* The open record's row is marked distinctly from a selected row: opening an
+   entry must never look like adding it to a bulk selection. */
+.measurement-dataset-grid::part(open-detail-row) {
+  background-color: color-mix(in srgb, var(--lumo-primary-color) 5%, transparent);
+  box-shadow: inset 3px 0 0 0 var(--primary-color);
+}
+
+/* ── Master-detail layout ─────────────────────────────────────────────────── */
+
+.measurement-dataset-detail-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--lumo-space-l);
+  min-width: 0;
+}
+
+.measurement-dataset-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+  min-width: 0;
+}
+
+@media (min-width: 1100px) {
+  .measurement-dataset-detail-layout--open {
+    grid-template-columns: minmax(0, 1fr) var(--measurement-data-detail-panel-width);
+  }
+
+  .measurement-data-detail-panel {
+    position: sticky;
+    top: var(--lumo-space-m);
+    max-height: calc(100vh - 8rem);
+    overflow-y: auto;
+  }
+}
+
+.measurement-data-detail-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+  padding: var(--lumo-space-m);
+  border: 1px solid var(--lumo-contrast-10pct);
+  border-radius: var(--lumo-border-radius-m);
+  background-color: var(--lumo-base-color);
+  min-width: 0;
+}
+
+.measurement-data-detail-panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--lumo-space-s);
+}
+
+.measurement-data-detail-panel-heading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-01);
+  min-width: 0;
+}
+
+.measurement-data-detail-panel-title {
+  margin: 0;
+  font-size: var(--lumo-font-size-l);
+  font-weight: var(--font-weight-semi-bold);
+  color: var(--heading-text-color);
+  overflow-wrap: anywhere;
+}
+
+.measurement-data-detail-panel-subtitle {
+  font-family: var(--font-family-monospace);
+  font-size: var(--lumo-font-size-xs);
+  color: var(--body-text-color);
+}
+
+.measurement-data-detail-panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+}
+
+.measurement-data-detail-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-02);
+}
+
+.measurement-data-detail-group-title {
+  margin: 0;
+  font-size: var(--lumo-font-size-xs);
+  font-weight: var(--font-weight-semi-bold);
+  color: var(--field-label-text-color, var(--body-text-color));
+}
+
+.measurement-data-detail-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-01);
+}
+
+/* Grouped vision: the label sits tight to its value, and the gap to the next
+   label is larger, so pairs read as pairs rather than as a flat list. */
+.measurement-data-detail-group .measurement-data-detail-field + .measurement-data-detail-field {
+  margin-top: var(--spacing-03);
+}
+
+.measurement-data-detail-field-label {
+  color: var(--field-label-text-color, var(--body-text-color));
+  font-size: var(--lumo-font-size-xs);
+}
+
+.measurement-data-detail-field-value.identifier {
+  font-family: var(--font-family-monospace);
+}
+
+.measurement-data-detail-field-value {
+  color: var(--body-text-color);
+  font-size: var(--lumo-font-size-s);
+  overflow-wrap: anywhere;
+}

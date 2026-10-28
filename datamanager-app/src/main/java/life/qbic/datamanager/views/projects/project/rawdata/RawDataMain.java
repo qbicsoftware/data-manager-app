@@ -51,8 +51,7 @@ import org.springframework.beans.factory.annotation.Value;
 
 @SpringComponent
 @UIScope
-@Route(value = "projects/:projectId?/experiments/:experimentId?/rawdata", layout = ProjectMainLayout.class)
-@PermitAll
+@Deprecated
 public class RawDataMain extends Main implements BeforeEnterObserver, BeforeLeaveObserver {
 
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";

@@ -27,7 +27,7 @@ import life.qbic.datamanager.views.general.ReactiveUiBridge;
 import life.qbic.datamanager.views.general.utils.Utility;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentDesignMain;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentSetupMain;
-import life.qbic.datamanager.views.projects.project.measurements.MeasurementMain;
+import life.qbic.datamanager.views.projects.project.dataset.MeasurementDatasetMain;
 import life.qbic.datamanager.views.projects.project.samples.SampleInformationMain;
 import life.qbic.projectmanagement.application.api.ProjectQueryService;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService;
@@ -390,7 +390,7 @@ public class ExperimentOverviewComponent extends Div {
     return snapshotCard("Dataset", "measurements", total, state, tone,
         note(gapSentence(progress)), completenessRing(progress),
         new String[]{"Measurement ID", "Primary data", "Changed"}, rows,
-        "No measurements to show yet", () -> navigate(MeasurementMain.class));
+        "No measurements to show yet", () -> navigate(MeasurementDatasetMain.class));
   }
 
   /**

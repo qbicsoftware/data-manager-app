@@ -102,8 +102,7 @@ import reactor.core.publisher.Mono;
  * associated with an {@link Experiment} within a {@link Project} via the provided
  * {@link ExperimentId} and {@link ProjectId} in the URL
  */
-@Route(value = "projects/:projectId?/experiments/:experimentId?/measurements", layout = ProjectMainLayout.class)
-@PermitAll
+@Deprecated
 public class MeasurementMain extends Main implements BeforeEnterObserver, BeforeLeaveObserver {
 
   @Serial

@@ -30,7 +30,7 @@ import life.qbic.datamanager.views.general.ReactiveUiBridge;
 import life.qbic.datamanager.views.general.utils.Utility;
 import life.qbic.datamanager.views.projects.project.datasets.ProjectDatasetsMain;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
-import life.qbic.datamanager.views.projects.project.measurements.MeasurementMain;
+import life.qbic.datamanager.views.projects.project.dataset.MeasurementDatasetMain;
 import life.qbic.datamanager.views.projects.project.samples.SampleInformationMain;
 import life.qbic.projectmanagement.application.ProjectOverview;
 import life.qbic.projectmanagement.application.associated_dataset.AssociatedDatasetService;
@@ -180,7 +180,7 @@ public class ProjectProgressSection extends Div {
     action.addClassName("project-progress-incomplete-action");
     row.add(context, text, action);
     Utility.activateOnClickAndKeys(row, "link",
-        () -> navigate(MeasurementMain.class, entry.experimentId()));
+        () -> navigate(MeasurementDatasetMain.class, entry.experimentId()));
     return row;
   }
 
@@ -252,7 +252,7 @@ public class ProjectProgressSection extends Div {
         "Dataset",
         datasetDetail(withData, measurements, missing),
         missing > 0 ? State.INCOMPLETE : State.DONE,
-        () -> navigate(MeasurementMain.class, firstExperiment)));
+        () -> navigate(MeasurementDatasetMain.class, firstExperiment)));
     return rail;
   }
 
