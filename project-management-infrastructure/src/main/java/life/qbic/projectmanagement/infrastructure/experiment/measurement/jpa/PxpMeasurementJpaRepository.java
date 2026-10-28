@@ -155,9 +155,17 @@ public interface PxpMeasurementJpaRepository extends
           .filter(Predicate.not(SampleFilter::isInclusion))
           .flatMap(it -> it.sampleIds().stream())
           .collect(Collectors.toSet());
-      return (root, query, criteriaBuilder) -> criteriaBuilder.and(
-          getSampleInfos(root).get("sample").get("sampleId").in(includedSampleIds),
-          getSampleInfos(root).get("sample").get("sampleId").in(excludedSampleIds).not());
+      // An empty included set must not become `IN ()`, which matches nothing: a filter that only
+      // excludes samples still has to return the measurements that measure every other sample.
+      Specification<PxpMeasurementInformation> includesMatch = includedSampleIds.isEmpty()
+          ? Specification.unrestricted()
+          : (root, query, criteriaBuilder) -> getSampleInfos(root).get("sample").get("sampleId")
+              .in(includedSampleIds);
+      Specification<PxpMeasurementInformation> excludesMatch = excludedSampleIds.isEmpty()
+          ? Specification.unrestricted()
+          : (root, query, criteriaBuilder) -> getSampleInfos(root).get("sample").get("sampleId")
+              .in(excludedSampleIds).not();
+      return includesMatch.and(excludesMatch);
     }
 
     private @NonNull Specification<PxpMeasurementInformation> containsSearchTerm() {
@@ -200,6 +208,17 @@ public interface PxpMeasurementJpaRepository extends
       return (root, query, criteriaBuilder) ->
           criteriaBuilder.equal(getSampleInfos(root).get("sample").get("experimentId"),
               experimentId);
+    }
+
+    /**
+     * Whether this filter constrains the samples a measurement must measure.
+     *
+     * <p>Exposed for tests only: the sample constraint used to be dropped on its way from the
+     * lookup API to this filter, which no test could observe. Keep the visibility package-private.
+     * </p>
+     */
+    boolean hasSampleConstraint() {
+      return !sampleFilters.isEmpty();
     }
 
     @Override
