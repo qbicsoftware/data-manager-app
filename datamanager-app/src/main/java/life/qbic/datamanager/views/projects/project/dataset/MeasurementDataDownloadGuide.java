@@ -19,9 +19,11 @@ import java.io.Serializable;
  * three facts a user needs to use them — a personal access token, the exported list of URLs, and a
  * command to fetch them.</p>
  *
- * <p>The guidance is stated once, at the point of export, and not as a permanent fixture: the
- * retired raw-data page carried it in a permanent side rail, where it occupied a fifth of the
- * screen and went stale whenever the download service changed.</p>
+ * <p>The guidance is shown on request, in a dialog opened from the list's actions. It is
+ * deliberately not a permanent band: rendered at the bottom of a full grid it read as a footnote
+ * and sat below the fold, and the retired raw-data page spent a fifth of the screen on the same
+ * content in a side rail that went stale whenever the download service changed. A reader who needs
+ * it asks for it; everybody else never sees it.</p>
  *
  * @since 1.21.0
  */
@@ -56,10 +58,14 @@ public class MeasurementDataDownloadGuide extends Div implements Serializable {
 
     Span exportLabel = new Span(VaadinIcon.DOWNLOAD.create());
     exportLabel.addClassName("measurement-dataset-download-guide-step-icon");
-    exportLocationsButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
-    exportLocationsButton.addClassName("measurement-dataset-download-guide-link");
-    Div exportStep = new Div(exportLabel, exportLocationsButton,
-        new Span(" of the measurements you selected."));
+    exportLocationsButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+    exportLocationsButton.addClassName("measurement-dataset-download-guide-button");
+    // A real button, not link-styled text welded to a sentence: the previous markup rendered the
+    // icon on top of the label and produced an unreadable "Export dataset locations of the
+    // measurements you selected."
+    Span exportHint = new Span("for the measurements you selected");
+    exportHint.addClassName("measurement-dataset-download-guide-hint");
+    Div exportStep = new Div(exportLabel, exportLocationsButton, exportHint);
     exportStep.addClassName("measurement-dataset-download-guide-step");
 
     Span commandLabel = new Span(VaadinIcon.TERMINAL.create());

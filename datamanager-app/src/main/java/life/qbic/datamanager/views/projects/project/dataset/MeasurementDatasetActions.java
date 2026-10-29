@@ -78,6 +78,12 @@ public class MeasurementDatasetActions implements Serializable {
   private final Button deleteButton = new Button("Delete", VaadinIcon.TRASH.create());
 
   /**
+   * Opens the guidance on how to fetch the data. It sits with the other actions because that is
+   * where a reader looks for it; a band below the list was neither findable nor in place.
+   */
+  private final Button getDataButton = new Button("Get data", VaadinIcon.DOWNLOAD_ALT.create());
+
+  /**
    * @param asyncService       the service the export and update calls go through
    * @param measurementService the service deletions go through
    * @param projectId          the project whose measurements are acted on
@@ -107,6 +113,11 @@ public class MeasurementDatasetActions implements Serializable {
     return deleteButton;
   }
 
+  /** @return the action that explains how to obtain the data files */
+  public Button getDataButton() {
+    return getDataButton;
+  }
+
   /**
    * Applies the current selection to the action buttons.
    *
@@ -125,6 +136,10 @@ public class MeasurementDatasetActions implements Serializable {
     editButton.setEnabled(canWrite);
     deleteButton.setVisible(canWrite);
     deleteButton.setEnabled(hasSelection);
+    // Reading the data is not a mutation, so it is offered to every reader of the project, with or
+    // without a selection: the guidance itself is useful before anything is selected.
+    getDataButton.setVisible(true);
+    getDataButton.setEnabled(true);
   }
 
   /**

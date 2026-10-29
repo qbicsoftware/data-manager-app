@@ -264,11 +264,13 @@ public class MeasurementDataDetailPanel extends Div implements Serializable {
    */
   private static DetailGroup dataGroup(MeasurementDataRow row, Function<Instant, String> formatter) {
     List<DetailField> fields = new ArrayList<>();
+    // The status is a value-only field: the group is already titled "Data", so a field also
+    // labelled "Data" rendered as "DATA / Data / Waiting" — the word twice for one fact.
     if (!row.hasData()) {
-      fields.add(field("Data", "Waiting \u2014 not uploaded yet", false));
+      fields.add(new DetailField("", "Waiting \u2014 not uploaded yet", false));
       return new DetailGroup("Data", fields);
     }
-    fields.add(field("Data", "Available", false));
+    fields.add(new DetailField("", "Available", false));
     List<String> facts = new ArrayList<>();
     if (row.fileCountOrZero() > 0) {
       facts.add(row.fileCountOrZero() == 1 ? "1 file" : row.fileCountOrZero() + " files");

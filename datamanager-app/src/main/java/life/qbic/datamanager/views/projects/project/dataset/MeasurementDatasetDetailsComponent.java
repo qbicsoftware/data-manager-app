@@ -477,7 +477,8 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
     Div toolbarRight = new Div();
     toolbarRight.addClassName("measurement-dataset-toolbar-right");
     if (actions != null) {
-      toolbarRight.add(actions.exportButton(), actions.editButton(), actions.deleteButton());
+      toolbarRight.add(actions.getDataButton(), actions.exportButton(), actions.editButton(),
+          actions.deleteButton());
     }
     toolbarRight.add(showHideColumnsMenu(grid));
     row.add(toolbarRight);
@@ -1014,10 +1015,10 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
    * @param guide the guidance to show, or {@code null} to show none
    */
   public void setDownloadGuide(MeasurementDataDownloadGuide guide) {
+    // Not added to the DOM: it is dialog content the page opens on request. The list only needs a
+    // reference so it can keep the guide's export action in step with the selection.
     this.downloadGuide = guide;
-    if (guide != null) {
-      add(guide);
-    }
+    updateSelectionBar();
   }
 
   /**

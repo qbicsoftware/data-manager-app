@@ -261,11 +261,13 @@ public class MeasurementDatasetMain extends Main
     detailsComponent.setWriteAccess(canWrite());
 
     var guide = new MeasurementDataDownloadGuide();
-    guide.setTokenSettingsHref("../" + life.qbic.datamanager.views.AppRoutes.ProjectRoutes.SETTINGS_API_TOKENS);
+    guide.setTokenSettingsHref("../"
+        + life.qbic.datamanager.views.AppRoutes.ProjectRoutes.SETTINGS_API_TOKENS);
     guide.addExportLocationsListener(clicked -> detailsComponent.exportLocations(
         () -> notifications.toast("rawdata.no-dataset-selected", new Object[]{},
             getLocale()).open()));
     detailsComponent.setDownloadGuide(guide);
+    actions.getDataButton().addClickListener(clicked -> openDownloadGuide(guide));
 
     List<MeasurementDatasetSelector.DatasetSummary> summaries =
         MeasurementDatasetSelector.DatasetSummary.of(progress);
@@ -310,6 +312,24 @@ public class MeasurementDatasetMain extends Main
    */
   private boolean canWrite() {
     return context != null && context.projectId().map(userPermissions::editProject).orElse(false);
+  }
+
+  /**
+   * Opens the guidance on fetching the data, as a dialog.
+   *
+   * <p>On request rather than on the page: the content is needed by the reader who is about to
+   * download and is noise for everyone else, and as a page band it sat below the fold in a full
+   * list. It is bound to the same selection state as the other actions, so the location export
+   * inside it knows what to export.</p>
+   */
+  private void openDownloadGuide(MeasurementDataDownloadGuide guide) {
+    var dialog = life.qbic.datamanager.views.general.dialog.AppDialog.medium();
+    life.qbic.datamanager.views.general.dialog.DialogHeader.with(dialog, "Getting the data");
+    life.qbic.datamanager.views.general.dialog.DialogFooter.withConfirmOnly(dialog, "Close");
+    life.qbic.datamanager.views.general.dialog.DialogBody.withoutUserInput(dialog, guide);
+    dialog.registerConfirmAction(dialog::close);
+    add(dialog);
+    dialog.open();
   }
 
   /** Opens the metadata export for the given selection. */
