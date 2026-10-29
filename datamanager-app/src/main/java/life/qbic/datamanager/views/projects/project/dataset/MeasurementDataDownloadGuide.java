@@ -8,6 +8,8 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.tabs.TabSheet;
+import life.qbic.datamanager.views.general.CodeBlock;
 import com.vaadin.flow.shared.Registration;
 import java.io.Serial;
 import java.io.Serializable;
@@ -135,14 +137,30 @@ public class MeasurementDataDownloadGuide extends Div implements Serializable {
     return row;
   }
 
+  /**
+   * The download commands, one per tool.
+   *
+   * <p>Both are offered because which one a reader has is a property of their machine, not of this
+   * application: a server usually has {@code curl}, a laptop often has {@code wget} only. They are
+   * tabs rather than two stacked blocks so the step stays one line high, and each is a
+   * {@link CodeBlock} — the same component the download guidance used before this page was rebuilt —
+   * so the command can be copied rather than retyped from a screenshot.</p>
+   *
+   * <p>The {@code <URL>} placeholder is deliberate: the locations are exported as a file, so the
+   * command is a shape to apply to each line, not a command that could be pasted verbatim.</p>
+   */
   private Div commandStep() {
     Span icon = new Span(VaadinIcon.TERMINAL.create());
     icon.addClassName("measurement-dataset-download-guide-step-icon");
-    Span command = new Span("curl --parallel --fail -OJ -H \"Authorization: Bearer <TOKEN>\" <URL>");
-    command.addClassNames("measurement-dataset-download-guide-command", "identifier");
-    // The command is long and must span the full width, so it gets its own row under the icon
-    // rather than being a second grid column that pushed the icon onto a line of its own.
-    Div content = new Div(command);
+
+    TabSheet commands = new TabSheet();
+    commands.addClassName("measurement-dataset-download-guide-commands");
+    commands.add("curl", new CodeBlock("curl", "--parallel", "--fail", "-OJ", "-H",
+        "\"Authorization: Bearer <TOKEN>\"", "<URL>"));
+    commands.add("wget", new CodeBlock("wget", "--content-disposition", "--trust-server-names",
+        "--header", "\"Authorization: Bearer <TOKEN>\"", "<URL>"));
+
+    Div content = new Div(commands);
     content.addClassName("measurement-dataset-download-guide-command-wrap");
     Div step = new Div(icon, content);
     step.addClassName("measurement-dataset-download-guide-step");

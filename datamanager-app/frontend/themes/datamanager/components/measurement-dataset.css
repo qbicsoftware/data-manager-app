@@ -628,15 +628,14 @@
   min-width: 0;
 }
 
-.measurement-dataset-download-guide-command {
-  display: block;
-  padding: var(--lumo-space-xs) var(--lumo-space-s);
-  border: 1px solid var(--lumo-contrast-10pct);
-  border-radius: var(--lumo-border-radius-s);
-  background-color: var(--shade-color-5pct);
-  font-size: var(--lumo-font-size-xs);
-  overflow-wrap: anywhere;
+/* The commands are copyable text enclosed by the app's own CodeBlock, so this
+   rule only keeps a long command from widening the dialog. The block itself
+   carries the surface and the copy affordance. */
+.measurement-dataset-download-guide-commands {
+  max-width: 100%;
+  overflow-x: auto;
 }
+
 
 /* ── Delete dialog ────────────────────────────────────────────────────────── */
 

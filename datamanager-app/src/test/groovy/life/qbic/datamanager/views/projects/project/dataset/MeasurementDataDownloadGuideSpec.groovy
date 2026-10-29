@@ -117,6 +117,91 @@ class MeasurementDataDownloadGuideSpec extends Specification {
         actionsOf(guide)[0].isVisible()
     }
 
+    def "both download tools are shown, each copyable"() {
+        given:
+        def guide = new MeasurementDataDownloadGuide()
+
+        when: "the dialog's tabbed command block is inspected"
+        // TabSheet keeps its content in a slot rather than among its child components, so the
+        // tabs are read from the TabSheet itself.
+        def tabs = collectTabSheets(guide)
+
+        then: "one tabbed block, holding both tools"
+        tabs.size() == 1
+        def sheet = (com.vaadin.flow.component.tabs.TabSheet) tabs[0]
+        // TabSheet keeps content in a slot, so it is read through getComponent(Tab), not through
+        // getChildren().
+        def contents = (0..<2).collect { sheet.getComponent(sheet.getTabAt(it)) }
+        contents.size() == 2
+        contents.every { it != null && it.getClass().getSimpleName() == "CodeBlock" }
+    }
+
+    def "the commands are a shape, not a pastable line"() {
+        given:
+        def guide = new MeasurementDataDownloadGuide()
+
+        when:
+        def labels = collectCommandTexts(guide)
+
+        then: "both commands are offered and each names both placeholders"
+        labels.size() == 2
+        labels.every { it.contains("<URL>") }
+        labels.every { it.contains("<TOKEN>") }
+
+        and: "the tools themselves are named, so a reader can tell the tabs apart"
+        def prompt = String.valueOf((char) 36) + " "
+        labels.any { it.contains(prompt + "curl") }
+        labels.any { it.contains(prompt + "wget") }
+    }
+
+    /**
+     * The concatenated text of a component and its descendants.
+     *
+     * <p>Only components implementing {@code HasText} carry text; icons and layout wrappers do not,
+     * so they contribute their children's text and nothing of their own.</p>
+     */
+    private static String textOf(com.vaadin.flow.component.Component component) {
+        StringBuilder text = new StringBuilder()
+        if (component instanceof com.vaadin.flow.component.HasText) {
+            text.append(component.getText())
+        }
+        for (var child : component.getChildren().toList()) {
+            text.append(textOf(child))
+        }
+        return text.toString()
+    }
+
+    /** Every TabSheet rendered inside the given component tree. */
+    private static List<com.vaadin.flow.component.Component> collectTabSheets(
+            com.vaadin.flow.component.Component root) {
+        List<com.vaadin.flow.component.Component> found = []
+        for (var child : root.getChildren().toList()) {
+            if (child.getClass().getSimpleName() == "TabSheet") {
+                found.add(child)
+            }
+            found.addAll(collectTabSheets(child))
+        }
+        return found
+    }
+
+    /** The rendered command text of every CodeBlock the dialog's tab sheets hold. */
+    private static List<String> collectCommandTexts(
+            com.vaadin.flow.component.Component root) {
+        List<String> found = []
+        for (var sheet : collectTabSheets(root)) {
+            def tabSheet = (com.vaadin.flow.component.tabs.TabSheet) sheet
+            for (int index = 0; index < 2; index++) {
+                def content = tabSheet.getComponent(tabSheet.getTabAt(index))
+                if (content != null) {
+                    // CodeBlock renders the command into a child Span and its own getText() is
+                    // empty, so the text is read from the component tree.
+                    found.add(textOf(content))
+                }
+            }
+        }
+        return found
+    }
+
     /** The two export buttons, in the order the dialog renders them. */
     private static List<com.vaadin.flow.component.button.Button> actionsOf(
             MeasurementDataDownloadGuide guide) {
