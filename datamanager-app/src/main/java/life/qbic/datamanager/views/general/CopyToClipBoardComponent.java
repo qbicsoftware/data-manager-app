@@ -30,6 +30,12 @@ public class CopyToClipBoardComponent extends Span {
   private static final long SHOW_SUCCESS_TIME = 1000;
   private String textToBeCopied = "";
 
+  /**
+   * The scheduled icon reset, tracked so a second click or a detach can cancel it instead of
+   * leaving a task that writes to a component the user is no longer looking at.
+   */
+  private transient CompletableFuture<Void> pendingReset;
+
   public CopyToClipBoardComponent() {
     copyIcon = VaadinIcon.COPY_O.create();
     copyIcon.setSize(IconSize.SMALL);
@@ -58,18 +64,64 @@ public class CopyToClipBoardComponent extends Span {
 
   private void handleCopyClicked(ComponentEvent<Span> componentEvent) {
     fireEvent(new SwitchToSuccessFullCopyIconEvent(this, componentEvent.isFromClient()));
-    UI.getCurrent().getPage().executeJs("window.copyToClipboard($0)", textToBeCopied);
-    copyIcon.setVisible(false);
-    copySuccessIcon.setVisible(true);
-    // reset copy view after a specific time
     UI ui = UI.getCurrent();
+    ui.getPage().executeJs("window.copyToClipboard($0)", textToBeCopied);
+    // Cancel a pending reset before scheduling a new one, so rapid clicks cannot leave two timers
+    // racing to restore the same two icons.
+    cancelPendingReset();
+    showSuccessIcon();
+    // Reset after a moment so the user sees the confirmation, then can copy again.
+    //
+    // The delay runs on a background thread, which is why this uses UI.access and not
+    // UI.accessLater: accessLater defers a task until the *currently executing request* finishes,
+    // and there is no current request on a delayed thread, so the task was queued for a request
+    // that never arrived. The success icon stayed forever and the copy icon never came back, which
+    // made the control look dead after its first use.
     Executor delayedExecutor = CompletableFuture.delayedExecutor(SHOW_SUCCESS_TIME,
         TimeUnit.MILLISECONDS);
-    CompletableFuture.runAsync(() -> ui.accessLater(() -> {
-          copyIcon.setVisible(true);
-          copySuccessIcon.setVisible(false);
-        }, null), delayedExecutor)
-        .thenRun(() -> fireEvent(new SwitchToCopyIconEvent(this, componentEvent.isFromClient())));
+    pendingReset = CompletableFuture.runAsync(() -> {
+      try {
+        ui.access(() -> {
+          showCopyIcon();
+          fireEvent(new SwitchToCopyIconEvent(this, componentEvent.isFromClient()));
+        });
+      } catch (com.vaadin.flow.component.UIDetachedException ignored) {
+        // The view was closed while the confirmation was showing; there is nothing to reset and
+        // the session is going away anyway.
+      }
+    }, delayedExecutor);
+  }
+
+  /** Cancels a scheduled icon reset, if one is pending. */
+  private void cancelPendingReset() {
+    if (pendingReset != null) {
+      pendingReset.cancel(false);
+      pendingReset = null;
+    }
+  }
+
+  @Override
+  protected void onDetach(com.vaadin.flow.component.DetachEvent detachEvent) {
+    super.onDetach(detachEvent);
+    // A detached component must not be written to later; stop the timer with the component.
+    cancelPendingReset();
+  }
+
+  /** Shows the success icon and hides the copy icon. */
+  private void showSuccessIcon() {
+    copyIcon.setVisible(false);
+    copySuccessIcon.setVisible(true);
+  }
+
+  /**
+   * Restores the copy icon.
+   *
+   * <p>Public so a caller can reset the control if it is ever left in its confirmation state, and
+   * called by the scheduled reset after every click.</p>
+   */
+  public void showCopyIcon() {
+    copyIcon.setVisible(true);
+    copySuccessIcon.setVisible(false);
   }
 
   /**
