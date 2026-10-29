@@ -96,8 +96,17 @@
   min-width: 0;
 }
 
+/* Hovering a card previews the selection's *shape*, not its colour: the bar appears
+   in grey, so the reader sees where a click lands without a second card claiming to
+   be active. `border-color` is deliberately not set here — that shorthand also
+   overrides the left edge of an already-active card and turned its accent rule grey,
+   because :hover outranks the modifier class. */
 .measurement-dataset-card:hover {
-  border-color: var(--lumo-contrast-30pct);
+  border-top-color: var(--lumo-contrast-30pct);
+  border-right-color: var(--lumo-contrast-30pct);
+  border-bottom-color: var(--lumo-contrast-30pct);
+  border-left: 4px solid var(--lumo-contrast-30pct);
+  padding-left: calc(var(--lumo-space-m) - 3px);
 }
 
 /* Selection is carried by a thick leading rule, a tinted border and aria-checked —
@@ -115,6 +124,15 @@
   padding-left: calc(var(--lumo-space-m) - 3px);
 }
 
+/* The active card keeps its accent rule while hovered: the bar's presence is shared,
+   its colour is what distinguishes the active card from the one under the pointer.
+   This needs the hover selector too, or the plain :hover rule above (which is more
+   specific than a bare modifier class) would win. */
+.measurement-dataset-card--selected:hover {
+  border-color: var(--primary-color);
+  border-left: 4px solid var(--primary-color);
+}
+
 /* The single-dataset card is a statement, not a choice: it carries no pointer
    affordance, no hover state and no selection treatment, so nothing suggests
    there was an alternative. */
@@ -124,6 +142,8 @@
 
 .measurement-dataset-card--single:hover {
   border-color: var(--lumo-contrast-10pct);
+  border-left: 1px solid var(--lumo-contrast-10pct);
+  padding-left: var(--lumo-space-m);
 }
 
 .measurement-dataset-card:focus-visible {
