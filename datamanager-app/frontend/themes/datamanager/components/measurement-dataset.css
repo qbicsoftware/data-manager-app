@@ -549,3 +549,76 @@
   transform: scale(0.72);
   transform-origin: top right;
 }
+
+/* ── Download guidance ────────────────────────────────────────────────────── */
+
+/* The application does not serve the data, so this band explains where the files
+   are and how to fetch them. It sits below the list, where a reader who has found
+   the data they want looks next, and it is not a permanent side rail: the retired
+   raw-data page spent a fifth of the screen on this and it went stale with the
+   download service. */
+.measurement-dataset-download-guide {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+  margin-top: var(--lumo-space-l);
+  padding: var(--lumo-space-m);
+  border: 1px solid var(--lumo-contrast-10pct);
+  border-radius: var(--lumo-border-radius-m);
+  background-color: var(--shade-color-5pct);
+}
+
+.measurement-dataset-download-guide-title {
+  color: var(--heading-text-color);
+  font-size: var(--lumo-font-size-m);
+  font-weight: var(--font-weight-semi-bold);
+}
+
+.measurement-dataset-download-guide-text {
+  color: var(--body-text-color);
+  font-size: var(--lumo-font-size-s);
+  max-width: 78ch;
+}
+
+.measurement-dataset-download-guide-step {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+  font-size: var(--lumo-font-size-s);
+  color: var(--body-text-color);
+  flex-wrap: wrap;
+}
+
+.measurement-dataset-download-guide-step-icon {
+  color: var(--field-label-text-color);
+  flex-shrink: 0;
+}
+
+.measurement-dataset-download-guide-link {
+  color: var(--primary-color);
+}
+
+/* The command is copyable text, not prose: monospace and visually enclosed so it
+   is not mistaken for a sentence. */
+.measurement-dataset-download-guide-command {
+  display: inline-block;
+  padding: 2px var(--lumo-space-s);
+  border: 1px solid var(--lumo-contrast-10pct);
+  border-radius: var(--lumo-border-radius-s);
+  background-color: var(--lumo-base-color);
+  font-size: var(--lumo-font-size-xs);
+  overflow-wrap: anywhere;
+}
+
+/* ── Delete dialog ────────────────────────────────────────────────────────── */
+
+.measurement-dataset-delete-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+}
+
+.measurement-dataset-delete-followup {
+  color: var(--body-text-color);
+  font-size: var(--lumo-font-size-s);
+}

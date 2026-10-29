@@ -91,7 +91,7 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
   private final Grid<MeasurementDataRow> grid = new Grid<>();
   private final PaginatedGrid<MeasurementDataRow> paginatedGrid;
   private final PaginationBar paginationBar = new PaginationBar(
-      ListStateCodec.ALLOWED_PAGE_SIZES, ListStateCodec.DEFAULT_PAGE_SIZE, "measurement entries");
+      ListStateCodec.ALLOWED_PAGE_SIZES, ListStateCodec.DEFAULT_PAGE_SIZE, "measurements");
   private final TextField searchField = new TextField();
 
   /**
@@ -111,6 +111,29 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
   private final Div selectionBar = new Div(selectionIcon, selectionDisplay, selectAllResultsButton,
       clearSelectionButton);
   private long totalItemsActive;
+
+  /**
+   * The page's action buttons and download guidance. Supplied by the route view because they need
+   * services, permissions and project context that the list itself does not.
+   */
+  private MeasurementDatasetActions actions;
+
+  private java.util.function.Consumer<MeasurementSelection> editSelectionHandler;
+  private java.util.function.Consumer<MeasurementSelection> exportSelectionHandler;
+  private java.util.function.BiConsumer<MeasurementSelection,
+      java.util.function.Consumer<MeasurementSelection>> deleteSelectionHandler;
+  private java.util.function.Consumer<MeasurementSelection> exportLocationsHandler;
+
+  /**
+   * Whether the caller may mutate this project's measurements. Fail-closed: mutation actions are
+   * hidden until the owning view confirms write scope, so a read-only user is never offered an
+   * action that can only fail.
+   */
+  private boolean writeAccess = false;
+  private MeasurementDataDownloadGuide downloadGuide;
+
+  /** The toolbar row; kept so it can be rebuilt once the page supplies its actions. */
+  private Div toolbar = new Div();
 
   private final Div detailLayout = new Div();
   private final Div listColumn = new Div();
@@ -145,7 +168,7 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
     addClassNames("measurement-dataset-details", "measurement-dataset-details-content");
 
     paginatedGrid = new PaginatedGrid<>(grid, this::loadPage,
-        MeasurementDataRow::measurementId, "measurement entries", MeasurementDataSort.DEFAULT,
+        MeasurementDataRow::measurementId, "measurements", MeasurementDataSort.DEFAULT,
         false, false, false);
     paginatedGrid.addClassNames("width-full");
 
@@ -185,7 +208,8 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
     detailLayout.add(listColumn, detailPanel, detailBackdrop);
     detailPanel.addCloseListener(event -> closeDetail());
 
-    add(createToolbar(), selectionBar, errorState, detailLayout);
+    toolbar = createToolbar();
+    add(toolbar, selectionBar, errorState, detailLayout);
     updateSelectionBar();
   }
 
@@ -441,14 +465,23 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
   // ── toolbar, search, filters ────────────────────────────────────────────
 
   private Div createToolbar() {
+    Div rebuilt = buildToolbar();
+    toolbar = rebuilt;
+    return rebuilt;
+  }
+
+  private Div buildToolbar() {
     searchField.addClassName("measurement-dataset-search");
-    Div toolbar = new Div(searchField, dataStatusFilter);
-    toolbar.addClassName("measurement-dataset-toolbar");
+    Div row = new Div(searchField, dataStatusFilter);
+    row.addClassName("measurement-dataset-toolbar");
     Div toolbarRight = new Div();
     toolbarRight.addClassName("measurement-dataset-toolbar-right");
+    if (actions != null) {
+      toolbarRight.add(actions.exportButton(), actions.editButton(), actions.deleteButton());
+    }
     toolbarRight.add(showHideColumnsMenu(grid));
-    toolbar.add(toolbarRight);
-    return toolbar;
+    row.add(toolbarRight);
+    return row;
   }
 
   private void configureSearch() {
@@ -614,6 +647,30 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
       }
     }
     clearSelectionButton.setVisible(hasSelection);
+    if (actions != null) {
+      actions.applySelection(currentSelection(), writeAccess);
+    }
+    if (downloadGuide != null) {
+      // The location export needs measurements to describe, so it follows the selection exactly
+      // like the metadata export.
+      downloadGuide.setExportEnabled(hasSelection);
+    }
+  }
+
+  /**
+   * The current selection, reduced to the per-method ids the write actions need.
+   *
+   * <p>Read from the rendered page rather than from the id set alone: the selection stores ids, but
+   * dispatching an export or a deletion requires knowing each measurement's method.</p>
+   */
+  private MeasurementSelection currentSelection() {
+    Set<String> selected = paginatedGrid.selectedIds();
+    if (selected.isEmpty()) {
+      return MeasurementSelection.empty();
+    }
+    return MeasurementSelection.of(grid.getGenericDataView().getItems()
+        .filter(row -> selected.contains(row.measurementId()))
+        .toList());
   }
 
   private void selectAllMatching() {
@@ -806,6 +863,164 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
   }
 
   /**
+   * Every measurement id of the dataset currently shown, independent of the page and the filter.
+   *
+   * <p>Used by the edit dialog's "export all" option, which must cover the whole dataset rather than
+   * the visible page — the same baseline the retired measurement page offered, and the rescue path
+   * for a user whose in-session selection was lost.</p>
+   */
+  public java.util.List<String> allMeasurementIds() {
+    MeasurementDataFilter filter = currentFilter(new ListState(1, 1,
+        paginatedGrid.listState().filter(),
+        paginatedGrid.listState().sort()));
+    long total = queryService.countMeasurementData(projectId, experimentId, filter)
+        .blockOptional().orElse(0L);
+    return queryService.getMeasurementData(projectId, experimentId, 0, (int) Math.max(total, 0),
+            filter)
+        .map(MeasurementDataRow::measurementId)
+        .collectList().blockOptional().orElse(java.util.List.of());
+  }
+
+  /**
+   * The measurement codes of the current selection.
+   *
+   * <p>The codes, not the internal ids: the export names the measurements the way the reader and
+   * the download service identify them.</p>
+   */
+  public java.util.List<String> selectedMeasurementCodes() {
+    Set<String> selected = paginatedGrid.selectedIds();
+    return grid.getGenericDataView().getItems()
+        .filter(row -> selected.contains(row.measurementId()))
+        .map(MeasurementDataRow::measurementCode)
+        .toList();
+  }
+
+  /**
+   * Asks the page to open the edit dialog for the current selection.
+   *
+   * <p>Edit is offered without a selection too: its dialog can export the metadata of the whole
+   * dataset, exactly as the measurement edit dialog always could.</p>
+   */
+  public void openEditSelection() {
+    if (editSelectionHandler != null) {
+      editSelectionHandler.accept(currentSelection());
+    }
+  }
+
+  /** Asks the page to export the metadata of the current selection. */
+  public void exportSelection() {
+    if (exportSelectionHandler != null) {
+      exportSelectionHandler.accept(currentSelection());
+    }
+  }
+
+  /**
+   * Asks the page to delete the current selection.
+   *
+   * @param onConfirm run by the page once the reader confirms a deletable selection
+   */
+  public void deleteSelection(java.util.function.Consumer<MeasurementSelection> onConfirm) {
+    if (deleteSelectionHandler != null) {
+      deleteSelectionHandler.accept(currentSelection(), onConfirm);
+    }
+  }
+
+  /**
+   * Exports the locations of the data of the current selection.
+   *
+   * @param onEmpty run when nothing is selected, so the reader is told why nothing happened
+   */
+  public void exportLocations(Runnable onEmpty) {
+    if (paginatedGrid.selectedIds().isEmpty()) {
+      onEmpty.run();
+      return;
+    }
+    if (exportLocationsHandler != null) {
+      exportLocationsHandler.accept(currentSelection());
+    }
+  }
+
+  /**
+   * Registers the page's handler for the edit action.
+   *
+   * @param handler receives the current selection
+   */
+  public void setEditSelectionHandler(java.util.function.Consumer<MeasurementSelection> handler) {
+    this.editSelectionHandler = handler;
+  }
+
+  /**
+   * Registers the page's handler for the metadata export.
+   *
+   * @param handler receives the current selection
+   */
+  public void setExportSelectionHandler(
+      java.util.function.Consumer<MeasurementSelection> handler) {
+    this.exportSelectionHandler = handler;
+  }
+
+  /**
+   * Registers the page's handler for deletion, which owns the confirmation dialog.
+   *
+   * @param handler receives the current selection and the callback to run on confirmation
+   */
+  public void setDeleteSelectionHandler(
+      java.util.function.BiConsumer<MeasurementSelection,
+          java.util.function.Consumer<MeasurementSelection>> handler) {
+    this.deleteSelectionHandler = handler;
+  }
+
+  /**
+   * Registers the page's handler for the data-location export.
+   *
+   * @param handler receives the current selection
+   */
+  public void setExportLocationsHandler(
+      java.util.function.Consumer<MeasurementSelection> handler) {
+    this.exportLocationsHandler = handler;
+  }
+
+  /**
+   * Hands the page's action buttons to the list, which owns the selection they act on.
+   *
+   * @param actions the actions to show in the toolbar, or {@code null} to show none
+   */
+  public void setActions(MeasurementDatasetActions actions) {
+    this.actions = actions;
+    // The toolbar renders the action buttons, so it is rebuilt in place rather than patched: the
+    // row order is fixed and a partial insert would put them after the column menu.
+    if (toolbar.getParent().isPresent()) {
+      replace(toolbar, createToolbar());
+    } else {
+      toolbar = createToolbar();
+    }
+    updateSelectionBar();
+  }
+
+  /**
+   * Applies the caller's permission scope to the mutation actions.
+   *
+   * @param writeAccess whether the user may change measurements in this project
+   */
+  public void setWriteAccess(boolean writeAccess) {
+    this.writeAccess = writeAccess;
+    updateSelectionBar();
+  }
+
+  /**
+   * Places the download guidance below the list, where a reader who has found the data they want
+   * looks next.
+   *
+   * @param guide the guidance to show, or {@code null} to show none
+   */
+  public void setDownloadGuide(MeasurementDataDownloadGuide guide) {
+    this.downloadGuide = guide;
+    if (guide != null) {
+      add(guide);
+    }
+  }
+
+  /**
    * Activates one measurement dataset, which is what the list below shows.
    *
    * <p>The datasets are the page's structure, not a filter: the reader chooses which dataset they
@@ -833,13 +1048,13 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
     if (total <= 0) {
       statusLine.setText("No measurement data registered yet");
     } else {
-      String entries = total == 1 ? "1 measurement entry" : "%d measurement entries".formatted(total);
+      String measurements = total == 1 ? "1 measurement" : "%d measurements".formatted(total);
       String pending = waiting == 0
           ? "all with data available"
           : waiting == 1
               ? "1 waiting for data"
               : "%d waiting for data".formatted(waiting);
-      statusLine.setText(entries + " \u00b7 " + pending);
+      statusLine.setText(measurements + " \u00b7 " + pending);
     }
     statusLine.addClassName("measurement-dataset-status-line");
   }

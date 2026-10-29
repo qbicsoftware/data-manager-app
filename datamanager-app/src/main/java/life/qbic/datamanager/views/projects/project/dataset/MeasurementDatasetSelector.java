@@ -26,7 +26,7 @@ import life.qbic.projectmanagement.application.query.AssayType;
  * and invisible.</p>
  *
  * <p>Each card states the dataset's size, because that is what the reader needs in order to
- * recognise which dataset they are looking at: how many measurement entries it holds, how many
+ * recognise which dataset they are looking at: how many measurements it holds, how many
  * still wait for data, and how much data has arrived. A card is selected by pointer or by
  * Enter/Space, and the selection is what activates the list below it.</p>
  *
@@ -133,8 +133,8 @@ public class MeasurementDatasetSelector extends Div implements Serializable {
     label.addClassName("measurement-dataset-card-label");
 
     Span count = new Span(summary.total() == 1
-        ? "1 measurement entry"
-        : "%d measurement entries".formatted(summary.total()));
+        ? "1 measurement"
+        : "%d measurements".formatted(summary.total()));
     count.addClassName("measurement-dataset-card-count");
 
     Div headline = new Div(label, count);
@@ -184,9 +184,9 @@ public class MeasurementDatasetSelector extends Div implements Serializable {
       return "No measurement metadata registered yet";
     }
     if (summary.waiting() == 0) {
-      return "All %d measurement entries have data available".formatted(summary.total());
+      return "All %d measurements have data available".formatted(summary.total());
     }
-    return "%d of %d measurement entries have data available"
+    return "%d of %d measurements have data available"
         .formatted(summary.available(), summary.total());
   }
 
@@ -235,7 +235,7 @@ public class MeasurementDatasetSelector extends Div implements Serializable {
    * One dataset's summary as the selector states it.
    *
    * @param segment   the measurement method
-   * @param total     the number of measurement entries in this dataset
+   * @param total     the number of measurements in this dataset
    * @param available the number of entries whose data is available
    * @param bytes     the total size of the data that has arrived, {@code 0} when not recorded
    */
