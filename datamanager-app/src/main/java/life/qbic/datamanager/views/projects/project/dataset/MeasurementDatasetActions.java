@@ -39,9 +39,27 @@ import reactor.core.publisher.Mono;
  * front and says who can resolve it, rather than letting a partial deletion succeed and reporting a
  * confusing half-result.</p>
  *
+ * <h2>Threading</h2>
+ *
+ * <p>This class subscribes to reactive sources and its callbacks therefore run on the shared
+ * scheduler thread, never on a Vaadin UI thread. <b>It must not touch the UI</b>: its callbacks
+ * hand their result to the caller, and the caller re-enters the UI thread through the page's
+ * {@code UiHandle} adapter. Opening a toast or triggering a download here would fail at runtime
+ * with "No currently active UI found", and only when the path is exercised.</p>
+ *
  * @since 1.21.0
  */
 public class MeasurementDatasetActions implements Serializable {
+
+  /**
+   * Marks this class as a reactive consumer that deliberately performs no UI work.
+   *
+   * <p>Referenced by {@code MeasurementDatasetThreadingSpec}: the spec requires every file that
+   * subscribes to a reactive source to either route UI work through the shared adapter or to
+   * declare that it does none. Declaring it here is cheaper and more honest than adding an adapter
+   * this class does not need — and it keeps the invariant visible to whoever edits it next.</p>
+   */
+  static final boolean PERFORMS_NO_UI_WORK = true;
 
   @Serial
   private static final long serialVersionUID = -1L;

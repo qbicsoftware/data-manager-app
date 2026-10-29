@@ -99,6 +99,17 @@ public class MeasurementDatasetMain extends Main
   private final transient life.qbic.datamanager.security.UserPermissions userPermissions;
   private final transient life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory
       notifications;
+  /**
+   * The single bridge back onto the UI thread.
+   *
+   * <p>Every reactive result is delivered on the scheduler thread, and almost everything this page
+   * does with a result touches the UI: opening a toast, triggering a download (which assigns an
+   * {@code href} and therefore needs a current UI), rendering the reloaded page. Reaching the UI
+   * directly from those callbacks fails with "No currently active UI found".</p>
+   */
+  private final life.qbic.datamanager.views.UiHandle uiHandle =
+      new life.qbic.datamanager.views.UiHandle();
+
   private final com.vaadin.flow.component.html.Div downloadComponentHost =
       new com.vaadin.flow.component.html.Div();
   private final life.qbic.datamanager.views.general.download.DownloadComponent downloadComponent =
@@ -153,6 +164,9 @@ public class MeasurementDatasetMain extends Main
     content.add(header);
     content.addClassName("measurement-dataset-content");
     add(content);
+
+    addAttachListener(event -> uiHandle.bind(event.getUI()));
+    addDetachListener(event -> uiHandle.unbind());
   }
 
   @Override
@@ -304,13 +318,18 @@ public class MeasurementDatasetMain extends Main
         life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory.EMPTY_PARAMETERS,
         getLocale());
     pending.open();
-    actions.exportMetadata(selection, digitalObject -> {
-      pending.close();
-      triggerDownload("measurements", "xlsx", digitalObject);
-    }, () -> {
-      pending.close();
-      notifications.toast("task.failed", new Object[]{"Measurement export"}, getLocale()).open();
-    });
+    // The callbacks arrive on the scheduler thread; triggering a download assigns an href and
+    // therefore requires the UI thread, so the whole outcome is re-entered through the adapter.
+    actions.exportMetadata(selection,
+        digitalObject -> uiHandle.onUiAndPush(() -> {
+          pending.close();
+          triggerDownload("measurements", "xlsx", digitalObject);
+        }),
+        () -> uiHandle.onUiAndPush(() -> {
+          pending.close();
+          notifications.toast("task.failed", new Object[]{"Measurement export"}, getLocale())
+              .open();
+        }));
   }
 
   /** Opens the delete confirmation, which refuses selections that still have data. */
@@ -329,7 +348,7 @@ public class MeasurementDatasetMain extends Main
     var pending = notifications.pendingTaskToast("task.in-progress",
         new Object[]{"Measurement deletion"}, getLocale());
     pending.open();
-    actions.delete(selection, deleted -> getUI().ifPresent(ui -> ui.access(() -> {
+    actions.delete(selection, deleted -> uiHandle.onUiAndPush(() -> {
       pending.close();
       notifications.toast("measurement.deletion.successful",
           new Object[]{deleted}, getLocale()).open();
@@ -337,10 +356,10 @@ public class MeasurementDatasetMain extends Main
       // rather than only the grid refreshed.
       render(context.projectId().orElseThrow().value(),
           context.experimentId().orElseThrow().value());
-    })), () -> getUI().ifPresent(ui -> ui.access(() -> {
+    }), () -> uiHandle.onUiAndPush(() -> {
       pending.close();
       notifications.toast("task.failed", new Object[]{"Measurement deletion"}, getLocale()).open();
-    })));
+    }));
   }
 
   /**
@@ -584,17 +603,19 @@ public class MeasurementDatasetMain extends Main
         new Object[]{description}, getLocale());
     pending.open();
     operation.subscribe(ignored -> {
+      // no per-element handling; the batch outcome is reported once, below
     }, error -> {
       log.error(description + " failed", error);
-      getUI().ifPresent(ui -> ui.access(() -> {
+      uiHandle.onUiAndPush(() -> {
         pending.close();
         notifications.toast("task.failed", new Object[]{description}, getLocale()).open();
-      }));
-    }, () -> getUI().ifPresent(ui -> ui.access(() -> {
+      });
+    }, () -> uiHandle.onUiAndPush(() -> {
       pending.close();
       notifications.toast("measurement.update.successful", new Object[]{""}, getLocale()).open();
+      // Rebuilding touches the component tree, so it must run on the UI thread too.
       reload();
-    })));
+    }));
   }
 
   /**
