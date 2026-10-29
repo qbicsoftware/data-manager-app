@@ -29,8 +29,11 @@ import java.io.Serializable;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -121,6 +124,16 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
    * The active segment, or {@code null} while the page is still deciding which segments exist.
    * A null segment means "no filtering by method", which is also what the query expects.
    */
+  /**
+   * Names of the single samples the current page measures, keyed by measurement id.
+   *
+   * <p>The list read model intentionally carries no sample identities — a pool can hold fifty, and
+   * {@code group_concat_max_len} would truncate that silently. For the 1:1 case the name is what a
+   * reader recognises, so it is resolved for the current page only, in one query, and cached here.
+   * Pooled rows keep their pool label and never need it.</p>
+   */
+  private final Map<String, String> singleSampleNames = new HashMap<>();
+
   private MeasurementDatasetSegment activeSegment;
   private DataStatusFilter activeDataStatus = DataStatusFilter.ALL;
 
@@ -158,6 +171,10 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
       paginationBar.setVisible(event.getTotal() > 0);
       applySelectionToGrid();
       updateSelectionBar();
+      // The event carries only page/count, so the rendered rows are read from the grid: they are
+      // exactly the items of the page just loaded.
+      resolveSingleSampleNames(grid.getGenericDataView().getItems().toList());
+      // Re-rendering the resolved names happens once, after the loop, so this does not recurse.
     });
 
     listColumn.addClassName("measurement-dataset-list");
@@ -200,14 +217,15 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
     grid.addClassName("measurement-dataset-grid");
     grid.setColumnReorderingAllowed(true);
 
-    // A measurement code is a technical identifier with an embedded nano-timestamp; at full length
-    // it is unreadable to a human and wide enough to push every other column out. The grid shows a
-    // bounded form and keeps the whole value in the tooltip and in the detail panel. Searching for
-    // the full code still works, because the filter runs in the database, not on the rendered text.
-    var idColumn = grid.addColumn(row -> shortMeasurementCode(row.measurementCode()))
+    // A measurement code is a system identifier, not user-managed metadata: it is minted by the
+    // application, carries an embedded nano-timestamp and cannot be read or remembered. It is
+    // rendered with the app-wide identifier treatment (monospace, secondary ink) and given no
+    // emphasis, so it identifies a row without competing with the facts a person actually reads.
+    // Searching for the full code still works: the filter runs in the database.
+    var idColumn = grid.addColumn(new ComponentRenderer<>(this::measurementIdCell))
         .setHeader("Measurement ID")
         .setSortProperty("measurementId")
-        .setComparator(MeasurementDataRow::measurementCode)
+        .setComparator(Comparator.comparing(MeasurementDataRow::measurementCode))
         .setAutoWidth(true)
         .setFlexGrow(0)
         .setTooltipGenerator(MeasurementDataRow::measurementCode)
@@ -227,16 +245,6 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
         .setSortProperty("samplePool")
         .setAutoWidth(true)
         .setResizable(true);
-    grid.addColumn(row -> textOrDash(row.facility()))
-        .setHeader("Facility")
-        .setAutoWidth(true)
-        .setResizable(true);
-    var registeredColumn = grid.addColumn(row -> formatTime(row.registeredAt()))
-        .setHeader("Registration date")
-        .setSortProperty("registrationDate")
-        .setComparator(MeasurementDataRow::registeredAt)
-        .setAutoWidth(true)
-        .setResizable(true);
     // The one status column. It is what drives attention and what the whole merge exists to
     // state, so it is visible by default rather than hidden behind the column menu.
     grid.addComponentColumn(this::dataStatusCell)
@@ -245,15 +253,20 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
         .setComparator((left, right) -> left.dataStatus().compareTo(right.dataStatus()))
         .setAutoWidth(true)
         .setResizable(true);
+    grid.addColumn(row -> textOrDash(row.facility()))
+        .setHeader("Facility")
+        .setAutoWidth(true)
+        .setResizable(true);
     grid.addComponentColumn(this::detailsCell)
         .setHeader("")
         .setAutoWidth(true)
         .setFlexGrow(0);
 
     addHiddenDetailColumns();
-    // Default order: most recently registered first. Metadata is registered before its data
-    // arrives, so the newest rows are also the ones most likely to still be waiting.
-    grid.sort(GridSortOrder.desc(registeredColumn).build());
+    // Default order: most recently registered first, even though the date is not a visible column.
+    // Metadata is registered before its data arrives, so the newest rows are the ones most likely
+    // to still be waiting — which is what the Data column then states.
+    grid.sort(GridSortOrder.desc(grid.getColumnByKey("metadata-registered")).build());
   }
 
   /**
@@ -262,6 +275,17 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
    * the samples page uses for the columns its detail panel took over.
    */
   private void addHiddenDetailColumns() {
+    // Demoted out of the visible set: the reader of a list is interested in the data status, and
+    // the registration moment is read in the detail panel (and exported). It stays sortable and
+    // restorable through Show/Hide Columns, and it is still the default sort.
+    grid.addColumn(row -> formatDate(row.registeredAt()))
+        .setKey("metadata-registered")
+        .setHeader("Metadata registered")
+        .setSortProperty("registrationDate")
+        .setComparator(MeasurementDataRow::registeredAt)
+        .setAutoWidth(true)
+        .setResizable(true)
+        .setVisible(false);
     grid.addColumn(row -> String.valueOf(row.sampleCount()))
         .setHeader("Sample count")
         .setAutoWidth(true)
@@ -310,16 +334,51 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
    *       names are listed in the detail panel, which fetches them when it opens.</li>
    * </ul>
    */
+  /**
+   * The text of the pool pill.
+   *
+   * <p>The word "Pool" is not decoration. A pool label is free text the registrant typed, so it can
+   * be "2.0", "group A" or anything else; without the word the pill renders as unexplained
+   * different-looking text and the reader cannot tell why it looks different or what it means.</p>
+   *
+   * <p>Package-private and static so the rule is testable without a component instance.</p>
+   *
+   * @param row a measurement that measures more than one sample
+   */
+  static String pooledCellText(MeasurementDataRow row) {
+    return hasText(row.samplePool())
+        ? "Pool: " + row.samplePool()
+        : "Pool of %d".formatted(row.sampleCount());
+  }
+
+  /**
+   * The row's system identifier, in the app-wide identifier treatment.
+   *
+   * <p>Deliberately inconspicuous: it is minted by the application, not entered by a person, and
+   * nothing in a workflow depends on reading it. The bounded form keeps the column narrow; the
+   * full code is in the tooltip and the detail panel.</p>
+   */
+  private Component measurementIdCell(MeasurementDataRow row) {
+    Span id = new Span(shortMeasurementCode(row.measurementCode()));
+    id.addClassNames("identifier", "measurement-dataset-measurement-id");
+    return id;
+  }
+
   private Component samplesCell(MeasurementDataRow row) {
     if (row.sampleCount() <= 1) {
-      Span single = new Span("1 sample");
-      single.addClassName("measurement-dataset-sample-single");
+      // The name of the one sample, when it is known. "1 sample" repeated down the column told a
+      // reader nothing they could not infer from the row's existence; the name is the fact they
+      // actually use to recognise the measurement.
+      String name = singleSampleNames.get(row.measurementId());
+      Span single = new Span(hasText(name) ? name : "1 sample");
+      single.addClassNames("measurement-dataset-sample-single",
+          hasText(name) ? "measurement-dataset-sample-name" : "measurement-dataset-sample-unnamed");
+      if (hasText(name)) {
+        single.getElement().setAttribute("title", name);
+      }
       return single;
     }
-    String label = hasText(row.samplePool())
-        ? row.samplePool()
-        : "%d samples".formatted(row.sampleCount());
-    Span pill = new Span(label);
+    Span pill = new Span(pooledCellText(row));
     pill.addClassName("measurement-dataset-pool-pill");
     pill.getElement().setAttribute("title",
         row.sampleCount() + " samples pooled into one measurement");
@@ -607,7 +666,7 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
     // The open id must be recorded before the sample fetch is issued: the fetch's completion guard
     // compares against it, and setting it afterwards made every response look stale.
     openDetailId.set(row.measurementId());
-    detailPanel.show(row, this::formatTime);
+    detailPanel.show(row, this::formatDate);
     loadSamplesFor(row);
     detailLayout.addClassName("measurement-dataset-detail-layout--open");
     grid.getDataProvider().refreshAll();
@@ -615,6 +674,48 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
       escShortcut.remove();
     }
     escShortcut = Shortcuts.addShortcutListener(this, event -> closeDetail(), Key.ESCAPE);
+  }
+
+  /**
+   * Resolves the sample names for the 1:1 measurements on the current page.
+   *
+   * <p>One query per single-sample row, issued only for the rows that need it and only for the page
+   * being displayed: a pooled row never asks, because its pool label is what the reader recognises.
+   * The alternative — carrying sample identities in the list read model — is both heavier and
+   * silently lossy for large pools.</p>
+   *
+   * <p>Failures are not surfaced. The column falls back to "1 sample", which is what it showed
+   * before, so a name that cannot be resolved costs the reader nothing they had.</p>
+   */
+  private void resolveSingleSampleNames(List<MeasurementDataRow> rows) {
+    if (rows == null || rows.isEmpty()) {
+      return;
+    }
+    singleSampleNames.keySet().retainAll(rows.stream()
+        .map(MeasurementDataRow::measurementId).collect(Collectors.toSet()));
+    boolean resolvedAny = false;
+    for (MeasurementDataRow row : rows) {
+      if (row.sampleCount() != 1 || singleSampleNames.containsKey(row.measurementId())) {
+        continue;
+      }
+      try {
+        var samples = queryService.getMeasuredSamples(projectId, row.measurementId())
+            .collectList()
+            .blockOptional()
+            .orElse(List.of());
+        if (samples.size() == 1) {
+          var sample = samples.getFirst();
+          singleSampleNames.put(row.measurementId(),
+              hasText(sample.sampleLabel()) ? sample.sampleLabel() : sample.sampleCode());
+          resolvedAny = true;
+        }
+      } catch (RuntimeException e) {
+        log.error("Could not resolve the sample of measurement " + row.measurementId(), e);
+      }
+    }
+    if (resolvedAny) {
+      grid.getDataProvider().refreshAll();
+    }
   }
 
   /**
@@ -772,6 +873,21 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
   /** Reloads the current page in place, preserving page, filter and sort. */
   public void refresh() {
     paginatedGrid.refresh();
+  }
+
+  /**
+   * Renders a date with its weekday, e.g. {@code Wed, 11 Feb 2026}.
+   *
+   * <p>A weekday is what lets a person relate a record to the working week they remember; a bare
+   * day-of-month leaves them counting.</p>
+   */
+  private String formatDate(Instant instant) {
+    if (instant == null) {
+      return "";
+    }
+    return DateTimeFormat.asJavaFormatter(DateTimeFormat.WEEKDAY_DATE_SHORT,
+            ZoneId.of(clientTimeZone.get()))
+        .format(instant);
   }
 
   private String formatTime(Instant instant) {

@@ -12,6 +12,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import life.qbic.application.commons.FileSizeFormatter;
+import life.qbic.datamanager.views.general.CompletenessRing;
 import life.qbic.projectmanagement.application.query.AssayType;
 
 /**
@@ -138,7 +139,17 @@ public class MeasurementDatasetSelector extends Div implements Serializable {
 
     Div headline = new Div(label, count);
     headline.addClassName("measurement-dataset-card-headline");
-    card.add(headline);
+
+    // The coverage ring is the same component the project and experiment pages use, so the reader
+    // meets one visual language for "how complete is this". It never carries the meaning alone: the
+    // sentence beside it states the count, and the ring exposes role=progressbar with spoken text.
+    Div ring = new Div(new CompletenessRing(summary.available(), summary.total(),
+        ringAriaText(summary)));
+    ring.addClassName("measurement-dataset-card-ring");
+
+    Div headlineRow = new Div(headline, ring);
+    headlineRow.addClassName("measurement-dataset-card-headline-row");
+    card.add(headlineRow);
 
     // The facts are stated as text, never as colour alone, so a reader who does not perceive the
     // tint still reads the state.
@@ -163,6 +174,20 @@ public class MeasurementDatasetSelector extends Div implements Serializable {
             + "  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.click(); }"
             + "});");
     return card;
+  }
+
+  /**
+   * The spoken form of the ring, so assistive technology gets the same fact the arc shows.
+   */
+  private static String ringAriaText(DatasetSummary summary) {
+    if (summary.total() == 0) {
+      return "No measurement metadata registered yet";
+    }
+    if (summary.waiting() == 0) {
+      return "All %d measurement entries have data available".formatted(summary.total());
+    }
+    return "%d of %d measurement entries have data available"
+        .formatted(summary.available(), summary.total());
   }
 
   private static String coverageText(DatasetSummary summary) {

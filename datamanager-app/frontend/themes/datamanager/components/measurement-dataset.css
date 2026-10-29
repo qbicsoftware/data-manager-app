@@ -504,3 +504,48 @@
   color: var(--body-text-color);
   font-size: var(--lumo-font-size-s);
 }
+
+/* ── Grid: the measurement identifier ─────────────────────────────────────── */
+
+/* A system identifier, not user metadata: monospace, secondary ink, and no
+   weight — it identifies the row without competing with the facts a person
+   reads. It is deliberately not emphasised even though it is the frozen first
+   column. */
+.measurement-dataset-measurement-id {
+  color: var(--field-label-text-color);
+  font-size: var(--lumo-font-size-xs);
+}
+
+/* ── Grid: single-sample names ────────────────────────────────────────────── */
+
+/* The name of the one sample a 1:1 measurement measures. It is user-entered
+   metadata, so it reads at body ink, unlike the system identifier beside it. */
+.measurement-dataset-sample-name {
+  color: var(--body-text-color);
+  font-size: var(--lumo-font-size-s);
+}
+
+/* Only shown when the name could not be resolved; deliberately quieter than a
+   name, because it is a fallback rather than a fact. */
+.measurement-dataset-sample-unnamed {
+  color: var(--field-label-text-color);
+  font-size: var(--lumo-font-size-s);
+}
+
+/* ── Dataset cards: the coverage ring ─────────────────────────────────────── */
+
+.measurement-dataset-card-headline-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--lumo-space-s);
+  min-width: 0;
+}
+
+.measurement-dataset-card-ring {
+  flex-shrink: 0;
+  /* The shared ring is sized for a card footer; a selector card is compact, so
+     it is scaled down here rather than in the shared component. */
+  transform: scale(0.72);
+  transform-origin: top right;
+}

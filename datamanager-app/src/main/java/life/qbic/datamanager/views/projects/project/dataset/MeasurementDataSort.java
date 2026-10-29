@@ -27,7 +27,13 @@ public final class MeasurementDataSort {
   private MeasurementDataSort() {
   }
 
-  /** The default sort order: most recently registered first. */
+  /**
+   * The default sort order: most recently registered first.
+   *
+   * <p>Registration order rather than data status, because the status is already the first thing a
+   * reader scans and the Data filter is the deliberate way to find outstanding work. Sorting by
+   * status by default would reorder the list under a reader who came to see what is newest.</p>
+   */
   public static final SortOrder DEFAULT = new SortOrder("registrationDate", true);
 
   /**

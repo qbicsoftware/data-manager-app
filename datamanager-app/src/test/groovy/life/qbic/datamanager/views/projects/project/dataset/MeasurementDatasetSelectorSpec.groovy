@@ -93,6 +93,32 @@ class MeasurementDatasetSelectorSpec extends Specification {
         "NGSQ2IMMU620AT-2540306555616"                || "NGSQ2IMMU620AT-25\u2026"
     }
 
+    @Unroll
+    def "a pooled row never renders a bare count without saying it is a pool (#poolLabel -> #expected)"() {
+        given: "a pooled measurement, with and without a user-typed pool label"
+        def row = new life.qbic.projectmanagement.application.query.MeasurementDataRow(
+                "mid-1", "exp-1", "PROTEOMICS", "MS-1", "PX run", "QBiC", null,
+                poolLabel, 50, java.time.Instant.EPOCH,
+                life.qbic.projectmanagement.application.query.MeasurementDataRow.DataStatus.AVAILABLE,
+                5L, 1024L, Set.of("raw"), java.time.Instant.EPOCH)
+
+        when: "the rule is applied without needing a component instance"
+        def rendered = MeasurementDatasetDetailsComponent.pooledCellText(row)
+
+        then: "the word 'Pool' appears, so the pill is not unexplained different-looking text"
+        rendered.startsWith("Pool")
+
+        and: "the user's own label is used when they gave one"
+        rendered == expected
+
+        where:
+        poolLabel || expected
+        "group A"  || "Pool: group A"
+        "2.0"      || "Pool: 2.0"
+        null       || "Pool of 50"
+        ""         || "Pool of 50"
+    }
+
     def "shortening two long codes keeps their distinguishing prefix readable"() {
         given: "two measurements of the same sample, differing only in the timestamp"
         def first = MeasurementDatasetDetailsComponent.shortMeasurementCode(

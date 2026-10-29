@@ -222,7 +222,9 @@ public class MeasurementDataDetailPanel extends Div implements Serializable {
     if (!titleIsTheCode(row)) {
       identity.add(field("QBiC Measurement ID", row.measurementCode(), true));
     }
-    identity.add(field("Registration date", format(formatter, row.registeredAt()), false));
+    // Named for what it dates: the metadata, not its data. They are different moments, often days
+    // apart, and the old label left the reader guessing which one they were looking at.
+    identity.add(field("Metadata registered", format(formatter, row.registeredAt()), false));
     groups.add(new DetailGroup("Measurement", identity));
 
     groups.add(new DetailGroup("Sample", sampleFields(row)));
@@ -280,7 +282,7 @@ public class MeasurementDataDetailPanel extends Div implements Serializable {
       facts.add(String.join(", ", row.dataFileTypes().stream().sorted().toList()));
     }
     if (row.dataUploadedAt() != null) {
-      facts.add("uploaded " + format(formatter, row.dataUploadedAt()));
+      facts.add("data registered " + format(formatter, row.dataUploadedAt()));
     }
     fields.add(new DetailField("", String.join(" \u00b7 ", facts), false));
     return new DetailGroup("Data", fields);
