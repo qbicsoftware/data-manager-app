@@ -183,6 +183,13 @@ public class MeasurementDatasetMain extends Main
       throw new ApplicationException("invalid experiment id " + experimentIdValue);
     }
     context = new Context().with(projectId).with(ExperimentId.parse(experimentIdValue));
+    // The human-facing project code, not the UUID. It is what download file names are built from,
+    // and without it the fallback emitted the project's internal identifier into every exported
+    // file name. Every other project-scoped view resolves it the same way.
+    context = context.withProjectCode(asyncService.getProjectCode(projectIdValue)
+        .blockOptional()
+        .map(life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectCode::value)
+        .orElse(null));
 
     // URL list-state synchronisation (USER-R-03): capture the router handler, install ours, and
     // seed the list from the URL on direct load / reload / shared links.
@@ -481,9 +488,18 @@ public class MeasurementDatasetMain extends Main
   }
 
   /** The project code used in download file names. */
+  /**
+   * The project code used in download file names.
+   *
+   * <p>Never the project's internal identifier: a UUID in an exported file name is meaningless to
+   * the reader and looks like a defect, so an unresolved code degrades to the word "project"
+   * rather than to the id.</p>
+   */
   private String projectCode() {
-    return context == null ? "project"
-        : context.projectCode().orElse(context.projectId().map(p -> p.value()).orElse("project"));
+    if (context == null) {
+      return "project";
+    }
+    return context.projectCode().orElse("project");
   }
 
   /**

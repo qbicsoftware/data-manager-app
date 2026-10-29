@@ -102,6 +102,20 @@ class MeasurementDatasetNavigationAndDownloadSpec extends Specification {
         !code.contains("setHref(")
     }
 
+    def "exported file names never carry the project's internal identifier"() {
+        given:
+        def code = codeOf("MeasurementDatasetMain.java")
+
+        expect: "the project code is resolved in beforeEnter, as every other project view does"
+        code.contains("withProjectCode(")
+        code.contains("getProjectCode(")
+
+        and: "the fallback degrades to a word, never to the UUID"
+        // A UUID in an exported file name is meaningless to the reader and looks like a defect.
+        !code.contains("projectId().map(p -> p.value())")
+        code.contains('orElse("project")')
+    }
+
     def "the download anchor lives inside the modal dialog, not in the page behind it"() {
         given:
         def guide = sourceOf("MeasurementDataDownloadGuide.java")
