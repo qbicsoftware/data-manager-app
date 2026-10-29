@@ -1,5 +1,6 @@
 package life.qbic.datamanager.views.projects.project.dataset;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
@@ -12,6 +13,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import life.qbic.application.commons.Result;
+import life.qbic.datamanager.views.general.dialog.AlertDialog;
 import life.qbic.datamanager.views.general.dialog.AppDialog;
 import life.qbic.datamanager.views.general.dialog.DialogBody;
 import life.qbic.datamanager.views.general.dialog.DialogFooter;
@@ -194,7 +196,7 @@ public class MeasurementDatasetActions implements Serializable {
    * @param onConfirm invoked with the selection when the user confirms
    * @return the dialog to open, or {@code null} when nothing is selected
    */
-  public AppDialog deleteDialog(MeasurementSelection selection,
+  public AppDialog deleteDialog(Component parent, MeasurementSelection selection,
       Consumer<MeasurementSelection> onConfirm) {
     if (selection.isEmpty()) {
       return null;
@@ -202,19 +204,23 @@ public class MeasurementDatasetActions implements Serializable {
     if (!selection.isDeletable()) {
       return blockedDeleteDialog(selection);
     }
-    var dialog = AppDialog.small();
-    DialogHeader.with(dialog, "Delete measurements");
-    DialogBody.withoutUserInput(dialog, new Span(selection.total() == 1
-        ? "This measurement will be deleted. Its measurement code is released."
-        : "These %d measurements will be deleted. Their measurement codes are released."
-            .formatted(selection.total())));
-    DialogFooter.with(dialog, "Keep measurements", "Delete measurements");
-    dialog.registerCancelAction(dialog::close);
-    dialog.registerConfirmAction(() -> {
-      onConfirm.accept(selection);
-      dialog.close();
-    });
-    return dialog;
+    // AlertDialog.danger, not a plain AppDialog: deletion is destructive and irreversible, and the
+    // shared alert gives it a warning icon and a red confirm button. Assembling an AppDialog by hand
+    // here produced a dialog that looked like any other confirmation, with a primary-coloured
+    // "Delete" — the one action on this page that must not look ordinary.
+    return AlertDialog.danger(parent,
+        selection.total() == 1
+            ? "Delete measurement"
+            : "Delete %d measurements".formatted(selection.total()),
+        selection.total() == 1
+            ? "This measurement's metadata will be deleted and its measurement code released. "
+                + "This cannot be undone."
+            : "The metadata of these %d measurements will be deleted and their measurement codes "
+                + "released. This cannot be undone.".formatted(selection.total()),
+        selection.total() == 1 ? "Delete measurement" : "Delete %d measurements".formatted(
+            selection.total()),
+        "Keep measurements",
+        () -> onConfirm.accept(selection)).dialog();
   }
 
   /**
@@ -224,25 +230,36 @@ public class MeasurementDatasetActions implements Serializable {
    * perform. Naming who owns that step is more useful than pointing at a button that does not
    * exist.</p>
    */
+  /**
+   * Explains why a selection with attached data cannot be deleted.
+   *
+   * <p>Uses the shared alert with a warning intent: the reader asked for a destructive action and
+   * is being told it is blocked, so the dialog belongs to the same family as the confirmation —
+   * but with a single acknowledgement instead of a red confirm, because there is nothing to
+   * confirm.</p>
+   *
+   * <p>The previous copy told users to remove the data first — a step this application cannot
+   * perform. Naming who owns that step is more useful than pointing at a button that does not
+   * exist.</p>
+   */
   private AppDialog blockedDeleteDialog(MeasurementSelection selection) {
-    var dialog = AppDialog.small();
-    DialogHeader.with(dialog, "These measurements cannot be deleted");
     int blocked = selection.withData();
-    String message = blocked == 1
+    String message = (blocked == 1
         ? "1 of the selected measurements already has data registered. Measurement metadata can "
-            + "only be deleted while no data is attached to it."
+            + "only be deleted while no data is attached to it. "
         : "%d of the selected measurements already have data registered. Measurement metadata can "
-            + "only be deleted while no data is attached to it.".formatted(blocked);
-    Span follow = new Span(
-        "Data removal is handled by the data management team. Please contact your data manager to "
-            + "have the data removed first.");
-    follow.addClassName("measurement-dataset-delete-followup");
-    Div body = new Div(new Span(message), follow);
-    body.addClassName("measurement-dataset-delete-body");
-    DialogBody.withoutUserInput(dialog, body);
-    DialogFooter.withConfirmOnly(dialog, "Close");
-    dialog.registerConfirmAction(dialog::close);
-    return dialog;
+            + "only be deleted while no data is attached to it. ".formatted(blocked))
+        + "Data removal is handled by the data management team, so please contact your data "
+        + "manager to have the data removed first.";
+    return AlertDialog.alert(null)
+        .warning()
+        .title("These measurements cannot be deleted")
+        .message(message)
+        .confirmButton("Close", () -> {
+          // acknowledge only
+        })
+        .build()
+        .dialog();
   }
 
   /**

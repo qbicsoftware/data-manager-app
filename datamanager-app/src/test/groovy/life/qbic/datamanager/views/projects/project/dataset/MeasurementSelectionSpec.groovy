@@ -94,6 +94,33 @@ class MeasurementSelectionSpec extends Specification {
         thrown(IllegalArgumentException)
     }
 
+    def "deletion is confirmed through the shared danger alert"() {
+        given: "the source of the actions that perform deletion"
+        // Resolved like the other source specs: this module's tests run from the module directory.
+        def candidates = [
+                new File("datamanager-app/src/main/java/life/qbic/datamanager/views/projects/project/dataset/MeasurementDatasetActions.java"),
+                new File("src/main/java/life/qbic/datamanager/views/projects/project/dataset/MeasurementDatasetActions.java"),
+                new File("../datamanager-app/src/main/java/life/qbic/datamanager/views/projects/project/dataset/MeasurementDatasetActions.java")
+        ]
+        def source = candidates.find { it.exists() }
+        assert source != null: "MeasurementDatasetActions.java not found from ${new File('.').absolutePath}"
+        def code = source.text
+                .replaceAll('(?s)/\\*.*?\\*/', '')
+                .replaceAll('(?m)^\\s*//.*$', '')
+        def methodStart = code.indexOf("deleteDialog(")
+        def method = code.substring(methodStart)
+
+        expect: "a destructive, irreversible action must not look like an ordinary confirmation"
+        // A hand-assembled AppDialog gave it a primary-coloured Delete button and no warning icon.
+        method.contains("AlertDialog.danger(")
+
+        and: "it must not assemble its own footer, which is what produced the ordinary styling"
+        !method.contains("DialogFooter.with(dialog,")
+
+        and: "the message states that the action cannot be undone"
+        method.contains("cannot be undone")
+    }
+
     def "the reduced selection is immutable"() {
         given:
         def mutable = new ArrayList<String>(["a"])

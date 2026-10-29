@@ -365,7 +365,7 @@ public class MeasurementDatasetMain extends Main
   /** Opens the delete confirmation, which refuses selections that still have data. */
   private void openDeleteDialog(MeasurementDatasetActions actions, MeasurementSelection selection,
       java.util.function.Consumer<MeasurementSelection> onConfirm) {
-    var dialog = actions.deleteDialog(selection, onConfirm);
+    var dialog = actions.deleteDialog(this, selection, onConfirm);
     if (dialog != null) {
       add(dialog);
       dialog.open();
