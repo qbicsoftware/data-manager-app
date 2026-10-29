@@ -45,9 +45,17 @@
   display: contents;
 }
 
-/* page-size Select (UX F10): keep a stable width so the bar does not jump between sizes */
+/* page-size Select (UX F10): wide enough for its own longest label.
+   
+   A fixed 8rem was too narrow: "12 per page" plus the chevron overflowed, and the
+   chevron sat on top of the final character. A `min-width` with `width: auto` keeps
+   the bar from jumping when the size changes (the digits are few, and `ch`-based
+   minimums hold for all offered sizes) while letting the control fit its content.
+   `flex: 0 0 auto` stops the flex row from shrinking it back below that. */
 .pagination-bar .pagination-page-size {
-  width: 8rem;
+  width: auto;
+  min-width: 9.5rem;
+  flex: 0 0 auto;
 }
 /* Built-in selection bar of PaginatedGrid — mirrors the measurement selection bar (icon +
    bold count + clear) so list selection reads consistently across the app. Hidden until a

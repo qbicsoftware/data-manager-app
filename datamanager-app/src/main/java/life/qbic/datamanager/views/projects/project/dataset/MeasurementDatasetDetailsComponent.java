@@ -499,7 +499,13 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
   }
 
   private void configureFilters() {
-    dataStatusFilter.setLabel("Data");
+    // No label: it was the only labelled control in a row of unlabelled ones, and it pushed the
+    // select's own box out of line with the search field beside it. The options name the filter
+    // instead ("All data" / "Available" / "Waiting").
+    dataStatusFilter.getElement().setAttribute("aria-label", "Filter by data availability");
+    // A stable width keeps the row's control positions fixed as the selected value changes; without
+    // it the filter resizes between "All data" and "Waiting" and shifts every control beside it.
+    dataStatusFilter.setWidth("10rem");
     dataStatusFilter.setItems(DataStatusFilter.values());
     dataStatusFilter.setItemLabelGenerator(DataStatusFilter::label);
     dataStatusFilter.setValue(DataStatusFilter.ALL);
@@ -1141,7 +1147,10 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
 
   /** The data-status filter's options, with the label each carries in the toolbar. */
   public enum DataStatusFilter {
-    ALL("All", null),
+    // "All data" rather than "All": the control carries no field label (a label above it was the
+    // only one in a row of unlabelled controls and broke the row's alignment), so each option has
+    // to say what it filters. "All" alone read as a scope rather than a data-status filter.
+    ALL("All data", null),
     AVAILABLE("Available", DataStatus.AVAILABLE),
     WAITING("Waiting", DataStatus.WAITING);
 

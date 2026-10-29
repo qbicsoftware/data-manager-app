@@ -88,6 +88,31 @@ class MeasurementDatasetStylesheetSpec extends Specification {
         css.contains("::part(open-detail-row)")
     }
 
+    def "the page-size select is wide enough for its own label"() {
+        given: "the shared pager stylesheet, which every paginated list uses"
+        def candidates = [
+                new File("datamanager-app/frontend/themes/datamanager/components/pagination.css"),
+                new File("frontend/themes/datamanager/components/pagination.css"),
+                new File("../datamanager-app/frontend/themes/datamanager/components/pagination.css")
+        ]
+        def file = candidates.find { it.exists() }
+        assert file != null
+
+        when:
+        def text = file.text
+        int start = text.indexOf(".pagination-bar .pagination-page-size {")
+        assert start > 0
+        def rule = text.substring(start, text.indexOf("}", start))
+
+        then: "a fixed 8rem was narrower than '12 per page' plus its chevron, so the chevron sat"
+        // on top of the last character. The width now follows the content, with a floor that still
+        // keeps the bar from jumping as the value changes.
+        !rule.contains("width: 8rem")
+        rule.contains("width: auto")
+        rule.contains("min-width:")
+        rule.contains("flex: 0 0 auto")
+    }
+
     def "a lone dataset card does not stretch across the content column"() {
         given:
         def css = stylesheet().text
