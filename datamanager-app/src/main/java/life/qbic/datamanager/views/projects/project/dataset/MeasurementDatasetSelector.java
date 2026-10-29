@@ -63,8 +63,23 @@ public class MeasurementDatasetSelector extends Div implements Serializable {
   public void setDatasets(List<DatasetSummary> summaries) {
     cards.removeAll();
     cardBySegment.clear();
+
+    // With one dataset there is nothing to choose between: the card states what the list below
+    // contains. Presenting it as a selected radio would tell the reader they made a choice, and
+    // that something else was available — which is exactly how a lone highlighted card reads.
+    if (summaries.size() == 1) {
+      Div summaryCard = createCard(summaries.getFirst(), false);
+      cardBySegment.put(summaries.getFirst().segment(), summaryCard);
+      cards.add(summaryCard);
+      cards.getElement().removeAttribute("role");
+      cards.getElement().removeAttribute("aria-label");
+      return;
+    }
+
+    cards.getElement().setAttribute("role", "radiogroup");
+    cards.getElement().setAttribute("aria-label", "Measurement datasets");
     for (DatasetSummary summary : summaries) {
-      Div card = createCard(summary);
+      Div card = createCard(summary, true);
       cardBySegment.put(summary.segment(), card);
       cards.add(card);
     }
@@ -113,6 +128,10 @@ public class MeasurementDatasetSelector extends Div implements Serializable {
 
   private void markSelected(MeasurementDatasetSegment segment) {
     cardBySegment.forEach((key, card) -> {
+      if (card.getClassNames().contains("measurement-dataset-card--single")) {
+        // The lone informational card is never marked as a choice.
+        return;
+      }
       boolean isSelected = key == segment;
       card.getElement().setAttribute("aria-checked", String.valueOf(isSelected));
       card.getElement().setAttribute("tabindex", isSelected ? "0" : "-1");
@@ -124,10 +143,21 @@ public class MeasurementDatasetSelector extends Div implements Serializable {
     });
   }
 
-  private Div createCard(DatasetSummary summary) {
+  /**
+   * Renders one dataset card.
+   *
+   * @param summary    the dataset to state
+   * @param selectable whether the card is a choice among several, or the only dataset there is
+   */
+  private Div createCard(DatasetSummary summary, boolean selectable) {
     Div card = new Div();
     card.addClassName("measurement-dataset-card");
-    card.getElement().setAttribute("role", "radio");
+    if (!selectable) {
+      // Informational only: no radio role, no focus, no pointer affordance.
+      card.addClassName("measurement-dataset-card--single");
+    } else {
+      card.getElement().setAttribute("role", "radio");
+    }
 
     Span label = new Span(summary.segment().label());
     label.addClassName("measurement-dataset-card-label");
@@ -163,6 +193,10 @@ public class MeasurementDatasetSelector extends Div implements Serializable {
     Span size = new Span(sizeText(summary));
     size.addClassName("measurement-dataset-card-size");
     card.add(size);
+
+    if (!selectable) {
+      return card;
+    }
 
     card.addClickListener(event -> select(summary.segment()));
     card.getElement().setAttribute("tabindex", "0");
