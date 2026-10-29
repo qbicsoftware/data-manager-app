@@ -4,6 +4,7 @@ import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.ShortcutRegistration;
 import com.vaadin.flow.component.Shortcuts;
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.CheckboxGroup;
@@ -171,9 +172,13 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
     updateSelectionBar();
   }
 
+  private final life.qbic.datamanager.views.UiHandle uiHandle =
+      new life.qbic.datamanager.views.UiHandle();
+
   @Override
   protected void onAttach(AttachEvent attachEvent) {
     super.onAttach(attachEvent);
+    uiHandle.bind(attachEvent.getUI());
     attachEvent.getUI().getPage().getExtendedClientDetails().refresh(
         receiver -> {
           clientTimeZone.set(receiver.getTimeZoneId());
@@ -181,6 +186,12 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
           // re-render so the date column reflects the reader's zone.
           paginatedGrid.refreshItems();
         });
+  }
+
+  @Override
+  protected void onDetach(com.vaadin.flow.component.DetachEvent detachEvent) {
+    super.onDetach(detachEvent);
+    uiHandle.unbind();
   }
 
   // ── grid ────────────────────────────────────────────────────────────────
@@ -207,11 +218,11 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
         .setTooltipGenerator(MeasurementDataRow::measurementName)
         .setAutoWidth(true)
         .setResizable(true);
-    // The counted samples, never the pool label: samplePool holds an internal value such as "2.0",
-    // and mixing that with the computed text produced a column reading 2.0, 1.0, 1 sample.
-    grid.addColumn(row -> row.sampleCount() == 1
-            ? "1 sample"
-            : row.sampleCount() + " samples")
+    // A bare sample count answers a question nobody asks: for a proteomics pool of fifty the
+    // number is noise. What a reader needs is *which* samples and whether it is pooled, so a pooled
+    // measurement shows the registrant's pool label (free text they typed, e.g. "pool group 1") in
+    // a scannable pill, and a 1:1 measurement shows the sample name.
+    grid.addComponentColumn(this::samplesCell)
         .setHeader("Samples")
         .setSortProperty("samplePool")
         .setAutoWidth(true)
@@ -283,6 +294,42 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
    * Renders the data status. The state is carried by the text, never by colour alone: a reader who
    * does not perceive the tint still reads "Waiting" or "Available".
    */
+  /**
+   * Renders which samples a measurement measures.
+   *
+   * <p>A bare count answers a question nobody asks — for a proteomics pool of fifty the number is
+   * noise, and for a single sample it repeats the row's own existence. The column therefore says
+   * <em>what kind</em> of measurement this is:</p>
+   *
+   * <ul>
+   *   <li>pooled: the registrant's pool label in a pill, with the sample count in the tooltip. The
+   *       label is free text they typed ("pool group 1"), so it is theirs to recognise;</li>
+   *   <li>a single sample: stated as such. The sample's name is not available here — the list read
+   *       model deliberately does not carry sample identities, because a pool of fifty would make
+   *       that query enormous and, through {@code group_concat_max_len}, silently truncate. The
+   *       names are listed in the detail panel, which fetches them when it opens.</li>
+   * </ul>
+   */
+  private Component samplesCell(MeasurementDataRow row) {
+    if (row.sampleCount() <= 1) {
+      Span single = new Span("1 sample");
+      single.addClassName("measurement-dataset-sample-single");
+      return single;
+    }
+    String label = hasText(row.samplePool())
+        ? row.samplePool()
+        : "%d samples".formatted(row.sampleCount());
+    Span pill = new Span(label);
+    pill.addClassName("measurement-dataset-pool-pill");
+    pill.getElement().setAttribute("title",
+        row.sampleCount() + " samples pooled into one measurement");
+    return pill;
+  }
+
+  private static boolean hasText(String value) {
+    return value != null && !value.isBlank();
+  }
+
   private Span dataStatusCell(MeasurementDataRow row) {
     Span cell = new Span();
     if (row.dataStatus() == DataStatus.WAITING) {
@@ -557,14 +604,50 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
 
   private void openDetail(MeasurementDataRow row, Button invoker) {
     detailsButtonInvoker.set(invoker);
-    detailPanel.show(row, this::formatTime);
-    detailLayout.addClassName("measurement-dataset-detail-layout--open");
+    // The open id must be recorded before the sample fetch is issued: the fetch's completion guard
+    // compares against it, and setting it afterwards made every response look stale.
     openDetailId.set(row.measurementId());
+    detailPanel.show(row, this::formatTime);
+    loadSamplesFor(row);
+    detailLayout.addClassName("measurement-dataset-detail-layout--open");
     grid.getDataProvider().refreshAll();
     if (escShortcut != null) {
       escShortcut.remove();
     }
     escShortcut = Shortcuts.addShortcutListener(this, event -> closeDetail(), Key.ESCAPE);
+  }
+
+  /**
+   * Fetches the samples of the opened record and hands them to the panel.
+   *
+   * <p>Fetched per record rather than carried in the list row: a proteomics measurement can pool
+   * fifty or more samples, so a list query carrying them all would be heavy, and MariaDB's {@code
+   * group_concat_max_len} (1024 bytes by default) would silently drop the tail of a large pool.
+   * One query per opened record is cheap and always complete.</p>
+   *
+   * <p>The rest of the record renders immediately; only this group waits. A failure is stated in
+   * the group rather than failing the whole panel, because the metadata the reader already has is
+   * still useful.</p>
+   */
+  private void loadSamplesFor(MeasurementDataRow row) {
+    detailPanel.showSamplesLoading();
+    // Guards against a slower earlier request overwriting the panel after the reader has already
+    // opened another record.
+    String requestedId = row.measurementId();
+    queryService.getMeasuredSamples(projectId, requestedId)
+        .collectList()
+        .subscribe(
+            samples -> uiHandle.onUi(() -> {
+              if (requestedId.equals(openDetailId.get())) {
+                detailPanel.showSamples(samples);
+              }
+            }),
+            error -> uiHandle.onUi(() -> {
+              log.error("Could not load the samples of measurement " + requestedId, error);
+              if (requestedId.equals(openDetailId.get())) {
+                detailPanel.showSamplesFailed();
+              }
+            }));
   }
 
   private void closeDetail() {

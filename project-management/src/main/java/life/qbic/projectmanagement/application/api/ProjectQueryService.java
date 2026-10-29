@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Objects;
 import life.qbic.projectmanagement.application.query.AssayType;
 import life.qbic.projectmanagement.application.query.ExperimentProgress;
+import life.qbic.projectmanagement.application.query.MeasuredSample;
 import life.qbic.projectmanagement.application.query.MeasurementDataRow;
 import life.qbic.projectmanagement.application.query.ProjectSampleOverview;
 import life.qbic.projectmanagement.application.query.RecentMeasurement;
@@ -143,6 +144,21 @@ public interface ProjectQueryService {
    */
   Mono<Long> countMeasurementData(String projectId, String experimentId,
       MeasurementDataFilter filter);
+
+  /**
+   * Streams the samples one measurement measures.
+   *
+   * <p>Separate from {@link #getMeasurementData} on purpose. A proteomics measurement can pool
+   * fifty or more samples, and embedding them in the list rows would make the page query enormous
+   * or — because MariaDB's {@code group_concat_max_len} defaults to 1024 bytes — silently lossy.
+   * The detail panel fetches them when a record is opened, one record at a time.</p>
+   *
+   * @param projectId     the project identifier
+   * @param measurementId the internal measurement identifier
+   * @throws RequestFailedException if the request could not be executed
+   * @throws AccessDeniedException  if the caller lacks {@code READ} on the project
+   */
+  Flux<MeasuredSample> getMeasuredSamples(String projectId, String measurementId);
 
   /**
    * Filter and sort for the experiment's measurement data list.

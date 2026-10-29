@@ -190,6 +190,77 @@ final class MeasurementDataQuery {
   }
 
   /**
+   * The assay type of one measurement, used to decide which per-type table holds its sample links.
+   *
+   * <p>Read here rather than supplied by the caller, so the table name can never be chosen from
+   * outside.</p>
+   */
+  static final String MEASUREMENT_TYPE_BY_ID = """
+      SELECT measurement_type
+      FROM (
+          SELECT 'GENOMICS' AS measurement_type, measurement_id FROM ngs_measurements
+          UNION ALL
+          SELECT 'PROTEOMICS', measurement_id FROM proteomics_measurement
+          UNION ALL
+          SELECT 'IMMUNOPEPTIDOMICS', measurement_id FROM ip_measurements
+      ) typed
+      WHERE measurement_id COLLATE utf8mb4_unicode_ci = :measurementId COLLATE utf8mb4_unicode_ci
+      """;
+
+  /**
+   * The samples one measurement measures, joined through the per-type metadata table.
+   *
+   * <p>Read per record when a detail panel opens, never as part of the list query: a pool can hold
+   * fifty or more samples, and {@code group_concat_max_len} would truncate a combined list without
+   * raising an error. Ordered by sample code so the listing is stable between openings.</p>
+   *
+   * <p>The table name comes from {@link MeasurementMetadataTable}, a closed enum, because a table
+   * name cannot be a bind parameter and must never be caller-supplied.</p>
+   */
+  static String measuredSamples(MeasurementMetadataTable table) {
+    return """
+        SELECT s.sample_id   AS sample_id,
+               s.code        AS sample_code,
+               s.label       AS sample_label
+        FROM %s smm
+                 JOIN sample s ON s.sample_id = smm.sample_id COLLATE utf8mb4_unicode_ci
+        WHERE smm.measurement_id = :measurementId COLLATE utf8mb4_unicode_ci
+        ORDER BY s.code ASC
+        """.formatted(table.tableName());
+  }
+
+  /**
+   * The per-type table holding a measurement's sample links. A closed set: the table name is
+   * interpolated into the statement, so it must never come from a caller.
+   */
+  enum MeasurementMetadataTable {
+    GENOMICS("specific_measurement_metadata_ngs"),
+    PROTEOMICS("specific_measurement_metadata_pxp"),
+    IMMUNOPEPTIDOMICS("specific_measurement_metadata_ip");
+
+    private final String tableName;
+
+    MeasurementMetadataTable(String tableName) {
+      this.tableName = tableName;
+    }
+
+    String tableName() {
+      return tableName;
+    }
+
+    /** Resolves the table for a read-model assay type name, as stored in the entries CTE. */
+    static MeasurementMetadataTable forAssayTypeName(String assayTypeName) {
+      return switch (assayTypeName) {
+        case "GENOMICS" -> GENOMICS;
+        case "PROTEOMICS" -> PROTEOMICS;
+        case "IMMUNOPEPTIDOMICS" -> IMMUNOPEPTIDOMICS;
+        default -> throw new IllegalArgumentException(
+            "Unknown assay type: " + assayTypeName);
+      };
+    }
+  }
+
+  /**
    * Sortable columns of the measurement entry list.
    *
    * <p>An enum with an explicit SQL fragment, <em>not</em> a caller-supplied string: the sort column

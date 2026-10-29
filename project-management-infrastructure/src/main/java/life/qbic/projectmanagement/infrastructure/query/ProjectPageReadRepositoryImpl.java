@@ -20,6 +20,7 @@ import life.qbic.projectmanagement.application.api.ProjectQueryService.ProjectSa
 import life.qbic.projectmanagement.application.api.ProjectQueryService.SortDirection;
 import life.qbic.projectmanagement.application.api.ProjectQueryService.SortOrder;
 import life.qbic.projectmanagement.application.query.ExperimentProgress;
+import life.qbic.projectmanagement.application.query.MeasuredSample;
 import life.qbic.projectmanagement.application.query.MeasurementDataRow;
 import life.qbic.projectmanagement.application.query.ProjectPageReadRepository;
 import life.qbic.projectmanagement.application.query.ProjectSampleOverview;
@@ -153,6 +154,12 @@ public class ProjectPageReadRepositoryImpl implements ProjectPageReadRepository 
           resultSet.getLong("pxp_primary_data_bytes"),
           resultSet.getLong("ip_primary_data_bytes"));
 
+  private static final RowMapper<MeasuredSample> MEASURED_SAMPLE_ROW_MAPPER =
+      (resultSet, rowNumber) -> new MeasuredSample(
+          resultSet.getString("sample_id"),
+          resultSet.getString("sample_code"),
+          resultSet.getString("sample_label"));
+
   private final NamedParameterJdbcTemplate jdbcTemplate;  private final ProjectSampleOverviewRepository sampleOverviewRepository;
   private final RecentSampleRepository recentSampleRepository;
   private final RecentMeasurementRepository recentMeasurementRepository;
@@ -263,6 +270,22 @@ public class ProjectPageReadRepositoryImpl implements ProjectPageReadRepository 
       case DATA_STATUS -> MeasurementDataQuery.SortColumn.DATA_STATUS;
       case SAMPLE_POOL -> MeasurementDataQuery.SortColumn.SAMPLE_POOL;
     };
+  }
+
+  @Override
+  @PreAuthorize(PROJECT_READ)
+  public List<MeasuredSample> findMeasuredSamples(String projectId, String measurementId) {
+    // The measurement's type decides which per-type table holds its sample links. It is read from
+    // measurements_datamanager rather than passed in, so a caller cannot choose the table.
+    List<String> types = jdbcTemplate.queryForList(
+        MeasurementDataQuery.MEASUREMENT_TYPE_BY_ID,
+        Map.of("measurementId", measurementId), String.class);
+    if (types.isEmpty()) {
+      return List.of();
+    }
+    var table = MeasurementDataQuery.MeasurementMetadataTable.forAssayTypeName(types.getFirst());
+    return jdbcTemplate.query(MeasurementDataQuery.measuredSamples(table),
+        Map.of("measurementId", measurementId), MEASURED_SAMPLE_ROW_MAPPER);
   }
 
   @Override
