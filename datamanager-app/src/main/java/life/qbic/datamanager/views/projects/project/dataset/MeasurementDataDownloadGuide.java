@@ -77,8 +77,16 @@ public class MeasurementDataDownloadGuide extends Div implements Serializable {
     Span icon = new Span(VaadinIcon.KEY.create());
     icon.addClassName("measurement-dataset-download-guide-step-icon");
     tokenSettingsLink.setText("Create a personal access token");
-    // Opens in the same tab: a token has to be created before the export below can be used, and a
-    // blank tab would leave the dialog behind in a stale state.
+    // Opens in a new tab, deliberately. The token is created elsewhere and the reader comes back
+    // to finish the export; navigating this tab would discard the open dialog, and with it the
+    // selection the export is scoped to. A new tab keeps the dialog exactly as it was.
+    //
+    // The target is set on the element rather than through an Anchor's href, so the URL is still
+    // resolved by the router and therefore honours the servlet context path — an Anchor with a
+    // hand-built href was what produced the original 404.
+    tokenSettingsLink.getElement().setAttribute("target", "_blank");
+    // Without this, the new tab can reach back into this window through window.opener.
+    tokenSettingsLink.getElement().setAttribute("rel", "noopener noreferrer");
     tokenSettingsLink.addClassName("measurement-dataset-download-guide-link");
     Div step = new Div(icon, tokenSettingsLink);
     step.addClassName("measurement-dataset-download-guide-step");

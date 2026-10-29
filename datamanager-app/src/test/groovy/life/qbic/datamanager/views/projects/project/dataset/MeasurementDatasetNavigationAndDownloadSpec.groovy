@@ -87,6 +87,21 @@ class MeasurementDatasetNavigationAndDownloadSpec extends Specification {
         !codeOf("MeasurementDatasetMain.java").contains("settings/api-tokens")
     }
 
+    def "the token link opens in a new tab, so the open dialog survives the round trip"() {
+        given:
+        def code = codeOf("MeasurementDataDownloadGuide.java")
+
+        expect: "navigating this tab would discard the dialog and the selection it is scoped to"
+        code.contains('setAttribute("target", "_blank")')
+
+        and: "the new tab must not be able to reach back into this window"
+        code.contains('setAttribute("rel", "noopener noreferrer")')
+
+        and: "the URL is still resolved by the router, so the context path is honoured"
+        code.contains("RouterLink")
+        !code.contains("setHref(")
+    }
+
     def "the download anchor lives inside the modal dialog, not in the page behind it"() {
         given:
         def guide = sourceOf("MeasurementDataDownloadGuide.java")
