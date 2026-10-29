@@ -4,10 +4,9 @@ import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.html.Anchor;
-import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.shared.Registration;
 import java.io.Serial;
@@ -37,9 +36,30 @@ public class MeasurementDataDownloadGuide extends Div implements Serializable {
 
   private final Button exportAllButton = new Button("Export locations of all measurements");
   private final Button exportSelectedButton = new Button();
-  private final Anchor tokenSettingsLink = new Anchor();
+  /**
+   * A real {@link RouterLink}, not an {@link com.vaadin.flow.component.html.Anchor} with a
+   * hand-built href.
+   *
+   * <p>The previous version concatenated {@code "../settings/api-tokens"}, which produced a 404:
+   * the application is deployed behind a servlet context path
+   * ({@code server.servlet.context-path}), and a relative href resolved against the current route
+   * knows nothing about it. A RouterLink asks the router for the URL, so the context path, the
+   * route's own layout and any future route change are all handled for us.</p>
+   */
+  private final RouterLink tokenSettingsLink = new RouterLink();
   private final Span exportAllHint = new Span();
   private final Span exportSelectedHint = new Span();
+
+  /**
+   * The hidden anchor that performs the download.
+   *
+   * <p>It lives <em>inside</em> this dialog content on purpose. {@code AppDialog} is strictly
+   * modal, so an anchor rendered in the page behind it is inert: the synthetic click the trigger
+   * performs never reaches it and nothing downloads. Every working download-from-dialog component
+   * in this application keeps its anchor in the dialog for the same reason.</p>
+   */
+  private final life.qbic.datamanager.views.general.download.DownloadComponent downloadComponent =
+      new life.qbic.datamanager.views.general.download.DownloadComponent();
 
   public MeasurementDataDownloadGuide() {
     addClassName("measurement-dataset-download-guide");
@@ -50,14 +70,15 @@ public class MeasurementDataDownloadGuide extends Div implements Serializable {
             + "and download them with a personal access token.");
     explanation.addClassName("measurement-dataset-download-guide-text");
 
-    add(explanation, tokenStep(), exportStep(), commandStep());
+    add(explanation, tokenStep(), exportStep(), commandStep(), downloadComponent);
   }
 
   private Div tokenStep() {
     Span icon = new Span(VaadinIcon.KEY.create());
     icon.addClassName("measurement-dataset-download-guide-step-icon");
     tokenSettingsLink.setText("Create a personal access token");
-    tokenSettingsLink.setTarget(AnchorTarget.BLANK);
+    // Opens in the same tab: a token has to be created before the export below can be used, and a
+    // blank tab would leave the dialog behind in a stale state.
     tokenSettingsLink.addClassName("measurement-dataset-download-guide-link");
     Div step = new Div(icon, tokenSettingsLink);
     step.addClassName("measurement-dataset-download-guide-step");
@@ -121,12 +142,16 @@ public class MeasurementDataDownloadGuide extends Div implements Serializable {
   }
 
   /**
-   * Points the token step at the place a token is created.
+   * Points the token step at the view where a token is created.
    *
-   * @param href the settings route, as an href
+   * <p>Takes the navigation target rather than a URL: the router resolves the path, so the link
+   * works regardless of the context path the application is deployed under.</p>
+   *
+   * @param navigationTarget the route to open
    */
-  public void setTokenSettingsHref(String href) {
-    tokenSettingsLink.setHref(href);
+  public void setTokenSettingsTarget(
+      Class<? extends com.vaadin.flow.component.Component> navigationTarget) {
+    tokenSettingsLink.setRoute(navigationTarget);
   }
 
   /**
@@ -162,6 +187,16 @@ public class MeasurementDataDownloadGuide extends Div implements Serializable {
   public Registration addExportRequestedListener(
       ComponentEventListener<ExportRequested> listener) {
     return addListener(ExportRequested.class, listener);
+  }
+
+  /**
+   * Triggers a download from within the open dialog.
+   *
+   * @param provider the content to download
+   */
+  public void triggerDownload(
+      life.qbic.datamanager.files.export.download.DownloadStreamProvider provider) {
+    downloadComponent.trigger(provider);
   }
 
   /** Which measurements a location export covers. */
