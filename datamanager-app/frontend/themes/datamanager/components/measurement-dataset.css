@@ -571,54 +571,64 @@
   gap: var(--lumo-space-m);
 }
 
-.measurement-dataset-download-guide-title {
-  display: none;
-}
-
 .measurement-dataset-download-guide-text {
   color: var(--body-text-color);
   font-size: var(--lumo-font-size-s);
   max-width: 70ch;
 }
 
-/* Each step is an icon and a line of content. `align-items: center` with a
-   wrap would let the icon drift onto its own line, so the icon is a fixed-width
-   first column and the content flows beside it. */
+/* Each step is an icon and its content. The icon is a fixed first column so the
+   content always starts at the same x — that shared left edge is what makes the
+   three steps read as a sequence rather than three unrelated lines. */
 .measurement-dataset-download-guide-step {
   display: grid;
   grid-template-columns: auto 1fr;
-  align-items: center;
+  align-items: start;
   column-gap: var(--lumo-space-s);
-  row-gap: var(--lumo-space-xs);
   color: var(--body-text-color);
   font-size: var(--lumo-font-size-s);
 }
 
 .measurement-dataset-download-guide-step-icon {
   color: var(--field-label-text-color);
-  flex-shrink: 0;
+  /* Aligns the glyph with the first line of the content beside it. */
+  margin-top: 2px;
 }
 
 .measurement-dataset-download-guide-link {
   color: var(--primary-color);
 }
 
-/* A real button, sized to its own label, with the hint beside it rather than
-   inside it. */
-.measurement-dataset-download-guide-button {
-  justify-self: start;
+/* The two export scopes, stacked so the primary reads first and the narrower
+   convenience action sits under it. */
+.measurement-dataset-download-guide-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+  min-width: 0;
+}
+
+.measurement-dataset-download-guide-action {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
 }
 
 .measurement-dataset-download-guide-hint {
-  grid-column: 2;
   color: var(--field-label-text-color);
   font-size: var(--lumo-font-size-xs);
 }
 
 /* The command is copyable text, not prose: monospace and visually enclosed so it
-   is not mistaken for a sentence. It spans both columns because it is long. */
+   is not mistaken for a sentence. It lives inside its step's content column, so
+   the step's icon stays on the same line as the command's first row instead of
+   being stranded on a line of its own. */
+.measurement-dataset-download-guide-command-wrap {
+  min-width: 0;
+}
+
 .measurement-dataset-download-guide-command {
-  grid-column: 1 / -1;
   display: block;
   padding: var(--lumo-space-xs) var(--lumo-space-s);
   border: 1px solid var(--lumo-contrast-10pct);

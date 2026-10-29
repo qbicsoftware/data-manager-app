@@ -252,7 +252,6 @@ public class MeasurementDatasetMain extends Main
         selection -> exportMetadata(actions, selection));
     detailsComponent.setDeleteSelectionHandler(
         (selection, onConfirm) -> openDeleteDialog(actions, selection, onConfirm));
-    detailsComponent.setExportLocationsHandler(this::exportLocations);
     actions.editButton().addClickListener(clicked -> detailsComponent.openEditSelection());
     actions.exportButton().addClickListener(clicked -> detailsComponent.exportSelection());
     actions.deleteButton().addClickListener(clicked -> detailsComponent.deleteSelection(
@@ -263,9 +262,7 @@ public class MeasurementDatasetMain extends Main
     var guide = new MeasurementDataDownloadGuide();
     guide.setTokenSettingsHref("../"
         + life.qbic.datamanager.views.AppRoutes.ProjectRoutes.SETTINGS_API_TOKENS);
-    guide.addExportLocationsListener(clicked -> detailsComponent.exportLocations(
-        () -> notifications.toast("rawdata.no-dataset-selected", new Object[]{},
-            getLocale()).open()));
+    guide.addExportRequestedListener(event -> exportLocations(guide, event.scope()));
     detailsComponent.setDownloadGuide(guide);
     actions.getDataButton().addClickListener(clicked -> openDownloadGuide(guide));
 
@@ -323,6 +320,11 @@ public class MeasurementDatasetMain extends Main
    * inside it knows what to export.</p>
    */
   private void openDownloadGuide(MeasurementDataDownloadGuide guide) {
+    // The scopes are recomputed on every open, so the dialog states what the *current* selection
+    // would export rather than what it was when the page was built.
+    if (detailsComponent != null) {
+      guide.setSelectionCount(detailsComponent.selectionCount());
+    }
     var dialog = life.qbic.datamanager.views.general.dialog.AppDialog.medium();
     life.qbic.datamanager.views.general.dialog.DialogHeader.with(dialog, "Getting the data");
     life.qbic.datamanager.views.general.dialog.DialogFooter.withConfirmOnly(dialog, "Close");
@@ -383,18 +385,25 @@ public class MeasurementDatasetMain extends Main
   }
 
   /**
-   * Exports the data locations of the given selection.
+   * Exports the data locations for the requested scope.
    *
    * <p>The application does not serve the data, so this exports <em>where</em> the files are — one
-   * URL per measurement — and the reader fetches them with a personal access token. Constructing
-   * the URL requires the configured download endpoint; that coupling is a known debt and the
-   * subject of a follow-up increment.</p>
+   * URL per measurement — and the reader fetches them with a personal access token. Constructing the
+   * URL requires the configured download endpoint; that coupling is a known debt and the subject of
+   * a follow-up increment.</p>
+   *
+   * <p>The whole-dataset scope is the baseline and needs no selection, because a reader who has
+   * selected nothing still needs a way to get all of the data.</p>
+   *
+   * @param guide the dialog that asked, so it can refresh its own scope state afterwards
+   * @param scope which measurements the export covers
    */
-  private void exportLocations(MeasurementSelection selection) {
-    java.util.List<String> codes = new java.util.ArrayList<>();
-    // The export names measurements, not internal ids, and the reader needs the codes they can
-    // recognise in the download service.
-    detailsComponent.selectedMeasurementCodes().forEach(codes::add);
+  private void exportLocations(MeasurementDataDownloadGuide guide,
+      MeasurementDataDownloadGuide.ExportScope scope) {
+    java.util.List<String> codes =
+        scope == MeasurementDataDownloadGuide.ExportScope.SELECTED
+            ? detailsComponent.selectionCodes()
+            : detailsComponent.allMeasurementCodes();
     if (codes.isEmpty()) {
       notifications.toast("rawdata.no-dataset-selected", new Object[]{}, getLocale()).open();
       return;
@@ -405,6 +414,9 @@ public class MeasurementDatasetMain extends Main
         .collect(java.util.stream.Collectors.joining("\n", "", "\n"))
         .getBytes(java.nio.charset.StandardCharsets.UTF_8);
     triggerBytes("measurement_dataset_locations", "txt", content);
+    // The scopes are recomputed from the selection each time an export runs, so a stale count
+    // cannot outlive the selection it described.
+    guide.setSelectionCount(detailsComponent.selectionCount());
   }
 
   /** Downloads a produced workbook. */

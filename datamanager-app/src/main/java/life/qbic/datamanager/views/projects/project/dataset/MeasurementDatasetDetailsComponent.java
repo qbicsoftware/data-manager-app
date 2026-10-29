@@ -122,7 +122,6 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
   private java.util.function.Consumer<MeasurementSelection> exportSelectionHandler;
   private java.util.function.BiConsumer<MeasurementSelection,
       java.util.function.Consumer<MeasurementSelection>> deleteSelectionHandler;
-  private java.util.function.Consumer<MeasurementSelection> exportLocationsHandler;
 
   /**
    * Whether the caller may mutate this project's measurements. Fail-closed: mutation actions are
@@ -652,9 +651,9 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
       actions.applySelection(currentSelection(), writeAccess);
     }
     if (downloadGuide != null) {
-      // The location export needs measurements to describe, so it follows the selection exactly
-      // like the metadata export.
-      downloadGuide.setExportEnabled(hasSelection);
+      // The whole-dataset export is always available; only the selection-scoped one depends on the
+      // selection, so the dialog always has a working action.
+      downloadGuide.setSelectionCount(count);
     }
   }
 
@@ -927,18 +926,34 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
   }
 
   /**
-   * Exports the locations of the data of the current selection.
+   * The measurement codes of every measurement in the dataset currently shown.
    *
-   * @param onEmpty run when nothing is selected, so the reader is told why nothing happened
+   * <p>Independent of the page and the filter: the location export covers the dataset, not the
+   * rendered page, so a reader who has selected nothing still gets every URL.</p>
    */
-  public void exportLocations(Runnable onEmpty) {
-    if (paginatedGrid.selectedIds().isEmpty()) {
-      onEmpty.run();
-      return;
-    }
-    if (exportLocationsHandler != null) {
-      exportLocationsHandler.accept(currentSelection());
-    }
+  public java.util.List<String> allMeasurementCodes() {
+    MeasurementDataFilter filter = currentFilter(new ListState(1, 1,
+        paginatedGrid.listState().filter(), paginatedGrid.listState().sort()));
+    long total = queryService.countMeasurementData(projectId, experimentId, filter)
+        .blockOptional().orElse(0L);
+    return queryService.getMeasurementData(projectId, experimentId, 0, (int) Math.max(total, 0),
+            filter)
+        .map(MeasurementDataRow::measurementCode)
+        .collectList().blockOptional().orElse(java.util.List.of());
+  }
+
+  /**
+   * The measurement codes of the current selection.
+   *
+   * @return the codes, empty when nothing is selected
+   */
+  public java.util.List<String> selectionCodes() {
+    return selectedMeasurementCodes();
+  }
+
+  /** @return how many measurements are selected */
+  public int selectionCount() {
+    return paginatedGrid.selectedIds().size();
   }
 
   /**
@@ -969,16 +984,6 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
       java.util.function.BiConsumer<MeasurementSelection,
           java.util.function.Consumer<MeasurementSelection>> handler) {
     this.deleteSelectionHandler = handler;
-  }
-
-  /**
-   * Registers the page's handler for the data-location export.
-   *
-   * @param handler receives the current selection
-   */
-  public void setExportLocationsHandler(
-      java.util.function.Consumer<MeasurementSelection> handler) {
-    this.exportLocationsHandler = handler;
   }
 
   /**
