@@ -212,11 +212,19 @@
   min-width: 12rem;
 }
 
+/* The gap must sit on the real flex children. Grouping the actions into wrapper divs
+   removed the only spacing that existed, and the row collapsed into one continuous
+   block — every control touching its neighbour. A single direct-child rule states the
+   rhythm once, so a wrapper or a bare button is spaced the same. */
 .measurement-dataset-toolbar-right {
   display: flex;
   align-items: center;
-  gap: var(--lumo-space-s);
+  gap: var(--lumo-space-m);
   margin-left: auto;
+}
+
+.measurement-dataset-toolbar-right > * {
+  flex-shrink: 0;
 }
 
 /* ── Selection bar ────────────────────────────────────────────────────────── */
@@ -743,16 +751,21 @@
 /* Three scopes share this row: the list (search, filter), the selection (export, edit,
    delete) and the dataset/view (get data, columns). A separator states the boundary the
    flat 8px rhythm could not, so the row reads as groups rather than seven peers. */
+/* Within a scope the controls sit closer than between scopes: proximity is the grouping,
+   so the separator has something to divide. */
 .measurement-dataset-toolbar-actions {
   display: flex;
   align-items: center;
   gap: var(--lumo-space-s);
 }
 
+/* An empty div has no height, so `align-self: stretch` cannot stretch it and the
+   separator rendered as nothing at all. An explicit height is what makes it visible;
+   `--lumo-size-m` matches the controls it divides. */
 .measurement-dataset-toolbar-separator {
   width: 1px;
-  align-self: stretch;
-  margin-block: var(--lumo-space-xs);
+  height: var(--lumo-size-m);
+  align-self: center;
   background-color: var(--lumo-contrast-20pct);
   flex-shrink: 0;
 }

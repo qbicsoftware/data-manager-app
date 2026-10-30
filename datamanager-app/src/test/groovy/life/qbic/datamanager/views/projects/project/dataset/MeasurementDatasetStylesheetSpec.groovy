@@ -171,6 +171,29 @@ class MeasurementDatasetStylesheetSpec extends Specification {
         return text.substring(start, text.indexOf("}", start))
     }
 
+    def "the toolbar separator has an explicit height"() {
+        given:
+        def rule = block("measurement-dataset-toolbar-separator")
+
+        expect: "an empty div has no height, so align-self: stretch cannot stretch it — the"
+        // separator rendered as nothing at all and the row's scope grouping was invisible.
+        rule.contains("height:")
+        !rule.contains("align-self: stretch")
+    }
+
+    def "the toolbar gap sits on the real flex children"() {
+        given:
+        def container = block("measurement-dataset-toolbar-right")
+        def css = stylesheet().text
+
+        expect: "grouping actions into wrapper divs removed the only spacing there was, and the"
+        // whole row collapsed into one continuous block of touching controls. The rhythm is now
+        // stated on the container and every direct child is pinned against shrinking it away.
+        container.contains("gap:")
+        container.contains("display: flex")
+        css.contains(".measurement-dataset-toolbar-right > *")
+    }
+
     def "the selection bar is sticky so the selected count stays visible"() {
         given:
         def css = stylesheet().text

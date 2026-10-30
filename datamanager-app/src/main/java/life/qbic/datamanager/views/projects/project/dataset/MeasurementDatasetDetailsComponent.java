@@ -16,7 +16,6 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.provider.QuerySortOrder;
@@ -568,14 +567,29 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
         .orElse(null);
   }
 
-  private static <T> MenuBar showHideColumnsMenu(Grid<T> grid) {
-    MenuBar menuBar = new MenuBar();
-    // A menu, not a filter: no box, a gap between label and chevron, and a smaller glyph. The
-    // previous markup put a full-size chevron hard against the "s" of "Columns" and boxed the whole
-    // thing like the selects beside it, which made a view setting the loudest control in the row.
-    Span itemContent = new Span(new Span("Show/Hide Columns"), VaadinIcon.CHEVRON_DOWN.create());
-    itemContent.addClassName("measurement-dataset-columns-menu");
-    var subMenu = menuBar.addItem(itemContent).getSubMenu();
+  /**
+   * Builds the show/hide-columns control as an icon button with a menu.
+   *
+   * <p>Demoted deliberately: choosing which columns are visible is a secondary, occasional
+   * preference. The page's important actions are registering, editing, seeing the data status and
+   * getting the data; a view setting does not deserve 180px and the second-loudest treatment in the
+   * row. As an icon-only button it costs one glyph and its meaning is carried by the tooltip and
+   * the accessible name.</p>
+   *
+   * <p>A {@link com.vaadin.flow.component.contextmenu.ContextMenu} on a real {@link Button} rather
+   * than a {@code MenuBar} item: the menu-bar item wrapped the label and chevron in its own
+   * elements, so no gap could be applied between them and the chevron abutted the text.</p>
+   */
+  private static <T> Button showHideColumnsMenu(Grid<T> grid) {
+    Button menuButton = new Button(VaadinIcon.EYE.create());
+    menuButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+    menuButton.addClassName("measurement-dataset-columns-toggle");
+    menuButton.getElement().setAttribute("aria-label", "Show or hide columns");
+    menuButton.getElement().setAttribute("title", "Show or hide columns");
+
+    var menu = new com.vaadin.flow.component.contextmenu.ContextMenu(menuButton);
+    menu.setOpenOnClick(true);
+
     CheckboxGroup<Column<T>> checkboxGroup = new CheckboxGroup<>();
     checkboxGroup.setItemLabelGenerator(Column::getHeaderText);
     List<Column<T>> columns = grid.getColumns().stream()
@@ -585,14 +599,13 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
     checkboxGroup.setValue(columns.stream().filter(Column::isVisible).collect(Collectors.toSet()));
     checkboxGroup.addThemeVariants(CheckboxGroupVariant.LUMO_VERTICAL);
     checkboxGroup.addClassNames("flex-vertical");
-    checkboxGroup.getElement()
-        .executeJs("this.addEventListener('click', e => e.stopPropagation());");
     checkboxGroup.addValueChangeListener(event -> {
       Set<Column<T>> selected = event.getValue();
       columns.forEach(column -> column.setVisible(selected.contains(column)));
     });
-    subMenu.addComponent(checkboxGroup);
-    return menuBar;
+    // A menu item wrapping the checkbox group is how a ContextMenu hosts arbitrary content.
+    menu.addItem(checkboxGroup);
+    return menuButton;
   }
 
   // ── selection ───────────────────────────────────────────────────────────
