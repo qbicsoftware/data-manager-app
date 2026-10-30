@@ -19,7 +19,7 @@ import life.qbic.datamanager.views.general.section.Section;
 import life.qbic.datamanager.views.general.section.SectionHeader;
 import life.qbic.datamanager.views.general.section.SectionTitle;
 import life.qbic.datamanager.views.general.utils.Utility;
-import life.qbic.datamanager.views.projects.project.measurements.MeasurementMain;
+import life.qbic.datamanager.views.projects.project.dataset.MeasurementDatasetMain;
 import life.qbic.projectmanagement.application.api.ProjectQueryService;
 import life.qbic.projectmanagement.application.query.AssayType;
 import life.qbic.projectmanagement.application.query.ExperimentProgress;
@@ -245,7 +245,7 @@ public class PrimaryDatasetsComponent extends Div {
   }
 
   private void openExperiment(String experimentId) {
-    getUI().ifPresent(ui -> ui.navigate(MeasurementMain.class, new RouteParameters(
+    getUI().ifPresent(ui -> ui.navigate(MeasurementDatasetMain.class, new RouteParameters(
         new RouteParam(PROJECT_ID_PARAMETER, projectId),
         new RouteParam(EXPERIMENT_ID_PARAMETER, experimentId))));
   }

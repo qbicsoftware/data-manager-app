@@ -1,0 +1,835 @@
+/* ────────────────────────────────────────────────────────────────────────────
+ * Measurement Dataset page (experiment scope)
+ *
+ * One surface for the two ordered process steps that were previously two pages:
+ * the registered measurement metadata, and the data produced by it.
+ *
+ * Bands are borderless and separated by whitespace, matching the project page and
+ * the samples page. Only the stage band (outstanding work) and the detail panel
+ * carry a surface, so the page has exactly one loud element at a time.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  --measurement-data-detail-panel-width: 24rem;
+}
+
+/* ── Page shell ───────────────────────────────────────────────────────────── */
+
+.measurement-dataset {
+  max-width: var(--content-shell-max-width);
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  box-sizing: border-box;
+  padding-inline: var(--content-shell-gutter);
+  display: block;
+}
+
+.measurement-dataset-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+  min-width: 0;
+}
+
+/* ── Header ───────────────────────────────────────────────────────────────── */
+
+.measurement-dataset-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--lumo-space-m);
+  flex-wrap: wrap;
+}
+
+.measurement-dataset-header-title-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-02);
+  min-width: 0;
+}
+
+.measurement-dataset-title {
+  color: var(--heading-text-color);
+  font-size: var(--lumo-font-size-xxl);
+  font-weight: var(--font-weight-semi-bold);
+  margin: 0;
+}
+
+/* Read, not decoration: the status line uses body ink because
+   --secondary-text-color measures 2.96:1 and fails WCAG AA for normal text. */
+.measurement-dataset-header-status {
+  color: var(--body-text-color);
+  font-size: var(--lumo-font-size-s);
+}
+
+/* ── Dataset selector: one card per measurement dataset ───────────────────── */
+
+/* The datasets are the page's structure, not a filter. Each card is a
+   mutually-exclusive choice that activates the list below it, so the reader
+   never has to discover a dropdown to learn the page is grouped at all. */
+/* Count-based column layout, following the pinned-project cards: a single fixed
+   card size is always a compromise, because one, two and three datasets want
+   different columns. Every count gets an explicit layout so the row distributes
+   evenly instead of leaving a lone card's width to chance. */
+.measurement-dataset-selector-cards {
+  display: grid;
+  gap: var(--lumo-space-m);
+  align-items: stretch;
+}
+
+/* One dataset: capped at the width it would have with two in a row, so it reads as
+   one card rather than as a page-wide band — and it does not sit marooned at the
+   left of an otherwise empty row. */
+.measurement-dataset-count-1 {
+  grid-template-columns: minmax(16rem, 50%);
+}
+
+.measurement-dataset-count-2 {
+  grid-template-columns: repeat(2, minmax(16rem, 1fr));
+}
+
+/* Three — the maximum the domain has — fills the row. */
+.measurement-dataset-count-3,
+.measurement-dataset-count-4,
+.measurement-dataset-count-5,
+.measurement-dataset-count-6 {
+  grid-template-columns: repeat(3, minmax(16rem, 1fr));
+}
+
+/* Narrow viewports drop three-across first, then everything to one column, so cards
+   wrap instead of overflowing (USER-NFR-01). */
+@media (max-width: 62rem) {
+  .measurement-dataset-count-2,
+  .measurement-dataset-count-3,
+  .measurement-dataset-count-4,
+  .measurement-dataset-count-5,
+  .measurement-dataset-count-6 {
+    grid-template-columns: repeat(2, minmax(16rem, 1fr));
+  }
+}
+
+@media (max-width: 38rem) {
+  .measurement-dataset-selector-cards {
+    grid-template-columns: minmax(16rem, 1fr);
+  }
+}
+
+.measurement-dataset-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-02);
+  padding: var(--lumo-space-m);
+  border: 1px solid var(--lumo-contrast-10pct);
+  border-radius: var(--lumo-border-radius-m);
+  background-color: var(--lumo-base-color);
+  cursor: pointer;
+  min-width: 0;
+}
+
+/* Hovering a card previews the selection's *shape*, not its colour: the bar appears
+   in grey, so the reader sees where a click lands without a second card claiming to
+   be active. `border-color` is deliberately not set here — that shorthand also
+   overrides the left edge of an already-active card and turned its accent rule grey,
+   because :hover outranks the modifier class. */
+.measurement-dataset-card:hover {
+  border-top-color: var(--lumo-contrast-30pct);
+  border-right-color: var(--lumo-contrast-30pct);
+  border-bottom-color: var(--lumo-contrast-30pct);
+  border-left: 4px solid var(--lumo-contrast-30pct);
+  padding-left: calc(var(--lumo-space-m) - 3px);
+}
+
+/* Selection is carried by a thick leading rule, a tinted border and aria-checked —
+   never by colour alone. The rule is the primary signal (a shape, visible at a glance
+   beside unselected cards); the border reinforces it and the fill is left alone so the
+   card's text keeps its normal contrast. */
+.measurement-dataset-card--selected {
+  border-color: var(--primary-color);
+  border-left: 4px solid var(--primary-color);
+  padding-left: calc(var(--lumo-space-m) - 3px);
+}
+
+/* The active card keeps its accent rule while hovered: the bar's presence is shared,
+   its colour is what distinguishes the active card from the one under the pointer. */
+.measurement-dataset-card--selected:hover {
+  border-color: var(--primary-color);
+  border-left: 4px solid var(--primary-color);
+}
+
+/* The single-dataset card is a statement, not a choice: no pointer affordance, no
+   hover state and no selection treatment, so nothing suggests there was an
+   alternative. */
+.measurement-dataset-card--single {
+  cursor: default;
+}
+
+.measurement-dataset-card--single:hover {
+  border-color: var(--lumo-contrast-10pct);
+  border-left: 1px solid var(--lumo-contrast-10pct);
+  padding-left: var(--lumo-space-m);
+}
+
+.measurement-dataset-card:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+/* Title and count on one line. Stacking them put two lines and one large number in
+   each card, so the least interesting value was the tallest thing on the page — three
+   times across the row. */
+.measurement-dataset-card-headline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: 0;
+}
+
+.measurement-dataset-card-label {
+  color: var(--heading-text-color);
+  font-size: var(--lumo-font-size-m);
+  font-weight: var(--font-weight-semi-bold);
+}
+
+/* The dataset's quantities — measurement count and data size — which a reader needs
+   before downloading: they decide whether the data fits their disk and their link.
+   Body ink rather than the muted label colour, because these are facts to read, not a
+   caption. */
+.measurement-dataset-card-size {
+  color: var(--body-text-color);
+  font-size: var(--lumo-font-size-s);
+  margin-top: var(--spacing-02);
+}
+
+/* ── Toolbar ──────────────────────────────────────────────────────────────── */
+
+.measurement-dataset-toolbar {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--lumo-space-s);
+  flex-wrap: wrap;
+}
+
+.measurement-dataset-search {
+  flex: 1 1 18rem;
+  min-width: 12rem;
+}
+
+/* The gap must sit on the real flex children. Grouping the actions into wrapper divs
+   removed the only spacing that existed, and the row collapsed into one continuous
+   block — every control touching its neighbour. A single direct-child rule states the
+   rhythm once, so a wrapper or a bare button is spaced the same. */
+.measurement-dataset-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-m);
+  margin-left: auto;
+}
+
+.measurement-dataset-toolbar-right > * {
+  flex-shrink: 0;
+}
+
+/* ── Selection bar ────────────────────────────────────────────────────────── */
+
+/* Sticky so the count and the clear action stay visible while a full page of rows
+   is scrolled: USER-R-02 requires the number of selected items to always be
+   visible, which a bar below a long grid is not. */
+.measurement-dataset-selection-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+  padding: var(--lumo-space-xs) var(--lumo-space-s);
+  border-radius: var(--lumo-border-radius-s);
+  background-color: var(--primary-color-10pct);
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+}
+
+.measurement-dataset-selection-icon {
+  color: var(--primary-color);
+}
+
+.measurement-dataset-selection-count {
+  font-weight: var(--font-weight-medium);
+  color: var(--body-text-color);
+}
+
+/* ── Error state ──────────────────────────────────────────────────────────── */
+
+/* A failed load must never be rendered as "no measurement data": every entry
+   waiting is a legitimate and very different state. */
+.measurement-dataset-error-state {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+  padding: var(--lumo-space-s) var(--lumo-space-m);
+  border: 1px solid var(--error-color);
+  border-radius: var(--lumo-border-radius-s);
+  background-color: var(--error-color-10pct);
+}
+
+.measurement-dataset-error-state-message {
+  color: var(--error-text-color);
+  font-weight: var(--font-weight-medium);
+}
+
+/* ── Empty state ──────────────────────────────────────────────────────────── */
+
+.measurement-dataset-empty-state {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+  padding: var(--lumo-space-l);
+  border: 1px dashed var(--border-color-default);
+  border-radius: var(--lumo-border-radius-m);
+  background-color: var(--shade-color-5pct);
+}
+
+.measurement-dataset-empty-heading {
+  color: var(--heading-text-color);
+  font-size: var(--lumo-font-size-l);
+  font-weight: var(--font-weight-semi-bold);
+}
+
+.measurement-dataset-empty-body,
+.measurement-dataset-empty-prerequisite {
+  color: var(--body-text-color);
+  font-size: var(--lumo-font-size-s);
+  max-width: 78ch;
+}
+
+.measurement-dataset-empty-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+  align-items: flex-start;
+  margin-top: var(--lumo-space-s);
+}
+
+/* ── Grid ─────────────────────────────────────────────────────────────────── */
+
+/* The data status is the one status column. It never relies on colour alone: the
+   cell states "Waiting" or "Available · n files · size" in text, and the tint
+   only reinforces it. */
+.measurement-dataset-status {
+  font-size: var(--lumo-font-size-s);
+  font-weight: var(--font-weight-medium);
+}
+
+.measurement-dataset-status--waiting {
+  color: var(--warning-text-color);
+}
+
+.measurement-dataset-status--available {
+  color: var(--success-text-color);
+}
+
+/* The row opens the record on click, so the body cells say so. This is the other half of
+   the pair below: a pointer cursor invites the click, and the suppressed text selection
+   keeps a small drift during that click from dragging a highlight across the rows. */
+.measurement-dataset-grid::part(body-cell) {
+  cursor: pointer;
+}
+
+/* Lays the chevron out at the cell's trailing edge. */
+.measurement-dataset-details-cell {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* The row is a navigation surface: clicking it opens the record. The checkbox cell and
+   the chevron cell keep their own behaviour — a click on the checkbox must select rather
+   than open, and the chevron is its own control — so neither gets the row's pointer
+   cursor. Vaadin also drops an item click from a cell containing a focusable element
+   (gridConnector.ts), so these two already behave correctly; this only stops them
+   *looking* like the rest of the row.
+
+   These must NOT be written as `::part(body-cell) .measurement-dataset-details-cell`.
+   A descendant selector may not trail a ::part() pseudo-element — the rule is invalid
+   CSS and the production frontend build rejects it — and cell content is light DOM
+   anyway, so a plain descendant selector reaches it and outranks the ::part() rule. */
+.measurement-dataset-grid .measurement-dataset-details-cell,
+.measurement-dataset-grid vaadin-checkbox {
+  cursor: default;
+}
+
+/* Clicking anywhere on a row opens its record, so a click that drifts a pixel or two is
+   a click-and-drag as far as the browser is concerned — and a drag over text selects it.
+   The result is the smeared blue highlight across several rows. The grid only suppresses
+   text selection while reordering, resizing or range-selecting
+   (vaadin-grid-base-styles.js sets `user-select: none` for `:host([reordering])`,
+   `#scroller[range-selecting]` and `[draggable-source]`), so at rest cell text stays
+   selectable and the browser has no reason to hold back.
+
+   The tell that this is native text selection and not a style: the checkbox and chevron
+   columns never highlight, because Lumo already sets `user-select: none` on its controls.
+   Only bare cell text highlights.
+
+   The record's values are shown in full in the detail panel, which is ordinary selectable
+   text, and bulk output goes through Export, so giving up selection in the cells costs
+   nothing that is not available elsewhere. */
+.measurement-dataset-grid::part(body-cell),
+.measurement-dataset-grid vaadin-grid-cell-content {
+  user-select: none;
+}
+
+/* The open record's row is marked distinctly from a selected row: opening an
+   entry must never look like adding it to a bulk selection. */
+.measurement-dataset-grid::part(open-detail-row) {
+  background-color: color-mix(in srgb, var(--lumo-primary-color) 5%, transparent);
+  box-shadow: inset 3px 0 0 0 var(--primary-color);
+}
+
+/* ── Master-detail layout ─────────────────────────────────────────────────── */
+
+.measurement-dataset-detail-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--lumo-space-l);
+  min-width: 0;
+}
+
+.measurement-dataset-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+  min-width: 0;
+}
+
+@media (min-width: 1100px) {
+  .measurement-dataset-detail-layout--open {
+    grid-template-columns: minmax(0, 1fr) var(--measurement-data-detail-panel-width);
+  }
+
+  .measurement-data-detail-panel {
+    position: sticky;
+    top: var(--lumo-space-m);
+    max-height: calc(100vh - 8rem);
+    overflow-y: auto;
+  }
+}
+
+.measurement-data-detail-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+  padding: var(--lumo-space-m);
+  border: 1px solid var(--lumo-contrast-10pct);
+  border-radius: var(--lumo-border-radius-m);
+  background-color: var(--lumo-base-color);
+  min-width: 0;
+}
+
+.measurement-data-detail-panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--lumo-space-s);
+}
+
+.measurement-data-detail-panel-heading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-01);
+  min-width: 0;
+}
+
+.measurement-data-detail-panel-title {
+  margin: 0;
+  font-size: var(--lumo-font-size-l);
+  font-weight: var(--font-weight-semi-bold);
+  color: var(--heading-text-color);
+  overflow-wrap: anywhere;
+}
+
+.measurement-data-detail-panel-subtitle {
+  font-family: var(--font-family-monospace);
+  font-size: var(--lumo-font-size-xs);
+  color: var(--body-text-color);
+}
+
+/* ── Panel: the record's fields ───────────────────────────────────────────── */
+
+/* THE RHYTHM IS THE SCAN PATH. A field's label sits tight to its value (2px), two
+   consecutive fields are close (8px), and a group boundary is visibly wider
+   (20px plus a hairline). An earlier revision had this inverted — field-to-field
+   was 4x the label-to-value gap while group-to-group was only 2x the
+   field-to-field gap — so twelve lines read as one undifferentiated list and
+   the group headings were just another line. Field before group in this file,
+   because the smaller distance is the one that repeats. */
+.measurement-data-detail-panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-07);
+}
+
+.measurement-data-detail-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+  min-width: 0;
+}
+
+/* Every group after the first is separated by whitespace AND a hairline, so the
+   boundary survives even when two adjacent groups are short. */
+.measurement-data-detail-group + .measurement-data-detail-group {
+  border-top: 1px solid var(--lumo-contrast-10pct);
+  padding-top: var(--lumo-space-m);
+}
+
+/* Group titles and field labels must not be typographically identical: at 12px
+   the weight difference alone was invisible. The title is tracked and
+   upper-cased so it reads as a section marker; the field label stays sentence
+   case and sits at the label ink. */
+.measurement-data-detail-group-title {
+  margin: 0;
+  font-size: var(--lumo-font-size-xs);
+  font-weight: var(--font-weight-semi-bold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--field-label-text-color);
+}
+
+.measurement-data-detail-fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+  min-width: 0;
+}
+
+.measurement-data-detail-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+/* A value-only field (the collapsed data meta line) has no label line, so it
+   must not reserve that line's height. */
+.measurement-data-detail-field--valueless-label {
+  gap: 0;
+}
+
+.measurement-data-detail-field-label {
+  color: var(--field-label-text-color);
+  font-size: var(--lumo-font-size-xs);
+  line-height: 1.3;
+}
+
+.measurement-data-detail-field-value {
+  color: var(--body-text-color);
+  font-size: var(--lumo-font-size-m);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+/* ── Panel: the sample listing ────────────────────────────────────────────── */
+
+/* A pool can hold fifty or more samples: the listing is capped and scrolls
+   rather than pushing the data section off the bottom of the panel. */
+.measurement-data-detail-samples {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-xs);
+  min-width: 0;
+}
+
+.measurement-data-detail-samples-count {
+  color: var(--body-text-color);
+  font-size: var(--lumo-font-size-s);
+  font-weight: var(--font-weight-medium);
+}
+
+.measurement-data-detail-samples-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 16rem;
+  overflow-y: auto;
+  border: 1px solid var(--lumo-contrast-10pct);
+  border-radius: var(--lumo-border-radius-s);
+  padding: var(--lumo-space-xs) var(--lumo-space-s);
+}
+
+.measurement-data-detail-sample {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--lumo-space-s);
+  padding: 2px 0;
+  min-width: 0;
+}
+
+.measurement-data-detail-sample-label {
+  color: var(--body-text-color);
+  font-size: var(--lumo-font-size-s);
+  overflow-wrap: anywhere;
+}
+
+.measurement-data-detail-sample-code {
+  color: var(--field-label-text-color);
+  font-size: var(--lumo-font-size-xs);
+  flex-shrink: 0;
+}
+
+.measurement-data-detail-samples-loading,
+.measurement-data-detail-muted {
+  color: var(--field-label-text-color);
+  font-size: var(--lumo-font-size-s);
+}
+
+.measurement-data-detail-field-value.identifier {
+  font-family: var(--font-family-monospace);
+}
+
+/* The close glyph is the whole control, so it needs a target a pointer can hit
+   and a name a screen reader can read (set as aria-label in the component). */
+.measurement-data-detail-panel-close {
+  flex-shrink: 0;
+  min-width: var(--lumo-size-m);
+  min-height: var(--lumo-size-m);
+  padding: var(--lumo-space-xs);
+}
+
+.measurement-data-detail-panel-close:hover {
+  background-color: var(--lumo-contrast-5pct);
+}
+
+/* ── Grid: the Samples column ─────────────────────────────────────────────── */
+
+/* A pooled measurement shows the registrant's own pool label, in a pill so it is
+   distinguishable from a plain value at a glance. The sample count lives in the
+   tooltip: for a pool of fifty the number is noise, the label is the identity. */
+.measurement-dataset-pool-pill {
+  display: inline-block;
+  max-width: 22ch;
+  padding: 2px var(--lumo-space-s);
+  border-radius: 999px;
+  border: 1px solid var(--lumo-contrast-20pct);
+  background-color: var(--shade-color-5pct);
+  color: var(--body-text-color);
+  font-size: var(--lumo-font-size-xs);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
+
+.measurement-dataset-sample-single {
+  color: var(--body-text-color);
+  font-size: var(--lumo-font-size-s);
+}
+
+/* ── Grid: the measurement identifier ─────────────────────────────────────── */
+
+/* A system identifier, not user metadata: monospace, secondary ink, and no
+   weight — it identifies the row without competing with the facts a person
+   reads. It is deliberately not emphasised even though it is the frozen first
+   column. */
+.measurement-dataset-measurement-id {
+  color: var(--field-label-text-color);
+  font-size: var(--lumo-font-size-xs);
+}
+
+/* ── Grid: single-sample names ────────────────────────────────────────────── */
+
+/* The name of the one sample a 1:1 measurement measures. It is user-entered
+   metadata, so it reads at body ink, unlike the system identifier beside it. */
+.measurement-dataset-sample-name {
+  color: var(--body-text-color);
+  font-size: var(--lumo-font-size-s);
+}
+
+/* Only shown when the name could not be resolved; deliberately quieter than a
+   name, because it is a fallback rather than a fact. */
+.measurement-dataset-sample-unnamed {
+  color: var(--field-label-text-color);
+  font-size: var(--lumo-font-size-s);
+}
+
+/* ── Dataset cards: the coverage ring ─────────────────────────────────────── */
+
+.measurement-dataset-card-headline-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--lumo-space-m);
+  min-width: 0;
+}
+
+/* A complete dataset is marked, not only drawn. A full ring is a green circle, but at
+   card size that is a faint difference from a 90% arc, and "everything has arrived" is
+   the one state worth recognising without reading anything. */
+.measurement-dataset-card-ring {
+  flex: 0 0 auto;
+  margin-left: auto;
+  /* The shared ring is sized for a card footer; a selector card is compact, so
+     it is scaled down here rather than in the shared component. The origin is
+     top-centre so the scaled ring stays inside its box instead of drifting. */
+  transform: scale(0.72);
+  transform-origin: top center;
+}
+
+.measurement-dataset-card-ring--complete {
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--success-color);
+}
+
+/* ── Download guidance (dialog content) ───────────────────────────────────── */
+
+/* Shown on request from the "Get data" action. It is dialog content, so it carries
+   no page band chrome — the dialog already provides the surface. */
+.measurement-dataset-download-guide {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+}
+
+.measurement-dataset-download-guide-text {
+  color: var(--body-text-color);
+  font-size: var(--lumo-font-size-s);
+  max-width: 70ch;
+}
+
+/* Each step is an icon and its content. The icon is a fixed first column so the
+   content always starts at the same x — that shared left edge is what makes the
+   three steps read as a sequence rather than three unrelated lines. */
+.measurement-dataset-download-guide-step {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  column-gap: var(--lumo-space-s);
+  color: var(--body-text-color);
+  font-size: var(--lumo-font-size-s);
+}
+
+.measurement-dataset-download-guide-step-icon {
+  color: var(--field-label-text-color);
+  /* Aligns the glyph with the first line of the content beside it. */
+  margin-top: 2px;
+}
+
+.measurement-dataset-download-guide-link {
+  color: var(--primary-color);
+}
+
+/* The two export scopes, stacked so the primary reads first and the narrower
+   convenience action sits under it. */
+.measurement-dataset-download-guide-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+  min-width: 0;
+}
+
+.measurement-dataset-download-guide-action {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.measurement-dataset-download-guide-hint {
+  color: var(--field-label-text-color);
+  font-size: var(--lumo-font-size-xs);
+}
+
+/* The command is copyable text, not prose: monospace and visually enclosed so it
+   is not mistaken for a sentence. It lives inside its step's content column, so
+   the step's icon stays on the same line as the command's first row instead of
+   being stranded on a line of its own. */
+.measurement-dataset-download-guide-command-wrap {
+  min-width: 0;
+}
+
+/* The commands are copyable text enclosed by the app's own CodeBlock, so this
+   rule only keeps a long command from widening the dialog. The block itself
+   carries the surface and the copy affordance. */
+.measurement-dataset-download-guide-commands {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+
+/* ── Delete dialog ────────────────────────────────────────────────────────── */
+
+.measurement-dataset-delete-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+}
+
+.measurement-dataset-delete-followup {
+  color: var(--body-text-color);
+  font-size: var(--lumo-font-size-s);
+}
+
+/* ── Toolbar: overflow menu ───────────────────────────────────────────────── */
+
+/* An ellipsis, matching the project cards' options menu: the application's established
+   "more actions" affordance, so it is recognised without a label. Sized to a comfortable
+   target rather than to the glyph. */
+.measurement-dataset-overflow-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--lumo-secondary-text-color);
+  padding: var(--lumo-space-xs);
+  min-width: 2rem;
+  min-height: 2rem;
+  border-radius: var(--lumo-border-radius-s);
+}
+
+.measurement-dataset-overflow-toggle:hover {
+  color: var(--lumo-primary-text-color);
+  background-color: var(--lumo-contrast-5pct);
+}
+
+/* The chooser is hosted in a menu item, so it inherits that item's hover and active
+   surfaces. Left alone, the whole panel takes the menu's accent tint and every row reads
+   as selected — the panel must look like a form inside a menu, not like a highlighted
+   menu entry. */
+.measurement-dataset-column-chooser {
+  padding: var(--lumo-space-s);
+  min-width: 12rem;
+  background-color: var(--lumo-base-color);
+}
+
+.measurement-dataset-column-chooser::part(group-field) {
+  background-color: var(--lumo-base-color);
+}
+
+/* The menu item that hosts the chooser must not paint its own hover/active surface: the
+   chooser is a form inside a menu, not a menu entry. It is marked in Java
+   (`columnsItem`), because ::part() reaches the overlay host only, not the items inside
+   it — an ::part() selector for the item would be silently inert. */
+vaadin-context-menu-item.measurement-dataset-menu-host[active],
+vaadin-context-menu-item.measurement-dataset-menu-host:hover {
+  background-color: transparent;
+}
+
+/* ── Toolbar: grouping ────────────────────────────────────────────────────── */
+
+/* Three scopes share this row: the list (search, filter), the selection (export, edit,
+   delete) and the dataset/view (get data, columns). A separator states the boundary the
+   flat 8px rhythm could not, so the row reads as groups rather than seven peers. */
+/* Within a scope the controls sit closer than between scopes: proximity is the grouping,
+   so the separator has something to divide. */
+.measurement-dataset-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+}
+
+/* An empty div has no height, so `align-self: stretch` cannot stretch it and the
+   separator rendered as nothing at all. An explicit height is what makes it visible;
+   `--lumo-size-m` matches the controls it divides. */
+.measurement-dataset-toolbar-separator {
+  width: 1px;
+  height: var(--lumo-size-m);
+  align-self: center;
+  background-color: var(--lumo-contrast-20pct);
+  flex-shrink: 0;
+}

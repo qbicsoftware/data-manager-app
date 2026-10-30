@@ -8,8 +8,10 @@ import static org.mockito.Mockito.when;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import life.qbic.projectmanagement.application.api.ProjectQueryService.MeasurementDataFilter;
 import life.qbic.projectmanagement.application.api.ProjectQueryService.ProjectSampleFilter;
 import life.qbic.projectmanagement.application.query.ExperimentProgress;
+import life.qbic.projectmanagement.application.query.MeasurementDataRow;
 import life.qbic.projectmanagement.application.query.ProjectPageReadRepository;
 import life.qbic.projectmanagement.application.query.ProjectSampleOverview;
 import org.junit.jupiter.api.AfterEach;
@@ -96,5 +98,30 @@ class ProjectQueryServiceImplTest {
     StepVerifier.create(underTest.getExperimentProgress("P1"))
         .expectError(ProjectQueryService.AccessDeniedException.class)
         .verify();
+  }
+
+  @Test
+  @DisplayName("measurement data is streamed with the given experiment, offset, limit and filter")
+  void streamsMeasurementData() {
+    MeasurementDataRow row = new MeasurementDataRow("mid-1", "E1", "GENOMICS", "NGS-1", null,
+        null, null, null, 1, java.time.Instant.EPOCH,
+        MeasurementDataRow.DataStatus.WAITING, null, null, null, null);
+    MeasurementDataFilter filter = MeasurementDataFilter.all();
+    when(readRepository.findMeasurementData("P1", "E1", 24, 12, filter))
+        .thenReturn(List.of(row));
+
+    StepVerifier.create(underTest.getMeasurementData("P1", "E1", 24, 12, filter))
+        .expectNext(row)
+        .verifyComplete();
+  }
+
+  @Test
+  @DisplayName("the measurement data count is emitted for the pager total")
+  void emitsMeasurementDataCount() {
+    when(readRepository.countMeasurementData(eq("P1"), eq("E1"), any())).thenReturn(24L);
+
+    StepVerifier.create(underTest.countMeasurementData("P1", "E1", MeasurementDataFilter.all()))
+        .expectNext(24L)
+        .verifyComplete();
   }
 }

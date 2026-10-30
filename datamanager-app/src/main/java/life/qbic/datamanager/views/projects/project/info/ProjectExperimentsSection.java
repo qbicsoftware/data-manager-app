@@ -27,7 +27,7 @@ import life.qbic.datamanager.views.general.ReactiveUiBridge;
 import life.qbic.datamanager.views.general.utils.Utility;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.create.CreateExperimentMain;
-import life.qbic.datamanager.views.projects.project.measurements.MeasurementMain;
+import life.qbic.datamanager.views.projects.project.dataset.MeasurementDatasetMain;
 import life.qbic.datamanager.views.projects.project.samples.SampleInformationMain;
 import life.qbic.projectmanagement.application.api.ProjectQueryService;
 import life.qbic.projectmanagement.application.query.ExperimentProgress;
@@ -212,7 +212,7 @@ public class ProjectExperimentsSection extends Div {
         completenessRing(experiment),
         new String[]{"Measurement ID", "Primary data", "Changed"}, rows,
         "No measurements to show yet",
-        () -> navigate(MeasurementMain.class, experiment.experimentId()));
+        () -> navigate(MeasurementDatasetMain.class, experiment.experimentId()));
   }
 
   /**

@@ -8,6 +8,8 @@ import java.util.Objects;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.query.ExperimentProgress;
+import life.qbic.projectmanagement.application.query.MeasuredSample;
+import life.qbic.projectmanagement.application.query.MeasurementDataRow;
 import life.qbic.projectmanagement.application.query.ProjectPageReadRepository;
 import life.qbic.projectmanagement.application.query.ProjectSampleOverview;
 import life.qbic.projectmanagement.application.query.RecentMeasurement;
@@ -94,6 +96,55 @@ public class ProjectQueryServiceImpl implements ProjectQueryService {
         .contextWrite(reactiveSecurity(securityContext))
         .retryWhen(defaultRetryStrategy())
         .onErrorMap(cause -> mapToQueryException(cause, "Request to count project samples failed"));
+  }
+
+  @Override
+  public Flux<MeasurementDataRow> getMeasurementData(String projectId, String experimentId,
+      int offset, int limit, MeasurementDataFilter filter) {
+    Objects.requireNonNull(projectId, "projectId must not be null");
+    Objects.requireNonNull(experimentId, "experimentId must not be null");
+    Objects.requireNonNull(filter, "filter must not be null");
+    SecurityContext securityContext = SecurityContextHolder.getContext();
+    return applySecurityContextMany(Flux.defer(
+            () -> Flux.fromIterable(
+                readRepository.findMeasurementData(projectId, experimentId, offset, limit,
+                    filter))))
+        .subscribeOn(scheduler)
+        .contextWrite(reactiveSecurity(securityContext))
+        .retryWhen(defaultRetryStrategy())
+        .onErrorMap(
+            cause -> mapToQueryException(cause, "Request for measurement data failed"));
+  }
+
+  @Override
+  public Mono<Long> countMeasurementData(String projectId, String experimentId,
+      MeasurementDataFilter filter) {
+    Objects.requireNonNull(projectId, "projectId must not be null");
+    Objects.requireNonNull(experimentId, "experimentId must not be null");
+    Objects.requireNonNull(filter, "filter must not be null");
+    SecurityContext securityContext = SecurityContextHolder.getContext();
+    return applySecurityContext(
+            Mono.defer(() -> Mono.just(
+                readRepository.countMeasurementData(projectId, experimentId, filter))))
+        .subscribeOn(scheduler)
+        .contextWrite(reactiveSecurity(securityContext))
+        .retryWhen(defaultRetryStrategy())
+        .onErrorMap(
+            cause -> mapToQueryException(cause, "Request to count measurement data failed"));
+  }
+
+  @Override
+  public Flux<MeasuredSample> getMeasuredSamples(String projectId, String measurementId) {
+    Objects.requireNonNull(projectId, "projectId must not be null");
+    Objects.requireNonNull(measurementId, "measurementId must not be null");
+    SecurityContext securityContext = SecurityContextHolder.getContext();
+    return applySecurityContextMany(Flux.defer(
+            () -> Flux.fromIterable(
+                readRepository.findMeasuredSamples(projectId, measurementId))))
+        .subscribeOn(scheduler)
+        .contextWrite(reactiveSecurity(securityContext))
+        .retryWhen(defaultRetryStrategy())
+        .onErrorMap(cause -> mapToQueryException(cause, "Request for measured samples failed"));
   }
 
   @Override

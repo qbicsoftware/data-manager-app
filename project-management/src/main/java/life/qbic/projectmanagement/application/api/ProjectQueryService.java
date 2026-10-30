@@ -2,7 +2,10 @@ package life.qbic.projectmanagement.application.api;
 
 import java.util.List;
 import java.util.Objects;
+import life.qbic.projectmanagement.application.query.AssayType;
 import life.qbic.projectmanagement.application.query.ExperimentProgress;
+import life.qbic.projectmanagement.application.query.MeasuredSample;
+import life.qbic.projectmanagement.application.query.MeasurementDataRow;
 import life.qbic.projectmanagement.application.query.ProjectSampleOverview;
 import life.qbic.projectmanagement.application.query.RecentMeasurement;
 import life.qbic.projectmanagement.application.query.RecentSample;
@@ -106,6 +109,89 @@ public interface ProjectQueryService {
    * @param experimentId the experiment identifier
    */
   Flux<RecentMeasurement> getRecentMeasurements(String projectId, String experimentId);
+
+  /**
+   * Streams a page of {@link MeasurementDataRow} for one experiment: every registered measurement
+   * of the experiment together with the data produced by it, so the two process steps
+   * (metadata registration, data availability) are stated about the same entry.
+   *
+   * <p>An entry whose data has not arrived yet is included with {@link
+   * MeasurementDataRow.DataStatus#WAITING} — that is the normal state after registration, not an
+   * exception, and the page cannot answer "which measurements are still waiting?" without it.</p>
+   *
+   * @param projectId    the project identifier
+   * @param experimentId the experiment identifier
+   * @param offset       the offset from 0 of all matching rows to start at
+   * @param limit        the maximum number of rows to return
+   * @param filter       the filter and sort to apply; use {@link MeasurementDataFilter#all()} for
+   *                     none
+   * @throws RequestFailedException if the request could not be executed
+   * @throws AccessDeniedException  if the caller lacks {@code READ} on the project
+   */
+  Flux<MeasurementDataRow> getMeasurementData(String projectId, String experimentId, int offset,
+      int limit, MeasurementDataFilter filter);
+
+  /**
+   * Counts the measurement data entries of one experiment matching the filter, for the pager's
+   * total. Applies exactly the same filter as {@link #getMeasurementData}, so the pager cannot
+   * disagree with the page.
+   *
+   * @param projectId    the project identifier
+   * @param experimentId the experiment identifier
+   * @param filter       the filter to apply; use {@link MeasurementDataFilter#all()} for none
+   * @throws RequestFailedException if the request could not be executed
+   * @throws AccessDeniedException  if the caller lacks {@code READ} on the project
+   */
+  Mono<Long> countMeasurementData(String projectId, String experimentId,
+      MeasurementDataFilter filter);
+
+  /**
+   * Streams the samples one measurement measures.
+   *
+   * <p>Separate from {@link #getMeasurementData} on purpose. A proteomics measurement can pool
+   * fifty or more samples, and embedding them in the list rows would make the page query enormous
+   * or — because MariaDB's {@code group_concat_max_len} defaults to 1024 bytes — silently lossy.
+   * The detail panel fetches them when a record is opened, one record at a time.</p>
+   *
+   * @param projectId     the project identifier
+   * @param measurementId the internal measurement identifier
+   * @throws RequestFailedException if the request could not be executed
+   * @throws AccessDeniedException  if the caller lacks {@code READ} on the project
+   */
+  Flux<MeasuredSample> getMeasuredSamples(String projectId, String measurementId);
+
+  /**
+   * Filter and sort for the experiment's measurement data list.
+   *
+   * @param searchTerm      a case-insensitive substring matched against the measurement code,
+   *                        measurement name, facility and sample pool; blank means no filter
+   * @param measurementType restricts the list to one assay type; {@code null} means all types
+   * @param dataStatus      restricts by data availability; {@code null} means both states
+   * @param sortOrders      the requested sort orders; empty applies a deterministic default
+   */
+  record MeasurementDataFilter(String searchTerm, AssayType measurementType,
+                               MeasurementDataRow.DataStatus dataStatus,
+                               List<SortOrder<MeasurementDataSortKey>> sortOrders) {
+
+    public MeasurementDataFilter {
+      searchTerm = searchTerm == null ? "" : searchTerm;
+      sortOrders = sortOrders == null ? List.of() : List.copyOf(sortOrders);
+    }
+
+    /** A filter that selects everything and leaves sorting to the implementation default. */
+    public static MeasurementDataFilter all() {
+      return new MeasurementDataFilter("", null, null, List.of());
+    }
+  }
+
+  /** Sortable properties of the measurement data list. */
+  enum MeasurementDataSortKey {
+    MEASUREMENT_ID,
+    MEASUREMENT_NAME,
+    REGISTRATION_DATE,
+    DATA_STATUS,
+    SAMPLE_POOL
+  }
 
   /**
    * Filter and sort for the project sample list.

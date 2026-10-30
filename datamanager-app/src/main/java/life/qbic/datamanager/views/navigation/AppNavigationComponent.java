@@ -15,11 +15,10 @@ import life.qbic.datamanager.views.groups.MyGroupsMain;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.datamanager.views.projects.project.access.ProjectAccessMain;
 import life.qbic.datamanager.views.projects.project.datasets.ProjectDatasetsMain;
+import life.qbic.datamanager.views.projects.project.dataset.MeasurementDatasetMain;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
 import life.qbic.datamanager.views.projects.project.info.ProjectInformationMain;
-import life.qbic.datamanager.views.projects.project.measurements.MeasurementMain;
 import life.qbic.datamanager.views.projects.project.ontology.OntologyLookupMainComponent;
-import life.qbic.datamanager.views.projects.project.rawdata.RawDataMain;
 import life.qbic.datamanager.views.projects.project.samples.SampleInformationMain;
 import life.qbic.datamanager.views.projects.project.settings.ProjectSettingsMain;
 
@@ -100,8 +99,11 @@ public class AppNavigationComponent extends Div {
     return new AppNavigationComponent()
         .addItem("Overview", ExperimentInformationMain.class, parameters)
         .addItem("Samples", SampleInformationMain.class, parameters)
-        .addItem("Measurements", MeasurementMain.class, parameters)
-        .addItem("Raw data", RawDataMain.class, parameters);
+        // One entry for the two ordered process steps that used to be "Measurements" and "Raw
+        // data". The metadata is registered here and mints the measurement code; the data is
+        // produced elsewhere and appears once it has been scanned. Two pages asked the reader to
+        // know which step their data was in before choosing a link.
+        .addItem("Datasets", MeasurementDatasetMain.class, parameters);
   }
 
   /**
