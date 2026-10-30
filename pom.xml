@@ -48,7 +48,7 @@
 
   <properties>
     <java.version>21</java.version>
-    <vaadin.version>25.3.3</vaadin.version>
+    <vaadin.version>25.3.4</vaadin.version>
     <sigstore.skip>false</sigstore.skip>
 
     <!-- overwritten spring boot properties from bom-->
@@ -59,7 +59,7 @@
     <artemis.version>2.55.0</artemis.version>
     <snakeyaml.version>2.5</snakeyaml.version>
     <!--    Code coverage -->
-    <jacoco.version>0.8.15</jacoco.version>
+    <jacoco.version>0.8.16</jacoco.version>
 
     <!--    SonarCloud properties for CI -->
     <sonar.host.url>https://sonarcloud.io</sonar.host.url>
