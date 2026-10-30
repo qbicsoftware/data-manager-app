@@ -116,6 +116,23 @@ class MeasurementDatasetNavigationAndDownloadSpec extends Specification {
         code.contains('orElse("project")')
     }
 
+    def "the grid's overflow control is an ellipsis with an extensible menu"() {
+        given:
+        def code = codeOf("MeasurementDatasetDetailsComponent.java")
+
+        expect: "the ellipsis is the application's established more-actions affordance; an eye"
+        // glyph was a guess at meaning that no reader could be expected to decode.
+        code.contains("VaadinIcon.ELLIPSIS_DOTS_H")
+        !code.contains("VaadinIcon.EYE")
+
+        and: "its items are extensible, so further display options need no new control"
+        code.contains("getSubMenu()")
+        code.contains('menu.addItem("Columns")')
+
+        and: "it has an accessible name, since the glyph itself carries none"
+        code.contains("More display options")
+    }
+
     def "the download anchor lives inside the modal dialog, not in the page behind it"() {
         given:
         def guide = sourceOf("MeasurementDataDownloadGuide.java")

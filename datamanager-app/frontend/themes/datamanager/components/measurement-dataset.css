@@ -719,31 +719,30 @@
   font-size: var(--lumo-font-size-s);
 }
 
-/* ── Toolbar: column menu ─────────────────────────────────────────────────── */
+/* ── Toolbar: overflow menu ───────────────────────────────────────────────── */
 
-/* A view setting, not a filter: unboxed, with real space between label and chevron and
-   a glyph that does not outweigh the text. Previously the chevron abutted the final
-   character and the whole control was boxed like the selects beside it, making the
-   least important control the loudest thing in the row. */
-.measurement-dataset-columns-menu {
+/* An ellipsis, matching the project cards' options menu: the application's established
+   "more actions" affordance, so it is recognised without a label. Sized to a comfortable
+   target rather than to the glyph. */
+.measurement-dataset-overflow-toggle {
   display: inline-flex;
   align-items: center;
-  gap: var(--lumo-space-xs);
-  color: var(--primary-color);
-  white-space: nowrap;
+  justify-content: center;
+  color: var(--lumo-secondary-text-color);
+  padding: var(--lumo-space-xs);
+  min-width: 2rem;
+  min-height: 2rem;
+  border-radius: var(--lumo-border-radius-s);
 }
 
-.measurement-dataset-columns-menu vaadin-icon,
-.measurement-dataset-columns-menu iron-icon {
-  width: var(--lumo-font-size-m);
-  height: var(--lumo-font-size-m);
-  flex-shrink: 0;
+.measurement-dataset-overflow-toggle:hover {
+  color: var(--lumo-primary-text-color);
+  background-color: var(--lumo-contrast-5pct);
 }
 
-/* The menu bar itself must not draw a box around the item. */
-.measurement-dataset-toolbar-right vaadin-menu-bar {
-  background: none;
-  box-shadow: none;
+.measurement-dataset-column-chooser {
+  padding: var(--lumo-space-s);
+  min-width: 12rem;
 }
 
 /* ── Toolbar: grouping ────────────────────────────────────────────────────── */
