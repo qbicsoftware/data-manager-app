@@ -740,9 +740,27 @@
   background-color: var(--lumo-contrast-5pct);
 }
 
+/* The chooser is hosted in a menu item, so it inherits that item's hover and active
+   surfaces. Left alone, the whole panel takes the menu's accent tint and every row reads
+   as selected — the panel must look like a form inside a menu, not like a highlighted
+   menu entry. */
 .measurement-dataset-column-chooser {
   padding: var(--lumo-space-s);
   min-width: 12rem;
+  background-color: var(--lumo-base-color);
+}
+
+.measurement-dataset-column-chooser::part(group-field) {
+  background-color: var(--lumo-base-color);
+}
+
+/* The menu item that hosts the chooser must not paint its own hover/active surface: the
+   chooser is a form inside a menu, not a menu entry. It is marked in Java
+   (`columnsItem`), because ::part() reaches the overlay host only, not the items inside
+   it — an ::part() selector for the item would be silently inert. */
+vaadin-context-menu-item.measurement-dataset-menu-host[active],
+vaadin-context-menu-item.measurement-dataset-menu-host:hover {
+  background-color: transparent;
 }
 
 /* ── Toolbar: grouping ────────────────────────────────────────────────────── */

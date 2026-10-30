@@ -116,6 +116,21 @@ class MeasurementDatasetNavigationAndDownloadSpec extends Specification {
         code.contains('orElse("project")')
     }
 
+    def "the column chooser stops clicks from reaching the hosting menu item"() {
+        given:
+        def code = codeOf("MeasurementDatasetDetailsComponent.java")
+
+        expect: "without this the menu item handles the click, marks itself active, and the whole"
+        // submenu panel takes the accent tint — every row turns blue as soon as a checkbox is
+        // hovered. The guard existed in the previous implementation and was lost in the rebuild.
+        code.contains("stopPropagation")
+
+        and: "the hosting item is marked so its hover/active surface can be suppressed, because the"
+        // chooser is a form inside a menu rather than a menu entry. Done in Java because ::part()
+        // reaches the overlay host only, not the items inside it.
+        code.contains("measurement-dataset-menu-host")
+    }
+
     def "the grid's overflow control is an ellipsis with an extensible menu"() {
         given:
         def code = codeOf("MeasurementDatasetDetailsComponent.java")

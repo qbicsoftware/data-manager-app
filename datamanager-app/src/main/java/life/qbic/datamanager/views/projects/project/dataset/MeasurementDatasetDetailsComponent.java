@@ -596,6 +596,10 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
     // One item today. The submenu keeps the menu extensible: further display options can be added
     // beside it without reworking the control or crowding the action row.
     var columnsItem = menu.addItem("Columns");
+    // Marked so the stylesheet can suppress the hosting item's hover/active surface: the chooser
+    // is a form inside a menu, and inheriting a menu entry's tint made the whole panel look
+    // selected. Done here rather than in CSS because ::part() reaches the overlay host only.
+    columnsItem.getElement().getClassList().add("measurement-dataset-menu-host");
     var columnsSubMenu = columnsItem.getSubMenu();
     columnsSubMenu.addItem(columnChooser(grid));
     return menuButton;
@@ -618,6 +622,12 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
     checkboxGroup.setValue(columns.stream().filter(Column::isVisible).collect(Collectors.toSet()));
     checkboxGroup.addThemeVariants(CheckboxGroupVariant.LUMO_VERTICAL);
     checkboxGroup.addClassNames("flex-vertical", "measurement-dataset-column-chooser");
+    // Stop the click from reaching the menu item. Without this the item handles it, marks itself
+    // active, and the whole submenu panel stays in its highlighted state — every row turns blue as
+    // soon as a checkbox is hovered or clicked. This guard existed in the previous implementation
+    // and was lost when the menu was rebuilt.
+    checkboxGroup.getElement().executeJs(
+        "this.addEventListener('click', e => e.stopPropagation());");
     checkboxGroup.addValueChangeListener(event -> {
       Set<Column<T>> selected = event.getValue();
       columns.forEach(column -> column.setVisible(selected.contains(column)));
