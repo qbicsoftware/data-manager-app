@@ -83,7 +83,10 @@ public class MeasurementDatasetActions implements Serializable {
    * Opens the guidance on how to fetch the data. It sits with the other actions because that is
    * where a reader looks for it; a band below the list was neither findable nor in place.
    */
-  private final Button getDataButton = new Button("Get data", VaadinIcon.DOWNLOAD_ALT.create());
+  // LINK, not another download glyph: "Get data" sits beside "Export", and two adjacent download
+  // arrows read as the same action twice. This one opens the guidance on *where* the files are,
+  // so it points at a destination rather than promising a download this page does not perform.
+  private final Button getDataButton = new Button("Get data", VaadinIcon.LINK.create());
 
   /**
    * @param asyncService       the service the export and update calls go through

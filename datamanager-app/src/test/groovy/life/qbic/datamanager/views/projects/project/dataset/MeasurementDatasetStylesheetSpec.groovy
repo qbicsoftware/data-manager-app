@@ -113,20 +113,30 @@ class MeasurementDatasetStylesheetSpec extends Specification {
         rule.contains("flex: 0 0 auto")
     }
 
-    def "a lone dataset card does not stretch across the content column"() {
+    def "each dataset count gets its own column layout"() {
         given:
         def css = stylesheet().text
 
-        expect: "auto-fit collapses its empty tracks, so a single card filled the whole row and its"
-        // ring ended up a screen away from the text it describes. A flex basis with a maximum
-        // keeps one card beside its own content and lets several wrap.
-        //
-        // The check reads the *declaration*, not the file: the old pattern is still mentioned in
-        // the comment that explains why it was wrong, and a plain text search matched that.
-        !block("measurement-dataset-selector-cards").contains("grid-template-columns")
-        block("measurement-dataset-selector-cards").contains("flex-wrap: wrap")
-        block("measurement-dataset-card").contains("max-width:")
-        block("measurement-dataset-card").contains("flex: 0 1")
+        expect: "a single fixed card size is always a compromise — one, two and three datasets"
+        // want different columns, and an auto-fitting grid collapses its empty tracks so a lone
+        // card either stretches across the page or sits marooned at the left. Each count names its
+        // own layout, following the pinned-project cards.
+        css.contains(".measurement-dataset-count-1")
+        css.contains(".measurement-dataset-count-2")
+        css.contains(".measurement-dataset-count-3")
+        !block("measurement-dataset-selector-cards").contains("auto-fit")
+        !block("measurement-dataset-selector-cards").contains("flex-wrap: wrap")
+    }
+
+    def "one dataset is capped at half the row rather than spanning it"() {
+        given:
+        def css = stylesheet().text
+        int start = css.indexOf(".measurement-dataset-count-1 {")
+        assert start > 0
+        def rule = css.substring(start, css.indexOf("}", start))
+
+        expect: "a full-width band reads as a page header, not as one card among possible others"
+        rule.contains("50%")
     }
 
     def "the board's status ring sits beside the card's text, not at the far edge"() {

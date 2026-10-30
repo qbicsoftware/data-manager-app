@@ -473,11 +473,25 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
     searchField.addClassName("measurement-dataset-search");
     Div row = new Div(searchField, dataStatusFilter);
     row.addClassName("measurement-dataset-toolbar");
+    // Grouped by scope, so the row reads as three things rather than seven peers. The selection
+    // actions sit together because they act on the same thing; "Get data" and the column menu are
+    // dataset- and view-scoped and sit beyond a separator.
     Div toolbarRight = new Div();
     toolbarRight.addClassName("measurement-dataset-toolbar-right");
     if (actions != null) {
-      toolbarRight.add(actions.getDataButton(), actions.exportButton(), actions.editButton(),
+      Div selectionActions = new Div(actions.exportButton(), actions.editButton(),
           actions.deleteButton());
+      selectionActions.addClassName("measurement-dataset-toolbar-actions");
+      toolbarRight.add(selectionActions);
+
+      Div separator = new Div();
+      separator.addClassName("measurement-dataset-toolbar-separator");
+      separator.getElement().setAttribute("aria-hidden", "true");
+      toolbarRight.add(separator);
+
+      Div datasetActions = new Div(actions.getDataButton());
+      datasetActions.addClassName("measurement-dataset-toolbar-actions");
+      toolbarRight.add(datasetActions);
     }
     toolbarRight.add(showHideColumnsMenu(grid));
     row.add(toolbarRight);
@@ -556,7 +570,11 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
 
   private static <T> MenuBar showHideColumnsMenu(Grid<T> grid) {
     MenuBar menuBar = new MenuBar();
+    // A menu, not a filter: no box, a gap between label and chevron, and a smaller glyph. The
+    // previous markup put a full-size chevron hard against the "s" of "Columns" and boxed the whole
+    // thing like the selects beside it, which made a view setting the loudest control in the row.
     Span itemContent = new Span(new Span("Show/Hide Columns"), VaadinIcon.CHEVRON_DOWN.create());
+    itemContent.addClassName("measurement-dataset-columns-menu");
     var subMenu = menuBar.addItem(itemContent).getSubMenu();
     CheckboxGroup<Column<T>> checkboxGroup = new CheckboxGroup<>();
     checkboxGroup.setItemLabelGenerator(Column::getHeaderText);

@@ -63,6 +63,11 @@ public class MeasurementDatasetSelector extends Div implements Serializable {
   public void setDatasets(List<DatasetSummary> summaries) {
     cards.removeAll();
     cardBySegment.clear();
+    // Count-based column layout, following the pinned-project cards: a fixed card size is always a
+    // compromise, because one, two and three datasets want different columns. A dedicated class per
+    // count lets the row distribute evenly instead of leaving a lone card's width to chance.
+    cards.getClassNames().removeIf(name -> name.startsWith("measurement-dataset-count-"));
+    cards.addClassName("measurement-dataset-count-%d".formatted(summaries.size()));
 
     // With one dataset there is nothing to choose between: the card states what the list below
     // contains. Presenting it as a selected radio would tell the reader they made a choice, and
@@ -162,6 +167,8 @@ public class MeasurementDatasetSelector extends Div implements Serializable {
     Span label = new Span(summary.segment().label());
     label.addClassName("measurement-dataset-card-label");
 
+    // Count on the title line, at body weight: two lines for "Genomics" and "6 measurements" made
+    // the least interesting number the tallest thing in the card.
     Span count = new Span(summary.total() == 1
         ? "1 measurement"
         : "%d measurements".formatted(summary.total()));
@@ -176,28 +183,23 @@ public class MeasurementDatasetSelector extends Div implements Serializable {
     Div ring = new Div(new CompletenessRing(summary.available(), summary.total(),
         ringAriaText(summary)));
     ring.addClassName("measurement-dataset-card-ring");
+    if (summary.total() > 0 && summary.waiting() == 0) {
+      // A complete dataset gets a marker beside the ring. A full ring is already a green circle,
+      // but at card size that is a faint difference from a 90% arc; the marker makes "everything
+      // has arrived" unmistakable without a sentence.
+      ring.addClassName("measurement-dataset-card-ring--complete");
+      ring.getElement().setAttribute("title",
+          "All %d measurements have data available".formatted(summary.total()));
+    }
 
     Div headlineRow = new Div(headline, ring);
     headlineRow.addClassName("measurement-dataset-card-headline-row");
     card.add(headlineRow);
 
-    // The facts are stated as text, never as colour alone, so a reader who does not perceive the
-    // tint still reads the state.
-    Span coverage = new Span(coverageText(summary));
-    coverage.addClassName("measurement-dataset-card-coverage");
-    if (summary.waiting() > 0) {
-      coverage.addClassName("measurement-dataset-card-coverage--outstanding");
-    }
-    card.add(coverage);
-
-    Span size = new Span(sizeText(summary));
-    size.addClassName("measurement-dataset-card-size");
-    card.add(size);
-
-    if (!selectable) {
-      return card;
-    }
-
+    // No count sentence beside the ring. The ring states the ratio, the filter finds the
+    // measurements that are still missing, and the card stated the same numbers twice — the arc and
+    // "4 of 6 waiting for data" encode one fact. The ring's spoken form carries the numbers for
+    // assistive technology, and its complete state is named as well as drawn.
     card.addClickListener(event -> select(summary.segment()));
     card.getElement().setAttribute("tabindex", "0");
     // A div gets no native activation, so Enter and Space are wired explicitly. Putting something
@@ -224,36 +226,11 @@ public class MeasurementDatasetSelector extends Div implements Serializable {
         .formatted(summary.available(), summary.total());
   }
 
-  private static String coverageText(DatasetSummary summary) {
-    if (summary.total() == 0) {
-      return "No measurement metadata registered yet";
-    }
-    if (summary.waiting() == 0) {
-      return "Data available for all %d".formatted(summary.total());
-    }
-    if (summary.waiting() == summary.total()) {
-      return summary.total() == 1
-          ? "Waiting for its data"
-          : "Waiting for their data";
-    }
-    return "%d of %d waiting for data".formatted(summary.waiting(), summary.total());
-  }
-
   /**
    * States the size of what has arrived. {@code 0} bytes is ambiguous — it means either no data or
    * data whose size the external sync never recorded — so the card must not present it as an empty
    * dataset.
    */
-  private static String sizeText(DatasetSummary summary) {
-    if (summary.available() == 0) {
-      return "No data attached yet";
-    }
-    if (summary.bytes() > 0) {
-      return FileSizeFormatter.formatBytes(summary.bytes());
-    }
-    return "Size not recorded";
-  }
-
   /**
    * Registers a listener for dataset selection changes.
    *

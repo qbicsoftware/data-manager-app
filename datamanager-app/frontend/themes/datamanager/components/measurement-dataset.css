@@ -68,27 +68,58 @@
 /* The datasets are the page's structure, not a filter. Each card is a
    mutually-exclusive choice that activates the list below it, so the reader
    never has to discover a dropdown to learn the page is grouped at all. */
+/* Count-based column layout, following the pinned-project cards: a single fixed
+   card size is always a compromise, because one, two and three datasets want
+   different columns. Every count gets an explicit layout so the row distributes
+   evenly instead of leaving a lone card's width to chance. */
 .measurement-dataset-selector-cards {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
   gap: var(--lumo-space-m);
   align-items: stretch;
 }
 
-/* A card is as wide as it needs to be, not as wide as the screen.
-   `repeat(auto-fit, minmax(16rem, 1fr))` collapsed the empty tracks and stretched a lone card
-   across the whole content column — with one measurement method (the common case) that produced a
-   band the full width of the page whose ring sat a screen away from the text it describes. A flex
-   row with a bounded basis keeps a single card beside its own content and lets several cards wrap
-   naturally. */
+/* One dataset: capped at the width it would have with two in a row, so it reads as
+   one card rather than as a page-wide band — and it does not sit marooned at the
+   left of an otherwise empty row. */
+.measurement-dataset-count-1 {
+  grid-template-columns: minmax(16rem, 50%);
+}
+
+.measurement-dataset-count-2 {
+  grid-template-columns: repeat(2, minmax(16rem, 1fr));
+}
+
+/* Three — the maximum the domain has — fills the row. */
+.measurement-dataset-count-3,
+.measurement-dataset-count-4,
+.measurement-dataset-count-5,
+.measurement-dataset-count-6 {
+  grid-template-columns: repeat(3, minmax(16rem, 1fr));
+}
+
+/* Narrow viewports drop three-across first, then everything to one column, so cards
+   wrap instead of overflowing (USER-NFR-01). */
+@media (max-width: 62rem) {
+  .measurement-dataset-count-2,
+  .measurement-dataset-count-3,
+  .measurement-dataset-count-4,
+  .measurement-dataset-count-5,
+  .measurement-dataset-count-6 {
+    grid-template-columns: repeat(2, minmax(16rem, 1fr));
+  }
+}
+
+@media (max-width: 38rem) {
+  .measurement-dataset-selector-cards {
+    grid-template-columns: minmax(16rem, 1fr);
+  }
+}
+
 .measurement-dataset-card {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-02);
   padding: var(--lumo-space-m);
-  /* As wide as its content needs, not as wide as the screen. */
-  flex: 0 1 22rem;
-  max-width: 30rem;
   border: 1px solid var(--lumo-contrast-10pct);
   border-radius: var(--lumo-border-radius-m);
   background-color: var(--lumo-base-color);
@@ -110,32 +141,25 @@
 }
 
 /* Selection is carried by a thick leading rule, a tinted border and aria-checked —
-   never by colour alone.
-   
-   A fully tinted surface was too loud: at three cards it turned a third of the page
-   blue, and with one dataset it read as though the reader had made a choice that
-   mattered. The rule is the primary signal (it is a shape, visible at a glance and
-   unmistakable beside unselected cards), the border reinforces it, and the fill is
-   left alone so the card's text keeps its normal contrast. */
+   never by colour alone. The rule is the primary signal (a shape, visible at a glance
+   beside unselected cards); the border reinforces it and the fill is left alone so the
+   card's text keeps its normal contrast. */
 .measurement-dataset-card--selected {
   border-color: var(--primary-color);
   border-left: 4px solid var(--primary-color);
-  /* Keeps the text where it was: the rule replaces padding rather than adding to it. */
   padding-left: calc(var(--lumo-space-m) - 3px);
 }
 
 /* The active card keeps its accent rule while hovered: the bar's presence is shared,
-   its colour is what distinguishes the active card from the one under the pointer.
-   This needs the hover selector too, or the plain :hover rule above (which is more
-   specific than a bare modifier class) would win. */
+   its colour is what distinguishes the active card from the one under the pointer. */
 .measurement-dataset-card--selected:hover {
   border-color: var(--primary-color);
   border-left: 4px solid var(--primary-color);
 }
 
-/* The single-dataset card is a statement, not a choice: it carries no pointer
-   affordance, no hover state and no selection treatment, so nothing suggests
-   there was an alternative. */
+/* The single-dataset card is a statement, not a choice: no pointer affordance, no
+   hover state and no selection treatment, so nothing suggests there was an
+   alternative. */
 .measurement-dataset-card--single {
   cursor: default;
 }
@@ -151,10 +175,13 @@
   outline-offset: 2px;
 }
 
+/* Title and count on one line. Stacking them put two lines and one large number in
+   each card, so the least interesting value was the tallest thing on the page — three
+   times across the row. */
 .measurement-dataset-card-headline {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-01);
+  gap: 0;
   min-width: 0;
 }
 
@@ -164,23 +191,11 @@
   font-weight: var(--font-weight-semi-bold);
 }
 
+/* Body weight and body size: the count is a supporting fact, not the headline. */
 .measurement-dataset-card-count {
-  color: var(--body-text-color);
-  font-size: var(--lumo-font-size-l);
-  font-weight: var(--font-weight-medium);
-}
-
-.measurement-dataset-card-coverage,
-.measurement-dataset-card-size {
-  color: var(--body-text-color);
+  color: var(--field-label-text-color);
   font-size: var(--lumo-font-size-s);
-}
-
-/* An outstanding dataset is stated, not just tinted: the text says how many of
-   how many. The tint only reinforces. */
-.measurement-dataset-card-coverage--outstanding {
-  color: var(--warning-text-color);
-  font-weight: var(--font-weight-medium);
+  font-weight: var(--font-weight-regular);
 }
 
 /* ── Toolbar ──────────────────────────────────────────────────────────────── */
@@ -589,6 +604,9 @@
   min-width: 0;
 }
 
+/* A complete dataset is marked, not only drawn. A full ring is a green circle, but at
+   card size that is a faint difference from a 90% arc, and "everything has arrived" is
+   the one state worth recognising without reading anything. */
 .measurement-dataset-card-ring {
   flex: 0 0 auto;
   margin-left: auto;
@@ -597,6 +615,11 @@
      top-centre so the scaled ring stays inside its box instead of drifting. */
   transform: scale(0.72);
   transform-origin: top center;
+}
+
+.measurement-dataset-card-ring--complete {
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--success-color);
 }
 
 /* ── Download guidance (dialog content) ───────────────────────────────────── */
@@ -686,4 +709,50 @@
 .measurement-dataset-delete-followup {
   color: var(--body-text-color);
   font-size: var(--lumo-font-size-s);
+}
+
+/* ── Toolbar: column menu ─────────────────────────────────────────────────── */
+
+/* A view setting, not a filter: unboxed, with real space between label and chevron and
+   a glyph that does not outweigh the text. Previously the chevron abutted the final
+   character and the whole control was boxed like the selects beside it, making the
+   least important control the loudest thing in the row. */
+.measurement-dataset-columns-menu {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lumo-space-xs);
+  color: var(--primary-color);
+  white-space: nowrap;
+}
+
+.measurement-dataset-columns-menu vaadin-icon,
+.measurement-dataset-columns-menu iron-icon {
+  width: var(--lumo-font-size-m);
+  height: var(--lumo-font-size-m);
+  flex-shrink: 0;
+}
+
+/* The menu bar itself must not draw a box around the item. */
+.measurement-dataset-toolbar-right vaadin-menu-bar {
+  background: none;
+  box-shadow: none;
+}
+
+/* ── Toolbar: grouping ────────────────────────────────────────────────────── */
+
+/* Three scopes share this row: the list (search, filter), the selection (export, edit,
+   delete) and the dataset/view (get data, columns). A separator states the boundary the
+   flat 8px rhythm could not, so the row reads as groups rather than seven peers. */
+.measurement-dataset-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+}
+
+.measurement-dataset-toolbar-separator {
+  width: 1px;
+  align-self: stretch;
+  margin-block: var(--lumo-space-xs);
+  background-color: var(--lumo-contrast-20pct);
+  flex-shrink: 0;
 }
