@@ -171,6 +171,25 @@ class MeasurementDatasetStylesheetSpec extends Specification {
         return text.substring(start, text.indexOf("}", start))
     }
 
+    def "the grid suppresses native text selection in its cells"() {
+        given:
+        def css = stylesheet().text
+
+        expect: "a row click that drifts a pixel is a click-and-drag, and a drag over text"
+        // selects it — the smeared highlight across several rows. The grid only suppresses text
+        // selection while reordering, resizing or range-selecting, so at rest the cells need this.
+        css.contains("measurement-dataset-grid::part(body-cell)")
+        css.contains("measurement-dataset-grid vaadin-grid-cell-content")
+        css.contains("user-select: none")
+
+        and: "the pointer cursor is the other half of the pair: it invites the click"
+        css.contains("cursor: pointer")
+
+        and: "the checkbox and chevron cells are exempt, so they do not look like the row"
+        css.contains(".measurement-dataset-grid vaadin-checkbox")
+        css.contains("cursor: default")
+    }
+
     def "the toolbar separator has an explicit height"() {
         given:
         def rule = block("measurement-dataset-toolbar-separator")

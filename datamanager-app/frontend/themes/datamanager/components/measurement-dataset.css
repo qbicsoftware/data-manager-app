@@ -323,9 +323,53 @@
   color: var(--success-text-color);
 }
 
+/* The row opens the record on click, so the body cells say so. This is the other half of
+   the pair below: a pointer cursor invites the click, and the suppressed text selection
+   keeps a small drift during that click from dragging a highlight across the rows. */
+.measurement-dataset-grid::part(body-cell) {
+  cursor: pointer;
+}
+
+/* Lays the chevron out at the cell's trailing edge. */
 .measurement-dataset-details-cell {
   display: flex;
   justify-content: flex-end;
+}
+
+/* The row is a navigation surface: clicking it opens the record. The checkbox cell and
+   the chevron cell keep their own behaviour — a click on the checkbox must select rather
+   than open, and the chevron is its own control — so neither gets the row's pointer
+   cursor. Vaadin also drops an item click from a cell containing a focusable element
+   (gridConnector.ts), so these two already behave correctly; this only stops them
+   *looking* like the rest of the row.
+
+   These must NOT be written as `::part(body-cell) .measurement-dataset-details-cell`.
+   A descendant selector may not trail a ::part() pseudo-element — the rule is invalid
+   CSS and the production frontend build rejects it — and cell content is light DOM
+   anyway, so a plain descendant selector reaches it and outranks the ::part() rule. */
+.measurement-dataset-grid .measurement-dataset-details-cell,
+.measurement-dataset-grid vaadin-checkbox {
+  cursor: default;
+}
+
+/* Clicking anywhere on a row opens its record, so a click that drifts a pixel or two is
+   a click-and-drag as far as the browser is concerned — and a drag over text selects it.
+   The result is the smeared blue highlight across several rows. The grid only suppresses
+   text selection while reordering, resizing or range-selecting
+   (vaadin-grid-base-styles.js sets `user-select: none` for `:host([reordering])`,
+   `#scroller[range-selecting]` and `[draggable-source]`), so at rest cell text stays
+   selectable and the browser has no reason to hold back.
+
+   The tell that this is native text selection and not a style: the checkbox and chevron
+   columns never highlight, because Lumo already sets `user-select: none` on its controls.
+   Only bare cell text highlights.
+
+   The record's values are shown in full in the detail panel, which is ordinary selectable
+   text, and bulk output goes through Export, so giving up selection in the cells costs
+   nothing that is not available elsewhere. */
+.measurement-dataset-grid::part(body-cell),
+.measurement-dataset-grid vaadin-grid-cell-content {
+  user-select: none;
 }
 
 /* The open record's row is marked distinctly from a selected row: opening an
