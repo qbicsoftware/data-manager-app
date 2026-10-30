@@ -103,7 +103,7 @@ public class AppNavigationComponent extends Div {
         // data". The metadata is registered here and mints the measurement code; the data is
         // produced elsewhere and appears once it has been scanned. Two pages asked the reader to
         // know which step their data was in before choosing a link.
-        .addItem("Dataset", MeasurementDatasetMain.class, parameters);
+        .addItem("Datasets", MeasurementDatasetMain.class, parameters);
   }
 
   /**

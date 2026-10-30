@@ -164,7 +164,9 @@ public class MeasurementDatasetSelector extends Div implements Serializable {
       card.getElement().setAttribute("role", "radio");
     }
 
-    Span label = new Span(summary.segment().label());
+    // Each card *is* a dataset, so it says so: "Genomics" alone reads as a category or a filter,
+    // and a reader had no way to know the row of cards was the list of the experiment's datasets.
+    Span label = new Span("%s dataset".formatted(summary.segment().label()));
     label.addClassName("measurement-dataset-card-label");
 
     // Count on the title line, at body weight: two lines for "Genomics" and "6 measurements" made
@@ -196,10 +198,14 @@ public class MeasurementDatasetSelector extends Div implements Serializable {
     headlineRow.addClassName("measurement-dataset-card-headline-row");
     card.add(headlineRow);
 
-    // No count sentence beside the ring. The ring states the ratio, the filter finds the
-    // measurements that are still missing, and the card stated the same numbers twice — the arc and
-    // "4 of 6 waiting for data" encode one fact. The ring's spoken form carries the numbers for
-    // assistive technology, and its complete state is named as well as drawn.
+    // The size is stated because it is the fact a reader needs *before* downloading: it decides
+    // whether the data fits on their disk and their link. It is not derivable from anything else on
+    // the page, so it earns its line — unlike the "N of M waiting" sentence, which only restated
+    // the ring.
+    Span size = new Span(sizeText(summary));
+    size.addClassName("measurement-dataset-card-size");
+    card.add(size);
+
     card.addClickListener(event -> select(summary.segment()));
     card.getElement().setAttribute("tabindex", "0");
     // A div gets no native activation, so Enter and Space are wired explicitly. Putting something
@@ -215,6 +221,23 @@ public class MeasurementDatasetSelector extends Div implements Serializable {
   /**
    * The spoken form of the ring, so assistive technology gets the same fact the arc shows.
    */
+  /**
+   * States the size of the dataset's data.
+   *
+   * <p>Deliberately explicit about the two cases that are not a number: a dataset with no data yet
+   * has no size, and a dataset whose arrival the sync never measured has a size that is unknown
+   * rather than zero. Presenting either as "0 B" would tell a reader their download is free.</p>
+   */
+  static String sizeText(DatasetSummary summary) {
+    if (summary.available() == 0) {
+      return "No data yet";
+    }
+    if (summary.bytes() > 0) {
+      return FileSizeFormatter.formatBytes(summary.bytes());
+    }
+    return "Size not recorded";
+  }
+
   private static String ringAriaText(DatasetSummary summary) {
     if (summary.total() == 0) {
       return "No measurement metadata registered yet";

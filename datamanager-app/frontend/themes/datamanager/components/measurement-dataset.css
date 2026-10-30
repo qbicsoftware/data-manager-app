@@ -198,6 +198,15 @@
   font-weight: var(--font-weight-regular);
 }
 
+/* The dataset's size, which a reader needs before downloading: it decides whether the
+   data fits their disk and their link. Body ink rather than the muted label colour,
+   because it is a fact to read, not a caption. */
+.measurement-dataset-card-size {
+  color: var(--body-text-color);
+  font-size: var(--lumo-font-size-s);
+  margin-top: var(--spacing-02);
+}
+
 /* ── Toolbar ──────────────────────────────────────────────────────────────── */
 
 .measurement-dataset-toolbar {

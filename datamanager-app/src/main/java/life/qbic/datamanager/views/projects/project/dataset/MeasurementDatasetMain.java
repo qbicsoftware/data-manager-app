@@ -39,7 +39,7 @@ import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
- * The experiment's <b>Measurement Dataset</b>: one surface for the two ordered process steps that
+ * The experiment's <b>Datasets</b>: one surface for the two ordered process steps that
  * were previously two pages.
  *
  * <p>A measurement is the metadata describing how a result was produced; the measurement data is
@@ -115,7 +115,7 @@ public class MeasurementDatasetMain extends Main
   private final life.qbic.datamanager.views.general.download.DownloadComponent downloadComponent =
       new life.qbic.datamanager.views.general.download.DownloadComponent();
 
-  private final H1 title = new H1("Dataset");
+  private final H1 title = new H1("Datasets");
   private final com.vaadin.flow.component.button.Button registerButton =
       new com.vaadin.flow.component.button.Button("Register measurements",
           com.vaadin.flow.component.icon.VaadinIcon.PLUS.create());

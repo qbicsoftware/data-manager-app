@@ -188,6 +188,59 @@ class MeasurementDatasetSelectorSpec extends Specification {
         return found
     }
 
+    @Unroll
+    def "a card names itself a dataset (#segment -> #expected)"() {
+        given: "an experiment measured by one or more methods"
+        def selector = new MeasurementDatasetSelector()
+
+        when:
+        selector.setDatasets([new MeasurementDatasetSelector.DatasetSummary(segment, 6, 2, 1024L)])
+        def label = firstLabelText(selector)
+
+        then: "each card *is* a dataset, so a bare method name would read as a filter or category"
+        label == expected
+
+        where:
+        segment                                           || expected
+        MeasurementDatasetSegment.GENOMICS                || "Genomics dataset"
+        MeasurementDatasetSegment.PROTEOMICS              || "Proteomics dataset"
+        MeasurementDatasetSegment.IMMUNOPEPTIDOMICS       || "Immunopeptidomics dataset"
+    }
+
+    @Unroll
+    def "a card states the dataset size for download planning (#available.#bytes -> #expected)"() {
+        given:
+        def summary = new MeasurementDatasetSelector.DatasetSummary(
+                MeasurementDatasetSegment.GENOMICS, 10, available, bytes)
+
+        expect: "size decides whether the data fits the reader's disk and link, so it is stated —"
+        // and the two cases that are not a number must not read as a free download.
+        MeasurementDatasetSelector.sizeText(summary) == expected
+
+        where:
+        // FileSizeFormatter divides by 1024 while labelling the units KB/MB/GB, so these are
+        // binary values under decimal names. The expectations follow the formatter, which is the
+        // app-wide one and not this page's choice.
+        available | bytes              || expected
+        2         | 4_200_000_000L     || "3.91 GB"
+        2         | 1024L              || "1.00 KB"
+        0         | 0L                 || "No data yet"
+        2         | 0L                 || "Size not recorded"
+    }
+
+    /** The label text of the selector's first card. */
+    private static String firstLabelText(MeasurementDatasetSelector selector) {
+        def cardsDiv = selector.getChildren().toList().first()
+        def card = ((com.vaadin.flow.component.html.Div) cardsDiv)
+                .getChildren().toList().first()
+        def headlineRow = ((com.vaadin.flow.component.html.Div) card)
+                .getChildren().toList().first()
+        def headline = ((com.vaadin.flow.component.html.Div) headlineRow)
+                .getChildren().toList().first()
+        return ((com.vaadin.flow.component.html.Span) ((com.vaadin.flow.component.html.Div) headline)
+                .getChildren().toList().first()).getText()
+    }
+
     def "shortening two long codes keeps their distinguishing prefix readable"() {
         given: "two measurements of the same sample, differing only in the timestamp"
         def first = MeasurementDatasetDetailsComponent.shortMeasurementCode(
