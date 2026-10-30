@@ -33,6 +33,7 @@ import life.qbic.datamanager.views.projects.project.samples.SampleInformationMai
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.api.ProjectQueryService;
+import life.qbic.application.commons.FileSizeFormatter;
 import life.qbic.projectmanagement.application.query.ExperimentProgress;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
@@ -235,7 +236,7 @@ public class MeasurementDatasetMain extends Main
             "Unknown experiment " + experimentId + " in project " + projectId));
 
     int total = progress.measurementCount();
-    updateHeader(total);
+    updateHeader(progress);
     registerButton.setVisible(canWrite());
 
     removeDetailsComponent();
@@ -301,14 +302,52 @@ public class MeasurementDatasetMain extends Main
    * twice. It now lives in the per-dataset cards, where it is attributable to a dataset instead of
    * being an experiment-wide figure the reader cannot reconcile with the list below it.</p>
    */
-  private void updateHeader(int total) {
+  /**
+   * States the experiment's standing across all its datasets.
+   *
+   * <p>Not a restatement of the cards. The line used to print the total measurement count, which
+   * was exactly the sum of the cards directly beneath it — a duplicate dressed as a summary. It now
+   * carries what no single card can: how many datasets the experiment has, and how much data has
+   * arrived in total, which is the figure a reader needs for a cross-dataset download.</p>
+   *
+   * @param progress the experiment's read model
+   */
+  private void updateHeader(ExperimentProgress progress) {
+    statusLine.setText(summaryLine(progress));
+  }
+
+  /**
+   * The experiment's standing across all its datasets, as one line.
+   *
+   * <p>Package-private and static so the wording is testable without a component instance. It
+   * deliberately says what no single card can — the number of datasets and the total volume — rather
+   * than repeating the measurement total, which is the sum of the cards directly beneath it.</p>
+   *
+   * @param progress the experiment's read model
+   * @return the line to show under the page title
+   */
+  static String summaryLine(ExperimentProgress progress) {
+    int total = progress.measurementCount();
     if (total == 0) {
-      statusLine.setText("No measurement metadata registered yet");
-      return;
+      return "No measurements registered yet";
     }
-    statusLine.setText(total == 1
-        ? "1 measurement in 1 dataset"
-        : "%d measurements".formatted(total));
+    int datasets = progress.assayTypes().size();
+    String datasetPart = datasets == 1 ? "1 dataset" : "%d datasets".formatted(datasets);
+    String measurementPart = total == 1
+        ? "1 measurement"
+        : "%d measurements".formatted(total);
+
+    long bytes = progress.primaryDataBytes();
+    int withData = progress.measurementsWithPrimaryData();
+    String dataPart;
+    if (withData == 0) {
+      dataPart = "no data yet";
+    } else if (bytes > 0) {
+      dataPart = FileSizeFormatter.formatBytes(bytes);
+    } else {
+      dataPart = "data size not recorded";
+    }
+    return "%s \u00b7 %s \u00b7 %s".formatted(datasetPart, measurementPart, dataPart);
   }
 
   /**

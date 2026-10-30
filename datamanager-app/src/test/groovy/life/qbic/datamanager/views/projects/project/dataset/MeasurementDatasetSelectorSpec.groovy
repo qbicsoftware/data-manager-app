@@ -189,6 +189,28 @@ class MeasurementDatasetSelectorSpec extends Specification {
     }
 
     @Unroll
+    def "the header summarises across datasets instead of repeating their sum (#ngs.#pxp.#ip)"() {
+        given: "an experiment with the given per-method measurement counts"
+        def progress = progressWith(ngs, ngsWithData, ngsBytes, pxp, pxpWithData, pxpBytes,
+                ip, ipWithData, ipBytes)
+
+        expect: "the line used to print the total measurement count, which was exactly the sum of"
+        // the cards beneath it — a duplicate dressed as a summary. It now carries what no single
+        // card can: how many datasets exist and how much data has arrived in total.
+        MeasurementDatasetMain.summaryLine(progress) == expected
+
+        where:
+        ngs | ngsWithData | ngsBytes | pxp | pxpWithData | pxpBytes | ip | ipWithData | ipBytes || expected
+        6   | 2           | 1024L    | 0   | 0           | 0L       | 0  | 0           | 0L      || "1 dataset \u00b7 6 measurements \u00b7 1.00 KB"
+        6   | 2           | 1024L    | 3   | 3           | 1024L    | 0  | 0           | 0L      || "2 datasets \u00b7 9 measurements \u00b7 2.00 KB"
+        6   | 2           | 1024L    | 3   | 3           | 1024L    | 4  | 4           | 1024L   || "3 datasets \u00b7 13 measurements \u00b7 3.00 KB"
+        6   | 0           | 0L       | 0   | 0           | 0L       | 0  | 0           | 0L      || "1 dataset \u00b7 6 measurements \u00b7 no data yet"
+        6   | 2           | 0L       | 0   | 0           | 0L       | 0  | 0           | 0L      || "1 dataset \u00b7 6 measurements \u00b7 data size not recorded"
+        0   | 0           | 0L       | 0   | 0           | 0L       | 0  | 0           | 0L      || "No measurements registered yet"
+        1   | 1           | 1024L    | 0   | 0           | 0L       | 0  | 0           | 0L      || "1 dataset \u00b7 1 measurement \u00b7 1.00 KB"
+    }
+
+    @Unroll
     def "a card names itself a dataset (#segment -> #expected)"() {
         given: "an experiment measured by one or more methods"
         def selector = new MeasurementDatasetSelector()
@@ -205,6 +227,37 @@ class MeasurementDatasetSelectorSpec extends Specification {
         MeasurementDatasetSegment.GENOMICS                || "Genomics dataset"
         MeasurementDatasetSegment.PROTEOMICS              || "Proteomics dataset"
         MeasurementDatasetSegment.IMMUNOPEPTIDOMICS       || "Immunopeptidomics dataset"
+    }
+
+    @Unroll
+    def "count and size share one line, because both answer how big the dataset is (#total.#available.#bytes)"() {
+        given:
+        def selector = new MeasurementDatasetSelector()
+
+        when:
+        selector.setDatasets([new MeasurementDatasetSelector.DatasetSummary(
+                MeasurementDatasetSegment.GENOMICS, total, available, bytes)])
+        def line = quantitiesLineText(selector)
+
+        then: "the count alone sat above the ring as its unexplained denominator; beside the size it"
+        // is one of the two measures of the dataset's extent, and together they answer the question
+        // a reader has before downloading.
+        line == expected
+
+        where:
+        total | available | bytes          || expected
+        6     | 2         | 1024L          || "6 measurements \u00b7 1.00 KB"
+        1     | 1         | 1024L          || "1 measurement \u00b7 1.00 KB"
+        6     | 0         | 0L             || "6 measurements \u00b7 No data yet"
+        6     | 2         | 0L             || "6 measurements \u00b7 Size not recorded"
+    }
+
+    /** The quantities line of the selector's first card. */
+    private static String quantitiesLineText(MeasurementDatasetSelector selector) {
+        def cardsDiv = (com.vaadin.flow.component.html.Div) selector.getChildren().toList().first()
+        def card = (com.vaadin.flow.component.html.Div) cardsDiv.getChildren().toList().first()
+        // headline row, then the quantities span
+        return ((com.vaadin.flow.component.html.Span) card.getChildren().toList().get(1)).getText()
     }
 
     @Unroll

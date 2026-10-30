@@ -191,16 +191,10 @@
   font-weight: var(--font-weight-semi-bold);
 }
 
-/* Body weight and body size: the count is a supporting fact, not the headline. */
-.measurement-dataset-card-count {
-  color: var(--field-label-text-color);
-  font-size: var(--lumo-font-size-s);
-  font-weight: var(--font-weight-regular);
-}
-
-/* The dataset's size, which a reader needs before downloading: it decides whether the
-   data fits their disk and their link. Body ink rather than the muted label colour,
-   because it is a fact to read, not a caption. */
+/* The dataset's quantities — measurement count and data size — which a reader needs
+   before downloading: they decide whether the data fits their disk and their link.
+   Body ink rather than the muted label colour, because these are facts to read, not a
+   caption. */
 .measurement-dataset-card-size {
   color: var(--body-text-color);
   font-size: var(--lumo-font-size-s);

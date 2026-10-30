@@ -169,19 +169,13 @@ public class MeasurementDatasetSelector extends Div implements Serializable {
     Span label = new Span("%s dataset".formatted(summary.segment().label()));
     label.addClassName("measurement-dataset-card-label");
 
-    // Count on the title line, at body weight: two lines for "Genomics" and "6 measurements" made
-    // the least interesting number the tallest thing in the card.
-    Span count = new Span(summary.total() == 1
-        ? "1 measurement"
-        : "%d measurements".formatted(summary.total()));
-    count.addClassName("measurement-dataset-card-count");
-
-    Div headline = new Div(label, count);
+    Div headline = new Div(label);
     headline.addClassName("measurement-dataset-card-headline");
 
     // The coverage ring is the same component the project and experiment pages use, so the reader
-    // meets one visual language for "how complete is this". It never carries the meaning alone: the
-    // sentence beside it states the count, and the ring exposes role=progressbar with spoken text.
+    // meets one visual language for "how complete is this". It never carries the meaning alone: it
+    // exposes role=progressbar with spoken text that states the numbers, and the line beneath the
+    // title gives the dataset's count and size.
     Div ring = new Div(new CompletenessRing(summary.available(), summary.total(),
         ringAriaText(summary)));
     ring.addClassName("measurement-dataset-card-ring");
@@ -198,13 +192,13 @@ public class MeasurementDatasetSelector extends Div implements Serializable {
     headlineRow.addClassName("measurement-dataset-card-headline-row");
     card.add(headlineRow);
 
-    // The size is stated because it is the fact a reader needs *before* downloading: it decides
-    // whether the data fits on their disk and their link. It is not derivable from anything else on
-    // the page, so it earns its line — unlike the "N of M waiting" sentence, which only restated
-    // the ring.
-    Span size = new Span(sizeText(summary));
-    size.addClassName("measurement-dataset-card-size");
-    card.add(size);
+    // Count and size on one line: they are the two measures of *how big this dataset is*, so they
+    // read as one thought and answer the question a reader has before downloading — will it fit on
+    // my disk and my link. The count alone, on its own line above the ring, was the denominator of
+    // the ring printed separately, which is why it read as unexplained.
+    Span quantities = new Span("%s \u00b7 %s".formatted(countText(summary), sizeText(summary)));
+    quantities.addClassName("measurement-dataset-card-size");
+    card.add(quantities);
 
     card.addClickListener(event -> select(summary.segment()));
     card.getElement().setAttribute("tabindex", "0");
@@ -221,6 +215,13 @@ public class MeasurementDatasetSelector extends Div implements Serializable {
   /**
    * The spoken form of the ring, so assistive technology gets the same fact the arc shows.
    */
+  /** The number of measurements in the dataset, pluralised. */
+  static String countText(DatasetSummary summary) {
+    return summary.total() == 1
+        ? "1 measurement"
+        : "%d measurements".formatted(summary.total());
+  }
+
   /**
    * States the size of the dataset's data.
    *
