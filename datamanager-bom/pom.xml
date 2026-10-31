@@ -18,7 +18,7 @@
 
   <properties>
     <!--    custom properties, not spring boot managed-->
-    <apache.poi.version>5.5.1</apache.poi.version>
+    <apache.poi.version>6.0.0</apache.poi.version>
     <docx4j.version>11.5.14</docx4j.version>
     <jobrunr.version>9.0.2</jobrunr.version>
     <shedlock.version>7.10.1</shedlock.version>
