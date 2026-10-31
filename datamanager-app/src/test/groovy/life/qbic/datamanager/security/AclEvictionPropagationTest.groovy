@@ -8,6 +8,8 @@ import org.apache.activemq.artemis.core.config.impl.ConfigurationImpl
 import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory
 import org.apache.activemq.artemis.jms.server.config.impl.ConnectionFactoryConfigurationImpl
 import org.apache.activemq.artemis.jms.server.config.impl.JMSConfigurationImpl
+import org.apache.activemq.artemis.api.core.SimpleString
+import org.apache.activemq.artemis.core.server.Queue
 import org.apache.activemq.artemis.jms.server.embedded.EmbeddedJMS
 import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.cache.CacheManager
@@ -87,15 +89,70 @@ class AclEvictionPropagationTest extends Specification {
         AclCacheEvictionListener,
         AclEvictionMessagePublisher)
 
-    // Deterministically wait until the listener container is subscribed to the topic. Without
-    // this, a message published before subscription completes would be dropped by the broker's
-    // non-durable pub-sub routing and the test would fail flakily.
+    awaitTopicSubscription()
+  }
+
+  /**
+   * Waits until the broker actually has a consumer on the eviction topic.
+   *
+   * <p>The topic is <b>non-durable</b> pub-sub, so the broker discards a message published before
+   * the subscription exists. That subscription is created asynchronously after the listener
+   * container starts consuming, which means waiting for
+   * {@code JmsListenerEndpointRegistry#isRunning()} is not enough: it reports that the
+   * <em>container</em> started, not that the <em>subscription</em> reached the broker. Under CI
+   * load the gap between the two is wide enough that the published eviction was dropped and the
+   * test then waited out its receipt budget for a message that would never arrive — the failure
+   * seen in GitHub Actions, while the same test passed locally.</p>
+   *
+   * <p>So this asserts the state the test actually needs: a bound queue on the topic address with
+   * at least one consumer. Keep this in preference to a container check; simplifying it back
+   * reintroduces the race.</p>
+   */
+  private void awaitTopicSubscription() {
+    // First wait for the listener container itself, so a genuinely broken wiring still fails with
+    // a clear message rather than timing out on the subscription check below.
     def registry = context.getBean(JmsListenerEndpointRegistry)
-    def deadline = System.nanoTime() + Duration.ofSeconds(10).toNanos()
-    while (!registry.listenerContainers.findAll { it.isRunning() } && System.nanoTime() < deadline) {
+    def containerDeadline = System.nanoTime() + Duration.ofSeconds(10).toNanos()
+    while (!registry.listenerContainers.findAll { it.isRunning() } &&
+            System.nanoTime() < containerDeadline) {
       Thread.sleep(50)
     }
-    assert registry.listenerContainers.findAll { it.isRunning() }: "JMS listener container did not become ready in time"
+    assert registry.listenerContainers.findAll { it.isRunning() }:
+        "JMS listener container did not become ready in time"
+
+    def postOffice = broker.getJMSServerManager().getActiveMQServer().postOffice
+    def address = SimpleString.of(TOPIC)
+    def deadline = System.nanoTime() + Duration.ofSeconds(10).toNanos()
+    while (System.nanoTime() < deadline) {
+      def subscribed = subscribedConsumers(postOffice, address) > 0
+      if (subscribed) {
+        return
+      }
+      Thread.sleep(50)
+    }
+    assert false: "no consumer subscribed to topic '%s' within the readiness budget".formatted(TOPIC)
+  }
+
+  /**
+   * The number of consumers across every binding of the given address.
+   *
+   * <p>A {@code Binding} is not itself a {@code Queue}: a {@code LocalQueueBinding} wraps one and
+   * exposes it through {@code getBindable()}. Testing {@code binding instanceof Queue} always
+   * returned zero, which made the readiness check fail even when the subscription was present.</p>
+   */
+  private static int subscribedConsumers(postOffice, SimpleString address) {
+    def bindings = postOffice.getBindingsForAddress(address)
+    if (bindings == null) {
+      return 0
+    }
+    int total = 0
+    bindings.getBindings().each { binding ->
+      def bindable = binding.bindable
+      if (bindable instanceof Queue) {
+        total += ((Queue) bindable).consumerCount
+      }
+    }
+    return total
   }
 
   def cleanup() {
