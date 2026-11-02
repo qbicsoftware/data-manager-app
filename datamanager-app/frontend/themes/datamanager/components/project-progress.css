@@ -423,9 +423,19 @@
    at marker size, so the page states coverage one way at two grains instead of introducing a
    second dialect (a bar) for the lower one. */
 .project-progress-assay-ring {
-  --completeness-ring-size: 1.9rem;
-  --completeness-ring-font-size: var(--lumo-font-size-xs);
+  /* Sized to the rail's marker discs (1.75rem) rather than to the rail's ring: with no centre text
+     there is nothing to fit, and matching the discs keeps the two coverage encodings on this page in
+     proportion to each other. */
+  --completeness-ring-size: 1.75rem;
   flex: none;
+}
+
+/* No centre text. The row states the figures beside the ring, so a percentage here would repeat
+   them -- and the text is what breaks first as the value grows: "100%" needs ~28px inside an arc
+   that encloses ~24px at this size. The ring is the glanceable proportion, the text is the
+   precision, and the ring's aria-valuetext carries the same fact for assistive technology. */
+.project-progress-assay-ring--unlabelled .completeness-ring__centre {
+  display: none;
 }
 
 /* A complete dataset gets a halo. A full ring is already green, but at this size the difference

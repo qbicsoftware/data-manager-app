@@ -552,10 +552,18 @@ public class ProjectProgressSection extends Div {
             : "%d of %d measurements still need primary data".formatted(missing, measurements);
 
     CompletenessRing ring = new CompletenessRing(assay.withData(), measurements, spoken);
+    // Unlabelled: the row already states the exact figures beside the ring ("84 of 86 missing"), so
+    // a percentage in the centre would repeat them -- and at this size the text is the thing that
+    // breaks first. "100%" needs roughly 28px of the ~24px the arc encloses, so a labelled ring
+    // either overflows or forces the ring to grow past its place in the row. The ring carries the
+    // glanceable proportion, the text carries the precision; the spoken form below keeps the
+    // component's contract that the ring never means anything alone.
+    ring.addClassName("project-progress-assay-ring--unlabelled");
     ring.addClassName("project-progress-assay-ring");
     if (assay.complete()) {
       // A full ring is already green, but a success halo makes "everything has arrived"
-      // unmistakable at this size -- the same treatment the dataset selector card uses.
+      // unmistakable at this size -- the same treatment the dataset selector card uses. It matters
+      // more now that the centre holds no number.
       ring.addClassName("project-progress-assay-ring--complete");
     }
     return ring;
