@@ -527,9 +527,10 @@ public class ProjectProgressSection extends Div {
    * method -- "two experiments were measured as WGS" -- rather than the state, and putting it beside
    * the numbers on the right lent it a weight it does not carry.</p>
    *
-   * <p>The state is a word first and a count second, in that order and at those weights: the word
-   * answers the question, the count qualifies it. The ring went with the count because a percentage
-   * and a fraction are the same measure; a state word and a ring are not.</p>
+   * <p>The state is a phrase first and a count second, in that order and at those weights: the phrase
+   * answers the question, the count qualifies it. There is no ring. A ring is a proportion, and a
+   * proportion is not what this row reports any more -- the phrase states the state, the count states
+   * the amount, and a third encoding of the same two facts only competed with them.</p>
    */
   private Div assayRow(AssayRollup assay) {
     Div row = new Div();
@@ -554,7 +555,7 @@ public class ProjectProgressSection extends Div {
     Div identity = new Div(method, dot, datasets);
     identity.addClassName("project-progress-assay-identity");
 
-    Div state = new Div(assayState(assay), assayDetail(assay));
+    Div state = new Div(assayState(assay), assayCount(assay));
     state.addClassName("project-progress-assay-state-group");
 
     row.add(identity, state);
@@ -562,20 +563,23 @@ public class ProjectProgressSection extends Div {
   }
 
   /**
-   * The row's data state, in the vocabulary the application already uses: <b>Waiting</b> or
-   * <b>Available</b>.
+   * The row's data state: <b>Waiting for data</b> or <b>Data available</b>.
    *
-   * <p>Two states, not three. A method with no measurements registered is <em>Waiting</em> too --
-   * nothing has been uploaded for it, which is exactly what the word means. Inventing a third
-   * "nothing registered" state would describe a distinction the reader does not act on differently:
-   * in both cases the next step is the same, and the count beside the word says how much is
+   * <p>Both phrases name what is waited for. The dataset list can say "Waiting" alone because its
+   * column header scopes the word to <em>Data</em>; a card with no header cannot, and a bare
+   * "Waiting" beside a list of experiments reads as something still loading.</p>
+   *
+   * <p>Two states, not three. A method with no measurements registered is <em>Waiting for data</em>
+   * too -- nothing has been uploaded for it, which is exactly what the phrase means. A third
+   * "nothing registered" state would draw a distinction the reader does not act on differently: the
+   * next step is the same in both cases, and the count beside the phrase says how much is
    * outstanding.</p>
    *
-   * <p>The word carries the state on its own, so colour is reinforcement and never the only signal
-   * (the same rule the dataset list's status column follows).</p>
+   * <p>The phrase carries the state on its own, so colour is reinforcement and never the only
+   * signal -- the same rule the dataset list's status column follows.</p>
    */
   private static Span assayState(AssayRollup assay) {
-    Span state = new Span(assay.complete() ? "Available" : "Waiting");
+    Span state = new Span(assay.complete() ? "Data available" : "Waiting for data");
     state.addClassNames("project-progress-assay-state",
         assay.complete()
             ? "project-progress-assay-state--available"
@@ -584,53 +588,17 @@ public class ProjectProgressSection extends Div {
   }
 
   /**
-   * The count and the ring beside the state word: how much, as opposed to whether.
+   * The count beside the state: how much, as opposed to whether.
    *
-   * <p>Secondary by weight and by colour, because the state word has already answered the question.
-   * The ring is unlabelled: the fraction states the figure precisely, and the ring's centre cannot
-   * hold it as the value approaches 100% at this size. Its {@code aria-valuetext} keeps the
-   * component's contract that the ring never means anything alone.</p>
+   * <p>Secondary by weight and by colour, because the state phrase has already answered the question
+   * and the per-dataset figures live in the dataset section below.</p>
    */
-  private static Div assayDetail(AssayRollup assay) {
-    Div detail = new Div();
-    detail.addClassName("project-progress-assay-detail");
-
+  private static Span assayCount(AssayRollup assay) {
     Span count = new Span(assay.measurements() == 0
         ? "none registered"
         : "%d of %d with data".formatted(assay.withData(), assay.measurements()));
     count.addClassName("project-progress-assay-count");
-
-    detail.add(count, assayRing(assay));
-    return detail;
-  }
-
-  /**
-   * The method's coverage, as the application states it everywhere else: a completeness ring.
-   *
-   * <p>Unlabelled and small, sitting at the row's trailing edge as an accessory. The dataset section
-   * below carries the per-dataset figures; this is the glanceable proportion that lets a reader
-   * compare rows without reading the fractions.</p>
-   */
-  private static CompletenessRing assayRing(AssayRollup assay) {
-    int measurements = assay.measurements();
-    String spoken = measurements == 0
-        ? "No measurements registered yet for this analysis method"
-        : assay.missing() == 0
-            ? "All %d measurements have primary data".formatted(measurements)
-            : "%d of %d measurements still need primary data"
-                .formatted(assay.missing(), measurements);
-    CompletenessRing ring = new CompletenessRing(assay.withData(), measurements, spoken);
-    ring.addClassName("project-progress-assay-ring");
-    // No centre text: the fraction beside it states the figure, and at this size the text is what
-    // breaks first -- "100%" needs more width than the arc encloses.
-    ring.addClassName("project-progress-assay-ring--unlabelled");
-    if (assay.complete()) {
-      // A full ring is green, but at this size 100% and 95% differ by a few pixels. The halo makes
-      // "everything has arrived" unmistakable without a sentence -- the same treatment the dataset
-      // selector card uses.
-      ring.addClassName("project-progress-assay-ring--complete");
-    }
-    return ring;
+    return count;
   }
 
   /**

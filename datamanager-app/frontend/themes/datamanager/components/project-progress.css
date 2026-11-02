@@ -370,10 +370,12 @@
   color: var(--lumo-contrast-30pct);
 }
 
-/* The state group: the figures and the ring they describe, read as one unit. */
+/* The state group: the phrase and the count it qualifies, read as one unit, right-aligned together
+   so phrases and counts line up down the card instead of drifting with the phrase width. */
 .project-progress-assay-state-group {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: var(--lumo-space-s);
 }
 
@@ -385,9 +387,10 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* The state word answers the question, so it takes body colour and medium weight. Waiting and
-   Available are the decided data-status vocabulary; colour reinforces and never carries the state
-   alone, matching the dataset list's status column. */
+/* The state phrase answers the question, so it takes body colour and medium weight. It names what is
+   waited for because this card has no column header to scope a bare "Waiting" to data -- the dataset
+   list can say the short form, this cannot. Colour reinforces and never carries the state alone,
+   matching the dataset list's status column. */
 .project-progress-assay-state {
   font-size: var(--lumo-font-size-s);
   font-weight: 500;
@@ -400,14 +403,6 @@
 
 .project-progress-assay-state--available {
   color: var(--lumo-success-text-color, var(--lumo-body-text-color));
-}
-
-/* The count and the ring are a qualifier of the state, so they sit quieter than the word they
-   qualify: "Waiting" answers the question, "2 of 2 with data" refines it. */
-.project-progress-assay-detail {
-  display: flex;
-  align-items: center;
-  gap: var(--lumo-space-s);
 }
 
 .project-progress-assay-count {
@@ -424,35 +419,6 @@
   color: var(--lumo-tertiary-text-color, var(--lumo-secondary-text-color));
   font-size: var(--lumo-font-size-xs);
   white-space: nowrap;
-}
-
-/* ── Coverage ring ────────────────────────────────────────────────────── */
-
-/* The shared completeness ring, scaled for a row accessory. The rail above uses the same component
-   at marker size, so the page states coverage one way at two grains instead of introducing a
-   second dialect (a bar) for the lower one. */
-.project-progress-assay-ring {
-  /* Sized to the rail's marker discs (1.75rem) rather than to the rail's ring: with no centre text
-     there is nothing to fit, and matching the discs keeps the two coverage encodings on this page in
-     proportion to each other. */
-  --completeness-ring-size: 1.75rem;
-  flex: none;
-}
-
-/* No centre text. The row states the figures beside the ring, so a percentage here would repeat
-   them -- and the text is what breaks first as the value grows: "100%" needs ~28px inside an arc
-   that encloses ~24px at this size. The ring is the glanceable proportion, the text is the
-   precision, and the ring's aria-valuetext carries the same fact for assistive technology. */
-.project-progress-assay-ring--unlabelled .completeness-ring__centre {
-  display: none;
-}
-
-/* A complete dataset gets a halo. A full ring is already green, but at this size the difference
-   between 100% and 95% is a few pixels; the halo makes "everything has arrived" unmistakable without
-   a sentence. Same treatment as the dataset selector card. */
-.project-progress-assay-ring--complete {
-  border-radius: 50%;
-  box-shadow: 0 0 0 2px var(--success-color, var(--lumo-success-color));
 }
 
 /* Connected assets as a grid, not a stack of flex rows. Grid sizes each column across ALL the rows,
