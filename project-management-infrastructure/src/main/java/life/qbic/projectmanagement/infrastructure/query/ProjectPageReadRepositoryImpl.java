@@ -19,6 +19,7 @@ import life.qbic.projectmanagement.application.api.ProjectQueryService.ProjectSa
 import life.qbic.projectmanagement.application.api.ProjectQueryService.ProjectSampleSortKey;
 import life.qbic.projectmanagement.application.api.ProjectQueryService.SortDirection;
 import life.qbic.projectmanagement.application.api.ProjectQueryService.SortOrder;
+import life.qbic.projectmanagement.application.query.AssayStanding;
 import life.qbic.projectmanagement.application.query.ExperimentProgress;
 import life.qbic.projectmanagement.application.query.MeasuredSample;
 import life.qbic.projectmanagement.application.query.MeasurementDataRow;
@@ -26,6 +27,7 @@ import life.qbic.projectmanagement.application.query.ProjectPageReadRepository;
 import life.qbic.projectmanagement.application.query.ProjectSampleOverview;
 import life.qbic.projectmanagement.application.query.RecentMeasurement;
 import life.qbic.projectmanagement.application.query.RecentSample;
+import life.qbic.projectmanagement.domain.model.sample.AnalysisMethod;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
@@ -154,6 +156,15 @@ public class ProjectPageReadRepositoryImpl implements ProjectPageReadRepository 
           resultSet.getLong("pxp_primary_data_bytes"),
           resultSet.getLong("ip_primary_data_bytes"));
 
+  private static final RowMapper<AssayStanding> ASSAY_STANDING_ROW_MAPPER =
+      (resultSet, rowNumber) -> new AssayStanding(
+          resultSet.getString("experiment_id"),
+          resultSet.getString("experiment_name"),
+          AnalysisMethod.valueOf(resultSet.getString("analysis_method")),
+          resultSet.getInt("measurements"),
+          resultSet.getInt("measurements_with_primary_data"),
+          resultSet.getLong("primary_data_bytes"));
+
   private static final RowMapper<MeasuredSample> MEASURED_SAMPLE_ROW_MAPPER =
       (resultSet, rowNumber) -> new MeasuredSample(
           resultSet.getString("sample_id"),
@@ -182,6 +193,15 @@ public class ProjectPageReadRepositoryImpl implements ProjectPageReadRepository 
     // ExperimentProgressQuery for why the experiment_progress view could not be used directly.
     return jdbcTemplate.query(ExperimentProgressQuery.BY_PROJECT,
         Map.of("projectId", projectId), EXPERIMENT_PROGRESS_ROW_MAPPER);
+  }
+
+  @Override
+  @PreAuthorize(PROJECT_READ)
+  public List<AssayStanding> findAssayStanding(String projectId) {
+    // Project-scoped in SQL, and the only place the analysis method is resolved from the sample --
+    // see AssayStandingQuery and ADR 0010.
+    return jdbcTemplate.query(AssayStandingQuery.BY_PROJECT,
+        Map.of("projectId", projectId), ASSAY_STANDING_ROW_MAPPER);
   }
 
   @Override

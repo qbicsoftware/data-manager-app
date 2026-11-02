@@ -180,7 +180,8 @@ public class ProjectSummaryComponent extends PageArea {
     this.asyncProjectService = Objects.requireNonNull(asyncProjectService);
     this.downloadComponent = new DownloadComponent();
     this.projectProgressSection = new ProjectProgressSection(
-        Objects.requireNonNull(associatedDatasetService));
+        Objects.requireNonNull(associatedDatasetService),
+        Objects.requireNonNull(projectQueryService));
     this.projectExperimentsSection = new ProjectExperimentsSection(this.projectQueryService);
     this.projectExperimentsSection.addAddExperimentListener(
         event -> fireEvent(new AddExperimentRequestedEvent(this, event.isFromClient())));

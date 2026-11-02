@@ -1,6 +1,7 @@
 package life.qbic.datamanager.views.projects.project.info;
 
 import static java.util.Objects.requireNonNull;
+import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
@@ -15,6 +16,7 @@ import com.vaadin.flow.component.html.OrderedList;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.router.RouteParam;
 import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.shared.Registration;
@@ -22,8 +24,11 @@ import java.io.Serial;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 import life.qbic.datamanager.views.MeasurementType;
+import life.qbic.logging.api.Logger;
 import life.qbic.datamanager.views.general.CompletenessRing;
 import life.qbic.datamanager.views.general.DataSetTagFactory;
 import life.qbic.datamanager.views.general.DataSetTagFactory.TagType;
@@ -36,9 +41,12 @@ import life.qbic.datamanager.views.projects.project.samples.SampleInformationMai
 import life.qbic.projectmanagement.application.ProjectOverview;
 import life.qbic.projectmanagement.application.associated_dataset.AssociatedDatasetService;
 import life.qbic.projectmanagement.application.associated_dataset.ConnectedDatasetView;
+import life.qbic.projectmanagement.application.api.ProjectQueryService;
+import life.qbic.projectmanagement.application.query.AssayStanding;
 import life.qbic.projectmanagement.application.query.AssayType;
 import life.qbic.projectmanagement.application.query.ExperimentProgress;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import life.qbic.projectmanagement.domain.model.sample.AnalysisMethod;
 import reactor.core.publisher.Mono;
 
 /**
@@ -71,6 +79,8 @@ import reactor.core.publisher.Mono;
  */
 public class ProjectProgressSection extends Div {
 
+  private static final Logger log = logger(ProjectProgressSection.class);
+
   private static final String PROJECT_ID_PARAMETER = "projectId";
   private static final String EXPERIMENT_ID_PARAMETER = "experimentId";
 
@@ -84,12 +94,18 @@ public class ProjectProgressSection extends Div {
   public static final String INCOMPLETE_LIST_ID = "project-incomplete";
 
   private final transient AssociatedDatasetService associatedDatasetService;
+  private final transient ProjectQueryService projectQueryService;
   private final Div content = new Div();
   private String projectId;
+  /** Resolved before the progress render, since the dataset card needs both. */
+  private List<AssayStanding> assayStanding = List.of();
 
-  public ProjectProgressSection(AssociatedDatasetService associatedDatasetService) {
+  public ProjectProgressSection(AssociatedDatasetService associatedDatasetService,
+      ProjectQueryService projectQueryService) {
     this.associatedDatasetService = requireNonNull(associatedDatasetService,
         "associatedDatasetService must not be null");
+    this.projectQueryService = requireNonNull(projectQueryService,
+        "projectQueryService must not be null");
     addClassName("project-progress-section");
     content.addClassName("project-progress-content");
     add(content);
@@ -125,8 +141,25 @@ public class ProjectProgressSection extends Div {
     content.add(message("Loading project status …"));
     ProjectId id = ProjectId.parse(projectId);
     List<ConnectedDatasetView> connected = associatedDatasetService.listConnectedDatasetViews(id);
-    ReactiveUiBridge.onUi(ui, progress,
-        loaded -> render(loaded, overview, connected),
+    // The dataset card is backed by its own read model, resolved once per load. A failure there must
+    // not take the progress band down with it: the band is the page's primary job and its data is
+    // already in hand, so a failed assay query degrades to "no datasets stated" rather than to an
+    // error page.
+    Mono<List<AssayStanding>> assays = projectQueryService.getAssayStanding(projectId)
+        .collectList()
+        .onErrorResume(error -> {
+          // The facade takes a message and no cause, so the exception is named in the text rather
+          // than attached: losing the stack trace here is preferable to failing the whole band over
+          // a degraded card.
+          log.warn("Assay standing could not be loaded for project " + projectId + ": "
+              + error.getClass().getSimpleName() + " (" + error.getMessage() + ")");
+          return Mono.just(List.of());
+        });
+    ReactiveUiBridge.onUi(ui, progress.zipWith(assays),
+        pair -> {
+          assayStanding = pair.getT2();
+          render(pair.getT1(), overview, connected);
+        },
         error -> {
           content.removeAll();
           content.add(heading());
@@ -441,43 +474,47 @@ public class ProjectProgressSection extends Div {
 
     Div grid = new Div();
     grid.addClassName("project-progress-datasets-grid");
-    grid.add(primaryDataCard(progress));
+    grid.add(primaryDataCard(assayStanding));
     grid.add(connectedAssetsCard(connected));
     wrap.add(head, grid);
     return wrap;
   }
 
   /**
-   * The project's primary data, stated per measurement type.
+   * The project's primary datasets: one line per analysis method, grouped by omics domain.
    *
-   * <p><b>What a dataset is.</b> Not a declared unit: a dataset is a logical container for data
-   * that belongs together, and it is the <em>consequence</em> of measurements having been done --
-   * it does not exist before there is data to put in it. Its <em>type</em> is the measurement
-   * method, and an experiment can hold more than one dataset of the same type, so the number of
-   * datasets in a project is not a figure this page can count. An earlier revision claimed one
-   * ("5 of 9 datasets complete"), which was wrong twice over: it counted types rather than
-   * datasets, and it turned an emergent container into a plannable quantity.</p>
+   * <p><b>What a dataset is.</b> The data of <em>one experiment</em> for <em>one analysis method</em>.
+   * It is not declared by anyone: it is the consequence of measurements having been done. Two
+   * experiments measured as WES are two datasets; one experiment measured as WES and RNA-Seq is also
+   * two. Its type is the analysis method, because that is what a reader picks datasets by when
+   * planning an analysis -- variant calling, cluster analysis, ... -- and the omics domain alone is
+   * far too coarse to do that: WES, RNA-Seq and 16S are all genomics and are not interchangeable.</p>
    *
-   * <p><b>Why the type axis.</b> The type is what a reader acts on -- analysis is chosen against
-   * datasets of a given data type (variant calling, cluster analysis, ...), so "which types does
-   * this project hold, and how far along is each" is the question this card answers. It is the
-   * project grain of the same axis the Datasets page breaks down per experiment.</p>
+   * <p><b>Why the domain is still shown.</b> As a grouping label, never as the identity. It answers
+   * "what kind of work is this project" at a glance while the method answers "which dataset do I
+   * open". Dataset counts are summed per method across experiments because that is the question the
+   * project grain can answer -- "how much WES does this project hold" -- while the experiment each
+   * dataset belongs to is the discriminant the Datasets page shows and this card deliberately does
+   * not, since it would bloat the overview without changing any decision made from it.</p>
    *
-   * <p>A type with no measurements is not listed: it is not an empty dataset, and showing one would
-   * invent data that does not exist.</p>
+   * <p><b>Progress is carried by a bar, not by prose.</b> The row used to state its state as the
+   * longest phrase in the row ("12 measurements missing"), last, in grey, once per line; scanning
+   * four such lines meant reading four sentences. The bar states how far along the dataset is in the
+   * space the eye already travels down, and the only text left states what is not derivable from a
+   * proportion: how many measurements are outstanding.</p>
    */
-  private Div primaryDataCard(List<ExperimentProgress> progress) {
+  private Div primaryDataCard(List<AssayStanding> datasets) {
     Div card = new Div();
     card.addClassName("project-progress-datasets-card");
     card.add(cardTitle("Primary datasets"));
 
-    List<AssayTypeStanding> types = assayTypeStanding(progress);
-    if (types.isEmpty()) {
-      card.add(cardFact("None yet — a dataset appears once an experiment has measurements"));
+    if (datasets.isEmpty()) {
+      card.add(cardFact(
+          "None yet — a dataset appears once an experiment has measurements"));
     } else {
       Div rows = new Div();
-      rows.addClassName("project-progress-types");
-      types.forEach(type -> rows.add(typeRow(type)));
+      rows.addClassName("project-progress-assays");
+      assayRollup(datasets).forEach(entry -> rows.add(assayRow(entry)));
       card.add(rows);
     }
 
@@ -489,88 +526,135 @@ public class ProjectProgressSection extends Div {
   }
 
   /**
-   * One measurement type across the project: how much data it holds and how far along it is.
+   * One analysis method's datasets across the project, summed.
    *
-   * <p>Coverage is per type because that is the grain the reader is working at. "8 of 284
-   * measurements" across the whole project says nothing about which analysis is blocked; "2 of 13
-   * proteomics measurements are missing" says exactly that.</p>
+   * <p>Summed across experiments on purpose: the project grain answers "how much WES does this
+   * project hold", and the per-experiment split is one click away. The count of datasets is carried
+   * separately, because two experiments measured as WES are two datasets of one method -- a
+   * distinction the method name alone loses.</p>
    */
-  private record AssayTypeStanding(AssayType type, int measurements, int withData, long bytes) {
-
-    /** Complete means every measurement of this type in the project has primary data. */
-    boolean complete() {
-      return measurements > 0 && withData >= measurements;
-    }
+  private record AssayRollup(AnalysisMethod method, int datasets, int measurements, int withData,
+                             long bytes) {
 
     int missing() {
       return Math.max(0, measurements - withData);
     }
 
-    String label() {
-      return MeasurementType.from(type).getType();
+    boolean complete() {
+      return measurements > 0 && withData >= measurements;
     }
-  }
 
-  /** The measurement types the project actually holds measurements of, in declaration order. */
-  private static List<AssayTypeStanding> assayTypeStanding(List<ExperimentProgress> progress) {
-    List<AssayTypeStanding> types = new ArrayList<>();
-    for (AssayType type : AssayType.values()) {
-      int measurements = progress.stream().mapToInt(entry -> entry.measurementCount(type)).sum();
-      if (measurements == 0) {
-        continue;
-      }
-      types.add(new AssayTypeStanding(type, measurements,
-          progress.stream().mapToInt(entry -> entry.measurementsWithPrimaryData(type)).sum(),
-          progress.stream().mapToLong(entry -> entry.primaryDataBytes(type)).sum()));
+    AssayType domain() {
+      return AssayType.of(method);
     }
-    return types;
   }
 
   /**
-   * One line per type: its name, how many measurements it holds, its size, and its state.
+   * Rolls the per-dataset rows up to one entry per analysis method, in domain then method order.
    *
-   * <p>The state is the actionable part, so it comes last and reads as a plain word -- "Complete",
-   * or the count of what is outstanding. The size states "not recorded" rather than a zero when the
-   * sync never captured it, and drops out entirely when no data has arrived yet: a type with nothing
-   * in it has no size to report, which is a different statement from a size of zero (migration
-   * trap 4d).</p>
+   * <p>Ordered by domain so the grouping reads as groups, and inside a domain by the method's own
+   * abbreviation, which is the stable, comparable form ("16S", "RNA-SEQ", "WES").</p>
    */
-  private Div typeRow(AssayTypeStanding type) {
+  private static List<AssayRollup> assayRollup(List<AssayStanding> datasets) {
+    return datasets.stream()
+        .collect(Collectors.groupingBy(AssayStanding::analysisMethod,
+            LinkedHashMap::new, Collectors.toList()))
+        .entrySet().stream()
+        .map(entry -> new AssayRollup(
+            entry.getKey(),
+            entry.getValue().size(),
+            entry.getValue().stream().mapToInt(AssayStanding::measurements).sum(),
+            entry.getValue().stream().mapToInt(AssayStanding::withPrimaryData).sum(),
+            entry.getValue().stream().mapToLong(AssayStanding::primaryDataBytes).sum()))
+        .sorted(Comparator.comparing((AssayRollup rollup) -> rollup.domain().ordinal())
+            .thenComparing(rollup -> rollup.method().abbreviation()))
+        .toList();
+  }
+
+  /**
+   * One analysis method: its domain, its abbreviation, a progress bar, and the outstanding count.
+   *
+   * <p>The abbreviation leads because it is the identity a reader recognises ("WES", "16S",
+   * "RNA-SEQ"); the full label is the tooltip, since "Exome sequencing" repeated on every row is more
+   * text than the identity needs. The domain is a small leading label so the grouping is visible
+   * without a heading per group, which would add a row of chrome per domain.</p>
+   */
+  private Div assayRow(AssayRollup assay) {
     Div row = new Div();
-    row.addClassName("project-progress-type-row");
+    row.addClassName("project-progress-assay-row");
 
-    Span label = new Span(type.label());
-    label.addClassName("project-progress-type-label");
+    Span domain = new Span(MeasurementType.from(assay.domain()).getType());
+    domain.addClassName("project-progress-assay-domain");
 
-    Span detail = new Span(pluralise(type.measurements(), "measurement", "measurements")
-        + sizeSuffix(type));
-    detail.addClassName("project-progress-type-detail");
+    Span method = new Span(assay.method().abbreviation());
+    method.addClassName("project-progress-assay-method");
+    method.getElement().setAttribute("title", assay.method().label());
 
-    Span state = new Span(type.complete()
-        ? "Complete"
-        : pluralise(type.missing(), "measurement missing", "measurements missing"));
-    state.addClassName("project-progress-type-state");
-    state.addClassName(type.complete()
-        ? "project-progress-type-state--complete"
-        : "project-progress-type-state--incomplete");
+    Div bar = coverageBar(assay);
+    Div report = assayReport(assay);
 
-    row.add(label, detail, state);
+    Div head = new Div(domain, method, report);
+    head.addClassName("project-progress-assay-head");
+    row.add(head, bar);
     return row;
   }
 
   /**
-   * The size part of a type's detail, appended to its measurement count.
+   * The row's progress bar: the share of the method's measurements that carry primary data.
    *
-   * <p>Empty when nothing has arrived, so the line does not claim a size for a dataset that holds no
-   * data yet.</p>
+   * <p>A bar rather than the completeness ring the rail uses, because the two answer different
+   * questions at different grains: the rail's ring is the project's whole pipeline, this is one
+   * dataset type's coverage in a full-width row where a bar can show its remainder. It is also the
+   * only encoding of that number on this line, so it does not compete with a second one beside
+   * it.</p>
    */
-  private static String sizeSuffix(AssayTypeStanding type) {
-    if (type.withData() == 0) {
-      return "";
+  private static Div coverageBar(AssayRollup assay) {
+    Div wrap = new Div();
+    wrap.addClassName("project-progress-assay-bar");
+    if (assay.complete()) {
+      wrap.addClassName("project-progress-assay-bar--complete");
     }
-    return type.bytes() > 0
-        ? " · " + Utility.humanReadableSize(type.bytes())
-        : " · size not recorded";
+    ProgressBar bar = new ProgressBar(0d, 1d,
+        assay.measurements() == 0 ? 0d : (double) assay.withData() / assay.measurements());
+    bar.addClassName("project-progress-assay-progress");
+    // The outstanding count and the dataset count sit beside the bar as text, so the bar is not
+    // given a spoken value that would repeat them.
+    bar.getElement().setAttribute("aria-hidden", "true");
+    wrap.add(bar);
+    return wrap;
+  }
+
+  /**
+   * The numbers beside the bar: datasets, measurements with data, and what is outstanding.
+   *
+   * <p>"Complete" replaces the outstanding count when nothing is missing -- the two are exclusive,
+   * and stating "0 missing" would make the reader check a number to learn what a word can say.</p>
+   */
+  private static Div assayReport(AssayRollup assay) {
+    Div report = new Div();
+    report.addClassName("project-progress-assay-report");
+
+    Span count = new Span(assay.datasets() == 1 ? "1 dataset" : assay.datasets() + " datasets");
+    count.addClassName("project-progress-assay-datasets");
+    count.getElement().setAttribute("title", assay.datasets() == 1
+        ? "One dataset of this analysis method"
+        : "%d datasets of this analysis method, one per experiment"
+            .formatted(assay.datasets()));
+
+    Span state = new Span(assay.complete()
+        ? "Complete"
+        : assay.missing() + " missing");
+    state.addClassName("project-progress-assay-state");
+    state.addClassName(assay.complete()
+        ? "project-progress-assay-state--complete"
+        : "project-progress-assay-state--missing");
+
+    Span covered = new Span("%d of %s".formatted(assay.withData(),
+        pluralise(assay.measurements(), "measurement", "measurements")));
+    covered.addClassName("project-progress-assay-covered");
+
+    report.add(covered, state, count);
+    return report;
   }
 
   /**

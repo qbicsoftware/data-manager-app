@@ -7,6 +7,7 @@ import static life.qbic.projectmanagement.application.authorization.ReactiveSecu
 import java.util.Objects;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
+import life.qbic.projectmanagement.application.query.AssayStanding;
 import life.qbic.projectmanagement.application.query.ExperimentProgress;
 import life.qbic.projectmanagement.application.query.MeasuredSample;
 import life.qbic.projectmanagement.application.query.MeasurementDataRow;
@@ -68,6 +69,18 @@ public class ProjectQueryServiceImpl implements ProjectQueryService {
     return getExperimentProgress(projectId)
         .filter(progress -> experimentId.equals(progress.experimentId()))
         .next();
+  }
+
+  @Override
+  public Flux<AssayStanding> getAssayStanding(String projectId) {
+    Objects.requireNonNull(projectId, "projectId must not be null");
+    SecurityContext securityContext = SecurityContextHolder.getContext();
+    return applySecurityContextMany(Flux.defer(
+            () -> Flux.fromIterable(readRepository.findAssayStanding(projectId))))
+        .subscribeOn(scheduler)
+        .contextWrite(reactiveSecurity(securityContext))
+        .retryWhen(defaultRetryStrategy())
+        .onErrorMap(cause -> mapToQueryException(cause, "Request for assay standing failed"));
   }
 
   @Override

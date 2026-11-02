@@ -431,47 +431,111 @@
   color: var(--lumo-secondary-text-color);
 }
 
-/* One line per measurement type. Grid, not flex: the label, the count-and-size and the state are
-   three columns that must line up across rows, and the state has to hold the right edge whatever
-   the sizes are. */
-.project-progress-types {
+/* ── Assay rows ───────────────────────────────────────────────────────── */
+
+/* One block per analysis method: a head line (domain, method, numbers) and a coverage bar beneath.
+   The bar is full-width in the card, which is what a bar needs and what the completeness ring in
+   the rail above never had. */
+.project-progress-assays {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+}
+
+.project-progress-assay-row {
   display: flex;
   flex-direction: column;
   gap: var(--lumo-space-xs);
 }
 
-.project-progress-type-row {
+/* Grid, so the method and the numbers hold their columns across rows: the eye scans one vertical
+   band of numbers instead of four ragged phrases. */
+.project-progress-assay-head {
   display: grid;
-  grid-template-columns: minmax(0, max-content) minmax(0, 1fr) max-content;
+  grid-template-columns: max-content minmax(0, max-content) minmax(0, 1fr);
   gap: var(--lumo-space-s);
   align-items: baseline;
   font-size: var(--lumo-font-size-s);
 }
 
-.project-progress-type-label {
+/* The domain, as a grouping label. Quiet: it is context for the method, not the thing being read. */
+.project-progress-assay-domain {
+  color: var(--lumo-tertiary-text-color, var(--lumo-secondary-text-color));
+  font-size: var(--lumo-font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* The method abbreviation is the identity a reader recognises -- "WES", "16S", "RNA-SEQ" -- so it
+   takes body weight and body colour. The full label is the tooltip. */
+.project-progress-assay-method {
   font-weight: 600;
   color: var(--lumo-body-text-color);
+  font-variant-numeric: tabular-nums;
 }
 
-.project-progress-type-detail {
-  color: var(--lumo-secondary-text-color);
+.project-progress-assay-report {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: var(--lumo-space-s);
   font-size: var(--lumo-font-size-s);
-}
-
-.project-progress-type-state {
-  white-space: nowrap;
   color: var(--lumo-secondary-text-color);
 }
 
-/* The two states are named in words, so colour only reinforces. Complete is quiet -- it is the
-   settled state and needs no attention -- while outstanding work is stated at body weight. */
-.project-progress-type-state--complete {
+.project-progress-assay-covered {
+  font-variant-numeric: tabular-nums;
+}
+
+/* The outstanding count is the actionable part, so it is stated in body colour at medium weight
+   rather than as another grey phrase. "Complete" replaces it entirely when nothing is missing --
+   stating "0 missing" would make the reader parse a number to learn what a word says. */
+.project-progress-assay-state {
+  font-weight: 500;
+  color: var(--lumo-body-text-color);
+  white-space: nowrap;
+}
+
+.project-progress-assay-state--complete {
+  font-weight: 400;
   color: var(--lumo-success-text-color, var(--lumo-secondary-text-color));
 }
 
-.project-progress-type-state--incomplete {
-  color: var(--lumo-body-text-color);
-  font-weight: 500;
+/* The dataset count: two experiments measured as WES are two datasets, so the count is not
+   derivable from the method name and earns its place. */
+.project-progress-assay-datasets {
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-xs);
+  white-space: nowrap;
+}
+
+/* ── Coverage bar ─────────────────────────────────────────────────────── */
+
+/* The bar's track is the visible remainder: at 2% the filled sliver reads as almost-nothing-arrived
+   because the empty track frames it. This is the encoding the ring could not carry at marker size. */
+.project-progress-assay-bar {
+  display: flex;
+  width: 100%;
+}
+
+.project-progress-assay-progress {
+  width: 100%;
+  --vaadin-progress-bar-height: 5px;
+}
+
+.project-progress-assay-progress::part(bar) {
+  background-color: var(--lumo-contrast-10pct);
+}
+
+.project-progress-assay-progress::part(value) {
+  background-color: var(--info-color, var(--lumo-primary-color));
+}
+
+/* A complete dataset's bar goes quiet: it is settled, and a full bar in the info colour would pull
+   the eye to the one row with nothing to do. */
+.project-progress-assay-bar--complete .project-progress-assay-progress::part(value) {
+  background-color: var(--success-color, var(--lumo-success-color));
 }
 
 /* Connected assets as a grid, not a stack of flex rows. Grid sizes each column across ALL the rows,
