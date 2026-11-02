@@ -526,6 +526,10 @@ public class ProjectProgressSection extends Div {
    * identity needs. The dataset count trails it after a middot at lower priority: it qualifies the
    * method -- "two experiments were measured as WGS" -- rather than the state, and putting it beside
    * the numbers on the right lent it a weight it does not carry.</p>
+   *
+   * <p>The state is a word first and a count second, in that order and at those weights: the word
+   * answers the question, the count qualifies it. The ring went with the count because a percentage
+   * and a fraction are the same measure; a state word and a ring are not.</p>
    */
   private Div assayRow(AssayRollup assay) {
     Div row = new Div();
@@ -550,7 +554,7 @@ public class ProjectProgressSection extends Div {
     Div identity = new Div(method, dot, datasets);
     identity.addClassName("project-progress-assay-identity");
 
-    Div state = new Div(assayState(assay), coverageRing(assay));
+    Div state = new Div(assayState(assay), assayDetail(assay));
     state.addClassName("project-progress-assay-state-group");
 
     row.add(identity, state);
@@ -558,62 +562,75 @@ public class ProjectProgressSection extends Div {
   }
 
   /**
-   * The row's coverage ring: how much of this method's measurement count carries primary data.
+   * The row's data state, in the vocabulary the application already uses: <b>Waiting</b> or
+   * <b>Available</b>.
    *
-   * <p>A dataset with no measurements at all renders the ring's "no data" state (a dashed track and
-   * an em dash) rather than 0%. Nothing is missing from a dataset that has nothing yet -- the
-   * measurement has not been registered, so there is no shortfall to report -- and 0% would claim a
-   * measured failure where the truth is that the work has not started.</p>
+   * <p>Two states, not three. A method with no measurements registered is <em>Waiting</em> too --
+   * nothing has been uploaded for it, which is exactly what the word means. Inventing a third
+   * "nothing registered" state would describe a distinction the reader does not act on differently:
+   * in both cases the next step is the same, and the count beside the word says how much is
+   * outstanding.</p>
+   *
+   * <p>The word carries the state on its own, so colour is reinforcement and never the only signal
+   * (the same rule the dataset list's status column follows).</p>
    */
-  private static CompletenessRing coverageRing(AssayRollup assay) {
-    int measurements = assay.measurements();
-    int missing = assay.missing();
-    String spoken = measurements == 0
-        ? "No measurements registered yet for this analysis method"
-        : missing == 0
-            ? "All %d measurements have primary data".formatted(measurements)
-            : "%d of %d measurements still need primary data".formatted(missing, measurements);
-
-    CompletenessRing ring = new CompletenessRing(assay.withData(), measurements, spoken);
-    // Unlabelled: the row already states the exact figures beside the ring ("84 of 86 missing"), so
-    // a percentage in the centre would repeat them -- and at this size the text is the thing that
-    // breaks first. "100%" needs roughly 28px of the ~24px the arc encloses, so a labelled ring
-    // either overflows or forces the ring to grow past its place in the row. The ring carries the
-    // glanceable proportion, the text carries the precision; the spoken form below keeps the
-    // component's contract that the ring never means anything alone.
-    ring.addClassName("project-progress-assay-ring--unlabelled");
-    ring.addClassName("project-progress-assay-ring");
-    if (assay.complete()) {
-      // A full ring is already green, but a success halo makes "everything has arrived"
-      // unmistakable at this size -- the same treatment the dataset selector card uses. It matters
-      // more now that the centre holds no number.
-      ring.addClassName("project-progress-assay-ring--complete");
-    }
-    return ring;
+  private static Span assayState(AssayRollup assay) {
+    Span state = new Span(assay.complete() ? "Available" : "Waiting");
+    state.addClassNames("project-progress-assay-state",
+        assay.complete()
+            ? "project-progress-assay-state--available"
+            : "project-progress-assay-state--waiting");
+    return state;
   }
 
   /**
-   * The state, immediately left of the ring that encodes it.
+   * The count and the ring beside the state word: how much, as opposed to whether.
    *
-   * <p>"Complete" replaces the outstanding count when nothing is missing: the two are exclusive, and
-   * "0 missing" makes the reader parse a number to learn what a word says.</p>
+   * <p>Secondary by weight and by colour, because the state word has already answered the question.
+   * The ring is unlabelled: the fraction states the figure precisely, and the ring's centre cannot
+   * hold it as the value approaches 100% at this size. Its {@code aria-valuetext} keeps the
+   * component's contract that the ring never means anything alone.</p>
    */
-  private static Span assayState(AssayRollup assay) {
-    Span state;
+  private static Div assayDetail(AssayRollup assay) {
+    Div detail = new Div();
+    detail.addClassName("project-progress-assay-detail");
+
+    Span count = new Span(assay.measurements() == 0
+        ? "none registered"
+        : "%d of %d with data".formatted(assay.withData(), assay.measurements()));
+    count.addClassName("project-progress-assay-count");
+
+    detail.add(count, assayRing(assay));
+    return detail;
+  }
+
+  /**
+   * The method's coverage, as the application states it everywhere else: a completeness ring.
+   *
+   * <p>Unlabelled and small, sitting at the row's trailing edge as an accessory. The dataset section
+   * below carries the per-dataset figures; this is the glanceable proportion that lets a reader
+   * compare rows without reading the fractions.</p>
+   */
+  private static CompletenessRing assayRing(AssayRollup assay) {
+    int measurements = assay.measurements();
+    String spoken = measurements == 0
+        ? "No measurements registered yet for this analysis method"
+        : assay.missing() == 0
+            ? "All %d measurements have primary data".formatted(measurements)
+            : "%d of %d measurements still need primary data"
+                .formatted(assay.missing(), measurements);
+    CompletenessRing ring = new CompletenessRing(assay.withData(), measurements, spoken);
+    ring.addClassName("project-progress-assay-ring");
+    // No centre text: the fraction beside it states the figure, and at this size the text is what
+    // breaks first -- "100%" needs more width than the arc encloses.
+    ring.addClassName("project-progress-assay-ring--unlabelled");
     if (assay.complete()) {
-      state = new Span("Complete");
-      state.addClassNames("project-progress-assay-state",
-          "project-progress-assay-state--complete");
-    } else if (assay.measurements() == 0) {
-      state = new Span("Nothing registered yet");
-      state.addClassNames("project-progress-assay-state",
-          "project-progress-assay-state--pending");
-    } else {
-      state = new Span("%d of %d missing".formatted(assay.missing(), assay.measurements()));
-      state.addClassNames("project-progress-assay-state",
-          "project-progress-assay-state--missing");
+      // A full ring is green, but at this size 100% and 95% differ by a few pixels. The halo makes
+      // "everything has arrived" unmistakable without a sentence -- the same treatment the dataset
+      // selector card uses.
+      ring.addClassName("project-progress-assay-ring--complete");
     }
-    return state;
+    return ring;
   }
 
   /**

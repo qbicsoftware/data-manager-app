@@ -385,30 +385,36 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* The outstanding count is the actionable part, so it is stated in body colour at medium weight
-   rather than as another grey phrase. "Complete" replaces it entirely when nothing is missing --
-   stating "0 missing" would make the reader parse a number to learn what a word says. */
+/* The state word answers the question, so it takes body colour and medium weight. Waiting and
+   Available are the decided data-status vocabulary; colour reinforces and never carries the state
+   alone, matching the dataset list's status column. */
 .project-progress-assay-state {
   font-size: var(--lumo-font-size-s);
   font-weight: 500;
-  color: var(--lumo-body-text-color);
   white-space: nowrap;
-  /* Right-aligned inside its group, so the counts end on one vertical line down the card however
-     wide the ring's neighbour is. */
-  text-align: right;
 }
 
-.project-progress-assay-state--complete {
-  font-weight: 400;
-  color: var(--lumo-success-text-color, var(--lumo-secondary-text-color));
+.project-progress-assay-state--waiting {
+  color: var(--lumo-warning-text-color, var(--lumo-body-text-color));
 }
 
-/* Nothing registered yet is not a shortfall: the measurement has not been entered, so there is
-   nothing to be behind on. Stated quietly so it does not read as a warning beside the rows that
-   genuinely are missing data. */
-.project-progress-assay-state--pending {
-  font-weight: 400;
-  color: var(--lumo-tertiary-text-color, var(--lumo-secondary-text-color));
+.project-progress-assay-state--available {
+  color: var(--lumo-success-text-color, var(--lumo-body-text-color));
+}
+
+/* The count and the ring are a qualifier of the state, so they sit quieter than the word they
+   qualify: "Waiting" answers the question, "2 of 2 with data" refines it. */
+.project-progress-assay-detail {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+}
+
+.project-progress-assay-count {
+  font-size: var(--lumo-font-size-xs);
+  color: var(--lumo-secondary-text-color);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 /* The dataset count qualifies the method -- "two experiments were measured as WGS" -- so it trails
