@@ -21,25 +21,65 @@
   color: var(--lumo-secondary-text-color);
 }
 
-/* ── Not-complete card ────────────────────────────────────────────────── */
+/* ── Not-complete disclosure ──────────────────────────────────────────── */
 
+/* The deficit follows the progress card as one quiet line. It used to lead the band as a tinted,
+   bordered card, which made the loudest object on the page a notice and pushed the rail below the
+   fold -- so it now states the project-level fact at secondary weight and opens for the detail. */
 .project-progress-incomplete {
-  display: flex;
-  flex-direction: column;
-  gap: var(--lumo-space-s);
-  /* Reached by anchor from the identity band, so leave room above: without it the heading lands
-     flush under the band the reader just left. */
+  margin-top: var(--lumo-space-m);
+  /* Reached by anchor from the identity band, so leave room above: without it the summary lands
+     flush against the card the reader just left. */
   scroll-margin-top: var(--lumo-space-l);
-  padding: var(--lumo-space-m);
-  margin-bottom: var(--lumo-space-m);
-  background-color: var(--info-surface, var(--lumo-contrast-5pct));
-  border: 1px solid var(--info-border, var(--lumo-contrast-20pct));
-  border-radius: var(--lumo-border-radius-m);
+  border: none;
+  background: none;
+  font-size: var(--lumo-font-size-s);
+  color: var(--lumo-secondary-text-color);
 }
 
-.project-progress-incomplete-title {
-  font-weight: 600;
-  color: var(--info-text-color, var(--lumo-error-text-color));
+/* Vaadin draws a divider line and a default summary padding; this line is a footnote, not a
+   section, so it loses both and keeps only the disclosure triangle. */
+.project-progress-incomplete::part(summary),
+.project-progress-incomplete::part(summary-content) {
+  padding: 0;
+}
+
+.project-progress-incomplete[open]::part(content) {
+  padding: var(--lumo-space-s) 0 0;
+}
+
+.project-progress-incomplete-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--lumo-space-xs);
+}
+
+/* The fact, not an alarm: it is stated at the same weight as the sentence beside it, because a
+   missing primary dataset is a normal stage of the process rather than a fault. */
+.project-progress-incomplete-lead {
+  color: var(--lumo-body-text-color);
+  font-weight: 500;
+}
+
+.project-progress-incomplete-separator {
+  color: var(--lumo-contrast-40pct);
+}
+
+.project-progress-incomplete-count {
+  color: var(--lumo-secondary-text-color);
+}
+
+/* ── Disclosure rows ──────────────────────────────────────────────────── */
+
+.project-progress-incomplete-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  border: 1px solid var(--lumo-contrast-10pct);
+  border-radius: var(--lumo-border-radius-m);
+  overflow: hidden;
+  background-color: var(--lumo-contrast-10pct);
 }
 
 .project-progress-incomplete-row {
@@ -48,12 +88,14 @@
   gap: var(--lumo-space-s);
   padding: var(--lumo-space-s) var(--lumo-space-m);
   background-color: var(--lumo-base-color);
-  border-radius: var(--lumo-border-radius-m);
   cursor: pointer;
+  /* The row carries three cells: the name, the fraction, and the action name. */
+  font-size: var(--lumo-font-size-s);
 }
 
-.project-progress-incomplete-row .project-progress-glyph {
-  color: var(--info-color, var(--lumo-error-text-color));
+.project-progress-incomplete-row:hover,
+.project-progress-incomplete-row:focus-visible {
+  background-color: var(--lumo-contrast-5pct);
 }
 
 .project-progress-incomplete-row:hover .project-progress-incomplete-action,
@@ -64,20 +106,25 @@
 .project-progress-incomplete-context {
   font-weight: 600;
   color: var(--lumo-body-text-color);
+  /* The name takes the slack so the fraction and the action keep their own columns and the figures
+     line up across rows however long the experiment names are. */
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.project-progress-incomplete-text {
+.project-progress-incomplete-fraction {
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
   color: var(--lumo-secondary-text-color);
 }
 
 .project-progress-incomplete-action {
-  margin-left: auto;
+  flex: 0 0 auto;
   font-weight: 600;
   color: var(--lumo-primary-text-color);
-}
-
-.project-progress-separator {
-  color: var(--lumo-contrast-40pct);
 }
 
 /* ── Progress card ────────────────────────────────────────────────────── */
@@ -148,16 +195,9 @@
   display: flex;
   align-items: center;
   gap: var(--lumo-space-s);
-  /* Tall enough for the completeness ring that marks the Primary datasets stage, so every stage's
-     connector sits on the same line even though the ring is taller than the round markers. */
-  min-height: 2.75rem;
-}
-
-/* The Primary datasets stage's marker: the project's primary-data coverage at a glance, with the
-   step's own count beside it. */
-.project-progress-step-ring {
-  --completeness-ring-size: 2.75rem;
-  --completeness-ring-font-size: var(--lumo-font-size-xs);
+  /* All three markers are the same disc now that the Dataset stage no longer carries a ring, so the
+     connector sits on one line without a minimum height reserved for a taller middle element. */
+  min-height: 1.75rem;
 }
 
 .project-progress-marker {
@@ -328,14 +368,69 @@
   outline-offset: 2px;
 }
 
+/* The card's name. It is a div, not a span, because the connected-assets title carries its count
+   and provider as separate spans so they can take their own weight; those two now hang off the
+   name instead of trailing it after an em dash. */
 .project-progress-datasets-card-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--lumo-space-xs);
   font-weight: 600;
   color: var(--lumo-header-text-color);
+}
+
+/* The count is the fact and stays at heading weight; the provider is where it is hosted, so it
+   steps back to secondary text rather than competing with the number. */
+.project-progress-datasets-card-title-fact {
+  font-variant-numeric: tabular-nums;
+}
+
+.project-progress-datasets-card-title-provider {
+  font-weight: 400;
+  font-size: var(--lumo-font-size-s);
+  color: var(--lumo-secondary-text-color);
 }
 
 .project-progress-datasets-card-fact {
   font-size: var(--lumo-font-size-s);
   color: var(--lumo-secondary-text-color);
+}
+
+/* ── Coverage measure ─────────────────────────────────────────────────── */
+
+/* The one place on the page that states primary-data coverage as a proportion. It lives in the
+   Primary data card, which is the surface about that data and the only block wide enough for a bar:
+   at the rail's marker size a 3% arc was illegible, and in a row of plain discs it was also a
+   foreign shape. Here the unfilled remainder is visible, so "3%" reads as almost-nothing-arrived
+   rather than as a spinner. */
+.project-progress-coverage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-xs);
+  margin-block: var(--lumo-space-xs);
+}
+
+.project-progress-coverage-bar {
+  width: 100%;
+  /* Vaadin's default bar is 8px of full-contrast colour, which in a secondary card read as the
+     loudest element in it. Thinned and softened: the figures beside it carry the precision. */
+  --vaadin-progress-bar-height: 6px;
+}
+
+.project-progress-coverage-bar::part(bar) {
+  background-color: var(--lumo-contrast-10pct);
+}
+
+.project-progress-coverage-bar::part(value) {
+  background-color: var(--info-color, var(--lumo-primary-color));
+}
+
+.project-progress-coverage-figures,
+.project-progress-coverage-none {
+  font-size: var(--lumo-font-size-s);
+  color: var(--lumo-secondary-text-color);
+  font-variant-numeric: tabular-nums;
 }
 
 /* Connected assets as a grid, not a stack of flex rows. Grid sizes each column across ALL the rows,

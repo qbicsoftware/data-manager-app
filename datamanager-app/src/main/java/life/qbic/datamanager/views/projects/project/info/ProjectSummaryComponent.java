@@ -501,7 +501,11 @@ public class ProjectSummaryComponent extends PageArea {
     identityMeta.removeAll();
     identityMeta.add(new Span(identityLastModified));
     identityMeta.add(separator());
-    identityMeta.add(new Span(experiments == 1 ? "1 experiment" : experiments + " experiments"));
+    // "created", not a bare count: it matches the rail's own wording, so the same number is not
+    // stated two ways on one page.
+    identityMeta.add(new Span(experiments == 1
+        ? "1 experiment created"
+        : experiments + " experiments created"));
     if (incomplete > 0) {
       identityMeta.add(separator());
       identityMeta.add(incompleteChip(incomplete));
@@ -509,20 +513,27 @@ public class ProjectSummaryComponent extends PageArea {
   }
 
   /**
-   * The not-complete rollup. It can hit several experiments at once, so the chip is a project-level
-   * count that brings the reader to the per-experiment rows rather than jumping into one arbitrary
-   * experiment.
+   * The deficit rollup.
+   *
+   * <p>It counts experiments without <em>samples</em> — a different condition from the progress
+   * band's "needs primary data", which counts measurements. The two numbers coincide on many
+   * projects, and both used to be worded "not complete yet", so the page appeared to state one fact
+   * twice when it was stating two. Each now names its own condition, which is what makes the chip
+   * and the disclosure additive rather than duplicates.</p>
+   *
+   * <p>It is an anchor to the per-experiment list rather than a button that scrolls through a
+   * script: the jump is the browser's, it works before any client-side code has run, the
+   * destination is visible in the URL and can be bookmarked or shared, and the back button returns
+   * the reader here.</p>
    */
   private Anchor incompleteChip(int incomplete) {
-    // A real anchor to the per-experiment list rather than a button that scrolls a script: the jump
-    // is the browser's, it works before any client-side code has run, the destination is visible in
-    // the URL and can be bookmarked or shared, and the back button returns the reader here.
     Anchor chip = new Anchor("#" + ProjectProgressSection.INCOMPLETE_LIST_ID);
     chip.addClassName("project-identity-incomplete");
-    chip.getElement().setAttribute("title", "Show which experiments are not complete yet");
+    chip.getElement().setAttribute("title",
+        "Show which experiments have not registered samples yet");
     chip.add(new Span(incomplete == 1
-        ? "1 experiment not complete yet"
-        : incomplete + " experiments not complete yet"));
+        ? "1 experiment without samples"
+        : incomplete + " experiments without samples"));
     chip.add(VaadinIcon.ANGLE_RIGHT.create());
     return chip;
   }
@@ -534,8 +545,12 @@ public class ProjectSummaryComponent extends PageArea {
   }
 
   /**
-   * The objective under the identity block: expanded by default, clamped to a few lines with a
-   * "Show more" toggle, exactly as the prototype presents it (never a collapsed grey bar).
+   * The objective under the identity block: expanded by default, clamped, with a "Show more"
+   * toggle — never a collapsed grey bar.
+   *
+   * <p>Clamped to two lines rather than three, and set in secondary text: on this page the objective
+   * is context for the status band that follows it, not a fact a reader scans for, and at three
+   * lines of full-contrast body text it competed with the band below for the first screenful.</p>
    */
   private static Div objectiveBlock(Project project) {
     Div block = new Div();

@@ -8,22 +8,24 @@ import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.ListItem;
 import com.vaadin.flow.component.html.OrderedList;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.router.RouteParam;
 import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.shared.Registration;
 import java.io.Serial;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import life.qbic.datamanager.views.MeasurementType;
-import life.qbic.datamanager.views.general.CompletenessRing;
 import life.qbic.datamanager.views.general.DataSetTagFactory;
 import life.qbic.datamanager.views.general.DataSetTagFactory.TagType;
 import life.qbic.datamanager.views.general.ReactiveUiBridge;
@@ -43,10 +45,18 @@ import reactor.core.publisher.Mono;
 /**
  * "Where the project stands" — the prototype's progress band.
  *
- * <p>Structure (top to bottom): the band title; the not-complete card (only when something is
- * outstanding); then the progress card with a headline sentence, a rail of three stages
- * ({@code Experiment created -> Samples registered -> Dataset}) on a connector line, and the
- * dataset standing (primary data and connected assets).</p>
+ * <p>Structure (top to bottom): the band title; the progress card with a headline sentence, a rail
+ * of three stages ({@code Experiment created -> Samples registered -> Dataset}) on a connector
+ * line, and the dataset standing (primary data and connected assets); and last the not-complete
+ * disclosure (only when something is outstanding).</p>
+ *
+ * <p><b>Why the deficit comes last.</b> The band has two jobs — state where the project stands, and
+ * name what is outstanding — and they are not equally urgent. The deficit used to open the band as
+ * a tinted, bordered, multi-row card, so the highest-contrast object on the page was a notice and
+ * the rail, the actual status, began below the fold; the page read as an error report. The overview
+ * therefore leads and the deficit follows as one secondary line the reader opens when they act. It
+ * keeps its importance — it is still the only project-level statement of what is missing — without
+ * spending the fold on it.</p>
  *
  * <p>This is a genuine sequence, so the rail numbers its steps and marks done / not-complete with
  * glyphs instead of ordinals. Each step routes to its surface.</p>
@@ -131,19 +141,21 @@ public class ProjectProgressSection extends Div {
     content.add(heading());
     fireEvent(new ProgressLoadedEvent(this, false, progress));
 
-    List<ExperimentProgress> incomplete = progress.stream()
-        .filter(entry -> entry.measurementsWithoutPrimaryData() > 0)
-        .toList();
-    if (!incomplete.isEmpty()) {
-      content.add(incompleteBlock(incomplete));
-    }
-
+    // The overview leads and the deficit follows it — see the class note on why the order is not
+    // the other way round.
     Div card = new Div();
     card.addClassName("project-progress-card");
     card.add(headline(progress));
     card.add(rail(progress));
     card.add(datasetsStanding(progress, overview, connected));
     content.add(card);
+
+    List<ExperimentProgress> incomplete = progress.stream()
+        .filter(entry -> entry.measurementsWithoutPrimaryData() > 0)
+        .toList();
+    if (!incomplete.isEmpty()) {
+      content.add(incompleteDisclosure(incomplete));
+    }
   }
 
   private Span heading() {
@@ -152,36 +164,82 @@ public class ProjectProgressSection extends Div {
     return heading;
   }
 
-  // ── Not-complete card ──────────────────────────────────────────────────
+  // ── Not-complete disclosure ───────────────────────────────────────────
 
-  private Div incompleteBlock(List<ExperimentProgress> incomplete) {
-    Div block = new Div();
-    block.addClassName("project-progress-incomplete");
-    block.setId(INCOMPLETE_LIST_ID);
-    // "Not complete yet", not "Needs attention": missing primary data is a normal, time-dependent
-    // stage of the process, not a problem, so the card informs rather than alarms.
-    Span title = new Span("Not complete yet");
-    title.addClassName("project-progress-incomplete-title");
-    block.add(title);
-    incomplete.forEach(entry -> block.add(incompleteRow(entry)));
-    return block;
+  /**
+   * The deficit as a secondary disclosure, closed by default.
+   *
+   * <p>It used to open the band: a tinted card with a title and one white row per experiment,
+   * taller than everything below it. It now states the same fact in one quiet line and opens on
+   * demand.</p>
+   *
+   * <p>The wording separates two conditions the page used to blur. The identity band's chip counts
+   * experiments without <em>samples</em>; this counts experiments whose measurements lack
+   * <em>primary data</em>. Both numbers happened to be 2 on the same project and both were phrased
+   * as "not complete", so a reader had no way to tell they were different facts. Each names its
+   * own condition now.</p>
+   */
+  private Details incompleteDisclosure(List<ExperimentProgress> incomplete) {
+    int missing = incomplete.stream()
+        .mapToInt(ExperimentProgress::measurementsWithoutPrimaryData).sum();
+    int measurements = incomplete.stream()
+        .mapToInt(ExperimentProgress::measurementCount).sum();
+
+    Div summary = new Div();
+    summary.addClassName("project-progress-incomplete-summary");
+    Span lead = new Span(incomplete.size() == 1
+        ? "1 experiment needs primary data"
+        : incomplete.size() + " experiments need primary data");
+    lead.addClassName("project-progress-incomplete-lead");
+    Span detail = new Span("%s of %s measurements".formatted(missing, measurements));
+    detail.addClassName("project-progress-incomplete-count");
+    summary.add(lead, separator(), detail);
+
+    Div rows = new Div();
+    rows.addClassName("project-progress-incomplete-rows");
+    incomplete.forEach(entry -> rows.add(incompleteRow(entry)));
+
+    Details disclosure = new Details(summary, rows);
+    disclosure.addClassName("project-progress-incomplete");
+    // Closed by default: the summary already carries the project-level fact, and the rows answer
+    // "which experiment" -- the second question, not the first.
+    disclosure.setOpened(false);
+    // The identity band's chip anchors to this element, so the id stays the contract between them.
+    disclosure.setId(INCOMPLETE_LIST_ID);
+    return disclosure;
   }
 
+  /**
+   * One outstanding experiment, at the shortest form that still lets the reader act.
+   *
+   * <p>The row used to read "<name> 264 of 272 measurements have no primary data attached   Open
+   * dataset". The verb phrase repeats what the disclosure's summary already says, carries no
+   * per-experiment information, and stretched every row onto a second line. What differs between
+   * rows is the name and the fraction, so those are what the row shows. The whole row is the link,
+   * so the trailing action keeps its name for assistive technology rather than as visible text.</p>
+   */
   private Div incompleteRow(ExperimentProgress entry) {
     Div row = new Div();
     row.addClassName("project-progress-incomplete-row");
-    row.add(icon(VaadinIcon.INFO_CIRCLE));
     Span context = new Span(entry.experimentName());
     context.addClassName("project-progress-incomplete-context");
-    Span text = new Span(entry.measurementsWithoutPrimaryData() + " of " + entry.measurementCount()
-        + " measurements have no primary data attached");
-    text.addClassName("project-progress-incomplete-text");
+    // The fraction is one unit, so its two numbers never wrap apart, and it sits in the row's
+    // right-hand column so the figures line up however long the experiment names are.
+    Span fraction = new Span("%d/%d".formatted(
+        entry.measurementsWithoutPrimaryData(), entry.measurementCount()));
+    fraction.addClassName("project-progress-incomplete-fraction");
     Span action = new Span("Open dataset");
     action.addClassName("project-progress-incomplete-action");
-    row.add(context, text, action);
+    row.add(context, fraction, action);
     Utility.activateOnClickAndKeys(row, "link",
         () -> navigate(MeasurementDatasetMain.class, entry.experimentId()));
     return row;
+  }
+
+  private static Span separator() {
+    Span separator = new Span("\u00b7");
+    separator.addClassName("project-progress-incomplete-separator");
+    return separator;
   }
 
   // ── Headline ───────────────────────────────────────────────────────────
@@ -245,37 +303,37 @@ public class ProjectProgressSection extends Div {
             : "None registered yet",
         samples > 0 ? State.DONE : State.TODO,
         () -> navigate(SampleInformationMain.class, firstExperiment)));
-    // The stage's marker is a completeness ring: it carries the primary-data coverage at a glance,
-    // with the detail beside it, instead of a warning triangle that only says "something is wrong".
-    rail.add(stepWithMarker(
-        primaryDatasetsRing(withData, measurements, missing),
-        "Dataset",
-        datasetDetail(withData, measurements, missing),
+    // The Dataset stage takes the same marker as the two stages beside it, and states its coverage
+    // in the detail slot. It used to carry a completeness ring as its marker, which put a donut in a
+    // row of discs: two stages read as one family and the third as a foreign object, the 3% arc was
+    // nearly invisible at marker size, and a 3% stage ended up with the label weight of a finished
+    // one. The ring was right about the *proportion* being worth showing and wrong about the slot;
+    // the proportion now lives in one full-width bar in the Primary data card, where there is room
+    // for it.
+    rail.add(step(3, "Dataset", datasetDetail(withData, measurements, missing),
         missing > 0 ? State.INCOMPLETE : State.DONE,
         () -> navigate(MeasurementDatasetMain.class, firstExperiment)));
     return rail;
   }
 
-  /** What the Dataset stage reports once at least one experiment exists. */
+  /**
+   * What the Dataset stage reports once at least one experiment exists.
+   *
+   * <p>All three stages now speak one grammar: a positive count of what exists, with the deficit as
+   * a secondary clause where there is one. The slot used to hold "276 of 284 measurements still
+   * need data" beside "599 samples registered" — a deficit next to two achievements, so the three
+   * stages could not be compared at a glance.</p>
+   */
   private static String datasetDetail(int withData, int measurements, int missing) {
     if (measurements == 0) {
       return "None registered yet";
     }
     String total = pluralise(measurements, "measurement", "measurements");
-    // Both branches are "N of M ...", so the two states read as the same measure with a different
-    // ending -- and each stays grammatical for a single measurement.
+    // Both branches keep the "N of M ..." shape, so the two states read as the same measure with a
+    // different ending -- and each stays grammatical for a single measurement.
     return missing == 0
         ? withData + " of " + total + " with data"
-        : missing + " of " + total + " still need data";
-  }
-
-  private static CompletenessRing primaryDatasetsRing(int withData, int measurements, int missing) {
-    CompletenessRing ring = new CompletenessRing(withData, measurements,
-        measurements == 0
-            ? "No measurements registered yet"
-            : missing + " of " + measurements + " measurements still need primary data");
-    ring.addClassName("project-progress-step-ring");
-    return ring;
+        : withData + " of " + total + " with data · " + missing + " missing";
   }
 
   private static String pluralise(int count, String singular, String plural) {
@@ -372,29 +430,71 @@ public class ProjectProgressSection extends Div {
   /**
    * Primary data, as analysis sees it: how much of it there is, and where it sits.
    *
-   * <p>This card answers "what data exists": a total, then where it sits per assay type. It
-   * deliberately does NOT state coverage. "8 of 284 measurements" is a project-grain number that
-   * hides which experiment is behind -- the question a reader actually has -- and it is already
-   * answered at the right grain by the not-complete card and the experiment snapshot panels. The
-   * file count that used to sit here is gone: it is not comparable across assay types, it cannot
-   * be acted on, and pairing it with a byte total only invites the reader to divide the two (see
-   * the migration's trap 4c).</p>
+   * <p>This card answers "what data exists": a coverage measure, a total, then where it sits per
+   * assay type. The file count that used to sit here is gone: it is not comparable across assay
+   * types, it cannot be acted on, and pairing it with a byte total only invites the reader to
+   * divide the two (see the migration's trap 4c).</p>
+   *
+   * <p><b>Why the coverage bar is here.</b> Coverage used to be a completeness ring used as the
+   * Dataset stage's marker, where it sat in a row of plain discs and had no room to show a 3% arc
+   * honestly. This card is the one place on the page that is about the primary datasets and has the
+   * width for a bar, so the proportion lives here once, as the measure it is, and the rail up top
+   * goes back to stating counts. The bar is the project-grain view; "which experiment" is the
+   * disclosure's question, one line below the card.</p>
    */
   private Div primaryDataCard(List<ExperimentProgress> progress) {
     Div card = new Div();
     card.addClassName("project-progress-datasets-card");
-    card.add(cardTitle("Primary data — for analysis"));
+    card.add(cardTitle("Primary data"));
+    card.add(coverageMeasure(progress));
     List<AssayTypeTotal> present = assayTypesWithPrimaryData(progress);
     card.add(cardFact(totalVolume(progress, present)));
     if (!present.isEmpty()) {
       card.add(cardFact(volumeByAssayType(present)));
     }
     // The card summarises the project's primary datasets, so it opens the page that lists them
-    // one by experiment and assay type. It used to open the raw files of the first experiment,
+    // one per experiment and assay type. It used to open the raw files of the first experiment,
     // which answered a narrower question and only ever for one of them.
     makeNavigable(card, "Open primary datasets", () -> getUI().ifPresent(
         ui -> ui.navigate(ProjectDatasetsMain.class, projectParameters())));
     return card;
+  }
+
+  /**
+   * How much of the project's measurement count has primary data, as a bar with its figures.
+   *
+   * <p>The bar's track is what makes a low value legible: 3% against a visible remainder reads as
+   * "almost nothing has arrived yet", where a thin 3% arc on white read as a spinner. The sentence
+   * beneath states the numbers, so the bar never carries the meaning alone -- the same contract the
+   * completeness ring honoured with its {@code aria-valuetext}, kept here by the visible text.</p>
+   */
+  private static Div coverageMeasure(List<ExperimentProgress> progress) {
+    int measurements = progress.stream().mapToInt(ExperimentProgress::measurementCount).sum();
+    int withData = progress.stream().mapToInt(ExperimentProgress::measurementsWithPrimaryData).sum();
+
+    Div measure = new Div();
+    measure.addClassName("project-progress-coverage");
+
+    // No measurements yet is "not applicable", not "0%": there is nothing to be covered, and a 0%
+    // bar would claim a measured shortfall. The line states the absence instead.
+    if (measurements == 0) {
+      Span none = new Span("No measurements registered yet");
+      none.addClassName("project-progress-coverage-none");
+      measure.add(none);
+      return measure;
+    }
+
+    ProgressBar bar = new ProgressBar(0d, 1d, (double) withData / measurements);
+    bar.addClassName("project-progress-coverage-bar");
+    // The figures sit in the sentence below, so the bar is hidden from assistive technology rather
+    // than given a spoken value that would state the same fact twice in a row.
+    bar.getElement().setAttribute("aria-hidden", "true");
+
+    Span figures = new Span("%d of %s have primary data".formatted(withData,
+        pluralise(measurements, "measurement", "measurements")));
+    figures.addClassName("project-progress-coverage-figures");
+    measure.add(bar, figures);
+    return measure;
   }
 
   /**
@@ -473,8 +573,11 @@ public class ProjectProgressSection extends Div {
     card.addClassName("project-progress-datasets-card");
     makeNavigable(card, "Open connected datasets", () -> getUI().ifPresent(
         ui -> ui.navigate(ProjectDatasetsMain.class, projectParameters())));
+    // The count and the provider are the card's headline fact, so they lead in body weight and the
+    // repository is set apart in secondary text -- rather than one em-dash construction per card,
+    // which made both cards read as a caption with a fact bolted onto it.
     if (connected.isEmpty()) {
-      card.add(cardTitle("Connected datasets — none, hosted elsewhere"));
+      card.add(cardTitle("Connected datasets"));
       card.add(cardFact("None linked yet"));
       return card;
     }
@@ -482,9 +585,16 @@ public class ProjectProgressSection extends Div {
     // the same word three times beside the fields that actually differ. When they agree it moves
     // into the card title; when they do not, each row keeps its own.
     String sharedProvider = sharedProvider(connected);
-    card.add(cardTitle(sharedProvider == null
-        ? "Connected datasets — %d, hosted elsewhere".formatted(connected.size())
-        : "Connected datasets — %d from %s".formatted(connected.size(), sharedProvider)));
+    Div title = cardTitle("Connected datasets");
+    Span count = new Span(" %d ".formatted(connected.size()));
+    count.addClassName("project-progress-datasets-card-title-fact");
+    title.add(count);
+    if (sharedProvider != null) {
+      Span provider = new Span("from %s".formatted(sharedProvider));
+      provider.addClassName("project-progress-datasets-card-title-provider");
+      title.add(provider);
+    }
+    card.add(title);
 
     boolean perRowProvider = sharedProvider == null;
     Div rows = new Div();
@@ -584,9 +694,10 @@ public class ProjectProgressSection extends Div {
     return row;
   }
 
-  private static Span cardTitle(String text) {
-    Span title = new Span(text);
+  private static Div cardTitle(String text) {
+    Div title = new Div();
     title.addClassName("project-progress-datasets-card-title");
+    title.add(new Span(text));
     return title;
   }
 

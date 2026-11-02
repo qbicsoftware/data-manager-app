@@ -23,18 +23,19 @@
   color: var(--lumo-contrast-40pct);
 }
 
-/* The not-complete rollup as a chip, following the prototype's .pt-chip: a surface of its own, so it
-   reads as a control rather than as coloured text that happens to be clickable. Tone matches the
-   list it leads to, so the chip and its destination look like the same thing. */
+/* The deficit rollup as a chip: a surface of its own, so it reads as a control rather than as
+   coloured text that happens to be clickable. Neutral, not info-tinted: it used to carry the same
+   blue as the notice below it, which made the smallest element in the band the first thing the eye
+   landed on -- ahead of the project's own metadata. The tint now lives only where the list is. */
 .project-identity-incomplete {
   display: inline-flex;
   align-items: center;
   gap: var(--lumo-space-xs);
   padding: 0.1rem 0.55rem;
   border-radius: 999px;
-  border: 1px solid var(--info-border, var(--lumo-contrast-20pct));
-  background-color: var(--info-surface, var(--lumo-contrast-5pct));
-  color: var(--info-text-color, var(--lumo-error-text-color));
+  border: 1px solid var(--lumo-contrast-20pct);
+  background-color: var(--lumo-contrast-5pct);
+  color: var(--lumo-secondary-text-color);
   font-size: var(--lumo-font-size-xs);
   font-weight: 600;
   white-space: nowrap;
@@ -45,7 +46,8 @@
 
 .project-identity-incomplete:hover,
 .project-identity-incomplete:focus-visible {
-  border-color: var(--info-text-color, var(--lumo-error-text-color));
+  border-color: var(--lumo-contrast-40pct);
+  color: var(--lumo-body-text-color);
   text-decoration: none;
 }
 
@@ -62,14 +64,18 @@
   gap: var(--lumo-space-xs);
 }
 
-/* Expanded by default, clamped to a few lines — never a collapsed grey bar. */
+/* Expanded by default, clamped — never a collapsed grey bar. Two lines rather than three, and in
+   secondary text: on the summary page the objective is context for the status band below it, and at
+   three lines of full-contrast body text it competed with that band for the first screenful. A
+   longer objective is still one click away through the toggle below. */
 .project-objective-text {
   display: -webkit-box;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   max-width: 60rem;
   line-height: var(--lumo-line-height-m);
+  color: var(--lumo-secondary-text-color);
 }
 
 .project-objective-text.is-expanded {
