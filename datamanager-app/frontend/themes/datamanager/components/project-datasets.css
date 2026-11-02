@@ -136,8 +136,12 @@ it needs no paging, filtering or selection, and it is read-only.
    minmax(0, …) lets a long experiment name ellipsize instead of widening the page. */
 .project-datasets-table-row {
   display: grid;
-  grid-template-columns: minmax(0, 2.5fr) minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, 1fr)
-      minmax(0, 1fr) minmax(0, 1fr);
+  /* Seven columns since the analysis method became the dataset's identity: experiment, method,
+     domain, measurements, primary data, size, status. The method takes a wider share than the
+     domain because it is the column a reader scans for -- "WES" vs "RNA-SEQ" is the distinction
+     that matters, the domain is only the grouping around it. */
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1.3fr) minmax(0, 1.1fr) minmax(0, 0.9fr)
+      minmax(0, 1fr) minmax(0, 0.9fr) minmax(0, 1fr);
   border-top: 1px solid var(--border-color-light);
 }
 

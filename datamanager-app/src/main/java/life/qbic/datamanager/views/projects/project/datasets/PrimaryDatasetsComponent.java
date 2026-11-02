@@ -22,7 +22,8 @@ import life.qbic.datamanager.views.general.utils.Utility;
 import life.qbic.datamanager.views.projects.project.dataset.MeasurementDatasetMain;
 import life.qbic.projectmanagement.application.api.ProjectQueryService;
 import life.qbic.projectmanagement.application.query.AssayType;
-import life.qbic.projectmanagement.application.query.ExperimentProgress;
+import life.qbic.projectmanagement.domain.model.sample.AnalysisMethod;
+import life.qbic.projectmanagement.application.query.AssayStanding;
 
 /**
  * <b>The project's primary datasets</b>
@@ -31,12 +32,15 @@ import life.qbic.projectmanagement.application.query.ExperimentProgress;
  * connected half is {@link ConnectedResourcesComponent}, which is hosted elsewhere and linked
  * here; the two are different things and are titled separately.</p>
  *
- * <p><b>A dataset is one experiment and one assay type.</b> Not one per experiment: a project
- * already holds one primary dataset per assay type, so an experiment that was measured as genomics
- * and as proteomics contributes two. A type an experiment never measured is not an empty dataset
- * and is not listed. This is the grain the read model can back — per-experiment, per-type
- * measurement counts, primary-data coverage and volume — and it keeps the per-experiment
- * attribution that a project-level rollup throws away.</p>
+ * <p><b>A dataset is one experiment for one analysis method.</b> Not one per experiment: an
+ * experiment measured as WES and as RNA-Seq contributes two, and two experiments both measured as
+ * WES contribute two as well. The analysis method, not the omics domain, is the identity, because
+ * WES, RNA-Seq and 16S are all genomics and are not interchangeable -- a reader picks a dataset by
+ * the analysis they intend to run. A method an experiment never measured is not an empty dataset and
+ * is not listed.</p>
+ *
+ * <p>The grain comes from {@code v_project_assay_standing}, shared with the project summary page, so
+ * the two surfaces cannot disagree about how many datasets a project holds. See ADR 0010.</p>
  *
  * <p>The rows are derived, not addressable: primary datasets have no identity of their own yet, so
  * a row cannot be linked to. Opening one goes to that experiment's measurements, which is where
@@ -86,8 +90,11 @@ public class PrimaryDatasetsComponent extends Div {
     }
     body.removeAll();
     body.add(message("Loading datasets …"));
+    // Read from the assay-standing read model, not from experiment_progress: this page and the
+    // project summary must resolve a dataset the same way, or a project that holds "2 WES datasets"
+    // on the summary would hold "1 Genomics dataset" here. See ADR 0010.
     ReactiveUiBridge.onUi(ui,
-        projectQueryService.getExperimentProgress(projectId).collectList(),
+        projectQueryService.getAssayStanding(projectId).collectList(),
         this::render,
         error -> {
           body.removeAll();
@@ -95,37 +102,40 @@ public class PrimaryDatasetsComponent extends Div {
         });
   }
 
-  private void render(List<ExperimentProgress> progress) {
+  private void render(List<AssayStanding> datasets) {
     body.removeAll();
-    List<DatasetRow> rows = datasetRows(progress);
+    List<DatasetRow> rows = datasetRows(datasets);
     if (rows.isEmpty()) {
       body.add(emptyState());
       return;
     }
     body.add(rollup(rows));
     body.add(table(rows));
-    body.add(note("A primary dataset is the measurement data of one experiment for one assay "
-        + "type. Open one to see its measurements and primary data."));
+    body.add(note("A primary dataset is the measurement data of one experiment for one analysis "
+        + "method. Open one to see its measurements and primary data."));
   }
 
   /**
-   * One row per primary dataset: one experiment, one assay type, ordered by experiment.
+   * One row per primary dataset: one experiment, one analysis method.
    *
-   * <p>The experiments come back in no particular order, so the rows are sorted by name; the
-   * sections of the page are otherwise listed in a stable order.</p>
+   * <p>The read model already returns exactly that grain -- one row per
+   * {@code (experiment, analysis method)} -- so this only sorts. The experiment is the discriminant
+   * between two datasets of the same method, which is why it is a column here and a grouping on the
+   * summary page: this page is where the reader resolves "which one", the summary only reports "how
+   * many".</p>
    */
-  private static List<DatasetRow> datasetRows(List<ExperimentProgress> progress) {
-    return progress.stream()
-        .sorted(Comparator.comparing(ExperimentProgress::experimentName,
-            String.CASE_INSENSITIVE_ORDER))
-        .flatMap(experiment -> experiment.assayTypes().stream()
-            .map(type -> new DatasetRow(
-                experiment.experimentId(),
-                experiment.experimentName(),
-                type,
-                experiment.measurementCount(type),
-                experiment.measurementsWithPrimaryData(type),
-                experiment.primaryDataBytes(type))))
+  private static List<DatasetRow> datasetRows(List<AssayStanding> datasets) {
+    return datasets.stream()
+        .sorted(Comparator.comparing(AssayStanding::experimentName, String.CASE_INSENSITIVE_ORDER)
+            .thenComparing(dataset -> dataset.analysisMethod().abbreviation()))
+        .map(dataset -> new DatasetRow(
+            dataset.experimentId(),
+            dataset.experimentName(),
+            dataset.analysisMethod(),
+            dataset.assayType(),
+            dataset.measurements(),
+            dataset.withPrimaryData(),
+            dataset.primaryDataBytes()))
         .toList();
   }
 
@@ -174,8 +184,8 @@ public class PrimaryDatasetsComponent extends Div {
   private static Div headerRow() {
     Div row = new Div();
     row.addClassNames("project-datasets-table-row", "project-datasets-table-row--head");
-    for (String header : new String[]{"Experiment", "Assay type", "Measurements", "Primary data",
-        "Size", "Status"}) {
+    for (String header : new String[]{"Experiment", "Analysis method", "Domain", "Measurements",
+        "Primary data", "Size", "Status"}) {
       row.add(cell(header));
     }
     return row;
@@ -189,6 +199,14 @@ public class PrimaryDatasetsComponent extends Div {
     Div row = new Div();
     row.addClassNames("project-datasets-table-row", "project-datasets-table-row--clickable");
     row.add(cell(dataset.experimentName()));
+
+    // The analysis method is the dataset's identity -- "WES" and "RNA-Seq" are both genomics but
+    // are not interchangeable -- so it leads and the domain follows as the grouping it is. The
+    // abbreviation is shown and the full label carries the title, since "Exome sequencing" repeated
+    // on every row is more text than the identity needs.
+    Span methodCell = cell(dataset.analysisMethod().abbreviation());
+    methodCell.getElement().setAttribute("title", dataset.analysisMethod().label());
+    row.add(methodCell);
 
     Span typeCell = cell(null);
     typeCell.add(TagFactory.forMeasurement(MeasurementType.from(dataset.assayType())));
@@ -274,7 +292,8 @@ public class PrimaryDatasetsComponent extends Div {
   }
 
   /** One primary dataset: the measurement data of one experiment for one assay type. */
-  private record DatasetRow(String experimentId, String experimentName, AssayType assayType,
+  private record DatasetRow(String experimentId, String experimentName,
+                            AnalysisMethod analysisMethod, AssayType assayType,
                             int measurements, int withPrimaryData, long bytes) {
 
     int missing() {

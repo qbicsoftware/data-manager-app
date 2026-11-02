@@ -25,6 +25,7 @@ For the three-tier migration documentation structure, see
 | 9 | [`create-project-page-read-models.sql`](create-project-page-read-models.sql) | Create project-page read-model views `experiment_progress`, `v_project_sample_overview`, `v_measurement_experiment` + index on `sample(experiment_id)` | TBD (`FEAT-PROJECT-*`) | `data_management` |
 | 10 | [`create-user-project-view-state.sql`](create-user-project-view-state.sql) | Create `user_project_view_state` for per-user "new since last looked" (**deferred — do not apply yet**) | TBD (`FEAT-PROJECT-*`) | `data_management` |
 | 11 | [`create-experiment-recent-activity-views.sql`](create-experiment-recent-activity-views.sql) | Create `experiment_recent_sample` and `experiment_recent_measurement` views (newest three per experiment) for the snapshot panels | TBD (`FEAT-PROJECT-*`) | `data_management` |
+| 12 | [`create-assay-standing-view.sql`](create-assay-standing-view.sql) | Create `v_project_assay_standing` view: one row per primary dataset, i.e. per (experiment, analysis method), with measurement counts, primary-data coverage and volume. Single derivation shared by the summary and Datasets pages (ADR 0010) | TBD (`FEAT-PROJECT-*`) | `data_management` |
 
 *Add a row here and drop in the script when a new migration lands.*
 

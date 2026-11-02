@@ -65,15 +65,17 @@ is one change rather than a change per consumer.
 **Adopt option 4. The analysis method is resolved in exactly one place, and callers never see where
 it came from.**
 
-1. **Single resolution point.** `AssayStandingQuery.BY_PROJECT`
-   (`project-management-infrastructure`) is the only statement that reads `sample.analysis_method` to
-   determine a dataset's type. Everything upstream — `AssayStanding`,
-   `ProjectPageReadRepository.findAssayStanding`, `ProjectQueryService.getAssayStanding`, the views —
+1. **Single resolution point.** `v_project_assay_standing`
+   (`sql/migrations/create-assay-standing-view.sql`) is the only statement that reads
+   `sample.analysis_method` to determine a dataset's type. Everything upstream — `AssayStanding`,
+   `ProjectPageReadRepository.findAssayStanding`, `ProjectQueryService.getAssayStanding`, and both
+   surfaces that display it (the project summary's dataset card and `PrimaryDatasetsComponent`) —
    consumes the resolved `AnalysisMethod` and is agnostic to its origin.
 
 2. **The migration is then a one-file change.** When the measurement carries its own annotation, the
-   resolution changes *inside* `AssayStandingQuery` (reading the measurement first, falling back to
-   the sample), plus its row mapping. No view, no application service, and no consumer changes.
+   resolution changes *inside* the view (reading the measurement first, falling back to the sample).
+   No Java row mapping, no application service, and no consumer changes — which is why the derivation
+   is a view rather than a query string in a repository.
 
 3. **The sample annotation is not deleted.** It is the historical record for projects registered
    before the move and the fallback for any measurement without its own annotation. It is retained as
