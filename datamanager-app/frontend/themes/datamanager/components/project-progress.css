@@ -431,6 +431,49 @@
   color: var(--lumo-secondary-text-color);
 }
 
+/* One line per measurement type. Grid, not flex: the label, the count-and-size and the state are
+   three columns that must line up across rows, and the state has to hold the right edge whatever
+   the sizes are. */
+.project-progress-types {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-xs);
+}
+
+.project-progress-type-row {
+  display: grid;
+  grid-template-columns: minmax(0, max-content) minmax(0, 1fr) max-content;
+  gap: var(--lumo-space-s);
+  align-items: baseline;
+  font-size: var(--lumo-font-size-s);
+}
+
+.project-progress-type-label {
+  font-weight: 600;
+  color: var(--lumo-body-text-color);
+}
+
+.project-progress-type-detail {
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-s);
+}
+
+.project-progress-type-state {
+  white-space: nowrap;
+  color: var(--lumo-secondary-text-color);
+}
+
+/* The two states are named in words, so colour only reinforces. Complete is quiet -- it is the
+   settled state and needs no attention -- while outstanding work is stated at body weight. */
+.project-progress-type-state--complete {
+  color: var(--lumo-success-text-color, var(--lumo-secondary-text-color));
+}
+
+.project-progress-type-state--incomplete {
+  color: var(--lumo-body-text-color);
+  font-weight: 500;
+}
+
 /* Connected assets as a grid, not a stack of flex rows. Grid sizes each column across ALL the rows,
    so the type and the timestamp line up vertically whatever the vocabulary term or the relative
    time happens to be. A per-row layout can only reserve a guess at the type width, and the
