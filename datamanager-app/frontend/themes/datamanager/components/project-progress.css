@@ -195,9 +195,35 @@
   display: flex;
   align-items: center;
   gap: var(--lumo-space-s);
-  /* All three markers are the same disc now that the Dataset stage no longer carries a ring, so the
-     connector sits on one line without a minimum height reserved for a taller middle element. */
-  min-height: 1.75rem;
+  /* Tall enough for the completeness ring that marks the Dataset stage, so every stage's connector
+     sits on the same line even though the ring is taller than the two round markers beside it. */
+  min-height: 2.75rem;
+}
+
+/* The Dataset stage's marker: the project's primary-data coverage at a glance, with the step's own
+   count beside it. The ring is kept here on purpose -- the same component the experiment panels and
+   the dataset selector use -- so this page can be read as a comparison against the bar in the
+   Primary data card below. */
+.project-progress-step-ring {
+  --completeness-ring-size: 2.75rem;
+  --completeness-ring-font-size: var(--lumo-font-size-xs);
+}
+
+/* At 3% coverage the arc is a sliver, and the ring's track is the only thing that frames it as
+   "almost nothing has arrived yet" rather than as a spinner with no remainder. The shared track sits
+   at --lumo-contrast-10pct, which on white is too faint to register at this size -- so the ring in
+   the rail is given a track that survives a low value. This is scoped to the rail and does not
+   change the ring on the surfaces that sit it in a card. */
+.project-progress-step-ring .completeness-ring__track {
+  stroke: var(--lumo-contrast-20pct);
+}
+
+/* A stage's connector leads INTO the next stage, so its colour has to follow that stage's state
+   rather than its own. Drawn from the current step it turned success-green into a 3% stage: the
+   connector asserted progress the stage it pointed at did not have. */
+.project-progress-step--done:has(+ .project-progress-step--incomplete) .project-progress-connector,
+.project-progress-step--done:has(+ .project-progress-step--todo) .project-progress-connector {
+  background-color: var(--lumo-contrast-20pct);
 }
 
 .project-progress-marker {

@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import life.qbic.datamanager.views.MeasurementType;
+import life.qbic.datamanager.views.general.CompletenessRing;
 import life.qbic.datamanager.views.general.DataSetTagFactory;
 import life.qbic.datamanager.views.general.DataSetTagFactory.TagType;
 import life.qbic.datamanager.views.general.ReactiveUiBridge;
@@ -303,14 +304,15 @@ public class ProjectProgressSection extends Div {
             : "None registered yet",
         samples > 0 ? State.DONE : State.TODO,
         () -> navigate(SampleInformationMain.class, firstExperiment)));
-    // The Dataset stage takes the same marker as the two stages beside it, and states its coverage
-    // in the detail slot. It used to carry a completeness ring as its marker, which put a donut in a
-    // row of discs: two stages read as one family and the third as a foreign object, the 3% arc was
-    // nearly invisible at marker size, and a 3% stage ended up with the label weight of a finished
-    // one. The ring was right about the *proportion* being worth showing and wrong about the slot;
-    // the proportion now lives in one full-width bar in the Primary data card, where there is room
-    // for it.
-    rail.add(step(3, "Dataset", datasetDetail(withData, measurements, missing),
+    // The Dataset stage keeps the completeness ring as its marker. This is deliberate for now: the
+    // ring is in use on three other surfaces and the rail is the only place it meets plain discs, so
+    // the page is being used to compare the two encodings side by side -- the ring here, the bar in
+    // the Primary data card below. The ring also states its share in the detail slot, so neither the
+    // marker nor the sentence carries the proportion alone.
+    rail.add(stepWithMarker(
+        primaryDatasetsRing(withData, measurements, missing),
+        "Dataset",
+        datasetDetail(withData, measurements, missing),
         missing > 0 ? State.INCOMPLETE : State.DONE,
         () -> navigate(MeasurementDatasetMain.class, firstExperiment)));
     return rail;
@@ -334,6 +336,24 @@ public class ProjectProgressSection extends Div {
     return missing == 0
         ? withData + " of " + total + " with data"
         : withData + " of " + total + " with data · " + missing + " missing";
+  }
+
+  /**
+   * The Dataset stage's marker: primary-data coverage at a glance, sharing the slot with the two
+   * plain discs beside it.
+   *
+   * <p>An arc is weak at low values, and this project's coverage is 3%. The ring's own track is what
+   * makes that readable -- it frames the arc as mostly-empty rather than letting a sliver float in
+   * white -- so the track is drawn at a contrast that survives a 3% arc, and the detail beside the
+   * marker states the figures in words.</p>
+   */
+  private static CompletenessRing primaryDatasetsRing(int withData, int measurements, int missing) {
+    CompletenessRing ring = new CompletenessRing(withData, measurements,
+        measurements == 0
+            ? "No measurements registered yet"
+            : missing + " of " + measurements + " measurements still need primary data");
+    ring.addClassName("project-progress-step-ring");
+    return ring;
   }
 
   private static String pluralise(int count, String singular, String plural) {
