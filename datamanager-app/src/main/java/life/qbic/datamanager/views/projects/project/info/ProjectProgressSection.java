@@ -54,16 +54,15 @@ import reactor.core.publisher.Mono;
  *
  * <p>Structure (top to bottom): the band title; the progress card with a headline sentence, a rail
  * of three stages ({@code Experiment created -> Samples registered -> Dataset}) on a connector
- * line, and the dataset standing (primary data and connected assets); and last the not-complete
- * disclosure (only when something is outstanding).</p>
+ * line, and the dataset standing (primary data and connected assets).</p>
  *
- * <p><b>Why the deficit comes last.</b> The band has two jobs — state where the project stands, and
- * name what is outstanding — and they are not equally urgent. The deficit used to open the band as
- * a tinted, bordered, multi-row card, so the highest-contrast object on the page was a notice and
- * the rail, the actual status, began below the fold; the page read as an error report. The overview
- * therefore leads and the deficit follows as one secondary line the reader opens when they act. It
- * keeps its importance — it is still the only project-level statement of what is missing — without
- * spending the fold on it.</p>
+ * <p><b>The per-experiment deficit is not stated here.</b> It used to open the band as a tinted card
+ * and later closed it as a disclosure, and both were answering a question this band is not placed to
+ * answer. The band reports the project's standing; "which experiments are behind" is per-experiment
+ * detail, it is already carried at the right grain by the experiment entries below the band and by
+ * the Datasets page, and the identity band's chip links straight to that detail. Keeping a third
+ * rendering of it here cost a block of vertical space and restated numbers the rail and the dataset
+ * card already state.</p>
  *
  * <p>This is a genuine sequence, so the rail numbers its steps and marks done / not-complete with
  * glyphs instead of ordinals. Each step routes to its surface.</p>
@@ -83,15 +82,6 @@ public class ProjectProgressSection extends Div {
 
   private static final String PROJECT_ID_PARAMETER = "projectId";
   private static final String EXPERIMENT_ID_PARAMETER = "experimentId";
-
-  /**
-   * Document id of the per-experiment not-complete list, so the identity band can link straight to
-   * it.
-   *
-   * <p>The two live in sibling components and neither knows the other's DOM, so the id is the
-   * contract between them. Unique per page, since a page renders one progress band.</p>
-   */
-  public static final String INCOMPLETE_LIST_ID = "project-incomplete";
 
   private final transient AssociatedDatasetService associatedDatasetService;
   private final transient ProjectQueryService projectQueryService;
@@ -181,97 +171,12 @@ public class ProjectProgressSection extends Div {
     card.add(rail(progress));
     card.add(datasetsStanding(progress, overview, connected));
     content.add(card);
-
-    List<ExperimentProgress> incomplete = progress.stream()
-        .filter(entry -> entry.measurementsWithoutPrimaryData() > 0)
-        .toList();
-    if (!incomplete.isEmpty()) {
-      content.add(incompleteDisclosure(incomplete));
-    }
   }
 
   private Span heading() {
     Span heading = new Span("Where the project stands");
     heading.addClassName("project-progress-heading");
     return heading;
-  }
-
-  // ── Not-complete disclosure ───────────────────────────────────────────
-
-  /**
-   * The deficit as a secondary disclosure, closed by default.
-   *
-   * <p>It used to open the band: a tinted card with a title and one white row per experiment,
-   * taller than everything below it. It now states the same fact in one quiet line and opens on
-   * demand.</p>
-   *
-   * <p>The summary names the condition and the count of experiments, and nothing else. It used to
-   * add "· 276 of 284 measurements", and both of those numbers were already on the page -- 284 in
-   * the ring's spoken text and the Dataset step, the outstanding count in the step's detail. A
-   * footnote restating the figures above it asks the reader to reconcile them a second time for no
-   * gain; what it adds is the one thing the rail cannot say, which is <em>which</em> experiments, and
-   * that is what the rows behind it are for.</p>
-   *
-   * <p>The condition is named in full because it is the fact the page used to blur: the count is
-   * measurements without <em>primary data</em>, not experiments without samples.</p>
-   */
-  private Details incompleteDisclosure(List<ExperimentProgress> incomplete) {
-    Div summary = new Div();
-    summary.addClassName("project-progress-incomplete-summary");
-    Span lead = new Span(incomplete.size() == 1
-        ? "1 experiment needs primary data"
-        : incomplete.size() + " experiments need primary data");
-    lead.addClassName("project-progress-incomplete-lead");
-    summary.add(lead);
-
-    Div rows = new Div();
-    rows.addClassName("project-progress-incomplete-rows");
-    incomplete.forEach(entry -> rows.add(incompleteRow(entry)));
-
-    Details disclosure = new Details(summary, rows);
-    disclosure.addClassName("project-progress-incomplete");
-    // Closed by default: the summary already carries the project-level fact, and the rows answer
-    // "which experiment" -- the second question, not the first.
-    disclosure.setOpened(false);
-    // The identity band's chip anchors to this element, so the id stays the contract between them.
-    disclosure.setId(INCOMPLETE_LIST_ID);
-    return disclosure;
-  }
-
-  /**
-   * One outstanding experiment, at the shortest form that still lets the reader act.
-   *
-   * <p>The row used to read "<name> 264 of 272 measurements have no primary data attached   Open
-   * dataset" -- a full sentence that repeated the summary's condition, carried no per-experiment
-   * information, and pushed every row onto a second line. What differs between rows is the name and
-   * the count, so those are what the row shows.</p>
-   *
-   * <p>The count is written "264 of 272 without data" rather than a bare "264/272": the summary line
-   * has scrolled out of view by the time the reader is working down the rows, and a slash fraction
-   * under no heading is a puzzle. The row is the link, so it needs no visible "Open dataset" -- that
-   * text is kept as the row's accessible name instead.</p>
-   */
-  private Div incompleteRow(ExperimentProgress entry) {
-    Div row = new Div();
-    row.addClassName("project-progress-incomplete-row");
-    Span context = new Span(entry.experimentName());
-    context.addClassName("project-progress-incomplete-context");
-    // One span, so the two numbers never wrap apart, and it sits in the row's right-hand column so
-    // the figures line up however long the experiment names are.
-    Span count = new Span("%d of %d without data".formatted(
-        entry.measurementsWithoutPrimaryData(), entry.measurementCount()));
-    count.addClassName("project-progress-incomplete-count");
-    // The row is the link, and with no action word left the destination has to be signalled by
-    // something. The chevron is what the identity chip already uses for the same job, so the two
-    // places that lead into a dataset read the same way.
-    Icon chevron = VaadinIcon.ANGLE_RIGHT.create();
-    chevron.addClassName("project-progress-incomplete-chevron");
-    row.add(context, count, chevron);
-    row.getElement().setAttribute("aria-label",
-        "%s: open dataset, %s".formatted(entry.experimentName(), count.getText()));
-    Utility.activateOnClickAndKeys(row, "link",
-        () -> navigate(MeasurementDatasetMain.class, entry.experimentId()));
-    return row;
   }
 
   // ── Headline ───────────────────────────────────────────────────────────

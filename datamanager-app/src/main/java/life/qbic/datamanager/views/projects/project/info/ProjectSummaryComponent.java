@@ -21,6 +21,7 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.router.RouteParam;
+import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.data.binder.Validator;
 import com.vaadin.flow.function.SerializablePredicate;
@@ -91,6 +92,7 @@ import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.projects.ProjectInformation;
 import life.qbic.datamanager.views.projects.edit.EditContactsComponent;
 import life.qbic.datamanager.views.projects.edit.ProjectDesignForm;
+import life.qbic.datamanager.views.projects.project.datasets.ProjectDatasetsMain;
 import life.qbic.datamanager.views.projects.project.settings.ProjectSettingsMain;
 import life.qbic.datamanager.views.strategy.scope.ReadScopeStrategy;
 import life.qbic.datamanager.views.strategy.scope.UserScopeStrategy;
@@ -514,24 +516,30 @@ public class ProjectSummaryComponent extends PageArea {
   }
 
   /**
-   * The deficit rollup, as an anchor to the per-experiment list.
+   * The deficit rollup: experiments whose measurements lack primary data, and the way to them.
    *
-   * <p>The jump is the browser's rather than a button that scrolls through a script: it works before
-   * any client-side code has run, the destination is visible in the URL and can be bookmarked or
-   * shared, and the back button returns the reader here.</p>
+   * <p>It links to the Datasets page, which lists one row per primary dataset — one experiment for
+   * one analysis method — with its coverage and outstanding count. That page is where "which
+   * experiments are behind" is answerable per row. The chip itself carries the project-level count,
+   * so it answers the question in the band and offers the detail in one control.</p>
    *
-   * <p><b>Wording.</b> It names the same condition the footnote does — experiments whose
-   * measurements lack primary data, which is what the counter in this class computes — and it uses
-   * the footnote's words, because the chip is a link to it and a link should read like its
-   * destination. An earlier revision worded it "without samples", which was simply wrong: samples
-   * are registered from the moment an experiment has them, and this count has nothing to do with
-   * sample registration.</p>
+   * <p>It used to be an in-page anchor to a disclosure at the bottom of the progress band. That
+   * disclosure is gone: it restated numbers the rail and the dataset card already state, and it was
+   * the third rendering of a fact this page has at two grains already. A router link to the surface
+   * that actually holds the detail is the honest destination.</p>
+   *
+   * <p>The count is experiments whose measurements lack primary data — not samples, which are
+   * registered from the moment an experiment has them.</p>
    */
-  private Anchor incompleteChip(int incomplete) {
-    Anchor chip = new Anchor("#" + ProjectProgressSection.INCOMPLETE_LIST_ID);
+  private RouterLink incompleteChip(int incomplete) {
+    RouterLink chip = new RouterLink();
+    chip.setRoute(ProjectDatasetsMain.class,
+        new RouteParameters(new RouteParam("projectId", context.projectId()
+            .orElseThrow(() -> new ApplicationException("No project id provided"))
+            .value())));
     chip.addClassName("project-identity-incomplete");
     chip.getElement().setAttribute("title",
-        "Show which experiments need primary data");
+        "Show the project's datasets and what each is still missing");
     chip.add(new Span(incomplete == 1
         ? "1 experiment needs primary data"
         : incomplete + " experiments need primary data"));
