@@ -15,7 +15,6 @@ import com.vaadin.flow.component.html.OrderedList;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.router.RouteParam;
 import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.shared.Registration;
@@ -174,27 +173,24 @@ public class ProjectProgressSection extends Div {
    * taller than everything below it. It now states the same fact in one quiet line and opens on
    * demand.</p>
    *
-   * <p>The wording separates two conditions the page used to blur. The identity band's chip counts
-   * experiments without <em>samples</em>; this counts experiments whose measurements lack
-   * <em>primary data</em>. Both numbers happened to be 2 on the same project and both were phrased
-   * as "not complete", so a reader had no way to tell they were different facts. Each names its
-   * own condition now.</p>
+   * <p>The summary names the condition and the count of experiments, and nothing else. It used to
+   * add "· 276 of 284 measurements", and both of those numbers were already on the page -- 284 in
+   * the ring's spoken text and the Dataset step, the outstanding count in the step's detail. A
+   * footnote restating the figures above it asks the reader to reconcile them a second time for no
+   * gain; what it adds is the one thing the rail cannot say, which is <em>which</em> experiments, and
+   * that is what the rows behind it are for.</p>
+   *
+   * <p>The condition is named in full because it is the fact the page used to blur: the count is
+   * measurements without <em>primary data</em>, not experiments without samples.</p>
    */
   private Details incompleteDisclosure(List<ExperimentProgress> incomplete) {
-    int missing = incomplete.stream()
-        .mapToInt(ExperimentProgress::measurementsWithoutPrimaryData).sum();
-    int measurements = incomplete.stream()
-        .mapToInt(ExperimentProgress::measurementCount).sum();
-
     Div summary = new Div();
     summary.addClassName("project-progress-incomplete-summary");
     Span lead = new Span(incomplete.size() == 1
         ? "1 experiment needs primary data"
         : incomplete.size() + " experiments need primary data");
     lead.addClassName("project-progress-incomplete-lead");
-    Span detail = new Span("%s of %s measurements".formatted(missing, measurements));
-    detail.addClassName("project-progress-incomplete-count");
-    summary.add(lead, separator(), detail);
+    summary.add(lead);
 
     Div rows = new Div();
     rows.addClassName("project-progress-incomplete-rows");
@@ -214,33 +210,31 @@ public class ProjectProgressSection extends Div {
    * One outstanding experiment, at the shortest form that still lets the reader act.
    *
    * <p>The row used to read "<name> 264 of 272 measurements have no primary data attached   Open
-   * dataset". The verb phrase repeats what the disclosure's summary already says, carries no
-   * per-experiment information, and stretched every row onto a second line. What differs between
-   * rows is the name and the fraction, so those are what the row shows. The whole row is the link,
-   * so the trailing action keeps its name for assistive technology rather than as visible text.</p>
+   * dataset" -- a full sentence that repeated the summary's condition, carried no per-experiment
+   * information, and pushed every row onto a second line. What differs between rows is the name and
+   * the count, so those are what the row shows.</p>
+   *
+   * <p>The count is written "264 of 272 without data" rather than a bare "264/272": the summary line
+   * has scrolled out of view by the time the reader is working down the rows, and a slash fraction
+   * under no heading is a puzzle. The row is the link, so it needs no visible "Open dataset" -- that
+   * text is kept as the row's accessible name instead.</p>
    */
   private Div incompleteRow(ExperimentProgress entry) {
     Div row = new Div();
     row.addClassName("project-progress-incomplete-row");
     Span context = new Span(entry.experimentName());
     context.addClassName("project-progress-incomplete-context");
-    // The fraction is one unit, so its two numbers never wrap apart, and it sits in the row's
-    // right-hand column so the figures line up however long the experiment names are.
-    Span fraction = new Span("%d/%d".formatted(
+    // One span, so the two numbers never wrap apart, and it sits in the row's right-hand column so
+    // the figures line up however long the experiment names are.
+    Span count = new Span("%d of %d without data".formatted(
         entry.measurementsWithoutPrimaryData(), entry.measurementCount()));
-    fraction.addClassName("project-progress-incomplete-fraction");
-    Span action = new Span("Open dataset");
-    action.addClassName("project-progress-incomplete-action");
-    row.add(context, fraction, action);
+    count.addClassName("project-progress-incomplete-count");
+    row.add(context, count);
+    row.getElement().setAttribute("aria-label",
+        "%s: open dataset, %s".formatted(entry.experimentName(), count.getText()));
     Utility.activateOnClickAndKeys(row, "link",
         () -> navigate(MeasurementDatasetMain.class, entry.experimentId()));
     return row;
-  }
-
-  private static Span separator() {
-    Span separator = new Span("\u00b7");
-    separator.addClassName("project-progress-incomplete-separator");
-    return separator;
   }
 
   // ── Headline ───────────────────────────────────────────────────────────
@@ -321,21 +315,23 @@ public class ProjectProgressSection extends Div {
   /**
    * What the Dataset stage reports once at least one experiment exists.
    *
-   * <p>All three stages now speak one grammar: a positive count of what exists, with the deficit as
-   * a secondary clause where there is one. The slot used to hold "276 of 284 measurements still
-   * need data" beside "599 samples registered" — a deficit next to two achievements, so the three
-   * stages could not be compared at a glance.</p>
+   * <p>One number, one word -- the same grammar as the two stages beside it ("599 samples
+   * registered"). It used to read "8 of 284 measurements with data · 276 missing", which put three
+   * figures in the slot where its neighbours put one, and made the reader reconcile a numerator, a
+   * denominator and a complement against a ring that already showed the proportion and a footnote
+   * that already named the outstanding count.</p>
+   *
+   * <p>The word is "missing" rather than "still need primary data" because the ring beside it is
+   * labelled and the footnote below spells the condition out in full; this slot only has to say how
+   * much is outstanding.</p>
    */
   private static String datasetDetail(int withData, int measurements, int missing) {
     if (measurements == 0) {
       return "None registered yet";
     }
-    String total = pluralise(measurements, "measurement", "measurements");
-    // Both branches keep the "N of M ..." shape, so the two states read as the same measure with a
-    // different ending -- and each stays grammatical for a single measurement.
     return missing == 0
-        ? withData + " of " + total + " with data"
-        : withData + " of " + total + " with data · " + missing + " missing";
+        ? pluralise(withData, "measurement with data", "measurements with data")
+        : pluralise(missing, "measurement missing data", "measurements missing data");
   }
 
   /**
@@ -455,18 +451,14 @@ public class ProjectProgressSection extends Div {
    * types, it cannot be acted on, and pairing it with a byte total only invites the reader to
    * divide the two (see the migration's trap 4c).</p>
    *
-   * <p><b>Why the coverage bar is here.</b> Coverage used to be a completeness ring used as the
-   * Dataset stage's marker, where it sat in a row of plain discs and had no room to show a 3% arc
-   * honestly. This card is the one place on the page that is about the primary datasets and has the
-   * width for a bar, so the proportion lives here once, as the measure it is, and the rail up top
-   * goes back to stating counts. The bar is the project-grain view; "which experiment" is the
-   * disclosure's question, one line below the card.</p>
+   * <p>It deliberately states no coverage: that is the rail's ring, one measure above, and restating
+   * it here as a second visual encoding gave the page two ways to say "8 of 284" and no reason for
+   * the reader to learn both.</p>
    */
   private Div primaryDataCard(List<ExperimentProgress> progress) {
     Div card = new Div();
     card.addClassName("project-progress-datasets-card");
     card.add(cardTitle("Primary data"));
-    card.add(coverageMeasure(progress));
     List<AssayTypeTotal> present = assayTypesWithPrimaryData(progress);
     card.add(cardFact(totalVolume(progress, present)));
     if (!present.isEmpty()) {
@@ -478,43 +470,6 @@ public class ProjectProgressSection extends Div {
     makeNavigable(card, "Open primary datasets", () -> getUI().ifPresent(
         ui -> ui.navigate(ProjectDatasetsMain.class, projectParameters())));
     return card;
-  }
-
-  /**
-   * How much of the project's measurement count has primary data, as a bar with its figures.
-   *
-   * <p>The bar's track is what makes a low value legible: 3% against a visible remainder reads as
-   * "almost nothing has arrived yet", where a thin 3% arc on white read as a spinner. The sentence
-   * beneath states the numbers, so the bar never carries the meaning alone -- the same contract the
-   * completeness ring honoured with its {@code aria-valuetext}, kept here by the visible text.</p>
-   */
-  private static Div coverageMeasure(List<ExperimentProgress> progress) {
-    int measurements = progress.stream().mapToInt(ExperimentProgress::measurementCount).sum();
-    int withData = progress.stream().mapToInt(ExperimentProgress::measurementsWithPrimaryData).sum();
-
-    Div measure = new Div();
-    measure.addClassName("project-progress-coverage");
-
-    // No measurements yet is "not applicable", not "0%": there is nothing to be covered, and a 0%
-    // bar would claim a measured shortfall. The line states the absence instead.
-    if (measurements == 0) {
-      Span none = new Span("No measurements registered yet");
-      none.addClassName("project-progress-coverage-none");
-      measure.add(none);
-      return measure;
-    }
-
-    ProgressBar bar = new ProgressBar(0d, 1d, (double) withData / measurements);
-    bar.addClassName("project-progress-coverage-bar");
-    // The figures sit in the sentence below, so the bar is hidden from assistive technology rather
-    // than given a spoken value that would state the same fact twice in a row.
-    bar.getElement().setAttribute("aria-hidden", "true");
-
-    Span figures = new Span("%d of %s have primary data".formatted(withData,
-        pluralise(measurements, "measurement", "measurements")));
-    figures.addClassName("project-progress-coverage-figures");
-    measure.add(bar, figures);
-    return measure;
   }
 
   /**

@@ -62,10 +62,6 @@
   font-weight: 500;
 }
 
-.project-progress-incomplete-separator {
-  color: var(--lumo-contrast-40pct);
-}
-
 .project-progress-incomplete-count {
   color: var(--lumo-secondary-text-color);
 }
@@ -89,7 +85,7 @@
   padding: var(--lumo-space-s) var(--lumo-space-m);
   background-color: var(--lumo-base-color);
   cursor: pointer;
-  /* The row carries three cells: the name, the fraction, and the action name. */
+  /* The row carries two cells: the experiment name and its count. */
   font-size: var(--lumo-font-size-s);
 }
 
@@ -98,16 +94,11 @@
   background-color: var(--lumo-contrast-5pct);
 }
 
-.project-progress-incomplete-row:hover .project-progress-incomplete-action,
-.project-progress-incomplete-row:focus-visible .project-progress-incomplete-action {
-  text-decoration: underline;
-}
-
 .project-progress-incomplete-context {
   font-weight: 600;
   color: var(--lumo-body-text-color);
-  /* The name takes the slack so the fraction and the action keep their own columns and the figures
-     line up across rows however long the experiment names are. */
+  /* The name takes the slack so the count keeps its column and the figures line up across rows
+     however long the experiment names are. */
   flex: 1 1 auto;
   min-width: 0;
   overflow: hidden;
@@ -115,16 +106,21 @@
   white-space: nowrap;
 }
 
-.project-progress-incomplete-fraction {
+/* The count is the row's only other cell, so it takes the right edge; tabular figures keep the
+   numbers aligned down the column however long the experiment names are. It states its own
+   condition ("264 of 272 without data") because the summary line has scrolled away by the time the
+   reader is working down the rows, and a bare slash fraction under no heading is a puzzle. */
+.project-progress-incomplete-count {
   flex: 0 0 auto;
   font-variant-numeric: tabular-nums;
   color: var(--lumo-secondary-text-color);
 }
 
-.project-progress-incomplete-action {
-  flex: 0 0 auto;
-  font-weight: 600;
-  color: var(--lumo-primary-text-color);
+/* The row is the link, so there is no visible action text; the affordance still has to read at rest
+   and under keyboard focus, which is what this does. */
+.project-progress-incomplete-row:hover .project-progress-incomplete-count,
+.project-progress-incomplete-row:focus-visible .project-progress-incomplete-count {
+  color: var(--lumo-body-text-color);
 }
 
 /* ── Progress card ────────────────────────────────────────────────────── */
@@ -421,42 +417,6 @@
 .project-progress-datasets-card-fact {
   font-size: var(--lumo-font-size-s);
   color: var(--lumo-secondary-text-color);
-}
-
-/* ── Coverage measure ─────────────────────────────────────────────────── */
-
-/* The one place on the page that states primary-data coverage as a proportion. It lives in the
-   Primary data card, which is the surface about that data and the only block wide enough for a bar:
-   at the rail's marker size a 3% arc was illegible, and in a row of plain discs it was also a
-   foreign shape. Here the unfilled remainder is visible, so "3%" reads as almost-nothing-arrived
-   rather than as a spinner. */
-.project-progress-coverage {
-  display: flex;
-  flex-direction: column;
-  gap: var(--lumo-space-xs);
-  margin-block: var(--lumo-space-xs);
-}
-
-.project-progress-coverage-bar {
-  width: 100%;
-  /* Vaadin's default bar is 8px of full-contrast colour, which in a secondary card read as the
-     loudest element in it. Thinned and softened: the figures beside it carry the precision. */
-  --vaadin-progress-bar-height: 6px;
-}
-
-.project-progress-coverage-bar::part(bar) {
-  background-color: var(--lumo-contrast-10pct);
-}
-
-.project-progress-coverage-bar::part(value) {
-  background-color: var(--info-color, var(--lumo-primary-color));
-}
-
-.project-progress-coverage-figures,
-.project-progress-coverage-none {
-  font-size: var(--lumo-font-size-s);
-  color: var(--lumo-secondary-text-color);
-  font-variant-numeric: tabular-nums;
 }
 
 /* Connected assets as a grid, not a stack of flex rows. Grid sizes each column across ALL the rows,

@@ -513,27 +513,25 @@ public class ProjectSummaryComponent extends PageArea {
   }
 
   /**
-   * The deficit rollup.
+   * The deficit rollup, as an anchor to the per-experiment list.
    *
-   * <p>It counts experiments without <em>samples</em> — a different condition from the progress
-   * band's "needs primary data", which counts measurements. The two numbers coincide on many
-   * projects, and both used to be worded "not complete yet", so the page appeared to state one fact
-   * twice when it was stating two. Each now names its own condition, which is what makes the chip
-   * and the disclosure additive rather than duplicates.</p>
+   * <p>The jump is the browser's rather than a button that scrolls through a script: it works before
+   * any client-side code has run, the destination is visible in the URL and can be bookmarked or
+   * shared, and the back button returns the reader here.</p>
    *
-   * <p>It is an anchor to the per-experiment list rather than a button that scrolls through a
-   * script: the jump is the browser's, it works before any client-side code has run, the
-   * destination is visible in the URL and can be bookmarked or shared, and the back button returns
-   * the reader here.</p>
+   * <p><b>Wording.</b> It names the same condition the footnote does — experiments whose
+   * measurements lack primary data, which is what the counter in this class computes. An earlier
+   * revision worded it "without samples", which was simply wrong: samples are registered from the
+   * moment an experiment has them, and this count has nothing to do with sample registration.</p>
    */
   private Anchor incompleteChip(int incomplete) {
     Anchor chip = new Anchor("#" + ProjectProgressSection.INCOMPLETE_LIST_ID);
     chip.addClassName("project-identity-incomplete");
     chip.getElement().setAttribute("title",
-        "Show which experiments have not registered samples yet");
+        "Show which experiments are not complete yet");
     chip.add(new Span(incomplete == 1
-        ? "1 experiment without samples"
-        : incomplete + " experiments without samples"));
+        ? "1 experiment not complete yet"
+        : incomplete + " experiments not complete yet"));
     chip.add(VaadinIcon.ANGLE_RIGHT.create());
     return chip;
   }
