@@ -322,15 +322,19 @@
 /* The card is ONE grid, and every assay row is a set of cells in it (display: contents below). That
    is what gives the reader four vertical lines to scan down: method, dataset count, state, count.
    Per-row flex layouts could only align within a row, which left "1 dataset" and the counts starting
-   at a different x on every line. */
+   at a different x on every line.
+
+   The column count must match the number of cells each row emits -- four. A declared column with no
+   cell to fill it shifts every row one position further right by auto-placement, which cascades down
+   the card. The slack lives in column 2 rather than in a spacer column: it absorbs the free space,
+   so the dataset count stays beside the method and the state is pushed to the right edge. */
 .project-progress-assays {
   display: grid;
   grid-template-columns:
-      minmax(0, max-content)      /* method abbreviation */
-      minmax(0, max-content)      /* dataset count */
-      minmax(0, 1fr)              /* spacer: pushes the state to the right */
-      minmax(0, max-content)      /* state phrase */
-      minmax(0, max-content);     /* count */
+      max-content                 /* method abbreviation */
+      minmax(0, 1fr)              /* dataset count, and the slack that pushes state right */
+      max-content                 /* state phrase */
+      max-content;                /* count */
   gap: var(--lumo-space-xs) var(--lumo-space-s);
   align-items: baseline;
 }
