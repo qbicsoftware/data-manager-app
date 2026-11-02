@@ -514,11 +514,18 @@ public class ProjectProgressSection extends Div {
   }
 
   /**
-   * One analysis method: its abbreviation, its coverage ring, and its state.
+   * One analysis method: what it is on the left, and how far along it is on the right.
    *
-   * <p>The abbreviation leads because it is the identity a reader recognises ("WES", "16S",
-   * "RNA-SEQ"); the full label is the tooltip, since "Exome sequencing" repeated on every row is more
-   * text than the identity needs.</p>
+   * <p>The row is two statements, and their grouping is the point. On the left, the dataset's
+   * <em>identity</em>: the method abbreviation, and how many datasets it has. On the right, its
+   * <em>state</em>: the outstanding count and the ring, side by side because they are the same fact
+   * at two resolutions and a reader reads one to confirm the other.</p>
+   *
+   * <p>The abbreviation leads because it is what a reader recognises ("WGS", "16S", "RNA-SEQ"); the
+   * full label is the tooltip, since "Exome sequencing" repeated on every row is more text than the
+   * identity needs. The dataset count trails it after a middot at lower priority: it qualifies the
+   * method -- "two experiments were measured as WGS" -- rather than the state, and putting it beside
+   * the numbers on the right lent it a weight it does not carry.</p>
    */
   private Div assayRow(AssayRollup assay) {
     Div row = new Div();
@@ -528,9 +535,25 @@ public class ProjectProgressSection extends Div {
     method.addClassName("project-progress-assay-method");
     method.getElement().setAttribute("title", assay.method().label());
 
-    Div head = new Div(method, assayReport(assay));
-    head.addClassName("project-progress-assay-head");
-    row.add(head, coverageRing(assay));
+    Span dot = new Span("\u00b7");
+    dot.addClassName("project-progress-assay-dot");
+
+    Span datasets = new Span(assay.datasets() == 1
+        ? "1 dataset"
+        : assay.datasets() + " datasets");
+    datasets.addClassName("project-progress-assay-datasets");
+    datasets.getElement().setAttribute("title", assay.datasets() == 1
+        ? "One dataset of this analysis method"
+        : "%d datasets of this analysis method, one per experiment"
+            .formatted(assay.datasets()));
+
+    Div identity = new Div(method, dot, datasets);
+    identity.addClassName("project-progress-assay-identity");
+
+    Div state = new Div(assayState(assay), coverageRing(assay));
+    state.addClassName("project-progress-assay-state-group");
+
+    row.add(identity, state);
     return row;
   }
 
@@ -570,15 +593,12 @@ public class ProjectProgressSection extends Div {
   }
 
   /**
-   * The text beside the ring: the state, and how many datasets the method has.
+   * The state, immediately left of the ring that encodes it.
    *
-   * <p>"Complete" replaces the outstanding count when nothing is missing, because the two are
-   * exclusive and "0 missing" makes the reader parse a number to learn what a word says.</p>
+   * <p>"Complete" replaces the outstanding count when nothing is missing: the two are exclusive, and
+   * "0 missing" makes the reader parse a number to learn what a word says.</p>
    */
-  private static Div assayReport(AssayRollup assay) {
-    Div report = new Div();
-    report.addClassName("project-progress-assay-report");
-
+  private static Span assayState(AssayRollup assay) {
     Span state;
     if (assay.complete()) {
       state = new Span("Complete");
@@ -593,16 +613,7 @@ public class ProjectProgressSection extends Div {
       state.addClassNames("project-progress-assay-state",
           "project-progress-assay-state--missing");
     }
-
-    Span count = new Span(assay.datasets() == 1 ? "1 dataset" : assay.datasets() + " datasets");
-    count.addClassName("project-progress-assay-datasets");
-    count.getElement().setAttribute("title", assay.datasets() == 1
-        ? "One dataset of this analysis method"
-        : "%d datasets of this analysis method, one per experiment"
-            .formatted(assay.datasets()));
-
-    report.add(state, count);
-    return report;
+    return state;
   }
 
   /**

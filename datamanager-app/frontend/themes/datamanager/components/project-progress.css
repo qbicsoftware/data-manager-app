@@ -319,9 +319,7 @@
 
 /* ── Assay rows ───────────────────────────────────────────────────────── */
 
-/* One block per analysis method: a head line (domain, method, numbers) and a coverage bar beneath.
-   The bar is full-width in the card, which is what a bar needs and what the completeness ring in
-   the rail above never had. */
+/* One block per analysis method, grouped under one heading per omics domain. */
 .project-progress-assays {
   display: flex;
   flex-direction: column;
@@ -350,8 +348,8 @@
   color: var(--lumo-secondary-text-color);
 }
 
-/* Head and ring side by side: the ring is the row's coverage encoding and sits where the eye lands
-   last, so the method and its state are read first and the figure confirms them. */
+/* Two statements per row: identity on the left, state on the right. The split is the grouping --
+   nothing on the right qualifies the left, and vice versa. */
 .project-progress-assay-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) max-content;
@@ -359,14 +357,24 @@
   align-items: center;
 }
 
-/* Grid, so the method and the numbers hold their columns across rows: the eye scans one vertical
-   band of numbers instead of four ragged phrases. */
-.project-progress-assay-head {
-  display: grid;
-  grid-template-columns: max-content minmax(0, 1fr);
-  gap: var(--lumo-space-s);
+/* The identity group: method, then its dataset count at lower priority. Baseline-aligned so the
+   optional count does not shift the method when a method has only one dataset. */
+.project-progress-assay-identity {
+  display: flex;
   align-items: baseline;
-  font-size: var(--lumo-font-size-s);
+  gap: var(--lumo-space-xs);
+  min-width: 0;
+}
+
+.project-progress-assay-dot {
+  color: var(--lumo-contrast-30pct);
+}
+
+/* The state group: the figures and the ring they describe, read as one unit. */
+.project-progress-assay-state-group {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
 }
 
 /* The method abbreviation is the identity a reader recognises -- "WES", "16S", "RNA-SEQ" -- so it
@@ -377,23 +385,17 @@
   font-variant-numeric: tabular-nums;
 }
 
-.project-progress-assay-report {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: flex-end;
-  gap: var(--lumo-space-s);
-  font-size: var(--lumo-font-size-s);
-  color: var(--lumo-secondary-text-color);
-}
-
 /* The outstanding count is the actionable part, so it is stated in body colour at medium weight
    rather than as another grey phrase. "Complete" replaces it entirely when nothing is missing --
    stating "0 missing" would make the reader parse a number to learn what a word says. */
 .project-progress-assay-state {
+  font-size: var(--lumo-font-size-s);
   font-weight: 500;
   color: var(--lumo-body-text-color);
   white-space: nowrap;
+  /* Right-aligned inside its group, so the counts end on one vertical line down the card however
+     wide the ring's neighbour is. */
+  text-align: right;
 }
 
 .project-progress-assay-state--complete {
@@ -409,10 +411,11 @@
   color: var(--lumo-tertiary-text-color, var(--lumo-secondary-text-color));
 }
 
-/* The dataset count: two experiments measured as WES are two datasets, so the count is not
-   derivable from the method name and earns its place. */
+/* The dataset count qualifies the method -- "two experiments were measured as WGS" -- so it trails
+   the method at lower weight. It is not derivable from the method name, which is why it earns its
+   place at all; it just does not earn equal billing with the state. */
 .project-progress-assay-datasets {
-  color: var(--lumo-secondary-text-color);
+  color: var(--lumo-tertiary-text-color, var(--lumo-secondary-text-color));
   font-size: var(--lumo-font-size-xs);
   white-space: nowrap;
 }
