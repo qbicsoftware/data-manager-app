@@ -16,7 +16,6 @@ import com.vaadin.flow.component.html.OrderedList;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.router.RouteParam;
 import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.shared.Registration;
@@ -405,10 +404,10 @@ public class ProjectProgressSection extends Div {
    * apart concludes the page is broken. The card therefore reports per method and never aggregates:
    * there is no total here to disagree with the rail.</p>
    *
-   * <p><b>One number per row.</b> The row used to state "2 of 86 measurements  84 missing", where 84
-   * is 86-2: three numbers, and an implicit subtraction the reader was silently asked to check. It
-   * states the outstanding count only -- "84 of 86 missing" -- because that is the figure that drives
-   * action; the covered count is not something anyone acts on.</p>
+   * <p><b>The row states a state, not an arithmetic problem.</b> It used to read "2 of 86
+   * measurements  84 missing" -- three numbers, 84 being 86-2, an implicit subtraction the reader was
+   * silently asked to check. It now says what the two cases actually are: "Complete", or how many are
+   * outstanding out of how many. The ring carries the proportion, so the text does not repeat it.</p>
    *
    * <p><b>Bounded.</b> Rows are capped at {@value #ASSAY_ROWS_SHOWN}. Analysis methods are not a
    * small set -- a project running several NGS assays alongside proteomics and immunopeptidomics has
@@ -515,7 +514,7 @@ public class ProjectProgressSection extends Div {
   }
 
   /**
-   * One analysis method: its abbreviation, a progress bar, and its outstanding count.
+   * One analysis method: its abbreviation, its coverage ring, and its state.
    *
    * <p>The abbreviation leads because it is the identity a reader recognises ("WES", "16S",
    * "RNA-SEQ"); the full label is the tooltip, since "Exome sequencing" repeated on every row is more
@@ -531,56 +530,61 @@ public class ProjectProgressSection extends Div {
 
     Div head = new Div(method, assayReport(assay));
     head.addClassName("project-progress-assay-head");
-    row.add(head, coverageBar(assay));
+    row.add(head, coverageRing(assay));
     return row;
   }
 
   /**
-   * The row's progress bar: the share of the method's measurements that carry primary data.
+   * The row's coverage ring: how much of this method's measurement count carries primary data.
    *
-   * <p>A bar rather than the completeness ring the rail uses, because the two answer different
-   * questions at different grains: the rail's ring is the project's whole pipeline, this is one
-   * analysis method's coverage in a full-width row where a bar can show its remainder.</p>
+   * <p>A dataset with no measurements at all renders the ring's "no data" state (a dashed track and
+   * an em dash) rather than 0%. Nothing is missing from a dataset that has nothing yet -- the
+   * measurement has not been registered, so there is no shortfall to report -- and 0% would claim a
+   * measured failure where the truth is that the work has not started.</p>
    */
-  private static Div coverageBar(AssayRollup assay) {
-    Div wrap = new Div();
-    wrap.addClassName("project-progress-assay-bar");
+  private static CompletenessRing coverageRing(AssayRollup assay) {
+    int measurements = assay.measurements();
+    int missing = assay.missing();
+    String spoken = measurements == 0
+        ? "No measurements registered yet for this analysis method"
+        : missing == 0
+            ? "All %d measurements have primary data".formatted(measurements)
+            : "%d of %d measurements still need primary data".formatted(missing, measurements);
+
+    CompletenessRing ring = new CompletenessRing(assay.withData(), measurements, spoken);
+    ring.addClassName("project-progress-assay-ring");
     if (assay.complete()) {
-      wrap.addClassName("project-progress-assay-bar--complete");
+      // A full ring is already green, but a success halo makes "everything has arrived"
+      // unmistakable at this size -- the same treatment the dataset selector card uses.
+      ring.addClassName("project-progress-assay-ring--complete");
     }
-    if (assay.measurements() == 0) {
-      // Nothing to be covered: a 0% bar would claim a measured shortfall for a dataset that has no
-      // measurements at all.
-      wrap.addClassName("project-progress-assay-bar--none");
-      return wrap;
-    }
-    ProgressBar bar = new ProgressBar(0d, 1d, (double) assay.withData() / assay.measurements());
-    bar.addClassName("project-progress-assay-progress");
-    // The outstanding count sits beside the bar as text, so the bar is not given a spoken value that
-    // would repeat it.
-    bar.getElement().setAttribute("aria-hidden", "true");
-    wrap.add(bar);
-    return wrap;
+    return ring;
   }
 
   /**
-   * The numbers beside the bar: what is outstanding, and how many datasets the method has.
+   * The text beside the ring: the state, and how many datasets the method has.
    *
-   * <p>"Complete" replaces the count when nothing is missing -- the two are exclusive, and stating
-   * "0 missing" would make the reader parse a number to learn what a word says.</p>
+   * <p>"Complete" replaces the outstanding count when nothing is missing, because the two are
+   * exclusive and "0 missing" makes the reader parse a number to learn what a word says.</p>
    */
   private static Div assayReport(AssayRollup assay) {
     Div report = new Div();
     report.addClassName("project-progress-assay-report");
 
-    Span state = new Span(assay.complete()
-        ? "Complete"
-        : "%d of %s missing".formatted(assay.missing(),
-            pluralise(assay.measurements(), "measurement", "measurements")));
-    state.addClassName("project-progress-assay-state");
-    state.addClassName(assay.complete()
-        ? "project-progress-assay-state--complete"
-        : "project-progress-assay-state--missing");
+    Span state;
+    if (assay.complete()) {
+      state = new Span("Complete");
+      state.addClassNames("project-progress-assay-state",
+          "project-progress-assay-state--complete");
+    } else if (assay.measurements() == 0) {
+      state = new Span("Nothing registered yet");
+      state.addClassNames("project-progress-assay-state",
+          "project-progress-assay-state--pending");
+    } else {
+      state = new Span("%d of %d missing".formatted(assay.missing(), assay.measurements()));
+      state.addClassNames("project-progress-assay-state",
+          "project-progress-assay-state--missing");
+    }
 
     Span count = new Span(assay.datasets() == 1 ? "1 dataset" : assay.datasets() + " datasets");
     count.addClassName("project-progress-assay-datasets");

@@ -350,10 +350,13 @@
   color: var(--lumo-secondary-text-color);
 }
 
+/* Head and ring side by side: the ring is the row's coverage encoding and sits where the eye lands
+   last, so the method and its state are read first and the figure confirms them. */
 .project-progress-assay-row {
-  display: flex;
-  flex-direction: column;
-  gap: var(--lumo-space-xs);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  gap: var(--lumo-space-s);
+  align-items: center;
 }
 
 /* Grid, so the method and the numbers hold their columns across rows: the eye scans one vertical
@@ -398,6 +401,14 @@
   color: var(--lumo-success-text-color, var(--lumo-secondary-text-color));
 }
 
+/* Nothing registered yet is not a shortfall: the measurement has not been entered, so there is
+   nothing to be behind on. Stated quietly so it does not read as a warning beside the rows that
+   genuinely are missing data. */
+.project-progress-assay-state--pending {
+  font-weight: 400;
+  color: var(--lumo-tertiary-text-color, var(--lumo-secondary-text-color));
+}
+
 /* The dataset count: two experiments measured as WES are two datasets, so the count is not
    derivable from the method name and earns its place. */
 .project-progress-assay-datasets {
@@ -406,39 +417,23 @@
   white-space: nowrap;
 }
 
-/* ── Coverage bar ─────────────────────────────────────────────────────── */
+/* ── Coverage ring ────────────────────────────────────────────────────── */
 
-/* The bar's track is the visible remainder: at 2% the filled sliver reads as almost-nothing-arrived
-   because the empty track frames it. This is the encoding the ring could not carry at marker size. */
-.project-progress-assay-bar {
-  display: flex;
-  width: 100%;
+/* The shared completeness ring, scaled for a row accessory. The rail above uses the same component
+   at marker size, so the page states coverage one way at two grains instead of introducing a
+   second dialect (a bar) for the lower one. */
+.project-progress-assay-ring {
+  --completeness-ring-size: 1.9rem;
+  --completeness-ring-font-size: var(--lumo-font-size-xs);
+  flex: none;
 }
 
-/* A dataset with no measurements has nothing to be covered, so it gets no track: an empty one reads
-   as a horizontal rule between rows rather than as a datum. The height is still reserved, so the row
-   keeps the same rhythm as its neighbours instead of collapsing. */
-.project-progress-assay-bar--none {
-  min-height: 5px;
-}
-
-.project-progress-assay-progress {
-  width: 100%;
-  --vaadin-progress-bar-height: 5px;
-}
-
-.project-progress-assay-progress::part(bar) {
-  background-color: var(--lumo-contrast-10pct);
-}
-
-.project-progress-assay-progress::part(value) {
-  background-color: var(--info-color, var(--lumo-primary-color));
-}
-
-/* A complete dataset's bar goes quiet: it is settled, and a full bar in the info colour would pull
-   the eye to the one row with nothing to do. */
-.project-progress-assay-bar--complete .project-progress-assay-progress::part(value) {
-  background-color: var(--success-color, var(--lumo-success-color));
+/* A complete dataset gets a halo. A full ring is already green, but at this size the difference
+   between 100% and 95% is a few pixels; the halo makes "everything has arrived" unmistakable without
+   a sentence. Same treatment as the dataset selector card. */
+.project-progress-assay-ring--complete {
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--success-color, var(--lumo-success-color));
 }
 
 /* Connected assets as a grid, not a stack of flex rows. Grid sizes each column across ALL the rows,
