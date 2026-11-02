@@ -480,6 +480,9 @@ public class ProjectProgressSection extends Div {
     return wrap;
   }
 
+  /** How many analysis-method rows the card shows before deferring to the Datasets page. */
+  private static final int ASSAY_ROWS_SHOWN = 4;
+
   /**
    * The project's primary datasets: one line per analysis method, grouped by omics domain.
    *
@@ -490,18 +493,22 @@ public class ProjectProgressSection extends Div {
    * planning an analysis -- variant calling, cluster analysis, ... -- and the omics domain alone is
    * far too coarse to do that: WES, RNA-Seq and 16S are all genomics and are not interchangeable.</p>
    *
-   * <p><b>Why the domain is still shown.</b> As a grouping label, never as the identity. It answers
-   * "what kind of work is this project" at a glance while the method answers "which dataset do I
-   * open". Dataset counts are summed per method across experiments because that is the question the
-   * project grain can answer -- "how much WES does this project hold" -- while the experiment each
-   * dataset belongs to is the discriminant the Datasets page shows and this card deliberately does
-   * not, since it would bloat the overview without changing any decision made from it.</p>
+   * <p><b>The card states no total, and that is deliberate.</b> A measurement measuring samples with
+   * different analysis methods is attributed to each (ADR 0010), so summing the rows of this card can
+   * exceed the measurement total the rail states a few lines above -- on one real project the rows
+   * summed to 287 against the rail's 284. Both numbers are correct, but a reader comparing them 30px
+   * apart concludes the page is broken. The card therefore reports per method and never aggregates:
+   * there is no total here to disagree with the rail.</p>
    *
-   * <p><b>Progress is carried by a bar, not by prose.</b> The row used to state its state as the
-   * longest phrase in the row ("12 measurements missing"), last, in grey, once per line; scanning
-   * four such lines meant reading four sentences. The bar states how far along the dataset is in the
-   * space the eye already travels down, and the only text left states what is not derivable from a
-   * proportion: how many measurements are outstanding.</p>
+   * <p><b>One number per row.</b> The row used to state "2 of 86 measurements  84 missing", where 84
+   * is 86-2: three numbers, and an implicit subtraction the reader was silently asked to check. It
+   * states the outstanding count only -- "84 of 86 missing" -- because that is the figure that drives
+   * action; the covered count is not something anyone acts on.</p>
+   *
+   * <p><b>Bounded.</b> Rows are capped at {@value #ASSAY_ROWS_SHOWN}. Analysis methods are not a
+   * small set -- a project running several NGS assays alongside proteomics and immunopeptidomics has
+   * a dozen -- and an uncapped list made this card taller than the rail and the disclosure together,
+   * which is the same domination the "Not complete yet" card had before it was demoted.</p>
    */
   private Div primaryDataCard(List<AssayStanding> datasets) {
     Div card = new Div();
@@ -512,10 +519,15 @@ public class ProjectProgressSection extends Div {
       card.add(cardFact(
           "None yet — a dataset appears once an experiment has measurements"));
     } else {
-      Div rows = new Div();
-      rows.addClassName("project-progress-assays");
-      assayRollup(datasets).forEach(entry -> rows.add(assayRow(entry)));
-      card.add(rows);
+      List<AssayRollup> rollup = assayRollup(datasets);
+      card.add(assayGroups(rollup));
+      if (rollup.size() > ASSAY_ROWS_SHOWN) {
+        Span more = new Span("and %d more analysis method%s on the datasets page"
+            .formatted(rollup.size() - ASSAY_ROWS_SHOWN,
+                rollup.size() - ASSAY_ROWS_SHOWN == 1 ? "" : "s"));
+        more.addClassName("project-progress-assays-more");
+        card.add(more);
+      }
     }
 
     // The card is the project grain of the Datasets page, so it opens that page: the per-experiment
@@ -523,6 +535,32 @@ public class ProjectProgressSection extends Div {
     makeNavigable(card, "Open primary datasets", () -> getUI().ifPresent(
         ui -> ui.navigate(ProjectDatasetsMain.class, projectParameters())));
     return card;
+  }
+
+  /**
+   * The assay rows, grouped under one heading per omics domain.
+   *
+   * <p>A heading rather than a repeated cell: with five genomics assays the domain cell read
+   * "GENOMICS" five times over, which is noise in the column a reader scans. As a heading it says
+   * the same thing once and gives the grouping a structure instead of a repetition.</p>
+   */
+  private Div assayGroups(List<AssayRollup> rollup) {
+    Div groups = new Div();
+    groups.addClassName("project-progress-assays");
+
+    // Bounded before grouping, so the cap applies to rows rather than to whole domains: truncating
+    // by domain could show two domains and hide a third entirely.
+    List<AssayRollup> shown = rollup.stream().limit(ASSAY_ROWS_SHOWN).toList();
+    shown.stream()
+        .collect(Collectors.groupingBy(AssayRollup::domain, LinkedHashMap::new,
+            Collectors.toList()))
+        .forEach((domain, assays) -> {
+          Span heading = new Span(MeasurementType.from(domain).getType());
+          heading.addClassName("project-progress-assays-domain");
+          groups.add(heading);
+          assays.forEach(assay -> groups.add(assayRow(assay)));
+        });
+    return groups;
   }
 
   /**
@@ -572,30 +610,23 @@ public class ProjectProgressSection extends Div {
   }
 
   /**
-   * One analysis method: its domain, its abbreviation, a progress bar, and the outstanding count.
+   * One analysis method: its abbreviation, a progress bar, and its outstanding count.
    *
    * <p>The abbreviation leads because it is the identity a reader recognises ("WES", "16S",
    * "RNA-SEQ"); the full label is the tooltip, since "Exome sequencing" repeated on every row is more
-   * text than the identity needs. The domain is a small leading label so the grouping is visible
-   * without a heading per group, which would add a row of chrome per domain.</p>
+   * text than the identity needs.</p>
    */
   private Div assayRow(AssayRollup assay) {
     Div row = new Div();
     row.addClassName("project-progress-assay-row");
 
-    Span domain = new Span(MeasurementType.from(assay.domain()).getType());
-    domain.addClassName("project-progress-assay-domain");
-
     Span method = new Span(assay.method().abbreviation());
     method.addClassName("project-progress-assay-method");
     method.getElement().setAttribute("title", assay.method().label());
 
-    Div bar = coverageBar(assay);
-    Div report = assayReport(assay);
-
-    Div head = new Div(domain, method, report);
+    Div head = new Div(method, assayReport(assay));
     head.addClassName("project-progress-assay-head");
-    row.add(head, bar);
+    row.add(head, coverageBar(assay));
     return row;
   }
 
@@ -604,9 +635,7 @@ public class ProjectProgressSection extends Div {
    *
    * <p>A bar rather than the completeness ring the rail uses, because the two answer different
    * questions at different grains: the rail's ring is the project's whole pipeline, this is one
-   * dataset type's coverage in a full-width row where a bar can show its remainder. It is also the
-   * only encoding of that number on this line, so it does not compete with a second one beside
-   * it.</p>
+   * analysis method's coverage in a full-width row where a bar can show its remainder.</p>
    */
   private static Div coverageBar(AssayRollup assay) {
     Div wrap = new Div();
@@ -614,25 +643,39 @@ public class ProjectProgressSection extends Div {
     if (assay.complete()) {
       wrap.addClassName("project-progress-assay-bar--complete");
     }
-    ProgressBar bar = new ProgressBar(0d, 1d,
-        assay.measurements() == 0 ? 0d : (double) assay.withData() / assay.measurements());
+    if (assay.measurements() == 0) {
+      // Nothing to be covered: a 0% bar would claim a measured shortfall for a dataset that has no
+      // measurements at all.
+      wrap.addClassName("project-progress-assay-bar--none");
+      return wrap;
+    }
+    ProgressBar bar = new ProgressBar(0d, 1d, (double) assay.withData() / assay.measurements());
     bar.addClassName("project-progress-assay-progress");
-    // The outstanding count and the dataset count sit beside the bar as text, so the bar is not
-    // given a spoken value that would repeat them.
+    // The outstanding count sits beside the bar as text, so the bar is not given a spoken value that
+    // would repeat it.
     bar.getElement().setAttribute("aria-hidden", "true");
     wrap.add(bar);
     return wrap;
   }
 
   /**
-   * The numbers beside the bar: datasets, measurements with data, and what is outstanding.
+   * The numbers beside the bar: what is outstanding, and how many datasets the method has.
    *
-   * <p>"Complete" replaces the outstanding count when nothing is missing -- the two are exclusive,
-   * and stating "0 missing" would make the reader check a number to learn what a word can say.</p>
+   * <p>"Complete" replaces the count when nothing is missing -- the two are exclusive, and stating
+   * "0 missing" would make the reader parse a number to learn what a word says.</p>
    */
   private static Div assayReport(AssayRollup assay) {
     Div report = new Div();
     report.addClassName("project-progress-assay-report");
+
+    Span state = new Span(assay.complete()
+        ? "Complete"
+        : "%d of %s missing".formatted(assay.missing(),
+            pluralise(assay.measurements(), "measurement", "measurements")));
+    state.addClassName("project-progress-assay-state");
+    state.addClassName(assay.complete()
+        ? "project-progress-assay-state--complete"
+        : "project-progress-assay-state--missing");
 
     Span count = new Span(assay.datasets() == 1 ? "1 dataset" : assay.datasets() + " datasets");
     count.addClassName("project-progress-assay-datasets");
@@ -641,19 +684,7 @@ public class ProjectProgressSection extends Div {
         : "%d datasets of this analysis method, one per experiment"
             .formatted(assay.datasets()));
 
-    Span state = new Span(assay.complete()
-        ? "Complete"
-        : assay.missing() + " missing");
-    state.addClassName("project-progress-assay-state");
-    state.addClassName(assay.complete()
-        ? "project-progress-assay-state--complete"
-        : "project-progress-assay-state--missing");
-
-    Span covered = new Span("%d of %s".formatted(assay.withData(),
-        pluralise(assay.measurements(), "measurement", "measurements")));
-    covered.addClassName("project-progress-assay-covered");
-
-    report.add(covered, state, count);
+    report.add(state, count);
     return report;
   }
 

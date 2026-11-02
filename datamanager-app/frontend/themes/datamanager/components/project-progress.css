@@ -439,7 +439,29 @@
 .project-progress-assays {
   display: flex;
   flex-direction: column;
-  gap: var(--lumo-space-s);
+  gap: var(--lumo-space-xs);
+}
+
+/* One heading per omics domain, instead of the domain repeated in every row's first cell. With five
+   genomics assays the old cell read "GENOMICS" five times over, in the column a reader scans. */
+.project-progress-assays-domain {
+  font-size: var(--lumo-font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--lumo-tertiary-text-color, var(--lumo-secondary-text-color));
+  margin-top: var(--lumo-space-s);
+}
+
+.project-progress-assays-domain:first-child {
+  margin-top: 0;
+}
+
+/* The cap. "and 3 more analysis methods on the datasets page" is a pointer, not a fact worth
+   reading twice -- the card is already the way into that page. */
+.project-progress-assays-more {
+  margin-top: var(--lumo-space-xs);
+  font-size: var(--lumo-font-size-xs);
+  color: var(--lumo-secondary-text-color);
 }
 
 .project-progress-assay-row {
@@ -452,18 +474,10 @@
    band of numbers instead of four ragged phrases. */
 .project-progress-assay-head {
   display: grid;
-  grid-template-columns: max-content minmax(0, max-content) minmax(0, 1fr);
+  grid-template-columns: max-content minmax(0, 1fr);
   gap: var(--lumo-space-s);
   align-items: baseline;
   font-size: var(--lumo-font-size-s);
-}
-
-/* The domain, as a grouping label. Quiet: it is context for the method, not the thing being read. */
-.project-progress-assay-domain {
-  color: var(--lumo-tertiary-text-color, var(--lumo-secondary-text-color));
-  font-size: var(--lumo-font-size-xs);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 
 /* The method abbreviation is the identity a reader recognises -- "WES", "16S", "RNA-SEQ" -- so it
@@ -482,10 +496,6 @@
   gap: var(--lumo-space-s);
   font-size: var(--lumo-font-size-s);
   color: var(--lumo-secondary-text-color);
-}
-
-.project-progress-assay-covered {
-  font-variant-numeric: tabular-nums;
 }
 
 /* The outstanding count is the actionable part, so it is stated in body colour at medium weight
@@ -517,6 +527,13 @@
 .project-progress-assay-bar {
   display: flex;
   width: 100%;
+}
+
+/* A dataset with no measurements has nothing to be covered, so it gets no track: an empty one reads
+   as a horizontal rule between rows rather than as a datum. The height is still reserved, so the row
+   keeps the same rhythm as its neighbours instead of collapsing. */
+.project-progress-assay-bar--none {
+  min-height: 5px;
 }
 
 .project-progress-assay-progress {
