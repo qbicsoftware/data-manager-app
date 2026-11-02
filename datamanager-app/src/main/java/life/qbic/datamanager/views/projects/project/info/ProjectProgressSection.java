@@ -514,23 +514,20 @@ public class ProjectProgressSection extends Div {
   }
 
   /**
-   * One analysis method: what it is on the left, and how far along it is on the right.
+   * One analysis method, as four cells of the card's single grid: method, dataset count, state,
+   * and count.
    *
-   * <p>The row is two statements, and their grouping is the point. On the left, the dataset's
-   * <em>identity</em>: the method abbreviation, and how many datasets it has. On the right, its
-   * <em>state</em>: the outstanding count and the ring, side by side because they are the same fact
-   * at two resolutions and a reader reads one to confirm the other.</p>
+   * <p><b>Why four cells and not two groups.</b> Each row used to be its own flex layout, so the
+   * columns lined up only within a row: "1 dataset" started at a different x for WGS than for
+   * PEPTIDOMICS, and the counts drifted with the phrase even though both were right-aligned. A
+   * reader scanning down the card had no vertical line to follow. The cells are now items of one grid
+   * owned by {@link #assayGroups} (each row is {@code display: contents}), so every column sizes
+   * across all rows and the eye gets four clean vertical lines -- the same technique the connected
+   * datasets card uses.</p>
    *
-   * <p>The abbreviation leads because it is what a reader recognises ("WGS", "16S", "RNA-SEQ"); the
-   * full label is the tooltip, since "Exome sequencing" repeated on every row is more text than the
-   * identity needs. The dataset count trails it after a middot at lower priority: it qualifies the
-   * method -- "two experiments were measured as WGS" -- rather than the state, and putting it beside
-   * the numbers on the right lent it a weight it does not carry.</p>
-   *
-   * <p>The state is a phrase first and a count second, in that order and at those weights: the phrase
-   * answers the question, the count qualifies it. There is no ring. A ring is a proportion, and a
-   * proportion is not what this row reports any more -- the phrase states the state, the count states
-   * the amount, and a third encoding of the same two facts only competed with them.</p>
+   * <p>The middot between method and count is drawn by CSS rather than emitted as a span: it is
+   * punctuation separating two cells, not content of its own, and as a grid cell it would claim a
+   * column.</p>
    */
   private Div assayRow(AssayRollup assay) {
     Div row = new Div();
@@ -539,9 +536,6 @@ public class ProjectProgressSection extends Div {
     Span method = new Span(assay.method().abbreviation());
     method.addClassName("project-progress-assay-method");
     method.getElement().setAttribute("title", assay.method().label());
-
-    Span dot = new Span("\u00b7");
-    dot.addClassName("project-progress-assay-dot");
 
     Span datasets = new Span(assay.datasets() == 1
         ? "1 dataset"
@@ -552,13 +546,7 @@ public class ProjectProgressSection extends Div {
         : "%d datasets of this analysis method, one per experiment"
             .formatted(assay.datasets()));
 
-    Div identity = new Div(method, dot, datasets);
-    identity.addClassName("project-progress-assay-identity");
-
-    Div state = new Div(assayState(assay), assayCount(assay));
-    state.addClassName("project-progress-assay-state-group");
-
-    row.add(identity, state);
+    row.add(method, datasets, assayState(assay), assayCount(assay));
     return row;
   }
 

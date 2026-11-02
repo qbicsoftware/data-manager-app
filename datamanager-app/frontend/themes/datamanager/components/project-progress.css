@@ -319,16 +319,27 @@
 
 /* ── Assay rows ───────────────────────────────────────────────────────── */
 
-/* One block per analysis method, grouped under one heading per omics domain. */
+/* The card is ONE grid, and every assay row is a set of cells in it (display: contents below). That
+   is what gives the reader four vertical lines to scan down: method, dataset count, state, count.
+   Per-row flex layouts could only align within a row, which left "1 dataset" and the counts starting
+   at a different x on every line. */
 .project-progress-assays {
-  display: flex;
-  flex-direction: column;
-  gap: var(--lumo-space-xs);
+  display: grid;
+  grid-template-columns:
+      minmax(0, max-content)      /* method abbreviation */
+      minmax(0, max-content)      /* dataset count */
+      minmax(0, 1fr)              /* spacer: pushes the state to the right */
+      minmax(0, max-content)      /* state phrase */
+      minmax(0, max-content);     /* count */
+  gap: var(--lumo-space-xs) var(--lumo-space-s);
+  align-items: baseline;
 }
 
 /* One heading per omics domain, instead of the domain repeated in every row's first cell. With five
-   genomics assays the old cell read "GENOMICS" five times over, in the column a reader scans. */
+   genomics assays the old cell read "GENOMICS" five times over, in the column a reader scans.
+   It spans the whole grid: it is a group label, not a cell. */
 .project-progress-assays-domain {
+  grid-column: 1 / -1;
   font-size: var(--lumo-font-size-xs);
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -348,35 +359,20 @@
   color: var(--lumo-secondary-text-color);
 }
 
-/* Two statements per row: identity on the left, state on the right. The split is the grouping --
-   nothing on the right qualifies the left, and vice versa. */
+/* display: contents -- the row's four spans become cells of the card's grid, which is what lets the
+   columns size across ALL rows. The row itself carries no box, so nothing is lost. */
 .project-progress-assay-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) max-content;
-  gap: var(--lumo-space-s);
-  align-items: center;
+  display: contents;
 }
 
-/* The identity group: method, then its dataset count at lower priority. Baseline-aligned so the
-   optional count does not shift the method when a method has only one dataset. */
-.project-progress-assay-identity {
-  display: flex;
-  align-items: baseline;
-  gap: var(--lumo-space-xs);
-  min-width: 0;
-}
-
-.project-progress-assay-dot {
+/* The middot between the method and its dataset count is punctuation, not a cell: drawn here so it
+   does not claim a column of its own. */
+.project-progress-assay-datasets::before {
+  content: "\00b7";
+  /* Pulled back into the grid gap so the dot hugs the method, and given a small trailing space so it
+     does not touch the count. Without the negative inset the gap doubled up in front of it. */
+  margin-inline: calc(-1 * var(--lumo-space-s) + var(--lumo-space-xs)) var(--lumo-space-xs);
   color: var(--lumo-contrast-30pct);
-}
-
-/* The state group: the phrase and the count it qualifies, read as one unit, right-aligned together
-   so phrases and counts line up down the card instead of drifting with the phrase width. */
-.project-progress-assay-state-group {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--lumo-space-s);
 }
 
 /* The method abbreviation is the identity a reader recognises -- "WES", "16S", "RNA-SEQ" -- so it
