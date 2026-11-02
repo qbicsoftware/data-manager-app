@@ -116,8 +116,20 @@
   color: var(--lumo-secondary-text-color);
 }
 
-/* The row is the link, so there is no visible action text; the affordance still has to read at rest
-   and under keyboard focus, which is what this does. */
+/* The row is the link and there is no action word, so the chevron carries the affordance. Kept at
+   secondary weight: it marks the destination without becoming the row's loudest element. */
+.project-progress-incomplete-chevron {
+  flex: 0 0 auto;
+  color: var(--lumo-contrast-40pct);
+  width: var(--lumo-icon-size-s);
+  height: var(--lumo-icon-size-s);
+}
+
+.project-progress-incomplete-row:hover .project-progress-incomplete-chevron,
+.project-progress-incomplete-row:focus-visible .project-progress-incomplete-chevron {
+  color: var(--lumo-primary-text-color);
+}
+
 .project-progress-incomplete-row:hover .project-progress-incomplete-count,
 .project-progress-incomplete-row:focus-visible .project-progress-incomplete-count {
   color: var(--lumo-body-text-color);

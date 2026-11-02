@@ -520,18 +520,20 @@ public class ProjectSummaryComponent extends PageArea {
    * shared, and the back button returns the reader here.</p>
    *
    * <p><b>Wording.</b> It names the same condition the footnote does — experiments whose
-   * measurements lack primary data, which is what the counter in this class computes. An earlier
-   * revision worded it "without samples", which was simply wrong: samples are registered from the
-   * moment an experiment has them, and this count has nothing to do with sample registration.</p>
+   * measurements lack primary data, which is what the counter in this class computes — and it uses
+   * the footnote's words, because the chip is a link to it and a link should read like its
+   * destination. An earlier revision worded it "without samples", which was simply wrong: samples
+   * are registered from the moment an experiment has them, and this count has nothing to do with
+   * sample registration.</p>
    */
   private Anchor incompleteChip(int incomplete) {
     Anchor chip = new Anchor("#" + ProjectProgressSection.INCOMPLETE_LIST_ID);
     chip.addClassName("project-identity-incomplete");
     chip.getElement().setAttribute("title",
-        "Show which experiments are not complete yet");
+        "Show which experiments need primary data");
     chip.add(new Span(incomplete == 1
-        ? "1 experiment not complete yet"
-        : incomplete + " experiments not complete yet"));
+        ? "1 experiment needs primary data"
+        : incomplete + " experiments need primary data"));
     chip.add(VaadinIcon.ANGLE_RIGHT.create());
     return chip;
   }

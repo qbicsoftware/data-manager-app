@@ -21,9 +21,10 @@ import com.vaadin.flow.shared.Registration;
 import java.io.Serial;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import life.qbic.datamanager.views.MeasurementType;
 import life.qbic.datamanager.views.general.CompletenessRing;
 import life.qbic.datamanager.views.general.DataSetTagFactory;
@@ -229,7 +230,12 @@ public class ProjectProgressSection extends Div {
     Span count = new Span("%d of %d without data".formatted(
         entry.measurementsWithoutPrimaryData(), entry.measurementCount()));
     count.addClassName("project-progress-incomplete-count");
-    row.add(context, count);
+    // The row is the link, and with no action word left the destination has to be signalled by
+    // something. The chevron is what the identity chip already uses for the same job, so the two
+    // places that lead into a dataset read the same way.
+    Icon chevron = VaadinIcon.ANGLE_RIGHT.create();
+    chevron.addClassName("project-progress-incomplete-chevron");
+    row.add(context, count, chevron);
     row.getElement().setAttribute("aria-label",
         "%s: open dataset, %s".formatted(entry.experimentName(), count.getText()));
     Utility.activateOnClickAndKeys(row, "link",
@@ -444,32 +450,118 @@ public class ProjectProgressSection extends Div {
   }
 
   /**
-   * Primary data, as analysis sees it: how much of it there is, and where it sits.
+   * The project's primary datasets: how many there are, and how far along they are.
    *
-   * <p>This card answers "what data exists": a coverage measure, a total, then where it sits per
-   * assay type. The file count that used to sit here is gone: it is not comparable across assay
-   * types, it cannot be acted on, and pairing it with a byte total only invites the reader to
-   * divide the two (see the migration's trap 4c).</p>
+   * <p><b>What a primary dataset is.</b> One experiment measured with one assay type. A project
+   * therefore holds one per experiment and assay type -- an experiment measured as genomics and as
+   * proteomics contributes two -- and an assay type an experiment never measured is not an empty
+   * dataset and is not counted. Each holds data of a certain size and is either complete (every one
+   * of its measurements has primary data) or not.</p>
    *
-   * <p>It deliberately states no coverage: that is the rail's ring, one measure above, and restating
-   * it here as a second visual encoding gave the page two ways to say "8 of 284" and no reason for
-   * the reader to learn both.</p>
+   * <p>The card is titled for the datasets because that is what it lists, and it states the two
+   * facts a reader wants about them: how many are complete, and how big they are. It used to be
+   * titled "Primary data" and list assay types with no count and no state, so a card about datasets
+   * answered a question about measurements instead. Measurement-grain coverage is the rail's ring,
+   * one measure above; this is the dataset grain, and the two are different questions rather than
+   * two renderings of one.</p>
+   *
+   * <p>Sizes are per assay type rather than one total: a reader comparing assay types wants them
+   * side by side, and the types are the datasets this card is counting.</p>
    */
   private Div primaryDataCard(List<ExperimentProgress> progress) {
     Div card = new Div();
     card.addClassName("project-progress-datasets-card");
-    card.add(cardTitle("Primary data"));
-    List<AssayTypeTotal> present = assayTypesWithPrimaryData(progress);
-    card.add(cardFact(totalVolume(progress, present)));
-    if (!present.isEmpty()) {
-      card.add(cardFact(volumeByAssayType(present)));
+    card.add(cardTitle("Primary datasets"));
+
+    List<DatasetStanding> datasets = datasetStanding(progress);
+    if (datasets.isEmpty()) {
+      // No experiment has measurements yet, so there is no dataset to describe. Saying "0 of 0
+      // complete" would report a state for something that does not exist.
+      card.add(cardFact("None yet — a dataset appears once an experiment has measurements"));
+    } else {
+      long complete = datasets.stream().filter(DatasetStanding::complete).count();
+      card.add(cardFact("%d of %s complete".formatted(complete,
+          pluralise(datasets.size(), "dataset", "datasets"))));
+      card.add(cardFact(sizeLine(datasets)));
+      card.add(cardFact(String.join(" · ", datasets.stream()
+          .map(DatasetStanding::label).toList())));
     }
+
     // The card summarises the project's primary datasets, so it opens the page that lists them
-    // one per experiment and assay type. It used to open the raw files of the first experiment,
-    // which answered a narrower question and only ever for one of them.
+    // one per experiment and assay type with their coverage and size.
     makeNavigable(card, "Open primary datasets", () -> getUI().ifPresent(
         ui -> ui.navigate(ProjectDatasetsMain.class, projectParameters())));
     return card;
+  }
+
+  /**
+   * One primary dataset: an experiment's measurements for one assay type.
+   *
+   * <p>This is the grain the Datasets page uses, kept identical here so the two surfaces cannot
+   * disagree about how many datasets a project has or whether one of them is complete.</p>
+   */
+  private record DatasetStanding(AssayType type, int measurements, int withData, long bytes) {
+
+    /** Complete means every measurement of this experiment and assay type has primary data. */
+    boolean complete() {
+      return measurements > 0 && withData >= measurements;
+    }
+
+    String label() {
+      return MeasurementType.from(type).getType();
+    }
+  }
+
+  /** The project's primary datasets: one per experiment and assay type that has measurements. */
+  private static List<DatasetStanding> datasetStanding(List<ExperimentProgress> progress) {
+    List<DatasetStanding> datasets = new ArrayList<>();
+    for (AssayType type : AssayType.values()) {
+      progress.stream()
+          .filter(entry -> entry.measurementCount(type) > 0)
+          .map(entry -> new DatasetStanding(type, entry.measurementCount(type),
+              entry.measurementsWithPrimaryData(type), entry.primaryDataBytes(type)))
+          .forEach(datasets::add);
+    }
+    return datasets;
+  }
+
+  /**
+   * The datasets' sizes, per assay type.
+   *
+   * <p>"Not recorded" is a different statement from "0 B": a dataset can hold measurements carrying
+   * primary data whose sizes the sync never recorded, and the read model cannot tell that apart from
+   * empty data (migration trap 4d). It is therefore stated once, as a trailing note, rather than
+   * letting one unknown size stand in for the whole group.</p>
+   */
+  private static String sizeLine(List<DatasetStanding> datasets) {
+    // Sizes are summed per assay type, because the datasets are listed by assay type.
+    Map<AssayType, Long> bytesByType = new LinkedHashMap<>();
+    for (DatasetStanding dataset : datasets) {
+      bytesByType.merge(dataset.type(), dataset.bytes(), Long::sum);
+    }
+    long total = bytesByType.values().stream().mapToLong(Long::longValue).sum();
+    boolean anyWithData = datasets.stream().anyMatch(dataset -> dataset.withData() > 0);
+    if (total <= 0) {
+      return anyWithData ? "Size not recorded" : "No data attached yet";
+    }
+    // One type reads better as itself; several read better as a total with the split named, which
+    // is what a reader comparing assay types actually wants to see.
+    if (bytesByType.size() == 1) {
+      return Utility.humanReadableSize(total);
+    }
+    return String.join(" · ", bytesByType.entrySet().stream()
+        .map(entry -> MeasurementType.from(entry.getKey()).getType() + " "
+            + sizeOrDash(entry.getValue()))
+        .toList());
+  }
+
+  /**
+   * Size in the unit that keeps the number readable.
+   *
+   * <p>Zero means "not recorded" at this point in the flow; see {@link #sizeLine}.</p>
+   */
+  private static String sizeOrDash(long bytes) {
+    return bytes <= 0 ? "—" : Utility.humanReadableSize(bytes);
   }
 
   /**
@@ -483,64 +575,6 @@ public class ProjectProgressSection extends Div {
     card.addClassName("project-progress-datasets-card--link");
     card.getElement().setAttribute("title", description);
     Utility.activateOnClickAndKeys(card, "link", action);
-  }
-
-  /**
-   * The headline volume.
-   *
-   * <p>"Size not recorded" is a different statement from "0 B". A real project holds measurements
-   * carrying primary data whose sizes the sync never recorded, and the read model cannot tell
-   * that apart from empty data (migration trap 4d), so the card must not claim 0.</p>
-   */
-  private static String totalVolume(List<ExperimentProgress> progress, List<AssayTypeTotal> present) {
-    if (present.isEmpty()) {
-      return "No primary data attached yet";
-    }
-    long bytes = progress.stream().mapToLong(ExperimentProgress::primaryDataBytes).sum();
-    return bytes > 0 ? Utility.humanReadableSize(bytes) + " in total" : "Size not recorded";
-  }
-
-  /** One assay type's share of the project's primary data. */
-  private record AssayTypeTotal(AssayType type, int measurementsWithData, long bytes) {
-
-    String label() {
-      return MeasurementType.from(type).getType();
-    }
-  }
-
-  /** The assay types that actually carry primary data, in declaration order. */
-  private static List<AssayTypeTotal> assayTypesWithPrimaryData(List<ExperimentProgress> progress) {
-    return Arrays.stream(AssayType.values())
-        .map(type -> new AssayTypeTotal(type,
-            progress.stream().mapToInt(entry -> entry.measurementsWithPrimaryData(type)).sum(),
-            progress.stream().mapToLong(entry -> entry.primaryDataBytes(type)).sum()))
-        .filter(total -> total.measurementsWithData() > 0)
-        .toList();
-  }
-
-  /**
-   * Where the volume sits, per assay type.
-   *
-   * <p>A type whose size was never recorded is named without a figure when nothing was measured,
-   * or as "—" when its siblings were: the headline already states the gap, so a dash per type
-   * would only repeat it, but a bare name beside figures would read as a zero.</p>
-   */
-  private static String volumeByAssayType(List<AssayTypeTotal> present) {
-    boolean anyRecorded = present.stream().anyMatch(type -> type.bytes() > 0);
-    return String.join(" · ", present.stream()
-        .map(type -> anyRecorded
-            ? type.label() + " " + sizeOrDash(type.bytes())
-            : type.label())
-        .toList());
-  }
-
-  /**
-   * Size in the unit that keeps the number readable.
-   *
-   * <p>Zero means "not recorded" at this point in the flow; see {@link #volumeByAssayType}.</p>
-   */
-  private static String sizeOrDash(long bytes) {
-    return bytes <= 0 ? "—" : Utility.humanReadableSize(bytes);
   }
 
   private Div connectedAssetsCard(List<ConnectedDatasetView> connected) {
