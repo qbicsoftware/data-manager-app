@@ -562,7 +562,14 @@ public class ProjectProgressSection extends Div {
         : "%d datasets of this analysis method, one per experiment"
             .formatted(assay.datasets()));
 
-    row.add(method, datasets, assayState(assay), assayCount(assay));
+    // Three cells, three grid tracks: the state phrase and its count are one cell, so they stay
+    // glued to the right edge and the counts share a right edge down the card whatever the phrases
+    // are. Adding a fourth cell without a fourth track shifts every row right by auto-placement --
+    // a bug this layout has already had once.
+    Div state = new Div(assayState(assay), assayCount(assay));
+    state.addClassName("project-progress-assay-state-group");
+
+    row.add(method, datasets, state);
     return row;
   }
 

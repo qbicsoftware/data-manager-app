@@ -116,7 +116,9 @@
    rather than its own. Drawn from the current step it turned success-green into a 3% stage: the
    connector asserted progress the stage it pointed at did not have. */
 .project-progress-step--done:has(+ .project-progress-step--incomplete) .project-progress-connector,
-.project-progress-step--done:has(+ .project-progress-step--todo) .project-progress-connector {
+.project-progress-step--done:has(+ .project-progress-step--partial) .project-progress-connector,
+.project-progress-step--done:has(+ .project-progress-step--todo) .project-progress-connector,
+.project-progress-step--done:has(+ .project-progress-step--locked) .project-progress-connector {
   background-color: var(--lumo-contrast-20pct);
 }
 
@@ -153,8 +155,10 @@
   color: var(--lumo-secondary-text-color);
 }
 
+/* A partial stage's connector is neutral: the stage it leads out of has not finished, so the line
+   must not assert progress in the success colour. */
 .project-progress-step--partial .project-progress-connector {
-  background-color: var(--info-color, var(--lumo-primary-color));
+  background-color: var(--lumo-contrast-20pct);
 }
 
 .project-progress-step--incomplete .project-progress-marker {
@@ -333,24 +337,32 @@
 
 /* ── Assay rows ───────────────────────────────────────────────────────── */
 
-/* The card is ONE grid, and every assay row is a set of cells in it (display: contents below). That
-   is what gives the reader four vertical lines to scan down: method, dataset count, state, count.
-   Per-row flex layouts could only align within a row, which left "1 dataset" and the counts starting
-   at a different x on every line.
-
-   The column count must match the number of cells each row emits -- four. A declared column with no
-   cell to fill it shifts every row one position further right by auto-placement, which cascades down
-   the card. The slack lives in column 2 rather than in a spacer column: it absorbs the free space,
-   so the dataset count stays beside the method and the state is pushed to the right edge. */
+/* The card is ONE grid and every assay row is a set of cells in it (display: contents below), so the
+   columns size across ALL rows and the eye gets vertical lines to follow. Per-row flex layouts could
+   only align within a row, which left the counts starting at a different x on every line. */
 .project-progress-assays {
   display: grid;
+  /* Three tracks for three cells: the method, its dataset count, and the state group. The slack lives
+     in track 2, immediately after the method, so the dataset count stays beside the method it
+     qualifies and the state group is pushed to the right edge.
+
+     Track count and cell count are linked: adding a cell without adding a track shifts every row one
+     position right, a bug this layout has already had once (a five-column grid with four-cell rows
+     cascaded down the card). */
   grid-template-columns:
       max-content                 /* method abbreviation */
-      minmax(0, 1fr)              /* dataset count, and the slack that pushes state right */
-      max-content                 /* state phrase */
-      max-content;                /* count */
+      minmax(0, 1fr)              /* dataset count, then the slack that pushes state right */
+      max-content;                /* state group: phrase + count */
   gap: var(--lumo-space-xs) var(--lumo-space-s);
   align-items: baseline;
+}
+
+/* The state phrase and its count read as one unit on the right edge. The count is last, so the counts
+   share a right edge down the card whatever the phrases are. */
+.project-progress-assay-state-group {
+  display: flex;
+  align-items: baseline;
+  gap: var(--lumo-space-s);
 }
 
 /* One heading per omics domain, instead of the domain repeated in every row's first cell. With five
