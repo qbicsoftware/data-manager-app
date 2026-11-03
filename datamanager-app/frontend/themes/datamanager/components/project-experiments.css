@@ -263,11 +263,28 @@
   gap: 2px;
 }
 
+/* The row is a grid, and the column count must equal the number of cells the owning panel emits.
+   The Samples panel emits three (ID, name, changed); the dataset panel emits four (domain, method,
+   with-data, availability). Declaring three columns for a four-cell row does not fail -- it wraps the
+   fourth cell onto a new implicit row, which is how "Partial" ended up on its own line under every
+   dataset while the samples table looked fine.
+
+   So the columns are declared per panel via a modifier class rather than once for both. */
 .project-exp-panel-row {
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) max-content;
   gap: var(--lumo-space-s);
   font-size: var(--lumo-font-size-s);
+}
+
+/* Dataset panel: four cells. The domain and the method are both prose-ish and share the slack, the
+   count holds a fixed column so the numbers line up, and availability is a short trailing word. */
+.project-exp-panel-rows--four-columns .project-exp-panel-row {
+  grid-template-columns:
+      minmax(0, 1fr)      /* omics domain */
+      minmax(0, 1.2fr)    /* method */
+      minmax(0, max-content) /* measurements with data */
+      max-content;        /* data availability */
 }
 
 /* The last column is a timestamp and is right-aligned, so its header is too -- otherwise "Changed"

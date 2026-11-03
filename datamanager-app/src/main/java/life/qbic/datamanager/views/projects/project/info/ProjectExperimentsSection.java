@@ -357,6 +357,12 @@ public class ProjectExperimentsSection extends Div {
 
     Div list = new Div();
     list.addClassName("project-exp-panel-rows");
+    // The grid's column count has to match the number of cells this panel emits, or the extra cell
+    // wraps onto a new implicit row. The Samples panel emits three columns, the dataset panel four,
+    // so the modifier is chosen from the column count rather than assumed.
+    if (columns.length == 4) {
+      list.addClassName("project-exp-panel-rows--four-columns");
+    }
     list.add(row(columns, true));
     if (rows.isEmpty()) {
       list.add(placeholderRow(emptyRow));
