@@ -13,8 +13,8 @@ import spock.lang.Specification
 class AssayStandingSpec extends Specification {
 
   private static AssayStanding standing(int measurements, int withData) {
-    return new AssayStanding("experiment-1", "Experiment 1", AnalysisMethod.WES,
-        measurements, withData, 0L)
+    return new AssayStanding("experiment-1", "Experiment 1", AssayType.GENOMICS,
+        AnalysisMethod.WES, measurements, withData, 0L)
   }
 
   def "a dataset with every measurement covered is complete"() {
@@ -46,7 +46,7 @@ class AssayStandingSpec extends Specification {
 
   def "negative counts are rejected"() {
     when:
-    new AssayStanding("experiment-1", "Experiment 1", AnalysisMethod.WES, -1, 0, 0L)
+    new AssayStanding("experiment-1", "Experiment 1", AssayType.GENOMICS, AnalysisMethod.WES, -1, 0, 0L)
 
     then:
     thrown(IllegalArgumentException)
@@ -54,8 +54,10 @@ class AssayStandingSpec extends Specification {
 
   def "two datasets of the same experiment and method are distinguished only by the experiment"() {
     given:
-    def first = new AssayStanding("experiment-1", "Experiment 1", AnalysisMethod.WES, 4, 4, 100L)
-    def second = new AssayStanding("experiment-2", "Experiment 2", AnalysisMethod.WES, 6, 0, 0L)
+    def first = new AssayStanding("experiment-1", "Experiment 1", AssayType.GENOMICS,
+        AnalysisMethod.WES, 4, 4, 100L)
+    def second = new AssayStanding("experiment-2", "Experiment 2", AssayType.GENOMICS,
+        AnalysisMethod.WES, 6, 0, 0L)
 
     expect:
     // Same method, two experiments, two datasets -- which is why a count per method cannot be
@@ -81,8 +83,38 @@ class AssayStandingSpec extends Specification {
     AnalysisMethod.values().every { method -> AssayType.of(method) != null }
   }
 
-  def "the domain of a dataset is derived from its analysis method"() {
+  def "the domain of a dataset comes from the measurement, not from the analysis method"() {
     expect:
     standing(1, 1).assayType() == AssayType.GENOMICS
+  }
+
+  def "proteomics and immunopeptidomics are different datasets despite the same analysis method"() {
+    // The one thing that cannot be inferred from the analysis method. Proteomics and
+    // immunopeptidomics samples carry the SAME analysis method; what distinguishes them is what the
+    // measurement records. An earlier read model derived the domain from the analysis method and
+    // reported every immunopeptidomics dataset as proteomics.
+    given:
+    def proteomics = new AssayStanding("e1", "Experiment 1", AssayType.PROTEOMICS,
+        AnalysisMethod.PROTEOMICS, 6, 6, 0L)
+    def immunopeptidomics = new AssayStanding("e1", "Experiment 1", AssayType.IMMUNOPEPTIDOMICS,
+        AnalysisMethod.PROTEOMICS, 8, 8, 0L)
+
+    expect:
+    proteomics.analysisMethod() == immunopeptidomics.analysisMethod()
+    proteomics.assayType() != immunopeptidomics.assayType()
+    proteomics != immunopeptidomics
+  }
+
+  def "two datasets of the same method and domain are still distinct rows"() {
+    given:
+    def first = new AssayStanding("e1", "Experiment 1", AssayType.GENOMICS,
+        AnalysisMethod.RNA_SEQ, 3, 1, 0L)
+    def second = new AssayStanding("e1", "Experiment 1", AssayType.GENOMICS,
+        AnalysisMethod.RNA_SEQ, 2, 2, 0L)
+
+    expect: "same experiment, domain and method; only the counts differ"
+    first.assayType() == second.assayType()
+    first.analysisMethod() == second.analysisMethod()
+    first.measurements() != second.measurements()
   }
 }

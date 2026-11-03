@@ -20,6 +20,7 @@ import life.qbic.projectmanagement.application.api.ProjectQueryService.ProjectSa
 import life.qbic.projectmanagement.application.api.ProjectQueryService.SortDirection;
 import life.qbic.projectmanagement.application.api.ProjectQueryService.SortOrder;
 import life.qbic.projectmanagement.application.query.AssayStanding;
+import life.qbic.projectmanagement.application.query.AssayType;
 import life.qbic.projectmanagement.application.query.ExperimentProgress;
 import life.qbic.projectmanagement.application.query.MeasuredSample;
 import life.qbic.projectmanagement.application.query.MeasurementDataRow;
@@ -160,6 +161,7 @@ public class ProjectPageReadRepositoryImpl implements ProjectPageReadRepository 
       (resultSet, rowNumber) -> new AssayStanding(
           resultSet.getString("experiment_id"),
           resultSet.getString("experiment_name"),
+          AssayType.valueOf(resultSet.getString("measurement_type")),
           AnalysisMethod.valueOf(resultSet.getString("analysis_method")),
           resultSet.getInt("measurements"),
           resultSet.getInt("measurements_with_primary_data"),

@@ -215,11 +215,12 @@ public class ProjectExperimentsSection extends Div {
   /**
    * The experiment's measurement datasets, one row per analysis method.
    *
-   * <p><b>What a row is.</b> One experiment for one analysis method -- the grain
-   * {@code v_project_assay_standing} provides. RNA-Seq and 16S are both genomics technologies but
-   * are different analysis methods, so they are different rows here; that is exactly the distinction
-   * the omics domain cannot make, and the reason this panel reads the assay-standing model rather
-   * than the progress model.</p>
+   * <p><b>What a row is.</b> One dataset: an experiment, an omics domain and an analysis method.
+   * Both axes are needed. The <em>domain</em> comes from the measurement table the record lives in
+   * and is always reliable; the <em>method</em> is the annotation on the sample. RNA-Seq and 16S are
+   * both genomics but different methods, so they are different rows -- and proteomics and
+   * immunopeptidomics share a method but are different domains, which is the case the domain column
+   * exists for.</p>
    *
    * <p><b>What a row is not.</b> Two datasets of the <em>same</em> analysis method in one experiment
    * still collapse, because the view groups by {@code (experiment, analysis_method)}. Separating
@@ -259,14 +260,21 @@ public class ProjectExperimentsSection extends Div {
         ? "No measurements registered yet"
         : "Newest data " + Utility.relativeTime(newest(measurements));
 
-    // One row per analysis method, ordered by the method's own abbreviation so the list is stable.
+    // One row per dataset, ordered by domain then method so the list is stable and reads as groups.
     List<AssayStanding> datasets = assays.stream()
-        .sorted(Comparator.comparing(dataset -> dataset.analysisMethod().abbreviation()))
+        .sorted(Comparator.comparing((AssayStanding dataset) -> dataset.assayType().ordinal())
+            .thenComparing(dataset -> dataset.analysisMethod().abbreviation()))
         .toList();
 
+    // Both axes, because neither alone identifies a dataset. The DOMAIN comes from the measurement
+    // and is always right; the METHOD comes from the sample annotation. Proteomics and
+    // immunopeptidomics samples share the same analysis method and are distinguished only by what
+    // the measurement records, so a row with the domain omitted would report immunopeptidomics as
+    // proteomics -- which is exactly what an earlier revision did.
     List<List<String>> rows = datasets.stream()
         .map(dataset -> List.of(
-            dataset.analysisMethod().abbreviation(),
+            "%s · %s".formatted(MeasurementType.from(dataset.assayType()).getType(),
+                dataset.analysisMethod().abbreviation()),
             "%d of %d".formatted(dataset.withPrimaryData(), dataset.measurements()),
             DataStateLabel.word(DataState.of(dataset.withPrimaryData(), dataset.measurements()))))
         .toList();
@@ -278,7 +286,8 @@ public class ProjectExperimentsSection extends Div {
         datasets.isEmpty() || datasetsMissingData == 0 ? null
             : "%d of %d %s need primary data".formatted(datasetsMissingData, datasets.size(),
                 datasets.size() == 1 ? "method" : "methods"),
-        new String[]{"Analysis method", "Measurements with data", "Data availability"}, rows,
+        new String[]{"Domain · analysis method", "Measurements with data", "Data availability"},
+        rows,
         "No measurements to show yet",
         total > 0 ? "All " + total + " measurements" : "",
         AppRoutes.ProjectRoutes.MEASUREMENT_DATASET, experiment.experimentId());

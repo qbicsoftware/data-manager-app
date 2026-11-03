@@ -59,6 +59,16 @@
 --    (measurement -> specific_measurement_metadata_* -> sample). Verified against the same join
 --    the other project-page read models use.
 --
+--  * THE DOMAIN COMES FROM THE MEASUREMENT, NOT THE SAMPLE. This is the one thing about this view
+--    that cannot be inferred from analysis_method: proteomics and immunopeptidomics share the same
+--    analysis method on the sample, and what distinguishes them is what was recorded on the
+--    measurement. So `measurement_type` -- which table the measurement lives in, NGS / PXP / IP --
+--    is the ONLY reliable source for the omics domain, and it is carried as its own column.
+--
+--    Deriving the domain from analysis_method (an earlier revision of this view did exactly that)
+--    silently reported immunopeptidomics measurements as proteomics, because both samples carry the
+--    same analysis method. Never infer the domain from the analysis method.
+--
 --  * AMBIGUOUS ATTRIBUTION. A measurement can measure samples carrying DIFFERENT analysis methods.
 --    Such a measurement is attributed to EACH of them and is therefore counted in each.
 --    Consequence, which must be documented wherever these numbers are shown: the per-dataset
@@ -145,46 +155,53 @@ dataset_measurements AS (
     FROM measurement_sample ms
              JOIN project_samples ps ON ps.sample_id = ms.sample_id
 ),
+-- The dataset key is (experiment, measurement_type, analysis_method): the measurement type is the
+-- omics domain and is the only reliable one -- proteomics and immunopeptidomics share an analysis
+-- method on the sample, so the method alone cannot name the domain.
 dataset_keys AS (
-    SELECT DISTINCT project_id, experiment_id, analysis_method FROM dataset_measurements
+    SELECT DISTINCT project_id, experiment_id, measurement_type, analysis_method
+    FROM dataset_measurements
 ),
 -- Measurement records per dataset.
 counted AS (
-    SELECT project_id, experiment_id, analysis_method,
+    SELECT project_id, experiment_id, measurement_type, analysis_method,
            COUNT(*) AS measurements
     FROM dataset_measurements
-    GROUP BY project_id, experiment_id, analysis_method
+    GROUP BY project_id, experiment_id, measurement_type, analysis_method
 ),
 -- Measurement records carrying primary data, per dataset.
 with_data AS (
-    SELECT dm.project_id, dm.experiment_id, dm.analysis_method,
+    SELECT dm.project_id, dm.experiment_id, dm.measurement_type, dm.analysis_method,
            COUNT(*) AS measurements_with_primary_data
     FROM dataset_measurements dm
              JOIN remote_measurement_data rmd
                   ON rmd.measurement_id = dm.measurement_code COLLATE utf8mb4_unicode_ci
                       AND rmd.deleted = FALSE
-    GROUP BY dm.project_id, dm.experiment_id, dm.analysis_method
+    GROUP BY dm.project_id, dm.experiment_id, dm.measurement_type, dm.analysis_method
 ),
 -- Bytes per (experiment, analysis method, measurementCode), keyed by code first so that two
 -- measurement records sharing one code cannot double the volume.
 bytes_by_code AS (
-    SELECT dm.project_id, dm.experiment_id, dm.analysis_method, dm.measurement_code,
+    SELECT dm.project_id, dm.experiment_id, dm.measurement_type, dm.analysis_method,
+           dm.measurement_code,
            MAX(rmd.total_filesize_bytes) AS code_bytes
     FROM dataset_measurements dm
              JOIN remote_measurement_data rmd
                   ON rmd.measurement_id = dm.measurement_code COLLATE utf8mb4_unicode_ci
                       AND rmd.deleted = FALSE
-    GROUP BY dm.project_id, dm.experiment_id, dm.analysis_method, dm.measurement_code
+    GROUP BY dm.project_id, dm.experiment_id, dm.measurement_type, dm.analysis_method,
+             dm.measurement_code
 ),
 volume AS (
-    SELECT project_id, experiment_id, analysis_method,
+    SELECT project_id, experiment_id, measurement_type, analysis_method,
            COALESCE(SUM(code_bytes), 0) AS primary_data_bytes
     FROM bytes_by_code
-    GROUP BY project_id, experiment_id, analysis_method
+    GROUP BY project_id, experiment_id, measurement_type, analysis_method
 )
 SELECT k.project_id,
        k.experiment_id,
        e.experimentName                               AS experiment_name,
+       k.measurement_type,
        k.analysis_method,
        COALESCE(c.measurements, 0)                    AS measurements,
        COALESCE(w.measurements_with_primary_data, 0)  AS measurements_with_primary_data,
@@ -195,14 +212,17 @@ FROM dataset_keys k
          LEFT JOIN counted c
                    ON c.project_id = k.project_id
                        AND c.experiment_id COLLATE utf8mb4_unicode_ci = k.experiment_id
+                       AND c.measurement_type = k.measurement_type
                        AND c.analysis_method = k.analysis_method
          LEFT JOIN with_data w
                    ON w.project_id = k.project_id
                        AND w.experiment_id COLLATE utf8mb4_unicode_ci = k.experiment_id
+                       AND w.measurement_type = k.measurement_type
                        AND w.analysis_method = k.analysis_method
          LEFT JOIN volume v
                    ON v.project_id = k.project_id
                        AND v.experiment_id COLLATE utf8mb4_unicode_ci = k.experiment_id
+                       AND v.measurement_type = k.measurement_type
                        AND v.analysis_method = k.analysis_method;
 
 -- Supporting index: the view's hot path is the sample -> experiment -> analysis_method join.

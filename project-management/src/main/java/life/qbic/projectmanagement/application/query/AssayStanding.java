@@ -28,7 +28,8 @@ import life.qbic.projectmanagement.domain.model.sample.AnalysisMethod;
  *
  * @param experimentId     the experiment the dataset belongs to
  * @param experimentName   the experiment's name, the discriminant between two datasets of one method
- * @param analysisMethod   the analysis method, which is the dataset's type
+ * @param measurementType  the omics domain, read from the measurement table the record lives in
+ * @param analysisMethod   the analysis method annotated on the sample
  * @param measurements     the number of measurements attributed to this dataset
  * @param withPrimaryData  the number of those measurements that carry primary data
  * @param primaryDataBytes the size of the primary data, {@code 0} when nothing arrived or the sync
@@ -39,6 +40,7 @@ import life.qbic.projectmanagement.domain.model.sample.AnalysisMethod;
 public record AssayStanding(
     String experimentId,
     String experimentName,
+    AssayType measurementType,
     AnalysisMethod analysisMethod,
     int measurements,
     int withPrimaryData,
@@ -47,6 +49,7 @@ public record AssayStanding(
   public AssayStanding {
     Objects.requireNonNull(experimentId, "experimentId must not be null");
     Objects.requireNonNull(experimentName, "experimentName must not be null");
+    Objects.requireNonNull(measurementType, "measurementType must not be null");
     Objects.requireNonNull(analysisMethod, "analysisMethod must not be null");
     if (measurements < 0 || withPrimaryData < 0) {
       throw new IllegalArgumentException("counts must not be negative");
@@ -69,8 +72,17 @@ public record AssayStanding(
     return measurements > 0 && withPrimaryData >= measurements;
   }
 
-  /** The omics domain this analysis method belongs to, for grouping in the overview. */
+  /**
+   * The omics domain of this dataset, taken from the measurement rather than from the analysis
+   * method.
+   *
+   * <p><b>This cannot be derived from {@link #analysisMethod()}.</b> Proteomics and
+   * immunopeptidomics samples carry the same analysis method; what distinguishes them is what was
+   * recorded on the measurement, so the domain has to come from the measurement's own table. An
+   * earlier revision derived it from the method and reported every immunopeptidomics dataset as
+   * proteomics.</p>
+   */
   public AssayType assayType() {
-    return AssayType.of(analysisMethod);
+    return measurementType;
   }
 }
