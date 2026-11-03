@@ -291,12 +291,16 @@ public class ProjectExperimentsSection extends Div {
         .toList();
 
     long datasetsMissingData = datasets.stream().filter(dataset -> !dataset.complete()).count();
+    // The unit of a row is a dataset, not a method: once the instrument joined the key, three rows
+    // can be three instruments of one method. "3 analysis methods" was left over from when rows were
+    // methods, and it survived a commit that claimed to change it -- the edit targeted a string that
+    // had already moved on, so it silently did nothing.
     return snapshotPanel("Measurement datasets",
-        datasets.size() == 1 ? "analysis method" : "analysis methods", datasets.size(),
+        datasets.size() == 1 ? "dataset" : "datasets", datasets.size(),
         state, tone, status,
         datasets.isEmpty() || datasetsMissingData == 0 ? null
             : "%d of %d %s need primary data".formatted(datasetsMissingData, datasets.size(),
-                datasets.size() == 1 ? "method" : "methods"),
+                datasets.size() == 1 ? "dataset" : "datasets"),
         new String[]{"Omics domain", "Method", "Instrument", "With data", "Data availability"},
         rows,
         // A failed query must not read as "this project has no datasets": those are opposite
