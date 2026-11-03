@@ -30,6 +30,7 @@ import life.qbic.datamanager.views.projects.project.experiments.experiment.creat
 import life.qbic.datamanager.views.projects.project.dataset.MeasurementDatasetMain;
 import life.qbic.datamanager.views.projects.project.samples.SampleInformationMain;
 import life.qbic.projectmanagement.application.api.ProjectQueryService;
+import life.qbic.projectmanagement.application.query.AssayType;
 import life.qbic.projectmanagement.application.query.DataState;
 import life.qbic.projectmanagement.application.query.ExperimentProgress;
 import life.qbic.projectmanagement.application.query.RecentMeasurement;
@@ -192,13 +193,27 @@ public class ProjectExperimentsSection extends Div {
         AppRoutes.ProjectRoutes.SAMPLES, experiment.experimentId());
   }
 
+  /**
+   * The experiment's measurement datasets, one row per analysis method.
+   *
+   * <p><b>Why the rows are methods and not datasets.</b> A measurement dataset is one experiment for
+   * one measurement method, and the model is 1:n -- an experiment can hold more than one dataset of
+   * the same method. The read model cannot separate them yet: it is keyed by
+   * {@code (experiment, analysisMethod)}, so two genomics datasets of one experiment collapse into
+   * one row. Listing measurement IDs instead -- what this panel used to do -- was worse, because a
+   * measurement is a <em>member</em> of a dataset and says nothing about which dataset it belongs to
+   * or how that dataset is doing.</p>
+   *
+   * <p>So the panel states the grain it can back: how many measurements each method holds, how many
+   * of them have data, and whether that method is complete. It does not say "3 datasets" when it
+   * means "3 methods". Splitting datasets of one method needs a real dataset identity, which is
+   * tracked in #1660.</p>
+   */
   private Div datasetPanel(ExperimentProgress experiment, List<RecentMeasurement> measurements) {
     int total = experiment.measurementCount();
-    int missing = experiment.measurementsWithoutPrimaryData();
     boolean hasSamples = experiment.sampleCount() > 0;
 
-    // The state comes from the page's one vocabulary, so this panel cannot drift into its own word
-    // for the same condition. "Locked" stays separate: it is a prerequisite, not a data state.
+    // The experiment's state is the aggregate of its datasets: complete only if every method is.
     DataState dataState = DataState.of(experiment.measurementsWithPrimaryData(), total);
     String state;
     String tone;
@@ -216,26 +231,54 @@ public class ProjectExperimentsSection extends Div {
         case WAITING, AT_RISK -> "waiting";
       };
     }
-    // The state in words once, then the age. The deficit is stated in the metric band, beside the
-    // count it belongs to, rather than repeated here.
+
+    // Newest data arrival across the experiment's datasets. Still arrival rather than preparation --
+    // that distinction needs dataset identity (#1660) -- but stated for what it is.
     String status = total == 0
         ? "No measurements registered yet"
-        : "Newest measurement " + Utility.relativeTime(newest(measurements));
+        : "Newest data " + Utility.relativeTime(newest(measurements));
 
-    List<List<String>> rows = measurements.stream()
-        .map(measurement -> List.of(measurement.measurementCode(), primaryDataLabel(measurement),
-            Utility.relativeTime(measurement.changed())))
+    List<AssayType> methods = experiment.assayTypes();
+    // One row per method: which method, how far along it is, and its share with data. The method is
+    // the identity a reader has today, so it leads; the counts follow in the same columns the other
+    // panel uses, so the two tables still read alike.
+    List<List<String>> rows = methods.stream()
+        .map(method -> List.of(
+            MeasurementType.from(method).getType(),
+            String.valueOf(experiment.measurementsWithPrimaryData(method)),
+            methodState(experiment, method)))
         .toList();
-    // The deficit is the qualifier when there is one: it is the actionable half of the count.
-    String qualifier = total == 0 || missing == 0
-        ? null
-        : "%d of %d need primary data".formatted(missing, total);
-    return snapshotPanel("Measurement dataset", "measurements", total, state, tone, status,
-        qualifier,
-        new String[]{"Measurement ID", "Primary data", "Changed"}, rows,
+
+    // The metric counts METHODS, not datasets, and says so. Two genomics datasets of one experiment
+    // still collapse into one row here, so claiming "3 measurement datasets" would be the same
+    // overclaim the panel used to make with measurement IDs. The qualifier names the grain too.
+    long methodsMissingData = methods.stream()
+        .filter(m -> experiment.measurementsWithoutPrimaryData(m) > 0)
+        .count();
+    return snapshotPanel("Measurement datasets",
+        "analysis methods", methods.size(), state, tone, status,
+        total == 0 ? null
+            : "%d of %d %s need primary data".formatted(methodsMissingData, methods.size(),
+                methods.size() == 1 ? "method" : "methods"),
+        new String[]{"Analysis method", "With data", "Status"}, rows,
         "No measurements to show yet",
         total > 0 ? "All " + total + " measurements" : "",
         AppRoutes.ProjectRoutes.MEASUREMENT_DATASET, experiment.experimentId());
+  }
+
+  /**
+   * A method's own state as a short word, using the page's one vocabulary.
+   *
+   * <p>Short rather than phrased because the table column already scopes it, and because a full
+   * sentence in a cell crowds the two numeric columns beside it.</p>
+   */
+  private static String methodState(ExperimentProgress experiment, AssayType method) {
+    int count = experiment.measurementCount(method);
+    if (count == 0) {
+      return DataStateLabel.word(DataState.WAITING);
+    }
+    return DataStateLabel.word(
+        DataState.of(experiment.measurementsWithPrimaryData(method), count));
   }
 
   private Div snapshotPanel(String label, String unit, int count, String state, String tone,
@@ -398,14 +441,6 @@ public class ProjectExperimentsSection extends Div {
     return experiment.assayTypes().stream()
         .map(type -> MeasurementType.from(type).getType())
         .toList();
-  }
-
-  private static String primaryDataLabel(RecentMeasurement measurement) {
-    if (!measurement.hasPrimaryData()) {
-      return "Not attached";
-    }
-    return Utility.primaryDataLabel(measurement.primaryDataFiles(),
-        measurement.primaryDataBytes());
   }
 
   private static Instant newest(List<RecentMeasurement> measurements) {
