@@ -103,6 +103,22 @@ public class Utility {
   }
 
   /**
+   * How much primary data a measurement carries, as one phrase: "1 file · 104.9 MB".
+   *
+   * <p>Shared because two panels render it, and they had already diverged once: both said
+   * "1 files". A measurement carrying a single file is the common case, so the plural was wrong on
+   * the most frequently rendered row.</p>
+   *
+   * @param files the number of files, {@code null} treated as zero
+   * @param bytes the size in bytes, {@code null} or zero when the sync never recorded it
+   */
+  public static String primaryDataLabel(Long files, Long bytes) {
+    long count = files == null ? 0L : files;
+    return (count == 1 ? "1 file" : count + " files") + " · " + humanReadableSize(
+        bytes == null ? 0L : bytes);
+  }
+
+  /**
    * How long ago something happened, at the coarsest resolution that still says something useful:
    * hours while it is under a day, days after that.
    *

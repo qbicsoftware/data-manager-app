@@ -99,15 +99,23 @@
   flex: 1 1 var(--card-readable-width);
   min-width: 0;
   padding: var(--lumo-space-m);
-  border: 1px solid var(--lumo-contrast-10pct);
+  border: 1px solid var(--lumo-contrast-20pct);
   border-radius: var(--lumo-border-radius-m);
-  cursor: pointer;
+  /* No pointer cursor: the panel is not a click target. Its one destination is the "Open …" link in
+     the header, and a pointer cursor promised a click that no longer does anything. The cursor is
+     what tells a reader "this whole thing is clickable", so leaving it here was a lie in the one
+     affordance people trust most. */
+  cursor: default;
+  transition: border-color 150ms ease;
 }
 
+/* The hover affordance is the primary-colour frame, matching the project cards: a border on an
+   already-rounded box needs no box-shadow, cannot affect layout, and matches the flat, shadow-free
+   card language used everywhere else. The greyed-out background it replaces read as a disabled
+   state rather than as a hover. */
 .project-exp-panel:hover,
-.project-exp-panel:focus-visible {
-  background-color: var(--lumo-contrast-5pct);
-  outline: none;
+.project-exp-panel:has(:focus-visible) {
+  border-color: var(--lumo-primary-color);
 }
 
 .project-exp-panel-head {
@@ -177,38 +185,36 @@
   text-decoration: underline;
 }
 
-/* The Dataset panel's completeness ring, top-right of the panel head. The "Open" hint is no longer
-   right-aligned: the ring owns the auto margin, so both panels' heads start at the same left edge
-   and only the ring sits at the right. */
-/* The accessory now lives in the metric band beside the count, not in the header row. In the header
-   it pushed the whole panel's metric, status and table one line below its neighbour's, so the two
-   panels never shared a baseline. */
-.project-exp-panel-accessory {
-  margin-left: auto;
-}
-
-.project-exp-panel-accessory .completeness-ring {
-  --completeness-ring-size: 2.5rem;
-  --completeness-ring-font-size: var(--lumo-font-size-xs);
-}
-
+/* A fixed two-line slot: the count, then the qualifier. The second line is always rendered, empty
+   when there is nothing to qualify, because its reserved height is what keeps the status line and the
+   table on one baseline across the pair. A content-sized band let a wrapping qualifier push
+   everything below it a full line down -- the defect the banded layout was introduced to remove. */
 .project-exp-panel-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  /* Two line boxes: the value's line and the qualifier's. Reserved, not content-driven. */
+  min-height: calc(var(--lumo-font-size-xl) * var(--lumo-line-height-xs) + var(--lumo-font-size-s));
+}
+
+.project-exp-panel-count-line {
   display: flex;
   align-items: baseline;
   gap: var(--lumo-space-xs);
-  /* Fixed height, so both panels' status lines and tables start on the same baseline whether or not
-     this panel carries an accessory (the completeness ring is taller than the count's own line). */
-  min-height: 2.5rem;
 }
 
-/* The deficit beside the count: the fact that gives the total its meaning. Near-equal weight to the
-   value, because "17 measurements" alone is the least useful number in the panel. */
+/* The qualifier: the fact that gives the total its meaning. On its own line so its wrap cannot move
+   anything below it, and clamped to two lines so an unusually long sentence is truncated rather than
+   pushing the band taller than its reserved slot. */
 .project-exp-panel-qualifier {
   font-size: var(--lumo-font-size-s);
   font-weight: 500;
   color: var(--lumo-body-text-color);
   line-height: var(--lumo-line-height-xs);
-  max-width: 18ch;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .project-exp-panel-value {
@@ -227,24 +233,28 @@
   color: var(--lumo-secondary-text-color);
 }
 
-/* The table's header band: column labels, plus the way to the full list. The panel shows three rows
-   and has to say so, or they read as the whole set. */
-.project-exp-panel-rows-head {
+/* The way out of the preview, below a hairline. In the table's header row it sat on the header
+   baseline at header size, so it read as a fourth column with no cells under it. */
+.project-exp-panel-footer {
   display: flex;
-  align-items: baseline;
-  gap: var(--lumo-space-s);
-}
-
-.project-exp-panel-rows-head .project-exp-panel-row {
-  flex: 1 1 auto;
+  justify-content: flex-end;
+  margin-top: var(--lumo-space-xs);
+  padding-top: var(--lumo-space-xs);
+  border-top: 1px solid var(--lumo-contrast-10pct);
 }
 
 .project-exp-panel-all {
-  flex: 0 0 auto;
   font-size: var(--lumo-font-size-xs);
   font-weight: 500;
   color: var(--lumo-primary-text-color);
+  text-decoration: none;
   white-space: nowrap;
+}
+
+.project-exp-panel-all:hover,
+.project-exp-panel-all:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .project-exp-panel-rows {
@@ -260,10 +270,26 @@
   font-size: var(--lumo-font-size-s);
 }
 
+/* The last column is a timestamp and is right-aligned, so its header is too -- otherwise "Changed"
+   floats between the previous column and its own values and reads as belonging to the wrong one. */
+.project-exp-panel-row > :last-child {
+  text-align: right;
+}
+
 .project-exp-panel-cell-header {
   font-size: var(--lumo-font-size-xs);
   font-weight: 600;
   color: var(--lumo-secondary-text-color);
+}
+
+/* The first column is an identifier -- a monospace code the reader may copy. It must never wrap mid
+   code (worst case for a copyable ID) and must never crowd its neighbour, so it truncates with an
+   ellipsis and keeps the full value in the title attribute. */
+.project-exp-panel-row > :first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ── Empty experiments list ───────────────────────────────────────────── */

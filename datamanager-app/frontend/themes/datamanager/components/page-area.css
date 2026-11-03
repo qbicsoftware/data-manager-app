@@ -2387,14 +2387,20 @@ a.project-dataset-footer, a.project-dataset-footer:hover {
   flex-direction: column;
   gap: var(--lumo-space-s);
   padding: var(--lumo-space-m);
-  border: 1px solid var(--lumo-contrast-10pct);
+  border: 1px solid var(--lumo-contrast-20pct);
   border-radius: var(--lumo-border-radius-l);
-  cursor: pointer;
+  /* Not a click target: the card's one destination is the "Open …" link in its header. A pointer
+     cursor here promised a click that does nothing. */
+  cursor: default;
+  transition: border-color 150ms ease;
 }
 
+/* The same hover language as the project cards: the frame takes the primary colour. Solid rather
+   than 50pct, because this card sits inside another card's surface and a half-transparent border on
+   a tinted background is hard to see. */
 .experiment-overview-card:hover,
-.experiment-overview-card:focus-visible {
-  border-color: var(--lumo-primary-color-50pct);
+.experiment-overview-card:has(:focus-visible) {
+  border-color: var(--lumo-primary-color);
 }
 
 .experiment-overview-card-head {

@@ -23,7 +23,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.MeasurementType;
-import life.qbic.datamanager.views.general.CompletenessRing;
 import life.qbic.datamanager.views.general.ReactiveUiBridge;
 import life.qbic.datamanager.views.general.utils.Utility;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
@@ -181,9 +180,13 @@ public class ProjectExperimentsSection extends Div {
         .map(sample -> List.of(sample.sampleCode(), sample.sampleName(),
             Utility.relativeTime(sample.changed())))
         .toList();
+    // "Registered" was outside the declared vocabulary, and it was green -- a success colour for a
+    // stage that is done but whose downstream data is not. Samples are either there or not, and that
+    // is what Complete/Waiting already say.
     return snapshotPanel("Samples", "samples", experiment.sampleCount(),
-        started ? "Registered" : "Not started", started ? "done" : "active",
-        status, null, null, new String[]{"Sample ID", "Sample name", "Changed"}, rows,
+        started ? DataStateLabel.word(DataState.COMPLETE) : "Not started",
+        started ? "done" : "active",
+        status, null, new String[]{"Sample ID", "Sample name", "Changed"}, rows,
         "No samples to show yet",
         started ? "All " + experiment.sampleCount() + " samples" : "",
         AppRoutes.ProjectRoutes.SAMPLES, experiment.experimentId());
@@ -228,46 +231,15 @@ public class ProjectExperimentsSection extends Div {
         ? null
         : "%d of %d need primary data".formatted(missing, total);
     return snapshotPanel("Measurement dataset", "measurements", total, state, tone, status,
-        qualifier, completenessRing(experiment),
+        qualifier,
         new String[]{"Measurement ID", "Primary data", "Changed"}, rows,
         "No measurements to show yet",
         total > 0 ? "All " + total + " measurements" : "",
         AppRoutes.ProjectRoutes.MEASUREMENT_DATASET, experiment.experimentId());
   }
 
-  /**
-   * The Dataset panel's completeness ring, placed in the panel's top-right corner. The sentence on
-   * the status line states the gap, the ring shows the coverage; neither carries it alone.
-   */
-  private static Component completenessRing(ExperimentProgress experiment) {
-    int total = experiment.measurementCount();
-    int withData = experiment.measurementsWithPrimaryData();
-    int missing = experiment.measurementsWithoutPrimaryData();
-    String aria = total == 0
-        ? "No measurements registered yet"
-        : missing > 0
-            ? missing + " of " + total + " measurements still need primary data"
-            : "All " + total + " measurements have primary data";
-    return new CompletenessRing(withData, total, aria);
-  }
-
-  /**
-   * One snapshot panel, as five identical bands.
-   *
-   * <p><b>Why the bands are fixed.</b> The two panels sit side by side and are read against each
-   * other, so every band must land on the same baseline in both: header, metric, status, table. The
-   * Dataset panel used to carry its completeness ring in the <em>header</em> row, which pushed its
-   * metric, status and table a whole line below the Samples panel's -- the two read as two different
-   * layouts that happened to be adjacent. The ring is now the metric's companion, inside the metric
-   * band, so it cannot disturb the bands above or below it.</p>
-   *
-   * <p><b>Why the metric band states the deficit, not just the total.</b> "17 measurements" alone is
-   * the least useful number in the Dataset panel: the question is how many of them have data. The
-   * denial and the deficit are one band, at near-equal weight, so the panel cannot emphasise the
-   * denominator while burying the gap.</p>
-   */
   private Div snapshotPanel(String label, String unit, int count, String state, String tone,
-      String status, String qualifier, Component accessory, String[] columns,
+      String status, String qualifier, String[] columns,
       List<List<String>> rows, String emptyRow, String allRowsText,
       String openHref, String experimentId) {
     Div panel = new Div();
@@ -290,26 +262,24 @@ public class ProjectExperimentsSection extends Div {
     head.add(openHint);
     panel.add(head);
 
-    // Band 2: the count, with its accessory beside it rather than floating in the header.
+    // Band 2: a fixed two-line slot. Line one is the count; line two is the qualifier and exists even
+    // when empty, because its reserved height is what holds the status line and table on one baseline
+    // across the pair. A content-sized band let a wrapping qualifier push everything below it a line
+    // down -- the defect banding was introduced to remove.
     Div metric = new Div();
     metric.addClassName("project-exp-panel-metric");
+    Div countLine = new Div();
+    countLine.addClassName("project-exp-panel-count-line");
     Span value = new Span(Integer.toString(count));
     value.addClassName("project-exp-panel-value");
     Span unitSpan = new Span(unit);
     unitSpan.addClassName("project-exp-panel-unit");
-    metric.add(value, unitSpan);
-    // The qualifier is the fact that gives the count its meaning -- "12 of 17 need primary data" --
-    // and it sits with the count rather than in the quiet status line below, so the panel cannot
-    // emphasise the denominator while burying the gap.
-    if (qualifier != null && !qualifier.isBlank()) {
-      Span qualifierSpan = new Span(qualifier);
-      qualifierSpan.addClassName("project-exp-panel-qualifier");
-      metric.add(qualifierSpan);
-    }
-    if (accessory != null) {
-      accessory.addClassName("project-exp-panel-accessory");
-      metric.add(accessory);
-    }
+    countLine.add(value, unitSpan);
+    metric.add(countLine);
+
+    Span qualifierSpan = new Span(qualifier == null ? "" : qualifier);
+    qualifierSpan.addClassName("project-exp-panel-qualifier");
+    metric.add(qualifierSpan);
     panel.add(metric);
 
     // Band 3: the state in words. One line, so both panels keep the same rhythm.
@@ -319,23 +289,24 @@ public class ProjectExperimentsSection extends Div {
 
     Div list = new Div();
     list.addClassName("project-exp-panel-rows");
-    Div tableHead = new Div();
-    tableHead.addClassName("project-exp-panel-rows-head");
-    tableHead.add(row(columns, true));
-    if (allRowsText != null && !allRowsText.isBlank()) {
-      // The panel previews three records, so it has to say so and offer the rest. Without this the
-      // three rows read as the whole set.
-      Span all = new Span(allRowsText + " \u2192");
-      all.addClassName("project-exp-panel-all");
-      tableHead.add(all);
-    }
-    list.add(tableHead);
+    list.add(row(columns, true));
     if (rows.isEmpty()) {
       list.add(placeholderRow(emptyRow));
     } else {
       rows.forEach(cells -> list.add(row(cells.toArray(new String[0]), false)));
     }
     panel.add(list);
+
+    // The panel previews three records, so it has to say so and offer the rest. In the table's header
+    // row it read as a fourth column whose cells were empty; as a footer below a hairline it reads as
+    // the way out of the preview.
+    if (allRowsText != null && !allRowsText.isBlank()) {
+      Div footer = new Div();
+      footer.addClassName("project-exp-panel-footer");
+      footer.add(Utility.textLink(allRowsText + " \u2192",
+          openHref.formatted(projectId, experimentId), "project-exp-panel-all"));
+      panel.add(footer);
+    }
 
     // The panel is NOT a click target. Its one destination is the "Open …" link above, and a
     // container that is also a link would announce as a button, lose the native <a> affordances
@@ -371,8 +342,11 @@ public class ProjectExperimentsSection extends Div {
         span.addClassName("project-exp-panel-cell-header");
       } else if (index == 0) {
         // The first column is the record's identifier in both panels -- Sample ID, Measurement
-        // ID -- so it takes the same treatment as the project code above.
+        // ID -- so it takes the same treatment as the project code above. The cell truncates rather
+        // than wrapping mid-code, so the untruncated value has to stay reachable: a measurement ID
+        // runs to 24 characters and is the thing a reader copies.
         span.addClassName("identifier");
+        span.getElement().setAttribute("title", cells[index]);
       }
       row.add(span);
     }
@@ -430,8 +404,8 @@ public class ProjectExperimentsSection extends Div {
     if (!measurement.hasPrimaryData()) {
       return "Not attached";
     }
-    return measurement.primaryDataFiles() + " files · " + Utility.humanReadableSize(
-        measurement.primaryDataBytes() == null ? 0L : measurement.primaryDataBytes());
+    return Utility.primaryDataLabel(measurement.primaryDataFiles(),
+        measurement.primaryDataBytes());
   }
 
   private static Instant newest(List<RecentMeasurement> measurements) {

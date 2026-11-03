@@ -506,11 +506,17 @@
   color: var(--lumo-secondary-text-color);
 }
 
+/* A rail stage IS a click target -- it has exactly one destination -- so the pointer cursor is
+   honest here, unlike on the cards. The hover treatment matches the links elsewhere on the page:
+   colour shift plus underline, not underline alone. */
 .project-progress-step--link {
   cursor: pointer;
 }
 
 .project-progress-step--link:hover .project-progress-step-label,
 .project-progress-step--link:focus-visible .project-progress-step-label {
+  color: var(--lumo-primary-text-color);
   text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
 }

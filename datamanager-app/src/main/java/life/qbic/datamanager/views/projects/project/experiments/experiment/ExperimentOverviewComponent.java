@@ -495,8 +495,8 @@ public class ExperimentOverviewComponent extends Div {
     if (!measurement.hasPrimaryData()) {
       return "Not attached";
     }
-    return measurement.primaryDataFiles() + " files · " + Utility.humanReadableSize(
-        measurement.primaryDataBytes() == null ? 0L : measurement.primaryDataBytes());
+    return Utility.primaryDataLabel(measurement.primaryDataFiles(),
+        measurement.primaryDataBytes());
   }
 
   private static Div detailBlock(String title, List<String> entries) {
