@@ -215,12 +215,14 @@ public class ProjectExperimentsSection extends Div {
   /**
    * The experiment's measurement datasets, one row per analysis method.
    *
-   * <p><b>What a row is.</b> One dataset: an experiment, an omics domain and an analysis method.
-   * Both axes are needed. The <em>domain</em> comes from the measurement table the record lives in
-   * and is always reliable; the <em>method</em> is the annotation on the sample. RNA-Seq and 16S are
-   * both genomics but different methods, so they are different rows -- and proteomics and
-   * immunopeptidomics share a method but are different domains, which is the case the domain column
-   * exists for.</p>
+   * <p><b>What a row is.</b> One dataset: one experiment for one omics domain. The domain comes from
+   * the measurement table the record lives in, which makes it the only axis that is complete and
+   * reliable across all three domains.</p>
+   *
+   * <p><b>What a row is not.</b> It does not name the measurement method, because no single fact
+   * could: genomics records no method on the measurement, proteomics records an optional free-text
+   * LCMS method, and immunopeptidomics a mandatory one. Genomics' WGS / RNA-Seq / 16S exist only as
+   * the sample's planned analysis. See #1661 for modelling the method axis.</p>
    *
    * <p><b>What a row is not.</b> Two datasets of the <em>same</em> analysis method in one experiment
    * still collapse, because the view groups by {@code (experiment, analysis_method)}. Separating
@@ -266,15 +268,21 @@ public class ProjectExperimentsSection extends Div {
             .thenComparing(dataset -> dataset.analysisMethod().abbreviation()))
         .toList();
 
-    // Both axes, because neither alone identifies a dataset. The DOMAIN comes from the measurement
-    // and is always right; the METHOD comes from the sample annotation. Proteomics and
-    // immunopeptidomics samples share the same analysis method and are distinguished only by what
-    // the measurement records, so a row with the domain omitted would report immunopeptidomics as
-    // proteomics -- which is exactly what an earlier revision did.
+    // Domain only. It is the one axis that is complete, reliable and uniform across all three
+    // domains, because it comes from the measurement table the record lives in.
+    //
+    // No method column, deliberately. There is no single fact that could fill it:
+    //   - genomics records no method on the measurement at all (the NGS registration template has
+    //     no method column; "Sequencing Read Type" is a layout, not an assay);
+    //   - proteomics records LCMS Method, optional free text;
+    //   - immunopeptidomics records LCMS Method, mandatory free text.
+    // What genomics could show -- WGS, RNA-Seq, 16S -- exists only as the sample's PLANNED analysis,
+    // not as a record of what was done. Rendering a plan, an optional free-text field and a mandatory
+    // one in a single column would present three different kinds of fact as though they were the
+    // same. The method axis needs modelling before it can be shown; see #1661.
     List<List<String>> rows = datasets.stream()
         .map(dataset -> List.of(
-            "%s · %s".formatted(MeasurementType.from(dataset.assayType()).getType(),
-                dataset.analysisMethod().abbreviation()),
+            MeasurementType.from(dataset.assayType()).getType(),
             "%d of %d".formatted(dataset.withPrimaryData(), dataset.measurements()),
             DataStateLabel.word(DataState.of(dataset.withPrimaryData(), dataset.measurements()))))
         .toList();
@@ -286,8 +294,7 @@ public class ProjectExperimentsSection extends Div {
         datasets.isEmpty() || datasetsMissingData == 0 ? null
             : "%d of %d %s need primary data".formatted(datasetsMissingData, datasets.size(),
                 datasets.size() == 1 ? "method" : "methods"),
-        new String[]{"Domain · analysis method", "Measurements with data", "Data availability"},
-        rows,
+        new String[]{"Omics domain", "Measurements with data", "Data availability"}, rows,
         "No measurements to show yet",
         total > 0 ? "All " + total + " measurements" : "",
         AppRoutes.ProjectRoutes.MEASUREMENT_DATASET, experiment.experimentId());
