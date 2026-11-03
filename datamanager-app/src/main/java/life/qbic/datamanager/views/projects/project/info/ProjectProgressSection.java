@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.MeasurementType;
@@ -494,8 +495,8 @@ public class ProjectProgressSection extends Div {
    * separately, because two experiments measured as WES are two datasets of one method -- a
    * distinction the method name alone loses.</p>
    */
-  private record AssayRollup(AnalysisMethod method, int datasets, int measurements, int withData,
-                             long bytes) {
+  private record AssayRollup(String methodLabel, AssayType domain, int datasets, int measurements,
+                             int withData, long bytes) {
 
     int missing() {
       return Math.max(0, measurements - withData);
@@ -504,31 +505,30 @@ public class ProjectProgressSection extends Div {
     boolean complete() {
       return measurements > 0 && withData >= measurements;
     }
-
-    AssayType domain() {
-      return AssayType.of(method);
-    }
   }
 
   /**
-   * Rolls the per-dataset rows up to one entry per analysis method, in domain then method order.
+   * Rolls the per-dataset rows up to one entry per (domain, method label), in domain then label order.
    *
-   * <p>Ordered by domain so the grouping reads as groups, and inside a domain by the method's own
-   * abbreviation, which is the stable, comparable form ("16S", "RNA-SEQ", "WES").</p>
+   * <p>Grouped by the pair, not by the label alone: the label is free text for PXP/IP, so two domains
+   * could otherwise produce the same key. Ordered by domain so the grouping reads as groups, then by
+   * the label, which is the stable comparable form the view resolved ("WES", "CIDOT").</p>
    */
   private static List<AssayRollup> assayRollup(List<AssayStanding> datasets) {
     return datasets.stream()
-        .collect(Collectors.groupingBy(AssayStanding::analysisMethod,
+        .collect(Collectors.groupingBy(
+            dataset -> Map.entry(dataset.assayType(), dataset.methodLabel()),
             LinkedHashMap::new, Collectors.toList()))
         .entrySet().stream()
         .map(entry -> new AssayRollup(
-            entry.getKey(),
+            entry.getKey().getValue(),
+            entry.getKey().getKey(),
             entry.getValue().size(),
             entry.getValue().stream().mapToInt(AssayStanding::measurements).sum(),
             entry.getValue().stream().mapToInt(AssayStanding::withPrimaryData).sum(),
             entry.getValue().stream().mapToLong(AssayStanding::primaryDataBytes).sum()))
         .sorted(Comparator.comparing((AssayRollup rollup) -> rollup.domain().ordinal())
-            .thenComparing(rollup -> rollup.method().abbreviation()))
+            .thenComparing(AssayRollup::methodLabel))
         .toList();
   }
 
@@ -552,9 +552,9 @@ public class ProjectProgressSection extends Div {
     Div row = new Div();
     row.addClassName("project-progress-assay-row");
 
-    Span method = new Span(assay.method().abbreviation());
+    Span method = new Span(assay.methodLabel());
     method.addClassName("project-progress-assay-method");
-    method.getElement().setAttribute("title", assay.method().label());
+    method.getElement().setAttribute("title", assay.methodLabel());
 
     Span datasets = new Span(assay.datasets() == 1
         ? "1 dataset"

@@ -22,7 +22,6 @@ import life.qbic.datamanager.views.general.utils.Utility;
 import life.qbic.datamanager.views.projects.project.dataset.MeasurementDatasetMain;
 import life.qbic.projectmanagement.application.api.ProjectQueryService;
 import life.qbic.projectmanagement.application.query.AssayType;
-import life.qbic.projectmanagement.domain.model.sample.AnalysisMethod;
 import life.qbic.projectmanagement.application.query.AssayStanding;
 
 /**
@@ -127,11 +126,11 @@ public class PrimaryDatasetsComponent extends Div {
   private static List<DatasetRow> datasetRows(List<AssayStanding> datasets) {
     return datasets.stream()
         .sorted(Comparator.comparing(AssayStanding::experimentName, String.CASE_INSENSITIVE_ORDER)
-            .thenComparing(dataset -> dataset.analysisMethod().abbreviation()))
+            .thenComparing(AssayStanding::methodLabel))
         .map(dataset -> new DatasetRow(
             dataset.experimentId(),
             dataset.experimentName(),
-            dataset.analysisMethod(),
+            dataset.methodLabel(),
             dataset.assayType(),
             dataset.measurements(),
             dataset.withPrimaryData(),
@@ -204,8 +203,8 @@ public class PrimaryDatasetsComponent extends Div {
     // are not interchangeable -- so it leads and the domain follows as the grouping it is. The
     // abbreviation is shown and the full label carries the title, since "Exome sequencing" repeated
     // on every row is more text than the identity needs.
-    Span methodCell = cell(dataset.analysisMethod().abbreviation());
-    methodCell.getElement().setAttribute("title", dataset.analysisMethod().label());
+    Span methodCell = cell(dataset.methodLabel());
+    methodCell.getElement().setAttribute("title", dataset.methodLabel());
     row.add(methodCell);
 
     Span typeCell = cell(null);
@@ -293,7 +292,7 @@ public class PrimaryDatasetsComponent extends Div {
 
   /** One primary dataset: the measurement data of one experiment for one assay type. */
   private record DatasetRow(String experimentId, String experimentName,
-                            AnalysisMethod analysisMethod, AssayType assayType,
+                            String methodLabel, AssayType assayType,
                             int measurements, int withPrimaryData, long bytes) {
 
     int missing() {

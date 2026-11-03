@@ -27,6 +27,24 @@
 -- Requires MariaDB 10.2+ (CTEs, window-free but WITH clause).
 --
 -- =============================================================================
+-- METHOD RESOLUTION (read before changing this view)
+-- =============================================================================
+--
+-- The method label of a dataset is resolved per measurement, in this order:
+--
+--   1. the MEASUREMENT's own record    (PXP / IP: lcmsMethod)
+--   2. the SAMPLE's analysis_method    (genomics: the measurement records none)
+--
+-- This mirrors where the fact actually lives today, and it is an interim shape: the sample-level
+-- annotation is a known misfiling (see the grandfather note below), and genomics records no method on
+-- the measurement at all -- the NGS registration template has no method column. What is needed is a
+-- controlled method vocabulary captured on the measurement in every domain; until then this COALESCE
+-- is the least-wrong answer, and the label it produces is free text for PXP/IP.
+--
+-- The COALESCE order IS the rule. Do not reorder it: a measurement's own record always wins over the
+-- sample's annotation, because the measurement is what was done.
+--
+-- =============================================================================
 -- THE GRANDFATHER RELATION (read before changing this view)
 -- =============================================================================
 --
@@ -51,7 +69,8 @@
 -- SEMANTICS
 -- =============================================================================
 --
---  * Grain: one row per (experiment_id, analysis_method). That pair is the dataset identity.
+--  * Grain: one row per (experiment_id, measurement_type, method_label). The measurement type is the
+--    omics domain; the method label is resolved as described above and may be free text.
 --    Two experiments measured as WES are two datasets; one experiment measured as WES and RNA-Seq
 --    is also two.
 --
@@ -76,7 +95,8 @@
 --    This is not an error. It follows the precedent already documented for measurements spanning
 --    experiments (trap 3 in create-project-page-read-models.sql).
 --
---  * Samples with NULL/blank analysis_method are EXCLUDED rather than grouped into an "unknown"
+--  * Samples with NULL/blank analysis_method AND no measurement method are EXCLUDED rather than
+--    grouped into an "unknown"
 --    dataset. A dataset that cannot be typed cannot be chosen for an analysis, and materialising an
 --    "unknown" dataset would state one that does not exist. Consequence: such measurements are
 --    counted in the per-domain progress figures (experiment_progress) but not here. The two figures
@@ -118,8 +138,11 @@ WITH project_samples AS (
       AND s.analysis_method <> ''
 ),
 measurement_sample AS (
-    -- measurement -> the samples it measured -> the analysis methods those samples carry.
+    -- measurement -> the samples it measured, plus whatever the MEASUREMENT itself records as its
+    -- method. Only PXP and IP record one (lcmsMethod); NGS records nothing, so its method has to come
+    -- from the sample. See the METHOD RESOLUTION note in the header.
     SELECT smm.measurement_id, m.measurementCode AS measurement_code, 'NGS' AS measurement_type,
+           CAST(NULL AS CHAR) AS measurement_method,
            ps.sample_id
     FROM ngs_measurements m
              JOIN specific_measurement_metadata_ngs smm
@@ -128,6 +151,7 @@ measurement_sample AS (
                   ON ps.sample_id = smm.sample_id COLLATE utf8mb4_unicode_ci
     UNION
     SELECT smm.measurement_id, p.measurementCode, 'PXP',
+           NULLIF(TRIM(p.lcmsMethod), ''),
            ps.sample_id
     FROM proteomics_measurement p
              JOIN specific_measurement_metadata_pxp smm
@@ -136,6 +160,7 @@ measurement_sample AS (
                   ON ps.sample_id = smm.sample_id COLLATE utf8mb4_unicode_ci
     UNION
     SELECT smm.measurement_id, ip.measurementCode, 'IP',
+           NULLIF(TRIM(ip.lcmsMethod), ''),
            ps.sample_id
     FROM ip_measurements ip
              JOIN specific_measurement_metadata_ip smm
@@ -145,11 +170,16 @@ measurement_sample AS (
 ),
 -- One row per (experiment, analysis method, measurement record). DISTINCT collapses the sample
 -- fan-out: a measurement measuring ten samples of one method is still one measurement.
+-- The method label is resolved here, once: the measurement's own record where it has one (PXP/IP
+-- lcmsMethod), otherwise the sample's analysis_method (genomics, which records none).
+-- COALESCE order IS the rule -- do not reorder it.
 dataset_measurements AS (
     SELECT DISTINCT ps.project_id,
                     ps.experiment_id,
                     ps.analysis_method,
                     ms.measurement_type,
+                    COALESCE(ms.measurement_method,
+                             CAST(ps.analysis_method AS CHAR))      AS method_label,
                     ms.measurement_id,
                     ms.measurement_code
     FROM measurement_sample ms
@@ -159,50 +189,50 @@ dataset_measurements AS (
 -- omics domain and is the only reliable one -- proteomics and immunopeptidomics share an analysis
 -- method on the sample, so the method alone cannot name the domain.
 dataset_keys AS (
-    SELECT DISTINCT project_id, experiment_id, measurement_type, analysis_method
+    SELECT DISTINCT project_id, experiment_id, measurement_type, method_label
     FROM dataset_measurements
 ),
 -- Measurement records per dataset.
 counted AS (
-    SELECT project_id, experiment_id, measurement_type, analysis_method,
+    SELECT project_id, experiment_id, measurement_type, method_label,
            COUNT(*) AS measurements
     FROM dataset_measurements
-    GROUP BY project_id, experiment_id, measurement_type, analysis_method
+    GROUP BY project_id, experiment_id, measurement_type, method_label
 ),
 -- Measurement records carrying primary data, per dataset.
 with_data AS (
-    SELECT dm.project_id, dm.experiment_id, dm.measurement_type, dm.analysis_method,
+    SELECT dm.project_id, dm.experiment_id, dm.measurement_type, dm.method_label,
            COUNT(*) AS measurements_with_primary_data
     FROM dataset_measurements dm
              JOIN remote_measurement_data rmd
                   ON rmd.measurement_id = dm.measurement_code COLLATE utf8mb4_unicode_ci
                       AND rmd.deleted = FALSE
-    GROUP BY dm.project_id, dm.experiment_id, dm.measurement_type, dm.analysis_method
+    GROUP BY dm.project_id, dm.experiment_id, dm.measurement_type, dm.method_label
 ),
 -- Bytes per (experiment, analysis method, measurementCode), keyed by code first so that two
 -- measurement records sharing one code cannot double the volume.
 bytes_by_code AS (
-    SELECT dm.project_id, dm.experiment_id, dm.measurement_type, dm.analysis_method,
+    SELECT dm.project_id, dm.experiment_id, dm.measurement_type, dm.method_label,
            dm.measurement_code,
            MAX(rmd.total_filesize_bytes) AS code_bytes
     FROM dataset_measurements dm
              JOIN remote_measurement_data rmd
                   ON rmd.measurement_id = dm.measurement_code COLLATE utf8mb4_unicode_ci
                       AND rmd.deleted = FALSE
-    GROUP BY dm.project_id, dm.experiment_id, dm.measurement_type, dm.analysis_method,
+    GROUP BY dm.project_id, dm.experiment_id, dm.measurement_type, dm.method_label,
              dm.measurement_code
 ),
 volume AS (
-    SELECT project_id, experiment_id, measurement_type, analysis_method,
+    SELECT project_id, experiment_id, measurement_type, method_label,
            COALESCE(SUM(code_bytes), 0) AS primary_data_bytes
     FROM bytes_by_code
-    GROUP BY project_id, experiment_id, measurement_type, analysis_method
+    GROUP BY project_id, experiment_id, measurement_type, method_label
 )
 SELECT k.project_id,
        k.experiment_id,
        e.experimentName                               AS experiment_name,
        k.measurement_type,
-       k.analysis_method,
+       k.method_label,
        COALESCE(c.measurements, 0)                    AS measurements,
        COALESCE(w.measurements_with_primary_data, 0)  AS measurements_with_primary_data,
        COALESCE(v.primary_data_bytes, 0)              AS primary_data_bytes
@@ -213,17 +243,20 @@ FROM dataset_keys k
                    ON c.project_id = k.project_id
                        AND c.experiment_id COLLATE utf8mb4_unicode_ci = k.experiment_id
                        AND c.measurement_type = k.measurement_type
-                       AND c.analysis_method = k.analysis_method
+                       AND c.method_label COLLATE utf8mb4_unicode_ci =
+                           k.method_label COLLATE utf8mb4_unicode_ci
          LEFT JOIN with_data w
                    ON w.project_id = k.project_id
                        AND w.experiment_id COLLATE utf8mb4_unicode_ci = k.experiment_id
                        AND w.measurement_type = k.measurement_type
-                       AND w.analysis_method = k.analysis_method
+                       AND w.method_label COLLATE utf8mb4_unicode_ci =
+                           k.method_label COLLATE utf8mb4_unicode_ci
          LEFT JOIN volume v
                    ON v.project_id = k.project_id
                        AND v.experiment_id COLLATE utf8mb4_unicode_ci = k.experiment_id
                        AND v.measurement_type = k.measurement_type
-                       AND v.analysis_method = k.analysis_method;
+                       AND v.method_label COLLATE utf8mb4_unicode_ci =
+                           k.method_label COLLATE utf8mb4_unicode_ci;
 
 -- Supporting index: the view's hot path is the sample -> experiment -> analysis_method join.
 -- `sample(experiment_id)` already exists (create-project-page-read-models.sql); this one keeps the

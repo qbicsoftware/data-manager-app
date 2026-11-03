@@ -28,7 +28,6 @@ import life.qbic.projectmanagement.application.query.ProjectPageReadRepository;
 import life.qbic.projectmanagement.application.query.ProjectSampleOverview;
 import life.qbic.projectmanagement.application.query.RecentMeasurement;
 import life.qbic.projectmanagement.application.query.RecentSample;
-import life.qbic.projectmanagement.domain.model.sample.AnalysisMethod;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
@@ -162,7 +161,7 @@ public class ProjectPageReadRepositoryImpl implements ProjectPageReadRepository 
           resultSet.getString("experiment_id"),
           resultSet.getString("experiment_name"),
           AssayType.valueOf(resultSet.getString("measurement_type")),
-          AnalysisMethod.valueOf(resultSet.getString("analysis_method")),
+          resultSet.getString("method_label"),
           resultSet.getInt("measurements"),
           resultSet.getInt("measurements_with_primary_data"),
           resultSet.getLong("primary_data_bytes"));

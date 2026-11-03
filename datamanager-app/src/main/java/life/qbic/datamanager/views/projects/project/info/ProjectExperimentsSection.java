@@ -219,10 +219,11 @@ public class ProjectExperimentsSection extends Div {
    * the measurement table the record lives in, which makes it the only axis that is complete and
    * reliable across all three domains.</p>
    *
-   * <p><b>What a row is not.</b> It does not name the measurement method, because no single fact
-   * could: genomics records no method on the measurement, proteomics records an optional free-text
-   * LCMS method, and immunopeptidomics a mandatory one. Genomics' WGS / RNA-Seq / 16S exist only as
-   * the sample's planned analysis. See #1661 for modelling the method axis.</p>
+   * <p><b>Where the method comes from.</b> PXP and IP record {@code lcmsMethod} on the measurement;
+   * genomics records nothing there, so it falls back to {@code sample.analysis_method}. That is an
+   * interim shape -- the real fix is a controlled method vocabulary captured on the measurement in
+   * every domain (the NGS template has no method column at all). The resolution lives in the view, so
+   * replacing it is a one-file change. See #1660.</p>
    *
    * <p><b>What a row is not.</b> Two datasets of the <em>same</em> analysis method in one experiment
    * still collapse, because the view groups by {@code (experiment, analysis_method)}. Separating
@@ -265,24 +266,22 @@ public class ProjectExperimentsSection extends Div {
     // One row per dataset, ordered by domain then method so the list is stable and reads as groups.
     List<AssayStanding> datasets = assays.stream()
         .sorted(Comparator.comparing((AssayStanding dataset) -> dataset.assayType().ordinal())
-            .thenComparing(dataset -> dataset.analysisMethod().abbreviation()))
+            .thenComparing(AssayStanding::methodLabel))
         .toList();
 
-    // Domain only. It is the one axis that is complete, reliable and uniform across all three
-    // domains, because it comes from the measurement table the record lives in.
+    // Domain and method, from the resolved label.
     //
-    // No method column, deliberately. There is no single fact that could fill it:
-    //   - genomics records no method on the measurement at all (the NGS registration template has
-    //     no method column; "Sequencing Read Type" is a layout, not an assay);
-    //   - proteomics records LCMS Method, optional free text;
-    //   - immunopeptidomics records LCMS Method, mandatory free text.
-    // What genomics could show -- WGS, RNA-Seq, 16S -- exists only as the sample's PLANNED analysis,
-    // not as a record of what was done. Rendering a plan, an optional free-text field and a mandatory
-    // one in a single column would present three different kinds of fact as though they were the
-    // same. The method axis needs modelling before it can be shown; see #1661.
+    // The method is sourced per domain because that is where the fact lives today: PXP and IP record
+    // lcmsMethod on the measurement, genomics records nothing there and falls back to the sample's
+    // analysis_method. That resolution happens once, in v_project_assay_standing -- the panel just
+    // displays what it is given, so the interim shape can be replaced in one place when the method
+    // vocabulary and the templates catch up (#1660).
+    //
+    // The method label is free text for PXP/IP, so it is displayed and never grouped on here.
     List<List<String>> rows = datasets.stream()
         .map(dataset -> List.of(
             MeasurementType.from(dataset.assayType()).getType(),
+            dataset.methodLabel(),
             "%d of %d".formatted(dataset.withPrimaryData(), dataset.measurements()),
             DataStateLabel.word(DataState.of(dataset.withPrimaryData(), dataset.measurements()))))
         .toList();
@@ -294,7 +293,8 @@ public class ProjectExperimentsSection extends Div {
         datasets.isEmpty() || datasetsMissingData == 0 ? null
             : "%d of %d %s need primary data".formatted(datasetsMissingData, datasets.size(),
                 datasets.size() == 1 ? "method" : "methods"),
-        new String[]{"Omics domain", "Measurements with data", "Data availability"}, rows,
+        new String[]{"Omics domain", "Method", "Measurements with data", "Data availability"},
+        rows,
         "No measurements to show yet",
         total > 0 ? "All " + total + " measurements" : "",
         AppRoutes.ProjectRoutes.MEASUREMENT_DATASET, experiment.experimentId());
