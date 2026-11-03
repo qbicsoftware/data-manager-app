@@ -1,6 +1,7 @@
 package life.qbic.datamanager.views.projects.project.info;
 
 import static java.util.Objects.requireNonNull;
+import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
@@ -18,10 +19,12 @@ import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.shared.Registration;
 import java.io.Serial;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import life.qbic.datamanager.views.AppRoutes;
+import life.qbic.logging.api.Logger;
 import life.qbic.datamanager.views.MeasurementType;
 import life.qbic.datamanager.views.general.ReactiveUiBridge;
 import life.qbic.datamanager.views.general.utils.Utility;
@@ -30,6 +33,7 @@ import life.qbic.datamanager.views.projects.project.experiments.experiment.creat
 import life.qbic.datamanager.views.projects.project.dataset.MeasurementDatasetMain;
 import life.qbic.datamanager.views.projects.project.samples.SampleInformationMain;
 import life.qbic.projectmanagement.application.api.ProjectQueryService;
+import life.qbic.projectmanagement.application.query.AssayStanding;
 import life.qbic.projectmanagement.application.query.AssayType;
 import life.qbic.projectmanagement.application.query.DataState;
 import life.qbic.projectmanagement.application.query.ExperimentProgress;
@@ -51,6 +55,8 @@ import reactor.core.publisher.Mono;
  * @since 1.19.0
  */
 public class ProjectExperimentsSection extends Div {
+
+  private static final Logger log = logger(ProjectExperimentsSection.class);
 
   private static final String PROJECT_ID_PARAMETER = "projectId";
   private static final String EXPERIMENT_ID_PARAMETER = "experimentId";
@@ -93,8 +99,18 @@ public class ProjectExperimentsSection extends Div {
     Mono<Snapshot> snapshot = Mono.zip(
             progress,
             projectQueryService.getRecentSamples(projectId).collectList(),
-            projectQueryService.getRecentMeasurements(projectId).collectList())
-        .map(values -> new Snapshot(values.getT1(), values.getT2(), values.getT3()));
+            projectQueryService.getRecentMeasurements(projectId).collectList(),
+            // The dataset-grain read model: one row per (experiment, analysis method). This is what
+            // the dataset panel needs -- the progress model only knows omics domains.
+            projectQueryService.getAssayStanding(projectId).collectList()
+                .onErrorResume(error -> {
+                  // A failed assay query degrades the dataset panel to "no datasets stated" rather
+                  // than taking the whole experiments list down with it.
+                  log.warn("Assay standing could not be loaded for project " + projectId + ": "
+                      + error.getClass().getSimpleName() + " (" + error.getMessage() + ")");
+                  return Mono.just(List.of());
+                }))
+        .map(values -> new Snapshot(values.getT1(), values.getT2(), values.getT3(), values.getT4()));
     ReactiveUiBridge.onUi(ui, snapshot, this::render, error -> {
       content.removeAll();
       content.add(message("Experiments could not be loaded."));
@@ -122,19 +138,22 @@ public class ProjectExperimentsSection extends Div {
         .collect(Collectors.groupingBy(RecentSample::experimentId));
     Map<String, List<RecentMeasurement>> measurementsByExperiment = snapshot.measurements().stream()
         .collect(Collectors.groupingBy(RecentMeasurement::experimentId));
+    Map<String, List<AssayStanding>> assaysByExperiment = snapshot.assays().stream()
+        .collect(Collectors.groupingBy(AssayStanding::experimentId));
 
     Div cards = new Div();
     cards.addClassName("project-experiments-cards");
     for (ExperimentProgress experiment : snapshot.progress()) {
       cards.add(experimentCard(experiment,
           samplesByExperiment.getOrDefault(experiment.experimentId(), List.of()),
-          measurementsByExperiment.getOrDefault(experiment.experimentId(), List.of())));
+          measurementsByExperiment.getOrDefault(experiment.experimentId(), List.of()),
+          assaysByExperiment.getOrDefault(experiment.experimentId(), List.of())));
     }
     content.add(cards);
   }
 
   private Div experimentCard(ExperimentProgress experiment, List<RecentSample> samples,
-      List<RecentMeasurement> measurements) {
+      List<RecentMeasurement> measurements, List<AssayStanding> assays) {
     Div card = new Div();
     card.addClassName("project-experiment-card");
 
@@ -158,7 +177,7 @@ public class ProjectExperimentsSection extends Div {
     Div panels = new Div();
     panels.addClassName("project-exp-snapshot");
     panels.add(samplesPanel(experiment, samples));
-    panels.add(datasetPanel(experiment, measurements));
+    panels.add(datasetPanel(experiment, measurements, assays));
     card.add(panels);
     return card;
   }
@@ -196,27 +215,26 @@ public class ProjectExperimentsSection extends Div {
   /**
    * The experiment's measurement datasets, one row per analysis method.
    *
-   * <p><b>Why the rows are omics domains and not datasets.</b> A measurement dataset is one
-   * experiment for one measurement method, and the model is 1:n -- an experiment can hold more than
-   * one dataset of the same method. The read model cannot separate them yet, and it cannot even
-   * separate methods: it is keyed by {@code (experiment, assayType)}, where the assay type is the
-   * <em>domain</em>. Listing measurement IDs instead -- what this panel used to do -- was worse,
-   * because a measurement is a <em>member</em> of a dataset and says nothing about which dataset it
-   * belongs to or how that dataset is doing.</p>
+   * <p><b>What a row is.</b> One experiment for one analysis method -- the grain
+   * {@code v_project_assay_standing} provides. RNA-Seq and 16S are both genomics technologies but
+   * are different analysis methods, so they are different rows here; that is exactly the distinction
+   * the omics domain cannot make, and the reason this panel reads the assay-standing model rather
+   * than the progress model.</p>
    *
-   * <p>So the panel states the grain it can back: the project's <em>omics domains</em> (genomics,
-   * proteomics, immunopeptidomics), how many of each domain's measurements carry data, and whether
-   * that domain is fully available. Genomics is a domain, not a method -- WES, RNA-Seq and 16S are
-   * all genomics -- and the read model exposes no finer grouping, so the panel names the domain and
-   * does not claim to list datasets or methods.</p>
+   * <p><b>What a row is not.</b> Two datasets of the <em>same</em> analysis method in one experiment
+   * still collapse, because the view groups by {@code (experiment, analysis_method)}. Separating
+   * those needs a real dataset identity -- tracked in #1660. The panel does not claim to show them
+   * apart.</p>
    *
-   * <p>Splitting by analysis method, and giving each dataset an identity, is tracked in #1660.</p>
+   * <p>No row cap: more than four analysis methods in one experiment is not a case that arises in
+   * practice, and the full list is one link away in the experiment's datasets section anyway.</p>
    */
-  private Div datasetPanel(ExperimentProgress experiment, List<RecentMeasurement> measurements) {
+  private Div datasetPanel(ExperimentProgress experiment, List<RecentMeasurement> measurements,
+      List<AssayStanding> assays) {
     int total = experiment.measurementCount();
     boolean hasSamples = experiment.sampleCount() > 0;
 
-    // The experiment's state is the aggregate of its datasets: complete only if every method is.
+    // The experiment's state is the aggregate of its datasets: complete only if every one is.
     DataState dataState = DataState.of(experiment.measurementsWithPrimaryData(), total);
     String state;
     String tone;
@@ -235,38 +253,32 @@ public class ProjectExperimentsSection extends Div {
       };
     }
 
-    // Newest data arrival across the experiment's datasets. Still arrival rather than preparation --
-    // that distinction needs dataset identity (#1660) -- but stated for what it is.
+    // Newest data arrival across the experiment's datasets. Arrival, not preparation -- that
+    // distinction needs per-dataset identity (#1660) -- stated for what it is.
     String status = total == 0
         ? "No measurements registered yet"
         : "Newest data " + Utility.relativeTime(newest(measurements));
 
-    List<AssayType> domains = experiment.assayTypes();
-    // One row per OMICS DOMAIN, not per analysis method. The values come from ExperimentProgress'
-    // assayTypes(), which is the domain -- "Genomics" covers WES, RNA-Seq, 16S and more. The column
-    // header used to say "Analysis method", which was simply wrong: it named a grain the data does
-    // not expose. The row leads with the domain because that is the finest grouping available.
-    List<List<String>> rows = domains.stream()
-        .map(domain -> List.of(
-            MeasurementType.from(domain).getType(),
-            "%d of %d".formatted(experiment.measurementsWithPrimaryData(domain),
-                experiment.measurementCount(domain)),
-            DataStateLabel.word(DataState.of(experiment.measurementsWithPrimaryData(domain),
-                experiment.measurementCount(domain)))))
+    // One row per analysis method, ordered by the method's own abbreviation so the list is stable.
+    List<AssayStanding> datasets = assays.stream()
+        .sorted(Comparator.comparing(dataset -> dataset.analysisMethod().abbreviation()))
         .toList();
 
-    // The metric counts DOMAINS, and says so. Genomics can back several measurement datasets, so
-    // "3 measurement datasets" would be the same overclaim the panel made when it listed measurement
-    // IDs. The qualifier names the grain too.
-    long domainsMissingData = domains.stream()
-        .filter(d -> experiment.measurementsWithoutPrimaryData(d) > 0)
-        .count();
+    List<List<String>> rows = datasets.stream()
+        .map(dataset -> List.of(
+            dataset.analysisMethod().abbreviation(),
+            "%d of %d".formatted(dataset.withPrimaryData(), dataset.measurements()),
+            DataStateLabel.word(DataState.of(dataset.withPrimaryData(), dataset.measurements()))))
+        .toList();
+
+    long datasetsMissingData = datasets.stream().filter(dataset -> !dataset.complete()).count();
     return snapshotPanel("Measurement datasets",
-        "omics domains", domains.size(), state, tone, status,
-        total == 0 ? null
-            : "%d of %d %s need primary data".formatted(domainsMissingData, domains.size(),
-                domains.size() == 1 ? "domain" : "domains"),
-        new String[]{"Omics domain", "Measurements with data", "Data availability"}, rows,
+        datasets.size() == 1 ? "analysis method" : "analysis methods", datasets.size(),
+        state, tone, status,
+        datasets.isEmpty() || datasetsMissingData == 0 ? null
+            : "%d of %d %s need primary data".formatted(datasetsMissingData, datasets.size(),
+                datasets.size() == 1 ? "method" : "methods"),
+        new String[]{"Analysis method", "Measurements with data", "Data availability"}, rows,
         "No measurements to show yet",
         total > 0 ? "All " + total + " measurements" : "",
         AppRoutes.ProjectRoutes.MEASUREMENT_DATASET, experiment.experimentId());
@@ -461,8 +473,10 @@ public class ProjectExperimentsSection extends Div {
   }
 
   /** The section's data: per-experiment progress plus the newest rows for the snapshot panels. */
-  private record Snapshot(List<ExperimentProgress> progress, List<RecentSample> samples,
-                          List<RecentMeasurement> measurements) {
+  private record Snapshot(List<ExperimentProgress> progress,
+                              List<RecentSample> samples,
+                              List<RecentMeasurement> measurements,
+                              List<AssayStanding> assays) {
 
   }
 
