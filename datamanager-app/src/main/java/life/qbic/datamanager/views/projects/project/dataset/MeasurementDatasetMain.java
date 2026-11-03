@@ -331,8 +331,12 @@ public class MeasurementDatasetMain extends Main
     if (total == 0) {
       return "No measurements registered yet";
     }
-    int datasets = progress.assayTypes().size();
-    String datasetPart = datasets == 1 ? "1 dataset" : "%d datasets".formatted(datasets);
+    // NOT "3 datasets". The read model is keyed by AssayType, which is the omics DOMAIN, and one
+    // domain can back several measurement datasets (WES and RNA-Seq are both genomics). Calling these
+    // datasets claimed a count the model cannot produce. See #1660 for dataset identity.
+    int domains = progress.assayTypes().size();
+    String datasetPart = domains == 1
+        ? "1 omics domain" : "%d omics domains".formatted(domains);
     String measurementPart = total == 1
         ? "1 measurement"
         : "%d measurements".formatted(total);

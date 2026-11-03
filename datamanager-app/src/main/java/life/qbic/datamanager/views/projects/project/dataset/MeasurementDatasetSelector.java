@@ -164,9 +164,10 @@ public class MeasurementDatasetSelector extends Div implements Serializable {
       card.getElement().setAttribute("role", "radio");
     }
 
-    // Each card *is* a dataset, so it says so: "Genomics" alone reads as a category or a filter,
-    // and a reader had no way to know the row of cards was the list of the experiment's datasets.
-    Span label = new Span("%s dataset".formatted(summary.segment().label()));
+    // The card states its omics domain, and says so. It used to read "Genomics dataset", which
+    // claimed each card was one dataset -- but a domain can back several (WES and RNA-Seq are both
+    // genomics), and this card is a filter over all measurements of the domain. See #1660.
+    Span label = new Span(summary.segment().label());
     label.addClassName("measurement-dataset-card-label");
 
     Div headline = new Div(label);

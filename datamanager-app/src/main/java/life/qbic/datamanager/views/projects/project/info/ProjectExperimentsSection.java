@@ -196,18 +196,21 @@ public class ProjectExperimentsSection extends Div {
   /**
    * The experiment's measurement datasets, one row per analysis method.
    *
-   * <p><b>Why the rows are methods and not datasets.</b> A measurement dataset is one experiment for
-   * one measurement method, and the model is 1:n -- an experiment can hold more than one dataset of
-   * the same method. The read model cannot separate them yet: it is keyed by
-   * {@code (experiment, analysisMethod)}, so two genomics datasets of one experiment collapse into
-   * one row. Listing measurement IDs instead -- what this panel used to do -- was worse, because a
-   * measurement is a <em>member</em> of a dataset and says nothing about which dataset it belongs to
-   * or how that dataset is doing.</p>
+   * <p><b>Why the rows are omics domains and not datasets.</b> A measurement dataset is one
+   * experiment for one measurement method, and the model is 1:n -- an experiment can hold more than
+   * one dataset of the same method. The read model cannot separate them yet, and it cannot even
+   * separate methods: it is keyed by {@code (experiment, assayType)}, where the assay type is the
+   * <em>domain</em>. Listing measurement IDs instead -- what this panel used to do -- was worse,
+   * because a measurement is a <em>member</em> of a dataset and says nothing about which dataset it
+   * belongs to or how that dataset is doing.</p>
    *
-   * <p>So the panel states the grain it can back: how many measurements each method holds, how many
-   * of them have data, and whether that method is complete. It does not say "3 datasets" when it
-   * means "3 methods". Splitting datasets of one method needs a real dataset identity, which is
-   * tracked in #1660.</p>
+   * <p>So the panel states the grain it can back: the project's <em>omics domains</em> (genomics,
+   * proteomics, immunopeptidomics), how many of each domain's measurements carry data, and whether
+   * that domain is fully available. Genomics is a domain, not a method -- WES, RNA-Seq and 16S are
+   * all genomics -- and the read model exposes no finer grouping, so the panel names the domain and
+   * does not claim to list datasets or methods.</p>
+   *
+   * <p>Splitting by analysis method, and giving each dataset an identity, is tracked in #1660.</p>
    */
   private Div datasetPanel(ExperimentProgress experiment, List<RecentMeasurement> measurements) {
     int total = experiment.measurementCount();
@@ -238,47 +241,35 @@ public class ProjectExperimentsSection extends Div {
         ? "No measurements registered yet"
         : "Newest data " + Utility.relativeTime(newest(measurements));
 
-    List<AssayType> methods = experiment.assayTypes();
-    // One row per method: which method, how far along it is, and its share with data. The method is
-    // the identity a reader has today, so it leads; the counts follow in the same columns the other
-    // panel uses, so the two tables still read alike.
-    List<List<String>> rows = methods.stream()
-        .map(method -> List.of(
-            MeasurementType.from(method).getType(),
-            String.valueOf(experiment.measurementsWithPrimaryData(method)),
-            methodState(experiment, method)))
+    List<AssayType> domains = experiment.assayTypes();
+    // One row per OMICS DOMAIN, not per analysis method. The values come from ExperimentProgress'
+    // assayTypes(), which is the domain -- "Genomics" covers WES, RNA-Seq, 16S and more. The column
+    // header used to say "Analysis method", which was simply wrong: it named a grain the data does
+    // not expose. The row leads with the domain because that is the finest grouping available.
+    List<List<String>> rows = domains.stream()
+        .map(domain -> List.of(
+            MeasurementType.from(domain).getType(),
+            "%d of %d".formatted(experiment.measurementsWithPrimaryData(domain),
+                experiment.measurementCount(domain)),
+            DataStateLabel.word(DataState.of(experiment.measurementsWithPrimaryData(domain),
+                experiment.measurementCount(domain)))))
         .toList();
 
-    // The metric counts METHODS, not datasets, and says so. Two genomics datasets of one experiment
-    // still collapse into one row here, so claiming "3 measurement datasets" would be the same
-    // overclaim the panel used to make with measurement IDs. The qualifier names the grain too.
-    long methodsMissingData = methods.stream()
-        .filter(m -> experiment.measurementsWithoutPrimaryData(m) > 0)
+    // The metric counts DOMAINS, and says so. Genomics can back several measurement datasets, so
+    // "3 measurement datasets" would be the same overclaim the panel made when it listed measurement
+    // IDs. The qualifier names the grain too.
+    long domainsMissingData = domains.stream()
+        .filter(d -> experiment.measurementsWithoutPrimaryData(d) > 0)
         .count();
     return snapshotPanel("Measurement datasets",
-        "analysis methods", methods.size(), state, tone, status,
+        "omics domains", domains.size(), state, tone, status,
         total == 0 ? null
-            : "%d of %d %s need primary data".formatted(methodsMissingData, methods.size(),
-                methods.size() == 1 ? "method" : "methods"),
-        new String[]{"Analysis method", "With data", "Status"}, rows,
+            : "%d of %d %s need primary data".formatted(domainsMissingData, domains.size(),
+                domains.size() == 1 ? "domain" : "domains"),
+        new String[]{"Omics domain", "Measurements with data", "Data availability"}, rows,
         "No measurements to show yet",
         total > 0 ? "All " + total + " measurements" : "",
         AppRoutes.ProjectRoutes.MEASUREMENT_DATASET, experiment.experimentId());
-  }
-
-  /**
-   * A method's own state as a short word, using the page's one vocabulary.
-   *
-   * <p>Short rather than phrased because the table column already scopes it, and because a full
-   * sentence in a cell crowds the two numeric columns beside it.</p>
-   */
-  private static String methodState(ExperimentProgress experiment, AssayType method) {
-    int count = experiment.measurementCount(method);
-    if (count == 0) {
-      return DataStateLabel.word(DataState.WAITING);
-    }
-    return DataStateLabel.word(
-        DataState.of(experiment.measurementsWithPrimaryData(method), count));
   }
 
   private Div snapshotPanel(String label, String unit, int count, String state, String tone,
