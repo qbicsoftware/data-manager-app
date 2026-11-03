@@ -160,7 +160,7 @@ public class ProjectPageReadRepositoryImpl implements ProjectPageReadRepository 
       (resultSet, rowNumber) -> new AssayStanding(
           resultSet.getString("experiment_id"),
           resultSet.getString("experiment_name"),
-          AssayType.valueOf(resultSet.getString("measurement_type")),
+          AssayType.fromColumnValue(resultSet.getString("measurement_type")),
           resultSet.getString("method_label"),
           resultSet.getInt("measurements"),
           resultSet.getInt("measurements_with_primary_data"),

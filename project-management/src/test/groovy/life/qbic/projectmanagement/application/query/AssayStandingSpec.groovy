@@ -104,6 +104,28 @@ class AssayStandingSpec extends Specification {
                           AnalysisMethod.SEQ_ONLY].toSet()
   }
 
+  def "assay types resolve from both column conventions in this codebase"() {
+    // MeasurementDataQuery writes enum names; v_measurement_experiment and
+    // v_project_assay_standing write the short table codes. Reading the short codes with
+    // valueOf() threw "No enum constant AssayType.IP" on every row, which surfaced as a project
+    // page that silently showed no datasets.
+    expect:
+    AssayType.fromColumnValue("NGS") == AssayType.GENOMICS
+    AssayType.fromColumnValue("PXP") == AssayType.PROTEOMICS
+    AssayType.fromColumnValue("IP") == AssayType.IMMUNOPEPTIDOMICS
+    AssayType.fromColumnValue("GENOMICS") == AssayType.GENOMICS
+    AssayType.fromColumnValue("PROTEOMICS") == AssayType.PROTEOMICS
+    AssayType.fromColumnValue("IMMUNOPEPTIDOMICS") == AssayType.IMMUNOPEPTIDOMICS
+  }
+
+  def "an unknown measurement_type fails loudly instead of guessing"() {
+    when:
+    AssayType.fromColumnValue("SOMETHING_ELSE")
+
+    then:
+    thrown(IllegalArgumentException)
+  }
+
   def "every analysis method maps to exactly one domain"() {
     expect:
     AnalysisMethod.values().every { method -> AssayType.of(method) != null }

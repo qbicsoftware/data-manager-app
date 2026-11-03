@@ -31,6 +31,33 @@ public enum AssayType {
   IMMUNOPEPTIDOMICS;
 
   /**
+   * Resolves an assay type from the string a read model stores in its {@code measurement_type}
+   * column.
+   *
+   * <p><b>Two conventions exist in this codebase.</b> {@code MeasurementDataQuery} writes the enum
+   * names ({@code GENOMICS}, {@code PROTEOMICS}, {@code IMMUNOPEPTIDOMICS}), while
+   * {@code v_measurement_experiment} and {@code v_project_assay_standing} write the short table codes
+   * ({@code NGS}, {@code PXP}, {@code IP}). {@link #valueOf(String)} accepts only the first, so
+   * reading the second threw {@code No enum constant AssayType.IP} on every row -- which surfaced as
+   * a project page that silently showed no datasets.</p>
+   *
+   * @param value the column value, in either convention
+   * @throws IllegalArgumentException if the value matches neither
+   */
+  public static AssayType fromColumnValue(String value) {
+    if (value == null) {
+      throw new IllegalArgumentException("measurement_type must not be null");
+    }
+    return switch (value.trim().toUpperCase(java.util.Locale.ROOT)) {
+      case "NGS", "GENOMICS" -> GENOMICS;
+      case "PXP", "PROTEOMICS" -> PROTEOMICS;
+      case "IP", "IMMUNOPEPTIDOMICS" -> IMMUNOPEPTIDOMICS;
+      default -> throw new IllegalArgumentException(
+          "Unknown measurement_type: " + value);
+    };
+  }
+
+  /**
    * The domain an analysis method belongs to.
    *
    * <p>Every method maps to exactly one domain. Metabolomics methods are grouped with proteomics
