@@ -30,6 +30,7 @@ import life.qbic.datamanager.views.projects.project.experiments.experiment.creat
 import life.qbic.datamanager.views.projects.project.dataset.MeasurementDatasetMain;
 import life.qbic.datamanager.views.projects.project.samples.SampleInformationMain;
 import life.qbic.projectmanagement.application.api.ProjectQueryService;
+import life.qbic.projectmanagement.application.query.DataState;
 import life.qbic.projectmanagement.application.query.ExperimentProgress;
 import life.qbic.projectmanagement.application.query.RecentMeasurement;
 import life.qbic.projectmanagement.application.query.RecentSample;
@@ -161,19 +162,29 @@ public class ProjectExperimentsSection extends Div {
     return card;
   }
 
+  /**
+   * The experiment's newest samples.
+   *
+   * <p>The panel previews <em>recency</em>, which is the decision taken for both panels: the three
+   * rows are the newest, "Changed" is the column that carries the meaning, and the header band
+   * offers the way to the full list. The status line states the state once and then the age -- it
+   * used to repeat the tag's own word ("Registered" twice in two bands) which spent a band saying
+   * nothing.</p>
+   */
   private Div samplesPanel(ExperimentProgress experiment, List<RecentSample> samples) {
     boolean started = experiment.sampleCount() > 0;
     String status = samples.isEmpty()
-        ? "Nothing registered yet"
-        : "Registered · " + Utility.relativeTime(samples.getFirst().changed());
+        ? "No samples registered yet"
+        : "Newest sample " + Utility.relativeTime(samples.getFirst().changed());
     List<List<String>> rows = samples.stream()
         .map(sample -> List.of(sample.sampleCode(), sample.sampleName(),
             Utility.relativeTime(sample.changed())))
         .toList();
     return snapshotPanel("Samples", "samples", experiment.sampleCount(),
         started ? "Registered" : "Not started", started ? "done" : "active",
-        status, null, new String[]{"Sample ID", "Sample name", "Changed"}, rows,
+        status, null, null, new String[]{"Sample ID", "Sample name", "Changed"}, rows,
         "No samples to show yet",
+        started ? "All " + experiment.sampleCount() + " samples" : "",
         () -> navigate(SampleInformationMain.class, experiment.experimentId()));
   }
 
@@ -182,6 +193,9 @@ public class ProjectExperimentsSection extends Div {
     int missing = experiment.measurementsWithoutPrimaryData();
     boolean hasSamples = experiment.sampleCount() > 0;
 
+    // The state comes from the page's one vocabulary, so this panel cannot drift into its own word
+    // for the same condition. "Locked" stays separate: it is a prerequisite, not a data state.
+    DataState dataState = DataState.of(experiment.measurementsWithPrimaryData(), total);
     String state;
     String tone;
     if (!hasSamples) {
@@ -190,28 +204,33 @@ public class ProjectExperimentsSection extends Div {
     } else if (total == 0) {
       state = "Ready to register";
       tone = "active";
-    } else if (missing > 0) {
-      state = "Not complete yet";
-      tone = "incomplete";
     } else {
-      state = "Complete";
-      tone = "done";
+      state = DataStateLabel.word(dataState);
+      tone = switch (dataState) {
+        case COMPLETE -> "done";
+        case PARTIAL -> "partial";
+        case WAITING, AT_RISK -> "waiting";
+      };
     }
+    // The state in words once, then the age. The deficit is stated in the metric band, beside the
+    // count it belongs to, rather than repeated here.
     String status = total == 0
-        ? "Nothing registered yet"
-        : (missing > 0
-            ? missing + " measurements still need primary data"
-            : "All " + total + " have primary data")
-            + " · " + Utility.relativeTime(newest(measurements));
+        ? "No measurements registered yet"
+        : "Newest measurement " + Utility.relativeTime(newest(measurements));
 
     List<List<String>> rows = measurements.stream()
         .map(measurement -> List.of(measurement.measurementCode(), primaryDataLabel(measurement),
             Utility.relativeTime(measurement.changed())))
         .toList();
-    return snapshotPanel("Dataset", "measurements", total, state, tone, status,
-        completenessRing(experiment),
+    // The deficit is the qualifier when there is one: it is the actionable half of the count.
+    String qualifier = total == 0 || missing == 0
+        ? null
+        : "%d of %d need primary data".formatted(missing, total);
+    return snapshotPanel("Measurement dataset", "measurements", total, state, tone, status,
+        qualifier, completenessRing(experiment),
         new String[]{"Measurement ID", "Primary data", "Changed"}, rows,
         "No measurements to show yet",
+        total > 0 ? "All " + total + " measurements" : "",
         () -> navigate(MeasurementDatasetMain.class, experiment.experimentId()));
   }
 
@@ -231,12 +250,28 @@ public class ProjectExperimentsSection extends Div {
     return new CompletenessRing(withData, total, aria);
   }
 
+  /**
+   * One snapshot panel, as five identical bands.
+   *
+   * <p><b>Why the bands are fixed.</b> The two panels sit side by side and are read against each
+   * other, so every band must land on the same baseline in both: header, metric, status, table. The
+   * Dataset panel used to carry its completeness ring in the <em>header</em> row, which pushed its
+   * metric, status and table a whole line below the Samples panel's -- the two read as two different
+   * layouts that happened to be adjacent. The ring is now the metric's companion, inside the metric
+   * band, so it cannot disturb the bands above or below it.</p>
+   *
+   * <p><b>Why the metric band states the deficit, not just the total.</b> "17 measurements" alone is
+   * the least useful number in the Dataset panel: the question is how many of them have data. The
+   * denial and the deficit are one band, at near-equal weight, so the panel cannot emphasise the
+   * denominator while burying the gap.</p>
+   */
   private Div snapshotPanel(String label, String unit, int count, String state, String tone,
-      String status, Component accessory, String[] columns, List<List<String>> rows,
-      String emptyRow, Runnable open) {
+      String status, String qualifier, Component accessory, String[] columns,
+      List<List<String>> rows, String emptyRow, String allRowsText, Runnable open) {
     Div panel = new Div();
     panel.addClassName("project-exp-panel");
 
+    // Band 1: what this panel is, its state, and the way in.
     Div head = new Div();
     head.addClassName("project-exp-panel-head");
     Span labelSpan = new Span(label);
@@ -248,12 +283,9 @@ public class ProjectExperimentsSection extends Div {
     Span openHint = new Span("Open " + label.toLowerCase());
     openHint.addClassName("project-exp-panel-open");
     head.add(openHint);
-    if (accessory != null) {
-      accessory.addClassName("project-exp-panel-accessory");
-      head.add(accessory);
-    }
     panel.add(head);
 
+    // Band 2: the count, with its accessory beside it rather than floating in the header.
     Div metric = new Div();
     metric.addClassName("project-exp-panel-metric");
     Span value = new Span(Integer.toString(count));
@@ -261,15 +293,38 @@ public class ProjectExperimentsSection extends Div {
     Span unitSpan = new Span(unit);
     unitSpan.addClassName("project-exp-panel-unit");
     metric.add(value, unitSpan);
+    // The qualifier is the fact that gives the count its meaning -- "12 of 17 need primary data" --
+    // and it sits with the count rather than in the quiet status line below, so the panel cannot
+    // emphasise the denominator while burying the gap.
+    if (qualifier != null && !qualifier.isBlank()) {
+      Span qualifierSpan = new Span(qualifier);
+      qualifierSpan.addClassName("project-exp-panel-qualifier");
+      metric.add(qualifierSpan);
+    }
+    if (accessory != null) {
+      accessory.addClassName("project-exp-panel-accessory");
+      metric.add(accessory);
+    }
     panel.add(metric);
 
+    // Band 3: the state in words. One line, so both panels keep the same rhythm.
     Span statusSpan = new Span(status);
     statusSpan.addClassName("project-exp-panel-status");
     panel.add(statusSpan);
 
     Div list = new Div();
     list.addClassName("project-exp-panel-rows");
-    list.add(row(columns, true));
+    Div tableHead = new Div();
+    tableHead.addClassName("project-exp-panel-rows-head");
+    tableHead.add(row(columns, true));
+    if (allRowsText != null && !allRowsText.isBlank()) {
+      // The panel previews three records, so it has to say so and offer the rest. Without this the
+      // three rows read as the whole set.
+      Span all = new Span(allRowsText + " \u2192");
+      all.addClassName("project-exp-panel-all");
+      tableHead.add(all);
+    }
+    list.add(tableHead);
     if (rows.isEmpty()) {
       list.add(placeholderRow(emptyRow));
     } else {

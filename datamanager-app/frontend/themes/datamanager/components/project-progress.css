@@ -143,6 +143,20 @@
   color: var(--lumo-base-color);
 }
 
+/* Partial is a half-filled disc: a tick would claim completion and an info circle would claim a
+   problem, and a stage that is part-way is neither. */
+.project-progress-step--partial .project-progress-marker {
+  border-color: var(--info-color, var(--lumo-primary-color));
+  background: linear-gradient(90deg,
+      var(--info-color, var(--lumo-primary-color)) 50%,
+      var(--lumo-base-color) 50%);
+  color: var(--lumo-secondary-text-color);
+}
+
+.project-progress-step--partial .project-progress-connector {
+  background-color: var(--info-color, var(--lumo-primary-color));
+}
+
 .project-progress-step--incomplete .project-progress-marker {
   border-color: var(--info-border, var(--lumo-contrast-40pct));
   background-color: var(--info-surface, var(--lumo-contrast-5pct));
@@ -369,15 +383,10 @@
   display: contents;
 }
 
-/* The middot between the method and its dataset count is punctuation, not a cell: drawn here so it
-   does not claim a column of its own. */
-.project-progress-assay-datasets::before {
-  content: "\00b7";
-  /* Pulled back into the grid gap so the dot hugs the method, and given a small trailing space so it
-     does not touch the count. Without the negative inset the gap doubled up in front of it. */
-  margin-inline: calc(-1 * var(--lumo-space-s) + var(--lumo-space-xs)) var(--lumo-space-xs);
-  color: var(--lumo-contrast-30pct);
-}
+/* No separator dot. It was drawn as a ::before inside the dataset-count cell, which pushed that
+   cell's text a few pixels right of the column every other row's count starts on -- punctuation
+   inside a grid cell shifts the cell's content, and the column it was meant to respect is the thing
+   it broke. The grid gap already separates the method from its count. */
 
 /* The method abbreviation is the identity a reader recognises -- "WES", "16S", "RNA-SEQ" -- so it
    takes body weight and body colour. The full label is the tooltip. */
@@ -397,19 +406,37 @@
   white-space: nowrap;
 }
 
+/* Waiting is the normal, time-dependent state of a registered measurement whose data the facility
+   has not uploaded yet, so it is neutral: amber would spend the strongest colour on the least
+   alarming fact and leave nothing for a real one. */
 .project-progress-assay-state--waiting {
-  color: var(--lumo-warning-text-color, var(--lumo-body-text-color));
+  color: var(--lumo-secondary-text-color);
+  font-weight: 400;
 }
 
-.project-progress-assay-state--available {
+/* Partial is neither success nor absence, so it takes the informational tone. */
+.project-progress-assay-state--partial {
+  color: var(--info-text-color, var(--lumo-primary-text-color));
+}
+
+.project-progress-assay-state--complete {
   color: var(--lumo-success-text-color, var(--lumo-body-text-color));
 }
 
+/* Reserved: nothing computes it yet. Amber exists here so that when something genuinely needs a
+   steward's attention it has a colour that has not been spent elsewhere. */
+.project-progress-assay-state--at-risk {
+  color: var(--lumo-warning-text-color, var(--lumo-body-text-color));
+}
+
+/* Right-aligned numeric column: the counts share a right edge down the card, so they can be compared
+   without reading the label each time. */
 .project-progress-assay-count {
   font-size: var(--lumo-font-size-xs);
   color: var(--lumo-secondary-text-color);
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
+  text-align: right;
 }
 
 /* The dataset count qualifies the method -- "two experiments were measured as WGS" -- so it trails

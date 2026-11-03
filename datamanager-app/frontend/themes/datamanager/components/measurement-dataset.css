@@ -318,8 +318,12 @@
   font-weight: var(--font-weight-medium);
 }
 
+/* Waiting is the normal, time-dependent state of a registered measurement whose data has not been
+   uploaded yet -- not a warning. It is neutral here for the same reason it is neutral on the project
+   page: the two surfaces report one axis, so they must not colour it two ways. Amber is reserved for
+   a state that genuinely needs a steward's attention. */
 .measurement-dataset-status--waiting {
-  color: var(--warning-text-color);
+  color: var(--lumo-secondary-text-color);
 }
 
 .measurement-dataset-status--available {

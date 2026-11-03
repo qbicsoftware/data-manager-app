@@ -141,9 +141,17 @@
   color: var(--lumo-success-text-color, var(--lumo-secondary-text-color));
 }
 
-.project-exp-panel-state--incomplete {
+/* Partial: some data has arrived, so it takes the informational tone rather than the warning one. */
+.project-exp-panel-state--partial {
   background-color: var(--info-surface, var(--lumo-contrast-10pct));
-  color: var(--info-text-color, var(--lumo-error-text-color));
+  color: var(--info-text-color, var(--lumo-primary-text-color));
+}
+
+/* Waiting: nothing has arrived yet, which is the normal state of the process. Neutral, not amber --
+   amber would spend the strongest colour on the least alarming fact. */
+.project-exp-panel-state--waiting {
+  background-color: var(--lumo-contrast-5pct);
+  color: var(--lumo-secondary-text-color);
 }
 
 .project-exp-panel-state--active {
@@ -164,6 +172,9 @@
 /* The Dataset panel's completeness ring, top-right of the panel head. The "Open" hint is no longer
    right-aligned: the ring owns the auto margin, so both panels' heads start at the same left edge
    and only the ring sits at the right. */
+/* The accessory now lives in the metric band beside the count, not in the header row. In the header
+   it pushed the whole panel's metric, status and table one line below its neighbour's, so the two
+   panels never shared a baseline. */
 .project-exp-panel-accessory {
   margin-left: auto;
 }
@@ -177,6 +188,19 @@
   display: flex;
   align-items: baseline;
   gap: var(--lumo-space-xs);
+  /* Fixed height, so both panels' status lines and tables start on the same baseline whether or not
+     this panel carries an accessory (the completeness ring is taller than the count's own line). */
+  min-height: 2.5rem;
+}
+
+/* The deficit beside the count: the fact that gives the total its meaning. Near-equal weight to the
+   value, because "17 measurements" alone is the least useful number in the panel. */
+.project-exp-panel-qualifier {
+  font-size: var(--lumo-font-size-s);
+  font-weight: 500;
+  color: var(--lumo-body-text-color);
+  line-height: var(--lumo-line-height-xs);
+  max-width: 18ch;
 }
 
 .project-exp-panel-value {
@@ -193,6 +217,26 @@
 .project-exp-panel-status {
   font-size: var(--lumo-font-size-s);
   color: var(--lumo-secondary-text-color);
+}
+
+/* The table's header band: column labels, plus the way to the full list. The panel shows three rows
+   and has to say so, or they read as the whole set. */
+.project-exp-panel-rows-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--lumo-space-s);
+}
+
+.project-exp-panel-rows-head .project-exp-panel-row {
+  flex: 1 1 auto;
+}
+
+.project-exp-panel-all {
+  flex: 0 0 auto;
+  font-size: var(--lumo-font-size-xs);
+  font-weight: 500;
+  color: var(--lumo-primary-text-color);
+  white-space: nowrap;
 }
 
 .project-exp-panel-rows {

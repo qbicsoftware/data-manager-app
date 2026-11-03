@@ -42,6 +42,7 @@ import life.qbic.projectmanagement.application.associated_dataset.AssociatedData
 import life.qbic.projectmanagement.application.associated_dataset.ConnectedDatasetView;
 import life.qbic.projectmanagement.application.api.ProjectQueryService;
 import life.qbic.projectmanagement.application.query.AssayStanding;
+import life.qbic.projectmanagement.application.query.DataState;
 import life.qbic.projectmanagement.application.query.AssayType;
 import life.qbic.projectmanagement.application.query.ExperimentProgress;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
@@ -234,10 +235,16 @@ public class ProjectProgressSection extends Div {
     rail.add(step(1, "Experiment", pluralise(progress.size(), "experiment created",
             "experiments created"),
         State.DONE, () -> navigate(ExperimentInformationMain.class, firstExperiment)));
+    // "Done" means every experiment has samples, not that the stage has been reached. The rail used
+    // to mark this stage done as soon as one experiment had a sample, so it showed a green check
+    // beside a headline reading "4 of 9 experiments have registered samples" -- a contradiction the
+    // reader has to resolve. Some is Partial; none is Todo.
+    long withSamples = progress.stream().filter(entry -> entry.sampleCount() > 0).count();
     rail.add(step(2, "Samples", samples > 0
             ? pluralise(samples, "sample registered", "samples registered")
             : "None registered yet",
-        samples > 0 ? State.DONE : State.TODO,
+        samples == 0 ? State.TODO
+            : withSamples == progress.size() ? State.DONE : State.PARTIAL,
         () -> navigate(SampleInformationMain.class, firstExperiment)));
     // The Dataset stage keeps the completeness ring as its marker. This is deliberate for now: the
     // ring is in use on three other surfaces and the rail is the only place it meets plain discs, so
@@ -248,7 +255,13 @@ public class ProjectProgressSection extends Div {
         primaryDatasetsRing(withData, measurements, missing),
         "Dataset",
         datasetDetail(withData, measurements, missing),
-        missing > 0 ? State.INCOMPLETE : State.DONE,
+        switch (DataState.of(withData, measurements)) {
+          case COMPLETE -> State.DONE;
+          case WAITING -> State.TODO;
+          // Partial is the interesting one, and it is neither: the ring already shows how far along
+          // it is, so the marker carries "in progress" without claiming success or failure.
+          case PARTIAL, AT_RISK -> State.PARTIAL;
+        },
         () -> navigate(MeasurementDatasetMain.class, firstExperiment)));
     return rail;
   }
@@ -303,6 +316,9 @@ public class ProjectProgressSection extends Div {
     marker.addClassName("project-progress-marker");
     switch (state) {
       case DONE -> marker.add(icon(VaadinIcon.CHECK));
+      // Partial is marked with a diagonal split instead of a glyph: a tick would claim completion and
+      // an info circle would claim a problem, and it is neither.
+      case PARTIAL -> marker.addClassName("project-progress-marker--partial");
       case INCOMPLETE -> marker.add(icon(VaadinIcon.INFO_CIRCLE));
       case ACTIVE -> marker.setText(Integer.toString(ordinal));
       case LOCKED -> marker.add(icon(VaadinIcon.LOCK));
@@ -417,7 +433,7 @@ public class ProjectProgressSection extends Div {
   private Div primaryDataCard(List<AssayStanding> datasets) {
     Div card = new Div();
     card.addClassName("project-progress-datasets-card");
-    card.add(cardTitle("Primary datasets"));
+    card.add(cardTitle("Measurement datasets"));
 
     if (datasets.isEmpty()) {
       card.add(cardFact(
@@ -436,7 +452,7 @@ public class ProjectProgressSection extends Div {
 
     // The card is the project grain of the Datasets page, so it opens that page: the per-experiment
     // breakdown, the individual measurements and their primary data all live there.
-    makeNavigable(card, "Open primary datasets", () -> getUI().ifPresent(
+    makeNavigable(card, "Open measurement datasets", () -> getUI().ifPresent(
         ui -> ui.navigate(ProjectDatasetsMain.class, projectParameters())));
     return card;
   }
@@ -551,28 +567,23 @@ public class ProjectProgressSection extends Div {
   }
 
   /**
-   * The row's data state: <b>Waiting for data</b> or <b>Data available</b>.
+   * The row's data state, from the one vocabulary the whole page uses.
    *
-   * <p>Both phrases name what is waited for. The dataset list can say "Waiting" alone because its
-   * column header scopes the word to <em>Data</em>; a card with no header cannot, and a bare
-   * "Waiting" beside a list of experiments reads as something still loading.</p>
+   * <p>Three possible words, not two: a method holding some of its measurements' data is
+   * <em>Partially available</em>, which is neither "everything arrived" nor "nothing arrived". The
+   * phrase names what is waited for because this card has no column header to scope a bare
+   * "Waiting" to data -- beside a list of experiments the short form reads as a loading spinner.</p>
    *
-   * <p>Two states, not three. A method with no measurements registered is <em>Waiting for data</em>
-   * too -- nothing has been uploaded for it, which is exactly what the phrase means. A third
-   * "nothing registered" state would draw a distinction the reader does not act on differently: the
-   * next step is the same in both cases, and the count beside the phrase says how much is
-   * outstanding.</p>
-   *
-   * <p>The phrase carries the state on its own, so colour is reinforcement and never the only
-   * signal -- the same rule the dataset list's status column follows.</p>
+   * <p>Colour reinforces and never carries the state alone, matching the dataset list's status
+   * column. Waiting is neutral, not amber: a measurement whose data has not been uploaded yet is the
+   * normal state of the process, and amber is reserved for {@link DataState#AT_RISK}.</p>
    */
   private static Span assayState(AssayRollup assay) {
-    Span state = new Span(assay.complete() ? "Data available" : "Waiting for data");
-    state.addClassNames("project-progress-assay-state",
-        assay.complete()
-            ? "project-progress-assay-state--available"
-            : "project-progress-assay-state--waiting");
-    return state;
+    DataState state = DataState.of(assay.withData(), assay.measurements());
+    Span label = new Span(DataStateLabel.phrase(state));
+    label.addClassNames("project-progress-assay-state",
+        "project-progress-assay-state--" + DataStateLabel.modifier(state));
+    return label;
   }
 
   /**
@@ -605,13 +616,13 @@ public class ProjectProgressSection extends Div {
   private Div connectedAssetsCard(List<ConnectedDatasetView> connected) {
     Div card = new Div();
     card.addClassName("project-progress-datasets-card");
-    makeNavigable(card, "Open connected datasets", () -> getUI().ifPresent(
+    makeNavigable(card, "Open linked datasets", () -> getUI().ifPresent(
         ui -> ui.navigate(ProjectDatasetsMain.class, projectParameters())));
     // The count and the provider are the card's headline fact, so they lead in body weight and the
     // repository is set apart in secondary text -- rather than one em-dash construction per card,
     // which made both cards read as a caption with a fact bolted onto it.
     if (connected.isEmpty()) {
-      card.add(cardTitle("Connected datasets"));
+      card.add(cardTitle("Linked datasets"));
       card.add(cardFact("None linked yet"));
       return card;
     }
@@ -619,7 +630,7 @@ public class ProjectProgressSection extends Div {
     // the same word three times beside the fields that actually differ. When they agree it moves
     // into the card title; when they do not, each row keeps its own.
     String sharedProvider = sharedProvider(connected);
-    Div title = cardTitle("Connected datasets");
+    Div title = cardTitle("Linked datasets");
     Span count = new Span(" %d ".formatted(connected.size()));
     count.addClassName("project-progress-datasets-card-title-fact");
     title.add(count);
@@ -773,7 +784,13 @@ public class ProjectProgressSection extends Div {
   }
 
   private enum State {
-    DONE("done"), INCOMPLETE("incomplete"), ACTIVE("active"), LOCKED("locked"), TODO("todo");
+    DONE("done"),
+    /** Started but not finished: neither success nor absence. */
+    PARTIAL("partial"),
+    INCOMPLETE("incomplete"),
+    ACTIVE("active"),
+    LOCKED("locked"),
+    TODO("todo");
 
     private final String css;
 

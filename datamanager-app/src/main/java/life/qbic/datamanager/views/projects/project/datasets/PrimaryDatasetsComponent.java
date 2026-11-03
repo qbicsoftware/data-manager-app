@@ -68,7 +68,7 @@ public class PrimaryDatasetsComponent extends Div {
     // The band titles itself. Without it the page had one named half and one nameless block above
     // it, which read as a band plus an orphan rather than as two halves of one page.
     var header = new SectionHeader(
-        new SectionTitle("Primary datasets", SectionTitle.Size.MEDIUM));
+        new SectionTitle("Measurement datasets", SectionTitle.Size.MEDIUM));
     Section section = new Section.SectionBuilder().withHeader(header).build();
     body.addClassName("project-datasets-primary-body");
     section.content().add(body);

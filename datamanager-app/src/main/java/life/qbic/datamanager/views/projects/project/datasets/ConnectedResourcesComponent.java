@@ -89,7 +89,7 @@ public class ConnectedResourcesComponent extends Div {
     addClassName("datasets-content");
 
     // ── Action bar (always visible) ──────────────────────────────────
-    connectButton = new Button("Connect Datasets", VaadinIcon.PLUS_CIRCLE.create());
+    connectButton = new Button("Link datasets", VaadinIcon.PLUS_CIRCLE.create());
     connectButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     connectButton.addClickListener(e -> fireConnectDatasetsClick());
 
@@ -109,7 +109,7 @@ public class ConnectedResourcesComponent extends Div {
     // Medium: this is a band of the Datasets page now, not the page heading. The page itself
     // titles at LARGE, above both halves.
     var header = new SectionHeader(
-        new SectionTitle("Connected datasets", SectionTitle.Size.MEDIUM),
+        new SectionTitle("Linked datasets", SectionTitle.Size.MEDIUM),
         actionBar,
         note
     );
