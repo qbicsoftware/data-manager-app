@@ -132,6 +132,27 @@ public enum AnalysisMethod {
   }
 
   /**
+   * Whether this value names an <b>assay</b>, as opposed to a workflow scope.
+   *
+   * <p>Three values in this enum are not methods at all, and the ontology mapping confirms it: none of
+   * them has an OBI term, and each is described as a <em>workflow scope</em> by the domain experts
+   * (see the terminology table recorded on #1660):</p>
+   *
+   * <ul>
+   *   <li>{@link #ISOLATION_ONLY} — isolation only, no sequencing;</li>
+   *   <li>{@link #QC_ONLY} — quality control only, no sequencing;</li>
+   *   <li>{@link #SEQ_ONLY} — sequencing of ready-to-sequence pools.</li>
+   * </ul>
+   *
+   * <p>They describe which steps are carried out, not what was measured, so they must not be treated
+   * as the type of a measurement dataset: a sample registered as {@code QC-ONLY} does not produce a
+   * dataset, and grouping by this enum without this check invents one.</p>
+   */
+  public boolean isAssay() {
+    return this != ISOLATION_ONLY && this != QC_ONLY && this != SEQ_ONLY;
+  }
+
+  /**
    * Provides the abbreviation for a certain analysis method.
    * <p>
    * Example: WES for whole exome sequencing

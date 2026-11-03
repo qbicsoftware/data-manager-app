@@ -95,6 +95,10 @@
 --    This is not an error. It follows the precedent already documented for measurements spanning
 --    experiments (trap 3 in create-project-page-read-models.sql).
 --
+--  * Samples registered with a WORKFLOW SCOPE rather than an assay (ISOLATION-ONLY, QC-ONLY,
+--    SEQ-ONLY) are excluded. None of the three has an OBI term; they describe which steps are
+--    performed, not what was measured, so they cannot type a dataset. See AnalysisMethod.isAssay().
+--
 --  * Samples with NULL/blank analysis_method AND no measurement method are EXCLUDED rather than
 --    grouped into an "unknown"
 --    dataset. A dataset that cannot be typed cannot be chosen for an analysis, and materialising an
@@ -128,6 +132,11 @@ WITH project_samples AS (
     -- Every project's samples, with the analysis method that types their dataset. No project filter
     -- here: the view is project-agnostic and callers filter on project_id, so one derivation serves
     -- every surface.
+    --
+    -- ISOLATION-ONLY / QC-ONLY / SEQ-ONLY are EXCLUDED: they name a workflow scope, not an assay.
+    -- None of the three has an OBI term (domain experts, terminology table on #1660), and a sample
+    -- registered as one of them does not produce a measurement dataset -- grouping it would invent a
+    -- dataset that is not a dataset.
     SELECT s.sample_id,
            s.project_id,
            s.experiment_id,
@@ -136,6 +145,7 @@ WITH project_samples AS (
     WHERE s.experiment_id IS NOT NULL
       AND s.analysis_method IS NOT NULL
       AND s.analysis_method <> ''
+      AND s.analysis_method NOT IN ('ISOLATION_ONLY', 'QC_ONLY', 'SEQ_ONLY')
 ),
 measurement_sample AS (
     -- measurement -> the samples it measured, plus whatever the MEASUREMENT itself records as its

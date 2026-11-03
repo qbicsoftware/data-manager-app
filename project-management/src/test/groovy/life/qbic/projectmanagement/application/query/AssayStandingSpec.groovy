@@ -78,6 +78,32 @@ class AssayStandingSpec extends Specification {
     AnalysisMethod.WES != AnalysisMethod.RNA_SEQ
   }
 
+  def "workflow scopes are not assays and cannot type a dataset"() {
+    // None of the three has an OBI term; the domain experts describe each as a workflow scope.
+    // A sample registered as one of them does not produce a measurement dataset.
+    expect:
+    !AnalysisMethod.ISOLATION_ONLY.isAssay()
+    !AnalysisMethod.QC_ONLY.isAssay()
+    !AnalysisMethod.SEQ_ONLY.isAssay()
+  }
+
+  def "real assays are assays"() {
+    expect:
+    AnalysisMethod.WGS.isAssay()
+    AnalysisMethod.RNA_SEQ.isAssay()
+    AnalysisMethod.SIXTEEN_S.isAssay()
+    AnalysisMethod.PROTEOMICS.isAssay()
+  }
+
+  def "exactly the three workflow scopes are excluded, no more"() {
+    given:
+    def notAssays = AnalysisMethod.values().findAll { !it.isAssay() }
+
+    expect:
+    notAssays.toSet() == [AnalysisMethod.ISOLATION_ONLY, AnalysisMethod.QC_ONLY,
+                          AnalysisMethod.SEQ_ONLY].toSet()
+  }
+
   def "every analysis method maps to exactly one domain"() {
     expect:
     AnalysisMethod.values().every { method -> AssayType.of(method) != null }
