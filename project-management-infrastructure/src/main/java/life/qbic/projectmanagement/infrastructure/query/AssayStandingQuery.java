@@ -52,7 +52,11 @@ final class AssayStandingQuery {
           -- measurement -> the samples it measured, plus whatever the MEASUREMENT records as its
           -- method. Only PXP and IP record one (lcmsMethod); NGS records nothing.
           SELECT smm.measurement_id, m.measurementCode AS measurement_code, 'NGS' AS measurement_type,
-                 CAST(NULL AS CHAR) AS measurement_method,
+                 -- Explicitly collated: a bare CAST(NULL AS CHAR) takes the connection collation and
+                 -- UNION refuses to mix that with the utf8mb4_unicode_ci of lcmsMethod in the other
+                 -- two branches ("Illegal mix of collations for operation 'UNION'").
+                 CAST(NULL AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci
+                     AS measurement_method,
                  ps.sample_id
           FROM ngs_measurements m
                    JOIN specific_measurement_metadata_ngs smm
@@ -61,7 +65,7 @@ final class AssayStandingQuery {
                         ON ps.sample_id = smm.sample_id COLLATE utf8mb4_unicode_ci
           UNION
           SELECT smm.measurement_id, p.measurementCode, 'PXP',
-                 NULLIF(TRIM(p.lcmsMethod), ''),
+                 NULLIF(TRIM(p.lcmsMethod), '') COLLATE utf8mb4_unicode_ci,
                  ps.sample_id
           FROM proteomics_measurement p
                    JOIN specific_measurement_metadata_pxp smm
@@ -70,7 +74,7 @@ final class AssayStandingQuery {
                         ON ps.sample_id = smm.sample_id COLLATE utf8mb4_unicode_ci
           UNION
           SELECT smm.measurement_id, ip.measurementCode, 'IP',
-                 NULLIF(TRIM(ip.lcmsMethod), ''),
+                 NULLIF(TRIM(ip.lcmsMethod), '') COLLATE utf8mb4_unicode_ci,
                  ps.sample_id
           FROM ip_measurements ip
                    JOIN specific_measurement_metadata_ip smm
@@ -84,8 +88,10 @@ final class AssayStandingQuery {
       dataset_measurements AS (
           SELECT DISTINCT ps.experiment_id,
                           ms.measurement_type,
-                          COALESCE(ms.measurement_method, CAST(ps.analysis_method AS CHAR))
-                              AS method_label,
+                          COALESCE(ms.measurement_method,
+                                  CAST(ps.analysis_method AS CHAR CHARACTER SET utf8mb4)
+                                      COLLATE utf8mb4_unicode_ci)
+                                  AS method_label,
                           ms.measurement_id,
                           ms.measurement_code
           FROM measurement_sample ms
