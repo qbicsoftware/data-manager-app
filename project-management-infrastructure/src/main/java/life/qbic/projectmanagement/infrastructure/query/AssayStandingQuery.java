@@ -61,7 +61,8 @@ final class AssayStandingQuery {
           SELECT smm.measurement_id, m.measurementCode AS measurement_code, 'NGS' AS measurement_type,
                  COALESCE(JSON_UNQUOTE(JSON_EXTRACT(m.instrument, '$.label')),
                           JSON_UNQUOTE(JSON_EXTRACT(m.instrument, '$.name')))
-                     COLLATE utf8mb4_unicode_ci,
+                     COLLATE utf8mb4_unicode_ci
+                     AS instrument_label,
                  ps.sample_id
           FROM ngs_measurements m
                    JOIN specific_measurement_metadata_ngs smm
@@ -72,7 +73,8 @@ final class AssayStandingQuery {
           SELECT smm.measurement_id, p.measurementCode, 'PXP',
                  COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p.instrument, '$.label')),
                           JSON_UNQUOTE(JSON_EXTRACT(p.instrument, '$.name')))
-                     COLLATE utf8mb4_unicode_ci,
+                     COLLATE utf8mb4_unicode_ci
+                     AS instrument_label,
                  ps.sample_id
           FROM proteomics_measurement p
                    JOIN specific_measurement_metadata_pxp smm
@@ -83,7 +85,8 @@ final class AssayStandingQuery {
           SELECT smm.measurement_id, ip.measurementCode, 'IP',
                  COALESCE(JSON_UNQUOTE(JSON_EXTRACT(ip.instrument, '$.label')),
                           JSON_UNQUOTE(JSON_EXTRACT(ip.instrument, '$.name')))
-                     COLLATE utf8mb4_unicode_ci,
+                     COLLATE utf8mb4_unicode_ci
+                     AS instrument_label,
                  ps.sample_id
           FROM ip_measurements ip
                    JOIN specific_measurement_metadata_ip smm

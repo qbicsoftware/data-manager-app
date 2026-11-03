@@ -52,9 +52,9 @@
 -- THE GRANDFATHER RELATION (read before changing this view)
 -- =============================================================================
 --
--- The analysis method is currently annotated on the SAMPLE (sample.analysis_method), not on the
--- measurement. That is the wrong home: one extract can legitimately yield several analysis methods,
--- so the method is a property of the measurement. It cannot simply be moved, because:
+-- method_label comes from the SAMPLE (sample.analysis_method), not the measurement. That is the wrong
+-- home: one extract can legitimately yield several analysis methods, so the method is a property of
+-- the measurement. It cannot simply be moved, because:
 --
 --   1. it is populated for existing projects and is their only source;
 --   2. moving it creates a period with the information in TWO places;
@@ -63,8 +63,7 @@
 --
 -- Therefore the sample annotation is a PERMANENTLY SUPPORTED source -- a grandfather relation, not
 -- a temporary hack -- and this view is the ONE place allowed to read it to type a dataset
--- (see ADR 0010). When the measurement carries its own annotation, the resolution changes HERE
--- (prefer the measurement, fall back to the sample) and no consumer changes.
+-- (see ADR 0010).
 --
 -- DO NOT resolve the analysis method from sample.analysis_method anywhere else. A second call site
 -- doubles the migration surface and lets two surfaces disagree.
@@ -73,10 +72,11 @@
 -- SEMANTICS
 -- =============================================================================
 --
---  * Grain: one row per (experiment_id, measurement_type, method_label). The measurement type is the
---    omics domain; the method label is resolved as described above and may be free text.
---    Two experiments measured as WES are two datasets; one experiment measured as WES and RNA-Seq
---    is also two.
+--  * Grain: one row per (experiment_id, measurement_type, method_label, instrument_label). The
+--    measurement type is the omics domain; method_label is the sample's controlled enum; and
+--    instrument_label is the measurement's vocabulary term, which may be NULL when none was recorded.
+--    Two experiments measured as WES are two datasets; one experiment measured as WES and RNA-Seq is
+--    also two; and one method measured on two instruments is two as well.
 --
 --  * Analysis-method attribution goes through the samples a measurement measured
 --    (measurement -> specific_measurement_metadata_* -> sample). Verified against the same join
@@ -159,7 +159,8 @@ measurement_sample AS (
     SELECT smm.measurement_id, m.measurementCode AS measurement_code, 'NGS' AS measurement_type,
            COALESCE(JSON_UNQUOTE(JSON_EXTRACT(m.instrument, '$.label')),
                     JSON_UNQUOTE(JSON_EXTRACT(m.instrument, '$.name')))
-               COLLATE utf8mb4_unicode_ci,
+               COLLATE utf8mb4_unicode_ci
+               AS instrument_label,
            ps.sample_id
     FROM ngs_measurements m
              JOIN specific_measurement_metadata_ngs smm
@@ -170,7 +171,8 @@ measurement_sample AS (
     SELECT smm.measurement_id, p.measurementCode, 'PXP',
            COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p.instrument, '$.label')),
                     JSON_UNQUOTE(JSON_EXTRACT(p.instrument, '$.name')))
-               COLLATE utf8mb4_unicode_ci,
+               COLLATE utf8mb4_unicode_ci
+               AS instrument_label,
            ps.sample_id
     FROM proteomics_measurement p
              JOIN specific_measurement_metadata_pxp smm
@@ -181,7 +183,8 @@ measurement_sample AS (
     SELECT smm.measurement_id, ip.measurementCode, 'IP',
            COALESCE(JSON_UNQUOTE(JSON_EXTRACT(ip.instrument, '$.label')),
                     JSON_UNQUOTE(JSON_EXTRACT(ip.instrument, '$.name')))
-               COLLATE utf8mb4_unicode_ci,
+               COLLATE utf8mb4_unicode_ci
+               AS instrument_label,
            ps.sample_id
     FROM ip_measurements ip
              JOIN specific_measurement_metadata_ip smm
