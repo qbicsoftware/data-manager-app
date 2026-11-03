@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Map;
 import java.util.stream.Collectors;
+import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.CompletenessRing;
 import life.qbic.datamanager.views.general.ReactiveUiBridge;
@@ -361,7 +362,7 @@ public class ExperimentOverviewComponent extends Div {
     return snapshotCard("Samples", "samples", progress.sampleCount(),
         started ? "Registered" : "Not started", started ? "done" : "active", note(status), null,
         new String[]{"Sample ID", "Sample name", "Changed"}, rows, "No samples to show yet",
-        SampleInformationMain.class);
+        AppRoutes.ProjectRoutes.SAMPLES);
   }
 
   private Div datasetCard(ExperimentProgress progress, List<RecentMeasurement> measurements) {
@@ -390,7 +391,7 @@ public class ExperimentOverviewComponent extends Div {
     return snapshotCard("Dataset", "measurements", total, state, tone,
         note(gapSentence(progress)), completenessRing(progress),
         new String[]{"Measurement ID", "Primary data", "Changed"}, rows,
-        "No measurements to show yet", MeasurementDatasetMain.class);
+        "No measurements to show yet", AppRoutes.ProjectRoutes.MEASUREMENT_DATASET);
   }
 
   /**
@@ -429,7 +430,7 @@ public class ExperimentOverviewComponent extends Div {
 
   private Div snapshotCard(String label, String unit, int count, String state, String tone,
       Component status, Component accessory, String[] columns, List<List<String>> rows,
-      String emptyRow, Class<? extends Component> openTarget) {
+      String emptyRow, String openHref) {
     Div panel = new Div();
     panel.addClassName("experiment-overview-card");
 
@@ -439,9 +440,10 @@ public class ExperimentOverviewComponent extends Div {
     labelSpan.addClassName("experiment-overview-card-label");
     // A real anchor, not a styled Span: the span looked like a link, was not focusable, could not be
     // opened in a new tab and was not announced as a link.
-    head.add(surfaceIcon(label), labelSpan,
-        stateTag(state, tone),
-        Utility.routeLink("Open " + label.toLowerCase(), openTarget, routeParameters(),
+    head.add(surfaceIcon(label), labelSpan, stateTag(state, tone),
+        Utility.textLink("Open " + label.toLowerCase(),
+            openHref.formatted(context.projectId().orElseThrow().value(),
+                context.experimentId().orElseThrow().value()),
             "experiment-overview-open"));
     if (accessory != null) {
       accessory.addClassName("experiment-overview-card-accessory");

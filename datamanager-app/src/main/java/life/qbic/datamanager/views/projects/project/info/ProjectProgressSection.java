@@ -29,6 +29,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.stream.Collectors;
+import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.MeasurementType;
 import life.qbic.logging.api.Logger;
 import life.qbic.datamanager.views.general.CompletenessRing;
@@ -436,7 +437,7 @@ public class ProjectProgressSection extends Div {
   private Div primaryDataCard(List<AssayStanding> datasets) {
     Div card = new Div();
     card.addClassName("project-progress-datasets-card");
-    card.add(cardTitle("Measurement datasets"));
+    card.add(cardTitle("Measurement datasets", projectParameters()));
 
     if (datasets.isEmpty()) {
       card.add(cardFact(
@@ -453,10 +454,9 @@ public class ProjectProgressSection extends Div {
       }
     }
 
-    // The card is the project grain of the Datasets page, so it opens that page: the per-experiment
-    // breakdown, the individual measurements and their primary data all live there.
-    makeNavigable(card, "Open measurement datasets", () -> getUI().ifPresent(
-        ui -> ui.navigate(ProjectDatasetsMain.class, projectParameters())));
+    // NOT a click target. The rule is that a container is inert once it holds a link: the heading
+    // is the link, the way every other card on this page now works. Leaving this one clickable made
+    // the two cards beside each other behave differently for no reason a reader could see.
     return card;
   }
 
@@ -618,21 +618,6 @@ public class ProjectProgressSection extends Div {
    * drifting from theirs.</p>
    */
   /**
-   * Makes a whole card the way into its surface.
-   *
-   * <p>Only for a card with exactly ONE destination. Two cards on this page carry real links inside
-   * them -- the linked datasets and the experiment panels -- and those must not also be click
-   * targets: nested interactive elements are invalid markup and unannounceable, and a card that is
-   * itself a link while containing links leaves the reader guessing which click does what. Where
-   * there is more than one target, the target is the text item, not the card.</p>
-   */
-  private static void makeNavigable(Div card, String description, Runnable action) {
-    card.addClassName("project-progress-datasets-card--link");
-    card.getElement().setAttribute("title", description);
-    Utility.activateOnClickAndKeys(card, "link", action);
-  }
-
-  /**
    * The project's linked datasets: external records the user attached.
    *
    * <p><b>The card is not a click target.</b> Each record has its own destination, so following the
@@ -780,6 +765,23 @@ public class ProjectProgressSection extends Div {
     return row;
   }
 
+  /**
+   * A card heading. When {@code parameters} is given the heading is the card's way into its surface
+   * and renders as a real anchor; otherwise it is plain text.
+   */
+  private Div cardTitle(String text, RouteParameters ignoredParameters) {
+    Div title = new Div();
+    title.addClassName("project-progress-datasets-card-title");
+    // A real anchor built from an application path: RouterLink + RouteParameters silently renders an
+    // inert element when the parameters do not bind, which is how two cards ended up with links that
+    // looked right and did nothing.
+    title.add(Utility.textLink(text,
+        AppRoutes.ProjectRoutes.DATASETS.formatted(projectId),
+        "project-progress-datasets-card-title-link"));
+    return title;
+  }
+
+  /** A card heading that does not navigate. */
   private static Div cardTitle(String text) {
     Div title = new Div();
     title.addClassName("project-progress-datasets-card-title");

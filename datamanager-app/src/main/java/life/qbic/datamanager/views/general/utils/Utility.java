@@ -1,8 +1,7 @@
 package life.qbic.datamanager.views.general.utils;
 
 import com.vaadin.flow.component.Component;
-import com.vaadin.flow.router.RouteParameters;
-import com.vaadin.flow.router.RouterLink;
+import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import java.time.Duration;
@@ -77,23 +76,26 @@ public class Utility {
   }
 
   /**
-   * Renders the way into a surface as a real anchor, so the affordance carries the semantics it
-   * advertises.
+   * Renders the way into a surface as a real anchor.
    *
-   * <p>A {@code Span} styled to look like a link is the one thing this app kept doing: it is not
-   * focusable, it cannot be opened in a new tab, it is not announced as a link, and it invites a
-   * click that a surrounding container handler may or may not honour. Where a card holds exactly one
-   * destination the whole card may be the target, but the label inside it must still be an anchor --
-   * the anchor is what middle-click, ⌘-click and "copy link address" work on.</p>
+   * <p>A {@code Span} styled to look like a link is the thing this app kept doing: it is not
+   * focusable, cannot be opened in a new tab, is not announced as a link, and invites a click that a
+   * surrounding container handler may or may not honour. A navigation affordance must be an
+   * {@code <a>}.</p>
    *
-   * @param text       the visible label
-   * @param target     the route to navigate to
-   * @param parameters the route parameters
-   * @param className  the styling class the label would otherwise have carried
+   * <p><b>Why an href and not {@code RouterLink}.</b> A {@code RouterLink} built from
+   * {@code RouteParameters} resolves the target route's template at render time and silently renders
+   * an inert element when the parameters do not bind. Two cards on the project page ended up with
+   * links that looked right and did nothing. An {@code href} built from {@link AppRoutes} is a plain
+   * string that cannot fail to bind -- the same approach the project cards' footer links already
+   * use.</p>
+   *
+   * @param text      the visible label
+   * @param href      an application path, e.g. {@code AppRoutes.ProjectRoutes.SAMPLES.formatted(...)}
+   * @param className the styling class the label would otherwise have carried
    */
-  public static RouterLink routeLink(String text, Class<? extends Component> target,
-      RouteParameters parameters, String className) {
-    RouterLink link = new RouterLink(text, target, parameters);
+  public static Anchor textLink(String text, String href, String className) {
+    Anchor link = new Anchor(href, text);
     if (className != null && !className.isBlank()) {
       link.addClassName(className);
     }

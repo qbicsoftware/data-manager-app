@@ -8,20 +8,20 @@ import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.router.RouteParam;
 import com.vaadin.flow.router.RouteParameters;
-import com.vaadin.flow.router.RouterLink;
-import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.shared.Registration;
 import java.io.Serial;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.MeasurementType;
 import life.qbic.datamanager.views.general.CompletenessRing;
 import life.qbic.datamanager.views.general.ReactiveUiBridge;
@@ -142,9 +142,9 @@ public class ProjectExperimentsSection extends Div {
     identity.addClassName("project-exp-identity");
     // The experiment's identity is the way into its overview; the snapshot panels open their own
     // surfaces (project owner, 2026-10-19).
-    RouterLink name = new RouterLink(experiment.experimentName(),
-        ExperimentInformationMain.class, experimentRouteParameters(experiment.experimentId()));
-    name.addClassName("project-exp-name");
+    Anchor name = Utility.textLink(experiment.experimentName(),
+        AppRoutes.ProjectRoutes.EXPERIMENT.formatted(projectId, experiment.experimentId()),
+        "project-exp-name");
     Div facets = new Div();
     facets.addClassName("project-exp-facets");
     domains(experiment).forEach(domain -> facets.add(chip(domain, "project-exp-chip--domain")));
@@ -186,7 +186,7 @@ public class ProjectExperimentsSection extends Div {
         status, null, null, new String[]{"Sample ID", "Sample name", "Changed"}, rows,
         "No samples to show yet",
         started ? "All " + experiment.sampleCount() + " samples" : "",
-        SampleInformationMain.class, experiment.experimentId());
+        AppRoutes.ProjectRoutes.SAMPLES, experiment.experimentId());
   }
 
   private Div datasetPanel(ExperimentProgress experiment, List<RecentMeasurement> measurements) {
@@ -232,7 +232,7 @@ public class ProjectExperimentsSection extends Div {
         new String[]{"Measurement ID", "Primary data", "Changed"}, rows,
         "No measurements to show yet",
         total > 0 ? "All " + total + " measurements" : "",
-        MeasurementDatasetMain.class, experiment.experimentId());
+        AppRoutes.ProjectRoutes.MEASUREMENT_DATASET, experiment.experimentId());
   }
 
   /**
@@ -269,7 +269,7 @@ public class ProjectExperimentsSection extends Div {
   private Div snapshotPanel(String label, String unit, int count, String state, String tone,
       String status, String qualifier, Component accessory, String[] columns,
       List<List<String>> rows, String emptyRow, String allRowsText,
-      Class<? extends Component> openTarget, String experimentId) {
+      String openHref, String experimentId) {
     Div panel = new Div();
     panel.addClassName("project-exp-panel");
 
@@ -285,8 +285,8 @@ public class ProjectExperimentsSection extends Div {
     // A real anchor, not a styled Span. The span looked like a link, was not focusable, could not be
     // opened in a new tab and was not announced as a link -- and it sat inside a container that was
     // itself a click target, so the reader could not tell which click did what.
-    RouterLink openHint = Utility.routeLink("Open " + label.toLowerCase(), openTarget,
-        experimentRouteParameters(experimentId), "project-exp-panel-open");
+    Anchor openHint = Utility.textLink("Open " + label.toLowerCase(),
+        openHref.formatted(projectId, experimentId), "project-exp-panel-open");
     head.add(openHint);
     panel.add(head);
 
@@ -402,9 +402,9 @@ public class ProjectExperimentsSection extends Div {
   private Div emptyExperiments() {
     Div empty = new Div();
     empty.addClassName("project-experiments-empty");
-    RouterLink create = new RouterLink("Create experiment", CreateExperimentMain.class,
-        new RouteParameters(new RouteParam(PROJECT_ID_PARAMETER, projectId)));
-    create.addClassName("project-experiments-empty-action");
+    Anchor create = Utility.textLink("Create experiment",
+        AppRoutes.ProjectRoutes.EXPERIMENT_CREATION.formatted(projectId),
+        "project-experiments-empty-action");
     Span text = new Span("No experiments yet. ");
     text.addClassName("project-experiments-empty-text");
     empty.add(text, create);

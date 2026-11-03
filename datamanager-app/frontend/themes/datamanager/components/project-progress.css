@@ -289,26 +289,20 @@
   min-width: 0;
 }
 
-/* A card is the way into its surface, like the rail stages above it. The whole card is the target,
-   so the hover has to read as "this is one thing" rather than as a row highlight. */
-.project-progress-datasets-card--link {
-  cursor: pointer;
+/* A card heading that navigates. Underlined and colour-shifted on hover only, so the resting card
+   does not look like a block of links -- but the pointer, the colour change and the underline are all
+   present, because that is what a reader knows a link to be. */
+.project-progress-datasets-card-title-link {
+  color: inherit;
+  text-decoration: none;
 }
 
-.project-progress-datasets-card--link:hover,
-.project-progress-datasets-card--link:focus-visible {
-  border-color: var(--lumo-contrast-20pct);
-  background-color: var(--lumo-contrast-10pct);
+.project-progress-datasets-card-title-link:hover,
+.project-progress-datasets-card-title-link:focus-visible {
+  color: var(--lumo-primary-text-color);
+  text-decoration: underline;
 }
 
-.project-progress-datasets-card--link:focus-visible {
-  outline: 2px solid var(--lumo-primary-color);
-  outline-offset: 2px;
-}
-
-/* The card's name. It is a div, not a span, because the connected-assets title carries its count
-   and provider as separate spans so they can take their own weight; those two now hang off the
-   name instead of trailing it after an em dash. */
 .project-progress-datasets-card-title {
   display: flex;
   flex-wrap: wrap;
