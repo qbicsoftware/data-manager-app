@@ -277,14 +277,21 @@
   font-size: var(--lumo-font-size-s);
 }
 
-/* Dataset panel: five cells. Domain and method are short controlled values; the instrument is the
-   long one and takes the slack, truncating rather than pushing the numbers off the row. */
-.project-exp-panel-rows--5-columns .project-exp-panel-row {
+/* Dataset panel: five data cells plus one spacer cell the row emits itself.
+   The spacer carries the slack rather than letting the instrument column do it: with the instrument
+   as the flexible track, a short value ("Illumina") left a wide void in the middle of the row and
+   pushed the numbers away from the identity they belong to. Now the identity group stays tight on the
+   left, the numbers stay on the right edge, and the gap is where a gap is expected.
+
+   Track count matches the rendered cell count INCLUDING the spacer. Both come from the same rule in
+   Java (row() emits the spacer when there are more than three cells), so they cannot drift. */
+.project-exp-panel-rows--6-columns .project-exp-panel-row {
   grid-template-columns:
-      minmax(0, max-content)  /* omics domain */
-      minmax(0, max-content)  /* method */
-      minmax(0, 1fr)          /* instrument: the only open-ended value */
-      minmax(0, max-content)  /* measurements with data */
+      max-content             /* omics domain */
+      max-content             /* method */
+      minmax(0, max-content)  /* instrument: truncates rather than pushing the numbers off */
+      minmax(0, 1fr)          /* spacer: absorbs the free space */
+      max-content             /* measurements with data */
       max-content;            /* data availability */
 }
 

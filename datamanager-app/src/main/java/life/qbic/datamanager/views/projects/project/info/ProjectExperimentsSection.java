@@ -360,8 +360,10 @@ public class ProjectExperimentsSection extends Div {
     // The grid's column count has to match the number of cells this panel emits, or the extra cell
     // wraps onto a new implicit row. The Samples panel emits three columns, the dataset panel four,
     // so the modifier is chosen from the column count rather than assumed.
-    if (columns.length > 3) {
-      list.addClassName("project-exp-panel-rows--" + columns.length + "-columns");
+    // The rendered grid has one extra track (the spacer) whenever the spacer rule applies.
+    int gridTracks = columns.length > 3 ? columns.length + 1 : columns.length;
+    if (gridTracks > 3) {
+      list.addClassName("project-exp-panel-rows--" + gridTracks + "-columns");
     }
     list.add(row(columns, true));
     if (rows.isEmpty()) {
@@ -407,10 +409,22 @@ public class ProjectExperimentsSection extends Div {
     return glyph;
   }
 
+  /** Marked on the spacer cell so the grid can be laid out without counting cells by hand. */
+  private static final String SPACER_CLASS = "project-exp-panel-cell-spacer";
+
   private static Div row(String[] cells, boolean header) {
     Div row = new Div();
     row.addClassName("project-exp-panel-row");
+    // A spacer cell before the trailing numbers: it absorbs the free space so the identity group
+    // (domain, method, instrument) stays tight on the left and the numbers keep the right edge. The
+    // CSS grid declares a matching track; both are derived from the same rule so they cannot drift.
+    int spacerAt = cells.length > 3 ? cells.length - 2 : -1;
     for (int index = 0; index < cells.length; index++) {
+      if (index == spacerAt) {
+        Span spacer = new Span();
+        spacer.addClassName(SPACER_CLASS);
+        row.add(spacer);
+      }
       Span span = new Span(cells[index]);
       if (header) {
         span.addClassName("project-exp-panel-cell-header");
