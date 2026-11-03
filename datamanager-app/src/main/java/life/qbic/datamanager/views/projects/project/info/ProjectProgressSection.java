@@ -10,6 +10,9 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.details.Details;
+import com.vaadin.flow.component.html.Anchor;
+import com.vaadin.flow.component.html.AnchorTarget;
+import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.ListItem;
 import com.vaadin.flow.component.html.OrderedList;
@@ -614,17 +617,32 @@ public class ProjectProgressSection extends Div {
    * a card is reachable by Tab and activated by Enter or Space without a separate implementation
    * drifting from theirs.</p>
    */
+  /**
+   * Makes a whole card the way into its surface.
+   *
+   * <p>Only for a card with exactly ONE destination. Two cards on this page carry real links inside
+   * them -- the linked datasets and the experiment panels -- and those must not also be click
+   * targets: nested interactive elements are invalid markup and unannounceable, and a card that is
+   * itself a link while containing links leaves the reader guessing which click does what. Where
+   * there is more than one target, the target is the text item, not the card.</p>
+   */
   private static void makeNavigable(Div card, String description, Runnable action) {
     card.addClassName("project-progress-datasets-card--link");
     card.getElement().setAttribute("title", description);
     Utility.activateOnClickAndKeys(card, "link", action);
   }
 
+  /**
+   * The project's linked datasets: external records the user attached.
+   *
+   * <p><b>The card is not a click target.</b> Each record has its own destination, so following the
+   * rule that a container stays inert once it holds more than one link: the card would otherwise be
+   * a link containing links. Each record's title links to the record, and the card's heading links to
+   * the full list.</p>
+   */
   private Div connectedAssetsCard(List<ConnectedDatasetView> connected) {
     Div card = new Div();
     card.addClassName("project-progress-datasets-card");
-    makeNavigable(card, "Open linked datasets", () -> getUI().ifPresent(
-        ui -> ui.navigate(ProjectDatasetsMain.class, projectParameters())));
     // The count and the provider are the card's headline fact, so they lead in body weight and the
     // repository is set apart in secondary text -- rather than one em-dash construction per card,
     // which made both cards read as a caption with a fact bolted onto it.
@@ -637,7 +655,11 @@ public class ProjectProgressSection extends Div {
     // the same word three times beside the fields that actually differ. When they agree it moves
     // into the card title; when they do not, each row keeps its own.
     String sharedProvider = sharedProvider(connected);
-    Div title = cardTitle("Linked datasets");
+    // The heading is the card's single way into the full list; the rows keep their own links.
+    RouterLink title = new RouterLink();
+    title.setRoute(ProjectDatasetsMain.class, projectParameters());
+    title.addClassName("project-progress-datasets-card-title");
+    title.add(new Span("Linked datasets"));
     Span count = new Span(" %d ".formatted(connected.size()));
     count.addClassName("project-progress-datasets-card-title-fact");
     title.add(count);
@@ -728,9 +750,21 @@ public class ProjectProgressSection extends Div {
     }
     row.add(typeCell);
 
-    Span title = new Span(asset.title());
-    title.addClassName("project-progress-connected-asset-title");
-    title.getElement().setAttribute("title", asset.title());
+    // Each record is its own destination, so the title is the link. A record whose source gave no
+    // URL falls back to the plain span: a link that goes nowhere is worse than text.
+    Component title;
+    if (asset.accessLink() != null && !asset.accessLink().isBlank()) {
+      Anchor link = new Anchor(asset.accessLink(), asset.title());
+      link.setTarget(AnchorTarget.BLANK);
+      link.addClassName("project-progress-connected-asset-title");
+      link.getElement().setAttribute("title", asset.title());
+      title = link;
+    } else {
+      Span plain = new Span(asset.title());
+      plain.addClassName("project-progress-connected-asset-title");
+      plain.getElement().setAttribute("title", asset.title());
+      title = plain;
+    }
     row.add(title);
 
     Span activity = new Span(activityLabel(asset));

@@ -1,6 +1,8 @@
 package life.qbic.datamanager.views.general.utils;
 
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.router.RouteParameters;
+import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import java.time.Duration;
@@ -72,6 +74,30 @@ public class Utility {
         action.run();
       }
     }).addEventData("event.key");
+  }
+
+  /**
+   * Renders the way into a surface as a real anchor, so the affordance carries the semantics it
+   * advertises.
+   *
+   * <p>A {@code Span} styled to look like a link is the one thing this app kept doing: it is not
+   * focusable, it cannot be opened in a new tab, it is not announced as a link, and it invites a
+   * click that a surrounding container handler may or may not honour. Where a card holds exactly one
+   * destination the whole card may be the target, but the label inside it must still be an anchor --
+   * the anchor is what middle-click, ⌘-click and "copy link address" work on.</p>
+   *
+   * @param text       the visible label
+   * @param target     the route to navigate to
+   * @param parameters the route parameters
+   * @param className  the styling class the label would otherwise have carried
+   */
+  public static RouterLink routeLink(String text, Class<? extends Component> target,
+      RouteParameters parameters, String className) {
+    RouterLink link = new RouterLink(text, target, parameters);
+    if (className != null && !className.isBlank()) {
+      link.addClassName(className);
+    }
+    return link;
   }
 
   /**

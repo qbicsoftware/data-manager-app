@@ -15,6 +15,7 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.router.RouteParam;
 import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.router.RouterLink;
+import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.shared.Registration;
 import java.io.Serial;
 import java.time.Instant;
@@ -185,7 +186,7 @@ public class ProjectExperimentsSection extends Div {
         status, null, null, new String[]{"Sample ID", "Sample name", "Changed"}, rows,
         "No samples to show yet",
         started ? "All " + experiment.sampleCount() + " samples" : "",
-        () -> navigate(SampleInformationMain.class, experiment.experimentId()));
+        SampleInformationMain.class, experiment.experimentId());
   }
 
   private Div datasetPanel(ExperimentProgress experiment, List<RecentMeasurement> measurements) {
@@ -231,7 +232,7 @@ public class ProjectExperimentsSection extends Div {
         new String[]{"Measurement ID", "Primary data", "Changed"}, rows,
         "No measurements to show yet",
         total > 0 ? "All " + total + " measurements" : "",
-        () -> navigate(MeasurementDatasetMain.class, experiment.experimentId()));
+        MeasurementDatasetMain.class, experiment.experimentId());
   }
 
   /**
@@ -267,7 +268,8 @@ public class ProjectExperimentsSection extends Div {
    */
   private Div snapshotPanel(String label, String unit, int count, String state, String tone,
       String status, String qualifier, Component accessory, String[] columns,
-      List<List<String>> rows, String emptyRow, String allRowsText, Runnable open) {
+      List<List<String>> rows, String emptyRow, String allRowsText,
+      Class<? extends Component> openTarget, String experimentId) {
     Div panel = new Div();
     panel.addClassName("project-exp-panel");
 
@@ -280,8 +282,11 @@ public class ProjectExperimentsSection extends Div {
     Span stateTag = new Span(state);
     stateTag.addClassNames("project-exp-panel-state", "project-exp-panel-state--" + tone);
     head.add(stateTag);
-    Span openHint = new Span("Open " + label.toLowerCase());
-    openHint.addClassName("project-exp-panel-open");
+    // A real anchor, not a styled Span. The span looked like a link, was not focusable, could not be
+    // opened in a new tab and was not announced as a link -- and it sat inside a container that was
+    // itself a click target, so the reader could not tell which click did what.
+    RouterLink openHint = Utility.routeLink("Open " + label.toLowerCase(), openTarget,
+        experimentRouteParameters(experimentId), "project-exp-panel-open");
     head.add(openHint);
     panel.add(head);
 
@@ -332,7 +337,9 @@ public class ProjectExperimentsSection extends Div {
     }
     panel.add(list);
 
-    Utility.activateOnClickAndKeys(panel, "button", open);
+    // The panel is NOT a click target. Its one destination is the "Open …" link above, and a
+    // container that is also a link would announce as a button, lose the native <a> affordances
+    // (middle-click, copy link address) and leave the reader guessing which click navigates.
     return panel;
   }
 
@@ -378,10 +385,6 @@ public class ProjectExperimentsSection extends Div {
     row.addClassName("project-exp-panel-row");
     row.add(new Span(text));
     return row;
-  }
-
-  private void navigate(Class<? extends Component> target, String experimentId) {
-    getUI().ifPresent(ui -> ui.navigate(target, experimentRouteParameters(experimentId)));
   }
 
   private RouteParameters experimentRouteParameters(String experimentId) {

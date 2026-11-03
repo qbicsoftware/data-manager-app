@@ -361,7 +361,7 @@ public class ExperimentOverviewComponent extends Div {
     return snapshotCard("Samples", "samples", progress.sampleCount(),
         started ? "Registered" : "Not started", started ? "done" : "active", note(status), null,
         new String[]{"Sample ID", "Sample name", "Changed"}, rows, "No samples to show yet",
-        () -> navigate(SampleInformationMain.class));
+        SampleInformationMain.class);
   }
 
   private Div datasetCard(ExperimentProgress progress, List<RecentMeasurement> measurements) {
@@ -390,7 +390,7 @@ public class ExperimentOverviewComponent extends Div {
     return snapshotCard("Dataset", "measurements", total, state, tone,
         note(gapSentence(progress)), completenessRing(progress),
         new String[]{"Measurement ID", "Primary data", "Changed"}, rows,
-        "No measurements to show yet", () -> navigate(MeasurementDatasetMain.class));
+        "No measurements to show yet", MeasurementDatasetMain.class);
   }
 
   /**
@@ -429,7 +429,7 @@ public class ExperimentOverviewComponent extends Div {
 
   private Div snapshotCard(String label, String unit, int count, String state, String tone,
       Component status, Component accessory, String[] columns, List<List<String>> rows,
-      String emptyRow, Runnable open) {
+      String emptyRow, Class<? extends Component> openTarget) {
     Div panel = new Div();
     panel.addClassName("experiment-overview-card");
 
@@ -437,8 +437,12 @@ public class ExperimentOverviewComponent extends Div {
     head.addClassName("experiment-overview-card-head");
     Span labelSpan = new Span(label);
     labelSpan.addClassName("experiment-overview-card-label");
+    // A real anchor, not a styled Span: the span looked like a link, was not focusable, could not be
+    // opened in a new tab and was not announced as a link.
     head.add(surfaceIcon(label), labelSpan,
-        stateTag(state, tone), hint("Open " + label.toLowerCase()));
+        stateTag(state, tone),
+        Utility.routeLink("Open " + label.toLowerCase(), openTarget, routeParameters(),
+            "experiment-overview-open"));
     if (accessory != null) {
       accessory.addClassName("experiment-overview-card-accessory");
       head.add(accessory);
@@ -465,7 +469,9 @@ public class ExperimentOverviewComponent extends Div {
     }
     panel.add(list);
 
-    Utility.activateOnClickAndKeys(panel, "button", open);
+    // The card is NOT a click target: its one destination is the "Open …" link above. A container
+    // that is also a link announces as a button and loses the native <a> affordances (middle-click,
+    // copy link address), and it leaves the reader guessing which click navigates.
     return panel;
   }
 
@@ -475,10 +481,6 @@ public class ExperimentOverviewComponent extends Div {
 
   private void navigateToSetup() {
     getUI().ifPresent(ui -> ui.navigate(ExperimentSetupMain.class, routeParameters()));
-  }
-
-  private void navigate(Class<? extends Component> target) {
-    getUI().ifPresent(ui -> ui.navigate(target, routeParameters()));
   }
 
   private RouteParameters routeParameters() {

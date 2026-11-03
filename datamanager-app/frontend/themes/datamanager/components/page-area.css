@@ -2491,6 +2491,19 @@ a.project-dataset-footer, a.project-dataset-footer:hover {
   font-size: var(--lumo-font-size-s);
 }
 
+/* The card's one destination, as a real anchor. Same weight as the panel's equivalent on the project
+   page so the two surfaces agree on what a way out of a card looks like. */
+.experiment-overview-open {
+  font-size: var(--lumo-font-size-s);
+  color: var(--lumo-primary-text-color);
+  text-decoration: none;
+}
+
+.experiment-overview-open:hover,
+.experiment-overview-open:focus-visible {
+  text-decoration: underline;
+}
+
 .experiment-overview-message {
   color: var(--lumo-secondary-text-color);
 }

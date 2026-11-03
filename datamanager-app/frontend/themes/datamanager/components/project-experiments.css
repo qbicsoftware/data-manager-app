@@ -164,9 +164,17 @@
   color: var(--lumo-secondary-text-color);
 }
 
+/* The panel's one destination, as a real anchor rather than a styled Span. Underlined on hover only,
+   so the resting state still reads as a quiet link inside the header band. */
 .project-exp-panel-open {
   font-size: var(--lumo-font-size-s);
   color: var(--lumo-primary-text-color);
+  text-decoration: none;
+}
+
+.project-exp-panel-open:hover,
+.project-exp-panel-open:focus-visible {
+  text-decoration: underline;
 }
 
 /* The Dataset panel's completeness ring, top-right of the panel head. The "Open" hint is no longer
