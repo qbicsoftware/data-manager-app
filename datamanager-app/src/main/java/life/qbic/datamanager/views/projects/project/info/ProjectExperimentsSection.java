@@ -217,7 +217,7 @@ public class ProjectExperimentsSection extends Div {
   }
 
   /**
-   * The experiment's measurement datasets, one row per analysis method.
+   * The experiment's measurement datasets, one row per dataset.
    *
    * <p><b>What a row is.</b> One dataset: one experiment for one omics domain. The domain comes from
    * the measurement table the record lives in, which makes it the only axis that is complete and
@@ -229,12 +229,13 @@ public class ProjectExperimentsSection extends Div {
    * every domain (the NGS template has no method column at all). The resolution lives in the view, so
    * replacing it is a one-file change. See #1660.</p>
    *
-   * <p><b>What a row is not.</b> Two datasets of the <em>same</em> analysis method in one experiment
+   * <p><b>What a row is not.</b> Two datasets of the <em>same</em> analysis method and instrument in
+   * one experiment
    * still collapse, because the view groups by {@code (experiment, analysis_method)}. Separating
    * those needs a real dataset identity -- tracked in #1660. The panel does not claim to show them
    * apart.</p>
    *
-   * <p>No row cap: more than four analysis methods in one experiment is not a case that arises in
+   * <p>No row cap: more than four datasets in one experiment is not a case that arises in
    * practice, and the full list is one link away in the experiment's datasets section anyway.</p>
    */
   private Div datasetPanel(ExperimentProgress experiment, List<RecentMeasurement> measurements,
