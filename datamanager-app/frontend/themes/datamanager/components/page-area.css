@@ -857,39 +857,30 @@ a.project-collection-component .project-overview-item:hover {
   cursor: default;
 }
 
-/* The navigational target: code, title, measurement tags, last-modified and the people metadata
-   form one large link so opening a project stays a comfortable click after the card body stopped
-   being an anchor. */
-/* The card body is a large link around the card's content, but its TITLE is what a reader takes to
-   be the link, so the title has to behave like one: no resting underline (the whole card is the
-   target, so a permanent underline would be noise), but an underline and a colour shift on hover --
-   which is what the rest of the web does and what a reader tests a link with. */
-.project-collection-component a.project-card-title-link,
-.project-collection-component a.project-card-title-link * {
+/* Only the project TITLE navigates now. The card body used to be one large anchor wrapping the code,
+   title, tags, last-modified date and both contact rows, which made every line inside it inherit the
+   link treatment -- so once links gained a hover underline, the whole card underlined at once and
+   read as a paragraph of links. A reader decides where to click from what looks clickable, so the
+   title is the link and everything else is text. */
+.project-collection-component a.project-overview-item-title-link {
+  color: inherit;
   text-decoration: none;
-  box-sizing: border-box;
+  cursor: pointer;
+  border-radius: var(--lumo-border-radius-s);
 }
 
-.project-card-wrapper:hover .project-card-title-link,
-.project-card-wrapper:has(:focus-visible) .project-card-title-link,
-a.project-card-title-link:hover,
-a.project-card-title-link:focus-visible {
+/* Link feedback on the title alone: colour shift and underline on hover and on keyboard focus --
+   what a reader tests a link with. No resting underline, because a card of permanent underlines is
+   noise. */
+.project-collection-component a.project-overview-item-title-link:hover,
+.project-collection-component a.project-overview-item-title-link:focus-visible {
   color: var(--lumo-primary-text-color);
   text-decoration: underline;
   text-decoration-thickness: 1px;
   text-underline-offset: 2px;
 }
 
-.project-collection-component a.project-card-title-link {
-  display: flex;
-  flex-direction: column;
-  row-gap: var(--lumo-space-s);
-  color: inherit;
-  cursor: pointer;
-  border-radius: var(--lumo-border-radius-s);
-}
-
-.project-collection-component a.project-card-title-link:focus-visible {
+.project-collection-component a.project-overview-item-title-link:focus-visible {
   outline: 2px solid var(--lumo-primary-color);
   outline-offset: 4px;
 }
