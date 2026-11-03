@@ -13,9 +13,15 @@ package life.qbic.projectmanagement.infrastructure.query;
  * <p><b>Here the project is a parameter applied inside the derivation.</b>
  * {@code project_experiments} is the project's experiment ids, {@code project_samples} the samples of
  * those experiments, and every aggregate is built only from those. See the view's header for the
- * semantics this must stay identical to -- in particular the method resolution order
- * ({@code lcmsMethod} first, {@code sample.analysis_method} second) and the exclusion of workflow
- * scopes.</p>
+ * semantics this must stay identical to -- in particular that the method label is
+ * {@code sample.analysis_method} (a controlled enum) and that workflow scopes are excluded.</p>
+ *
+ * <p><b>The method label is not {@code lcmsMethod}.</b> That column is free text with no controlled
+ * vocabulary, so grouping by it fragments one method across spellings and produces several rows for
+ * one dataset. The PXP/IP label comes from {@code instrument} instead, which is an
+ * {@code OntologyTerm} -- a resolved vocabulary term, not a typed string. Where no instrument was
+ * recorded, the sample's {@code analysis_method} (an enum) is used. Both are controlled; that is the
+ * requirement for a grouping key. See #1660.</p>
  *
  * @see ExperimentProgressQuery
  * @see <a href="https://github.com/qbicsoftware/data-manager-app/issues/1660">#1660</a>
@@ -49,12 +55,11 @@ final class AssayStandingQuery {
             AND s.analysis_method NOT IN ('ISOLATION_ONLY', 'QC_ONLY', 'SEQ_ONLY')
       ),
       measurement_sample AS (
-          -- measurement -> the samples it measured, plus whatever the MEASUREMENT records as its
-          -- method. Only PXP and IP record one (lcmsMethod); NGS records nothing.
+          -- measurement -> the samples it measured, plus the instrument's vocabulary label where the
+          -- measurement records one (PXP / IP). NGS records none: its assays live in the sample
+          -- annotation. The NULL is explicitly collated so the UNION does not fail on mixed
+          -- collations.
           SELECT smm.measurement_id, m.measurementCode AS measurement_code, 'NGS' AS measurement_type,
-                 -- Explicitly collated: a bare CAST(NULL AS CHAR) takes the connection collation and
-                 -- UNION refuses to mix that with the utf8mb4_unicode_ci of lcmsMethod in the other
-                 -- two branches ("Illegal mix of collations for operation 'UNION'").
                  CAST(NULL AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci
                      AS measurement_method,
                  ps.sample_id
@@ -65,7 +70,9 @@ final class AssayStandingQuery {
                         ON ps.sample_id = smm.sample_id COLLATE utf8mb4_unicode_ci
           UNION
           SELECT smm.measurement_id, p.measurementCode, 'PXP',
-                 NULLIF(TRIM(p.lcmsMethod), '') COLLATE utf8mb4_unicode_ci,
+                 COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p.instrument, '$.label')),
+                          JSON_UNQUOTE(JSON_EXTRACT(p.instrument, '$.name')))
+                     COLLATE utf8mb4_unicode_ci,
                  ps.sample_id
           FROM proteomics_measurement p
                    JOIN specific_measurement_metadata_pxp smm
@@ -74,7 +81,9 @@ final class AssayStandingQuery {
                         ON ps.sample_id = smm.sample_id COLLATE utf8mb4_unicode_ci
           UNION
           SELECT smm.measurement_id, ip.measurementCode, 'IP',
-                 NULLIF(TRIM(ip.lcmsMethod), '') COLLATE utf8mb4_unicode_ci,
+                 COALESCE(JSON_UNQUOTE(JSON_EXTRACT(ip.instrument, '$.label')),
+                          JSON_UNQUOTE(JSON_EXTRACT(ip.instrument, '$.name')))
+                     COLLATE utf8mb4_unicode_ci,
                  ps.sample_id
           FROM ip_measurements ip
                    JOIN specific_measurement_metadata_ip smm
@@ -82,16 +91,15 @@ final class AssayStandingQuery {
                    JOIN project_samples ps
                         ON ps.sample_id = smm.sample_id COLLATE utf8mb4_unicode_ci
       ),
-      -- Method resolution happens here, once: the measurement's own record where it has one
-      -- (PXP/IP lcmsMethod), otherwise the sample's analysis_method (genomics, which records none).
-      -- The COALESCE order IS the rule -- a measurement's own record always wins.
+      -- The method label resolves here, once: the measurement's instrument (a controlled vocabulary
+      -- term) where it recorded one, otherwise the sample's analysis_method (an enum). Both are
+      -- controlled, which is what a grouping key must be -- unlike lcmsMethod, free text, not read.
       dataset_measurements AS (
           SELECT DISTINCT ps.experiment_id,
                           ms.measurement_type,
                           COALESCE(ms.measurement_method,
                                   CAST(ps.analysis_method AS CHAR CHARACTER SET utf8mb4)
-                                      COLLATE utf8mb4_unicode_ci)
-                                  AS method_label,
+                                      COLLATE utf8mb4_unicode_ci) AS method_label,
                           ms.measurement_id,
                           ms.measurement_code
           FROM measurement_sample ms

@@ -30,19 +30,22 @@
 -- METHOD RESOLUTION (read before changing this view)
 -- =============================================================================
 --
--- The method label of a dataset is resolved per measurement, in this order:
+-- The dataset's method label is the INSTRUMENT for PXP / IP, and sample.analysis_method for NGS:
 --
---   1. the MEASUREMENT's own record    (PXP / IP: lcmsMethod)
---   2. the SAMPLE's analysis_method    (genomics: the measurement records none)
+--   1. measurement.instrument   (PXP / IP: an OntologyTerm, i.e. a controlled vocabulary)
+--   2. sample.analysis_method   (NGS: an enum; also the fallback when no instrument was recorded)
 --
--- This mirrors where the fact actually lives today, and it is an interim shape: the sample-level
--- annotation is a known misfiling (see the grandfather note below), and genomics records no method on
--- the measurement at all -- the NGS registration template has no method column. What is needed is a
--- controlled method vocabulary captured on the measurement in every domain; until then this COALESCE
--- is the least-wrong answer, and the label it produces is free text for PXP/IP.
+-- Why not lcmsMethod: it is FREE TEXT with no controlled vocabulary. Grouping by it fragments one
+-- method across spellings ("CIDOT", "cidot", "CID-OT") and it is frequently blank. A grouping key has
+-- to be controlled, or one dataset appears as several rows. It is deliberately NOT read here.
 --
--- The COALESCE order IS the rule. Do not reorder it: a measurement's own record always wins over the
--- sample's annotation, because the measurement is what was done.
+-- Why the instrument is a good key: it is an OntologyTerm (JSON with name / label / oboId, validated
+-- by a json_valid check), so it is resolved to a vocabulary term rather than typed freely. The domain
+-- experts intend the instrument to become the *platform* field later, which is exactly the role it
+-- plays here: what was the data generated on.
+--
+-- COALESCE order IS the rule: a measurement's own instrument wins over the sample's annotation,
+-- because the measurement is what was done. Do not reorder it.
 --
 -- =============================================================================
 -- THE GRANDFATHER RELATION (read before changing this view)
@@ -148,15 +151,13 @@ WITH project_samples AS (
       AND s.analysis_method NOT IN ('ISOLATION_ONLY', 'QC_ONLY', 'SEQ_ONLY')
 ),
 measurement_sample AS (
-    -- measurement -> the samples it measured, plus whatever the MEASUREMENT itself records as its
-    -- method. Only PXP and IP record one (lcmsMethod); NGS records nothing, so its method has to come
-    -- from the sample. See the METHOD RESOLUTION note in the header.
+    -- measurement -> the samples it measured, plus the instrument's vocabulary label where the
+    -- measurement records one (PXP / IP). See the METHOD RESOLUTION note.
+    -- NGS records no instrument-derived method here: its assays live in the sample annotation.
+    -- Explicitly collated NULL so the UNION does not fail on mixed collations.
     SELECT smm.measurement_id, m.measurementCode AS measurement_code, 'NGS' AS measurement_type,
-           -- NULL, but explicitly collated: a bare CAST(NULL AS CHAR) takes the connection
-           -- collation, and UNION refuses to mix that with the utf8mb4_unicode_ci of lcmsMethod in
-           -- the other two branches ("Illegal mix of collations for operation 'UNION'").
            CAST(NULL AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci
-                                              AS measurement_method,
+               AS measurement_method,
            ps.sample_id
     FROM ngs_measurements m
              JOIN specific_measurement_metadata_ngs smm
@@ -165,7 +166,9 @@ measurement_sample AS (
                   ON ps.sample_id = smm.sample_id COLLATE utf8mb4_unicode_ci
     UNION
     SELECT smm.measurement_id, p.measurementCode, 'PXP',
-           NULLIF(TRIM(p.lcmsMethod), '') COLLATE utf8mb4_unicode_ci,
+           COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p.instrument, '$.label')),
+                    JSON_UNQUOTE(JSON_EXTRACT(p.instrument, '$.name')))
+               COLLATE utf8mb4_unicode_ci,
            ps.sample_id
     FROM proteomics_measurement p
              JOIN specific_measurement_metadata_pxp smm
@@ -174,7 +177,9 @@ measurement_sample AS (
                   ON ps.sample_id = smm.sample_id COLLATE utf8mb4_unicode_ci
     UNION
     SELECT smm.measurement_id, ip.measurementCode, 'IP',
-           NULLIF(TRIM(ip.lcmsMethod), '') COLLATE utf8mb4_unicode_ci,
+           COALESCE(JSON_UNQUOTE(JSON_EXTRACT(ip.instrument, '$.label')),
+                    JSON_UNQUOTE(JSON_EXTRACT(ip.instrument, '$.name')))
+               COLLATE utf8mb4_unicode_ci,
            ps.sample_id
     FROM ip_measurements ip
              JOIN specific_measurement_metadata_ip smm
@@ -184,17 +189,16 @@ measurement_sample AS (
 ),
 -- One row per (experiment, analysis method, measurement record). DISTINCT collapses the sample
 -- fan-out: a measurement measuring ten samples of one method is still one measurement.
--- The method label is resolved here, once: the measurement's own record where it has one (PXP/IP
--- lcmsMethod), otherwise the sample's analysis_method (genomics, which records none).
--- COALESCE order IS the rule -- do not reorder it.
+-- The method label resolves here, once: the measurement's instrument (a controlled vocabulary term)
+-- where it recorded one, otherwise the sample's analysis_method (an enum). Both are controlled, which
+-- is what a grouping key must be -- unlike lcmsMethod, which is free text and is not read at all.
 dataset_measurements AS (
     SELECT DISTINCT ps.project_id,
                     ps.experiment_id,
-                    ps.analysis_method,
                     ms.measurement_type,
                     COALESCE(ms.measurement_method,
                              CAST(ps.analysis_method AS CHAR CHARACTER SET utf8mb4)
-                                 COLLATE utf8mb4_unicode_ci)        AS method_label,
+                                 COLLATE utf8mb4_unicode_ci)         AS method_label,
                     ms.measurement_id,
                     ms.measurement_code
     FROM measurement_sample ms
