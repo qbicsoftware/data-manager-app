@@ -102,13 +102,16 @@ public class ProjectExperimentsSection extends Div {
             projectQueryService.getRecentMeasurements(projectId).collectList(),
             // The dataset-grain read model: one row per (experiment, analysis method). This is what
             // the dataset panel needs -- the progress model only knows omics domains.
+            // A failed assay query must not take the experiments list down with it, but it must not
+            // be silently reported as "no datasets" either -- that is indistinguishable from a
+            // project that genuinely has none, and it hid a broken query once already. The failure is
+            // logged at error level with the cause, and the panel says so (see Snapshot.assaysFailed).
             projectQueryService.getAssayStanding(projectId).collectList()
+                .map(assays -> new AssayLoad(assays, false))
                 .onErrorResume(error -> {
-                  // A failed assay query degrades the dataset panel to "no datasets stated" rather
-                  // than taking the whole experiments list down with it.
-                  log.warn("Assay standing could not be loaded for project " + projectId + ": "
-                      + error.getClass().getSimpleName() + " (" + error.getMessage() + ")");
-                  return Mono.just(List.of());
+                  log.error("Assay standing could not be loaded for project " + projectId + ": "
+                      + error.getClass().getSimpleName() + " (" + error.getMessage() + ")", error);
+                  return Mono.just(new AssayLoad(List.of(), true));
                 }))
         .map(values -> new Snapshot(values.getT1(), values.getT2(), values.getT3(), values.getT4()));
     ReactiveUiBridge.onUi(ui, snapshot, this::render, error -> {
@@ -138,7 +141,7 @@ public class ProjectExperimentsSection extends Div {
         .collect(Collectors.groupingBy(RecentSample::experimentId));
     Map<String, List<RecentMeasurement>> measurementsByExperiment = snapshot.measurements().stream()
         .collect(Collectors.groupingBy(RecentMeasurement::experimentId));
-    Map<String, List<AssayStanding>> assaysByExperiment = snapshot.assays().stream()
+    Map<String, List<AssayStanding>> assaysByExperiment = snapshot.assayLoad().assays().stream()
         .collect(Collectors.groupingBy(AssayStanding::experimentId));
 
     Div cards = new Div();
@@ -147,13 +150,14 @@ public class ProjectExperimentsSection extends Div {
       cards.add(experimentCard(experiment,
           samplesByExperiment.getOrDefault(experiment.experimentId(), List.of()),
           measurementsByExperiment.getOrDefault(experiment.experimentId(), List.of()),
-          assaysByExperiment.getOrDefault(experiment.experimentId(), List.of())));
+          assaysByExperiment.getOrDefault(experiment.experimentId(), List.of()),
+          snapshot.assayLoad().failed()));
     }
     content.add(cards);
   }
 
   private Div experimentCard(ExperimentProgress experiment, List<RecentSample> samples,
-      List<RecentMeasurement> measurements, List<AssayStanding> assays) {
+      List<RecentMeasurement> measurements, List<AssayStanding> assays, boolean assaysFailed) {
     Div card = new Div();
     card.addClassName("project-experiment-card");
 
@@ -177,7 +181,7 @@ public class ProjectExperimentsSection extends Div {
     Div panels = new Div();
     panels.addClassName("project-exp-snapshot");
     panels.add(samplesPanel(experiment, samples));
-    panels.add(datasetPanel(experiment, measurements, assays));
+    panels.add(datasetPanel(experiment, measurements, assays, assaysFailed));
     card.add(panels);
     return card;
   }
@@ -234,7 +238,7 @@ public class ProjectExperimentsSection extends Div {
    * practice, and the full list is one link away in the experiment's datasets section anyway.</p>
    */
   private Div datasetPanel(ExperimentProgress experiment, List<RecentMeasurement> measurements,
-      List<AssayStanding> assays) {
+      List<AssayStanding> assays, boolean assaysFailed) {
     int total = experiment.measurementCount();
     boolean hasSamples = experiment.sampleCount() > 0;
 
@@ -295,7 +299,9 @@ public class ProjectExperimentsSection extends Div {
                 datasets.size() == 1 ? "method" : "methods"),
         new String[]{"Omics domain", "Method", "Measurements with data", "Data availability"},
         rows,
-        "No measurements to show yet",
+        // A failed query must not read as "this project has no datasets": those are opposite
+        // statements and the silent version of this hid a broken query once already.
+        assaysFailed ? "Datasets could not be loaded" : "No measurements to show yet",
         total > 0 ? "All " + total + " measurements" : "",
         AppRoutes.ProjectRoutes.MEASUREMENT_DATASET, experiment.experimentId());
   }
@@ -489,10 +495,15 @@ public class ProjectExperimentsSection extends Div {
   }
 
   /** The section's data: per-experiment progress plus the newest rows for the snapshot panels. */
+  /** Assay rows plus whether the query failed, so the panel can say "could not load". */
+  private record AssayLoad(List<AssayStanding> assays, boolean failed) {
+
+  }
+
   private record Snapshot(List<ExperimentProgress> progress,
                               List<RecentSample> samples,
                               List<RecentMeasurement> measurements,
-                              List<AssayStanding> assays) {
+                              AssayLoad assayLoad) {
 
   }
 
