@@ -14,7 +14,7 @@ class AssayStandingSpec extends Specification {
 
   private static AssayStanding standing(int measurements, int withData) {
     return new AssayStanding("experiment-1", "Experiment 1", AssayType.GENOMICS,
-        "WES", measurements, withData, 0L)
+        "WES", "Illumina NovaSeq", measurements, withData, 0L)
   }
 
   def "a dataset with every measurement covered is complete"() {
@@ -46,7 +46,8 @@ class AssayStandingSpec extends Specification {
 
   def "negative counts are rejected"() {
     when:
-    new AssayStanding("experiment-1", "Experiment 1", AssayType.GENOMICS, "WES", -1, 0, 0L)
+    new AssayStanding("experiment-1", "Experiment 1", AssayType.GENOMICS, "WES",
+        "Illumina NovaSeq", -1, 0, 0L)
 
     then:
     thrown(IllegalArgumentException)
@@ -55,9 +56,9 @@ class AssayStandingSpec extends Specification {
   def "two datasets of the same experiment and method are distinguished only by the experiment"() {
     given:
     def first = new AssayStanding("experiment-1", "Experiment 1", AssayType.GENOMICS,
-        "WES", 4, 4, 100L)
+        "WES", "Illumina NovaSeq", 4, 4, 100L)
     def second = new AssayStanding("experiment-2", "Experiment 2", AssayType.GENOMICS,
-        "WES", 6, 0, 0L)
+        "WES", "Illumina NovaSeq", 6, 0, 0L)
 
     expect:
     // Same method, two experiments, two datasets -- which is why a count per method cannot be
@@ -143,21 +144,43 @@ class AssayStandingSpec extends Specification {
     // reported every immunopeptidomics dataset as proteomics.
     given:
     def proteomics = new AssayStanding("e1", "Experiment 1", AssayType.PROTEOMICS,
-        "CIDOT", 6, 6, 0L)
+        "PROTEOMICS", "Orbitrap Exploris 480", 6, 6, 0L)
     def immunopeptidomics = new AssayStanding("e1", "Experiment 1", AssayType.IMMUNOPEPTIDOMICS,
-        "HCDOT", 8, 8, 0L)
+        "PROTEOMICS", "timsTOF Pro", 8, 8, 0L)
 
     expect:
     proteomics.assayType() != immunopeptidomics.assayType()
     proteomics != immunopeptidomics
   }
 
+  def "an instrument may be absent without inventing one"() {
+    // A measurement that records no instrument has none. The rendering is an em dash; substituting
+    // the analysis method there would merge two different kinds of fact into one column again.
+    expect:
+    standing(3, 1).instrumentLabel() == "Illumina NovaSeq"
+
+    and: "an instrument-less dataset keeps a null instrument"
+    new AssayStanding("e1", "Experiment 1", AssayType.GENOMICS, "WGS", null, 2, 0, 0L)
+        .instrumentLabel() == null
+  }
+
+  def "method and instrument are separate facts"() {
+    given:
+    def proteomics = new AssayStanding("e1", "Experiment 1", AssayType.PROTEOMICS,
+        "PROTEOMICS", "Orbitrap Exploris 480", 6, 6, 0L)
+
+    expect: "the method is an assay name, the instrument is a vocabulary term; they are not merged"
+    proteomics.methodLabel() == "PROTEOMICS"
+    proteomics.instrumentLabel() == "Orbitrap Exploris 480"
+    proteomics.methodLabel() != proteomics.instrumentLabel()
+  }
+
   def "two datasets of the same method and domain are still distinct rows"() {
     given:
     def first = new AssayStanding("e1", "Experiment 1", AssayType.GENOMICS,
-        "RNA-SEQ", 3, 1, 0L)
+        "RNA-SEQ", null, 3, 1, 0L)
     def second = new AssayStanding("e1", "Experiment 1", AssayType.GENOMICS,
-        "RNA-SEQ", 2, 2, 0L)
+        "RNA-SEQ", null, 2, 2, 0L)
 
     expect: "same experiment, domain and method; only the counts differ"
     first.assayType() == second.assayType()

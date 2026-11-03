@@ -162,6 +162,7 @@ public class ProjectPageReadRepositoryImpl implements ProjectPageReadRepository 
           resultSet.getString("experiment_name"),
           AssayType.fromColumnValue(resultSet.getString("measurement_type")),
           resultSet.getString("method_label"),
+          resultSet.getString("instrument_label"),
           resultSet.getInt("measurements"),
           resultSet.getInt("measurements_with_primary_data"),
           resultSet.getLong("primary_data_bytes"));

@@ -29,10 +29,11 @@ import life.qbic.projectmanagement.domain.model.sample.AnalysisMethod;
  * @param experimentId     the experiment the dataset belongs to
  * @param experimentName   the experiment's name, the discriminant between two datasets of one method
  * @param measurementType  the omics domain, read from the measurement table the record lives in
- * @param methodLabel      the method, resolved from the measurement where it records one and from the
- *                         sample otherwise. Free text: PXP/IP carry <em>lcmsMethod</em> verbatim, and
- *                         genomics carries the {@code AnalysisMethod} name. Not an enum (yet) because
- *                         the two are not the same vocabulary
+ * @param methodLabel      the analysis method, from {@code sample.analysis_method}: a controlled enum
+ *                         name (WGS, RNA-SEQ, PROTEOMICS, ...)
+ * @param instrumentLabel  the instrument recorded on the measurement, where there is one. A controlled
+ *                         vocabulary term (the {@code OntologyTerm} label, or its CURIE when the term
+ *                         carries no label). {@code null} when the measurement records none
  * @param measurements     the number of measurements attributed to this dataset
  * @param withPrimaryData  the number of those measurements that carry primary data
  * @param primaryDataBytes the size of the primary data, {@code 0} when nothing arrived or the sync
@@ -45,6 +46,7 @@ public record AssayStanding(
     String experimentName,
     AssayType measurementType,
     String methodLabel,
+    String instrumentLabel,
     int measurements,
     int withPrimaryData,
     long primaryDataBytes) {
@@ -54,6 +56,8 @@ public record AssayStanding(
     Objects.requireNonNull(experimentName, "experimentName must not be null");
     Objects.requireNonNull(measurementType, "measurementType must not be null");
     Objects.requireNonNull(methodLabel, "methodLabel must not be null");
+    // instrumentLabel may be null: a measurement that records no instrument has none, and an empty
+    // cell is the honest rendering. It is never substituted from another vocabulary.
     if (measurements < 0 || withPrimaryData < 0) {
       throw new IllegalArgumentException("counts must not be negative");
     }

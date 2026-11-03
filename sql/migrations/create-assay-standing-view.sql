@@ -30,22 +30,23 @@
 -- METHOD RESOLUTION (read before changing this view)
 -- =============================================================================
 --
--- The dataset's method label is the INSTRUMENT for PXP / IP, and sample.analysis_method for NGS:
+-- A dataset row carries TWO independent facts, and they are never merged:
 --
---   1. measurement.instrument   (PXP / IP: an OntologyTerm, i.e. a controlled vocabulary)
---   2. sample.analysis_method   (NGS: an enum; also the fallback when no instrument was recorded)
+--   method_label      sample.analysis_method -- a controlled enum (WGS, RNA-SEQ, 16S, PROTEOMICS, ...)
+--   instrument_label  measurement.instrument -- an OntologyTerm (JSON: name / label / oboId, guarded
+--                     by a json_valid check), present on ALL THREE measurement tables
+--
+-- An earlier revision merged them with a COALESCE, so one column held an assay for one row and an
+-- instrument for the next. A reader could not tell that "WGS" and "Orbitrap Exploris 480" were
+-- different kinds of fact. They are now separate columns, and neither falls back to the other.
 --
 -- Why not lcmsMethod: it is FREE TEXT with no controlled vocabulary. Grouping by it fragments one
 -- method across spellings ("CIDOT", "cidot", "CID-OT") and it is frequently blank. A grouping key has
 -- to be controlled, or one dataset appears as several rows. It is deliberately NOT read here.
 --
--- Why the instrument is a good key: it is an OntologyTerm (JSON with name / label / oboId, validated
--- by a json_valid check), so it is resolved to a vocabulary term rather than typed freely. The domain
--- experts intend the instrument to become the *platform* field later, which is exactly the role it
--- plays here: what was the data generated on.
---
--- COALESCE order IS the rule: a measurement's own instrument wins over the sample's annotation,
--- because the measurement is what was done. Do not reorder it.
+-- The instrument is part of the dataset key: two datasets of one method measured on different
+-- instruments are different datasets, and because the instrument is a vocabulary term rather than
+-- typed text it groups correctly.
 --
 -- =============================================================================
 -- THE GRANDFATHER RELATION (read before changing this view)
@@ -153,11 +154,12 @@ WITH project_samples AS (
 measurement_sample AS (
     -- measurement -> the samples it measured, plus the instrument's vocabulary label where the
     -- measurement records one (PXP / IP). See the METHOD RESOLUTION note.
-    -- NGS records no instrument-derived method here: its assays live in the sample annotation.
-    -- Explicitly collated NULL so the UNION does not fail on mixed collations.
+    -- All three measurement tables record an instrument as an OntologyTerm, so all three branches
+    -- read it the same way. There is no domain-specific special case.
     SELECT smm.measurement_id, m.measurementCode AS measurement_code, 'NGS' AS measurement_type,
-           CAST(NULL AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci
-               AS measurement_method,
+           COALESCE(JSON_UNQUOTE(JSON_EXTRACT(m.instrument, '$.label')),
+                    JSON_UNQUOTE(JSON_EXTRACT(m.instrument, '$.name')))
+               COLLATE utf8mb4_unicode_ci,
            ps.sample_id
     FROM ngs_measurements m
              JOIN specific_measurement_metadata_ngs smm
@@ -196,9 +198,9 @@ dataset_measurements AS (
     SELECT DISTINCT ps.project_id,
                     ps.experiment_id,
                     ms.measurement_type,
-                    COALESCE(ms.measurement_method,
-                             CAST(ps.analysis_method AS CHAR CHARACTER SET utf8mb4)
-                                 COLLATE utf8mb4_unicode_ci)         AS method_label,
+                    CAST(ps.analysis_method AS CHAR CHARACTER SET utf8mb4)
+                        COLLATE utf8mb4_unicode_ci                      AS method_label,
+                    ms.instrument_label,
                     ms.measurement_id,
                     ms.measurement_code
     FROM measurement_sample ms
@@ -207,51 +209,55 @@ dataset_measurements AS (
 -- The dataset key is (experiment, measurement_type, analysis_method): the measurement type is the
 -- omics domain and is the only reliable one -- proteomics and immunopeptidomics share an analysis
 -- method on the sample, so the method alone cannot name the domain.
+-- The instrument is part of the key: two datasets of one method measured on different instruments
+-- are different datasets, and the instrument is a controlled vocabulary term so it groups correctly.
 dataset_keys AS (
-    SELECT DISTINCT project_id, experiment_id, measurement_type, method_label
+    SELECT DISTINCT project_id, experiment_id, measurement_type, method_label, instrument_label
     FROM dataset_measurements
 ),
 -- Measurement records per dataset.
 counted AS (
-    SELECT project_id, experiment_id, measurement_type, method_label,
+    SELECT project_id, experiment_id, measurement_type, method_label, instrument_label,
            COUNT(*) AS measurements
     FROM dataset_measurements
-    GROUP BY project_id, experiment_id, measurement_type, method_label
+    GROUP BY project_id, experiment_id, measurement_type, method_label, instrument_label
 ),
 -- Measurement records carrying primary data, per dataset.
 with_data AS (
     SELECT dm.project_id, dm.experiment_id, dm.measurement_type, dm.method_label,
-           COUNT(*) AS measurements_with_primary_data
+           dm.instrument_label, COUNT(*) AS measurements_with_primary_data
     FROM dataset_measurements dm
              JOIN remote_measurement_data rmd
                   ON rmd.measurement_id = dm.measurement_code COLLATE utf8mb4_unicode_ci
                       AND rmd.deleted = FALSE
-    GROUP BY dm.project_id, dm.experiment_id, dm.measurement_type, dm.method_label
+    GROUP BY dm.project_id, dm.experiment_id, dm.measurement_type, dm.method_label,
+             dm.instrument_label
 ),
 -- Bytes per (experiment, analysis method, measurementCode), keyed by code first so that two
 -- measurement records sharing one code cannot double the volume.
 bytes_by_code AS (
     SELECT dm.project_id, dm.experiment_id, dm.measurement_type, dm.method_label,
-           dm.measurement_code,
+           dm.instrument_label, dm.measurement_code,
            MAX(rmd.total_filesize_bytes) AS code_bytes
     FROM dataset_measurements dm
              JOIN remote_measurement_data rmd
                   ON rmd.measurement_id = dm.measurement_code COLLATE utf8mb4_unicode_ci
                       AND rmd.deleted = FALSE
     GROUP BY dm.project_id, dm.experiment_id, dm.measurement_type, dm.method_label,
-             dm.measurement_code
+             dm.instrument_label, dm.measurement_code
 ),
 volume AS (
-    SELECT project_id, experiment_id, measurement_type, method_label,
+    SELECT project_id, experiment_id, measurement_type, method_label, instrument_label,
            COALESCE(SUM(code_bytes), 0) AS primary_data_bytes
     FROM bytes_by_code
-    GROUP BY project_id, experiment_id, measurement_type, method_label
+    GROUP BY project_id, experiment_id, measurement_type, method_label, instrument_label
 )
 SELECT k.project_id,
        k.experiment_id,
        e.experimentName                               AS experiment_name,
        k.measurement_type,
        k.method_label,
+       k.instrument_label,
        COALESCE(c.measurements, 0)                    AS measurements,
        COALESCE(w.measurements_with_primary_data, 0)  AS measurements_with_primary_data,
        COALESCE(v.primary_data_bytes, 0)              AS primary_data_bytes
@@ -264,18 +270,24 @@ FROM dataset_keys k
                        AND c.measurement_type = k.measurement_type
                        AND c.method_label COLLATE utf8mb4_unicode_ci =
                            k.method_label COLLATE utf8mb4_unicode_ci
+                       AND c.instrument_label COLLATE utf8mb4_unicode_ci =
+                           k.instrument_label COLLATE utf8mb4_unicode_ci
          LEFT JOIN with_data w
                    ON w.project_id = k.project_id
                        AND w.experiment_id COLLATE utf8mb4_unicode_ci = k.experiment_id
                        AND w.measurement_type = k.measurement_type
                        AND w.method_label COLLATE utf8mb4_unicode_ci =
                            k.method_label COLLATE utf8mb4_unicode_ci
+                       AND w.instrument_label COLLATE utf8mb4_unicode_ci =
+                           k.instrument_label COLLATE utf8mb4_unicode_ci
          LEFT JOIN volume v
                    ON v.project_id = k.project_id
                        AND v.experiment_id COLLATE utf8mb4_unicode_ci = k.experiment_id
                        AND v.measurement_type = k.measurement_type
                        AND v.method_label COLLATE utf8mb4_unicode_ci =
-                           k.method_label COLLATE utf8mb4_unicode_ci;
+                           k.method_label COLLATE utf8mb4_unicode_ci
+                       AND v.instrument_label COLLATE utf8mb4_unicode_ci =
+                           k.instrument_label COLLATE utf8mb4_unicode_ci;
 
 -- Supporting index: the view's hot path is the sample -> experiment -> analysis_method join.
 -- `sample(experiment_id)` already exists (create-project-page-read-models.sql); this one keeps the

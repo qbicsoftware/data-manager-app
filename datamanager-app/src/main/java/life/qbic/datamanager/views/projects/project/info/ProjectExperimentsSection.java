@@ -273,19 +273,18 @@ public class ProjectExperimentsSection extends Div {
             .thenComparing(AssayStanding::methodLabel))
         .toList();
 
-    // Domain and method, from the resolved label.
+    // Four independent facts, one column each. The method and the instrument are NOT merged: an
+    // earlier revision COALESCEd them, so one row showed an assay ("WGS") and the next an instrument
+    // ("Orbitrap Exploris 480") in the same column with nothing to tell them apart.
     //
-    // The method is sourced per domain because that is where the fact lives today: PXP and IP record
-    // lcmsMethod on the measurement, genomics records nothing there and falls back to the sample's
-    // analysis_method. That resolution happens once, in v_project_assay_standing -- the panel just
-    // displays what it is given, so the interim shape can be replaced in one place when the method
-    // vocabulary and the templates catch up (#1660).
-    //
-    // The method label is free text for PXP/IP, so it is displayed and never grouped on here.
+    // The instrument cell is an em dash when the measurement records none. Substituting the method
+    // there would re-create exactly that confusion; an empty cell says "not recorded", which is true.
     List<List<String>> rows = datasets.stream()
         .map(dataset -> List.of(
             MeasurementType.from(dataset.assayType()).getType(),
             dataset.methodLabel(),
+            dataset.instrumentLabel() == null || dataset.instrumentLabel().isBlank()
+                ? "\u2014" : dataset.instrumentLabel(),
             "%d of %d".formatted(dataset.withPrimaryData(), dataset.measurements()),
             DataStateLabel.word(DataState.of(dataset.withPrimaryData(), dataset.measurements()))))
         .toList();
@@ -297,7 +296,7 @@ public class ProjectExperimentsSection extends Div {
         datasets.isEmpty() || datasetsMissingData == 0 ? null
             : "%d of %d %s need primary data".formatted(datasetsMissingData, datasets.size(),
                 datasets.size() == 1 ? "method" : "methods"),
-        new String[]{"Omics domain", "Method", "Measurements with data", "Data availability"},
+        new String[]{"Omics domain", "Method", "Instrument", "With data", "Data availability"},
         rows,
         // A failed query must not read as "this project has no datasets": those are opposite
         // statements and the silent version of this hid a broken query once already.
@@ -360,8 +359,8 @@ public class ProjectExperimentsSection extends Div {
     // The grid's column count has to match the number of cells this panel emits, or the extra cell
     // wraps onto a new implicit row. The Samples panel emits three columns, the dataset panel four,
     // so the modifier is chosen from the column count rather than assumed.
-    if (columns.length == 4) {
-      list.addClassName("project-exp-panel-rows--four-columns");
+    if (columns.length > 3) {
+      list.addClassName("project-exp-panel-rows--" + columns.length + "-columns");
     }
     list.add(row(columns, true));
     if (rows.isEmpty()) {

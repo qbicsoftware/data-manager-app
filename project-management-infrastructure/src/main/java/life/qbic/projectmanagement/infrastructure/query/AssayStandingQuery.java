@@ -55,13 +55,13 @@ final class AssayStandingQuery {
             AND s.analysis_method NOT IN ('ISOLATION_ONLY', 'QC_ONLY', 'SEQ_ONLY')
       ),
       measurement_sample AS (
-          -- measurement -> the samples it measured, plus the instrument's vocabulary label where the
-          -- measurement records one (PXP / IP). NGS records none: its assays live in the sample
-          -- annotation. The NULL is explicitly collated so the UNION does not fail on mixed
-          -- collations.
+          -- measurement -> the samples it measured, plus the instrument's vocabulary label. All three
+          -- measurement tables record an instrument as an OntologyTerm, so all three branches read it
+          -- the same way.
           SELECT smm.measurement_id, m.measurementCode AS measurement_code, 'NGS' AS measurement_type,
-                 CAST(NULL AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci
-                     AS measurement_method,
+                 COALESCE(JSON_UNQUOTE(JSON_EXTRACT(m.instrument, '$.label')),
+                          JSON_UNQUOTE(JSON_EXTRACT(m.instrument, '$.name')))
+                     COLLATE utf8mb4_unicode_ci,
                  ps.sample_id
           FROM ngs_measurements m
                    JOIN specific_measurement_metadata_ngs smm
@@ -91,60 +91,66 @@ final class AssayStandingQuery {
                    JOIN project_samples ps
                         ON ps.sample_id = smm.sample_id COLLATE utf8mb4_unicode_ci
       ),
-      -- The method label resolves here, once: the measurement's instrument (a controlled vocabulary
-      -- term) where it recorded one, otherwise the sample's analysis_method (an enum). Both are
-      -- controlled, which is what a grouping key must be -- unlike lcmsMethod, free text, not read.
+      -- Two independent facts, never merged: the method is the sample's analysis_method (a controlled
+      -- enum), the instrument is the measurement's OntologyTerm. An earlier revision COALESCEd them
+      -- into one column, so a row showed an assay or an instrument with no way to tell which.
       dataset_measurements AS (
           SELECT DISTINCT ps.experiment_id,
                           ms.measurement_type,
-                          COALESCE(ms.measurement_method,
-                                  CAST(ps.analysis_method AS CHAR CHARACTER SET utf8mb4)
-                                      COLLATE utf8mb4_unicode_ci) AS method_label,
+                          CAST(ps.analysis_method AS CHAR CHARACTER SET utf8mb4)
+                              COLLATE utf8mb4_unicode_ci AS method_label,
+                          ms.instrument_label,
                           ms.measurement_id,
                           ms.measurement_code
           FROM measurement_sample ms
                    JOIN project_samples ps ON ps.sample_id = ms.sample_id
       ),
+      -- The instrument is part of the key: two datasets of one method on different instruments are
+      -- different datasets, and it is a vocabulary term so it groups correctly.
       dataset_keys AS (
-          SELECT DISTINCT experiment_id, measurement_type, method_label FROM dataset_measurements
+          SELECT DISTINCT experiment_id, measurement_type, method_label, instrument_label
+          FROM dataset_measurements
       ),
       counted AS (
-          SELECT experiment_id, measurement_type, method_label,
+          SELECT experiment_id, measurement_type, method_label, instrument_label,
                  COUNT(*) AS measurements
           FROM dataset_measurements
-          GROUP BY experiment_id, measurement_type, method_label
+          GROUP BY experiment_id, measurement_type, method_label, instrument_label
       ),
       with_data AS (
-          SELECT dm.experiment_id, dm.measurement_type, dm.method_label,
+          SELECT dm.experiment_id, dm.measurement_type, dm.method_label, dm.instrument_label,
                  COUNT(*) AS measurements_with_primary_data
           FROM dataset_measurements dm
                    JOIN remote_measurement_data rmd
                         ON rmd.measurement_id = dm.measurement_code COLLATE utf8mb4_unicode_ci
                             AND rmd.deleted = FALSE
-          GROUP BY dm.experiment_id, dm.measurement_type, dm.method_label
+          GROUP BY dm.experiment_id, dm.measurement_type, dm.method_label, dm.instrument_label
       ),
       -- Bytes per (experiment, domain, method, measurementCode), keyed by code first so that two
       -- measurement records sharing one code cannot double the volume (view trap 4b).
       bytes_by_code AS (
-          SELECT dm.experiment_id, dm.measurement_type, dm.method_label, dm.measurement_code,
+          SELECT dm.experiment_id, dm.measurement_type, dm.method_label, dm.instrument_label,
+                 dm.measurement_code,
                  MAX(rmd.total_filesize_bytes) AS code_bytes
           FROM dataset_measurements dm
                    JOIN remote_measurement_data rmd
                         ON rmd.measurement_id = dm.measurement_code COLLATE utf8mb4_unicode_ci
                             AND rmd.deleted = FALSE
-          GROUP BY dm.experiment_id, dm.measurement_type, dm.method_label, dm.measurement_code
+          GROUP BY dm.experiment_id, dm.measurement_type, dm.method_label, dm.instrument_label,
+                   dm.measurement_code
       ),
       volume AS (
-          SELECT experiment_id, measurement_type, method_label,
+          SELECT experiment_id, measurement_type, method_label, instrument_label,
                  COALESCE(SUM(code_bytes), 0) AS primary_data_bytes
           FROM bytes_by_code
-          GROUP BY experiment_id, measurement_type, method_label
+          GROUP BY experiment_id, measurement_type, method_label, instrument_label
       )
       SELECT pe.experiment_id,
              :projectId              AS project_id,
              pe.experiment_name,
              k.measurement_type,
              k.method_label,
+             k.instrument_label,
              COALESCE(c.measurements, 0)                   AS measurements,
              COALESCE(w.measurements_with_primary_data, 0) AS measurements_with_primary_data,
              COALESCE(v.primary_data_bytes, 0)             AS primary_data_bytes
@@ -156,17 +162,23 @@ final class AssayStandingQuery {
                              AND c.measurement_type = k.measurement_type
                              AND c.method_label COLLATE utf8mb4_unicode_ci =
                                  k.method_label COLLATE utf8mb4_unicode_ci
+                             AND c.instrument_label COLLATE utf8mb4_unicode_ci =
+                                 k.instrument_label COLLATE utf8mb4_unicode_ci
                LEFT JOIN with_data w
                          ON w.experiment_id COLLATE utf8mb4_unicode_ci = k.experiment_id
                              AND w.measurement_type = k.measurement_type
                              AND w.method_label COLLATE utf8mb4_unicode_ci =
                                  k.method_label COLLATE utf8mb4_unicode_ci
+                             AND w.instrument_label COLLATE utf8mb4_unicode_ci =
+                                 k.instrument_label COLLATE utf8mb4_unicode_ci
                LEFT JOIN volume v
                          ON v.experiment_id COLLATE utf8mb4_unicode_ci = k.experiment_id
                              AND v.measurement_type = k.measurement_type
                              AND v.method_label COLLATE utf8mb4_unicode_ci =
                                  k.method_label COLLATE utf8mb4_unicode_ci
-      ORDER BY pe.experiment_name, k.measurement_type, k.method_label
+                             AND v.instrument_label COLLATE utf8mb4_unicode_ci =
+                                 k.instrument_label COLLATE utf8mb4_unicode_ci
+      ORDER BY pe.experiment_name, k.measurement_type, k.method_label, k.instrument_label
       """;
 
   private AssayStandingQuery() {

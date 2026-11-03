@@ -277,14 +277,15 @@
   font-size: var(--lumo-font-size-s);
 }
 
-/* Dataset panel: four cells. The domain and the method are both prose-ish and share the slack, the
-   count holds a fixed column so the numbers line up, and availability is a short trailing word. */
-.project-exp-panel-rows--four-columns .project-exp-panel-row {
+/* Dataset panel: five cells. Domain and method are short controlled values; the instrument is the
+   long one and takes the slack, truncating rather than pushing the numbers off the row. */
+.project-exp-panel-rows--5-columns .project-exp-panel-row {
   grid-template-columns:
-      minmax(0, 1fr)      /* omics domain */
-      minmax(0, 1.2fr)    /* method */
-      minmax(0, max-content) /* measurements with data */
-      max-content;        /* data availability */
+      minmax(0, max-content)  /* omics domain */
+      minmax(0, max-content)  /* method */
+      minmax(0, 1fr)          /* instrument: the only open-ended value */
+      minmax(0, max-content)  /* measurements with data */
+      max-content;            /* data availability */
 }
 
 /* The last column is a timestamp and is right-aligned, so its header is too -- otherwise "Changed"
