@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -93,7 +94,6 @@ public class ProjectPageReadRepositoryImpl implements ProjectPageReadRepository 
           resultSet.getString("measurement_code"),
           resultSet.getString("measurement_name"),
           resultSet.getString("facility"),
-          resultSet.getString("instrument"),
           resultSet.getString("sample_pool"),
           resultSet.getInt("sample_count"),
           toInstant(resultSet, "registered_at"),
@@ -101,7 +101,25 @@ public class ProjectPageReadRepositoryImpl implements ProjectPageReadRepository 
           toLong(resultSet, "data_file_count"),
           toLong(resultSet, "data_size_bytes"),
           fileTypes(resultSet.getString("data_file_types")),
-          toInstant(resultSet, "data_uploaded_at"));
+          toInstant(resultSet, "data_uploaded_at"),
+          methodList(resultSet.getString("method_labels")),
+          resultSet.getString("instrument_label"));
+    }
+
+    /**
+     * The row's methods, from the comma-delimited list the query aggregates.
+     *
+     * <p>A measurement attributed to several methods (ADR 0010 decision 4) arrives as
+     * {@code WGS,RNA-SEQ}; it is split here so the view never parses SQL output itself.</p>
+     */
+    private static List<String> methodList(String joined) {
+      if (joined == null || joined.isBlank()) {
+        return List.of();
+      }
+      return Arrays.stream(joined.split(","))
+          .map(String::trim)
+          .filter(method -> !method.isEmpty())
+          .toList();
     }
 
     /**
@@ -251,6 +269,9 @@ public class ProjectPageReadRepositoryImpl implements ProjectPageReadRepository 
     parameters.put("experimentId", experimentId);
     parameters.put("measurementType",
         filter.measurementType() == null ? "" : filter.measurementType().name());
+    parameters.put("methodLabel", filter.methodLabel() == null ? "" : filter.methodLabel());
+    parameters.put("instrumentLabel",
+        filter.instrumentLabel() == null ? "" : filter.instrumentLabel());
     parameters.put("dataStatus",
         filter.dataStatus() == null ? "" : filter.dataStatus().name());
     parameters.put("searchTerm", filter.searchTerm());

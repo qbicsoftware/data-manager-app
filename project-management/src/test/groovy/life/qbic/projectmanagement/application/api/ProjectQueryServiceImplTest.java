@@ -104,8 +104,8 @@ class ProjectQueryServiceImplTest {
   @DisplayName("measurement data is streamed with the given experiment, offset, limit and filter")
   void streamsMeasurementData() {
     MeasurementDataRow row = new MeasurementDataRow("mid-1", "E1", "GENOMICS", "NGS-1", null,
-        null, null, null, 1, java.time.Instant.EPOCH,
-        MeasurementDataRow.DataStatus.WAITING, null, null, null, null);
+        null, null, 1, java.time.Instant.EPOCH,
+        MeasurementDataRow.DataStatus.WAITING, null, null, null, null, null, null);
     MeasurementDataFilter filter = MeasurementDataFilter.all();
     when(readRepository.findMeasurementData("P1", "E1", 24, 12, filter))
         .thenReturn(List.of(row));

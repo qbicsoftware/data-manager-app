@@ -19,15 +19,16 @@ class MeasurementDataRowSpec extends Specification {
 
     private static MeasurementDataRow waiting() {
         return new MeasurementDataRow("mid-1", "exp-1", "GENOMICS", "NGS-123", "NGS run",
-                "QBiC", "{\"label\":\"NovaSeq\"}", "pool-1", 2, REGISTERED,
-                MeasurementDataRow.DataStatus.WAITING, null, null, null, null)
+                "QBiC", "pool-1", 2, REGISTERED,
+                MeasurementDataRow.DataStatus.WAITING, null, null, null, null,
+                List.of(), null)
     }
 
     private static MeasurementDataRow available(Long files, Long bytes) {
         return new MeasurementDataRow("mid-2", "exp-1", "PROTEOMICS", "MS-456", "PX run",
-                "QBiC", null, "pool-2", 3, REGISTERED,
+                "QBiC", "pool-2", 3, REGISTERED,
                 MeasurementDataRow.DataStatus.AVAILABLE, files, bytes,
-                Set.of("raw", "mzml"), UPLOADED)
+                Set.of("raw", "mzml"), UPLOADED, List.of(), null)
     }
 
     def "a waiting entry has no data and reports no size"() {
@@ -78,8 +79,8 @@ class MeasurementDataRowSpec extends Specification {
     def "file types default to empty instead of null so callers never null-check"() {
         when:
         def row = new MeasurementDataRow("mid-3", "exp-1", "IMMUNOPEPTIDOMICS", "IP-789", null,
-                null, null, null, 0, REGISTERED, MeasurementDataRow.DataStatus.WAITING,
-                null, null, null, null)
+                null, null, 0, REGISTERED, MeasurementDataRow.DataStatus.WAITING,
+                null, null, null, null, null, null)
 
         then:
         row.dataFileTypes() != null
@@ -88,8 +89,8 @@ class MeasurementDataRowSpec extends Specification {
 
     def "the measurement identity is required"() {
         when:
-        new MeasurementDataRow(null, "exp-1", "GENOMICS", "NGS-1", null, null, null, null, 0,
-                REGISTERED, MeasurementDataRow.DataStatus.WAITING, null, null, null, null)
+        new MeasurementDataRow(null, "exp-1", "GENOMICS", "NGS-1", null, null, null, 0,
+                REGISTERED, MeasurementDataRow.DataStatus.WAITING, null, null, null, null, null, null)
 
         then:
         thrown(NullPointerException)
@@ -97,10 +98,42 @@ class MeasurementDataRowSpec extends Specification {
 
     def "the data status is required so an entry is never neither waiting nor available"() {
         when:
-        new MeasurementDataRow("mid-4", "exp-1", "GENOMICS", "NGS-1", null, null, null, null, 0,
-                REGISTERED, null, null, null, null, null)
+        new MeasurementDataRow("mid-4", "exp-1", "GENOMICS", "NGS-1", null, null, null, 0,
+                REGISTERED, null, null, null, null, null, null, null)
 
         then:
         thrown(NullPointerException)
+    }
+
+    @spock.lang.Unroll
+    def "the dataset identity states method and instrument, and never invents one (#methods / #instrument -> #expected)"() {
+        given: "a row of a dataset, with and without the parts of its identity"
+        def row = new MeasurementDataRow("mid-1", "exp-1", "GENOMICS", "NGS-1", null,
+                null, null, 1, REGISTERED, MeasurementDataRow.DataStatus.WAITING,
+                null, null, null, null, methods, instrument)
+
+        expect: "the identity is what tells two rows of one domain apart, so neither part is"
+        // substituted for the other and neither is invented: a measurement that records no method, or
+        // no instrument, states only what it has.
+        row.datasetIdentity() == expected
+
+        where:
+        methods        | instrument      || expected
+        ["WGS"]        | "Illumina"      || "WGS \u00b7 Illumina"
+        ["RNA-SEQ"]    | "Illumina"      || "RNA-SEQ \u00b7 Illumina"
+        ["WGS"]        | null            || "WGS"
+        ["WGS"]        | ""              || "WGS"
+        []             | "Illumina"      || "Illumina"
+        []             | null            || ""
+    }
+
+    def "a measurement attributed to several methods lists them all instead of picking one"() {
+        given: "one measurement that measured samples annotated with different methods"
+        def row = new MeasurementDataRow("mid-1", "exp-1", "GENOMICS", "NGS-1", null,
+                null, null, 2, REGISTERED, MeasurementDataRow.DataStatus.WAITING,
+                null, null, null, null, ["WGS", "RNA-SEQ"], "Illumina")
+
+        expect: "picking one would misattribute the row (ADR 0010 decision 4)"
+        row.datasetIdentity() == "WGS, RNA-SEQ \u00b7 Illumina"
     }
 }

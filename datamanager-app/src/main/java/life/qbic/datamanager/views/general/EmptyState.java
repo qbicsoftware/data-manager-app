@@ -36,7 +36,21 @@ import com.vaadin.flow.component.icon.VaadinIcon;
  */
 public class EmptyState extends Div {
 
-  private final Button actionButton;
+  private Button actionButton;
+
+  /**
+   * The listener to attach to the action button, kept rather than bound at registration time.
+   *
+   * <p>{@link #setContent} can state a second condition whose action label appears only then, so the
+   * button may not exist when the caller registers. Storing the listener means callers register once,
+   * in any order, and the wiring happens whenever a button comes into being -- which is what the grid
+   * needed: it registers in its constructor, long before it knows whether the empty state will be a
+   * filtered or an unfiltered one.</p>
+   */
+  private java.util.function.Consumer<com.vaadin.flow.component.ClickEvent<Button>> actionHandler;
+
+  /** Whether the delegating click listener is already on {@link #actionButton}. */
+  private boolean handlerAttached;
 
   /**
    * Creates an empty state without a call to action. Use this when the user cannot resolve the
@@ -86,19 +100,92 @@ public class EmptyState extends Div {
     if (actionButton != null) {
       actionButton.addClassName("primary");
       actionButton.addClassName("empty-state__action");
+      attachHandler();
       add(actionButton);
     }
   }
 
   /**
-   * Registers a click listener on the call-to-action button. Only call this when the empty state
-   * was created with an action label.
+   * Wires the stored handler to the current button, exactly once per button.
+   *
+   * <p>The listener is a delegating one: it reads {@link #actionHandler} on every click, so replacing
+   * the handler needs no re-wiring and registering twice cannot double-fire. The guard is only there
+   * because a button created by {@link #setContent} and one created by the constructor must not both
+   * attach a delegate.</p>
+   */
+  private void attachHandler() {
+    if (handlerAttached) {
+      return;
+    }
+    actionButton.addClickListener(event -> {
+      if (actionHandler != null) {
+        actionHandler.accept(event);
+      }
+    });
+    handlerAttached = true;
+  }
+
+  /**
+   * Restates the placeholder.
+   *
+   * <p>For a surface whose empty condition changes while it stays on screen -- a grid whose search
+   * goes from matching nothing to being cleared -- so one instance can state both conditions instead
+   * of being rebuilt. The content is replaced in place, and the live region is unchanged, so the
+   * second statement is announced exactly like the first.</p>
+   *
+   * <p>The action is removed and re-added as needed: passing {@code null} leaves a placeholder with no
+   * call to action, which is the honest rendering when the reader cannot resolve the emptiness from
+   * here.</p>
+   *
+   * @param icon        the icon shown above the title
+   * @param title       a short statement of what is empty
+   * @param text        an explanation of what the item is for and what happens next
+   * @param actionLabel the label of the primary action, or {@code null} to omit it
+   */
+  public void setContent(VaadinIcon icon, String title, String text, String actionLabel) {
+    requireNonNull(icon, "icon must not be null");
+    requireNonNull(title, "title must not be null");
+    requireNonNull(text, "text must not be null");
+    var iconElement = icon.create();
+    iconElement.addClassName("empty-state__icon");
+    var titleElement = new H3(title);
+    titleElement.addClassName("empty-state__title");
+    var textElement = new Span(text);
+    textElement.addClassName("empty-state__text");
+    removeAll();
+    add(iconElement, titleElement, textElement);
+    if (actionLabel != null) {
+      if (actionButton == null) {
+        actionButton = new Button(actionLabel);
+        actionButton.addClassName("primary");
+        actionButton.addClassName("empty-state__action");
+        // A button appearing for the first time -- the filtered condition after an unfiltered one --
+        // still has to fire the handler the caller registered before it existed.
+        handlerAttached = false;
+        attachHandler();
+      } else {
+        // Relabelled, not replaced: a listener registered on the first statement must keep firing
+        // after a restatement, which a fresh button would silently drop.
+        actionButton.setText(actionLabel);
+      }
+      add(actionButton);
+    }
+  }
+
+  /**
+   * Registers a click listener on the call-to-action button.
+   *
+   * <p>Safe to call before an action exists: {@link #setContent} may introduce the button later, and
+   * the listener is attached when it does. This is the difference between a placeholder that can be
+   * restated and one that has to be rebuilt for every condition.</p>
    *
    * @param listener the listener invoked when the action button is clicked
    */
   public void addActionListener(ComponentEventListener<ClickEvent<Button>> listener) {
-    requireNonNull(actionButton,
-        "This empty state has no action button; create it with an action label first")
-        .addClickListener(requireNonNull(listener, "listener must not be null"));
+    requireNonNull(listener, "listener must not be null");
+    this.actionHandler = event -> listener.onComponentEvent(event);
+    if (actionButton != null) {
+      attachHandler();
+    }
   }
 }

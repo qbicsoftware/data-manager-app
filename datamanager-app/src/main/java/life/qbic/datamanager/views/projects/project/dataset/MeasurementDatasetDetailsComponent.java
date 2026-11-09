@@ -41,6 +41,8 @@ import java.util.stream.Collectors;
 import life.qbic.application.commons.FileSizeFormatter;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.application.commons.time.DateTimeFormat;
+import life.qbic.datamanager.views.MeasurementType;
+import life.qbic.datamanager.views.TagFactory;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.pagination.ListState;
 import life.qbic.datamanager.views.general.pagination.ListStateCodec;
@@ -50,6 +52,7 @@ import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.api.ProjectQueryService;
 import life.qbic.projectmanagement.application.api.ProjectQueryService.MeasurementDataFilter;
+import life.qbic.projectmanagement.application.query.AssayType;
 import life.qbic.projectmanagement.application.query.MeasurementDataRow;
 import life.qbic.projectmanagement.application.query.MeasurementDataRow.DataStatus;
 import org.jspecify.annotations.NonNull;
@@ -101,7 +104,6 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
 
   private final AtomicReference<String> clientTimeZone = new AtomicReference<>("UTC");
 
-  private final Span statusLine = new Span();
   private final Div errorState = new Div();
   private final Icon selectionIcon = VaadinIcon.CHECK_SQUARE_O.create();
   private final Span selectionDisplay = new Span();
@@ -156,6 +158,9 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
   private final Map<String, String> singleSampleNames = new HashMap<>();
 
   private MeasurementDatasetSegment activeSegment;
+
+  /** States which dataset the grid is showing; see {@link #buildToolbar()}. */
+  private final Span datasetScope = new Span();
   private DataStatusFilter activeDataStatus = DataStatusFilter.ALL;
 
   public MeasurementDatasetDetailsComponent(@NonNull ProjectQueryService queryService,
@@ -168,6 +173,10 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
     paginatedGrid = new PaginatedGrid<>(grid, this::loadPage,
         MeasurementDataRow::measurementId, "measurements", MeasurementDataSort.DEFAULT,
         false, false, false);
+    // The grid renders no search field here (showSearch=false): this page owns it, in the toolbar
+    // above. So the placeholder's "Clear search" must clear THIS field -- otherwise it clears the
+    // grid's own, which is not in the DOM, and the button appears to do nothing.
+    paginatedGrid.setEmptyStateClearAction(this::clearSearch);
     paginatedGrid.addClassNames("width-full");
 
     configureGrid();
@@ -258,6 +267,33 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
         .setTooltipGenerator(MeasurementDataRow::measurementName)
         .setAutoWidth(true)
         .setResizable(true);
+    // The omics domain, in its own column and in the app's existing domain tag -- the same tag the
+    // Datasets page, the project cards and the pinned projects use, so the word and the colour hold
+    // everywhere. A separate column rather than a prefix on the identity string: "Immunopeptidomics"
+    // is 17 characters, and prefixing it produced "Immunopeptidomics \u00b7 WGS \u00b7 Illumina" --
+    // 34 characters of identity before a reader reached the sample name, in a column already sized by
+    // the longest instrument. As its own column it is sortable, it aligns with the tag column on the
+    // Datasets page, and it needs no abbreviation nobody can read.
+    grid.addComponentColumn(row -> domainCell(row.measurementType()))
+        .setHeader("Domain")
+        .setSortProperty("domain")
+        // Ordered as the cards above are ordered (genomics, proteomics, immunopeptidomics), not
+        // alphabetically by enum name: sorting the raw column put immunopeptidomics between genomics
+        // and proteomics, which is neither the biological grouping nor the one the page teaches.
+        .setComparator(Comparator.comparingInt(
+            (MeasurementDataRow row) -> domainOrder(row.measurementType())))
+        .setAutoWidth(true)
+        .setFlexGrow(0)
+        .setResizable(true);
+    // The rest of the dataset identity, one line per row: method and instrument. Shown by default,
+    // because it is not detail -- it is what tells two rows of one omics domain apart. An experiment
+    // measured as both WGS and RNA-Seq renders rows that are otherwise indistinguishable, and a list
+    // filtered to one dataset gives no sign of that filter anywhere else on the page.
+    grid.addColumn(row -> textOrDash(row.datasetIdentity()))
+        .setHeader("Method \u00b7 Instrument")
+        .setAutoWidth(true)
+        .setResizable(true)
+        .setTooltipGenerator(MeasurementDataRow::datasetIdentity);
     // A bare sample count answers a question nobody asks: for a proteomics pool of fifty the
     // number is noise. What a reader needs is *which* samples and whether it is pooled, so a pooled
     // measurement shows the registrant's pool label (free text they typed, e.g. "pool group 1") in
@@ -318,7 +354,7 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
         .setResizable(true)
         .setVisible(false);
     grid.addColumn(row -> row.hasRecordedSize()
-            ? FileSizeFormatter.formatBytes(row.dataSizeBytes())
+            ? FileSizeFormatter.formatBytesCompact(row.dataSizeBytes())
             : "")
         .setHeader("Total size")
         .setAutoWidth(true)
@@ -413,29 +449,49 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
 
   private Span dataStatusCell(MeasurementDataRow row) {
     Span cell = new Span();
+    // "Waiting" carries no second fact, so it is stated alone: there is no size and no file count to
+    // report for data that has not arrived, and a placeholder beside it would be noise.
     if (row.dataStatus() == DataStatus.WAITING) {
       cell.setText("Waiting");
       cell.addClassName("measurement-dataset-status--waiting");
-    } else {
-      // The facts that make the datum usable are stated with the status, so the reader does not
-      // have to open the panel to know whether the data is even the right shape.
-      cell.setText("Available \u00b7 " + dataFacts(row));
-      cell.addClassName("measurement-dataset-status--available");
+      cell.addClassName("measurement-dataset-status");
+      return cell;
     }
+
+    // Available: the status word, a median-dot separator, then the one quantity a reader needs from a
+    // list -- how big the download is. The file count is deliberately not here: it answers "how many
+    // parts" rather than "will it fit", it was the third fact in a cell whose job is to state whether
+    // data exists, and it cost the width the Domain column now uses. It stays in the detail panel,
+    // where a reader checking the record can see it without competing with every other row.
     cell.addClassName("measurement-dataset-status");
-    cell.getElement().setAttribute("title", cell.getText());
+    cell.addClassName("measurement-dataset-status--available");
+    cell.add(new Span("Available"));
+    Span separator = new Span("\u00b7");
+    separator.addClassName("measurement-dataset-status-separator");
+    separator.getElement().setAttribute("aria-hidden", "true");
+    cell.add(separator);
+    Span size = new Span(sizeText(row));
+    size.addClassName("measurement-dataset-status-size");
+    cell.add(size);
+
+    // The cell is three nodes now, so its spoken form is spelled out rather than read from the text
+    // content, which would run the separator into the words.
+    cell.getElement().setAttribute("title", "Available \u00b7 " + sizeText(row));
     return cell;
   }
 
-  private static String dataFacts(MeasurementDataRow row) {
-    List<String> facts = new ArrayList<>();
-    if (row.fileCountOrZero() > 0) {
-      facts.add(row.fileCountOrZero() == 1 ? "1 file" : row.fileCountOrZero() + " files");
+  /**
+   * The size of the data that has arrived, or an explicit statement that it is unknown.
+   *
+   * <p>{@code 0} bytes is ambiguous -- it means either no data or data whose size the external sync
+   * never recorded -- so it is never rendered as "0 B", which would tell a reader their download is
+   * free.</p>
+   */
+  private static String sizeText(MeasurementDataRow row) {
+    if (!row.hasRecordedSize()) {
+      return "size not recorded";
     }
-    if (row.hasRecordedSize()) {
-      facts.add(FileSizeFormatter.formatBytes(row.dataSizeBytes()));
-    }
-    return facts.isEmpty() ? "no file details recorded" : String.join(" \u00b7 ", facts);
+    return FileSizeFormatter.formatBytesCompact(row.dataSizeBytes());
   }
 
   private ComponentRenderer<Div, MeasurementDataRow> detailsCellRenderer() {
@@ -472,6 +528,13 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
     searchField.addClassName("measurement-dataset-search");
     Div row = new Div(searchField, dataStatusFilter);
     row.addClassName("measurement-dataset-toolbar");
+    // What the list is a list of. The grid is filtered to one dataset, but the filter leaves no trace
+    // in the grid itself, so without this a reader sees a subset and cannot tell -- and in an
+    // experiment measured several ways, cannot tell which subset. It sits beside the search field
+    // because it scopes the list in exactly the way the search does, and it is stated once here
+    // rather than repeated in the Method/Instrument column of every row.
+    datasetScope.addClassName("measurement-dataset-scope");
+    row.add(datasetScope);
     // Grouped by scope, so the row reads as three things rather than seven peers. The selection
     // actions sit together because they act on the same thing; "Get data" and the column menu are
     // dataset- and view-scoped and sit beyond a separator.
@@ -495,6 +558,20 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
     toolbarRight.add(gridOverflowMenu(grid));
     row.add(toolbarRight);
     return row;
+  }
+
+  /**
+   * Clears the search field and the list's filter.
+   *
+   * <p>Setting the field is what the reader sees; applying the list state is what actually reloads,
+   * because the field's own listener is {@code LAZY} and would fire on the next pause rather than
+   * now. Doing both keeps the visible control and the query in step immediately.</p>
+   */
+  private void clearSearch() {
+    searchField.clear();
+    if (!paginatedGrid.listState().filter().isBlank()) {
+      paginatedGrid.setListState(paginatedGrid.listState().withFilter("").withPage(1));
+    }
   }
 
   private void configureSearch() {
@@ -921,8 +998,14 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
           ProjectQueryService.MeasurementDataSortKey.MEASUREMENT_ID,
           ProjectQueryService.SortDirection.ASC));
     }
-    AssayTypeValue type = activeSegment == null ? null : new AssayTypeValue(activeSegment);
-    return new MeasurementDataFilter(state.filter(), type.value(),
+    // The dataset is the filter: domain, method and instrument together. Filtering on the domain
+    // alone -- which is what this did while a dataset was an omics domain -- showed every measurement
+    // of the domain, so two datasets of one domain could not be told apart in the list below the
+    // cards.
+    return new MeasurementDataFilter(state.filter(),
+        activeSegment == null ? null : activeSegment.assayType(),
+        activeSegment == null ? null : activeSegment.methodLabel(),
+        activeSegment == null ? null : activeSegment.instrumentLabel(),
         activeDataStatus.status(), orders);
   }
 
@@ -933,6 +1016,37 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
    * the visible page — the same baseline the retired measurement page offered, and the rescue path
    * for a user whose in-session selection was lost.</p>
    */
+  /**
+   * The whole current view as a selection: the rows the filter admits, not just the selected ones.
+   *
+   * <p>This is what an unscoped edit exports. It is a {@link MeasurementSelection} rather than a flat
+   * list of ids because the view can span several omics domains -- the "all measurements" card exists
+   * for exactly that -- and each domain's template takes only its own ids. A flat list handed to every
+   * domain would put measurements into a sheet that cannot describe them.</p>
+   *
+   * <p>Defined as "the selection, or else every row the current filter matches", so it needs no second
+   * definition of what the view contains: the list state, the search term and the data filter are the
+   * same ones the grid is rendering.</p>
+   */
+  public MeasurementSelection currentSelectionOrWholeView() {
+    MeasurementSelection selected = currentSelection();
+    if (!selected.isEmpty()) {
+      return selected;
+    }
+    // Count first, then fetch exactly that many: the page query takes an offset/limit pair, and a
+    // sentinel limit is both unreliable as SQL and unclear to read. The same two calls the export-all
+    // path above already makes, under the same filter.
+    MeasurementDataFilter filter = currentFilter(paginatedGrid.listState());
+    long total = queryService.countMeasurementData(projectId, experimentId, filter)
+        .blockOptional().orElse(0L);
+    if (total <= 0) {
+      return MeasurementSelection.empty();
+    }
+    return MeasurementSelection.of(queryService.getMeasurementData(projectId, experimentId, 0,
+            (int) Math.min(total, Integer.MAX_VALUE), filter)
+        .collectList().blockOptional().orElse(java.util.List.of()));
+  }
+
   public java.util.List<String> allMeasurementIds() {
     MeasurementDataFilter filter = currentFilter(new ListState(1, 1,
         paginatedGrid.listState().filter(),
@@ -1105,28 +1219,13 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
       return;
     }
     this.activeSegment = segment;
+    // The scope label follows the selection, so the list always says what it holds.
+    // A null segment is the "all measurements" view, and it says so: an empty pill would leave the
+    // list looking unscoped by accident, which is the state this label exists to rule out.
+    datasetScope.setText(segment == null
+        ? "All measurements"
+        : "%s \u00b7 %s".formatted(segment.domainLabel(), segment.identityLabel()));
     paginatedGrid.setListState(paginatedGrid.listState().withPage(1));
-  }
-
-  /**
-   * States what the page currently holds, above the list.
-   *
-   * @param total    the number of entries in the experiment
-   * @param waiting  how many of them are still waiting for their data
-   */
-  public void updateStatusLine(long total, long waiting) {
-    if (total <= 0) {
-      statusLine.setText("No measurement data registered yet");
-    } else {
-      String measurements = total == 1 ? "1 measurement" : "%d measurements".formatted(total);
-      String pending = waiting == 0
-          ? "all with data available"
-          : waiting == 1
-              ? "1 waiting for data"
-              : "%d waiting for data".formatted(waiting);
-      statusLine.setText(measurements + " \u00b7 " + pending);
-    }
-    statusLine.addClassName("measurement-dataset-status-line");
   }
 
   /**
@@ -1203,6 +1302,60 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
     return value == null || value.isBlank() ? "\u2014" : value;
   }
 
+  /**
+   * The omics domain of a row, as the app's domain tag.
+   *
+   * <p>Built through {@link TagFactory} so the word and the colour are the ones the Datasets page, the
+   * project cards and the pinned projects already use -- a row here and a card there describe the same
+   * dataset, and two renderings of the same fact would be the drift this page keeps being fixed for.
+   * The column header says "Domain", so the tag does not repeat it in a sentence.</p>
+   *
+   * <p>Deliberately the <em>full</em> word, not an abbreviation: {@code Immunopeptidomics} is long but
+   * it is read on first sight, and the app has no agreed abbreviation for it -- {@code IP} already
+   * means three other things to the people who use this page.</p>
+   */
+  /**
+   * The domain's display order, stated explicitly.
+   *
+   * <p>Not the enum's ordinal: {@code MeasurementType} declares {@code PROTEOMICS} first, and
+   * {@code AssayType} orders them differently again, so relying on either would put proteomics above
+   * genomics while the cards above the grid show genomics first. The order here is the order the page
+   * teaches: genomics, proteomics, immunopeptidomics.</p>
+   */
+  private static int domainOrder(String measurementType) {
+    try {
+      return switch (MeasurementType.from(AssayType.fromColumnValue(measurementType))) {
+        case GENOMICS -> 0;
+        case PROTEOMICS -> 1;
+        case IMMUNOPEPTIDOMICS -> 2;
+      };
+    } catch (IllegalArgumentException unknownDomain) {
+      // Sorted last rather than dropped: an unknown domain is a data defect that should stay visible.
+      return Integer.MAX_VALUE;
+    }
+  }
+
+  private static com.vaadin.flow.component.Component domainCell(String measurementType) {
+    if (measurementType == null || measurementType.isBlank()) {
+      return new Span("\u2014");
+    }
+    try {
+      // fromColumnValue, not valueOf: two conventions exist in this codebase (the enum names this
+      // query writes, and the short table codes the views write), and valueOf accepts only one.
+      Span cell = new Span(TagFactory.forMeasurement(
+          MeasurementType.from(AssayType.fromColumnValue(measurementType))));
+      // The tag is a padded box with line-height 1, so in a grid cell it sits a couple of pixels off
+      // the row's text baseline. The wrapper carries the alignment so the column reads as text beside
+      // text instead of as a box among lines.
+      cell.addClassName("measurement-dataset-domain-cell");
+      return cell;
+    } catch (IllegalArgumentException unknownDomain) {
+      // A domain the view enum does not know is a data defect, not a rendering one: state it rather
+      // than throwing inside a grid cell renderer, which takes the whole column down.
+      return new Span(measurementType);
+    }
+  }
+
   /** The data-status filter's options, with the label each carries in the toolbar. */
   public enum DataStatusFilter {
     // "All data" rather than "All": the control carries no field label (a label above it was the
@@ -1229,15 +1382,4 @@ public class MeasurementDatasetDetailsComponent extends Div implements Serializa
     }
   }
 
-  /**
-   * Bridges the page's segment to the read model's {@link life.qbic.projectmanagement.application.query.AssayType}
-   * without the view having to construct enum names by string.
-   */
-  private record AssayTypeValue(
-      life.qbic.projectmanagement.application.query.AssayType value) {
-
-    private AssayTypeValue(MeasurementDatasetSegment segment) {
-      this(life.qbic.projectmanagement.application.query.AssayType.valueOf(segment.apiValue()));
-    }
-  }
 }

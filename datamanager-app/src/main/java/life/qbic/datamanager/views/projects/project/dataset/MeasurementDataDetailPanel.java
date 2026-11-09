@@ -225,6 +225,19 @@ public class MeasurementDataDetailPanel extends Div implements Serializable {
     // Named for what it dates: the metadata, not its data. They are different moments, often days
     // apart, and the old label left the reader guessing which one they were looking at.
     identity.add(field("Metadata registered", format(formatter, row.registeredAt()), false));
+
+    // The dataset identity: which method produced this measurement, and on which instrument. Two
+    // fields rather than the joined line the grid renders, because here there is room to label them
+    // and the panel is where a reader checks which of two similar rows they are looking at. The
+    // instrument is the one fact that identifies a mass-spectrometry run -- the only controlled term
+    // that distinguishes two datasets of the same nominal method -- and it was absent from this panel
+    // entirely.
+    if (!row.methods().isEmpty()) {
+      identity.add(field("Method", String.join(", ", row.methods()), false));
+    }
+    if (hasText(row.instrumentLabel())) {
+      identity.add(field("Instrument", row.instrumentLabel(), false));
+    }
     groups.add(new DetailGroup("Measurement", identity));
 
     groups.add(new DetailGroup("Sample", sampleFields(row)));
@@ -278,7 +291,7 @@ public class MeasurementDataDetailPanel extends Div implements Serializable {
     // 0 bytes is ambiguous: either no data or data whose size the sync never recorded. It must
     // never be rendered as an empty dataset.
     facts.add(row.hasRecordedSize()
-        ? FileSizeFormatter.formatBytes(row.dataSizeBytes())
+        ? FileSizeFormatter.formatBytesCompact(row.dataSizeBytes())
         : "size not recorded");
     if (!row.dataFileTypes().isEmpty()) {
       facts.add(String.join(", ", row.dataFileTypes().stream().sorted().toList()));

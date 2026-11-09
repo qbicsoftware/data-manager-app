@@ -201,7 +201,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     // selection bar and pager so all controls sit in one row next to the search field, matching
     // the measurement lists. The grid still owns page loading, clamping and the empty state.
     paginatedGrid = new PaginatedGrid<>(sampleGrid, this::loadPage,
-        preview -> preview.sampleId().value(), "sample", SampleSort.DEFAULT, false, false, false);
+        preview -> preview.sampleId().value(), "samples", SampleSort.DEFAULT, false, false, false);
     paginatedGrid.addClassNames("width-full");
 
     configureSearch();

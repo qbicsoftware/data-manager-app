@@ -21,6 +21,66 @@ public class FileSizeFormatter {
   }
 
   /**
+   * Formats a byte value into a compact, human-readable string for a list cell or a summary line.
+   *
+   * <p><b>Whole units with an approximation mark, not decimals.</b> A data volume in a table is read
+   * to answer "roughly how big is this" -- 300 MB or 4 GB -- and two decimal places imply a precision
+   * the sync does not have (it records what the file system reported) while costing the width a
+   * column needs for something that actually distinguishes rows. {@code ~300 MB} says the same thing
+   * as {@code 300.00 MB} in half the characters and does not overstate accuracy.</p>
+   *
+   * <p>The approximation mark appears only when the value was actually rounded. An exact value --
+   * a whole number of the unit -- is stated without it, so {@code ~1 KB} never claims uncertainty
+   * about a figure that is exact. Below one kilobyte the byte count is exact by definition.</p>
+   *
+   * <p>Precision is kept to three significant digits within the unit: 9.4 MB and 941 MB both read
+   * usefully, where rounding to whole MB would turn 0.4 MB into "0 MB".</p>
+   *
+   * @param bytes the size in bytes
+   * @return a compact string such as {@code "300 MB"}, {@code "~9.4 MB"}, {@code "512 B"}
+   */
+  public static String formatBytesCompact(long bytes) {
+    if (bytes < 0) {
+      return "0 B";
+    }
+    if (bytes < KILOBYTE) {
+      return bytes + " B";
+    }
+    long unit;
+    String suffix;
+    if (bytes < MEGABYTE) {
+      unit = KILOBYTE;
+      suffix = "KB";
+    } else if (bytes < GIGABYTE) {
+      unit = MEGABYTE;
+      suffix = "MB";
+    } else {
+      unit = GIGABYTE;
+      suffix = "GB";
+    }
+    double scaled = bytes / (double) unit;
+    // One decimal below 100, none at or above it: "9.4 MB" and "941 MB" are both three significant
+    // digits, which is as much as a reader uses. Rounding to whole MB throughout would turn a 0.4 MB
+    // dataset into "0 MB".
+    //
+    // Whether the figure was rounded is decided by comparing the stated value against the real one,
+    // NOT by inspecting the rendered string. 9 400 000 bytes is 8.96 MB, which renders as "9.0": the
+    // string ends in ".0" but the value was rounded, and an exactness test on the text called it
+    // exact -- contradicting the mark's whole purpose.
+    int decimals = scaled >= 100 ? 0 : 1;
+    String number = String.format(Locale.US, "%." + decimals + "f", scaled);
+    double stated = Double.parseDouble(number);
+    // A trailing ".0" is noise on whole values, so it is dropped either way; the mark then reports
+    // whether dropping it hid a rounding.
+    boolean whole = number.endsWith(".0");
+    if (whole) {
+      number = number.substring(0, number.length() - 2);
+    }
+    boolean rounded = Math.abs(stated * unit - bytes) > 0d;
+    return (rounded ? "~" : "") + number + " " + suffix;
+  }
+
+  /**
    * Formats a byte value into a human-readable string.
    * <p>
    * The value is scaled to the most appropriate decimal unit (B, KB, MB, or GB)

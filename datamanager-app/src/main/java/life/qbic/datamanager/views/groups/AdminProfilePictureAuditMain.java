@@ -132,7 +132,7 @@ public class AdminProfilePictureAuditMain extends Main implements BeforeEnterObs
         grid,
         this::loadAuditPage,
         entry -> String.valueOf(entry.id()),
-        "record",
+        "records",
         SortOrder.of("createdAt"),
         true,
         false,

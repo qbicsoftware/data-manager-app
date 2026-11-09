@@ -182,10 +182,14 @@ public interface ProjectQueryService {
    * @param searchTerm      a case-insensitive substring matched against the measurement code,
    *                        measurement name, facility and sample pool; blank means no filter
    * @param measurementType restricts the list to one assay type; {@code null} means all types
+   * @param methodLabel     restricts the list to one analysis method; {@code null} or blank means
+   *                        all methods. Part of the dataset identity, see {@link AssayStanding}
+   * @param instrumentLabel restricts the list to one instrument; {@code null} or blank means all
    * @param dataStatus      restricts by data availability; {@code null} means both states
    * @param sortOrders      the requested sort orders; empty applies a deterministic default
    */
   record MeasurementDataFilter(String searchTerm, AssayType measurementType,
+                               String methodLabel, String instrumentLabel,
                                MeasurementDataRow.DataStatus dataStatus,
                                List<SortOrder<MeasurementDataSortKey>> sortOrders) {
 
@@ -196,7 +200,7 @@ public interface ProjectQueryService {
 
     /** A filter that selects everything and leaves sorting to the implementation default. */
     public static MeasurementDataFilter all() {
-      return new MeasurementDataFilter("", null, null, List.of());
+      return new MeasurementDataFilter("", null, null, null, null, List.of());
     }
   }
 

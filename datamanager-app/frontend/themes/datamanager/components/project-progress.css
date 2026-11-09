@@ -273,6 +273,11 @@
   align-items: start;
 }
 
+/* The card takes the snapshot panel's surface, not a tinted variant of it. The fill was the only
+   texture in a block where nothing else was loud -- no row dividers, no icons, two text sizes -- so
+   the grey became the most prominent thing in it while carrying no meaning, and it also swallowed
+   the type chips (a 10pct chip on a 5pct fill has no visible edge). Without it the pair reads as a
+   sibling of the two panels below instead of a recessed secondary block. */
 .project-progress-datasets-card {
   display: flex;
   flex-direction: column;
@@ -281,12 +286,17 @@
      card is squeezed past the point where its content still makes sense. */
   flex: 1 1 var(--card-readable-width);
   padding: var(--lumo-space-m);
-  /* A hairline as well as the tint, or the cards read as loose grey rectangles on a near-white
-     page with nothing tying them to the "Datasets" heading above them. */
-  border: 1px solid var(--lumo-contrast-10pct);
-  background-color: var(--lumo-contrast-5pct);
+  border: 1px solid var(--lumo-contrast-20pct);
   border-radius: var(--lumo-border-radius-m);
   min-width: 0;
+  transition: border-color 150ms ease;
+}
+
+/* The same hover language as the panels below and the project cards: the frame takes the primary
+   colour. It signals "this card holds the way in" without making the container a click target. */
+.project-progress-datasets-card:hover,
+.project-progress-datasets-card:has(:focus-visible) {
+  border-color: var(--lumo-primary-color);
 }
 
 /* A card heading that navigates. Underlined and colour-shifted on hover only, so the resting card
@@ -305,22 +315,32 @@
 
 .project-progress-datasets-card-title {
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--lumo-space-xs);
+  align-items: center;
+  gap: var(--lumo-space-s);
   font-weight: 600;
   color: var(--lumo-header-text-color);
 }
 
-/* The count is the fact and stays at heading weight; the provider is where it is hosted, so it
-   steps back to secondary text rather than competing with the number. */
-.project-progress-datasets-card-title-fact {
-  font-variant-numeric: tabular-nums;
+/* Decorative only: the title beside it carries the meaning, so it is aria-hidden in the component. */
+.project-progress-datasets-card-icon {
+  flex: 0 0 auto;
+  color: var(--lumo-secondary-text-color);
 }
 
-.project-progress-datasets-card-title-provider {
-  font-weight: 400;
+/* The count and the provider lead the body rather than sitting inside the heading. "Linked datasets
+   6" set a number at heading weight inside a title and had no counterpart on the card beside it;
+   this is the same fact at the same weight as that card's content. */
+.project-progress-datasets-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--lumo-space-xs);
   font-size: var(--lumo-font-size-s);
+  font-variant-numeric: tabular-nums;
+  color: var(--lumo-body-text-color);
+}
+
+.project-progress-datasets-summary-provider {
   color: var(--lumo-secondary-text-color);
 }
 
@@ -329,129 +349,108 @@
   color: var(--lumo-secondary-text-color);
 }
 
-/* ── Assay rows ───────────────────────────────────────────────────────── */
+/* ── Assay table ─────────────────────────────────────────────────────── */
 
-/* The card is ONE grid and every assay row is a set of cells in it (display: contents below), so the
-   columns size across ALL rows and the eye gets vertical lines to follow. Per-row flex layouts could
-   only align within a row, which left the counts starting at a different x on every line. */
+/* One grid for the whole table and one row per dataset, the same construction the snapshot panels
+   use (snapshot-panel.css) so the two read as one table language.
+
+   It replaces a layout that emitted one uppercase domain caption per row. With one assay per domain
+   that spent six lines on three facts and set the caption -- the field that varies -- as the
+   faintest thing on the card, while the invariants (the method, the state phrase, "1 dataset")
+   carried the weight. As a column with a header the domain repeats like data instead of like
+   decoration, and it scales to the dozen assays a multi-omics project runs. */
 .project-progress-assays {
   display: grid;
-  /* Three tracks for three cells: the method, its dataset count, and the state group. The slack lives
-     in track 2, immediately after the method, so the dataset count stays beside the method it
-     qualifies and the state group is pushed to the right edge.
+  grid-template-columns: max-content max-content max-content;
+  gap: 2px var(--lumo-space-s);
+  align-items: baseline;
+  font-size: var(--lumo-font-size-s);
+}
 
-     Track count and cell count are linked: adding a cell without adding a track shifts every row one
-     position right, a bug this layout has already had once (a five-column grid with four-cell rows
-     cascaded down the card). */
+/* Five data cells plus the spacer the row emits itself: the spacer track carries the slack, so the
+   identity group stays tight on the left and the numbers keep the right edge instead of the gap
+   opening in the middle of the row. The track count must match the rendered cell count including the
+   spacer -- both come from the same rule in the component, so they cannot drift. */
+.project-progress-assays--5-columns {
   grid-template-columns:
-      max-content                 /* method abbreviation */
-      minmax(0, 1fr)              /* dataset count, then the slack that pushes state right */
-      max-content;                /* state group: phrase + count */
-  gap: var(--lumo-space-xs) var(--lumo-space-s);
-  align-items: baseline;
+      max-content             /* omics domain */
+      max-content             /* method */
+      max-content             /* dataset count */
+      minmax(0, 1fr)          /* spacer: absorbs the free space */
+      max-content             /* measurements with data */
+      max-content;            /* availability pill */
 }
 
-/* The state phrase and its count read as one unit on the right edge. The count is last, so the counts
-   share a right edge down the card whatever the phrases are. */
-.project-progress-assay-state-group {
-  display: flex;
-  align-items: baseline;
-  gap: var(--lumo-space-s);
+/* display: contents, so each row's cells become items of the grid above -- that is what lets the
+   columns size across all rows. The row itself carries no box and no semantics. */
+/* The spacer is a grid item with no content: it exists only to claim the slack track, so it must
+   not contribute text, padding or a focus ring. */
+.project-progress-assay-spacer {
+  display: block;
 }
 
-/* One heading per omics domain, instead of the domain repeated in every row's first cell. With five
-   genomics assays the old cell read "GENOMICS" five times over, in the column a reader scans.
-   It spans the whole grid: it is a group label, not a cell. */
-.project-progress-assays-domain {
-  grid-column: 1 / -1;
-  font-size: var(--lumo-font-size-xs);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--lumo-tertiary-text-color, var(--lumo-secondary-text-color));
-  margin-top: var(--lumo-space-s);
-}
-
-.project-progress-assays-domain:first-child {
-  margin-top: 0;
-}
-
-/* The cap. "and 3 more analysis methods on the datasets page" is a pointer, not a fact worth
-   reading twice -- the card is already the way into that page. */
-.project-progress-assays-more {
-  margin-top: var(--lumo-space-xs);
-  font-size: var(--lumo-font-size-xs);
-  color: var(--lumo-secondary-text-color);
-}
-
-/* display: contents -- the row's four spans become cells of the card's grid, which is what lets the
-   columns size across ALL rows. The row itself carries no box, so nothing is lost. */
 .project-progress-assay-row {
   display: contents;
 }
 
-/* No separator dot. It was drawn as a ::before inside the dataset-count cell, which pushed that
-   cell's text a few pixels right of the column every other row's count starts on -- punctuation
-   inside a grid cell shifts the cell's content, and the column it was meant to respect is the thing
-   it broke. The grid gap already separates the method from its count. */
+.project-progress-assay-header {
+  padding-bottom: var(--lumo-space-xs);
+  font-size: var(--lumo-font-size-xs);
+  font-weight: 600;
+  color: var(--lumo-secondary-text-color);
+}
 
-/* The method abbreviation is the identity a reader recognises -- "WES", "16S", "RNA-SEQ" -- so it
-   takes body weight and body colour. The full label is the tooltip. */
+/* The domain is the field that distinguishes one dataset from the next, so it takes body ink rather
+   than the tertiary grey the caption carried. */
+.project-progress-assay-domain-cell {
+  color: var(--lumo-body-text-color);
+}
+
+/* The method abbreviation is the identity a reader recognises -- "WES", "16S", "RNA-SEQ". */
 .project-progress-assay-method {
   font-weight: 600;
   color: var(--lumo-body-text-color);
   font-variant-numeric: tabular-nums;
 }
 
-/* The state phrase answers the question, so it takes body colour and medium weight. It names what is
-   waited for because this card has no column header to scope a bare "Waiting" to data -- the dataset
-   list can say the short form, this cannot. Colour reinforces and never carries the state alone,
-   matching the dataset list's status column. */
-.project-progress-assay-state {
-  font-size: var(--lumo-font-size-s);
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-/* Waiting is the normal, time-dependent state of a registered measurement whose data the facility
-   has not uploaded yet, so it is neutral: amber would spend the strongest colour on the least
-   alarming fact and leave nothing for a real one. */
-.project-progress-assay-state--waiting {
-  color: var(--lumo-secondary-text-color);
-  font-weight: 400;
-}
-
-/* Partial is neither success nor absence, so it takes the informational tone. */
-.project-progress-assay-state--partial {
-  color: var(--info-text-color, var(--lumo-primary-text-color));
-}
-
-.project-progress-assay-state--complete {
-  color: var(--lumo-success-text-color, var(--lumo-body-text-color));
-}
-
-/* Reserved: nothing computes it yet. Amber exists here so that when something genuinely needs a
-   steward's attention it has a colour that has not been spent elsewhere. */
-.project-progress-assay-state--at-risk {
-  color: var(--lumo-warning-text-color, var(--lumo-body-text-color));
-}
-
-/* Right-aligned numeric column: the counts share a right edge down the card, so they can be compared
-   without reading the label each time. */
-.project-progress-assay-count {
-  font-size: var(--lumo-font-size-xs);
-  color: var(--lumo-secondary-text-color);
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
+/* Right-aligned numeric column: the counts share a right edge down the card, so they can be
+   compared without reading the label each time. */
+.project-progress-assay-number {
   text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--lumo-body-text-color);
 }
 
-/* The dataset count qualifies the method -- "two experiments were measured as WGS" -- so it trails
-   the method at lower weight. It is not derivable from the method name, which is why it earns its
-   place at all; it just does not earn equal billing with the state. */
-.project-progress-assay-datasets {
-  color: var(--lumo-tertiary-text-color, var(--lumo-secondary-text-color));
+/* The availability pill is the shared snapshot-panel state tag, adopted rather than re-implemented:
+   one vocabulary across the cards, the panels and the Datasets page, and colour that varies with the
+   state instead of every row being the same info-blue. */
+.project-progress-assays .snapshot-panel-state {
+  justify-self: end;
+}
+
+/* The way out of a card, in the same grammar as the snapshot panels' footer: right-aligned below a
+   hairline, in the link colour. It was an inert lowercase sentence that named a destination while
+   the identical destination sat 20px above as a link. */
+.project-progress-datasets-card-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--lumo-space-xs);
+  padding-top: var(--lumo-space-xs);
+  border-top: 1px solid var(--lumo-contrast-10pct);
+}
+
+.project-progress-datasets-card-footer-link {
   font-size: var(--lumo-font-size-xs);
+  font-weight: 500;
+  color: var(--lumo-primary-text-color);
+  text-decoration: none;
   white-space: nowrap;
+}
+
+.project-progress-datasets-card-footer-link:hover,
+.project-progress-datasets-card-footer-link:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 /* Connected assets as a grid, not a stack of flex rows. Grid sizes each column across ALL the rows,
@@ -462,9 +461,10 @@
 .project-progress-connected-assets {
   display: grid;
   grid-template-columns: max-content minmax(0, 1fr) max-content;
-  gap: var(--lumo-space-xs) var(--lumo-space-s);
-  align-items: center;
+  gap: 2px var(--lumo-space-s);
+  align-items: baseline;
   font-size: var(--lumo-font-size-s);
+  padding-top: var(--lumo-space-xs);
 }
 
 .project-progress-connected-assets--with-provider {
@@ -484,12 +484,27 @@
   align-self: center;
 }
 
+/* Header cells take the same treatment as the measurement table's, so the two tables read as one
+   language: xs, semibold, secondary. */
+.project-progress-connected-asset-header {
+  padding-bottom: var(--lumo-space-xs);
+  font-size: var(--lumo-font-size-xs);
+  font-weight: 600;
+  color: var(--lumo-secondary-text-color);
+}
+
+/* The title is the field that identifies the record, so it has to be readable. It was single-line
+   with an ellipsis, and two of three rows clipped to near-identical prefixes ("Modelización de la
+   coordinac...", "A fast and memory-efficient ..."), which made the list unscannable and left the
+   full string reachable only by hovering. Two lines instead, so the title track gets the room. */
 .project-progress-connected-asset-title {
   min-width: 0;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   color: var(--lumo-body-text-color);
+  line-height: var(--lumo-line-height-xs);
 }
 
 /* When the record was last touched. Left-aligned, so the column opens on the same vertical line as

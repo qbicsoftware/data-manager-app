@@ -13,6 +13,50 @@ import spock.lang.Unroll
  */
 class MeasurementDataDownloadGuideSpec extends Specification {
 
+    // ── The sequence ───────────────────────────────────────────────────────
+
+    /**
+     * The three steps are a real sequence: a token must exist before the locations are useful, and
+     * the locations must be exported before the command has a URL. Bare glyphs did not say that --
+     * a key, a download arrow and a terminal prompt are only self-evident to someone who already
+     * knows the workflow.
+     */
+    def "the steps are numbered, in the order they must be taken"() {
+        given:
+        def guide = new MeasurementDataDownloadGuide()
+
+        expect: "three ordered markers, reading 1, 2, 3"
+        markersOf(guide) == ["1", "2", "3"]
+
+        and: "each step is titled with what to do, not with an icon"
+        stepTitlesOf(guide) == ["Get access", "Export the locations", "Fetch the files"]
+    }
+
+    /**
+     * The terminal glyph was the worst offender: it reads as "developer only", which is the
+     * opposite of what a step-by-step guide is for. No step is identified by a glyph any more.
+     */
+    def "no step is identified by an icon alone"() {
+        given:
+        def guide = new MeasurementDataDownloadGuide()
+
+        expect: "every step carries a text title beside its ordinal"
+        stepTitlesOf(guide).every { it != null && !it.isBlank() }
+
+        and: "and no step-icon element is rendered at all"
+        !containsClass(guide, "measurement-dataset-download-guide-step-icon")
+    }
+
+    /** A step states why it exists, so its control is not the only explanation offered. */
+    def "every step says what it is for, not only what its control does"() {
+        given:
+        def guide = new MeasurementDataDownloadGuide()
+
+        expect:
+        detailsOf(guide).size() == 3
+        detailsOf(guide).every { it != null && !it.isBlank() }
+    }
+
     def "the whole-dataset export is offered when nothing is selected"() {
         given:
         def guide = new MeasurementDataDownloadGuide()
@@ -200,6 +244,45 @@ class MeasurementDataDownloadGuideSpec extends Specification {
             }
         }
         return found
+    }
+
+    /** The ordinal in each step's marker, in render order. */
+    private static List<String> markersOf(MeasurementDataDownloadGuide guide) {
+        return collectByClass(guide, "measurement-dataset-download-guide-step-marker")
+            .collect { it.element.text }
+    }
+
+    /** The title of each step, in render order. */
+    private static List<String> stepTitlesOf(MeasurementDataDownloadGuide guide) {
+        return collectByClass(guide, "measurement-dataset-download-guide-step-title")
+            .collect { it.element.text }
+    }
+
+    /** The explanatory sentence of each step, in render order. */
+    private static List<String> detailsOf(MeasurementDataDownloadGuide guide) {
+        return collectByClass(guide, "measurement-dataset-download-guide-step-detail")
+            .collect { it.element.text }
+    }
+
+    /** Every element carrying a class, depth-first. */
+    private static List<com.vaadin.flow.component.Component> collectByClass(
+            com.vaadin.flow.component.Component root, String className) {
+        def found = []
+        def pending = new ArrayDeque<com.vaadin.flow.component.Component>()
+        pending.add(root)
+        while (!pending.isEmpty()) {
+            def node = pending.poll()
+            if (node.getClassNames().contains(className)) {
+                found.add(node)
+            }
+            pending.addAll(node.getChildren().toList())
+        }
+        return found
+    }
+
+    private static boolean containsClass(
+            com.vaadin.flow.component.Component root, String className) {
+        return !collectByClass(root, className).isEmpty()
     }
 
     /** The two export buttons, in the order the dialog renders them. */

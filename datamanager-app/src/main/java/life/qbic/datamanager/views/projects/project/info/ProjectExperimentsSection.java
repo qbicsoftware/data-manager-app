@@ -12,14 +12,10 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.Icon;
-import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.router.RouteParam;
 import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.shared.Registration;
 import java.io.Serial;
-import java.time.Instant;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -27,6 +23,7 @@ import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.logging.api.Logger;
 import life.qbic.datamanager.views.MeasurementType;
 import life.qbic.datamanager.views.general.ReactiveUiBridge;
+import life.qbic.datamanager.views.general.snapshot.SnapshotPanel;
 import life.qbic.datamanager.views.general.utils.Utility;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.create.CreateExperimentMain;
@@ -34,8 +31,6 @@ import life.qbic.datamanager.views.projects.project.dataset.MeasurementDatasetMa
 import life.qbic.datamanager.views.projects.project.samples.SampleInformationMain;
 import life.qbic.projectmanagement.application.api.ProjectQueryService;
 import life.qbic.projectmanagement.application.query.AssayStanding;
-import life.qbic.projectmanagement.application.query.AssayType;
-import life.qbic.projectmanagement.application.query.DataState;
 import life.qbic.projectmanagement.application.query.ExperimentProgress;
 import life.qbic.projectmanagement.application.query.RecentMeasurement;
 import life.qbic.projectmanagement.application.query.RecentSample;
@@ -180,8 +175,10 @@ public class ProjectExperimentsSection extends Div {
 
     Div panels = new Div();
     panels.addClassName("project-exp-snapshot");
-    panels.add(samplesPanel(experiment, samples));
-    panels.add(datasetPanel(experiment, measurements, assays, assaysFailed));
+    // Both panels sit in a wrapping flex row, so each has to claim an equal share of it: without
+    // the basis a panel collapses to its content width and leaves the rest of the row empty.
+    panels.add(samplesPanel(experiment, samples).equalInRow());
+    panels.add(datasetPanel(experiment, measurements, assays, assaysFailed).equalInRow());
     card.add(panels);
     return card;
   }
@@ -189,268 +186,34 @@ public class ProjectExperimentsSection extends Div {
   /**
    * The experiment's newest samples.
    *
-   * <p>The panel previews <em>recency</em>, which is the decision taken for both panels: the three
-   * rows are the newest, "Changed" is the column that carries the meaning, and the header band
-   * offers the way to the full list. The status line states the state once and then the age -- it
-   * used to repeat the tag's own word ("Registered" twice in two bands) which spent a band saying
-   * nothing.</p>
+   * <p>Delegates to the shared {@link SnapshotPanel} so this page and the experiment overview render
+   * one anatomy from one place. The panel previews <em>recency</em>: the three rows are the newest,
+   * "Changed" is the column that carries the meaning, and the header band offers the way to the full
+   * list.</p>
    */
-  private Div samplesPanel(ExperimentProgress experiment, List<RecentSample> samples) {
-    boolean started = experiment.sampleCount() > 0;
-    String status = samples.isEmpty()
-        ? "No samples registered yet"
-        : "Newest sample " + Utility.relativeTime(samples.getFirst().changed());
-    List<List<String>> rows = samples.stream()
-        .map(sample -> List.of(sample.sampleCode(), sample.sampleName(),
-            Utility.relativeTime(sample.changed())))
-        .toList();
-    // "Registered" was outside the declared vocabulary, and it was green -- a success colour for a
-    // stage that is done but whose downstream data is not. Samples are either there or not, and that
-    // is what Complete/Waiting already say.
-    return snapshotPanel("Samples", "samples", experiment.sampleCount(),
-        started ? DataStateLabel.word(DataState.COMPLETE) : "Not started",
-        started ? "done" : "active",
-        status, null, new String[]{"Sample ID", "Sample name", "Changed"}, rows,
-        "No samples to show yet",
-        started ? "All " + experiment.sampleCount() + " samples" : "",
-        AppRoutes.ProjectRoutes.SAMPLES, experiment.experimentId());
+  private SnapshotPanel samplesPanel(ExperimentProgress experiment,
+      List<RecentSample> samples) {
+    return SnapshotPanel.samples(experiment, samples,
+        AppRoutes.ProjectRoutes.SAMPLES.formatted(projectId, experiment.experimentId()),
+        experiment.sampleCount() > 0 ? "All " + experiment.sampleCount()
+            + (experiment.sampleCount() == 1 ? " sample" : " samples") + " \u2192" : "");
   }
 
   /**
    * The experiment's measurement datasets, one row per dataset.
    *
-   * <p><b>What a row is.</b> One dataset: one experiment for one omics domain. The domain comes from
-   * the measurement table the record lives in, which makes it the only axis that is complete and
-   * reliable across all three domains.</p>
-   *
-   * <p><b>Where the method comes from.</b> PXP and IP record {@code lcmsMethod} on the measurement;
-   * genomics records nothing there, so it falls back to {@code sample.analysis_method}. That is an
-   * interim shape -- the real fix is a controlled method vocabulary captured on the measurement in
-   * every domain (the NGS template has no method column at all). The resolution lives in the view, so
-   * replacing it is a one-file change. See #1660.</p>
-   *
-   * <p><b>What a row is not.</b> Two datasets of the <em>same</em> analysis method and instrument in
-   * one experiment
-   * still collapse, because the view groups by {@code (experiment, analysis_method)}. Separating
-   * those needs a real dataset identity -- tracked in #1660. The panel does not claim to show them
-   * apart.</p>
-   *
-   * <p>No row cap: more than four datasets in one experiment is not a case that arises in
-   * practice, and the full list is one link away in the experiment's datasets section anyway.</p>
+   * <p>Delegates to the shared {@link SnapshotPanel}: the dataset-grain table, the one-row-per-dataset
+   * decision and the {@code DataState} vocabulary all live there now, so the two pages that show an
+   * experiment's datasets cannot describe them differently. See the method's own javadoc for what a
+   * row is, where the method comes from, and why there is no header tag.</p>
    */
-  private Div datasetPanel(ExperimentProgress experiment, List<RecentMeasurement> measurements,
-      List<AssayStanding> assays, boolean assaysFailed) {
-    int total = experiment.measurementCount();
-    boolean hasSamples = experiment.sampleCount() > 0;
-
-    // The experiment's state is the aggregate of its datasets: complete only if every one is.
-    DataState dataState = DataState.of(experiment.measurementsWithPrimaryData(), total);
-    String state;
-    String tone;
-    if (!hasSamples) {
-      state = "Locked";
-      tone = "locked";
-    } else if (total == 0) {
-      state = "Ready to register";
-      tone = "active";
-    } else {
-      state = DataStateLabel.word(dataState);
-      tone = switch (dataState) {
-        case COMPLETE -> "done";
-        case PARTIAL -> "partial";
-        case WAITING, AT_RISK -> "waiting";
-      };
-    }
-
-    // Newest data arrival across the experiment's datasets. Arrival, not preparation -- that
-    // distinction needs per-dataset identity (#1660) -- stated for what it is.
-    String status = total == 0
-        ? "No measurements registered yet"
-        : "Newest data " + Utility.relativeTime(newest(measurements));
-
-    // One row per dataset, ordered by domain then method so the list is stable and reads as groups.
-    List<AssayStanding> datasets = assays.stream()
-        .sorted(Comparator.comparing((AssayStanding dataset) -> dataset.assayType().ordinal())
-            .thenComparing(AssayStanding::methodLabel))
-        .toList();
-
-    // Four independent facts, one column each. The method and the instrument are NOT merged: an
-    // earlier revision COALESCEd them, so one row showed an assay ("WGS") and the next an instrument
-    // ("Orbitrap Exploris 480") in the same column with nothing to tell them apart.
-    //
-    // The instrument cell is an em dash when the measurement records none. Substituting the method
-    // there would re-create exactly that confusion; an empty cell says "not recorded", which is true.
-    List<List<String>> rows = datasets.stream()
-        .map(dataset -> List.of(
-            MeasurementType.from(dataset.assayType()).getType(),
-            dataset.methodLabel(),
-            dataset.instrumentLabel() == null || dataset.instrumentLabel().isBlank()
-                ? "\u2014" : dataset.instrumentLabel(),
-            "%d of %d".formatted(dataset.withPrimaryData(), dataset.measurements()),
-            DataStateLabel.word(DataState.of(dataset.withPrimaryData(), dataset.measurements()))))
-        .toList();
-
-    long datasetsMissingData = datasets.stream().filter(dataset -> !dataset.complete()).count();
-    // The unit of a row is a dataset, not a method: once the instrument joined the key, three rows
-    // can be three instruments of one method. "3 analysis methods" was left over from when rows were
-    // methods, and it survived a commit that claimed to change it -- the edit targeted a string that
-    // had already moved on, so it silently did nothing.
-    return snapshotPanel("Measurement datasets",
-        datasets.size() == 1 ? "dataset" : "datasets", datasets.size(),
-        state, tone, status,
-        datasets.isEmpty() || datasetsMissingData == 0 ? null
-            : "%d of %d %s need primary data".formatted(datasetsMissingData, datasets.size(),
-                datasets.size() == 1 ? "dataset" : "datasets"),
-        new String[]{"Omics domain", "Method", "Instrument", "With data", "Data availability"},
-        rows,
-        // A failed query must not read as "this project has no datasets": those are opposite
-        // statements and the silent version of this hid a broken query once already.
-        assaysFailed ? "Datasets could not be loaded" : "No measurements to show yet",
-        total > 0 ? "All " + total + " measurements" : "",
-        AppRoutes.ProjectRoutes.MEASUREMENT_DATASET, experiment.experimentId());
-  }
-
-  private Div snapshotPanel(String label, String unit, int count, String state, String tone,
-      String status, String qualifier, String[] columns,
-      List<List<String>> rows, String emptyRow, String allRowsText,
-      String openHref, String experimentId) {
-    Div panel = new Div();
-    panel.addClassName("project-exp-panel");
-
-    // Band 1: what this panel is, its state, and the way in.
-    Div head = new Div();
-    head.addClassName("project-exp-panel-head");
-    Span labelSpan = new Span(label);
-    labelSpan.addClassName("project-exp-panel-label");
-    head.add(surfaceIcon(label), labelSpan);
-    Span stateTag = new Span(state);
-    stateTag.addClassNames("project-exp-panel-state", "project-exp-panel-state--" + tone);
-    head.add(stateTag);
-    // A real anchor, not a styled Span. The span looked like a link, was not focusable, could not be
-    // opened in a new tab and was not announced as a link -- and it sat inside a container that was
-    // itself a click target, so the reader could not tell which click did what.
-    Anchor openHint = Utility.textLink("Open " + label.toLowerCase(),
-        openHref.formatted(projectId, experimentId), "project-exp-panel-open");
-    head.add(openHint);
-    panel.add(head);
-
-    // Band 2: a fixed two-line slot. Line one is the count; line two is the qualifier and exists even
-    // when empty, because its reserved height is what holds the status line and table on one baseline
-    // across the pair. A content-sized band let a wrapping qualifier push everything below it a line
-    // down -- the defect banding was introduced to remove.
-    Div metric = new Div();
-    metric.addClassName("project-exp-panel-metric");
-    Div countLine = new Div();
-    countLine.addClassName("project-exp-panel-count-line");
-    Span value = new Span(Integer.toString(count));
-    value.addClassName("project-exp-panel-value");
-    Span unitSpan = new Span(unit);
-    unitSpan.addClassName("project-exp-panel-unit");
-    countLine.add(value, unitSpan);
-    metric.add(countLine);
-
-    Span qualifierSpan = new Span(qualifier == null ? "" : qualifier);
-    qualifierSpan.addClassName("project-exp-panel-qualifier");
-    metric.add(qualifierSpan);
-    panel.add(metric);
-
-    // Band 3: the state in words. One line, so both panels keep the same rhythm.
-    Span statusSpan = new Span(status);
-    statusSpan.addClassName("project-exp-panel-status");
-    panel.add(statusSpan);
-
-    Div list = new Div();
-    list.addClassName("project-exp-panel-rows");
-    // The grid's column count has to match the number of cells this panel emits, or the extra cell
-    // wraps onto a new implicit row. The Samples panel emits three columns, the dataset panel four,
-    // so the modifier is chosen from the column count rather than assumed.
-    // The rendered grid has one extra track (the spacer) whenever the spacer rule applies.
-    int gridTracks = columns.length > 3 ? columns.length + 1 : columns.length;
-    if (gridTracks > 3) {
-      list.addClassName("project-exp-panel-rows--" + gridTracks + "-columns");
-    }
-    list.add(row(columns, true));
-    if (rows.isEmpty()) {
-      list.add(placeholderRow(emptyRow));
-    } else {
-      rows.forEach(cells -> list.add(row(cells.toArray(new String[0]), false)));
-    }
-    panel.add(list);
-
-    // The panel previews three records, so it has to say so and offer the rest. In the table's header
-    // row it read as a fourth column whose cells were empty; as a footer below a hairline it reads as
-    // the way out of the preview.
-    if (allRowsText != null && !allRowsText.isBlank()) {
-      Div footer = new Div();
-      footer.addClassName("project-exp-panel-footer");
-      footer.add(Utility.textLink(allRowsText + " \u2192",
-          openHref.formatted(projectId, experimentId), "project-exp-panel-all"));
-      panel.add(footer);
-    }
-
-    // The panel is NOT a click target. Its one destination is the "Open …" link above, and a
-    // container that is also a link would announce as a button, lose the native <a> affordances
-    // (middle-click, copy link address) and leave the reader guessing which click navigates.
-    return panel;
-  }
-
-  /**
-   * The decorative glyph that maps a panel to its subject at a glance: Samples is a flask,
-   * Dataset a database.
-   *
-   * <p>Decoration only. The label already names the surface, so the glyph is redundant
-   * reinforcement for people who scan shapes, and it must never become the only carrier of
-   * meaning -- hence {@code aria-hidden}. Mirrors the prototype's {@code surfaceGlyph}.</p>
-   */
-  private static Icon surfaceIcon(String label) {
-    Icon glyph = switch (label) {
-      case "Samples" -> VaadinIcon.FLASK.create();
-      case "Dataset" -> VaadinIcon.DATABASE.create();
-      default -> VaadinIcon.RECORDS.create();
-    };
-    glyph.addClassName("project-exp-panel-icon");
-    glyph.getElement().setAttribute("aria-hidden", "true");
-    return glyph;
-  }
-
-  /** Marked on the spacer cell so the grid can be laid out without counting cells by hand. */
-  private static final String SPACER_CLASS = "project-exp-panel-cell-spacer";
-
-  private static Div row(String[] cells, boolean header) {
-    Div row = new Div();
-    row.addClassName("project-exp-panel-row");
-    // A spacer cell before the trailing numbers: it absorbs the free space so the identity group
-    // (domain, method, instrument) stays tight on the left and the numbers keep the right edge. The
-    // CSS grid declares a matching track; both are derived from the same rule so they cannot drift.
-    int spacerAt = cells.length > 3 ? cells.length - 2 : -1;
-    for (int index = 0; index < cells.length; index++) {
-      if (index == spacerAt) {
-        Span spacer = new Span();
-        spacer.addClassName(SPACER_CLASS);
-        row.add(spacer);
-      }
-      Span span = new Span(cells[index]);
-      if (header) {
-        span.addClassName("project-exp-panel-cell-header");
-      } else if (index == 0) {
-        // The first column is the record's identifier in both panels -- Sample ID, Measurement
-        // ID -- so it takes the same treatment as the project code above. The cell truncates rather
-        // than wrapping mid-code, so the untruncated value has to stay reachable: a measurement ID
-        // runs to 24 characters and is the thing a reader copies.
-        span.addClassName("identifier");
-        span.getElement().setAttribute("title", cells[index]);
-      }
-      row.add(span);
-    }
-    return row;
-  }
-
-  /** A message standing in for rows. Not a record, so it takes none of the row's cell classes. */
-  private static Div placeholderRow(String text) {
-    Div row = new Div();
-    row.addClassName("project-exp-panel-row");
-    row.add(new Span(text));
-    return row;
+  private SnapshotPanel datasetPanel(ExperimentProgress experiment,
+      List<RecentMeasurement> measurements, List<AssayStanding> assays, boolean assaysFailed) {
+    int datasets = assays.size();
+    return SnapshotPanel.datasets(experiment, measurements, assays, assaysFailed,
+        AppRoutes.ProjectRoutes.MEASUREMENT_DATASET.formatted(projectId, experiment.experimentId()),
+        datasets == 0 ? "" : "All " + datasets + (datasets == 1 ? " dataset" : " datasets")
+            + " \u2192");
   }
 
   private RouteParameters experimentRouteParameters(String experimentId) {
@@ -490,14 +253,6 @@ public class ProjectExperimentsSection extends Div {
     return experiment.assayTypes().stream()
         .map(type -> MeasurementType.from(type).getType())
         .toList();
-  }
-
-  private static Instant newest(List<RecentMeasurement> measurements) {
-    return measurements.stream()
-        .map(RecentMeasurement::changed)
-        .filter(java.util.Objects::nonNull)
-        .max(Instant::compareTo)
-        .orElse(null);
   }
 
   private static Span chip(String text, String modifier) {

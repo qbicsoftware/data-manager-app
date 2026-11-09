@@ -87,6 +87,9 @@ public class ConnectedResourcesComponent extends Div {
     this.associatedDatasetService = associatedDatasetService;
     addClassNames("padding-vertical-04", "flex-vertical");
     addClassName("datasets-content");
+    // The anchor the project page's "Linked datasets" link targets; see
+    // PrimaryDatasetsComponent.BAND_ANCHOR for why the id exists and who does the scrolling.
+    getElement().setAttribute("id", PrimaryDatasetsComponent.CONNECTED_BAND_ANCHOR);
 
     // ── Action bar (always visible) ──────────────────────────────────
     connectButton = new Button("Link datasets", VaadinIcon.PLUS_CIRCLE.create());

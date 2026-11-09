@@ -2375,85 +2375,18 @@ a.project-dataset-footer, a.project-dataset-footer:hover {
   font-size: var(--lumo-font-size-s);
 }
 
+/* The data-at-a-glance band's two cards are the shared .snapshot-panel component (see
+   snapshot-panel.css): the project overview and this page describe the same two data sets at the
+   same grain, so they render one anatomy from one file. The card rules that used to live here --
+   head, label, icon, metric, rows, tag tones, the "Open …" link and the completeness ring accessory --
+   were a second, divergent copy of exactly that, which is how this page kept a completeness ring and
+   a "Not complete yet" vocabulary the project page had already retired (project owner, 2026-11-03).
+   The band only owns the two-column layout; the panel owns what it reports. */
 .experiment-overview-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
   gap: var(--lumo-space-m);
   align-items: stretch;
-}
-
-.experiment-overview-card {
-  display: flex;
-  flex-direction: column;
-  gap: var(--lumo-space-s);
-  padding: var(--lumo-space-m);
-  border: 1px solid var(--lumo-contrast-20pct);
-  border-radius: var(--lumo-border-radius-l);
-  /* Not a click target: the card's one destination is the "Open …" link in its header. A pointer
-     cursor here promised a click that does nothing. */
-  cursor: default;
-  transition: border-color 150ms ease;
-}
-
-/* The same hover language as the project cards: the frame takes the primary colour. Solid rather
-   than 50pct, because this card sits inside another card's surface and a half-transparent border on
-   a tinted background is hard to see. */
-.experiment-overview-card:hover,
-.experiment-overview-card:has(:focus-visible) {
-  border-color: var(--lumo-primary-color);
-}
-
-.experiment-overview-card-head {
-  display: flex;
-  align-items: center;
-  gap: var(--lumo-space-s);
-}
-
-.experiment-overview-card-label {
-  font-weight: 600;
-  color: var(--lumo-header-text-color);
-}
-
-.experiment-overview-card-icon {
-  color: var(--lumo-secondary-text-color);
-}
-
-.experiment-overview-card-metric {
-  display: flex;
-  align-items: baseline;
-  gap: var(--lumo-space-xs);
-}
-
-.experiment-overview-card-value {
-  font-size: var(--lumo-font-size-xxl);
-  font-weight: var(--font-weight-semi-bold);
-}
-
-.experiment-overview-card-unit {
-  color: var(--lumo-secondary-text-color);
-}
-
-.experiment-overview-card-rows {
-  display: flex;
-  flex-direction: column;
-  gap: var(--lumo-space-xs);
-}
-
-.experiment-overview-card-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr auto;
-  gap: var(--lumo-space-s);
-  font-size: var(--lumo-font-size-s);
-}
-
-.experiment-overview-card-cell-header {
-  color: var(--lumo-secondary-text-color);
-  font-size: var(--lumo-font-size-xs);
-  text-transform: uppercase;
-}
-
-.experiment-overview-card-row .identifier {
-  font-family: var(--monospace-font, monospace);
 }
 
 .experiment-overview-tag {
@@ -2501,30 +2434,8 @@ a.project-dataset-footer, a.project-dataset-footer:hover {
   font-size: var(--lumo-font-size-s);
 }
 
-/* The card's one destination, as a real anchor. Same weight as the panel's equivalent on the project
-   page so the two surfaces agree on what a way out of a card looks like. */
-.experiment-overview-open {
-  font-size: var(--lumo-font-size-s);
-  color: var(--lumo-primary-text-color);
-  text-decoration: none;
-}
-
-.experiment-overview-open:hover,
-.experiment-overview-open:focus-visible {
-  text-decoration: underline;
-}
-
 .experiment-overview-message {
   color: var(--lumo-secondary-text-color);
-}
-
-/*
- * Completeness ring — the Dataset card's proportion-to-complete signal. The ring and the gap
- * sentence are one unit: the arc is the proportion, the sentence states what is outstanding, so the
- * ring never carries the meaning alone.
- */
-.experiment-overview-card-accessory {
-  margin-left: auto;
 }
 
 .completeness-ring {

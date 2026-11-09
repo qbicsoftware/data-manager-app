@@ -12,7 +12,6 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.AnchorTarget;
-import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.ListItem;
 import com.vaadin.flow.component.html.OrderedList;
@@ -34,10 +33,13 @@ import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.MeasurementType;
 import life.qbic.logging.api.Logger;
 import life.qbic.datamanager.views.general.CompletenessRing;
+import life.qbic.datamanager.views.general.snapshot.SnapshotPanel;
 import life.qbic.datamanager.views.general.DataSetTagFactory;
+import life.qbic.datamanager.views.general.DataStateLabel;
 import life.qbic.datamanager.views.general.DataSetTagFactory.TagType;
 import life.qbic.datamanager.views.general.ReactiveUiBridge;
 import life.qbic.datamanager.views.general.utils.Utility;
+import life.qbic.datamanager.views.projects.project.datasets.PrimaryDatasetsComponent;
 import life.qbic.datamanager.views.projects.project.datasets.ProjectDatasetsMain;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
 import life.qbic.datamanager.views.projects.project.dataset.MeasurementDatasetMain;
@@ -435,56 +437,134 @@ public class ProjectProgressSection extends Div {
    * a dozen -- and an uncapped list made this card taller than the rail and the disclosure together,
    * which is the same domination the "Not complete yet" card had before it was demoted.</p>
    */
-  private Div primaryDataCard(List<AssayStanding> datasets) {
+  /**
+   * Package-private so a spec can assert the table without a {@code UI}: {@code reload()} returns
+   * early when there is no current UI, which would otherwise make the card unreachable from a plain
+   * unit test.
+   */
+  Div primaryDataCard(List<AssayStanding> datasets) {
     Div card = new Div();
     card.addClassName("project-progress-datasets-card");
-    card.add(cardTitle("Measurement datasets", projectParameters()));
+    // The heading links to <em>its own band</em> on the Datasets page, not to the page top. Both
+    // cards sit side by side and both lead to the same page, so a link without a target dropped the
+    // reader at the top of a page whose first band is the other card's -- clicking "Linked datasets"
+    // and clicking "Measurement datasets" produced an identical landing.
+    card.add(cardTitle("Measurement datasets", PrimaryDatasetsComponent.BAND_ANCHOR));
 
     if (datasets.isEmpty()) {
       card.add(cardFact(
           "None yet — a dataset appears once an experiment has measurements"));
-    } else {
-      List<AssayRollup> rollup = assayRollup(datasets);
-      card.add(assayGroups(rollup));
-      if (rollup.size() > ASSAY_ROWS_SHOWN) {
-        Span more = new Span("and %d more analysis method%s on the datasets page"
-            .formatted(rollup.size() - ASSAY_ROWS_SHOWN,
-                rollup.size() - ASSAY_ROWS_SHOWN == 1 ? "" : "s"));
-        more.addClassName("project-progress-assays-more");
-        card.add(more);
-      }
+      return card;
     }
 
-    // NOT a click target. The rule is that a container is inert once it holds a link: the heading
-    // is the link, the way every other card on this page now works. Leaving this one clickable made
-    // the two cards beside each other behave differently for no reason a reader could see.
+    List<AssayRollup> rollup = assayRollup(datasets);
+    // The count line the linked card carries, in the same position and the same wording. Only the
+    // linked card stated its size ("6 records"), so the pair read as two different kinds of block:
+    // one that tells you how much it holds and one that does not.
+    card.add(cardSummary(rollup.size(), "dataset", "datasets"));
+    card.add(assayTable(rollup));
+    // One disclosure grammar for the whole page: the same footer the snapshot panels use, right
+    // aligned under a hairline and in the link colour. It used to be an inert lowercase sentence,
+    // which named a destination while the identical destination sat 20px above as a link.
+    card.add(cardFooter(rollup.size() > ASSAY_ROWS_SHOWN
+        ? "All %d datasets".formatted(rollup.size())
+        : "All %d %s".formatted(rollup.size(),
+            rollup.size() == 1 ? "dataset" : "datasets"),
+        AppRoutes.ProjectRoutes.DATASETS.formatted(projectId)
+            + "#" + PrimaryDatasetsComponent.BAND_ANCHOR));
     return card;
   }
 
   /**
-   * The assay rows, grouped under one heading per omics domain.
+   * The card's datasets as one table: a header row, then a row per dataset.
    *
-   * <p>A heading rather than a repeated cell: with five genomics assays the domain cell read
-   * "GENOMICS" five times over, which is noise in the column a reader scans. As a heading it says
-   * the same thing once and gives the grouping a structure instead of a repetition.</p>
+   * <p><b>It is the same table the experiment panels render</b> (see
+   * {@link life.qbic.datamanager.views.general.snapshot.SnapshotPanel}), because it answers the same
+   * question at the same grain. Three things follow from that, and each fixes a defect the previous
+   * per-domain layout had:</p>
+   *
+   * <ul>
+   *   <li><b>The domain is a column, not a caption per row.</b> The card used to emit one uppercase
+   *       caption per domain. With one assay per domain that spent six lines on three facts, and the
+   *       caption was wider than the single row it governed. As a column with a header it repeats
+   *       like data rather than like decoration — which is what lets the card hold a dozen assays
+   *       across three domains without turning into a stack of headings.</li>
+   *   <li><b>The header row attributes the right-hand numbers.</b> Without it they sat across a
+   *       ~180px void from the method with nothing saying what they measured, so each row read as
+   *       two unrelated islands.</li>
+   *   <li><b>Two counts in different bases are named.</b> "1 dataset" beside "1 of 6 with data" put
+   *       a dataset count and a measurement count next to each other with no marker that the base
+   *       changed. The headers now say which is which.</li>
+   * </ul>
+   *
+   * <p>The state is a pill in the shared vocabulary, so "Partial" here is the word the panels below
+   * and the Datasets page use. The phrase "Partially available" both duplicated the pill and stated
+   * the proportion a second time.</p>
    */
-  private Div assayGroups(List<AssayRollup> rollup) {
-    Div groups = new Div();
-    groups.addClassName("project-progress-assays");
+  // Package-private and static so a spec can assert the table without building the section: the
+  // table reads only its argument, and constructing the section needs collaborators this classpath
+  // cannot mock.
+  static Div assayTable(List<AssayRollup> rollup) {
+    Div table = new Div();
+    table.addClassName("project-progress-assays");
+    table.addClassName("project-progress-assays--5-columns");
 
-    // Bounded before grouping, so the cap applies to rows rather than to whole domains: truncating
-    // by domain could show two domains and hide a third entirely.
-    List<AssayRollup> shown = rollup.stream().limit(ASSAY_ROWS_SHOWN).toList();
-    shown.stream()
-        .collect(Collectors.groupingBy(AssayRollup::domain, LinkedHashMap::new,
-            Collectors.toList()))
-        .forEach((domain, assays) -> {
-          Span heading = new Span(MeasurementType.from(domain).getType());
-          heading.addClassName("project-progress-assays-domain");
-          groups.add(heading);
-          assays.forEach(assay -> groups.add(assayRow(assay)));
-        });
-    return groups;
+    // Bounded before rendering, so the cap applies to dataset rows rather than to whole domains.
+    table.add(assayCells(new String[]{"Omics domain", "Method", "Datasets",
+        "Measurements with data", "Availability"}, true, null));
+    rollup.stream().limit(ASSAY_ROWS_SHOWN).forEach(assay -> {
+      DataState state = DataState.of(assay.withData(), assay.measurements());
+      table.add(assayCells(new String[]{
+          MeasurementType.from(assay.domain()).getType(),
+          assay.methodLabel(),
+          Integer.toString(assay.datasets()),
+          assay.measurements() == 0 ? "none" : "%d of %d".formatted(assay.withData(),
+              assay.measurements()),
+          DataStateLabel.word(state)},
+          false, state));
+    });
+    return table;
+  }
+
+  /**
+   * One row's cells, as items of the table's single grid.
+   *
+   * <p>A spacer cell precedes the numbers: it absorbs the free space so the identity group (domain,
+   * method) stays tight on the left and the numbers keep the right edge, rather than the gap opening
+   * in the middle of the row. The grid declares a matching track, derived from the same rule — a
+   * row with more cells than tracks shifts right by auto-placement, a bug this layout has had.</p>
+   */
+  private static Div assayCells(String[] cells, boolean header, DataState state) {
+    Div row = new Div();
+    row.addClassName("project-progress-assay-row");
+    // The header emits the spacer too. Skipping it for the header put its five labels into the
+    // first five tracks of a six-track grid, so "Measurements with data" sat under the spacer and
+    // the whole header row was off by one column against every row beneath it.
+    int spacerAt = cells.length > 3 ? cells.length - 2 : -1;
+    for (int index = 0; index < cells.length; index++) {
+      if (index == spacerAt) {
+        Span spacer = new Span();
+        spacer.addClassName("project-progress-assay-spacer");
+        row.add(spacer);
+      }
+      Span cell = new Span(cells[index]);
+      if (header) {
+        cell.addClassName("project-progress-assay-header");
+      } else if (index == cells.length - 1 && state != null) {
+        // The state is a pill in the same vocabulary the panels below use, so one word holds across
+        // the whole page and colour varies with the state instead of everything being info-blue.
+        cell.addClassNames("snapshot-panel-state",
+            "snapshot-panel-state--" + DataStateLabel.tone(state));
+      } else if (index == 0) {
+        cell.addClassName("project-progress-assay-domain-cell");
+      } else if (index == 1) {
+        cell.addClassName("project-progress-assay-method");
+      } else {
+        cell.addClassName("project-progress-assay-number");
+      }
+      row.add(cell);
+    }
+    return row;
   }
 
   /**
@@ -495,16 +575,9 @@ public class ProjectProgressSection extends Div {
    * separately, because two experiments measured as WES are two datasets of one method -- a
    * distinction the method name alone loses.</p>
    */
-  private record AssayRollup(String methodLabel, AssayType domain, int datasets, int measurements,
-                             int withData, long bytes) {
+  record AssayRollup(String methodLabel, AssayType domain, int datasets, int measurements,
+                     int withData, long bytes) {
 
-    int missing() {
-      return Math.max(0, measurements - withData);
-    }
-
-    boolean complete() {
-      return measurements > 0 && withData >= measurements;
-    }
   }
 
   /**
@@ -514,7 +587,7 @@ public class ProjectProgressSection extends Div {
    * could otherwise produce the same key. Ordered by domain so the grouping reads as groups, then by
    * the label, which is the stable comparable form the view resolved ("WES", "CIDOT").</p>
    */
-  private static List<AssayRollup> assayRollup(List<AssayStanding> datasets) {
+  static List<AssayRollup> assayRollup(List<AssayStanding> datasets) {
     return datasets.stream()
         .collect(Collectors.groupingBy(
             dataset -> Map.entry(dataset.assayType(), dataset.methodLabel()),
@@ -533,84 +606,6 @@ public class ProjectProgressSection extends Div {
   }
 
   /**
-   * One analysis method, as four cells of the card's single grid: method, dataset count, state,
-   * and count.
-   *
-   * <p><b>Why four cells and not two groups.</b> Each row used to be its own flex layout, so the
-   * columns lined up only within a row: "1 dataset" started at a different x for WGS than for
-   * PEPTIDOMICS, and the counts drifted with the phrase even though both were right-aligned. A
-   * reader scanning down the card had no vertical line to follow. The cells are now items of one grid
-   * owned by {@link #assayGroups} (each row is {@code display: contents}), so every column sizes
-   * across all rows and the eye gets four clean vertical lines -- the same technique the connected
-   * datasets card uses.</p>
-   *
-   * <p>The middot between method and count is drawn by CSS rather than emitted as a span: it is
-   * punctuation separating two cells, not content of its own, and as a grid cell it would claim a
-   * column.</p>
-   */
-  private Div assayRow(AssayRollup assay) {
-    Div row = new Div();
-    row.addClassName("project-progress-assay-row");
-
-    Span method = new Span(assay.methodLabel());
-    method.addClassName("project-progress-assay-method");
-    method.getElement().setAttribute("title", assay.methodLabel());
-
-    Span datasets = new Span(assay.datasets() == 1
-        ? "1 dataset"
-        : assay.datasets() + " datasets");
-    datasets.addClassName("project-progress-assay-datasets");
-    datasets.getElement().setAttribute("title", assay.datasets() == 1
-        ? "One dataset of this analysis method"
-        : "%d datasets of this analysis method, one per experiment"
-            .formatted(assay.datasets()));
-
-    // Three cells, three grid tracks: the state phrase and its count are one cell, so they stay
-    // glued to the right edge and the counts share a right edge down the card whatever the phrases
-    // are. Adding a fourth cell without a fourth track shifts every row right by auto-placement --
-    // a bug this layout has already had once.
-    Div state = new Div(assayState(assay), assayCount(assay));
-    state.addClassName("project-progress-assay-state-group");
-
-    row.add(method, datasets, state);
-    return row;
-  }
-
-  /**
-   * The row's data state, from the one vocabulary the whole page uses.
-   *
-   * <p>Three possible words, not two: a method holding some of its measurements' data is
-   * <em>Partially available</em>, which is neither "everything arrived" nor "nothing arrived". The
-   * phrase names what is waited for because this card has no column header to scope a bare
-   * "Waiting" to data -- beside a list of experiments the short form reads as a loading spinner.</p>
-   *
-   * <p>Colour reinforces and never carries the state alone, matching the dataset list's status
-   * column. Waiting is neutral, not amber: a measurement whose data has not been uploaded yet is the
-   * normal state of the process, and amber is reserved for {@link DataState#AT_RISK}.</p>
-   */
-  private static Span assayState(AssayRollup assay) {
-    DataState state = DataState.of(assay.withData(), assay.measurements());
-    Span label = new Span(DataStateLabel.phrase(state));
-    label.addClassNames("project-progress-assay-state",
-        "project-progress-assay-state--" + DataStateLabel.modifier(state));
-    return label;
-  }
-
-  /**
-   * The count beside the state: how much, as opposed to whether.
-   *
-   * <p>Secondary by weight and by colour, because the state phrase has already answered the question
-   * and the per-dataset figures live in the dataset section below.</p>
-   */
-  private static Span assayCount(AssayRollup assay) {
-    Span count = new Span(assay.measurements() == 0
-        ? "none registered"
-        : "%d of %d with data".formatted(assay.withData(), assay.measurements()));
-    count.addClassName("project-progress-assay-count");
-    return count;
-  }
-
-  /**
    * Makes a whole card the way into its surface, the way the rail steps are.
    *
    * <p>Role and keyboard handling come from the same helper the rail and the not-complete rows use, so
@@ -625,6 +620,9 @@ public class ProjectProgressSection extends Div {
    * a link containing links. Each record's title links to the record, and the card's heading links to
    * the full list.</p>
    */
+  /** How many linked records the card shows before deferring to the Datasets page. */
+  private static final int CONNECTED_ROWS_SHOWN = 3;
+
   private Div connectedAssetsCard(List<ConnectedDatasetView> connected) {
     Div card = new Div();
     card.addClassName("project-progress-datasets-card");
@@ -641,19 +639,13 @@ public class ProjectProgressSection extends Div {
     // into the card title; when they do not, each row keeps its own.
     String sharedProvider = sharedProvider(connected);
     // The heading is the card's single way into the full list; the rows keep their own links.
-    RouterLink title = new RouterLink();
-    title.setRoute(ProjectDatasetsMain.class, projectParameters());
-    title.addClassName("project-progress-datasets-card-title");
-    title.add(new Span("Linked datasets"));
-    Span count = new Span(" %d ".formatted(connected.size()));
-    count.addClassName("project-progress-datasets-card-title-fact");
-    title.add(count);
-    if (sharedProvider != null) {
-      Span provider = new Span("from %s".formatted(sharedProvider));
-      provider.addClassName("project-progress-datasets-card-title-provider");
-      title.add(provider);
-    }
-    card.add(title);
+    card.add(cardTitle("Linked datasets", PrimaryDatasetsComponent.CONNECTED_BAND_ANCHOR));
+
+    // The count is a fact about the card, not part of its name. "Linked datasets 6" set a number at
+    // heading weight inside a title, stated the same quantity three ways (6 / three rows / "and 3
+    // more") and had no counterpart on the card beside it. It now leads the body the way the
+    // measurement card's table does, in the same weight as that card's content.
+    card.add(cardSummary(connected.size(), "record", "records", sharedProvider));
 
     boolean perRowProvider = sharedProvider == null;
     Div rows = new Div();
@@ -661,13 +653,26 @@ public class ProjectProgressSection extends Div {
     if (perRowProvider) {
       rows.addClassName("project-progress-connected-assets--with-provider");
     }
+    // A header row, the way the measurement table beside it has one. Without it "3 days ago" and
+    // "Zenodo" ran on from the title as if they were part of it, and the reader had to infer what
+    // the two trailing columns meant.
+    rows.add(connectedHeaderRow(perRowProvider));
     // Most recent activity first. The question this card answers is "is anything happening here",
     // and ordering by connection date buried the record that was synced this morning.
     connected.stream()
         .sorted(Comparator.comparing(ProjectProgressSection::lastActivity).reversed())
-        .limit(3)
+        .limit(CONNECTED_ROWS_SHOWN)
         .forEach(asset -> rows.add(connectedAssetRow(asset, perRowProvider)));
     card.add(rows);
+
+    // Same disclosure grammar as the card beside it and the panels below: a footer link under a
+    // hairline, not an inert lowercase sentence that names a destination.
+    card.add(cardFooter(connected.size() > CONNECTED_ROWS_SHOWN
+            ? "All %d records".formatted(connected.size())
+            : "All %d %s".formatted(connected.size(),
+                connected.size() == 1 ? "record" : "records"),
+        AppRoutes.ProjectRoutes.DATASETS.formatted(projectId) + "#"
+            + PrimaryDatasetsComponent.CONNECTED_BAND_ANCHOR));
     return card;
   }
 
@@ -687,9 +692,12 @@ public class ProjectProgressSection extends Div {
    * events, and a reader judging whether a record is current needs to know which one they are
    * looking at.
    */
-  private static String activityLabel(ConnectedDatasetView asset) {
-    return (asset.lastSyncedAt() != null ? "synced " : "connected ")
-        + Utility.relativeTime(lastActivity(asset));
+  static String activityLabel(ConnectedDatasetView asset) {
+    // Just the relative time. The verb ("synced" / "connected") distinguished two events that this
+    // card does not act on: it is answering "is anything happening here", and when it last happened
+    // is the whole answer. The distinction survives where it matters -- the two are still ordered by
+    // their last activity, and the record's own page states which event that was.
+    return Utility.relativeTime(lastActivity(asset));
   }
 
   /**
@@ -720,7 +728,26 @@ public class ProjectProgressSection extends Div {
    * invented here, and it is rendered with the same tag the connected-datasets page uses so that
    * "Dataset" or "Software" reads identically in both places.</p>
    */
-  private static Div connectedAssetRow(ConnectedDatasetView asset, boolean showProvider) {
+  /**
+   * The linked table's header row, in the same grammar as the measurement table's.
+   *
+   * <p>"Last activity" rather than "Synced"/"Connected": the column reports when the record last
+   * changed, and which of the two events that was is not something this card acts on.</p>
+   */
+  static Div connectedHeaderRow(boolean showProvider) {
+    Div row = new Div();
+    row.addClassName("project-progress-connected-asset");
+    for (String label : showProvider
+        ? new String[]{"Type", "Name", "Last activity", "Source"}
+        : new String[]{"Type", "Name", "Last activity"}) {
+      Span header = new Span(label);
+      header.addClassName("project-progress-connected-asset-header");
+      row.add(header);
+    }
+    return row;
+  }
+
+  static Div connectedAssetRow(ConnectedDatasetView asset, boolean showProvider) {
     Div row = new Div();
     row.addClassName("project-progress-connected-asset");
 
@@ -766,17 +793,26 @@ public class ProjectProgressSection extends Div {
   }
 
   /**
-   * A card heading. When {@code parameters} is given the heading is the card's way into its surface
-   * and renders as a real anchor; otherwise it is plain text.
+   * A card heading that is the card's way into the matching band of the Datasets page.
+   *
+   * <p>The fragment is not decoration. The page holds two bands and this section holds two cards,
+   * both pointing at that page: without a target they landed identically at the top, so "Linked
+   * datasets" put the reader in front of the primary datasets and left them to scroll. The fragment
+   * names the band, the band carries the matching id, and {@code ProjectDatasetsMain} turns the two
+   * into an actual scroll once the (asynchronous) band content exists.</p>
+   *
+   * <p>A real anchor built from an application path, for the reason {@link Utility#textLink}
+   * documents: {@code RouterLink} + {@code RouteParameters} silently renders an inert element when
+   * the parameters do not bind, and a fragment cannot be expressed on a {@code RouterLink} at all.</p>
    */
-  private Div cardTitle(String text, RouteParameters ignoredParameters) {
+  private Div cardTitle(String text, String anchor) {
     Div title = new Div();
     title.addClassName("project-progress-datasets-card-title");
-    // A real anchor built from an application path: RouterLink + RouteParameters silently renders an
-    // inert element when the parameters do not bind, which is how two cards ended up with links that
-    // looked right and did nothing.
+    // The same glyph the snapshot panels carry, so the two cards and the two panels below name their
+    // subject the same way: a database for stored data, a flask for samples.
+    title.add(surfaceIcon(text));
     title.add(Utility.textLink(text,
-        AppRoutes.ProjectRoutes.DATASETS.formatted(projectId),
+        AppRoutes.ProjectRoutes.DATASETS.formatted(projectId) + "#" + anchor,
         "project-progress-datasets-card-title-link"));
     return title;
   }
@@ -785,8 +821,62 @@ public class ProjectProgressSection extends Div {
   private static Div cardTitle(String text) {
     Div title = new Div();
     title.addClassName("project-progress-datasets-card-title");
+    title.add(surfaceIcon(text));
     title.add(new Span(text));
     return title;
+  }
+
+  /**
+   * The card's count line: how much it holds, and optionally where that comes from.
+   *
+   * <p>Both cards carry it, in the same place and the same wording. Only the linked card stated its
+   * size before, so the pair read as two different kinds of block -- one that tells you how much it
+   * holds and one that does not -- even though they answer the same question at the same grain.</p>
+   */
+  static Div cardSummary(int count, String singular, String plural) {
+    return cardSummary(count, singular, plural, null);
+  }
+
+  static Div cardSummary(int count, String singular, String plural, String qualifier) {
+    Div summary = new Div();
+    summary.addClassName("project-progress-datasets-summary");
+    summary.add(new Span(SnapshotPanel.pluralise(count, singular, plural)));
+    if (qualifier != null && !qualifier.isBlank()) {
+      Span qualifierSpan = new Span("from %s".formatted(qualifier));
+      qualifierSpan.addClassName("project-progress-datasets-summary-provider");
+      summary.add(qualifierSpan);
+    }
+    return summary;
+  }
+
+  /**
+   * The decorative glyph naming a card's subject.
+   *
+   * <p>Decoration only — the title carries the meaning, so it is {@code aria-hidden}. Mirrors the
+   * snapshot panels' glyph so a reader meets one visual language for "stored data" across the page.</p>
+   */
+  private static Icon surfaceIcon(String label) {
+    Icon glyph = label.startsWith("Linked") || label.startsWith("Measurement")
+        ? VaadinIcon.DATABASE.create()
+        : VaadinIcon.RECORDS.create();
+    glyph.addClassName("project-progress-datasets-card-icon");
+    glyph.getElement().setAttribute("aria-hidden", "true");
+    return glyph;
+  }
+
+  /**
+   * A card's way out, below a hairline, in the same grammar as the snapshot panels' footer.
+   *
+   * <p>Both cards used to disclose their cap as an inert lowercase sentence ("and 3 more records on
+   * the datasets page") while the identical destination sat 20px above as a link, and the panels
+   * below used a right-aligned footer link. One grammar now covers all four surfaces.</p>
+   */
+  private Div cardFooter(String text, String href) {
+    Div footer = new Div();
+    footer.addClassName("project-progress-datasets-card-footer");
+    footer.add(Utility.textLink(text + " \u2192", href,
+        "project-progress-datasets-card-footer-link"));
+    return footer;
   }
 
   private static Span cardFact(String text) {
