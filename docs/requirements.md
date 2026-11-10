@@ -181,6 +181,26 @@ After an authentication change of this impact, the first question asked during a
 **Source:**
 [AUTH-R-01](#auth-r-01-mandatory-second-authentication-factor); GitHub issue [#1666](https://github.com/qbicsoftware/data-manager-app/issues/1666)
 
+#### AUTH-R-05: Single-Use, Time-Limited Verification Links
+
+Links used to confirm an email address or to reset a password shall carry an unguessable, single-use, time-limited token that neither reveals nor reuses the user's persistent identifier. Consuming a link shall require an explicit action by the user it was issued to; retrieving the link shall not by itself perform the state change. A token shall be invalidated when it is used, when a newer token is issued for the same purpose, and when it expires.
+
+**Rationale:**
+A verification link is an unauthenticated entry point that grants control of an account, so it is a credential in every sense and must be treated as one. Deriving the link from a persistent identifier makes the link permanent, replayable, and — because identifiers also appear in access-control records and administrative views — discloses a value the user cannot rotate. Performing the state change on retrieval alone additionally allows a mail scanner, link prefetcher, or corporate proxy to consume the link before the user sees it.
+
+**Source:**
+[AUTH-R-03](#auth-r-03-account-recovery-without-permanent-lockout); code review of the existing confirmation and reset flows (2026-11); GitHub issue [#1666](https://github.com/qbicsoftware/data-manager-app/issues/1666)
+
+#### AUTH-R-06: Single Authentication Identifier
+
+The system shall authenticate a user by exactly one identifier, and that identifier shall be the user's verified email address. Any additional name held for a user shall be display-only and shall never be accepted as an authentication credential, nor be used to derive one.
+
+**Rationale:**
+The registration form currently collects a user name that cannot be used to log in, while the login form accepts only an email address. Two identifier-shaped fields create two uniqueness rules, two sources of user confusion, and a wider surface for account enumeration, without adding any authentication capability. Stating the rule explicitly prevents a future change from quietly turning the display name into a second credential.
+
+**Source:**
+[AUTH-NFR-03](#auth-nfr-03-indistinguishable-authentication-failure-responses); code review of the registration and login views (2026-11); GitHub issue [#1666](https://github.com/qbicsoftware/data-manager-app/issues/1666)
+
 ### Non-Functional Requirements
 
 #### AUTH-NFR-01: Protection of Stored Second-Factor Secrets
@@ -202,6 +222,16 @@ A second factor must not become a denial-of-service vector by adding unacceptabl
 
 **Source:**
 [AUTH-R-01](#auth-r-01-mandatory-second-authentication-factor); PRD §5 Security & Privacy; GitHub issue [#1666](https://github.com/qbicsoftware/data-manager-app/issues/1666)
+
+#### AUTH-NFR-03: Indistinguishable Authentication Failure Responses
+
+The system shall not disclose, through any response to an unauthenticated request, whether an account exists, whether an account's email address has been confirmed, or whether an account is otherwise eligible for the requested operation. Responses to login, registration, email confirmation, and password reset shall be uniform in content and shall not differ observably in timing. Repeated attempts against these flows shall be throttled per account and per request origin.
+
+**Rationale:**
+Knowing that an address is registered is the first step of every credential attack, and knowing that an account is unconfirmed identifies the weaker target. The existing reset flow answers directly with "user not found" and "user not active", and the login flow distinguishes an unknown account from a wrong password by short-circuiting before password verification, so the current behaviour hands an attacker both facts. Uniformity must be stated as a requirement because it is not a property any single code path can guarantee on its own — it constrains the wording of every message, the order of internal checks, and the time spent before responding.
+
+**Source:**
+[AUTH-R-06](#auth-r-06-single-authentication-identifier); [AUTH-NFR-02](#auth-nfr-02-deterministic-and-fail-closed-second-factor-verification); code review of `ResetPasswordMain` and `UserDetailsServiceImpl` (2026-11); GitHub issue [#1666](https://github.com/qbicsoftware/data-manager-app/issues/1666)
 
 ### Constraints
 
