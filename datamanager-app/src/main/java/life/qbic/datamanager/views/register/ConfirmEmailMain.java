@@ -74,20 +74,32 @@ public class ConfirmEmailMain extends Main implements BeforeEnterObserver {
     this.linkSupplier = requireNonNull(linkSupplier);
     this.tokenParameter = requireNonNull(tokenParameter);
 
-    // .main is the theme's page-level grid (display:grid; height:100%). Every sibling landing view
-    // gets it by extending Main; ConfirmEmailMain does too, and the component below carries the
-    // same "email-confirm" spacing rules EmailConfirmationMain uses.
-    addClassName("email-confirm");
-    content.addClassName("email-confirm-component");
+    // These are the theme's EXISTING class names, not new ones.
+    //
+    // .main.email-confirmation (main.css) is the rule that centres the panel and sizes its card;
+    // .email-confirmation-component is what draws the card. Inventing "email-confirm" and
+    // "email-confirm-component" matched nothing — "email-confirm" only appeared to exist because it
+    // is a substring of "email-confirmation" — so the page rendered as unstyled content in a
+    // 100%-height grid container.
+    addClassName("email-confirmation");
+    content.addClassName("email-confirmation-component");
     add(content);
   }
 
   @Override
   public void beforeEnter(BeforeEnterEvent event) {
-    Map<String, List<String>> params = event.getLocation().getQueryParameters().getParameters();
-    rawToken = params.containsKey(tokenParameter) ? params.get(tokenParameter).getFirst() : null;
-    // Deliberately render only. No state changes on retrieval — see class javadoc.
-    renderPrompt();
+    try {
+      Map<String, List<String>> params = event.getLocation().getQueryParameters().getParameters();
+      rawToken = params.containsKey(tokenParameter) ? params.get(tokenParameter).getFirst() : null;
+      // Deliberately render only. No state changes on retrieval — see class javadoc.
+      renderPrompt();
+    } catch (RuntimeException e) {
+      // A rendering failure must never escape as a blank page. This is the failure mode that made
+      // the missing-token case look like "nothing happened": the exception replaced the view and
+      // only a truncated line reached the log.
+      log.error("Failed to render the email confirmation page: " + e, e);
+      renderFailure();
+    }
   }
 
   /** Shows the explicit "confirm" action. Nothing has happened yet. */
@@ -108,12 +120,22 @@ public class ConfirmEmailMain extends Main implements BeforeEnterObserver {
   /**
    * Performs the state change, on the user's explicit action only.
    */
-  private void confirm() {
+  void confirm() {
     if (confirmationPerformed || rawToken == null) {
       return;
     }
     confirmationPerformed = true;
+    try {
+      doConfirm();
+    } catch (RuntimeException e) {
+      // Same principle as beforeEnter: an unexpected failure renders the uniform failure panel and
+      // is logged. It must not surface as an unhandled exception with no diagnostic.
+      log.error("Email confirmation failed unexpectedly: " + e, e);
+      renderFailure();
+    }
+  }
 
+  private void doConfirm() {
     Optional<String> userId = verificationLinkService.consume(rawToken,
         VerificationLinkService.Purpose.EMAIL_CONFIRMATION, Instant.now());
     if (userId.isEmpty()) {

@@ -33,6 +33,7 @@ class ConfirmEmailMainSpec extends Specification {
 
     VerificationLinkService linkService
     IdentityService identityService
+    life.qbic.identity.domain.model.User testUser
     ConfirmEmailMain view
 
     def setup() {
@@ -54,9 +55,17 @@ class ConfirmEmailMainSpec extends Specification {
         VaadinService.setCurrent(service)
         linkService = Mock(VerificationLinkService)
         // IdentityService is final, so Spock cannot mock it without Mockito on the classpath.
-        // A real instance over a stub repository is enough: this spec's property is whether the
-        // TOKEN was spent, and that decision belongs entirely to VerificationLinkService.
-        identityService = new IdentityService(Stub(life.qbic.identity.domain.repository.UserRepository))
+        // A real instance over a stub repository that CONTAINS the user is enough: this spec's
+        // property is whether the token was spent and what gets rendered afterwards.
+        testUser = life.qbic.identity.domain.model.User.create(
+                life.qbic.identity.domain.model.FullName.from("Test User"),
+                life.qbic.identity.domain.model.EmailAddress.from("test@example.com"),
+                "testuser",
+                life.qbic.identity.domain.model.EncryptedPassword.from("aStrongPassw0rd!".toCharArray()))
+        def userRepository = Stub(life.qbic.identity.domain.repository.UserRepository)
+        userRepository.findById(_) >> Optional.of(testUser)
+        userRepository.findByEmail(_) >> Optional.of(testUser)
+        identityService = new IdentityService(userRepository)
         view = new ConfirmEmailMain(linkService, identityService,
                 new EmailConfirmationLinkSupplier("https", "example.org", 443, "",
                         "/registration/confirm", "token"), "token")
@@ -102,6 +111,63 @@ class ConfirmEmailMainSpec extends Specification {
 
     def cleanup() {
         VaadinService.setCurrent(null)
+    }
+
+    // ------------------------------------------------- the click path (consumed token)
+
+    def "a consumed token on click renders the failure state and does not throw"() {
+        given: "the token is already used, so consumption returns empty"
+        linkService.consume("tok-used", VerificationLinkService.Purpose.EMAIL_CONFIRMATION,
+                _ as Instant) >> Optional.empty()
+        view.beforeEnter(eventWithToken("tok-used"))
+
+        when: "the user presses confirm"
+        view.confirm()
+
+        then: "it renders the failure panel — an unusable link must never blank the page"
+        noExceptionThrown()
+        renderedText(view).contains("no longer valid")
+        !renderedText(view).contains("Confirm your email address")
+    }
+
+    def "an expired token on click renders the same failure state"() {
+        given:
+        linkService.consume("tok-old", VerificationLinkService.Purpose.EMAIL_CONFIRMATION,
+                _ as Instant) >> Optional.empty()
+        view.beforeEnter(eventWithToken("tok-old"))
+
+        when:
+        view.confirm()
+
+        then: "identical wording, so the visitor cannot tell expired from consumed (AUTH-NFR-03)"
+        renderedText(view).contains("no longer valid")
+    }
+
+    def "a valid token on click renders the success state"() {
+        given:
+        linkService.consume("tok-ok", VerificationLinkService.Purpose.EMAIL_CONFIRMATION,
+                _ as Instant) >> Optional.of(testUser.id().get())
+        view.beforeEnter(eventWithToken("tok-ok"))
+
+        when:
+        view.confirm()
+
+        then:
+        renderedText(view).contains("Email address confirmed")
+    }
+
+    def "a second click after success does nothing"() {
+        given: "one successful confirmation"
+        linkService.consume("tok-ok", VerificationLinkService.Purpose.EMAIL_CONFIRMATION,
+                _ as Instant) >> Optional.of(testUser.id().get())
+        view.beforeEnter(eventWithToken("tok-ok"))
+        view.confirm()
+
+        when: "the user clicks again"
+        view.confirm()
+
+        then: "the token is not consumed a second time — the double-click guard holds"
+        0 * linkService.consume(*_)
     }
 
     // ------------------------------------------------------------------ helpers
