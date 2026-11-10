@@ -604,4 +604,56 @@ _approved, stories will be recorded here individually with their final stable ID
 
 ---
 
-*Last updated: 2026-09-21*
+### FEAT-AUTH-FLOWS
+
+| Field | Value |
+|---|---|
+| **Description** | Login, registration and account recovery as one coherent journey: single-use expiring verification links, one authentication identifier, uniform failure responses, and a password for every account |
+| **PRD Section** | §5 Security & Privacy — Authentication; §Technical Constraints (see conflict note below) |
+| **Requirements** | `AUTH-R-05`, `AUTH-R-06`, `AUTH-R-07`, `AUTH-NFR-03` |
+| **GitHub Feature** | [#1672](https://github.com/qbicsoftware/data-manager-app/issues/1672) |
+| **Status** | 🔴 Open (release R1 in progress) |
+| **Milestone** | [MILESTONE-MFA](https://github.com/qbicsoftware/data-manager-app/milestone/1) — phase M1 |
+
+**Why this Feature exists.** It is phase M1 of `MILESTONE-MFA` and ships **before** the second factor.
+The paths it closes are the ones an attacker uses to bypass a second factor, so hardening the factor
+first would have been theatre. Three defects drove it:
+
+1. `EmailConfirmationLinkSupplier` and `PasswordResetLinkSupplier` derive links from the user's
+   persistent identifier (`users.id`), with no expiry and no single-use. The identifier **is** the
+   credential, and it also appears in ACL records.
+2. `LoginLayout.handle()` confirms an email inside `beforeEnter` — a state change on an unauthenticated
+   GET, consumable by a mail scanner or link prefetcher.
+3. `ResetPasswordMain` reports "User not found" and "User not active", disclosing account existence.
+
+**Delivery is two releases** (decision B5):
+
+- **R1 — the security fix, ships first, revertable on its own:** tokenised links, confirmation off
+  `/login`, tokenised reset, uniform failures, server-side throttling, and the `AUTH-R-07` password
+  migration.
+- **R2 — the consolidation, follows:** one registration form, one password policy, display name no
+  longer a credential, dead state removed.
+
+**Known conflict (unresolved, PO-owned):** PRD §Technical Constraints states *"ORCID OAuth2 integration
+for researcher identity; local password-based authentication as fallback"*. `AUTH-R-07` inverts that
+priority. `docs/prd.md` has not been edited; tracked in
+[#1666](https://github.com/qbicsoftware/data-manager-app/issues/1666).
+
+### Stories
+
+| Story | Title | Requirements | Release | GitHub | Status |
+|---|---|---|---|---|---|
+| `FEAT-AUTH-FLOWS-01` | Confirm an Email Address with a Single-Use Link | `AUTH-R-05`, `AUTH-NFR-01` | R1 | [#1673](https://github.com/qbicsoftware/data-manager-app/issues/1673) | 🔴 Open |
+| `FEAT-AUTH-FLOWS-02` | Reset a Password with an Expiring Single-Use Link | `AUTH-R-05` | R1 | [#1674](https://github.com/qbicsoftware/data-manager-app/issues/1674) | 🔴 Open |
+| `FEAT-AUTH-FLOWS-03` | Sign In Without Revealing Whether an Account Exists | `AUTH-NFR-03` | R1 | [#1675](https://github.com/qbicsoftware/data-manager-app/issues/1675) | 🔴 Open |
+| `FEAT-AUTH-FLOWS-04` | Register Once, with One Password Rule | `AUTH-R-06` | R2 | [#1676](https://github.com/qbicsoftware/data-manager-app/issues/1676) | 🔴 Open |
+| `FEAT-AUTH-FLOWS-05` | Sign In with a Password, Link ORCID Afterwards | `AUTH-R-07` | R1 | [#1677](https://github.com/qbicsoftware/data-manager-app/issues/1677) | 🔴 Open |
+
+Acceptance criteria live in `docs/requirements.md` (requirements) and in each GitHub story issue. The
+step-by-step plan, decisions A1–D1 and the two-release split are in
+[`docs/plans/MILESTONE-MFA-self-governed-2fa.md`](plans/MILESTONE-MFA-self-governed-2fa.md) §2.
+
+---
+
+*Last updated: 2026-11-10*
+
