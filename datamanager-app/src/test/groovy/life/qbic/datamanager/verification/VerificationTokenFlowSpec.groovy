@@ -38,6 +38,8 @@ class VerificationTokenFlowSpec extends Specification {
     @Shared
     EntityManagerFactory emf
 
+    Boolean usersTableCache
+
     VerificationTokenServiceImpl service
 
     static final Duration CONFIRMATION = Duration.ofHours(1)
@@ -76,8 +78,15 @@ class VerificationTokenFlowSpec extends Specification {
      * MariaDB run must state it. The application pins {@code MariaDBDialect} in
      * {@code application.properties}; these specs mirror that.
      */
+    /**
+     * The dialect to pin, or {@code null} to let Hibernate infer it.
+     *
+     * <p>H2 infers its own dialect and warns if one is set explicitly (HHH90000025). MariaDB 12 via
+     * the MySQL driver cannot be inferred, so the MariaDB run must pass
+     * {@code -Dverification.dialect=org.hibernate.dialect.MariaDBDialect}.</p>
+     */
     static String dialect() {
-        System.getProperty("verification.dialect", "org.hibernate.dialect.H2Dialect")
+        System.getProperty("verification.dialect")
     }
 
     static String ddlAuto() {
@@ -85,14 +94,16 @@ class VerificationTokenFlowSpec extends Specification {
     }
 
     def setupSpec() {
-        def registry = new StandardServiceRegistryBuilder()
+        def builder = new StandardServiceRegistryBuilder()
                 .applySetting(AvailableSettings.JAKARTA_JDBC_URL, jdbcUrl())
                 .applySetting(AvailableSettings.JAKARTA_JDBC_USER, jdbcUser())
                 .applySetting(AvailableSettings.JAKARTA_JDBC_PASSWORD, jdbcPassword())
                 .applySetting(AvailableSettings.JAKARTA_JDBC_DRIVER, jdbcDriver())
-                .applySetting(AvailableSettings.DIALECT, dialect())
                 .applySetting(AvailableSettings.HBM2DDL_AUTO, ddlAuto())
-                .build()
+        if (dialect() != null) {
+            builder.applySetting(AvailableSettings.DIALECT, dialect())
+        }
+        def registry = builder.build()
         def metadata = new MetadataSources(registry)
                 .addAnnotatedClass(life.qbic.identity.domain.model.verification.VerificationToken)
                 .buildMetadata()
@@ -159,23 +170,54 @@ class VerificationTokenFlowSpec extends Specification {
      * {@code FK_user_verification_token_user REFERENCES users(id)} rejects the insert otherwise.
      * In production the user always exists: a token is only issued for a registered account.</p>
      */
+    /**
+     * Whether the schema carries a {@code users} table.
+     *
+     * <p>Resolved once, by inspection. The FK to {@code users} only exists in the real migration
+     * DDL; the H2-generated schema omits it, so there is nothing to satisfy there. Probing with a
+     * failing query per call would spam the log with {@code Table "USERS" not found} and, worse,
+     * hide a genuine failure behind a swallowed exception.</p>
+     */
+    Boolean usersTablePresent() {
+        if (usersTableCache == null) {
+            EntityManager em = emf.createEntityManager()
+            try {
+                // information_schema only: querying `users` itself is what produced the
+                // per-call "Table USERS not found" noise in the first place.
+                // Filter by schema: H2 ships its own INFORMATION_SCHEMA.USERS, which a plain
+                // TABLE_NAME match happily finds. We want an application table, not a metadata one.
+                def found = em.createNativeQuery(
+                        "SELECT COUNT(*) FROM information_schema.TABLES " +
+                        "WHERE UPPER(TABLE_NAME) = 'USERS' " +
+                        "  AND TABLE_SCHEMA NOT IN ('INFORMATION_SCHEMA', 'information_schema')")
+                        .singleResult
+                usersTableCache = ((Number) found).intValue() > 0
+            } catch (Exception e) {
+                usersTableCache = false
+            } finally {
+                em.close()
+            }
+        }
+        return usersTableCache
+    }
+
     void ensureUser(String userId) {
+        if (!usersTablePresent()) {
+            return
+        }
         EntityManager em = emf.createEntityManager()
         try {
             em.transaction.begin()
-            try {
-                def existing = em.createNativeQuery("SELECT COUNT(*) FROM users WHERE id = :id")
-                        .setParameter("id", userId).singleResult
-                if (((Number) existing).intValue() == 0) {
-                    em.createNativeQuery("INSERT INTO users (id, active) VALUES (:id, b'1')")
-                            .setParameter("id", userId).executeUpdate()
-                }
-            } catch (Exception ignored) {
-                // No users table on the H2-generated schema; nothing to satisfy there.
+            def existing = em.createNativeQuery("SELECT COUNT(*) FROM users WHERE id = :id")
+                    .setParameter("id", userId).singleResult
+            if (((Number) existing).intValue() == 0) {
+                em.createNativeQuery("INSERT INTO users (id, active) VALUES (:id, b'1')")
+                        .setParameter("id", userId).executeUpdate()
             }
             em.transaction.commit()
-        } catch (Exception ignored) {
+        } catch (Exception e) {
             if (em.transaction.active) em.transaction.rollback()
+            throw e   // do not swallow: a real FK/permission problem must be visible
         } finally {
             em.close()
         }
