@@ -62,9 +62,7 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
   private VerticalLayout contentLayout;
   private ConfigurableLoginForm loginForm;
 
-  public LoginLayout(@Autowired LoginHandler loginHandler,
-      @Value("${server.servlet.context-path}") String contextPath) {
-    requireNonNull(loginHandler, "loginHandler must not be null");
+  public LoginLayout(@Value("${server.servlet.context-path}") String contextPath) {
     initLayout(contextPath);
     styleLayout();
     initFields();

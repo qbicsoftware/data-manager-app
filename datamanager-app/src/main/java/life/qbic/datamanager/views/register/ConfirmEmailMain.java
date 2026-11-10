@@ -7,7 +7,6 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Paragraph;
-import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
@@ -19,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import life.qbic.datamanager.views.AppRoutes;
+import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.landing.LandingPageLayout;
 import life.qbic.datamanager.views.login.LoginLayout;
 import life.qbic.identity.api.VerificationLinkService;
@@ -49,7 +49,7 @@ import life.qbic.logging.api.Logger;
 @Route(value = AppRoutes.CONFIRM_EMAIL, layout = LandingPageLayout.class)
 @PageTitle("Confirm email address")
 @AnonymousAllowed
-public class ConfirmEmailMain extends VerticalLayout implements BeforeEnterObserver {
+public class ConfirmEmailMain extends Main implements BeforeEnterObserver {
 
   private static final Logger log = logger(ConfirmEmailMain.class);
 
@@ -74,6 +74,9 @@ public class ConfirmEmailMain extends VerticalLayout implements BeforeEnterObser
     this.linkSupplier = requireNonNull(linkSupplier);
     this.tokenParameter = requireNonNull(tokenParameter);
 
+    // .main is the theme's page-level grid (display:grid; height:100%). Every sibling landing view
+    // gets it by extending Main; ConfirmEmailMain does too, and the component below carries the
+    // same "email-confirm" spacing rules EmailConfirmationMain uses.
     addClassName("email-confirm");
     content.addClassName("email-confirm-component");
     add(content);
