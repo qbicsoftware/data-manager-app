@@ -757,29 +757,29 @@ public class ProjectCollectionComponent extends PageArea {
     }
 
     /**
-     * Builds the card body: a plain container holding the navigational title/metadata link and the
+     * Builds the card body: a plain container holding the project's identity, its metadata and the
      * collapsible access summary.
      *
+     * <p><b>Only the title is a link.</b> The body used to be one large anchor wrapping the code,
+     * title, tags, last-modified date and both contact rows. That made every line inside it look
+     * clickable -- and once links gained a hover underline, every line underlined at once, so the
+     * card appeared to be a paragraph of links. A reader decides where to click from what is
+     * underlined, so only the title underlines and only the title navigates.</p>
+     *
      * <p>The padding and card styling stay on the {@code project-overview-item} container so the
-     * existing page-area.css card rules keep applying. The title link is deliberately large (code,
-     * title, tags, last-modified, PI and responsible) so "open the project" remains a comfortable
-     * target now that the whole card is no longer one anchor. The access summary sits outside the
-     * link, which is what allows it to be an interactive disclosure.</p>
+     * existing page-area.css card rules keep applying. The access summary and the footer stay
+     * separate click targets, which is what allows them to be interactive.</p>
      */
     private Div buildCardBody(CardAccessSummary accessSummary,
         AccessSummaryToggleHandler accessSummaryToggleHandler) {
       var body = new Div();
       body.addClassName("project-overview-item");
 
-      var link = new RouterLink("", ProjectInformationMain.class,
-          new RouteParameters(PROJECT_ID_ROUTE_PARAMETER, projectOverview.projectId().value()));
-      link.addClassName("project-card-title-link");
-
       setMeasurementDependentTags();
-      link.add(createHeader(projectOverview.projectCode(), projectOverview.projectTitle(), false));
-      link.add(buildLastModified());
-      link.add(buildProjectDetails());
-      body.add(link);
+      body.add(createHeader(projectOverview.projectCode(), projectOverview.projectTitle(),
+          projectOverview.projectId().value()));
+      body.add(buildLastModified());
+      body.add(buildProjectDetails());
 
       body.add(new SharedWithSummary(accessSummary.groups(),
           projectOverview.collaboratorUserInfos(), accessSummary.collaboratorRoles(),
@@ -968,10 +968,19 @@ public class ProjectCollectionComponent extends PageArea {
       return base;
     }
 
-    private Span createHeader(String projectCode, String projectTitle, boolean pinned) {
+    /**
+     * The card's identity row: project code, the title as a link, and the assay-type tags.
+     *
+     * <p>{@code projectId} is passed in rather than read from a field so the signature states the
+     * dependency: this is the one element in the card body that navigates.</p>
+     */
+    private Span createHeader(String projectCode, String projectTitle, String projectId) {
       Span title = new Span();
       title.add(new ProjectCodeBadge(projectCode));
-      title.add(new Span(" " + projectTitle));
+      RouterLink titleLink = new RouterLink(projectTitle, ProjectInformationMain.class,
+          new RouteParameters(PROJECT_ID_ROUTE_PARAMETER, projectId));
+      titleLink.addClassName("project-overview-item-title-link");
+      title.add(titleLink);
       title.addClassName("project-overview-item-title");
       tags.addClassNames("tag-collection");
       Span header = new Span(title, tags);

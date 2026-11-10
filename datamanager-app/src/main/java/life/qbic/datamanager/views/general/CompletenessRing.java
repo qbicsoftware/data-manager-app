@@ -71,10 +71,15 @@ public class CompletenessRing extends Div {
    */
   private static String svg(int percentage, boolean noData) {
     String trackDash = noData ? " stroke-dasharray=\"1.5 3\"" : "";
+    // A round line cap is what softens a partial arc's ends. At 100% the arc closes on itself, so
+    // both caps land on the same point and overdraw each other into a visible bulge at 12 o'clock.
+    // Butt caps are correct for a closed circle: there is no end left to soften.
+    String linecap = percentage >= 100 ? "butt" : "round";
     String value = noData ? "" : """
         <circle class="completeness-ring__value" cx="18" cy="18" r="15.9155"
-                fill="none" stroke-width="3.5" stroke-linecap="round"
-                stroke-dasharray="%d 100" transform="rotate(-90 18 18)"/>""".formatted(percentage);
+                fill="none" stroke-width="3.5" stroke-linecap="%s"
+                stroke-dasharray="%d 100" transform="rotate(-90 18 18)"/>""".formatted(linecap,
+        percentage);
     return """
         <svg class="completeness-ring__svg" viewBox="0 0 36 36" aria-hidden="true" focusable="false">
           <circle class="completeness-ring__track" cx="18" cy="18" r="15.9155"

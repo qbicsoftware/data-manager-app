@@ -24,6 +24,7 @@ For the migration documentation structure, see [`README.md`](README.md).
 | 1 | *(automatic — bundled with JobRunr)* | **JobRunr 8.7.1 → 9.0.x** auto-applies its bundled migration `v017__change_job_stats_view_to_sql_security_invoker.sql` on first startup: the `jobrunr_jobs_stats` view is recreated with `SQL SECURITY INVOKER` (MariaDB/MySQL). Atomic `CREATE OR REPLACE VIEW`; no table/index DDL, no downtime. Applied once and recorded in `jobrunr_migrations`. | Low |
 | 2 | [`create-project-page-read-models.sql`](../sql/migrations/create-project-page-read-models.sql) | Create the project-page read-model views `experiment_progress`, `v_project_sample_overview`, `v_measurement_experiment`, plus a supporting index on `sample(experiment_id)`. Views + one index only; no table or column changes. | Low (non-destructive) |
 | 3 | [`create-experiment-recent-activity-views.sql`](../sql/migrations/create-experiment-recent-activity-views.sql) | Create the recent-activity views `experiment_recent_sample` and `experiment_recent_measurement` (newest three per experiment, via `ROW_NUMBER`) for the experiment snapshot panels. Views only. | Low (non-destructive; needs MariaDB 10.2+) |
+| 4 | [`create-assay-standing-view.sql`](../sql/migrations/create-assay-standing-view.sql) | Create `v_project_assay_standing`: one row per primary dataset — one experiment for one analysis method — with measurement counts, primary-data coverage and volume. One derivation shared by the summary and Datasets pages (ADR 0010). View + one index. | Low (non-destructive; needs MariaDB 10.2+) |
 
 Each row links to its incremental script. The sections below expand each entry
 with apply / verify / rollback detail.
@@ -245,6 +246,112 @@ DROP VIEW IF EXISTS experiment_recent_sample;
 
 - Non-destructive and safe on a live database; no downtime, no data movement.
 - Needs MariaDB 10.2 or newer (window functions).
+
+---
+
+## Migration #4: Assay standing read model
+
+| Field | Value |
+|---|---|
+| **Story** | TBD (governance gate skipped at project-owner direction) |
+| **Feature** | TBD (`FEAT-PROJECT-*`) |
+| **ADRs** | [0010](../adr/0010-analysis-method-attribution.md) (analysis-method attribution) |
+| **Scope** | create 1 view + 1 index |
+| **Script** | [`sql/migrations/create-assay-standing-view.sql`](../sql/migrations/create-assay-standing-view.sql) |
+| **Target datasource** | `data_management` |
+
+### What it does
+
+Adds the read model behind the project's primary datasets: one row per **(experiment, analysis
+method)**, which is the identity of a primary dataset.
+
+A primary dataset is the data of one experiment for one analysis method. It is not declared: it is
+the consequence of measurements having been done. The analysis method is its type because that is
+what a reader selects datasets by when planning an analysis; the omics domain is too coarse, since
+WES, RNA-Seq and 16S are all genomics and are not interchangeable.
+
+The view exists so the summary page and the Datasets page read **one** derivation. Two derivations
+drift, and a project holding "2 WES datasets" on one page must not hold "1 Genomics dataset" on
+another.
+
+**Requires MariaDB 10.2+** (CTEs).
+
+### Read this before changing the view
+
+The analysis method is annotated on the **sample** (`sample.analysis_method`), not the measurement.
+That is the wrong home and a known mistake, but it cannot simply be moved: it is the only source for
+existing projects, and it can never be deleted without destroying their record. It is therefore a
+**permanently supported grandfather relation**, and this view is the one place allowed to read it to
+type a dataset (ADR 0010).
+
+Two consequences an operator will notice in the data:
+
+- A measurement measuring samples with **different** analysis methods is counted in **each**, so
+  per-dataset measurement counts can sum to more than the measurement total. Not an error.
+- Samples with **no** analysis method are excluded, so their measurements appear in the per-domain
+  progress figures but not here.
+
+### Pre-flight
+
+```sql
+SELECT VERSION();
+
+-- How much is affected: measurements whose samples carry no analysis method (excluded from this
+-- view, still counted by experiment_progress).
+SELECT COUNT(*)
+FROM sample
+WHERE analysis_method IS NULL OR analysis_method = '';
+```
+
+### Apply
+
+```bash
+mysql -u <user> -h <host> -P <port> data_management \
+    < sql/migrations/create-assay-standing-view.sql
+```
+
+### Verify
+
+```sql
+SHOW CREATE VIEW v_project_assay_standing;
+
+-- One row per (experiment, analysis method) for a project.
+SELECT experiment_name, analysis_method, measurements, measurements_with_primary_data
+FROM v_project_assay_standing
+WHERE project_id = '<projectId>'
+ORDER BY experiment_name, analysis_method;
+
+-- The index the script adds.
+SELECT index_name
+FROM information_schema.statistics
+WHERE table_schema = DATABASE()
+  AND table_name = 'sample'
+  AND index_name = 'idx_sample_project_experiment'
+LIMIT 1;
+```
+
+**Cross-check against the other read model.** The two figures answer different questions and are
+expected to differ, but the direction must make sense:
+
+```sql
+SELECT
+  (SELECT SUM(measurements) FROM v_project_assay_standing WHERE project_id = '<projectId>')
+    AS assay_measurements,
+  (SELECT SUM(measurement_count) FROM experiment_progress WHERE project_id = '<projectId>')
+    AS progress_measurements;
+```
+
+`assay_measurements` may exceed `progress_measurements` (ambiguous attribution). It must **not** be
+lower for a project whose samples all carry an analysis method.
+
+### Rollback
+
+```sql
+DROP VIEW IF EXISTS v_project_assay_standing;
+DROP INDEX idx_sample_project_experiment ON sample;
+```
+
+Non-destructive: no table or column is modified.
 
 ---
 

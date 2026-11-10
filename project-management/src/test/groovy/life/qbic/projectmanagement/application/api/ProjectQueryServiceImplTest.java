@@ -1,5 +1,6 @@
 package life.qbic.projectmanagement.application.api;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -10,6 +11,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import life.qbic.projectmanagement.application.api.ProjectQueryService.MeasurementDataFilter;
 import life.qbic.projectmanagement.application.api.ProjectQueryService.ProjectSampleFilter;
+import life.qbic.projectmanagement.application.query.AssayStanding;
 import life.qbic.projectmanagement.application.query.ExperimentProgress;
 import life.qbic.projectmanagement.application.query.MeasurementDataRow;
 import life.qbic.projectmanagement.application.query.ProjectPageReadRepository;
@@ -54,6 +56,47 @@ class ProjectQueryServiceImplTest {
     StepVerifier.create(underTest.getExperimentProgress("P1"))
         .expectNext(progress)
         .verifyComplete();
+  }
+
+  @Test
+  @DisplayName("assay standing is streamed from the read port")
+  void streamsAssayStanding() {
+    AssayStanding standing = mock(AssayStanding.class);
+    when(readRepository.findAssayStanding("P1")).thenReturn(List.of(standing));
+
+    StepVerifier.create(underTest.getAssayStanding("P1"))
+        .expectNext(standing)
+        .verifyComplete();
+  }
+
+  @Test
+  @DisplayName("assay standing is empty when the project holds no dataset")
+  void streamsNoAssayStanding() {
+    when(readRepository.findAssayStanding("P1")).thenReturn(List.of());
+
+    StepVerifier.create(underTest.getAssayStanding("P1"))
+        .verifyComplete();
+  }
+
+  /**
+   * The parameter is the query's subject, so a null must fail loudly at the boundary rather than
+   * reach the repository and become a SQL predicate matching nothing.
+   */
+  @Test
+  @DisplayName("assay standing rejects a null project id")
+  void rejectsNullProjectIdForAssayStanding() {
+    assertThrows(NullPointerException.class, () -> underTest.getAssayStanding(null));
+  }
+
+  @Test
+  @DisplayName("assay standing maps a read failure to a query exception")
+  void mapsAssayStandingFailure() {
+    when(readRepository.findAssayStanding("P1"))
+        .thenThrow(new IllegalStateException("boom"));
+
+    StepVerifier.create(underTest.getAssayStanding("P1"))
+        .expectError(ProjectQueryService.RequestFailedException.class)
+        .verify();
   }
 
   @Test
@@ -104,8 +147,8 @@ class ProjectQueryServiceImplTest {
   @DisplayName("measurement data is streamed with the given experiment, offset, limit and filter")
   void streamsMeasurementData() {
     MeasurementDataRow row = new MeasurementDataRow("mid-1", "E1", "GENOMICS", "NGS-1", null,
-        null, null, null, 1, java.time.Instant.EPOCH,
-        MeasurementDataRow.DataStatus.WAITING, null, null, null, null);
+        null, null, 1, java.time.Instant.EPOCH,
+        MeasurementDataRow.DataStatus.WAITING, null, null, null, null, null, null);
     MeasurementDataFilter filter = MeasurementDataFilter.all();
     when(readRepository.findMeasurementData("P1", "E1", 24, 12, filter))
         .thenReturn(List.of(row));

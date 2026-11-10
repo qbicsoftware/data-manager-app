@@ -21,11 +21,11 @@ class MeasurementSelectionSpec extends Specification {
 
     private static MeasurementDataRow row(String id, String type, boolean withData,
             String poolLabel = null, int sampleCount = 1) {
-        return new MeasurementDataRow(id, "exp-1", type, "CODE-" + id, "name", "QBiC", null,
+        return new MeasurementDataRow(id, "exp-1", type, "CODE-" + id, "name", "QBiC",
                 poolLabel, sampleCount, Instant.EPOCH,
                 withData ? DataStatus.AVAILABLE : DataStatus.WAITING,
                 withData ? 3L : null, withData ? 4096L : null, Set.of(),
-                withData ? Instant.EPOCH : null)
+                withData ? Instant.EPOCH : null, List.of(), null)
     }
 
     def "an empty selection is empty"() {

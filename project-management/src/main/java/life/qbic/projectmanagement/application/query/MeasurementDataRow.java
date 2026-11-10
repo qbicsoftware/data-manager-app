@@ -3,6 +3,7 @@ package life.qbic.projectmanagement.application.query;
 import static java.util.Objects.requireNonNull;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -35,7 +36,6 @@ public record MeasurementDataRow(
     String measurementCode,
     String measurementName,
     String facility,
-    String instrument,
     String samplePool,
     int sampleCount,
     Instant registeredAt,
@@ -43,13 +43,40 @@ public record MeasurementDataRow(
     Long dataFileCount,
     Long dataSizeBytes,
     Set<String> dataFileTypes,
-    Instant dataUploadedAt) {
+    Instant dataUploadedAt,
+    List<String> methods,
+    String instrumentLabel) {
 
   public MeasurementDataRow {
     requireNonNull(measurementId, "measurementId must not be null");
     requireNonNull(measurementType, "measurementType must not be null");
     requireNonNull(dataStatus, "dataStatus must not be null");
     dataFileTypes = dataFileTypes == null ? Set.of() : Set.copyOf(dataFileTypes);
+    methods = methods == null ? List.of() : List.copyOf(methods);
+  }
+
+  /**
+   * The dataset identity of this row as one line: {@code RNA-SEQ · Illumina}.
+   *
+   * <p>This is the fact that tells two rows of one omics domain apart. Without it a list filtered to
+   * one dataset cannot show that it is filtered, and an experiment measured as both WGS and RNA-Seq
+   * renders rows the reader has no way to attribute to either.</p>
+   *
+   * <p>Plural by nature: a measurement can measure samples annotated with different methods, in which
+   * case it is attributed to each of them (ADR 0010 decision 4). The methods are then listed, joined
+   * by a comma, rather than one being picked -- picking one would misattribute the row.</p>
+   *
+   * <p>The instrument is the label the vocabulary term carries, resolved by the query. It is never
+   * substituted from the method: a measurement that records no instrument has none, and an empty cell
+   * is the honest rendering.</p>
+   */
+  public String datasetIdentity() {
+    String methodPart = methods.isEmpty() ? "" : String.join(", ", methods);
+    boolean hasInstrument = instrumentLabel != null && !instrumentLabel.isBlank();
+    if (methodPart.isEmpty()) {
+      return hasInstrument ? instrumentLabel : "";
+    }
+    return hasInstrument ? methodPart + " \u00b7 " + instrumentLabel : methodPart;
   }
 
   /**

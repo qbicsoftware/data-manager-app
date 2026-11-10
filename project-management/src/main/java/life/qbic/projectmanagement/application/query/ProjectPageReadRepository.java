@@ -30,6 +30,18 @@ public interface ProjectPageReadRepository {
   List<ExperimentProgress> findExperimentProgress(String projectId);
 
   /**
+   * Returns one {@link AssayStanding} per primary dataset of the project.
+   *
+   * <p>A primary dataset is one experiment for one analysis method, so the returned rows carry the
+   * experiment and the method rather than a pre-aggregated total -- the pair is the identity, and
+   * two experiments measured with the same method are two datasets.</p>
+   *
+   * @param projectId the project identifier
+   * @since 1.22.0
+   */
+  List<AssayStanding> findAssayStanding(String projectId);
+
+  /**
    * Returns a page of {@link ProjectSampleOverview} for the project, matching the filter.
    *
    * @param projectId the project identifier

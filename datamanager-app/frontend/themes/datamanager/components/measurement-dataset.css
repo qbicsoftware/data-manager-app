@@ -25,11 +25,37 @@
   display: block;
 }
 
+/* The page's vertical rhythm, in three named steps rather than one uniform gap.
+
+   A single --lumo-space-m between every child made the toolbar look like part of the card row above
+   it: 16px is the gap *inside* a card (padding and internal gaps are the same value), so the same
+   distance read as "still inside the same block" and the cards, the search row and the grid ran
+   together as one dense mass. The three distances below are the three actual relationships:
+
+     page title  ->  cards        --spacing-05  (the title introduces the choice)
+     cards       ->  toolbar      --spacing-05  (choose, then act on what you chose)
+     toolbar     ->  grid         --spacing-03  (the toolbar scopes the list it sits on)
+
+   The title→cards and cards→toolbar steps are equal because both separate two different kinds of
+   thing. The toolbar→grid step is half of that: the toolbar is the grid's own control strip and
+   belongs with it, so a full band break there would cut the list off from its own search field. */
 .measurement-dataset-content {
   display: flex;
   flex-direction: column;
-  gap: var(--lumo-space-m);
+  gap: 0;
   min-width: 0;
+}
+
+.measurement-dataset-content > .measurement-dataset-header {
+  margin-bottom: var(--spacing-05);
+}
+
+.measurement-dataset-content > .measurement-dataset-selector {
+  margin-bottom: var(--spacing-05);
+}
+
+.measurement-dataset-content > .measurement-dataset-toolbar {
+  margin-bottom: var(--spacing-03);
 }
 
 /* ── Header ───────────────────────────────────────────────────────────────── */
@@ -78,23 +104,27 @@
   align-items: stretch;
 }
 
-/* One dataset: capped at the width it would have with two in a row, so it reads as
-   one card rather than as a page-wide band — and it does not sit marooned at the
-   left of an otherwise empty row. */
-.measurement-dataset-count-1 {
-  grid-template-columns: minmax(16rem, 50%);
-}
-
+/* Two cards — the minimum, because the "all measurements" card is always rendered beside the
+   dataset cards, so a single card can no longer occur and there is no count-1 layout.
+   Capped at two columns so the pair reads as cards rather than as a page-wide band. */
 .measurement-dataset-count-2 {
   grid-template-columns: repeat(2, minmax(16rem, 1fr));
 }
 
-/* Three — the maximum the domain has — fills the row. */
-.measurement-dataset-count-3,
+.measurement-dataset-count-3 {
+  grid-template-columns: repeat(3, minmax(16rem, 1fr));
+}
+
+/* Four and up: the three omics domains plus "all measurements", and anything beyond that from a
+   multi-method experiment. auto-fit rather than a fixed count, because the number of datasets is
+   data, not a design decision -- a fixed track list either leaves empty tracks or overflows, and the
+   previous "everything 3-and-up is three columns" rule put the fourth card alone on a second line. */
 .measurement-dataset-count-4,
 .measurement-dataset-count-5,
-.measurement-dataset-count-6 {
-  grid-template-columns: repeat(3, minmax(16rem, 1fr));
+.measurement-dataset-count-6,
+.measurement-dataset-count-7,
+.measurement-dataset-count-8 {
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
 }
 
 /* Narrow viewports drop three-across first, then everything to one column, so cards
@@ -104,7 +134,9 @@
   .measurement-dataset-count-3,
   .measurement-dataset-count-4,
   .measurement-dataset-count-5,
-  .measurement-dataset-count-6 {
+  .measurement-dataset-count-6,
+  .measurement-dataset-count-7,
+  .measurement-dataset-count-8 {
     grid-template-columns: repeat(2, minmax(16rem, 1fr));
   }
 }
@@ -191,6 +223,18 @@
   font-weight: var(--font-weight-semi-bold);
 }
 
+/* The dataset's identity under its domain: method · instrument. Secondary weight and colour, because
+   the domain is what a reader scans for and this is the line that tells two datasets of one domain
+   apart. It wraps rather than truncating: a truncated identity defeats the purpose of the line,
+   since "Orbitrap Exploris 4…" and "Orbitrap Exploris 480" are then indistinguishable — which is
+   exactly the ambiguity the card exists to remove. */
+.measurement-dataset-card-identity {
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-s);
+  line-height: var(--lumo-line-height-xs);
+  overflow-wrap: anywhere;
+}
+
 /* The dataset's quantities — measurement count and data size — which a reader needs
    before downloading: they decide whether the data fits their disk and their link.
    Body ink rather than the muted label colour, because these are facts to read, not a
@@ -213,6 +257,48 @@
 .measurement-dataset-search {
   flex: 1 1 18rem;
   min-width: 12rem;
+}
+
+/* The dataset the list is filtered to, stated beside the search field rather than in the grid. The
+   grid's rows carry the domain and the method/instrument as columns, so repeating the dataset in every
+   row would be noise; stating it once here is what tells a reader the list is a subset, and which one.
+
+   No border and no pill: an outlined chip sits in the toolbar as a third *control* beside the search
+   field and the data-filter select, and reads as clickable when it is not. It is a statement about the
+   list, so it is drawn as one -- a muted lead-in followed by the scope in body ink, on the text
+   baseline of the row it belongs to. */
+.measurement-dataset-scope {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--lumo-space-xs);
+  align-self: center;
+  font-size: var(--lumo-font-size-s);
+  font-weight: 500;
+  color: var(--lumo-secondary-text-color);
+  white-space: nowrap;
+}
+
+/* The lead-in reads "Showing …", so the line is a statement about the list rather than a bare noun
+   that could be mistaken for the label of a filter chip. Not in the DOM: it is punctuation for the
+   sentence, carries nothing a screen reader needs twice, and the scope itself is announced in full. */
+.measurement-dataset-scope::before {
+  content: "Showing";
+  font-weight: 400;
+  color: var(--lumo-tertiary-text-color, var(--lumo-secondary-text-color));
+}
+
+/* Before the first selection there is no scope to state, and "Showing" alone would be a dangling
+   sentence fragment. */
+.measurement-dataset-scope:empty {
+  display: none;
+}
+
+/* The "all measurements" card is a peer of the dataset cards, not a lesser option: it is the widest
+   view of the same thing. It is distinguished by position (first) and by its identity line naming
+   what it spans, not by a different shape -- a differently-shaped card would read as a different kind
+   of control rather than as one more choice. */
+.measurement-dataset-card--all .measurement-dataset-card-label {
+  color: var(--heading-text-color);
 }
 
 /* The gap must sit on the real flex children. Grouping the actions into wrapper divs
@@ -318,12 +404,34 @@
   font-weight: var(--font-weight-medium);
 }
 
+/* Waiting is the normal, time-dependent state of a registered measurement whose data has not been
+   uploaded yet -- not a warning. It is neutral here for the same reason it is neutral on the project
+   page: the two surfaces report one axis, so they must not colour it two ways. Amber is reserved for
+   a state that genuinely needs a steward's attention. */
 .measurement-dataset-status--waiting {
-  color: var(--warning-text-color);
+  color: var(--lumo-secondary-text-color);
 }
 
 .measurement-dataset-status--available {
   color: var(--success-text-color);
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--lumo-space-xs);
+}
+
+/* The separator is drawn, not typed: it sits between two facts of different weight and must not
+   inherit the green of the status word, which would read as part of the state. */
+.measurement-dataset-status-separator {
+  color: var(--lumo-contrast-30pct);
+  font-weight: 400;
+}
+
+/* The size is a quantity, not part of the state: it steps back to body ink so "Available" stays the
+   word a reader scans for and the number is there when they look for it. */
+.measurement-dataset-status-size {
+  color: var(--lumo-body-text-color);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
 }
 
 /* The row opens the record on click, so the body cells say so. This is the other half of
@@ -333,10 +441,47 @@
   cursor: pointer;
 }
 
+/* The no-hit / no-rows placeholder, as a shared EmptyState under the grid header.
+   The shared component is a 40rem centred card with generous padding -- right for a page that holds
+   nothing, wrong here: it sits inside a table that already has a header row, so a page-sized card
+   under it reads as a second, competing block. This is the grid's own placeholder, so it takes the
+   grid's full width, the grid's alignment (left, not centred -- everything above it is left-aligned)
+   and a shallower height. The dashed border and the tint stay: they are what says "deliberately
+   empty" rather than "failed to load". */
+.measurement-dataset-grid ~ .paginated-grid-empty-state,
+.measurement-dataset-list .paginated-grid-empty-state {
+  max-width: none;
+  margin-inline: 0;
+  padding: var(--lumo-space-l) var(--lumo-space-m);
+  align-items: flex-start;
+  text-align: left;
+}
+
+.measurement-dataset-list .paginated-grid-empty-state .empty-state__icon {
+  width: var(--lumo-icon-size-m);
+  height: var(--lumo-icon-size-m);
+  color: var(--lumo-secondary-text-color);
+}
+
 /* Lays the chevron out at the cell's trailing edge. */
 .measurement-dataset-details-cell {
   display: flex;
   justify-content: flex-end;
+}
+
+/* The omics domain cell: the app's domain tag, aligned with the plain-text columns beside it.
+   The tag is a padded box with line-height 1, so on its own it would ride above the row's baseline
+   and make the domain column look vertically misaligned against Method · Instrument. The wrapper
+   takes the cell's line box and centres the tag in it. */
+.measurement-dataset-domain-cell {
+  display: inline-flex;
+  align-items: center;
+  line-height: var(--lumo-line-height-m);
+}
+
+.measurement-dataset-domain-cell .tag {
+  /* One tag style across the app; only its vertical placement is corrected here. */
+  vertical-align: middle;
 }
 
 /* The row is a navigation surface: clicking it opens the record. The checkbox cell and
@@ -659,9 +804,6 @@
   min-width: 0;
 }
 
-/* A complete dataset is marked, not only drawn. A full ring is a green circle, but at
-   card size that is a faint difference from a 90% arc, and "everything has arrived" is
-   the one state worth recognising without reading anything. */
 .measurement-dataset-card-ring {
   flex: 0 0 auto;
   margin-left: auto;
@@ -672,10 +814,11 @@
   transform-origin: top center;
 }
 
-.measurement-dataset-card-ring--complete {
-  border-radius: 50%;
-  box-shadow: 0 0 0 2px var(--success-color);
-}
+/* No halo on completion. The halo was added when a full ring was hard to tell from a 90% arc at
+   this size, but at a true 100% the arc IS a closed green circle -- so the halo drew a second green
+   circle 2px outside it, and because the ring is scaled to 0.72 the shadow hugged the "100%" text
+   and read as a doubled, misregistered ring. The colour change to the success tone already carries
+   "complete", and the component closes the arc with butt caps so it has no overlap bulge. */
 
 /* ── Download guidance (dialog content) ───────────────────────────────────── */
 
@@ -693,22 +836,62 @@
   max-width: 70ch;
 }
 
-/* Each step is an icon and its content. The icon is a fixed first column so the
-   content always starts at the same x — that shared left edge is what makes the
-   three steps read as a sequence rather than three unrelated lines. */
+/* Each step is one block: a numbered head, then its explanation and its control.
+   
+   The steps used to be an icon beside a line of content, one line each. A key, a download arrow and
+   a terminal prompt do not communicate a sequence — a reader who does not already know the workflow
+   cannot tell what the terminal glyph means, and nothing said "do this first". The marker now
+   carries the ordinal and every step is a full block, so the order is stated rather than implied. */
 .measurement-dataset-download-guide-step {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: start;
-  column-gap: var(--lumo-space-s);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--lumo-space-xs);
   color: var(--body-text-color);
   font-size: var(--lumo-font-size-s);
+  /* A step is a block; the divider keeps three steps from reading as one paragraph. */
+  padding-top: var(--lumo-space-s);
+  border-top: 1px solid var(--lumo-contrast-10pct);
 }
 
-.measurement-dataset-download-guide-step-icon {
-  color: var(--field-label-text-color);
-  /* Aligns the glyph with the first line of the content beside it. */
-  margin-top: 2px;
+/* The first step follows the intro sentence, which already separates it. */
+.measurement-dataset-download-guide-step:first-of-type {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.measurement-dataset-download-guide-step-head {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+}
+
+/* The ordinal, in the same treatment the experiment overview's ordered step pair uses, so "step 2"
+   looks the same wherever the app asks a reader to do things in order. */
+.measurement-dataset-download-guide-step-marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  border-radius: 50%;
+  border: 1px solid var(--lumo-contrast-30pct);
+  font-size: var(--lumo-font-size-s);
+  font-weight: var(--font-weight-semi-bold);
+  color: var(--lumo-secondary-text-color);
+}
+
+.measurement-dataset-download-guide-step-title {
+  font-weight: var(--font-weight-semi-bold);
+  color: var(--lumo-header-text-color);
+}
+
+/* What the step is for. States the reason, because the control alone does not: "create a token"
+   does not tell a reader why a download needs an identity. */
+.measurement-dataset-download-guide-step-detail {
+  color: var(--lumo-secondary-text-color);
+  max-width: 70ch;
 }
 
 .measurement-dataset-download-guide-link {

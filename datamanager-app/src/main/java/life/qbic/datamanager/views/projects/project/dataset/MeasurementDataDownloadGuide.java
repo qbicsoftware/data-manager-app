@@ -67,17 +67,46 @@ public class MeasurementDataDownloadGuide extends Div implements Serializable {
     addClassName("measurement-dataset-download-guide");
 
     Span explanation = new Span(
-        "The data files are held by the data download service, not by this application. This list "
-            + "tells you which measurements have data; to fetch the files, export their locations "
-            + "and download them with a personal access token.");
+        "The data files are held by the data download service, not by this application. Fetching "
+            + "them takes three steps.");
     explanation.addClassName("measurement-dataset-download-guide-text");
 
     add(explanation, tokenStep(), exportStep(), commandStep(), downloadComponent);
   }
 
+  /**
+   * A step's headline: the ordinal, then what to do, in that order.
+   *
+   * <p>The steps are numbered because they are a genuine sequence: a token has to exist before the
+   * locations are worth anything, and the locations have to be exported before the command has a
+   * URL to fetch. Bare glyphs did not say that — a key, a download arrow and a terminal prompt are
+   * only self-evident to someone who already knows the workflow, and the terminal icon in particular
+   * reads as "developer only", which is the opposite of what a step-by-step guide is for.</p>
+   *
+   * <p>The ordinal is passed in rather than counted, so the numbering is stated where the step is
+   * written and cannot drift if a step is ever moved or inserted.</p>
+   *
+   * @param ordinal the step's position in the sequence, starting at 1
+   * @param title   what the reader has to do
+   */
+  private static Div stepHead(int ordinal, String title) {
+    Div head = new Div();
+    head.addClassName("measurement-dataset-download-guide-step-head");
+    Span marker = new Span(Integer.toString(ordinal));
+    marker.addClassName("measurement-dataset-download-guide-step-marker");
+    Span titleSpan = new Span(title);
+    titleSpan.addClassName("measurement-dataset-download-guide-step-title");
+    head.add(marker, titleSpan);
+    return head;
+  }
+
+  /**
+   * Step 1: get a token. Without one the exported URLs cannot be fetched.
+   *
+   * <p>The step states the reason, not only the action: "create a personal access token" alone does
+   * not tell a reader why a download needs an identity.</p>
+   */
   private Div tokenStep() {
-    Span icon = new Span(VaadinIcon.KEY.create());
-    icon.addClassName("measurement-dataset-download-guide-step-icon");
     tokenSettingsLink.setText("Create a personal access token");
     // Opens in a new tab, deliberately. The token is created elsewhere and the reader comes back
     // to finish the export; navigating this tab would discard the open dialog, and with it the
@@ -90,22 +119,24 @@ public class MeasurementDataDownloadGuide extends Div implements Serializable {
     // Without this, the new tab can reach back into this window through window.opener.
     tokenSettingsLink.getElement().setAttribute("rel", "noopener noreferrer");
     tokenSettingsLink.addClassName("measurement-dataset-download-guide-link");
-    Div step = new Div(icon, tokenSettingsLink);
+
+    Span explain = new Span("The download service asks for one, so the exported links work.");
+    explain.addClassName("measurement-dataset-download-guide-step-detail");
+
+    Div step = new Div(stepHead(1, "Get access"),
+        explain, tokenSettingsLink);
     step.addClassName("measurement-dataset-download-guide-step");
     return step;
   }
 
   /**
-   * The export step: one baseline action and, when a selection exists, a narrower second one.
+   * Step 2: export the locations. One URL per measurement, as a text file.
    *
-   * <p>Each button carries its own icon and no separate icon element. The previous markup placed an
+   * <p>Each button carries its own icon and no separate icon element. An earlier markup placed an
    * icon <em>span</em> beside a button that already had one, so the step rendered two download
    * glyphs in a row before its label.</p>
    */
   private Div exportStep() {
-    Span icon = new Span(VaadinIcon.DOWNLOAD.create());
-    icon.addClassName("measurement-dataset-download-guide-step-icon");
-
     Div actions = new Div();
     actions.addClassName("measurement-dataset-download-guide-actions");
 
@@ -126,7 +157,10 @@ public class MeasurementDataDownloadGuide extends Div implements Serializable {
     actions.add(actionRow(exportAllButton, exportAllHint),
         actionRow(exportSelectedButton, exportSelectedHint));
 
-    Div step = new Div(icon, actions);
+    Span explain = new Span("This writes a text file listing where each file lives.");
+    explain.addClassName("measurement-dataset-download-guide-step-detail");
+
+    Div step = new Div(stepHead(2, "Export the locations"), explain, actions);
     step.addClassName("measurement-dataset-download-guide-step");
     return step;
   }
@@ -138,21 +172,19 @@ public class MeasurementDataDownloadGuide extends Div implements Serializable {
   }
 
   /**
-   * The download commands, one per tool.
+   * Step 3: fetch the files, with the exported list.
    *
-   * <p>Both are offered because which one a reader has is a property of their machine, not of this
-   * application: a server usually has {@code curl}, a laptop often has {@code wget} only. They are
-   * tabs rather than two stacked blocks so the step stays one line high, and each is a
-   * {@link CodeBlock} — the same component the download guidance used before this page was rebuilt —
-   * so the command can be copied rather than retyped from a screenshot.</p>
+   * <p>Both tools are offered because which one a reader has is a property of their machine, not of
+   * this application: a server usually has {@code curl}, a laptop often has {@code wget} only. They
+   * are tabs rather than two stacked blocks so the step stays one line high, and each is a
+   * {@link CodeBlock} — the same component the guidance used before this page was rebuilt — so the
+   * command can be copied rather than retyped from a screenshot.</p>
    *
-   * <p>The {@code <URL>} placeholder is deliberate: the locations are exported as a file, so the
-   * command is a shape to apply to each line, not a command that could be pasted verbatim.</p>
+   * <p>The sentence above the tabs names the requirement the command encodes (a URL and a token),
+   * because the command itself is a shape to apply to each line of the exported file rather than
+   * something to paste blank.</p>
    */
   private Div commandStep() {
-    Span icon = new Span(VaadinIcon.TERMINAL.create());
-    icon.addClassName("measurement-dataset-download-guide-step-icon");
-
     TabSheet commands = new TabSheet();
     commands.addClassName("measurement-dataset-download-guide-commands");
     commands.add("curl", new CodeBlock("curl", "--parallel", "--fail", "-OJ", "-H",
@@ -162,7 +194,12 @@ public class MeasurementDataDownloadGuide extends Div implements Serializable {
 
     Div content = new Div(commands);
     content.addClassName("measurement-dataset-download-guide-command-wrap");
-    Div step = new Div(icon, content);
+
+    Span explain = new Span("Run this once for each line of the exported file, substituting "
+        + "<URL> and your token. Either tool works; pick the one you have.");
+    explain.addClassName("measurement-dataset-download-guide-step-detail");
+
+    Div step = new Div(stepHead(3, "Fetch the files"), explain, content);
     step.addClassName("measurement-dataset-download-guide-step");
     return step;
   }
@@ -189,6 +226,27 @@ public class MeasurementDataDownloadGuide extends Div implements Serializable {
    *
    * @param selectedCount the number of selected measurements, {@code 0} when none
    */
+  /**
+   * Renames the whole-dataset export, for a surface that already scopes it to one dataset.
+   *
+   * <p>On the experiment's Datasets page "all measurements" means all of the experiment's — the
+   * dataset there is a filter the reader may have widened. On the project page the guide is opened
+   * for a <em>single row</em>, so "all measurements" would describe a scope wider than the one the
+   * dialog actually offers. The caller names its own scope; the default stays correct for the page
+   * this dialog was written for.</p>
+   *
+   * @param label the button text
+   * @param hint  the line under it, or {@code null} to leave the default
+   */
+  public void setScopeLabel(String label, String hint) {
+    if (label != null && !label.isBlank()) {
+      exportAllButton.setText(label);
+    }
+    if (hint != null) {
+      exportAllHint.setText(hint);
+    }
+  }
+
   public void setSelectionCount(int selectedCount) {
     if (selectedCount <= 0) {
       exportSelectedButton.setVisible(false);

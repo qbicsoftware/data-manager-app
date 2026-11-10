@@ -22,6 +22,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import life.qbic.application.commons.SortOrder;
+import life.qbic.datamanager.views.general.EmptyState;
 
 /**
  * A reusable, explicitly paginated grid (USER-R-01/-R-02/-R-03).
@@ -57,12 +58,33 @@ public class PaginatedGrid<T> extends Div {
   private final Icon selectionIcon = VaadinIcon.CHECK_CIRCLE_O.create();
   private final Button clearSelectionButton = new Button("Clear selection");
   private final Div selectionBar = new Div();
-  private final Div emptyState = new Div();
+  /**
+   * The placeholder shown instead of rows.
+   *
+   * <p>A shared {@link EmptyState} rather than a bare text line: an empty grid previously rendered
+   * one sentence of muted text under a header row, which reads as a table that failed to load its
+   * rows rather than as a table with nothing in it. The placeholder states the condition, keeps the
+   * column headers meaningful and -- when the emptiness is the reader's own filtering -- offers the
+   * way out instead of describing it.</p>
+   */
+  private final EmptyState emptyState = new EmptyState(VaadinIcon.FILTER,
+      "Nothing to show", "No items match the current view.");
   private ListState listState;
   private final String itemLabel;
   private final boolean showToolbar;
   private final boolean showSearch;
   private boolean initialLoadDone;
+
+  /**
+   * Clears whatever produces the current filter, when the owner supplies its own search field.
+   *
+   * <p>The empty-state action used to set this class's own {@code searchField}, which is only correct
+   * for a grid that renders one. A controlled grid is built with {@code showSearch=false} and the
+   * owning view renders its own field -- so the action cleared an input that was not in the DOM and
+   * the reader saw nothing happen. The owner, which knows where its filter comes from, overrides this;
+   * when it is not overridden the grid's own field is the right target.</p>
+   */
+  private Runnable emptyStateClearAction;
 
   /**
    * Loads a single page of items for a list state.
@@ -204,6 +226,9 @@ public class PaginatedGrid<T> extends Div {
     addClassNames("paginated-grid", "flex-vertical", "gap-03", "width-full");
     emptyState.addClassName("paginated-grid-empty-state");
     emptyState.setVisible(false);
+    // Delegates, so an owner's override applies whenever the button is created -- including the
+    // filtered condition, which is the only one that offers the button at all.
+    emptyState.addActionListener(event -> clearFilter());
     if (showToolbar) {
       Div toolbar = new Div();
       toolbar.addClassName("paginated-grid-toolbar");
@@ -352,13 +377,47 @@ public class PaginatedGrid<T> extends Div {
     fireEvent(new PageLoadedEvent(this, pageToRender, page.total()));
   }
 
+  /**
+   * Registers how this grid's filter is cleared, for a grid whose owner renders its own search field.
+   *
+   * <p>Call this once, after construction. Without it the empty state's action clears this class's own
+   * search field, which a controlled grid does not render -- see {@link #emptyStateClearAction}.</p>
+   *
+   * @param clearAction clears the owner's filter and reloads; must not be {@code null}
+   */
+  public void setEmptyStateClearAction(Runnable clearAction) {
+    this.emptyStateClearAction = Objects.requireNonNull(clearAction,
+        "clearAction must not be null");
+  }
+
+  /** Clears the current filter, through the owner's action when one was supplied. */
+  private void clearFilter() {
+    if (emptyStateClearAction != null) {
+      emptyStateClearAction.run();
+      return;
+    }
+    searchField.setValue("");
+  }
+
   private void renderEmptyState(boolean isEmpty, boolean hasFilter) {
     emptyState.setVisible(isEmpty);
-    if (isEmpty) {
-      emptyState.setText(hasFilter
-          ? "No %ss match the current search. Clear the search to see all %ss.".formatted(itemLabel,
-              itemLabel)
-          : "No %ss registered yet.".formatted(itemLabel));
+    if (!isEmpty) {
+      return;
+    }
+    // itemLabel is already the plural noun ("measurements", "samples"), so it is used as-is. The
+    // previous "No %ss" form appended a second plural suffix and rendered "No measurementss match
+    // the current search" -- a typo in every grid on every no-hit search.
+    //
+    // The two conditions are different statements and get different placeholders: a filtered grid
+    // has rows the reader has hidden from themselves (so the way out is clearing the search, offered
+    // as the action), while an unfiltered one is genuinely empty (and the action is withheld -- the
+    // item has to be created elsewhere, and an empty state must not offer a dead end).
+    if (hasFilter) {
+      emptyState.setContent(VaadinIcon.FILTER, "No matching %s".formatted(itemLabel),
+          "No %s match the current search.".formatted(itemLabel), "Clear search");
+    } else {
+      emptyState.setContent(VaadinIcon.FILTER, "No %s yet".formatted(itemLabel),
+          "No %s have been registered here yet.".formatted(itemLabel), null);
     }
   }
 

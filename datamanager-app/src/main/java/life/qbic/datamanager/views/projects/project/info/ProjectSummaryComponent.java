@@ -21,6 +21,7 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.router.RouteParam;
+import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.data.binder.Validator;
 import com.vaadin.flow.function.SerializablePredicate;
@@ -91,6 +92,7 @@ import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.projects.ProjectInformation;
 import life.qbic.datamanager.views.projects.edit.EditContactsComponent;
 import life.qbic.datamanager.views.projects.edit.ProjectDesignForm;
+import life.qbic.datamanager.views.projects.project.datasets.ProjectDatasetsMain;
 import life.qbic.datamanager.views.projects.project.settings.ProjectSettingsMain;
 import life.qbic.datamanager.views.strategy.scope.ReadScopeStrategy;
 import life.qbic.datamanager.views.strategy.scope.UserScopeStrategy;
@@ -180,7 +182,8 @@ public class ProjectSummaryComponent extends PageArea {
     this.asyncProjectService = Objects.requireNonNull(asyncProjectService);
     this.downloadComponent = new DownloadComponent();
     this.projectProgressSection = new ProjectProgressSection(
-        Objects.requireNonNull(associatedDatasetService));
+        Objects.requireNonNull(associatedDatasetService),
+        Objects.requireNonNull(projectQueryService));
     this.projectExperimentsSection = new ProjectExperimentsSection(this.projectQueryService);
     this.projectExperimentsSection.addAddExperimentListener(
         event -> fireEvent(new AddExperimentRequestedEvent(this, event.isFromClient())));
@@ -501,7 +504,11 @@ public class ProjectSummaryComponent extends PageArea {
     identityMeta.removeAll();
     identityMeta.add(new Span(identityLastModified));
     identityMeta.add(separator());
-    identityMeta.add(new Span(experiments == 1 ? "1 experiment" : experiments + " experiments"));
+    // "created", not a bare count: it matches the rail's own wording, so the same number is not
+    // stated two ways on one page.
+    identityMeta.add(new Span(experiments == 1
+        ? "1 experiment created"
+        : experiments + " experiments created"));
     if (incomplete > 0) {
       identityMeta.add(separator());
       identityMeta.add(incompleteChip(incomplete));
@@ -509,20 +516,33 @@ public class ProjectSummaryComponent extends PageArea {
   }
 
   /**
-   * The not-complete rollup. It can hit several experiments at once, so the chip is a project-level
-   * count that brings the reader to the per-experiment rows rather than jumping into one arbitrary
-   * experiment.
+   * The deficit rollup: experiments whose measurements lack primary data, and the way to them.
+   *
+   * <p>It links to the Datasets page, which lists one row per primary dataset — one experiment for
+   * one analysis method — with its coverage and outstanding count. That page is where "which
+   * experiments are behind" is answerable per row. The chip itself carries the project-level count,
+   * so it answers the question in the band and offers the detail in one control.</p>
+   *
+   * <p>It used to be an in-page anchor to a disclosure at the bottom of the progress band. That
+   * disclosure is gone: it restated numbers the rail and the dataset card already state, and it was
+   * the third rendering of a fact this page has at two grains already. A router link to the surface
+   * that actually holds the detail is the honest destination.</p>
+   *
+   * <p>The count is experiments whose measurements lack primary data — not samples, which are
+   * registered from the moment an experiment has them.</p>
    */
-  private Anchor incompleteChip(int incomplete) {
-    // A real anchor to the per-experiment list rather than a button that scrolls a script: the jump
-    // is the browser's, it works before any client-side code has run, the destination is visible in
-    // the URL and can be bookmarked or shared, and the back button returns the reader here.
-    Anchor chip = new Anchor("#" + ProjectProgressSection.INCOMPLETE_LIST_ID);
+  private RouterLink incompleteChip(int incomplete) {
+    RouterLink chip = new RouterLink();
+    chip.setRoute(ProjectDatasetsMain.class,
+        new RouteParameters(new RouteParam("projectId", context.projectId()
+            .orElseThrow(() -> new ApplicationException("No project id provided"))
+            .value())));
     chip.addClassName("project-identity-incomplete");
-    chip.getElement().setAttribute("title", "Show which experiments are not complete yet");
+    chip.getElement().setAttribute("title",
+        "Show the project's datasets and what each is still missing");
     chip.add(new Span(incomplete == 1
-        ? "1 experiment not complete yet"
-        : incomplete + " experiments not complete yet"));
+        ? "1 experiment needs primary data"
+        : incomplete + " experiments need primary data"));
     chip.add(VaadinIcon.ANGLE_RIGHT.create());
     return chip;
   }
@@ -534,8 +554,12 @@ public class ProjectSummaryComponent extends PageArea {
   }
 
   /**
-   * The objective under the identity block: expanded by default, clamped to a few lines with a
-   * "Show more" toggle, exactly as the prototype presents it (never a collapsed grey bar).
+   * The objective under the identity block: expanded by default, clamped, with a "Show more"
+   * toggle — never a collapsed grey bar.
+   *
+   * <p>Clamped to two lines rather than three, and set in secondary text: on this page the objective
+   * is context for the status band that follows it, not a fact a reader scans for, and at three
+   * lines of full-contrast body text it competed with the band below for the first screenful.</p>
    */
   private static Div objectiveBlock(Project project) {
     Div block = new Div();

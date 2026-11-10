@@ -23,6 +23,7 @@
 @import "app-shell.css";
 @import "project-progress.css";
 @import "project-experiments.css";
+@import "snapshot-panel.css";
 @import "project-datasets.css";
 @import "project-metadata.css";
 @import "project-settings.css";

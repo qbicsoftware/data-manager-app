@@ -94,91 +94,224 @@ it needs no paging, filtering or selection, and it is read-only.
 
 /* --- The headline figures --- */
 
+/* The project's scale, in two grain groups rather than four equal figures in one line.
+   
+   The single line mixed grains: "3 datasets" sat beside "20 measurements", "3 with primary data" and
+   "17 missing data", with nothing saying which figure belonged to which grain. A reader therefore
+   read "17 missing data" as 17 DATASETS missing data, directly contradicting the 3 beside it. The
+   groups name their grain and their figures are qualified relative to it. */
 .project-datasets-rollup {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
-  gap: var(--spacing-03);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  /* The groups need to be visibly separate, not merely adjacent. At the previous gap the two group
+     labels sat close enough to read as one line of headings, and the figures underneath flowed
+     together into a single run of five numbers -- so the grouping that was added to fix the grain
+     confusion was itself hard to perceive. */
+  /* No gap: the separation is carried by the rule plus symmetric padding, so the space either side
+     of the divider is equal. A flex gap on top of a padded left edge made the right-hand group sit
+     twice as far from the rule as the left-hand one. */
+  gap: 0;
+  border-top: 1px solid var(--border-color-light);
+  border-bottom: 1px solid var(--border-color-light);
+  padding-block: var(--spacing-03);
+}
+
+.project-datasets-rollup-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-xs);
+  padding-right: var(--lumo-space-xl);
+}
+
+.project-datasets-rollup-group:last-child {
+  padding-right: 0;
+}
+
+/* A rule between the grains. The gap alone was not enough: with two short groups the eye reads
+   across rather than grouping, and a vertical edge is what stops it. */
+.project-datasets-rollup-group + .project-datasets-rollup-group {
+  border-left: 1px solid var(--border-color-light);
+  padding-left: var(--lumo-space-xl);
+}
+
+/* The grain. Small and quiet: it labels the group, it is not itself a figure. */
+.project-datasets-rollup-group-label {
+  font-size: var(--lumo-font-size-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--secondary-text-color);
+}
+
+.project-datasets-rollup-stats {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--lumo-space-m);
+}
+
+/* The figures inside one group stay closer together than the groups are to each other, so proximity
+   does the grouping work as well as the rule does. */
+.project-datasets-rollup-group .project-datasets-stat + .project-datasets-stat {
+  border-left: 1px solid var(--border-color-light);
+  padding-left: var(--lumo-space-m);
 }
 
 .project-datasets-stat {
   display: flex;
-  flex-direction: column;
-  gap: var(--spacing-01);
-  padding: var(--spacing-03) var(--spacing-04);
-  border: 1px solid var(--border-color-light);
-  border-radius: 10px;
-  background: var(--shade-color-5pct);
+  align-items: baseline;
+  gap: var(--spacing-02);
 }
 
 .project-datasets-stat-value {
   font-size: var(--lumo-font-size-xl);
   font-weight: var(--font-weight-bold);
-  line-height: 1;
+  line-height: 1.1;
   color: var(--heading-text-color);
   font-variant-numeric: tabular-nums;
 }
 
+/* The qualifier is what binds a figure to its grain ("20 total", "17 missing"), so it is not
+   decorative and takes body ink rather than the muted label colour. */
 .project-datasets-stat-label {
-  font-size: var(--lumo-font-size-xs);
+  font-size: var(--lumo-font-size-s);
+  color: var(--body-text-color);
+}
+
+/* A figure whose counting rule needs stating carries a tooltip; the dotted underline is the only
+   hint that one is there, since the label itself stays short. */
+.project-datasets-stat--described {
+  cursor: help;
+}
+
+.project-datasets-stat--described .project-datasets-stat-label {
+  text-decoration: underline dotted var(--border-color-light);
+  text-underline-offset: 3px;
+}
+
+.project-datasets-stat--positive .project-datasets-stat-value {
+  color: var(--success-text-color);
+}
+
+.project-datasets-stat--attention .project-datasets-stat-value {
+  color: var(--info-text-color);
+}
+
+.project-datasets-stat--muted .project-datasets-stat-value {
   color: var(--secondary-text-color);
 }
 
 /* --- One row per primary dataset --- */
 
+/* ONE grid for the whole table, and every row is display: contents.
+
+   The rows used to be their own grids. Each then resolved its own tracks, so a `max-content` column
+   was as wide as THAT row's longest value: the header's "Omics domain" is wider than "Genomics", so
+   the header row laid its columns out differently from every data row and nothing lined up. Mixing
+   `max-content` and `fr` makes it worse, because the fr tracks absorb whatever the max-content
+   tracks leave -- and that remainder differs per row.
+
+   With a single grid the columns size across ALL rows, which is the only construction in which a
+   header can sit exactly over its values. This is the same defect fixed once in project-progress.css
+   and once in project-experiments.css, and never carried over here. */
 .project-datasets-table {
+  display: grid;
+  /* A closed vocabulary gets max-content: the omics domain has three possible labels and the status
+     two, so reserving room for the longest member is exact rather than a guess. The open-ended
+     columns -- experiment, method, instrument -- take fractional tracks and truncate, because their
+     values are user data of unbounded length. */
+  grid-template-columns:
+      minmax(0, 1.6fr)   /* experiment */
+      max-content        /* omics domain: one of exactly three labels */
+      minmax(0, 1fr)     /* method */
+      minmax(0, 1.3fr)   /* instrument */
+      minmax(0, 0.8fr)   /* measurements */
+      minmax(0, 0.9fr)   /* primary data */
+      minmax(0, 0.7fr)   /* size */
+      max-content        /* status: one of exactly two labels */
+      max-content;       /* the row's data-download action */
   border: 1px solid var(--border-color-light);
   border-radius: 10px;
   overflow: hidden;
 }
 
-/* Columns size by weight rather than equally: the experiment name is the longest value in the
-   list and the figures are all short, so equal columns would spend most of the width on numbers.
-   minmax(0, …) lets a long experiment name ellipsize instead of widening the page. */
+/* display: contents -- the row's cells become items of the table's grid, which is what lets the
+   columns size across every row. The row itself carries no box, so it also carries no border,
+   background, cursor or outline; each of those moves to the cells below. */
 .project-datasets-table-row {
-  display: grid;
-  grid-template-columns: minmax(0, 2.5fr) minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, 1fr)
-      minmax(0, 1fr) minmax(0, 1fr);
+  display: contents;
+}
+
+/* The divider between records, on the cells because the row has no box to draw it with. Applied to
+   every row but the first, so the table's own border is the top edge. */
+.project-datasets-table-row + .project-datasets-table-row .project-datasets-cell {
   border-top: 1px solid var(--border-color-light);
 }
 
-.project-datasets-table-row:first-child {
-  border-top: 0;
-}
-
-.project-datasets-table-row--head .project-datasets-cell {
-  font-size: var(--lumo-font-size-xs);
-  font-weight: var(--font-weight-medium);
-  color: var(--secondary-text-color);
-}
-
-.project-datasets-table-row--head {
-  background: var(--shade-color-5pct);
-}
-
-.project-datasets-table-row--clickable {
+/* The row is the navigation target, but it has no box, so its affordances are drawn per cell. */
+.project-datasets-table-row--clickable .project-datasets-cell {
   cursor: pointer;
 }
 
-.project-datasets-table-row--clickable:hover {
+.project-datasets-table-row--clickable:hover .project-datasets-cell {
   background: var(--shade-color-5pct);
 }
 
-.project-datasets-table-row--clickable:focus-visible {
-  outline: 2px solid var(--primary-color);
-  outline-offset: -2px;
+/* A focus ring cannot be drawn on a display: contents element. The frame is assembled from inset
+   shadows on the cells instead: every cell draws the top and bottom edges and the outer two draw
+   the sides, so the four segments meet and read as one rectangle around the row. */
+.project-datasets-table-row--clickable:focus-visible .project-datasets-cell {
+  box-shadow:
+      inset 0 2px 0 var(--primary-color),
+      inset 0 -2px 0 var(--primary-color);
 }
 
+.project-datasets-table-row--clickable:focus-visible .project-datasets-cell:first-child {
+  box-shadow:
+      inset 0 2px 0 var(--primary-color),
+      inset 0 -2px 0 var(--primary-color),
+      inset 2px 0 0 var(--primary-color);
+}
+
+.project-datasets-table-row--clickable:focus-visible .project-datasets-cell:last-child {
+  box-shadow:
+      inset 0 2px 0 var(--primary-color),
+      inset 0 -2px 0 var(--primary-color),
+      inset -2px 0 0 var(--primary-color);
+}
+
+/* A tag is inline-flex with flex-shrink: 0, so it does not shrink to its cell. Capped here as a
+   backstop: if the vocabulary ever gains a longer label, the pill truncates inside its own cell
+   instead of running into the next column. */
+.project-datasets-cell .tag {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Block, not flex. `text-overflow: ellipsis` only applies to the element that establishes the text
+   flow; inside a flex container the text becomes an anonymous flex item and the ellipsis never
+   renders -- which is why a long instrument ("Thermo Fisher Scientific instruction ...") was cut
+   mid-word with no indication that anything was missing. A block truncates properly. Cells that
+   hold a pill are unaffected: the tag is inline-flex and simply sits on the text baseline. */
 .project-datasets-cell {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-02);
+  display: block;
   min-width: 0;
   padding: var(--spacing-03);
   font-size: var(--lumo-font-size-s);
+  line-height: var(--lumo-line-height-s);
   color: var(--body-text-color);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Figures share a right edge down the table, so they can be compared without re-reading the
+   header. The header cell keeps its own alignment via the same modifier. */
+.project-datasets-cell--number {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 /* A figure that is not a figure. Muted and italic, the same treatment the project details band
@@ -189,7 +322,10 @@ it needs no paging, filtering or selection, and it is read-only.
 }
 
 /* Coverage state as a pill: two states that have to be told apart while scanning one column. */
+/* inline-block rather than a block: the cell is a block now (so text can ellipsize), and the pill
+   sits on the text baseline the way it did inside the old flex row. */
 .project-datasets-state {
+  display: inline-block;
   padding: 0.1rem var(--spacing-03);
   border: 1px solid transparent;
   border-radius: 999px;
@@ -208,6 +344,19 @@ it needs no paging, filtering or selection, and it is read-only.
   color: var(--info-text-color);
   background: var(--info-surface);
   border-color: var(--info-border);
+}
+
+/* The row's download action: always visible.
+   
+   It was revealed on row hover, which hid the page's only download path from anyone who had not
+   already discovered it -- an affordance that only appears once you are looking for it is not an
+   affordance. It is a small tertiary button in its own column, so a visible row of them reads as a
+   tool column rather than as competing with the data. Disabled rows keep the button visible so the
+   column stays aligned and the tooltip can explain why there is nothing to fetch. */
+.project-datasets-download {
+  padding-inline: var(--spacing-02);
+  font-size: var(--lumo-font-size-xs);
+  white-space: nowrap;
 }
 
 /* --- Notes, messages and the empty state --- */

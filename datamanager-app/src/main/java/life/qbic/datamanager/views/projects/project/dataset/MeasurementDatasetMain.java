@@ -34,6 +34,7 @@ import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.api.ProjectQueryService;
 import life.qbic.application.commons.FileSizeFormatter;
+import life.qbic.projectmanagement.application.query.AssayType;
 import life.qbic.projectmanagement.application.query.ExperimentProgress;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
@@ -77,6 +78,15 @@ public class MeasurementDatasetMain extends Main
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
 
   private static final String DATASET_PARAMETER = "dataset";
+
+  /**
+   * The {@code dataset} parameter's value for the unscoped view.
+   *
+   * <p>Not a segment: "all measurements" is the absence of a dataset filter. {@code all} cannot
+   * collide with a real value, because a segment's is built from an enum name and two labels and is
+   * always {@code DOMAIN:method:instrument}.</p>
+   */
+  private static final String ALL_DATASETS_PARAMETER = "all";
 
   private static final Logger log = LoggerFactory.logger(MeasurementDatasetMain.class);
 
@@ -207,12 +217,20 @@ public class MeasurementDatasetMain extends Main
       render(projectIdValue, experimentIdValue);
       // The active dataset is addressable too: a link to "the proteomics dataset of this
       // experiment" has to survive a reload and a share.
+      // A malformed dataset value must not take the page down: it is a stale or hand-crafted link,
+      // and the page already has a valid dataset selected by default.
       event.getLocation().getQueryParameters().getSingleParameter(DATASET_PARAMETER)
-          .map(MeasurementDatasetSegment::fromUrlValue)
-          .filter(segment -> datasetSelectorContains(segment))
-          .ifPresent(segment -> {
-            datasetSelector.selectSilently(segment);
-            detailsComponent.activate(segment);
+          .ifPresent(value -> {
+            if (ALL_DATASETS_PARAMETER.equals(value)) {
+              datasetSelector.selectAllSilently();
+              detailsComponent.activate(null);
+              return;
+            }
+            MeasurementDatasetSegment segment = parseDatasetParameter(value);
+            if (segment != null && datasetSelectorContains(segment)) {
+              datasetSelector.selectSilently(segment);
+              detailsComponent.activate(segment);
+            }
           });
       if (detailsComponent != null) {
         ListState urlState = ListStateCodec.parse(event.getLocation().getQueryParameters(),
@@ -236,7 +254,14 @@ public class MeasurementDatasetMain extends Main
             "Unknown experiment " + experimentId + " in project " + projectId));
 
     int total = progress.measurementCount();
-    updateHeader(progress);
+    // One assay read for the whole page: the header counts datasets and the selector renders them,
+    // so reading twice would let the two disagree within one render. It is the same read model the
+    // project summary and the Datasets page consume (ADR 0010).
+    List<life.qbic.projectmanagement.application.query.AssayStanding> assays =
+        queryService.getAssayStanding(projectId).collectList().blockOptional().orElse(List.of());
+    List<MeasurementDatasetSelector.DatasetSummary> summaries =
+        MeasurementDatasetSelector.DatasetSummary.of(experimentId, assays);
+    updateHeader(progress, summaries.size());
     registerButton.setVisible(canWrite());
 
     removeDetailsComponent();
@@ -275,15 +300,15 @@ public class MeasurementDatasetMain extends Main
     detailsComponent.setDownloadGuide(guide);
     actions.getDataButton().addClickListener(clicked -> openDownloadGuide(guide));
 
-    List<MeasurementDatasetSelector.DatasetSummary> summaries =
-        MeasurementDatasetSelector.DatasetSummary.of(progress);
     datasetSelector.setDatasets(summaries);
     datasetSelector.addSelectionChangedListener(event -> {
       detailsComponent.activate(event.segment());
       writeUrl(detailsComponent.listState());
     });
-    // The first dataset is active by default, so the page never shows cards with nothing below
-    // them. A dataset named in the URL is applied afterwards, in beforeEnter, where the query
+    // A dataset is active by default, so the page never shows cards with nothing below them. It is
+    // the first dataset rather than "all measurements" because the cards are the page's structure and
+    // a reader arriving here is looking for one dataset; "All" is the deliberate widening, one click
+    // away. A dataset named in the URL is applied afterwards, in beforeEnter, where the query
     // parameters are available.
     MeasurementDatasetSegment initial = summaries.getFirst().segment();
     datasetSelector.selectSilently(initial);
@@ -311,9 +336,10 @@ public class MeasurementDatasetMain extends Main
    * arrived in total, which is the figure a reader needs for a cross-dataset download.</p>
    *
    * @param progress the experiment's read model
+   * @param datasets how many datasets the experiment holds, as its cards state them
    */
-  private void updateHeader(ExperimentProgress progress) {
-    statusLine.setText(summaryLine(progress));
+  private void updateHeader(ExperimentProgress progress, int datasets) {
+    statusLine.setText(summaryLine(progress, datasets));
   }
 
   /**
@@ -323,16 +349,24 @@ public class MeasurementDatasetMain extends Main
    * deliberately says what no single card can — the number of datasets and the total volume — rather
    * than repeating the measurement total, which is the sum of the cards directly beneath it.</p>
    *
+   * <p><b>The unit is the dataset.</b> This line used to say "3 omics domains", because the read
+   * model it read was keyed by {@code AssayType} and one domain can back several datasets (WES and
+   * RNA-Seq are both genomics). The cards above are now keyed by the dataset identity -- domain,
+   * method and instrument -- so the header can finally count datasets, which is the unit the rest of
+   * the page, the project summary and the Datasets page use. A domain count here would now contradict
+   * the cards directly beneath it.</p>
+   *
    * @param progress the experiment's read model
+   * @param datasets the experiment's datasets, as the cards state them
    * @return the line to show under the page title
    */
-  static String summaryLine(ExperimentProgress progress) {
+  static String summaryLine(ExperimentProgress progress, int datasets) {
     int total = progress.measurementCount();
     if (total == 0) {
       return "No measurements registered yet";
     }
-    int datasets = progress.assayTypes().size();
-    String datasetPart = datasets == 1 ? "1 dataset" : "%d datasets".formatted(datasets);
+    String datasetPart = datasets == 1
+        ? "1 dataset" : "%d datasets".formatted(datasets);
     String measurementPart = total == 1
         ? "1 measurement"
         : "%d measurements".formatted(total);
@@ -343,7 +377,7 @@ public class MeasurementDatasetMain extends Main
     if (withData == 0) {
       dataPart = "no data yet";
     } else if (bytes > 0) {
-      dataPart = FileSizeFormatter.formatBytes(bytes);
+      dataPart = FileSizeFormatter.formatBytesCompact(bytes);
     } else {
       dataPart = "data size not recorded";
     }
@@ -455,12 +489,11 @@ public class MeasurementDatasetMain extends Main
       notifications.toast("rawdata.no-dataset-selected", new Object[]{}, getLocale()).open();
       return;
     }
-    String endpoint = downloadEndpoint;
-    byte[] content = codes.stream()
-        .map(code -> endpoint + "/" + code)
-        .collect(java.util.stream.Collectors.joining("\n", "", "\n"))
-        .getBytes(java.nio.charset.StandardCharsets.UTF_8);
-    guide.triggerDownload(locationListProvider("measurement_dataset_locations", "txt", content));
+    // The file is built by the shared service, so the project page's per-row export of the same
+    // dataset produces a byte-identical list. The empty case is handled above, before the service
+    // is called, so the provider is non-null here.
+    guide.triggerDownload(new MeasurementDataLocations(downloadEndpoint)
+        .locationList(codes, projectCode(), "measurement_dataset_locations"));
     // The scopes are recomputed from the selection each time an export runs, so a stale count
     // cannot outlive the selection it described.
     guide.setSelectionCount(detailsComponent.selectionCount());
@@ -492,38 +525,6 @@ public class MeasurementDatasetMain extends Main
       }
     };
     downloadComponent.trigger(provider);
-  }
-
-  /**
-   * Builds a plain-text download provider for the location list.
-   *
-   * <p>Returned rather than triggered: the download is performed by the anchor inside the dialog,
-   * which is the only place a click is honoured while a strict modal dialog is open.</p>
-   */
-  private life.qbic.datamanager.files.export.download.DownloadStreamProvider locationListProvider(
-      String prefix, String suffix, byte[] content) {
-    return new life.qbic.datamanager.files.export.download.DownloadStreamProvider() {
-      @Override
-      public String getFilename() {
-        return life.qbic.application.commons.FileNameFormatter.formatWithTimestampedSimple(
-            java.time.LocalDate.now(), projectCode(), prefix, suffix);
-      }
-
-      @Override
-      public java.io.InputStream getStream() {
-        return new java.io.ByteArrayInputStream(content);
-      }
-
-      @Override
-      public String getContentType() {
-        return org.springframework.util.MimeTypeUtils.TEXT_PLAIN_VALUE;
-      }
-
-      @Override
-      public java.util.Optional<Long> contentLength() {
-        return java.util.Optional.of((long) content.length);
-      }
-    };
   }
 
   /** The project code used in download file names. */
@@ -580,10 +581,15 @@ public class MeasurementDatasetMain extends Main
   }
 
   /** The label of the edit dialog's export button, stating what it will export. */
-  private static String exportButtonLabel(MeasurementSelection selection) {
-    return selection.isEmpty()
-        ? "Export all measurements in this dataset"
-        : "Export %d selected".formatted(selection.total());
+  private String exportButtonLabel(MeasurementSelection selection) {
+    if (!selection.isEmpty()) {
+      return "Export %d selected".formatted(selection.total());
+    }
+    // Names the view, not "this dataset": with the "all measurements" card active the export spans
+    // the experiment, and a label promising one dataset would misdescribe it.
+    return datasetSelector.allSelected()
+        ? "Export all measurements in this experiment"
+        : "Export all measurements in this dataset";
   }
 
   /**
@@ -599,35 +605,62 @@ public class MeasurementDatasetMain extends Main
     return reactor.core.publisher.Mono.defer(() -> {
       String projectId = context.projectId().orElseThrow().value();
       if (!selection.isEmpty()) {
-        return switch (firstMethodOf(selection)) {
-          case GENOMICS -> asyncService.measurementUpdateNGS(projectId, selection.genomics(),
-              OPEN_XML);
-          case PROTEOMICS -> asyncService.measurementUpdatePxP(projectId, selection.proteomics(),
-              OPEN_XML);
-          case IMMUNOPEPTIDOMICS -> asyncService.measurementUpdateIP(projectId,
-              selection.immunopeptidomics(), OPEN_XML);
-        };
+        return updateRequestFor(firstMethodOf(selection), projectId,
+            selection.genomics(), selection.proteomics(), selection.immunopeptidomics());
       }
-      String experimentId = context.experimentId().orElseThrow().value();
-      MeasurementDatasetSegment segment = datasetSelector.selected();
-      java.util.List<String> allIds = detailsComponent.allMeasurementIds();
-      return switch (segment) {
-        case GENOMICS -> asyncService.measurementUpdateNGS(projectId, allIds, OPEN_XML);
-        case PROTEOMICS -> asyncService.measurementUpdatePxP(projectId, allIds, OPEN_XML);
-        case IMMUNOPEPTIDOMICS -> asyncService.measurementUpdateIP(projectId, allIds, OPEN_XML);
-      };
+      // No selection: the whole *view* is exported. What that view holds decides the ids, and it is
+      // not one flat list -- a view spanning several domains must hand each domain only its own ids,
+      // or every template would receive measurements it cannot describe. The rows already carry their
+      // domain, so the split is read from them rather than guessed from the selected dataset.
+      MeasurementSelection wholeView = detailsComponent.currentSelectionOrWholeView();
+      return updateRequestFor(firstMethodOf(wholeView), projectId,
+          wholeView.genomics(), wholeView.proteomics(), wholeView.immunopeptidomics());
     });
   }
 
-  /** The measurement method of a non-empty selection. */
-  private static MeasurementDatasetSegment firstMethodOf(MeasurementSelection selection) {
+  /**
+   * The update call for one omics domain.
+   *
+   * <p>The edit template is per domain, not per dataset: the sheet layout and the validator are the
+   * same for two proteomics datasets, and the selection has already been split by domain. The dataset
+   * still decides <em>which</em> ids are in scope, which is why it is passed in rather than read from
+   * the selection.</p>
+   */
+  private reactor.core.publisher.Mono<
+      life.qbic.projectmanagement.application.api.fair.DigitalObject> updateRequestFor(
+      MeasurementDatasetSegment dataset, String projectId, java.util.List<String> genomics,
+      java.util.List<String> proteomics, java.util.List<String> immunopeptidomics) {
+    return switch (dataset.assayType()) {
+      case GENOMICS -> asyncService.measurementUpdateNGS(projectId, genomics, OPEN_XML);
+      case PROTEOMICS -> asyncService.measurementUpdatePxP(projectId, proteomics, OPEN_XML);
+      case IMMUNOPEPTIDOMICS -> asyncService.measurementUpdateIP(projectId, immunopeptidomics,
+          OPEN_XML);
+    };
+  }
+
+  /** The dataset of a non-empty selection, for choosing the edit template's domain. */
+  private MeasurementDatasetSegment firstMethodOf(MeasurementSelection selection) {
     if (!selection.genomics().isEmpty()) {
-      return MeasurementDatasetSegment.GENOMICS;
+      return datasetSegment(AssayType.GENOMICS);
     }
     if (!selection.proteomics().isEmpty()) {
-      return MeasurementDatasetSegment.PROTEOMICS;
+      return datasetSegment(AssayType.PROTEOMICS);
     }
-    return MeasurementDatasetSegment.IMMUNOPEPTIDOMICS;
+    return datasetSegment(AssayType.IMMUNOPEPTIDOMICS);
+  }
+
+  /**
+   * The dataset the page is currently showing, as a domain-typed value.
+   *
+   * <p>The edit template only needs the domain, so the selected dataset's method and instrument are
+   * carried through unchanged rather than invented here.</p>
+   */
+  private MeasurementDatasetSegment datasetSegment(AssayType assayType) {
+    MeasurementDatasetSegment selected = datasetSelector.selected();
+    if (selected != null && selected.assayType() == assayType) {
+      return selected;
+    }
+    return MeasurementDatasetSegment.of(assayType, MeasurementDatasetSegment.NO_INSTRUMENT, null);
   }
 
   private static final org.springframework.util.MimeType OPEN_XML =
@@ -940,6 +973,15 @@ public class MeasurementDatasetMain extends Main
         .forEach(content::remove);
   }
 
+  /** Parses the URL's dataset value, or {@code null} when it names nothing this page can show. */
+  private static MeasurementDatasetSegment parseDatasetParameter(String value) {
+    try {
+      return MeasurementDatasetSegment.fromUrlValue(value);
+    } catch (IllegalArgumentException e) {
+      return null;
+    }
+  }
+
   /**
    * Whether the selector currently offers the given dataset.
    *
@@ -960,7 +1002,11 @@ public class MeasurementDatasetMain extends Main
     }
     Map<String, List<String>> parameters = new LinkedHashMap<>();
     MeasurementDatasetSegment selected = datasetSelector.selected();
-    if (selected != null) {
+    if (datasetSelector.allSelected()) {
+      // The unscoped view is addressable too, or a reader who widened to the whole experiment would
+      // silently get one dataset back on reload.
+      parameters.put(DATASET_PARAMETER, List.of(ALL_DATASETS_PARAMETER));
+    } else if (selected != null) {
       // First, so the URL reads dataset-then-list-state rather than burying the structure.
       parameters.put(DATASET_PARAMETER, List.of(selected.urlValue()));
     }

@@ -113,30 +113,41 @@ class MeasurementDatasetStylesheetSpec extends Specification {
         rule.contains("flex: 0 0 auto")
     }
 
-    def "each dataset count gets its own column layout"() {
+    /**
+     * The layouts start at TWO, not one, because the "all measurements" card is always rendered
+     * beside the dataset cards: the modifier counts cards, not datasets, so the smallest row holds
+     * the All card plus one dataset. A count-1 layout can therefore never apply, and asserting it
+     * was asserting a rule that had already been deleted as unreachable.
+     */
+    def "each card count gets its own column layout, starting at the two the page always has"() {
         given:
         def css = stylesheet().text
 
-        expect: "a single fixed card size is always a compromise — one, two and three datasets"
-        // want different columns, and an auto-fitting grid collapses its empty tracks so a lone
-        // card either stretches across the page or sits marooned at the left. Each count names its
-        // own layout, following the pinned-project cards.
-        css.contains(".measurement-dataset-count-1")
-        css.contains(".measurement-dataset-count-2")
-        css.contains(".measurement-dataset-count-3")
+        expect: "every count the component can emit has a layout"
+        (2..8).every { css.contains(".measurement-dataset-count-${it}") }
+
+        and: "no unreachable single-card layout is declared"
+        !css.contains(".measurement-dataset-count-1")
+
+        and: "the row is an explicit grid, so empty tracks cannot collapse or a card sit marooned"
         !block("measurement-dataset-selector-cards").contains("auto-fit")
         !block("measurement-dataset-selector-cards").contains("flex-wrap: wrap")
     }
 
-    def "one dataset is capped at half the row rather than spanning it"() {
+    /**
+     * The narrowest real case is the All card plus one dataset, and it is capped at two columns
+     * rather than spreading across the row: a pair that fills the width reads as a page-wide band
+     * rather than as two cards among possible others.
+     */
+    def "the smallest real row is capped at two columns rather than spanning the page"() {
         given:
         def css = stylesheet().text
-        int start = css.indexOf(".measurement-dataset-count-1 {")
+        int start = css.indexOf(".measurement-dataset-count-2 {")
         assert start > 0
         def rule = css.substring(start, css.indexOf("}", start))
 
-        expect: "a full-width band reads as a page header, not as one card among possible others"
-        rule.contains("50%")
+        expect:
+        rule.contains("repeat(2")
     }
 
     def "the board's status ring sits beside the card's text, not at the far edge"() {

@@ -140,6 +140,64 @@ final class MeasurementDataQuery {
                    LEFT JOIN remote_measurement_data rmd
                              ON rmd.measurement_id = entries.measurement_code
                                  COLLATE utf8mb4_unicode_ci
+      ),
+      -- The dataset's identity: the analysis method (from the samples the measurement measured) and
+      -- the instrument. Both come from a join, not from correlated subqueries in the SELECT list:
+      -- MySQL resolves a subquery there against the CTE's own definition, not against the row being
+      -- projected, so `md.measurement_id` is unknown inside it.
+      --
+      -- A measurement can measure samples annotated with different methods; it is then attributed to
+      -- each of them (ADR 0010 decision 4). The method is therefore a delimited list, and the filter
+      -- matches it with FIND_IN_SET -- the same attribution rule the counts use.
+      --
+      -- The method comes from sample.analysis_method because that is where it lives today (ADR 0010);
+      -- when it moves onto the measurement, only this expression changes. The instrument is an
+      -- OntologyTerm read as COALESCE(label, name), the way AssayStandingQuery reads it, and left
+      -- empty -- not substituted -- where the measurement records none.
+      methods AS (
+          SELECT smm.measurement_id,
+                 GROUP_CONCAT(DISTINCT CAST(s.analysis_method AS CHAR CHARACTER SET utf8mb4)
+                              COLLATE utf8mb4_unicode_ci
+                              ORDER BY s.analysis_method SEPARATOR ',') AS method_labels
+          FROM (
+              SELECT measurement_id, sample_id FROM specific_measurement_metadata_ngs
+              UNION ALL
+              SELECT measurement_id, sample_id FROM specific_measurement_metadata_pxp
+              UNION ALL
+              SELECT measurement_id, sample_id FROM specific_measurement_metadata_ip
+          ) smm
+                   JOIN sample s ON s.sample_id = smm.sample_id COLLATE utf8mb4_unicode_ci
+          WHERE s.analysis_method IS NOT NULL
+            AND s.analysis_method <> ''
+          GROUP BY smm.measurement_id
+      ),
+      instruments AS (
+          SELECT measurement_id,
+                 COALESCE(JSON_UNQUOTE(JSON_EXTRACT(instrument, '$.label')),
+                          JSON_UNQUOTE(JSON_EXTRACT(instrument, '$.name'))) AS instrument_label
+          FROM ngs_measurements
+          UNION ALL
+          SELECT measurement_id,
+                 COALESCE(JSON_UNQUOTE(JSON_EXTRACT(instrument, '$.label')),
+                          JSON_UNQUOTE(JSON_EXTRACT(instrument, '$.name')))
+          FROM proteomics_measurement
+          UNION ALL
+          SELECT measurement_id,
+                 COALESCE(JSON_UNQUOTE(JSON_EXTRACT(instrument, '$.label')),
+                          JSON_UNQUOTE(JSON_EXTRACT(instrument, '$.name')))
+          FROM ip_measurements
+      ),
+      dataset_parts AS (
+          SELECT md.*,
+                 COALESCE(am.method_labels, '') AS method_labels,
+                 COALESCE(instr.instrument_label, '') AS instrument_label
+          FROM measurement_data md
+                   LEFT JOIN methods am
+                             ON am.measurement_id = md.measurement_id
+                                 COLLATE utf8mb4_unicode_ci
+                   LEFT JOIN instruments instr
+                             ON instr.measurement_id = md.measurement_id
+                                 COLLATE utf8mb4_unicode_ci
       )
       """;
 
@@ -150,6 +208,15 @@ final class MeasurementDataQuery {
   private static final String FILTER = """
       WHERE (COALESCE(:measurementType, '') = ''
              OR measurement_type COLLATE utf8mb4_unicode_ci = :measurementType)
+        -- FIND_IN_SET rather than equality: the column is the delimited list of the methods of the
+        -- samples this measurement measured, and a row belongs to a dataset when that dataset's
+        -- method is one of them (ADR 0010 decision 4). The guard turns the branch off when no method
+        -- is asked for, so an empty list cannot match the empty parameter -- FIND_IN_SET('', '') is 0,
+        -- but relying on that would make the no-filter case depend on the data.
+        AND (COALESCE(:methodLabel, '') = ''
+             OR FIND_IN_SET(:methodLabel, method_labels COLLATE utf8mb4_unicode_ci) > 0)
+        AND (COALESCE(:instrumentLabel, '') = ''
+             OR instrument_label COLLATE utf8mb4_unicode_ci = :instrumentLabel)
         AND (COALESCE(:searchTerm, '') = ''
              OR LOWER(COALESCE(measurement_code, '')) LIKE :searchPattern
              OR LOWER(COALESCE(measurement_name, '')) LIKE :searchPattern
@@ -169,7 +236,6 @@ final class MeasurementDataQuery {
                measurement_code,
                measurement_name,
                facility,
-               instrument,
                sample_pool,
                sample_count,
                registered_at,
@@ -177,8 +243,10 @@ final class MeasurementDataQuery {
                data_file_count,
                data_size_bytes,
                data_file_types,
-               data_uploaded_at
-        FROM measurement_data
+               data_uploaded_at,
+               method_labels,
+               instrument_label
+        FROM dataset_parts
         """
         + FILTER
         + "ORDER BY " + orderByClause + "\nLIMIT :limit OFFSET :offset";
@@ -186,7 +254,7 @@ final class MeasurementDataQuery {
 
   /** The total number of entries matching the same filter as {@link #page(String)}. */
   static String count() {
-    return ENTRIES_CTE + "SELECT COUNT(*) FROM measurement_data\n" + FILTER;
+    return ENTRIES_CTE + "SELECT COUNT(*) FROM dataset_parts\n" + FILTER;
   }
 
   /**

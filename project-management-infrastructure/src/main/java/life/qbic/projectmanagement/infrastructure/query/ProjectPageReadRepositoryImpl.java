@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,6 +20,8 @@ import life.qbic.projectmanagement.application.api.ProjectQueryService.ProjectSa
 import life.qbic.projectmanagement.application.api.ProjectQueryService.ProjectSampleSortKey;
 import life.qbic.projectmanagement.application.api.ProjectQueryService.SortDirection;
 import life.qbic.projectmanagement.application.api.ProjectQueryService.SortOrder;
+import life.qbic.projectmanagement.application.query.AssayStanding;
+import life.qbic.projectmanagement.application.query.AssayType;
 import life.qbic.projectmanagement.application.query.ExperimentProgress;
 import life.qbic.projectmanagement.application.query.MeasuredSample;
 import life.qbic.projectmanagement.application.query.MeasurementDataRow;
@@ -70,6 +73,26 @@ public class ProjectPageReadRepositoryImpl implements ProjectPageReadRepository 
       new MeasurementDataRowMapper(new ObjectMapper());
 
   /**
+   * The row's methods, from the comma-delimited list the query aggregates.
+   *
+   * <p>A measurement attributed to several methods (ADR 0010 decision 4) arrives as
+   * {@code WGS,RNA-SEQ}; it is split here so the view never parses SQL output itself.</p>
+   *
+   * <p>On the outer class rather than inside the mapper: this is the one place the view turns an
+   * aggregated SQL string into a list, so it is the one place worth pinning without a JDBC
+   * connection.</p>
+   */
+  static List<String> methodList(String joined) {
+    if (joined == null || joined.isBlank()) {
+      return List.of();
+    }
+    return Arrays.stream(joined.split(","))
+        .map(String::trim)
+        .filter(method -> !method.isEmpty())
+        .toList();
+  }
+
+  /**
    * Maps one measurement entry with its data status. Absent data columns (a waiting entry) map to
    * {@code null}, never to zero: {@code 0} bytes is meaningful and must not be confused with "no
    * datum".
@@ -91,7 +114,6 @@ public class ProjectPageReadRepositoryImpl implements ProjectPageReadRepository 
           resultSet.getString("measurement_code"),
           resultSet.getString("measurement_name"),
           resultSet.getString("facility"),
-          resultSet.getString("instrument"),
           resultSet.getString("sample_pool"),
           resultSet.getInt("sample_count"),
           toInstant(resultSet, "registered_at"),
@@ -99,7 +121,9 @@ public class ProjectPageReadRepositoryImpl implements ProjectPageReadRepository 
           toLong(resultSet, "data_file_count"),
           toLong(resultSet, "data_size_bytes"),
           fileTypes(resultSet.getString("data_file_types")),
-          toInstant(resultSet, "data_uploaded_at"));
+          toInstant(resultSet, "data_uploaded_at"),
+          methodList(resultSet.getString("method_labels")),
+          resultSet.getString("instrument_label"));
     }
 
     /**
@@ -154,6 +178,17 @@ public class ProjectPageReadRepositoryImpl implements ProjectPageReadRepository 
           resultSet.getLong("pxp_primary_data_bytes"),
           resultSet.getLong("ip_primary_data_bytes"));
 
+  private static final RowMapper<AssayStanding> ASSAY_STANDING_ROW_MAPPER =
+      (resultSet, rowNumber) -> new AssayStanding(
+          resultSet.getString("experiment_id"),
+          resultSet.getString("experiment_name"),
+          AssayType.fromColumnValue(resultSet.getString("measurement_type")),
+          resultSet.getString("method_label"),
+          resultSet.getString("instrument_label"),
+          resultSet.getInt("measurements"),
+          resultSet.getInt("measurements_with_primary_data"),
+          resultSet.getLong("primary_data_bytes"));
+
   private static final RowMapper<MeasuredSample> MEASURED_SAMPLE_ROW_MAPPER =
       (resultSet, rowNumber) -> new MeasuredSample(
           resultSet.getString("sample_id"),
@@ -182,6 +217,15 @@ public class ProjectPageReadRepositoryImpl implements ProjectPageReadRepository 
     // ExperimentProgressQuery for why the experiment_progress view could not be used directly.
     return jdbcTemplate.query(ExperimentProgressQuery.BY_PROJECT,
         Map.of("projectId", projectId), EXPERIMENT_PROGRESS_ROW_MAPPER);
+  }
+
+  @Override
+  @PreAuthorize(PROJECT_READ)
+  public List<AssayStanding> findAssayStanding(String projectId) {
+    // Project-scoped in SQL, and the only place the analysis method is resolved from the sample --
+    // see AssayStandingQuery and ADR 0010.
+    return jdbcTemplate.query(AssayStandingQuery.BY_PROJECT,
+        Map.of("projectId", projectId), ASSAY_STANDING_ROW_MAPPER);
   }
 
   @Override
@@ -229,6 +273,9 @@ public class ProjectPageReadRepositoryImpl implements ProjectPageReadRepository 
     parameters.put("experimentId", experimentId);
     parameters.put("measurementType",
         filter.measurementType() == null ? "" : filter.measurementType().name());
+    parameters.put("methodLabel", filter.methodLabel() == null ? "" : filter.methodLabel());
+    parameters.put("instrumentLabel",
+        filter.instrumentLabel() == null ? "" : filter.instrumentLabel());
     parameters.put("dataStatus",
         filter.dataStatus() == null ? "" : filter.dataStatus().name());
     parameters.put("searchTerm", filter.searchTerm());

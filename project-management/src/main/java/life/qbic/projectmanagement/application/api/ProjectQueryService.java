@@ -3,6 +3,7 @@ package life.qbic.projectmanagement.application.api;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.projectmanagement.application.query.AssayType;
+import life.qbic.projectmanagement.application.query.AssayStanding;
 import life.qbic.projectmanagement.application.query.ExperimentProgress;
 import life.qbic.projectmanagement.application.query.MeasuredSample;
 import life.qbic.projectmanagement.application.query.MeasurementDataRow;
@@ -48,6 +49,21 @@ public interface ProjectQueryService {
    * @param experimentId the experiment identifier
    */
   Mono<ExperimentProgress> getExperimentProgress(String projectId, String experimentId);
+
+  /**
+   * Streams the project's primary datasets, one {@link AssayStanding} per dataset.
+   *
+   * <p>A primary dataset is one experiment for one analysis method. The stream is not aggregated:
+   * two experiments measured with the same method emit two entries, because they are two datasets.
+   * Callers that want a per-method or per-domain rollup aggregate it themselves, at the grain they
+   * display.</p>
+   *
+   * @param projectId the project identifier
+   * @throws RequestFailedException if the request could not be executed
+   * @throws AccessDeniedException  if the caller lacks {@code READ} on the project
+   * @since 1.22.0
+   */
+  Flux<AssayStanding> getAssayStanding(String projectId);
 
   /**
    * Streams a page of {@link ProjectSampleOverview} for the project, matching the filter.
@@ -166,10 +182,14 @@ public interface ProjectQueryService {
    * @param searchTerm      a case-insensitive substring matched against the measurement code,
    *                        measurement name, facility and sample pool; blank means no filter
    * @param measurementType restricts the list to one assay type; {@code null} means all types
+   * @param methodLabel     restricts the list to one analysis method; {@code null} or blank means
+   *                        all methods. Part of the dataset identity, see {@link AssayStanding}
+   * @param instrumentLabel restricts the list to one instrument; {@code null} or blank means all
    * @param dataStatus      restricts by data availability; {@code null} means both states
    * @param sortOrders      the requested sort orders; empty applies a deterministic default
    */
   record MeasurementDataFilter(String searchTerm, AssayType measurementType,
+                               String methodLabel, String instrumentLabel,
                                MeasurementDataRow.DataStatus dataStatus,
                                List<SortOrder<MeasurementDataSortKey>> sortOrders) {
 
@@ -180,7 +200,7 @@ public interface ProjectQueryService {
 
     /** A filter that selects everything and leaves sorting to the implementation default. */
     public static MeasurementDataFilter all() {
-      return new MeasurementDataFilter("", null, null, List.of());
+      return new MeasurementDataFilter("", null, null, null, null, List.of());
     }
   }
 

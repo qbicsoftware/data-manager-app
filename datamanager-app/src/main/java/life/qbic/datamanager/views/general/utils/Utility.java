@@ -1,6 +1,7 @@
 package life.qbic.datamanager.views.general.utils;
 
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import java.time.Duration;
@@ -72,6 +73,49 @@ public class Utility {
         action.run();
       }
     }).addEventData("event.key");
+  }
+
+  /**
+   * Renders the way into a surface as a real anchor.
+   *
+   * <p>A {@code Span} styled to look like a link is the thing this app kept doing: it is not
+   * focusable, cannot be opened in a new tab, is not announced as a link, and invites a click that a
+   * surrounding container handler may or may not honour. A navigation affordance must be an
+   * {@code <a>}.</p>
+   *
+   * <p><b>Why an href and not {@code RouterLink}.</b> A {@code RouterLink} built from
+   * {@code RouteParameters} resolves the target route's template at render time and silently renders
+   * an inert element when the parameters do not bind. Two cards on the project page ended up with
+   * links that looked right and did nothing. An {@code href} built from {@link AppRoutes} is a plain
+   * string that cannot fail to bind -- the same approach the project cards' footer links already
+   * use.</p>
+   *
+   * @param text      the visible label
+   * @param href      an application path, e.g. {@code AppRoutes.ProjectRoutes.SAMPLES.formatted(...)}
+   * @param className the styling class the label would otherwise have carried
+   */
+  public static Anchor textLink(String text, String href, String className) {
+    Anchor link = new Anchor(href, text);
+    if (className != null && !className.isBlank()) {
+      link.addClassName(className);
+    }
+    return link;
+  }
+
+  /**
+   * How much primary data a measurement carries, as one phrase: "1 file · 104.9 MB".
+   *
+   * <p>Shared because two panels render it, and they had already diverged once: both said
+   * "1 files". A measurement carrying a single file is the common case, so the plural was wrong on
+   * the most frequently rendered row.</p>
+   *
+   * @param files the number of files, {@code null} treated as zero
+   * @param bytes the size in bytes, {@code null} or zero when the sync never recorded it
+   */
+  public static String primaryDataLabel(Long files, Long bytes) {
+    long count = files == null ? 0L : files;
+    return (count == 1 ? "1 file" : count + " files") + " · " + humanReadableSize(
+        bytes == null ? 0L : bytes);
   }
 
   /**

@@ -7,6 +7,7 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.DetachEvent;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
+import com.vaadin.flow.router.Location;
 import com.vaadin.flow.router.NotFoundException;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
@@ -70,6 +71,8 @@ public class ProjectDatasetsMain extends Main implements BeforeEnterObserver {
 
   private final transient AssociatedDatasetService associatedDatasetService;
   private final transient ExperimentInformationService experimentInformationService;
+  private final transient life.qbic.projectmanagement.application.ProjectInformationService
+      projectInformationService;
   private final transient UserPermissions userPermissions;
   private final transient MessageSourceNotificationFactory notificationFactory;
   private final transient ExternalCredentialService externalCredentialService;
@@ -83,18 +86,39 @@ public class ProjectDatasetsMain extends Main implements BeforeEnterObserver {
   private Context context = new Context();
   private final UiHandle uiHandle = new UiHandle();
 
+  /**
+   * The band this navigation asked for, or {@code null} for the top of the page.
+   *
+   * <p>Set in {@link #beforeEnter} from the URL fragment and consumed once the content that carries
+   * the anchor has actually been rendered. It cannot be done in {@code beforeEnter}: both bands are
+   * populated asynchronously (the primary half through {@link ProjectQueryService}), so at
+   * navigation time the element with that id does not exist yet and the browser has nothing to
+   * scroll to. Doing it here and honouring it from the render callbacks is what turns the link into
+   * a landing rather than a page load.</p>
+   */
+  private String pendingAnchor;
+
+  /** The anchors this page knows how to land on, in document order. */
+  private static final List<String> BAND_ANCHORS = List.of(
+      PrimaryDatasetsComponent.BAND_ANCHOR, PrimaryDatasetsComponent.CONNECTED_BAND_ANCHOR);
+
   @Autowired
   public ProjectDatasetsMain(
       AssociatedDatasetService associatedDatasetService,
       ExperimentInformationService experimentInformationService,
+      life.qbic.projectmanagement.application.ProjectInformationService projectInformationService,
       UserPermissions userPermissions,
       MessageSourceNotificationFactory notificationFactory,
       AuthenticationToUserIdTranslator authenticationToUserIdTranslator,
       ExternalCredentialService externalCredentialService,
-      ProjectQueryService projectQueryService
+      ProjectQueryService projectQueryService,
+      @org.springframework.beans.factory.annotation.Value(
+          "${server.download.api.measurement.url:}") String downloadEndpoint
       ) {
     this.associatedDatasetService = requireNonNull(associatedDatasetService,
         "associatedDatasetService must not be null");
+    this.projectInformationService = requireNonNull(projectInformationService,
+        "projectInformationService must not be null");
     this.experimentInformationService = requireNonNull(experimentInformationService,
         "experimentInformationService must not be null");
     this.userPermissions = requireNonNull(userPermissions,
@@ -108,8 +132,13 @@ public class ProjectDatasetsMain extends Main implements BeforeEnterObserver {
     addClassName("project");
     addClassName("datasets");
     primaryDatasetsComponent = new PrimaryDatasetsComponent(
-        requireNonNull(projectQueryService, "projectQueryService must not be null"));
+        requireNonNull(projectQueryService, "projectQueryService must not be null"),
+        downloadEndpoint, this.notificationFactory);
     connectedResourcesComponent = new ConnectedResourcesComponent(associatedDatasetService);
+    // The primary half renders asynchronously, and a fragment can only be honoured against an
+    // element that exists. Its load completion is therefore also a landing opportunity.
+    primaryDatasetsComponent.addDatasetsRenderedListener(
+        e -> landOn(PrimaryDatasetsComponent.BAND_ANCHOR));
     connectedResourcesComponent.addConnectDatasetsClickListener(e -> openConnectSidebar());
     connectedResourcesComponent.addRemoveDatasetClickListener(
         e -> onRemoveDataset(e.getDatasetId()));
@@ -166,7 +195,57 @@ public class ProjectDatasetsMain extends Main implements BeforeEnterObserver {
       return;
     }
     this.context = new Context().with(parsedProjectId);
+    // The human-facing project code names the exported file, so the dataset download does not fall
+    // back to a generic name. Resolved here because the route has already resolved the project; the
+    // component degrades to its own fallback if the code cannot be read.
+    primaryDatasetsComponent.setProjectCode(projectInformationService.find(parsedProjectId)
+        .map(project -> project.getProjectCode().value())
+        .orElse(null));
+    this.pendingAnchor = requestedAnchor(beforeEnterEvent.getLocation());
     setContext(parsedProjectId);
+  }
+
+  /**
+   * The band the URL asked to land on, or {@code null}.
+   *
+   * <p>Read from the fragment Vaadin already parsed off the location. Only the anchors this page
+   * defines are accepted: an arbitrary fragment is not turned into a selector.</p>
+   */
+  private static String requestedAnchor(Location location) {
+    if (location == null) {
+      return null;
+    }
+    String withFragment = location.getPathWithQueryParameters();
+    int index = withFragment.indexOf('#');
+    if (index < 0 || index == withFragment.length() - 1) {
+      return null;
+    }
+    String anchor = withFragment.substring(index + 1);
+    return BAND_ANCHORS.contains(anchor) ? anchor : null;
+  }
+
+  /**
+   * Scrolls the requested band into view, once, and only if one was requested.
+   *
+   * <p>Called from the point that renders that band, and only for it: the primary half is loaded
+   * asynchronously, so landing on the linked half must not wait for it (and vice versa). The request
+   * is cleared on the way out, so a band that renders again -- after a sync, after a connection --
+   * does not yank the viewport a second time.</p>
+   *
+   * <p>The scroll is deferred by a frame because the element was just added: at the moment the
+   * callback runs the browser has not laid it out, and {@code scrollIntoView} on an unlaid-out
+   * element is a no-op. {@code block: 'start'} puts the band's heading at the top of the viewport,
+   * which is what "land in this section" means.</p>
+   */
+  private void landOn(String bandAnchor) {
+    if (!bandAnchor.equals(pendingAnchor)) {
+      return;
+    }
+    pendingAnchor = null;
+    getUI().ifPresent(ui -> ui.getPage().executeJs(
+        "const band = document.getElementById($0);"
+            + "if (band) { requestAnimationFrame(() => band.scrollIntoView({block: 'start'})); }",
+        bandAnchor));
   }
 
   private void setContext(
@@ -177,6 +256,9 @@ public class ProjectDatasetsMain extends Main implements BeforeEnterObserver {
     if (connectDatasetSidebar != null) {
       connectDatasetSidebar.setContext(context);
     }
+    // The connected half is rendered synchronously by setContext above, so its band is complete
+    // here; the primary half reports its own completion through its rendered event.
+    landOn(PrimaryDatasetsComponent.CONNECTED_BAND_ANCHOR);
   }
 
   // ── Remove dataset flow ─────────────────────────────────────────────

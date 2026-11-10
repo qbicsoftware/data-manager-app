@@ -1,6 +1,7 @@
 package life.qbic.datamanager.views.projects.project.experiments.experiment;
 
 import static java.util.Objects.requireNonNull;
+import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
@@ -21,8 +22,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Map;
 import java.util.stream.Collectors;
+import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.Context;
-import life.qbic.datamanager.views.general.CompletenessRing;
+import life.qbic.logging.api.Logger;
+import life.qbic.datamanager.views.general.snapshot.SnapshotPanel;
 import life.qbic.datamanager.views.general.ReactiveUiBridge;
 import life.qbic.datamanager.views.general.utils.Utility;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentDesignMain;
@@ -35,6 +38,7 @@ import life.qbic.projectmanagement.application.confounding.ConfoundingVariableSe
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ExperimentReference;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService.ExperimentalVariableInformation;
+import life.qbic.projectmanagement.application.query.AssayStanding;
 import life.qbic.projectmanagement.application.query.ExperimentProgress;
 import life.qbic.projectmanagement.application.query.RecentMeasurement;
 import life.qbic.projectmanagement.application.query.RecentSample;
@@ -63,6 +67,8 @@ public class ExperimentOverviewComponent extends Div {
 
   @Serial
   private static final long serialVersionUID = 1L;
+
+  private static final Logger log = logger(ExperimentOverviewComponent.class);
 
   private static final String PROJECT_ID_PARAMETER = "projectId";
   private static final String EXPERIMENT_ID_PARAMETER = "experimentId";
@@ -142,11 +148,31 @@ public class ExperimentOverviewComponent extends Div {
     dataBand.add(cards);
     content.add(dataBand);
 
+    // The dataset card states one row per dataset, so it needs the dataset-grain read model (one
+    // AssayStanding per experiment/domain/method/instrument) -- the progress row only knows omics
+    // domains, which can back several datasets. It is the same read model the project overview and
+    // the Datasets page consume (ADR 0010), so the three surfaces cannot disagree.
+    //
+    // A failed assay query must not take the two cards down with it, and it must not be rendered as
+    // "no datasets" either: those are opposite statements, and the silent version of this hid a
+    // broken query once already. The failure is logged and the panel says so.
+    Mono<AssayLoad> assays = projectQueryService.getAssayStanding(projectId)
+        .collectList()
+        .map(rows -> new AssayLoad(rows.stream()
+            .filter(row -> row.experimentId().equals(experimentId.value()))
+            .toList(), false))
+        .onErrorResume(error -> {
+          log.error("Assay standing could not be loaded for project " + projectId + ": "
+              + error.getClass().getSimpleName() + " (" + error.getMessage() + ")", error);
+          return Mono.just(new AssayLoad(List.of(), true));
+        });
+
     Mono<Data> data = Mono.zip(
             projectQueryService.getExperimentProgress(projectId, experimentId.value()),
             projectQueryService.getRecentSamples(projectId, experimentId.value()).collectList(),
-            projectQueryService.getRecentMeasurements(projectId, experimentId.value()).collectList())
-        .map(values -> new Data(values.getT1(), values.getT2(), values.getT3()));
+            projectQueryService.getRecentMeasurements(projectId, experimentId.value()).collectList(),
+            assays)
+        .map(values -> new Data(values.getT1(), values.getT2(), values.getT3(), values.getT4()));
     ReactiveUiBridge.onUi(ui, data, snapshot -> renderCards(cards, snapshot), error -> {
       cards.removeAll();
       cards.add(message("Data could not be loaded."));
@@ -346,127 +372,52 @@ public class ExperimentOverviewComponent extends Div {
   private void renderCards(Div cards, Data data) {
     cards.removeAll();
     cards.add(samplesCard(data.progress(), data.samples()));
-    cards.add(datasetCard(data.progress(), data.measurements()));
-  }
-
-  private Div samplesCard(ExperimentProgress progress, List<RecentSample> samples) {
-    boolean started = progress.sampleCount() > 0;
-    String status = samples.isEmpty()
-        ? "Nothing registered yet"
-        : "Registered · " + Utility.relativeTime(samples.getFirst().changed());
-    List<List<String>> rows = samples.stream()
-        .map(sample -> List.of(sample.sampleCode(), sample.sampleName(),
-            Utility.relativeTime(sample.changed())))
-        .toList();
-    return snapshotCard("Samples", "samples", progress.sampleCount(),
-        started ? "Registered" : "Not started", started ? "done" : "active", note(status), null,
-        new String[]{"Sample ID", "Sample name", "Changed"}, rows, "No samples to show yet",
-        () -> navigate(SampleInformationMain.class));
-  }
-
-  private Div datasetCard(ExperimentProgress progress, List<RecentMeasurement> measurements) {
-    int total = progress.measurementCount();
-    int missing = progress.measurementsWithoutPrimaryData();
-    boolean hasSamples = progress.sampleCount() > 0;
-    String state;
-    String tone;
-    if (!hasSamples) {
-      state = "Locked";
-      tone = "locked";
-    } else if (total == 0) {
-      state = "Ready to register";
-      tone = "active";
-    } else if (missing > 0) {
-      state = "Not complete yet";
-      tone = "incomplete";
-    } else {
-      state = "Complete";
-      tone = "done";
-    }
-    List<List<String>> rows = measurements.stream()
-        .map(measurement -> List.of(measurement.measurementCode(),
-            primaryDataLabel(measurement), Utility.relativeTime(measurement.changed())))
-        .toList();
-    return snapshotCard("Dataset", "measurements", total, state, tone,
-        note(gapSentence(progress)), completenessRing(progress),
-        new String[]{"Measurement ID", "Primary data", "Changed"}, rows,
-        "No measurements to show yet", () -> navigate(MeasurementDatasetMain.class));
+    cards.add(datasetCard(data.progress(), data.measurements(), data.assays(),
+        data.assayLoadFailed()));
   }
 
   /**
-   * The Dataset card's completeness ring, placed in the card's top-right corner.
+   * The experiment's samples, as the project overview renders them.
    *
-   * <p>The ring shows the coverage proportion; the status sentence beside the metric states the
-   * outstanding count, never the ratio, so the reader is not asked to do the subtraction the ring
-   * already did. The ring never carries the meaning alone — it also exposes
-   * {@code role=progressbar} with an {@code aria-valuetext}.</p>
+   * <p>This card is now the shared {@link SnapshotPanel}, the same component the project overview
+   * uses. It used to be a look-alike with its own anatomy, its own state words ("Registered", where
+   * the shared vocabulary says Complete) and its own table layout, so two pages describing the same
+   * samples at the same grain disagreed about how to describe them.</p>
    */
-  private Component completenessRing(ExperimentProgress progress) {
-    int total = progress.measurementCount();
-    int withData = progress.measurementsWithPrimaryData();
-    int missing = progress.measurementsWithoutPrimaryData();
-    String aria = total == 0
-        ? "No measurements registered yet"
-        : missing > 0
-            ? missing + " of " + total + " measurements still need primary data"
-            : "All " + total + " measurements have primary data";
-    return new CompletenessRing(withData, total, aria);
+  private Div samplesCard(ExperimentProgress progress, List<RecentSample> samples) {
+    int count = progress.sampleCount();
+    return SnapshotPanel.samples(progress, samples,
+        AppRoutes.ProjectRoutes.SAMPLES.formatted(projectIdValue(), experimentIdValue()),
+        count > 0 ? "All " + count + (count == 1 ? " sample" : " samples") + " →" : "");
   }
 
-  /** The one sentence that states the gap, never the ratio. */
-  private static String gapSentence(ExperimentProgress progress) {
-    int total = progress.measurementCount();
-    int missing = progress.measurementsWithoutPrimaryData();
-    if (total == 0) {
-      return "No measurements registered yet";
-    }
-    return missing > 0
-        ? missing + (missing == 1
-            ? " measurement still needs primary data"
-            : " measurements still need primary data")
-        : "All " + total + " have primary data";
-  }
-
-  private Div snapshotCard(String label, String unit, int count, String state, String tone,
-      Component status, Component accessory, String[] columns, List<List<String>> rows,
-      String emptyRow, Runnable open) {
-    Div panel = new Div();
-    panel.addClassName("experiment-overview-card");
-
-    Div head = new Div();
-    head.addClassName("experiment-overview-card-head");
-    Span labelSpan = new Span(label);
-    labelSpan.addClassName("experiment-overview-card-label");
-    head.add(surfaceIcon(label), labelSpan,
-        stateTag(state, tone), hint("Open " + label.toLowerCase()));
-    if (accessory != null) {
-      accessory.addClassName("experiment-overview-card-accessory");
-      head.add(accessory);
-    }
-    panel.add(head);
-
-    Div metric = new Div();
-    metric.addClassName("experiment-overview-card-metric");
-    Span value = new Span(Integer.toString(count));
-    value.addClassName("experiment-overview-card-value");
-    Span unitSpan = new Span(unit);
-    unitSpan.addClassName("experiment-overview-card-unit");
-    metric.add(value, unitSpan);
-    panel.add(metric);
-    panel.add(status);
-
-    Div list = new Div();
-    list.addClassName("experiment-overview-card-rows");
-    list.add(row(columns, true));
-    if (rows.isEmpty()) {
-      list.add(placeholderRow(emptyRow));
-    } else {
-      rows.forEach(cells -> list.add(row(cells.toArray(new String[0]), false)));
-    }
-    panel.add(list);
-
-    Utility.activateOnClickAndKeys(panel, "button", open);
-    return panel;
+  /**
+   * The experiment's measurement datasets, one row per dataset.
+   *
+   * <p>Two corrections, both taken from the project overview (project owner, 2026-11-03):</p>
+   *
+   * <ul>
+   *   <li><b>Dataset grain, not measurement grain.</b> The card previewed the three newest
+   *       measurements with their primary-data status. But "not complete" is a condition of a
+   *       dataset, and a list of measurement IDs cannot say which dataset is behind -- which is the
+   *       question the card exists to answer. It now states one row per dataset, the way the
+   *       project overview's panel does.</li>
+   *   <li><b>No completeness ring.</b> The card carried the count, a ring and a gap sentence: three
+   *       encodings of one fact, and the ring appeared on this card alone, so the two cards had
+   *       visibly different weight. The ratio is now stated once, in words. A proportion is the
+   *       ring's encoding, and "17 of 20" is more precise than an arc.</li>
+   * </ul>
+   *
+   * <p>The state tag is gone with them: the table's "Data availability" column states every
+   * dataset's state on its own row, which is the same fact at a stronger grain.</p>
+   */
+  private Div datasetCard(ExperimentProgress progress, List<RecentMeasurement> measurements,
+      List<AssayStanding> assays, boolean assayLoadFailed) {
+    int datasets = assays.size();
+    return SnapshotPanel.datasets(progress, measurements, assays, assayLoadFailed,
+        AppRoutes.ProjectRoutes.MEASUREMENT_DATASET.formatted(projectIdValue(), experimentIdValue()),
+        datasets == 0 ? "" : "All " + datasets + (datasets == 1 ? " dataset" : " datasets")
+            + " →");
   }
 
   private void navigateToDesign() {
@@ -477,22 +428,20 @@ public class ExperimentOverviewComponent extends Div {
     getUI().ifPresent(ui -> ui.navigate(ExperimentSetupMain.class, routeParameters()));
   }
 
-  private void navigate(Class<? extends Component> target) {
-    getUI().ifPresent(ui -> ui.navigate(target, routeParameters()));
-  }
-
   private RouteParameters routeParameters() {
     return new RouteParameters(
         new RouteParam(PROJECT_ID_PARAMETER, context.projectId().orElseThrow().value()),
         new RouteParam(EXPERIMENT_ID_PARAMETER, context.experimentId().orElseThrow().value()));
   }
 
-  private static String primaryDataLabel(RecentMeasurement measurement) {
-    if (!measurement.hasPrimaryData()) {
-      return "Not attached";
-    }
-    return measurement.primaryDataFiles() + " files · " + Utility.humanReadableSize(
-        measurement.primaryDataBytes() == null ? 0L : measurement.primaryDataBytes());
+  /** The project of the loaded context, as the route's identifier: the cards' links need it. */
+  private String projectIdValue() {
+    return context.projectId().orElseThrow().value();
+  }
+
+  /** The experiment of the loaded context, as the route's identifier. */
+  private String experimentIdValue() {
+    return context.experimentId().orElseThrow().value();
   }
 
   private static Div detailBlock(String title, List<String> entries) {
@@ -511,39 +460,6 @@ public class ExperimentOverviewComponent extends Div {
       block.add(item);
     });
     return block;
-  }
-
-  private static Icon surfaceIcon(String label) {
-    Icon glyph = switch (label) {
-      case "Samples" -> VaadinIcon.FLASK.create();
-      case "Dataset" -> VaadinIcon.DATABASE.create();
-      default -> VaadinIcon.RECORDS.create();
-    };
-    glyph.addClassName("experiment-overview-card-icon");
-    glyph.getElement().setAttribute("aria-hidden", "true");
-    return glyph;
-  }
-
-  private static Div row(String[] cells, boolean header) {
-    Div row = new Div();
-    row.addClassName("experiment-overview-card-row");
-    for (int index = 0; index < cells.length; index++) {
-      Span span = new Span(cells[index]);
-      if (header) {
-        span.addClassName("experiment-overview-card-cell-header");
-      } else if (index == 0) {
-        span.addClassName("identifier");
-      }
-      row.add(span);
-    }
-    return row;
-  }
-
-  private static Div placeholderRow(String text) {
-    Div row = new Div();
-    row.addClassName("experiment-overview-card-row");
-    row.add(new Span(text));
-    return row;
   }
 
   private static Div actions(Component... components) {
@@ -625,8 +541,20 @@ public class ExperimentOverviewComponent extends Div {
     return message;
   }
 
-  private record Data(ExperimentProgress progress, List<RecentSample> samples,
-                      List<RecentMeasurement> measurements) {
+  /** The experiment's datasets, plus whether the query failed so the card can say so. */
+  private record AssayLoad(List<AssayStanding> assays, boolean failed) {
 
+  }
+
+  private record Data(ExperimentProgress progress, List<RecentSample> samples,
+                      List<RecentMeasurement> measurements, AssayLoad assayLoad) {
+
+    List<AssayStanding> assays() {
+      return assayLoad.assays();
+    }
+
+    boolean assayLoadFailed() {
+      return assayLoad.failed();
+    }
   }
 }

@@ -21,65 +21,6 @@
   color: var(--lumo-secondary-text-color);
 }
 
-/* ── Not-complete card ────────────────────────────────────────────────── */
-
-.project-progress-incomplete {
-  display: flex;
-  flex-direction: column;
-  gap: var(--lumo-space-s);
-  /* Reached by anchor from the identity band, so leave room above: without it the heading lands
-     flush under the band the reader just left. */
-  scroll-margin-top: var(--lumo-space-l);
-  padding: var(--lumo-space-m);
-  margin-bottom: var(--lumo-space-m);
-  background-color: var(--info-surface, var(--lumo-contrast-5pct));
-  border: 1px solid var(--info-border, var(--lumo-contrast-20pct));
-  border-radius: var(--lumo-border-radius-m);
-}
-
-.project-progress-incomplete-title {
-  font-weight: 600;
-  color: var(--info-text-color, var(--lumo-error-text-color));
-}
-
-.project-progress-incomplete-row {
-  display: flex;
-  align-items: center;
-  gap: var(--lumo-space-s);
-  padding: var(--lumo-space-s) var(--lumo-space-m);
-  background-color: var(--lumo-base-color);
-  border-radius: var(--lumo-border-radius-m);
-  cursor: pointer;
-}
-
-.project-progress-incomplete-row .project-progress-glyph {
-  color: var(--info-color, var(--lumo-error-text-color));
-}
-
-.project-progress-incomplete-row:hover .project-progress-incomplete-action,
-.project-progress-incomplete-row:focus-visible .project-progress-incomplete-action {
-  text-decoration: underline;
-}
-
-.project-progress-incomplete-context {
-  font-weight: 600;
-  color: var(--lumo-body-text-color);
-}
-
-.project-progress-incomplete-text {
-  color: var(--lumo-secondary-text-color);
-}
-
-.project-progress-incomplete-action {
-  margin-left: auto;
-  font-weight: 600;
-  color: var(--lumo-primary-text-color);
-}
-
-.project-progress-separator {
-  color: var(--lumo-contrast-40pct);
-}
-
 /* ── Progress card ────────────────────────────────────────────────────── */
 
 .project-progress-card {
@@ -148,16 +89,37 @@
   display: flex;
   align-items: center;
   gap: var(--lumo-space-s);
-  /* Tall enough for the completeness ring that marks the Primary datasets stage, so every stage's
-     connector sits on the same line even though the ring is taller than the round markers. */
+  /* Tall enough for the completeness ring that marks the Dataset stage, so every stage's connector
+     sits on the same line even though the ring is taller than the two round markers beside it. */
   min-height: 2.75rem;
 }
 
-/* The Primary datasets stage's marker: the project's primary-data coverage at a glance, with the
-   step's own count beside it. */
+/* The Dataset stage's marker: the project's primary-data coverage at a glance, with the step's own
+   count beside it. The ring is kept here on purpose -- the same component the experiment panels and
+   the dataset selector use -- so this page can be read as a comparison against the bar in the
+   Primary data card below. */
 .project-progress-step-ring {
   --completeness-ring-size: 2.75rem;
   --completeness-ring-font-size: var(--lumo-font-size-xs);
+}
+
+/* At 3% coverage the arc is a sliver, and the ring's track is the only thing that frames it as
+   "almost nothing has arrived yet" rather than as a spinner with no remainder. The shared track sits
+   at --lumo-contrast-10pct, which on white is too faint to register at this size -- so the ring in
+   the rail is given a track that survives a low value. This is scoped to the rail and does not
+   change the ring on the surfaces that sit it in a card. */
+.project-progress-step-ring .completeness-ring__track {
+  stroke: var(--lumo-contrast-20pct);
+}
+
+/* A stage's connector leads INTO the next stage, so its colour has to follow that stage's state
+   rather than its own. Drawn from the current step it turned success-green into a 3% stage: the
+   connector asserted progress the stage it pointed at did not have. */
+.project-progress-step--done:has(+ .project-progress-step--incomplete) .project-progress-connector,
+.project-progress-step--done:has(+ .project-progress-step--partial) .project-progress-connector,
+.project-progress-step--done:has(+ .project-progress-step--todo) .project-progress-connector,
+.project-progress-step--done:has(+ .project-progress-step--locked) .project-progress-connector {
+  background-color: var(--lumo-contrast-20pct);
 }
 
 .project-progress-marker {
@@ -181,6 +143,22 @@
   border-color: var(--lumo-success-color, var(--lumo-contrast-40pct));
   background-color: var(--lumo-success-color, var(--lumo-contrast-40pct));
   color: var(--lumo-base-color);
+}
+
+/* Partial is a half-filled disc: a tick would claim completion and an info circle would claim a
+   problem, and a stage that is part-way is neither. */
+.project-progress-step--partial .project-progress-marker {
+  border-color: var(--info-color, var(--lumo-primary-color));
+  background: linear-gradient(90deg,
+      var(--info-color, var(--lumo-primary-color)) 50%,
+      var(--lumo-base-color) 50%);
+  color: var(--lumo-secondary-text-color);
+}
+
+/* A partial stage's connector is neutral: the stage it leads out of has not finished, so the line
+   must not assert progress in the success colour. */
+.project-progress-step--partial .project-progress-connector {
+  background-color: var(--lumo-contrast-20pct);
 }
 
 .project-progress-step--incomplete .project-progress-marker {
@@ -295,6 +273,11 @@
   align-items: start;
 }
 
+/* The card takes the snapshot panel's surface, not a tinted variant of it. The fill was the only
+   texture in a block where nothing else was loud -- no row dividers, no icons, two text sizes -- so
+   the grey became the most prominent thing in it while carrying no meaning, and it also swallowed
+   the type chips (a 10pct chip on a 5pct fill has no visible edge). Without it the pair reads as a
+   sibling of the two panels below instead of a recessed secondary block. */
 .project-progress-datasets-card {
   display: flex;
   flex-direction: column;
@@ -303,39 +286,171 @@
      card is squeezed past the point where its content still makes sense. */
   flex: 1 1 var(--card-readable-width);
   padding: var(--lumo-space-m);
-  /* A hairline as well as the tint, or the cards read as loose grey rectangles on a near-white
-     page with nothing tying them to the "Datasets" heading above them. */
-  border: 1px solid var(--lumo-contrast-10pct);
-  background-color: var(--lumo-contrast-5pct);
+  border: 1px solid var(--lumo-contrast-20pct);
   border-radius: var(--lumo-border-radius-m);
   min-width: 0;
+  transition: border-color 150ms ease;
 }
 
-/* A card is the way into its surface, like the rail stages above it. The whole card is the target,
-   so the hover has to read as "this is one thing" rather than as a row highlight. */
-.project-progress-datasets-card--link {
-  cursor: pointer;
+/* The same hover language as the panels below and the project cards: the frame takes the primary
+   colour. It signals "this card holds the way in" without making the container a click target. */
+.project-progress-datasets-card:hover,
+.project-progress-datasets-card:has(:focus-visible) {
+  border-color: var(--lumo-primary-color);
 }
 
-.project-progress-datasets-card--link:hover,
-.project-progress-datasets-card--link:focus-visible {
-  border-color: var(--lumo-contrast-20pct);
-  background-color: var(--lumo-contrast-10pct);
+/* A card heading that navigates. Underlined and colour-shifted on hover only, so the resting card
+   does not look like a block of links -- but the pointer, the colour change and the underline are all
+   present, because that is what a reader knows a link to be. */
+.project-progress-datasets-card-title-link {
+  color: inherit;
+  text-decoration: none;
 }
 
-.project-progress-datasets-card--link:focus-visible {
-  outline: 2px solid var(--lumo-primary-color);
-  outline-offset: 2px;
+.project-progress-datasets-card-title-link:hover,
+.project-progress-datasets-card-title-link:focus-visible {
+  color: var(--lumo-primary-text-color);
+  text-decoration: underline;
 }
 
 .project-progress-datasets-card-title {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
   font-weight: 600;
   color: var(--lumo-header-text-color);
+}
+
+/* Decorative only: the title beside it carries the meaning, so it is aria-hidden in the component. */
+.project-progress-datasets-card-icon {
+  flex: 0 0 auto;
+  color: var(--lumo-secondary-text-color);
+}
+
+/* The count and the provider lead the body rather than sitting inside the heading. "Linked datasets
+   6" set a number at heading weight inside a title and had no counterpart on the card beside it;
+   this is the same fact at the same weight as that card's content. */
+.project-progress-datasets-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--lumo-space-xs);
+  font-size: var(--lumo-font-size-s);
+  font-variant-numeric: tabular-nums;
+  color: var(--lumo-body-text-color);
+}
+
+.project-progress-datasets-summary-provider {
+  color: var(--lumo-secondary-text-color);
 }
 
 .project-progress-datasets-card-fact {
   font-size: var(--lumo-font-size-s);
   color: var(--lumo-secondary-text-color);
+}
+
+/* ── Assay table ─────────────────────────────────────────────────────── */
+
+/* One grid for the whole table and one row per dataset, the same construction the snapshot panels
+   use (snapshot-panel.css) so the two read as one table language.
+
+   It replaces a layout that emitted one uppercase domain caption per row. With one assay per domain
+   that spent six lines on three facts and set the caption -- the field that varies -- as the
+   faintest thing on the card, while the invariants (the method, the state phrase, "1 dataset")
+   carried the weight. As a column with a header the domain repeats like data instead of like
+   decoration, and it scales to the dozen assays a multi-omics project runs. */
+.project-progress-assays {
+  display: grid;
+  grid-template-columns: max-content max-content max-content;
+  gap: 2px var(--lumo-space-s);
+  align-items: baseline;
+  font-size: var(--lumo-font-size-s);
+}
+
+/* Five data cells plus the spacer the row emits itself: the spacer track carries the slack, so the
+   identity group stays tight on the left and the numbers keep the right edge instead of the gap
+   opening in the middle of the row. The track count must match the rendered cell count including the
+   spacer -- both come from the same rule in the component, so they cannot drift. */
+.project-progress-assays--5-columns {
+  grid-template-columns:
+      max-content             /* omics domain */
+      max-content             /* method */
+      max-content             /* dataset count */
+      minmax(0, 1fr)          /* spacer: absorbs the free space */
+      max-content             /* measurements with data */
+      max-content;            /* availability pill */
+}
+
+/* display: contents, so each row's cells become items of the grid above -- that is what lets the
+   columns size across all rows. The row itself carries no box and no semantics. */
+/* The spacer is a grid item with no content: it exists only to claim the slack track, so it must
+   not contribute text, padding or a focus ring. */
+.project-progress-assay-spacer {
+  display: block;
+}
+
+.project-progress-assay-row {
+  display: contents;
+}
+
+.project-progress-assay-header {
+  padding-bottom: var(--lumo-space-xs);
+  font-size: var(--lumo-font-size-xs);
+  font-weight: 600;
+  color: var(--lumo-secondary-text-color);
+}
+
+/* The domain is the field that distinguishes one dataset from the next, so it takes body ink rather
+   than the tertiary grey the caption carried. */
+.project-progress-assay-domain-cell {
+  color: var(--lumo-body-text-color);
+}
+
+/* The method abbreviation is the identity a reader recognises -- "WES", "16S", "RNA-SEQ". */
+.project-progress-assay-method {
+  font-weight: 600;
+  color: var(--lumo-body-text-color);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Right-aligned numeric column: the counts share a right edge down the card, so they can be
+   compared without reading the label each time. */
+.project-progress-assay-number {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--lumo-body-text-color);
+}
+
+/* The availability pill is the shared snapshot-panel state tag, adopted rather than re-implemented:
+   one vocabulary across the cards, the panels and the Datasets page, and colour that varies with the
+   state instead of every row being the same info-blue. */
+.project-progress-assays .snapshot-panel-state {
+  justify-self: end;
+}
+
+/* The way out of a card, in the same grammar as the snapshot panels' footer: right-aligned below a
+   hairline, in the link colour. It was an inert lowercase sentence that named a destination while
+   the identical destination sat 20px above as a link. */
+.project-progress-datasets-card-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--lumo-space-xs);
+  padding-top: var(--lumo-space-xs);
+  border-top: 1px solid var(--lumo-contrast-10pct);
+}
+
+.project-progress-datasets-card-footer-link {
+  font-size: var(--lumo-font-size-xs);
+  font-weight: 500;
+  color: var(--lumo-primary-text-color);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.project-progress-datasets-card-footer-link:hover,
+.project-progress-datasets-card-footer-link:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 /* Connected assets as a grid, not a stack of flex rows. Grid sizes each column across ALL the rows,
@@ -346,9 +461,10 @@
 .project-progress-connected-assets {
   display: grid;
   grid-template-columns: max-content minmax(0, 1fr) max-content;
-  gap: var(--lumo-space-xs) var(--lumo-space-s);
-  align-items: center;
+  gap: 2px var(--lumo-space-s);
+  align-items: baseline;
   font-size: var(--lumo-font-size-s);
+  padding-top: var(--lumo-space-xs);
 }
 
 .project-progress-connected-assets--with-provider {
@@ -368,12 +484,27 @@
   align-self: center;
 }
 
+/* Header cells take the same treatment as the measurement table's, so the two tables read as one
+   language: xs, semibold, secondary. */
+.project-progress-connected-asset-header {
+  padding-bottom: var(--lumo-space-xs);
+  font-size: var(--lumo-font-size-xs);
+  font-weight: 600;
+  color: var(--lumo-secondary-text-color);
+}
+
+/* The title is the field that identifies the record, so it has to be readable. It was single-line
+   with an ellipsis, and two of three rows clipped to near-identical prefixes ("Modelización de la
+   coordinac...", "A fast and memory-efficient ..."), which made the list unscannable and left the
+   full string reachable only by hovering. Two lines instead, so the title track gets the room. */
 .project-progress-connected-asset-title {
   min-width: 0;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   color: var(--lumo-body-text-color);
+  line-height: var(--lumo-line-height-xs);
 }
 
 /* When the record was last touched. Left-aligned, so the column opens on the same vertical line as
@@ -390,11 +521,17 @@
   color: var(--lumo-secondary-text-color);
 }
 
+/* A rail stage IS a click target -- it has exactly one destination -- so the pointer cursor is
+   honest here, unlike on the cards. The hover treatment matches the links elsewhere on the page:
+   colour shift plus underline, not underline alone. */
 .project-progress-step--link {
   cursor: pointer;
 }
 
 .project-progress-step--link:hover .project-progress-step-label,
 .project-progress-step--link:focus-visible .project-progress-step-label {
+  color: var(--lumo-primary-text-color);
   text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
 }

@@ -1,6 +1,7 @@
 package life.qbic.datamanager.views.projects.project.info;
 
 import static java.util.Objects.requireNonNull;
+import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
@@ -8,28 +9,28 @@ import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.Icon;
-import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.router.RouteParam;
 import com.vaadin.flow.router.RouteParameters;
-import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.shared.Registration;
 import java.io.Serial;
-import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import life.qbic.datamanager.views.AppRoutes;
+import life.qbic.logging.api.Logger;
 import life.qbic.datamanager.views.MeasurementType;
-import life.qbic.datamanager.views.general.CompletenessRing;
 import life.qbic.datamanager.views.general.ReactiveUiBridge;
+import life.qbic.datamanager.views.general.snapshot.SnapshotPanel;
 import life.qbic.datamanager.views.general.utils.Utility;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.create.CreateExperimentMain;
 import life.qbic.datamanager.views.projects.project.dataset.MeasurementDatasetMain;
 import life.qbic.datamanager.views.projects.project.samples.SampleInformationMain;
 import life.qbic.projectmanagement.application.api.ProjectQueryService;
+import life.qbic.projectmanagement.application.query.AssayStanding;
 import life.qbic.projectmanagement.application.query.ExperimentProgress;
 import life.qbic.projectmanagement.application.query.RecentMeasurement;
 import life.qbic.projectmanagement.application.query.RecentSample;
@@ -49,6 +50,8 @@ import reactor.core.publisher.Mono;
  * @since 1.19.0
  */
 public class ProjectExperimentsSection extends Div {
+
+  private static final Logger log = logger(ProjectExperimentsSection.class);
 
   private static final String PROJECT_ID_PARAMETER = "projectId";
   private static final String EXPERIMENT_ID_PARAMETER = "experimentId";
@@ -91,8 +94,21 @@ public class ProjectExperimentsSection extends Div {
     Mono<Snapshot> snapshot = Mono.zip(
             progress,
             projectQueryService.getRecentSamples(projectId).collectList(),
-            projectQueryService.getRecentMeasurements(projectId).collectList())
-        .map(values -> new Snapshot(values.getT1(), values.getT2(), values.getT3()));
+            projectQueryService.getRecentMeasurements(projectId).collectList(),
+            // The dataset-grain read model: one row per (experiment, analysis method). This is what
+            // the dataset panel needs -- the progress model only knows omics domains.
+            // A failed assay query must not take the experiments list down with it, but it must not
+            // be silently reported as "no datasets" either -- that is indistinguishable from a
+            // project that genuinely has none, and it hid a broken query once already. The failure is
+            // logged at error level with the cause, and the panel says so (see Snapshot.assaysFailed).
+            projectQueryService.getAssayStanding(projectId).collectList()
+                .map(assays -> new AssayLoad(assays, false))
+                .onErrorResume(error -> {
+                  log.error("Assay standing could not be loaded for project " + projectId + ": "
+                      + error.getClass().getSimpleName() + " (" + error.getMessage() + ")", error);
+                  return Mono.just(new AssayLoad(List.of(), true));
+                }))
+        .map(values -> new Snapshot(values.getT1(), values.getT2(), values.getT3(), values.getT4()));
     ReactiveUiBridge.onUi(ui, snapshot, this::render, error -> {
       content.removeAll();
       content.add(message("Experiments could not be loaded."));
@@ -120,19 +136,23 @@ public class ProjectExperimentsSection extends Div {
         .collect(Collectors.groupingBy(RecentSample::experimentId));
     Map<String, List<RecentMeasurement>> measurementsByExperiment = snapshot.measurements().stream()
         .collect(Collectors.groupingBy(RecentMeasurement::experimentId));
+    Map<String, List<AssayStanding>> assaysByExperiment = snapshot.assayLoad().assays().stream()
+        .collect(Collectors.groupingBy(AssayStanding::experimentId));
 
     Div cards = new Div();
     cards.addClassName("project-experiments-cards");
     for (ExperimentProgress experiment : snapshot.progress()) {
       cards.add(experimentCard(experiment,
           samplesByExperiment.getOrDefault(experiment.experimentId(), List.of()),
-          measurementsByExperiment.getOrDefault(experiment.experimentId(), List.of())));
+          measurementsByExperiment.getOrDefault(experiment.experimentId(), List.of()),
+          assaysByExperiment.getOrDefault(experiment.experimentId(), List.of()),
+          snapshot.assayLoad().failed()));
     }
     content.add(cards);
   }
 
   private Div experimentCard(ExperimentProgress experiment, List<RecentSample> samples,
-      List<RecentMeasurement> measurements) {
+      List<RecentMeasurement> measurements, List<AssayStanding> assays, boolean assaysFailed) {
     Div card = new Div();
     card.addClassName("project-experiment-card");
 
@@ -140,9 +160,9 @@ public class ProjectExperimentsSection extends Div {
     identity.addClassName("project-exp-identity");
     // The experiment's identity is the way into its overview; the snapshot panels open their own
     // surfaces (project owner, 2026-10-19).
-    RouterLink name = new RouterLink(experiment.experimentName(),
-        ExperimentInformationMain.class, experimentRouteParameters(experiment.experimentId()));
-    name.addClassName("project-exp-name");
+    Anchor name = Utility.textLink(experiment.experimentName(),
+        AppRoutes.ProjectRoutes.EXPERIMENT.formatted(projectId, experiment.experimentId()),
+        "project-exp-name");
     Div facets = new Div();
     facets.addClassName("project-exp-facets");
     domains(experiment).forEach(domain -> facets.add(chip(domain, "project-exp-chip--domain")));
@@ -155,178 +175,45 @@ public class ProjectExperimentsSection extends Div {
 
     Div panels = new Div();
     panels.addClassName("project-exp-snapshot");
-    panels.add(samplesPanel(experiment, samples));
-    panels.add(datasetPanel(experiment, measurements));
+    // Both panels sit in a wrapping flex row, so each has to claim an equal share of it: without
+    // the basis a panel collapses to its content width and leaves the rest of the row empty.
+    panels.add(samplesPanel(experiment, samples).equalInRow());
+    panels.add(datasetPanel(experiment, measurements, assays, assaysFailed).equalInRow());
     card.add(panels);
     return card;
   }
 
-  private Div samplesPanel(ExperimentProgress experiment, List<RecentSample> samples) {
-    boolean started = experiment.sampleCount() > 0;
-    String status = samples.isEmpty()
-        ? "Nothing registered yet"
-        : "Registered · " + Utility.relativeTime(samples.getFirst().changed());
-    List<List<String>> rows = samples.stream()
-        .map(sample -> List.of(sample.sampleCode(), sample.sampleName(),
-            Utility.relativeTime(sample.changed())))
-        .toList();
-    return snapshotPanel("Samples", "samples", experiment.sampleCount(),
-        started ? "Registered" : "Not started", started ? "done" : "active",
-        status, null, new String[]{"Sample ID", "Sample name", "Changed"}, rows,
-        "No samples to show yet",
-        () -> navigate(SampleInformationMain.class, experiment.experimentId()));
-  }
-
-  private Div datasetPanel(ExperimentProgress experiment, List<RecentMeasurement> measurements) {
-    int total = experiment.measurementCount();
-    int missing = experiment.measurementsWithoutPrimaryData();
-    boolean hasSamples = experiment.sampleCount() > 0;
-
-    String state;
-    String tone;
-    if (!hasSamples) {
-      state = "Locked";
-      tone = "locked";
-    } else if (total == 0) {
-      state = "Ready to register";
-      tone = "active";
-    } else if (missing > 0) {
-      state = "Not complete yet";
-      tone = "incomplete";
-    } else {
-      state = "Complete";
-      tone = "done";
-    }
-    String status = total == 0
-        ? "Nothing registered yet"
-        : (missing > 0
-            ? missing + " measurements still need primary data"
-            : "All " + total + " have primary data")
-            + " · " + Utility.relativeTime(newest(measurements));
-
-    List<List<String>> rows = measurements.stream()
-        .map(measurement -> List.of(measurement.measurementCode(), primaryDataLabel(measurement),
-            Utility.relativeTime(measurement.changed())))
-        .toList();
-    return snapshotPanel("Dataset", "measurements", total, state, tone, status,
-        completenessRing(experiment),
-        new String[]{"Measurement ID", "Primary data", "Changed"}, rows,
-        "No measurements to show yet",
-        () -> navigate(MeasurementDatasetMain.class, experiment.experimentId()));
-  }
-
   /**
-   * The Dataset panel's completeness ring, placed in the panel's top-right corner. The sentence on
-   * the status line states the gap, the ring shows the coverage; neither carries it alone.
-   */
-  private static Component completenessRing(ExperimentProgress experiment) {
-    int total = experiment.measurementCount();
-    int withData = experiment.measurementsWithPrimaryData();
-    int missing = experiment.measurementsWithoutPrimaryData();
-    String aria = total == 0
-        ? "No measurements registered yet"
-        : missing > 0
-            ? missing + " of " + total + " measurements still need primary data"
-            : "All " + total + " measurements have primary data";
-    return new CompletenessRing(withData, total, aria);
-  }
-
-  private Div snapshotPanel(String label, String unit, int count, String state, String tone,
-      String status, Component accessory, String[] columns, List<List<String>> rows,
-      String emptyRow, Runnable open) {
-    Div panel = new Div();
-    panel.addClassName("project-exp-panel");
-
-    Div head = new Div();
-    head.addClassName("project-exp-panel-head");
-    Span labelSpan = new Span(label);
-    labelSpan.addClassName("project-exp-panel-label");
-    head.add(surfaceIcon(label), labelSpan);
-    Span stateTag = new Span(state);
-    stateTag.addClassNames("project-exp-panel-state", "project-exp-panel-state--" + tone);
-    head.add(stateTag);
-    Span openHint = new Span("Open " + label.toLowerCase());
-    openHint.addClassName("project-exp-panel-open");
-    head.add(openHint);
-    if (accessory != null) {
-      accessory.addClassName("project-exp-panel-accessory");
-      head.add(accessory);
-    }
-    panel.add(head);
-
-    Div metric = new Div();
-    metric.addClassName("project-exp-panel-metric");
-    Span value = new Span(Integer.toString(count));
-    value.addClassName("project-exp-panel-value");
-    Span unitSpan = new Span(unit);
-    unitSpan.addClassName("project-exp-panel-unit");
-    metric.add(value, unitSpan);
-    panel.add(metric);
-
-    Span statusSpan = new Span(status);
-    statusSpan.addClassName("project-exp-panel-status");
-    panel.add(statusSpan);
-
-    Div list = new Div();
-    list.addClassName("project-exp-panel-rows");
-    list.add(row(columns, true));
-    if (rows.isEmpty()) {
-      list.add(placeholderRow(emptyRow));
-    } else {
-      rows.forEach(cells -> list.add(row(cells.toArray(new String[0]), false)));
-    }
-    panel.add(list);
-
-    Utility.activateOnClickAndKeys(panel, "button", open);
-    return panel;
-  }
-
-  /**
-   * The decorative glyph that maps a panel to its subject at a glance: Samples is a flask,
-   * Dataset a database.
+   * The experiment's newest samples.
    *
-   * <p>Decoration only. The label already names the surface, so the glyph is redundant
-   * reinforcement for people who scan shapes, and it must never become the only carrier of
-   * meaning -- hence {@code aria-hidden}. Mirrors the prototype's {@code surfaceGlyph}.</p>
+   * <p>Delegates to the shared {@link SnapshotPanel} so this page and the experiment overview render
+   * one anatomy from one place. The panel previews <em>recency</em>: the three rows are the newest,
+   * "Changed" is the column that carries the meaning, and the header band offers the way to the full
+   * list.</p>
    */
-  private static Icon surfaceIcon(String label) {
-    Icon glyph = switch (label) {
-      case "Samples" -> VaadinIcon.FLASK.create();
-      case "Dataset" -> VaadinIcon.DATABASE.create();
-      default -> VaadinIcon.RECORDS.create();
-    };
-    glyph.addClassName("project-exp-panel-icon");
-    glyph.getElement().setAttribute("aria-hidden", "true");
-    return glyph;
+  private SnapshotPanel samplesPanel(ExperimentProgress experiment,
+      List<RecentSample> samples) {
+    return SnapshotPanel.samples(experiment, samples,
+        AppRoutes.ProjectRoutes.SAMPLES.formatted(projectId, experiment.experimentId()),
+        experiment.sampleCount() > 0 ? "All " + experiment.sampleCount()
+            + (experiment.sampleCount() == 1 ? " sample" : " samples") + " \u2192" : "");
   }
 
-  private static Div row(String[] cells, boolean header) {
-    Div row = new Div();
-    row.addClassName("project-exp-panel-row");
-    for (int index = 0; index < cells.length; index++) {
-      Span span = new Span(cells[index]);
-      if (header) {
-        span.addClassName("project-exp-panel-cell-header");
-      } else if (index == 0) {
-        // The first column is the record's identifier in both panels -- Sample ID, Measurement
-        // ID -- so it takes the same treatment as the project code above.
-        span.addClassName("identifier");
-      }
-      row.add(span);
-    }
-    return row;
-  }
-
-  /** A message standing in for rows. Not a record, so it takes none of the row's cell classes. */
-  private static Div placeholderRow(String text) {
-    Div row = new Div();
-    row.addClassName("project-exp-panel-row");
-    row.add(new Span(text));
-    return row;
-  }
-
-  private void navigate(Class<? extends Component> target, String experimentId) {
-    getUI().ifPresent(ui -> ui.navigate(target, experimentRouteParameters(experimentId)));
+  /**
+   * The experiment's measurement datasets, one row per dataset.
+   *
+   * <p>Delegates to the shared {@link SnapshotPanel}: the dataset-grain table, the one-row-per-dataset
+   * decision and the {@code DataState} vocabulary all live there now, so the two pages that show an
+   * experiment's datasets cannot describe them differently. See the method's own javadoc for what a
+   * row is, where the method comes from, and why there is no header tag.</p>
+   */
+  private SnapshotPanel datasetPanel(ExperimentProgress experiment,
+      List<RecentMeasurement> measurements, List<AssayStanding> assays, boolean assaysFailed) {
+    int datasets = assays.size();
+    return SnapshotPanel.datasets(experiment, measurements, assays, assaysFailed,
+        AppRoutes.ProjectRoutes.MEASUREMENT_DATASET.formatted(projectId, experiment.experimentId()),
+        datasets == 0 ? "" : "All " + datasets + (datasets == 1 ? " dataset" : " datasets")
+            + " \u2192");
   }
 
   private RouteParameters experimentRouteParameters(String experimentId) {
@@ -344,9 +231,9 @@ public class ProjectExperimentsSection extends Div {
   private Div emptyExperiments() {
     Div empty = new Div();
     empty.addClassName("project-experiments-empty");
-    RouterLink create = new RouterLink("Create experiment", CreateExperimentMain.class,
-        new RouteParameters(new RouteParam(PROJECT_ID_PARAMETER, projectId)));
-    create.addClassName("project-experiments-empty-action");
+    Anchor create = Utility.textLink("Create experiment",
+        AppRoutes.ProjectRoutes.EXPERIMENT_CREATION.formatted(projectId),
+        "project-experiments-empty-action");
     Span text = new Span("No experiments yet. ");
     text.addClassName("project-experiments-empty-text");
     empty.add(text, create);
@@ -368,22 +255,6 @@ public class ProjectExperimentsSection extends Div {
         .toList();
   }
 
-  private static String primaryDataLabel(RecentMeasurement measurement) {
-    if (!measurement.hasPrimaryData()) {
-      return "Not attached";
-    }
-    return measurement.primaryDataFiles() + " files · " + Utility.humanReadableSize(
-        measurement.primaryDataBytes() == null ? 0L : measurement.primaryDataBytes());
-  }
-
-  private static Instant newest(List<RecentMeasurement> measurements) {
-    return measurements.stream()
-        .map(RecentMeasurement::changed)
-        .filter(java.util.Objects::nonNull)
-        .max(Instant::compareTo)
-        .orElse(null);
-  }
-
   private static Span chip(String text, String modifier) {
     Span chip = new Span(text);
     chip.addClassNames("project-exp-chip", modifier);
@@ -403,8 +274,15 @@ public class ProjectExperimentsSection extends Div {
   }
 
   /** The section's data: per-experiment progress plus the newest rows for the snapshot panels. */
-  private record Snapshot(List<ExperimentProgress> progress, List<RecentSample> samples,
-                          List<RecentMeasurement> measurements) {
+  /** Assay rows plus whether the query failed, so the panel can say "could not load". */
+  private record AssayLoad(List<AssayStanding> assays, boolean failed) {
+
+  }
+
+  private record Snapshot(List<ExperimentProgress> progress,
+                              List<RecentSample> samples,
+                              List<RecentMeasurement> measurements,
+                              AssayLoad assayLoad) {
 
   }
 
