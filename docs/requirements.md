@@ -141,15 +141,79 @@ _No features defined yet._
 
 ### Functional Requirements
 
-_No requirements defined yet._
+#### AUTH-R-01: Mandatory Second Authentication Factor
+
+The system shall require a second authentication factor for every interactive human login, in addition to the user's password or external identity assertion. A login that has supplied only a first factor shall not establish an authenticated session. The requirement shall be enforced by the system itself and shall not depend on an external identity provider for its enforcement.
+
+**Rationale:**
+The system is exposed to the internet and a password alone is a single, replayable credential. Attackers routinely obtain passwords through phishing, credential stuffing, and reuse; a second factor removes the value of a stolen password without requiring the user to memorise a stronger one. Enforcement must be under the product's own control so that the requirement holds for every account, including users whose home organisation does not operate, or does not enforce, multi-factor authentication.
+
+**Source:**
+PRD §5 Security & Privacy — Authentication; stakeholder security directive (2026-11) to harden login against increasing internet-facing attacks; [ADR 0011](../adr/README.md) (second-factor authentication authority); GitHub issue [#1666](https://github.com/qbicsoftware/data-manager-app/issues/1666)
+
+#### AUTH-R-02: Self-Service Enrolment and Management of Second-Factor Credentials
+
+The system shall allow users to enrol, inspect, rename, replace, and remove their own second-factor credentials, and shall support more than one credential type so that a user is not restricted to a single device. At minimum the system shall support a phishing-resistant public-key credential (passkey or security key) and a time-based one-time-password authenticator application.
+
+**Rationale:**
+A mandatory second factor is only viable if users can set it up themselves without support intervention, and only acceptable if they can move to a new device when theirs is lost, replaced, or broken. Supporting two credential types protects users whose hardware or software cannot participate in one of them, so the requirement does not become a device-procurement programme.
+
+**Source:**
+[AUTH-R-01](#auth-r-01-mandatory-second-authentication-factor); GitHub issue [#1666](https://github.com/qbicsoftware/data-manager-app/issues/1666)
+
+#### AUTH-R-03: Account Recovery Without Permanent Lockout
+
+The system shall provide recovery codes that are generated at enrolment, displayed once, stored in a form that does not permit them to be reconstructed, and invalidated on first use, and shall provide an administrative process to re-enrol a user's second factor. No user account shall be permanently inaccessible because a second-factor device was lost.
+
+**Rationale:**
+Any authentication strength that can lock a legitimate researcher out of their data is a net loss for a research data management platform. Recovery codes give a self-service route out of the common failure (lost or replaced device), and an administrative re-enrolment path covers the residual case (codes lost as well) at a cost that is predictable and does not require developer or database access.
+
+**Source:**
+[AUTH-R-01](#auth-r-01-mandatory-second-authentication-factor); GitHub issue [#1666](https://github.com/qbicsoftware/data-manager-app/issues/1666)
+
+#### AUTH-R-04: Auditable Second-Factor Lifecycle
+
+The system shall record in the audit log at least: second-factor enrolment, removal, and replacement; successful and unsuccessful second-factor verification; use of a recovery code; and administrative re-enrolment performed on a user's behalf.
+
+**Rationale:**
+After an authentication change of this impact, the first question asked during any incident investigation is "was a second factor enrolled for this account, and which one". Without a recorded lifecycle, neither an intrusion nor an account-recovery misuse can be reconstructed, and the organisation cannot demonstrate due diligence to its auditors.
+
+**Source:**
+[AUTH-R-01](#auth-r-01-mandatory-second-authentication-factor); GitHub issue [#1666](https://github.com/qbicsoftware/data-manager-app/issues/1666)
 
 ### Non-Functional Requirements
 
-_No requirements defined yet._
+#### AUTH-NFR-01: Protection of Stored Second-Factor Secrets
+
+The system shall not store a shared second-factor secret in retrievable plaintext. Authenticator-application secrets shall be stored encrypted with a key that is not kept in the database, and public-key credentials shall be stored only as public keys and credential metadata. Recovery codes and other single-use verification values shall be stored in a form that does not permit their reconstruction.
+
+**Rationale:**
+A second factor whose secret is readable from a database copy provides no protection beyond a password: the factor material is then one dump away from being cloned. Public-key credentials avoid the problem structurally, and the remaining shared secrets fall under the same protection already applied to other stored credentials in this system.
+
+**Source:**
+[AUTH-R-01](#auth-r-01-mandatory-second-authentication-factor); `AGENTS.md` §10 Security Notes; GitHub issue [#1669](https://github.com/qbicsoftware/data-manager-app/issues/1669)
+
+#### AUTH-NFR-02: Deterministic and Fail-Closed Second-Factor Verification
+
+The system shall complete second-factor verification within 500 ms at the 95th percentile under normal operating load, and shall deny authentication when a second-factor decision cannot be reached — for example because the verification service fails, a credential lookup errors, or a response is ambiguous. The first authentication factor shall be subject to request throttling and temporary lockout after repeated failures, and the second-factor step shall be subject to throttling independently of it.
+
+**Rationale:**
+A second factor must not become a denial-of-service vector by adding unacceptable latency to every login, nor a false sense of security by failing open when its backing service is unavailable. Independent throttling of both steps is required because the steps can be attacked separately, and an attacker who exhausts the one-time-password search space must be slowed on that step rather than on the password step alone.
+
+**Source:**
+[AUTH-R-01](#auth-r-01-mandatory-second-authentication-factor); PRD §5 Security & Privacy; GitHub issue [#1666](https://github.com/qbicsoftware/data-manager-app/issues/1666)
 
 ### Constraints
 
-_No requirements defined yet._
+#### AUTH-C-01: Second-Factor Enforcement Must Not Depend on an External Identity Provider
+
+The second authentication factor shall be verified and enforced by the Data Manager itself. Federated identity providers, including the ORCID login currently offered, shall not be the enforcement point for the second factor, and the availability of the login shall not depend on an identity provider operated by a third party beyond the existing external-login feature.
+
+**Rationale:**
+Users of this platform include collaborators whose home organisation either does not operate multi-factor authentication or does not enforce it, and external researchers with no institutional account at all. Making a trusted third party the enforcement point would transfer the login's availability — and therefore access to research data — to an organisation outside the product's control, and would leave an uncovered population for whom the requirement silently does not apply. External providers remain valuable as an identity source and as a convenience, but not as the gate.
+
+**Source:**
+[ADR 0011](../adr/README.md) (second-factor authentication authority); `AGENTS.md` §12 (external OAuth2 provider changes require review); GitHub issue [#1667](https://github.com/qbicsoftware/data-manager-app/issues/1667)
 
 ---
 
