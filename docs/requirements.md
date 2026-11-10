@@ -143,20 +143,26 @@ _No features defined yet._
 
 #### AUTH-R-01: Mandatory Second Authentication Factor
 
-The system shall require a second authentication factor for every interactive human login, in addition to the user's password or external identity assertion. A login that has supplied only a first factor shall not establish an authenticated session. The requirement shall be enforced by the system itself and shall not depend on an external identity provider for its enforcement.
+The system shall require a second authentication factor for every interactive human login, in addition to the user's password or external identity assertion. A login that has supplied only a first factor shall not establish an authenticated session. The requirement shall be enforced by the system itself and shall not depend on an external identity provider for its enforcement. No user account shall be exempt from this requirement. Programmatic access by means of a personal access token is not an interactive login and is therefore outside this requirement; such tokens are instead individually revocable.
 
 **Rationale:**
 The system is exposed to the internet and a password alone is a single, replayable credential. Attackers routinely obtain passwords through phishing, credential stuffing, and reuse; a second factor removes the value of a stolen password without requiring the user to memorise a stronger one. Enforcement must be under the product's own control so that the requirement holds for every account, including users whose home organisation does not operate, or does not enforce, multi-factor authentication.
+
+Exempting individual accounts was considered and rejected. A login path that skips the second factor is the cheapest way into the system, so creating one — however narrowly it is intended — concentrates attack value on that path and requires it to be defended as strongly as the normal path while being exercised far less often. Continuity of access is instead provided by requiring several independent factor types with distinct failure characteristics, so that the loss of any single component (a user's device, or the store protecting one factor type) does not deny access to everyone.
+
+Personal access tokens are deliberately excluded because the alternative — an interactive second-factor step per request — would make integration impossible. That exemption carries its own residual risk, which is managed by revocation and lifetime rather than by a second factor.
 
 **Source:**
 PRD §5 Security & Privacy — Authentication; stakeholder security directive (2026-11) to harden login against increasing internet-facing attacks; [ADR 0011](../adr/README.md) (second-factor authentication authority); GitHub issue [#1666](https://github.com/qbicsoftware/data-manager-app/issues/1666)
 
 #### AUTH-R-02: Self-Service Enrolment and Management of Second-Factor Credentials
 
-The system shall allow users to enrol, inspect, rename, replace, and remove their own second-factor credentials, and shall support more than one credential type so that a user is not restricted to a single device. At minimum the system shall support a phishing-resistant public-key credential (passkey or security key) and a time-based one-time-password authenticator application.
+The system shall allow users to enrol, inspect, rename, replace, and remove their own second-factor credentials, and shall support more than one credential so that a user is not restricted to a single device. The system shall at minimum support a time-based one-time-password authenticator application, because it is available to every user without dedicated hardware. Support for a phishing-resistant public-key credential (passkey or security key) is desirable and shall be added as an extension where the effort allows, but is not a precondition for satisfying this requirement.
 
 **Rationale:**
-A mandatory second factor is only viable if users can set it up themselves without support intervention, and only acceptable if they can move to a new device when theirs is lost, replaced, or broken. Supporting two credential types protects users whose hardware or software cannot participate in one of them, so the requirement does not become a device-procurement programme.
+A mandatory second factor is only viable if users can set it up themselves without support intervention, and only acceptable if they can move to a new device when theirs is lost, replaced, or broken. The authenticator application is the baseline because it asks nothing of the user beyond a smartphone, which keeps the requirement from turning into a device-procurement or exception-request programme.
+
+Public-key credentials are strictly stronger — they are bound to the site's origin and therefore resistant to real-time phishing, whereas a one-time password can be relayed by an attacker who is present in the session — but they also introduce enrolment friction and a per-device support story. The requirement therefore fixes the universal baseline and leaves the stronger option open, rather than making the whole capability depend on it. If the stronger option is adopted, it is offered in addition to the baseline, never as a replacement.
 
 **Source:**
 [AUTH-R-01](#auth-r-01-mandatory-second-authentication-factor); GitHub issue [#1666](https://github.com/qbicsoftware/data-manager-app/issues/1666)
@@ -173,10 +179,10 @@ Any authentication strength that can lock a legitimate researcher out of their d
 
 #### AUTH-R-04: Auditable Second-Factor Lifecycle
 
-The system shall record in the audit log at least: second-factor enrolment, removal, and replacement; successful and unsuccessful second-factor verification; use of a recovery code; and administrative re-enrolment performed on a user's behalf.
+The system shall record in the audit log at least: second-factor enrolment, removal, and replacement; successful and unsuccessful second-factor verification; use of a recovery code; and administrative re-enrolment performed on a user's behalf. The retention period for these records is stated in the security and privacy note that accompanies this requirement, not in this requirement.
 
 **Rationale:**
-After an authentication change of this impact, the first question asked during any incident investigation is "was a second factor enrolled for this account, and which one". Without a recorded lifecycle, neither an intrusion nor an account-recovery misuse can be reconstructed, and the organisation cannot demonstrate due diligence to its auditors.
+After an authentication change of this impact, the first question asked during any incident investigation is "was a second factor enrolled for this account, and which one". Without a recorded lifecycle, neither an intrusion nor an account-recovery misuse can be reconstructed, and the organisation cannot demonstrate due diligence to its auditors. Retention is separated from the capability on purpose: how long a record must survive is a compliance decision that changes independently of what the system records, so binding the two would force a requirement change every time the retention policy is revised.
 
 **Source:**
 [AUTH-R-01](#auth-r-01-mandatory-second-authentication-factor); GitHub issue [#1666](https://github.com/qbicsoftware/data-manager-app/issues/1666)
@@ -215,10 +221,10 @@ A second factor whose secret is readable from a database copy provides no protec
 
 #### AUTH-NFR-02: Deterministic and Fail-Closed Second-Factor Verification
 
-The system shall complete second-factor verification within 500 ms at the 95th percentile under normal operating load, and shall deny authentication when a second-factor decision cannot be reached — for example because the verification service fails, a credential lookup errors, or a response is ambiguous. The first authentication factor shall be subject to request throttling and temporary lockout after repeated failures, and the second-factor step shall be subject to throttling independently of it.
+The system shall complete second-factor verification within 1000 ms at the 95th percentile under normal operating load, and shall deny authentication when a second-factor decision cannot be reached — for example because the verification service fails, a credential lookup errors, or a response is ambiguous. A second-factor challenge shall not remain valid for longer than the authentication session it belongs to; no session established before a second factor was enrolled shall satisfy the requirement of [AUTH-R-01](#auth-r-01-mandatory-second-authentication-factor).
 
 **Rationale:**
-A second factor must not become a denial-of-service vector by adding unacceptable latency to every login, nor a false sense of security by failing open when its backing service is unavailable. Independent throttling of both steps is required because the steps can be attacked separately, and an attacker who exhausts the one-time-password search space must be slowed on that step rather than on the password step alone.
+A second factor must not become a denial-of-service vector by adding unacceptable latency to every login, nor a false sense of security by failing open when its backing service is unavailable. The latency budget is deliberately generous: the goal is to exclude a pathological implementation, not to tune user experience. The session clause exists because a challenge that outlives its session, or a session that predates enrolment, would let an attacker hold an authentication state that no second factor ever gated.
 
 **Source:**
 [AUTH-R-01](#auth-r-01-mandatory-second-authentication-factor); PRD §5 Security & Privacy; GitHub issue [#1666](https://github.com/qbicsoftware/data-manager-app/issues/1666)
@@ -232,6 +238,16 @@ Knowing that an address is registered is the first step of every credential atta
 
 **Source:**
 [AUTH-R-06](#auth-r-06-single-authentication-identifier); [AUTH-NFR-02](#auth-nfr-02-deterministic-and-fail-closed-second-factor-verification); code review of `ResetPasswordMain` and `UserDetailsServiceImpl` (2026-11); GitHub issue [#1666](https://github.com/qbicsoftware/data-manager-app/issues/1666)
+
+#### AUTH-NFR-04: Revocable, Time-Bound Programmatic Access
+
+Personal access tokens shall be individually revocable at any time by the token's owner and by an administrator, shall carry a bounded lifetime, and shall be displayed to their owner exactly once at creation together with the ability to list and revoke every active token.
+
+**Rationale:**
+[AUTH-R-01](#auth-r-01-mandatory-second-authentication-factor) places personal access tokens outside the second-factor requirement, on the grounds that an interactive challenge per request would make integration impossible. That exclusion is only acceptable if the compensating control is real: a token that cannot be revoked quickly is a permanent credential, and an integration credential that is valid forever is a weaker position than the password path it replaces. Listing is part of the requirement because a user cannot revoke what they cannot see.
+
+**Source:**
+[AUTH-R-01](#auth-r-01-mandatory-second-authentication-factor); `AGENTS.md` §10 Security Notes (tokens are stored encrypted and must stay revocable); GitHub issue [#1666](https://github.com/qbicsoftware/data-manager-app/issues/1666)
 
 ### Constraints
 
