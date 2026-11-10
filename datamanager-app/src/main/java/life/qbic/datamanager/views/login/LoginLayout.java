@@ -37,8 +37,6 @@ import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.InformationMessage;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.datamanager.views.register.UserRegistrationMain;
-import life.qbic.identity.application.user.IdentityService;
-import life.qbic.identity.application.user.UserNotFoundException;
 import life.qbic.logging.api.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -60,20 +58,13 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
     BeforeEnterObserver {
 
   private static final Logger log = logger(LoginLayout.class);
-  private final String emailConfirmationParameter;
   public VerticalLayout notificationLayout;
   private VerticalLayout contentLayout;
   private ConfigurableLoginForm loginForm;
-  private final transient IdentityService identityService;
 
   public LoginLayout(@Autowired LoginHandler loginHandler,
-      @Autowired IdentityService identityService,
       @Value("${server.servlet.context-path}") String contextPath) {
     requireNonNull(loginHandler, "loginHandler must not be null");
-    this.identityService = requireNonNull(identityService,
-        "identityService must not be null");
-    this.emailConfirmationParameter = requireNonNull(
-        loginHandler.emailConfirmationParameter(), "email confirmationParameter must not be null");
     initLayout(contextPath);
     styleLayout();
     initFields();
@@ -249,18 +240,17 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
     } else if (queryParams.containsKey("error")) {
       showInvalidCredentialsError();
     }
-    if (queryParams.containsKey(emailConfirmationParameter)) {
-      String userId = queryParams.get(emailConfirmationParameter).getFirst();
-      try {
-        identityService.confirmUserEmail(userId);
-        onEmailConfirmationSuccess();
-      } catch (UserNotFoundException e) {
-        log.error("User %s not found!".formatted(userId), e);
-        onEmailConfirmationFailure(
-            "Unknown user for request. If the issue persists, please contact our helpdesk.");
-      }
-
-    }
+    // Email confirmation deliberately does NOT happen here any more.
+    //
+    // It used to: /login?confirm-email={userId} called identityService.confirmUserEmail(userId)
+    // inside beforeEnter, i.e. the state change fired on page retrieval. A mail scanner, link
+    // prefetcher or corporate proxy that GETs a URL would confirm the account before the user ever
+    // saw the page — and the credential was the user's persistent identifier, which is also visible
+    // in ACL records.
+    //
+    // Confirmation now lives at /registration/confirm and requires a single-use token plus an
+    // explicit click (AUTH-R-05). Old links are not redirected: decision B1 ships no compatibility
+    // window, so they simply cannot be used, and the user requests a new one.
     if (queryParams.containsKey("userRegistered")) {
       showEmailConfirmationReminder();
     }

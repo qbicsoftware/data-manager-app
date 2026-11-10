@@ -3,11 +3,7 @@ package life.qbic.datamanager.verification
 import jakarta.persistence.EntityManager
 import jakarta.persistence.EntityManagerFactory
 import life.qbic.identity.application.verification.VerificationTokenServiceImpl
-import life.qbic.identity.application.verification.VerificationTokenServiceImpl.Consumed
-import life.qbic.identity.application.verification.VerificationTokenServiceImpl.Invalid
 import life.qbic.identity.domain.model.verification.ConsumeFailure
-import life.qbic.identity.domain.model.verification.TokenPurpose
-import life.qbic.identity.domain.repository.VerificationTokenRepository
 import life.qbic.identity.infrastructure.verification.JpaVerificationTokenRepository
 import org.hibernate.SessionFactory
 import org.hibernate.boot.MetadataSources
@@ -108,6 +104,7 @@ class VerificationTokenFlowSpec extends Specification {
                 .addAnnotatedClass(life.qbic.identity.domain.model.verification.VerificationToken)
                 .buildMetadata()
         emf = metadata.buildSessionFactory()
+        createUsersTable()
         if (ddlAuto() == "none") {
             createRealSchema()
         }
@@ -137,6 +134,30 @@ class VerificationTokenFlowSpec extends Specification {
                         }
                     }
             em.transaction.commit()
+        } finally {
+            em.close()
+        }
+    }
+
+    /**
+     * {@code users} is needed even on H2: {@code lockAccount} issues
+     * {@code SELECT id FROM users WHERE id = ? FOR UPDATE} as the per-account mutex, and the
+     * generated schema has no such table because {@code User} belongs to a different persistence
+     * unit. Production always has it; this is test scaffolding only.
+     */
+    void createUsersTable() {
+        EntityManager em = emf.createEntityManager()
+        try {
+            em.transaction.begin()
+            em.createNativeQuery("""
+                CREATE TABLE IF NOT EXISTS users (
+                    id varchar(255) NOT NULL PRIMARY KEY,
+                    active boolean NOT NULL
+                )
+                """).executeUpdate()
+            em.transaction.commit()
+        } catch (Exception ignored) {
+            if (em.transaction.active) em.transaction.rollback()
         } finally {
             em.close()
         }
@@ -211,7 +232,7 @@ class VerificationTokenFlowSpec extends Specification {
             def existing = em.createNativeQuery("SELECT COUNT(*) FROM users WHERE id = :id")
                     .setParameter("id", userId).singleResult
             if (((Number) existing).intValue() == 0) {
-                em.createNativeQuery("INSERT INTO users (id, active) VALUES (:id, b'1')")
+                em.createNativeQuery("INSERT INTO users (id, active) VALUES (:id, TRUE)")
                         .setParameter("id", userId).executeUpdate()
             }
             em.transaction.commit()
@@ -239,21 +260,20 @@ class VerificationTokenFlowSpec extends Specification {
     def "a confirmation token is usable exactly once"() {
         given:
         def now = Instant.parse("2026-11-10T10:00:00Z")
-        def issued = service.issue("u-1", TokenPurpose.EMAIL_CONFIRMATION, now)
+        def issued = service.issue("u-1", life.qbic.identity.api.VerificationLinkService.Purpose.EMAIL_CONFIRMATION, now)
 
         when: "first use"
-        def first = service.consume(issued.rawToken(), TokenPurpose.EMAIL_CONFIRMATION, now.plusSeconds(60))
+        def first = service.consume(issued.rawToken(), life.qbic.identity.api.VerificationLinkService.Purpose.EMAIL_CONFIRMATION, now.plusSeconds(60))
 
         then:
-        first instanceof Consumed
-        (first as Consumed).userId() == "u-1"
+        first.isPresent()
+        first.get() == "u-1"
 
         when: "second use of the same link"
-        def second = service.consume(issued.rawToken(), TokenPurpose.EMAIL_CONFIRMATION, now.plusSeconds(61))
+        def second = service.consume(issued.rawToken(), life.qbic.identity.api.VerificationLinkService.Purpose.EMAIL_CONFIRMATION, now.plusSeconds(61))
 
         then: "the link is dead — this is AUTH-R-05's single-use clause"
-        second instanceof Invalid
-        (second as Invalid).reason() == life.qbic.identity.domain.model.verification.ConsumeFailure.ALREADY_CONSUMED
+        second.isEmpty()
     }
 
     def "the raw token is never stored, only its SHA-256 hash"() {
@@ -261,7 +281,7 @@ class VerificationTokenFlowSpec extends Specification {
         def now = Instant.parse("2026-11-10T10:00:00Z")
 
         when:
-        def issued = service.issue("u-1", TokenPurpose.EMAIL_CONFIRMATION, now)
+        def issued = service.issue("u-1", life.qbic.identity.api.VerificationLinkService.Purpose.EMAIL_CONFIRMATION, now)
 
         then: "the raw token does not appear anywhere in the table"
         !persistedColumnValues().contains(issued.rawToken())
@@ -273,30 +293,29 @@ class VerificationTokenFlowSpec extends Specification {
     def "a token is rejected after its configured lifetime"() {
         given:
         def now = Instant.parse("2026-11-10T10:00:00Z")
-        def issued = service.issue("u-1", TokenPurpose.PASSWORD_RESET, now)
+        def issued = service.issue("u-1", life.qbic.identity.api.VerificationLinkService.Purpose.PASSWORD_RESET, now)
 
         expect: "the reset lifetime is 5 minutes here"
         issued.expiresAt() == now.plus(RESET)
 
         when: "consumed one second past expiry"
-        def outcome = service.consume(issued.rawToken(), TokenPurpose.PASSWORD_RESET, now.plus(RESET).plusSeconds(1))
+        def outcome = service.consume(issued.rawToken(), life.qbic.identity.api.VerificationLinkService.Purpose.PASSWORD_RESET, now.plus(RESET).plusSeconds(1))
 
         then:
-        outcome instanceof Invalid
-        (outcome as Invalid).reason() == life.qbic.identity.domain.model.verification.ConsumeFailure.EXPIRED
+        outcome.isEmpty()
     }
 
     def "a token is still usable one second before expiry"() {
         given:
         def now = Instant.parse("2026-11-10T10:00:00Z")
-        def issued = service.issue("u-1", TokenPurpose.PASSWORD_RESET, now)
+        def issued = service.issue("u-1", life.qbic.identity.api.VerificationLinkService.Purpose.PASSWORD_RESET, now)
 
         when:
-        def outcome = service.consume(issued.rawToken(), TokenPurpose.PASSWORD_RESET,
+        def outcome = service.consume(issued.rawToken(), life.qbic.identity.api.VerificationLinkService.Purpose.PASSWORD_RESET,
                 now.plus(RESET).minusSeconds(1))
 
         then:
-        outcome instanceof Consumed
+        outcome.isPresent()
     }
 
     // ---------------------------------------------------------------- supersede
@@ -304,39 +323,38 @@ class VerificationTokenFlowSpec extends Specification {
     def "issuing a new token for the same purpose invalidates the previous one"() {
         given:
         def now = Instant.parse("2026-11-10T10:00:00Z")
-        def first = service.issue("u-1", TokenPurpose.EMAIL_CONFIRMATION, now)
-        def second = service.issue("u-1", TokenPurpose.EMAIL_CONFIRMATION, now.plusSeconds(30))
+        def first = service.issue("u-1", life.qbic.identity.api.VerificationLinkService.Purpose.EMAIL_CONFIRMATION, now)
+        def second = service.issue("u-1", life.qbic.identity.api.VerificationLinkService.Purpose.EMAIL_CONFIRMATION, now.plusSeconds(30))
 
         when: "the older link is followed"
-        def oldOutcome = service.consume(first.rawToken(), TokenPurpose.EMAIL_CONFIRMATION, now.plusSeconds(60))
+        def oldOutcome = service.consume(first.rawToken(), life.qbic.identity.api.VerificationLinkService.Purpose.EMAIL_CONFIRMATION, now.plusSeconds(60))
 
         then:
-        oldOutcome instanceof Invalid
-        (oldOutcome as Invalid).reason() == life.qbic.identity.domain.model.verification.ConsumeFailure.SUPERSEDED
+        oldOutcome.isEmpty()
 
         when: "the newer link is followed"
-        def newOutcome = service.consume(second.rawToken(), TokenPurpose.EMAIL_CONFIRMATION, now.plusSeconds(61))
+        def newOutcome = service.consume(second.rawToken(), life.qbic.identity.api.VerificationLinkService.Purpose.EMAIL_CONFIRMATION, now.plusSeconds(61))
 
         then:
-        newOutcome instanceof Consumed
+        newOutcome.isPresent()
     }
 
     def "superseding does not touch a different purpose for the same user"() {
         given:
         def now = Instant.parse("2026-11-10T10:00:00Z")
-        def confirmation = service.issue("u-1", TokenPurpose.EMAIL_CONFIRMATION, now)
-        def reset = service.issue("u-1", TokenPurpose.PASSWORD_RESET, now)
+        def confirmation = service.issue("u-1", life.qbic.identity.api.VerificationLinkService.Purpose.EMAIL_CONFIRMATION, now)
+        def reset = service.issue("u-1", life.qbic.identity.api.VerificationLinkService.Purpose.PASSWORD_RESET, now)
 
         when: "a second reset is issued, superseding the first reset"
-        service.issue("u-1", TokenPurpose.PASSWORD_RESET, now.plusSeconds(10))
+        service.issue("u-1", life.qbic.identity.api.VerificationLinkService.Purpose.PASSWORD_RESET, now.plusSeconds(10))
 
         then: "the confirmation token is untouched"
-        def outcome = service.consume(confirmation.rawToken(), TokenPurpose.EMAIL_CONFIRMATION, now.plusSeconds(60))
-        outcome instanceof Consumed
+        def outcome = service.consume(confirmation.rawToken(), life.qbic.identity.api.VerificationLinkService.Purpose.EMAIL_CONFIRMATION, now.plusSeconds(60))
+        outcome.isPresent()
 
         and: "the first reset token was superseded"
-        def resetOutcome = service.consume(reset.rawToken(), TokenPurpose.PASSWORD_RESET, now.plusSeconds(60))
-        (resetOutcome as Invalid).reason() == life.qbic.identity.domain.model.verification.ConsumeFailure.SUPERSEDED
+        def resetOutcome = service.consume(reset.rawToken(), life.qbic.identity.api.VerificationLinkService.Purpose.PASSWORD_RESET, now.plusSeconds(60))
+        resetOutcome.isEmpty()
     }
 
     // ---------------------------------------------------------------- cross-purpose
@@ -344,17 +362,16 @@ class VerificationTokenFlowSpec extends Specification {
     def "a confirmation token cannot be used to reset a password"() {
         given:
         def now = Instant.parse("2026-11-10T10:00:00Z")
-        def confirmation = service.issue("u-1", TokenPurpose.EMAIL_CONFIRMATION, now)
+        def confirmation = service.issue("u-1", life.qbic.identity.api.VerificationLinkService.Purpose.EMAIL_CONFIRMATION, now)
 
         when: "presented at the reset endpoint"
-        def outcome = service.consume(confirmation.rawToken(), TokenPurpose.PASSWORD_RESET, now.plusSeconds(10))
+        def outcome = service.consume(confirmation.rawToken(), life.qbic.identity.api.VerificationLinkService.Purpose.PASSWORD_RESET, now.plusSeconds(10))
 
         then:
-        outcome instanceof Invalid
-        (outcome as Invalid).reason() == life.qbic.identity.domain.model.verification.ConsumeFailure.WRONG_PURPOSE
+        outcome.isEmpty()
 
         and: "and it is still usable for its own purpose — a wrong attempt must not burn it"
-        service.consume(confirmation.rawToken(), TokenPurpose.EMAIL_CONFIRMATION, now.plusSeconds(11)) instanceof Consumed
+        service.consume(confirmation.rawToken(), life.qbic.identity.api.VerificationLinkService.Purpose.EMAIL_CONFIRMATION, now.plusSeconds(11)).isPresent()
     }
 
     def "an unknown token is reported without touching anything"() {
@@ -362,16 +379,15 @@ class VerificationTokenFlowSpec extends Specification {
         def now = Instant.parse("2026-11-10T10:00:00Z")
 
         when:
-        def outcome = service.consume("not-a-real-token", TokenPurpose.EMAIL_CONFIRMATION, now)
+        def outcome = service.consume("not-a-real-token", life.qbic.identity.api.VerificationLinkService.Purpose.EMAIL_CONFIRMATION, now)
 
         then:
-        outcome instanceof Invalid
-        (outcome as Invalid).reason() == life.qbic.identity.domain.model.verification.ConsumeFailure.UNKNOWN
+        outcome.isEmpty()
     }
 
-    def "blank and null tokens are rejected as malformed"() {
+    def "blank and null tokens are rejected"() {
         expect:
-        (service.consume(raw, TokenPurpose.EMAIL_CONFIRMATION, Instant.now()) as Invalid).reason() == life.qbic.identity.domain.model.verification.ConsumeFailure.MALFORMED
+        service.consume(raw, life.qbic.identity.api.VerificationLinkService.Purpose.EMAIL_CONFIRMATION, Instant.now()).isEmpty()
 
         where:
         raw << [null, "", "   "]
@@ -383,14 +399,14 @@ class VerificationTokenFlowSpec extends Specification {
         given: "the same absolute instant expressed via a non-UTC default zone"
         def originalZone = TimeZone.getDefault()
         def now = Instant.parse("2026-11-10T10:00:00Z")
-        def issued = service.issue("u-1", TokenPurpose.PASSWORD_RESET, now)
+        def issued = service.issue("u-1", life.qbic.identity.api.VerificationLinkService.Purpose.PASSWORD_RESET, now)
 
         when:
         TimeZone.setDefault(TimeZone.getTimeZone(ZoneId.of("Pacific/Kiritimati"))) // UTC+14
-        def outcome = service.consume(issued.rawToken(), TokenPurpose.PASSWORD_RESET, now.plusSeconds(60))
+        def outcome = service.consume(issued.rawToken(), life.qbic.identity.api.VerificationLinkService.Purpose.PASSWORD_RESET, now.plusSeconds(60))
 
         then: "expiry is evaluated in one clock, so the offset cannot make a valid token look expired"
-        outcome instanceof Consumed
+        outcome.isPresent()
 
         cleanup:
         TimeZone.setDefault(originalZone)
@@ -415,7 +431,8 @@ class VerificationTokenFlowSpec extends Specification {
     def "a token hash that is not a 64-char lower-case hex digest is rejected"() {
         when:
         life.qbic.identity.domain.model.verification.VerificationToken.issue(
-                "u-1", TokenPurpose.EMAIL_CONFIRMATION, hash, Instant.now(), CONFIRMATION)
+                "u-1", life.qbic.identity.domain.model.verification.TokenPurpose.EMAIL_CONFIRMATION,
+                hash, Instant.now(), CONFIRMATION)
 
         then:
         thrown(IllegalArgumentException)

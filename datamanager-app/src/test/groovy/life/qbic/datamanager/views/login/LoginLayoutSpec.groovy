@@ -64,8 +64,10 @@ class LoginLayoutSpec extends Specification {
     page.getHistory() >> history
     UI.setCurrent(ui)
 
-    def identityService = new IdentityService(Stub(UserRepository))
-    loginLayout = new LoginLayout(new LoginHandler("confirm-email"), identityService, "context")
+    // LoginLayout no longer takes IdentityService: email confirmation moved to
+    // /registration/confirm (ConfirmEmailMain) and no longer happens on GET, so the login view has
+    // nothing to confirm and no use for the service. See AUTH-R-05 / decision B1.
+    loginLayout = new LoginLayout(new LoginHandler("confirm-email"), "context")
   }
 
   def cleanup() {

@@ -63,18 +63,23 @@ public class EmailConfirmationMain extends Main implements HasUrlParameter<Strin
 
   private final transient EmailConfirmationLinkSupplier emailConfirmationLinkSupplier;
 
+  private final transient life.qbic.identity.api.VerificationLinkService verificationLinkService;
+
   private int lockoutTimer = 0;
 
   private UserInfo userInfo;
 
   public EmailConfirmationMain(UserInformationService userInformationService,
       EmailService emailService,
-      EmailConfirmationLinkSupplier emailConfirmationLinkSupplier) {
+      EmailConfirmationLinkSupplier emailConfirmationLinkSupplier,
+      life.qbic.identity.api.VerificationLinkService verificationLinkService) {
     this.userInformationService = requireNonNull(userInformationService,
         "userInformationService must not be null");
     this.emailService = requireNonNull(emailService, "emailService must not be null");
     this.emailConfirmationLinkSupplier = requireNonNull(emailConfirmationLinkSupplier,
         "emailConfirmationLinkSupplier must not be null");
+    this.verificationLinkService = requireNonNull(verificationLinkService,
+        "verificationLinkService must not be null");
     initConfirmEmailComponent();
     addClassName("email-confirmation");
     add(emailConfirmationComponent);
@@ -145,9 +150,16 @@ public class EmailConfirmationMain extends Main implements HasUrlParameter<Strin
   private void sendConfirmationEmail(String userId, String email, String fullName) {
     var subject = new Subject("Please confirm your email address");
     var recipient = new Recipient(email, fullName);
-    var content = new Content(Messages.formatRegistrationEmailContent(fullName,
-        emailConfirmationLinkSupplier.emailConfirmationUrl(userId)));
     try {
+      // Issue a fresh single-use token. The user id must never be used as the token: it is not a
+      // credential, it is derivable, and it is visible in ACL records. Issuing here also supersedes
+      // any earlier confirmation token for this account, so an older link cannot stay alive
+      // alongside the new one (AUTH-R-05).
+      var issued = verificationLinkService.issue(userId,
+          life.qbic.identity.api.VerificationLinkService.Purpose.EMAIL_CONFIRMATION,
+          java.time.Instant.now());
+      var content = new Content(Messages.formatRegistrationEmailContent(fullName,
+          emailConfirmationLinkSupplier.emailConfirmationUrl(issued.rawToken())));
       emailService.send(subject, recipient, content);
     } catch (CommunicationException communicationException) {
       showError("Couldn't send email verification", "Please try again");

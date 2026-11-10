@@ -12,6 +12,7 @@ import life.qbic.identity.domain.repository.VerificationTokenRepository.Consumed
 import life.qbic.identity.domain.repository.VerificationTokenRepository.Refused;
 import life.qbic.identity.domain.model.verification.VerificationToken;
 import life.qbic.identity.domain.repository.VerificationTokenRepository;
+import org.springframework.stereotype.Repository;
 
 /**
  * <b>JPA verification token repository</b>
@@ -27,12 +28,30 @@ import life.qbic.identity.domain.repository.VerificationTokenRepository;
  *
  * @since 1.0.0
  */
+@Repository
 public class JpaVerificationTokenRepository implements VerificationTokenRepository {
 
   private final EntityManager entityManager;
 
+  /**
+   * The shared, container-managed EntityManager.
+   *
+   * <p>Deliberately not a self-created one: consumption must run inside the caller's transaction
+   * (see {@link #consumeIfUsable}), and a private EntityManager would open its own and break the
+   * atomicity this class exists to provide.</p>
+   */
   public JpaVerificationTokenRepository(EntityManager entityManager) {
     this.entityManager = entityManager;
+  }
+
+  @Override
+  public void lockAccount(String userId) {
+    // SELECT ... FOR UPDATE on the account row. Nothing is read from the result; the lock is the
+    // point. Issuing is rare and per-account, so the contention cost is negligible, and it is
+    // bounded to one account rather than the whole token table.
+    entityManager.createNativeQuery("SELECT id FROM users WHERE id = :id FOR UPDATE")
+        .setParameter("id", userId)
+        .getResultList();
   }
 
   @Override

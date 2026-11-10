@@ -163,10 +163,11 @@ public class AppConfig {
   @Bean
   public WhenUserRegisteredSendConfirmationEmail whenUserRegisteredSendConfirmationEmail(
       EmailService emailService, JobScheduler jobScheduler, UserRepository userRepository,
-      EmailConfirmationLinkSupplier emailConfirmationLinkSupplier) {
+      EmailConfirmationLinkSupplier emailConfirmationLinkSupplier,
+      life.qbic.identity.api.VerificationLinkService verificationLinkService) {
 
     return new WhenUserRegisteredSendConfirmationEmail(emailService, jobScheduler, userRepository,
-        emailConfirmationLinkSupplier);
+        emailConfirmationLinkSupplier, verificationLinkService);
   }
 
   @Bean

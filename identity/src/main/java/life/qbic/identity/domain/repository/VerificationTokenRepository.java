@@ -29,6 +29,25 @@ public interface VerificationTokenRepository {
   Optional<VerificationToken> findByTokenHash(String tokenHash);
 
   /**
+   * Serialises token issuing for one account by locking the account's {@code users} row.
+   *
+   * <p>The token table cannot serialise itself. Supersede-then-insert is an UPDATE across an index
+   * range followed by an INSERT into that same range; under REPEATABLE READ two concurrent
+   * transactions each see only rows committed before their own snapshot, so each supersedes what it
+   * can see and each inserts its own token. The result is both symptoms observed in production:
+   * a deadlock on the INSERT, and — when it does not deadlock — several tokens left simultaneously
+   * usable, which breaks the "a reissue invalidates the previous link" guarantee of AUTH-R-05.</p>
+   *
+   * <p>{@code users.id} is the right mutex: it always exists (the FK guarantees it), it is stable,
+   * and locking it serialises reissues per account without blocking unrelated accounts.</p>
+   *
+   * <p>Must be called inside the issuing transaction and <b>before</b> touching the token table.</p>
+   *
+   * @param userId the account to lock
+   */
+  void lockAccount(String userId);
+
+  /**
    * Consumes a token atomically: lock the row, evaluate usability, mark it used, commit.
    *
    * <p><b>This must be one transaction.</b> A "read, then decide, then write" sequence split across

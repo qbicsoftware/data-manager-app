@@ -31,6 +31,11 @@ class UserEnsuringRepository implements VerificationTokenRepository {
     }
 
     @Override
+    void lockAccount(String userId) {
+        delegate.lockAccount(userId)
+    }
+
+    @Override
     Optional<VerificationToken> findByTokenHash(String tokenHash) {
         delegate.findByTokenHash(tokenHash)
     }

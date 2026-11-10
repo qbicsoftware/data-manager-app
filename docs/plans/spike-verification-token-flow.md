@@ -176,6 +176,45 @@ The specs are parameterised for exactly this (`-Dverification.jdbc.url`, `.user`
    `org.hibernate.dialect.MariaDBDialect` in `application.properties`, so production is fine, but any
    manual Hibernate bootstrap against MariaDB must set it explicitly.
 
+## 🔴 Finding 6 — concurrent *reissue* deadlocked and leaked live tokens (found in production, not by these specs)
+
+Reported from a running instance: two "request a new link" jobs for the same account overlapped and
+MariaDB raised
+
+    Deadlock found when trying to get lock; try restarting transaction
+    [insert into user_verification_token ...]
+
+JobRunr retried and the second attempt succeeded, which is exactly why this was invisible: the
+failure was masked by a retry, and the logs only ever showed the successful run.
+
+**Reproduced both ways**, and the reproduction found a second, worse bug that the deadlock was
+hiding:
+
+| Engine | Without the fix |
+|---|---|
+| MariaDB 12.3 | `Deadlock found` on the INSERT (matches production) |
+| H2 | **6 concurrent reissues left 6 simultaneously usable tokens** |
+
+The H2 result is the more serious one: it means "issuing a new token invalidates the previous link"
+(AUTH-R-05) was **not actually an invariant**. Sequential tests are why it looked correct.
+
+**Root cause.** `issue()` did `UPDATE (index range)` then `INSERT (same range)` with nothing
+serialising the two transactions. Under REPEATABLE READ each transaction's `UPDATE` only sees rows
+committed before its own snapshot, so each supersedes a different subset and each inserts its own
+token; the `UPDATE`'s gap locks then collide with the other transactions' inserts.
+
+**Fix.** Take a per-account mutex *before* touching the token table:
+`SELECT id FROM users WHERE id = ? FOR UPDATE`. `users.id` is the right lock target — it always
+exists (the FK guarantees it), and it serialises reissues per account without blocking unrelated
+accounts.
+
+**Guard proven:** removing the lock line makes MariaDB fail with the production deadlock again.
+
+A related lesson about the harness itself: the first version of this spec opened one transaction per
+repository call, which *created* the deadlock rather than reproducing production's. The spec now runs
+the service inside a single transaction, matching `@Transactional` in production. A spec that models
+transactions differently from production measures the harness, not the code.
+
 ## Deliberately not tested (out of spike scope)
 - `deleteExpiredOrConsumedBefore` (retention is undecided — #1669).
 - The ORCID set-password invitation flow (#1683).

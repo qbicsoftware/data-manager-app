@@ -4,10 +4,7 @@ import jakarta.persistence.EntityManager
 import jakarta.persistence.EntityManagerFactory
 import life.qbic.identity.application.verification.AuthAttemptThrottle
 import life.qbic.identity.application.verification.VerificationTokenServiceImpl
-import life.qbic.identity.application.verification.VerificationTokenServiceImpl.Consumed
-import life.qbic.identity.application.verification.VerificationTokenServiceImpl.Invalid
 import life.qbic.identity.domain.model.verification.ConsumeFailure
-import life.qbic.identity.domain.model.verification.TokenPurpose
 import life.qbic.identity.domain.repository.VerificationTokenRepository
 import life.qbic.identity.infrastructure.verification.JpaAttemptCounter
 import life.qbic.identity.infrastructure.verification.JpaVerificationTokenRepository
@@ -100,6 +97,7 @@ class VerificationTokenConcurrencySpec extends Specification {
                 .addAnnotatedClass(life.qbic.identity.domain.model.verification.VerificationToken)
                 .buildMetadata()
         emf = metadata.buildSessionFactory()
+        createUsersTable()
         if (ddlAuto() == "create-drop") { createAuthAttemptTable() }
     }
 
@@ -131,6 +129,30 @@ class VerificationTokenConcurrencySpec extends Specification {
         }
     }
 
+    /**
+     * {@code users} is needed even on H2: {@code lockAccount} issues
+     * {@code SELECT id FROM users WHERE id = ? FOR UPDATE} as the per-account mutex, and the
+     * generated schema has no such table because {@code User} belongs to a different persistence
+     * unit. Production always has it; this is test scaffolding only.
+     */
+    void createUsersTable() {
+        EntityManager em = emf.createEntityManager()
+        try {
+            em.transaction.begin()
+            em.createNativeQuery("""
+                CREATE TABLE IF NOT EXISTS users (
+                    id varchar(255) NOT NULL PRIMARY KEY,
+                    active boolean NOT NULL
+                )
+                """).executeUpdate()
+            em.transaction.commit()
+        } catch (Exception ignored) {
+            if (em.transaction.active) em.transaction.rollback()
+        } finally {
+            em.close()
+        }
+    }
+
     def cleanupSpec() {
         emf?.close()
     }
@@ -145,7 +167,7 @@ class VerificationTokenConcurrencySpec extends Specification {
         given:
         def now = Instant.parse("2026-11-10T10:00:00Z")
         def service = newService()
-        def issued = service.issue("u-1", TokenPurpose.EMAIL_CONFIRMATION, now)
+        def issued = service.issue("u-1", life.qbic.identity.api.VerificationLinkService.Purpose.EMAIL_CONFIRMATION, now)
 
         and: "all threads are released at the same moment"
         int threads = 8
@@ -156,7 +178,7 @@ class VerificationTokenConcurrencySpec extends Specification {
         def outcomes = (1..threads).collect { i ->
             pool.submit({
                 start.await()
-                service.consume(issued.rawToken(), TokenPurpose.EMAIL_CONFIRMATION,
+                service.consume(issued.rawToken(), life.qbic.identity.api.VerificationLinkService.Purpose.EMAIL_CONFIRMATION,
                         now.plusSeconds(10))
             } as Callable)
         }
@@ -165,26 +187,25 @@ class VerificationTokenConcurrencySpec extends Specification {
         pool.shutdown()
 
         then: "the token is consumed exactly once — this is the property AUTH-R-05 requires"
-        results.count { it instanceof Consumed } == 1
+        results.count { it.isPresent() } == 1
 
-        and: "every other consumer is told 'already used', not handed an internal error"
-        results.findAll { it instanceof Invalid }
-                .every { (it as Invalid).reason() == life.qbic.identity.domain.model.verification.ConsumeFailure.ALREADY_CONSUMED }
+        and: "every other consumer is refused, and told nothing about why (AUTH-NFR-03)"
+        results.findAll { it.isEmpty() }.size() == threads - 1
     }
 
     def "the second consumer is stopped by row locking, not by the unique index"() {
         given: "the unique index only guards INSERT, so it cannot help an UPDATE"
         def now = Instant.parse("2026-11-10T10:00:00Z")
         def service = newService()
-        def issued = service.issue("u-1", TokenPurpose.EMAIL_CONFIRMATION, now)
+        def issued = service.issue("u-1", life.qbic.identity.api.VerificationLinkService.Purpose.EMAIL_CONFIRMATION, now)
 
         when: "two sequential consumers run against the same row"
-        def first = service.consume(issued.rawToken(), TokenPurpose.EMAIL_CONFIRMATION, now.plusSeconds(5))
-        def second = service.consume(issued.rawToken(), TokenPurpose.EMAIL_CONFIRMATION, now.plusSeconds(6))
+        def first = service.consume(issued.rawToken(), life.qbic.identity.api.VerificationLinkService.Purpose.EMAIL_CONFIRMATION, now.plusSeconds(5))
+        def second = service.consume(issued.rawToken(), life.qbic.identity.api.VerificationLinkService.Purpose.EMAIL_CONFIRMATION, now.plusSeconds(6))
 
         then:
-        first instanceof Consumed
-        (second as Invalid).reason() == life.qbic.identity.domain.model.verification.ConsumeFailure.ALREADY_CONSUMED
+        first.isPresent()
+        second.isEmpty()
 
         and: "the persisted row records exactly one consumption timestamp"
         def consumedAt = singleColumn("consumedAt")
@@ -195,12 +216,12 @@ class VerificationTokenConcurrencySpec extends Specification {
         given:
         def now = Instant.parse("2026-11-10T10:00:00Z")
         def service = newService()
-        def issued = service.issue("u-1", TokenPurpose.PASSWORD_RESET, now)
-        service.consume(issued.rawToken(), TokenPurpose.PASSWORD_RESET, now.plusSeconds(5))
+        def issued = service.issue("u-1", life.qbic.identity.api.VerificationLinkService.Purpose.PASSWORD_RESET, now)
+        service.consume(issued.rawToken(), life.qbic.identity.api.VerificationLinkService.Purpose.PASSWORD_RESET, now.plusSeconds(5))
         def firstConsumedAt = singleColumn("consumedAt")
 
         when: "replayed later"
-        service.consume(issued.rawToken(), TokenPurpose.PASSWORD_RESET, now.plusSeconds(600))
+        service.consume(issued.rawToken(), life.qbic.identity.api.VerificationLinkService.Purpose.PASSWORD_RESET, now.plusSeconds(600))
 
         then: "the original consumption instant is not rewritten"
         singleColumn("consumedAt") == firstConsumedAt
@@ -377,7 +398,7 @@ class VerificationTokenConcurrencySpec extends Specification {
             def existing = em.createNativeQuery("SELECT COUNT(*) FROM users WHERE id = :id")
                     .setParameter("id", userId).singleResult
             if (((Number) existing).intValue() == 0) {
-                em.createNativeQuery("INSERT INTO users (id, active) VALUES (:id, b'1')")
+                em.createNativeQuery("INSERT INTO users (id, active) VALUES (:id, TRUE)")
                         .setParameter("id", userId).executeUpdate()
             }
             em.transaction.commit()

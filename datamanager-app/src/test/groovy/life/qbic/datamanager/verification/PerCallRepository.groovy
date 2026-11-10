@@ -41,6 +41,11 @@ class PerCallRepository implements VerificationTokenRepository {
     }
 
     @Override
+    void lockAccount(String userId) {
+        tx { JpaVerificationTokenRepository repo -> repo.lockAccount(userId) }
+    }
+
+    @Override
     void save(VerificationToken token) {
         tx { JpaVerificationTokenRepository repo -> repo.save(token) }
     }
