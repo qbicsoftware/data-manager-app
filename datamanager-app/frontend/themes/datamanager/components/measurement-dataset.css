@@ -104,9 +104,9 @@
   align-items: stretch;
 }
 
-/* One dataset: capped at the width it would have with two in a row, so it reads as
-   one card rather than as a page-wide band — and it does not sit marooned at the
-   left of an otherwise empty row. */
+/* Two cards — the minimum, because the "all measurements" card is always rendered beside the
+   dataset cards, so a single card can no longer occur and there is no count-1 layout.
+   Capped at two columns so the pair reads as cards rather than as a page-wide band. */
 .measurement-dataset-count-2 {
   grid-template-columns: repeat(2, minmax(16rem, 1fr));
 }
