@@ -67,6 +67,21 @@
     <sonar.projectKey>qbicsoftware_data-manager-app</sonar.projectKey>
     <!-- Aggregated coverage report produced by the `report-aggregate` goal in datamanager-app -->
     <sonar.coverage.jacoco.xmlReportPaths>${maven.multiModuleProjectDirectory}/datamanager-app/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+    <!--
+      Coverage is not measured on the Vaadin view layer: those classes are component composition
+      (layout trees, CSS class assignment, router wiring), and the logic worth testing has been
+      extracted out of them on purpose -- SnapshotPanel's content, DataStateLabel's vocabulary,
+      MeasurementDataLocations' file format and AssayType's two column conventions all live in
+      classes with their own specs.
+
+      This has to be a POM property, not a sonar-project.properties entry: the CI scanner is invoked
+      as sonar-maven-plugin:sonar, which takes its configuration from the POM and never read the
+      properties file, so the exclusion placed there had no effect.
+
+      coverage.exclusions, not exclusions: bug, vulnerability and code-smell analysis still cover
+      these files. Only the coverage requirement is lifted.
+    -->
+    <sonar.coverage.exclusions>datamanager-app/src/main/java/life/qbic/datamanager/views/**</sonar.coverage.exclusions>
   </properties>
 
 
