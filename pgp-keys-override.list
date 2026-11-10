@@ -227,8 +227,12 @@ org.json:json:jar:20231013 = 0xFB35C8D02B4724DADA23DE0AFD116C1969FCCFF3
 org.json:json:pom:20231013 = 0xFB35C8D02B4724DADA23DE0AFD116C1969FCCFF3
 
 # nuiton-processor via license-maven-plugin (build-time)
+# 1.3 is what license-maven-plugin 2.7.1 pulled in, 1.4 is what 2.8.0
+# pulls in (processorVersion bumped by dependabot). Same release key.
 org.nuiton.processor:nuiton-processor:jar:1.3 = 0x8C91FA79AE8556710867A977E9056E22014A6ED2
 org.nuiton.processor:nuiton-processor:pom:1.3 = 0x8C91FA79AE8556710867A977E9056E22014A6ED2
+org.nuiton.processor:nuiton-processor:jar:1.4 = 0x8C91FA79AE8556710867A977E9056E22014A6ED2
+org.nuiton.processor:nuiton-processor:pom:1.4 = 0x8C91FA79AE8556710867A977E9056E22014A6ED2
 
 # odfdom-java via license-maven-plugin (build-time)
 org.odftoolkit:odfdom-java:jar:0.12.0 = 0x38986C6D418B8E8DB39B96E2FCB440888750FA22
