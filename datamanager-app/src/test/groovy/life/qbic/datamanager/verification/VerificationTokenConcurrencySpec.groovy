@@ -46,20 +46,50 @@ class VerificationTokenConcurrencySpec extends Specification {
     static final Duration HOUR = Duration.ofHours(1)
     static final Duration TINY = Duration.ofMinutes(1)
 
+    // ---------------------------------------------------------------- database under test
+    //
+    // Defaults to H2 in MODE=MySQL. Set -Dverification.jdbc.url (and friends) to run the identical
+    // specs against MariaDB, which is the only way to validate that InnoDB's locking behaves like
+    // the engine these specs were written on. H2 and InnoDB do NOT have identical lock semantics.
+    static String jdbcUrl() {
+        System.getProperty("verification.jdbc.url",
+                "jdbc:h2:mem:vertokenconc;MODE=MySQL;DB_CLOSE_DELAY=-1")
+    }
+
+    static String jdbcUser() {
+        System.getProperty("verification.jdbc.user", "sa")
+    }
+
+    static String jdbcPassword() {
+        System.getProperty("verification.jdbc.password", "")
+    }
+
+    static String jdbcDriver() {
+        System.getProperty("verification.jdbc.driver", "org.h2.Driver")
+    }
+
+    static String dialect() {
+        System.getProperty("verification.dialect", "org.hibernate.dialect.H2Dialect")
+    }
+
+    static String ddlAuto() {
+        System.getProperty("verification.jdbc.url") == null ? "create-drop" : "none"
+    }
+
     def setupSpec() {
         def registry = new StandardServiceRegistryBuilder()
-                .applySetting(AvailableSettings.JAKARTA_JDBC_URL,
-                        "jdbc:h2:mem:vertokenconc;MODE=MySQL;DB_CLOSE_DELAY=-1")
-                .applySetting(AvailableSettings.JAKARTA_JDBC_USER, "sa")
-                .applySetting(AvailableSettings.JAKARTA_JDBC_PASSWORD, "")
-                .applySetting(AvailableSettings.JAKARTA_JDBC_DRIVER, "org.h2.Driver")
-                .applySetting(AvailableSettings.HBM2DDL_AUTO, "create-drop")
+                .applySetting(AvailableSettings.JAKARTA_JDBC_URL, jdbcUrl())
+                .applySetting(AvailableSettings.JAKARTA_JDBC_USER, jdbcUser())
+                .applySetting(AvailableSettings.JAKARTA_JDBC_PASSWORD, jdbcPassword())
+                .applySetting(AvailableSettings.JAKARTA_JDBC_DRIVER, jdbcDriver())
+                .applySetting(AvailableSettings.DIALECT, dialect())
+                .applySetting(AvailableSettings.HBM2DDL_AUTO, ddlAuto())
                 .build()
         def metadata = new MetadataSources(registry)
                 .addAnnotatedClass(life.qbic.identity.domain.model.verification.VerificationToken)
                 .buildMetadata()
         emf = metadata.buildSessionFactory()
-        createAuthAttemptTable()
+        if (ddlAuto() == "create-drop") { createAuthAttemptTable() }
     }
 
     /**
@@ -295,8 +325,31 @@ class VerificationTokenConcurrencySpec extends Specification {
 
     // --------------------------------------------------------------- helpers
 
+    void ensureUser(String userId) {
+        EntityManager em = emf.createEntityManager()
+        try {
+            em.transaction.begin()
+            try {
+                def existing = em.createNativeQuery("SELECT COUNT(*) FROM users WHERE id = :id")
+                        .setParameter("id", userId).singleResult
+                if (((Number) existing).intValue() == 0) {
+                    em.createNativeQuery("INSERT INTO users (id, active) VALUES (:id, b'1')")
+                            .setParameter("id", userId).executeUpdate()
+                }
+            } catch (Exception ignored) {
+                // H2-generated schema has no users table.
+            }
+            em.transaction.commit()
+        } catch (Exception ignored) {
+            if (em.transaction.active) em.transaction.rollback()
+        } finally {
+            em.close()
+        }
+    }
+
     VerificationTokenServiceImpl newService() {
-        new VerificationTokenServiceImpl(new PerCallRepository(emf), HOUR, TINY, HOUR)
+        new VerificationTokenServiceImpl(
+                new UserEnsuringRepository(emf, { String id -> ensureUser(id) }), HOUR, TINY, HOUR)
     }
 
     /**

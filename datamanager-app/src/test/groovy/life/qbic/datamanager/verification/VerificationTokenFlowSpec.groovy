@@ -44,19 +44,91 @@ class VerificationTokenFlowSpec extends Specification {
     static final Duration RESET = Duration.ofMinutes(5)
     static final Duration SET_PASSWORD = Duration.ofHours(1)
 
+    // ---------------------------------------------------------------- database under test
+    //
+    // Defaults to H2 in MODE=MySQL. Set -Dverification.jdbc.url (and friends) to run the identical
+    // specs against MariaDB, which is the only way to validate that InnoDB's locking behaves like
+    // the engine these specs were written on. H2 and InnoDB do NOT have identical lock semantics.
+    static String jdbcUrl() {
+        System.getProperty("verification.jdbc.url",
+                "jdbc:h2:mem:vertoken;MODE=MySQL;DB_CLOSE_DELAY=-1")
+    }
+
+    static String jdbcUser() {
+        System.getProperty("verification.jdbc.user", "sa")
+    }
+
+    static String jdbcPassword() {
+        System.getProperty("verification.jdbc.password", "")
+    }
+
+    static String jdbcDriver() {
+        System.getProperty("verification.jdbc.driver", "org.h2.Driver")
+    }
+
+    /**
+     * On H2 the schema is generated from the entity. On MariaDB it must come from the real migration
+     * DDL, because that is what production runs — generating it would test Hibernate's idea of the
+     * schema rather than the signed-off one.
+     */
+    /**
+     * Hibernate cannot infer a dialect from a MariaDB 12 connection through the MySQL driver, so a
+     * MariaDB run must state it. The application pins {@code MariaDBDialect} in
+     * {@code application.properties}; these specs mirror that.
+     */
+    static String dialect() {
+        System.getProperty("verification.dialect", "org.hibernate.dialect.H2Dialect")
+    }
+
+    static String ddlAuto() {
+        System.getProperty("verification.jdbc.url") == null ? "create-drop" : "none"
+    }
+
     def setupSpec() {
         def registry = new StandardServiceRegistryBuilder()
-                .applySetting(AvailableSettings.JAKARTA_JDBC_URL,
-                        "jdbc:h2:mem:vertoken;MODE=MySQL;DB_CLOSE_DELAY=-1")
-                .applySetting(AvailableSettings.JAKARTA_JDBC_USER, "sa")
-                .applySetting(AvailableSettings.JAKARTA_JDBC_PASSWORD, "")
-                .applySetting(AvailableSettings.JAKARTA_JDBC_DRIVER, "org.h2.Driver")
-                .applySetting(AvailableSettings.HBM2DDL_AUTO, "create-drop")
+                .applySetting(AvailableSettings.JAKARTA_JDBC_URL, jdbcUrl())
+                .applySetting(AvailableSettings.JAKARTA_JDBC_USER, jdbcUser())
+                .applySetting(AvailableSettings.JAKARTA_JDBC_PASSWORD, jdbcPassword())
+                .applySetting(AvailableSettings.JAKARTA_JDBC_DRIVER, jdbcDriver())
+                .applySetting(AvailableSettings.DIALECT, dialect())
+                .applySetting(AvailableSettings.HBM2DDL_AUTO, ddlAuto())
                 .build()
         def metadata = new MetadataSources(registry)
                 .addAnnotatedClass(life.qbic.identity.domain.model.verification.VerificationToken)
                 .buildMetadata()
         emf = metadata.buildSessionFactory()
+        if (ddlAuto() == "none") {
+            createRealSchema()
+        }
+    }
+
+    /**
+     * Applies the migration draft's DDL verbatim, so a MariaDB run exercises the signed-off schema
+     * including {@code char(64)} and the unique keys — not a Hibernate approximation.
+     */
+    void createRealSchema() {
+        // surefire runs with the module as working directory, so walk up to the repo root.
+        def f = new File("sql/migrations/drafts/auth-flow-hardening.sql")
+        if (!f.exists()) {
+            f = new File("../sql/migrations/drafts/auth-flow-hardening.sql")
+        }
+        def ddl = f.text
+        // The script is idempotent and only needs the two CREATE TABLE blocks; run it whole.
+        def em = emf.createEntityManager()
+        try {
+            em.transaction.begin()
+            ddl.readLines().findAll { !it.trim().startsWith("--") && !it.trim().isEmpty() }
+                    .join("\n")
+                    .split(";")
+                    .each { stmt ->
+                        if (!stmt.trim().isEmpty()) {
+                            em.createNativeQuery(stmt).executeUpdate()
+                        }
+                    }
+            em.transaction.commit()
+        } finally {
+            em.close()
+        }
     }
 
     def cleanupSpec() {
@@ -76,7 +148,37 @@ class VerificationTokenFlowSpec extends Specification {
      * address, setting a password) in ONE transaction — see the spike notes.</p>
      */
     VerificationTokenServiceImpl newService(Duration confirmation, Duration reset, Duration setPw) {
-        new VerificationTokenServiceImpl(new PerCallRepository(emf), confirmation, reset, setPw)
+        new VerificationTokenServiceImpl(new UserEnsuringRepository(emf, { String id -> ensureUser(id) }),
+                confirmation, reset, setPw)
+    }
+
+    /**
+     * Ensures the owning user row exists before a token is persisted.
+     *
+     * <p>Invisible on H2 (generated schema has no FK), required on MariaDB, where the real DDL's
+     * {@code FK_user_verification_token_user REFERENCES users(id)} rejects the insert otherwise.
+     * In production the user always exists: a token is only issued for a registered account.</p>
+     */
+    void ensureUser(String userId) {
+        EntityManager em = emf.createEntityManager()
+        try {
+            em.transaction.begin()
+            try {
+                def existing = em.createNativeQuery("SELECT COUNT(*) FROM users WHERE id = :id")
+                        .setParameter("id", userId).singleResult
+                if (((Number) existing).intValue() == 0) {
+                    em.createNativeQuery("INSERT INTO users (id, active) VALUES (:id, b'1')")
+                            .setParameter("id", userId).executeUpdate()
+                }
+            } catch (Exception ignored) {
+                // No users table on the H2-generated schema; nothing to satisfy there.
+            }
+            em.transaction.commit()
+        } catch (Exception ignored) {
+            if (em.transaction.active) em.transaction.rollback()
+        } finally {
+            em.close()
+        }
     }
 
     def truncate() {

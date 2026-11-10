@@ -145,10 +145,38 @@ spec is the regression guard for the finding above and should not be dropped as 
   round-trips; a single `RETURNING`-style statement or a `SELECT ... FOR UPDATE` wrapper would be
   tighter. Not worth optimising before it is wired.
 
-## Deliberately not tested (out of spike scope)
+## ✅ Finding 5 — the same suite runs green on real MariaDB 12.3 / InnoDB
 
-- **MariaDB itself.** Everything ran on H2 in MySQL mode. The upsert and `PESSIMISTIC_WRITE` should
-  be re-run against the real engine before sign-off — H2's lock semantics are not MariaDB's.
+This was flagged as the one outstanding check and has now been done: the identical specs run against
+MariaDB 12.3.3 via `mysql-connector-j`, not just H2. Both suites pass on both engines.
+
+    H2 (MODE=MySQL)        21 flow + 9 concurrency   green
+    MariaDB 12.3.3/InnoDB  21 flow + 9 concurrency   green
+
+So the `PESSIMISTIC_WRITE` lock really does serialise two concurrent consumers under InnoDB, and the
+`ON DUPLICATE KEY UPDATE` counter really does keep every increment on the engine production uses.
+H2's lock semantics were not trusted for this, and should not be in future.
+
+The specs are parameterised for exactly this (`-Dverification.jdbc.url`, `.user`, `.password`,
+`.driver`, `.dialect`; default H2). That switch is worth keeping when the specs move into
+`identity-infrastructure` — it is the only cheap way to catch engine-specific behaviour.
+
+### Three things only the MariaDB run could reveal
+
+1. **`FK_user_verification_token_user` is a hard prerequisite.** The DDL fails with
+   `errno 150 Foreign key constraint is incorrectly formed` if `users` does not exist. Obvious in
+   hindsight, and a genuine sequencing constraint: the migration cannot be applied to a fresh
+   database before `users` exists.
+2. **The FK rejects token inserts for non-existent users** (`Cannot add or update a child row`). The
+   specs had to gain a user fixture to run on MariaDB; on H2 the generated schema has no FK, so this
+   was invisible. In production it is a non-issue — a token is only issued for a registered
+   account — but any test or fixture that fabricates a `userId` must create the row first.
+3. **Hibernate cannot infer the dialect** from a MariaDB 12 connection through the MySQL driver; it
+   fails with *"Unable to determine Dialect without JDBC metadata"*. The application pins
+   `org.hibernate.dialect.MariaDBDialect` in `application.properties`, so production is fine, but any
+   manual Hibernate bootstrap against MariaDB must set it explicitly.
+
+## Deliberately not tested (out of spike scope)
 - `deleteExpiredOrConsumedBefore` (retention is undecided — #1669).
 - The ORCID set-password invitation flow (#1683).
 - Anything Vaadin or HTTP: no routes, no views, no mail sending.
