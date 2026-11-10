@@ -73,6 +73,26 @@ public class ProjectPageReadRepositoryImpl implements ProjectPageReadRepository 
       new MeasurementDataRowMapper(new ObjectMapper());
 
   /**
+   * The row's methods, from the comma-delimited list the query aggregates.
+   *
+   * <p>A measurement attributed to several methods (ADR 0010 decision 4) arrives as
+   * {@code WGS,RNA-SEQ}; it is split here so the view never parses SQL output itself.</p>
+   *
+   * <p>On the outer class rather than inside the mapper: this is the one place the view turns an
+   * aggregated SQL string into a list, so it is the one place worth pinning without a JDBC
+   * connection.</p>
+   */
+  static List<String> methodList(String joined) {
+    if (joined == null || joined.isBlank()) {
+      return List.of();
+    }
+    return Arrays.stream(joined.split(","))
+        .map(String::trim)
+        .filter(method -> !method.isEmpty())
+        .toList();
+  }
+
+  /**
    * Maps one measurement entry with its data status. Absent data columns (a waiting entry) map to
    * {@code null}, never to zero: {@code 0} bytes is meaningful and must not be confused with "no
    * datum".
@@ -104,22 +124,6 @@ public class ProjectPageReadRepositoryImpl implements ProjectPageReadRepository 
           toInstant(resultSet, "data_uploaded_at"),
           methodList(resultSet.getString("method_labels")),
           resultSet.getString("instrument_label"));
-    }
-
-    /**
-     * The row's methods, from the comma-delimited list the query aggregates.
-     *
-     * <p>A measurement attributed to several methods (ADR 0010 decision 4) arrives as
-     * {@code WGS,RNA-SEQ}; it is split here so the view never parses SQL output itself.</p>
-     */
-    private static List<String> methodList(String joined) {
-      if (joined == null || joined.isBlank()) {
-        return List.of();
-      }
-      return Arrays.stream(joined.split(","))
-          .map(String::trim)
-          .filter(method -> !method.isEmpty())
-          .toList();
     }
 
     /**
