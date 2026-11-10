@@ -209,6 +209,16 @@ The registration form currently collects a user name that cannot be used to log 
 **Source:**
 [AUTH-NFR-03](#auth-nfr-03-indistinguishable-authentication-failure-responses); code review of the registration and login views (2026-11); GitHub issue [#1666](https://github.com/qbicsoftware/data-manager-app/issues/1666)
 
+#### AUTH-R-07: Verifiable Ownership of the Authentication Address
+
+Every local account shall hold a password, and every account whose email address has not been verified shall be given the means to set one. An external identity provider shall be usable as an authentication method only after it has been linked to an existing account by a user who authenticated with that account's password; linking an external identity shall never by itself create an authenticated session.
+
+**Rationale:**
+An account that exists only through an external provider cannot be forced to satisfy [AUTH-R-01](#auth-r-01-mandatory-second-authentication-factor) without making a third party part of its login path, and it cannot recover from the loss of that provider link because there is no second credential the platform controls. Requiring a password for every account also means the verified email address is always sufficient to take control of the account through the reset flow, which is the migration path for accounts that today have no password. The second sentence closes the binding question the other way round: if logging in with a provider that is not yet linked were allowed to create the link, then possession of any assertion from that provider would be enough to attach it to whatever account the flow chose, and the link would establish the session rather than merely describe it.
+
+**Source:**
+[AUTH-R-06](#auth-r-06-single-authentication-identifier); [AUTH-C-01](../adr/README.md); stakeholder decision D1b (2026-11-11); PRD §Technical Constraints — *"ORCID OAuth2 integration for researcher identity; local password-based authentication as fallback"*; code review of `User.createOidc` (creates a user with `encryptedPassword = null`); GitHub issue [#1666](https://github.com/qbicsoftware/data-manager-app/issues/1666)
+
 ### Non-Functional Requirements
 
 #### AUTH-NFR-01: Protection of Stored Second-Factor Secrets
