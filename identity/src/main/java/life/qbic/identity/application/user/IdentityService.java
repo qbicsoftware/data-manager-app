@@ -35,9 +35,28 @@ public final class IdentityService {
 
   private final UserRepository userRepository;
 
+  /**
+   * Optional: when present, a completed password change invalidates every other pending reset token
+   * for that account (AUTH-R-05, story #1674).
+   *
+   * <p>Optional rather than required so the domain-focused unit tests and the ORCID/registration
+   * paths can construct the service without a token store. When it is absent, no token can have been
+   * issued through this service anyway.</p>
+   */
+  private final java.util.function.Consumer<String> invalidationAfterPasswordChange;
+
   public IdentityService(UserRepository userRepository) {
+    this(userRepository, userId -> {
+    });
+  }
+
+  public IdentityService(UserRepository userRepository,
+      java.util.function.Consumer<String> invalidationAfterPasswordChange) {
     super();
-    this.userRepository = userRepository;
+    this.userRepository = java.util.Objects.requireNonNull(userRepository,
+        "userRepository must not be null");
+    this.invalidationAfterPasswordChange = java.util.Objects.requireNonNull(
+        invalidationAfterPasswordChange, "invalidationAfterPasswordChange must not be null");
   }
 
   /**
@@ -286,7 +305,12 @@ public final class IdentityService {
         .flatMap(this::attemptPasswordEncryption)
         .onValue(password -> user
             .onValue(u -> u.setNewPassword(password))
-            .onValue(userRepository::updateUser));
+            .onValue(userRepository::updateUser))
+        // A completed password change kills every outstanding reset link for the account. Without
+        // this, a user who requested two resets and used the second leaves the first still valid —
+        // and an attacker holding that older link can still take the account over.
+        .onValue(password -> user.onValue(u -> invalidationAfterPasswordChange.accept(
+            u.id().get())));
   }
 
   private Result<EncryptedPassword, RuntimeException> attemptPasswordEncryption(

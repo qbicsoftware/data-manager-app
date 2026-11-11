@@ -123,9 +123,15 @@ public class AppConfig {
 
   @Bean
   public IdentityService userRegistrationService(
-      UserRepository userRepository
+      UserRepository userRepository,
+      life.qbic.identity.domain.repository.VerificationTokenRepository
+          verificationTokenRepository
   ) {
-    return new IdentityService(userRepository);
+    return new IdentityService(userRepository,
+        // A completed password change invalidates every other pending reset token (#1674).
+        userId -> verificationTokenRepository.supersedeAllFor(userId,
+            life.qbic.identity.domain.model.verification.TokenPurpose.PASSWORD_RESET,
+            null, java.time.Instant.now()));
   }
 
   @Bean
