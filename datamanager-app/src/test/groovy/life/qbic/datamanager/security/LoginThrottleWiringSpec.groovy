@@ -13,6 +13,7 @@ import org.springframework.security.authentication.event.AbstractAuthenticationF
 import org.springframework.security.authentication.event.AuthenticationSuccessEvent
 import org.springframework.security.authentication.event.InteractiveAuthenticationSuccessEvent
 import org.springframework.security.core.Authentication
+import life.qbic.projectmanagement.application.authorization.QbicUserDetails
 import org.springframework.security.web.authentication.AuthenticationFailureHandler
 import spock.lang.Specification
 
@@ -34,6 +35,7 @@ class LoginThrottleWiringSpec extends Specification {
   // window and the throttle would never engage.
   static final Instant NOW = Instant.now()
   static final String ADDRESS = 'alice@example.org'
+  static final String USER_ID = '3f3e2b1a-0000-4000-8000-000000000000'
 
   AuthAttemptCounter counter
   AuthAttemptThrottle throttle
@@ -172,19 +174,47 @@ class LoginThrottleWiringSpec extends Specification {
     counter.totalIncrements() == 1
   }
 
-  def "a successful password login clears the bucket"() {
-    given: 'two failures, then a success'
+  def "a successful password login clears the bucket that the FAILURES wrote to"() {
+    // This is the accounting the success path exists for: fumble the password a few times, then get
+    // it right, and the allowance must be whole again.
+    //
+    // It previously was not. The listener used authentication.getName() for both paths, but that
+    // returns the principal's getUsername() — and QbicUserDetails.getUsername() returns the USER ID,
+    // because ACL records are keyed on it. So on success the listener cleared hash("LOGIN\0<uuid>"),
+    // a bucket nobody had written to, and the real email-keyed counter was left untouched.
+    given: 'two failures keyed on the email, as the failure path does'
     2.times { throttle.record(Scope.LOGIN, ADDRESS, NOW) }
     def listener = new AuthAttemptEventListener(throttle)
 
-    when:
-    listener.onSuccess(successEvent(AuthenticationSuccessEvent))
+    when: 'the same person logs in successfully'
+    listener.onSuccess(successEvent())
 
-    then: 'the allowance is restored'
-    !throttle.isThrottled(Scope.LOGIN, ADDRESS, NOW.plusSeconds(1))
+    then: 'the EMAIL-keyed bucket is empty, so the allowance is whole again'
+    counter.bucketCountFor(Scope.LOGIN, ADDRESS) == 0
+
+    and: 'and nothing was written to a bucket keyed on the user id'
+    counter.bucketCountFor(Scope.LOGIN, USER_ID) == 0
   }
 
-  def "an interactive (form-login) success also clears the bucket"() {
+  def "the success path reads the email from the principal, not getUsername()"() {
+    // Pins the mechanism directly: a QbicUserDetails whose getUsername() is the user id and whose
+    // getEmailAddress() is the address. If the listener ever goes back to getName(), this fails.
+    given:
+    def listener = new AuthAttemptEventListener(throttle)
+
+    when:
+    listener.onSuccess(successEvent())
+
+    then: 'the email bucket was cleared, which is only possible by reading getEmailAddress()'
+    counter.clearedKeys.contains(
+        AuthAttemptThrottle.attemptKey(Scope.LOGIN, ADDRESS))
+
+    and: 'the user-id bucket was never touched'
+    !counter.clearedKeys.contains(
+        AuthAttemptThrottle.attemptKey(Scope.LOGIN, USER_ID))
+  }
+
+  def "an interactive (form-login) success also clears the email-keyed bucket"() {
     // In Spring Security 7 InteractiveAuthenticationSuccessEvent is a SIBLING of
     // AuthenticationSuccessEvent, not a subclass — so a single handler cannot catch both. Missing
     // this one would leave every form-login user accumulating a counter they never clear.
@@ -194,10 +224,24 @@ class LoginThrottleWiringSpec extends Specification {
 
     when:
     listener.onInteractiveSuccess(
-        new InteractiveAuthenticationSuccessEvent(auth(), Object))
+        new InteractiveAuthenticationSuccessEvent(authenticatedPrincipal(), Object))
 
     then:
-    !throttle.isThrottled(Scope.LOGIN, ADDRESS, NOW.plusSeconds(1))
+    counter.bucketCountFor(Scope.LOGIN, ADDRESS) == 0
+  }
+
+  def "a failure is keyed on the submitted email, which is what the filter checks"() {
+    // The pre-check in LoginThrottleFilter reads request.getParameter("username") — the raw address.
+    // The failure listener must key on the same value, or an attacker's failures would never reach
+    // the threshold the filter consults.
+    given:
+    def listener = new AuthAttemptEventListener(throttle)
+
+    when:
+    listener.onFailure(failureEvent())
+
+    then:
+    counter.bucketCountFor(Scope.LOGIN, ADDRESS) == 1
   }
 
   // ---- helpers -------------------------------------------------------------------------------
@@ -226,9 +270,28 @@ class LoginThrottleWiringSpec extends Specification {
     }
   }
 
+  /** A failure-shaped authentication: principal is the raw submitted string. */
   private Authentication auth() {
     def authentication = Stub(Authentication)
     authentication.getName() >> ADDRESS
+    return authentication
+  }
+
+  /**
+   * A success-shaped authentication, faithful to production.
+   *
+   * <p>{@code getName()} returns the USER ID, because it delegates to
+   * {@link QbicUserDetails#getUsername()} and that returns the id (ACL records are keyed on it). The
+   * email is only reachable through {@code getEmailAddress()}. A stub that returned the email from
+   * {@code getName()} would hide the very bug these specs exist to catch.</p>
+   */
+  private Authentication authenticatedPrincipal() {
+    def user = new life.qbic.projectmanagement.application.authorization.User(
+        USER_ID, 'Alice Example', 'alice', ADDRESS, 'hash', true, null, null)
+    def details = new QbicUserDetails(user, [])
+    def authentication = Stub(Authentication)
+    authentication.getPrincipal() >> details
+    authentication.getName() >> details.getUsername()   // the user id
     return authentication
   }
 
@@ -238,8 +301,8 @@ class LoginThrottleWiringSpec extends Specification {
     }
   }
 
-  private AuthenticationSuccessEvent successEvent(Class<?> ignored) {
-    return new AuthenticationSuccessEvent(auth())
+  private AuthenticationSuccessEvent successEvent() {
+    return new AuthenticationSuccessEvent(authenticatedPrincipal())
   }
 
   static final class RecordingFailureHandler implements AuthenticationFailureHandler {
@@ -263,30 +326,45 @@ class LoginThrottleWiringSpec extends Specification {
     @Override
     AuthAttemptCounter.Counter increment(String scope, String key, Instant now, Instant windowStart) {
       increments++
-      String id = "$scope|$key"
+      String id = bucketId(scope, key)
       counts.computeIfAbsent(id) { new int[1] }[0]++
       return new AuthAttemptCounter.Counter(counts[id][0], blocks[id])
     }
 
     @Override
     void block(String scope, String key, Instant blockedUntil) {
-      blocks["$scope|$key"] = blockedUntil
+      blocks[bucketId(scope, key)] = blockedUntil
     }
 
     @Override
     AuthAttemptCounter.Counter peek(String scope, String key) {
-      String id = "$scope|$key"
+      String id = bucketId(scope, key)
       new AuthAttemptCounter.Counter(counts[id] == null ? 0 : counts[id][0], blocks[id])
     }
 
+    final Set<String> clearedKeys = []
+
     @Override
     void clear(String scope, String key) {
-      counts.remove("$scope|$key")
-      blocks.remove("$scope|$key")
+      clearedKeys << key
+      counts.remove(bucketId(scope, key))
+      blocks.remove(bucketId(scope, key))
     }
 
     int totalIncrements() {
       return increments
+    }
+
+    /** How many attempts are counted against this identifier in this scope. */
+    int bucketCountFor(Scope scope, String identifier) {
+      // `.toString()` is not cosmetic: a GString is not equal to a String in Groovy, so an inline
+      // "$a|$b" key silently misses entries inserted under a coerced String key.
+      String id = bucketId(scope.name(), AuthAttemptThrottle.attemptKey(scope, identifier))
+      return counts[id] == null ? 0 : counts[id][0]
+    }
+
+    private static String bucketId(String scope, String key) {
+      return scope + '|' + key
     }
   }
 }

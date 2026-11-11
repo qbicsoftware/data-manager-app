@@ -6,10 +6,12 @@ import java.time.Instant;
 import life.qbic.identity.application.throttle.AuthAttemptThrottle;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
+import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
 import org.springframework.context.event.EventListener;
 import org.springframework.security.authentication.event.AbstractAuthenticationFailureEvent;
 import org.springframework.security.authentication.event.AuthenticationSuccessEvent;
 import org.springframework.security.authentication.event.InteractiveAuthenticationSuccessEvent;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
 /**
@@ -56,11 +58,7 @@ public class AuthAttemptEventListener {
    */
   @EventListener
   public void onSuccess(AuthenticationSuccessEvent event) {
-    String address = event.getAuthentication().getName();
-    if (address == null || address.isBlank()) {
-      return;
-    }
-    throttle.onSuccess(AuthAttemptThrottle.Scope.LOGIN, address);
+    throttle.onSuccess(AuthAttemptThrottle.Scope.LOGIN, loginIdentifierOf(event.getAuthentication()));
   }
 
   /**
@@ -71,11 +69,33 @@ public class AuthAttemptEventListener {
    */
   @EventListener
   public void onInteractiveSuccess(InteractiveAuthenticationSuccessEvent event) {
-    String address = event.getAuthentication().getName();
-    if (address == null || address.isBlank()) {
-      return;
+    throttle.onSuccess(AuthAttemptThrottle.Scope.LOGIN, loginIdentifierOf(event.getAuthentication()));
+  }
+
+  /**
+   * The identifier the bucket is keyed on — the email address the visitor typed.
+   *
+   * <p><b>Not {@code authentication.getName()}.</b> That returns the principal's
+   * {@code getUsername()}, and {@link QbicUserDetails#getUsername()} deliberately returns the
+   * <em>user id</em> because ACL records are keyed on it. On a failure the principal is still the raw
+   * submitted string, so {@code getName()} is the email; on a success it is a {@code QbicUserDetails},
+   * so {@code getName()} is a UUID.</p>
+   *
+   * <p>Using {@code getName()} for both therefore cleared a bucket that nobody had written to, and
+   * left the real counter untouched: a user who mistyped their password nine times and then got it
+   * right stayed one attempt from a lockout for the rest of the window. This is exactly the case
+   * {@code onSuccess} exists to prevent.</p>
+   */
+  private static String loginIdentifierOf(Authentication authentication) {
+    if (authentication == null) {
+      return null;
     }
-    throttle.onSuccess(AuthAttemptThrottle.Scope.LOGIN, address);
+    if (authentication.getPrincipal() instanceof QbicUserDetails details) {
+      return details.getEmailAddress();
+    }
+    // A failure, or an authentication that never reached the UserDetailsService: the principal is
+    // the submitted username, which is the email address.
+    return authentication.getName();
   }
 
   /**
@@ -86,7 +106,9 @@ public class AuthAttemptEventListener {
    */
   @EventListener
   public void onFailure(AbstractAuthenticationFailureEvent event) {
-    String address = event.getAuthentication().getName();
+    // On a failure the principal is still the submitted username, i.e. the email address. Same helper
+    // as the success path so the two can never drift apart again.
+    String address = loginIdentifierOf(event.getAuthentication());
     if (address == null || address.isBlank()) {
       return;
     }
