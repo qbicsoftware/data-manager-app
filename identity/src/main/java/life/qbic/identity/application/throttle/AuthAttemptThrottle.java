@@ -14,6 +14,7 @@ import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * <b>Server-side throttling for the unauthenticated authentication flows.</b>
@@ -50,6 +51,21 @@ import org.springframework.stereotype.Service;
  * <h3>Rule 4 — thresholds are deployment configuration</h3>
  * <p>Nothing here is a constant. {@code qbic.auth-throttle.*} supplies the limits, because they are
  * tuned from telemetry and differ per environment.</p>
+ *
+ * <h3>Rule 5 — every write runs inside a transaction, and this class is what provides it</h3>
+ * <p>The counter uses native SQL on a container-managed {@code EntityManager}; without an active
+ * transaction an {@code INSERT}/{@code UPDATE} throws, and because the login counter is written from
+ * a Spring authentication <em>event listener</em>, that exception escapes through the event publisher
+ * and surfaces as an HTTP 500 — after the credentials have already been rejected.</p>
+ *
+ * <p>{@code @Transactional} is therefore on the public methods here, not on the repository. The
+ * repository must stay transaction-agnostic: the token-consumption adapter deliberately joins the
+ * caller's transaction so consumption and the state change it authorises commit together, and the
+ * same rule applies here.</p>
+ *
+ * <p>This was a genuine production bug that the concurrency specs could not catch: every one of them
+ * wrapped the counter in its own transaction, so they supplied the boundary that production never
+ * opened.</p>
  *
  * @since 1.0.0
  */
@@ -99,11 +115,16 @@ public class AuthAttemptThrottle {
    * <p>The attempt is recorded even when it is already blocked, so a client that keeps hammering
    * does not shorten its own block by noticing that the count stopped moving.</p>
    *
+   * <p>{@code @Transactional} is not decoration: without it the native upsert throws because there is
+   * no active transaction, and the login path surfaces that as a 500. See Rule 5 in the class
+   * javadoc.</p>
+   *
    * @param scope the flow
    * @param identifier the address as typed; normalised and hashed here, never stored raw
    * @param now   the attempt instant
    * @return whether to perform the work. <b>Do not render this.</b>
    */
+  @Transactional
   public Decision record(Scope scope, String identifier, Instant now) {
     requireNonNull(scope, "scope must not be null");
     requireNonNull(now, "now must not be null");
@@ -144,11 +165,15 @@ public class AuthAttemptThrottle {
    * <p>Called before authentication is attempted. The result is for control flow only — the caller
    * must produce the <em>same</em> generic failure it would have produced anyway (see Rule 2).</p>
    *
+   * <p>Read-only, but still needs a transaction: the native query runs on the container-managed
+   * {@code EntityManager}.</p>
+   *
    * @param scope      the flow
    * @param identifier the address as typed
    * @param now        the instant to evaluate against
    * @return {@code true} if the caller should skip the work
    */
+  @Transactional(readOnly = true)
   public boolean isThrottled(Scope scope, String identifier, Instant now) {
     requireNonNull(scope, "scope must not be null");
     requireNonNull(now, "now must not be null");
@@ -167,6 +192,7 @@ public class AuthAttemptThrottle {
    * @param scope      the flow
    * @param identifier the address as typed
    */
+  @Transactional
   public void onSuccess(Scope scope, String identifier) {
     requireNonNull(scope, "scope must not be null");
     if (identifier == null || identifier.isBlank()) {
