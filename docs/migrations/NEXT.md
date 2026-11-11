@@ -34,8 +34,58 @@ with apply / verify / rollback detail.
 
 ## Application properties changes
 
-*Document any new, removed, or renamed `application.properties` entries here.
-If there are none this release, delete this section.*
+> **Read this before upgrading.** This release renames two configuration keys and changes two
+> defaults. Spring Boot does **not** fail on unknown environment variables or unknown properties, so
+> a deployment carrying the old names will start cleanly and silently ignore them. Nothing warns you.
+
+### Renamed keys — old names are now ignored
+
+| Removed | Replacement | Notes |
+|---|---|---|
+| `routing.email-confirmation.confirmation-parameter` | `routing.email-confirmation.token-parameter` | same meaning, new name |
+| `routing.password-reset.reset-parameter` | `routing.password-reset.token-parameter` | same meaning, new name |
+| `EMAIL_CONFIRMATION_PARAMETER` (env) | `EMAIL_CONFIRMATION_TOKEN_PARAMETER` | env var renamed |
+| `PASSWORD_RESET_PARAMETER` (env) | `PASSWORD_RESET_TOKEN_PARAMETER` | env var renamed |
+
+### Changed defaults
+
+| Key | Old default | New default | Why |
+|---|---|---|---|
+| `routing.email-confirmation.endpoint` | `/login` | `/registration/confirm` | confirmation moved off `/login` so it no longer mutates state on GET |
+| `routing.password-reset.endpoint` | `new-password` | `/registration/new-password` | the old default was a bare, non-navigable path |
+
+**If your deployment explicitly sets either endpoint to the old value**, links will point at routes
+that no longer consume tokens. They will appear broken — and for a different reason than the
+intentional link-format change below, which will make it harder to diagnose. Check both.
+
+### New keys (all have working defaults)
+
+| Key | Default | Bound |
+|---|---|---|
+| `qbic.verification-token.confirmation-lifetime` | `PT1H` | max `PT1H` (AUTH-R-05) |
+| `qbic.verification-token.reset-lifetime` | `PT5M` | max `PT15M` (AUTH-R-05) |
+| `qbic.verification-token.set-password-lifetime` | `PT1H` | max `PT1H` (AUTH-R-05) |
+
+Values are ISO-8601 durations (`PT1H`, `PT5M`, `PT30M`).
+
+⚠️ **An out-of-bound value is a startup failure, not a silent weakening.** The service validates
+these in its constructor and refuses to boot if a configured lifetime exceeds the AUTH-R-05 maximum.
+Setting `VERIFICATION_RESET_LIFETIME=PT30M` will stop the application from starting. Shorter values
+are always allowed.
+
+### Deployment checklist for this release
+
+1. Apply the SQL migration **first** — see the section above. The application cannot issue or consume
+   tokens without `user_verification_token`, and the failure is silent: registration still appears to
+   succeed, but the confirmation email job fails and no link works.
+2. Rename the two environment variables (or the two property keys) in the deployment configuration.
+3. Check whether `EMAIL_CONFIRMATION_ENDPOINT` / `PASSWORD_RESET_ENDPOINT` are overridden, and update
+   them if they point at the old routes.
+4. Decide whether to keep the default lifetimes. No action is needed to accept them.
+5. **Use `application.properties.template` as the reference** — it is the single source of truth for a
+   working configuration, and it lists every value explicitly. The documentation convention for this
+   project is that administrators configure values directly there rather than through environment
+   variables; this release follows that convention.
 
 ---
 

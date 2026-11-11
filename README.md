@@ -282,14 +282,22 @@ the following properties:
 | `DM_HOST_PROTOCOL`             | The server protocol (http or https)                               |
 | `DM_SERVICE_PORT`              | The server port (-1 for default)                                  |
 | `DM_SERVICE_CONTEXT_PATH`      | The service context path of the application (empty for default)   |
-| `EMAIL_CONFIRMATION_PARAMETER` | The name of the parameter to which to pass the confirmation token |
-| `EMAIL_CONFIRMATION_ENDPOINT`  | The endpoint for the email configuration entry                    |
-| `PASSWORD_RESET_ENDPOINT`      | The endpoint for the password reset entry                         |
-| `PASSWORD_RESET_PARAMETER`     | The name for the password reset query parameter in the URL        |
+| `EMAIL_CONFIRMATION_TOKEN_PARAMETER` | The name of the query parameter carrying the confirmation token |
+| `EMAIL_CONFIRMATION_ENDPOINT`  | The endpoint that consumes the email confirmation token            |
+| `PASSWORD_RESET_ENDPOINT`      | The endpoint that consumes the password reset token               |
+| `PASSWORD_RESET_TOKEN_PARAMETER` | The name of the query parameter carrying the reset token        |
+| `VERIFICATION_CONFIRMATION_LIFETIME` | Confirmation link lifetime (ISO-8601, max `PT1H`)            |
+| `VERIFICATION_RESET_LIFETIME`  | Password reset link lifetime (ISO-8601, max `PT15M`)               |
+| `VERIFICATION_SET_PASSWORD_LIFETIME` | Set-password invitation lifetime (ISO-8601, max `PT1H`)      |
 
-Generated email confirmation links will look like `localhost:8080/login?confirm-email=<token>` with
-the
-default configuration.
+> **Renamed variables — the old names are now ignored.** `EMAIL_CONFIRMATION_PARAMETER` and
+> `PASSWORD_RESET_PARAMETER` no longer exist; they were replaced by the `*_TOKEN_PARAMETER`
+> variables above. Spring Boot does **not** fail on unknown environment variables, so a deployment
+> still carrying the old names starts cleanly and silently ignores them. Confirm links also changed
+> format: they no longer carry the user id.
+
+Generated email confirmation links will look like
+`localhost:8080/registration/confirm?token=<token>` with the default configuration.
 
 ```properties
 # global service route configuration for mail interaction requests
@@ -298,12 +306,17 @@ service.host.protocol=${DM_HOST_PROTOCOL:https}
 service.host.port=${DM_SERVICE_PORT:-1}
 # Set the context path, for example if your app runs behind a proxy
 server.servlet.context-path=${DM_SERVICE_CONTEXT_PATH:}
-# route for mail confirmation consumption
-email-confirmation-endpoint=${EMAIL_CONFIRMATION_ENDPOINT:login}
-email-confirmation-parameter=${EMAIL_CONFIRMATION_PARAMETER:confirm-email}
-# route for password reset
-password-reset-endpoint=${PASSWORD_RESET_ENDPOINT:new-password}
-password-reset-parameter=${PASSWORD_RESET_PARAMETER:user-id}
+# route for mail confirmation consumption (carries a single-use token, not the user id)
+routing.email-confirmation.endpoint=${EMAIL_CONFIRMATION_ENDPOINT:/registration/confirm}
+routing.email-confirmation.token-parameter=${EMAIL_CONFIRMATION_TOKEN_PARAMETER:token}
+# route for password reset (carries a single-use token, not the user id)
+routing.password-reset.endpoint=${PASSWORD_RESET_ENDPOINT:/registration/new-password}
+routing.password-reset.token-parameter=${PASSWORD_RESET_TOKEN_PARAMETER:token}
+# verification link lifetimes. AUTH-R-05 bounds these: confirmation and set-password <= 1h,
+# password reset <= 15min. The application refuses to start if a configured value exceeds the bound.
+qbic.verification-token.confirmation-lifetime=${VERIFICATION_CONFIRMATION_LIFETIME:PT1H}
+qbic.verification-token.reset-lifetime=${VERIFICATION_RESET_LIFETIME:PT5M}
+qbic.verification-token.set-password-lifetime=${VERIFICATION_SET_PASSWORD_LIFETIME:PT1H}
 ```
 
 Since the application will retrieve experimental design values from a list of defined vocabularies
@@ -355,12 +368,16 @@ service.host.protocol=${DM_HOST_PROTOCOL:https}
 service.host.port=${DM_SERVICE_PORT:-1}
 # Set the context path, for example if your app runs behind a proxy
 server.servlet.context-path=${DM_SERVICE_CONTEXT_PATH:}
-# route for mail confirmation consumption
-email-confirmation-endpoint=${EMAIL_CONFIRMATION_ENDPOINT:login}
-email-confirmation-parameter=${EMAIL_CONFIRMATION_PARAMETER:confirm-email}
-# route for password reset
-password-reset-endpoint=${PASSWORD_RESET_ENDPOINT:new-password}
-password-reset-parameter=${PASSWORD_RESET_PARAMETER:user-id}
+# route for mail confirmation consumption (single-use token, not the user id)
+routing.email-confirmation.endpoint=${EMAIL_CONFIRMATION_ENDPOINT:/registration/confirm}
+routing.email-confirmation.token-parameter=${EMAIL_CONFIRMATION_TOKEN_PARAMETER:token}
+# route for password reset (single-use token, not the user id)
+routing.password-reset.endpoint=${PASSWORD_RESET_ENDPOINT:/registration/new-password}
+routing.password-reset.token-parameter=${PASSWORD_RESET_TOKEN_PARAMETER:token}
+# verification link lifetimes (AUTH-R-05 bounds: confirmation/set-password <= 1h, reset <= 15min)
+qbic.verification-token.confirmation-lifetime=${VERIFICATION_CONFIRMATION_LIFETIME:PT1H}
+qbic.verification-token.reset-lifetime=${VERIFICATION_RESET_LIFETIME:PT5M}
+qbic.verification-token.set-password-lifetime=${VERIFICATION_SET_PASSWORD_LIFETIME:PT1H}
 # openbis-client credentials
 openbis.user.name=${OPENBIS_USER_NAME:openbis-username}
 openbis.user.password=${OPENBIS_USER_PASSWORD:openbis-password}
