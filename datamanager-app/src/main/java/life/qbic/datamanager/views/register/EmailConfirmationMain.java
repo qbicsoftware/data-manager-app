@@ -16,6 +16,7 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
+import java.time.Duration;
 import java.util.Optional;
 import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.MainPage;
@@ -100,35 +101,78 @@ public class EmailConfirmationMain extends Main implements HasUrlParameter<Strin
     resendVerificationLink.addClassName("link");
     Span resendVerification = new Span(resendVerificationText, resendVerificationLink);
     resendVerificationLink.addClickListener(spanClickEvent -> {
-      // Server-side throttle (AUTH-NFR-03, #1682).
+      // Resend with no user id must not throw.
       //
-      // This replaces a 30-second client-side java.util.Timer whose counter lived in a UIScope
-      // bean: reloading the page reset it to zero, so it was not a control at all. The timer is
-      // gone rather than kept alongside, because two mechanisms disagreeing about whether a resend
-      // is allowed is worse than one.
+      // This route uses @OptionalParameter, so /register/pending-email-confirmation is a valid URL and
+      // renders this page with userInfo == null. Clicking "Resend" then dereferenced it and produced a
+      // NullPointerException -> HTTP 500. The visitor here has no account context to resend for, so
+      // say so plainly instead of failing.
+      if (userInfo == null) {
+        showError("Cannot resend the link",
+            "Please open the link from your registration email, or register again.");
+        return;
+      }
+
+      // Server-side throttle (AUTH-NFR-03, #1682). This replaces a 30-second client-side
+      // java.util.Timer whose counter lived in a UIScope bean: reloading the page reset it to zero,
+      // so it was not a control at all.
       //
-      // The DECISION decides whether the work happens. It must not decide what is rendered — see
-      // below. Note it is record() and not isThrottled()+record(): the attempt that crosses the
-      // threshold is itself over the limit, so only record()'s return value correctly refuses it.
+      // record(), not isThrottled()+record(): the attempt that crosses the threshold is itself over
+      // the limit, so only record()'s return value correctly refuses it.
       var decision = authAttemptThrottle.record(
           AuthAttemptThrottle.Scope.EMAIL_CONFIRMATION_RESEND, userInfo.emailAddress(),
           java.time.Instant.now());
+
       if (decision == AuthAttemptThrottle.Decision.ALLOWED) {
         sendConfirmationEmail(userInfo.id(), userInfo.emailAddress(), userInfo.fullName());
+        showInfo("Verification email sent",
+            "Please check your inbox and click the link to complete your registration.");
+        return;
       }
-      // One message for both outcomes. "Verification email has been sent" is true enough for the
-      // throttled case too — an email was sent recently — and discloses nothing. A distinct "too
-      // many requests" panel would confirm to an attacker that the address is real and that the
-      // throttle is keyed on it (decision B4).
-      showInfo("Verification email has been sent",
-          "Please check your inbox. If the email does not arrive, wait a few minutes before "
-              + "requesting another one.");
+
+      // Throttled: say so, and say when to come back.
+      //
+      // This is deliberately NOT hidden, and the reason is specific to this page: it is only
+      // reachable after the visitor proved they know the user id (UserRegistrationMain navigates
+      // here with a real id straight after registering). Everyone here has already demonstrated the
+      // account exists, so stating "wait N minutes" discloses nothing that the URL did not.
+      //
+      // Staying silent would be worse than useless: the visitor would be told an email was sent, no
+      // email would arrive, and they would report a broken mail server. See ResetPasswordMain for the
+      // opposite decision, where the audience is anonymous and silence IS the requirement.
+      Duration cooldown = authAttemptThrottle.blockDuration(
+          AuthAttemptThrottle.Scope.EMAIL_CONFIRMATION_RESEND);
+      showInfo("Verification email already sent",
+          "To prevent duplicate emails, another link can be requested in %s. Check your inbox and "
+              .formatted(cooldownText(cooldown))
+              + "spam folder first — the link from the previous email is still valid.");
     });
     resendVerification.addClassName("resend-verification");
     emailConfirmationComponent.add(resendVerification);
 
     RouterLink backToLoginLink = new RouterLink("Go back to login", LoginLayout.class);
     emailConfirmationComponent.add(backToLoginLink);
+  }
+
+  /**
+   * Renders a duration for a human, without seconds-level precision nobody needs.
+   *
+   * <p>Deliberately coarse: the throttle window is deployment configuration and can change, so the
+   * copy must not hard-code "15 minutes" and then drift.</p>
+   */
+  static String cooldownText(Duration cooldown) {
+    long minutes = cooldown.toMinutes();
+    if (minutes < 1) {
+      return "a moment";
+    }
+    if (minutes == 1) {
+      return "1 minute";
+    }
+    if (minutes < 60) {
+      return minutes + " minutes";
+    }
+    long hours = cooldown.toHours();
+    return hours == 1 ? "1 hour" : hours + " hours";
   }
 
   private boolean isAlreadyActiveUser(QbicOidcUser oidcUser) {

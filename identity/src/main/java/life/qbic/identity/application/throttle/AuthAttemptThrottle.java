@@ -209,6 +209,19 @@ public class AuthAttemptThrottle {
   }
 
   /**
+   * How long a block lasts for this flow.
+   *
+   * <p>Exposed so a view can tell the visitor when to come back, instead of leaving them to guess
+   * whether anything happened. It reveals a configured duration, not account state.</p>
+   *
+   * @param scope the flow
+   * @return the configured block duration
+   */
+  public Duration blockDuration(Scope scope) {
+    return policyFor(requireNonNull(scope, "scope must not be null")).blockDuration();
+  }
+
+  /**
    * Derives the stored key: SHA-256 over {@code scope NUL normalised-identifier}.
    *
    * <p>Plain SHA-256, not a stretching function. The input is an email address — low entropy, so a

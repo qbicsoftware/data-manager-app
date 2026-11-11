@@ -93,6 +93,12 @@ public class ResetPasswordMain extends Main implements BeforeEnterObserver {
     // (decision B4). The visitor sees the same "check your inbox" panel either way, and the only
     // difference is whether an email is actually sent.
     //
+    // ⚠️ EmailConfirmationMain makes the OPPOSITE choice — it tells the visitor to wait. That is not
+    // an inconsistency: this page is reachable by anyone with no prior proof of anything, so a
+    // distinguishing message is an oracle. That page is only reachable after the visitor proved they
+    // know the user id, so stating a cooldown there discloses nothing and silence would just look
+    // like a broken mail server. Do not "unify" the two without checking that reasoning first.
+    //
     // record(), not isThrottled()+record(): the attempt that crosses the threshold is itself over
     // the limit, so only record()'s return value correctly refuses it.
     var decision = authAttemptThrottle.record(AuthAttemptThrottle.Scope.PASSWORD_RESET_RESEND, email,

@@ -107,30 +107,96 @@ class EmailConfirmationResendSpec extends Specification {
     1 * emailService.send(_, _, _)
   }
 
-  def "the throttled resend shows the same panel as a successful one"() {
-    // The single most important assertion in this spec. If a throttled resend said "too many
-    // requests", the button would become an account-existence oracle.
+  def "a successful resend confirms the email was sent"() {
     given:
     def view = newView()
     view.setParameter(event(), USER_ID)
 
-    when: 'one resend succeeds'
+    when:
     clickResend(view)
-    def afterFirst = renderedText(view)
 
-    and: 'the next one is throttled'
+    then:
+    def text = renderedText(view)
+    text.toLowerCase().contains('sent')
+    text.toLowerCase().contains('check your inbox')
+  }
+
+  def "a throttled resend tells the visitor to wait, instead of silently doing nothing"() {
+    // This is the behaviour that was wrong first time round.
+    //
+    // The page is only reachable after the visitor proved they know the user id (UserRegistrationMain
+    // navigates here with a real id straight after registering), so everyone here has ALREADY
+    // demonstrated that the account exists. There is no enumeration oracle to protect, and staying
+    // silent meant telling the visitor "an email was sent" while no email was sent — which reads as a
+    // broken mail server and lands on the helpdesk.
+    given:
+    def view = newView()
+    view.setParameter(event(), USER_ID)
+
+    when: 'the first resend goes out'
     clickResend(view)
-    def afterSecond = renderedText(view)
 
-    then: 'the visitor cannot tell the difference — identical rendering, character for character'
-    afterFirst == afterSecond
-    afterFirst.toLowerCase().contains('sent')
+    and: 'the second one is throttled'
+    clickResend(view)
 
-    and: 'and neither rendering carries throttle language'
-    !afterSecond.toLowerCase().contains('too many')
-    !afterSecond.toLowerCase().contains('throttl')
-    !afterSecond.toLowerCase().contains('seconds until')
-    !afterSecond.toLowerCase().contains('try again later')
+    then: 'the visitor is told, in plain words, that they must wait'
+    def text = renderedText(view).toLowerCase()
+    text.contains('already sent')
+    text.contains('can be requested in')
+
+    and: 'the cooldown is stated as a human duration, not a raw ISO-8601 value'
+    text ==~ /(?s).*\d+ minutes.*/
+    !text.contains('pt15m')
+
+    and: 'and it does not pretend the link is lost — the previous one is still valid'
+    text.contains('still valid')
+  }
+
+  def "the throttle copy derives the duration from configuration, not a hard-coded 15"() {
+    // The block duration is deployment configuration. Copy that hard-codes "15 minutes" would start
+    // lying the moment an operator tunes AUTH_THROTTLE_RESEND_BLOCK_DURATION.
+    expect:
+    EmailConfirmationMain.cooldownText(java.time.Duration.ofMinutes(5)) == '5 minutes'
+    EmailConfirmationMain.cooldownText(java.time.Duration.ofMinutes(15)) == '15 minutes'
+    EmailConfirmationMain.cooldownText(java.time.Duration.ofMinutes(1)) == '1 minute'
+    EmailConfirmationMain.cooldownText(java.time.Duration.ofHours(1)) == '1 hour'
+    EmailConfirmationMain.cooldownText(java.time.Duration.ofHours(2)) == '2 hours'
+    EmailConfirmationMain.cooldownText(java.time.Duration.ofSeconds(30)) == 'a moment'
+  }
+
+  def "a throttled resend does not send a second email"() {
+    given:
+    def view = newView()
+    view.setParameter(event(), USER_ID)
+
+    when:
+    clickResend(view)
+    clickResend(view)
+
+    then: 'the resend limit is 1 in this spec'
+    1 * emailService.send(_, _, _)
+  }
+
+  def "the page rendered without a user id does not throw when Resend is clicked"() {
+    // The route uses @OptionalParameter, so /register/pending-email-confirmation is a valid URL that
+    // renders this page with no userInfo. The click handler dereferenced it unconditionally and
+    // produced a NullPointerException -> HTTP 500.
+    given: 'no parameter was supplied, so setParameter never assigned a user'
+    def view = newView()
+
+    when:
+    clickResend(view)
+
+    then: 'no exception escapes'
+    noExceptionThrown()
+
+    and: 'the visitor is told what to do instead'
+    def text = renderedText(view).toLowerCase()
+    text.contains('cannot resend')
+    text.contains('registration email')
+
+    and: 'nothing was sent'
+    0 * emailService.send(_, _, _)
   }
 
   def "the throttle survives a page reload, because it is in the store and not in the view"() {
