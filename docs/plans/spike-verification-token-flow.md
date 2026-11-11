@@ -1,6 +1,6 @@
 # Spike — tokenised verification flow (FEAT-AUTH-FLOWS-01)
 
-**Branch:** `spike/verification-token-flow`
+**Branch:** `feature/auth-flow-hardening` (PR #1689)
 **Purpose:** answer the questions a DDL review cannot. Not production code — see *What to keep* below.
 **Result:** 30 new specs, all green; 304 existing `identity` specs unaffected.
 
