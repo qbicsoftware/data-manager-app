@@ -167,3 +167,45 @@ CREATE TABLE IF NOT EXISTS `auth_attempt`
 --     including the "throttling is now active" note and the threshold properties.
 -- 5. [ ] Remove the AWAITING status line from the header above.
 -- =============================================================================
+
+-- -----------------------------------------------------------------------------
+-- Idempotent upgrade of an EXISTING auth_attempt table
+-- -----------------------------------------------------------------------------
+-- `CREATE TABLE IF NOT EXISTS` above is a NO-OP when the table already exists. That
+-- matters here because this script is applied more than once across its life:
+--
+--   * the table was created during testing, and
+--   * `windowSeconds` was added afterwards, when the sliding-window bug was fixed.
+--
+-- Without the statements below, re-applying the script against an existing table
+-- silently leaves the old shape in place — no error, no warning, and the application
+-- then fails at runtime with "Unknown column 'windowSeconds'". That is exactly what
+-- happened on the test server.
+--
+-- MariaDB/MySQL have no `ADD COLUMN IF NOT EXISTS`, so each column is added only when
+-- it is actually missing, via a prepared statement over information_schema.
+-- -----------------------------------------------------------------------------
+
+SET @dbname = DATABASE();
+
+-- `windowSeconds`: added when the fixed-window fix landed.
+SET @sql = (
+    SELECT IF(
+        COUNT(*) = 0,
+        'ALTER TABLE `auth_attempt`
+           ADD COLUMN `windowSeconds` int(11) NOT NULL DEFAULT 900
+           COMMENT ''Length of the counting window, stored per row. The adapter compares the row''''s own window end (windowStartAt + windowSeconds) against now.''',
+        'DO 0'
+    )
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = @dbname
+      AND TABLE_NAME = 'auth_attempt'
+      AND COLUMN_NAME = 'windowSeconds'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Defensive: a row written by the pre-fix code has windowSeconds backfilled by the
+-- DEFAULT above, so no data fix is needed. Clearing any stale block is also not
+-- necessary — the adapter clears it when the window rolls over.
