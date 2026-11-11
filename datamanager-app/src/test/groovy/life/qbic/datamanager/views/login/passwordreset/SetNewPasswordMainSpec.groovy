@@ -5,10 +5,12 @@ import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.Location
 import com.vaadin.flow.router.NavigationTrigger
 import com.vaadin.flow.router.QueryParameters
+import com.vaadin.flow.router.RouteParameters
 import com.vaadin.flow.router.Router
 import com.vaadin.flow.server.RouteRegistry
 import com.vaadin.flow.server.VaadinService
 import life.qbic.identity.api.VerificationLinkService
+import life.qbic.datamanager.views.login.LoginLayout
 import life.qbic.identity.application.user.IdentityService
 import life.qbic.identity.domain.repository.UserRepository
 import spock.lang.Specification
@@ -34,7 +36,10 @@ class SetNewPasswordMainSpec extends Specification {
     Router router
 
     def setup() {
-        router = new Router(Stub(RouteRegistry))
+        def registry = Stub(RouteRegistry)
+        // The "Go to login" link resolves its target through the registry at construction time.
+        registry.getTargetUrl(LoginLayout, _ as RouteParameters) >> Optional.of("login")
+        router = new Router(registry)
         def service = Stub(VaadinService)
         service.getRouter() >> router
         service.getContext() >> null
@@ -78,6 +83,7 @@ class SetNewPasswordMainSpec extends Specification {
         readField(view, "currentUserId") == "u-1"
         readField(view, "resetAuthorised") == true
         setNewPasswordComponent.isVisible()
+        !readField(view, "invalidLinkComponent").isVisible()
     }
 
     def "an unusable token leaves the form hidden"() {
@@ -92,6 +98,9 @@ class SetNewPasswordMainSpec extends Specification {
         !setNewPasswordComponent.isVisible()
         readField(view, "currentUserId") == null
         readField(view, "resetAuthorised") == false
+
+        and: "consumed/expired tokens must not render a blank page"
+        readField(view, "invalidLinkComponent").isVisible()
     }
 
     def "a missing token leaves the form hidden"() {
@@ -102,6 +111,9 @@ class SetNewPasswordMainSpec extends Specification {
         0 * linkService.consume(*_)
         !setNewPasswordComponent.isVisible()
         readField(view, "resetAuthorised") == false
+
+        and:
+        readField(view, "invalidLinkComponent").isVisible()
     }
 
     // ------------------------------------------------------------------ helpers
