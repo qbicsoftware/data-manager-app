@@ -25,7 +25,7 @@ For the migration documentation structure, see [`README.md`](README.md).
 | 2 | [`create-project-page-read-models.sql`](../sql/migrations/create-project-page-read-models.sql) | Create the project-page read-model views `experiment_progress`, `v_project_sample_overview`, `v_measurement_experiment`, plus a supporting index on `sample(experiment_id)`. Views + one index only; no table or column changes. | Low (non-destructive) |
 | 3 | [`create-experiment-recent-activity-views.sql`](../sql/migrations/create-experiment-recent-activity-views.sql) | Create the recent-activity views `experiment_recent_sample` and `experiment_recent_measurement` (newest three per experiment, via `ROW_NUMBER`) for the experiment snapshot panels. Views only. | Low (non-destructive; needs MariaDB 10.2+) |
 | 4 | [`create-assay-standing-view.sql`](../sql/migrations/create-assay-standing-view.sql) | Create `v_project_assay_standing`: one row per primary dataset — one experiment for one analysis method — with measurement counts, primary-data coverage and volume. One derivation shared by the summary and Datasets pages (ADR 0010). View + one index. | Low (non-destructive; needs MariaDB 10.2+) |
-| 5 | [`auth-flow-hardening.sql`](../sql/migrations/auth-flow-hardening.sql) — **draft in `sql/migrations/drafts/` until §12 sign-off** | Create `user_verification_token` (single-use, hashed, time-limited confirmation / reset / set-password links, AUTH-R-05). One new table; no existing table altered. Throttling (`auth_attempt`, AUTH-NFR-03) is **not** in this release — see #1682. | Medium (one new table; **links in flight stop working by design** — see operator notes) |
+| 5 | [`auth-flow-hardening.sql`](../sql/migrations/auth-flow-hardening.sql) | Create `user_verification_token` (single-use, hashed, time-limited confirmation / reset / set-password links, AUTH-R-05). One new table; no existing table altered. Throttling (`auth_attempt`, AUTH-NFR-03) is **not** in this release — see #1682. | Medium (one new table; **links in flight stop working by design** — see operator notes) |
 
 Each row links to its incremental script. The sections below expand each entry
 with apply / verify / rollback detail.
@@ -408,9 +408,10 @@ Non-destructive: no table or column is modified.
 
 ## Migration #5: Auth-flow hardening — verification tokens and attempt throttling
 
-**Status:** ⛔ **draft, do not apply.** The script lives in `sql/migrations/drafts/` and is waiting
-for AGENTS.md §12 schema-change sign-off. It is documented here so the rollout procedure is written
-and reviewable *before* the DDL is promoted, not after.
+**Status:** ✅ **approved and promoted.** The AGENTS.md §12 schema-change sign-off was recorded, the
+script moved to `sql/migrations/`, and its `CREATE TABLE` block was added to
+`sql/complete-schema.sql` so a fresh install matches an upgraded one. **Apply the SQL before
+deploying the application code** — see the deployment checklist below.
 
 | Field | Value |
 |---|---|
@@ -418,7 +419,7 @@ and reviewable *before* the DDL is promoted, not after.
 | **Feature** | [`FEAT-AUTH-FLOWS`](https://github.com/qbicsoftware/data-manager-app/issues/1672) |
 | **ADRs** | none — no architectural decision required; rationale is in the script header |
 | **Scope** | create 1 table; no existing table altered |
-| **Script** | [`sql/migrations/drafts/auth-flow-hardening.sql`](../sql/migrations/drafts/auth-flow-hardening.sql) (→ `sql/migrations/auth-flow-hardening.sql` on promotion) |
+| **Script** | [`sql/migrations/auth-flow-hardening.sql`](../sql/migrations/auth-flow-hardening.sql) |
 | **Target datasource** | `data_management` |
 
 ### What it does

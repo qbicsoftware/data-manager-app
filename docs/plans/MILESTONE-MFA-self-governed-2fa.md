@@ -168,7 +168,7 @@ journey. Requirements: `AUTH-R-05`, `AUTH-R-06`, `AUTH-NFR-03` (+ `AUTH-R-01` fo
 
 | # | Rel. | Type | Title | Labels | Depends on |
 |---|---|---|---|---|---|
-| M1-1 | R1 | Task | **Tokenised verification links**: `user_verification_token`, hashed single-use tokens, expiry, supersede-on-reissue, explicit confirm action (draft: `sql/migrations/drafts/auth-flow-hardening.sql`) | `complex`, `high prio` | M0 gate |
+| M1-1 | R1 | Task | **Tokenised verification links**: `user_verification_token`, hashed single-use tokens, expiry, supersede-on-reissue, explicit confirm action (`sql/migrations/auth-flow-hardening.sql` — promoted) | `complex`, `high prio` | M0 gate |
 | M1-2 | R1 | Task | **Confirmation moves off `/login`**: dedicated `/registration/confirm` route; `LoginLayout.handle()` no longer mutates state on GET | `medium` | M1-1 |
 | M1-3 | R1 | Task | **Reset flow uses tokens**: `/registration/reset-password` stops accepting a user id; `SetNewPasswordMain` consumes a token | `complex`, `high prio` | M1-1 |
 | M1-4 | R1 | Task | **Uniform failure responses** (`AUTH-NFR-03`): reset form always reports "if an account exists, a link was sent"; constant-work login path so unknown account and wrong password are indistinguishable | `medium` | M1-3 |
@@ -177,7 +177,7 @@ journey. Requirements: `AUTH-R-05`, `AUTH-R-06`, `AUTH-NFR-03` (+ `AUTH-R-01` fo
 | M1-7 | R2 | Task | **One password policy**: single source (`PasswordPolicy`), fix the "shorter than 8 characters" message for a 12-character rule, remove the three UI copies | `simple` | — |
 | M1-8 | R2 | Task | **Display name is not a credential** (`AUTH-R-06`): stop asking for a user name at registration (derive or defer to profile); keep `platformUserName` as display-only for sharing and avatars | `medium` | M1-6 |
 | M1-9 | R2 | Task | Remove dead UX state (`?userRegistered` consumer with no producer) and collapse the duplicated confirmation-parameter configuration | `simple` | M1-2 |
-| M1-11 | R1 | Task | **ORCID-only accounts get a password** (`AUTH-R-07`, decision D1b): detection query, one-time set-password invitation for accounts with `encryptedPassword IS NULL`, remove the passwordless-ORCID registration path, make ORCID login require an existing link instead of offering registration (draft: `sql/migrations/drafts/auth-flow-hardening.sql` §3) | `complex`, `high prio` | M1-1, M1-3 |
+| M1-11 | R1 | Task | **ORCID-only accounts get a password** (`AUTH-R-07`, decision D1b): detection query, one-time set-password invitation for accounts with `encryptedPassword IS NULL`, remove the passwordless-ORCID registration path, make ORCID login require an existing link instead of offering registration (runbook in `docs/migrations/NEXT.md`; the DDL itself is promoted) | `complex`, `high prio` | M1-1, M1-3 |
 | M1-10 | R1 | Task | Migration guide entry in `docs/migrations/NEXT.md` for both new tables, with the "links in flight stop working" operator note (B1) | `documentation` | M1-1 |
 
 **Two releases (decision B5):** `R1` is the security fix and ships first; `R2` is the consolidation
@@ -448,5 +448,5 @@ gh api repos/:owner/:repo/milestones \
    `AUTH-*` entries. **Awaiting human approval — it is the gate.**
 3. Hand both drafts to review in parallel, so schema approval and requirement approval land in the
    same conversation:
-   - `sql/migrations/drafts/auth-flow-hardening.sql` (M1, ships first)
+   - `sql/migrations/auth-flow-hardening.sql` (M1, promoted)
    - `sql/migrations/drafts/mfa-second-factor.sql` (M2)

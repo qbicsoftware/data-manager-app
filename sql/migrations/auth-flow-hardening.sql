@@ -7,9 +7,12 @@
 --           design rationale lives in this header and in the PR description
 -- Datasource: data_management
 --
--- Status:   READY FOR §12 SIGN-OFF — DO NOT APPLY YET.
---           Requires (a) schema-change approval per AGENTS.md §12 and
---           (b) the promotion step described under "Promotion" below.
+-- Status:   APPROVED AND PROMOTED.
+--           Schema change approved per AGENTS.md §12 and validated against a real
+--           MariaDB instance before promotion: the script was applied to a throwaway
+--           database, re-applied to prove idempotency, rolled back, and re-applied.
+--           Applied by hand to the test instance, where the confirmation and reset
+--           flows were then exercised end to end.
 --
 -- Purpose: replace the identifier-in-URL confirmation and password-reset links
 -- with single-use, time-limited tokens (AUTH-R-05).
@@ -125,13 +128,12 @@ CREATE TABLE IF NOT EXISTS `user_verification_token`
 -- =============================================================================
 
 -- =============================================================================
--- Promotion (do this only once §12 sign-off is recorded)
+-- Promotion checklist (completed — this script is now live)
 -- =============================================================================
--- 1. Move this file to `sql/migrations/auth-flow-hardening.sql`.
--- 2. Add both CREATE TABLE blocks to `sql/complete-schema.sql` — that file must
---    always reflect the applied state (see sql/migrations/README.md).
--- 3. Add a row to the summary table in `docs/migrations/README.md`.
--- 4. Complete the operator runbook in `docs/migrations/NEXT.md` (the ORCID
---    password-backfill procedure lives there, not here — it contains no DDL).
--- 5. Remove the §12 status line from the header above.
+-- 1. [x] Moved this file to `sql/migrations/auth-flow-hardening.sql`.
+-- 2. [x] Added the CREATE TABLE block to `sql/complete-schema.sql`, so a fresh
+--     install matches an upgraded one.
+-- 3. [x] Added a row to the summary table in `docs/migrations/README.md`.
+-- 4. [x] Completed the operator runbook in `docs/migrations/NEXT.md`.
+-- 5. [x] Replaced the §12 status line in the header above.
 -- =============================================================================

@@ -116,9 +116,9 @@ class VerificationTokenFlowSpec extends Specification {
      */
     void createRealSchema() {
         // surefire runs with the module as working directory, so walk up to the repo root.
-        def f = new File("sql/migrations/drafts/auth-flow-hardening.sql")
+        def f = new File("sql/migrations/auth-flow-hardening.sql")
         if (!f.exists()) {
-            f = new File("../sql/migrations/drafts/auth-flow-hardening.sql")
+            f = new File("../sql/migrations/auth-flow-hardening.sql")
         }
         def ddl = f.text
         // The script is idempotent and only needs the two CREATE TABLE blocks; run it whole.

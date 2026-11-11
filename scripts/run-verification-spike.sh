@@ -113,11 +113,11 @@ case "$MODE" in
         PRIMARY KEY (\`id\`)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;"
 
-    echo "Applying the real migration DDL from sql/migrations/drafts/"
+    echo "Applying the real migration DDL from sql/migrations/"
     for db in vertoken vertokenconc; do
       mysql -h 127.0.0.1 -P "$MYSQL_PORT" -u root -p"$MARIADB_PW" "$db" -e "$USERS_DDL" 2>/dev/null
       mysql -h 127.0.0.1 -P "$MYSQL_PORT" -u root -p"$MARIADB_PW" "$db" \
-        < sql/migrations/drafts/auth-flow-hardening.sql 2>/dev/null
+        < sql/migrations/auth-flow-hardening.sql 2>/dev/null
     done
 
     echo "Running against MariaDB $MYSQL_PORT"

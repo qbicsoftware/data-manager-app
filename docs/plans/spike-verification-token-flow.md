@@ -8,7 +8,7 @@
 
 ## What the spike set out to test
 
-Reviewing `sql/migrations/drafts/auth-flow-hardening.sql` established that the *schema* behaves as
+Reviewing `sql/migrations/auth-flow-hardening.sql` established that the *schema* behaves as
 claimed (unique keys reject replays, no FK on `auth_attempt`, cascade works, rollback is clean). It
 could not establish whether the *service layer* preserves those properties. Four questions:
 

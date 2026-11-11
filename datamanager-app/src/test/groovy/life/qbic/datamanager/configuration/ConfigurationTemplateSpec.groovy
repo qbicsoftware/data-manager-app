@@ -18,6 +18,31 @@ import spock.lang.Unroll
  */
 class ConfigurationTemplateSpec extends Specification {
 
+    private static File resolve(String path) {
+        def candidates = [new File(path), new File("../$path")]
+        def file = candidates.find { it.exists() }
+        assert file != null : "$path not found from ${new File('.').absolutePath}"
+        return file
+    }
+
+    /**
+     * Extracts the structural DDL of {@code user_verification_token} with comments stripped, so the
+     * comparison is about columns, keys and constraints rather than wording.
+     */
+    private static List<String> structuralDdl(String path) {
+        def text = resolve(path).text
+        int start = text.indexOf('CREATE TABLE IF NOT EXISTS `user_verification_token`')
+        if (start < 0) {
+            return null
+        }
+        int end = text.indexOf('COLLATE = utf8mb4_unicode_ci;', start)
+        return text.substring(start, end).readLines()
+                .collect { it.trim() }
+                .findAll { it && !it.startsWith('--') && !it.startsWith('COMMENT ') }
+                .collect { it.replaceAll(/COMMENT '[^']*'/, '').replaceAll(/\s+/, ' ').trim() }
+                .findAll { it }
+    }
+
     private static Properties loadTemplate() {
         def candidates = [new File("../application.properties.template"),
                           new File("application.properties.template")]
@@ -67,6 +92,17 @@ class ConfigurationTemplateSpec extends Specification {
         expect:
         loadTemplate().getProperty('routing.email-confirmation.token-parameter') == 'token'
         loadTemplate().getProperty('routing.password-reset.token-parameter') == 'token'
+    }
+
+    def "the promoted migration and complete-schema.sql define the same table"() {
+        given: "a fresh install is built from complete-schema.sql, an upgraded one from the migration"
+        def migration = structuralDdl('sql/migrations/auth-flow-hardening.sql')
+        def schema = structuralDdl('sql/complete-schema.sql')
+
+        expect: "the two paths must produce the same table, or fresh and upgraded installs diverge"
+        migration != null
+        schema != null
+        migration == schema
     }
 
     @Unroll

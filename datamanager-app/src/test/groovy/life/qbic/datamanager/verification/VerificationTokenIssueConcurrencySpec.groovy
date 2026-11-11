@@ -185,9 +185,9 @@ class VerificationTokenIssueConcurrencySpec extends Specification {
     }
 
     void createRealSchema() {
-        def f = new File("sql/migrations/drafts/auth-flow-hardening.sql")
+        def f = new File("sql/migrations/auth-flow-hardening.sql")
         if (!f.exists()) {
-            f = new File("../sql/migrations/drafts/auth-flow-hardening.sql")
+            f = new File("../sql/migrations/auth-flow-hardening.sql")
         }
         def em = emf.createEntityManager()
         try {

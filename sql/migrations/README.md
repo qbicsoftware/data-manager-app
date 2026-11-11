@@ -26,6 +26,7 @@ For the three-tier migration documentation structure, see
 | 10 | [`create-user-project-view-state.sql`](create-user-project-view-state.sql) | Create `user_project_view_state` for per-user "new since last looked" (**deferred — do not apply yet**) | TBD (`FEAT-PROJECT-*`) | `data_management` |
 | 11 | [`create-experiment-recent-activity-views.sql`](create-experiment-recent-activity-views.sql) | Create `experiment_recent_sample` and `experiment_recent_measurement` views (newest three per experiment) for the snapshot panels | TBD (`FEAT-PROJECT-*`) | `data_management` |
 | 12 | [`create-assay-standing-view.sql`](create-assay-standing-view.sql) | Create `v_project_assay_standing` view: one row per primary dataset, i.e. per (experiment, analysis method), with measurement counts, primary-data coverage and volume. Single derivation shared by the summary and Datasets pages (ADR 0010) | TBD (`FEAT-PROJECT-*`) | `data_management` |
+| 13 | [`auth-flow-hardening.sql`](auth-flow-hardening.sql) | Create `user_verification_token`: single-use, hashed, time-limited tokens behind email confirmation, password reset and the set-password invitation (AUTH-R-05) | [`FEAT-AUTH-FLOWS-01/-02/-05`](https://github.com/qbicsoftware/data-manager-app/issues/1673) ([#1678](https://github.com/qbicsoftware/data-manager-app/issues/1678), [#1680](https://github.com/qbicsoftware/data-manager-app/issues/1680), [#1683](https://github.com/qbicsoftware/data-manager-app/issues/1683)) | `data_management` |
 
 *Add a row here and drop in the script when a new migration lands.*
 
