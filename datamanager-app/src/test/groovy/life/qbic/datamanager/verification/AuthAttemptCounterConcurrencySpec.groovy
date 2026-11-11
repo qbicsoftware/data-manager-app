@@ -300,6 +300,48 @@ class AuthAttemptCounterConcurrencySpec extends Specification {
     storedRowCount(SCOPE, staleKey) == 0
   }
 
+  def "peek on a key that was never attempted returns an empty, unblocked counter"() {
+    // The pre-request check runs on every login, including the first one for an address, so this is
+    // the most-executed path in the whole throttle. Returning null here would NPE on every first
+    // login attempt.
+    given:
+    def key = AuthAttemptThrottle.attemptKey(AuthAttemptThrottle.Scope.LOGIN, 'never-seen@example.org')
+
+    expect:
+    inTransaction { EntityManager em ->
+      def state = new JpaAuthAttemptCounter(em).peek(SCOPE, key)
+      state.attemptCount() == 0 && state.blockedUntil() == null
+    }
+  }
+
+  def "a stored blockedUntil is read back as the same instant it was written"() {
+    // Guards the UTC round-trip. Every column is datetime(6) with no zone, so a write in one zone and
+    // a read in another would shift the block by the offset — and a block that ends early is not a
+    // block.
+    given:
+    def key = AuthAttemptThrottle.attemptKey(AuthAttemptThrottle.Scope.LOGIN, ADDRESS)
+    def blockedUntil = Instant.parse('2026-11-11T12:34:56.123456Z')
+
+    when:
+    inTransaction { EntityManager em ->
+      def counter = new JpaAuthAttemptCounter(em)
+      counter.increment(SCOPE, key, T0, T0.minus(Duration.ofMinutes(15)))
+      counter.block(SCOPE, key, blockedUntil)
+    }
+
+    then:
+    inTransaction { EntityManager em ->
+      new JpaAuthAttemptCounter(em).peek(SCOPE, key).blockedUntil() == blockedUntil
+    }
+  }
+
+  def "purging an empty table is a no-op rather than an error"() {
+    expect:
+    inTransaction { EntityManager em ->
+      new JpaAuthAttemptCounter(em).purgeOlderThan(T0) == 0
+    }
+  }
+
   // --------------------------------------------------------------- helpers
 
   private AuthAttemptThrottle newThrottle(int maxAttempts) {

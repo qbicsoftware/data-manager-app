@@ -92,11 +92,12 @@ public class ResetPasswordMain extends Main implements BeforeEnterObserver {
     // throttle is keyed on it, which is exactly the oracle the uniform response exists to remove
     // (decision B4). The visitor sees the same "check your inbox" panel either way, and the only
     // difference is whether an email is actually sent.
-    boolean throttled = authAttemptThrottle.isThrottled(
-        AuthAttemptThrottle.Scope.PASSWORD_RESET_RESEND, email, java.time.Instant.now());
-    if (!throttled) {
-      authAttemptThrottle.record(AuthAttemptThrottle.Scope.PASSWORD_RESET_RESEND, email,
-          java.time.Instant.now());
+    //
+    // record(), not isThrottled()+record(): the attempt that crosses the threshold is itself over
+    // the limit, so only record()'s return value correctly refuses it.
+    var decision = authAttemptThrottle.record(AuthAttemptThrottle.Scope.PASSWORD_RESET_RESEND, email,
+        java.time.Instant.now());
+    if (decision == AuthAttemptThrottle.Decision.ALLOWED) {
       try {
         identityService.requestPasswordReset(email);
       } catch (RuntimeException e) {

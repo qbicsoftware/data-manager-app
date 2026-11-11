@@ -107,19 +107,19 @@ public class EmailConfirmationMain extends Main implements HasUrlParameter<Strin
       // gone rather than kept alongside, because two mechanisms disagreeing about whether a resend
       // is allowed is worse than one.
       //
-      // The visitor is told the same thing either way. That is the requirement, not politeness: a
-      // distinct "too many requests" message confirms to an attacker that this address is real and
-      // that the throttle is keyed on it (decision B4).
-      boolean throttled = authAttemptThrottle.isThrottled(
+      // The DECISION decides whether the work happens. It must not decide what is rendered — see
+      // below. Note it is record() and not isThrottled()+record(): the attempt that crosses the
+      // threshold is itself over the limit, so only record()'s return value correctly refuses it.
+      var decision = authAttemptThrottle.record(
           AuthAttemptThrottle.Scope.EMAIL_CONFIRMATION_RESEND, userInfo.emailAddress(),
           java.time.Instant.now());
-      if (!throttled) {
-        authAttemptThrottle.record(AuthAttemptThrottle.Scope.EMAIL_CONFIRMATION_RESEND,
-            userInfo.emailAddress(), java.time.Instant.now());
+      if (decision == AuthAttemptThrottle.Decision.ALLOWED) {
         sendConfirmationEmail(userInfo.id(), userInfo.emailAddress(), userInfo.fullName());
       }
       // One message for both outcomes. "Verification email has been sent" is true enough for the
-      // throttled case too — an email was sent recently — and discloses nothing.
+      // throttled case too — an email was sent recently — and discloses nothing. A distinct "too
+      // many requests" panel would confirm to an attacker that the address is real and that the
+      // throttle is keyed on it (decision B4).
       showInfo("Verification email has been sent",
           "Please check your inbox. If the email does not arrive, wait a few minutes before "
               + "requesting another one.");
