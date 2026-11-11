@@ -665,6 +665,11 @@ no-op — the same fail-fast posture as the verification-token lifetimes.
 
 ### ⚠️ Scope decision — account scope only, not origin scope
 
+> **Operators: the proxy requirements live in
+> [`docs/operations/installation-and-administration.md`](../operations/installation-and-administration.md) §1.**
+> Read it before you enable `server.forward-headers-strategy`, and read §1.8 for the residual risk
+> this section describes below.
+
 `AUTH-NFR-03` asks for throttling *per account and per request origin*. **Only account scope ships.**
 Origin scope is deferred because the application cannot currently determine a client address:
 
