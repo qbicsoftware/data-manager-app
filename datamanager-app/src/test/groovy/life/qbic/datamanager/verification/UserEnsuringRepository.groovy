@@ -25,9 +25,9 @@ class UserEnsuringRepository implements VerificationTokenRepository {
     }
 
     @Override
-    void save(VerificationToken token) {
+    VerificationToken save(VerificationToken token) {
         ensureUser.call(token.userId())
-        delegate.save(token)
+        return delegate.save(token)
     }
 
     @Override

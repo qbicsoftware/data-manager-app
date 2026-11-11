@@ -66,8 +66,8 @@ class ServiceFactory {
         }
 
         @Override
-        void save(VerificationToken token) {
-            delegate.save(token)
+        VerificationToken save(VerificationToken token) {
+            return delegate.save(token)
         }
 
         @Override

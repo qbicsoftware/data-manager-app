@@ -55,12 +55,15 @@ public class JpaVerificationTokenRepository implements VerificationTokenReposito
   }
 
   @Override
-  public void save(VerificationToken token) {
+  public VerificationToken save(VerificationToken token) {
     if (token.id() == null) {
       entityManager.persist(token);
-    } else {
-      entityManager.merge(token);
+      return token;
     }
+    // merge() returns the MANAGED copy and leaves the argument detached. Discarding the
+    // return value means any later mutation on `token` would silently not be flushed, so
+    // the managed instance is returned instead. Same for consumeIfUsable() below.
+    return entityManager.merge(token);
   }
 
   @Override
@@ -100,7 +103,9 @@ public class JpaVerificationTokenRepository implements VerificationTokenReposito
     }
 
     token.consume(now);
-    entityManager.merge(token);
+    // No merge() here: `token` was loaded by findByTokenHashForUpdate in THIS EntityManager, so it
+    // is already managed and the mutation is tracked. merge() would copy it into a second instance
+    // and leave us returning the wrong one.
     entityManager.flush();
     return new Consumed(token);
   }

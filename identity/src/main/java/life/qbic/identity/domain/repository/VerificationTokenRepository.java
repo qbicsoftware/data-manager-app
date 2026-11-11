@@ -24,7 +24,12 @@ public interface VerificationTokenRepository {
    *     A duplicate hash is expected under concurrent consumption and must be handled as "already
    *     used", not as an internal error.
    */
-  void save(VerificationToken token);
+  /**
+   * @return the persisted, managed instance. Callers must use the returned value rather than the
+   *     argument: {@code merge} leaves the argument detached, so mutating it afterwards would not
+   *     be flushed.
+   */
+  VerificationToken save(VerificationToken token);
 
   Optional<VerificationToken> findByTokenHash(String tokenHash);
 

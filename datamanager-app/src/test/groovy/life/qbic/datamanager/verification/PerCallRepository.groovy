@@ -46,7 +46,7 @@ class PerCallRepository implements VerificationTokenRepository {
     }
 
     @Override
-    void save(VerificationToken token) {
+    VerificationToken save(VerificationToken token) {
         tx { JpaVerificationTokenRepository repo -> repo.save(token) }
     }
 
