@@ -664,6 +664,41 @@ CREATE TABLE IF NOT EXISTS `users`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
+-- Single-use, time-limited tokens behind email confirmation, password reset and the
+-- set-password invitation (AUTH-R-05). Only the SHA-256 hash is stored; the raw token exists
+-- once, in the outgoing email, and can never be read back.
+--
+-- Three nullable timestamps record how a token stopped being usable: consumedAt (used),
+-- supersededAt (replaced when a newer token was issued for the same purpose), and expiry via
+-- expiresAt. Kept separate so "was this link already used?" stays answerable.
+--
+-- expiresAt MUST be compared in application code against Instant.now(), never in SQL against
+-- NOW(): every column here is datetime(6) with no timezone.
+CREATE TABLE IF NOT EXISTS `user_verification_token`
+(
+    `id`           bigint(20)   NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `userId`       varchar(255) NOT NULL,
+    `purpose`      varchar(32)  NOT NULL
+        COMMENT 'EMAIL_CONFIRMATION | PASSWORD_RESET | SET_PASSWORD',
+    `tokenHash`    char(64)     NOT NULL
+        COMMENT 'Lower-case SHA-256 hex digest of a 32-byte SecureRandom token (Base64URL-encoded in the link). The raw token is never stored.',
+    `createdAt`    datetime(6)  NOT NULL,
+    `expiresAt`    datetime(6)  NOT NULL,
+    `consumedAt`   datetime(6)  DEFAULT NULL
+        COMMENT 'Set on first successful use. Non-NULL makes the token unusable.',
+    `supersededAt` datetime(6)  DEFAULT NULL
+        COMMENT 'Set when a newer token was issued for the same (userId, purpose). Non-NULL makes the token unusable.',
+
+    UNIQUE KEY `uk_user_verification_token_hash` (`tokenHash`),
+    KEY `idx_user_verification_token_user_purpose` (`userId`, `purpose`),
+    KEY `idx_user_verification_token_expiry` (`expiresAt`),
+    CONSTRAINT `FK_user_verification_token_user`
+        FOREIGN KEY (`userId`) REFERENCES `users` (`id`)
+            ON DELETE CASCADE
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS `experiments_datamanager_confounding_variables`
 (
     `id`           bigint(20)   NOT NULL AUTO_INCREMENT PRIMARY KEY,

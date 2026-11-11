@@ -29,9 +29,13 @@ public class ResetEmailSentComponent extends Div {
   public ResetEmailSentComponent() {
     loginButton.addClassName("primary");
     Div introduction = new Div();
-    introduction.add("Please check your inbox and follow the instructions to reset your password.");
+    // Wording matters: the same screen is shown whether or not an account exists (AUTH-NFR-03), so
+    // it must not assert that a mail was definitely delivered — only what to do next.
+    introduction.add(
+        "If an account exists for that address, you will receive an email with instructions to "
+            + "reset your password. Please check your inbox.");
     introduction.addClassName("introduction");
-    H2 titleSpan = new H2("Email has been sent");
+    H2 titleSpan = new H2("Check your inbox");
     addClassName("card-layout");
     add(titleSpan, introduction, loginButton);
   }
