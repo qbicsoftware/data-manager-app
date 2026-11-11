@@ -160,8 +160,13 @@ Two specific known issues that this fixes:
 
 ### 1.7 Enabling origin-scope throttling (once §1.2 and §1.5 hold)
 
-Origin scope is **not implemented** yet — `AUTH-NFR-03` is satisfied for account scope only, and the
-gap is tracked in issue [#1682](https://github.com/qbicsoftware/data-manager-app/issues/1682).
+Origin scope is **not implemented** yet — `AUTH-NFR-03` is satisfied for account scope only. The work
+is tracked in two places:
+
+| Tracked as | Purpose |
+|---|---|
+| [#1682](https://github.com/qbicsoftware/data-manager-app/issues/1682) | The parent task. Account scope is delivered by #1690; the origin clause is split out. |
+| [#1691](https://github.com/qbicsoftware/data-manager-app/issues/1691) · milestone `MILESTONE-PROXY` | The staged plan: proxy header, canary rollout, origin buckets. |
 
 This document deliberately describes the **prerequisite contract** rather than shipping a header
 parser: doing the latter before §1.2 and §1.5 are verified would produce code that is correct only on
@@ -174,6 +179,12 @@ opaque hash, so an origin bucket is a second row with a different `scope` value.
 When it lands, the deployment contract does not change — it will simply *start using* the client
 address that this section already requires. **Do §1.2 and §1.5 first**, or the feature will be
 present and ineffective.
+
+> **Prefer `NATIVE` over `FRAMEWORK` on this stack.** `framework` (`ForwardedHeaderFilter`) takes the
+> **leftmost** `X-Forwarded-For` entry and does no trust check — so any client-supplied value wins.
+> `native` (Tomcat `RemoteIpValve`) only trusts the header when the connecting peer is in
+> `server.tomcat.remoteip.internal-proxies`, then walks the list right-to-left and discards everything
+> client-supplied. Verified in the respective sources; see §1.5.
 
 ### 1.8 Known residual risk while origin scope is missing
 
