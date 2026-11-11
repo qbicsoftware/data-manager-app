@@ -331,6 +331,28 @@ qbic.verification-token.confirmation-lifetime=PT1H
 qbic.verification-token.reset-lifetime=PT5M
 qbic.verification-token.set-password-lifetime=PT1H
 
+# Server-side throttling for the unauthenticated auth flows (AUTH-NFR-03).
+#
+# These are DEPLOYMENT configuration: tuned from telemetry, and they differ per environment.
+# A non-positive max-attempts, window or block-duration is a STARTUP FAILURE, not a silent no-op.
+#
+# Two properties are NOT configurable, because they are security properties:
+#   * the throttle is keyed per account AND per origin (only account scope ships in this
+#     release -- see docs/migrations/NEXT.md, Migration #6, for why the origin cannot be
+#     derived behind the proxy yet);
+#   * a throttled response is indistinguishable from a normal one. A visitor is never told
+#     they were throttled, because that would confirm the account is real.
+#
+# A login is a guess at a secret the user knows; a resend costs us an email and the recipient an
+# inbox notification -- which is why the resend limits are the tighter of the two.
+qbic.auth-throttle.login.max-attempts=10
+qbic.auth-throttle.login.window=PT15M
+qbic.auth-throttle.login.block-duration=PT15M
+
+qbic.auth-throttle.resend.max-attempts=3
+qbic.auth-throttle.resend.window=PT15M
+qbic.auth-throttle.resend.block-duration=PT15M
+
 ###############################################################################
 ### Data Server / Download ####################################################
 ###############################################################################

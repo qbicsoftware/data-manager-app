@@ -6,7 +6,9 @@ import com.vaadin.flow.router.Router
 import com.vaadin.flow.server.RouteRegistry
 import com.vaadin.flow.server.VaadinService
 import life.qbic.datamanager.views.login.LoginLayout
+import life.qbic.identity.application.throttle.AuthAttemptThrottle
 import life.qbic.identity.application.user.IdentityService
+import life.qbic.identity.domain.repository.AuthAttemptCounter
 import life.qbic.identity.domain.repository.UserDataStorage
 import life.qbic.identity.domain.repository.UserRepository
 import spock.lang.Specification
@@ -47,7 +49,13 @@ class ResetPasswordMainSpec extends Specification {
         resetPasswordComponent = new ResetPasswordComponent(
                 Stub(life.qbic.identity.api.UserInformationService))
         resetEmailSentComponent = new ResetEmailSentComponent()
-        view = new ResetPasswordMain(identityService, resetPasswordComponent, resetEmailSentComponent)
+        // The throttle is always-allowing here: these specs are about the response wording, and a
+        // throttle that engaged would mask it. Throttling behaviour has its own specs.
+        def throttle = new AuthAttemptThrottle(new AllowingCounter(),
+                Integer.MAX_VALUE, java.time.Duration.ofMinutes(15), java.time.Duration.ofMinutes(15),
+                Integer.MAX_VALUE, java.time.Duration.ofMinutes(15), java.time.Duration.ofMinutes(15))
+        view = new ResetPasswordMain(identityService, resetPasswordComponent, resetEmailSentComponent,
+                throttle)
     }
 
     def cleanup() {
@@ -89,5 +97,29 @@ class ResetPasswordMainSpec extends Specification {
             try { sink << component.getText() } catch (Exception ignored) { }
         }
         component.getChildren()?.each { collect(it, sink) }
+    }
+
+    /** Never blocks: one bucket per key, and the limits are set to Integer.MAX_VALUE. */
+    static final class AllowingCounter implements AuthAttemptCounter {
+
+        private final Map<String, Integer> counts = [:]
+
+        @Override
+        AuthAttemptCounter.Counter increment(String scope, String key, java.time.Instant now,
+                java.time.Instant windowStart) {
+            counts[key] = (counts[key] ?: 0) + 1
+            new AuthAttemptCounter.Counter(counts[key], null)
+        }
+
+        @Override
+        void block(String scope, String key, java.time.Instant blockedUntil) { }
+
+        @Override
+        AuthAttemptCounter.Counter peek(String scope, String key) {
+            new AuthAttemptCounter.Counter(counts[key] ?: 0, null)
+        }
+
+        @Override
+        void clear(String scope, String key) { counts.remove(key) }
     }
 }

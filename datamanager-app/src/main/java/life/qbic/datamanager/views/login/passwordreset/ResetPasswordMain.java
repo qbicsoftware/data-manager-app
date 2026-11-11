@@ -11,6 +11,7 @@ import java.util.Objects;
 import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.landing.LandingPageLayout;
+import life.qbic.identity.application.throttle.AuthAttemptThrottle;
 import life.qbic.identity.application.user.IdentityService;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
@@ -33,14 +34,18 @@ public class ResetPasswordMain extends Main implements BeforeEnterObserver {
   private static final Logger log =
       LoggerFactory.logger(ResetPasswordMain.class.getName());
   private final transient IdentityService identityService;
+  private final transient AuthAttemptThrottle authAttemptThrottle;
   private final ResetEmailSentComponent resetEmailSentComponent;
   private final ResetPasswordComponent resetPasswordComponent;
 
   public ResetPasswordMain(@Autowired IdentityService identityService,
       @Autowired ResetPasswordComponent resetPasswordComponent,
-      @Autowired ResetEmailSentComponent resetEmailSentComponent) {
+      @Autowired ResetEmailSentComponent resetEmailSentComponent,
+      @Autowired AuthAttemptThrottle authAttemptThrottle) {
     this.identityService = Objects.requireNonNull(identityService,
         "Identity service cannot be null");
+    this.authAttemptThrottle = Objects.requireNonNull(authAttemptThrottle,
+        "authAttemptThrottle cannot be null");
     this.resetPasswordComponent = Objects.requireNonNull(resetPasswordComponent,
         "ResetPasswordComponent cannot be null");
     this.resetEmailSentComponent = Objects.requireNonNull(resetEmailSentComponent,
@@ -82,12 +87,23 @@ public class ResetPasswordMain extends Main implements BeforeEnterObserver {
       return;
     }
 
-    try {
-      identityService.requestPasswordReset(email);
-    } catch (RuntimeException e) {
-      // Swallowed on purpose: an unexpected failure must not become an oracle either. It is logged
-      // for operators, and the visitor sees the same generic outcome as everyone else.
-      log.error("Password reset request failed unexpectedly: " + e, e);
+    // Server-side throttle (AUTH-NFR-03, #1682). Note what is deliberately NOT here: no branch on
+    // the outcome. A "too many requests" screen would confirm that this address is real and that the
+    // throttle is keyed on it, which is exactly the oracle the uniform response exists to remove
+    // (decision B4). The visitor sees the same "check your inbox" panel either way, and the only
+    // difference is whether an email is actually sent.
+    boolean throttled = authAttemptThrottle.isThrottled(
+        AuthAttemptThrottle.Scope.PASSWORD_RESET_RESEND, email, java.time.Instant.now());
+    if (!throttled) {
+      authAttemptThrottle.record(AuthAttemptThrottle.Scope.PASSWORD_RESET_RESEND, email,
+          java.time.Instant.now());
+      try {
+        identityService.requestPasswordReset(email);
+      } catch (RuntimeException e) {
+        // Swallowed on purpose: an unexpected failure must not become an oracle either. It is logged
+        // for operators, and the visitor sees the same generic outcome as everyone else.
+        log.error("Password reset request failed unexpectedly: " + e, e);
+      }
     }
 
     resetPasswordComponent.clearNotifications();

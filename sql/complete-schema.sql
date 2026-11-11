@@ -699,6 +699,36 @@ CREATE TABLE IF NOT EXISTS `user_verification_token`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
+-- Server-side throttling for the unauthenticated auth flows: login, resend-confirmation,
+-- resend-reset (AUTH-NFR-03). Replaces the client-side 30 s timer, which a page reload reset.
+--
+-- There is deliberately NO foreign key to `users`: an attempt against an address that does not
+-- exist must be counted exactly like one against an address that does, or the presence or absence
+-- of throttling answers "does this account exist?" — the enumeration oracle AUTH-NFR-03 forbids.
+-- `attemptKey` is a SHA-256 digest, never a raw address.
+--
+-- `attemptCount` is incremented by the DATABASE (INSERT ... ON DUPLICATE KEY UPDATE), never
+-- read-then-write: concurrent attempts would otherwise lose increments. `blockedUntil` is written
+-- here but evaluated in Java against Instant.now(), never in SQL against NOW().
+--
+-- `scope` is an open varchar so origin-scope throttling and second-factor throttling can be added
+-- without a schema change (see docs/migrations/NEXT.md, Migration #6).
+CREATE TABLE IF NOT EXISTS `auth_attempt`
+(
+    `id`            bigint(20)  NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `scope`         varchar(32) NOT NULL,
+    `attemptKey`    char(64)    NOT NULL,
+    `attemptCount`  int(11)     NOT NULL DEFAULT 0,
+    `windowStartAt` datetime(6) NOT NULL,
+    `blockedUntil`  datetime(6) DEFAULT NULL,
+    `lastAttemptAt` datetime(6) NOT NULL,
+
+    UNIQUE KEY `uk_auth_attempt_scope_key` (`scope`, `attemptKey`),
+    KEY `idx_auth_attempt_last` (`lastAttemptAt`)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS `experiments_datamanager_confounding_variables`
 (
     `id`           bigint(20)   NOT NULL AUTO_INCREMENT PRIMARY KEY,

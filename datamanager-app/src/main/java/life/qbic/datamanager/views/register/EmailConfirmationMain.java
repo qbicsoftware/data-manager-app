@@ -17,8 +17,6 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import java.util.Optional;
-import java.util.Timer;
-import java.util.TimerTask;
 import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.MainPage;
 import life.qbic.datamanager.views.general.Main;
@@ -33,6 +31,7 @@ import life.qbic.identity.application.communication.EmailService;
 import life.qbic.identity.application.communication.Messages;
 import life.qbic.identity.application.communication.Recipient;
 import life.qbic.identity.application.communication.Subject;
+import life.qbic.identity.application.throttle.AuthAttemptThrottle;
 import life.qbic.identity.application.user.policy.EmailConfirmationLinkSupplier;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.authorization.QbicOidcUser;
@@ -65,14 +64,15 @@ public class EmailConfirmationMain extends Main implements HasUrlParameter<Strin
 
   private final transient life.qbic.identity.api.VerificationLinkService verificationLinkService;
 
-  private int lockoutTimer = 0;
+  private final transient AuthAttemptThrottle authAttemptThrottle;
 
   private UserInfo userInfo;
 
   public EmailConfirmationMain(UserInformationService userInformationService,
       EmailService emailService,
       EmailConfirmationLinkSupplier emailConfirmationLinkSupplier,
-      life.qbic.identity.api.VerificationLinkService verificationLinkService) {
+      life.qbic.identity.api.VerificationLinkService verificationLinkService,
+      AuthAttemptThrottle authAttemptThrottle) {
     this.userInformationService = requireNonNull(userInformationService,
         "userInformationService must not be null");
     this.emailService = requireNonNull(emailService, "emailService must not be null");
@@ -80,6 +80,8 @@ public class EmailConfirmationMain extends Main implements HasUrlParameter<Strin
         "emailConfirmationLinkSupplier must not be null");
     this.verificationLinkService = requireNonNull(verificationLinkService,
         "verificationLinkService must not be null");
+    this.authAttemptThrottle = requireNonNull(authAttemptThrottle,
+        "authAttemptThrottle must not be null");
     initConfirmEmailComponent();
     addClassName("email-confirmation");
     add(emailConfirmationComponent);
@@ -98,40 +100,35 @@ public class EmailConfirmationMain extends Main implements HasUrlParameter<Strin
     resendVerificationLink.addClassName("link");
     Span resendVerification = new Span(resendVerificationText, resendVerificationLink);
     resendVerificationLink.addClickListener(spanClickEvent -> {
-      if (lockoutTimer > 0) {
-        showLockoutNotification(lockoutTimer);
-        return;
+      // Server-side throttle (AUTH-NFR-03, #1682).
+      //
+      // This replaces a 30-second client-side java.util.Timer whose counter lived in a UIScope
+      // bean: reloading the page reset it to zero, so it was not a control at all. The timer is
+      // gone rather than kept alongside, because two mechanisms disagreeing about whether a resend
+      // is allowed is worse than one.
+      //
+      // The visitor is told the same thing either way. That is the requirement, not politeness: a
+      // distinct "too many requests" message confirms to an attacker that this address is real and
+      // that the throttle is keyed on it (decision B4).
+      boolean throttled = authAttemptThrottle.isThrottled(
+          AuthAttemptThrottle.Scope.EMAIL_CONFIRMATION_RESEND, userInfo.emailAddress(),
+          java.time.Instant.now());
+      if (!throttled) {
+        authAttemptThrottle.record(AuthAttemptThrottle.Scope.EMAIL_CONFIRMATION_RESEND,
+            userInfo.emailAddress(), java.time.Instant.now());
+        sendConfirmationEmail(userInfo.id(), userInfo.emailAddress(), userInfo.fullName());
       }
-      sendConfirmationEmail(userInfo.id(), userInfo.emailAddress(), userInfo.fullName());
-      scheduleLockoutTimer();
-      showLockoutNotification(lockoutTimer);
+      // One message for both outcomes. "Verification email has been sent" is true enough for the
+      // throttled case too — an email was sent recently — and discloses nothing.
+      showInfo("Verification email has been sent",
+          "Please check your inbox. If the email does not arrive, wait a few minutes before "
+              + "requesting another one.");
     });
     resendVerification.addClassName("resend-verification");
     emailConfirmationComponent.add(resendVerification);
 
     RouterLink backToLoginLink = new RouterLink("Go back to login", LoginLayout.class);
     emailConfirmationComponent.add(backToLoginLink);
-  }
-
-  private void scheduleLockoutTimer() {
-    final int VERIFICATION_EMAIL_LOCKOUT_SECONDS_TIMER = 30;
-    lockoutTimer = VERIFICATION_EMAIL_LOCKOUT_SECONDS_TIMER;
-    Timer timer = new Timer();
-    timer.scheduleAtFixedRate(new TimerTask() {
-      @Override
-      public void run() {
-        lockoutTimer--;
-        if (lockoutTimer <= 0) {
-          timer.cancel();
-          clearNotifications();
-        }
-      }
-    }, 1, 1000);
-  }
-
-  private void showLockoutNotification(int timeLeft) {
-    showInfo("Verification email has been sent",
-        "Please wait " + timeLeft + " seconds until another email can be sent");
   }
 
   private boolean isAlreadyActiveUser(QbicOidcUser oidcUser) {
