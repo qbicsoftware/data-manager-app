@@ -37,6 +37,13 @@
       <groupId>org.springframework</groupId>
       <artifactId>spring-context</artifactId>
     </dependency>
+    <!-- @Transactional on VerificationTokenServiceImpl: consumption must be one atomic unit of
+         work, otherwise concurrent consumers all read consumedAt = NULL and all succeed.
+         Version inherited from the BOM, as required by AGENTS.md. -->
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-tx</artifactId>
+    </dependency>
     <dependency>
       <groupId>org.springframework.security</groupId>
       <artifactId>spring-security-crypto</artifactId>

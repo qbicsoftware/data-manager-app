@@ -7,15 +7,11 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.spring.annotation.UIScope;
-import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.landing.LandingPageLayout;
 import life.qbic.identity.application.user.IdentityService;
-import life.qbic.identity.application.user.UserNotFoundException;
-import life.qbic.identity.domain.model.EmailAddress.EmailValidationException;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -66,42 +62,51 @@ public class ResetPasswordMain extends Main implements BeforeEnterObserver {
         System.identityHashCode(resetEmailSentComponent)));
   }
 
-  private void resetPassword(String email) {
-    identityService.requestPasswordReset(email)
-        .ifSuccessOrElse(response -> {
-          resetPasswordComponent.clearNotifications();
-          resetPasswordComponent.setVisible(false);
-          resetEmailSentComponent.setVisible(true);
-        }, response -> handleRegistrationFailure(response.failures()));
-  }
-
-  private void handleRegistrationFailure(List<RuntimeException> exceptionList) {
-    if (exceptionList.isEmpty()) {
+  /**
+   * Requests a password reset.
+   *
+   * <p>The response is <b>always</b> "an email has been sent, if an account exists". AUTH-NFR-03
+   * forbids disclosing whether an account exists, whether it is confirmed, or whether it is
+   * otherwise eligible — so a registered address, an unknown address and an unconfirmed account all
+   * produce the same screen. This replaced an earlier version that surfaced "User not found" and
+   * "User not active" verbatim, which turned the form into an account-enumeration oracle.</p>
+   *
+   * <p>Only a malformed address is reported, because that is a property of the input the visitor
+   * typed, not of any account.</p>
+   */
+  void resetPassword(String email) {
+    boolean syntacticallyValid = isPlausibleEmailAddress(email);
+    if (!syntacticallyValid) {
+      resetPasswordComponent.showError("Invalid mail address format",
+          "Please provide a valid mail address.");
       return;
     }
-    for (RuntimeException e : exceptionList) {
-      if (e instanceof EmailValidationException) {
-        resetPasswordComponent.showError("Invalid mail address format",
-            "Please provide a valid mail address.");
-        break;
-      } else if (e instanceof UserNotFoundException) {
-        resetPasswordComponent.showError(
-            "User not found", "No user with the provided mail address is known.");
-        break;
-      } else if (e instanceof IdentityService.UserNotActivatedException) {
-        resetPasswordComponent.showError("User not active",
-            "Please activate your account first to reset the password.");
-        break;
-      } else {
-        resetPasswordComponent.showError(
-            "An unexpected error occurred", "Please contact support@qbic.zendesk.com for help.");
-        break;
-      }
+
+    try {
+      identityService.requestPasswordReset(email);
+    } catch (RuntimeException e) {
+      // Swallowed on purpose: an unexpected failure must not become an oracle either. It is logged
+      // for operators, and the visitor sees the same generic outcome as everyone else.
+      log.error("Password reset request failed unexpectedly: " + e, e);
     }
-    String allErrorMessages = exceptionList.stream().map(Throwable::getMessage)
-        .collect(Collectors.joining("\n"));
-    log.error(allErrorMessages);
-    exceptionList.forEach(e -> log.debug(e.getMessage(), e));
+
+    resetPasswordComponent.clearNotifications();
+    resetPasswordComponent.setVisible(false);
+    resetEmailSentComponent.setVisible(true);
+  }
+
+  /**
+   * Minimal syntactic check. Deliberately not a validity check against a real mailbox: the point is
+   * only to reject obviously malformed input, which is not an account-state question.
+   */
+  private static boolean isPlausibleEmailAddress(String email) {
+    if (email == null) {
+      return false;
+    }
+    String trimmed = email.strip();
+    int at = trimmed.indexOf('@');
+    return at > 0 && at == trimmed.lastIndexOf('@') && at < trimmed.length() - 1
+        && trimmed.indexOf(' ') < 0;
   }
 
   /**

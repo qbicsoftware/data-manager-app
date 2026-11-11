@@ -8,6 +8,8 @@ import life.qbic.identity.application.communication.EmailService;
 import life.qbic.identity.application.communication.Messages;
 import life.qbic.identity.application.communication.Recipient;
 import life.qbic.identity.application.communication.Subject;
+import life.qbic.identity.api.VerificationLinkService;
+import life.qbic.identity.api.VerificationLinkService.Purpose;
 import life.qbic.identity.domain.event.PasswordResetRequested;
 import life.qbic.identity.domain.model.User;
 import life.qbic.identity.domain.model.UserId;
@@ -34,14 +36,18 @@ public class WhenPasswordResetNotifyUser implements
   private final UserRepository userRepository;
   private final PasswordResetLinkSupplier passwordResetLinkSupplier;
 
+  private final VerificationLinkService verificationLinkService;
+
   public WhenPasswordResetNotifyUser(@Autowired EmailService emailService,
       @Autowired UserRepository userRepository,
       @Autowired JobScheduler jobScheduler,
-      @Autowired PasswordResetLinkSupplier passwordResetLinkSupplier) {
+      @Autowired PasswordResetLinkSupplier passwordResetLinkSupplier,
+      @Autowired VerificationLinkService verificationLinkService) {
     this.emailService = emailService;
     this.jobScheduler = jobScheduler;
     this.userRepository = userRepository;
     this.passwordResetLinkSupplier = passwordResetLinkSupplier;
+    this.verificationLinkService = verificationLinkService;
     DomainEventDispatcher.instance().subscribe(this);
   }
 
@@ -64,9 +70,14 @@ public class WhenPasswordResetNotifyUser implements
   }
 
   private void notifyUser(User user) {
+    // A fresh reset token supersedes any previous one, so requesting a new link cannot be used to
+    // keep older links alive (AUTH-R-05).
+    VerificationLinkService.Issued issued = verificationLinkService.issue(
+        user.id().get(), Purpose.PASSWORD_RESET, java.time.Instant.now());
+
     emailService.send(new Subject("Please reset your password"),
         new Recipient(user.emailAddress().get(), user.fullName().get()),
         new Content(Messages.formatPasswordResetEmailContent(user.fullName().get(),
-            passwordResetLinkSupplier.passwordResetUrl(user.id().get()))));
+            passwordResetLinkSupplier.passwordResetUrl(issued.rawToken()))));
   }
 }

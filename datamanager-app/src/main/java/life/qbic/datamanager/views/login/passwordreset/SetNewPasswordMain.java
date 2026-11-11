@@ -19,6 +19,8 @@ import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.landing.LandingPageLayout;
+import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.router.RouterLink;
 import life.qbic.datamanager.views.login.LoginLayout;
 import life.qbic.datamanager.views.login.passwordreset.SetNewPasswordComponent.SetNewPasswordEvent;
 import life.qbic.identity.application.user.IdentityService;
@@ -50,15 +52,39 @@ public class SetNewPasswordMain extends Main implements HasUrlParameter<String> 
   private final SetNewPasswordComponent setNewPasswordComponent;
   private final NewPasswordSetComponent newPasswordSetComponent;
   private final transient IdentityService identityService;
-  @Value("${routing.password-reset.reset-parameter}")
-  String newPasswordParam;
+
+  private final transient life.qbic.identity.api.VerificationLinkService verificationLinkService;
+
+  @Value("${routing.password-reset.token-parameter:token}")
+  String tokenParameter;
+
+  /**
+   * The account the token belongs to, resolved from the token on entry.
+   *
+   * <p>Deliberately <b>not</b> read from a URL parameter: a user id in a reset URL is a permanent,
+   * guessable credential that also appears in ACL records. The user is established by consuming the
+   * token, and only then does the password form become usable (AUTH-R-05).</p>
+   */
   private String currentUserId;
+
+  /** True only after a successful token consumption; gates the password change. */
+  private boolean resetAuthorised;
+
+  /**
+   * Shown when the link cannot be used. Exists because the rejection path used to hide both
+   * components and render nothing at all — the page went blank with only a log line, which is
+   * indistinguishable from "still loading" and reports nothing to the user.
+   */
+  private final Div invalidLinkComponent = new Div();
 
   public SetNewPasswordMain(@Autowired IdentityService identityService,
       @Autowired SetNewPasswordComponent setNewPasswordComponent,
-      @Autowired NewPasswordSetComponent newPasswordSetComponent) {
+      @Autowired NewPasswordSetComponent newPasswordSetComponent,
+      @Autowired life.qbic.identity.api.VerificationLinkService verificationLinkService) {
     this.identityService = Objects.requireNonNull(identityService,
         "Identity service cannot be null");
+    this.verificationLinkService = Objects.requireNonNull(verificationLinkService,
+        "verificationLinkService cannot be null");
     this.setNewPasswordComponent = Objects.requireNonNull(setNewPasswordComponent,
         "SetNewPasswordComponent cannot be null");
     this.newPasswordSetComponent = Objects.requireNonNull(newPasswordSetComponent,
@@ -66,7 +92,8 @@ public class SetNewPasswordMain extends Main implements HasUrlParameter<String> 
     setNewPasswordComponent.addSetNewPasswordListener(this::handleSetNewPassword);
     newPasswordSetComponent.addLoginButtonListener(event -> getUI().orElseThrow().navigate(
         LoginLayout.class));
-    add(setNewPasswordComponent, newPasswordSetComponent);
+    initInvalidLinkComponent();
+    add(setNewPasswordComponent, newPasswordSetComponent, invalidLinkComponent);
     addClassName("set-new-password");
     log.debug(String.format(
         "New instance for %s(#%s) created with %s(#%s) and %s(#%s)",
@@ -78,6 +105,13 @@ public class SetNewPasswordMain extends Main implements HasUrlParameter<String> 
   }
 
   private void handleSetNewPassword(SetNewPasswordEvent event) {
+    if (!resetAuthorised || currentUserId == null) {
+      // Defence in depth: the form must never be usable without a consumed token, even if the
+      // component were somehow rendered directly.
+      setNewPasswordComponent.setVisible(false);
+      newPasswordSetComponent.setVisible(false);
+      return;
+    }
     var result = identityService.newUserPassword(currentUserId,
         event.getPassword().toCharArray());
     if (result.isValue()) {
@@ -91,22 +125,53 @@ public class SetNewPasswordMain extends Main implements HasUrlParameter<String> 
 
   @Override
   public void setParameter(BeforeEvent beforeEvent, @OptionalParameter String parameter) {
-    setNewPasswordComponent.setVisible(true);
     newPasswordSetComponent.setVisible(false);
-    retrieveUserIdFromUrl(beforeEvent);
+    invalidLinkComponent.setVisible(false);
+    resetAuthorised = false;
+    currentUserId = null;
+
+    // The token is consumed here, on entry. Unlike email confirmation this is acceptable: showing
+    // the form IS the user acting on the link, and a scanner cannot set a password because that
+    // still needs form input. Consuming also means a prefetched or replayed link is already dead
+    // before anyone could type into it.
+    String rawToken = extractToken(beforeEvent);
+    java.util.Optional<String> userId = rawToken == null
+        ? java.util.Optional.empty()
+        : verificationLinkService.consume(rawToken,
+            life.qbic.identity.api.VerificationLinkService.Purpose.PASSWORD_RESET,
+            java.time.Instant.now());
+
+    if (userId.isEmpty()) {
+      // One message for every rejection: unknown, expired, already used, wrong flow (AUTH-NFR-03).
+      // The user-facing wording must not distinguish them — but the user must SEE something.
+      log.info("Password reset link rejected; token unusable, unknown, expired or already used.");
+      setNewPasswordComponent.setVisible(false);
+      newPasswordSetComponent.setVisible(false);
+      invalidLinkComponent.setVisible(true);
+      return;
+    }
+    currentUserId = userId.get();
+    resetAuthorised = true;
+    invalidLinkComponent.setVisible(false);
+    setNewPasswordComponent.setVisible(true);
   }
 
-  public void retrieveUserIdFromUrl(BeforeEvent beforeEvent) {
+  private void initInvalidLinkComponent() {
+    invalidLinkComponent.addClassName("invalid-reset-link");
+    invalidLinkComponent.add(new com.vaadin.flow.component.html.H2("This link is no longer valid"));
+    invalidLinkComponent.add(new com.vaadin.flow.component.html.Paragraph(
+        "Your password reset link has expired or has already been used. "
+            + "Request a new one from the login page."));
+    invalidLinkComponent.add(new com.vaadin.flow.component.html.Div(
+        new RouterLink("Go to login", LoginLayout.class)));
+    invalidLinkComponent.setVisible(false);
+  }
+
+  private String extractToken(BeforeEvent beforeEvent) {
     Map<String, List<String>> params = beforeEvent.getLocation().getQueryParameters()
         .getParameters();
-    var resetParam = params.keySet().stream()
-        .filter(entry -> Objects.equals(
-            entry, newPasswordParam)).findAny();
-    if (resetParam.isPresent()) {
-      currentUserId = params.get(newPasswordParam).get(0);
-    } else {
-      throw new NotImplementedException();
-    }
+    List<String> values = params.get(tokenParameter);
+    return values == null || values.isEmpty() ? null : values.getFirst();
   }
 
   private void handleNewPasswordError(Result<?, RuntimeException> applicationResponse) {

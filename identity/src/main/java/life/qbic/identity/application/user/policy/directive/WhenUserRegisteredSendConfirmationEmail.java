@@ -1,7 +1,11 @@
 package life.qbic.identity.application.user.policy.directive;
 
+import static java.util.Objects.requireNonNull;
+
 import life.qbic.domain.concepts.DomainEvent;
 import life.qbic.domain.concepts.DomainEventSubscriber;
+import life.qbic.identity.api.VerificationLinkService;
+import life.qbic.identity.api.VerificationLinkService.Purpose;
 import life.qbic.identity.application.communication.Content;
 import life.qbic.identity.application.communication.EmailService;
 import life.qbic.identity.application.communication.Messages;
@@ -12,6 +16,7 @@ import life.qbic.identity.domain.event.UserRegistered;
 import life.qbic.identity.domain.model.User;
 import life.qbic.identity.domain.model.UserId;
 import life.qbic.identity.domain.repository.UserRepository;
+import java.time.Instant;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.scheduling.JobScheduler;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,25 +24,35 @@ import org.springframework.beans.factory.annotation.Autowired;
 /**
  * When a user registered, email the user a confirmation link to the provided email address.
  *
+ * <p>The link carries a single-use, time-limited token (AUTH-R-05), never the user's persistent
+ * identifier. Only the token's hash is stored; the raw value exists once, in the outgoing email.</p>
+ *
+ * <p>Issuing goes through {@link VerificationLinkService} rather than writing the token directly, so
+ * "register" and "resend" share one implementation of the supersede-then-save ordering. Two copies
+ * of that ordering would eventually disagree.</p>
+ *
  * @since 1.0.0
  */
 public class WhenUserRegisteredSendConfirmationEmail implements
     DomainEventSubscriber<UserRegistered> {
 
   private final EmailService emailService;
-
   private final JobScheduler jobScheduler;
   private final UserRepository userRepository;
   private final EmailConfirmationLinkSupplier emailConfirmationLinkSupplier;
+  private final VerificationLinkService verificationLinkService;
 
   public WhenUserRegisteredSendConfirmationEmail(
       @Autowired EmailService emailService,
-      @Autowired JobScheduler jobScheduler, @Autowired UserRepository userRepository,
-      @Autowired EmailConfirmationLinkSupplier emailConfirmationLinkSupplier) {
-    this.emailService = emailService;
-    this.userRepository = userRepository;
-    this.emailConfirmationLinkSupplier = emailConfirmationLinkSupplier;
-    this.jobScheduler = jobScheduler;
+      @Autowired JobScheduler jobScheduler,
+      @Autowired UserRepository userRepository,
+      @Autowired EmailConfirmationLinkSupplier emailConfirmationLinkSupplier,
+      @Autowired VerificationLinkService verificationLinkService) {
+    this.emailService = requireNonNull(emailService);
+    this.jobScheduler = requireNonNull(jobScheduler);
+    this.userRepository = requireNonNull(userRepository);
+    this.emailConfirmationLinkSupplier = requireNonNull(emailConfirmationLinkSupplier);
+    this.verificationLinkService = requireNonNull(verificationLinkService);
   }
 
   @Override
@@ -58,9 +73,14 @@ public class WhenUserRegisteredSendConfirmationEmail implements
   }
 
   private void notifyUser(User user) {
+    // Issue before sending: if issuing fails, no email goes out and the user can request a new link.
+    // The reverse order could deliver a link whose token was never persisted.
+    VerificationLinkService.Issued issued = verificationLinkService.issue(
+        user.id().get(), Purpose.EMAIL_CONFIRMATION, Instant.now());
+
     emailService.send(new Subject("Please confirm your email address"),
         new Recipient(user.emailAddress().get(), user.fullName().get()),
         new Content(Messages.formatRegistrationEmailContent(user.fullName().get(),
-            emailConfirmationLinkSupplier.emailConfirmationUrl(user.id().get()))));
+            emailConfirmationLinkSupplier.emailConfirmationUrl(issued.rawToken()))));
   }
 }

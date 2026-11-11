@@ -43,6 +43,12 @@ public class AppRoutes {
    */
   public static final String EMAIL_CONFIRMATION = "register/pending-email-confirmation";
 
+  /**
+   * Consumes a single-use email confirmation token (AUTH-R-05). Replaces the old
+   * {@code /login?confirm-email={userId}} route, which mutated state on retrieval.
+   */
+  public static final String CONFIRM_EMAIL = "registration/confirm";
+
   public static class ProjectRoutes {
 
     private ProjectRoutes() {}
