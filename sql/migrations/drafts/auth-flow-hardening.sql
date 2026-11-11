@@ -1,5 +1,5 @@
 -- =============================================================================
--- Migration: Single-use verification tokens and auth attempt throttling
+-- Migration: Single-use verification tokens
 -- Story:    FEAT-AUTH-FLOWS-01 (#1678), FEAT-AUTH-FLOWS-02 (#1680),
 --           FEAT-AUTH-FLOWS-05 (#1683)
 -- Feature:  FEAT-AUTH-FLOWS (#1672)
@@ -12,9 +12,11 @@
 --           (b) the promotion step described under "Promotion" below.
 --
 -- Purpose: replace the identifier-in-URL confirmation and password-reset links
--- with single-use, time-limited tokens (AUTH-R-05), and give both flows a
--- server-side per-account throttle so their responses are uniform and
--- rate-limited (AUTH-NFR-03).
+-- with single-use, time-limited tokens (AUTH-R-05).
+--
+-- Scope note: this script creates ONE table. The per-account throttling that
+-- AUTH-NFR-03 also asks for is NOT part of this change — it is issue #1682, and
+-- shipping its table before its code would leave an unused schema object behind.
 --
 -- Design notes — read before changing anything:
 --
@@ -93,62 +95,9 @@ CREATE TABLE IF NOT EXISTS `user_verification_token`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
--- -----------------------------------------------------------------------------
--- 2. auth_attempt: server-side throttling for unauthenticated flows
--- -----------------------------------------------------------------------------
--- The application has no server-side throttling today; the "resend" lockout is a
--- client-side Timer in EmailConfirmationMain that a page reload resets.
---
--- SCOPE OF THIS RELEASE (decision 2026-11-10): account scope only. AUTH-NFR-03
--- also asks for throttling per request origin, and that is deliberately NOT
--- implemented here, because the application cannot currently determine a client
--- address:
---
---   * the app runs behind HAProxy, which terminates TLS;
---   * `server.forward-headers-strategy` is not set, no RemoteIpValve is
---     configured, and nothing in the codebase reads `getRemoteAddr()` or
---     `X-Forwarded-For`;
---   * therefore `getRemoteAddr()` returns the PROXY.
---
--- Keying origin scope on that address would put every user of the deployment
--- into a single bucket, and one anonymous attacker filling the bucket would
--- block the entire user population — a self-inflicted global denial of service,
--- strictly worse than the gap the throttle exists to close.
---
--- Doing it correctly needs trusted forwarded headers (a trusted-proxy allowlist,
--- and HAProxy overwriting rather than appending `X-Forwarded-For`, since the
--- header is client-supplied). That is tracked separately and also unblocks
--- passkeys and the ORCID `{baseUrl}` redirect — see the milestone plan §1a
--- condition 1. Adding that scope later requires NO schema change: `scope` is an
--- open varchar and `attemptKey` is always an opaque hash.
---
--- There is deliberately NO foreign key to `users`. An attempt against an address
--- that does not exist must be counted exactly like one against an address that
--- does; with an FK the unknown address could not be recorded, and the mere
--- presence or absence of throttling would answer "does this account exist?" —
--- the enumeration oracle AUTH-NFR-03 forbids.
-CREATE TABLE IF NOT EXISTS `auth_attempt`
-(
-    `id`            bigint(20) NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    `scope`         varchar(32) NOT NULL
-        COMMENT 'LOGIN | EMAIL_CONFIRMATION_RESEND | PASSWORD_RESET_RESEND',
-    `attemptKey`    char(64)    NOT NULL
-        COMMENT 'Lower-case SHA-256 hex digest of the normalised account identifier (email trimmed and lower-cased, using the same normalisation as the login lookup). Never a raw address.',
-    `attemptCount`  int(11)     NOT NULL DEFAULT 0,
-    `windowStartAt` datetime(6) NOT NULL,
-    `blockedUntil`  datetime(6) DEFAULT NULL,
-    `lastAttemptAt` datetime(6) NOT NULL,
-
-    UNIQUE KEY `uk_auth_attempt_scope_key` (`scope`, `attemptKey`),
-    KEY `idx_auth_attempt_last` (`lastAttemptAt`)
-) ENGINE = InnoDB
-  DEFAULT CHARSET = utf8mb4
-  COLLATE = utf8mb4_unicode_ci;
-
 -- =============================================================================
 -- Rollback
 -- =============================================================================
--- DROP TABLE IF EXISTS `auth_attempt`;
 -- DROP TABLE IF EXISTS `user_verification_token`;
 --
 -- WARNING 1 — links in flight. Rollback invalidates every unconsumed

@@ -111,6 +111,30 @@ to `users`.
 
 ---
 
+## Deferred to #1682 — the throttle was built, then removed from this PR
+
+`AuthAttemptThrottle` and `JpaAttemptCounter` were implemented and spec'd here, and the
+`auth_attempt` table was drafted alongside `user_verification_token`. All three are **removed from
+this change**, because nothing in production ever called them: they were dead code shipping next to
+the feature that was supposed to use them.
+
+Two things from that work are worth carrying into #1682 rather than rediscovering:
+
+1. **The counter increment must be an upsert.** Read-then-write loses increments under concurrency:
+   two attempts both read `attemptCount = 3`, both write `4`, and an attacker gains a free attempt
+   per race. A native `INSERT ... ON DUPLICATE KEY UPDATE` is required, and it needs a surrounding
+   transaction — there is currently no `@Transactional` boundary on the login or resend path.
+2. **No foreign key to `users`.** Attempts against an address that does not exist must be counted
+   identically to attempts against one that does. With an FK the unknown address cannot be recorded,
+   and the mere presence or absence of throttling answers "does this account exist?" — the
+   enumeration oracle AUTH-NFR-03 forbids. This is also why a per-account hard lockout keyed on a
+   real user row is itself an oracle.
+
+Also carried over: **origin-scope throttling cannot be implemented yet.** The app runs behind
+HAProxy, `server.forward-headers-strategy` is unset and nothing reads `getRemoteAddr()`, so the
+client address is the proxy. Keying a bucket on it would put every user in one row and let a single
+anonymous attacker block the whole population.
+
 ## What the spike produced
 
 | Concern | Location |

@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 #
-# Runs the verification-token spike specs (FEAT-AUTH-FLOWS-01 / #1678).
+# Runs the verification-token specs (FEAT-AUTH-FLOWS-01 / #1678).
+#
+# Kept in the PR because the MariaDB path is the ONLY way to exercise InnoDB row locking,
+# and the single-use guarantee depends on it.
 #
 #   ./scripts/run-verification-spike.sh              # H2 in MODE=MySQL (default, no setup)
 #   ./scripts/run-verification-spike.sh mariadb      # real MariaDB, bootstrapped in a temp dir
