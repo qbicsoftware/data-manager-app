@@ -40,7 +40,20 @@ public class SecurityConfiguration {
   final VaadinDefaultRequestCache defaultRequestCache;
   private final IdentityService identityService;
   private final AuthAttemptThrottle authAttemptThrottle;
-  private final PasswordEncoder passwordEncoder;
+
+  /**
+   * Held directly, not injected.
+   *
+   * <p>{@link #passwordEncoder()} is a {@code @Bean} on <em>this</em> class, so injecting a
+   * {@code PasswordEncoder} back into the constructor makes the configuration bean depend on a bean
+   * it creates. Spring Boot 4 prohibits circular references by default, and the application fails to
+   * start with "the dependencies of some of the beans in the application context form a cycle:
+   * securityConfiguration".</p>
+   *
+   * <p>Constructing it here is honest rather than a workaround: it is a stateless value with no
+   * collaborators, and {@link QBiCPasswordEncoder} is exactly what the bean method returns.</p>
+   */
+  private final PasswordEncoder passwordEncoder = new QBiCPasswordEncoder();
 
   @Value("${routing.registration.oidc.orcid.endpoint}")
   String registrationOrcidEndpoint;
@@ -54,14 +67,12 @@ public class SecurityConfiguration {
   public SecurityConfiguration(
       @Autowired VaadinDefaultRequestCache defaultRequestCache,
       @Autowired IdentityService identityService,
-      @Autowired AuthAttemptThrottle authAttemptThrottle,
-      @Autowired PasswordEncoder passwordEncoder) {
+      @Autowired AuthAttemptThrottle authAttemptThrottle) {
     this.defaultRequestCache = requireNonNull(defaultRequestCache,
         "defaultRequestCache must not be null");
     this.identityService = requireNonNull(identityService);
     this.authAttemptThrottle = requireNonNull(authAttemptThrottle,
         "authAttemptThrottle must not be null");
-    this.passwordEncoder = requireNonNull(passwordEncoder, "passwordEncoder must not be null");
   }
 
   @Bean
@@ -138,6 +149,9 @@ public class SecurityConfiguration {
 
   @Bean
   public PasswordEncoder passwordEncoder() {
+    // A separate instance from the field above, deliberately. This bean is what Spring Boot injects
+    // into the DaoAuthenticationProvider it derives from the UserDetailsService; the field exists
+    // only so this class never has to inject a bean it defines itself.
     return new QBiCPasswordEncoder();
   }
 
