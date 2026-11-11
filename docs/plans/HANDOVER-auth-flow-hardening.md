@@ -50,6 +50,9 @@ Server-side throttling for login, resend-confirmation and resend-reset. Three pr
 - `EmailConfirmationMain` / `ResetPasswordMain` — replaced the 30 s `java.util.Timer` (UI-scoped
   counter; a page reload reset it, so it was not a control).
 
+**Tests:** 41 throttling/token specs green on **both** H2 and real MariaDB 12.3/InnoDB; 362
+`identity`/infrastructure specs. CI green, including the SonarCloud quality gate.
+
 **Schema:** `auth_attempt` — `sql/migrations/auth-attempt-throttling.sql`, **AWAITING §12 SIGN-OFF**,
 not yet in a fresh-install path that operators follow (`complete-schema.sql` *is* updated, but
 `NEXT.md` says do not apply to production until approved).
@@ -167,6 +170,12 @@ export JAVA_HOME=~/.sdkman/candidates/java/current   # not on the default PATH h
 - Spock mocks cannot be created in `static` scope. Helper methods that build stubs must be instance
   methods.
 - `OncePerRequestFilter.doFilter` needs container bookkeeping; specs call `doFilterInternal`.
+- `BeforeEvent` and concrete `@Service` classes like `EmailConfirmationLinkSupplier` cannot be mocked
+  (no Objenesis, no no-arg constructor). Use a real `BeforeEnterEvent` with a `Router` stub, and
+  construct the real service with literal arguments.
+- **Stale Groovy stubs** show up as `NoClassDefFoundError …$_closure1` after editing a spec's inner
+  classes. `rm -rf {datamanager-app,identity,identity-infrastructure}/target/generated-sources`, then
+  rerun.
 - Vaadin specs need `VaadinService.setCurrent(...)` with a router stub, because router links resolve
   their href at construction.
 
@@ -232,6 +241,18 @@ passed a green test suite.
    attempts and passed on H2. This is the **third** time this project has hit that: the token
    consumption race and the reissue deadlock were the same shape. *If the change touches locking,
    uniqueness, or atomicity, the MariaDB run is the test — the H2 run is just the fast one.*
+
+4. **The service was right and the wiring was wrong — again.** Covering `EmailConfirmationMain` (the
+   last uncovered file, at 0%) immediately found a real bug in *both* resend call sites:
+
+   ```java
+   if (!throttle.isThrottled(...)) { throttle.record(...); doWork(); }
+   ```
+
+   `record()` returns `THROTTLED` when the attempt *itself* crosses the threshold, but the value was
+   discarded — so the request that tripped the limit still did the work, and the limit was off by one.
+   The throttle's own 18 specs never caught it, because they consume the return value. *A control
+   tested only at the service layer is not tested.*
 
 **Corollary for the next session:** when a fix "works" in a spec but not in the app, suspect the
 wiring, the theme, and the transaction boundary — in that order. When a *security* control works,
