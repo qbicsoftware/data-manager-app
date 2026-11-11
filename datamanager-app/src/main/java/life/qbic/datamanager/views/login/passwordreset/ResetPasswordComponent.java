@@ -10,8 +10,6 @@ import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
-import com.vaadin.flow.data.binder.ValidationResult;
-import com.vaadin.flow.data.binder.Validator;
 import com.vaadin.flow.data.validator.EmailValidator;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.spring.annotation.SpringComponent;
@@ -68,13 +66,17 @@ public class ResetPasswordComponent extends Div {
     emailField.setRequired(true);
     emailBinder.forField(emailField)
         .withValidator(new EmailValidator("Please provide a valid email address"))
-        .withValidator((Validator<String>) (value, context) -> {
-          if (userInformationService.isEmailAvailable(value)) {
-            return ValidationResult.error("No user with the provided mail address is known.");
-          } else {
-            return ValidationResult.ok();
-          }
-        })
+        // There is deliberately NO "does this account exist?" validator here.
+        //
+        // There used to be one, and it was a synchronous, server-side account-existence oracle:
+        // it answered "No user with the provided mail address is known." for an unregistered
+        // address before the visitor submitted anything. That defeated the uniform response in
+        // ResetPasswordMain: the service had already been fixed to answer identically for unknown
+        // and unconfirmed accounts (AUTH-NFR-03, #1680/#1681), but the form disclosed the same fact
+        // one step earlier — by field validation rather than by submit.
+        //
+        // The userInformationService is retained for construction compatibility with callers that
+        // inject it, but this component must never consult it about an address.
         .bind(value -> value, (bean, value) -> {
         });
   }
