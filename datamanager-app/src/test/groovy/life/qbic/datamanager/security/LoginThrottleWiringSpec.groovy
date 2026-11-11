@@ -324,7 +324,7 @@ class LoginThrottleWiringSpec extends Specification {
     private int increments = 0
 
     @Override
-    AuthAttemptCounter.Counter increment(String scope, String key, Instant now, Instant windowStart) {
+    AuthAttemptCounter.Counter increment(String scope, String key, Instant now, Duration window) {
       increments++
       String id = bucketId(scope, key)
       counts.computeIfAbsent(id) { new int[1] }[0]++

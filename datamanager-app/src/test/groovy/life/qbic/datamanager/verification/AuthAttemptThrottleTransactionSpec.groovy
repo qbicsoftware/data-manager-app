@@ -131,7 +131,7 @@ class AuthAttemptThrottleTransactionSpec extends Specification {
     def key = AuthAttemptThrottle.attemptKey(AuthAttemptThrottle.Scope.LOGIN, ADDRESS)
 
     when: 'the exact call the event listener makes, with no transaction'
-    counter.increment('LOGIN', key, T0, T0.minus(Duration.ofMinutes(15)))
+    counter.increment('LOGIN', key, T0, Duration.ofMinutes(15))
 
     then: 'it fails — the caller must provide the boundary'
     thrown(Exception)
@@ -203,6 +203,7 @@ class AuthAttemptThrottleTransactionSpec extends Specification {
           attemptKey char(64) NOT NULL,
           attemptCount int NOT NULL DEFAULT 0,
           windowStartAt datetime(6) NOT NULL,
+          windowSeconds int NOT NULL DEFAULT 900,
           blockedUntil datetime(6) DEFAULT NULL,
           lastAttemptAt datetime(6) NOT NULL,
           UNIQUE KEY uk_auth_attempt_scope_key (scope, attemptKey)
@@ -247,9 +248,9 @@ class AuthAttemptThrottleTransactionSpec extends Specification {
 
     @Override
     life.qbic.identity.domain.repository.AuthAttemptCounter.Counter increment(
-        String scope, String key, Instant now, Instant windowStart) {
+        String scope, String key, Instant now, Duration window) {
       spec.inTransaction { EntityManager em ->
-        new JpaAuthAttemptCounter(em).increment(scope, key, now, windowStart)
+        new JpaAuthAttemptCounter(em).increment(scope, key, now, window)
       }
     }
 

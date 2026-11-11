@@ -228,7 +228,7 @@ class AuthAttemptThrottleSpec extends Specification {
     private int increments = 0
 
     @Override
-    Counter increment(String scope, String key, Instant now, Instant windowStart) {
+    Counter increment(String scope, String key, Instant now, Duration window) {
       increments++
       String id = "$scope\u0000$key"
       counts.computeIfAbsent(id) { new int[1] }[0]++

@@ -106,7 +106,7 @@ class ResetPasswordMainSpec extends Specification {
 
         @Override
         AuthAttemptCounter.Counter increment(String scope, String key, java.time.Instant now,
-                java.time.Instant windowStart) {
+                java.time.Duration window) {
             counts[key] = (counts[key] ?: 0) + 1
             new AuthAttemptCounter.Counter(counts[key], null)
         }

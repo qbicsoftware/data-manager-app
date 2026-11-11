@@ -20,13 +20,19 @@ public interface AuthAttemptCounter {
    * {@code attemptCount = 3} and both write {@code 4}, so an attacker gains one free attempt per
    * race. The increment must be performed by the database.</p>
    *
-   * @param scope      the flow being throttled
-   * @param key        opaque hashed key material; never a raw address
-   * @param now        the attempt instant
-   * @param windowStart attempts before this instant do not count towards the current window
+   * <p><b>Why the window is a duration and not a boundary.</b> An earlier signature took
+   * {@code windowStart = now - window} and reset the row when the stored start was earlier than that.
+   * Because every call computes a <em>later</em> boundary, the stored start was always earlier and the
+   * counter reset on every call — it could never exceed 1. The adapter now compares the row's own
+   * window end against {@code now}, so the caller supplies only the window length.</p>
+   *
+   * @param scope  the flow being throttled
+   * @param key    opaque hashed key material; never a raw address
+   * @param now    the attempt instant
+   * @param window how long the counting window lasts from its first attempt
    * @return the state <em>after</em> the increment
    */
-  Counter increment(String scope, String key, Instant now, Instant windowStart);
+  Counter increment(String scope, String key, Instant now, java.time.Duration window);
 
   /**
    * Records that the counter is blocked until {@code blockedUntil}.

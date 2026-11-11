@@ -281,7 +281,7 @@ class EmailConfirmationResendSpec extends Specification {
     private final Map<String, Instant> blocks = [:]
 
     @Override
-    AuthAttemptCounter.Counter increment(String scope, String key, Instant now, Instant windowStart) {
+    AuthAttemptCounter.Counter increment(String scope, String key, Instant now, Duration window) {
       String id = "$scope|$key"
       counts.computeIfAbsent(id) { new int[1] }[0]++
       return new AuthAttemptCounter.Counter(counts[id][0], blocks[id])

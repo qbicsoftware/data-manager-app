@@ -720,6 +720,8 @@ CREATE TABLE IF NOT EXISTS `auth_attempt`
     `attemptKey`    char(64)    NOT NULL,
     `attemptCount`  int(11)     NOT NULL DEFAULT 0,
     `windowStartAt` datetime(6) NOT NULL,
+    `windowSeconds` int(11)     NOT NULL DEFAULT 900
+        COMMENT 'Length of the counting window. Stored per row so the adapter compares the row\'s own window end against now, instead of a caller-computed boundary (which made the counter reset on every call).',
     `blockedUntil`  datetime(6) DEFAULT NULL,
     `lastAttemptAt` datetime(6) NOT NULL,
 

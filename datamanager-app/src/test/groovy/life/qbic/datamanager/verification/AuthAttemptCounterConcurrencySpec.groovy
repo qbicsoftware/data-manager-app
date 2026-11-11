@@ -98,6 +98,7 @@ class AuthAttemptCounterConcurrencySpec extends Specification {
           attemptKey char(64) NOT NULL,
           attemptCount int NOT NULL DEFAULT 0,
           windowStartAt datetime(6) NOT NULL,
+          windowSeconds int NOT NULL DEFAULT 900,
           blockedUntil datetime(6) DEFAULT NULL,
           lastAttemptAt datetime(6) NOT NULL,
           UNIQUE KEY uk_auth_attempt_scope_key (scope, attemptKey)
@@ -107,6 +108,85 @@ class AuthAttemptCounterConcurrencySpec extends Specification {
       em.createNativeQuery('DELETE FROM auth_attempt').executeUpdate()
     }
     schemaReady = true
+  }
+
+  // ------------------------------------------- the bug that shipped: window never accumulated
+
+  def "successive attempts at different instants ACCUMULATE — the count must rise 1,2,3,..."() {
+    // This is the regression guard for a bug that reached a running server.
+    //
+    // The first implementation asked the caller for `windowStart = now - window` and reset the row
+    // whenever the stored start was earlier than that. Because every call computes a LATER boundary,
+    // the stored start was ALWAYS earlier, so every attempt was treated as a fresh window and reset
+    // the count. Measured: [1, 1, 1, 1, 1]. The threshold was therefore never reached and the throttle
+    // never engaged — the login flow silently had no rate limit at all.
+    //
+    // Every other case in this spec used a CONSTANT instant for `now`, which hid it completely.
+    given:
+    def counter = newThrottle(3)
+
+    when: 'five attempts, each 10 seconds after the previous'
+    def decisions = (0..4).collect { i ->
+      counter.record(AuthAttemptThrottle.Scope.LOGIN, ADDRESS, T0.plusSeconds(i * 10L))
+    }
+
+    then: 'the first three are allowed and the rest are throttled — the threshold was actually reached'
+    decisions == [
+        AuthAttemptThrottle.Decision.ALLOWED,
+        AuthAttemptThrottle.Decision.ALLOWED,
+        AuthAttemptThrottle.Decision.ALLOWED,
+        AuthAttemptThrottle.Decision.THROTTLED,
+        AuthAttemptThrottle.Decision.THROTTLED,
+    ]
+
+    and: 'the persisted count reflects the real number of attempts, not 1'
+    storedCount(SCOPE, AuthAttemptThrottle.attemptKey(AuthAttemptThrottle.Scope.LOGIN, ADDRESS)) == 5
+  }
+
+  def "the count resets only once the row's own window has actually elapsed"() {
+    given: 'a 15 minute window'
+    def key = AuthAttemptThrottle.attemptKey(AuthAttemptThrottle.Scope.LOGIN, ADDRESS)
+
+    when: 'three attempts spread over 30 seconds'
+    inTransaction { EntityManager em ->
+      def counter = new JpaAuthAttemptCounter(em)
+      counter.increment(SCOPE, key, T0, Duration.ofMinutes(15))
+      counter.increment(SCOPE, key, T0.plusSeconds(15), Duration.ofMinutes(15))
+      counter.increment(SCOPE, key, T0.plusSeconds(30), Duration.ofMinutes(15))
+    }
+
+    then: 'they all belong to one window'
+    storedCount(SCOPE, key) == 3
+
+    when: 'an attempt arrives one second past the window end'
+    def later = T0.plus(Duration.ofMinutes(15)).plusSeconds(1)
+    inTransaction { EntityManager em ->
+      new JpaAuthAttemptCounter(em).increment(SCOPE, key, later, Duration.ofMinutes(15))
+    }
+
+    then: 'the window rolled over and the count restarted at 1'
+    storedCount(SCOPE, key) == 1
+  }
+
+  def "an elapsed window clears a stale block, so an expired block cannot outlive its window"() {
+    given:
+    def key = AuthAttemptThrottle.attemptKey(AuthAttemptThrottle.Scope.LOGIN, ADDRESS)
+    inTransaction { EntityManager em ->
+      def counter = new JpaAuthAttemptCounter(em)
+      counter.increment(SCOPE, key, T0, Duration.ofMinutes(15))
+      counter.block(SCOPE, key, T0.plus(Duration.ofMinutes(15)))
+    }
+
+    when:
+    def later = T0.plus(Duration.ofMinutes(20))
+    inTransaction { EntityManager em ->
+      new JpaAuthAttemptCounter(em).increment(SCOPE, key, later, Duration.ofMinutes(15))
+    }
+
+    then:
+    inTransaction { EntityManager em ->
+      new JpaAuthAttemptCounter(em).peek(SCOPE, key).blockedUntil() == null
+    }
   }
 
   // --------------------------------------------------------------- the property that matters
@@ -125,7 +205,7 @@ class AuthAttemptCounterConcurrencySpec extends Specification {
       pool.submit({
         start.await()
         inTransaction { EntityManager em ->
-          new JpaAuthAttemptCounter(em).increment(SCOPE, key, T0, T0.minus(Duration.ofMinutes(15)))
+          new JpaAuthAttemptCounter(em).increment(SCOPE, key, T0, Duration.ofMinutes(15))
         }
       } as Callable)
     }
@@ -149,7 +229,7 @@ class AuthAttemptCounterConcurrencySpec extends Specification {
       pool.submit({
         start.await()
         inTransaction { EntityManager em ->
-          new JpaAuthAttemptCounter(em).increment(SCOPE, key, T0, T0.minus(Duration.ofMinutes(15)))
+          new JpaAuthAttemptCounter(em).increment(SCOPE, key, T0, Duration.ofMinutes(15))
         }
       } as Callable)
     }
@@ -199,8 +279,8 @@ class AuthAttemptCounterConcurrencySpec extends Specification {
     def key = AuthAttemptThrottle.attemptKey(AuthAttemptThrottle.Scope.LOGIN, ADDRESS)
     inTransaction { EntityManager em ->
       def counter = new JpaAuthAttemptCounter(em)
-      counter.increment(SCOPE, key, T0, T0.minus(Duration.ofMinutes(15)))
-      counter.increment(SCOPE, key, T0.plusSeconds(1), T0.minus(Duration.ofMinutes(15)))
+      counter.increment(SCOPE, key, T0, Duration.ofMinutes(15))
+      counter.increment(SCOPE, key, T0.plusSeconds(1), Duration.ofMinutes(15))
     }
     assert storedCount(SCOPE, key) == 2
 
@@ -208,7 +288,7 @@ class AuthAttemptCounterConcurrencySpec extends Specification {
     def later = T0.plus(Duration.ofHours(2))
     inTransaction { EntityManager em ->
       new JpaAuthAttemptCounter(em)
-          .increment(SCOPE, key, later, later.minus(Duration.ofMinutes(15)))
+          .increment(SCOPE, key, later, Duration.ofMinutes(15))
     }
 
     then: 'the window restarted, so the count is 1 rather than 3'
@@ -223,7 +303,7 @@ class AuthAttemptCounterConcurrencySpec extends Specification {
     when:
     inTransaction { EntityManager em ->
       def counter = new JpaAuthAttemptCounter(em)
-      counter.increment(SCOPE, key, T0, T0.minus(Duration.ofMinutes(15)))
+      counter.increment(SCOPE, key, T0, Duration.ofMinutes(15))
       counter.block(SCOPE, key, blockedUntil)
     }
 
@@ -235,7 +315,7 @@ class AuthAttemptCounterConcurrencySpec extends Specification {
     when: 'the window later rolls over'
     def later = T0.plus(Duration.ofHours(3))
     inTransaction { EntityManager em ->
-      new JpaAuthAttemptCounter(em).increment(SCOPE, key, later, later.minus(Duration.ofMinutes(15)))
+      new JpaAuthAttemptCounter(em).increment(SCOPE, key, later, Duration.ofMinutes(15))
     }
 
     then: 'the stale block is gone, so an expired block cannot outlive its window'
@@ -249,7 +329,7 @@ class AuthAttemptCounterConcurrencySpec extends Specification {
     def key = AuthAttemptThrottle.attemptKey(AuthAttemptThrottle.Scope.LOGIN, ADDRESS)
     inTransaction { EntityManager em ->
       def counter = new JpaAuthAttemptCounter(em)
-      counter.increment(SCOPE, key, T0, T0.minus(Duration.ofMinutes(15)))
+      counter.increment(SCOPE, key, T0, Duration.ofMinutes(15))
       counter.block(SCOPE, key, T0.plus(Duration.ofMinutes(15)))
     }
     def countBefore = storedCount(SCOPE, key)
@@ -269,7 +349,7 @@ class AuthAttemptCounterConcurrencySpec extends Specification {
     given:
     def key = AuthAttemptThrottle.attemptKey(AuthAttemptThrottle.Scope.LOGIN, ADDRESS)
     inTransaction { EntityManager em ->
-      new JpaAuthAttemptCounter(em).increment(SCOPE, key, T0, T0.minus(Duration.ofMinutes(15)))
+      new JpaAuthAttemptCounter(em).increment(SCOPE, key, T0, Duration.ofMinutes(15))
     }
 
     when:
@@ -285,9 +365,8 @@ class AuthAttemptCounterConcurrencySpec extends Specification {
     def staleKey = AuthAttemptThrottle.attemptKey(AuthAttemptThrottle.Scope.LOGIN, 'stale@example.org')
     inTransaction { EntityManager em ->
       def counter = new JpaAuthAttemptCounter(em)
-      counter.increment(SCOPE, freshKey, T0, T0.minus(Duration.ofMinutes(15)))
-      counter.increment(SCOPE, staleKey, T0.minus(Duration.ofDays(30)),
-          T0.minus(Duration.ofDays(30)).minus(Duration.ofMinutes(15)))
+      counter.increment(SCOPE, freshKey, T0, Duration.ofMinutes(15))
+      counter.increment(SCOPE, staleKey, T0.minus(Duration.ofDays(30)), Duration.ofMinutes(15))
     }
 
     when:
@@ -325,7 +404,7 @@ class AuthAttemptCounterConcurrencySpec extends Specification {
     when:
     inTransaction { EntityManager em ->
       def counter = new JpaAuthAttemptCounter(em)
-      counter.increment(SCOPE, key, T0, T0.minus(Duration.ofMinutes(15)))
+      counter.increment(SCOPE, key, T0, Duration.ofMinutes(15))
       counter.block(SCOPE, key, blockedUntil)
     }
 
@@ -363,9 +442,9 @@ class AuthAttemptCounterConcurrencySpec extends Specification {
     }
 
     @Override
-    AuthAttemptCounter.Counter increment(String scope, String key, Instant now, Instant windowStart) {
+    AuthAttemptCounter.Counter increment(String scope, String key, Instant now, Duration window) {
       spec.inTransaction { EntityManager em ->
-        new JpaAuthAttemptCounter(em).increment(scope, key, now, windowStart)
+        new JpaAuthAttemptCounter(em).increment(scope, key, now, window)
       }
     }
 

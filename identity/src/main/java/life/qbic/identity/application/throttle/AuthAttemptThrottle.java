@@ -140,8 +140,13 @@ public class AuthAttemptThrottle {
     // ONE increment, always. Splitting this into "check whether blocked, then increment" would
     // count a throttled attempt zero times, letting an already-blocked client keep its count — and
     // would also double-increment, because the check itself writes.
-    Instant windowStart = now.minus(policy.window());
-    AuthAttemptCounter.Counter state = counter.increment(scope.name(), key, now, windowStart);
+    //
+    // The WINDOW LENGTH is passed, not a computed boundary. An earlier version passed
+    // `now.minus(window)`; because every call computes a later boundary the stored start was always
+    // earlier, so every attempt looked like a new window and the counter could never exceed 1 — which
+    // meant the block threshold was never reached at all. See AuthAttemptCounter.increment.
+    AuthAttemptCounter.Counter state =
+        counter.increment(scope.name(), key, now, policy.window());
 
     // The stored block is evaluated against THIS clock, never with NOW() in SQL — every column is
     // datetime(6) with no zone, so a SQL-side comparison silently inherits the session's offset.

@@ -3,6 +3,7 @@ package life.qbic.identity.infrastructure.throttle;
 import static java.util.Objects.requireNonNull;
 
 import jakarta.persistence.EntityManager;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -53,24 +54,39 @@ public class JpaAuthAttemptCounter implements AuthAttemptCounter {
    * <p>Rolling the window over inside the upsert keeps it to one statement, so there is no second
    * lock acquisition and no ordering to get wrong.</p>
    *
-   * <p><b>Assignment order is load-bearing.</b> MySQL/MariaDB evaluate
-   * {@code ON DUPLICATE KEY UPDATE} assignments left to right, and later assignments see the values
-   * already written by earlier ones. {@code attemptCount} and {@code blockedUntil} therefore read
-   * the <em>old</em> {@code windowStartAt}, and {@code windowStartAt} is assigned last.</p>
+   * <h3>Why the window roll-over compares INSTANTS, not a caller-computed boundary</h3>
+   * <p>The first implementation asked the caller for {@code windowStart = now - window} and reset the
+   * row whenever {@code row.windowStartAt < :windowStart}. That is a <b>sliding</b> comparison, and it
+   * made the counter permanently stuck at 1: every call's boundary is later than the previous call's,
+   * so {@code row.windowStartAt} (written on the previous call) is <em>always</em> earlier than the new
+   * boundary. Every attempt was treated as "a fresh window" and reset the count instead of
+   * incrementing it — measured at {@code [1, 1, 1, 1, 1]}.</p>
+   *
+   * <p>The fix is to compare against the row's <em>own</em> window end: the row is stale only when
+   * {@code row.windowStartAt + row.windowSeconds <= now}. That is a genuine fixed window, it needs no
+   * boundary from the caller, and it cannot self-expire.</p>
+   *
+   * <p><b>Assignment order is load-bearing.</b> MySQL/MariaDB evaluate {@code ON DUPLICATE KEY UPDATE}
+   * assignments left to right, and later assignments see the values already written by earlier ones.
+   * {@code attemptCount} and {@code blockedUntil} must therefore be assigned <em>before</em>
+   * {@code windowStartAt}, so they still read the old value.</p>
    *
    * <p><b>{@code CASE WHEN}, not {@code IF()}.</b> MariaDB accepts both, but H2 in {@code MODE=MySQL}
    * rejects {@code IF()} inside {@code ON DUPLICATE KEY UPDATE} with a syntax error — so the H2 run
-   * would fail even though production is fine, and the in-memory suite is the fast feedback loop.
-   * {@code CASE WHEN} is standard and both engines accept it.</p>
+   * would fail even though production is fine, and the in-memory suite is the fast feedback loop.</p>
    */
   private static final String UPSERT = """
-      INSERT INTO auth_attempt (scope, attemptKey, attemptCount, windowStartAt, lastAttemptAt)
-      VALUES (:scope, :key, 1, :windowStart, :now)
+      INSERT INTO auth_attempt (scope, attemptKey, attemptCount, windowStartAt, windowSeconds, lastAttemptAt)
+      VALUES (:scope, :key, 1, :now, :windowSeconds, :now)
       ON DUPLICATE KEY UPDATE
-        attemptCount  = CASE WHEN windowStartAt < :windowStart THEN 1 ELSE attemptCount + 1 END,
-        blockedUntil  = CASE WHEN windowStartAt < :windowStart THEN NULL ELSE blockedUntil END,
+        attemptCount  = CASE WHEN TIMESTAMPADD(SECOND, windowSeconds, windowStartAt) <= :now
+                             THEN 1 ELSE attemptCount + 1 END,
+        blockedUntil  = CASE WHEN TIMESTAMPADD(SECOND, windowSeconds, windowStartAt) <= :now
+                             THEN NULL ELSE blockedUntil END,
+        windowSeconds = :windowSeconds,
         lastAttemptAt = :now,
-        windowStartAt = CASE WHEN windowStartAt < :windowStart THEN :windowStart ELSE windowStartAt END
+        windowStartAt = CASE WHEN TIMESTAMPADD(SECOND, windowSeconds, windowStartAt) <= :now
+                             THEN :now ELSE windowStartAt END
       """;
 
   private static final String SELECT_STATE =
@@ -90,19 +106,22 @@ public class JpaAuthAttemptCounter implements AuthAttemptCounter {
   }
 
   @Override
-  public Counter increment(String scope, String key, Instant now, Instant windowStart) {
+  public Counter increment(String scope, String key, Instant now, Duration window) {
     requireNonNull(scope, "scope must not be null");
     requireNonNull(key, "key must not be null");
     requireNonNull(now, "now must not be null");
-    requireNonNull(windowStart, "windowStart must not be null");
+    requireNonNull(window, "window must not be null");
+    if (window.isZero() || window.isNegative()) {
+      throw new IllegalArgumentException("window must be positive, but was " + window);
+    }
 
     // ONE statement. See UPSERT's javadoc: splitting the window roll-over into a preceding UPDATE
     // deadlocks on InnoDB, and the deadlock does not reproduce on H2.
     entityManager.createNativeQuery(UPSERT)
         .setParameter("scope", scope)
         .setParameter("key", key)
-        .setParameter("windowStart", toUtc(windowStart))
         .setParameter("now", toUtc(now))
+        .setParameter("windowSeconds", (int) window.toSeconds())
         .executeUpdate();
 
     return currentState(scope, key);

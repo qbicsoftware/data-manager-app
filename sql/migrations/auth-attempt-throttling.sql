@@ -53,6 +53,22 @@
 --    run H2 in MySQL mode, or they would pass against an upsert production never
 --    executes.
 --
+--  * The window length is STORED PER ROW (`windowSeconds`), and staleness is
+--    evaluated as `windowStartAt + windowSeconds <= now`.
+--
+--    The obvious design is to let the caller pass `windowStart = now - window`
+--    and reset whenever `windowStartAt < windowStart`. That is a SLIDING
+--    comparison and it is broken: every call computes a later boundary, so the
+--    stored start is always earlier than it and every attempt is treated as a
+--    fresh window. The counter then never exceeds 1, the threshold is never
+--    reached, and the throttle silently never engages — measured at
+--    [1, 1, 1, 1, 1] over five consecutive attempts. Storing the length per row
+--    makes the window fixed and self-contained.
+--
+--    Consequence for operators: changing `qbic.auth-throttle.*.window` takes
+--    effect on the next attempt (the upsert rewrites `windowSeconds`) but does
+--    not retroactively re-window an in-flight row's count.
+--
 --  * `blockedUntil` is stored, but the "is this blocked now?" decision is made in
 --    Java against an `Instant`, never in SQL against `NOW()`.
 --
@@ -112,7 +128,9 @@ CREATE TABLE IF NOT EXISTS `auth_attempt`
     `attemptCount`  int(11)     NOT NULL DEFAULT 0
         COMMENT 'Attempts in the current window. Incremented by the DATABASE (upsert), never read-then-write.',
     `windowStartAt` datetime(6) NOT NULL
-        COMMENT 'Start of the counting window. Compared in Java, not SQL.',
+        COMMENT 'Start of the counting window, written in UTC.',
+    `windowSeconds` int(11)     NOT NULL DEFAULT 900
+        COMMENT 'Length of the counting window, stored per row. The adapter compares the row''s OWN window end (windowStartAt + windowSeconds) against now. An earlier design passed now-minus-window as a boundary; because each call computed a later boundary the stored start was always earlier, so every attempt reset the count and the counter could never exceed 1.',
     `blockedUntil`  datetime(6) DEFAULT NULL
         COMMENT 'Set when the threshold is crossed. Evaluated in Java against Instant.now().',
     `lastAttemptAt` datetime(6) NOT NULL
