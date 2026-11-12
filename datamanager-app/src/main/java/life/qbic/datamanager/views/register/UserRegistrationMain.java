@@ -19,7 +19,6 @@ import life.qbic.identity.api.UserInformationService;
 import life.qbic.identity.api.UserNames;
 import life.qbic.identity.application.user.IdentityService;
 import life.qbic.identity.application.user.IdentityService.EmptyUserNameException;
-import life.qbic.identity.application.user.IdentityService.UserExistsException;
 import life.qbic.identity.application.user.IdentityService.UserNameNotAvailableException;
 import life.qbic.identity.application.user.IdentityService.UserNameTooLongException;
 import life.qbic.identity.application.throttle.AuthAttemptThrottle;
@@ -100,7 +99,8 @@ public class UserRegistrationMain extends Main {
         .ifSuccessOrElse(applicationResponse -> redirectToPendingConfirmation(
                 userRegistrationInformation.email()),
             applicationResponse -> {
-              if (isDuplicateAccount(applicationResponse.failures())) {
+              if (RegistrationOutcome.decide(applicationResponse.failures())
+                  == RegistrationOutcome.Action.UNIFORM_SUCCESS) {
                 // Uniform outcome (AUTH-NFR-03, FEAT-AUTH-FLOWS-03).
                 //
                 // A second registration for an address that already has an account must be
@@ -123,15 +123,6 @@ public class UserRegistrationMain extends Main {
             });
   }
 
-  /**
-   * Whether the failures are "an account already exists for this address".
-   *
-   * <p>Matched on the exception type rather than on rendered text, so the uniform response cannot be
-   * defeated by a message change elsewhere.</p>
-   */
-  private static boolean isDuplicateAccount(List<RuntimeException> failures) {
-    return failures.stream().anyMatch(UserExistsException.class::isInstance);
-  }
 
   /**
    * Sends the owner of an existing account the standard reset notice, telling them it can be ignored.
@@ -171,11 +162,11 @@ public class UserRegistrationMain extends Main {
       return;
     }
     for (RuntimeException e : exceptionList) {
-      if (e instanceof UserExistsException) {
-        userRegistrationComponent.showError("Email address already in use",
-            "If you have difficulties with your password you can reset it.");
-        break;
-      } else if (e instanceof UserNameNotAvailableException) {
+      // UserExistsException is handled before this method is reached, by RegistrationOutcome, and
+      // must never be rendered here: "email already in use" is the account-existence oracle
+      // (AUTH-NFR-03). The branch was removed rather than left unreachable, so it cannot be restored
+      // by accident while looking like a helpful default.
+      if (e instanceof UserNameNotAvailableException) {
         userRegistrationComponent.showError("Username already in use",
             "Please try another username");
         break;

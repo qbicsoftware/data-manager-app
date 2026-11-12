@@ -27,7 +27,6 @@ import life.qbic.identity.api.UserInformationService;
 import life.qbic.identity.api.UserNames;
 import life.qbic.identity.application.user.IdentityService;
 import life.qbic.identity.application.user.IdentityService.EmptyUserNameException;
-import life.qbic.identity.application.user.IdentityService.UserExistsException;
 import life.qbic.identity.application.user.IdentityService.UserNameNotAvailableException;
 import life.qbic.identity.application.user.IdentityService.UserNameTooLongException;
 import life.qbic.identity.application.throttle.AuthAttemptThrottle;
@@ -101,7 +100,8 @@ public class RegistrationOrcIdMain extends Main implements BeforeEnterObserver,
       registrationResponse.ifSuccessOrElse(
           response -> redirectToPendingConfirmation(information.email()),
           response -> {
-            if (isDuplicateAccount(response.failures())) {
+            if (RegistrationOutcome.decide(response.failures())
+                == RegistrationOutcome.Action.UNIFORM_SUCCESS) {
               // Uniform outcome, same reasoning as UserRegistrationMain: a duplicate registration must
               // not be distinguishable from a successful one. The owner is notified by email instead.
               notifyAccountOwnerOfRepeatedRegistration(information.email());
@@ -124,11 +124,10 @@ public class RegistrationOrcIdMain extends Main implements BeforeEnterObserver,
       return;
     }
     for (RuntimeException e : exceptionList) {
-      if (e instanceof UserExistsException) {
-        userRegistrationOrcIdComponent.showError("Email address already in use",
-            "If you have difficulties with your password you can reset it.");
-        break;
-      } else if (e instanceof UserNameNotAvailableException) {
+      // UserExistsException is handled before this method is reached, by RegistrationOutcome, and
+      // must never be rendered here: "email already in use" is the account-existence oracle
+      // (AUTH-NFR-03). The branch was removed rather than left unreachable.
+      if (e instanceof UserNameNotAvailableException) {
         userRegistrationOrcIdComponent.showError("Username already in use",
             "Please try another username");
         break;
@@ -151,14 +150,6 @@ public class RegistrationOrcIdMain extends Main implements BeforeEnterObserver,
     exceptionList.forEach(e -> log.debug(e.getMessage(), e));
   }
 
-  /**
-   * Whether the failures are "an account already exists for this address".
-   *
-   * <p>Matched on the exception type so the uniform response does not depend on rendered text.</p>
-   */
-  private static boolean isDuplicateAccount(List<RuntimeException> failures) {
-    return failures.stream().anyMatch(UserExistsException.class::isInstance);
-  }
 
   /**
    * Sends the owner of an existing account the standard reset notice, telling them it can be ignored.
