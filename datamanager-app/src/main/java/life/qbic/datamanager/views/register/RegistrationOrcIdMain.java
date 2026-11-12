@@ -10,6 +10,7 @@ import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.BeforeLeaveEvent;
 import com.vaadin.flow.router.BeforeLeaveObserver;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.server.VaadinSession;
 import jakarta.annotation.security.PermitAll;
 import java.time.Instant;
 import java.util.List;
@@ -96,10 +97,24 @@ public class RegistrationOrcIdMain extends Main implements BeforeEnterObserver,
         ProjectRoutes.PROJECTS); // no user id loaded as authentication principal is not overwritten.
   }
 
+  /**
+   * Sends the visitor to the pending-confirmation page, leaving the account id in the session.
+   *
+   * <p>The id must not travel in the URL: it is a persistent identifier that would land in browser
+   * history, access logs and Referer headers, and anyone holding the link could press "Resend
+   * verification link" to mail the account owner. The session scopes it to the visitor who just
+   * registered, which is the only person the action is for.</p>
+   *
+   * <p>An absent id is not an error — it is the signature of the page opened without a preceding
+   * registration, and the page handles it by offering no resend action.</p>
+   */
   private void navigateToPendingConfirmation(Optional<String> userId) {
-    userId.ifPresentOrElse(
-        id -> getUI().orElseThrow().navigate(EmailConfirmationMain.class, id),
-        () -> getUI().orElseThrow().navigate(EmailConfirmationMain.class));
+    VaadinSession session = VaadinSession.getCurrent();
+    if (session != null) {
+      session.setAttribute(EmailConfirmationMain.PENDING_REGISTRATION_USER_ID,
+          userId.orElse(null));
+    }
+    getUI().orElseThrow().navigate(EmailConfirmationMain.class);
   }
 
   private void handleRegistrationFailure(List<RuntimeException> exceptionList) {

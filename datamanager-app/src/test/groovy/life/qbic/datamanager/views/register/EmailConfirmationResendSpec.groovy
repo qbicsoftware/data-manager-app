@@ -5,6 +5,7 @@ import com.vaadin.flow.router.RouteParameters
 import com.vaadin.flow.router.Router
 import com.vaadin.flow.server.RouteRegistry
 import com.vaadin.flow.server.VaadinService
+import com.vaadin.flow.server.VaadinSession
 import life.qbic.identity.api.UserInfo
 import life.qbic.identity.api.UserInformationService
 import life.qbic.identity.api.VerificationLinkService
@@ -60,6 +61,7 @@ class EmailConfirmationResendSpec extends Specification {
     currentUi = Mock(UI)
     UI.setCurrent(currentUi)
 
+
     userInformationService = Stub(UserInformationService) {
       findById(USER_ID) >> Optional.of(
           new UserInfo(USER_ID, 'Alice Example', ADDRESS, 'alice', false, null, null))
@@ -78,6 +80,7 @@ class EmailConfirmationResendSpec extends Specification {
   }
 
   def cleanup() {
+    VaadinSession.setCurrent(null)
     VaadinService.setCurrent(null)
     UI.setCurrent(null)
   }
@@ -87,7 +90,7 @@ class EmailConfirmationResendSpec extends Specification {
     def view = newView()
 
     when:
-    view.setParameter(event(), USER_ID)
+    enter(view, USER_ID)
     clickResend(view)
 
     then:
@@ -97,7 +100,7 @@ class EmailConfirmationResendSpec extends Specification {
   def "a second resend within the window does not send another email"() {
     given:
     def view = newView()
-    view.setParameter(event(), USER_ID)
+    enter(view, USER_ID)
 
     when:
     clickResend(view)
@@ -113,7 +116,7 @@ class EmailConfirmationResendSpec extends Specification {
     // malfunction rather than a policy.
     given: 'the resend limit in this spec is 1'
     def view = newView()
-    view.setParameter(event(), USER_ID)
+    enter(view, USER_ID)
 
     when:
     clickResend(view)
@@ -150,7 +153,7 @@ class EmailConfirmationResendSpec extends Specification {
     // broken mail server and lands on the helpdesk.
     given:
     def view = newView()
-    view.setParameter(event(), USER_ID)
+    enter(view, USER_ID)
 
     when: 'the first resend goes out'
     clickResend(view)
@@ -186,7 +189,7 @@ class EmailConfirmationResendSpec extends Specification {
   def "a throttled resend does not send a second email"() {
     given:
     def view = newView()
-    view.setParameter(event(), USER_ID)
+    enter(view, USER_ID)
 
     when:
     clickResend(view)
@@ -200,7 +203,7 @@ class EmailConfirmationResendSpec extends Specification {
     // The route uses @OptionalParameter, so /register/pending-email-confirmation is a valid URL that
     // renders this page with no userInfo. The click handler dereferenced it unconditionally and
     // produced a NullPointerException -> HTTP 500.
-    given: 'no parameter was supplied, so setParameter never assigned a user'
+    given: 'the session carries no pending registration, so the page has no account to resend for'
     def view = newView()
 
     when:
@@ -221,12 +224,12 @@ class EmailConfirmationResendSpec extends Specification {
   def "the throttle survives a page reload, because it is in the store and not in the view"() {
     given: 'one resend from a first visit'
     def firstVisit = newView()
-    firstVisit.setParameter(event(), USER_ID)
+    enter(firstVisit, USER_ID)
     clickResend(firstVisit)
 
     and: 'the visitor reloads, which creates a brand-new view instance'
     def afterReload = newView()
-    afterReload.setParameter(event(), USER_ID)
+    enter(afterReload, USER_ID)
 
     when:
     clickResend(afterReload)
@@ -240,6 +243,28 @@ class EmailConfirmationResendSpec extends Specification {
   private static AuthAttemptThrottle.Outcome outcome(
       AuthAttemptThrottle.Decision decision, int used, int max) {
     return new AuthAttemptThrottle.Outcome(decision, used, max)
+  }
+
+  /**
+   * Simulates arriving at the page with a pending registration in the session.
+   *
+   * <p>The id is no longer a route parameter: it travels in the session so it cannot reach browser
+   * history, access logs or Referer headers. The page therefore reads it from {@link VaadinSession}.</p>
+   */
+  private void enter(EmailConfirmationMain view, String userId) {
+    // The session is installed only around beforeEnter: the page constructs a RouterLink in its
+    // constructor, which resolves through the current session's route registry, so a bare stub would
+    // break construction.
+    def session = Stub(VaadinSession) {
+      getAttribute(EmailConfirmationMain.PENDING_REGISTRATION_USER_ID) >> userId
+    }
+    def previous = VaadinSession.getCurrent()
+    VaadinSession.setCurrent(session)
+    try {
+      view.beforeEnter(event())
+    } finally {
+      VaadinSession.setCurrent(previous)
+    }
   }
 
   private EmailConfirmationMain newView() {

@@ -11,6 +11,7 @@ import com.vaadin.flow.router.RouteParameters
 import com.vaadin.flow.router.Router
 import com.vaadin.flow.server.RouteRegistry
 import com.vaadin.flow.server.VaadinService
+import com.vaadin.flow.server.VaadinSession
 import life.qbic.identity.api.UserInfo
 import life.qbic.identity.api.UserInformationService
 import life.qbic.identity.application.communication.EmailService
@@ -119,7 +120,15 @@ class PendingConfirmationCopySpec extends Specification {
     def view = newView()
 
     when: 'the page is built and the visitor id is resolved'
-    view.setParameter(event(), 'user-1')
+    def session = Stub(VaadinSession) {
+      getAttribute(EmailConfirmationMain.PENDING_REGISTRATION_USER_ID) >> 'user-1'
+    }
+    VaadinSession.setCurrent(session)
+    try {
+      view.beforeEnter(event())
+    } finally {
+      VaadinSession.setCurrent(null)
+    }
 
     then: 'nothing is dispatched on render — retrieval is not an action'
     0 * emailService.send(_, _, _)
