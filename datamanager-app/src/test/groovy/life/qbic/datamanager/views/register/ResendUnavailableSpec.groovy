@@ -87,6 +87,9 @@ class ResendUnavailableSpec extends Specification {
     lower.contains('session has expired')
     lower.contains('support@qbic.zendesk.com')
 
+    and: 'the page does not claim a link was sent, because it cannot know that'
+    !lower.contains("we've sent")
+
     where:
     reason                                   | sessionWithPendingId
     'session expired or opened directly'     | null

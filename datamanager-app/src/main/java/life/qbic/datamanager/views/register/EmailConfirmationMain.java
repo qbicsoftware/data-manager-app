@@ -95,6 +95,22 @@ public class EmailConfirmationMain extends Main implements BeforeEnterObserver {
    */
   private final Span resendVerification = new Span();
 
+  /**
+   * The instruction above the resend row.
+   *
+   * <p>Kept as a field because it is only true when a verification email was just dispatched. In the
+   * session-expired state the visitor may never have received one, and asserting "we've sent a link" there
+   * would be the same broken promise the reset form used to make.</p>
+   */
+  private final Span description = new Span();
+
+  private static final String SENT_DESCRIPTION =
+      "We've sent a verification link to your email. Please check your inbox and click on the link to "
+          + "complete the registration.";
+
+  private static final String UNKNOWN_DESCRIPTION =
+      "Check your inbox for the verification link to complete a registration.";
+
   public EmailConfirmationMain(UserInformationService userInformationService,
       EmailService emailService,
       EmailConfirmationLinkSupplier emailConfirmationLinkSupplier,
@@ -119,24 +135,9 @@ public class EmailConfirmationMain extends Main implements BeforeEnterObserver {
     H2 title = new H2("Verify your email");
     emailConfirmationComponent.add(title);
     emailConfirmationComponent.add(notificationLayout);
-    Text description = new Text(
-        "We've sent a verification link to your email. Please check your inbox and click on the link to complete the registration");
+    description.add(SENT_DESCRIPTION);
+    description.addClassName("email-confirmation-description");
     emailConfirmationComponent.add(description);
-    // The one sentence that makes this page honest for BOTH outcomes of a registration submission.
-    //
-    // A registration against an address that already has an account is deliberately indistinguishable
-    // from a new one (AUTH-NFR-03), so this page is reached in two situations and must state something
-    // true in both. The first sentence is conditional for that reason — on the duplicate path no
-    // verification email is sent at all, because no account was created.
-    //
-    // The second sentence is what stops the duplicate path from being a dead end. Without it, a person
-    // who mistyped their own address, or forgot they had an account, was told to check an inbox that
-    // will never receive anything and given no way forward. It is shown to everyone, so it discloses
-    // nothing, and it deliberately points at the reset flow rather than sending mail from here: a
-    // notification triggered by somebody else typing an address would describe an action the owner
-    // never took and would invalidate any reset link they were genuinely waiting for.
-    // Wrapped in a Span, not added as a bare Text: a Text is a client-side text node and cannot carry a
-    // CSS class, so styling it would silently do nothing (or throw, as it did under test).
     Text resendVerificationText = new Text("Did not receive an email?");
     Span resendVerificationLink = new Span("Resend verification link");
     resendVerificationLink.addClassName("link");
@@ -355,6 +356,11 @@ public class EmailConfirmationMain extends Main implements BeforeEnterObserver {
    * send the visitor in a circle. Support is the honest answer until a stateless resend exists.</p>
    */
   private void showResendUnavailable() {
+    // Neutral wording: in this state we cannot know that a link was sent to this visitor, and promising one
+    // is exactly the defect this page exists to avoid.
+    description.removeAll();
+    description.add(UNKNOWN_DESCRIPTION);
+
     resendVerification.removeAll();
     resendVerification.addClassName("resend-unavailable");
     Span explanation = new Span(
