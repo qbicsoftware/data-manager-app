@@ -44,7 +44,13 @@ public class BasicUserInformationService implements UserInformationService, User
       var email = EmailAddress.from(emailAddress);
       return userRepository.findByEmail(email).map(this::convert);
     } catch (EmailValidationException e) {
-      log.error("Client provided invalid email address %s".formatted(emailAddress), e);
+      // A malformed address is not an error condition: it is what a visitor typing nonsense into the
+      // login field produces, and the caller turns it into an ordinary "Incorrect username or
+      // password". Logging it at ERROR with a stack trace made every typo look like a server fault.
+      //
+      // Deliberately does NOT log the submitted value: it is attacker-controlled and may be a real
+      // address the attacker is probing, so it must not enter the log (AUTH-NFR-03).
+      log.debug("Login attempted with a malformed email address");
       return Optional.empty();
     }
   }

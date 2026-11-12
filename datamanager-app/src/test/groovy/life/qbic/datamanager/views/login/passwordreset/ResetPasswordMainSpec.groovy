@@ -6,7 +6,9 @@ import com.vaadin.flow.router.Router
 import com.vaadin.flow.server.RouteRegistry
 import com.vaadin.flow.server.VaadinService
 import life.qbic.datamanager.views.login.LoginLayout
+import life.qbic.identity.application.throttle.AuthAttemptThrottle
 import life.qbic.identity.application.user.IdentityService
+import life.qbic.identity.domain.repository.AuthAttemptCounter
 import life.qbic.identity.domain.repository.UserDataStorage
 import life.qbic.identity.domain.repository.UserRepository
 import spock.lang.Specification
@@ -47,7 +49,13 @@ class ResetPasswordMainSpec extends Specification {
         resetPasswordComponent = new ResetPasswordComponent(
                 Stub(life.qbic.identity.api.UserInformationService))
         resetEmailSentComponent = new ResetEmailSentComponent()
-        view = new ResetPasswordMain(identityService, resetPasswordComponent, resetEmailSentComponent)
+        // The throttle is always-allowing here: these specs are about the response wording, and a
+        // throttle that engaged would mask it. Throttling behaviour has its own specs.
+        def throttle = new AuthAttemptThrottle(new AllowingCounter(),
+                Integer.MAX_VALUE, java.time.Duration.ofMinutes(15), java.time.Duration.ofMinutes(15),
+                Integer.MAX_VALUE, java.time.Duration.ofMinutes(15), java.time.Duration.ofMinutes(15))
+        view = new ResetPasswordMain(identityService, resetPasswordComponent, resetEmailSentComponent,
+                throttle)
     }
 
     def cleanup() {
@@ -78,6 +86,57 @@ class ResetPasswordMainSpec extends Specification {
         resetPasswordComponent.isVisible()
     }
 
+    def "a throttled request says so, instead of promising an email that is never sent"() {
+        given: 'a view whose throttle allows 3 resends per window'
+        def throttled = viewWithLimit(3)
+
+        when: 'the same address is submitted four times'
+        (1..4).each { throttled.view.resetPassword("known@example.com") }
+
+        then: 'the panel stops claiming an email will arrive'
+        def text = renderedText(throttled.sent).toLowerCase()
+        !text.contains('you will receive an email')
+
+        and: 'it says this was a repeat, and when to come back'
+        text.contains('already')
+        text.contains('minutes')
+    }
+
+    def "the throttled reply is identical for a registered and an unregistered address"() {
+        // The critical property. The throttle is keyed on the submitted string and consulted BEFORE
+        // any account lookup, so it must not distinguish the two — otherwise stating it would be the
+        // enumeration oracle that keeping the "sent" reply uniform exists to prevent.
+        given:
+        def known = viewWithLimit(3)
+        def unknown = viewWithLimit(3)
+
+        when:
+        (1..4).each { known.view.resetPassword("known@example.com") }
+        (1..4).each { unknown.view.resetPassword("nobody@example.com") }
+
+        then: 'the rendered panel text is character-for-character the same'
+        renderedText(known.sent) == renderedText(unknown.sent)
+    }
+
+    def "an unthrottled request still uses the conditional wording, so existence is not disclosed"() {
+        when:
+        view.resetPassword("nobody@example.com")
+
+        then: 'the only reply for an accepted request is the conditional one'
+        renderedText(resetEmailSentComponent).toLowerCase().contains('if an account exists')
+    }
+
+    /** A view whose throttle is real, so the throttled state can be reached. */
+    private Map viewWithLimit(int maxResends) {
+        def sent = new ResetEmailSentComponent()
+        def component = new ResetPasswordComponent(
+                Stub(life.qbic.identity.api.UserInformationService))
+        def throttle = new AuthAttemptThrottle(new AllowingCounter(),
+                10, java.time.Duration.ofMinutes(15), java.time.Duration.ofMinutes(15),
+                maxResends, java.time.Duration.ofMinutes(15), java.time.Duration.ofMinutes(15))
+        return [view: new ResetPasswordMain(identityService, component, sent, throttle), sent: sent]
+    }
+
     private static String renderedText(component) {
         def sink = []
         collect(component, sink)
@@ -89,5 +148,29 @@ class ResetPasswordMainSpec extends Specification {
             try { sink << component.getText() } catch (Exception ignored) { }
         }
         component.getChildren()?.each { collect(it, sink) }
+    }
+
+    /** Never blocks: one bucket per key, and the limits are set to Integer.MAX_VALUE. */
+    static final class AllowingCounter implements AuthAttemptCounter {
+
+        private final Map<String, Integer> counts = [:]
+
+        @Override
+        AuthAttemptCounter.Counter increment(String scope, String key, java.time.Instant now,
+                java.time.Duration window) {
+            counts[key] = (counts[key] ?: 0) + 1
+            new AuthAttemptCounter.Counter(counts[key], null)
+        }
+
+        @Override
+        void block(String scope, String key, java.time.Instant blockedUntil) { }
+
+        @Override
+        AuthAttemptCounter.Counter peek(String scope, String key) {
+            new AuthAttemptCounter.Counter(counts[key] ?: 0, null)
+        }
+
+        @Override
+        void clear(String scope, String key) { counts.remove(key) }
     }
 }
