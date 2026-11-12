@@ -63,7 +63,11 @@ public class SampleRepositoryImpl implements SampleRepository {
       Collection<Sample> samples) {
     String commaSeperatedSampleIds = buildCommaSeparatedSampleIds(
         samples.stream().map(Sample::sampleId).toList());
-    List<Sample> savedSamples = this.sampleJpaRepository.saveAll(samples);
+    // The flush is mandatory and must not be removed: Sample has an assigned @EmbeddedId, so
+    // Spring Data routes saveAll to EntityManager.merge and only queues the INSERT. Without the
+    // flush the database validates the write at commit, i.e. after the openBIS call below has
+    // already succeeded, which leaves orphaned samples in openBIS when the commit fails.
+    List<Sample> savedSamples = this.sampleJpaRepository.saveAllAndFlush(samples);
     try {
       sampleDataRepository.addSamplesToProject(project, savedSamples);
     } catch (RuntimeException e) {
@@ -130,7 +134,9 @@ public class SampleRepositoryImpl implements SampleRepository {
   @Override
   public void updateAll(Project project,
       Collection<Sample> updatedSamples) {
-    sampleJpaRepository.saveAll(updatedSamples);
+    // Flush before the openBIS update for the same reason as in addAll: the database must reject
+    // an invalid update before the external system is mutated.
+    sampleJpaRepository.saveAllAndFlush(updatedSamples);
     sampleDataRepository.updateAll(project, updatedSamples);
   }
 
