@@ -11,6 +11,7 @@ import com.vaadin.flow.router.BeforeLeaveEvent;
 import com.vaadin.flow.router.BeforeLeaveObserver;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.PermitAll;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -21,6 +22,7 @@ import life.qbic.datamanager.views.MainPage;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.landing.LandingPageLayout;
 import life.qbic.datamanager.views.register.UserRegistrationOrcIdComponent.UserRegistrationOrcIdInformation;
+import life.qbic.identity.api.UserInfo;
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.identity.api.UserNames;
 import life.qbic.identity.application.user.IdentityService;
@@ -28,6 +30,7 @@ import life.qbic.identity.application.user.IdentityService.EmptyUserNameExceptio
 import life.qbic.identity.application.user.IdentityService.UserExistsException;
 import life.qbic.identity.application.user.IdentityService.UserNameNotAvailableException;
 import life.qbic.identity.application.user.IdentityService.UserNameTooLongException;
+import life.qbic.identity.application.throttle.AuthAttemptThrottle;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.authorization.QbicOidcUser;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,13 +48,17 @@ public class RegistrationOrcIdMain extends Main implements BeforeEnterObserver,
   private final transient IdentityService identityService;
   private final UserRegistrationOrcIdComponent userRegistrationOrcIdComponent;
   private final transient UserInformationService userInformationService;
+  private final transient AuthAttemptThrottle authAttemptThrottle;
 
   public RegistrationOrcIdMain(
       @Qualifier("userRegistrationService") IdentityService identityService,
-      @Autowired UserInformationService userInformationService) {
+      @Autowired UserInformationService userInformationService,
+      @Autowired AuthAttemptThrottle authAttemptThrottle) {
     this.identityService = requireNonNull(identityService, "identityService must not be null");
     this.userInformationService = requireNonNull(userInformationService,
         "userInformationService must not be null");
+    this.authAttemptThrottle = requireNonNull(authAttemptThrottle,
+        "authAttemptThrottle must not be null");
     userRegistrationOrcIdComponent = new UserRegistrationOrcIdComponent(userInformationService);
     userRegistrationOrcIdComponent.addRegistrationListener(
         event -> registerOidcUser(event.userRegistrationOrcIdInformation()));
@@ -78,16 +85,31 @@ public class RegistrationOrcIdMain extends Main implements BeforeEnterObserver,
       return; //nothing to do
     }
     if (authentication.getPrincipal() instanceof OidcUser oidcUser) {
+      // Throttle before any work — same reasoning as UserRegistrationMain. Reported identically.
+      var throttleOutcome = authAttemptThrottle.recordAndReport(
+          AuthAttemptThrottle.Scope.REGISTRATION, information.email(), Instant.now());
+      if (!throttleOutcome.isAllowed()) {
+        log.debug("ORCID registration submission throttled");
+        redirectToPendingConfirmation(information.email());
+        return;
+      }
+
       ApplicationResponse registrationResponse = identityService.registerOpenIdUser(
           information.fullName(),
           information.userName(), information.email(), oidcUser.getIssuer().toString(),
           oidcUser.getName());
       registrationResponse.ifSuccessOrElse(
+          response -> redirectToPendingConfirmation(information.email()),
           response -> {
-            var userId = userInformationService.findByEmail(information.email()).orElseThrow().id();
-            getUI().orElseThrow().navigate(EmailConfirmationMain.class, userId);
-          },
-          response -> handleRegistrationFailure(response.failures())
+            if (isDuplicateAccount(response.failures())) {
+              // Uniform outcome, same reasoning as UserRegistrationMain: a duplicate registration must
+              // not be distinguishable from a successful one. The owner is notified by email instead.
+              notifyAccountOwnerOfRepeatedRegistration(information.email());
+              redirectToPendingConfirmation(information.email());
+              return;
+            }
+            handleRegistrationFailure(response.failures());
+          }
       );
       return;
     }
@@ -127,6 +149,39 @@ public class RegistrationOrcIdMain extends Main implements BeforeEnterObserver,
         .collect(Collectors.joining("\n"));
     log.error(allErrorMessages);
     exceptionList.forEach(e -> log.debug(e.getMessage(), e));
+  }
+
+  /**
+   * Whether the failures are "an account already exists for this address".
+   *
+   * <p>Matched on the exception type so the uniform response does not depend on rendered text.</p>
+   */
+  private static boolean isDuplicateAccount(List<RuntimeException> failures) {
+    return failures.stream().anyMatch(UserExistsException.class::isInstance);
+  }
+
+  /**
+   * Sends the owner of an existing account the standard reset notice, telling them it can be ignored.
+   *
+   * <p>Reuses the password-reset notification deliberately — see {@code UserRegistrationMain}.</p>
+   */
+  private void notifyAccountOwnerOfRepeatedRegistration(String email) {
+    var response = identityService.requestPasswordReset(email);
+    if (response.hasFailures()) {
+      log.debug("Repeated registration for an existing account; notification not dispatched");
+    }
+  }
+
+  /**
+   * Navigates to the "check your inbox" page for the given address, whether or not it has an account.
+   *
+   * @see UserRegistrationMain#redirectToPendingConfirmation(String)
+   */
+  private void redirectToPendingConfirmation(String email) {
+    var userId = userInformationService.findByEmail(email).map(UserInfo::id);
+    userId.ifPresentOrElse(
+        id -> getUI().orElseThrow().navigate(EmailConfirmationMain.class, id),
+        () -> getUI().orElseThrow().navigate(EmailConfirmationMain.class));
   }
 
   @Override

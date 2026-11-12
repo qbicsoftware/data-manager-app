@@ -24,6 +24,7 @@ import java.io.Serializable;
 import java.util.Objects;
 import life.qbic.datamanager.views.login.passwordreset.ResetPasswordMain;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
+import life.qbic.identity.api.Passwords;
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.identity.api.UserNames;
 
@@ -68,7 +69,7 @@ public class UserRegistrationComponent extends Div {
     username.setMaxLength(UserNames.MAX_LENGTH);
     username.setHelperText("Your unique user name, visible to other users (max. "
         + UserNames.MAX_LENGTH + " characters)");
-    password.setHelperText("Please provide a password with at least 12 characters");
+    password.setHelperText(Passwords.hint());
     add(titleSpan, notificationLayout, fullName, email, username, password, registerButton);
     setFieldValidation();
     addRegistrationButtonListener();
@@ -90,15 +91,14 @@ public class UserRegistrationComponent extends Div {
     registrationInformationBinder.forField(email)
         .asRequired("Please provide an email address")
         .withValidator(new EmailValidator("Please provide a valid email address"))
-        .withValidator((Validator<String>) (value, context) -> {
-          if (userInformationService.isEmailAvailable(value)) {
-            return ValidationResult.ok();
-          } else {
-            return ValidationResult.error(
-                "Email address already in use. "
-                    + "You can reset your password if necessary");
-          }
-        })
+        // No account-existence check here, deliberately (AUTH-NFR-03, FEAT-AUTH-FLOWS-03).
+        // This validator used to call userInformationService.isEmailAvailable() and answer
+        // "Email address already in use", which is a repeatable, unauthenticated oracle for "does
+        // this address have an account?". Removed here AND in the submit path (UserRegistrationMain);
+        // fixing only one of the two would just move the disclosure one step later.
+        //
+        // Duplicate registrations are now handled uniformly: the visitor sees the same outcome as a
+        // successful registration, and the address owner is notified by email instead.
         .bind(UserRegistrationInformation::email, UserRegistrationInformation::setEmail);
     registrationInformationBinder.forField(username)
         .asRequired("Please provide an user name")
@@ -117,9 +117,7 @@ public class UserRegistrationComponent extends Div {
         .bind(UserRegistrationInformation::userName, UserRegistrationInformation::setUserName);
     registrationInformationBinder.forField(password)
         .asRequired("Please provide a password")
-        .withValidator(
-            name -> name.strip().length() >= 12,
-            "Password does not contain at least 12 characters")
+        .withValidator(Passwords::satisfiesMinLength, Passwords.tooShortMessage())
         .bind(UserRegistrationInformation::password, UserRegistrationInformation::setPassword);
   }
 
