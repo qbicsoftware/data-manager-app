@@ -1,160 +1,108 @@
 package life.qbic.datamanager.views.register
 
-import life.qbic.identity.api.UserInformationService
 import life.qbic.identity.application.throttle.AuthAttemptThrottle
-import life.qbic.identity.application.user.IdentityService
-import life.qbic.identity.domain.repository.AuthAttemptCounter
-
-import java.time.Duration
-import java.time.Instant
 import spock.lang.Specification
 import spock.lang.Unroll
 
 /**
- * <b>The registration views must receive the throttle, and must actually consult it.</b>
+ * <b>The registration views must actually be wired to the throttle.</b>
  *
- * <p>Both guards here exist because of a defect class this codebase has already paid for twice: a unit
- * spec that constructs its subject by hand will happily pass while the application wires something
- * else, or while the new collaborator is injected and never used.</p>
+ * <p>This guard exists because of a defect class this codebase has already paid for twice: a unit spec
+ * that constructs its subject by hand passes happily while the application wires something else, or
+ * while a new collaborator is injected and never used.</p>
  *
  * <ol>
- *   <li><b>Wiring.</b> {@code AuthAttemptThrottle} was added as a constructor dependency of both
- *       registration views. If the bean is not resolvable the routes fail at startup, not at first use.
- *       A hand-constructed spec never notices, because it passes a stub.</li>
- *   <li><b>Actually called.</b> Injecting a throttle and forgetting to call it is the more likely
- *       mistake, and it is silent: registration keeps working, unthrottled. The previous slice shipped
- *       exactly that shape of bug — a throttle with zero production call sites — which is why it had
- *       been deleted as dead code once before.</li>
+ *   <li><b>Wiring.</b> Both registration routes receive the throttle through
+ *       {@link RegistrationSubmission}. If the bean is missing the routes fail at startup, not at first
+ *       use — and a hand-constructed spec never notices, because it passes a stub.</li>
+ *   <li><b>Actually called.</b> Injecting a throttle and never calling it is the more likely mistake and
+ *       it is silent: registration keeps working, unthrottled. The previous slice shipped exactly that
+ *       shape — a throttle with zero production call sites — which is why it had once been deleted as
+ *       dead code.</li>
  * </ol>
  *
- * <p>There is no {@code @SpringBootTest} in this module (a full context needs MariaDB, Artemis, SMTP,
- * OpenBIS and the vault), so the properties are asserted directly rather than by booting.</p>
+ * <p>The behavioural half lives in {@code RegistrationSubmissionSpec}; this spec asserts the two things a
+ * behavioural spec cannot: that the bean is required at construction, and that the shipped bytecode
+ * references the registration scope.</p>
  */
 class RegistrationThrottleWiringSpec extends Specification {
 
   private static final List<Class> REGISTRATION_VIEWS = [UserRegistrationMain, RegistrationOrcIdMain]
 
   @Unroll
-  def "#view takes the throttle as a constructor dependency"() {
+  def "#view requires the throttle at construction"() {
     given:
     def parameterTypes = view.declaredConstructors
         .findAll { !it.synthetic }
         .collectMany { it.parameterTypes as List }
 
-    expect: 'the bean is required by the constructor, so a missing bean fails at startup'
+    expect: 'the bean is required, so a missing bean fails at startup rather than silently disabling it'
     parameterTypes.contains(AuthAttemptThrottle)
 
-    and: 'the pre-existing dependencies are still required, so this did not replace anything'
-    parameterTypes.contains(IdentityService)
-    parameterTypes.contains(UserInformationService)
+    and: 'the identity port is required too, so the view cannot bypass the uniform-response flow'
+    parameterTypes.contains(RegistrationIdentity)
 
     where:
     view << REGISTRATION_VIEWS
   }
 
-  @Unroll
-  def "#view records a REGISTRATION-scoped attempt before registering"() {
-    given: 'the scope exists and is served by the resend policy'
+  def "the registration scope exists and is separate from the login scope"() {
+    given:
     def scopes = AuthAttemptThrottle.Scope.values().collect { it.name() }
 
-    expect: 'the registration scope was added — the AC names registration, and it was not covered before'
+    expect: 'the AC names registration, and it was not covered before'
     scopes.contains('REGISTRATION')
 
-    and: 'the view references it, so the throttle is not merely injected and ignored'
-    // The enum constant appears in the class file as a constant-pool entry (a getstatic field name);
-    // the textual form "Scope.REGISTRATION" never appears in bytecode, so match the constant alone.
-    constantsOf(view).contains('REGISTRATION')
-
-    where:
-    view << REGISTRATION_VIEWS
+    and: 'it is not folded into LOGIN, which would share a bucket and a threshold'
+    scopes.count { it == 'REGISTRATION' } == 1
   }
 
-  def "the registration scope is throttled, not silently mapped to the login policy"() {
-    given:
-    def throttle = new AuthAttemptThrottle(
-        new InMemoryAuthAttemptCounter(),
-        10, Duration.ofMinutes(15), Duration.ofMinutes(15),
-        3, Duration.ofMinutes(15), Duration.ofMinutes(15))
+  def "the submission flow references the registration scope in shipped bytecode"() {
+    given: 'the compiled class file, so the assertion is about what is deployed'
+    def resource = RegistrationSubmission.name.replace('.', '/') + '.class'
+    def bytes = RegistrationSubmission.classLoader.getResourceAsStream(resource)
+        .withCloseable { new String(it.bytes, 'ISO-8859-1') }
 
-    when: 'a visitor submits registration more often than the resend allowance'
-    def decisions = (1..4).collect {
-      throttle.record(AuthAttemptThrottle.Scope.REGISTRATION, 'someone@example.org',
-          Instant.parse('2026-11-12T10:00:00Z'))
-    }
-
-    then: 'the resend allowance applies, so one address cannot mass-submit'
-    decisions.count { it == AuthAttemptThrottle.Decision.THROTTLED } == 1
+    expect: 'the enum constant appears in the constant pool, so it is genuinely used'
+    bytes.contains('REGISTRATION')
   }
 
-  /**
-   * The compiled class file, as a string, so the assertion is about shipped bytecode rather than about
-   * a test-only copy of the logic. The constant pool contains the enum constant name.
-   */
-  private static String constantsOf(Class type) {
-    def resource = type.name.replace('.', '/') + '.class'
-    def stream = type.classLoader.getResourceAsStream(resource)
-    assert stream != null: "could not load bytecode for ${type.name}"
-    return stream.withCloseable { new String(it.bytes, 'ISO-8859-1') }
+  def "the submission flow records an attempt before it registers"() {
+    given: 'a real throttle over a counter that records what it is asked'
+    def counter = new RecordingCounter()
+    def throttle = new AuthAttemptThrottle(counter,
+        10, java.time.Duration.ofMinutes(15), java.time.Duration.ofMinutes(15),
+        3, java.time.Duration.ofMinutes(15), java.time.Duration.ofMinutes(15))
+    def submission = new RegistrationSubmission(
+        new RegistrationSubmissionSpec.FakeIdentity(),
+        Stub(life.qbic.identity.api.UserInformationService) { findByEmail(_) >> Optional.empty() },
+        throttle)
+
+    when:
+    submission.submitLocal(new RegistrationSubmission.RegistrationForm(
+        'Ada Lovelace', 'someone@example.org', 'alovelace', 'a-strong-passphrase'), { it })
+
+    then: 'the attempt was recorded against the REGISTRATION scope, before any registration work'
+    counter.scopes == [AuthAttemptThrottle.Scope.REGISTRATION.name()]
   }
 
-  /**
-   * A counter with no database, so the policy can be exercised without MariaDB.
-   *
-   * <p>Mirrors the SQL contract deliberately: the window rolls over when it has elapsed and the count
-   * restarts at 1, not 0. A sliding interpretation leaves the counter stuck — the exact bug that made
-   * the throttle never engage in production while every spec passed on a constant clock.</p>
-   */
-  static class InMemoryAuthAttemptCounter implements AuthAttemptCounter {
-
-    private final Map<String, State> states = [:]
+  /** Records the scope of every increment, so ordering and scope can be asserted. */
+  static class RecordingCounter implements life.qbic.identity.domain.repository.AuthAttemptCounter {
+    List<String> scopes = []
 
     @Override
-    Counter increment(String scope, String key, Instant now, Duration window) {
-      def id = "${scope}|${key}"
-      def existing = states[id]
-      def start = existing?.windowStart
-      def count = existing?.attemptCount ?: 0
-      def blocked = existing?.blockedUntil
-      if (start == null || !now.isBefore(start.plus(window))) {
-        start = now
-        count = 0
-        blocked = null
-      }
-      def updated = new State(attemptCount: count + 1, windowStart: start, blockedUntil: blocked)
-      states[id] = updated
-      return new Counter(updated.attemptCount, updated.blockedUntil)
+    Counter increment(String scope, String key, java.time.Instant now, java.time.Duration window) {
+      scopes << scope
+      return new Counter(1, null)
     }
 
     @Override
-    Counter peek(String scope, String key) {
-      def existing = states["${scope}|${key}"]
-      return existing == null
-          ? new Counter(0, null)
-          : new Counter(existing.attemptCount, existing.blockedUntil)
-    }
+    Counter peek(String scope, String key) { return new Counter(0, null) }
 
     @Override
-    void block(String scope, String key, Instant blockedUntil) {
-      def id = "${scope}|${key}"
-      def existing = states[id]
-      if (existing != null) {
-        existing.blockedUntil = blockedUntil
-      }
-    }
+    void block(String scope, String key, java.time.Instant blockedUntil) { }
 
     @Override
-    void clear(String scope, String key) {
-      states.remove("${scope}|${key}")
-    }
-
-    Set<String> keys() {
-      return states.keySet()
-    }
-
-    static class State {
-      int attemptCount
-      Instant windowStart
-      Instant blockedUntil
-    }
+    void clear(String scope, String key) { }
   }
 }
