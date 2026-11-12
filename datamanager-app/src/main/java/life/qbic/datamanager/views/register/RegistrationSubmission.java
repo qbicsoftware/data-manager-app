@@ -121,8 +121,24 @@ public class RegistrationSubmission {
     }
     if (RegistrationOutcome.decide(response.failures())
         == RegistrationOutcome.Action.UNIFORM_SUCCESS) {
-      // Uniform outcome (AUTH-NFR-03). The owner is told by email; the visitor is told nothing.
-      notifyAccountOwnerOfRepeatedRegistration(email);
+      // Uniform outcome (AUTH-NFR-03). The visitor is told nothing, and NOBODY IS NOTIFIED BY EMAIL.
+      //
+      // The first implementation reused the password-reset notification here. That was wrong, and the
+      // reason is worth keeping: the owner did nothing, so the message described an action they never
+      // took, it invalidated a reset link they may have genuinely been waiting for (issuing a token
+      // supersedes the previous one), and it is trivially spammable — anyone who types a known address
+      // triggers it. Two unwanted emails for one typo is not a security control.
+      //
+      // The navigation carries an id here too, and it must: if the success path passed one and this path
+      // did not, the URL itself would answer "does this account exist?" — the oracle rebuilt one level up.
+      // Both paths are addressed identically, and the id is an opaque value either way.
+      //
+      // The cost of that choice, stated rather than hidden: on this path the id belongs to the EXISTING
+      // account, so the page's "resend verification link" would mail that account owner a confirmation
+      // link they did not ask for. It requires a deliberate click by the requester and is bounded by the
+      // EMAIL_CONFIRMATION_RESEND throttle (3 per window per address). Accepted because the alternative —
+      // omitting the id — would either leak existence through the URL or remove the resend feature for
+      // the legitimate "my email never arrived" case, which is the case it exists for.
       navigator.toPendingConfirmation(userIdOf(email));
       return List.of();
     }
@@ -146,20 +162,6 @@ public class RegistrationSubmission {
 
   private Optional<String> userIdOf(String email) {
     return userInformationService.findByEmail(email).map(life.qbic.identity.api.UserInfo::id);
-  }
-
-  /**
-   * Sends the owner of an existing account the standard reset notice, telling them it can be ignored.
-   *
-   * <p>Reuses the password-reset notification deliberately: it is the one existing message that gives
-   * the owner a way forward (set a new password) without disclosing anything to the requester, and it is
-   * what the previous error text already pointed at.</p>
-   */
-  private void notifyAccountOwnerOfRepeatedRegistration(String email) {
-    var response = identity.requestPasswordReset(email);
-    if (response.hasFailures()) {
-      log.debug("Repeated registration for an existing account; notification not dispatched");
-    }
   }
 
   /**

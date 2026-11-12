@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 /**
  * Wires {@link RegistrationIdentity} to the identity application service.
  *
- * <p>A thin adapter on purpose: it exists so the registration flow depends on three operations rather
+ * <p>A thin adapter on purpose: it exists so the registration flow depends on two operations rather
  * than on the whole {@code IdentityService}, and so the flow can be tested with a collaborator that is
  * not {@code final}.</p>
  *
@@ -33,10 +33,5 @@ public class RegistrationIdentityAdapter implements RegistrationIdentity {
   public ApplicationResponse registerOpenId(String fullName, String userName, String email,
       String issuer, String subject) {
     return identityService.registerOpenIdUser(fullName, userName, email, issuer, subject);
-  }
-
-  @Override
-  public ApplicationResponse requestPasswordReset(String email) {
-    return identityService.requestPasswordReset(email);
   }
 }

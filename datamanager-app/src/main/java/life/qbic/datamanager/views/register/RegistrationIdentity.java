@@ -5,11 +5,11 @@ import life.qbic.application.commons.ApplicationResponse;
 /**
  * <b>The identity operations registration needs, and nothing else.</b>
  *
- * <p>Registration touches exactly three things: create a local account, create an account from an ORCID
- * assertion, and reset a password. Naming them as a port keeps the registration flow independent of the
- * remaining twenty-odd operations on {@code IdentityService}, and — practically — makes the flow
- * testable: {@code IdentityService} is {@code final}, so it cannot be mocked, which is how the
- * account-existence decision ended up untested inside a view in the first place.</p>
+ * <p>Registration touches exactly two things: create a local account, and create an account from an ORCID
+ * assertion. Naming them as a port keeps the registration flow independent of the remaining twenty-odd
+ * operations on {@code IdentityService}, and — practically — makes the flow testable: {@code IdentityService}
+ * is {@code final}, so it cannot be mocked, which is how the account-existence decision ended up untested
+ * inside a view in the first place.</p>
  *
  * <p>Implemented for Spring in {@code RegistrationIdentityAdapter}.</p>
  *
@@ -34,11 +34,4 @@ public interface RegistrationIdentity {
   ApplicationResponse registerOpenId(String fullName, String userName, String email, String issuer,
       String subject);
 
-  /**
-   * Sends the standard reset notice to the address, if an account owns it.
-   *
-   * <p>Returns success for an unknown address, so the caller cannot use the response to learn whether an
-   * account exists.</p>
-   */
-  ApplicationResponse requestPasswordReset(String email);
 }

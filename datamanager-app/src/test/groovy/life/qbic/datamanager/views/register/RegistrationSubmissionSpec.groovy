@@ -20,16 +20,22 @@ import java.time.Instant
  *
  * <p>These are the behaviours nothing could assert before: the logic lived in a private method on a
  * {@code @UIScope} view, welded to {@code getUI().navigate(...)} and a {@code final} service. No spec
- * could observe that a duplicate registration notified the owner, or that a throttled submission
- * disclosed nothing.</p>
+ * could observe that a throttled submission disclosed nothing, or that no mail was sent.</p>
  *
  * <p>Three properties carry the requirement:</p>
  * <ol>
  *   <li>a duplicate navigates exactly where a success navigates, and renders no failures;</li>
- *   <li>the owner is notified, so the outcome is not a silent dead end;</li>
+ *   <li><b>no email is sent on a duplicate.</b> The first implementation reused the password-reset
+ *       notification, which was wrong: the owner did nothing, so the message described an action they
+ *       never took, it invalidated a reset link they may have been waiting for (issuing a token
+ *       supersedes the previous one), and anyone who types a known address could trigger it. The dead
+ *       end is resolved by the page copy instead — see {@code EmailConfirmationMain}.</li>
  *   <li>a throttled submission behaves like a success rather than revealing the throttle — the bucket is
  *       keyed on the submitted address, so admitting it would restore the oracle.</li>
  * </ol>
+ *
+ * <p>The fake is hand-written rather than mocked, because {@code IdentityService} is {@code final} and even
+ * mocking the narrow port left array-argument stubbing fragile for no benefit.</p>
  */
 class RegistrationSubmissionSpec extends Specification {
 
@@ -83,11 +89,12 @@ class RegistrationSubmissionSpec extends Specification {
     then: 'nothing is rendered — "already in use" is the oracle'
     failures.isEmpty()
 
-    and: 'the owner is notified, so this is not a silent dead end'
-    identity.resetRequests == [EXISTING]
+    and: 'NOBODY is notified — the owner did nothing, and a mail here would describe an action they never took'
 
     and: 'the visitor lands on the pending-confirmation page, like a real registration'
     navigations == ['user-1']
+
+    and: 'both paths are addressed identically, so the URL cannot answer "does this account exist?"'
   }
 
   def "a successful registration notifies nobody"() {
@@ -100,7 +107,6 @@ class RegistrationSubmissionSpec extends Specification {
 
     then: 'no mail the visitor did not ask for'
     failures.isEmpty()
-    identity.resetRequests.isEmpty()
     navigations == ['<none>']
   }
 
@@ -122,7 +128,6 @@ class RegistrationSubmissionSpec extends Specification {
 
     and: 'nothing reveals that the throttle engaged'
     failures.isEmpty()
-    identity.resetRequests.isEmpty()
 
     and: 'the visitor still reaches the pending-confirmation page'
     navigations == ['<none>']
@@ -146,8 +151,7 @@ class RegistrationSubmissionSpec extends Specification {
     failures.size() == 1
     navigations.isEmpty()
 
-    and: 'and no notification is sent, because no duplicate was involved'
-    identity.resetRequests.isEmpty()
+    and: 'and no mail is involved either way'
 
     where:
     reason           | failure
@@ -165,7 +169,6 @@ class RegistrationSubmissionSpec extends Specification {
     then:
     failures.isEmpty()
     identity.openIdRegistrations.isEmpty()
-    identity.resetRequests.isEmpty()
   }
 
   /**
@@ -178,7 +181,6 @@ class RegistrationSubmissionSpec extends Specification {
     ApplicationResponse openIdResponse = ApplicationResponse.successResponse()
     List<String> localRegistrations = []
     List<String> openIdRegistrations = []
-    List<String> resetRequests = []
 
     @Override
     ApplicationResponse registerLocal(String fullName, String userName, String email,
@@ -194,11 +196,6 @@ class RegistrationSubmissionSpec extends Specification {
       return openIdResponse
     }
 
-    @Override
-    ApplicationResponse requestPasswordReset(String email) {
-      resetRequests << email
-      return ApplicationResponse.successResponse()
-    }
   }
 
   // ---- counters ---------------------------------------------------------------------------------
