@@ -612,7 +612,7 @@ _approved, stories will be recorded here individually with their final stable ID
 | **PRD Section** | §5 Security & Privacy — Authentication; §Technical Constraints (see conflict note below) |
 | **Requirements** | `AUTH-R-05`, `AUTH-R-06`, `AUTH-R-07`, `AUTH-NFR-03` |
 | **GitHub Feature** | [#1672](https://github.com/qbicsoftware/data-manager-app/issues/1672) |
-| **Status** | 🔴 Open (release R1 in progress) |
+| **Status** | 🟡 In Progress (R1 shipped; R2 not started) |
 | **Milestone** | [MILESTONE-MFA](https://github.com/qbicsoftware/data-manager-app/milestone/1) — phase M1 |
 
 **Why this Feature exists.** It is phase M1 of `MILESTONE-MFA` and ships **before** the second factor.
@@ -643,11 +643,33 @@ priority. `docs/prd.md` has not been edited; tracked in
 
 | Story | Title | Requirements | Release | GitHub | Status |
 |---|---|---|---|---|---|
-| `FEAT-AUTH-FLOWS-01` | Confirm an Email Address with a Single-Use Link | `AUTH-R-05`, `AUTH-NFR-01` | R1 | [#1673](https://github.com/qbicsoftware/data-manager-app/issues/1673) | 🔴 Open |
-| `FEAT-AUTH-FLOWS-02` | Reset a Password with an Expiring Single-Use Link | `AUTH-R-05` | R1 | [#1674](https://github.com/qbicsoftware/data-manager-app/issues/1674) | 🔴 Open |
-| `FEAT-AUTH-FLOWS-03` | Sign In Without Revealing Whether an Account Exists | `AUTH-NFR-03` | R1 | [#1675](https://github.com/qbicsoftware/data-manager-app/issues/1675) | 🔴 Open |
+| `FEAT-AUTH-FLOWS-01` | Confirm an Email Address with a Single-Use Link | `AUTH-R-05`, `AUTH-NFR-01` | R1 | [#1673](https://github.com/qbicsoftware/data-manager-app/issues/1673) | 🟢 Done |
+| `FEAT-AUTH-FLOWS-02` | Reset a Password with an Expiring Single-Use Link | `AUTH-R-05` | R1 | [#1674](https://github.com/qbicsoftware/data-manager-app/issues/1674) | 🟢 Done |
+| `FEAT-AUTH-FLOWS-03` | Sign In Without Revealing Whether an Account Exists | `AUTH-NFR-03` | R1 | [#1675](https://github.com/qbicsoftware/data-manager-app/issues/1675) | 🟡 In Progress — **two ACs unmet**, see below |
 | `FEAT-AUTH-FLOWS-04` | Register Once, with One Password Rule | `AUTH-R-06` | R2 | [#1676](https://github.com/qbicsoftware/data-manager-app/issues/1676) | 🔴 Open |
 | `FEAT-AUTH-FLOWS-05` | Sign In with a Password, Link ORCID Afterwards | `AUTH-R-07` | R1 | [#1677](https://github.com/qbicsoftware/data-manager-app/issues/1677) | 🔴 Open |
+
+#### Status notes (2026-11-12, after the R1 closeout)
+
+**`FEAT-AUTH-FLOWS-01`, `-02` — done.** Single-use tokens, expiry, supersede-on-reissue, explicit
+confirm action, and uniform responses are all implemented and covered by specs. The
+"a mail scanner must not consume the link" criterion is met by rendering a confirm **button** rather
+than acting on retrieval (`ConfirmEmailMain`).
+
+**`FEAT-AUTH-FLOWS-03` — deliberately left open.** Two of its five acceptance criteria are not met:
+
+| AC | State |
+|---|---|
+| Unknown address and wrong password look identical | ✅ |
+| No observable timing difference | ✅ (Spring's `mitigateAgainstTimingAttack` already does the one derivation) |
+| **Registration does not disclose an already-registered address** | ⛔ **unmet** — `isEmailAvailable` is still a field validator in `UserRegistrationComponent:94` and `UserRegistrationOrcIdComponent:85`. This is a live `AUTH-NFR-03` violation, deferred to `FEAT-AUTH-FLOWS-04` because fixing it means editing both components that R2 replaces |
+| Throttling survives a reload and does not lock out a spammed victim | ⚠️ **partly** — survives a reload ✅; a victim spammed by an attacker **can** still be locked out, because only account scope ships. Per-origin counting needs trusted proxy headers (issue #1691, milestone `MILESTONE-PROXY`) |
+| A throttled response is indistinguishable | ✅ between registered and unregistered addresses. A repeat requester *is* told they asked recently — deliberate, because the alternative promised mail that was never sent |
+
+**`FEAT-AUTH-FLOWS-05` — not done.** `AUTH-R-07` (every account holds a password) is unimplemented.
+`NO_PASSWORD` stopped ORCID-only accounts from causing a 500, which is a crash fix, not the story:
+they can still neither log in nor set a password. Runbook drafted in `docs/migrations/NEXT.md`;
+open questions on [#1683](https://github.com/qbicsoftware/data-manager-app/issues/1683).
 
 Acceptance criteria live in `docs/requirements.md` (requirements) and in each GitHub story issue. The
 step-by-step plan, decisions A1–D1 and the two-release split are in
@@ -655,5 +677,5 @@ step-by-step plan, decisions A1–D1 and the two-release split are in
 
 ---
 
-*Last updated: 2026-11-10*
+*Last updated: 2026-11-12*
 

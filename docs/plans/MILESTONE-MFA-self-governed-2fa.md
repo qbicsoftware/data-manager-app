@@ -161,6 +161,18 @@ numbered M2–M8 in the original plan shifts by one; this table is the authority
 recorded PO direction with the justification in the PR description. Not recommended here — this is
 a security mandate and the requirement text is the artefact auditors will ask for.*
 
+> **⚠️ M1/R1 shipped without this gate being satisfied (2026-11-12).** The requirements PR #1670 is
+> merged, but **ADR 0011 (#1667) is still open**, and the gate above says "no code before this". The
+> R1 security fix is therefore in `development` under an unsatisfied M0 gate. Two consequences worth
+> deciding explicitly rather than inheriting:
+>
+> 1. Either ADR 0011 lands now and the deviation is recorded as accepted, or the gate was never a real
+>    gate and the milestone text should be corrected.
+> 2. **R2 (#1676) is M1, not M2+**, so the §5.6 blocking rule does not bar it — but if ADR 0011 is
+>    binding, it should precede a change that rewrites the registration and identity surface.
+>
+> Recorded here because a gate that is quietly abandoned is worse than one that is explicitly waived.
+
 ### Phase M1 — Auth-flow consolidation *(the clean-up, ahead of the factor)* · ~4 weeks
 
 Feature: **`FEAT-AUTH-FLOWS`** — login, registration and account recovery behave as one coherent
@@ -191,6 +203,36 @@ change causes a regression it must be revertable without reverting a security fi
 - **R2 (weeks 6–7):** one registration flow, one password policy, display name no longer a credential,
   dead state removed. Gate: *one registration form, one password rule rendered from one place,
   no credential-shaped field that is not a credential.*
+
+**R1 status — code merged 2026-11-12 (`#1689`, `#1690`), not yet deployable.** The gate above is met
+except for one clause: *"no flow accepts a user id as a secret"* holds for confirmation and reset, but
+registration still enumerates accounts (`isEmailAvailable`), and the `AUTH-R-07` slice is unimplemented.
+Two operational blockers remain before R1 can reach a server:
+
+- **AGENTS.md §12 sign-off for `auth_attempt` was never recorded**, so the throttling migration must not
+  be applied to production. The script header and `docs/migrations/NEXT.md` both still say so.
+- **Per-origin throttling is absent** (`AUTH-NFR-03`'s second clause). A known victim can be locked out
+  by an attacker for the block duration. Tracked in #1691 / `MILESTONE-PROXY`.
+
+See [`docs/features.md`](../features.md) for per-story status and
+[`docs/plans/HANDOVER-auth-flow-hardening.md`](HANDOVER-auth-flow-hardening.md) for the closeout record.
+
+### Phase M1 — R1 deliverable status
+
+| Task | Issue | State |
+|---|---|---|
+| M1-1 Tokenised verification links | #1678 | ✅ merged |
+| M1-2 Confirmation off `/login` | #1679 | ✅ merged |
+| M1-3 Tokenised reset | #1680 | ✅ merged |
+| M1-4 Uniform failure responses | #1681 | ✅ merged |
+| M1-5 Server-side throttling (account scope) | #1682 | ✅ merged · ⛔ **§12 sign-off outstanding** |
+| M1-10 Migration guide | #1684 | ✅ merged (#1690) |
+| M1-11 ORCID-only accounts get a password | #1683 | 🔴 **not started** — R1 ships without it |
+| M1-6 … M1-9 (R2) | #1676 | 🔴 not started |
+
+M1-11 is listed as R1 in the phase table above but was deferred. `NO_PASSWORD` prevents a crash for
+those accounts; it does not give them a password, so `AUTH-R-07` is unmet and the
+`encryptedPassword IS NULL` invariant in `docs/migrations/NEXT.md` is unreachable.
 
 **Decisions applied (2026-11-10):**
 - **B1 — no compatibility window.** The old `?confirm-email={userId}` route is removed, not kept
