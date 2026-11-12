@@ -6,6 +6,7 @@ import static java.util.Objects.requireNonNull;
 import com.vaadin.flow.spring.security.VaadinDefaultRequestCache;
 import life.qbic.datamanager.views.login.LoginLayout;
 import life.qbic.identity.application.security.QBiCPasswordEncoder;
+import life.qbic.identity.application.throttle.AuthAttemptThrottle;
 import life.qbic.identity.application.user.IdentityService;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
@@ -27,6 +28,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.client.RestClient;
 
 @EnableWebSecurity
@@ -37,6 +39,21 @@ public class SecurityConfiguration {
 
   final VaadinDefaultRequestCache defaultRequestCache;
   private final IdentityService identityService;
+  private final AuthAttemptThrottle authAttemptThrottle;
+
+  /**
+   * Held directly, not injected.
+   *
+   * <p>{@link #passwordEncoder()} is a {@code @Bean} on <em>this</em> class, so injecting a
+   * {@code PasswordEncoder} back into the constructor makes the configuration bean depend on a bean
+   * it creates. Spring Boot 4 prohibits circular references by default, and the application fails to
+   * start with "the dependencies of some of the beans in the application context form a cycle:
+   * securityConfiguration".</p>
+   *
+   * <p>Constructing it here is honest rather than a workaround: it is a stateless value with no
+   * collaborators, and {@link QBiCPasswordEncoder} is exactly what the bean method returns.</p>
+   */
+  private final PasswordEncoder passwordEncoder = new QBiCPasswordEncoder();
 
   @Value("${routing.registration.oidc.orcid.endpoint}")
   String registrationOrcidEndpoint;
@@ -49,10 +66,13 @@ public class SecurityConfiguration {
 
   public SecurityConfiguration(
       @Autowired VaadinDefaultRequestCache defaultRequestCache,
-      @Autowired IdentityService identityService) {
+      @Autowired IdentityService identityService,
+      @Autowired AuthAttemptThrottle authAttemptThrottle) {
     this.defaultRequestCache = requireNonNull(defaultRequestCache,
         "defaultRequestCache must not be null");
     this.identityService = requireNonNull(identityService);
+    this.authAttemptThrottle = requireNonNull(authAttemptThrottle,
+        "authAttemptThrottle must not be null");
   }
 
   @Bean
@@ -81,6 +101,18 @@ public class SecurityConfiguration {
             .failureHandler(oauth2AuthenticationFailureHandler())
             .tokenEndpoint(token -> token
                 .accessTokenResponseClient(accessTokenResponseClient())));
+
+    // Server-side throttling for the password login (AUTH-NFR-03, #1682).
+    //
+    // Registered BEFORE UsernamePasswordAuthenticationFilter, because a throttled attempt must be
+    // rejected before any password work happens — a check after verification is too late to save the
+    // work and cannot make the response cheap. Counting failed attempts is done separately, by
+    // AuthAttemptEventListener, on Spring's authentication events.
+    //
+    // The failure handler is deliberately the same one the form login would use, so a throttled
+    // attempt produces the identical "Incorrect username or password" screen. A distinct "too many
+    // attempts" message would tell an attacker their target is real (decision B4).
+    http.addFilterBefore(loginThrottleFilter(), UsernamePasswordAuthenticationFilter.class);
 
     http.with(vaadin(), vaadin -> vaadin
         .loginView(LoginLayout.class, contextPath + "/login?logout=true"));
@@ -117,7 +149,28 @@ public class SecurityConfiguration {
 
   @Bean
   public PasswordEncoder passwordEncoder() {
+    // A separate instance from the field above, deliberately. This bean is what Spring Boot injects
+    // into the DaoAuthenticationProvider it derives from the UserDetailsService; the field exists
+    // only so this class never has to inject a bean it defines itself.
     return new QBiCPasswordEncoder();
+  }
+
+  /**
+   * Rejects a throttled login attempt before any password work is done.
+   *
+   * <p>The constant-work hook performs one derivation on the rejection path, so a throttled attempt
+   * is not observably faster than a wrong password — otherwise the throttle itself signals that the
+   * address exists.</p>
+   */
+  private LoginThrottleFilter loginThrottleFilter() {
+    SimpleUrlAuthenticationFailureHandler failureHandler =
+        new SimpleUrlAuthenticationFailureHandler("/login?error");
+    return new LoginThrottleFilter(authAttemptThrottle, failureHandler,
+        // One real derivation against the same well-formed stand-in the login path uses for an
+        // account with no password. It must be well-formed PBKDF2 (iterations:salt:hash) — a bcrypt
+        // string would throw here instead of deriving, making the rejection measurably faster.
+        address -> passwordEncoder.matches(UserDetailsServiceImpl.NO_PASSWORD,
+            UserDetailsServiceImpl.NO_PASSWORD));
   }
 
   /**

@@ -40,7 +40,7 @@ MVN_ARGS=(
   -pl datamanager-app
   -am
   test
-  -Dtest='VerificationToken*Spec'
+  -Dtest='VerificationToken*Spec,AuthAttempt*Spec'
   -Dsurefire.failIfNoSpecifiedTests=false
   -DskipITs
 )

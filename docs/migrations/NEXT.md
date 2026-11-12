@@ -26,6 +26,7 @@ For the migration documentation structure, see [`README.md`](README.md).
 | 3 | [`create-experiment-recent-activity-views.sql`](../sql/migrations/create-experiment-recent-activity-views.sql) | Create the recent-activity views `experiment_recent_sample` and `experiment_recent_measurement` (newest three per experiment, via `ROW_NUMBER`) for the experiment snapshot panels. Views only. | Low (non-destructive; needs MariaDB 10.2+) |
 | 4 | [`create-assay-standing-view.sql`](../sql/migrations/create-assay-standing-view.sql) | Create `v_project_assay_standing`: one row per primary dataset — one experiment for one analysis method — with measurement counts, primary-data coverage and volume. One derivation shared by the summary and Datasets pages (ADR 0010). View + one index. | Low (non-destructive; needs MariaDB 10.2+) |
 | 5 | [`auth-flow-hardening.sql`](../sql/migrations/auth-flow-hardening.sql) | Create `user_verification_token` (single-use, hashed, time-limited confirmation / reset / set-password links, AUTH-R-05). One new table; no existing table altered. Throttling (`auth_attempt`, AUTH-NFR-03) is **not** in this release — see #1682. | Medium (one new table; **links in flight stop working by design** — see operator notes) |
+| 6 | [`auth-attempt-throttling.sql`](../sql/migrations/auth-attempt-throttling.sql) | Create `auth_attempt`: server-side throttling for login, resend-confirmation and resend-reset (AUTH-NFR-03, #1682). One new table; no existing table altered; no FK. Replaces the client-side 30 s timer, which a page reload reset. | Low (additive; **behaviour change** — repeated attempts now blocked server-side) |
 
 Each row links to its incremental script. The sections below expand each entry
 with apply / verify / rollback detail.
@@ -608,6 +609,158 @@ SELECT COUNT(*) FROM users WHERE encryptedPassword IS NULL;   -- expected 0
 stops creating passwordless ORCID accounts. Running this migration alone cannot satisfy it, and a
 non-zero count after the rollout means either an un-reached user or a mailbox that cannot be
 delivered to — investigate each row individually before declaring the release shipped.
+
+---
+
+## Migration #6: Server-side throttling for the auth flows
+
+**Status:** ⛔ **awaiting AGENTS.md §12 sign-off.** The script is in `sql/migrations/` and has been
+validated against a throwaway MariaDB 12.3 instance, but the schema change has not been approved. Do
+not apply it to production until the sign-off is recorded in the PR.
+
+| Field | Value |
+|---|---|
+| **Story** | [`FEAT-AUTH-FLOWS-03`](https://github.com/qbicsoftware/data-manager-app/issues/1675) ([#1682](https://github.com/qbicsoftware/data-manager-app/issues/1682)) |
+| **Feature** | [`FEAT-AUTH-FLOWS`](https://github.com/qbicsoftware/data-manager-app/issues/1672) |
+| **ADRs** | none — the design rationale is the script header |
+| **Scope** | create 1 table; no existing table altered; **no foreign key** |
+| **Script** | [`sql/migrations/auth-attempt-throttling.sql`](../sql/migrations/auth-attempt-throttling.sql) |
+| **Target datasource** | `data_management` |
+
+### What it does
+
+Creates **`auth_attempt`**, the counter behind server-side throttling for the three unauthenticated
+auth flows: `LOGIN`, `EMAIL_CONFIRMATION_RESEND`, `PASSWORD_RESET_RESEND`.
+
+This replaces the 30-second resend lockout in `EmailConfirmationMain`, which was a `java.util.Timer`
+over a field in a UI-scoped bean — reloading the page reset it, so it was not a control at all.
+
+### What changes for users
+
+Repeated failed logins, and repeated "resend" requests, are now blocked **server-side** and survive a
+reload. The block is temporary.
+
+**The visitor is not told they are throttled.** A throttled login shows the same
+"Incorrect username or password" as a wrong password, and a throttled resend shows the same
+"check your inbox" panel as a successful one. This is deliberate and is required by `AUTH-NFR-03`: a
+distinct "too many attempts" screen would confirm to an attacker that the address they are guessing
+at is a real account. Helpdesk scripts must not promise a specific error message for throttling.
+
+### Thresholds are configuration, not constants
+
+Defaults ship in `application.properties`; override per deployment. Thresholds are deployment
+configuration because they are tuned from telemetry and differ per environment.
+
+| Property | Env var | Default | Meaning |
+|---|---|---|---|
+| `qbic.auth-throttle.login.max-attempts` | `AUTH_THROTTLE_LOGIN_MAX_ATTEMPTS` | `10` | failed logins allowed per window |
+| `qbic.auth-throttle.login.window` | `AUTH_THROTTLE_LOGIN_WINDOW` | `PT15M` | counting window |
+| `qbic.auth-throttle.login.block-duration` | `AUTH_THROTTLE_LOGIN_BLOCK_DURATION` | `PT15M` | how long a block lasts |
+| `qbic.auth-throttle.resend.max-attempts` | `AUTH_THROTTLE_RESEND_MAX_ATTEMPTS` | `3` | resends allowed per window |
+| `qbic.auth-throttle.resend.window` | `AUTH_THROTTLE_RESEND_WINDOW` | `PT15M` | counting window |
+| `qbic.auth-throttle.resend.block-duration` | `AUTH_THROTTLE_RESEND_BLOCK_DURATION` | `PT15M` | how long a block lasts |
+
+A non-positive `max-attempts`, window or block-duration is a **startup failure**, not a silent
+no-op — the same fail-fast posture as the verification-token lifetimes.
+
+### ⚠️ Scope decision — account scope only, not origin scope
+
+> **Operators: the proxy requirements live in
+> [`docs/operations/installation-and-administration.md`](../operations/installation-and-administration.md) §1.**
+> Read it before you enable `server.forward-headers-strategy`, and read §1.8 for the residual risk
+> this section describes below.
+
+`AUTH-NFR-03` asks for throttling *per account and per request origin*. **Only account scope ships.**
+Origin scope is deferred because the application cannot currently determine a client address:
+
+- the app runs behind HAProxy, which terminates TLS;
+- `server.forward-headers-strategy` is unset, no `RemoteIpValve` is configured, and nothing reads
+  `getRemoteAddr()` or `X-Forwarded-For`;
+- therefore `getRemoteAddr()` returns the **proxy**.
+
+Keying a bucket on that address would put every user of the deployment into one row, and a single
+anonymous attacker filling it would block the entire user population — worse than the gap it closes.
+Doing it correctly needs a trusted-proxy allowlist plus HAProxy **overwriting** rather than appending
+`X-Forwarded-For`. That also unblocks passkeys and the ORCID `{baseUrl}` redirect — see
+[the milestone plan](../plans/MILESTONE-MFA-self-governed-2fa.md) §1a condition 1. It needs **no
+schema change**: `scope` is an open `varchar` and `attemptKey` is an opaque hash.
+
+**Residual risk accepted:** account-scope throttling stops credential stuffing against a known target
+and stops mail-bombing one inbox. It does **not** stop one source sending one reset mail to many
+different addresses — volume abuse, mitigated by the SMTP relay's own limits, and not account
+takeover. It also does not prevent an attacker locking a *specific known victim* out for the block
+duration; that is the cost of not having origin scope yet, and it is why the block is temporary.
+
+### Apply
+
+```sql
+-- 1. Verify the table does not exist yet (should return 0 rows).
+SHOW TABLES LIKE 'auth_attempt';
+
+-- 2. Apply.
+SOURCE sql/migrations/auth-attempt-throttling.sql;
+
+-- 3. Verify.
+SHOW CREATE TABLE auth_attempt\G
+-- Expect: PRIMARY KEY (id), UNIQUE KEY uk_auth_attempt_scope_key (scope, attemptKey),
+--         KEY idx_auth_attempt_last (lastAttemptAt), NO foreign keys.
+```
+
+**Apply before deploying the application code.** The code queries the table on the first login
+attempt; without it, every login fails with a SQL error.
+
+### Verify after deployment
+
+```sql
+-- Buckets exist and are being used (should grow after failed logins).
+SELECT scope, COUNT(*) AS buckets, SUM(attemptCount) AS attempts FROM auth_attempt GROUP BY scope;
+
+-- Rows currently blocked.
+SELECT scope, attemptCount, blockedUntil FROM auth_attempt
+ WHERE blockedUntil IS NOT NULL AND blockedUntil > UTC_TIMESTAMP(6);
+```
+
+Functional check: fail a login 11 times (default limit is 10) and confirm the 11th shows the same
+"Incorrect username or password" message as the first — **not** a "too many attempts" screen. Then
+wait for the block to expire and confirm login works again.
+
+### Rollback
+
+```sql
+DROP TABLE IF EXISTS auth_attempt;
+```
+
+Safe. This table holds no audit trail — it is a rate-limiting counter whose contents are meaningless
+without the code that reads it. Dropping it loses only the current block state, so rolling back
+re-enables unthrottled attempts, which is the pre-change behaviour rather than a data loss. No other
+table references it and it references nothing.
+
+### Retention (not implemented — deliberate)
+
+Rows are not pruned yet. `lastAttemptAt` is indexed so a scheduled sweep can call
+`JpaAuthAttemptCounter.purgeOlderThan(Instant)`. The purge is **deliberately not scheduled** in this
+change: retention is a compliance decision owned by
+[#1669](https://github.com/qbicsoftware/data-manager-app/issues/1669). Until it lands the table grows
+without bound — it is small (one row per address that has attempted a login or a resend within
+retention), but it is unbounded, and that is recorded here rather than left to be discovered.
+
+### A deadlock that only appears on MariaDB
+
+Recorded because it will be hit again by anyone simplifying this code. The first implementation reset
+an elapsed window with a separate `UPDATE … WHERE windowStartAt < ?` before the upsert. On real
+InnoDB, 16 concurrent attempts on one bucket deadlock:
+
+```
+Deadlock found when trying to get lock; try restarting transaction
+INSERT INTO auth_attempt ...
+```
+
+The `UPDATE` takes locks across the unique-key range and the `INSERT` then needs an insert-intention
+lock on the same range. **It does not reproduce on H2** — only on MariaDB. Fixed by folding the window
+roll-over into the single `INSERT … ON DUPLICATE KEY UPDATE` statement (assignment order matters:
+MySQL evaluates them left to right). This is the same failure the verification-token reissue hit
+(see [`../plans/spike-verification-token-flow.md`](../plans/spike-verification-token-flow.md),
+Finding 6).
 
 ---
 

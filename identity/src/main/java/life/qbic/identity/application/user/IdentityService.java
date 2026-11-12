@@ -22,6 +22,8 @@ import life.qbic.identity.domain.model.UserId;
 import life.qbic.identity.domain.model.UserNamePolicy;
 import life.qbic.identity.domain.registry.DomainRegistry;
 import life.qbic.identity.domain.repository.UserRepository;
+import life.qbic.logging.api.Logger;
+import life.qbic.logging.service.LoggerFactory;
 
 /**
  * <b>User Registration Service</b>
@@ -32,6 +34,8 @@ import life.qbic.identity.domain.repository.UserRepository;
  * @since 1.0.0
  */
 public final class IdentityService {
+
+  private static final Logger log = LoggerFactory.logger(IdentityService.class);
 
   private final UserRepository userRepository;
 
@@ -210,8 +214,23 @@ public final class IdentityService {
   /**
    * Requests a password reset for a user.
    *
+   * <p><b>The outcome does not describe the account.</b> An unknown address, an unconfirmed account
+   * and a confirmed account all return {@link ApplicationResponse#successResponse()}, and the
+   * notification is dispatched only for the last of them. AUTH-NFR-03 forbids telling an
+   * unauthenticated caller whether an account exists or has been confirmed, and this method used to
+   * answer both questions precisely: {@code UserNotFoundException("User not found")} and
+   * {@code UserNotActivatedException("User not active")} were distinct, structured failures that
+   * the caller rendered verbatim.</p>
+   *
+   * <p>Only a malformed address is reported, because that is a property of the input rather than of
+   * any account — a visitor who mistyped their own address must be told, and nobody learns anything
+   * about another account by learning that a string is not an email address.</p>
+   *
+   * <p>The caller must therefore render one fixed message for every successful call. If a caller
+   * branches on "was a reset actually requested", the uniform response is pointless.</p>
+   *
    * @param userEmailAddress the user's email address for whom the password reset shall be issued
-   * @return application response with success or failure information
+   * @return success for any well-formed address; failure only for a malformed one
    * @since 1.0.0
    */
   public ApplicationResponse requestPasswordReset(String userEmailAddress) {
@@ -221,18 +240,23 @@ public final class IdentityService {
     } catch (EmailValidationException e) {
       return ApplicationResponse.failureResponse(e);
     }
-    // fetch user
+
     var optionalUser = userRepository.findByEmail(emailAddress);
     if (optionalUser.isEmpty()) {
-      return ApplicationResponse.failureResponse(new UserNotFoundException("User not found"));
+      // Uniform outcome. Logged at debug and without the address, so the log does not become the
+      // oracle the response no longer is.
+      log.debug("Password reset requested for an address with no account");
+      return ApplicationResponse.successResponse();
     }
 
-    // get user
     var user = optionalUser.get();
-
-    // We only allow password reset for users with confirmed email address
     if (!user.isActive()) {
-      return ApplicationResponse.failureResponse(new UserNotActivatedException("User not active"));
+      // A reset link is only meaningful once the address is confirmed (the token flow confirms and
+      // sets the password in one step, see AUTH-R-07), so no notification is dispatched. The caller
+      // is told nothing different, and neither is the address owner — sending mail to an
+      // unconfirmed address would be mail to a mailbox nobody has proven they control.
+      log.debug("Password reset requested for an unconfirmed account");
+      return ApplicationResponse.successResponse();
     }
 
     user.resetPassword();
@@ -407,6 +431,11 @@ public final class IdentityService {
    * An exception to be thrown if a user is not activated. This implies that the user cannot log in
    * to the application
    * </p>
+   *
+   * <p><b>Not a password-reset failure any more.</b> {@link #requestPasswordReset(String)} no longer
+   * raises it: reporting "user not active" from an unauthenticated form disclosed that an address is
+   * registered but unconfirmed, which is more useful to an attacker than plain existence. The type is
+   * still used where activation genuinely gates an authenticated operation.</p>
    */
   public static class UserNotActivatedException extends ApplicationException {
 

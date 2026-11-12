@@ -16,9 +16,8 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
+import java.time.Duration;
 import java.util.Optional;
-import java.util.Timer;
-import java.util.TimerTask;
 import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.MainPage;
 import life.qbic.datamanager.views.general.Main;
@@ -33,6 +32,7 @@ import life.qbic.identity.application.communication.EmailService;
 import life.qbic.identity.application.communication.Messages;
 import life.qbic.identity.application.communication.Recipient;
 import life.qbic.identity.application.communication.Subject;
+import life.qbic.identity.application.throttle.AuthAttemptThrottle;
 import life.qbic.identity.application.user.policy.EmailConfirmationLinkSupplier;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.authorization.QbicOidcUser;
@@ -65,14 +65,15 @@ public class EmailConfirmationMain extends Main implements HasUrlParameter<Strin
 
   private final transient life.qbic.identity.api.VerificationLinkService verificationLinkService;
 
-  private int lockoutTimer = 0;
+  private final transient AuthAttemptThrottle authAttemptThrottle;
 
   private UserInfo userInfo;
 
   public EmailConfirmationMain(UserInformationService userInformationService,
       EmailService emailService,
       EmailConfirmationLinkSupplier emailConfirmationLinkSupplier,
-      life.qbic.identity.api.VerificationLinkService verificationLinkService) {
+      life.qbic.identity.api.VerificationLinkService verificationLinkService,
+      AuthAttemptThrottle authAttemptThrottle) {
     this.userInformationService = requireNonNull(userInformationService,
         "userInformationService must not be null");
     this.emailService = requireNonNull(emailService, "emailService must not be null");
@@ -80,6 +81,8 @@ public class EmailConfirmationMain extends Main implements HasUrlParameter<Strin
         "emailConfirmationLinkSupplier must not be null");
     this.verificationLinkService = requireNonNull(verificationLinkService,
         "verificationLinkService must not be null");
+    this.authAttemptThrottle = requireNonNull(authAttemptThrottle,
+        "authAttemptThrottle must not be null");
     initConfirmEmailComponent();
     addClassName("email-confirmation");
     add(emailConfirmationComponent);
@@ -98,13 +101,50 @@ public class EmailConfirmationMain extends Main implements HasUrlParameter<Strin
     resendVerificationLink.addClassName("link");
     Span resendVerification = new Span(resendVerificationText, resendVerificationLink);
     resendVerificationLink.addClickListener(spanClickEvent -> {
-      if (lockoutTimer > 0) {
-        showLockoutNotification(lockoutTimer);
+      // Resend with no user id must not throw.
+      //
+      // This route uses @OptionalParameter, so /register/pending-email-confirmation is a valid URL and
+      // renders this page with userInfo == null. Clicking "Resend" then dereferenced it and produced a
+      // NullPointerException -> HTTP 500. The visitor here has no account context to resend for, so
+      // say so plainly instead of failing.
+      if (userInfo == null) {
+        showError("Cannot resend the link",
+            "Please open the link from your registration email, or register again.");
         return;
       }
-      sendConfirmationEmail(userInfo.id(), userInfo.emailAddress(), userInfo.fullName());
-      scheduleLockoutTimer();
-      showLockoutNotification(lockoutTimer);
+
+      // Server-side throttle (AUTH-NFR-03, #1682). This replaces a 30-second client-side
+      // java.util.Timer whose counter lived in a UIScope bean: reloading the page reset it to zero,
+      // so it was not a control at all.
+      //
+      // recordAndReport(), not record(): the view needs the attempt counts to tell the visitor how
+      // many attempts remain, so they do not discover the limit by hitting it.
+      var outcome = authAttemptThrottle.recordAndReport(
+          AuthAttemptThrottle.Scope.EMAIL_CONFIRMATION_RESEND, userInfo.emailAddress(),
+          java.time.Instant.now());
+
+      if (outcome.isAllowed()) {
+        sendConfirmationEmail(userInfo.id(), userInfo.emailAddress(), userInfo.fullName());
+        showInfo("Verification email sent", successCopy(outcome));
+        return;
+      }
+
+      // Throttled: say so, and say when to come back.
+      //
+      // This is deliberately NOT hidden, and the reason is specific to this page: it is only
+      // reachable after the visitor proved they know the user id (UserRegistrationMain navigates
+      // here with a real id straight after registering). Everyone here has already demonstrated the
+      // account exists, so stating "wait N minutes" discloses nothing that the URL did not.
+      //
+      // Staying silent would be worse than useless: the visitor would be told an email was sent, no
+      // email would arrive, and they would report a broken mail server. See ResetPasswordMain for the
+      // opposite decision, where the audience is anonymous and silence IS the requirement.
+      Duration cooldown = authAttemptThrottle.blockDuration(
+          AuthAttemptThrottle.Scope.EMAIL_CONFIRMATION_RESEND);
+      showInfo("Verification email already sent",
+          "To prevent duplicate emails, another link can be requested in %s. Check your inbox and "
+              .formatted(cooldownText(cooldown))
+              + "spam folder first — the link from the previous email is still valid.");
     });
     resendVerification.addClassName("resend-verification");
     emailConfirmationComponent.add(resendVerification);
@@ -113,25 +153,45 @@ public class EmailConfirmationMain extends Main implements HasUrlParameter<Strin
     emailConfirmationComponent.add(backToLoginLink);
   }
 
-  private void scheduleLockoutTimer() {
-    final int VERIFICATION_EMAIL_LOCKOUT_SECONDS_TIMER = 30;
-    lockoutTimer = VERIFICATION_EMAIL_LOCKOUT_SECONDS_TIMER;
-    Timer timer = new Timer();
-    timer.scheduleAtFixedRate(new TimerTask() {
-      @Override
-      public void run() {
-        lockoutTimer--;
-        if (lockoutTimer <= 0) {
-          timer.cancel();
-          clearNotifications();
-        }
-      }
-    }, 1, 1000);
+  /**
+   * Copy for a successful resend, including how many attempts remain.
+   *
+   * <p>The remaining count matters because without it there is no signal that a limit exists: a
+   * visitor who clicks three times sees "sent" three times and only meets the limit on the fourth
+   * click, which reads as a malfunction. Naming the allowance makes the behaviour predictable.</p>
+   *
+   * <p>On the last permitted attempt the copy changes, because "0 more" reads as an error.</p>
+   */
+  static String successCopy(AuthAttemptThrottle.Outcome outcome) {
+    int remaining = outcome.attemptsRemainingInWindow();
+    if (remaining <= 0) {
+      return "Please check your inbox and click the link to complete your registration. "
+          + "This was the last link that can be requested for now.";
+    }
+    return ("Please check your inbox and click the link to complete your registration. "
+        + "You can request %s more %s.")
+        .formatted(remaining, remaining == 1 ? "link" : "links");
   }
 
-  private void showLockoutNotification(int timeLeft) {
-    showInfo("Verification email has been sent",
-        "Please wait " + timeLeft + " seconds until another email can be sent");
+  /**
+   * Renders a duration for a human, without seconds-level precision nobody needs.
+   *
+   * <p>Deliberately coarse: the throttle window is deployment configuration and can change, so the
+   * copy must not hard-code "15 minutes" and then drift.</p>
+   */
+  static String cooldownText(Duration cooldown) {
+    long minutes = cooldown.toMinutes();
+    if (minutes < 1) {
+      return "a moment";
+    }
+    if (minutes == 1) {
+      return "1 minute";
+    }
+    if (minutes < 60) {
+      return minutes + " minutes";
+    }
+    long hours = cooldown.toHours();
+    return hours == 1 ? "1 hour" : hours + " hours";
   }
 
   private boolean isAlreadyActiveUser(QbicOidcUser oidcUser) {

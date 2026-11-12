@@ -199,6 +199,12 @@ NetBeans, and VS Code).
 
 ## Deploying to Production
 
+> **Before your first production deployment, read
+> [`docs/operations/installation-and-administration.md`](docs/operations/installation-and-administration.md).**
+> It documents the reverse-proxy contract the application depends on — including a proxy
+> misconfiguration that silently disables auth throttling — plus the pre-deployment checklist and a
+> troubleshooting table.
+
 To create a production build, call `mvnw clean package -Pproduction` (Windows),
 or `./mvnw clean package -Pproduction` (Mac & Linux).
 This will build a JAR file with all the dependencies and front-end resources,
