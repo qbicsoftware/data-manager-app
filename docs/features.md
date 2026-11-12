@@ -663,21 +663,28 @@ deferral note; see the reasoning below.
 |---|---|
 | Unknown address and wrong password look identical | ✅ |
 | No observable timing difference | ✅ (Spring's `mitigateAgainstTimingAttack` already does the one derivation) |
-| **Registration does not disclose an already-registered address** | ⛔ **unmet** — two oracles, both live: `isEmailAvailable` in `UserRegistrationComponent:94` / `UserRegistrationOrcIdComponent:85`, and `UserExistsException` in `UserRegistrationMain:88` / `RegistrationOrcIdMain:105`. Both must change together or the disclosure moves from the field to the submit response |
+| **Registration does not disclose an already-registered address** | 🟡 **fixed in #1693**, awaiting merge — both oracles removed together (field validator and submit handler), AC amended; see below |
 | **Throttling does not lock out a spammed victim** | ⛔ **unmet** — account scope only; per-origin needs trusted proxy headers (#1691, `MILESTONE-PROXY`). `getRemoteAddr()` returns the HAProxy address, so an origin bucket today would put every user in one row |
 | A throttled response is indistinguishable | ✅ between registered and unregistered addresses |
 
-**The registration fix is blocked on a decision, not on code.** Two of its three parts are
-implementable now (remove the oracle; add a `REGISTRATION` throttle scope, which does not exist today).
-The third — *"the owner is notified by email instead"* — has **no requirement**: `AUTH-NFR-03`
-constrains disclosure but does not mandate a notification, and the `COMM` domain in
-`docs/requirements.md` is empty. Shipping the oracle removal without it turns a duplicate registration
-into a silent dead end: "check your inbox", no mail, no explanation — the same
-"promises mail it never sends" defect just fixed on the reset form.
+**The registration fix is in progress** (`#1693`): the oracle is removed from both the field validator
+and the submit handler, a `REGISTRATION` throttle scope was added, and the password rule was collapsed into
+one source (`identity-api/Passwords`) — it had enforced 12 characters while reporting *"shorter than 8"*.
 
-Options: **(a)** reuse the existing reset notification (no new requirement, and it is what today's
-message already suggests), **(b)** a dedicated duplicate-registration mail (needs a `COMM-*`
-requirement first), **(c)** no notification (not shippable alone).
+**The criterion was amended (2026-11-12): a duplicate registration sends no email.** The original said
+*"the owner is notified by email instead"*, which was our own drafting assumption — `AUTH-NFR-03` constrains
+disclosure, not notification. Implementing it made things worse: the owner got a password-reset message
+describing an action they never took, any reset link they were genuinely waiting for was invalidated
+(issuing a token supersedes the previous one), anyone could trigger it by typing a known address, and the
+pending-confirmation page offered a "resend" that mailed them a second time.
+
+The dead end that motivated it is resolved by copy instead, shown identically to every visitor:
+
+> *If that address was already registered, no new email will arrive. If you already have an account, use
+> "Forgot your password" on the login page to regain access.*
+
+A dedicated "someone tried to register with your address" message is still the better long-term answer for a
+confused legitimate user, but it needs a `COMM-*` requirement first and must not be a password-reset message.
 
 **Why it is not closed with a deferral:** this AC was already deferred once, from R1 to R2, on the
 understanding that R2 would fix it. R1 shipped; the AC is still unmet. Closing it again would record a
