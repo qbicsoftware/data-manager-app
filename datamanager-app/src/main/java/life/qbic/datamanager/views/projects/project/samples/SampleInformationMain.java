@@ -24,6 +24,7 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
+import java.time.Duration;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
@@ -74,7 +75,10 @@ import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
+import life.qbic.projectmanagement.infrastructure.sample.openbis.OpenbisRetryPolicy;
+import life.qbic.projectmanagement.infrastructure.sample.openbis.OpenbisSession;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 
 /**
  * Sample Information Main Component
@@ -92,6 +96,20 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver, 
 
   @Serial
   private static final long serialVersionUID = 3778218989387044758L;
+
+  /**
+   * How long the UI waits for a request that performs openBIS operations. Derived from the
+   * server-side retry policy *and* the configured read timeout, so that the client always gives up
+   * after the server has finished. Both inputs come from configuration, so changing either cannot
+   * silently break the relationship.
+   */
+  private Duration openbisRequestTimeout() {
+    return OpenbisRetryPolicy.recommendedUiTimeout(
+        Duration.ofMillis(openbisReadTimeoutMillis));
+  }
+
+  @Value("${openbis.datasource.read-timeout-ms:100000}")
+  private long openbisReadTimeoutMillis = OpenbisSession.ApiV3.DEFAULT_READ_TIMEOUT_MILLIS;
 
   /**
    * The framework's own history state change handler, captured before this view installs its own
@@ -218,7 +236,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver, 
     CompletableFuture<Void> registrationTask = sampleRegistrationServiceV2
         .registerSamples(sampleMetadata, projectId,
             new ExperimentReference(experimentId.value()))
-        .orTimeout(5, TimeUnit.MINUTES);
+        .orTimeout(openbisRequestTimeout().toSeconds(), TimeUnit.SECONDS);
     try {
       registrationTask
           .exceptionally(e -> {
@@ -341,7 +359,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver, 
             sampleMetadata,
             projectId,
             new ExperimentReference(context.experimentId().orElseThrow().value()))
-        .orTimeout(5, TimeUnit.MINUTES);
+        .orTimeout(openbisRequestTimeout().toSeconds(), TimeUnit.SECONDS);
     try {
       editTask
           .exceptionally(e -> {
@@ -378,7 +396,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver, 
 
     CompletableFuture<Void> deletionTask = deletionService.deleteSamplesAsync(projectId,
             deletionRequest.sampleIds())
-        .orTimeout(5, TimeUnit.MINUTES);
+        .orTimeout(openbisRequestTimeout().toSeconds(), TimeUnit.SECONDS);
     deletionTask
         .thenRun(() -> getUI().ifPresent(ui -> ui.access(() -> {
           pendingToast.close();
