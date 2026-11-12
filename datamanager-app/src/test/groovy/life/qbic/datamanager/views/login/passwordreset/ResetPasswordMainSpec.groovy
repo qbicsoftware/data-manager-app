@@ -86,6 +86,57 @@ class ResetPasswordMainSpec extends Specification {
         resetPasswordComponent.isVisible()
     }
 
+    def "a throttled request says so, instead of promising an email that is never sent"() {
+        given: 'a view whose throttle allows 3 resends per window'
+        def throttled = viewWithLimit(3)
+
+        when: 'the same address is submitted four times'
+        (1..4).each { throttled.view.resetPassword("known@example.com") }
+
+        then: 'the panel stops claiming an email will arrive'
+        def text = renderedText(throttled.sent).toLowerCase()
+        !text.contains('you will receive an email')
+
+        and: 'it says this was a repeat, and when to come back'
+        text.contains('already')
+        text.contains('minutes')
+    }
+
+    def "the throttled reply is identical for a registered and an unregistered address"() {
+        // The critical property. The throttle is keyed on the submitted string and consulted BEFORE
+        // any account lookup, so it must not distinguish the two — otherwise stating it would be the
+        // enumeration oracle that keeping the "sent" reply uniform exists to prevent.
+        given:
+        def known = viewWithLimit(3)
+        def unknown = viewWithLimit(3)
+
+        when:
+        (1..4).each { known.view.resetPassword("known@example.com") }
+        (1..4).each { unknown.view.resetPassword("nobody@example.com") }
+
+        then: 'the rendered panel text is character-for-character the same'
+        renderedText(known.sent) == renderedText(unknown.sent)
+    }
+
+    def "an unthrottled request still uses the conditional wording, so existence is not disclosed"() {
+        when:
+        view.resetPassword("nobody@example.com")
+
+        then: 'the only reply for an accepted request is the conditional one'
+        renderedText(resetEmailSentComponent).toLowerCase().contains('if an account exists')
+    }
+
+    /** A view whose throttle is real, so the throttled state can be reached. */
+    private Map viewWithLimit(int maxResends) {
+        def sent = new ResetEmailSentComponent()
+        def component = new ResetPasswordComponent(
+                Stub(life.qbic.identity.api.UserInformationService))
+        def throttle = new AuthAttemptThrottle(new AllowingCounter(),
+                10, java.time.Duration.ofMinutes(15), java.time.Duration.ofMinutes(15),
+                maxResends, java.time.Duration.ofMinutes(15), java.time.Duration.ofMinutes(15))
+        return [view: new ResetPasswordMain(identityService, component, sent, throttle), sent: sent]
+    }
+
     private static String renderedText(component) {
         def sink = []
         collect(component, sink)

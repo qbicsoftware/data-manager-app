@@ -87,23 +87,24 @@ public class ResetPasswordMain extends Main implements BeforeEnterObserver {
       return;
     }
 
-    // Server-side throttle (AUTH-NFR-03, #1682). Note what is deliberately NOT here: no branch on
-    // the outcome. A "too many requests" screen would confirm that this address is real and that the
-    // throttle is keyed on it, which is exactly the oracle the uniform response exists to remove
-    // (decision B4). The visitor sees the same "check your inbox" panel either way, and the only
-    // difference is whether an email is actually sent.
+    // Server-side throttle (AUTH-NFR-03, #1682).
     //
-    // ⚠️ EmailConfirmationMain makes the OPPOSITE choice — it tells the visitor to wait. That is not
-    // an inconsistency: this page is reachable by anyone with no prior proof of anything, so a
-    // distinguishing message is an oracle. That page is only reachable after the visitor proved they
-    // know the user id, so stating a cooldown there discloses nothing and silence would just look
-    // like a broken mail server. Do not "unify" the two without checking that reasoning first.
+    // Two statements are possible here and only ONE of them may stay uniform:
     //
-    // record(), not isThrottled()+record(): the attempt that crosses the threshold is itself over
-    // the limit, so only record()'s return value correctly refuses it.
-    var decision = authAttemptThrottle.record(AuthAttemptThrottle.Scope.PASSWORD_RESET_RESEND, email,
-        java.time.Instant.now());
-    if (decision == AuthAttemptThrottle.Decision.ALLOWED) {
+    //   * "If an account exists, an email was sent" — MUST be uniform. It genuinely reveals whether
+    //     the address is registered, which is the enumeration oracle the requirement forbids.
+    //   * "You already requested one recently, wait N minutes" — MAY be stated. The throttle is keyed
+    //     on the submitted string and is consulted BEFORE any account lookup, so an unknown address is
+    //     throttled identically to a known one. It describes the requester's own request volume.
+    //
+    // An earlier version of this method suppressed both, on the grounds that this page is reachable by
+    // anyone. That conflated the two questions: it hid the existence reply (correct) but also hid the
+    // throttle (wrong), so the panel promised an email that was never sent — indistinguishable from a
+    // broken mail server.
+    var outcome = authAttemptThrottle.recordAndReport(AuthAttemptThrottle.Scope.PASSWORD_RESET_RESEND,
+        email, java.time.Instant.now());
+
+    if (outcome.isAllowed()) {
       try {
         identityService.requestPasswordReset(email);
       } catch (RuntimeException e) {
@@ -111,6 +112,10 @@ public class ResetPasswordMain extends Main implements BeforeEnterObserver {
         // for operators, and the visitor sees the same generic outcome as everyone else.
         log.error("Password reset request failed unexpectedly: " + e, e);
       }
+      resetEmailSentComponent.showSent();
+    } else {
+      resetEmailSentComponent.showThrottled(
+          authAttemptThrottle.blockDuration(AuthAttemptThrottle.Scope.PASSWORD_RESET_RESEND));
     }
 
     resetPasswordComponent.clearNotifications();
