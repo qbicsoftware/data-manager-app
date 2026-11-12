@@ -25,7 +25,7 @@ For the migration documentation structure, see [`README.md`](README.md).
 | 2 | [`create-project-page-read-models.sql`](../sql/migrations/create-project-page-read-models.sql) | Create the project-page read-model views `experiment_progress`, `v_project_sample_overview`, `v_measurement_experiment`, plus a supporting index on `sample(experiment_id)`. Views + one index only; no table or column changes. | Low (non-destructive) |
 | 3 | [`create-experiment-recent-activity-views.sql`](../sql/migrations/create-experiment-recent-activity-views.sql) | Create the recent-activity views `experiment_recent_sample` and `experiment_recent_measurement` (newest three per experiment, via `ROW_NUMBER`) for the experiment snapshot panels. Views only. | Low (non-destructive; needs MariaDB 10.2+) |
 | 4 | [`create-assay-standing-view.sql`](../sql/migrations/create-assay-standing-view.sql) | Create `v_project_assay_standing`: one row per primary dataset — one experiment for one analysis method — with measurement counts, primary-data coverage and volume. One derivation shared by the summary and Datasets pages (ADR 0010). View + one index. | Low (non-destructive; needs MariaDB 10.2+) |
-| 5 | [`auth-flow-hardening.sql`](../sql/migrations/auth-flow-hardening.sql) | Create `user_verification_token` (single-use, hashed, time-limited confirmation / reset / set-password links, AUTH-R-05). One new table; no existing table altered. Throttling (`auth_attempt`, AUTH-NFR-03) is **not** in this release — see #1682. | Medium (one new table; **links in flight stop working by design** — see operator notes) |
+| 5 | [`auth-flow-hardening.sql`](../sql/migrations/auth-flow-hardening.sql) | Create `user_verification_token` (single-use, hashed, time-limited confirmation / reset / set-password links, AUTH-R-05). One new table; no existing table altered. Throttling is a **separate script** (#6) so each can be applied and rolled back independently. | Medium (one new table; **links in flight stop working by design** — see operator notes) |
 | 6 | [`auth-attempt-throttling.sql`](../sql/migrations/auth-attempt-throttling.sql) | Create `auth_attempt`: server-side throttling for login, resend-confirmation and resend-reset (AUTH-NFR-03, #1682). One new table; no existing table altered; no FK. Replaces the client-side 30 s timer, which a page reload reset. | Low (additive; **behaviour change** — repeated attempts now blocked server-side) |
 
 Each row links to its incremental script. The sections below expand each entry
@@ -425,7 +425,7 @@ deploying the application code** — see the deployment checklist below.
 
 ### What it does
 
-Two tables, both additive:
+One table, additive:
 
 - **`user_verification_token`** — single-use, time-limited tokens for email confirmation
   (`EMAIL_CONFIRMATION`), password reset (`PASSWORD_RESET`) and the one-time set-password invitation
@@ -433,7 +433,11 @@ Two tables, both additive:
   once, in the outgoing email, and cannot be recovered from the database. Three nullable timestamps
   record how a token stopped being usable: `consumedAt` (used), `supersededAt` (replaced when a
   newer token was issued for the same purpose), or expiry via `expiresAt`.
-### Scope decision recorded here — throttling is NOT in this release
+
+The throttling table `auth_attempt` is **migration #6**, not part of this script — the two are
+independent so either can be rolled back without the other.
+
+### Scope decision recorded here — origin scope is not in this release
 
 `AUTH-NFR-03` asks for throttling *per account and per request origin*. Only **account scope** ships
 in this release. Origin scope is deliberately deferred because the application cannot currently
@@ -503,7 +507,7 @@ mysql -u <user> -h <host> -P <port> data_management \
 ### Verify
 
 ```sql
--- Both tables exist with the expected shape.
+-- The table exists with the expected shape.
 SHOW CREATE TABLE user_verification_token;
 
 -- The hash column must be char(64) — a varchar(255) here means an older draft was applied.
@@ -540,7 +544,7 @@ DROP TABLE IF EXISTS `user_verification_token`;
 
 ### Operator notes
 
-- **Non-destructive.** Two new tables; no existing table, column, view or index is touched. Safe to
+- **Non-destructive.** One new table; no existing table, column, view or index is touched. Safe to
   apply on a live database with the application running.
 - **Nothing reads these tables until the new application code ships.** Applying the DDL alone changes
   no behaviour — old links keep working until the code deploy.
