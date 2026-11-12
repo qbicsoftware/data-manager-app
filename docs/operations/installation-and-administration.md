@@ -290,10 +290,18 @@ The table grows by one row per distinct address that attempts a login or a resen
 It is small, but it is unbounded. If it becomes a concern, prune manually:
 
 ```sql
-DELETE FROM auth_attempt WHERE lastAttemptAt < UTC_TIMESTAMP() - INTERVAL 30 DAY;
+DELETE FROM auth_attempt
+ WHERE lastAttemptAt < UTC_TIMESTAMP() - INTERVAL 30 DAY
+   AND (blockedUntil IS NULL OR blockedUntil < UTC_TIMESTAMP());
 ```
 
 (`lastAttemptAt` is indexed for exactly this.)
+
+> **The second condition is not optional.** A row that is still blocking someone has an old
+> `lastAttemptAt` but a live `blockedUntil`; deleting it on age alone **silently lifts an active
+> block**, so an address mid-block becomes unblocked without anyone noticing. The prune is a
+> housekeeping action and must not double as an unblock — use §3's unblock statement for that, where
+> it is a deliberate decision.
 
 ---
 
