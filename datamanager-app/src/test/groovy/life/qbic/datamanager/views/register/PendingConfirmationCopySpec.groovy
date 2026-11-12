@@ -69,50 +69,43 @@ class PendingConfirmationCopySpec extends Specification {
     VaadinService.setCurrent(null)
   }
 
-  def "the page does not promise an email, because on the duplicate path none is sent"() {
-    given:
-    def view = newView()
-
-    when:
-    def text = allText(view)
-
-    then: 'the sentence about having sent a link is conditional or absent — never an unconditional promise'
-    def lower = text.toLowerCase()
-    if (lower.contains("we've sent")) {
-      // The current copy opens with the new-registration case; that is acceptable only because the
-      // very next sentence tells the duplicate visitor that no mail will arrive.
-      lower.contains('no new email will arrive')
-    } else {
-      lower.contains('if that address')
-    }
-  }
-
-  @Unroll
-  def "the page tells an already-registered visitor how to get back in (#why)"() {
+  def "an unconfirmed account is offered the resend action (normal registration)"() {
     given:
     def view = newView()
 
     when:
     def lower = allText(view).toLowerCase()
 
-    then: 'a dead end is not acceptable: the visitor is pointed at the reset flow'
-    lower.contains('forgot your password')
-    lower.contains('already')
-
-    where:
-    why << ['the only way forward without mail']
-  }
-
-  def "the page still offers the resend action, and the login link"() {
-    given:
-    def view = newView()
-
-    when:
-    def lower = allText(view).toLowerCase()
-
-    then:
+    then: 'the resend action is available, because the address is not confirmed yet'
     lower.contains('resend verification link')
-    lower.contains('go back to login')
+
+    and: 'the password-reset advice is absent: it dispatches nothing for an unconfirmed account'
+    !lower.contains('forgot your password')
+  }
+
+  def "an already confirmed account is pointed at the reset flow and offered no resend"() {
+    given: 'the duplicate path, where the id belongs to an account that is already confirmed'
+    userInformationService.findById('user-1') >> Optional.of(
+        new UserInfo('user-1', 'Existing Person', 'existing@example.org', 'existing', true, null, null))
+    def view = newView()
+
+    when:
+    def lower = allTextAfterEnter(view, 'user-1').toLowerCase()
+
+    then: 'resending a confirmation for a confirmed account would mail the owner for nothing'
+    !lower.contains('resend verification link')
+
+    and: 'this is the one state where the reset route is correct advice'
+    lower.contains('already has a confirmed account')
+    lower.contains('forgot your password')
+  }
+
+  def "the login link is always present"() {
+    given:
+    def view = newView()
+
+    expect:
+    allText(view).toLowerCase().contains('go back to login')
   }
 
   def "rendering the page sends no email by itself"() {
@@ -132,6 +125,20 @@ class PendingConfirmationCopySpec extends Specification {
 
     then: 'nothing is dispatched on render — retrieval is not an action'
     0 * emailService.send(_, _, _)
+  }
+
+  /** Runs beforeEnter with a pending registration id in the session, then returns the rendered text. */
+  private String allTextAfterEnter(EmailConfirmationMain view, String userId) {
+    def session = Stub(VaadinSession) {
+      getAttribute(EmailConfirmationMain.PENDING_REGISTRATION_USER_ID) >> userId
+    }
+    VaadinSession.setCurrent(session)
+    try {
+      view.beforeEnter(event())
+    } finally {
+      VaadinSession.setCurrent(null)
+    }
+    return allText(view)
   }
 
   private EmailConfirmationMain newView() {

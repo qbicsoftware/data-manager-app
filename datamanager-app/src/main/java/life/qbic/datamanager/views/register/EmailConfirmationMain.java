@@ -86,6 +86,15 @@ public class EmailConfirmationMain extends Main implements BeforeEnterObserver {
 
   private UserInfo userInfo;
 
+  /**
+   * The "did not receive an email?" row, kept as a field so the page can replace it.
+   *
+   * <p>Whether resending is possible is only known in {@link #beforeEnter(BeforeEnterEvent)}, because the
+   * pending registration lives in the session and the component tree is built in the constructor. When the
+   * session no longer holds it, the row is replaced rather than left as a link that fails on click.</p>
+   */
+  private final Span resendVerification = new Span();
+
   public EmailConfirmationMain(UserInformationService userInformationService,
       EmailService emailService,
       EmailConfirmationLinkSupplier emailConfirmationLinkSupplier,
@@ -128,15 +137,10 @@ public class EmailConfirmationMain extends Main implements BeforeEnterObserver {
     // never took and would invalidate any reset link they were genuinely waiting for.
     // Wrapped in a Span, not added as a bare Text: a Text is a client-side text node and cannot carry a
     // CSS class, so styling it would silently do nothing (or throw, as it did under test).
-    Span alreadyRegistered = new Span(
-        "If that address was already registered, no new email will arrive. If you already have an "
-            + "account, use \"Forgot your password\" on the login page to regain access.");
-    alreadyRegistered.addClassName("already-registered-hint");
-    emailConfirmationComponent.add(alreadyRegistered);
     Text resendVerificationText = new Text("Did not receive an email?");
     Span resendVerificationLink = new Span("Resend verification link");
     resendVerificationLink.addClassName("link");
-    Span resendVerification = new Span(resendVerificationText, resendVerificationLink);
+    resendVerification.add(resendVerificationText, resendVerificationLink);
     resendVerificationLink.addClickListener(spanClickEvent -> {
       // Resend with no user id must not throw.
       //
@@ -299,11 +303,65 @@ public class EmailConfirmationMain extends Main implements BeforeEnterObserver {
       var optUserInfo = userInformationService.findById(userId);
       if (optUserInfo.isPresent()) {
         userInfo = optUserInfo.get();
+        if (userInfo.isActive()) {
+          // A registration against an address that already has a confirmed account ends up here: the
+          // duplicate is answered uniformly, and the id passed along belongs to the existing account.
+          // Offering "resend verification link" for an account that is already confirmed would mail the
+          // owner for no reason, so the row states the situation instead. This is the one place the
+          // password-reset route is the right advice, because that account really is active.
+          showAlreadyConfirmed();
+        }
       } else {
         log.debug("Pending registration id no longer resolves to an account; resend disabled");
         VaadinSession.getCurrent().setAttribute(PENDING_REGISTRATION_USER_ID, null);
+        showResendUnavailable();
       }
+    } else {
+      // No pending registration in this session: the page was opened directly, the session expired, or the
+      // instance that served the registration is no longer the one serving this request (a restart behind a
+      // load balancer). None of those is an error the visitor caused, so they get an explanation and a way
+      // forward instead of a button that throws when pressed.
+      showResendUnavailable();
     }
+  }
+
+  /**
+   * Replaces the resend row for an address that already has a confirmed account.
+   *
+   * <p>Nothing can be resent: the address is confirmed. The visitor is most likely the owner who forgot
+   * they had an account, so the reset route is the correct way forward — and it only helps here, on an
+   * active account. On an unconfirmed one a reset request deliberately dispatches nothing
+   * ({@code IdentityService.requestPasswordReset}), which is why this wording does not appear in the
+   * session-expired state.</p>
+   */
+  private void showAlreadyConfirmed() {
+    resendVerification.removeAll();
+    resendVerification.addClassName("already-confirmed");
+    resendVerification.add(new Span(
+        "This address already has a confirmed account. If it is yours, use \"Forgot your password\" "
+            + "on the login page to regain access."));
+  }
+
+  /**
+   * Replaces the resend row with information for a visitor whose registration context is gone.
+   *
+   * <p><b>Why not simply hide it.</b> The button is the only self-service way to get a new confirmation
+   * link, and a person who never received the first email needs to know that, and know what to do. A silent
+   * gap would read as "this page is broken".</p>
+   *
+   * <p><b>Why not tell them to register again or reset their password.</b> Both are dead ends for an
+   * unconfirmed account: a repeated registration is answered uniformly and deliberately sends no email
+   * (AUTH-NFR-03), and a reset request for an unconfirmed address dispatches nothing either. Saying so would
+   * send the visitor in a circle. Support is the honest answer until a stateless resend exists.</p>
+   */
+  private void showResendUnavailable() {
+    resendVerification.removeAll();
+    resendVerification.addClassName("resend-unavailable");
+    Span explanation = new Span(
+        "This page can no longer resend the confirmation link, because the registration session has "
+            + "expired or this page was opened separately. If the link in your inbox does not work, "
+            + "contact us at support@qbic.zendesk.com and we will confirm your account.");
+    resendVerification.add(explanation);
   }
 
   private void forwardToMainIfAlreadyConfirmed(BeforeEvent event, String parameter) {

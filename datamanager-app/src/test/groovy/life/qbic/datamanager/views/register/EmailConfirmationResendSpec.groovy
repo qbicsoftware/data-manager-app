@@ -199,11 +199,13 @@ class EmailConfirmationResendSpec extends Specification {
     1 * emailService.send(_, _, _)
   }
 
-  def "the page rendered without a user id does not throw when Resend is clicked"() {
-    // The route uses @OptionalParameter, so /register/pending-email-confirmation is a valid URL that
-    // renders this page with no userInfo. The click handler dereferenced it unconditionally and
-    // produced a NullPointerException -> HTTP 500.
-    given: 'the session carries no pending registration, so the page has no account to resend for'
+  def "the resend handler survives an absent account as defence in depth"() {
+    // In the normal flow beforeEnter replaces the resend row when the session holds no pending
+    // registration (see ResendUnavailableSpec), so this state is not reachable through the UI. The guard
+    // is kept anyway: the click handler dereferenced the account unconditionally once, and the result was
+    // a NullPointerException -> HTTP 500. A future refactor that stops replacing the row must not bring
+    // that back.
+    given: 'a page whose beforeEnter never ran, so the stale row is still clickable'
     def view = newView()
 
     when:
@@ -212,7 +214,7 @@ class EmailConfirmationResendSpec extends Specification {
     then: 'no exception escapes'
     noExceptionThrown()
 
-    and: 'the visitor is told what to do instead'
+    and: 'the visitor is told what to do instead of being shown a failure'
     def text = renderedText(view).toLowerCase()
     text.contains('cannot resend')
     text.contains('registration email')
