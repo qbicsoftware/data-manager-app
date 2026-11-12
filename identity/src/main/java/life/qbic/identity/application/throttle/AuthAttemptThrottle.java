@@ -93,6 +93,66 @@ public class AuthAttemptThrottle {
     THROTTLED
   }
 
+  /**
+   * The outcome of one attempt.
+   *
+   * <p>Carries the decision plus what a view needs to describe the state honestly:</p>
+   * <ul>
+   *   <li>{@link #attemptsUsed()} — how many attempts are counted in the current window;</li>
+   *   <li>{@link #attemptsRemainingInWindow()} — how many more will succeed before the block.</li>
+   * </ul>
+   *
+   * <p>Both describe <em>configured policy</em> and the caller's own attempt count, never whether an
+   * account exists. A view may render them on a page the visitor has already reached legitimately
+   * (e.g. after proving they know the user id), but must NOT render them where the audience is
+   * anonymous — see {@code ResetPasswordMain} for that case.</p>
+   *
+   * @param decision    whether the work may proceed
+   * @param attemptsUsed attempts counted in the window after this one
+   * @param maxAttempts  the configured limit for the flow
+   */
+  public record Outcome(Decision decision, int attemptsUsed, int maxAttempts) {
+
+    /** @return how many further attempts will still be allowed in this window */
+    public int attemptsRemainingInWindow() {
+      return Math.max(0, maxAttempts - attemptsUsed);
+    }
+
+    public boolean isAllowed() {
+      return decision == Decision.ALLOWED;
+    }
+  }
+
+  /**
+   * Records an attempt and reports the outcome.
+   *
+   * <p>Preferred over {@link #record(Scope, String, Instant)}, which loses the counts callers need to
+   * tell a visitor how many attempts remain.</p>
+   */
+  @Transactional
+  public Outcome recordAndReport(Scope scope, String identifier, Instant now) {
+    requireNonNull(scope, "scope must not be null");
+    requireNonNull(now, "now must not be null");
+    if (identifier == null || identifier.isBlank()) {
+      return new Outcome(Decision.ALLOWED, 0, maxAttempts(scope));
+    }
+
+    Policy policy = policyFor(scope);
+    String key = attemptKey(scope, identifier);
+    AuthAttemptCounter.Counter state = counter.increment(scope.name(), key, now, policy.window());
+
+    if (state.blockedUntil() != null && now.isBefore(state.blockedUntil())) {
+      return new Outcome(Decision.THROTTLED, state.attemptCount(), policy.maxAttempts());
+    }
+    if (state.attemptCount() > policy.maxAttempts()) {
+      counter.block(scope.name(), key, now.plus(policy.blockDuration()));
+      log.info("Throttling %s attempts after %d attempts in the window"
+          .formatted(scope, state.attemptCount()));
+      return new Outcome(Decision.THROTTLED, state.attemptCount(), policy.maxAttempts());
+    }
+    return new Outcome(Decision.ALLOWED, state.attemptCount(), policy.maxAttempts());
+  }
+
   private final AuthAttemptCounter counter;
   private final Policy loginPolicy;
   private final Policy resendPolicy;
@@ -126,42 +186,7 @@ public class AuthAttemptThrottle {
    */
   @Transactional
   public Decision record(Scope scope, String identifier, Instant now) {
-    requireNonNull(scope, "scope must not be null");
-    requireNonNull(now, "now must not be null");
-    if (identifier == null || identifier.isBlank()) {
-      // Nothing to key on. Allowing is correct: the request carries no address, so there is no
-      // bucket to fill and no account to attack. Callers validate the address separately.
-      return Decision.ALLOWED;
-    }
-
-    Policy policy = policyFor(scope);
-    String key = attemptKey(scope, identifier);
-
-    // ONE increment, always. Splitting this into "check whether blocked, then increment" would
-    // count a throttled attempt zero times, letting an already-blocked client keep its count — and
-    // would also double-increment, because the check itself writes.
-    //
-    // The WINDOW LENGTH is passed, not a computed boundary. An earlier version passed
-    // `now.minus(window)`; because every call computes a later boundary the stored start was always
-    // earlier, so every attempt looked like a new window and the counter could never exceed 1 — which
-    // meant the block threshold was never reached at all. See AuthAttemptCounter.increment.
-    AuthAttemptCounter.Counter state =
-        counter.increment(scope.name(), key, now, policy.window());
-
-    // The stored block is evaluated against THIS clock, never with NOW() in SQL — every column is
-    // datetime(6) with no zone, so a SQL-side comparison silently inherits the session's offset.
-    if (state.blockedUntil() != null && now.isBefore(state.blockedUntil())) {
-      return Decision.THROTTLED;
-    }
-    if (state.attemptCount() > policy.maxAttempts()) {
-      // Crossed the threshold. Arm the block, then report throttled for this request too: the
-      // attempt that crosses the line is itself over the limit.
-      counter.block(scope.name(), key, now.plus(policy.blockDuration()));
-      log.info("Throttling %s attempts after %d attempts in the window"
-          .formatted(scope, state.attemptCount()));
-      return Decision.THROTTLED;
-    }
-    return Decision.ALLOWED;
+    return recordAndReport(scope, identifier, now).decision();
   }
 
   /**
@@ -224,6 +249,23 @@ public class AuthAttemptThrottle {
    */
   public Duration blockDuration(Scope scope) {
     return policyFor(requireNonNull(scope, "scope must not be null")).blockDuration();
+  }
+
+  /**
+   * How many attempts are permitted in one window for this flow.
+   *
+   * <p>Exposed so a view can say "you can request N more" instead of leaving the visitor to discover
+   * the limit by hitting it. This is configured policy, not account state.</p>
+   *
+   * <p>Semantics: exactly {@code maxAttempts} attempts succeed per window. {@link #record} compares the
+   * count <em>after</em> the increment against this value with a strict {@code >}, so the
+   * {@code maxAttempts + 1}-th attempt is the first one refused.</p>
+   *
+   * @param scope the flow
+   * @return the configured maximum attempts per window
+   */
+  public int maxAttempts(Scope scope) {
+    return policyFor(requireNonNull(scope, "scope must not be null")).maxAttempts();
   }
 
   /**

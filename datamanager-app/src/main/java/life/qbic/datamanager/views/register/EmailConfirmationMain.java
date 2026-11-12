@@ -117,16 +117,15 @@ public class EmailConfirmationMain extends Main implements HasUrlParameter<Strin
       // java.util.Timer whose counter lived in a UIScope bean: reloading the page reset it to zero,
       // so it was not a control at all.
       //
-      // record(), not isThrottled()+record(): the attempt that crosses the threshold is itself over
-      // the limit, so only record()'s return value correctly refuses it.
-      var decision = authAttemptThrottle.record(
+      // recordAndReport(), not record(): the view needs the attempt counts to tell the visitor how
+      // many attempts remain, so they do not discover the limit by hitting it.
+      var outcome = authAttemptThrottle.recordAndReport(
           AuthAttemptThrottle.Scope.EMAIL_CONFIRMATION_RESEND, userInfo.emailAddress(),
           java.time.Instant.now());
 
-      if (decision == AuthAttemptThrottle.Decision.ALLOWED) {
+      if (outcome.isAllowed()) {
         sendConfirmationEmail(userInfo.id(), userInfo.emailAddress(), userInfo.fullName());
-        showInfo("Verification email sent",
-            "Please check your inbox and click the link to complete your registration.");
+        showInfo("Verification email sent", successCopy(outcome));
         return;
       }
 
@@ -152,6 +151,26 @@ public class EmailConfirmationMain extends Main implements HasUrlParameter<Strin
 
     RouterLink backToLoginLink = new RouterLink("Go back to login", LoginLayout.class);
     emailConfirmationComponent.add(backToLoginLink);
+  }
+
+  /**
+   * Copy for a successful resend, including how many attempts remain.
+   *
+   * <p>The remaining count matters because without it there is no signal that a limit exists: a
+   * visitor who clicks three times sees "sent" three times and only meets the limit on the fourth
+   * click, which reads as a malfunction. Naming the allowance makes the behaviour predictable.</p>
+   *
+   * <p>On the last permitted attempt the copy changes, because "0 more" reads as an error.</p>
+   */
+  static String successCopy(AuthAttemptThrottle.Outcome outcome) {
+    int remaining = outcome.attemptsRemainingInWindow();
+    if (remaining <= 0) {
+      return "Please check your inbox and click the link to complete your registration. "
+          + "This was the last link that can be requested for now.";
+    }
+    return ("Please check your inbox and click the link to complete your registration. "
+        + "You can request %s more %s.")
+        .formatted(remaining, remaining == 1 ? "link" : "links");
   }
 
   /**

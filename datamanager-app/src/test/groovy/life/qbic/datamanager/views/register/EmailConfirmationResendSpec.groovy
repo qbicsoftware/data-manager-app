@@ -107,8 +107,11 @@ class EmailConfirmationResendSpec extends Specification {
     1 * emailService.send(_, _, _)
   }
 
-  def "a successful resend confirms the email was sent"() {
-    given:
+  def "a successful resend confirms delivery AND states how many attempts remain"() {
+    // Without the remaining count there is no signal that a limit exists: a visitor clicks three
+    // times, sees "sent" three times, and meets the limit on the fourth click — which reads as a
+    // malfunction rather than a policy.
+    given: 'the resend limit in this spec is 1'
     def view = newView()
     view.setParameter(event(), USER_ID)
 
@@ -116,9 +119,25 @@ class EmailConfirmationResendSpec extends Specification {
     clickResend(view)
 
     then:
-    def text = renderedText(view)
-    text.toLowerCase().contains('sent')
-    text.toLowerCase().contains('check your inbox')
+    def text = renderedText(view).toLowerCase()
+    text.contains('sent')
+    text.contains('check your inbox')
+
+    and: 'the allowance is named, not left to be discovered'
+    text.contains('last link that can be requested')
+  }
+
+  def "success copy names the remaining allowance, and never says '0 more'"() {
+    // "You can request 0 more links" reads as an error. The last permitted attempt gets its own
+    // wording.
+    expect:
+    EmailConfirmationMain.successCopy(outcome(AuthAttemptThrottle.Decision.ALLOWED, 1, 3)).contains('2 more links')
+    EmailConfirmationMain.successCopy(outcome(AuthAttemptThrottle.Decision.ALLOWED, 2, 3)).contains('1 more link')
+    !EmailConfirmationMain.successCopy(outcome(AuthAttemptThrottle.Decision.ALLOWED, 2, 3)).contains('more links')
+
+    and: 'the final permitted attempt does not advertise a zero remainder'
+    !EmailConfirmationMain.successCopy(outcome(AuthAttemptThrottle.Decision.ALLOWED, 3, 3)).contains('0 more')
+    EmailConfirmationMain.successCopy(outcome(AuthAttemptThrottle.Decision.ALLOWED, 3, 3)).contains('last link')
   }
 
   def "a throttled resend tells the visitor to wait, instead of silently doing nothing"() {
@@ -217,6 +236,11 @@ class EmailConfirmationResendSpec extends Specification {
   }
 
   // ---- helpers -------------------------------------------------------------------------------
+
+  private static AuthAttemptThrottle.Outcome outcome(
+      AuthAttemptThrottle.Decision decision, int used, int max) {
+    return new AuthAttemptThrottle.Outcome(decision, used, max)
+  }
 
   private EmailConfirmationMain newView() {
     return new EmailConfirmationMain(userInformationService, emailService, linkSupplier,

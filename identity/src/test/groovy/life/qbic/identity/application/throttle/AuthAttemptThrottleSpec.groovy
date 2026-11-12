@@ -95,6 +95,60 @@ class AuthAttemptThrottleSpec extends Specification {
     throttle.record(Scope.LOGIN, ADDRESS, T0.plusSeconds(6)) == Decision.THROTTLED
   }
 
+  def "the outcome reports the counts a view needs, so it never has to guess"() {
+    // A view that wants to say "2 more attempts" must not re-derive the limit or the count itself —
+    // two places computing the same number is how copy and behaviour drift apart.
+    when:
+    def first = throttle.recordAndReport(Scope.LOGIN, ADDRESS, T0)
+    def second = throttle.recordAndReport(Scope.LOGIN, ADDRESS, T0.plusSeconds(1))
+    def third = throttle.recordAndReport(Scope.LOGIN, ADDRESS, T0.plusSeconds(2))
+    def fourth = throttle.recordAndReport(Scope.LOGIN, ADDRESS, T0.plusSeconds(3))
+
+    then: 'the login limit in this spec is 3'
+    first.attemptsUsed() == 1
+    first.attemptsRemainingInWindow() == 2
+    first.isAllowed()
+
+    and:
+    third.attemptsUsed() == 3
+    third.attemptsRemainingInWindow() == 0
+    third.isAllowed()
+
+    and: 'the fourth is the first refused attempt — the configured limit is honest'
+    fourth.decision() == Decision.THROTTLED
+    !fourth.isAllowed()
+    fourth.attemptsRemainingInWindow() == 0
+  }
+
+  def "the remaining count never goes negative, even when attempts overshoot"() {
+    // A client that keeps hammering pushes attemptCount past the limit. Reporting "-3 remaining" would
+    // leak the internal count into copy.
+    when:
+    (1..8).each { throttle.recordAndReport(Scope.LOGIN, ADDRESS, T0.plusSeconds(it)) }
+    def outcome = throttle.recordAndReport(Scope.LOGIN, ADDRESS, T0.plusSeconds(9))
+
+    then:
+    outcome.attemptsUsed() > outcome.maxAttempts()
+    outcome.attemptsRemainingInWindow() == 0
+  }
+
+  def "record() and recordAndReport() agree on the decision"() {
+    // record() delegates to recordAndReport(); this pins it so they cannot drift.
+    given:
+    def a = new InMemoryCounter()
+    def b = new InMemoryCounter()
+    def t1 = new AuthAttemptThrottle(a, 2, Duration.ofMinutes(15), Duration.ofMinutes(15),
+        2, Duration.ofMinutes(15), Duration.ofMinutes(15))
+    def t2 = new AuthAttemptThrottle(b, 2, Duration.ofMinutes(15), Duration.ofMinutes(15),
+        2, Duration.ofMinutes(15), Duration.ofMinutes(15))
+
+    expect:
+    (1..4).every { i ->
+      t1.record(Scope.LOGIN, ADDRESS, T0.plusSeconds(i)) ==
+          t2.recordAndReport(Scope.LOGIN, ADDRESS, T0.plusSeconds(i)).decision()
+    }
+  }
+
   // ---- the two rules that cause rework if missed ---------------------------------------------
 
   def "the stored key is a hash, never the address"() {
