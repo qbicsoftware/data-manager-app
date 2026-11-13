@@ -180,13 +180,14 @@ vaadin.sessionLockCheckStrategy=log
 ### Routing ###################################################################
 ###############################################################################
 
-# Route for mail confirmation consumption
-routing.email-confirmation.endpoint=/login
-routing.email-confirmation.confirmation-parameter=confirm-email
+# Route for mail confirmation consumption.
+# The confirmation link carries a single-use token, never the user's persistent id (AUTH-R-05).
+routing.email-confirmation.endpoint=/registration/confirm
+routing.email-confirmation.token-parameter=token
 
-# Route for password reset
+# Route for password reset. The link carries a single-use token as well (AUTH-R-05).
 routing.password-reset.endpoint=/registration/new-password
-routing.password-reset.reset-parameter=user-id
+routing.password-reset.token-parameter=token
 
 # Route to project resources
 routing.projects.endpoint=/projects
@@ -313,6 +314,44 @@ announcement.refresh-interval=2h
 qbic.access-token.salt=<CHANGE_ME>
 # Number of PBKDF2 iterations for token hashing
 qbic.access-token.iteration-count=100000
+
+## Verification links (email confirmation, password reset, set-password invitation)
+#
+# These are the lifetimes of the single-use tokens behind the links. AUTH-R-05 fixes the
+# MAXIMUM: confirmation and set-password invitations must not exceed 1 hour, password
+# reset must not exceed 15 minutes. The application REFUSES TO START if a configured
+# value is longer than the bound, so an invalid value here is a startup failure, not a
+# silent weakening.
+#
+# Format is ISO-8601 duration: PT1H = 1 hour, PT5M = 5 minutes, PT30M = 30 minutes.
+#
+# Shorter is always allowed and is the safer direction. A reset link grants control of an
+# existing account, which is why its bound is the tighter of the two.
+qbic.verification-token.confirmation-lifetime=PT1H
+qbic.verification-token.reset-lifetime=PT5M
+qbic.verification-token.set-password-lifetime=PT1H
+
+# Server-side throttling for the unauthenticated auth flows (AUTH-NFR-03).
+#
+# These are DEPLOYMENT configuration: tuned from telemetry, and they differ per environment.
+# A non-positive max-attempts, window or block-duration is a STARTUP FAILURE, not a silent no-op.
+#
+# Two properties are NOT configurable, because they are security properties:
+#   * the throttle is keyed per account AND per origin (only account scope ships in this
+#     release -- see docs/migrations/NEXT.md, Migration #6, for why the origin cannot be
+#     derived behind the proxy yet);
+#   * a throttled response is indistinguishable from a normal one. A visitor is never told
+#     they were throttled, because that would confirm the account is real.
+#
+# A login is a guess at a secret the user knows; a resend costs us an email and the recipient an
+# inbox notification -- which is why the resend limits are the tighter of the two.
+qbic.auth-throttle.login.max-attempts=10
+qbic.auth-throttle.login.window=PT15M
+qbic.auth-throttle.login.block-duration=PT15M
+
+qbic.auth-throttle.resend.max-attempts=3
+qbic.auth-throttle.resend.window=PT15M
+qbic.auth-throttle.resend.block-duration=PT15M
 
 ###############################################################################
 ### Data Server / Download ####################################################

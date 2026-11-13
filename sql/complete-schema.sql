@@ -664,6 +664,73 @@ CREATE TABLE IF NOT EXISTS `users`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
+-- Single-use, time-limited tokens behind email confirmation, password reset and the
+-- set-password invitation (AUTH-R-05). Only the SHA-256 hash is stored; the raw token exists
+-- once, in the outgoing email, and can never be read back.
+--
+-- Three nullable timestamps record how a token stopped being usable: consumedAt (used),
+-- supersededAt (replaced when a newer token was issued for the same purpose), and expiry via
+-- expiresAt. Kept separate so "was this link already used?" stays answerable.
+--
+-- expiresAt MUST be compared in application code against Instant.now(), never in SQL against
+-- NOW(): every column here is datetime(6) with no timezone.
+CREATE TABLE IF NOT EXISTS `user_verification_token`
+(
+    `id`           bigint(20)   NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `userId`       varchar(255) NOT NULL,
+    `purpose`      varchar(32)  NOT NULL
+        COMMENT 'EMAIL_CONFIRMATION | PASSWORD_RESET | SET_PASSWORD',
+    `tokenHash`    char(64)     NOT NULL
+        COMMENT 'Lower-case SHA-256 hex digest of a 32-byte SecureRandom token (Base64URL-encoded in the link). The raw token is never stored.',
+    `createdAt`    datetime(6)  NOT NULL,
+    `expiresAt`    datetime(6)  NOT NULL,
+    `consumedAt`   datetime(6)  DEFAULT NULL
+        COMMENT 'Set on first successful use. Non-NULL makes the token unusable.',
+    `supersededAt` datetime(6)  DEFAULT NULL
+        COMMENT 'Set when a newer token was issued for the same (userId, purpose). Non-NULL makes the token unusable.',
+
+    UNIQUE KEY `uk_user_verification_token_hash` (`tokenHash`),
+    KEY `idx_user_verification_token_user_purpose` (`userId`, `purpose`),
+    KEY `idx_user_verification_token_expiry` (`expiresAt`),
+    CONSTRAINT `FK_user_verification_token_user`
+        FOREIGN KEY (`userId`) REFERENCES `users` (`id`)
+            ON DELETE CASCADE
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci;
+
+-- Server-side throttling for the unauthenticated auth flows: login, resend-confirmation,
+-- resend-reset (AUTH-NFR-03). Replaces the client-side 30 s timer, which a page reload reset.
+--
+-- There is deliberately NO foreign key to `users`: an attempt against an address that does not
+-- exist must be counted exactly like one against an address that does, or the presence or absence
+-- of throttling answers "does this account exist?" — the enumeration oracle AUTH-NFR-03 forbids.
+-- `attemptKey` is a SHA-256 digest, never a raw address.
+--
+-- `attemptCount` is incremented by the DATABASE (INSERT ... ON DUPLICATE KEY UPDATE), never
+-- read-then-write: concurrent attempts would otherwise lose increments. `blockedUntil` is written
+-- here but evaluated in Java against Instant.now(), never in SQL against NOW().
+--
+-- `scope` is an open varchar so origin-scope throttling and second-factor throttling can be added
+-- without a schema change (see docs/migrations/NEXT.md, Migration #6).
+CREATE TABLE IF NOT EXISTS `auth_attempt`
+(
+    `id`            bigint(20)  NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `scope`         varchar(32) NOT NULL,
+    `attemptKey`    char(64)    NOT NULL,
+    `attemptCount`  int(11)     NOT NULL DEFAULT 0,
+    `windowStartAt` datetime(6) NOT NULL,
+    `windowSeconds` int(11)     NOT NULL DEFAULT 900
+        COMMENT 'Length of the counting window. Stored per row so the adapter compares the row\'s own window end against now, instead of a caller-computed boundary (which made the counter reset on every call).',
+    `blockedUntil`  datetime(6) DEFAULT NULL,
+    `lastAttemptAt` datetime(6) NOT NULL,
+
+    UNIQUE KEY `uk_auth_attempt_scope_key` (`scope`, `attemptKey`),
+    KEY `idx_auth_attempt_last` (`lastAttemptAt`)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS `experiments_datamanager_confounding_variables`
 (
     `id`           bigint(20)   NOT NULL AUTO_INCREMENT PRIMARY KEY,
