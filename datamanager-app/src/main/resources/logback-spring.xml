@@ -53,8 +53,18 @@
        message or stack trace. Developers must consult the on-premises log file
        for details, so no personal data is added to the email transmission.
        See ADR-0005. -->
+  <!--
+       logback's own SMTPAppender, subclassed only to REQUIRE STARTTLS.
+
+       logback offers <STARTTLS>true</STARTTLS>, but that sets mail.smtp.starttls.ENABLE, which falls
+       back to cleartext when the server does not offer the upgrade - measured against a relay that
+       cannot upgrade, the credentials and the message went out unencrypted either way. There is no
+       "required" option, hence the subclass.
+
+       Everything else here is unchanged: same authentication, same layout, same ERROR-only filter,
+       same asynchronous sending. See life.qbic.datamanager.logging.StartTlsRequiredSmtpAppender. -->
   <appender name="EmailOnError"
-    class="ch.qos.logback.classic.net.SMTPAppender">
+    class="life.qbic.datamanager.logging.StartTlsRequiredSmtpAppender">
     <smtpHost>${MAIL_HOST}</smtpHost>
     <smtpPort>${MAIL_PORT}</smtpPort>
     <username>${MAIL_USER}</username>
