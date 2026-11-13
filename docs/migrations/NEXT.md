@@ -16,17 +16,18 @@ For the migration documentation structure, see [`README.md`](README.md).
 
 ## Summary of schema changes in this release
 
-> *Append a row here whenever a new incremental script is added. Numbering is
-> sequential within the release and determines apply order.*
+> *Numbering is sequential within the release and determines apply order. This is a
+> **security patch release**: it carries the two auth-flow tables and nothing else.*
 
 | # | Script | Description | Risk |
 |---|---|---|---|
-| 1 | *(automatic — bundled with JobRunr)* | **JobRunr 8.7.1 → 9.0.x** auto-applies its bundled migration `v017__change_job_stats_view_to_sql_security_invoker.sql` on first startup: the `jobrunr_jobs_stats` view is recreated with `SQL SECURITY INVOKER` (MariaDB/MySQL). Atomic `CREATE OR REPLACE VIEW`; no table/index DDL, no downtime. Applied once and recorded in `jobrunr_migrations`. | Low |
-| 2 | [`create-project-page-read-models.sql`](../sql/migrations/create-project-page-read-models.sql) | Create the project-page read-model views `experiment_progress`, `v_project_sample_overview`, `v_measurement_experiment`, plus a supporting index on `sample(experiment_id)`. Views + one index only; no table or column changes. | Low (non-destructive) |
-| 3 | [`create-experiment-recent-activity-views.sql`](../sql/migrations/create-experiment-recent-activity-views.sql) | Create the recent-activity views `experiment_recent_sample` and `experiment_recent_measurement` (newest three per experiment, via `ROW_NUMBER`) for the experiment snapshot panels. Views only. | Low (non-destructive; needs MariaDB 10.2+) |
-| 4 | [`create-assay-standing-view.sql`](../sql/migrations/create-assay-standing-view.sql) | Create `v_project_assay_standing`: one row per primary dataset — one experiment for one analysis method — with measurement counts, primary-data coverage and volume. One derivation shared by the summary and Datasets pages (ADR 0010). View + one index. | Low (non-destructive; needs MariaDB 10.2+) |
-| 5 | [`auth-flow-hardening.sql`](../sql/migrations/auth-flow-hardening.sql) | Create `user_verification_token` (single-use, hashed, time-limited confirmation / reset / set-password links, AUTH-R-05). One new table; no existing table altered. Throttling (`auth_attempt`, AUTH-NFR-03) is **not** in this release — see #1682. | Medium (one new table; **links in flight stop working by design** — see operator notes) |
-| 6 | [`auth-attempt-throttling.sql`](../sql/migrations/auth-attempt-throttling.sql) | Create `auth_attempt`: server-side throttling for login, resend-confirmation and resend-reset (AUTH-NFR-03, #1682). One new table; no existing table altered; no FK. Replaces the client-side 30 s timer, which a page reload reset. | Low (additive; **behaviour change** — repeated attempts now blocked server-side) |
+| 1 | [`auth-flow-hardening.sql`](../../sql/migrations/auth-flow-hardening.sql) | Create `user_verification_token`: single-use, hashed, time-limited tokens behind email confirmation, password reset and the set-password invitation (`AUTH-R-05`). One new table; no existing table altered. | Medium — one new table, **and links already in flight stop working by design** (decision B1, see the operator note below) |
+| 2 | [`auth-attempt-throttling.sql`](../../sql/migrations/auth-attempt-throttling.sql) | Create `auth_attempt`: server-side throttling for login, confirmation-resend and reset-resend (`AUTH-NFR-03`). One new table, no existing table altered, no foreign key. Replaces the client-side 30 s timer, which a page reload reset. | Low (additive) — but a **behaviour change**: repeated attempts are now blocked server-side |
+
+**Apply in this order, and before deploying the application code.** Neither table exists on a 1.20.x
+installation, and both are queried on the first request that uses them: without `user_verification_token`
+no link can be issued or consumed (the failure is silent — registration appears to succeed and no link
+works), and without `auth_attempt` **login fails outright**.
 
 Each row links to its incremental script. The sections below expand each entry
 with apply / verify / rollback detail.
@@ -90,324 +91,7 @@ are always allowed.
 
 ---
 
-## Migration #2: Project page read models
-
-| Field | Value |
-|---|---|
-| **Story** | TBD (governance gate skipped at project-owner direction) |
-| **Feature** | TBD (`FEAT-PROJECT-*`) |
-| **ADRs** | TBD (read-model / query-service ADR; reactive boundary ADR) |
-| **Scope** | create 3 views + 1 index |
-| **Script** | [`sql/migrations/create-project-page-read-models.sql`](../sql/migrations/create-project-page-read-models.sql) |
-| **Target datasource** | `data_management` |
-
-### What it does
-
-Adds the read models the reworked project page renders from, so the landing page is served
-by a small, fixed number of queries instead of composing roughly seven lookups per
-experiment (the N+1 the current service layer would force).
-
-- **`experiment_progress`** — one row per experiment: `sample_count`,
-  `measured_sample_count`, `measurement_count` (plus per-type NGS/PXP/IP),
-  `measurements_with_primary_data` (plus per-type NGS/PXP/IP) and `primary_data_bytes` (plus
-  per-type NGS/PXP/IP). Serves both the summary progress band and the project Datasets
-  overview. There is deliberately **no file count**: see fact 3 below.
-- **`v_project_sample_overview`** — one row per sample in a project, with experiment
-  attribution, condition and a `measured` flag; feeds the project Samples list and stats.
-- **`v_measurement_experiment`** — helper that maps a measurement to the experiment(s) it
-  belongs to, via its measured samples.
-- **`idx_sample_experiment`** — `sample` has no index on `experiment_id`; the per-experiment
-  sample aggregation groups by it. The statement is guarded and idempotent.
-
-All three are views: non-destructive, always consistent, no write path. No table or column
-is created, altered or dropped.
-
-> **Collation drift is handled explicitly.** Instances have been found carrying
-> `latin1_swedish_ci` (`sample`, `ngs_measurements`, `specific_measurement_metadata_ngs`,
-> `proteomics_measurement`), `utf8mb4_general_ci` (`experiments_datamanager`,
-> `experimental_group`) and `utf8mb4_unicode_ci` (`projects_datamanager`,
-> `remote_measurement_data`, `associated_dataset`) at the same time. A column-to-column `=`
-> across them raises `Illegal mix of collations`. Every string equality in these views
-> therefore pins `COLLATE utf8mb4_unicode_ci` on one operand, so the comparison no longer
-> depends on the columns' own collations. It is lossless (`latin1` converts up to
-> `utf8mb4`) and harmless once an instance is aligned. Aligning the instance with
-> `ALTER TABLE … CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci` remains the
-> correct long-term fix, and is tracked separately — it is **not** part of this migration.
-
-> **Two source data facts the read models depend on.** Please read before reviewing numbers:
->
-> 1. `remote_measurement_data.measurement_id` holds the **measurementCode**, not the
->    measurement primary key. The join is `rmd.measurement_id = measurementCode`, matching
->    the existing `v_*_measurement_sample_json` views. This column name is a drift.
-> 2. "Measurements without primary data" is computed as
->    `measurement_count - measurements_with_primary_data`. `deleted = FALSE` is enforced.
-> 3. **`primary_data_bytes` can legitimately be 0, and there is no file count to fall back on.**
->    `total_filesize_bytes` is 0 for many synced measurements — a real project had 24
->    primary-data files across 8 measurements and 0 total bytes. That means the sizes were never
->    recorded, not that the arithmetic failed, and the view cannot tell the two apart. Anything
->    rendering this must distinguish "0 bytes" from "unmeasured" rather than printing `0 B`.
->    A file count is deliberately not exposed: it is not comparable across assay types (one NGS
->    measurement is a couple of large files, one proteomics measurement is hundreds of small
->    ones), it cannot be acted on, and pairing it with a byte total invites the reader to divide
->    the two. A mock-up that read `0.0 GB in 24 files` is the failure mode.
->
-> A measurement that measures samples from more than one experiment is attributed to each
-> experiment and counted in each (see *Verify*).
-
-### Pre-flight
-
-```sql
--- Confirm the source tables exist.
-SELECT TABLE_NAME
-  FROM information_schema.TABLES
- WHERE TABLE_SCHEMA = DATABASE()
-   AND TABLE_NAME IN ('sample', 'experiments_datamanager', 'ngs_measurements',
-                      'proteomics_measurement', 'ip_measurements',
-                      'specific_measurement_metadata_ngs',
-                      'specific_measurement_metadata_pxp',
-                      'specific_measurement_metadata_ip',
-                      'remote_measurement_data');
-
--- Confirm the measurementCode join convention (non-empty result proves it).
-SELECT m.measurementCode, rmd.measurement_id
-  FROM ngs_measurements m
-  JOIN remote_measurement_data rmd ON rmd.measurement_id = m.measurementCode
- LIMIT 5;
-```
-
-### Apply
-
-```bash
-mysql -u <user> -h <host> -P <port> data_management \
-    < sql/migrations/create-project-page-read-models.sql
-```
-
-### Verify
-
-```sql
--- Views present.
-SHOW CREATE VIEW experiment_progress;
-
--- One row per experiment; counts are consistent.
-SELECT * FROM experiment_progress LIMIT 20;
-
--- Measurements attributed to more than one experiment (trap: mixed experiments).
--- Empty is expected; rows are not an error, just an attribution note.
-SELECT measurement_type, measurement_id, COUNT(DISTINCT experiment_id) AS experiments
-  FROM v_measurement_experiment
- GROUP BY measurement_type, measurement_id
-HAVING experiments > 1;
-
--- Primary-data counts exclude deleted rows.
-SELECT COUNT(*) FROM remote_measurement_data WHERE deleted = TRUE;
-```
-
-### Rollback
-
-```sql
-DROP VIEW IF EXISTS experiment_progress;
-DROP VIEW IF EXISTS v_project_sample_overview;
-DROP VIEW IF EXISTS v_measurement_experiment;
-DROP INDEX idx_sample_experiment ON sample;
-```
-
-### Operator notes
-
-- **Non-destructive and safe on a live database.** No downtime; the application may keep
-  running while this is applied. The new views are inert until the new application code
-  reads them.
-- **Index build.** `CREATE INDEX idx_sample_experiment` is a secondary-index build on
-  `sample`. InnoDB performs it online, but it takes a brief lock at the start and end; on a
-  large `sample` table allow a short maintenance window for the statement even though the
-  view creation itself is instantaneous.
-- **No backfill, no data movement.** The views read live tables, so their numbers are
-  always current.
-- If the landing page later proves slow, the same read-model shape can be served by an
-  event-maintained summary table without changing any consumer.
-
----
-
-## Deferred — not part of this release
-
-[`create-user-project-view-state.sql`](../sql/migrations/create-user-project-view-state.sql)
-(adds the `user_project_view_state` table for the summary's "new since you last looked")
-was drafted alongside the read models but is **deliberately not included** in this release:
-where per-user view state belongs is still an open decision (cf. ADR-0008, user preferences
-vs project state). **Do not apply it** until that decision is recorded; it will be promoted
-to a numbered migration in a later release.
-
----
-
-## Migration #3: Recent-activity read models (experiment snapshot panels)
-
-| Field | Value |
-|---|---|
-| **Story** | TBD (governance gate skipped at project-owner direction) |
-| **Feature** | TBD (`FEAT-PROJECT-*`) |
-| **ADRs** | TBD (read-model / query-service ADR) |
-| **Scope** | create 2 views |
-| **Script** | [`sql/migrations/create-experiment-recent-activity-views.sql`](../sql/migrations/create-experiment-recent-activity-views.sql) |
-| **Target datasource** | `data_management` |
-
-### What it does
-
-Adds the read models behind the experiment snapshot panels on the project page: the newest three
-samples and the newest three measurements per experiment.
-
-- **`experiment_recent_sample`** — newest samples per experiment, ordered by
-  `COALESCE(lastModified, registrationTime)` descending, with the sample code as tie-break.
-- **`experiment_recent_measurement`** — newest measurements per experiment across the three type
-tables (union), ordered by registration descending, left-joined to `remote_measurement_data`
-(joined on the measurementCode, `deleted = FALSE`) so each row carries its primary-data file count
-and size. A measurement measuring samples of more than one experiment is attributed to each (D8).
-
-Both use `ROW_NUMBER() OVER (PARTITION BY experiment_id ORDER BY …) <= 3`, so a page renders from one
-query per view instead of a per-experiment N+1. **Requires MariaDB 10.2+.**
-
-### Pre-flight
-
-```sql
-SELECT VERSION();
-```
-
-### Apply
-
-```bash
-mysql -u <user> -h <host> -P <port> data_management \
-    < sql/migrations/create-experiment-recent-activity-views.sql
-```
-
-### Verify
-
-```sql
--- At most three rows per experiment (empty = good).
-SELECT experiment_id, COUNT(*) AS n FROM experiment_recent_sample
- GROUP BY experiment_id HAVING n > 3;
-SELECT experiment_id, COUNT(*) AS n FROM experiment_recent_measurement
- GROUP BY experiment_id HAVING n > 3;
-```
-
-### Rollback
-
-```sql
-DROP VIEW IF EXISTS experiment_recent_measurement;
-DROP VIEW IF EXISTS experiment_recent_sample;
-```
-
-### Operator notes
-
-- Non-destructive and safe on a live database; no downtime, no data movement.
-- Needs MariaDB 10.2 or newer (window functions).
-
----
-
-## Migration #4: Assay standing read model
-
-| Field | Value |
-|---|---|
-| **Story** | TBD (governance gate skipped at project-owner direction) |
-| **Feature** | TBD (`FEAT-PROJECT-*`) |
-| **ADRs** | [0010](../adr/0010-analysis-method-attribution.md) (analysis-method attribution) |
-| **Scope** | create 1 view + 1 index |
-| **Script** | [`sql/migrations/create-assay-standing-view.sql`](../sql/migrations/create-assay-standing-view.sql) |
-| **Target datasource** | `data_management` |
-
-### What it does
-
-Adds the read model behind the project's primary datasets: one row per **(experiment, analysis
-method)**, which is the identity of a primary dataset.
-
-A primary dataset is the data of one experiment for one analysis method. It is not declared: it is
-the consequence of measurements having been done. The analysis method is its type because that is
-what a reader selects datasets by when planning an analysis; the omics domain is too coarse, since
-WES, RNA-Seq and 16S are all genomics and are not interchangeable.
-
-The view exists so the summary page and the Datasets page read **one** derivation. Two derivations
-drift, and a project holding "2 WES datasets" on one page must not hold "1 Genomics dataset" on
-another.
-
-**Requires MariaDB 10.2+** (CTEs).
-
-### Read this before changing the view
-
-The analysis method is annotated on the **sample** (`sample.analysis_method`), not the measurement.
-That is the wrong home and a known mistake, but it cannot simply be moved: it is the only source for
-existing projects, and it can never be deleted without destroying their record. It is therefore a
-**permanently supported grandfather relation**, and this view is the one place allowed to read it to
-type a dataset (ADR 0010).
-
-Two consequences an operator will notice in the data:
-
-- A measurement measuring samples with **different** analysis methods is counted in **each**, so
-  per-dataset measurement counts can sum to more than the measurement total. Not an error.
-- Samples with **no** analysis method are excluded, so their measurements appear in the per-domain
-  progress figures but not here.
-
-### Pre-flight
-
-```sql
-SELECT VERSION();
-
--- How much is affected: measurements whose samples carry no analysis method (excluded from this
--- view, still counted by experiment_progress).
-SELECT COUNT(*)
-FROM sample
-WHERE analysis_method IS NULL OR analysis_method = '';
-```
-
-### Apply
-
-```bash
-mysql -u <user> -h <host> -P <port> data_management \
-    < sql/migrations/create-assay-standing-view.sql
-```
-
-### Verify
-
-```sql
-SHOW CREATE VIEW v_project_assay_standing;
-
--- One row per (experiment, analysis method) for a project.
-SELECT experiment_name, analysis_method, measurements, measurements_with_primary_data
-FROM v_project_assay_standing
-WHERE project_id = '<projectId>'
-ORDER BY experiment_name, analysis_method;
-
--- The index the script adds.
-SELECT index_name
-FROM information_schema.statistics
-WHERE table_schema = DATABASE()
-  AND table_name = 'sample'
-  AND index_name = 'idx_sample_project_experiment'
-LIMIT 1;
-```
-
-**Cross-check against the other read model.** The two figures answer different questions and are
-expected to differ, but the direction must make sense:
-
-```sql
-SELECT
-  (SELECT SUM(measurements) FROM v_project_assay_standing WHERE project_id = '<projectId>')
-    AS assay_measurements,
-  (SELECT SUM(measurement_count) FROM experiment_progress WHERE project_id = '<projectId>')
-    AS progress_measurements;
-```
-
-`assay_measurements` may exceed `progress_measurements` (ambiguous attribution). It must **not** be
-lower for a project whose samples all carry an analysis method.
-
-### Rollback
-
-```sql
-DROP VIEW IF EXISTS v_project_assay_standing;
-DROP INDEX idx_sample_project_experiment ON sample;
-```
-
-Non-destructive: no table or column is modified.
-
----
-
-## Migration #5: Auth-flow hardening — verification tokens and attempt throttling
+## Migration #1: Auth-flow hardening — verification tokens
 
 **Status:** ✅ **approved and promoted.** The AGENTS.md §12 schema-change sign-off was recorded, the
 script moved to `sql/migrations/`, and its `CREATE TABLE` block was added to
@@ -420,7 +104,7 @@ deploying the application code** — see the deployment checklist below.
 | **Feature** | [`FEAT-AUTH-FLOWS`](https://github.com/qbicsoftware/data-manager-app/issues/1672) |
 | **ADRs** | none — no architectural decision required; rationale is in the script header |
 | **Scope** | create 1 table; no existing table altered |
-| **Script** | [`sql/migrations/auth-flow-hardening.sql`](../sql/migrations/auth-flow-hardening.sql) |
+| **Script** | [`sql/migrations/auth-flow-hardening.sql`](../../sql/migrations/auth-flow-hardening.sql) |
 | **Target datasource** | `data_management` |
 
 ### What it does
@@ -526,21 +210,30 @@ follow it again (rejected).
 
 ### Rollback
 
+**Do not drop the table to revert this release.** Both new tables are additive and inert without the
+code that reads them, so the correct revert is: redeploy the previous application version and **leave the
+schema in place**. Nothing else in the 1.20.x schema references them, and no query breaks because they
+exist.
+
+Dropping `user_verification_token` is a last resort, and it costs more than it restores:
+
 ```sql
+-- LAST RESORT ONLY. Read both warnings first.
 DROP TABLE IF EXISTS `user_verification_token`;
 ```
 
-**Two warnings, both in the script header as well:**
+1. **It invalidates every unconsumed link**, including the ones the reverted code cannot reissue — the
+   old identifier-based links are gone from the code and are not restored by this. Users must request new
+   links, and on the reverted version they cannot.
+2. **It destroys the audit trail.** This table is the only record of which links were issued, consumed,
+   superseded or expired. Export before dropping — the statement is in the script header.
 
-1. **Rollback invalidates every unconsumed link.** Users holding one must request a new one. A
-   rollback after go-live needs the operator note above, not a silent drop.
-2. **Rollback destroys the audit trail.** `user_verification_token` is the only record of which links
-   were issued, consumed, superseded or expired. Export before dropping — the exact statement is in
-   the script header.
+There is no state, at any point, in which the pre-change links work again. Reverting the code restores the
+old behaviour for *new* links only.
 
 ### Operator notes
 
-- **Non-destructive.** Two new tables; no existing table, column, view or index is touched. Safe to
+- **Non-destructive.** One new table; no existing table, column, view or index is touched. Safe to
   apply on a live database with the application running.
 - **Nothing reads these tables until the new application code ships.** Applying the DDL alone changes
   no behaviour — old links keep working until the code deploy.
@@ -612,7 +305,7 @@ delivered to — investigate each row individually before declaring the release 
 
 ---
 
-## Migration #6: Server-side throttling for the auth flows
+## Migration #2: Server-side throttling for the auth flows
 
 **Status:** ✅ **approved.** The AGENTS.md §12 sign-off for the `auth_attempt` table was recorded by the
 Product Owner — see
@@ -629,7 +322,7 @@ rolls back cleanly, and the upgrade path from the earlier table shape works (inc
 | **Feature** | [`FEAT-AUTH-FLOWS`](https://github.com/qbicsoftware/data-manager-app/issues/1672) |
 | **ADRs** | none — the design rationale is the script header |
 | **Scope** | create 1 table; no existing table altered; **no foreign key** |
-| **Script** | [`sql/migrations/auth-attempt-throttling.sql`](../sql/migrations/auth-attempt-throttling.sql) |
+| **Script** | [`sql/migrations/auth-attempt-throttling.sql`](../../sql/migrations/auth-attempt-throttling.sql) |
 | **Target datasource** | `data_management` |
 
 ### What it does
@@ -731,11 +424,15 @@ wait for the block to expire and confirm login works again.
 
 ### Rollback
 
+**Do not drop the table to revert this release.** Redeploy the previous application version and leave the
+schema in place: the table is inert without the code, and the reverted code never queries it.
+
 ```sql
+-- LAST RESORT ONLY: the reverted code does not read this table, so there is no reason to drop it.
 DROP TABLE IF EXISTS auth_attempt;
 ```
 
-Safe. This table holds no audit trail — it is a rate-limiting counter whose contents are meaningless
+Should you drop it anyway: it holds no audit trail — it is a rate-limiting counter whose contents are meaningless
 without the code that reads it. Dropping it loses only the current block state, so rolling back
 re-enables unthrottled attempts, which is the pre-change behaviour rather than a data loss. No other
 table references it and it references nothing.
