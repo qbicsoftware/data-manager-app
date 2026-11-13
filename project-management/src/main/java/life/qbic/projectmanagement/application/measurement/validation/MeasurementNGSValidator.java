@@ -4,8 +4,10 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Pattern;
 import life.qbic.logging.api.Logger;
@@ -13,11 +15,13 @@ import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ValidationException;
 import life.qbic.projectmanagement.application.ValidationResult;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationNGS;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementSpecificNGS;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationNGS;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.measurement.NGSMeasurementMetadata;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
+import life.qbic.projectmanagement.application.validation.LengthValidation;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -96,7 +100,8 @@ public class MeasurementNGSValidator {
     return result.combine(validationPolicy.validateSampleIdsAsString(metadata.measuredSamples()))
         .combine(validationPolicy.validateMandatoryDataRegistration(metadata))
         .combine(validationPolicy.validateOrganisation(metadata.organisationId()))
-        .combine(validationPolicy.validateInstrument(metadata.instrumentCURIE()));
+        .combine(validationPolicy.validateInstrument(metadata.instrumentCURIE()))
+        .combine(validateCommentLength(metadata.specificMetadata()));
   }
 
   @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','READ')")
@@ -113,7 +118,17 @@ public class MeasurementNGSValidator {
     return result.combine(validationPolicy.validateMeasurementCode(metadata.measurementId()))
         .combine(validationPolicy.validateMandatoryMetadataDataForUpdate(metadata))
         .combine(validationPolicy.validateOrganisation(metadata.organisationId()))
-        .combine(validationPolicy.validateInstrument(metadata.instrumentCURIE()));
+        .combine(validationPolicy.validateInstrument(metadata.instrumentCURIE()))
+        .combine(validateCommentLength(metadata.specificMetadata()));
+  }
+
+  private static ValidationResult validateCommentLength(
+      Map<String, MeasurementSpecificNGS> specificMetadata) {
+    var commentsBySample = new HashMap<String, String>();
+    specificMetadata.forEach((sampleId, specific) ->
+        commentsBySample.put(sampleId, specific == null ? null : specific.comment()));
+    return LengthValidation.validateAll("Comment", MeasurementFieldLength.NGS_COMMENT,
+        commentsBySample);
   }
 
 

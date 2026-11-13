@@ -5,6 +5,7 @@ import java.util.Optional;
 import life.qbic.datamanager.files.structure.Column;
 import life.qbic.datamanager.files.structure.ExampleProvider;
 import life.qbic.datamanager.files.structure.ExampleProvider.Helper;
+import life.qbic.projectmanagement.application.measurement.validation.MeasurementFieldLength;
 
 /**
  * <b>Immunopeptidomics Measurement Register Columns</b>
@@ -90,7 +91,9 @@ public enum IPMeasurementRegisterColumn implements Column {
         case ION_MOBILITY_RANGE -> new Helper("Free text, e.g. 0.6-1.6",
             "Ion mobility window where the mass spectrometer method was designed to analyze precursors. Units are 1/k0 or CCS.");
         case COMMENT -> new Helper("Free text",
-            "Any other comments that can be noted (issue at the machines, during isolation or if the sample is excluded from the rest of the analysis)");
+            "Any other comments that can be noted (issue at the machines, during isolation or if the "
+                + "sample is excluded from the rest of the analysis). (Max "
+                + MeasurementFieldLength.IMMUNOPEPTIDOMICS_COMMENT + " characters)");
       };
     } else {
       throw new IllegalArgumentException(
