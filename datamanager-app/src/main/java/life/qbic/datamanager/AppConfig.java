@@ -124,14 +124,17 @@ public class AppConfig {
   @Bean
   public IdentityService userRegistrationService(
       UserRepository userRepository,
-      life.qbic.identity.domain.repository.VerificationTokenRepository
-          verificationTokenRepository
+      life.qbic.identity.application.verification.PasswordResetTokenInvalidator
+          passwordResetTokenInvalidator
   ) {
     return new IdentityService(userRepository,
         // A completed password change invalidates every other pending reset token (#1674).
-        userId -> verificationTokenRepository.supersedeAllFor(userId,
-            life.qbic.identity.domain.model.verification.TokenPurpose.PASSWORD_RESET,
-            null, java.time.Instant.now()));
+        //
+        // The method reference points at a bean, not a lambda over the repository: the invalidation
+        // is a bulk JPQL UPDATE and needs an active transaction. A lambda here has none — it runs
+        // after the password update has committed — and threw "No active transaction for update or
+        // delete query" as an HTTP 500 on the set-password page.
+        passwordResetTokenInvalidator::invalidateOutstanding);
   }
 
   @Bean
