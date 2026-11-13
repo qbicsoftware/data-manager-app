@@ -53,23 +53,33 @@
        message or stack trace. Developers must consult the on-premises log file
        for details, so no personal data is added to the email transmission.
        See ADR-0005. -->
+  <!--
+       Authenticated, TLS-required error notification.
+
+       This replaced logback's own SMTPAppender, which collects username/password, installs a
+       LoginAuthenticator, sets mail.smtp.auth=true - and then calls Transport.send(mimeMsg), which
+       passes no credentials. Jakarta Mail therefore never authenticates, and a WRONG PASSWORD IS
+       SILENTLY IGNORED: the mail leaves unauthenticated, and the only trace is an addError buried in
+       the logging subsystem. Verified in logback-core 1.5.38 source (SMTPAppenderBase lines 165-187
+       and 405).
+
+       The replacement passes the credentials to Transport.connect() and requires STARTTLS, so it
+       cannot silently fall back to an unauthenticated or cleartext hop. See
+       life.qbic.datamanager.logging.AuthenticatedSmtpAppender.
+
+       Configuration stays in spring.mail.* (ADR-0005: one SMTP source of truth). -->
   <appender name="EmailOnError"
-    class="ch.qos.logback.classic.net.SMTPAppender">
+    class="life.qbic.datamanager.logging.AuthenticatedSmtpAppender">
     <smtpHost>${MAIL_HOST}</smtpHost>
     <smtpPort>${MAIL_PORT}</smtpPort>
     <username>${MAIL_USER}</username>
     <password>${MAIL_PASSWORD}</password>
     <to>${ERROR_RECIPIENT}</to>
     <from>no-reply@qbic.uni-tuebingen.de</from>
-    <subject>${ERROR_SUBJECT_PREFIX} - ERROR</subject>
+    <subjectPrefix>${ERROR_SUBJECT_PREFIX}</subjectPrefix>
     <layout class="ch.qos.logback.classic.PatternLayout">
       <pattern>%d{ISO8601} - ERROR: %errorClass</pattern>
     </layout>
-    <filter class="ch.qos.logback.classic.filter.LevelFilter">
-      <level>ERROR</level>
-      <onMatch>ACCEPT</onMatch>
-      <onMismatch>DENY</onMismatch>
-    </filter>
   </appender>
 
   <root>
