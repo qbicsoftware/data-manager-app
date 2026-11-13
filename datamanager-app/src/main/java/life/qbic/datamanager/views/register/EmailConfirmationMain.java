@@ -9,9 +9,10 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.router.BeforeEvent;
-import com.vaadin.flow.router.HasUrlParameter;
+import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.NotFoundException;
-import com.vaadin.flow.router.OptionalParameter;
+import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
@@ -49,7 +50,23 @@ import org.springframework.security.core.context.SecurityContextHolder;
 @Route(value = AppRoutes.EMAIL_CONFIRMATION, layout = LandingPageLayout.class)
 @PageTitle("Waiting for email confirmation")
 @AnonymousAllowed
-public class EmailConfirmationMain extends Main implements HasUrlParameter<String> {
+public class EmailConfirmationMain extends Main implements BeforeEnterObserver {
+
+  /**
+   * Session key under which the registration flow leaves the id of the account it just created.
+   *
+   * <p><b>Why not in the URL.</b> The page used to take the user id as a route parameter, giving
+   * {@code /register/pending-email-confirmation/<uuid>}. That exposed a persistent identifier in browser
+   * history, server access logs and {@code Referer} headers — the same identifier the old confirmation
+   * links used as the credential itself — and it meant anyone holding the URL could press "Resend
+   * verification link" and mail the account owner at will.</p>
+   *
+   * <p>The id is only needed to enable that one action, for the visitor who just registered in this very
+   * session. Session state is the right scope: it is not persisted, not bookmarked, not logged, and it
+   * disappears with the session.</p>
+   */
+  public static final String PENDING_REGISTRATION_USER_ID =
+      EmailConfirmationMain.class.getName() + ".pendingUserId";
 
   private static final Logger log = logger(EmailConfirmationMain.class);
 
@@ -68,6 +85,31 @@ public class EmailConfirmationMain extends Main implements HasUrlParameter<Strin
   private final transient AuthAttemptThrottle authAttemptThrottle;
 
   private UserInfo userInfo;
+
+  /**
+   * The "did not receive an email?" row, kept as a field so the page can replace it.
+   *
+   * <p>Whether resending is possible is only known in {@link #beforeEnter(BeforeEnterEvent)}, because the
+   * pending registration lives in the session and the component tree is built in the constructor. When the
+   * session no longer holds it, the row is replaced rather than left as a link that fails on click.</p>
+   */
+  private final Span resendVerification = new Span();
+
+  /**
+   * The instruction above the resend row.
+   *
+   * <p>Kept as a field because it is only true when a verification email was just dispatched. In the
+   * session-expired state the visitor may never have received one, and asserting "we've sent a link" there
+   * would be the same broken promise the reset form used to make.</p>
+   */
+  private final Span description = new Span();
+
+  private static final String SENT_DESCRIPTION =
+      "We've sent a verification link to your email. Please check your inbox and click on the link to "
+          + "complete the registration.";
+
+  private static final String UNKNOWN_DESCRIPTION =
+      "Check your inbox for the verification link to complete a registration.";
 
   public EmailConfirmationMain(UserInformationService userInformationService,
       EmailService emailService,
@@ -93,20 +135,20 @@ public class EmailConfirmationMain extends Main implements HasUrlParameter<Strin
     H2 title = new H2("Verify your email");
     emailConfirmationComponent.add(title);
     emailConfirmationComponent.add(notificationLayout);
-    Text description = new Text(
-        "We've sent a verification link to your email. Please check your inbox and click on the link to complete the registration");
+    description.add(SENT_DESCRIPTION);
+    description.addClassName("email-confirmation-description");
     emailConfirmationComponent.add(description);
     Text resendVerificationText = new Text("Did not receive an email?");
     Span resendVerificationLink = new Span("Resend verification link");
     resendVerificationLink.addClassName("link");
-    Span resendVerification = new Span(resendVerificationText, resendVerificationLink);
+    resendVerification.add(resendVerificationText, resendVerificationLink);
     resendVerificationLink.addClickListener(spanClickEvent -> {
       // Resend with no user id must not throw.
       //
-      // This route uses @OptionalParameter, so /register/pending-email-confirmation is a valid URL and
-      // renders this page with userInfo == null. Clicking "Resend" then dereferenced it and produced a
-      // NullPointerException -> HTTP 500. The visitor here has no account context to resend for, so
-      // say so plainly instead of failing.
+      // The pending user id comes from the session, not the URL, so opening this page directly (a
+      // bookmark, a pasted link, a reloaded tab after the session expired) leaves it null. Clicking
+      // "Resend" used to dereference it and produce a NullPointerException -> HTTP 500. There is no
+      // account context to resend for, so say so plainly instead of failing.
       if (userInfo == null) {
         showError("Cannot resend the link",
             "Please open the link from your registration email, or register again.");
@@ -250,18 +292,82 @@ public class EmailConfirmationMain extends Main implements HasUrlParameter<Strin
    * @param parameter the resolved url parameter
    */
   @Override
-  public void setParameter(BeforeEvent event, @OptionalParameter String parameter) {
-    forwardToMainIfAlreadyConfirmed(event, parameter);
-    if (parameter != null && !parameter.isEmpty()) {
-      var optUserInfo = userInformationService.findById(parameter);
-      if (optUserInfo.isEmpty()) {
-        log.error("Invalid UserId provided during pending email confirmation "
-            + optUserInfo);
-        throw new NotFoundException("Could not find user");
-      } else {
+  public void beforeEnter(BeforeEnterEvent event) {
+    forwardToMainIfAlreadyConfirmed(event, null);
+    // The id lives in the session, never in the URL (see PENDING_REGISTRATION_USER_ID). It is absent on a
+    // fresh session, a bookmark, or a URL someone pasted elsewhere — in which case the page simply shows no
+    // resend action, which is the safe default.
+    Object pending = VaadinSession.getCurrent() == null
+        ? null
+        : VaadinSession.getCurrent().getAttribute(PENDING_REGISTRATION_USER_ID);
+    if (pending instanceof String userId && !userId.isBlank()) {
+      var optUserInfo = userInformationService.findById(userId);
+      if (optUserInfo.isPresent()) {
         userInfo = optUserInfo.get();
+        if (userInfo.isActive()) {
+          // A registration against an address that already has a confirmed account ends up here: the
+          // duplicate is answered uniformly, and the id passed along belongs to the existing account.
+          // Offering "resend verification link" for an account that is already confirmed would mail the
+          // owner for no reason, so the row states the situation instead. This is the one place the
+          // password-reset route is the right advice, because that account really is active.
+          showAlreadyConfirmed();
+        }
+      } else {
+        log.debug("Pending registration id no longer resolves to an account; resend disabled");
+        VaadinSession.getCurrent().setAttribute(PENDING_REGISTRATION_USER_ID, null);
+        showResendUnavailable();
       }
+    } else {
+      // No pending registration in this session: the page was opened directly, the session expired, or the
+      // instance that served the registration is no longer the one serving this request (a restart behind a
+      // load balancer). None of those is an error the visitor caused, so they get an explanation and a way
+      // forward instead of a button that throws when pressed.
+      showResendUnavailable();
     }
+  }
+
+  /**
+   * Replaces the resend row for an address that already has a confirmed account.
+   *
+   * <p>Nothing can be resent: the address is confirmed. The visitor is most likely the owner who forgot
+   * they had an account, so the reset route is the correct way forward — and it only helps here, on an
+   * active account. On an unconfirmed one a reset request deliberately dispatches nothing
+   * ({@code IdentityService.requestPasswordReset}), which is why this wording does not appear in the
+   * session-expired state.</p>
+   */
+  private void showAlreadyConfirmed() {
+    resendVerification.removeAll();
+    resendVerification.addClassName("already-confirmed");
+    resendVerification.add(new Span(
+        "This address already has a confirmed account. If it is yours, use \"Forgot your password\" "
+            + "on the login page to regain access."));
+  }
+
+  /**
+   * Replaces the resend row with information for a visitor whose registration context is gone.
+   *
+   * <p><b>Why not simply hide it.</b> The button is the only self-service way to get a new confirmation
+   * link, and a person who never received the first email needs to know that, and know what to do. A silent
+   * gap would read as "this page is broken".</p>
+   *
+   * <p><b>Why not tell them to register again or reset their password.</b> Both are dead ends for an
+   * unconfirmed account: a repeated registration is answered uniformly and deliberately sends no email
+   * (AUTH-NFR-03), and a reset request for an unconfirmed address dispatches nothing either. Saying so would
+   * send the visitor in a circle. Support is the honest answer until a stateless resend exists.</p>
+   */
+  private void showResendUnavailable() {
+    // Neutral wording: in this state we cannot know that a link was sent to this visitor, and promising one
+    // is exactly the defect this page exists to avoid.
+    description.removeAll();
+    description.add(UNKNOWN_DESCRIPTION);
+
+    resendVerification.removeAll();
+    resendVerification.addClassName("resend-unavailable");
+    Span explanation = new Span(
+        "This page can no longer resend the confirmation link, because the registration session has "
+            + "expired or this page was opened separately. If the link in your inbox does not work, "
+            + "contact us at support@qbic.zendesk.com and we will confirm your account.");
+    resendVerification.add(explanation);
   }
 
   private void forwardToMainIfAlreadyConfirmed(BeforeEvent event, String parameter) {

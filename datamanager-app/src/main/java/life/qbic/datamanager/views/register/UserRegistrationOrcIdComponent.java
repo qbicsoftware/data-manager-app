@@ -21,7 +21,6 @@ import java.util.Objects;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.identity.api.UserNames;
-
 /**
  * User Registration OrcId Component
  * <p>
@@ -81,15 +80,10 @@ public class UserRegistrationOrcIdComponent extends Div {
     registrationInformationBinder.forField(email)
         .asRequired("Please provide an email address")
         .withValidator(new EmailValidator("Please provide a valid email address"))
-        .withValidator((Validator<String>) (value, context) -> {
-          if (userInformationService.isEmailAvailable(value)) {
-            return ValidationResult.ok();
-          } else {
-            return ValidationResult.error(
-                "Email address already in use. "
-                    + "You can reset your password if necessary");
-          }
-        })
+        // No account-existence check here, deliberately (AUTH-NFR-03, FEAT-AUTH-FLOWS-03).
+        // This validator used to call userInformationService.isEmailAvailable() and answer
+        // "Email address already in use". Removed here AND in the submit path (RegistrationOrcIdMain);
+        // see UserRegistrationComponent for the full reasoning.
         .bind(UserRegistrationOrcIdInformation::email, UserRegistrationOrcIdInformation::setEmail);
     registrationInformationBinder.forField(username)
         .asRequired("Please provide an user name")
