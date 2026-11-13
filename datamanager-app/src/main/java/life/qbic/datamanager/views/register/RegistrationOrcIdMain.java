@@ -12,7 +12,6 @@ import com.vaadin.flow.router.BeforeLeaveObserver;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.VaadinSession;
 import jakarta.annotation.security.PermitAll;
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -21,12 +20,10 @@ import life.qbic.datamanager.views.AppRoutes.ProjectRoutes;
 import life.qbic.datamanager.views.MainPage;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.landing.LandingPageLayout;
-import life.qbic.datamanager.views.register.UserRegistrationOrcIdComponent.UserRegistrationOrcIdInformation;
+import life.qbic.datamanager.views.register.UserRegistrationComponent.Mode;
+import life.qbic.datamanager.views.register.UserRegistrationComponent.UserRegistrationInformation;
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.identity.api.UserNames;
-import life.qbic.identity.application.user.IdentityService.EmptyUserNameException;
-import life.qbic.identity.application.user.IdentityService.UserNameNotAvailableException;
-import life.qbic.identity.application.user.IdentityService.UserNameTooLongException;
 import life.qbic.identity.application.throttle.AuthAttemptThrottle;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.authorization.QbicOidcUser;
@@ -41,7 +38,7 @@ public class RegistrationOrcIdMain extends Main implements BeforeEnterObserver,
     BeforeLeaveObserver {
 
   private static final Logger log = logger(RegistrationOrcIdMain.class);
-  private final UserRegistrationOrcIdComponent userRegistrationOrcIdComponent;
+  private final UserRegistrationComponent userRegistrationComponent;
   private final transient UserInformationService userInformationService;
   private final transient RegistrationSubmission registrationSubmission;
 
@@ -55,16 +52,18 @@ public class RegistrationOrcIdMain extends Main implements BeforeEnterObserver,
         requireNonNull(registrationIdentity, "registrationIdentity must not be null"),
         userInformationService,
         requireNonNull(authAttemptThrottle, "authAttemptThrottle must not be null"));
-    userRegistrationOrcIdComponent = new UserRegistrationOrcIdComponent(userInformationService);
-    userRegistrationOrcIdComponent.addRegistrationListener(
-        event -> registerOidcUser(event.userRegistrationOrcIdInformation()));
-    add(userRegistrationOrcIdComponent);
+    // The SAME component as the local form, in the ORCID mode. It used to be a parallel class with a
+    // copy of the validator chain; see UserRegistrationComponent.
+    userRegistrationComponent = new UserRegistrationComponent(userInformationService, Mode.ORCID);
+    userRegistrationComponent.addRegistrationListener(
+        event -> registerOidcUser(event.information()));
+    add(userRegistrationComponent);
     addClassName("user-registration");
     log.debug(String.format(
         "New instance for %s(#%s) created with %s(#%s)",
         this.getClass().getSimpleName(), System.identityHashCode(this),
-        userRegistrationOrcIdComponent.getClass().getSimpleName(),
-        System.identityHashCode(userRegistrationOrcIdComponent)));
+        userRegistrationComponent.getClass().getSimpleName(),
+        System.identityHashCode(userRegistrationComponent)));
   }
 
   private static String buildFullName(String givenName, String middleName, String familyName) {
@@ -75,15 +74,16 @@ public class RegistrationOrcIdMain extends Main implements BeforeEnterObserver,
     );
   }
 
-  private void registerOidcUser(UserRegistrationOrcIdInformation information) {
+  private void registerOidcUser(UserRegistrationInformation information) {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     if (authentication.getPrincipal() instanceof QbicOidcUser) {
       return; // nothing to do
     }
     if (authentication.getPrincipal() instanceof OidcUser oidcUser) {
       var failures = registrationSubmission.submitOidc(
-          new RegistrationSubmission.RegistrationForm(information.fullName(), information.email(),
-              information.userName(), ""),
+          // No password: this mode does not collect one. The form reports an empty value, and
+          // RegistrationSubmission documents that the ORCID flow registers without one.
+          RegistrationSubmission.RegistrationForm.of(information),
           oidcUser.getIssuer().toString(),
           oidcUser.getName(),
           false,
@@ -117,33 +117,17 @@ public class RegistrationOrcIdMain extends Main implements BeforeEnterObserver,
     getUI().orElseThrow().navigate(EmailConfirmationMain.class);
   }
 
+  /**
+   * Renders the failures the submission returned, and logs them.
+   *
+   * <p>The mapping to text lives in {@link RegistrationFailureMessage}, which both registration routes
+   * share; this method only renders and logs.</p>
+   */
   private void handleRegistrationFailure(List<RuntimeException> exceptionList) {
-    /*These Cases should not happen anymore since we validate before we send the event,
-    however they can still be used as a failsafe*/
     if (exceptionList.isEmpty()) {
       return;
     }
-    for (RuntimeException e : exceptionList) {
-      // UserExistsException is handled before this method is reached, by RegistrationOutcome, and
-      // must never be rendered here: "email already in use" is the account-existence oracle
-      // (AUTH-NFR-03). The branch was removed rather than left unreachable.
-      if (e instanceof UserNameNotAvailableException) {
-        userRegistrationOrcIdComponent.showError("Username already in use",
-            "Please try another username");
-        break;
-      } else if (e instanceof EmptyUserNameException) {
-        userRegistrationOrcIdComponent.showError("Username must not be empty",
-            "Please try another username");
-        break;
-      } else if (e instanceof UserNameTooLongException) {
-        userRegistrationOrcIdComponent.showError("Username is too long",
-            "User name must not exceed " + UserNames.MAX_LENGTH + " characters");
-        break;
-      } else {
-        userRegistrationOrcIdComponent.showError("Registration failed", "Please try again.");
-        break;
-      }
-    }
+    RegistrationFailureMessage.render(userRegistrationComponent, exceptionList.getFirst());
     String allErrorMessages = exceptionList.stream().map(Throwable::getMessage)
         .collect(Collectors.joining("\n"));
     log.error(allErrorMessages);
@@ -162,14 +146,14 @@ public class RegistrationOrcIdMain extends Main implements BeforeEnterObserver,
     }
     if (authentication.getPrincipal() instanceof OidcUser oidcUser) {
       //note: for ORCID, only given name and family name are supported https://orcid.org/.well-known/openid-configuration.
-      userRegistrationOrcIdComponent.setFullName(
+      userRegistrationComponent.setFullName(
           buildFullName(oidcUser.getGivenName(), oidcUser.getMiddleName(),
               oidcUser.getFamilyName()));
-      Optional.ofNullable(oidcUser.getEmail()).ifPresent(userRegistrationOrcIdComponent::setEmail);
+      Optional.ofNullable(oidcUser.getEmail()).ifPresent(userRegistrationComponent::setEmail);
       Optional.ofNullable(oidcUser.getPreferredUsername())
           .map(RegistrationOrcIdMain::truncateToUserNameLimit)
           .ifPresent(
-              userRegistrationOrcIdComponent::setUsername);
+              userRegistrationComponent::setUsername);
     }
   }
 

@@ -2,25 +2,21 @@ package life.qbic.datamanager.views.register;
 
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.spring.annotation.SpringComponent;
-import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
-import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.landing.LandingPageLayout;
+import life.qbic.datamanager.views.register.UserRegistrationComponent.Mode;
 import life.qbic.datamanager.views.register.UserRegistrationComponent.UserRegistrationInformation;
 import life.qbic.identity.api.UserInformationService;
-import life.qbic.identity.api.UserNames;
-import life.qbic.identity.application.user.IdentityService.EmptyUserNameException;
-import life.qbic.identity.application.user.IdentityService.UserNameNotAvailableException;
-import life.qbic.identity.application.user.IdentityService.UserNameTooLongException;
 import life.qbic.identity.application.throttle.AuthAttemptThrottle;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
@@ -59,9 +55,9 @@ public class UserRegistrationMain extends Main {
         Objects.requireNonNull(authAttemptThrottle, "authAttemptThrottle must not be null"));
 
     addClassName("user-registration");
-    userRegistrationComponent = new UserRegistrationComponent(userInformationService);
+    userRegistrationComponent = new UserRegistrationComponent(userInformationService, Mode.LOCAL);
     userRegistrationComponent.addRegistrationListener(
-        event -> onRegistrationClicked(event.userRegistrationInformation()));
+        event -> onRegistrationClicked(event.information()));
     add(userRegistrationComponent);
     log.debug(String.format(
         "New instance for %s(#%s) created with %s(#%s)",
@@ -72,8 +68,7 @@ public class UserRegistrationMain extends Main {
 
   private void onRegistrationClicked(UserRegistrationInformation information) {
     var failures = registrationSubmission.submitLocal(
-        new RegistrationSubmission.RegistrationForm(information.fullName(), information.email(),
-            information.userName(), information.password()),
+        RegistrationSubmission.RegistrationForm.of(information),
         this::navigateToPendingConfirmation);
     if (!failures.isEmpty()) {
       handleRegistrationFailure(failures);
@@ -100,34 +95,17 @@ public class UserRegistrationMain extends Main {
     getUI().orElseThrow().navigate(EmailConfirmationMain.class);
   }
 
+  /**
+   * Renders the failures the submission returned, and logs them.
+   *
+   * <p>The mapping to text lives in {@link RegistrationFailureMessage}, which both registration routes
+   * share; this method only renders and logs.</p>
+   */
   private void handleRegistrationFailure(List<RuntimeException> exceptionList) {
-    /*These Cases should not happen anymore since we validate before we send the event,
-    however they can still be used as a failsafe*/
     if (exceptionList.isEmpty()) {
       return;
     }
-    for (RuntimeException e : exceptionList) {
-      // UserExistsException is handled before this method is reached, by RegistrationOutcome, and
-      // must never be rendered here: "email already in use" is the account-existence oracle
-      // (AUTH-NFR-03). The branch was removed rather than left unreachable, so it cannot be restored
-      // by accident while looking like a helpful default.
-      if (e instanceof UserNameNotAvailableException) {
-        userRegistrationComponent.showError("Username already in use",
-            "Please try another username");
-        break;
-      } else if (e instanceof EmptyUserNameException) {
-        userRegistrationComponent.showError("Username must not be empty",
-            "Please try another username");
-        break;
-      } else if (e instanceof UserNameTooLongException) {
-        userRegistrationComponent.showError("Username is too long",
-            "User name must not exceed " + UserNames.MAX_LENGTH + " characters");
-        break;
-      } else {
-        userRegistrationComponent.showError("Registration failed", "Please try again.");
-        break;
-      }
-    }
+    RegistrationFailureMessage.render(userRegistrationComponent, exceptionList.getFirst());
     String allErrorMessages = exceptionList.stream().map(Throwable::getMessage)
         .collect(Collectors.joining("\n"));
     log.error(allErrorMessages);
