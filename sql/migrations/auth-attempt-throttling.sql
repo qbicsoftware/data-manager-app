@@ -6,12 +6,10 @@
 --           the decision record for this change
 -- Datasource: data_management
 --
--- Status:   AWAITING AGENTS.md §12 SIGN-OFF.
---           This creates a new table. Per §12, a schema change must be approved by
---           a human reviewer before it is applied anywhere but a throwaway database.
---           Until sign-off is recorded, treat this file as a reviewable draft: it is
---           safe to apply to a scratch instance and has been, but the operator
---           runbook in docs/migrations/NEXT.md must not be followed for production.
+-- Status:   APPROVED — AGENTS.md §12 sign-off recorded by the Product Owner.
+--           See https://github.com/qbicsoftware/data-manager-app/pull/1690#issuecomment-6847303615
+--           The approved scope is the creation of `auth_attempt` only: one new table,
+--           no existing table altered, no foreign key.
 --
 -- Purpose: implement the throttling clause of AUTH-NFR-03 — "repeated attempts
 -- against these flows shall be throttled per account and per request origin".

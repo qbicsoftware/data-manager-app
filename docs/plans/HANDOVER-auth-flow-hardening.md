@@ -17,7 +17,7 @@ for the deployment contract.
 |---|---|---|
 | Tokenised confirmation / reset links | #1689 (merged) | ✅ |
 | Uniform failures (`AUTH-NFR-03`) | #1690 (merged) | ✅ |
-| Server-side throttling, account scope | #1690 (merged) | ✅ code shipped · ⚠️ **§12 sign-off never recorded** |
+| Server-side throttling, account scope | #1690 (merged) | ✅ code shipped · ✅ §12 sign-off recorded |
 
 > ⚠️ **This file was stale on `development`.** The accurate revision above lived only on
 > `feature/auth-throttling-and-uniform-failures` and was never merged; `development` still held the
@@ -35,12 +35,12 @@ for the deployment contract.
 | #1684 (migration guide) closed | ✅ |
 | Auth specs re-run on `origin/development` | ✅ 107 passed, 0 failed |
 | Handover §7.3 "unknown address four times" | ✅ already pinned by spec, see §7 |
-| **§12 sign-off for `auth_attempt`** | ⛔ **still not recorded — do not apply to production** |
+| **§12 sign-off for `auth_attempt`** | ✅ **recorded by the Product Owner** — see #1690 |
 
 ### 1.2 Still to do before the migration reaches a real server
 
-1. **A human records the AGENTS.md §12 sign-off** for `auth_attempt` on #1690 or #1682. Until then the
-   script header keeps `AWAITING SIGN-OFF` and honest operators will refuse to run it.
+1. ~~A human records the AGENTS.md §12 sign-off for `auth_attempt`~~ — recorded by the Product Owner on
+   #1690, and the script header and `NEXT.md` now say so.
 2. **On the test server:** `DROP TABLE IF EXISTS auth_attempt;` → apply
    `sql/migrations/auth-attempt-throttling.sql` → `SHOW CREATE TABLE auth_attempt\G` must contain
    **`windowSeconds`**. Then follow the smoke test in the ops doc §2.
@@ -141,7 +141,7 @@ password policy, display name no longer a credential.
 
 | # | Decision | Why it matters |
 |---|---|---|
-| 1 | **§12 sign-off for `auth_attempt`** | blocks #1690 |
+| 1 | ~~**§12 sign-off for `auth_attempt`**~~ | ✅ recorded |
 | 2 | **ADR 0011** ([#1667](https://github.com/qbicsoftware/data-manager-app/issues/1667)) | milestone gate for any M2 work; `docs/adr/0011-*.md` does not exist |
 | 3 | **Startup schema guard** | should the app refuse to boot if `user_verification_token` / `auth_attempt` is missing? A missing `auth_attempt` **breaks login outright**, which is worse than the blank page that motivated the question |
 | 4 | **HAProxy `filter cache` on app paths** | currently inert — Spring Security sends `no-store` and HAProxy honours it — but the protection is accidental and lives in framework defaults. With `alpn h2` + connection coalescing there is no `Vary: Cookie`. Scope the cache to `/VAADIN/` or remove it. Recorded in #1691 |
@@ -203,8 +203,7 @@ export JAVA_HOME=~/.sdkman/candidates/java/current   # not on the default PATH
 
 ## 7. Suggested next steps, in order
 
-1. ~~Merge #1690 and close #1678–#1684~~ — done. **The §12 sign-off is still outstanding**, so the
-   migration must not be applied to production until a human records it on #1690 or #1682.
+1. ~~Merge #1690 and close #1678–#1684~~ — done. ~~The §12 sign-off is still outstanding~~ — recorded.
 2. **Verify on the test server**: missing `windowSeconds` was the last trap, and the smoke test in ops §2
    covers it.
 3. ~~Confirm the "unknown address four times" claim~~ — **already covered, do not re-derive.**
@@ -212,7 +211,8 @@ export JAVA_HOME=~/.sdkman/candidates/java/current   # not on the default PATH
    address"` submits four times to both and asserts the rendered panel is character-for-character
    equal; `AuthAttemptThrottleSpec."an unknown address is throttled exactly like a known one"` pins the
    store-level property. What remains genuinely unverified is the **live app** (see §2).
-4. **§12 sign-off**, then apply the migration on the test server and run the ops §2 smoke test.
+4. Apply the migration on the test server and run the ops §2 smoke test. The DDL must precede the code
+   deploy — a missing `auth_attempt` fails login outright.
 5. **`#1667` ADR 0011** — still open, and the milestone's M0 gate names it as a prerequisite for *all*
    code. R1 shipped anyway; decide whether the gate still binds before R2.
 6. **`#1676` R2** — and with it the registration enumeration fix (§3.3), a live requirement violation.
