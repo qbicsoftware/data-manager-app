@@ -84,7 +84,16 @@ public class AuthAttemptThrottle {
   public enum Scope {
     LOGIN,
     EMAIL_CONFIRMATION_RESEND,
-    PASSWORD_RESET_RESEND
+    PASSWORD_RESET_RESEND,
+    /**
+     * Submissions of the registration form.
+     *
+     * <p>Added with FEAT-AUTH-FLOWS-03 because the unauthenticated registration form is a request
+     * surface like the others: without a throttle, an attacker can mass-submit addresses to make the
+     * application send notification mail, and can repeatedly invalidate a victim's outstanding reset
+     * link, since each newly issued token supersedes the previous one.</p>
+     */
+    REGISTRATION
   }
 
   /** Whether the caller may perform the work. Never render this; see Rule 2. */
@@ -234,7 +243,7 @@ public class AuthAttemptThrottle {
   private Policy policyFor(Scope scope) {
     return switch (scope) {
       case LOGIN -> loginPolicy;
-      case EMAIL_CONFIRMATION_RESEND, PASSWORD_RESET_RESEND -> resendPolicy;
+      case EMAIL_CONFIRMATION_RESEND, PASSWORD_RESET_RESEND, REGISTRATION -> resendPolicy;
     };
   }
 
