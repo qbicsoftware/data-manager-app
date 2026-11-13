@@ -20,11 +20,6 @@
       <artifactId>logging</artifactId>
     </dependency>
     <dependency>
-      <groupId>life.qbic</groupId>
-      <artifactId>zzzz-openbis-api</artifactId>
-      <classifier>r1700646105</classifier>
-    </dependency>
-    <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-jms</artifactId>
     </dependency>
@@ -128,6 +123,28 @@
       <groupId>org.spockframework</groupId>
       <artifactId>spock-core</artifactId>
       <scope>test</scope>
+    </dependency>
+    <!--
+      Kept last on purpose: this jar is a shaded uber-jar that bundles Jackson 2.9.x
+      (com.fasterxml.jackson.core, 107 core + 624 databind + 68 annotations classes,
+      no TokenStreamFactory, class file major version 50). Because Maven preserves
+      declaration order on the test classpath, declaring it early shadows the real
+      jackson-core 2.21.7 and produces at runtime:
+
+        java.lang.VerifyError: Bad return type
+          com/fasterxml/jackson/databind/cfg/MapperBuilder.streamFactory() ...
+          Type 'com/fasterxml/jackson/core/JsonFactory' is not assignable to
+          'com/fasterxml/jackson/core/TokenStreamFactory'
+
+      ro-crate-java 2.x uses Jackson and fails with that VerifyError when building
+      a crate, which the RO-Crate smoke test (RoCrateFactorySmokeSpec) catches.
+      Declaring it after the Jackson consumers keeps the newer classes winning.
+      The proper long-term fix is a shaded/relocated OpenBIS artifact.
+    -->
+    <dependency>
+      <groupId>life.qbic</groupId>
+      <artifactId>zzzz-openbis-api</artifactId>
+      <classifier>r1700646105</classifier>
     </dependency>
   </dependencies>
 

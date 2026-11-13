@@ -1,6 +1,7 @@
 package life.qbic.projectmanagement.infrastructure.template.provider.openxml.column;
 
 import java.util.Optional;
+import life.qbic.projectmanagement.application.measurement.validation.MeasurementFieldLength;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.Column;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.ExampleProvider;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.ExampleProvider.Helper;
@@ -82,7 +83,7 @@ public enum ProteomicsMeasurementRegisterColumn implements Column {
         case LABEL -> new Helper("Free text, e.g. Light, Medium, Heavy",
             "The label value for the label type that has been used.");
         case COMMENT ->
-            new Helper("Free text", "Notes about the measurement. (Max 500 characters)");
+            new Helper("Free text", "Notes about the measurement. (Max " + MeasurementFieldLength.PROTEOMICS_COMMENT + " characters)");
       };
     } else {
       throw new IllegalArgumentException(

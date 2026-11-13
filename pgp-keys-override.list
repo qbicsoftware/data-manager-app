@@ -8,6 +8,19 @@ life.qbic.logging:*:* = noSig
 life.qbic.datamanager:*:* = noSig
 
 # apicatalog / titanium-* family (JCS, RDF-API, RDF-N-Quads, JSON-LD)
+# Transitive via ro-crate-java 2.x. Required at runtime: ro-crate-java's
+# IdentifierUtils.isValidUri delegates to com.apicatalog.jsonld.uri.UriUtils,
+# so these must stay on the classpath (excluding them caused a
+# ClassNotFoundException in the RO-Crate export).
+#
+# The signing key expired 2026-03-15, it is NOT revoked. Verified against
+# keyserver.ubuntu.com and keys.openpgp.org (no revocation packets, both agree)
+# and confirmed by the plugin's own report
+# Artifact signatures were made 2025-10-05, i.e. while the key was still valid.
+# Compatibility check is waived here, integrity and signer identity are not:
+# pinning the master fingerprint means every artifact must carry a
+# cryptographically valid signature from this exact key.
+# Revisit if a re-signed release is published, or if the key is revoked.
 com.apicatalog:*:* = 0x6C3AE02ABF8203EEAC80DC215ACE4C100AABD0E8
 
 # itu (ethlo time)

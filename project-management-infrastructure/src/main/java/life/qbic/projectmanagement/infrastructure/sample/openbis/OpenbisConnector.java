@@ -108,20 +108,21 @@ public class OpenbisConnector implements QbicProjectDataRepo, SampleDataReposito
   private final IApplicationServerApi applicationServer;
   private final IDataStoreServerApi datastoreServer;
   private final OpenbisSession openBisSession;
-  private static final int RETRY_COUNT_MAX = 10;
 
   // used by spring to wire it up
   private OpenbisConnector(
       @Value("${openbis.datasource.as.url}") String asUrl,
       @Value("${openbis.datasource.dss.url}") String dssUrl,
+      @Value("${openbis.datasource.read-timeout-ms:100000}") long readTimeoutMillis,
       @Autowired VaultConfig vaultConfig) {
 
     final String openbisApplicationUrl = asUrl + IApplicationServerApi.SERVICE_URL;
     final String openbisDssUrl = dssUrl + IDataStoreServerApi.SERVICE_URL;
 
-    this.openBisSession = new OpenbisSession(vaultConfig.vault(), openbisApplicationUrl);
-    this.applicationServer = ApiV3.applicationServer(openbisApplicationUrl);
-    this.datastoreServer = ApiV3.dataStoreServer(openbisDssUrl);
+    this.openBisSession = new OpenbisSession(vaultConfig.vault(), openbisApplicationUrl,
+        readTimeoutMillis);
+    this.applicationServer = ApiV3.applicationServer(openbisApplicationUrl, readTimeoutMillis);
+    this.datastoreServer = ApiV3.dataStoreServer(openbisDssUrl, readTimeoutMillis);
   }
 
   public static String complementOfTwoToHex(int complementOfTwo) {
@@ -736,26 +737,21 @@ public class OpenbisConnector implements QbicProjectDataRepo, SampleDataReposito
   private void handleOperations(OpenbisSession session, IOperation operation) {
     List<IOperation> operationOptions = Collections.singletonList(operation);
     SynchronousOperationExecutionOptions options = new SynchronousOperationExecutionOptions();
-    var round = 1;
-    while (round <= RETRY_COUNT_MAX) {
-      log.debug("Try operation in openBIS: " + round + " of " + RETRY_COUNT_MAX);
-      try {
-        applicationServer.executeOperations(session.getToken(), operationOptions, options);
-        log.debug("Operations executed successfully");
-        break;
-      } catch (Exception e) {
-        log.error("Unexpected exception during openBIS operation.", e);
-      }
-      if (round == RETRY_COUNT_MAX) {
-        throw new ApplicationException("Unexpected exception during openBIS operation.");
-      }
-      try {
-        Thread.sleep((long) ((RANDOM.nextInt(200) + 500) * Math.pow(2, round)));
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-      }
-      round++;
-    }
+    OpenbisRetryPolicy.execute(
+        () -> applicationServer.executeOperations(session.getToken(), operationOptions, options),
+        RANDOM,
+        System::nanoTime,
+        millis -> {
+          try {
+            Thread.sleep(millis);
+          } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ApplicationException("Interrupted while retrying an openBIS operation", e);
+          }
+        },
+        (failure, attemptNumber) -> log.error(
+            "Attempt %d of %d failed during openBIS operation."
+                .formatted(attemptNumber, OpenbisRetryPolicy.MAX_ATTEMPTS), failure));
   }
 
   @Override
