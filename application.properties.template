@@ -146,6 +146,10 @@ spring.mail.properties.mail.smtp.auth=true
 spring.mail.properties.mail.smtp.starttls.enable=true
 spring.mail.properties.mail.smtp.starttls.required=true
 
+# Verify the SMTP connection at startup; a rejected login or a server without TLS fails the start.
+# Disable only where no mail server is available (local development, CI).
+qbic.mail.verify-connection-on-startup=${QBIC_MAIL_VERIFY_CONNECTION_ON_STARTUP:true}
+
 # Prefix applied to the subject of developer error notification emails (logback SMTPAppender).
 # Useful to identify which instance sent the email when multiple instances run concurrently.
 qbic.logging.error.subject-prefix=[Data Manager]
