@@ -44,6 +44,42 @@ import life.qbic.logging.service.LoggerFactory;
  * Authenticator} exactly as it always does, then hand it a copy of the properties with {@code
  * mail.smtp.starttls.required} added.</p>
  *
+ * <h3>Configuration: two sources, and only one of them is documented upstream</h3>
+ *
+ * <p><b>This appender does not receive {@code spring.mail.properties.*}.</b> That is a real limitation
+ * of logback's appender, not an oversight in the wiring: {@code SMTPAppenderBase} builds its session
+ * from its own fields plus {@code System.getProperties()}, so only what {@code <springProperty>} names
+ * explicitly in {@code logback-spring.xml} gets through. Measured against the shipped configuration,
+ * the session contains exactly:</p>
+ *
+ * <pre>
+ * mail.smtp.host = ...
+ * mail.smtp.port = ...
+ * mail.smtp.auth = true
+ * mail.smtp.starttls.enable   = null     &lt;- set in application.properties, NOT here
+ * mail.smtp.starttls.required = null     &lt;- set in application.properties, NOT here
+ * </pre>
+ *
+ * <p>The consequences, stated so nobody has to discover them:</p>
+ *
+ * <ul>
+ *   <li><b>{@code spring.mail.properties.*} does not affect error-notification mail.</b> Adding
+ *       {@code mail.smtp.from}, an SSL setting or a custom timeout there and expecting this channel to
+ *       honour it will silently do nothing.</li>
+ *   <li><b>The settings this appender needs are applied in {@link #start()}, not in the properties
+ *       file</b> — currently the TLS requirement. Changing the TLS posture of the error channel means
+ *       editing this class, not {@code application.properties}.</li>
+ *   <li>What <em>is</em> shared: host, port, username, password, recipient and subject, all through
+ *       {@code <springProperty>}. Authentication therefore cannot drift between the two mail paths,
+ *       which is the property that matters most for this incident.</li>
+ * </ul>
+ *
+ * <p>Removing this divergence entirely — one property set feeding both channels — is worth doing, and
+ * is recorded as a follow-up rather than attempted here: it needs a way to hand logback a whole
+ * property map, which means either a custom configuration step or passing a pre-serialised string
+ * through a single {@code <springProperty>}. That is more machinery than this fix should carry, and
+ * the honest comment above is preferable to an untested plumbing change.</p>
+ *
  * @since 1.20.4
  * @see <a href="../configuration/MailConnectionCheck.html">MailConnectionCheck</a>, which applies the
  *     same requirement to the application's own mail path
@@ -78,9 +114,10 @@ public class StartTlsRequiredSmtpAppender extends SMTPAppender {
       }
     }
     properties.setProperty("mail.smtp.starttls.required", "true");
-    // 'enable' too: 'required' alone makes Jakarta Mail demand the upgrade, but some servers only
-    // advertise it once the client has said it can do it.
-    properties.setProperty("mail.smtp.starttls.enable", "true");
+    // No mail.smtp.starttls.enable here. An earlier revision set it with a comment claiming some
+    // servers only advertise the extension once the client says it can upgrade. That was invented,
+    // not measured: against a server advertising STARTTLS, `required` alone already emits the
+    // STARTTLS command - the command list is identical with and without `enable`.
 
     this.session = Session.getInstance(properties, authenticatorForCurrentConfiguration());
 

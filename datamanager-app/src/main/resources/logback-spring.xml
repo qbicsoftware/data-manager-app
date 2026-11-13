@@ -62,7 +62,14 @@
        "required" option, hence the subclass.
 
        Everything else here is unchanged: same authentication, same layout, same ERROR-only filter,
-       same asynchronous sending. See life.qbic.datamanager.logging.StartTlsRequiredSmtpAppender. -->
+       same asynchronous sending. See life.qbic.datamanager.logging.StartTlsRequiredSmtpAppender.
+
+       LIMITATION, documented rather than hidden: this appender does NOT receive
+       spring.mail.properties.*. logback's SMTPAppenderBase builds its session from its own fields and
+       System.getProperties() only, so only the values named as <springProperty> below reach it.
+       Adding e.g. mail.smtp.from to application.properties and expecting error mail to honour it will
+       silently do nothing. Host/port/username/password ARE shared, so authentication cannot drift
+       between the two mail paths. -->
   <appender name="EmailOnError"
     class="life.qbic.datamanager.logging.StartTlsRequiredSmtpAppender">
     <smtpHost>${MAIL_HOST}</smtpHost>

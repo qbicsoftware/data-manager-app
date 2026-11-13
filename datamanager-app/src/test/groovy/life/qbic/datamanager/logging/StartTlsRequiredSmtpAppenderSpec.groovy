@@ -162,6 +162,35 @@ class StartTlsRequiredSmtpAppenderSpec extends Specification {
     !text.contains('mail.smtp.starttls.required')
   }
 
+  // ---- the documented limitation ----------------------------------------------------------------
+
+  def "the parent appender does not pick up spring.mail.properties.*, which is why this subclass exists"() {
+    given: 'the application\'s mail configuration, which sets the TLS properties there'
+    def appProperties = new Properties()
+    def f = new File('datamanager-app/src/main/resources/application.properties')
+    if (!f.exists()) { f = new File('src/main/resources/application.properties') }
+    f.withInputStream { appProperties.load(it) }
+
+    expect: 'the properties file does claim these settings'
+    appProperties.getProperty('spring.mail.properties.mail.smtp.starttls.required') == 'true'
+
+    when: 'logback\'s own appender is configured the way logback-spring.xml configures the subclass'
+    server = FakeSmtpServer.start([])
+    def plain = logbackAppender('error-bot@example.org', 'the-right-password')
+
+    then: 'its session does NOT carry them: SMTPAppenderBase reads only its own fields'
+    plain.session.getProperty('mail.smtp.starttls.required') == null
+    plain.session.getProperty('mail.smtp.starttls.enable') == null
+
+    and: 'authentication IS present, so host/port/username/password do pass through'
+    plain.session.getProperty('mail.smtp.auth') == 'true'
+    plain.session.getProperty('mail.smtp.host') == '127.0.0.1'
+
+    and: 'and the subclass compensates for exactly that gap'
+    shippedAppender('error-bot@example.org', 'the-right-password')
+        .session.getProperty('mail.smtp.starttls.required') == 'true'
+  }
+
   // ---- helpers ----------------------------------------------------------------------------------
 
   /**
