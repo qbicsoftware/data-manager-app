@@ -172,5 +172,20 @@ public class RegistrationSubmission {
    */
   public record RegistrationForm(String fullName, String email, String userName, String password) {
 
+    /**
+     * Adapts what the one registration form collected.
+     *
+     * <p>Both registration flows collect the same value type now that the forms are merged; this
+     * adapter keeps this class free of a dependency on the view package and makes the empty password of
+     * the ORCID flow explicit at the call site rather than implied.</p>
+     *
+     * @param information what the visitor entered
+     * @return the same values in this class's own vocabulary
+     */
+    public static RegistrationForm of(
+        life.qbic.datamanager.views.register.UserRegistrationComponent.UserRegistrationInformation information) {
+      return new RegistrationForm(information.fullName(), information.email(),
+          information.userName(), information.password());
+    }
   }
 }

@@ -13,6 +13,7 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
+import life.qbic.identity.api.Passwords;
 
 /**
  * Set New Password Component
@@ -40,7 +41,7 @@ public class SetNewPasswordComponent extends Div {
     addClassName("set-new-password-component");
     addClassName("card-layout");
     confirmButton.addClassName("primary");
-    password.setHelperText("Please provide a password with at least 12 characters");
+    password.setHelperText(Passwords.hint());
     Div introduction = new Div();
     introduction.add("Please provide a new password for your account:");
     introduction.addClassName("introduction");
@@ -53,9 +54,10 @@ public class SetNewPasswordComponent extends Div {
   private void setFieldValidation() {
     passwordResetBinder.forField(password)
         .asRequired("Please provide a password")
-        .withValidator(
-            name -> name.strip().length() >= 12,
-            "Password does not contain at least 12 characters")
+        // The rule and the message come from one source (Passwords), so this form cannot state a
+        // minimum the domain does not enforce. It used to hard-code both the number and the wording.
+        .withValidator(value -> Passwords.satisfiesMinLength(value.strip()),
+            Passwords.tooShortMessage())
         .bind(value -> value, (bean, value) -> {
         });
   }
