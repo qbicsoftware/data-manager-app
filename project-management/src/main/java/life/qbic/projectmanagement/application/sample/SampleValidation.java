@@ -20,6 +20,7 @@ import life.qbic.projectmanagement.application.confounding.ConfoundingVariableSe
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
+import life.qbic.projectmanagement.application.validation.LengthValidation;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.experiment.Condition;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
@@ -160,7 +161,9 @@ public class SampleValidation {
     var analyteValidation = validateAnalyte(analyte);
     var confoundingVariableValidation = validateConfoundingVariableLevels(confoundingVariables,
         new ExperimentReference(experimentId), projectId);
-    var batchValidation = validateBatch(batch);
+    var batchValidation = validateBatch(batch, sampleName);
+    var commentValidation = LengthValidation.validate("Comment", comment,
+        SampleFieldLength.COMMENT, sampleName);
 
     ValidationResult combinedValidationResult = ValidationResult.successful()
         .combine(sampleNameValidation.validationResult())
@@ -170,7 +173,8 @@ public class SampleValidation {
         .combine(specimenValidation.validationResult())
         .combine(analyteValidation.validationResult())
         .combine(confoundingVariableValidation.validationResult())
-        .combine(batchValidation.validationResult());
+        .combine(batchValidation.validationResult())
+        .combine(commentValidation);
 
     var metadata = combinedValidationResult.containsFailures()
         ? null
@@ -197,10 +201,15 @@ public class SampleValidation {
     return new ValidationResultWithPayload<>(ValidationResult.successful(), sampleName);
   }
 
-  private ValidationResultWithPayload<String> validateBatch(String batch) {
+  private ValidationResultWithPayload<String> validateBatch(String batch, String sampleContext) {
     if (isNull(batch) || batch.isBlank()) {
       return new ValidationResultWithPayload<>(
           ValidationResult.withFailures(List.of("Missing batch")), null);
+    }
+    var lengthValidation = LengthValidation.validate("Batch", batch,
+        SampleFieldLength.BATCH, sampleContext);
+    if (lengthValidation.containsFailures()) {
+      return new ValidationResultWithPayload<>(lengthValidation, null);
     }
     return new ValidationResultWithPayload<>(ValidationResult.successful(), batch);
   }
@@ -390,7 +399,9 @@ public class SampleValidation {
     var analyteValidation = validateAnalyte(analyte);
     var confoundingVariableValidation = validateConfoundingVariableLevels(confoundingVariables,
         new ExperimentReference(experimentId), projectId);
-    var batchValidation = validateBatch(batch);
+    var batchValidation = validateBatch(batch, sampleCode);
+    var commentValidation = LengthValidation.validate("Comment", comment,
+        SampleFieldLength.COMMENT, sampleCode);
 
     ValidationResult combinedValidationResult = ValidationResult.successful()
         .combine(sampleIdValidation.validationResult())
@@ -401,7 +412,8 @@ public class SampleValidation {
         .combine(specimenValidation.validationResult())
         .combine(analyteValidation.validationResult())
         .combine(confoundingVariableValidation.validationResult())
-        .combine(batchValidation.validationResult());
+        .combine(batchValidation.validationResult())
+        .combine(commentValidation);
 
     var metadata = combinedValidationResult.containsFailures()
         ? null

@@ -2,6 +2,7 @@ package life.qbic.projectmanagement.infrastructure.template.provider.openxml.col
 
 import java.util.Arrays;
 import java.util.Optional;
+import life.qbic.projectmanagement.application.measurement.validation.MeasurementFieldLength;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.Column;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.ExampleProvider;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.ExampleProvider.Helper;
@@ -78,7 +79,7 @@ public enum NGSMeasurementEditColumn implements Column {
         case INDEX_I5 -> new Helper("Free text, e.g. NEBNext UDI UMI Set 1 B12 S579",
             "Index used for multiplexing.");
         case COMMENT ->
-            new Helper("Free text", "Notes about the measurement. (Max 500 characters)");
+            new Helper("Free text", "Notes about the measurement. (Max " + MeasurementFieldLength.NGS_COMMENT + " characters)");
       };
     } else {
       throw new IllegalArgumentException(

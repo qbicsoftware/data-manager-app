@@ -4,6 +4,7 @@ import java.util.Optional;
 import life.qbic.datamanager.files.structure.Column;
 import life.qbic.datamanager.files.structure.ExampleProvider;
 import life.qbic.datamanager.files.structure.ExampleProvider.Helper;
+import life.qbic.projectmanagement.application.measurement.validation.MeasurementFieldLength;
 
 /**
  * <b>Proteomics Measurement Columns</b>
@@ -82,7 +83,7 @@ public enum ProteomicsMeasurementRegisterColumn implements Column {
             "The label value for the label type that has been used.");
         case MEASUREMENT_NAME -> new Helper("Free text, e.g. your local identifier for the measurement", "Name given for the measurement.");
         case COMMENT ->
-            new Helper("Free text", "Notes about the measurement. (Max 500 characters)");
+            new Helper("Free text", "Notes about the measurement. (Max " + MeasurementFieldLength.PROTEOMICS_COMMENT + " characters)");
       };
     } else {
       throw new IllegalArgumentException(

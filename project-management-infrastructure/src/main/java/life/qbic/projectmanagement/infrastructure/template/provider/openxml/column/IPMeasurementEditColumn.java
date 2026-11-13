@@ -2,6 +2,7 @@ package life.qbic.projectmanagement.infrastructure.template.provider.openxml.col
 
 import java.util.Arrays;
 import java.util.Optional;
+import life.qbic.projectmanagement.application.measurement.validation.MeasurementFieldLength;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.Column;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.ExampleProvider;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.ExampleProvider.Helper;
@@ -97,7 +98,9 @@ public enum IPMeasurementEditColumn implements Column {
         case RETENTION_TIME_RANGE -> new Helper("Integer, e.g. 120",
             "Time of chromatogram gradient (min)");
         case COMMENT -> new Helper("Free text",
-            "Any other comments that can be noted (issue at the machines, during isolation or if the sample is excluded from the rest of the analysis)");
+            "Any other comments that can be noted (issue at the machines, during isolation or if the "
+                + "sample is excluded from the rest of the analysis). (Max "
+                + MeasurementFieldLength.IMMUNOPEPTIDOMICS_COMMENT + " characters)");
       };
     } else {
       throw new IllegalArgumentException(

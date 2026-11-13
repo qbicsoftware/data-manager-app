@@ -5,6 +5,7 @@ import java.util.Optional;
 import life.qbic.datamanager.files.structure.Column;
 import life.qbic.datamanager.files.structure.ExampleProvider;
 import life.qbic.datamanager.files.structure.ExampleProvider.Helper;
+import life.qbic.projectmanagement.application.measurement.validation.MeasurementFieldLength;
 
 /**
  * <b>NGS Measurement Columns</b>
@@ -71,7 +72,7 @@ public enum NGSMeasurementRegisterColumn implements Column {
             "Index used for multiplexing.");
         case MEASUREMENT_NAME -> new Helper("Free text, e.g. your local identifier for the measurement", "Name given for the measurement.");
         case COMMENT ->
-            new Helper("Free text", "Notes about the measurement. (Max 500 characters)");
+            new Helper("Free text", "Notes about the measurement. (Max " + MeasurementFieldLength.NGS_COMMENT + " characters)");
       };
     } else {
       throw new IllegalArgumentException(
