@@ -37,7 +37,7 @@ class MailConnectionCheckSpec extends Specification {
     server.expectedCredentials = ['user@example.org', 'the-right-password']
 
     when: 'the application starts with a stale password'
-    new MailConnectionCheck(senderFor(server.port, 'user@example.org', 'a-stale-password'))
+    checked(senderFor(server.port, 'user@example.org', 'a-stale-password'))
 
     then: 'the start fails, and the message says what is wrong rather than "mail server not available"'
     def failure = thrown(IllegalStateException)
@@ -52,7 +52,7 @@ class MailConnectionCheckSpec extends Specification {
 
     when: 'the check runs with starttls.required set'
     try {
-      new MailConnectionCheck(senderFor(server.port, 'user@example.org', 'the-right-password'))
+      checked(senderFor(server.port, 'user@example.org', 'the-right-password'))
     } catch (IllegalStateException expected) {
       // Refused before authenticating; that is the point of this case.
     }
@@ -75,7 +75,7 @@ class MailConnectionCheckSpec extends Specification {
     server.expectedCredentials = ['user@example.org', 'the-right-password']
 
     when:
-    new MailConnectionCheck(senderFor(server.port, 'user@example.org', 'the-right-password'))
+    checked(senderFor(server.port, 'user@example.org', 'the-right-password'))
 
     then: 'startup is refused, because the alternative is sending the token in cleartext'
     def failure = thrown(IllegalStateException)
@@ -90,7 +90,7 @@ class MailConnectionCheckSpec extends Specification {
 
     when:
     try {
-      new MailConnectionCheck(senderFor(server.port, 'user@example.org', 'the-right-password'))
+      checked(senderFor(server.port, 'user@example.org', 'the-right-password'))
     } catch (IllegalStateException expected) {
       // Refused upgrade; asserted in the case above.
     }
@@ -113,7 +113,7 @@ class MailConnectionCheckSpec extends Specification {
 
     when:
     try {
-      new MailConnectionCheck(sender)
+      checked(sender)
     } catch (IllegalStateException expected) {
       // Not asserted on here.
     }
@@ -129,7 +129,7 @@ class MailConnectionCheckSpec extends Specification {
     server = FakeSmtpServer.start([])
 
     when:
-    new MailConnectionCheck(senderFor(server.port, '', ''))
+    checked(senderFor(server.port, '', ''))
 
     then: 'the failure explains the missing username instead of surfacing a connect error'
     def failure = thrown(IllegalStateException)
@@ -146,7 +146,7 @@ class MailConnectionCheckSpec extends Specification {
     sender.setPassword('pw')
 
     when:
-    new MailConnectionCheck(sender)
+    checked(sender)
 
     then: 'the failure names the missing host, rather than a connect error to 127.0.0.1:25'
     def failure = thrown(IllegalStateException)
@@ -161,7 +161,7 @@ class MailConnectionCheckSpec extends Specification {
     def before = System.currentTimeMillis()
 
     when:
-    new MailConnectionCheck(senderFor(deadPort, 'user@example.org', 'pw'))
+    checked(senderFor(deadPort, 'user@example.org', 'pw'))
 
     then: 'the failure is prompt and explicit'
     def failure = thrown(IllegalStateException)
@@ -172,6 +172,11 @@ class MailConnectionCheckSpec extends Specification {
   }
 
   // ---- helpers ----------------------------------------------------------------------------------
+
+  /** The check now asks for the sender through a provider; this keeps the specs readable. */
+  private static MailConnectionCheck checked(JavaMailSenderImpl sender) {
+    return new MailConnectionCheck(new MailConnectionCheckWiringSpec.StaticObjectProvider(sender))
+  }
 
   private static JavaMailSenderImpl senderFor(int port, String username, String password) {
     def sender = new JavaMailSenderImpl()

@@ -4,8 +4,8 @@ import jakarta.mail.MessagingException;
 import java.time.Duration;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnSingleCandidate;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 
@@ -44,11 +44,24 @@ import org.springframework.mail.javamail.JavaMailSenderImpl;
  * fail. Local development and CI legitimately run without a reachable mail server, so an opt-out is
  * required; and a startup check that can hang is not a gate.</p>
  *
+ * <h3>Why this asks for the sender instead of declaring a condition on it</h3>
+ *
+ * <p>The first version of this class carried {@code @ConditionalOnSingleCandidate(JavaMailSenderImpl
+ * .class)}, copying Boot's own auto-configuration. That silently did nothing: the annotation is
+ * evaluated while component scanning registers candidates, which happens <em>before</em> the
+ * application's own {@code @Bean} methods run, so no {@code JavaMailSenderImpl} exists yet and the
+ * condition never matches. The application booted past a {@code 535 5.7.8 authentication failed} and
+ * the only symptom was a failing password-reset job minutes later.</p>
+ *
+ * <p>That condition is correct for an auto-configuration, which is ordered after user beans. In a
+ * scanned {@code @Configuration} it is an ordering assumption, and it fails open — the gate vanishes
+ * rather than reporting that it could not run. {@link ObjectProvider} has no such ordering hazard,
+ * and the constructor below throws when the sender is missing, so a misconfiguration fails closed.</p>
+ *
  * @since 1.20.4
  */
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnBooleanProperty("qbic.mail.verify-connection-on-startup")
-@ConditionalOnSingleCandidate(JavaMailSenderImpl.class)
 public class MailConnectionCheck {
 
   /**
@@ -62,7 +75,14 @@ public class MailConnectionCheck {
 
   private static final Logger log = LoggerFactory.logger(MailConnectionCheck.class);
 
-  public MailConnectionCheck(JavaMailSenderImpl mailSender) {
+  public MailConnectionCheck(ObjectProvider<JavaMailSenderImpl> mailSenderProvider) {
+    JavaMailSenderImpl mailSender = mailSenderProvider.getIfAvailable();
+    if (mailSender == null) {
+      // Fail closed: the alternative is the silent no-op this class exists to prevent.
+      throw new IllegalStateException(
+          "Mail connection check is enabled but no JavaMailSenderImpl bean is available. Either "
+              + "configure spring.mail.host or disable qbic.mail.verify-connection-on-startup.");
+    }
     String host = mailSender.getHost();
     if (host == null || host.isBlank()) {
       throw new IllegalStateException(
