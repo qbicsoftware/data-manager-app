@@ -614,9 +614,14 @@ delivered to — investigate each row individually before declaring the release 
 
 ## Migration #6: Server-side throttling for the auth flows
 
-**Status:** ⛔ **awaiting AGENTS.md §12 sign-off.** The script is in `sql/migrations/` and has been
-validated against a throwaway MariaDB 12.3 instance, but the schema change has not been approved. Do
-not apply it to production until the sign-off is recorded in the PR.
+**Status:** ✅ **approved.** The AGENTS.md §12 sign-off for the `auth_attempt` table was recorded by the
+Product Owner — see
+[#1690](https://github.com/qbicsoftware/data-manager-app/pull/1690#issuecomment-6847303615). The approved
+scope is the creation of `auth_attempt` only: one new table, no existing table altered, no foreign key.
+
+The script was validated beforehand on a throwaway MariaDB 12.3 instance: it applies twice idempotently,
+rolls back cleanly, and the upgrade path from the earlier table shape works (including adding a missing
+`windowSeconds` column, which `CREATE TABLE IF NOT EXISTS` would silently skip).
 
 | Field | Value |
 |---|---|

@@ -12,50 +12,35 @@ findings behind the tokenised-link design, and
 
 ## 1. What is done
 
-### 1.1 Slice 1 — tokenised links (merged as #1689)
+| Slice | Delivered by | State |
+|---|---|---|
+| Tokenised confirmation / reset links | #1689 (merged) | ✅ |
+| Uniform failures (`AUTH-NFR-03`) | #1690 (merged) | ✅ |
+| Server-side throttling, account scope | #1690 (merged) | ✅ code shipped · ✅ §12 sign-off recorded |
 
 Email confirmation and password reset links carry **single-use, time-limited tokens** instead of the
 user's persistent identifier. Confirmation no longer mutates state on GET.
 
 | Task | State |
 |---|---|
-| [#1678](https://github.com/qbicsoftware/data-manager-app/issues/1678) tokenised confirmation | ✅ merged |
-| [#1679](https://github.com/qbicsoftware/data-manager-app/issues/1679) confirmation off `/login` | ✅ merged |
-| [#1680](https://github.com/qbicsoftware/data-manager-app/issues/1680) tokenised reset | ✅ merged |
-| [#1684](https://github.com/qbicsoftware/data-manager-app/issues/1684) migration guide + config | ✅ merged |
+| Ops-doc manual prune no longer lifts an active block | ✅ fixed |
+| `NEXT.md` #5 vs. #6 contradiction ("throttling is not in this release") | ✅ fixed |
+| `NEXT.md` #5 self-description ("Two tables") after the split | ✅ fixed |
+| #1678, #1679, #1680, #1681, #1682 closed | ✅ |
+| #1684 (migration guide) closed | ✅ |
+| Auth specs re-run on `origin/development` | ✅ 107 passed, 0 failed |
+| Handover §7.3 "unknown address four times" | ✅ already pinned by spec, see §7 |
+| **§12 sign-off for `auth_attempt`** | ✅ **recorded by the Product Owner** — see #1690 |
 
 **Schema:** `user_verification_token` — in `complete-schema.sql`, runbook in
 [`docs/migrations/NEXT.md`](../migrations/NEXT.md) (Migration #5).
 
-> The four issues above are **still open** on GitHub even though the PR said `Closes:` them. Close
-> them by hand when #1690 merges, or they will sit in the milestone forever.
-
-### 1.2 Slice 2 — uniform failures (#1681) — in #1690, code-only, no sign-off needed
-
-| Change | Why it was not just the issue's one bullet |
-|---|---|
-| `UserDetailsServiceImpl` no longer passes a `null` stored password | a `null` made `PasswordEncryptionPolicy` throw NPE → **unhandled 500**, a *third* outcome distinguishable from both "wrong password" and "no account", for exactly the ORCID-only accounts. Replaced with a well-formed `NO_PASSWORD` stand-in |
-| `IdentityService.requestPasswordReset` returns success for unknown **and** unconfirmed accounts | it used to return `UserNotFoundException` / `UserNotActivatedException`, which the view rendered verbatim |
-| `ResetPasswordComponent` lost its account-existence field validator | **#1680 did not reach the form.** The submit path was uniform, but the form still answered "No user with the provided mail address is known." as a repeatable server-side check, one step earlier |
-
-### 1.3 Slice 2 — throttling (#1682) — in #1690, **needs §12 sign-off**
-
-Server-side throttling for login, resend-confirmation and resend-reset. Three production call sites
-(the previous attempt had zero, which is why it was removed):
-
-- `LoginThrottleFilter` — registered before `UsernamePasswordAuthenticationFilter`, rejects **before**
-  any password work;
-- `AuthAttemptEventListener` — counts failures from Spring's own auth events, so every entry point is
-  covered;
-- `EmailConfirmationMain` / `ResetPasswordMain` — replaced the 30 s `java.util.Timer` (UI-scoped
-  counter; a page reload reset it, so it was not a control).
-
-**Tests:** 41 throttling/token specs green on **both** H2 and real MariaDB 12.3/InnoDB; 362
-`identity`/infrastructure specs. CI green, including the SonarCloud quality gate.
-
-**Schema:** `auth_attempt` — `sql/migrations/auth-attempt-throttling.sql`, **AWAITING §12 SIGN-OFF**,
-not yet in a fresh-install path that operators follow (`complete-schema.sql` *is* updated, but
-`NEXT.md` says do not apply to production until approved).
+1. ~~A human records the AGENTS.md §12 sign-off for `auth_attempt`~~ — recorded by the Product Owner on
+   #1690, and the script header and `NEXT.md` now say so.
+2. **On the test server:** `DROP TABLE IF EXISTS auth_attempt;` → apply
+   `sql/migrations/auth-attempt-throttling.sql` → `SHOW CREATE TABLE auth_attempt\G` must contain
+   **`windowSeconds`**. Then follow the smoke test in the ops doc §2.
+3. **Run the application** — see §2. The specs are not the evidence that matters.
 
 ---
 
@@ -116,30 +101,12 @@ until that lands. Small, but unbounded, and recorded rather than left to be disc
 
 | # | Decision | Why it matters |
 |---|---|---|
-| 1 | **§12 sign-off for `auth_attempt`** | Blocks #1690. The DDL is validated on MariaDB 12.3 (idempotent, rolls back, upsert verified) but approval is a human act. |
-| 2 | **GitGuardian dismissal on #1689** | Moot if the findings were dismissed there; if not, they reappear on #1690 for the same reason (the key name `…set-password-lifetime` matches a *Generic Password* regex; value is `PT1H`, an ISO-8601 duration). A security-tool override, not an agent decision. |
-| 3 | **Startup schema guard** | Should the app **refuse to boot** if `user_verification_token` or `auth_attempt` is missing, or log a hard ERROR and stay up? Today: blank page, or every login failing with a SQL error. Refusing to boot is honest but turns a missed migration into an outage. **This decision is now more pressing**: a missing `auth_attempt` breaks *login itself*, which is worse than the blank page that motivated the question. |
-| 4 | **`spring-tx` in `identity`** | Added for `@Transactional` on token consumption. Follows `project-management`'s pattern, but it is a new dependency in a module that had none. |
-| 5 | **Vaadin-native confirm button vs. real POST** | `ConfirmEmailMain` renders a button and mutates on click, so a scanner cannot confirm — but the click is a Vaadin round-trip, not a form POST. Satisfies `AUTH-R-05` in substance, not in shape. |
-
----
-
-## 4. Known gaps and risks
-
-- **Upgrade path unverified for both tables.** Neither DDL has been applied to a populated copy of a
-  real database. `user_verification_token` has an FK against `users` (collation, column type)
-  that is unverified — a 30-second check would close it: `mysqldump --no-data` the test instance into
-  a scratch DB, apply the migration twice, inspect. `auth_attempt` has no FK, so it is lower risk.
-- **`#1573` is unrelated** — it deletes expired *personal access* tokens per user, not verification
-  tokens.
-- **ADR 0011 is still missing** ([#1667](https://github.com/qbicsoftware/data-manager-app/issues/1667))
-  — `docs/adr/0011-*.md` does not exist though `docs/adr/README.md` is the index. Not blocking R1;
-  blocking M2.
-- **`datamanager-app` has 139 pre-existing spec errors in the sandbox** — all
-  `MockitoMockMaker could not be instantiated`. Verified identical on the untouched baseline, so it is
-  environmental. The auth specs must be run **by name** locally; CI's full `test` job is the real gate.
-- **`scripts/run-verification-spike.sh h2` does not work** — the `h2` argument falls through to Maven
-  as a lifecycle phase. Run it with **no argument** for H2, or `mariadb` for MariaDB.
+| 1 | ~~**§12 sign-off for `auth_attempt`**~~ | ✅ recorded |
+| 2 | **ADR 0011** ([#1667](https://github.com/qbicsoftware/data-manager-app/issues/1667)) | milestone gate for any M2 work; `docs/adr/0011-*.md` does not exist |
+| 3 | **Startup schema guard** | should the app refuse to boot if `user_verification_token` / `auth_attempt` is missing? A missing `auth_attempt` **breaks login outright**, which is worse than the blank page that motivated the question |
+| 4 | **HAProxy `filter cache` on app paths** | currently inert — Spring Security sends `no-store` and HAProxy honours it — but the protection is accidental and lives in framework defaults. With `alpn h2` + connection coalescing there is no `Vary: Cookie`. Scope the cache to `/VAADIN/` or remove it. Recorded in #1691 |
+| 5 | **`server.servlet.session.cookie.domain`** | set to `de.uni-tuebingen.qbic`, **not a suffix** of `rdm.qbic.uni-tuebingen.de`, so browsers drop it. Harmless but it will mislead the next debugger |
+| 6 | **Throttle thresholds** | login 10/15 min confirmed by PO. The 15-min *block* will generate support tickets (a legitimate user can be locked out); one env var to tune |
 
 ---
 
@@ -198,15 +165,24 @@ export JAVA_HOME=~/.sdkman/candidates/java/current   # not on the default PATH h
 
 ## 7. Suggested next steps, in order
 
-1. **Get §12 sign-off for `auth_attempt`, then merge #1690.**
-2. **Close #1681, #1682** (delivered by #1690) **and #1678, #1679, #1680, #1684** (delivered by #1689
-   but never closed).
-3. **Decide the startup schema guard** (open decision 3). It now matters more: a missing
-   `auth_attempt` breaks login rather than showing a blank page.
-4. **`#1667` ADR 0011** before any M2 (second-factor) work begins — the milestone gate requires it.
-5. **`#1676` R2** — and with it the registration enumeration fix in §2.1, which is a live requirement
-   violation until then.
-6. **`#1683` ORCID passwords** — settle the three open questions in `NEXT.md` first.
+1. ~~Merge #1690 and close #1678–#1684~~ — done. ~~The §12 sign-off is still outstanding~~ — recorded.
+2. **Verify on the test server**: missing `windowSeconds` was the last trap, and the smoke test in ops §2
+   covers it.
+3. ~~Confirm the "unknown address four times" claim~~ — **already covered, do not re-derive.**
+   `ResetPasswordMainSpec."the throttled reply is identical for a registered and an unregistered
+   address"` submits four times to both and asserts the rendered panel is character-for-character
+   equal; `AuthAttemptThrottleSpec."an unknown address is throttled exactly like a known one"` pins the
+   store-level property. What remains genuinely unverified is the **live app** (see §2).
+4. Apply the migration on the test server and run the ops §2 smoke test. The DDL must precede the code
+   deploy — a missing `auth_attempt` fails login outright.
+5. **`#1667` ADR 0011** — still open, and the milestone's M0 gate names it as a prerequisite for *all*
+   code. R1 shipped anyway; decide whether the gate still binds before R2.
+6. **`#1676` R2** — and with it the registration enumeration fix (§3.3), a live requirement violation.
+7. **`#1683` ORCID passwords** — settle the three questions in `NEXT.md` first.
+8. **Scheduled `auth_attempt` purge** — deliberately not built. `purgeOlderThan` exists and is tested
+   but unscheduled; retention is the compliance number owned by #1669, and "purge after N days" is
+   arguably a new capability that needs a requirement before it becomes a Task. Recorded on #1669, not
+   invented here.
 
 ---
 
