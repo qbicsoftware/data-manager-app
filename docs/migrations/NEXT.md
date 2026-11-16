@@ -47,6 +47,41 @@ with apply / verify / rollback detail.
 *Document any new, removed, or renamed `application.properties` entries here.
 If there are none this release, delete this section.*
 
+### No new keys — but one behaviour change for error notification mail
+
+`spring.mail.*` and `qbic.mail.verify-connection-on-startup` are unchanged. What changes is what the
+**logback error-notification appender** does when the SMTP server will not upgrade to TLS.
+
+| | Before | After |
+|---|---|---|
+| Relay supports STARTTLS | mail delivered, encrypted | mail delivered, encrypted |
+| Relay does **not** support STARTTLS | mail delivered **in cleartext**, credentials on the wire | **nothing sent**; the refusal is reported as a send failure |
+
+This closes the same defect class as v1.20.4's `starttls.required` change on the application's own
+mail path — but that release only fixed `spring.mail.properties.*`, which **does not reach logback**.
+The error-notification channel kept falling back to cleartext. It now requires TLS via a subclass of
+logback's `SMTPAppender` (`life.qbic.datamanager.logging.StartTlsRequiredSmtpAppender`), since
+logback offers `starttls.enable` but no `required`.
+
+**What an operator should check before deploying:**
+
+- The relay must offer STARTTLS on the submission port. A relay that only speaks cleartext SMTP for
+  submission will now produce **no error mail at all**.
+- This is deliberate and not a fallback: a mail server that cannot encrypt submission is a deployment
+  problem to fix. Watch for the startup gate refusing to boot (if
+  `qbic.mail.verify-connection-on-startup` is on, which it is by default) — that is the same defect,
+  caught earlier.
+- Read the trade honestly: error notification mail is now able to fail silently from a developer's
+  perspective. It is not invisible — the failure lands in the application log and in logback's status
+  manager — but nobody receives an email saying the email failed. Confirm one error mail arrives after
+  the deploy rather than assuming it.
+
+**Known limitation, documented rather than hidden:** the logback appender does not receive
+`spring.mail.properties.*`. Only the `spring.mail.*` values named as `<springProperty>` in
+`logback-spring.xml` (host, port, username, password) reach it. Adding e.g. `mail.smtp.from` or a
+custom timeout to `application.properties` will **not** affect error mail. The TLS requirement is
+applied in the appender class, so changing it means editing the class, not the properties file.
+
 ---
 
 ## Migration #<next>: <title>
