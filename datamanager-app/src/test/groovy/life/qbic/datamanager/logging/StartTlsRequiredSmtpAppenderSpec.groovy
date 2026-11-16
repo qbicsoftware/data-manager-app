@@ -142,8 +142,78 @@ class StartTlsRequiredSmtpAppenderSpec extends Specification {
     appender.session.getProperty('mail.smtp.starttls.required') == 'true'
   }
 
-  // ---- the shipped configuration ----------------------------------------------------------------
+  def "it leaves the appender untouched when the parent obtains no session at all"() {
+    given: 'a JNDI lookup that cannot resolve, which is the one way logback leaves session null'
+    server = FakeSmtpServer.start([])
+    def appender = new StartTlsRequiredSmtpAppender()
+    appender.context = context
+    appender.layout = plainLayout()
+    appender.evaluator = permissiveEvaluator()
+    appender.sessionViaJNDI = true
+    appender.jndiLocation = 'java:comp/env/mail/DoesNotExist'
 
+    when:
+    appender.start()
+
+    then: 'the parent reported the problem rather than starting'
+    !appender.isStarted()
+
+    and: 'no session was substituted, so a half-built appender is not left behind'
+    appender.session == null
+
+    and: 'the reason is on the status manager, not swallowed by the override'
+    appender.getStatusManager().getCopyOfStatusList().any {
+      (it.message ?: '').contains('Failed to obtain')
+    }
+  }
+
+  def "a missing host is not mistaken for a failed start"() {
+    given: 'no SMTP host, which logback does NOT validate in start()'
+    server = FakeSmtpServer.start([])
+    def appender = new StartTlsRequiredSmtpAppender()
+    appender.context = context
+    appender.layout = plainLayout()
+    appender.evaluator = permissiveEvaluator()
+
+    when:
+    appender.start()
+
+    then: 'the appender does start — the early return is keyed on the session, not on the host'
+    appender.isStarted()
+
+    and: 'and the requirement was still applied, so the guard has not silently disabled the fix'
+    appender.session.getProperty('mail.smtp.starttls.required') == 'true'
+  }
+
+  def "mail properties supplied as JVM flags survive the session rebuild"() {
+    given: 'settings an operator passes with -D, which logback sees as *defaults* of the session'
+    def inherited = [
+        'mail.smtp.ssl.trust'        : 'relay.example.org',
+        'mail.smtp.connectiontimeout': '5000'
+    ]
+    inherited.each { key, value -> System.setProperty(key, value) }
+    server = FakeSmtpServer.start([])
+
+    when: 'the appender rebuilds the session to add the TLS requirement'
+    def appender = shippedAppender('error-bot@example.org', 'the-right-password')
+
+    then: 'they are still resolvable, not silently dropped by the copy'
+    inherited.keySet().every {
+      appender.session.getProperties().getProperty(it) == inherited[it]
+    }
+
+    and: 'the requirement was added on top, so the fix and the settings coexist'
+    appender.session.getProperty('mail.smtp.starttls.required') == 'true'
+
+    and: 'the settings logback derived itself are intact too'
+    appender.session.getProperty('mail.smtp.host') == '127.0.0.1'
+    appender.session.getProperty('mail.smtp.auth') == 'true'
+
+    cleanup:
+    inherited.keySet().each { System.clearProperty(it) }
+  }
+
+  // ---- the shipped configuration ----------------------------------------------------------------
   def "logback-spring.xml uses this appender and changes nothing else"() {
     given:
     def config = new File('src/main/resources/logback-spring.xml')

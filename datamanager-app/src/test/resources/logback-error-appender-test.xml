@@ -1,12 +1,15 @@
 <configuration>
   <!-- Mirrors the EmailOnError appender in logback-spring.xml (without <springProperty>,
        which requires Spring's logging system). Used to verify the error-notification
-       email layout renders only the timestamp and the exception class. -->
+       email layout renders only the timestamp and the exception class.
+
+       Uses the same appender class as production: a spec that configures a different class
+       proves the layout and not the wiring. -->
   <conversionRule conversionWord="errorClass"
     class="life.qbic.datamanager.logging.ErrorClassConverter"/>
 
   <appender name="EmailOnError"
-    class="ch.qos.logback.classic.net.SMTPAppender">
+    class="life.qbic.datamanager.logging.StartTlsRequiredSmtpAppender">
     <smtpHost>localhost</smtpHost>
     <smtpPort>25</smtpPort>
     <username>test</username>

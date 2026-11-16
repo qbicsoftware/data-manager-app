@@ -35,13 +35,13 @@ import life.qbic.logging.service.LoggerFactory;
  *                                  support STARTTLS"                                (nothing sent)
  * </pre>
  *
- * <p>So "just add {@code <STARTTLS>}true}" would <em>not</em> have changed the outcome of the
- * incident. The mail still leaves with the password on the wire; only the {@code Received} header would
- * look reassuring.</p>
+ * <p>So "just add {@code <STARTTLS>true</STARTTLS>}" would <em>not</em> have changed the outcome of
+ * the incident. The mail still leaves with the password on the wire; only the {@code Received} header
+ * would look reassuring.</p>
  *
- * <p>{@link SMTPAppenderBase#session} is {@code protected} and {@link SMTPAppenderBase#start()} is
- * overridable, which makes the fix a few lines: let logback build its session and its {@link
- * Authenticator} exactly as it always does, then hand it a copy of the properties with {@code
+ * <p>{@code ch.qos.logback.core.net.SMTPAppenderBase#session} is {@code protected} and its {@code
+ * start()} is overridable, which makes the fix a few lines: let logback build its session and its
+ * {@link Authenticator} exactly as it always does, then hand it a copy of the properties with {@code
  * mail.smtp.starttls.required} added.</p>
  *
  * <h3>Configuration: two sources, and only one of them is documented upstream</h3>
@@ -80,7 +80,7 @@ import life.qbic.logging.service.LoggerFactory;
  * through a single {@code <springProperty>}. That is more machinery than this fix should carry, and
  * the honest comment above is preferable to an untested plumbing change.</p>
  *
- * @since 1.20.4
+ * @since 1.20.5
  * @see <a href="../configuration/MailConnectionCheck.html">MailConnectionCheck</a>, which applies the
  *     same requirement to the application's own mail path
  */
@@ -96,23 +96,36 @@ public class StartTlsRequiredSmtpAppender extends SMTPAppender {
    * The authenticator is reconstructed because {@link Session#getInstance} takes it by argument and
    * logback does not expose the one it created; it carries the same credentials the parent was
    * configured with, so authentication behaves identically.</p>
+   *
+   * <p><b>The copy must chain the original properties, not flatten them.</b> logback builds its
+   * session as {@code new Properties(OptionHelper.getSystemProperties())}, so any mail setting
+   * supplied as a JVM flag ({@code -Dmail.smtp.ssl.trust=…}, {@code -Dmail.smtp.connectiontimeout=…})
+   * lives in the <em>defaults</em> chain rather than as an explicit key. A {@code putAll} copy
+   * iterates only the explicit keys and silently discards the defaults, which would drop exactly the
+   * settings an operator reaches for when the relay uses a private CA or is slow. Passing the original
+   * as the defaults of the copy keeps them resolvable through {@code getProperty}. Verified: with
+   * {@code -Dmail.smtp.ssl.trust} set, the flattened copy reads {@code null} and the chained copy
+   * reads the value.</p>
+   *
+   * <p>One case is not covered: a session resolved through {@code sessionViaJNDI} is supplied by the
+   * container, and replacing it would exchange a managed session for a locally built one. That path
+   * would need the requirement applied by the container. This application does not use it — {@code
+   * logback-spring.xml} sets only {@code smtpHost}/{@code smtpPort}/{@code username}/{@code password},
+   * so the parent always takes {@code buildSessionFromProperties()}.</p>
    */
   @Override
   public void start() {
     super.start();
     if (this.session == null) {
-      // The parent refused to start (missing host, layout or evaluator). Do not paper over it.
+      // The parent could not obtain a session at all (a failed JNDI lookup, or its own error). It has
+      // already reported the reason and left the appender unstarted; there is nothing to strengthen.
+      // Note that a missing host is NOT this case: logback's start() does not validate the host, so an
+      // appender with no host does start — its failure surfaces at append time, in
+      // checkEntryConditions. Returning here must not be read as "the parent rejected our config".
       return;
     }
 
-    Properties properties = new Properties();
-    properties.putAll(this.session.getProperties());
-    if (properties.getProperty("mail.smtp.host") == null) {
-      String host = getSmtpHost();
-      if (host != null) {
-        properties.setProperty("mail.smtp.host", host);
-      }
-    }
+    Properties properties = new Properties(this.session.getProperties());
     properties.setProperty("mail.smtp.starttls.required", "true");
     // No mail.smtp.starttls.enable here. An earlier revision set it with a comment claiming some
     // servers only advertise the extension once the client says it can upgrade. That was invented,
