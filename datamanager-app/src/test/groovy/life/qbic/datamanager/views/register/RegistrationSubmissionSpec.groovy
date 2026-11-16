@@ -112,28 +112,29 @@ class RegistrationSubmissionSpec extends Specification {
 
   // ---- a throttled submission is a normal submission ---------------------------------------------
 
-  @Unroll
-  def "a throttled #flow submission is reported like a success"() {
+  def "a throttled submission is reported like a success"() {
     given:
     def subject = submission(true)
 
     when:
-    def failures = flow == 'local'
-        ? subject.submitLocal(form(NEW), navigator())
-        : subject.submitOidc(form(NEW), 'issuer', 'subject', false, navigator())
+    def failures = subject.submitLocal(form(NEW), navigator())
 
     then: 'no registration is attempted, because the throttle runs first'
     identity.localRegistrations.isEmpty()
-    identity.openIdRegistrations.isEmpty()
 
     and: 'nothing reveals that the throttle engaged'
     failures.isEmpty()
 
     and: 'the visitor still reaches the pending-confirmation page'
     navigations == ['<none>']
+  }
 
-    where:
-    flow << ['local', 'ORCID']
+  def "there is no second registration flow left to throttle"() {
+    expect: 'the port exposes exactly one way to create an account'
+    RegistrationIdentity.declaredMethods.findAll { !it.synthetic }*.name as Set == ['registerLocal'] as Set
+
+    and: 'a passwordless provider registration cannot be reintroduced without changing this spec'
+    !RegistrationIdentity.declaredMethods*.name.contains('registerOpenId')
   }
 
   // ---- a reportable failure is still reported ----------------------------------------------------
@@ -159,18 +160,6 @@ class RegistrationSubmissionSpec extends Specification {
     'empty username' | new EmptyUserNameException()
   }
 
-  def "an ORCID assertion that is already linked registers nothing"() {
-    given:
-    def subject = submission(false)
-
-    when:
-    def failures = subject.submitOidc(form(EXISTING), 'issuer', 'subject', true, navigator())
-
-    then:
-    failures.isEmpty()
-    identity.openIdRegistrations.isEmpty()
-  }
-
   /**
    * A hand-written fake, because Spock cannot mock the final IdentityService and a Mock of the narrow
    * port still made array-argument stubbing fragile. Explicit is better here.
@@ -178,22 +167,13 @@ class RegistrationSubmissionSpec extends Specification {
   static class FakeIdentity implements RegistrationIdentity {
 
     ApplicationResponse localResponse = ApplicationResponse.successResponse()
-    ApplicationResponse openIdResponse = ApplicationResponse.successResponse()
     List<String> localRegistrations = []
-    List<String> openIdRegistrations = []
 
     @Override
     ApplicationResponse registerLocal(String fullName, String userName, String email,
         char[] password) {
       localRegistrations << email
       return localResponse
-    }
-
-    @Override
-    ApplicationResponse registerOpenId(String fullName, String userName, String email,
-        String issuer, String subject) {
-      openIdRegistrations << email
-      return openIdResponse
     }
 
   }

@@ -34,9 +34,9 @@ public class AppRoutes {
   public static final String REGISTER = "registration";
 
   /**
-   * The route to enable new users to create a new account with their orcId
+   * The settings section that shows the account and its linked ORCID iD (AUTH-R-07).
    */
-  public static final String REGISTER_OIDC = "register/oidc";
+  public static final String PROFILE_SETTINGS = "settings/profile";
 
   /**
    * The route to inform user to confirm their email after account registration

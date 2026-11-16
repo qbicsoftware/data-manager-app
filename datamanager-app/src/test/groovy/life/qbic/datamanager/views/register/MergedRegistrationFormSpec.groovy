@@ -9,7 +9,6 @@ import com.vaadin.flow.server.RouteRegistry
 import com.vaadin.flow.server.VaadinService
 import life.qbic.datamanager.views.login.passwordreset.ResetPasswordMain
 import life.qbic.datamanager.views.login.passwordreset.SetNewPasswordComponent
-import life.qbic.datamanager.views.register.UserRegistrationComponent.Mode
 import life.qbic.identity.api.Passwords
 import life.qbic.identity.api.UserInformationService
 import life.qbic.identity.api.UserNames
@@ -47,12 +46,10 @@ import java.time.Instant
  */
 class MergedRegistrationFormSpec extends Specification {
 
-  private static final List<Mode> MODES = [Mode.LOCAL, Mode.ORCID]
-
   UserInformationService userInformationService = Stub()
 
   def setup() {
-    // The LOCAL mode builds a RouterLink to the reset form, whose href is resolved through the router at
+    // The form builds a RouterLink to the reset form, whose href is resolved through the router at
     // construction time. Same scaffolding as UserRegistrationAccountOracleSpec.
     def registry = Stub(RouteRegistry)
     registry.getTargetUrl(ResetPasswordMain, _ as RouteParameters) >> Optional.of('reset-password')
@@ -69,135 +66,86 @@ class MergedRegistrationFormSpec extends Specification {
     VaadinService.setCurrent(null)
   }
 
-  // ---- the merged form is one component, reached twice ------------------------------------------
+  // ---- there is one registration form, and one registration route --------------------------------
 
-  @Unroll
-  def "#viewClass builds the shared form in #mode mode"() {
+  def "the registration route builds the shared form, and only one of it"() {
     given: 'the view, constructed the way the application constructs it'
-    def view = viewClass.declaredConstructors.find { !it.synthetic }
+    def view = UserRegistrationMain.declaredConstructors.find { !it.synthetic }
         .newInstance(userInformationService, new RegistrationSubmissionSpec.FakeIdentity(),
             allowingThrottle())
 
     when:
     def forms = view.children.toList().findAll { it instanceof UserRegistrationComponent }
 
-    then: 'exactly one registration form is on the page, and it is the shared one'
+    then: 'exactly one registration form is on the page'
     forms.size() == 1
-
-    and: 'it renders the mode that belongs to this route'
-    forms.first().@mode == mode
-
-    where:
-    viewClass             | mode
-    UserRegistrationMain  | Mode.LOCAL
-    RegistrationOrcIdMain | Mode.ORCID
   }
 
-  def "the ORCID form class is gone, so the two validator chains cannot drift apart again"() {
-    expect: 'no bytecode for a second registration form survives in the build output'
+  def "no second registration view survives in the build output"() {
+    expect: 'the provider registration route is gone, not merely unrouted'
     UserRegistrationComponent.classLoader.getResource(
         'life/qbic/datamanager/views/register/UserRegistrationOrcIdComponent.class') == null
+    UserRegistrationComponent.classLoader.getResource(
+        'life/qbic/datamanager/views/register/RegistrationOrcIdMain.class') == null
   }
 
-  @Unroll
-  def "the #mode form does not ask the account table whether an address is free"() {
+  def "there is no registration mode left to chooses between"() {
+    expect: 'a single-valued mode parameter would be a misleading control, so it is gone'
+    UserRegistrationComponent.declaredClasses.every { it.simpleName != 'Mode' }
+  }
+
+  def "the form does not ask the account table whether an address is free"() {
     given: 'an account table that would answer, were it asked'
     def accountTable = Mock(UserInformationService)
-    def form = new UserRegistrationComponent(accountTable, mode)
+    def form = new UserRegistrationComponent(accountTable)
     accountTable.isUserNameAvailable(_) >> true
 
     when: 'the form is filled in the way a visitor would, and validated'
     form.setFullName('Ada Lovelace')
     form.setEmail('someone@example.org')
     form.setUsername('alovelace')
-    if (mode.collectsPassword()) {
-      form.@password.setValue('a-strong-passphrase')
-    }
+    form.@password.setValue('a-strong-passphrase')
     def hasErrors = form.@registrationInformationBinder.validate().hasErrors()
 
     then: 'the address is never the subject of a question to the account table'
     0 * accountTable.isEmailAvailable(_)
 
-    and: 'the rest of the validation is unaffected by the mode'
+    and: 'the rest of the validation passes'
     !hasErrors
-
-    where:
-    mode << MODES
   }
 
   // ---- the throttle still runs first -------------------------------------------------------------
 
-  @Unroll
-  def "the #mode flow records the attempt before it registers"() {
+  def "the flow records the attempt before it registers"() {
     given: 'a submission over a counter that records the scope it is asked about'
     def counter = new RecordingCounter()
     def identity = new RegistrationSubmissionSpec.FakeIdentity()
     def submission = new RegistrationSubmission(identity, userInformationService,
         throttleOver(counter))
 
-    and: 'what the shared form would submit in this mode'
-    def form = new UserRegistrationComponent(userInformationService, mode)
+    and: 'what the shared form would submit'
+    def form = new UserRegistrationComponent(userInformationService)
     form.setFullName('Ada Lovelace')
     form.setEmail('new@example.org')
     form.setUsername('alovelace')
-    if (mode.collectsPassword()) {
-      form.@password.setValue('a-strong-passphrase')
-    }
+    form.@password.setValue('a-strong-passphrase')
     def submitted = RegistrationSubmission.RegistrationForm.of(form.currentInput())
 
     when:
-    if (mode == Mode.LOCAL) {
-      submission.submitLocal(submitted, { Optional<String> ignored -> })
-    } else {
-      submission.submitOidc(submitted, 'issuer', 'subject', false,
-          { Optional<String> ignored -> })
-    }
+    submission.submitLocal(submitted, { Optional<String> ignored -> })
 
     then: 'the registration scope was recorded, and nothing else was'
     counter.scopes == [Scope.REGISTRATION.name()]
 
     and: 'only then was the identity port used, exactly once'
-    identity.localRegistrations + identity.openIdRegistrations == ['new@example.org']
-
-    where:
-    mode << MODES
-  }
-
-  def "the ORCID mode submits no password, so no factor is stored that the visitor did not choose"() {
-    given: 'the ORCID form, prefilled the way RegistrationOrcIdMain prefills it'
-    def form = new UserRegistrationComponent(userInformationService, Mode.ORCID)
-    form.setFullName('Ada Lovelace')
-    form.setEmail('ada@example.org')
-    form.setUsername('alovelace')
-
-    expect: 'the form offers no password field'
-    form.children.toList().every { !(it instanceof PasswordField) }
-
-    and: 'what it would submit carries an empty password (AUTH-R-07 adds one via invitation)'
-    form.currentInput().password().isEmpty()
-  }
-
-  def "the ORCID form does not offer to reset a password that does not exist yet"() {
-    given: 'both modes, so the difference is attributable to the mode and not to the merge'
-    def orcid = new UserRegistrationComponent(userInformationService, Mode.ORCID)
-    def local = new UserRegistrationComponent(userInformationService, Mode.LOCAL)
-
-    expect: 'the local form offers the reset route, because that visitor chose a password'
-    local.children.toList().findAll { it instanceof Span }.any {
-      it.text.toLowerCase().contains('forgot your password')
-    }
-
-    and: 'the ORCID form does not, because a reset request for a passwordless account cannot help'
-    !orcid.children.toList().findAll { it instanceof Span }.any {
-      it.text.toLowerCase().contains('forgot your password')
-    }
+    identity.localRegistrations == ['new@example.org']
   }
 
   // ---- one password rule, one message ------------------------------------------------------------
 
-  def "the merged form states the password rule from the shared constant"() {
+  def "the form states the password rule from the shared constant"() {
     given:
-    def form = new UserRegistrationComponent(userInformationService, Mode.LOCAL)
+    def form = new UserRegistrationComponent(userInformationService)
 
     expect: 'the hint is the shared one, so the number cannot go stale in this form alone'
     form.@password.getHelperText() == Passwords.hint()
@@ -208,15 +156,13 @@ class MergedRegistrationFormSpec extends Specification {
         .every { it.getHelperText() == Passwords.hint() }
   }
 
-  def "the user name limit comes from one constant in both modes"() {
+  def "the user name limit comes from one constant"() {
     given:
-    def local = new UserRegistrationComponent(userInformationService, Mode.LOCAL)
-    def orcid = new UserRegistrationComponent(userInformationService, Mode.ORCID)
+    def form = new UserRegistrationComponent(userInformationService)
 
     expect: 'the input is constrained to the shared maximum, and the helper text names it once'
-    local.@username.getMaxLength() == UserNames.MAX_LENGTH
-    orcid.@username.getMaxLength() == UserNames.MAX_LENGTH
-    local.@username.getHelperText() == orcid.@username.getHelperText()
+    form.@username.getMaxLength() == UserNames.MAX_LENGTH
+    form.@username.getHelperText().contains(UserNames.MAX_LENGTH.toString())
   }
 
   // ---- helpers -----------------------------------------------------------------------------------

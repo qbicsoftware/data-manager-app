@@ -1,27 +1,18 @@
 package life.qbic.datamanager;
 
-import static java.util.Objects.isNull;
 import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.component.UI;
-import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.server.ServiceDestroyEvent;
 import com.vaadin.flow.server.ServiceInitEvent;
 import com.vaadin.flow.server.SessionInitEvent;
 import com.vaadin.flow.server.UIInitEvent;
 import com.vaadin.flow.server.VaadinServiceInitListener;
 import com.vaadin.flow.spring.annotation.SpringComponent;
-import com.vaadin.flow.spring.security.AuthenticationContext;
 import life.qbic.datamanager.exceptionhandling.UiExceptionHandler;
-import life.qbic.datamanager.views.register.RegistrationOrcIdMain;
 import life.qbic.logging.api.Logger;
-import life.qbic.projectmanagement.application.authorization.QbicOidcUser;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 
 /**
  * Adds listeners to vaadin sessions and ui initialization.
@@ -31,14 +22,11 @@ public class MyVaadinSessionInitListener implements VaadinServiceInitListener {
 
   private static final Logger log = logger(MyVaadinSessionInitListener.class);
 
-  private final AuthenticationContext authenticationContext;
   private final transient UiExceptionHandler uiExceptionHandler;
 
-  public MyVaadinSessionInitListener(
-      @Autowired UiExceptionHandler uiExceptionHandler,
-      @Autowired AuthenticationContext authenticationContext) {
-    this.uiExceptionHandler = uiExceptionHandler;
-    this.authenticationContext = requireNonNull(authenticationContext);
+  public MyVaadinSessionInitListener(@Autowired UiExceptionHandler uiExceptionHandler) {
+    this.uiExceptionHandler = requireNonNull(uiExceptionHandler,
+        "uiExceptionHandler must not be null");
   }
 
   @Override
@@ -54,7 +42,6 @@ public class MyVaadinSessionInitListener implements VaadinServiceInitListener {
         initEvent.getUI().getSession().getSession().getId()));
     UI ui = initEvent.getUI();
     ui.getSession().setErrorHandler(errorEvent -> uiExceptionHandler.error(errorEvent, ui));
-    ui.addBeforeEnterListener(this::ensureCompleteOidcRegistration);
   }
 
   private static void onSessionInit(SessionInitEvent initEvent) {
@@ -66,19 +53,4 @@ public class MyVaadinSessionInitListener implements VaadinServiceInitListener {
     log.debug("Destroying vaadin service [%s]".formatted(serviceDestroyEvent.getSource()));
   }
 
-  private void ensureCompleteOidcRegistration(BeforeEnterEvent it) {
-    SecurityContext securityContext = SecurityContextHolder.getDeferredContext().get();
-    Authentication authentication = securityContext.getAuthentication();
-    if (isNull(authentication)) {
-      return;
-    }
-    var principal = authentication.getPrincipal();
-    if (principal instanceof OidcUser && !(principal instanceof QbicOidcUser)) {
-      if (it.getNavigationTarget().equals(RegistrationOrcIdMain.class)) {
-        return;
-      }
-      log.warn("Incomplete OpenIdConnect registration. Logging out and forwarding to login.");
-      requireNonNull(authenticationContext).logout();
-    }
-  }
 }

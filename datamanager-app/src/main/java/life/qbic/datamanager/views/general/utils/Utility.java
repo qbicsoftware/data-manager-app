@@ -4,7 +4,6 @@ import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import java.util.Optional;
 import life.qbic.datamanager.views.general.contact.Contact;
-import life.qbic.projectmanagement.application.authorization.QbicOidcUser;
 import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -40,11 +39,6 @@ public class Utility {
       emailAddress = qbicUserDetails.getEmailAddress();
       oidc = qbicUserDetails.oidc();
       oidcIssuer = qbicUserDetails.oidcIssuer();
-    } else if (principal instanceof QbicOidcUser qbicOidcUser) {
-      fullName = qbicOidcUser.getFullName();
-      emailAddress = qbicOidcUser.getEmail();
-      oidc = qbicOidcUser.getOidcId();
-      oidcIssuer = qbicOidcUser.getOidcIssuer();
     } else {
       return Optional.empty();
     }

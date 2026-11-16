@@ -7,7 +7,6 @@ import com.vaadin.flow.spring.security.VaadinDefaultRequestCache;
 import life.qbic.datamanager.views.login.LoginLayout;
 import life.qbic.identity.application.security.QBiCPasswordEncoder;
 import life.qbic.identity.application.throttle.AuthAttemptThrottle;
-import life.qbic.identity.application.user.IdentityService;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,9 +23,8 @@ import org.springframework.security.oauth2.client.endpoint.OAuth2AuthorizationCo
 import org.springframework.security.oauth2.client.endpoint.RestClientAuthorizationCodeTokenResponseClient;
 import org.springframework.security.oauth2.client.http.OAuth2ErrorResponseErrorHandler;
 import org.springframework.security.oauth2.core.http.converter.OAuth2AccessTokenResponseHttpMessageConverter;
+import org.springframework.security.oauth2.client.web.OAuth2AuthorizationCodeGrantFilter;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.AuthenticationFailureHandler;
-import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.client.RestClient;
@@ -38,8 +36,9 @@ public class SecurityConfiguration {
   private static final Logger log = LoggerFactory.logger(SecurityConfiguration.class);
 
   final VaadinDefaultRequestCache defaultRequestCache;
-  private final IdentityService identityService;
   private final AuthAttemptThrottle authAttemptThrottle;
+  private final life.qbic.identity.api.OidcLinkService oidcLinkService;
+  private final org.springframework.security.oauth2.client.OAuth2AuthorizedClientService authorizedClientService;
 
   /**
    * Held directly, not injected.
@@ -55,24 +54,31 @@ public class SecurityConfiguration {
    */
   private final PasswordEncoder passwordEncoder = new QBiCPasswordEncoder();
 
-  @Value("${routing.registration.oidc.orcid.endpoint}")
-  String registrationOrcidEndpoint;
-
-  @Value("${routing.registration.error.pending-email-verification}")
-  String emailConfirmationEndpoint;
-
   @Value("${server.servlet.context-path}")
   String contextPath;
 
+  /**
+   * The issuer of the ORCID registration, from configuration.
+   *
+   * <p>Not read from the assertion: a provider that could name its own issuer could rename itself into
+   * an accepted value. This is the same value the client registration was built from, so the stored
+   * issuer always matches the registry the iD actually came from.</p>
+   */
+  @Value("${qbic.oidc.orcid.issuer:https://sandbox.orcid.org}")
+  String orcidIssuer;
+
   public SecurityConfiguration(
       @Autowired VaadinDefaultRequestCache defaultRequestCache,
-      @Autowired IdentityService identityService,
-      @Autowired AuthAttemptThrottle authAttemptThrottle) {
+      @Autowired AuthAttemptThrottle authAttemptThrottle,
+      @Autowired life.qbic.identity.api.OidcLinkService oidcLinkService,
+      @Autowired org.springframework.security.oauth2.client.OAuth2AuthorizedClientService authorizedClientService) {
     this.defaultRequestCache = requireNonNull(defaultRequestCache,
         "defaultRequestCache must not be null");
-    this.identityService = requireNonNull(identityService);
     this.authAttemptThrottle = requireNonNull(authAttemptThrottle,
         "authAttemptThrottle must not be null");
+    this.oidcLinkService = requireNonNull(oidcLinkService, "oidcLinkService must not be null");
+    this.authorizedClientService = requireNonNull(authorizedClientService,
+        "authorizedClientService must not be null");
   }
 
   @Bean
@@ -81,8 +87,15 @@ public class SecurityConfiguration {
 
     http.authorizeHttpRequests(v -> v
         .requestMatchers(
-            "/oauth2/authorization/orcid",
-            "/oauth2/code/**",
+            // /link/orcid is permitAll on purpose, because it must serve anonymous callers: the
+            // controller checks the authentication itself and redirects to /login when there is
+            // none. Leaving it to the authorization filter would show a bare 403 instead of the
+            // login form, which reads as a broken link rather than as "sign in first".
+            //
+            // The OAuth2 callback is deliberately absent from this list. It is reached by the
+            // provider redirect and is matched by no other rule, so it falls through to the last
+            // matcher's default. Do not "fix" this by adding /login/oauth2/** here without also
+            // confirming that OAuth2AuthorizationCodeGrantFilter still consumes the response first.
             "/link/**",
             "/images/*.png")
         .permitAll()
@@ -93,14 +106,27 @@ public class SecurityConfiguration {
         .authenticated()
     );
 
-    http.oauth2Login(oauth2 ->
-        oauth2.loginPage("/login")
-            .permitAll()
-            .defaultSuccessUrl("/")
-            .successHandler(authenticationSuccessHandler())
-            .failureHandler(oauth2AuthenticationFailureHandler())
-            .tokenEndpoint(token -> token
-                .accessTokenResponseClient(accessTokenResponseClient())));
+    // ORCID is a client grant, not a login (AUTH-R-07).
+    //
+    // This used to be oauth2Login(...), which mints an authenticated principal from a provider
+    // assertion. That made ORCID a second way of establishing a session — the one thing a
+    // second-factor requirement cannot tolerate, because the factor is applied to the password path
+    // only. oauth2Client() performs the same authorization-code exchange but stores the result as an
+    // OAuth2AuthorizedClient for the principal that is already logged in; it never produces an
+    // Authentication, so "linking cannot create a session" is a property of the filter chain rather
+    // than of a success handler's discipline.
+    http.oauth2Client(client -> client
+        .authorizationCodeGrant(grant -> grant
+            .accessTokenResponseClient(accessTokenResponseClient())));
+
+    // The link is completed here, AFTER OAuth2AuthorizationCodeGrantFilter has exchanged the code and
+    // stored the OAuth2AuthorizedClient for the current principal. Registering it "after" in the chain
+    // is what makes the token available to read, and reading it is all this filter does: it takes the
+    // ORCID iD and immediately discards the token.
+    //
+    // It never creates or restores an Authentication. That is the difference between this arrangement
+    // and the oauth2Login() one it replaces, and it is the property the whole story exists for.
+    http.addFilterAfter(oidcLinkCompletionFilter(), OAuth2AuthorizationCodeGrantFilter.class);
 
     // Server-side throttling for the password login (AUTH-NFR-03, #1682).
     //
@@ -162,6 +188,10 @@ public class SecurityConfiguration {
    * is not observably faster than a wrong password — otherwise the throttle itself signals that the
    * address exists.</p>
    */
+  private OidcLinkCompletionFilter oidcLinkCompletionFilter() {
+    return new OidcLinkCompletionFilter(oidcLinkService, authorizedClientService, orcidIssuer);
+  }
+
   private LoginThrottleFilter loginThrottleFilter() {
     SimpleUrlAuthenticationFailureHandler failureHandler =
         new SimpleUrlAuthenticationFailureHandler("/login?error");
@@ -173,26 +203,4 @@ public class SecurityConfiguration {
             UserDetailsServiceImpl.NO_PASSWORD));
   }
 
-  /**
-   * Logs the actual OAuth2 authentication failure before redirecting to the login page.
-   * <p>
-   * Without this, Spring Security's default failure handler silently redirects and the
-   * exception details are lost — making it impossible to diagnose OAuth2 issues.
-   */
-  private AuthenticationFailureHandler oauth2AuthenticationFailureHandler() {
-    var handler = new SimpleUrlAuthenticationFailureHandler(
-        "/login?errorOauth2=true&error");
-    return (request, response, exception) -> {
-      log.error("OAuth2 authentication failed: %s".formatted(exception.getMessage()), exception);
-      handler.onAuthenticationFailure(request, response, exception);
-    };
-  }
-
-  private AuthenticationSuccessHandler authenticationSuccessHandler() {
-    requireNonNull(registrationOrcidEndpoint, "openIdRegistrationEndpoint must not be null");
-    var storedRequestAwareOidcAuthenticationSuccessHandler = new StoredRequestAwareOidcAuthenticationSuccessHandler(
-        registrationOrcidEndpoint, emailConfirmationEndpoint, identityService);
-    storedRequestAwareOidcAuthenticationSuccessHandler.setRequestCache(defaultRequestCache);
-    return storedRequestAwareOidcAuthenticationSuccessHandler;
-  }
 }

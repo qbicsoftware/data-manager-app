@@ -49,6 +49,7 @@ public class UserProfileMain extends Main implements BeforeEnterObserver, AfterN
   private static final long serialVersionUID = -5203169099713671493L;
 
   private final transient UserInformationService userInformationService;
+  private final transient life.qbic.identity.api.OidcLinkService oidcLinkService;
   private final transient AuthenticationToUserIdTranslationService userIdTranslator;
   private final IdentityService identityService;
   private final transient life.qbic.datamanager.profilepicture.ProfilePictureService profilePictureService;
@@ -63,7 +64,9 @@ public class UserProfileMain extends Main implements BeforeEnterObserver, AfterN
       @Autowired MessageSourceNotificationFactory messageFactory,
       AuthenticationToUserIdTranslationService userIdTranslator,
       IdentityService identityService,
-      @Autowired life.qbic.datamanager.profilepicture.ProfilePictureService profilePictureService) {
+      @Autowired life.qbic.datamanager.profilepicture.ProfilePictureService profilePictureService,
+      @Autowired life.qbic.identity.api.OidcLinkService oidcLinkService) {
+    this.oidcLinkService = requireNonNull(oidcLinkService, "oidcLinkService must not be null");
     this.userInformationService = requireNonNull(userInformationService,
         "userInformationService must not be null");
     this.userIdTranslator = requireNonNull(userIdTranslator, "userIdTranslator must not be null");
@@ -90,8 +93,28 @@ public class UserProfileMain extends Main implements BeforeEnterObserver, AfterN
       remove(section);
     }
     profileComponent = new UserProfileComponent(identityService, profilePictureService,
-        messageFactory, userInfo, event.getLocation(), this::onUsernameChanged);
+        messageFactory, userInformationService, oidcLinkService, userInfo, event.getLocation(),
+        this::onUsernameChanged, this::onAccountReloaded);
 
+    section = new SettingsSection("Profile",
+        "Manage your personal information and linked accounts.");
+    section.addContent(profileComponent);
+    add(section);
+  }
+
+  /**
+   * Re-renders the profile component with freshly read account data, so a link change is reflected in
+   * place — the same treatment a username change gets, for the same reason.
+   */
+  private void onAccountReloaded(life.qbic.identity.api.UserInfo refreshed) {
+    if (section == null) {
+      return;
+    }
+    remove(section);
+    profileComponent = new UserProfileComponent(identityService, profilePictureService,
+        messageFactory, userInformationService, oidcLinkService, refreshed,
+        new com.vaadin.flow.router.Location("settings/profile"),
+        this::onUsernameChanged, this::onAccountReloaded);
     section = new SettingsSection("Profile",
         "Manage your personal information and linked accounts.");
     section.addContent(profileComponent);

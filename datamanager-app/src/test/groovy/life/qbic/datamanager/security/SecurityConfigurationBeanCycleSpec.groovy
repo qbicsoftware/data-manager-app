@@ -70,8 +70,24 @@ class SecurityConfigurationBeanCycleSpec extends Specification {
 
     expect:
     parameterTypes.contains(life.qbic.identity.application.throttle.AuthAttemptThrottle)
-    parameterTypes.contains(life.qbic.identity.application.user.IdentityService)
     parameterTypes.contains(com.vaadin.flow.spring.security.VaadinDefaultRequestCache)
+  }
+
+  def "the identity service is no longer a collaborator, because no handler needs it"() {
+    // It was there for the OIDC link success handler, which is gone with the provider login
+    // (AUTH-R-07). Asserting its absence pins that removal rather than leaving a field nobody reads.
+    given:
+    def parameterTypes = SecurityConfiguration.declaredConstructors
+        .findAll { !it.synthetic }
+        .collectMany { it.parameterTypes as List }
+
+    expect:
+    !parameterTypes.contains(life.qbic.identity.application.user.IdentityService)
+
+    and: 'no field holds one either'
+    SecurityConfiguration.declaredFields
+        .findAll { !java.lang.reflect.Modifier.isStatic(it.modifiers) }
+        .every { it.type != life.qbic.identity.application.user.IdentityService }
   }
 
   def "the password encoder is constructed locally, not injected"() {

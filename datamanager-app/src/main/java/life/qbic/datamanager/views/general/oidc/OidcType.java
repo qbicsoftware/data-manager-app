@@ -37,7 +37,29 @@ public enum OidcType {
     return name;
   }
 
-  public String getUrlFor(String oidc) {
-    return String.format("%s%s", url, oidc);
+  /**
+   * The public researcher record for an ORCID iD.
+   *
+   * <p>One derivation, used by every view. It used to be built in five places, one of which hard-coded
+   * {@code https://orcid.org} — so a sandbox-linked iD rendered as a link into the production registry:
+   * a link that looks right and goes somewhere else.</p>
+   *
+   * @param oidcId the iD, in canonical form
+   * @return the absolute record URL for <em>this</em> registry
+   */
+  public String getUrlFor(String oidcId) {
+    return url + oidcId;
+  }
+
+  /**
+   * Resolves the registry type for a stored issuer.
+   *
+   * @param issuer the issuer stored on the account
+   * @return the matching type, or empty for an issuer this application does not know
+   */
+  public static java.util.Optional<OidcType> forIssuer(String issuer) {
+    return java.util.Arrays.stream(values())
+        .filter(type -> type.getIssuer().equals(issuer))
+        .findFirst();
   }
 }

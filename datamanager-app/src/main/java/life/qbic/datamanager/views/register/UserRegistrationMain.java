@@ -14,7 +14,6 @@ import java.util.stream.Collectors;
 import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.landing.LandingPageLayout;
-import life.qbic.datamanager.views.register.UserRegistrationComponent.Mode;
 import life.qbic.datamanager.views.register.UserRegistrationComponent.UserRegistrationInformation;
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.identity.application.throttle.AuthAttemptThrottle;
@@ -55,7 +54,7 @@ public class UserRegistrationMain extends Main {
         Objects.requireNonNull(authAttemptThrottle, "authAttemptThrottle must not be null"));
 
     addClassName("user-registration");
-    userRegistrationComponent = new UserRegistrationComponent(userInformationService, Mode.LOCAL);
+    userRegistrationComponent = new UserRegistrationComponent(userInformationService);
     userRegistrationComponent.addRegistrationListener(
         event -> onRegistrationClicked(event.information()));
     add(userRegistrationComponent);

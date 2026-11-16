@@ -84,35 +84,6 @@ public class RegistrationSubmission {
     return handleResponse(response, information.email(), navigator);
   }
 
-  /**
-   * Handles one ORCID registration submission.
-   *
-   * @param information   what the visitor entered
-   * @param oidcIssuer    the issuer of the ORCID assertion
-   * @param oidcId        the subject of the ORCID assertion
-   * @param existingLink  whether the assertion is already linked to an account; when it is, there is
-   *                      nothing to register
-   * @param navigator     where to send them
-   * @return the failures to render, empty when the visitor was navigated
-   */
-  public List<RuntimeException> submitOidc(RegistrationForm information, String oidcIssuer,
-      String oidcId, boolean existingLink, Navigator navigator) {
-    if (existingLink) {
-      return List.of();
-    }
-    if (isThrottled(information.email())) {
-      navigator.toPendingConfirmation(userIdOf(information.email()));
-      return List.of();
-    }
-    ApplicationResponse response = identity.registerOpenId(
-        information.fullName(),
-        information.userName(),
-        information.email(),
-        oidcIssuer,
-        oidcId);
-    return handleResponse(response, information.email(), navigator);
-  }
-
   private List<RuntimeException> handleResponse(ApplicationResponse response, String email,
       Navigator navigator) {
     if (!response.hasFailures()) {
@@ -167,17 +138,16 @@ public class RegistrationSubmission {
   /**
    * What a registration form produces, independent of which form it was.
    *
-   * <p>{@code password} is empty for the ORCID flow, which does not collect one — see
-   * {@code AUTH-R-07}, which will give those accounts a password through a separate invitation.</p>
+   * <p>Every registration collects a password. There used to be a second, passwordless form for
+   * visitors who arrived through an external provider; it was removed with the provider registration
+   * path (AUTH-R-07), so an account can no longer be created without a platform credential.</p>
    */
   public record RegistrationForm(String fullName, String email, String userName, String password) {
 
     /**
-     * Adapts what the one registration form collected.
+     * Adapts what the registration form collected.
      *
-     * <p>Both registration flows collect the same value type now that the forms are merged; this
-     * adapter keeps this class free of a dependency on the view package and makes the empty password of
-     * the ORCID flow explicit at the call site rather than implied.</p>
+     * <p>Keeps this class free of a dependency on the view package.</p>
      *
      * @param information what the visitor entered
      * @return the same values in this class's own vocabulary

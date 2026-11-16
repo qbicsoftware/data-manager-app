@@ -36,7 +36,6 @@ import life.qbic.identity.application.communication.Subject;
 import life.qbic.identity.application.throttle.AuthAttemptThrottle;
 import life.qbic.identity.application.user.policy.EmailConfirmationLinkSupplier;
 import life.qbic.logging.api.Logger;
-import life.qbic.projectmanagement.application.authorization.QbicOidcUser;
 import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
 import life.qbic.projectmanagement.application.communication.CommunicationException;
 import org.springframework.security.core.Authentication;
@@ -236,10 +235,6 @@ public class EmailConfirmationMain extends Main implements BeforeEnterObserver {
     return hours == 1 ? "1 hour" : hours + " hours";
   }
 
-  private boolean isAlreadyActiveUser(QbicOidcUser oidcUser) {
-    return isAlreadyActiveUser(oidcUser.getQbicUserId());
-  }
-
   private boolean isAlreadyActiveUser(QbicUserDetails qbicUserDetails) {
     return isAlreadyActiveUser(qbicUserDetails.getUserId());
   }
@@ -380,9 +375,6 @@ public class EmailConfirmationMain extends Main implements BeforeEnterObserver {
     }
     var principal = authentication.getPrincipal();
     // no idea how they ended up here but the account is already active, so they can go to the main page directly
-    if (principal instanceof QbicOidcUser qbicOidcUser && isAlreadyActiveUser(qbicOidcUser)) {
-      event.forwardTo(MainPage.class);
-    }
     if (principal instanceof QbicUserDetails qbicUserDetails && isAlreadyActiveUser(
         qbicUserDetails)) {
       event.forwardTo(MainPage.class);

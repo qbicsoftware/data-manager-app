@@ -61,7 +61,7 @@ class RegistrationFailureMessageSpec extends Specification {
     !message.description().toLowerCase().contains('exist')
   }
 
-  def "the failure is rendered on the merged form, whatever mode produced it"() {
+  def "the failure is rendered on the form"() {
     given: 'a service context, because the local form builds a RouterLink to the reset route'
     def registry = Stub(RouteRegistry)
     registry.getTargetUrl(ResetPasswordMain, _ as RouteParameters) >> Optional.of('reset-password')
@@ -73,7 +73,7 @@ class RegistrationFailureMessageSpec extends Specification {
     and: 'the shared form'
     def form = new UserRegistrationComponent(Stub(UserInformationService) {
       isUserNameAvailable(_) >> true
-    }, UserRegistrationComponent.Mode.LOCAL)
+    })
 
     when: 'a failure is rendered through the shared mapping'
     RegistrationFailureMessage.render(form, new UserNameNotAvailableException())

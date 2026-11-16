@@ -27,23 +27,24 @@ import life.qbic.identity.api.UserInformationService;
 import life.qbic.identity.api.UserNames;
 
 /**
- * <b>The one registration form: local and ORCID registration render the same component.</b>
+ * <b>The one registration form.</b>
  *
  * <p>This class used to exist twice — {@code UserRegistrationComponent} and
  * {@code UserRegistrationOrcIdComponent} — with roughly 80 % identical content: the same binder chain,
  * the same field layout, the same notification rendering and two parallel {@code …Event} /
- * {@code …Information} inner classes. The only real difference is that the ORCID flow does not collect a
- * password (ORCID already authenticated the visitor) and prefills the fields from the OIDC claims.</p>
+ * {@code …Information} inner classes. They were merged into one component, and the remaining difference
+ * (a passwordless variant for visitors arriving through an external provider) is gone as well: that
+ * registration path no longer exists, because an account without a password is an account that can only
+ * be entered through a third party (AUTH-R-07).</p>
  *
- * <p>That duplication was not cosmetic. A rule added to one form did not reach the other, and the two
+ * <p>The duplication was not cosmetic. A rule added to one form did not reach the other, and the two
  * forms had to be kept in step by hand for every change to the email or user-name rule. The account
  * oracle that {@code AUTH-NFR-03} removed lived in <em>both</em> email validators, and it could come back
- * in either one. So the difference is now a {@link Mode} parameter and everything else is one code path:
- * same fields, same validator chain, same messages, same failure rendering.</p>
+ * in either one. There is now one code path: one set of fields, one validator chain, one failure
+ * rendering.</p>
  *
- * <p>Not a Spring bean on purpose. Each registration route constructs its own form with an explicit
- * {@link Mode}; as a {@code @UIScope} bean an additional, unused instance was created per UI and the
- * mode-dependent construction had no way to be expressed.</p>
+ * <p>Not a Spring bean on purpose. The registration route constructs its own form; as a
+ * {@code @UIScope} bean an additional, unused instance was created per UI.</p>
  *
  * @see UserRegistrationMain
  * @see RegistrationOrcIdMain
@@ -52,57 +53,6 @@ public class UserRegistrationComponent extends Div {
 
   @Serial
   private static final long serialVersionUID = -1189104139053489520L;
-
-  /**
-   * <b>How the visitor arrived, and therefore what the form asks.</b>
-   *
-   * <p>The only differences between the two registration flows are collected here, so that the rest of
-   * the component cannot fork: a title, an explanatory line, and whether a password is collected (and
-   * therefore whether a password can be reset).</p>
-   */
-  public enum Mode {
-
-    /**
-     * The visitor registered on the platform: an email address, a user name and a password are needed.
-     */
-    LOCAL("Register", null, true),
-
-    /**
-     * The visitor authenticated with ORCID and completes the account: no password is collected, because
-     * the passwordless ORCID account is what {@code AUTH-R-07} later fixes through an invitation. The
-     * fields are prefilled from the OIDC claims in {@link RegistrationOrcIdMain#beforeEnter}.
-     */
-    ORCID("Add your details",
-        "Please complete missing information to create an account with us.", false);
-
-    private final String title;
-    private final String description;
-    private final boolean collectsPassword;
-
-    Mode(String title, String description, boolean collectsPassword) {
-      this.title = title;
-      this.description = description;
-      this.collectsPassword = collectsPassword;
-    }
-
-    public String title() {
-      return title;
-    }
-
-    /**
-     * @return the explanatory line above the fields, or {@code null} when the title says enough
-     */
-    public String description() {
-      return description;
-    }
-
-    /**
-     * @return whether this flow asks for, and validates, a password
-     */
-    public boolean collectsPassword() {
-      return collectsPassword;
-    }
-  }
 
   /*Validation via Binder does not show error message if an email field is used, see
    * https://github.com/vaadin/flow-components/issues/4618 for details */
@@ -125,13 +75,10 @@ public class UserRegistrationComponent extends Div {
 
   private final transient UserInformationService userInformationService;
 
-  private final Mode mode;
-
-  public UserRegistrationComponent(UserInformationService userInformationService, Mode mode) {
+  public UserRegistrationComponent(UserInformationService userInformationService) {
     this.userInformationService = Objects.requireNonNull(userInformationService,
         "userInformationService must not be null");
-    this.mode = Objects.requireNonNull(mode, "mode must not be null");
-    this.titleSpan = new H2(mode.title());
+    this.titleSpan = new H2("Register");
     addClassName("user-registration-component");
     addClassName("card-layout");
     registerButton.addClassName("primary");
@@ -139,22 +86,11 @@ public class UserRegistrationComponent extends Div {
     username.setHelperText("Your unique user name, visible to other users (max. "
         + UserNames.MAX_LENGTH + " characters)");
     add(titleSpan, notificationLayout);
-    if (mode.description() != null) {
-      Div description = new Div();
-      description.add(mode.description());
-      add(description);
-    }
     add(fullName, email, username);
-    if (mode.collectsPassword()) {
-      password.setHelperText(Passwords.hint());
-      add(password);
-    }
+    password.setHelperText(Passwords.hint());
+    add(password);
     add(registerButton);
-    if (mode.collectsPassword()) {
-      // Only a flow that collects a password can offer to reset one. On the ORCID form the visitor has
-      // no password yet, so "Forgot your password?" would point at a flow that cannot help them.
-      addRoutingLinks();
-    }
+    addRoutingLinks();
     setFieldValidation();
     addRegistrationButtonListener();
   }
@@ -166,11 +102,10 @@ public class UserRegistrationComponent extends Div {
   }
 
   /**
-   * Binds every field this mode asks for, with one validator chain shared by both modes.
+   * Binds every field, with one validator chain.
    *
-   * <p>Only the password binding is conditional, because only the local flow has that field. The email,
-   * user name and full name rules are deliberately written once — that is the point of merging the two
-   * forms.</p>
+   * <p>The rules are deliberately written once. They were once duplicated across two forms, and a
+   * security fix had to be applied to both to take effect.</p>
    */
   private void setFieldValidation() {
     registrationInformationBinder.forField(fullName)
@@ -189,8 +124,8 @@ public class UserRegistrationComponent extends Div {
         // Duplicate registrations are now handled uniformly: the visitor sees the same outcome as a
         // successful registration, and the address owner is notified by email instead.
         //
-        // This comment is the only place the rule is stated, because there is now only one email
-        // validator. The ORCID form inherits it by being the same component.
+        // This comment is the only place the rule is stated, because there is only one email
+        // validator left in the application.
         .bind(UserRegistrationInformation::email, UserRegistrationInformation::setEmail);
     registrationInformationBinder.forField(username)
         .asRequired("Please provide an user name")
@@ -207,12 +142,10 @@ public class UserRegistrationComponent extends Div {
           }
         })
         .bind(UserRegistrationInformation::userName, UserRegistrationInformation::setUserName);
-    if (mode.collectsPassword()) {
-      registrationInformationBinder.forField(password)
-          .asRequired("Please provide a password")
-          .withValidator(Passwords::satisfiesMinLength, Passwords.tooShortMessage())
-          .bind(UserRegistrationInformation::password, UserRegistrationInformation::setPassword);
-    }
+    registrationInformationBinder.forField(password)
+        .asRequired("Please provide a password")
+        .withValidator(Passwords::satisfiesMinLength, Passwords.tooShortMessage())
+        .bind(UserRegistrationInformation::password, UserRegistrationInformation::setPassword);
   }
 
   private void addRegistrationButtonListener() {
@@ -230,16 +163,46 @@ public class UserRegistrationComponent extends Div {
    * Reads the form into the value the submission consumes.
    *
    * <p>Package-private so that a spec can assert what the form would submit without simulating a browser
-   * click — which is also how the "the ORCID form submits no password" rule is pinned.</p>
+   * click.</p>
    *
-   * @return what the visitor entered, with an empty password when this mode does not collect one
+   * @return what the visitor entered
    */
   UserRegistrationInformation currentInput() {
     return new UserRegistrationInformation(
         fullName.getValue().strip(),
         email.getValue().strip(),
         username.getValue().strip(),
-        mode.collectsPassword() ? password.getValue().strip() : "");
+        password.getValue().strip());
+  }
+
+  /**
+   * Sets the email field programmatically.
+   *
+   * <p>Used by specs to populate the form without simulating typing. It is not a prefill hook any more:
+   * the provider-based flow that used to call it at navigation time is gone.</p>
+   *
+   * @param email the address to put in the field
+   */
+  public void setEmail(String email) {
+    this.email.setValue(email);
+  }
+
+  /**
+   * Sets the username field programmatically, for specs.
+   *
+   * @param username the user name to put in the field
+   */
+  public void setUsername(String username) {
+    this.username.setValue(username);
+  }
+
+  /**
+   * Sets the full-name field programmatically, for specs.
+   *
+   * @param fullName the full name to put in the field
+   */
+  public void setFullName(String fullName) {
+    this.fullName.setValue(fullName);
   }
 
   private void clearNotifications() {
@@ -257,37 +220,7 @@ public class UserRegistrationComponent extends Div {
   }
 
   /**
-   * Prefills the email address, used by the ORCID flow for the {@code email} claim.
-   *
-   * @param email the address from the OIDC assertion
-   */
-  public void setEmail(String email) {
-    this.email.setValue(email);
-  }
-
-  /**
-   * Prefills the user name, used by the ORCID flow for the {@code preferred_username} claim.
-   *
-   * @param username the proposed user name from the OIDC assertion
-   */
-  public void setUsername(String username) {
-    this.username.setValue(username);
-  }
-
-  /**
-   * Prefills the full name, used by the ORCID flow for the name claims.
-   *
-   * @param fullName the name assembled from the OIDC assertion
-   */
-  public void setFullName(String fullName) {
-    this.fullName.setValue(fullName);
-  }
-
-  /**
-   * <b>What the form collected, independent of which mode collected it.</b>
-   *
-   * <p>{@code password} is empty on the ORCID flow, which does not ask for one — see {@code AUTH-R-07},
-   * which will give those accounts a password through a separate invitation.</p>
+   * <b>What the form collected.</b>
    */
   public static final class UserRegistrationInformation implements Serializable {
 

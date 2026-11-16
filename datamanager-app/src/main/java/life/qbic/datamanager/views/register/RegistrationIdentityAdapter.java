@@ -28,10 +28,4 @@ public class RegistrationIdentityAdapter implements RegistrationIdentity {
       char[] password) {
     return identityService.registerUser(fullName, userName, email, password);
   }
-
-  @Override
-  public ApplicationResponse registerOpenId(String fullName, String userName, String email,
-      String issuer, String subject) {
-    return identityService.registerOpenIdUser(fullName, userName, email, issuer, subject);
-  }
 }

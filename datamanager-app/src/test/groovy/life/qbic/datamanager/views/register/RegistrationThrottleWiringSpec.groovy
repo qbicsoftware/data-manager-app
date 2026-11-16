@@ -27,7 +27,7 @@ import spock.lang.Unroll
  */
 class RegistrationThrottleWiringSpec extends Specification {
 
-  private static final List<Class> REGISTRATION_VIEWS = [UserRegistrationMain, RegistrationOrcIdMain]
+  private static final List<Class> REGISTRATION_VIEWS = [UserRegistrationMain]
 
   @Unroll
   def "#view requires the throttle at construction"() {

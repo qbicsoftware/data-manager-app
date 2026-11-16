@@ -5,11 +5,11 @@ import life.qbic.application.commons.ApplicationResponse;
 /**
  * <b>The identity operations registration needs, and nothing else.</b>
  *
- * <p>Registration touches exactly two things: create a local account, and create an account from an ORCID
- * assertion. Naming them as a port keeps the registration flow independent of the remaining twenty-odd
- * operations on {@code IdentityService}, and — practically — makes the flow testable: {@code IdentityService}
- * is {@code final}, so it cannot be mocked, which is how the account-existence decision ended up untested
- * inside a view in the first place.</p>
+ * <p>Registration touches exactly one thing: create a local account. Naming it as a port keeps the
+ * registration flow independent of the remaining twenty-odd operations on {@code IdentityService}, and —
+ * practically — makes the flow testable: {@code IdentityService} is {@code final}, so it cannot be
+ * mocked, which is how the account-existence decision ended up untested inside a view in the first
+ * place.</p>
  *
  * <p>Implemented for Spring in {@code RegistrationIdentityAdapter}.</p>
  *
@@ -25,13 +25,5 @@ public interface RegistrationIdentity {
    */
   ApplicationResponse registerLocal(String fullName, String userName, String email,
       char[] password);
-
-  /**
-   * Creates an account from an ORCID assertion.
-   *
-   * @return failure carrying {@code UserExistsException} when the address is already registered
-   */
-  ApplicationResponse registerOpenId(String fullName, String userName, String email, String issuer,
-      String subject);
 
 }
