@@ -53,7 +53,43 @@ with apply / verify / rollback detail.
 *Document any new, removed, or renamed `application.properties` entries here.
 If there are none this release, delete this section.*
 
-### No new keys — but one behaviour change for error notification mail
+### New keys for origin-scope throttling (#1691) — all inert by default
+
+`AUTH-NFR-03` asks for throttling per account **and** per request origin. Account scope shipped in
+v1.20.4; this release adds the origin half. **Nothing changes on deploy**, because origin scope ships
+disabled and the header strategy is unchanged.
+
+| Key | Default | Meaning |
+|---|---|---|
+| `qbic.auth-throttle.login.origin.enabled` | `false` | Write and consult the per-origin bucket |
+| `qbic.auth-throttle.login.origin.max-attempts` | `60` | Failures from one origin before that origin is blocked |
+| `qbic.auth-throttle.login.origin.window` | `PT15M` | Counting window for the origin bucket |
+| `qbic.auth-throttle.login.origin.block-duration` | `PT10M` | How long an origin block lasts |
+
+Unchanged but now load-bearing: `server.forward-headers-strategy`. It stays **unset (`NONE`)** in this
+release. Setting `origin.enabled=true` without `server.forward-headers-strategy=native` is a **startup
+failure**, deliberately — see ops doc §1.2/§1.7.
+
+**To turn it on** (only after the HAProxy change below):
+
+```properties
+server.forward-headers-strategy=native
+qbic.auth-throttle.login.origin.enabled=true
+```
+
+**Proxy prerequisite, not a property:** HAProxy must **replace** `X-Forwarded-For`
+(`http-request set-header X-Forwarded-For %[src]`). `option forwardfor` alone appends, which leaves the
+client's own entry at the front of the list.
+
+**No schema change, so there is no migration script for this.** Origin buckets are additional rows in
+the existing `auth_attempt` table with `scope = 'LOGIN_ORIGIN'`; `scope` is an open `varchar` and
+`attemptKey` is already an opaque hash. Existing rows are untouched and no backfill is needed.
+
+> **Do not enable this during a release deploy.** It is a separate, independently revertable operator
+> step because `server.forward-headers-strategy=native` also changes how absolute links
+> (confirmation/reset mail) and the ORCID redirect URI are built. Canary one node first — ops doc §1.7.
+
+### One behaviour change for error notification mail
 
 `spring.mail.*` and `qbic.mail.verify-connection-on-startup` are unchanged. What changes is what the
 **logback error-notification appender** does when the SMTP server will not upgrade to TLS.
@@ -87,6 +123,30 @@ logback offers `starttls.enable` but no `required`.
 `logback-spring.xml` (host, port, username, password) reach it. Adding e.g. `mail.smtp.from` or a
 custom timeout to `application.properties` will **not** affect error mail. The TLS requirement is
 applied in the appender class, so changing it means editing the class, not the properties file.
+
+### Verifying origin scope once enabled
+
+There is no migration script, but there is a real way for the feature to be **present and inert**:
+the client address is still the proxy. Check the table after a few failed logins on the canary node.
+
+```sql
+-- Must be > 0. If it stays 0, the origin is not being resolved and the feature is doing nothing.
+SELECT COUNT(*) AS origin_buckets
+FROM auth_attempt WHERE scope = 'LOGIN_ORIGIN';
+
+-- How many distinct origins are being tracked. A handful is healthy; exactly 1 means the whole
+-- deployment is sharing an origin, i.e. getRemoteAddr() is still the proxy -- STOP and roll back.
+SELECT COUNT(DISTINCT attemptKey) AS distinct_origins
+FROM auth_attempt WHERE scope = 'LOGIN_ORIGIN'
+  AND lastAttemptAt > UTC_TIMESTAMP(6) - INTERVAL 15 MINUTE;
+
+-- What is currently blocked, in either bucket.
+SELECT scope, attemptCount, blockedUntil FROM auth_attempt
+WHERE blockedUntil > UTC_TIMESTAMP(6);
+```
+
+The application log must also contain no `no trusted client origin could be resolved` warning. If it
+does, the throttle has degraded to account scope and is telling you so.
 
 ---
 
