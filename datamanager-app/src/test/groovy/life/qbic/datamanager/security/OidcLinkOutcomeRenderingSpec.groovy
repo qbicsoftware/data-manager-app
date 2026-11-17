@@ -137,17 +137,42 @@ class OidcLinkOutcomeRenderingSpec extends Specification {
     source.contains('session.removeAttribute(OUTCOME)')
   }
 
+  def "the view reads the outcome from the HTTP session, which is where the filter wrote it"() {
+    // The bug this pins: the filter writes to the servlet HttpSession; VaadinSession keeps a separate
+    // attribute map, so reading the same key from VaadinSession returns null and the user is told
+    // nothing at all — the exact symptom reported after the first fix shipped.
+    given:
+    def source = text(VIEW)
+
+    expect: 'the HTTP session is obtained from the Vaadin session'
+    source.contains('getSession()')
+
+    and: 'the outcome is read from it'
+    source.contains('httpSession.getAttribute(OidcLinkController.OUTCOME)')
+
+    and: 'it is not read from VaadinSession, whose attributes are a different map'
+    !source.contains('VaadinSession.getCurrent().getAttribute(OidcLinkController.OUTCOME)')
+  }
+
   def "the outcome is removed before it is rendered, so a refresh does not replay it"() {
     given:
     def source = text(VIEW)
-    def readIndex = source.indexOf('getAttribute(OidcLinkController.OUTCOME)')
-    def removeIndex = source.indexOf('setAttribute(OidcLinkController.OUTCOME, null)')
+    def readIndex = source.indexOf('httpSession.getAttribute(OidcLinkController.OUTCOME)')
+    def removeIndex = source.indexOf('httpSession.removeAttribute(OidcLinkController.OUTCOME)')
 
     expect:
     readIndex >= 0 && removeIndex > readIndex
 
     and: 'read-and-remove happens before the toast is built'
     removeIndex < source.indexOf('messageFactory.toast(key')
+  }
+
+  def "an invalidated session does not turn the notification into an error page"() {
+    given:
+    def source = text(VIEW)
+
+    expect:
+    source.contains('IllegalStateException')
   }
 
   def "a missing message key cannot break the settings page"() {

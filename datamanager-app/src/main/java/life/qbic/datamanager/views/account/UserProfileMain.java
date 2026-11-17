@@ -162,18 +162,33 @@ public class UserProfileMain extends Main implements BeforeEnterObserver, AfterN
    * would let anyone put their own sentence into a trusted notification.</p>
    */
   private void processLinkOutcome() {
-    var session = com.vaadin.flow.server.VaadinSession.getCurrent();
-    if (session == null) {
+    // The outcome is written by a servlet filter, so it lives in the HTTP session. VaadinSession keeps
+    // its own attribute map — reading the same key from VaadinSession silently returns null, which is
+    // how a rejected link came to show the user nothing at all. The wrapped HTTP session is the shared
+    // store on both sides.
+    var vaadinSession = com.vaadin.flow.server.VaadinSession.getCurrent();
+    if (vaadinSession == null) {
       return;
     }
-    Object stored = session.getAttribute(OidcLinkController.OUTCOME);
+    var httpSession = vaadinSession.getSession();
+    if (httpSession == null) {
+      return;
+    }
+
+    Object stored;
+    try {
+      stored = httpSession.getAttribute(OidcLinkController.OUTCOME);
+    } catch (IllegalStateException invalidSession) {
+      // The session was invalidated between the redirect and this read. Nothing to report, and nothing
+      // worth an error page: the settings page still renders the true account state.
+      return;
+    }
     if (stored == null) {
       return;
     }
-    // Remove first: read-and-remove must be atomic with respect to this method, not sigh-of-relief
-    // afterwards. If the toast fails to render, the user simply sees nothing rather than a stale
-    // message on the next visit.
-    session.setAttribute(OidcLinkController.OUTCOME, null);
+    // Remove first, so the value is consumed exactly once even if rendering fails below. A stale
+    // outcome next to a fresh one is precisely how this feature starts telling users the wrong thing.
+    httpSession.removeAttribute(OidcLinkController.OUTCOME);
 
     var outcome = stored instanceof life.qbic.identity.api.OidcLinkOutcomeMessage message
         ? message
@@ -184,6 +199,7 @@ public class UserProfileMain extends Main implements BeforeEnterObserver, AfterN
     }
 
     String key = "profile.oidc.link." + outcome.messageKey();
+    // Rendering is deferred to ui.access, so a toast failure must not be mistaken for "no outcome".
     getUI().ifPresent(ui -> ui.access(() -> {
       try {
         messageFactory.toast(key, new Object[]{}, getLocale()).open();
