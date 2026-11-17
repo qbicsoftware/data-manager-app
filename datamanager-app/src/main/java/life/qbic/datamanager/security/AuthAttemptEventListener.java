@@ -4,6 +4,8 @@ import static java.util.Objects.requireNonNull;
 
 import java.time.Instant;
 import life.qbic.identity.application.throttle.AuthAttemptThrottle;
+import life.qbic.identity.application.throttle.ClientOrigin;
+import life.qbic.identity.application.throttle.ClientOriginResolver;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
@@ -31,6 +33,18 @@ import org.springframework.stereotype.Component;
  * authentication back into a failed one. Splitting the two is what lets the throttled response be the
  * same generic failure as a wrong password (AUTH-NFR-03).</p>
  *
+ * <h3>Origin scope — the same resolver the filter uses</h3>
+ * <p>The failure is recorded against the request origin as well, which is what makes an origin that is
+ * spraying many accounts over its threshold (AUTH-NFR-03, #1691). The origin comes from the
+ * <em>same</em> {@link ClientOriginResolver} the filter consults, deliberately: if the two resolved
+ * the origin differently, the filter's pre-check would read a bucket the listener never wrote and the
+ * control would never fire.</p>
+ *
+ * <p>Authentication events are published synchronously on the request thread, so the request context
+ * is still bound here. When it is not — a programmatic authentication with no request — the resolver
+ * answers {@link ClientOrigin#unknown()} and only the account bucket is written, which is the
+ * pre-origin behaviour rather than a failure.</p>
+ *
  * @since 1.0.0
  */
 @Component
@@ -39,9 +53,12 @@ public class AuthAttemptEventListener {
   private static final Logger log = LoggerFactory.logger(AuthAttemptEventListener.class);
 
   private final AuthAttemptThrottle throttle;
+  private final ClientOriginResolver originResolver;
 
-  public AuthAttemptEventListener(AuthAttemptThrottle throttle) {
+  public AuthAttemptEventListener(AuthAttemptThrottle throttle,
+      ClientOriginResolver originResolver) {
     this.throttle = requireNonNull(throttle, "throttle must not be null");
+    this.originResolver = requireNonNull(originResolver, "originResolver must not be null");
   }
 
   /**
@@ -103,6 +120,11 @@ public class AuthAttemptEventListener {
    *
    * <p>Record only: the message the visitor sees comes from Spring Security's own handler and is
    * already generic ("Incorrect username or password"). The counter must not add wording.</p>
+   *
+   * <p>The origin bucket is written from this path and not from a success, on purpose: it counts
+   * <em>failures</em>, which is the attack signature — credential stuffing produces failures, not
+   * successes — and counting every attempt would let one busy institution behind a NAT block itself
+   * on legitimate traffic.</p>
    */
   @EventListener
   public void onFailure(AbstractAuthenticationFailureEvent event) {
@@ -112,7 +134,8 @@ public class AuthAttemptEventListener {
     if (address == null || address.isBlank()) {
       return;
     }
-    throttle.record(AuthAttemptThrottle.Scope.LOGIN, address, Instant.now());
+    throttle.record(AuthAttemptThrottle.Scope.LOGIN, address, originResolver.resolve(),
+        Instant.now());
     // Debug, not info: a failed login is routine, and a log line per failure is both noisy and a
     // second enumeration oracle for anyone who can read logs.
     log.debug("Recorded a failed login attempt");

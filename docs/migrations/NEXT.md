@@ -21,8 +21,14 @@ For the migration documentation structure, see [`README.md`](README.md).
 >   schema change because `user_verification_token` already carries the `SET_PASSWORD` purpose. The
 >   open execution questions are in [`released/v1.20.4.md`](released/v1.20.4.md) §"Not in this
 >   release".
-> - **#1691** — per-origin throttling. Needs HAProxy and a trusted-proxy configuration; not in this
->   repository.
+> - **#1691** — per-origin throttling. **The code and the schema impact are complete** (no schema change:
+>   origin buckets are rows in the existing `auth_attempt` with `scope = 'LOGIN_ORIGIN'`). What remains
+>   is the deployment half, which is not in this repository: HAProxy must *replace* `X-Forwarded-For`,
+>   and `server.forward-headers-strategy=native` plus
+>   `qbic.auth-throttle.login.origin.enabled=true` must be set. Both ship **off**, so merging this
+>   changes nothing in production until an operator acts. See
+>   [`docs/operations/installation-and-administration.md`](../operations/installation-and-administration.md)
+>   §1.7.
 > - **#1669** — retention/purge for `user_verification_token` and `auth_attempt`. Both tables grow
 >   without bound until it lands.
 
