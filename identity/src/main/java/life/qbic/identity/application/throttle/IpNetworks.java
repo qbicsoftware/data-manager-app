@@ -370,9 +370,9 @@ public final class IpNetworks {
       if (this == other) {
         return true;
       }
-      return other instanceof ParsedAddress that
-          && ipv4 == that.ipv4
-          && Arrays.equals(bytes, that.bytes);
+      return other instanceof ParsedAddress(byte[] otherBytes, boolean otherIpv4)
+          && ipv4 == otherIpv4
+          && Arrays.equals(bytes, otherBytes);
     }
 
     @Override

@@ -99,6 +99,16 @@ public class OriginTrustConfiguration {
   }
 
   /**
+   * Maps a property name to the canonical kebab-case form Spring's relaxed binding compares on.
+   *
+   * @param name a property name in any supported spelling
+   * @return the lower-cased name with {@code _} and {@code .} folded to {@code -}
+   */
+  private static String relax(String name) {
+    return name.toLowerCase(Locale.ROOT).replace('_', '-').replace('.', '-');
+  }
+
+  /**
    * Where the ineffective strategy came from, so the message points at a file instead of a constant.
    *
    * <p>The first version of this message could not be acted on in the common case. When <em>nothing</em>
@@ -110,16 +120,6 @@ public class OriginTrustConfiguration {
    * @param strategy the effective value
    * @return a parenthetical naming where the value came from, or an empty string if it cannot be told
    */
-  /**
-   * Maps a property name to the canonical kebab-case form Spring's relaxed binding compares on.
-   *
-   * @param name a property name in any supported spelling
-   * @return the lower-cased name with {@code _} and {@code .} folded to {@code -}
-   */
-  private static String relax(String name) {
-    return name.toLowerCase(Locale.ROOT).replace('_', '-').replace('.', '-');
-  }
-
   private String configuredBy(String strategy) {
     if (!"none".equalsIgnoreCase(strategy)) {
       return " (set explicitly)";
