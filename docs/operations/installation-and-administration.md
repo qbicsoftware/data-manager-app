@@ -40,7 +40,9 @@ ignores `X-Forwarded-*` entirely and believes it is talking to `127.0.0.1:8080`.
 To consume the headers, set:
 
 ```properties
-server.forward-headers-strategy=framework
+server.forward-headers-strategy=native
+server.tomcat.remoteip.remote-ip-header=X-Forwarded-For
+server.tomcat.remoteip.protocol-header=X-Forwarded-Proto
 ```
 
 Valid values:
@@ -48,24 +50,40 @@ Valid values:
 | Value | Meaning | Use when |
 |---|---|---|
 | `NONE` (default) | Ignore `X-Forwarded-*` headers | Only when the app is reached directly, with no proxy |
-| `FRAMEWORK` | The application parses the headers itself (`ForwardedHeaderFilter`) | **The intended value behind HAProxy** |
-| `NATIVE` | The servlet container parses them (Tomcat `RemoteIpValve`) | Also valid; requires configuring the valve's trusted-proxy list |
+| `NATIVE` | The servlet container parses them (Tomcat `RemoteIpValve`) | **The only safe value behind HAProxy** |
+| `FRAMEWORK` | The application parses the headers itself (`ForwardedHeaderFilter`) | **Never on this stack** — see below |
 
-> **⚠️ Do not set this until §1.5 is satisfied.** Turning this on while the proxy appends rather than
-> overwrites `X-Forwarded-For` lets any client forge their own source address. See §1.5.
+> **⚠️ `FRAMEWORK` must not be used.** `ForwardedHeaderFilter` takes the **leftmost**
+> `X-Forwarded-For` entry with no trust check. HAProxy's `option forwardfor` *appends*, so the client's
+> own entry survives at the front and becomes `request.getRemoteAddr()` — the client writes its own
+> rate-limit identity. `NATIVE` (`RemoteIpValve`) refuses the header unless the connecting peer is in
+> `server.tomcat.remoteip.internal-proxies`, then walks the list right-to-left and discards everything
+> client-supplied. This was corrected in #1691; earlier revisions of this document recommended
+> `framework` and were wrong.
+
+`server.tomcat.remoteip.internal-proxies` defaults to RFC1918, loopback, link-local, CGNAT and ULA
+(`10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 169.254.0.0/16, 100.64.0.0/10, 127.0.0.0/8, ::1/128,
+fc00::/7, fe80::/10`) — which already covers the QBiC HAProxy nodes. Set it explicitly if the proxy
+lives elsewhere.
+
+> **⚠️ Do not set this until §1.5 is satisfied.** Even `NATIVE` trusts the header from any peer inside
+> `internal-proxies`, so turning it on before the proxy *replaces* `X-Forwarded-For` is still a
+> misconfiguration. See §1.5.
 
 ### 1.3 What the client address is used for
 
 | Feature | Uses the client address for | State |
 |---|---|---|
-| **Auth throttling** (`AUTH-NFR-03`) | A per-origin attempt bucket alongside the per-account one | ⏳ account scope only today; origin scope needs §1.2 + §1.5 |
+| **Auth throttling** (`AUTH-NFR-03`) | A per-origin attempt bucket alongside the per-account one | ✅ implemented (#1691) · off by default; needs §1.2 + §1.5 + §1.7 |
 | Link generation (`{baseUrl}`) | Building absolute confirmation / reset URLs | Works today **only** if the proxy sends the headers and §1.2 is set |
 | OAuth2 (ORCID) redirect URI | Must match the browser-visible origin | Same dependency |
 | WebAuthn / passkeys (planned) | `rpId` and `allowedOrigins` must match the public origin | Future — see §1.6 |
 | Audit logging (planned) | Recording the source of a request | Future |
 
 **The consequence today:** with `NONE`, `request.getRemoteAddr()` returns the *proxy's* address — the
-same value for every user in the deployment. No per-origin logic can be correct on that value.
+same value for every user in the deployment. No per-origin logic can be correct on that value, which is
+why origin scope stays inert until §1.2 and §1.5 hold: the resolver answers "unknown" and the throttle
+falls back to account scope rather than keying every user on the proxy.
 
 ### 1.4 Minimal HAProxy configuration
 
@@ -75,13 +93,11 @@ frontend rdm
 
     # Tell the backend who the client really is.
     #
-    # `option forwardfor` APPENDS to any existing X-Forwarded-For the client sent.
-    # That is why the header must be deleted first (see §1.5).
-    http-request del-header X-Forwarded-For
-    http-request del-header X-Forwarded-Proto
-    http-request del-header X-Forwarded-Host
-    option forwardfor
-
+    # `%[src]` is HAProxy's own TCP source and `set-header` REPLACES whatever the client sent, so a
+    # client-supplied X-Forwarded-For cannot survive. This is stronger and simpler than
+    # `del-header` + `option forwardfor`: `option forwardfor` APPENDS, so it needs the delete and the
+    # two can drift apart during an edit. Set-header does both in one line (see §1.5).
+    http-request set-header X-Forwarded-For   %[src]
     http-request set-header X-Forwarded-Proto https
     http-request set-header X-Forwarded-Host  rdm.qbic.uni-tuebingen.de
 
@@ -95,8 +111,10 @@ backend app_servers
     server app2 10.0.0.12:8080 check cookie s2
 ```
 
-`set-header` replaces; `del-header` before `forwardfor` guarantees the client cannot smuggle a value
-in. Both are required — see §1.5.
+`set-header` replaces. Never pair a `del-header` with `option forwardfor` and then edit one of them:
+`forwardfor` appends, so the delete is the *only* thing stopping a client from keeping its own entry at
+the front of the list — and the front is what `framework` reads. `set-header %[src]` has no such
+coupling. See §1.5.
 
 ### 1.5 ⚠️ The failure mode that silently disables security
 
@@ -108,10 +126,10 @@ X-Forwarded-For: 1.2.3.4
 
 Two proxy behaviours, two very different outcomes:
 
-| Proxy behaviour | `X-Forwarded-For` the app sees | Consequence |
-|---|---|---|
-| **Overwrites / deletes then appends** (correct) | `1.2.3.4, <real-client-ip>` → app uses the last hop | Correct |
-| **Appends to the client's value** (dangerous) | `1.2.3.4, <real-client-ip>` → app uses the **leftmost** entry | **Attacker controls their own identity** |
+| Proxy behaviour | `X-Forwarded-For` the app sees | Consequence under `native` | Consequence under `framework` |
+|---|---|---|---|
+| **Replaces** (`set-header %[src]`) — required | `<real-client-ip>` | Correct | Correct |
+| **Appends** (`option forwardfor` without a delete) | `1.2.3.4, <real-client-ip>` | Correct — the valve walks right-to-left and discards `1.2.3.4` | **Attacker controls their own identity** — the filter takes the leftmost entry |
 
 If the application parses the *leftmost* entry of an appended header, an attacker sends a different
 fake address on every request and gets a **fresh rate-limit bucket each time** — the throttle is
@@ -129,7 +147,9 @@ So with `server.forward-headers-strategy=framework`, whatever sits **first** in 
 becomes `request.getRemoteAddr()`. If the client supplied that entry, the attacker controls their own
 identity for rate-limiting purposes.
 
-**Therefore:** `del-header X-Forwarded-For` before `option forwardfor`, and do not use
+**Therefore:** make the proxy **replace** the header (`http-request set-header X-Forwarded-For %[src]`),
+**and** use `native`. Replacing alone would also make `framework` safe, and `native` alone survives an
+append — but neither is worth betting the control on when both are one line each. Do not use
 `option forwardfor except ...` patterns that leave a client value in place.
 
 **Verify it, do not assume it.** From outside the deployment:
@@ -140,9 +160,10 @@ curl -sS -o /dev/null -w '%{http_code}\n' \
   https://rdm.qbic.uni-tuebingen.de/login
 ```
 
-Then check what the application recorded. With origin-scope throttling in place (§1.7), the forged
-address must **not** appear as its own bucket. Until origin scope exists, verify the header contract
-indirectly: the application must see the real client, not `10.x`/`172.x` proxy addresses.
+Then check what the application recorded. With origin-scope throttling enabled (§1.7), the forged
+address must **not** appear as its own bucket — see the hashed-key comparison in §1.7. Until origin
+scope is enabled, verify the header contract indirectly: the application must see the real client, not
+`10.x`/`172.x` proxy addresses.
 
 ### 1.6 Why this blocks more than throttling
 
@@ -160,35 +181,90 @@ Two specific known issues that this fixes:
 
 ### 1.7 Enabling origin-scope throttling (once §1.2 and §1.5 hold)
 
-Origin scope is **not implemented** yet — `AUTH-NFR-03` is satisfied for account scope only. The work
-is tracked in two places:
+Origin scope is **implemented** (#1691) and ships **disabled**. Enabling it is one property, but only
+once the two prerequisites above hold on the node you enable it on.
 
-| Tracked as | Purpose |
-|---|---|
-| [#1682](https://github.com/qbicsoftware/data-manager-app/issues/1682) | The parent task. Account scope is delivered by #1690; the origin clause is split out. |
-| [#1691](https://github.com/qbicsoftware/data-manager-app/issues/1691) · milestone `MILESTONE-PROXY` | The staged plan: proxy header, canary rollout, origin buckets. |
+```properties
+server.forward-headers-strategy=native
+qbic.auth-throttle.login.origin.enabled=true
+```
 
-This document deliberately describes the **prerequisite contract** rather than shipping a header
-parser: doing the latter before §1.2 and §1.5 are verified would produce code that is correct only on
-paper. An origin scope built on an untrusted header is worse than no origin scope, because it looks
-like a control.
+| Property | Default | Meaning |
+|---|---|---|
+| `qbic.auth-throttle.login.origin.enabled` | `false` | Write and consult the per-origin bucket |
+| `qbic.auth-throttle.login.origin.max-attempts` | `60` | Failures from one origin before that origin is blocked |
+| `qbic.auth-throttle.login.origin.window` | `PT15M` | Counting window for the origin bucket |
+| `qbic.auth-throttle.login.origin.block-duration` | `PT10M` | How long an origin block lasts (kept short: it affects everyone behind that network) |
+
+**A mismatched configuration is a startup failure, not a silent one.** Setting `enabled=true` with any
+strategy other than `native` aborts startup with an explanation. That is deliberate: `framework` gives
+the client its own bucket key (§1.2) and `none` makes one bucket cover the deployment — both are worse
+than account scope alone, and both would otherwise look like working controls.
+
+#### How the two buckets combine
+
+The two acceptance criteria for origin scope pull in opposite directions, so they are not simply OR-ed:
+
+```
+refuse ⇔ origin bucket is blocked
+       ∨ (account bucket is blocked ∧ this origin has itself produced ≥ max-attempts + 1 failures)
+       ∨ (account bucket is blocked ∧ no trusted origin is available)
+```
+
+The second clause is the one that matters operationally: **a victim spammed from someone else's origin
+can still log in from their own**, which account scope alone cannot deliver (§1.8). The cost is that
+while an account is blocked, an origin that has never been seen gets `max-attempts` attempts. That is
+the deliberate price of not letting one attacker lock out a chosen user, and it is bounded by the
+origin threshold.
+
+Grouping: origin keys use the client's **network**, not the address — IPv4 `/24`, IPv6 `/64`, with
+IPv4-mapped IPv6 folded to IPv4 first — so rotating inside an allocation does not buy a fresh bucket.
+Keys are hashed exactly like account keys, so `auth_attempt` never holds a readable address.
+
+**Canary it.** Enabling this on one node first (as #1691's Phase C describes) is still the right
+rollout, because `server.forward-headers-strategy=native` also changes how absolute links and the
+ORCID redirect URI are built. Verify the checklist below on that node before rolling to the others.
 
 It needs **no schema change**: `auth_attempt.scope` is an open `varchar` and `attemptKey` is an
-opaque hash, so an origin bucket is a second row with a different `scope` value.
+opaque hash, so an origin bucket is a second row with a different `scope` value (`LOGIN_ORIGIN`).
 
-When it lands, the deployment contract does not change — it will simply *start using* the client
-address that this section already requires. **Do §1.2 and §1.5 first**, or the feature will be
-present and ineffective.
+#### Verification checklist (run on the canary node)
 
-> **Prefer `NATIVE` over `FRAMEWORK` on this stack.** `framework` (`ForwardedHeaderFilter`) takes the
-> **leftmost** `X-Forwarded-For` entry and does no trust check — so any client-supplied value wins.
-> `native` (Tomcat `RemoteIpValve`) only trusts the header when the connecting peer is in
-> `server.tomcat.remoteip.internal-proxies`, then walks the list right-to-left and discards everything
-> client-supplied. Verified in the respective sources; see §1.5.
+- [ ] Confirmation email link contains `https://rdm.qbic.uni-tuebingen.de/...`, not `127.0.0.1:8080`
+- [ ] Password-reset link, same
+- [ ] ORCID login completes
+- [ ] `SELECT COUNT(*) FROM auth_attempt WHERE scope = 'LOGIN_ORIGIN';` grows after failed logins —
+      if it stays `0`, the origin is not being resolved and the feature is inert
+- [ ] `SELECT COUNT(*) FROM auth_attempt WHERE scope = 'LOGIN_ORIGIN'
+      AND lastAttemptAt > UTC_TIMESTAMP(6) - INTERVAL 15 MINUTE;` stays small. A handful of rows means
+      dozens of origins; **one** row means the whole deployment is sharing an origin, i.e.
+      `getRemoteAddr()` is still the proxy — **stop and roll back**
+- [ ] The application log contains no `no trusted client origin could be resolved` warning. If it does,
+      origin scope is silently degraded to account scope
 
-### 1.8 Known residual risk while origin scope is missing
+#### The forged-header test
 
-Throttling is keyed **per email address** only. Consequence, stated plainly:
+From outside the deployment, send a request with a forged header and confirm the forged address never
+becomes a bucket:
+
+```bash
+curl -sS -o /dev/null -w '%{http_code}\n' \
+  -H 'X-Forwarded-For: 203.0.113.77' \
+  https://rdm.qbic.uni-tuebingen.de/login
+```
+
+Then check that no origin row corresponds to `203.0.113.77`'s network. Because keys are hashed, compare
+by count rather than by value: drive a failed login from a known address, note the new row's
+`attemptKey`, then repeat with the forged header from the same address. **The `attemptKey` must be
+unchanged** — the forged value was discarded by the proxy and/or the valve.
+
+> **Do §1.2 and §1.5 first.** An origin scope built on an untrusted header is worse than none, because
+> it looks like a control.
+
+### 1.8 Known residual risk while origin scope is disabled
+
+With origin scope **off** (the default), throttling is keyed **per email address** only. Consequence,
+stated plainly:
 
 > An attacker who knows a victim's address can lock that victim out for `block-duration`
 > (default **15 minutes**) by submitting 11 failed logins.
@@ -196,13 +272,25 @@ Throttling is keyed **per email address** only. Consequence, stated plainly:
 This is not a defect in the implementation — it is the direct cost of account scope without origin
 scope, and it is why `AUTH-NFR-03` asks for both. Options, in order of preference:
 
-1. **Implement origin scope** (§1.2 + §1.5 first). Then the attacker's own source is throttled
-   separately and the victim's legitimate logins are unaffected.
+1. **Enable origin scope** (§1.2 + §1.5 + §1.7). Then a victim logging in from a different origin is
+   no longer blocked by someone else's spam. This is the only option that removes the risk rather
+   than shortening it, and it is now implemented.
 2. **Shorten `qbic.auth-throttle.login.block-duration`** (e.g. `PT5M`) — reduces the lockout window,
    and weakens the control proportionally.
 3. **Raise `qbic.auth-throttle.login.max-attempts`** — same trade-off from the other direction.
 
-Whichever is chosen, the helpdesk needs the unblock procedure in §3 — and needs to know that a
+With origin scope **on**, the risk above is removed, and one residual risk replaces it:
+
+> While an account is blocked by an attack, an origin that has never been seen still gets
+> `qbic.auth-throttle.login.max-attempts` attempts against it before it is itself treated as the
+> source of the damage. An attacker can therefore still spend a bounded number of guesses per fresh
+> origin.
+
+That bound is the deliberate price of §1.7's second clause — the alternative is locking out the victim,
+which is the failure being fixed. Lowering `max-attempts` tightens it and raises the support burden for
+everyone else.
+
+Whichever mode is deployed, the helpdesk needs the unblock procedure in §3 — and needs to know that a
 reported lockout may be an attack on that user rather than that user's own typos.
 
 ---
@@ -234,9 +322,13 @@ Run through this before the first production deployment and after any proxy chan
 ### Proxy
 
 - [ ] §1.1 items 1–6 all hold
-- [ ] `X-Forwarded-For` is deleted before being set (`del-header` then `option forwardfor`)
-- [ ] `server.forward-headers-strategy=framework` is set **only after** the line above is verified
+- [ ] The proxy **replaces** `X-Forwarded-For` (`http-request set-header X-Forwarded-For %[src]`) — not
+      merely `option forwardfor`, which appends and leaves the client's own entry in front
+- [ ] `server.forward-headers-strategy=native` is set **only after** the line above is verified —
+      never `framework` (§1.2)
 - [ ] Session affinity confirmed by logging in twice through the load balancer
+- [ ] If `qbic.auth-throttle.login.origin.enabled=true`: the §1.7 checklist has been walked, and the
+      application log shows no `no trusted client origin could be resolved` warning
 
 ### Behaviour smoke test
 
@@ -258,7 +350,8 @@ Run through this before the first production deployment and after any proxy chan
 |---|---|---|
 | Every failed login returns HTTP 500 | Throttle write failed (e.g. table missing, no transaction, DB read-only) | Application log for `TransactionRequiredException` / SQL errors; `SHOW TABLES LIKE 'auth_attempt'` |
 | Login works, but nobody is ever throttled | `auth_attempt` writes failing silently, or thresholds set very high | `SELECT COUNT(*) FROM auth_attempt`, then `qbic.auth-throttle.*` values |
-| A user reports being locked out | Account-scope throttle engaged; **no origin scope yet**, so an attacker can trigger this | `SELECT * FROM auth_attempt WHERE blockedUntil > UTC_TIMESTAMP(6)`; unblock with `DELETE FROM auth_attempt WHERE attemptKey = '<hash>'` — or wait for `blockedUntil` |
+| A user reports being locked out | Account-scope throttle engaged. With origin scope **off**, an attacker can trigger this; with it **on**, an origin block may also be affecting a whole institution | `SELECT scope, attemptCount, blockedUntil FROM auth_attempt WHERE blockedUntil > UTC_TIMESTAMP(6)`; unblock with `DELETE FROM auth_attempt WHERE attemptKey = '<hash>'` — or wait for `blockedUntil` |
+| `auth_attempt` has no `LOGIN_ORIGIN` rows although origin scope is enabled | The client address is still the proxy, so the resolver refuses to attribute it | Log for `no trusted client origin could be resolved`; `server.forward-headers-strategy` and the §1.2/§1.5 contract |
 | Confirmation/reset links point at the wrong host | Proxy headers missing, or §1.2 not set | Link in the email; compare to the public origin |
 | ORCID login fails with a redirect-URI mismatch | `{baseUrl}` derived from an untrusted proxy | Registered redirect URI in the ORCID portal vs. the actual request |
 | "Too many concurrent sessions" / random logouts | Session affinity missing | Backend balance config, cookie persistence |
