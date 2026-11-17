@@ -43,8 +43,11 @@ public class OidcLinkServiceImpl implements OidcLinkService {
   @Transactional
   public Outcome link(String userId, String oidcId, String oidcIssuer) {
     if (!OrcidIds.isValid(oidcId) || oidcIssuer == null || oidcIssuer.isBlank()) {
-      log.warn("Rejected an ORCID link for user %s: identifier or issuer not in canonical form"
-          .formatted(userId));
+      // The rejected value is logged, truncated and quoted: without it the line says only "something was
+      // wrong", which is what made an earlier rejection undiagnosable. Truncated so a hostile value
+      // cannot be used to flood or forge a log line.
+      log.warn("Rejected an ORCID link for user %s: identifier '%s' or issuer '%s' is not in canonical form"
+          .formatted(userId, abbreviate(oidcId), abbreviate(oidcIssuer)));
       return new Outcome.InvalidIdentifier();
     }
 
@@ -57,6 +60,10 @@ public class OidcLinkServiceImpl implements OidcLinkService {
     // Already linked to exactly this? Success, not a conflict. A user must be able to re-run a link —
     // for example after the popup was closed too early — without being told something is wrong.
     if (oidcId.equals(user.oidcId()) && oidcIssuer.equals(user.oidcIssuer())) {
+      // Logged even though nothing changed: "the user pressed Connect again" is the signal that tells a
+      // support case apart from "the button does nothing", and it is invisible otherwise.
+      log.info("ORCID iD %s (issuer %s) was already linked to user %s; nothing to change"
+          .formatted(oidcId, oidcIssuer, userId));
       return new Outcome.AlreadyLinked(new Link(oidcId, oidcIssuer));
     }
 
@@ -106,6 +113,20 @@ public class OidcLinkServiceImpl implements OidcLinkService {
    * so a malformed one means a corrupted session rather than hostile input — but it must not surface as
    * an unhandled exception in the middle of a link, leaving the browser on a blank page.</p>
    */
+  /**
+   * Renders a value for a log line without letting it dominate or forge one.
+   *
+   * <p>Log-injection hygiene: regardless of where the value came from, a newline inside it would split
+   * the record, and an unbounded value would drown the file.</p>
+   */
+  private static String abbreviate(String value) {
+    if (value == null) {
+      return "<null>";
+    }
+    String flat = value.replaceAll("\\s", "_");
+    return flat.length() <= 64 ? flat : flat.substring(0, 64) + "...";
+  }
+
   private Optional<User> findUser(String userId) {
     try {
       return userRepository.findById(UserId.from(userId));

@@ -209,8 +209,6 @@ routing.projects.info.endpoint=/projects/%s/info
 # Route to the project's connected-datasets view (used by dataset notification emails)
 routing.projects.datasets.endpoint=/projects/%s/datasets
 routing.projects.samples.enpoint=/projects/%s/experiments/%s/samples
-routing.registration.oidc.orcid.endpoint=/register/oidc
-routing.registration.error.pending-email-verification=/register/pending-email-confirmation
 
 ###############################################################################
 ### OAuth2 / ORCID ############################################################
