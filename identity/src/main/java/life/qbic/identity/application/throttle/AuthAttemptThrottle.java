@@ -27,14 +27,14 @@ import org.springframework.transaction.annotation.Transactional;
  * page reload reset and which therefore was not a control at all.</p>
  *
  * <h3>Rule 1 — the counter is keyed on a hash, and there is no account lookup</h3>
- * <p>{@link #record(Scope, String, Instant)} never asks whether the address exists. It cannot: the
+ * <p>{@link #recordAttempt(Scope, String, Instant)} never asks whether the address exists. It cannot: the
  * key is derived from the string the visitor typed. That is deliberate, because a throttle that
  * behaves differently for a registered and an unregistered address becomes the account-enumeration
  * oracle AUTH-NFR-03 forbids — and the throttle is consulted on every request, including requests
  * whose account is unknown.</p>
  *
  * <h3>Rule 2 — a throttled outcome must be indistinguishable from a normal one</h3>
- * <p>{@link #record} returns a {@link Decision}, and <b>every caller must ignore which one it got
+ * <p>{@link #recordAttempt} returns a {@link Decision}, and <b>every caller must ignore which one it got
  * when composing its response.</b> A caller that renders "too many attempts" tells an attacker that
  * their guess reached the threshold, and — because the threshold is per account — lets them confirm
  * that an address they are spamming is real. The decision exists to decide whether to <em>perform the
@@ -146,7 +146,7 @@ public class AuthAttemptThrottle {
      * ({@code auth_attempt.scope} is an open {@code varchar}) and so the two buckets cannot collide:
      * the key already includes the scope.</p>
      *
-     * <p>Never returned to a caller and never rendered. It is written by {@link #record} alongside
+     * <p>Never returned to a caller and never rendered. It is written by {@link #recordAttempt} alongside
      * {@link #LOGIN} and consulted by the combined decision described in the class javadoc.</p>
      */
     LOGIN_ORIGIN,
@@ -285,7 +285,7 @@ public class AuthAttemptThrottle {
   /**
    * Records an attempt and reports the outcome.
    *
-   * <p>Preferred over {@link #record(Scope, String, Instant)}, which loses the counts callers need to
+   * <p>Preferred over {@link #recordAttempt(Scope, String, Instant)}, which loses the counts callers need to
    * tell a visitor how many attempts remain.</p>
    *
    * @param scope      the flow
@@ -295,7 +295,7 @@ public class AuthAttemptThrottle {
    */
   @Transactional
   public Outcome recordAndReport(Scope scope, String identifier, Instant now) {
-    return recordAndReport(scope, identifier, ClientOrigin.unknown(), now);
+    return doRecordAndReport(scope, identifier, ClientOrigin.unknown(), now);
   }
 
   /**
@@ -316,6 +316,21 @@ public class AuthAttemptThrottle {
    */
   @Transactional
   public Outcome recordAndReport(Scope scope, String identifier, ClientOrigin origin, Instant now) {
+    return doRecordAndReport(scope, identifier, origin, now);
+  }
+
+  /**
+   * The write path, without a transaction annotation.
+   *
+   * <p><b>Why the public methods do not call each other.</b> A self-invocation bypasses the Spring
+   * proxy, so the callee's {@code @Transactional} would be ignored and only the caller's would apply.
+   * Here the two happen to be compatible today, which is precisely the trap: a later change to either
+   * annotation would silently take effect in one entry point and not the other. Every public method
+   * therefore opens its own transaction and delegates here, so there is exactly one place where the
+   * transaction boundary is decided (Rule 5).</p>
+   */
+  private Outcome doRecordAndReport(Scope scope, String identifier, ClientOrigin origin,
+      Instant now) {
     requireNonNull(scope, "scope must not be null");
     requireNonNull(origin, "origin must not be null");
     requireNonNull(now, "now must not be null");
@@ -340,7 +355,7 @@ public class AuthAttemptThrottle {
     }
 
     Optional<AuthAttemptCounter.Counter> originState = recordOriginAttempt(scope, origin, now);
-    Decision decision = combine(account, accountBlocked, originState, origin, now);
+    Decision decision = combine(accountBlocked, originState, now);
     return new Outcome(decision, account.attemptCount(), policy.maxAttempts());
   }
 
@@ -360,7 +375,7 @@ public class AuthAttemptThrottle {
    * @return whether to perform the work. <b>Do not render this.</b>
    */
   @Transactional
-  public Decision record(Scope scope, String identifier, Instant now) {
+  public Decision recordAttempt(Scope scope, String identifier, Instant now) {
     return recordAndReport(scope, identifier, now).decision();
   }
 
@@ -374,8 +389,9 @@ public class AuthAttemptThrottle {
    * @return whether to perform the work. <b>Do not render this.</b>
    */
   @Transactional
-  public Decision record(Scope scope, String identifier, ClientOrigin origin, Instant now) {
-    return recordAndReport(scope, identifier, origin, now).decision();
+  public Decision recordAttempt(Scope scope, String identifier, ClientOrigin origin,
+      Instant now) {
+    return doRecordAndReport(scope, identifier, origin, now).decision();
   }
 
   /**
@@ -394,7 +410,7 @@ public class AuthAttemptThrottle {
    */
   @Transactional(readOnly = true)
   public boolean isThrottled(Scope scope, String identifier, Instant now) {
-    return isThrottled(scope, identifier, ClientOrigin.unknown(), now);
+    return doIsThrottled(scope, identifier, ClientOrigin.unknown(), now);
   }
 
   /**
@@ -416,6 +432,11 @@ public class AuthAttemptThrottle {
    */
   @Transactional(readOnly = true)
   public boolean isThrottled(Scope scope, String identifier, ClientOrigin origin, Instant now) {
+    return doIsThrottled(scope, identifier, origin, now);
+  }
+
+  /** The read path, without a transaction annotation. See {@link #doRecordAndReport} for why. */
+  private boolean doIsThrottled(Scope scope, String identifier, ClientOrigin origin, Instant now) {
     requireNonNull(scope, "scope must not be null");
     requireNonNull(origin, "origin must not be null");
     requireNonNull(now, "now must not be null");
@@ -425,7 +446,7 @@ public class AuthAttemptThrottle {
     AuthAttemptCounter.Counter account = counter.peek(scope.name(), attemptKey(scope, identifier));
     boolean accountBlocked = isBlocked(account, now);
     Optional<AuthAttemptCounter.Counter> originState = peekOrigin(scope, origin);
-    return combine(account, accountBlocked, originState, origin, now) == Decision.THROTTLED;
+    return combine(accountBlocked, originState, now) == Decision.THROTTLED;
   }
 
   /**
@@ -497,9 +518,12 @@ public class AuthAttemptThrottle {
    *
    * <p>Written once and used by both the write path and the read path, so a rejection and a
    * pre-check can never disagree about the same state.</p>
+   *
+   * <p>Takes only what it reads: whether the account bucket is blocked (the count decides the outcome,
+   * not the state object) and the origin state it may attribute the damage to.</p>
    */
-  private Decision combine(AuthAttemptCounter.Counter account, boolean accountBlocked,
-      Optional<AuthAttemptCounter.Counter> originState, ClientOrigin origin, Instant now) {
+  private Decision combine(boolean accountBlocked,
+      Optional<AuthAttemptCounter.Counter> originState, Instant now) {
     // Criterion 1: an origin that has overrun its own threshold is throttled regardless of which
     // accounts it is hitting.
     if (originState.isPresent() && isBlocked(originState.get(), now)) {
@@ -586,7 +610,7 @@ public class AuthAttemptThrottle {
    * <p>Exposed so a view can say "you can request N more" instead of leaving the visitor to discover
    * the limit by hitting it. This is configured policy, not account state.</p>
    *
-   * <p>Semantics: exactly {@code maxAttempts} attempts succeed per window. {@link #record} compares the
+   * <p>Semantics: exactly {@code maxAttempts} attempts succeed per window. {@link #recordAttempt} compares the
    * count <em>after</em> the increment against this value with a strict {@code >}, so the
    * {@code maxAttempts + 1}-th attempt is the first one refused.</p>
    *

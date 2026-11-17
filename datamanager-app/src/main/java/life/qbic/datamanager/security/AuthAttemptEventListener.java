@@ -134,7 +134,7 @@ public class AuthAttemptEventListener {
     if (address == null || address.isBlank()) {
       return;
     }
-    throttle.record(AuthAttemptThrottle.Scope.LOGIN, address, originResolver.resolve(),
+    throttle.recordAttempt(AuthAttemptThrottle.Scope.LOGIN, address, originResolver.resolve(),
         Instant.now());
     // Debug, not info: a failed login is routine, and a log line per failure is both noisy and a
     // second enumeration oracle for anyone who can read logs.

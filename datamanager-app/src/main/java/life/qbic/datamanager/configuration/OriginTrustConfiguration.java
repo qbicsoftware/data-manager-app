@@ -55,9 +55,6 @@ public class OriginTrustConfiguration {
    */
   static final String REQUIRED_STRATEGY = "native";
 
-  /** The property whose default produces the most confusing possible message. See {@link #configuredBy}. */
-  private static final String STRATEGY_PROPERTY = "server.forward-headers-strategy";
-
   /**
    * Used only to make the failure message actionable.
    *

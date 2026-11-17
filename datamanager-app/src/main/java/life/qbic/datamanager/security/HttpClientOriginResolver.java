@@ -9,7 +9,8 @@ import life.qbic.identity.application.throttle.ClientOriginResolver;
 import life.qbic.identity.application.throttle.IpNetworks;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.tomcat.autoconfigure.TomcatServerProperties;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -56,20 +57,31 @@ public class HttpClientOriginResolver implements ClientOriginResolver {
   private static final Logger log = LoggerFactory.logger(HttpClientOriginResolver.class);
 
   /**
-   * The ranges the container is told to trust as proxies.
+   * Supplies the ranges the container is told to trust as proxies.
    *
-   * <p>Read from the same property Boot reads, so the two cannot disagree. If the container trusts a
-   * range that this class considers public, an address the valve left alone would be taken as a
-   * client; if this class trusted more than the container, a real client would be discarded as a
-   * proxy. Sharing the value makes both mistakes unrepresentable.</p>
+   * <p><b>Deliberately the same object the valve is configured from</b>, not a copy of the property and
+   * certainly not a list of literals here. The two lists must agree exactly, and only one direction of
+   * disagreement is dangerous:</p>
+   * <ul>
+   *   <li>this class trusting <em>more</em> than the container only wastes a bucket on something that
+   *       really was a client;</li>
+   *   <li>this class trusting <em>less</em> means an address the valve refused to rewrite is treated as
+   *       a client — so the bucket is keyed on the <b>proxy</b>, one row covers the whole deployment,
+   *       and a single attacker locks out every user.</li>
+   * </ul>
+   * <p>A hardcoded copy of Boot's default would drift towards that second case as soon as Boot changed
+   * its default, and nothing would report it. Reading {@code TomcatServerProperties} makes the
+   * disagreement unrepresentable.</p>
+   *
+   * <p>An {@link ObjectProvider} because this class is also used outside a servlet context (the specs),
+   * where Boot's {@code TomcatServletWebServerAutoConfiguration} never ran. Absent, this resolver
+   * reports no origin at all — failing closed rather than guessing a trust boundary.</p>
    */
-  private final String internalProxies;
+  private final ObjectProvider<TomcatServerProperties> tomcatProperties;
 
-  public HttpClientOriginResolver(
-      @Value("${server.tomcat.remoteip.internal-proxies:"
-          + "10.0.0.0/8, 192.168.0.0/16, 169.254.0.0/16, 100.64.0.0/10, "
-          + "fc00::/7, 172.16.0.0/12, ::1/128, 127.0.0.0/8, fe80::/10}") String internalProxies) {
-    this.internalProxies = requireNonNull(internalProxies, "internalProxies must not be null");
+  public HttpClientOriginResolver(ObjectProvider<TomcatServerProperties> tomcatProperties) {
+    this.tomcatProperties = requireNonNull(tomcatProperties,
+        "tomcatProperties must not be null");
   }
 
   @Override
@@ -95,12 +107,30 @@ public class HttpClientOriginResolver implements ClientOriginResolver {
       log.debug("Request origin is not an IP literal and cannot be used as a throttle key");
       return ClientOrigin.unknown();
     }
+    String internalProxies = internalProxies();
+    if (internalProxies == null) {
+      // No trust boundary is known, so nothing can be classified. Returning the address here would be
+      // the global-bucket failure: every request would key on whatever the peer happens to be.
+      log.debug("No trusted-proxy ranges available, so no trusted client origin exists");
+      return ClientOrigin.unknown();
+    }
     if (IpNetworks.isInAnyRange(parsed.get(), internalProxies)) {
       // The valve did not rewrite the address, so it is the proxy — the same value for everybody.
       log.debug("Request origin is an internal proxy address, so no trusted client origin exists");
       return ClientOrigin.unknown();
     }
     return ClientOrigin.of(IpNetworks.groupedNetwork(parsed.get()));
+  }
+
+  /**
+   * The trusted-proxy ranges, as the container itself is configured.
+   *
+   * @return the CIDR list, or {@code null} when no servlet container properties exist — see
+   *     {@link #internalProxies} for why "no boundary" must not fall back to "no proxies"
+   */
+  private String internalProxies() {
+    TomcatServerProperties properties = tomcatProperties.getIfAvailable();
+    return properties == null ? null : properties.getRemoteip().getInternalProxies();
   }
 
   private static Optional<HttpServletRequest> currentRequest() {

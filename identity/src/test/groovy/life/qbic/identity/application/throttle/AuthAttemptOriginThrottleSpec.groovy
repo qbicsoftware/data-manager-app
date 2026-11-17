@@ -57,7 +57,7 @@ class AuthAttemptOriginThrottleSpec extends Specification {
     given: 'one origin failing against a fresh account each time'
     when: 'it exceeds the origin threshold, which is far above any single account threshold'
     (1..ORIGIN_LIMIT + 1).each { i ->
-      throttled.record(Scope.LOGIN, "target$i@example.org".toString(), ATTACKER_ORIGIN, T0)
+      throttled.recordAttempt(Scope.LOGIN, "target$i@example.org".toString(), ATTACKER_ORIGIN, T0)
     }
 
     then: 'the next attempt against a brand-new, untouched account is refused'
@@ -65,26 +65,26 @@ class AuthAttemptOriginThrottleSpec extends Specification {
         T0.plusSeconds(1))
 
     and: 'and recording it says the same thing'
-    throttled.record(Scope.LOGIN, 'another-fresh@example.org', ATTACKER_ORIGIN,
+    throttled.recordAttempt(Scope.LOGIN, 'another-fresh@example.org', ATTACKER_ORIGIN,
         T0.plusSeconds(2)) == Decision.THROTTLED
   }
 
   def "a throttled origin does not throttle a different origin"() {
     given: 'the attacker exhausts their own origin'
     (1..ORIGIN_LIMIT + 1).each { i ->
-      throttled.record(Scope.LOGIN, "target$i@example.org".toString(), ATTACKER_ORIGIN, T0)
+      throttled.recordAttempt(Scope.LOGIN, "target$i@example.org".toString(), ATTACKER_ORIGIN, T0)
     }
 
     expect: 'an innocent origin is untouched, even for the same kind of request'
     !throttled.isThrottled(Scope.LOGIN, 'someone@example.org', THIRD_ORIGIN, T0.plusSeconds(1))
-    throttled.record(Scope.LOGIN, 'someone@example.org', THIRD_ORIGIN,
+    throttled.recordAttempt(Scope.LOGIN, 'someone@example.org', THIRD_ORIGIN,
         T0.plusSeconds(1)) == Decision.ALLOWED
   }
 
   def "the origin block expires on its own schedule"() {
     given:
     (1..ORIGIN_LIMIT + 1).each { i ->
-      throttled.record(Scope.LOGIN, "target$i@example.org".toString(), ATTACKER_ORIGIN, T0)
+      throttled.recordAttempt(Scope.LOGIN, "target$i@example.org".toString(), ATTACKER_ORIGIN, T0)
     }
 
     expect: 'blocked inside the block duration'
@@ -99,12 +99,12 @@ class AuthAttemptOriginThrottleSpec extends Specification {
   def "a live origin block is not extended by retrying, so it cannot become permanent"() {
     given:
     (1..ORIGIN_LIMIT + 1).each { i ->
-      throttled.record(Scope.LOGIN, "target$i@example.org".toString(), ATTACKER_ORIGIN, T0)
+      throttled.recordAttempt(Scope.LOGIN, "target$i@example.org".toString(), ATTACKER_ORIGIN, T0)
     }
 
     when: 'the blocked client keeps hammering'
     20.times { i ->
-      throttled.record(Scope.LOGIN, "spam$i@example.org".toString(), ATTACKER_ORIGIN,
+      throttled.recordAttempt(Scope.LOGIN, "spam$i@example.org".toString(), ATTACKER_ORIGIN,
           T0.plusSeconds(30 + i))
     }
 
@@ -120,7 +120,7 @@ class AuthAttemptOriginThrottleSpec extends Specification {
     // attacker's 11 failures lock the victim out for the block duration.
     given: 'an attacker fills the VICTIM account bucket from their own origin'
     (1..ACCOUNT_LIMIT + 1).each { i ->
-      throttled.record(Scope.LOGIN, VICTIM, ATTACKER_ORIGIN, T0.plusSeconds(i))
+      throttled.recordAttempt(Scope.LOGIN, VICTIM, ATTACKER_ORIGIN, T0.plusSeconds(i))
     }
 
     expect: 'the attacker is now refused for that account'
@@ -130,18 +130,18 @@ class AuthAttemptOriginThrottleSpec extends Specification {
     !throttled.isThrottled(Scope.LOGIN, VICTIM, VICTIM_ORIGIN, T0.plusSeconds(20))
 
     and: 'and the victim can actually authenticate'
-    throttled.record(Scope.LOGIN, VICTIM, VICTIM_ORIGIN, T0.plusSeconds(21)) == Decision.ALLOWED
+    throttled.recordAttempt(Scope.LOGIN, VICTIM, VICTIM_ORIGIN, T0.plusSeconds(21)) == Decision.ALLOWED
   }
 
   def "the victim keeps their full allowance every time they log in, however long the attack lasts"() {
     given: 'a sustained attack from one origin'
     (1..ACCOUNT_LIMIT + 5).each { i ->
-      throttled.record(Scope.LOGIN, VICTIM, ATTACKER_ORIGIN, T0.plusSeconds(i))
+      throttled.recordAttempt(Scope.LOGIN, VICTIM, ATTACKER_ORIGIN, T0.plusSeconds(i))
     }
 
     expect: 'the victim can still mistype their own password the usual number of times'
     (1..ACCOUNT_LIMIT).every { i ->
-      throttled.record(Scope.LOGIN, VICTIM, VICTIM_ORIGIN, T0.plusSeconds(100 + i)) ==
+      throttled.recordAttempt(Scope.LOGIN, VICTIM, VICTIM_ORIGIN, T0.plusSeconds(100 + i)) ==
           Decision.ALLOWED
     }
 
@@ -157,12 +157,12 @@ class AuthAttemptOriginThrottleSpec extends Specification {
     // attacker's origin and the victim's are judged by the same rule.
     given:
     (1..ACCOUNT_LIMIT + 1).each { i ->
-      throttled.record(Scope.LOGIN, VICTIM, ATTACKER_ORIGIN, T0.plusSeconds(i))
+      throttled.recordAttempt(Scope.LOGIN, VICTIM, ATTACKER_ORIGIN, T0.plusSeconds(i))
     }
 
     when: 'the victim keeps failing from their own origin'
     (1..ATTRIBUTION_THRESHOLD).each { i ->
-      throttled.record(Scope.LOGIN, VICTIM, VICTIM_ORIGIN, T0.plusSeconds(50 + i))
+      throttled.recordAttempt(Scope.LOGIN, VICTIM, VICTIM_ORIGIN, T0.plusSeconds(50 + i))
     }
 
     then:
@@ -175,12 +175,12 @@ class AuthAttemptOriginThrottleSpec extends Specification {
     // gets is not a bystander, whatever account it is aimed at.
     given:
     (1..ACCOUNT_LIMIT + 1).each { i ->
-      throttled.record(Scope.LOGIN, VICTIM, ATTACKER_ORIGIN, T0.plusSeconds(i))
+      throttled.recordAttempt(Scope.LOGIN, VICTIM, ATTACKER_ORIGIN, T0.plusSeconds(i))
     }
 
     when: 'the same origin keeps going past the attribution threshold'
     (1..ATTRIBUTION_THRESHOLD).each { i ->
-      throttled.record(Scope.LOGIN, 'decoy@example.org', ATTACKER_ORIGIN, T0.plusSeconds(10 + i))
+      throttled.recordAttempt(Scope.LOGIN, 'decoy@example.org', ATTACKER_ORIGIN, T0.plusSeconds(10 + i))
     }
 
     then: 'it is treated as the source of the damage and refused'
@@ -194,18 +194,18 @@ class AuthAttemptOriginThrottleSpec extends Specification {
     def accountOnly = new AuthAttemptThrottle(counter, ACCOUNT_LIMIT, Duration.ofMinutes(15),
         Duration.ofMinutes(15), 2, Duration.ofMinutes(15), Duration.ofMinutes(15))
     (1..ACCOUNT_LIMIT + 1).each { i ->
-      accountOnly.record(Scope.LOGIN, VICTIM, VICTIM_ORIGIN, T0.plusSeconds(i))
+      accountOnly.recordAttempt(Scope.LOGIN, VICTIM, VICTIM_ORIGIN, T0.plusSeconds(i))
     }
 
     expect: 'the account bucket still blocks, exactly as before #1691'
     accountOnly.isThrottled(Scope.LOGIN, VICTIM, VICTIM_ORIGIN, T0.plusSeconds(30))
-    accountOnly.record(Scope.LOGIN, VICTIM, VICTIM_ORIGIN, T0.plusSeconds(31)) == Decision.THROTTLED
+    accountOnly.recordAttempt(Scope.LOGIN, VICTIM, VICTIM_ORIGIN, T0.plusSeconds(31)) == Decision.THROTTLED
   }
 
   def "an unknown origin cannot rescue a blocked account even when origin scope is enabled"() {
     given: 'a deployment that enabled origin scope but resolved nothing'
     (1..ACCOUNT_LIMIT + 1).each { i ->
-      throttled.record(Scope.LOGIN, VICTIM, ClientOrigin.unknown(), T0.plusSeconds(i))
+      throttled.recordAttempt(Scope.LOGIN, VICTIM, ClientOrigin.unknown(), T0.plusSeconds(i))
     }
 
     expect: 'it degrades to account scope rather than to no throttle'
@@ -214,7 +214,7 @@ class AuthAttemptOriginThrottleSpec extends Specification {
 
   def "an unknown origin writes no origin bucket"() {
     when:
-    throttled.record(Scope.LOGIN, VICTIM, ClientOrigin.unknown(), T0)
+    throttled.recordAttempt(Scope.LOGIN, VICTIM, ClientOrigin.unknown(), T0)
 
     then: 'only the account bucket exists — there is nothing to attribute the request to'
     counter.scopes() == [Scope.LOGIN.name()]
@@ -224,7 +224,7 @@ class AuthAttemptOriginThrottleSpec extends Specification {
 
   def "the origin bucket is written alongside the account bucket, in one call"() {
     when:
-    throttled.record(Scope.LOGIN, VICTIM, VICTIM_ORIGIN, T0)
+    throttled.recordAttempt(Scope.LOGIN, VICTIM, VICTIM_ORIGIN, T0)
 
     then: 'both scopes, one statement each, which is what makes the combined rule possible at all'
     counter.scopes().toSet() == [Scope.LOGIN.name(), Scope.LOGIN_ORIGIN.name()] as Set
@@ -232,7 +232,7 @@ class AuthAttemptOriginThrottleSpec extends Specification {
 
   def "the origin key is a hash, never the network in readable form"() {
     when:
-    throttled.record(Scope.LOGIN, VICTIM, ATTACKER_ORIGIN, T0)
+    throttled.recordAttempt(Scope.LOGIN, VICTIM, ATTACKER_ORIGIN, T0)
 
     then: 'the store holds only 64-char digests, so the table is not a list of networks under attack'
     counter.originKeys().size() == 1
@@ -248,10 +248,10 @@ class AuthAttemptOriginThrottleSpec extends Specification {
     // its threshold. That is the "dead control beside a live feature" failure this codebase has hit.
     given: 'an origin that is partway to its threshold, with the account bucket dirty too'
     (1..ATTRIBUTION_THRESHOLD).each { i ->
-      throttled.record(Scope.LOGIN, 'decoy@example.org', ATTACKER_ORIGIN, T0.plusSeconds(i))
+      throttled.recordAttempt(Scope.LOGIN, 'decoy@example.org', ATTACKER_ORIGIN, T0.plusSeconds(i))
     }
     (1..ACCOUNT_LIMIT).each { i ->
-      throttled.record(Scope.LOGIN, VICTIM, ATTACKER_ORIGIN, T0.plusSeconds(10 + i))
+      throttled.recordAttempt(Scope.LOGIN, VICTIM, ATTACKER_ORIGIN, T0.plusSeconds(10 + i))
     }
     def originBefore = counter.originCount()
 
@@ -278,7 +278,7 @@ class AuthAttemptOriginThrottleSpec extends Specification {
     // The scope is part of the hashed key, so a network that happens to look like an address cannot
     // land in an account bucket.
     when:
-    throttled.record(Scope.LOGIN, '203.0.113.0/24', ATTACKER_ORIGIN, T0)
+    throttled.recordAttempt(Scope.LOGIN, '203.0.113.0/24', ATTACKER_ORIGIN, T0)
 
     then:
     counter.rowCount() == 2
@@ -289,7 +289,7 @@ class AuthAttemptOriginThrottleSpec extends Specification {
   def "an origin block alone is enough to refuse, even for a pristine account and a clean window"() {
     given:
     (1..ORIGIN_LIMIT + 1).each { i ->
-      throttled.record(Scope.LOGIN, "target$i@example.org".toString(), ATTACKER_ORIGIN, T0)
+      throttled.recordAttempt(Scope.LOGIN, "target$i@example.org".toString(), ATTACKER_ORIGIN, T0)
     }
 
     when:
@@ -307,7 +307,7 @@ class AuthAttemptOriginThrottleSpec extends Specification {
     // but a caller that branched on the bucket would leak everyone else's traffic behind the same NAT.
     given:
     (1..ORIGIN_LIMIT + 1).each { i ->
-      throttled.record(Scope.LOGIN, "target$i@example.org".toString(), ATTACKER_ORIGIN, T0)
+      throttled.recordAttempt(Scope.LOGIN, "target$i@example.org".toString(), ATTACKER_ORIGIN, T0)
     }
 
     when:
@@ -336,7 +336,7 @@ class AuthAttemptOriginThrottleSpec extends Specification {
     // which rejects the malformed form before any password comparison — so there is no guess to spend
     // and nothing to throttle. Counting it would let a client inflate its own origin's tally.
     when:
-    def decision = throttled.record(Scope.LOGIN, '', ATTACKER_ORIGIN, T0)
+    def decision = throttled.recordAttempt(Scope.LOGIN, '', ATTACKER_ORIGIN, T0)
 
     then:
     decision == Decision.ALLOWED
@@ -350,7 +350,7 @@ class AuthAttemptOriginThrottleSpec extends Specification {
     // LOGIN_ORIGIN is derived from LOGIN inside the throttle. Accepting it from a caller would let a
     // view apply the account limits to the origin bucket, or vice versa.
     when:
-    throttled.record(scope, 'x@example.org', ATTACKER_ORIGIN, T0)
+    throttled.recordAttempt(scope, 'x@example.org', ATTACKER_ORIGIN, T0)
 
     then:
     thrown(IllegalArgumentException)
@@ -370,7 +370,7 @@ class AuthAttemptOriginThrottleSpec extends Specification {
     // still a bystander; at `maxAttempts + 1` it is the culprit.
     given: 'a blocked account'
     (1..ACCOUNT_LIMIT + 1).each { i ->
-      throttled.record(Scope.LOGIN, VICTIM, ATTACKER_ORIGIN, T0.plusSeconds(i))
+      throttled.recordAttempt(Scope.LOGIN, VICTIM, ATTACKER_ORIGIN, T0.plusSeconds(i))
     }
 
     expect: 'the origin that produced exactly those failures is refused'
@@ -380,10 +380,10 @@ class AuthAttemptOriginThrottleSpec extends Specification {
   def "a bystander one failure short of the account limit is still a bystander"() {
     given: 'an account blocked by somebody else, and an origin with maxAttempts - 1 failures of its own'
     (1..ACCOUNT_LIMIT + 1).each { i ->
-      throttled.record(Scope.LOGIN, VICTIM, ATTACKER_ORIGIN, T0.plusSeconds(i))
+      throttled.recordAttempt(Scope.LOGIN, VICTIM, ATTACKER_ORIGIN, T0.plusSeconds(i))
     }
     (1..ACCOUNT_LIMIT - 1).each { i ->
-      throttled.record(Scope.LOGIN, 'decoy@example.org', THIRD_ORIGIN, T0.plusSeconds(10 + i))
+      throttled.recordAttempt(Scope.LOGIN, 'decoy@example.org', THIRD_ORIGIN, T0.plusSeconds(10 + i))
     }
 
     expect: 'not implicated, so not refused — this is criterion 2 working as intended'
@@ -407,7 +407,7 @@ class AuthAttemptOriginThrottleSpec extends Specification {
     // Deliberate scope decision, not an oversight: a resend costs an email, so its origin threshold
     // has to be calibrated against the population behind one NAT before it can be switched on.
     when:
-    throttled.record(scope, 'someone@example.org', ATTACKER_ORIGIN, T0)
+    throttled.recordAttempt(scope, 'someone@example.org', ATTACKER_ORIGIN, T0)
 
     then:
     counter.scopes() == [scope.name()]

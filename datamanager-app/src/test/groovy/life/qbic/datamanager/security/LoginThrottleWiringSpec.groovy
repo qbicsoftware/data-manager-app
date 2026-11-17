@@ -73,7 +73,7 @@ class LoginThrottleWiringSpec extends Specification {
 
   def "a throttled login POST is rejected without reaching the authentication path"() {
     given: 'the bucket is already over the limit'
-    4.times { throttle.record(Scope.LOGIN, ADDRESS, NOW) }
+    4.times { throttle.recordAttempt(Scope.LOGIN, ADDRESS, NOW) }
 
     and:
     def request = loginPost(ADDRESS)
@@ -96,7 +96,7 @@ class LoginThrottleWiringSpec extends Specification {
     // ~1 ms while a wrong password takes ~30 ms tells the attacker the address is being throttled,
     // and therefore that it exists.
     given:
-    4.times { throttle.record(Scope.LOGIN, ADDRESS, NOW) }
+    4.times { throttle.recordAttempt(Scope.LOGIN, ADDRESS, NOW) }
 
     when:
     filter.doFilterInternal(loginPost(ADDRESS), Stub(HttpServletResponse), new RecordingChain())
@@ -107,7 +107,7 @@ class LoginThrottleWiringSpec extends Specification {
 
   def "the rejection uses the same generic message a wrong password produces"() {
     given:
-    4.times { throttle.record(Scope.LOGIN, ADDRESS, NOW) }
+    4.times { throttle.recordAttempt(Scope.LOGIN, ADDRESS, NOW) }
 
     when:
     filter.doFilterInternal(loginPost(ADDRESS), Stub(HttpServletResponse), new RecordingChain())
@@ -118,7 +118,7 @@ class LoginThrottleWiringSpec extends Specification {
 
   def "GET /login is never throttled, or the visitor could not reach the form to stop failing"() {
     given:
-    4.times { throttle.record(Scope.LOGIN, ADDRESS, NOW) }
+    4.times { throttle.recordAttempt(Scope.LOGIN, ADDRESS, NOW) }
 
     and:
     def request = request('GET', '/login')
@@ -141,7 +141,7 @@ class LoginThrottleWiringSpec extends Specification {
 
   def "a rejected attempt is not counted, so retrying cannot extend the block"() {
     given:
-    4.times { throttle.record(Scope.LOGIN, ADDRESS, NOW) }
+    4.times { throttle.recordAttempt(Scope.LOGIN, ADDRESS, NOW) }
     def before = counter.totalIncrements()
 
     when: 'the blocked client retries ten times'
@@ -186,7 +186,7 @@ class LoginThrottleWiringSpec extends Specification {
     // because ACL records are keyed on it. So on success the listener cleared hash("LOGIN\0<uuid>"),
     // a bucket nobody had written to, and the real email-keyed counter was left untouched.
     given: 'two failures keyed on the email, as the failure path does'
-    2.times { throttle.record(Scope.LOGIN, ADDRESS, NOW) }
+    2.times { throttle.recordAttempt(Scope.LOGIN, ADDRESS, NOW) }
     def listener = new AuthAttemptEventListener(throttle, ClientOriginResolver.none())
 
     when: 'the same person logs in successfully'
@@ -223,7 +223,7 @@ class LoginThrottleWiringSpec extends Specification {
     // this one would leave every form-login user accumulating a counter they never clear.
     given:
     def listener = new AuthAttemptEventListener(throttle, ClientOriginResolver.none())
-    2.times { throttle.record(Scope.LOGIN, ADDRESS, NOW) }
+    2.times { throttle.recordAttempt(Scope.LOGIN, ADDRESS, NOW) }
 
     when:
     listener.onInteractiveSuccess(
@@ -260,7 +260,7 @@ class LoginThrottleWiringSpec extends Specification {
         Duration.ofMinutes(15), 2, Duration.ofMinutes(15), Duration.ofMinutes(15),
         true, 5, Duration.ofMinutes(15), Duration.ofMinutes(10))
     def attacker = ClientOrigin.of('203.0.113.0/24')
-    (1..6).each { i -> scoped.record(Scope.LOGIN, "target$i@example.org".toString(), attacker, NOW) }
+    (1..6).each { i -> scoped.recordAttempt(Scope.LOGIN, "target$i@example.org".toString(), attacker, NOW) }
 
     and:
     def scopedHandler = new RecordingFailureHandler()
@@ -289,7 +289,7 @@ class LoginThrottleWiringSpec extends Specification {
         Duration.ofMinutes(15), 2, Duration.ofMinutes(15), Duration.ofMinutes(15),
         true, 20, Duration.ofMinutes(15), Duration.ofMinutes(10))
     (1..4).each { i ->
-      scoped.record(Scope.LOGIN, ADDRESS, ClientOrigin.of('203.0.113.0/24'), NOW)
+      scoped.recordAttempt(Scope.LOGIN, ADDRESS, ClientOrigin.of('203.0.113.0/24'), NOW)
     }
 
     and:

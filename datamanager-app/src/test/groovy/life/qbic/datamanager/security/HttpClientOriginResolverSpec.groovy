@@ -1,6 +1,8 @@
 package life.qbic.datamanager.security
 
 import life.qbic.identity.application.throttle.ClientOrigin
+import org.springframework.beans.factory.ObjectProvider
+import org.springframework.boot.tomcat.autoconfigure.TomcatServerProperties
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -28,7 +30,49 @@ class HttpClientOriginResolverSpec extends Specification {
   HttpClientOriginResolver resolver
 
   def setup() {
-    resolver = new HttpClientOriginResolver(INTERNAL_PROXIES)
+    resolver = resolverWith(INTERNAL_PROXIES)
+  }
+
+  /**
+   * A resolver whose container properties report the given trusted-proxy list.
+   *
+   * <p>Built from the real {@link TomcatServerProperties} rather than a stub, so the spec exercises the
+   * same accessor path the valve is configured from — a stub here would let the two drift apart, which
+   * is the defect this design exists to prevent.</p>
+   */
+  private static HttpClientOriginResolver resolverWith(String internalProxies) {
+    def properties = new TomcatServerProperties()
+    if (internalProxies != null) {
+      properties.remoteip.internalProxies = internalProxies
+    }
+    return new HttpClientOriginResolver(providerOf(properties))
+  }
+
+  /** No servlet container properties at all — the state outside a servlet context. */
+  private static HttpClientOriginResolver resolverWithoutContainerProperties() {
+    return new HttpClientOriginResolver(providerOf(null))
+  }
+
+  private static ObjectProvider<TomcatServerProperties> providerOf(
+      TomcatServerProperties value) {
+    return new ObjectProvider<TomcatServerProperties>() {
+      @Override
+      TomcatServerProperties getObject(Object... args) { return value }
+
+      @Override
+      TomcatServerProperties getIfAvailable() { return value }
+
+      @Override
+      TomcatServerProperties getIfUnique() { return value }
+
+      @Override
+      TomcatServerProperties getObject() { return value }
+
+      @Override
+      Iterator<TomcatServerProperties> iterator() {
+        return value == null ? Collections.emptyIterator() : [value].iterator()
+      }
+    }
   }
 
   // ---- the positive case: a real client address becomes a grouped origin ---------------------------
@@ -147,9 +191,35 @@ class HttpClientOriginResolverSpec extends Specification {
     // second-guess it — but it does mean a deployment that cleared the list AND sits behind a proxy
     // will key on the proxy address. Documented in ops §1.2.
     given:
-    def trustingNothing = new HttpClientOriginResolver('')
+    def trustingNothing = resolverWith('')
 
     expect:
     trustingNothing.originOf('10.1.2.3').isKnown()
+  }
+
+  def "without any container properties the resolver reports no origin, never the peer address"() {
+    // Fail closed. The tempting alternative — treat "no boundary known" as "nothing is a proxy" — is
+    // the global-bucket failure: every request would key on whatever address the peer has, and behind
+    // a proxy that is one bucket for the entire deployment.
+    given:
+    def noContainer = resolverWithoutContainerProperties()
+
+    expect:
+    noContainer.originOf('203.0.113.7') == ClientOrigin.unknown()
+    noContainer.originOf('172.20.214.50') == ClientOrigin.unknown()
+    noContainer.resolve() == ClientOrigin.unknown()
+  }
+
+  def "the resolver reads the same list the valve is configured from"() {
+    // The two must never disagree, and only one direction of disagreement is safe. Pinning that the
+    // value comes from TomcatServerProperties means a change to Boot's default reaches both.
+    given:
+    def custom = resolverWith('203.0.113.0/24')
+
+    expect: 'a range the container trusts is not a client'
+    custom.originOf('203.0.113.7') == ClientOrigin.unknown()
+
+    and: 'even loopback, once the operator has narrowed the list, is judged by the list'
+    custom.originOf('127.0.0.1').isKnown()
   }
 }
