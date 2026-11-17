@@ -147,14 +147,17 @@ indirectly: the application must see the real client, not `10.x`/`172.x` proxy a
 ### 1.6 Why this blocks more than throttling
 
 The same three conditions (headers sent, headers trustworthy, §1.2 set) are prerequisites for
-passkeys and for reliable ORCID login. See
+passkeys and for reliable ORCID **linking**. See
 [`docs/plans/MILESTONE-MFA-self-governed-2fa.md`](../plans/MILESTONE-MFA-self-governed-2fa.md) §1a.
 
 Two specific known issues that this fixes:
 
 - `spring.security.oauth2.client.registration.orcid.redirect-uri` defaults to
   `${ORCID_REDIRECT_URI:{baseUrl}/login/oauth2/code/orcid}`. `{baseUrl}` is derived from the request,
-  so behind an untrusted proxy the redirect URI can be built with the wrong scheme/host.
+  so behind an untrusted proxy the redirect URI can be built with the wrong scheme/host. **This now
+  affects linking only** — ORCID is no longer a login (see
+  [`docs/migrations/NEXT.md`](../migrations/NEXT.md) §"ORCID is no longer a login"), so a broken
+  redirect URI means users cannot connect their iD, not that they cannot sign in.
 - WebAuthn cannot function at all: browsers refuse `navigator.credentials` outside a secure context,
   and `rpId` must equal the public origin.
 
@@ -221,6 +224,12 @@ Run through this before the first production deployment and after any proxy chan
 - [ ] `ARTEMIS_*` set and the broker reachable
 - [ ] `ORCID_CLIENT_ID` / `ORCID_CLIENT_SECRET` set, and the registered redirect URI matches the
       public origin
+- [ ] **`qbic.oidc.orcid.issuer` set** to the registry in use (`https://orcid.org` or
+      `https://sandbox.orcid.org`). Required, no default. The application **refuses to start** without
+      it, and also refuses if it disagrees with the registry named by
+      `spring.security.oauth2.client.provider.orcid.authorization-uri`.
+- [ ] Passwordless active accounts counted and the helpdesk briefed — see
+      [`docs/migrations/NEXT.md`](../migrations/NEXT.md) §"ORCID is no longer a login"
 
 ### Schema
 

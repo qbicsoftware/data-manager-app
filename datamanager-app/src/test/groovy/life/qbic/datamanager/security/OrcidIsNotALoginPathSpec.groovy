@@ -89,8 +89,20 @@ class OrcidIsNotALoginPathSpec extends Specification {
         .collect { (it.text ?: '').toLowerCase() }
 
     then: 'no link, card or label invites the visitor to sign in with ORCID'
-    texts.every { !it.contains('orcid') }
+    //
+    // Mentioning ORCID is allowed and necessary: the page explains that it no longer signs people in.
+    // What must not exist is an *affordance* — an invitation or a control that starts a provider login.
+    // The distinction is the whole point of this spec, so it is asserted on the invitation wording
+    // rather than on the string "orcid".
+    texts.every { !it.contains('login with orcid') }
+    texts.every { !it.contains('sign in with orcid') }
     texts.every { !it.contains('login with') }
+
+    and: 'nothing on the page links to the OAuth2 authorization endpoint'
+    descendants(layout).every { component ->
+      def href = component.element.getAttribute('href')
+      href == null || !href.contains('/oauth2/authorization')
+    }
 
     and: 'the ordinary registration route is still offered, via its RouterLink'
     descendants(layout).any {

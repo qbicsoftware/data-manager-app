@@ -125,7 +125,20 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
     RouterLink routerLink = new RouterLink("Register", UserRegistrationMain.class);
     Span registrationLink = new Span(new Text("Don't have an account? "), routerLink);
     registrationLink.addClassName("registration-link");
-    return new Div(registrationLink);
+
+    // Shown to EVERY visitor, unconditionally.
+    //
+    // This is where a returning user learns that ORCID no longer signs them in (AUTH-R-07). It must not
+    // be conditional on "you had an ORCID account", because that condition is an account-existence
+    // oracle (AUTH-NFR-03): anyone could probe it to learn whether an address is registered, and whether
+    // it was registered through the provider. The sentence names no account and no address, and it is
+    // true for everyone who reads it.
+    var orcidNotice = new Span(new Text(
+        "Signed in with ORCiD before? Use \"Forgot your password\" once to set a password for this "
+            + "account."));
+    orcidNotice.addClassName("login-orcid-notice");
+
+    return new Div(registrationLink, orcidNotice);
   }
 
   private void styleNotificationLayout() {
