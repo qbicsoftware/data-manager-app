@@ -8,12 +8,10 @@ import com.vaadin.flow.router.Router
 import com.vaadin.flow.server.RouteRegistry
 import com.vaadin.flow.server.VaadinService
 import life.qbic.datamanager.views.login.passwordreset.ResetPasswordMain
-import life.qbic.datamanager.views.register.UserRegistrationComponent.Mode
 import life.qbic.identity.api.Passwords
 import life.qbic.identity.api.UserInformationService
 import life.qbic.identity.api.UserNames
 import spock.lang.Specification
-import spock.lang.Unroll
 
 /**
  * <b>Registration must not answer "does this account exist?" (AUTH-NFR-03, FEAT-AUTH-FLOWS-03).</b>
@@ -33,10 +31,11 @@ import spock.lang.Unroll
  * <p>These specs pin both halves, plus the password rule whose rendered message disagreed with the
  * rule actually enforced.</p>
  *
- * <p><b>Both modes are covered by the same assertions.</b> The two forms were once separate classes
- * with a copy each of the email validator, so the oracle could have come back in either. They are now
- * one component selected by {@link Mode}, and the {@code @Unroll} below exists to keep it that way: if
- * a future change reintroduces a per-mode fork, the ORCID case fails.</p>
+ * <p><b>There is one form now.</b> The two forms were once separate classes with a copy each of the
+ * email validator, so the oracle could have come back in either; they were merged, then the mode
+ * parameter collapsed when the passwordless external-provider registration path was removed
+ * (AUTH-R-07). The assertions below therefore have exactly one subject, and a future change that
+ * reintroduces a second registration flow has to add a second subject deliberately.</p>
  */
 class UserRegistrationAccountOracleSpec extends Specification {
 
@@ -65,11 +64,10 @@ class UserRegistrationAccountOracleSpec extends Specification {
         .first() as Binder
   }
 
-  @Unroll
-  def "the email field does not ask the account table whether the address is free (#mode)"() {
+  def "the email field does not ask the account table whether the address is free"() {
     given: 'a mock that would record the question, were it asked'
     def accountTable = Mock(UserInformationService)
-    def component = new UserRegistrationComponent(accountTable, mode)
+    def component = new UserRegistrationComponent(accountTable)
 
     when: 'the form is constructed and validated'
     component.@registrationInformationBinder.isValid()
@@ -78,18 +76,15 @@ class UserRegistrationAccountOracleSpec extends Specification {
     0 * accountTable.isEmailAvailable(_)
     0 * accountTable._
 
-    where:
-    mode << [Mode.LOCAL, Mode.ORCID]
   }
 
-  @Unroll
-  def "a registered address is not called out in field validation (#mode)"() {
+  def "a registered address is not called out in field validation"() {
     given: 'a service that reports every address as taken'
     def taken = Stub(UserInformationService) {
       isEmailAvailable(_) >> false
       isUserNameAvailable(_) >> true
     }
-    def component = new UserRegistrationComponent(taken, mode)
+    def component = new UserRegistrationComponent(taken)
 
     when: 'the email field is populated and validated'
     component.@email.setValue('someone@example.org')
@@ -100,13 +95,11 @@ class UserRegistrationAccountOracleSpec extends Specification {
       !error.getMessage().get().toLowerCase().contains('already in use')
     }
 
-    where:
-    mode << [Mode.LOCAL, Mode.ORCID]
   }
 
   def "the password message states the minimum that is actually enforced"() {
     given:
-    def component = new UserRegistrationComponent(userInformationService, Mode.LOCAL)
+    def component = new UserRegistrationComponent(userInformationService)
 
     expect: 'the rendered hint and the rejection share one source with the domain rule'
     component.@password.getHelperText() == Passwords.hint()
@@ -125,54 +118,43 @@ class UserRegistrationAccountOracleSpec extends Specification {
         .every { error -> !error.getMessage().get().contains('Password') }
   }
 
-  def "the ORCID form does not ask for a password at all"() {
-    given: 'the mode that was authenticated by ORCID, so the visitor already proved who they are'
-    def component = new UserRegistrationComponent(userInformationService, Mode.ORCID)
+  def "registration always collects a password"() {
+    given: 'the only registration form that exists'
+    def component = new UserRegistrationComponent(userInformationService)
 
-    expect: 'no password field exists to be filled in the first place'
-    component.children.toList().every { !(it instanceof PasswordField) }
+    expect: 'a password field is rendered — there is no passwordless registration path left'
+    component.children.toList().any { it instanceof PasswordField }
 
-    and: 'a submitted registration carries no password, so nothing can store one by accident'
-    component.currentInput().password() == ''
+    when: 'the visitor submits without one'
+    component.setFullName('Ada Lovelace')
+    component.setEmail('ada@example.org')
+    component.setUsername('alovelace')
 
-    and: 'the reset route is not offered, because there is no password to reset'
-    !component.children.toList().findAll { it instanceof Span }.any {
+    then: 'the binder rejects it rather than registering an account with no credential'
+    def status = component.@registrationInformationBinder.validate()
+    status.hasErrors()
+    status.getFieldValidationErrors().any {
+      it.getMessage().get().toLowerCase().contains('password')
+    }
+  }
+
+  def "the reset route is offered, because every account now has a password to reset"() {
+    given:
+    def component = new UserRegistrationComponent(userInformationService)
+
+    expect: 'a visitor who chose a password is told how to recover from forgetting it'
+    component.children.toList().findAll { it instanceof Span }.any {
       it.text.toLowerCase().contains('forgot your password')
     }
   }
 
-  def "both modes submit the same value type, so the submission has one shape"() {
-    given:
-    def local = new UserRegistrationComponent(userInformationService, Mode.LOCAL)
-    def orcid = new UserRegistrationComponent(userInformationService, Mode.ORCID)
-
-    when: 'the same visitor details are entered into both'
-    [local, orcid].each { form ->
-      form.setFullName('Ada Lovelace')
-      form.setEmail('ada@example.org')
-      form.setUsername('alovelace')
-    }
-    local.@password.setValue('a-strong-passphrase')
-
-    then: 'the email, name and user name are identical, and only the password differs'
-    local.currentInput().fullName() == orcid.currentInput().fullName()
-    local.currentInput().email() == orcid.currentInput().email()
-    local.currentInput().userName() == orcid.currentInput().userName()
-    local.currentInput().password() == 'a-strong-passphrase'
-    orcid.currentInput().password() == ''
-  }
-
-  @Unroll
-  def "the user name field is bounded by the shared maximum (#mode)"() {
+  def "the user name field is bounded by the shared maximum"() {
     given:
     def component = new UserRegistrationComponent(
-        Stub(UserInformationService) { isUserNameAvailable(_) >> true }, mode)
+        Stub(UserInformationService) { isUserNameAvailable(_) >> true })
 
-    expect: 'the input is truncated at the constant, in both modes, from the same source'
+    expect: 'the input is truncated at the constant, from the single source'
     component.@username.getMaxLength() == UserNames.MAX_LENGTH
     component.@username.getHelperText().contains(UserNames.MAX_LENGTH.toString())
-
-    where:
-    mode << [Mode.LOCAL, Mode.ORCID]
   }
 }

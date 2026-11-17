@@ -40,7 +40,7 @@ class PendingConfirmationUrlLeakSpec extends Specification {
     bytes.contains('PENDING_REGISTRATION_USER_ID')
 
     where:
-    view << [UserRegistrationMain, RegistrationOrcIdMain]
+    view << [UserRegistrationMain]
   }
 
   def "the page still declares exactly one route, so no id-bearing variant exists"() {

@@ -1,6 +1,7 @@
 package life.qbic.datamanager.views.login
 
 import com.vaadin.flow.component.UI
+import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.component.page.History
 import com.vaadin.flow.component.page.Page
 import com.vaadin.flow.dom.Element
@@ -121,6 +122,43 @@ class LoginLayoutSpec extends Specification {
     then: "the login form stays available and the URL is left alone"
     event.reroutedTo == null
     0 * history.replaceState(_, _)
+  }
+
+  def "the login page tells returning ORCID users how to get in, without naming any account"() {
+    given: 'the page as a new visitor sees it'
+    def texts = descendants(loginLayout).findAll { it instanceof Span }
+        .collect { (it.text ?: '').toLowerCase() }
+
+    expect: 'there is a notice pointing at the password reset'
+    texts.any { it.contains('forgot your password') }
+
+    and: 'it mentions ORCID, because that is the account the reader remembers using'
+    texts.any { it.contains('orcid') }
+
+    and: 'it discloses nothing about any account: no address, no "you had", no condition'
+    texts.every { !it.contains('@') }
+    texts.every { !it.contains('your account exists') }
+    texts.every { !it.contains('orcid account') }
+
+    and: 'it is unconditional — the same text for every visitor (AUTH-NFR-03)'
+    // The notice is rendered in the constructor, not behind a check on a query parameter or a lookup.
+    // If it ever becomes conditional, this assertion should be replaced by one that proves the
+    // condition cannot be probed — but it must not quietly become conditional.
+    texts.count { it.contains('forgot your password') } == 1
+  }
+
+  def "the login page still offers no ORCID sign-in"() {
+    given:
+    def texts = descendants(loginLayout).findAll { it instanceof Span }
+        .collect { (it.text ?: '').toLowerCase() }
+
+    expect: 'the notice explains ORCID is not a login; it must not invite one'
+    texts.every { !it.contains('login with orcid') }
+    texts.every { !it.contains('sign in with orcid') }
+  }
+
+  private static List descendants(com.vaadin.flow.component.Component component) {
+    return component.children.toList().collectMany { [it] + descendants(it) }
   }
 
   private CapturingBeforeEnterEvent beforeEnterEvent() {

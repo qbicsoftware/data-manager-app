@@ -177,8 +177,16 @@ journey. Requirements: `AUTH-R-05`, `AUTH-R-06`, `AUTH-NFR-03` (+ `AUTH-R-01` fo
 | M1-7 | R2 | Task | **One password policy**: single source (`PasswordPolicy`), fix the "shorter than 8 characters" message for a 12-character rule, remove the three UI copies | `simple` | — |
 | M1-8 | R2 | Task | **Display name is not a credential** (`AUTH-R-06`): stop asking for a user name at registration (derive or defer to profile); keep `platformUserName` as display-only for sharing and avatars | `medium` | M1-6 |
 | M1-9 | R2 | Task | Remove dead UX state (`?userRegistered` consumer with no producer) and collapse the duplicated confirmation-parameter configuration | `simple` | M1-2 |
-| M1-11 | R1 | Task | **ORCID-only accounts get a password** (`AUTH-R-07`, decision D1b): detection query, one-time set-password invitation for accounts with `encryptedPassword IS NULL`, remove the passwordless-ORCID registration path, make ORCID login require an existing link instead of offering registration (runbook in `docs/migrations/NEXT.md`; the DDL itself is promoted) | `complex`, `high prio` | M1-1, M1-3 |
+| M1-11 | R1 | Task | ~~**ORCID-only accounts get a password** (`AUTH-R-07`, decision D1b)~~ — ✅ **done 2026-11-17** (story `FEAT-AUTH-FLOWS-05`, #1677). Implemented without an invitation campaign: an active passwordless account obtains a password through the ordinary reset flow, verified on a running build. ORCID is no longer a login at all. See `docs/migrations/NEXT.md`. | — | — |
 | M1-10 | R1 | Task | Migration guide entry in `docs/migrations/NEXT.md` for both new tables, with the "links in flight stop working" operator note (B1) | `documentation` | M1-1 |
+
+> **M1 gate is closed (2026-11-17).** The tokenised-link work shipped in v1.20.4, and `FEAT-AUTH-FLOWS-05`
+> removed the second authentication path. There is now exactly one way to establish a session — the password
+> — so the property the milestone's exit criteria and the bypass test suite (M4-5) depend on is true.
+>
+> **Sequencing consequence:** the "M1 before M2" rule was written because the clean-up closed paths that
+> would bypass the factor. That is satisfied. What remains open in M1 is documentation, which does not
+> block factor storage. **M2 may start**, subject to ADR 0011 (#1667), which is still the M0 gate.
 
 **Two releases (decision B5):** `R1` is the security fix and ships first; `R2` is the consolidation
 and follows. Rationale: the vulnerability fix must not wait on a UI refactor, and if the cosmetic

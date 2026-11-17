@@ -106,9 +106,14 @@ public class User implements Serializable {
   }
 
   /**
-   * Sets the OIDC issue and identifier for the user. Overwrites existing entries.
+   * Sets the OIDC issuer and identifier for the user. Overwrites existing entries.
+   *
+   * <p>This is an attribute update, not an authentication event: since AUTH-R-07 the external provider
+   * is no longer a way into the application, so nothing here can grant access. The caller is
+   * responsible for having already authenticated the user with their password.</p>
+   *
    * @param oidcIssuer the issuer of the OIDC principal
-   * @param oidcId the identifier of the OIDC principal
+   * @param oidcId     the identifier of the OIDC principal
    * @since 1.11.0
    */
   public void setOidcEntry(String oidcIssuer, String oidcId) {
@@ -116,18 +121,34 @@ public class User implements Serializable {
     this.oidcId = oidcId;
   }
 
-  public static User createOidc(String fullName, String emailAddress,
-      String userName, String oidcIssuer, String oidcId) {
-    if (isNull(oidcIssuer) && nonNull(oidcId)) {
-      throw new IllegalStateException("OIDC issuer cannot be null if OIDC identifier is provided");
-    }
-    validateUserName(userName);
-    UserId id = UserId.create();
-    Instant registrationDate = Instant.now();
-    var user = new User(id, FullName.from(fullName)
-        , EmailAddress.from(emailAddress), userName, null, registrationDate, oidcIssuer, oidcId);
-    user.active = false;
-    return user;
+  /**
+   * Removes the external-provider link.
+   *
+   * <p>The inverse of {@link #setOidcEntry}. Its absence was a defect: a link could be written but never
+   * removed, so a wrong iD — or one recorded against the wrong registry host — was permanent without
+   * someone editing the database.</p>
+   *
+   * @since 1.20.4
+   */
+  public void clearOidcEntry() {
+    this.oidcIssuer = null;
+    this.oidcId = null;
+  }
+
+  /**
+   * @return the ORCID iD, or {@code null} when the account holds no link
+   * @since 1.20.4
+   */
+  public String oidcId() {
+    return this.oidcId;
+  }
+
+  /**
+   * @return the issuer the iD was issued by, or {@code null} when the account holds no link
+   * @since 1.20.4
+   */
+  public String oidcIssuer() {
+    return this.oidcIssuer;
   }
 
   @Override

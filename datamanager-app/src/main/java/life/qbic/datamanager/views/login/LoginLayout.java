@@ -5,11 +5,9 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Text;
-import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
-import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.login.AbstractLogin.ForgotPasswordEvent;
 import com.vaadin.flow.component.login.AbstractLogin.LoginEvent;
@@ -30,8 +28,6 @@ import java.util.List;
 import java.util.Map;
 import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.AppRoutes.ProjectRoutes;
-import life.qbic.datamanager.views.general.oidc.OidcLogo;
-import life.qbic.datamanager.views.general.oidc.OidcType;
 import life.qbic.datamanager.views.landing.LandingPageLayout;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
@@ -117,17 +113,32 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
     loginForm.setUsernameText("Email");
   }
 
+  /**
+   * The only way off this page that is not a credential: create an account.
+   *
+   * <p>There used to be an ORCID card below it, which started an OAuth2 login round trip. ORCID is no
+   * longer an identity provider — it is connected to an existing account from the settings page
+   * (AUTH-R-07). Offering it here would be a second first-factor entry point, which is exactly what
+   * the second-factor requirement cannot tolerate.</p>
+   */
   private Div initRegistrationSection(String contextPath) {
     RouterLink routerLink = new RouterLink("Register", UserRegistrationMain.class);
     Span registrationLink = new Span(new Text("Don't have an account? "), routerLink);
     registrationLink.addClassName("registration-link");
-    Span spacer = new Span("OR");
-    spacer.addClassName("spacer");
-    OidcLogo oidcLogo = new OidcLogo(OidcType.ORCID);
-    oidcLogo.addClassName("icon-size-m");
-    LoginCard orcidCard = new LoginCard(oidcLogo, "Login with ORCID",
-        contextPath + "/oauth2/authorization/orcid");
-    return new Div(registrationLink, spacer, orcidCard);
+
+    // Shown to EVERY visitor, unconditionally.
+    //
+    // This is where a returning user learns that ORCID no longer signs them in (AUTH-R-07). It must not
+    // be conditional on "you had an ORCID account", because that condition is an account-existence
+    // oracle (AUTH-NFR-03): anyone could probe it to learn whether an address is registered, and whether
+    // it was registered through the provider. The sentence names no account and no address, and it is
+    // true for everyone who reads it.
+    var orcidNotice = new Span(new Text(
+        "Signed in with ORCiD before? Use \"Forgot your password\" once to set a password for this "
+            + "account."));
+    orcidNotice.addClassName("login-orcid-notice");
+
+    return new Div(registrationLink, orcidNotice);
   }
 
   private void styleNotificationLayout() {
@@ -184,11 +195,6 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
     showError("Incorrect username or password", "Please try again.");
   }
 
-  private void showOauth2LoginError() {
-    showError("Login with ORCID failed",
-        "Something went wrong during authentication. Please try again or use your email and password to log in.");
-  }
-
   public void clearNotifications() {
     notificationLayout.removeAll();
   }
@@ -216,10 +222,10 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
   public void handle(BeforeEvent beforeEvent) {
     Map<String, List<String>> queryParams = beforeEvent.getLocation().getQueryParameters()
         .getParameters();
-    if (queryParams.containsKey("errorOauth2")) {
-      log.error("OAuth2 login failed — user redirected with error. Check server logs for details.");
-      showOauth2LoginError();
-    } else if (queryParams.containsKey("error")) {
+    // One failure state. There used to be a second: ?errorOauth2, rendered as "Login with ORCID
+    // failed". Nothing produces it any more — ORCID is not a login path (AUTH-R-07) — and a branch
+    // that can never be reached is worse than no branch: it reads like a supported entry point.
+    if (queryParams.containsKey("error")) {
       showInvalidCredentialsError();
     }
     // Email confirmation deliberately does NOT happen here any more.
@@ -245,16 +251,4 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
   // caller: confirmation no longer happens on /login at all (AUTH-R-05), and with it went the only
   // thing that produced the "Email address confirmed" notice. Keeping them would leave a second dead
   // state beside the ?userRegistered one removed above.
-
-  private static class LoginCard extends Span {
-
-    public LoginCard(Image logo, String description, String url) {
-      Span text = new Span();
-      text.setText(description);
-      text.addClassName("text");
-      add(logo, text);
-      addClassName("login-card");
-      addClickListener(event -> UI.getCurrent().getPage().open(url, "_self"));
-    }
-  }
 }

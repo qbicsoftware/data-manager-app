@@ -13,7 +13,6 @@ import com.vaadin.flow.theme.lumo.LumoUtility.IconSize;
 import java.util.Objects;
 import life.qbic.datamanager.views.account.UserAvatar;
 import life.qbic.datamanager.views.account.UserProfileMain;
-import life.qbic.projectmanagement.application.authorization.QbicOidcUser;
 import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -78,9 +77,6 @@ public class DataManagerMenu extends Div {
     var userId = "";
     if (principal instanceof QbicUserDetails qbicUserDetails) {
       userId = qbicUserDetails.getUserId();
-    }
-    if (principal instanceof QbicOidcUser qbicOidcUser) {
-      userId = qbicOidcUser.getQbicUserId();
     }
     userAvatar.setUserId(userId);
   }

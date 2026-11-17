@@ -114,38 +114,6 @@ public final class IdentityService {
     return ApplicationResponse.successResponse();
   }
 
-  public ApplicationResponse registerOpenIdUser(String fullName, String userName, String email,
-      String oidcIssuer, String oidcId) {
-
-    var validationResponse = validateInputOidcInput(fullName, userName, email, oidcIssuer, oidcId);
-    if (validationResponse.hasFailures()) {
-      return validationResponse;
-    }
-
-    userName = normalizeUserName(userName);
-
-    var userDomainService = DomainRegistry.instance().userDomainService();
-    if (userDomainService.isEmpty()) {
-      throw new ApplicationException("User registration failed.");
-    }
-
-    var userEmail = EmailAddress.from(email);
-    var userFullName = FullName.from(fullName);
-
-    if (userRepository.findByEmail(userEmail).isPresent()) {
-      return ApplicationResponse.failureResponse(new UserExistsException());
-    }
-
-    if (userRepository.findByUserName(userName).isPresent()) {
-      return ApplicationResponse.failureResponse(new UserNameNotAvailableException());
-    }
-
-    // Trigger the user creation in the domain service
-    userDomainService.get().createOidcUser(userFullName, userName, userEmail, oidcIssuer, oidcId);
-
-    return ApplicationResponse.successResponse();
-  }
-
   private ApplicationResponse validateInput(String fullName, String userName, String email,
       char[] rawPassword) {
     List<RuntimeException> failures = new ArrayList<>();
@@ -169,39 +137,6 @@ public final class IdentityService {
       EncryptedPassword.from(rawPassword);
     } catch (PasswordValidationException e) {
       failures.add(e);
-    }
-
-    if (failures.isEmpty()) {
-      return ApplicationResponse.successResponse();
-    }
-
-    return ApplicationResponse.failureResponse(failures.toArray(RuntimeException[]::new));
-  }
-
-  private ApplicationResponse validateInputOidcInput(String fullName, String userName, String email,
-      String oidcIssuer, String oidcId) {
-    List<RuntimeException> failures = new ArrayList<>();
-
-    try {
-      EmailAddress.from(email);
-    } catch (EmailValidationException e) {
-      failures.add(e);
-    }
-    try {
-      FullName.from(fullName);
-    } catch (FullNameValidationException e) {
-      failures.add(e);
-    }
-    if (isNull(userName) || userName.isBlank()) {
-      failures.add(new EmptyUserNameException());
-    } else if (userName.strip().length() > UserNamePolicy.maxLength()) {
-      failures.add(new UserNameTooLongException());
-    }
-    if (isNull(oidcIssuer) || oidcIssuer.isBlank()) {
-      failures.add(new EmptyOidcIssuerException());
-    }
-    if (isNull(oidcId) || oidcId.isBlank()) {
-      failures.add(new EmptyOidcIdException());
     }
 
     if (failures.isEmpty()) {
@@ -445,13 +380,5 @@ public final class IdentityService {
     UserNotActivatedException(String message) {
       super(message);
     }
-  }
-
-  public static class EmptyOidcIssuerException extends RuntimeException {
-
-  }
-
-  public static class EmptyOidcIdException extends RuntimeException {
-
   }
 }

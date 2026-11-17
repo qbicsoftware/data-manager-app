@@ -97,6 +97,18 @@
   border-bottom: 1px solid var(--lumo-contrast-20pct);
 }
 
+/* Explains that ORCID no longer signs users in (AUTH-R-07). Deliberately quiet: it is information for
+   a returning minority, not an error and not a call to action. Shown to every visitor, unconditionally,
+   because making it conditional would disclose whether an account exists (AUTH-NFR-03). */
+.login-orcid-notice {
+  display: block;
+  margin-top: var(--lumo-space-m);
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-s);
+  line-height: var(--lumo-line-height-s);
+  text-align: center;
+}
+
 /* ontology-link styling */
 .ontology-link {
   display: inline-flex;

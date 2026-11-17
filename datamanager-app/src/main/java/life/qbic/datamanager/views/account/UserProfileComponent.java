@@ -35,7 +35,9 @@ import life.qbic.datamanager.views.general.InlineEditableField.SaveEvent;
 import life.qbic.datamanager.views.general.dialog.AlertDialog;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.general.oidc.OidcType;
+import life.qbic.identity.api.OidcLinkService;
 import life.qbic.identity.api.UserInfo;
+import life.qbic.identity.api.UserInformationService;
 import life.qbic.identity.api.UserNames;
 import life.qbic.identity.application.user.IdentityService;
 import life.qbic.identity.application.user.IdentityService.EmptyUserNameException;
@@ -61,6 +63,9 @@ public class UserProfileComponent extends Div implements Serializable {
   private final UserInfo userInfo;
   private final Location currentLocation;
   private final transient Consumer<String> usernameChangedListener;
+  private final transient Consumer<UserInfo> accountReloadListener;
+  private final transient UserInformationService userInformationService;
+  private final transient OidcLinkService oidcLinkService;
   private UserAvatar profileAvatar;
   private transient MenuItem removePictureMenuItem;
 
@@ -69,22 +74,38 @@ public class UserProfileComponent extends Div implements Serializable {
    *                                the surrounding layout can refresh dependent UI (e.g. the
    *                                account overview header) without a page reload
    */
+  /**
+   * @param usernameChangedListener invoked with the new username after a successful change, so
+   *                                the surrounding layout can refresh dependent UI (e.g. the
+   *                                account overview header) without a page reload
+   * @param accountReloadListener   invoked with freshly read account data after the ORCID link
+   *                                changes, so this component can re-render the group in place
+   */
   public UserProfileComponent(IdentityService identityService,
       ProfilePictureService profilePictureService,
       MessageSourceNotificationFactory messageFactory,
+      UserInformationService userInformationService,
+      OidcLinkService oidcLinkService,
       UserInfo userInfo,
       Location currentLocation,
-      Consumer<String> usernameChangedListener) {
+      Consumer<String> usernameChangedListener,
+      Consumer<UserInfo> accountReloadListener) {
     this.identityService = requireNonNull(identityService,
         "identity service cannot be null");
     this.profilePictureService = requireNonNull(profilePictureService,
         "profile picture service cannot be null");
     this.messageFactory = requireNonNull(messageFactory,
         "message factory cannot be null");
+    this.userInformationService = requireNonNull(userInformationService,
+        "userInformationService must not be null");
+    this.oidcLinkService = requireNonNull(oidcLinkService,
+        "oidcLinkService must not be null");
     this.userInfo = requireNonNull(userInfo, "userInfo must not be null");
     this.currentLocation = requireNonNull(currentLocation);
     this.usernameChangedListener = requireNonNull(usernameChangedListener,
         "usernameChangedListener must not be null");
+    this.accountReloadListener = requireNonNull(accountReloadListener,
+        "accountReloadListener must not be null");
     addClassName("user-profile-component");
     render();
   }
@@ -275,22 +296,64 @@ public class UserProfileComponent extends Div implements Serializable {
 
   // ── Linked accounts group ─────────────────────────────────────
 
+  /**
+   * <b>The ORCID link: show it, add it, remove it.</b>
+   *
+   * <p>This is now the only place the link exists in the product. Since AUTH-R-07 the ORCID iD is an
+   * attribute of the account — like the full name or the email address — and not a way to sign in.
+   * The copy has to say so, because a user who once logged in with ORCID will otherwise read
+   * "Link your ORCiD" and assume they are setting up a login.</p>
+   */
   private Div buildLinkedAccountsGroup() {
     var group = settingsGroup("Linked accounts");
 
-    if (userInfo.oidcId() == null || userInfo.oidcIssuer() == null
-        || userInfo.oidcIssuer().isEmpty() || userInfo.oidcId().isEmpty()) {
-      group.add(buildLinkWithOrcidBlock());
+    if (hasOrcidLink()) {
+      group.add(buildLinkedAccountBox());
     } else {
-      Arrays.stream(OidcType.values())
-          .filter(ot -> ot.getIssuer().equals(userInfo.oidcIssuer()))
-          .findFirst()
-          .ifPresentOrElse(
-              oidcType -> group.add(generateLinkedAccountBox(userInfo)),
-              () -> log.warn("No issuer was found for OIDC type " + userInfo.oidcIssuer()));
+      group.add(buildLinkWithOrcidBlock());
     }
-
     return group;
+  }
+
+  private boolean hasOrcidLink() {
+    return userInfo.oidcId() != null && !userInfo.oidcId().isBlank();
+  }
+
+  private Div buildLinkedAccountBox() {
+    var recordUrl = OidcType.forIssuer(userInfo.oidcIssuer())
+        .map(type -> type.getUrlFor(userInfo.oidcId()))
+        // An unknown issuer must not stop the page: show the iD without a record link rather than
+        // rendering nothing at all and leaving the user with no way to unlink.
+        .orElse(null);
+
+    var box = new AccountContentBox(userInfo.oidcId(), recordUrl);
+    box.addUnlinkAction(this::confirmUnlink);
+    return box;
+  }
+
+  private void confirmUnlink() {
+    AlertDialog.danger(this,
+        "Disconnect your ORCiD?",
+        "Your researcher record will no longer be shown next to your name in this application. "
+            + "Your account, sign-in and data are not affected — you sign in with your email "
+            + "address and password either way.",
+        "Disconnect",
+        "Keep it connected",
+        this::performUnlink)
+        .open();
+  }
+
+  private void performUnlink() {
+    var outcome = oidcLinkService.unlink(userInfo.id());
+    switch (outcome) {
+      case OidcLinkService.Outcome.Unlinked ignored -> {
+        messageFactory.toast("profile.oidc.unlink.success", new Object[]{}, getLocale()).open();
+        reload();
+      }
+      case OidcLinkService.Outcome.NotLinked ignored -> reload();
+      default -> messageFactory.toast("profile.oidc.unlink.failed", new Object[]{}, getLocale())
+          .open();
+    }
   }
 
   private Div buildLinkWithOrcidBlock() {
@@ -298,8 +361,8 @@ public class UserProfileComponent extends Div implements Serializable {
     block.addClassName("link-account-block");
 
     var explanation = new Paragraph(
-        "Link your ORCiD account to sign in with ORCiD and connect your public researcher record "
-            + "with this account.");
+        "Connect your ORCiD iD to show your public researcher record next to your name. This is a "
+            + "record link only — you sign in with your email address and password, not with ORCiD.");
     explanation.addClassName("link-account-block__explanation");
 
     var contextPath = VaadinService.getCurrentRequest().getContextPath();
@@ -307,7 +370,7 @@ public class UserProfileComponent extends Div implements Serializable {
 
     var linkAccount = new Anchor(
         contextPath + OidcLinkController.ENDPOINT_LINK_ORCID + "?return=" + returnTo,
-        "Link ORCiD account");
+        "Connect ORCiD iD");
     linkAccount.setTarget(AnchorTarget.SELF);
     linkAccount.setRouterIgnore(true);
     // Render the anchor as a primary button so the call to action is discoverable
@@ -317,13 +380,12 @@ public class UserProfileComponent extends Div implements Serializable {
     return block;
   }
 
-  private Div generateLinkedAccountBox(UserInfo userInfo) {
-    return new AccountContentBox(userInfo.oidcId(),
-        URI.create(generateOidCRecordURL(userInfo.oidcId())));
-  }
-
-  private String generateOidCRecordURL(String oidcId) {
-    return String.format("https://orcid.org/%s", oidcId);
+  /** Re-reads the account so the group reflects what was just written, without a page reload. */
+  private void reload() {
+    var refreshed = userInformationService.findById(userInfo.id());
+    refreshed.ifPresentOrElse(
+        info -> accountReloadListener.accept(info),
+        () -> log.warn("Could not reload the account after an ORCID change"));
   }
 
   // ── Shared group scaffolding ──────────────────────────────────
