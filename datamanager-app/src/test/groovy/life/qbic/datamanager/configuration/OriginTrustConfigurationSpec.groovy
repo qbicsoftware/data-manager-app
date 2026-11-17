@@ -1,5 +1,7 @@
 package life.qbic.datamanager.configuration
 
+import org.springframework.core.env.MapPropertySource
+import org.springframework.core.env.StandardEnvironment
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -27,16 +29,16 @@ class OriginTrustConfigurationSpec extends Specification {
     // The shipped default. Enabling the headers also changes how absolute links and the OAuth2
     // redirect URI are built, so it is a separate, independently revertable operator step.
     expect:
-    new OriginTrustConfiguration(false, 'none') != null
-    new OriginTrustConfiguration(false, 'framework') != null
-    new OriginTrustConfiguration(false, null) != null
-    new OriginTrustConfiguration(false, 'native') != null
+    new OriginTrustConfiguration(false, 'none', new StandardEnvironment()) != null
+    new OriginTrustConfiguration(false, 'framework', new StandardEnvironment()) != null
+    new OriginTrustConfiguration(false, null, new StandardEnvironment()) != null
+    new OriginTrustConfiguration(false, 'native', new StandardEnvironment()) != null
   }
 
   @Unroll
   def "origin scope with strategy '#strategy' starts"() {
     expect:
-    new OriginTrustConfiguration(true, strategy) != null
+    new OriginTrustConfiguration(true, strategy, new StandardEnvironment()) != null
 
     where:
     strategy << ['native', 'NATIVE', 'Native', ' native ']
@@ -45,7 +47,7 @@ class OriginTrustConfigurationSpec extends Specification {
   @Unroll
   def "origin scope with strategy '#strategy' refuses to start"() {
     when:
-    new OriginTrustConfiguration(true, strategy)
+    new OriginTrustConfiguration(true, strategy, new StandardEnvironment())
 
     then: 'a failed start is the only outcome that cannot be ignored'
     def failure = thrown(IllegalStateException)
@@ -62,7 +64,7 @@ class OriginTrustConfigurationSpec extends Specification {
     // `framework` is what the operations documentation used to recommend, so an operator following an
     // older copy of it is the realistic way this goes wrong. "Invalid value" would not help them.
     when:
-    new OriginTrustConfiguration(true, 'framework')
+    new OriginTrustConfiguration(true, 'framework', new StandardEnvironment())
 
     then:
     def failure = thrown(IllegalStateException)
@@ -73,12 +75,77 @@ class OriginTrustConfigurationSpec extends Specification {
 
   def "the refusal points at the runbook"() {
     when:
-    new OriginTrustConfiguration(true, 'none')
+    new OriginTrustConfiguration(true, 'none', new StandardEnvironment())
 
     then:
     def failure = thrown(IllegalStateException)
     failure.message.contains('installation-and-administration.md')
   }
+
+  // ---- the message must be actionable, not merely accurate ---------------------------------------
+  //
+  // Regression guard for a real report. Enabling origin scope without setting the strategy produced:
+  //
+  //   requires server.forward-headers-strategy=native, but it is currently 'none'.
+  //
+  // which reads as though someone configured `none`. An operator greps their configuration for it,
+  // finds nothing, and is stuck — because the value is Boot's default, not a setting. The message has
+  // to say where the value came from.
+
+  def "when nothing sets the property, the message says the value is the default"() {
+    // A real Environment with no such property, which is what a deployment that only set
+    // AUTH_THROTTLE_LOGIN_ORIGIN_ENABLED=true looks like.
+    given:
+    def environment = new StandardEnvironment()
+    environment.propertySources.remove(StandardEnvironment.SYSTEM_PROPERTIES_PROPERTY_SOURCE_NAME)
+    environment.propertySources.remove(StandardEnvironment.SYSTEM_ENVIRONMENT_PROPERTY_SOURCE_NAME)
+
+    when:
+    new OriginTrustConfiguration(true, 'none', environment)
+
+    then: 'the operator is told not to go looking for a setting that does not exist'
+    def failure = thrown(IllegalStateException)
+    failure.message.contains("currently 'none' (the default; the property is not set anywhere)")
+  }
+
+  def "when the property IS set, the message names the key that supplied it"() {
+    // Including the relaxed/upper-case form, because that is what an exported environment variable
+    // looks like — and an operator would not recognise `SERVER_FORWARD_HEADERS_STRATEGY` if the
+    // message only ever spoke about `server.forward-headers-strategy`.
+    given:
+    def environment = new StandardEnvironment()
+    environment.propertySources.addFirst(
+        new MapPropertySource('test-env', ['SERVER_FORWARD_HEADERS_STRATEGY': 'none']))
+
+    when:
+    new OriginTrustConfiguration(true, 'none', environment)
+
+    then:
+    def failure = thrown(IllegalStateException)
+    failure.message.contains("from 'SERVER_FORWARD_HEADERS_STRATEGY'")
+  }
+
+  def "an explicitly set non-none value is reported as explicit, not as a default"() {
+    when:
+    new OriginTrustConfiguration(true, 'framework', new StandardEnvironment())
+
+    then:
+    def failure = thrown(IllegalStateException)
+    failure.message.contains("currently 'framework' (set explicitly)")
+  }
+
+  def "a broken environment cannot stop the gate from firing"() {
+    // The diagnostics are a courtesy. If the Environment throws — or is missing — the security refusal
+    // must still happen, or a well-meaning message becomes a way to boot an insecure configuration.
+    when:
+    new OriginTrustConfiguration(true, 'none', null)
+
+    then:
+    def failure = thrown(IllegalStateException)
+    failure.message.contains('server.forward-headers-strategy=native')
+  }
+
+  // ---- configuration files ------------------------------------------------------------------------
 
   def "the configured property exists in the shipped configuration and the template"() {
     expect: 'the switch is discoverable without reading the code'
@@ -103,12 +170,29 @@ class OriginTrustConfigurationSpec extends Specification {
     ]
   }
 
+  def "the shipped configuration does not set the forward-headers strategy"() {
+    // Setting it in the shipped file would apply it to every deployment at once, which is exactly the
+    // all-or-nothing rollout #1691 stages away. It must remain an operator decision.
+    expect:
+    propertiesOf('datamanager-app/src/main/resources/application.properties')
+        .getProperty('server.forward-headers-strategy') == null
+  }
+
   def "the template ships origin scope switched off"() {
     // If this ever flips, every deployment that pulls the new configuration silently starts rewriting
     // absolute links. The issue stages that.
     expect:
     propertiesOf('application.properties.template')
         .getProperty('qbic.auth-throttle.login.origin.enabled') == 'false'
+  }
+
+  def "the template ships the safe strategy so following it verbatim cannot fail startup"() {
+    // The template is the blueprint an operator copies. If it shipped `native` here, every deployment
+    // built from it would enable the headers without the canary — and if it shipped `framework` or an
+    // uncommented unsafe value, a deployment that also enabled origin scope would refuse to boot.
+    expect:
+    propertiesOf('application.properties.template')
+        .getProperty('server.forward-headers-strategy') == 'none'
   }
 
   def "the template's origin threshold is above the account threshold"() {

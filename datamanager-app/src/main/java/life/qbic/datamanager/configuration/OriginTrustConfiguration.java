@@ -1,18 +1,24 @@
 package life.qbic.datamanager.configuration;
 
+import java.util.Arrays;
+import java.util.Locale;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.EnumerablePropertySource;
 
 /**
  * <b>Refuse to start when origin-scope throttling is switched on but the client address cannot be
  * trusted.</b>
  *
- * <p>This is the code form of the issue's <em>blocking check</em>: "if
- * {@code getRemoteAddr()} still shows a proxy address after Phase C, stop". A runbook step that says
- * "stop" is only as reliable as the person reading it at 2 a.m. on the node that is already
- * unhealthy, so the check is enforced where it cannot be skipped.</p>
+ * <p>This is the code form of the issue's <em>blocking check</em>: "if {@code getRemoteAddr()} still
+ * shows a proxy address after Phase C, stop". A runbook step that says "stop" is only as reliable as
+ * the person reading it at 2 a.m. on the node that is already unhealthy, so the check is enforced where
+ * it cannot be skipped.</p>
  *
  * <h3>The failure this prevents</h3>
  * <p>Origin scope is only correct when the request origin comes from a component entitled to rewrite
@@ -49,9 +55,21 @@ public class OriginTrustConfiguration {
    */
   static final String REQUIRED_STRATEGY = "native";
 
+  /** The property whose default produces the most confusing possible message. See {@link #configuredBy}. */
+  private static final String STRATEGY_PROPERTY = "server.forward-headers-strategy";
+
+  /**
+   * Used only to make the failure message actionable.
+   *
+   * <p>Nullable: a diagnostic must never be the reason a security gate cannot run.</p>
+   */
+  private final ConfigurableEnvironment environment;
+
   public OriginTrustConfiguration(
       @Value("${qbic.auth-throttle.login.origin.enabled:false}") boolean originEnabled,
-      @Value("${server.forward-headers-strategy:none}") String forwardHeadersStrategy) {
+      @Value("${server.forward-headers-strategy:none}") String forwardHeadersStrategy,
+      ConfigurableEnvironment environment) {
+    this.environment = environment;
     if (!originEnabled) {
       return;
     }
@@ -63,7 +81,7 @@ public class OriginTrustConfiguration {
     }
     throw new IllegalStateException(("""
         qbic.auth-throttle.login.origin.enabled=true requires \
-        server.forward-headers-strategy=native, but it is currently '%s'.
+        server.forward-headers-strategy=native, but it is currently '%s'%s.
 
         Origin-scope throttling keys a bucket on the client network. It is only correct when that \
         network comes from a component that may rewrite it:
@@ -80,6 +98,70 @@ public class OriginTrustConfiguration {
         X-Forwarded-For, e.g. `http-request set-header X-Forwarded-For %%[src]`), or leave \
         qbic.auth-throttle.login.origin.enabled=false to keep account-scope throttling. See \
         docs/operations/installation-and-administration.md 1.2, 1.5 and 1.7.""")
-        .formatted(strategy));
+        .formatted(strategy, configuredBy(strategy)));
+  }
+
+  /**
+   * Where the ineffective strategy came from, so the message points at a file instead of a constant.
+   *
+   * <p>The first version of this message could not be acted on in the common case. When <em>nothing</em>
+   * sets the property, it read <i>"it is currently 'none'"</i> — which looks exactly like a value
+   * someone configured. An operator then greps their configuration for {@code none}, finds nothing, and
+   * has no next step, because the value is Spring Boot's own default. Naming the origin of the value is
+   * the difference between a message that explains a failure and one that merely reports it.</p>
+   *
+   * @param strategy the effective value
+   * @return a parenthetical naming where the value came from, or an empty string if it cannot be told
+   */
+  /**
+   * Maps a property name to the canonical kebab-case form Spring's relaxed binding compares on.
+   *
+   * @param name a property name in any supported spelling
+   * @return the lower-cased name with {@code _} and {@code .} folded to {@code -}
+   */
+  private static String relax(String name) {
+    return name.toLowerCase(Locale.ROOT).replace('_', '-').replace('.', '-');
+  }
+
+  private String configuredBy(String strategy) {
+    if (!"none".equalsIgnoreCase(strategy)) {
+      return " (set explicitly)";
+    }
+    try {
+      if (environment == null) {
+        return " (the default; the property is not set)";
+      }
+      // Report the key whose VALUE is the one that won, walking sources in precedence order.
+      //
+      // Not "the first key with a matching name": that picked up the kebab-case name from a low
+      // precedence source while the actual value came from an environment variable, and the message
+      // then named a key the operator had never written. Comparing values is what makes the answer
+      // true even when several sources carry the property.
+      String supplyingKey = StreamSupport
+          .stream(environment.getPropertySources().spliterator(), false)
+          .flatMap(source -> source instanceof EnumerablePropertySource<?> enumerable
+              ? Arrays.stream(enumerable.getPropertyNames())
+              : Stream.<String>empty())
+          // Relaxed binding means the key may be `server.forward-headers-strategy` in a properties
+          // file or `SERVER_FORWARD_HEADERS_STRATEGY` in the environment. Normalising the separators
+          // is what lets one predicate match both — comparing on the raw name silently missed every
+          // environment-variable spelling, which is the form that matters in production.
+          .filter(name -> relax(name).endsWith("forward-headers-strategy"))
+          .sorted()
+          .filter(name -> {
+            Object value = environment.getProperty(name);
+            return value != null && strategy.equalsIgnoreCase(value.toString().strip());
+          })
+          .findFirst()
+          .orElse(null);
+      if (supplyingKey != null) {
+        return " (from '%s')".formatted(supplyingKey);
+      }
+      return " (the default; the property is not set anywhere)";
+    } catch (RuntimeException e) {
+      // Diagnostics must never mask the security failure they accompany.
+      log.debug("Could not determine where the forward-headers strategy came from", e);
+      return "";
+    }
   }
 }
