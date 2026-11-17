@@ -62,10 +62,12 @@ public class OidcLinkServiceImpl implements OidcLinkService {
 
     Optional<User> holder = userRepository.findByOidc(oidcId, oidcIssuer);
     if (holder.isPresent() && !holder.get().id().equals(user.id())) {
-      // Deliberately no detail about which account holds it. The iD is public researcher data, but the
-      // mapping to a platform account is not, and "linked to account X" would hand out that mapping.
-      log.info("Rejected an ORCID link for user %s: the identifier is held by another account"
-          .formatted(userId));
+      // The iD is logged; the holding account is NOT. The iD is public researcher data, but the mapping
+      // from that iD to a platform account is exactly what must not leak — including into a log that
+      // support staff can read. Without the iD this line was useless for diagnosing a real rejection:
+      // it could not be told apart from a rejection of a *different* iD for the same user.
+      log.info("Rejected an ORCID link for user %s: iD %s (issuer %s) is held by a different account"
+          .formatted(userId, oidcId, oidcIssuer));
       return new Outcome.HeldByAnotherAccount();
     }
 

@@ -165,6 +165,24 @@ class OidcLinkSpec extends Specification {
     0 * userRepository.updateUser(_)
   }
 
+  def "the account keeps its identity through an unlink, so the self-check cannot misfire"() {
+    // The branch that reports "held by another account" compares the holder's id with the caller's id.
+    // If an unlink changed the account's identity, that comparison would fail for the account itself
+    // and the code would report a conflict with a second account that does not exist. Nothing in the
+    // aggregate suggests it does — this pins it, because the failure mode is invisible otherwise.
+    given:
+    def user = account(ID, ISSUER)
+    userRepository.findById(user.id()) >> Optional.of(user)
+    def idBefore = user.id().get()
+
+    when:
+    service.unlink(user.id().get())
+
+    then:
+    user.id().get() == idBefore
+    user.id() == UserId.from(idBefore)
+  }
+
   def "unlink then relink works, so a mistaken link can be replaced"() {
     // The end-to-end reason unlink exists: a user who connected the wrong iD (or the right iD against
     // the wrong registry) must be able to correct it without a database edit.
