@@ -1,8 +1,14 @@
 # Migration: Next release
 
-**Current pom version:** 1.20.2
+**Current pom version:** 1.20.3
 **Target release version:** TBD *(renamed to `released/v<version>.md` at release cut)*
+
 **Status:** under development
+
+The v1.20.4 security patch is already documented as released — see
+[`released/v1.20.4.md`](released/v1.20.4.md). This file therefore describes the release **after**
+1.20.4: its schema summary starts empty, while behaviour changes that need an operator note
+(e.g. "ORCID is no longer a login") are recorded below.
 
 > **To operators:** This document describes schema changes for the **upcoming,
 > unreleased** Data Manager version. It is actively being edited as migrations
