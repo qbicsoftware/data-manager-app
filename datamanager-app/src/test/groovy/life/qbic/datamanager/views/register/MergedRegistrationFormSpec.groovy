@@ -133,7 +133,7 @@ class MergedRegistrationFormSpec extends Specification {
     def counter = new RecordingCounter()
     def identity = new RegistrationSubmissionSpec.FakeIdentity()
     def submission = new RegistrationSubmission(identity, userInformationService,
-        throttleOver(counter))
+        throttleOver(counter),life.qbic.identity.application.throttle.ClientOriginResolver.none())
 
     and: 'what the shared form would submit in this mode'
     def form = new UserRegistrationComponent(userInformationService, mode)

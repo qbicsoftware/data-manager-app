@@ -191,10 +191,41 @@ qbic.auth-throttle.login.origin.enabled=true
 
 | Property | Default | Meaning |
 |---|---|---|
-| `qbic.auth-throttle.login.origin.enabled` | `false` | Write and consult the per-origin bucket |
-| `qbic.auth-throttle.login.origin.max-attempts` | `60` | Failures from one origin before that origin is blocked |
-| `qbic.auth-throttle.login.origin.window` | `PT15M` | Counting window for the origin bucket |
-| `qbic.auth-throttle.login.origin.block-duration` | `PT10M` | How long an origin block lasts (kept short: it affects everyone behind that network) |
+| `qbic.auth-throttle.login.origin.enabled` | `false` | **The single switch for every origin bucket** (see below) |
+| `qbic.auth-throttle.login.origin.max-attempts` | `60` | Failed logins from one origin before that origin is blocked |
+| `qbic.auth-throttle.login.origin.window` | `PT15M` | Counting window for the login origin bucket |
+| `qbic.auth-throttle.login.origin.block-duration` | `PT10M` | How long a login origin block lasts |
+| `qbic.auth-throttle.mail-origin.max-attempts` | `20` | Link resends from one origin before that origin is blocked |
+| `qbic.auth-throttle.mail-origin.window` | `PT15M` | Counting window for the mail origin bucket |
+| `qbic.auth-throttle.mail-origin.block-duration` | `PT15M` | How long a mail origin block lasts |
+| `qbic.auth-throttle.registration-origin.max-attempts` | `100` | Registration submissions from one origin before that origin is blocked |
+| `qbic.auth-throttle.registration-origin.window` | `PT15M` | Counting window for the registration origin bucket |
+| `qbic.auth-throttle.registration-origin.block-duration` | `PT10M` | How long a registration origin block lasts |
+
+> **One switch, three buckets.** `login.origin.enabled` is named after login because that is where the
+> work started, but it governs **all** origin buckets. That is deliberate: a per-flow switch would let a
+> deployment be origin-scoped for login and silently account-scoped for the flows that actually send
+> mail — which is precisely the gap that was found in production.
+
+#### Which flows are covered
+
+| Flow | Account bucket | Origin bucket |
+|---|---|---|
+| Login | `LOGIN` | `LOGIN_ORIGIN` |
+| Password reset request | `PASSWORD_RESET_RESEND` | `MAIL_ORIGIN` |
+| Confirmation resend | `EMAIL_CONFIRMATION_RESEND` | `MAIL_ORIGIN` |
+| Registration submission | `REGISTRATION` | `REGISTRATION_ORIGIN` |
+
+The two resend flows **share** `MAIL_ORIGIN` on purpose: both send one mail for an arbitrary address,
+and separate buckets would hand an attacker a doubled allowance for switching between them.
+Registration has its **own, much higher** limit because it is legitimately bursty — at the start of a
+semester hundreds of students can register from one campus network.
+
+> **Why the mail buckets are not optional.** Account scope cannot bound these flows at all. The abuse is
+> "send one reset to a thousand different addresses": every attempt lands in a *fresh* account bucket,
+> so no per-account counter ever reaches its threshold and the application sends a thousand emails.
+> With origin scope enabled, the first `mail-origin.max-attempts` are allowed and the rest are refused
+> for `block-duration`. With it disabled, nothing bounds them but the relay's own limits.
 
 **A mismatched configuration is a startup failure, not a silent one.** Setting `enabled=true` with any
 strategy other than `native` aborts startup with an explanation. That is deliberate: `framework` gives
@@ -233,8 +264,10 @@ opaque hash, so an origin bucket is a second row with a different `scope` value 
 - [ ] Confirmation email link contains `https://rdm.qbic.uni-tuebingen.de/...`, not `127.0.0.1:8080`
 - [ ] Password-reset link, same
 - [ ] ORCID login completes
-- [ ] `SELECT COUNT(*) FROM auth_attempt WHERE scope = 'LOGIN_ORIGIN';` grows after failed logins —
-      if it stays `0`, the origin is not being resolved and the feature is inert
+- [ ] `SELECT scope, COUNT(*) FROM auth_attempt WHERE scope LIKE '%ORIGIN' GROUP BY scope;` shows rows
+      for `LOGIN_ORIGIN`, and for `MAIL_ORIGIN` after a password-reset request and a confirmation
+      resend. If a flow's bucket stays absent, that flow is still account-scoped only — the exact gap
+      that was found in production
 - [ ] `SELECT COUNT(*) FROM auth_attempt WHERE scope = 'LOGIN_ORIGIN'
       AND lastAttemptAt > UTC_TIMESTAMP(6) - INTERVAL 15 MINUTE;` stays small. A handful of rows means
       dozens of origins; **one** row means the whole deployment is sharing an origin, i.e.
@@ -279,7 +312,7 @@ scope, and it is why `AUTH-NFR-03` asks for both. Options, in order of preferenc
    and weakens the control proportionally.
 3. **Raise `qbic.auth-throttle.login.max-attempts`** — same trade-off from the other direction.
 
-With origin scope **on**, the risk above is removed, and one residual risk replaces it:
+With origin scope **on**, the lockout risk above is removed, and one residual risk replaces it:
 
 > While an account is blocked by an attack, an origin that has never been seen still gets
 > `qbic.auth-throttle.login.max-attempts` attempts against it before it is itself treated as the
@@ -289,6 +322,25 @@ With origin scope **on**, the risk above is removed, and one residual risk repla
 That bound is the deliberate price of §1.7's second clause — the alternative is locking out the victim,
 which is the failure being fixed. Lowering `max-attempts` tightens it and raises the support burden for
 everyone else.
+
+### 1.8.1 Mail-sending flows and origin scope
+
+The same reasoning applies to the flows that send mail, and there the consequence of leaving origin
+scope off is worse than a lockout — it is unbounded outbound mail:
+
+> An attacker who requests a password reset (or a registration, or a confirmation resend) for a
+> thousand different addresses from one host sends a thousand emails. Account scope never fires,
+> because no address is used twice.
+
+Origin scope bounds that at `mail-origin.max-attempts` (default 20) and
+`registration-origin.max-attempts` (default 100) per window, per network. Two residual risks remain:
+
+* **A generous origin limit is still a volume allowance.** 400 registrations per hour from one network
+  is permitted by default, because a semester start genuinely looks like that. It is a bound, not a
+  block — the relay's own limits are the second line of defence.
+* **A large NAT is shared.** All users behind one gateway share a bucket, so a burst of legitimate
+  resets from a campus network can briefly throttle resets for everyone on it. The block is short
+  (`PT15M`) and the alternative — no origin scope — is unbounded mail.
 
 Whichever mode is deployed, the helpdesk needs the unblock procedure in §3 — and needs to know that a
 reported lockout may be an attack on that user rather than that user's own typos.
@@ -352,6 +404,8 @@ Run through this before the first production deployment and after any proxy chan
 | Login works, but nobody is ever throttled | `auth_attempt` writes failing silently, or thresholds set very high | `SELECT COUNT(*) FROM auth_attempt`, then `qbic.auth-throttle.*` values |
 | A user reports being locked out | Account-scope throttle engaged. With origin scope **off**, an attacker can trigger this; with it **on**, an origin block may also be affecting a whole institution | `SELECT scope, attemptCount, blockedUntil FROM auth_attempt WHERE blockedUntil > UTC_TIMESTAMP(6)`; unblock with `DELETE FROM auth_attempt WHERE attemptKey = '<hash>'` — or wait for `blockedUntil` |
 | `auth_attempt` has no `LOGIN_ORIGIN` rows although origin scope is enabled | The client address is still the proxy, so the resolver refuses to attribute it | Log for `no trusted client origin could be resolved`; `server.forward-headers-strategy` and the §1.2/§1.5 contract |
+| An attacker can send unlimited reset / registration mail by varying the address | Origin scope is off, or the deployment predates the mail buckets — account scope cannot bound this | `SELECT scope, COUNT(*) FROM auth_attempt WHERE scope LIKE '%ORIGIN' GROUP BY scope`; confirm `MAIL_ORIGIN` / `REGISTRATION_ORIGIN` rows appear, and that `login.origin.enabled` is `true` |
+| Legitimate users on one network report "too many attempts" for resets | `mail-origin.max-attempts` is below what the network needs, or someone set it near the per-account limit | Raise `qbic.auth-throttle.mail-origin.max-attempts`; it must stay well above `qbic.auth-throttle.resend.max-attempts` |
 | Confirmation/reset links point at the wrong host | Proxy headers missing, or §1.2 not set | Link in the email; compare to the public origin |
 | ORCID login fails with a redirect-URI mismatch | `{baseUrl}` derived from an untrusted proxy | Registered redirect URI in the ORCID portal vs. the actual request |
 | "Too many concurrent sessions" / random logouts | Session affinity missing | Backend balance config, cookie persistence |

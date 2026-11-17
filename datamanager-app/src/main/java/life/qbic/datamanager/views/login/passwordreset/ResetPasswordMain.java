@@ -12,6 +12,7 @@ import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.landing.LandingPageLayout;
 import life.qbic.identity.application.throttle.AuthAttemptThrottle;
+import life.qbic.identity.application.throttle.ClientOriginResolver;
 import life.qbic.identity.application.user.IdentityService;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
@@ -35,15 +36,19 @@ public class ResetPasswordMain extends Main implements BeforeEnterObserver {
       LoggerFactory.logger(ResetPasswordMain.class.getName());
   private final transient IdentityService identityService;
   private final transient AuthAttemptThrottle authAttemptThrottle;
+  private final transient ClientOriginResolver clientOriginResolver;
   private final ResetEmailSentComponent resetEmailSentComponent;
   private final ResetPasswordComponent resetPasswordComponent;
 
   public ResetPasswordMain(@Autowired IdentityService identityService,
       @Autowired ResetPasswordComponent resetPasswordComponent,
       @Autowired ResetEmailSentComponent resetEmailSentComponent,
-      @Autowired AuthAttemptThrottle authAttemptThrottle) {
+      @Autowired AuthAttemptThrottle authAttemptThrottle,
+      @Autowired ClientOriginResolver clientOriginResolver) {
     this.identityService = Objects.requireNonNull(identityService,
         "Identity service cannot be null");
+    this.clientOriginResolver = Objects.requireNonNull(clientOriginResolver,
+        "clientOriginResolver cannot be null");
     this.authAttemptThrottle = Objects.requireNonNull(authAttemptThrottle,
         "authAttemptThrottle cannot be null");
     this.resetPasswordComponent = Objects.requireNonNull(resetPasswordComponent,
@@ -101,8 +106,10 @@ public class ResetPasswordMain extends Main implements BeforeEnterObserver {
     // anyone. That conflated the two questions: it hid the existence reply (correct) but also hid the
     // throttle (wrong), so the panel promised an email that was never sent — indistinguishable from a
     // broken mail server.
+    // The request origin is passed so a single source rotating addresses is throttled: account scope
+    // is invisible to an attacker who never reuses one (AUTH-NFR-03, #1691).
     var outcome = authAttemptThrottle.recordAndReport(AuthAttemptThrottle.Scope.PASSWORD_RESET_RESEND,
-        email, java.time.Instant.now());
+        email, clientOriginResolver.resolve(), java.time.Instant.now());
 
     if (outcome.isAllowed()) {
       try {

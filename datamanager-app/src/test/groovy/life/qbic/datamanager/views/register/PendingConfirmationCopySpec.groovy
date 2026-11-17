@@ -147,7 +147,7 @@ class PendingConfirmationCopySpec extends Specification {
         // this classpath has no Objenesis. Neither is exercised by these specs.
         new EmailConfirmationLinkSupplier('https', 'example.org', 443, '',
             '/registration/confirm', 'token'),
-        Stub(VerificationLinkService), throttle)
+        Stub(VerificationLinkService), throttle, life.qbic.identity.application.throttle.ClientOriginResolver.none())
   }
 
   private BeforeEnterEvent event() {

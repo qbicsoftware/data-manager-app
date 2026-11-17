@@ -25,6 +25,7 @@ import life.qbic.datamanager.views.register.UserRegistrationComponent.UserRegist
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.identity.api.UserNames;
 import life.qbic.identity.application.throttle.AuthAttemptThrottle;
+import life.qbic.identity.application.throttle.ClientOriginResolver;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.authorization.QbicOidcUser;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,13 +46,15 @@ public class RegistrationOrcIdMain extends Main implements BeforeEnterObserver,
   public RegistrationOrcIdMain(
       @Autowired UserInformationService userInformationService,
       @Autowired RegistrationIdentity registrationIdentity,
-      @Autowired AuthAttemptThrottle authAttemptThrottle) {
+      @Autowired AuthAttemptThrottle authAttemptThrottle,
+      @Autowired ClientOriginResolver clientOriginResolver) {
     this.userInformationService = requireNonNull(userInformationService,
         "userInformationService must not be null");
     this.registrationSubmission = new RegistrationSubmission(
         requireNonNull(registrationIdentity, "registrationIdentity must not be null"),
         userInformationService,
-        requireNonNull(authAttemptThrottle, "authAttemptThrottle must not be null"));
+        requireNonNull(authAttemptThrottle, "authAttemptThrottle must not be null"),
+        requireNonNull(clientOriginResolver, "clientOriginResolver must not be null"));
     // The SAME component as the local form, in the ORCID mode. It used to be a parallel class with a
     // copy of the validator chain; see UserRegistrationComponent.
     userRegistrationComponent = new UserRegistrationComponent(userInformationService, Mode.ORCID);

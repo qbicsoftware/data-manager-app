@@ -178,6 +178,72 @@ class OriginTrustConfigurationSpec extends Specification {
         .getProperty('server.forward-headers-strategy') == null
   }
 
+  @Unroll
+  def "the SHIPPED configuration also leaves origin scope #what"() {
+    // Regression guard for a defect that reached main. A commit that was supposed to comment out one
+    // line swept up local test edits and shipped:
+    //
+    //     login.origin.enabled=${AUTH_THROTTLE_LOGIN_ORIGIN_ENABLED:true}
+    //     login.origin.max-attempts=${AUTH_THROTTLE_LOGIN_ORIGIN_MAX_ATTEMPTS:3}
+    //
+    // Two consequences, both bad. `enabled=true` makes OriginTrustConfiguration refuse to boot in every
+    // environment without server.forward-headers-strategy=native -- local development and CI included.
+    // And an origin limit of 3 sits BELOW the per-account limit of 10, so one institution behind a NAT
+    // is blocked after four failed logins from that network: the whole-population lockout this design
+    // exists to prevent.
+    //
+    // The earlier spec only checked the template, which is why the shipped file could drift unnoticed.
+    expect:
+    defaultValueOf('datamanager-app/src/main/resources/application.properties', key) == value
+
+    where:
+    key                                          | value  | what
+    'qbic.auth-throttle.login.origin.enabled'    | 'false' | 'switched off by default'
+    'qbic.auth-throttle.login.origin.max-attempts' | '60'  | 'above the per-account login limit'
+  }
+
+  @Unroll
+  def "the shipped configuration and the template agree on #key"() {
+    // Two sources of truth for one default is how the drift above happened. They must not disagree.
+    expect: 'the shipped file may use ${VAR:default}; what must match is the DEFAULT'
+    defaultValueOf('datamanager-app/src/main/resources/application.properties', key) ==
+        defaultValueOf('application.properties.template', key)
+
+    where:
+    key << [
+        'qbic.auth-throttle.login.origin.enabled',
+        'qbic.auth-throttle.login.origin.max-attempts',
+        'qbic.auth-throttle.login.origin.window',
+        'qbic.auth-throttle.login.origin.block-duration',
+        'qbic.auth-throttle.mail-origin.max-attempts',
+        'qbic.auth-throttle.mail-origin.window',
+        'qbic.auth-throttle.mail-origin.block-duration',
+        'qbic.auth-throttle.registration-origin.max-attempts',
+        'qbic.auth-throttle.registration-origin.window',
+        'qbic.auth-throttle.registration-origin.block-duration',
+    ]
+  }
+
+  @Unroll
+  def "the shipped configuration's origin limit stays above its account limit for #flow"() {
+    // The invariant that makes an origin bucket survivable for a shared network. An origin limit at or
+    // below the per-account limit means the origin blocks first, and it blocks everyone behind it.
+    given:
+    def account = defaultValueOf('datamanager-app/src/main/resources/application.properties',
+        accountKey) as int
+    def origin = defaultValueOf('datamanager-app/src/main/resources/application.properties',
+        originKey) as int
+
+    expect:
+    origin > account
+
+    where:
+    flow         | accountKey                                | originKey
+    'login'      | 'qbic.auth-throttle.login.max-attempts'   | 'qbic.auth-throttle.login.origin.max-attempts'
+    'resend'     | 'qbic.auth-throttle.resend.max-attempts'  | 'qbic.auth-throttle.mail-origin.max-attempts'
+    'registr.'   | 'qbic.auth-throttle.resend.max-attempts'  | 'qbic.auth-throttle.registration-origin.max-attempts'
+  }
+
   def "the template ships origin scope switched off"() {
     // If this ever flips, every deployment that pulls the new configuration silently starts rewriting
     // absolute links. The issue stages that.
@@ -208,6 +274,23 @@ class OriginTrustConfigurationSpec extends Specification {
   }
 
   // ---- helpers ----------------------------------------------------------------------------------
+
+  /**
+   * The effective default of a key, with a {@code ${ENV_VAR:default}} placeholder resolved.
+   *
+   * <p>The shipped {@code application.properties} expresses defaults as {@code ${VAR:default}} so a
+   * deployment can override them from the environment, while the template carries literals. Comparing
+   * the raw values would compare a placeholder against a number and fail for the wrong reason — which
+   * is what the first version of these assertions did.</p>
+   */
+  private static String defaultValueOf(String path, String key) {
+    String raw = propertiesOf(path).getProperty(key)
+    if (raw == null) {
+      return null
+    }
+    def matcher = raw =~ /^\$\{[^:}]+:(.*)\}$/
+    return matcher.matches() ? matcher.group(1) : raw
+  }
 
   private static Properties propertiesOf(String path) {
     def candidates = [new File(path), new File("../$path"), new File("../../$path")]

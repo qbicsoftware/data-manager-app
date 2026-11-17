@@ -76,7 +76,7 @@ class RegistrationThrottleWiringSpec extends Specification {
     def submission = new RegistrationSubmission(
         new RegistrationSubmissionSpec.FakeIdentity(),
         Stub(life.qbic.identity.api.UserInformationService) { findByEmail(_) >> Optional.empty() },
-        throttle)
+        throttle, life.qbic.identity.application.throttle.ClientOriginResolver.none())
 
     when:
     submission.submitLocal(new RegistrationSubmission.RegistrationForm(

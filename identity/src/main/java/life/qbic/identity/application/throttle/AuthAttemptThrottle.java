@@ -150,6 +150,28 @@ public class AuthAttemptThrottle {
      * {@link #LOGIN} and consulted by the combined decision described in the class javadoc.</p>
      */
     LOGIN_ORIGIN,
+    /**
+     * Link-resend requests seen from one request origin, shared by {@link #EMAIL_CONFIRMATION_RESEND}
+     * and {@link #PASSWORD_RESET_RESEND}.
+     *
+     * <p><b>Shared deliberately.</b> Both flows send exactly one mail on behalf of an arbitrary
+     * address, so they have the same cost to us and the same abuse profile. Giving each its own bucket
+     * would hand an attacker a doubled allowance for free by alternating between them.</p>
+     *
+     * <p>This bucket exists because account scope alone cannot bound this abuse at all: an attacker who
+     * varies the address never reuses a bucket, so account-scope throttling is invisible to them while
+     * the application sends mail on their behalf. See Rule 3c.</p>
+     */
+    MAIL_ORIGIN,
+    /**
+     * Registration submissions seen from one request origin.
+     *
+     * <p><b>Separate from {@link #MAIL_ORIGIN}, and with a much higher limit, because registration is
+     * legitimately bursty.</b> Hundreds of students can create accounts from one campus network in a
+     * short window. Sharing the resend bucket would either throttle a whole institution at the start of
+     * a semester or force the resend limit high enough to be useless.</p>
+     */
+    REGISTRATION_ORIGIN,
     EMAIL_CONFIRMATION_RESEND,
     PASSWORD_RESET_RESEND,
     /**
@@ -208,12 +230,19 @@ public class AuthAttemptThrottle {
   private final Policy resendPolicy;
 
   /**
-   * The origin policy, or {@code null} when origin scope is switched off.
+   * Per-flow origin policies, or {@code null} when origin scope is switched off.
    *
    * <p>Null rather than a disabled {@link Policy} because "off" and "allowed zero attempts" must not
-   * be representable as the same value: the latter would throttle every login.</p>
+   * be representable as the same value: the latter would throttle every request.</p>
+   *
+   * <p>Three policies rather than one because the flows are not comparable. A failed login costs the
+   * attacker a guess and costs us nothing; a registration or a resend costs us an email and the
+   * recipient a notification. And registration is legitimately bursty where a resend is not, so it
+   * needs an order of magnitude more headroom.</p>
    */
-  private final OriginPolicy originPolicy;
+  private final OriginPolicy loginOriginPolicy;
+  private final OriginPolicy mailOriginPolicy;
+  private final OriginPolicy registrationOriginPolicy;
 
   /** Emits the "enabled but no trusted origin" warning once per process, not once per login. */
   private final AtomicBoolean unknownOriginReported = new AtomicBoolean(false);
@@ -239,7 +268,42 @@ public class AuthAttemptThrottle {
     this(counter,
         loginMaxAttempts, loginWindow, loginBlockDuration,
         resendMaxAttempts, resendWindow, resendBlockDuration,
-        false, 0, Duration.ofMinutes(15), Duration.ofMinutes(15));
+        false,
+        0, Duration.ofMinutes(15), Duration.ofMinutes(10),
+        0, Duration.ofMinutes(15), Duration.ofMinutes(15),
+        0, Duration.ofMinutes(15), Duration.ofMinutes(10));
+  }
+
+  /**
+   * Login-focused configuration: origin scope on, with the mail and registration buckets sharing the
+   * login limits.
+   *
+   * <p>For callers and specs that only exercise the login bucket. Production uses the full constructor
+   * below, which configures each flow's limits separately; here they are simply equal, because a caller
+   * that does not care about mail must not have to invent a mail threshold.</p>
+   *
+   * @param counter                  persistence port
+   * @param loginMaxAttempts         failures per account before the account block
+   * @param loginWindow              counting window for the account bucket
+   * @param loginBlockDuration       how long the account block lasts
+   * @param resendMaxAttempts        failures per account before the resend block
+   * @param resendWindow             counting window for the resend buckets
+   * @param resendBlockDuration      how long a resend block lasts
+   * @param originEnabled            whether origin buckets are written and consulted at all
+   * @param originMaxAttempts        failures per origin before an origin block
+   * @param originWindow             counting window for the origin buckets
+   * @param originBlockDuration      how long an origin block lasts
+   */
+  public AuthAttemptThrottle(AuthAttemptCounter counter,
+      int loginMaxAttempts, Duration loginWindow, Duration loginBlockDuration,
+      int resendMaxAttempts, Duration resendWindow, Duration resendBlockDuration,
+      boolean originEnabled, int originMaxAttempts, Duration originWindow,
+      Duration originBlockDuration) {
+    this(counter, loginMaxAttempts, loginWindow, loginBlockDuration,
+        resendMaxAttempts, resendWindow, resendBlockDuration, originEnabled,
+        originMaxAttempts, originWindow, originBlockDuration,
+        originMaxAttempts, originWindow, originBlockDuration,
+        originMaxAttempts, originWindow, originBlockDuration);
   }
 
   /**
@@ -252,11 +316,22 @@ public class AuthAttemptThrottle {
    * @param resendMaxAttempts        failures per account before the resend block
    * @param resendWindow             counting window for the resend buckets
    * @param resendBlockDuration      how long a resend block lasts
-   * @param originEnabled            whether origin buckets are written and consulted at all
-   * @param originMaxAttempts        failures per origin before the origin block; must exceed the
-   *                                 account threshold, because one origin may be an institution
-   * @param originWindow             counting window for the origin bucket
-   * @param originBlockDuration      how long the origin block lasts
+   * @param originEnabled            whether origin buckets are written and consulted at all; this is
+   *                                 the single switch for every flow, so origin scope cannot be on for
+   *                                 login and silently off for the mail flows
+   * @param loginOriginMaxAttempts   failed logins per origin before the login origin block; must
+   *                                 exceed the account threshold, because one origin may be an
+   *                                 institution
+   * @param loginOriginWindow        counting window for the login origin bucket
+   * @param loginOriginBlockDuration how long the login origin block lasts
+   * @param mailOriginMaxAttempts    link resends per origin before the mail origin block
+   * @param mailOriginWindow         counting window for the mail origin bucket
+   * @param mailOriginBlockDuration  how long the mail origin block lasts
+   * @param registrationOriginMaxAttempts   registrations per origin before the registration origin
+   *                                        block; much higher than the resend limit, because a
+   *                                        semester start is a legitimate burst
+   * @param registrationOriginWindow        counting window for the registration origin bucket
+   * @param registrationOriginBlockDuration how long the registration origin block lasts
    */
   @Autowired
   public AuthAttemptThrottle(AuthAttemptCounter counter,
@@ -266,19 +341,44 @@ public class AuthAttemptThrottle {
       @Value("${qbic.auth-throttle.resend.max-attempts:3}") int resendMaxAttempts,
       @Value("${qbic.auth-throttle.resend.window:PT15M}") Duration resendWindow,
       @Value("${qbic.auth-throttle.resend.block-duration:PT15M}") Duration resendBlockDuration,
+      // One switch, named after login because that is where it started. It governs every origin
+      // bucket: a deployment that enabled it for login gets the mail buckets too, which is the safe
+      // direction. Keeping it a single flag is deliberate — a per-flow flag would let origin scope be
+      // on for login and silently off for the flows that actually send mail.
       @Value("${qbic.auth-throttle.login.origin.enabled:false}") boolean originEnabled,
-      @Value("${qbic.auth-throttle.login.origin.max-attempts:60}") int originMaxAttempts,
-      @Value("${qbic.auth-throttle.login.origin.window:PT15M}") Duration originWindow,
-      @Value("${qbic.auth-throttle.login.origin.block-duration:PT10M}") Duration originBlockDuration) {
+      @Value("${qbic.auth-throttle.login.origin.max-attempts:60}") int loginOriginMaxAttempts,
+      @Value("${qbic.auth-throttle.login.origin.window:PT15M}") Duration loginOriginWindow,
+      @Value("${qbic.auth-throttle.login.origin.block-duration:PT10M}")
+      Duration loginOriginBlockDuration,
+      @Value("${qbic.auth-throttle.mail-origin.max-attempts:20}") int mailOriginMaxAttempts,
+      @Value("${qbic.auth-throttle.mail-origin.window:PT15M}") Duration mailOriginWindow,
+      @Value("${qbic.auth-throttle.mail-origin.block-duration:PT15M}")
+      Duration mailOriginBlockDuration,
+      @Value("${qbic.auth-throttle.registration-origin.max-attempts:100}")
+      int registrationOriginMaxAttempts,
+      @Value("${qbic.auth-throttle.registration-origin.window:PT15M}")
+      Duration registrationOriginWindow,
+      @Value("${qbic.auth-throttle.registration-origin.block-duration:PT10M}")
+      Duration registrationOriginBlockDuration) {
     this.counter = requireNonNull(counter, "counter must not be null");
     this.loginPolicy = new Policy(loginMaxAttempts, loginWindow, loginBlockDuration, "login");
     this.resendPolicy = new Policy(resendMaxAttempts, resendWindow, resendBlockDuration, "resend");
     // +1, because the account bucket blocks on attempt maxAttempts + 1 (see Policy: the comparison is
     // a strict `>`). Filling an account bucket therefore costs an attacker exactly maxAttempts + 1
     // failures, and that is the number that must implicate their origin.
-    this.originPolicy = originEnabled
-        ? new OriginPolicy(originMaxAttempts, originWindow, originBlockDuration,
+    this.loginOriginPolicy = originEnabled
+        ? new OriginPolicy(loginOriginMaxAttempts, loginOriginWindow, loginOriginBlockDuration,
         loginMaxAttempts + 1)
+        : null;
+    this.mailOriginPolicy = originEnabled
+        ? new OriginPolicy(mailOriginMaxAttempts, mailOriginWindow, mailOriginBlockDuration,
+        resendMaxAttempts + 1)
+        : null;
+    // Registration shares the resend *account* limits (see policyFor), so its attribution threshold
+    // derives from the same number.
+    this.registrationOriginPolicy = originEnabled
+        ? new OriginPolicy(registrationOriginMaxAttempts, registrationOriginWindow,
+        registrationOriginBlockDuration, resendMaxAttempts + 1)
         : null;
   }
 
@@ -355,7 +455,7 @@ public class AuthAttemptThrottle {
     }
 
     Optional<AuthAttemptCounter.Counter> originState = recordOriginAttempt(scope, origin, now);
-    Decision decision = combine(accountBlocked, originState, now);
+    Decision decision = combine(originBindingFor(scope), accountBlocked, originState, now);
     return new Outcome(decision, account.attemptCount(), policy.maxAttempts());
   }
 
@@ -446,7 +546,8 @@ public class AuthAttemptThrottle {
     AuthAttemptCounter.Counter account = counter.peek(scope.name(), attemptKey(scope, identifier));
     boolean accountBlocked = isBlocked(account, now);
     Optional<AuthAttemptCounter.Counter> originState = peekOrigin(scope, origin);
-    return combine(accountBlocked, originState, now) == Decision.THROTTLED;
+    return combine(originBindingFor(scope), accountBlocked, originState, now)
+        == Decision.THROTTLED;
   }
 
   /**
@@ -480,37 +581,38 @@ public class AuthAttemptThrottle {
    */
   private Optional<AuthAttemptCounter.Counter> recordOriginAttempt(Scope scope, ClientOrigin origin,
       Instant now) {
-    Optional<Scope> originScope = originScopeFor(scope);
-    if (originPolicy == null || originScope.isEmpty() || !origin.isKnown()) {
+    Optional<OriginBinding> binding = originBindingFor(scope);
+    if (binding.isEmpty() || !origin.isKnown()) {
       reportIfDegraded(scope, origin);
       return Optional.empty();
     }
+    OriginBinding bound = binding.get();
     String network = origin.network().orElseThrow();
-    AuthAttemptCounter.Counter state = counter.increment(originScope.get().name(),
-        attemptKey(originScope.get(), network), now, originPolicy.window());
+    Instant windowEnd = now.plus(bound.policy().blockDuration());
+    AuthAttemptCounter.Counter state = counter.increment(bound.scope().name(),
+        attemptKey(bound.scope(), network), now, bound.policy().window());
     // A block is set once and never extended: extending it on every attempt while it is active would
     // let a client that keeps hammering hold itself — and everyone else behind the same NAT —
     // blocked indefinitely. Same rule as the account bucket.
-    if (!isBlocked(state, now) && state.attemptCount() > originPolicy.maxAttempts()) {
-      counter.block(originScope.get().name(), attemptKey(originScope.get(), network),
-          now.plus(originPolicy.blockDuration()));
+    if (!isBlocked(state, now) && state.attemptCount() > bound.policy().maxAttempts()) {
+      counter.block(bound.scope().name(), attemptKey(bound.scope(), network), windowEnd);
       log.info("Throttling %s attempts from one origin after %d attempts in the window"
-          .formatted(originScope.get(), state.attemptCount()));
-      return Optional.of(new AuthAttemptCounter.Counter(state.attemptCount(),
-          now.plus(originPolicy.blockDuration())));
+          .formatted(bound.scope(), state.attemptCount()));
+      return Optional.of(new AuthAttemptCounter.Counter(state.attemptCount(), windowEnd));
     }
     return Optional.of(state);
   }
 
   /** Reads the origin bucket without writing, or empty when the flow has none. */
   private Optional<AuthAttemptCounter.Counter> peekOrigin(Scope scope, ClientOrigin origin) {
-    Optional<Scope> originScope = originScopeFor(scope);
-    if (originPolicy == null || originScope.isEmpty() || !origin.isKnown()) {
+    Optional<OriginBinding> binding = originBindingFor(scope);
+    if (binding.isEmpty() || !origin.isKnown()) {
       reportIfDegraded(scope, origin);
       return Optional.empty();
     }
-    return Optional.of(counter.peek(originScope.get().name(),
-        attemptKey(originScope.get(), origin.network().orElseThrow())));
+    OriginBinding bound = binding.get();
+    return Optional.of(counter.peek(bound.scope().name(),
+        attemptKey(bound.scope(), origin.network().orElseThrow())));
   }
 
   /**
@@ -522,7 +624,7 @@ public class AuthAttemptThrottle {
    * <p>Takes only what it reads: whether the account bucket is blocked (the count decides the outcome,
    * not the state object) and the origin state it may attribute the damage to.</p>
    */
-  private Decision combine(boolean accountBlocked,
+  private Decision combine(Optional<OriginBinding> binding, boolean accountBlocked,
       Optional<AuthAttemptCounter.Counter> originState, Instant now) {
     // Criterion 1: an origin that has overrun its own threshold is throttled regardless of which
     // accounts it is hitting.
@@ -533,13 +635,15 @@ public class AuthAttemptThrottle {
       return Decision.ALLOWED;
     }
     // The account bucket is full. Refuse unless this origin is provably not the one that filled it.
-    if (originState.isEmpty() || originPolicy == null) {
+    if (originState.isEmpty() || binding.isEmpty()) {
       // No trusted origin (or origin scope off): the pre-origin behaviour, which cannot distinguish
       // the victim from the attacker. Documented as the residual risk in ops §1.8.
       return Decision.THROTTLED;
     }
     // Criterion 2: the victim's own origin has not contributed the damage, so let them through.
-    return originState.get().attemptCount() >= originPolicy.accountAttributionThreshold()
+    // This matters as much for a resend as for a login: an attacker who fills a victim's resend bucket
+    // must not be able to stop that victim from requesting a reset from their own network.
+    return originState.get().attemptCount() >= binding.get().policy().accountAttributionThreshold()
         ? Decision.THROTTLED
         : Decision.ALLOWED;
   }
@@ -549,15 +653,35 @@ public class AuthAttemptThrottle {
   }
 
   /**
-   * The origin bucket that belongs to a flow, if that flow has one.
+   * The origin bucket and policy that belong to a flow.
    *
-   * <p>Only login today. The resend and registration flows would need their own origin thresholds
-   * calibrated against the population behind a single NAT before they could be switched on; shipping
-   * a guessed number would either throttle a whole institution or have no effect. The mechanism is
-   * flow-agnostic, so adding one is a line here plus three properties.</p>
+   * <p>Empty when origin scope is switched off, when the flow has no origin bucket, or when the flow
+   * is itself an origin bucket (those are derived, never passed in by a caller).</p>
+   *
+   * <p><b>Every mail-sending flow is covered.</b> Account scope cannot bound these at all: the abuse
+   * is "send one mail to a thousand different addresses", and an attacker who varies the address never
+   * reuses an account bucket, so per-account throttling never sees them. That is why this mapping is
+   * not optional for the resend and registration paths — see Rule 3c.</p>
    */
-  private static Optional<Scope> originScopeFor(Scope scope) {
-    return scope == Scope.LOGIN ? Optional.of(Scope.LOGIN_ORIGIN) : Optional.empty();
+  private Optional<OriginBinding> originBindingFor(Scope scope) {
+    return switch (scope) {
+      case LOGIN -> binding(Scope.LOGIN_ORIGIN, loginOriginPolicy);
+      case EMAIL_CONFIRMATION_RESEND, PASSWORD_RESET_RESEND ->
+          binding(Scope.MAIL_ORIGIN, mailOriginPolicy);
+      case REGISTRATION -> binding(Scope.REGISTRATION_ORIGIN, registrationOriginPolicy);
+      case LOGIN_ORIGIN, MAIL_ORIGIN, REGISTRATION_ORIGIN -> Optional.empty();
+    };
+  }
+
+  private static Optional<OriginBinding> binding(Scope originScope, OriginPolicy policy) {
+    return policy == null
+        ? Optional.empty()
+        : Optional.of(new OriginBinding(originScope, policy));
+  }
+
+  /** One flow's origin bucket and the thresholds that govern it. */
+  private record OriginBinding(Scope scope, OriginPolicy policy) {
+
   }
 
   /**
@@ -568,7 +692,7 @@ public class AuthAttemptThrottle {
    * a live feature" failure this codebase has already been bitten by twice.</p>
    */
   private void reportIfDegraded(Scope scope, ClientOrigin origin) {
-    if (originPolicy == null || originScopeFor(scope).isEmpty() || origin.isKnown()) {
+    if (originBindingFor(scope).isEmpty() || origin.isKnown()) {
       return;
     }
     if (unknownOriginReported.compareAndSet(false, true)) {
@@ -585,8 +709,9 @@ public class AuthAttemptThrottle {
       // LOGIN_ORIGIN is never passed in by a caller: it is derived from LOGIN inside this class. Its
       // policy is the origin policy, kept out of this switch so the account limits cannot be applied
       // to it by accident.
-      case LOGIN_ORIGIN -> throw new IllegalArgumentException(
-          "LOGIN_ORIGIN is derived from LOGIN and must not be used as a caller-facing scope");
+      case LOGIN_ORIGIN, MAIL_ORIGIN, REGISTRATION_ORIGIN -> throw new IllegalArgumentException(
+          "%s is derived from a caller-facing scope and must not be used directly"
+              .formatted(scope));
       case EMAIL_CONFIRMATION_RESEND, PASSWORD_RESET_RESEND, REGISTRATION -> resendPolicy;
     };
   }
@@ -630,7 +755,9 @@ public class AuthAttemptThrottle {
    * @return whether origin scope is enabled
    */
   public boolean originScopeEnabled() {
-    return originPolicy != null;
+    // The login policy is representative: one switch creates all three, so they are either all present
+    // or all null. Asserted by a spec rather than left as an assumption.
+    return loginOriginPolicy != null;
   }
 
   /**
