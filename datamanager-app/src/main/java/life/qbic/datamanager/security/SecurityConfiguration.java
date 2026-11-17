@@ -58,14 +58,30 @@ public class SecurityConfiguration {
   String contextPath;
 
   /**
-   * The issuer of the ORCID registration, from configuration.
+   * The issuer the ORCID client registration points at.
    *
-   * <p>Not read from the assertion: a provider that could name its own issuer could rename itself into
-   * an accepted value. This is the same value the client registration was built from, so the stored
-   * issuer always matches the registry the iD actually came from.</p>
+   * <p><b>No default, deliberately.</b> This value is written to {@code users.oidcIssuer} on every link
+   * and is half of the uniqueness key: an iD on {@code https://orcid.org} and the same iD on
+   * {@code https://sandbox.orcid.org} are two different links. A silent default therefore does not
+   * "fall back" — it stamps a registry the deployment may not be talking to, and the same researcher
+   * then ends up holding two links that look exchangeable and are not.</p>
+   *
+   * <p>There is no {@code :...} fallback here on purpose: a missing value must fail at startup, not
+   * pick sandbox. {@link #verifyIssuerMatchesProvider()} checks that it agrees with the configured
+   * OAuth2 provider, because a mismatch is silently wrong rather than loudly broken.</p>
    */
-  @Value("${qbic.oidc.orcid.issuer:https://sandbox.orcid.org}")
+  @Value("${qbic.oidc.orcid.issuer}")
   String orcidIssuer;
+
+  /**
+   * The provider's authorization endpoint, from the same key the OAuth2 client registration uses.
+   *
+   * <p>Used only to derive which registry the client actually talks to, so {@link #orcidIssuer} can be
+   * cross-checked against it. There is no {@code issuer} property on the provider block — the endpoint
+   * URIs are what a deployment actually changes.</p>
+   */
+  @Value("${spring.security.oauth2.client.provider.orcid.authorization-uri:}")
+  String providerAuthorizationUri;
 
   public SecurityConfiguration(
       @Autowired VaadinDefaultRequestCache defaultRequestCache,
@@ -79,6 +95,59 @@ public class SecurityConfiguration {
     this.oidcLinkService = requireNonNull(oidcLinkService, "oidcLinkService must not be null");
     this.authorizedClientService = requireNonNull(authorizedClientService,
         "authorizedClientService must not be null");
+  }
+
+  /**
+   * Fails startup when the stored-issuer setting and the OAuth2 provider disagree.
+   *
+   * <p>They are two settings for one fact. Nothing at runtime compares them, so a deployment that
+   * changes one and not the other silently records the wrong registry on every link — which is how a
+   * single installation came to hold {@code users.oidcIssuer} values from both registries.</p>
+   */
+  @jakarta.annotation.PostConstruct
+  void verifyIssuerMatchesProvider() {
+    String configured = orcidIssuer == null ? "" : orcidIssuer.strip();
+    if (configured.isEmpty()) {
+      throw new IllegalStateException(
+          "qbic.oidc.orcid.issuer must be set to the ORCID registry this deployment talks to "
+              + "(https://orcid.org or https://sandbox.orcid.org). It has no default because it is "
+              + "stored on every linked account and is part of the link's uniqueness.");
+    }
+    var providerRegistry = registryOf(providerAuthorizationUri);
+    if (providerRegistry.isEmpty()) {
+      throw new IllegalStateException(
+          "spring.security.oauth2.client.provider.orcid.authorization-uri must be set, so the ORCID "
+              + "registry in use can be determined.");
+    }
+    if (!providerRegistry.get().equals(configured)) {
+      throw new IllegalStateException(
+          ("qbic.oidc.orcid.issuer (%s) does not match the registry the OAuth2 client talks to (%s, from "
+              + "the authorization URI). Both must name the same registry, or every link records the "
+              + "wrong one.").formatted(configured, providerRegistry.get()));
+    }
+    log.info("ORCID issuer for linked accounts: %s".formatted(configured));
+  }
+
+  /**
+   * The registry origin behind an authorization endpoint, as {@code scheme://host}.
+   *
+   * @param authorizationUri the configured authorization endpoint
+   * @return the origin, or empty when the value is absent or unparseable
+   */
+  static java.util.Optional<String> registryOf(String authorizationUri) {
+    if (authorizationUri == null || authorizationUri.isBlank()) {
+      return java.util.Optional.empty();
+    }
+    try {
+      var uri = java.net.URI.create(authorizationUri.strip());
+      if (uri.getScheme() == null || uri.getHost() == null) {
+        return java.util.Optional.empty();
+      }
+      var port = uri.getPort() == -1 ? "" : ":" + uri.getPort();
+      return java.util.Optional.of(uri.getScheme() + "://" + uri.getHost() + port);
+    } catch (IllegalArgumentException notAUri) {
+      return java.util.Optional.empty();
+    }
   }
 
   @Bean

@@ -149,7 +149,13 @@ public class OidcLinkCompletionFilter extends OncePerRequestFilter {
       case Outcome.Linked ignored -> redirect(request, response, returnTo, "success", null);
       case Outcome.AlreadyLinked ignored -> redirect(request, response, returnTo, "success", null);
       case Outcome.HeldByAnotherAccount ignored -> redirect(request, response, returnTo, "error",
-          "This ORCID iD is already connected to another account.");
+          // Not a dead end any more. This case is reachable in a population that was created through
+          // the old provider-registration flow, where one person could end up with more than one
+          // account holding the same iD. There is no self-service way out — unlinking the other account
+          // requires being signed in to it — so the message must point somewhere.
+          "This ORCID iD is already connected to a different account. If that account is yours, sign "
+              + "in to it and disconnect the iD there first. If you think this is a mistake, contact "
+              + "us at support@qbic.zendesk.com.");
       case Outcome.InvalidIdentifier ignored -> redirect(request, response, returnTo, "error",
           "ORCID returned an identifier we cannot use. Please try again.");
       case Outcome.UnknownAccount ignored -> redirect(request, response, returnTo, "error",
