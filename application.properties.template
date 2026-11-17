@@ -49,6 +49,13 @@ qbic.security.vault.entry.password.env=DATAMANAGER_VAULT_ENTRY_PASSWORD
 # Distinct from the OpenBIS vault entries.
 qbic.security.vault.external-credential.key-alias=external-credential-master-key
 
+# Dedicated master AES-256 key alias for second-factor secrets (TOTP seeds),
+# MILESTONE-MFA / ADR 0011 F1. Deliberately separate from the external-credential
+# key: rotating or restoring one must not affect the other. Until the alias is
+# provisioned, second-factor enrolment fails closed at the operation (the
+# application still starts); see docs/plans/HANDOVER-mfa-m3-totp-enrolment.md.
+qbic.security.vault.second-factor.key-alias=second-factor-master-key
+
 ###############################################################################
 ### Datasources ###############################################################
 ###############################################################################
