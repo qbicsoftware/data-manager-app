@@ -18,6 +18,7 @@ import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import life.qbic.datamanager.security.OidcLinkController;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.settings.SettingsMainLayout;
@@ -48,12 +49,14 @@ public class UserProfileMain extends Main implements BeforeEnterObserver, AfterN
   @Serial
   private static final long serialVersionUID = -5203169099713671493L;
 
+  private static final life.qbic.logging.api.Logger log =
+      life.qbic.logging.service.LoggerFactory.logger(UserProfileMain.class);
+
   private final transient UserInformationService userInformationService;
   private final transient life.qbic.identity.api.OidcLinkService oidcLinkService;
   private final transient AuthenticationToUserIdTranslationService userIdTranslator;
   private final IdentityService identityService;
   private final transient life.qbic.datamanager.profilepicture.ProfilePictureService profilePictureService;
-  private final transient List<ParameterProcessor> parameterProcessors = new ArrayList<>();
   private final transient MessageSourceNotificationFactory messageFactory;
   private UserProfileComponent profileComponent;
   private SettingsSection section;
@@ -74,8 +77,6 @@ public class UserProfileMain extends Main implements BeforeEnterObserver, AfterN
     this.profilePictureService = requireNonNull(profilePictureService);
     addClassName("user-profile");
     this.identityService = identityService;
-    parameterProcessors.add(this::processSuccessParam);
-    parameterProcessors.add(this::processErrorParam);
   }
 
   /**
@@ -146,37 +147,57 @@ public class UserProfileMain extends Main implements BeforeEnterObserver, AfterN
     return Optional.empty();
   }
 
-  private void processRequestParams(QueryParameters parameters) {
-    requireNonNull(parameters);
-    parameterProcessors.forEach(p -> p.process(parameters));
-  }
+  /**
+   * Renders the outcome of the most recent ORCID link attempt, if there is one.
+   *
+   * <h3>Consumed exactly once</h3>
+   * <p>The value is removed as it is read. That is what keeps a retry honest: a failed attempt followed
+   * by a successful one must show the success, not the failure that is still sitting in the session — and
+   * a page refresh must not replay an outcome the user has already seen. The removal happens before the
+   * toast is built, so a rendering failure cannot leave the message to reappear later.</p>
+   *
+   * <h3>Why the session and not the URL</h3>
+   * <p>See {@code OidcLinkCompletionFilter#redirect}. Briefly: the outcome is decided in the request that
+   * redirects here, so it needs no round trip through the address bar — and text in a query parameter
+   * would let anyone put their own sentence into a trusted notification.</p>
+   */
+  private void processLinkOutcome() {
+    var session = com.vaadin.flow.server.VaadinSession.getCurrent();
+    if (session == null) {
+      return;
+    }
+    Object stored = session.getAttribute(OidcLinkController.OUTCOME);
+    if (stored == null) {
+      return;
+    }
+    // Remove first: read-and-remove must be atomic with respect to this method, not sigh-of-relief
+    // afterwards. If the toast fails to render, the user simply sees nothing rather than a stale
+    // message on the next visit.
+    session.setAttribute(OidcLinkController.OUTCOME, null);
 
-  private void processSuccessParam(QueryParameters routeParameters) {
-    routeParameters.getSingleParameter("success").ifPresent(ignored -> {
-      getUI().ifPresent(ui -> ui.access(() -> {
-        messageFactory.toast("profile.oidc.link.success", new Object[]{}, getLocale()).open();
-      }));
-    });
-  }
+    var outcome = stored instanceof life.qbic.identity.api.OidcLinkOutcomeMessage message
+        ? message
+        : null;
+    if (outcome == null) {
+      log.warn("Ignoring an ORCID link outcome of an unexpected type in the session");
+      return;
+    }
 
-  private void processErrorParam(QueryParameters routeParameters) {
-    routeParameters.getSingleParameter("error").ifPresent(reason -> {
-      getUI().ifPresent(ui -> ui.access(() -> {
-        messageFactory.toast("profile.oidc.link.failed", new Object[]{reason}, getLocale()).open();
-      }));
-    });
+    String key = "profile.oidc.link." + outcome.messageKey();
+    getUI().ifPresent(ui -> ui.access(() -> {
+      try {
+        messageFactory.toast(key, new Object[]{}, getLocale()).open();
+      } catch (RuntimeException e) {
+        // A missing message key must not break the settings page: the account state it renders is
+        // still correct, and a broken notification is not worth an error screen.
+        log.error("Could not render the ORCID link outcome " + outcome, e);
+      }
+    }));
   }
 
   @Override
   public void afterNavigation(AfterNavigationEvent event) {
-    processRequestParams(event.getLocation().getQueryParameters());
-  }
-
-  @FunctionalInterface
-  interface ParameterProcessor {
-
-    void process(QueryParameters routeParameters);
-
+    processLinkOutcome();
   }
 
 }

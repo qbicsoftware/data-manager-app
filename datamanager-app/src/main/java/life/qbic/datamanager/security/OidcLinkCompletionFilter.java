@@ -8,7 +8,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URI;
-import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -16,6 +15,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Optional;
 import life.qbic.datamanager.views.AppRoutes;
+import life.qbic.identity.api.OidcLinkOutcomeMessage;
 import life.qbic.identity.api.OidcLinkService;
 import life.qbic.identity.api.OidcLinkService.Outcome;
 import life.qbic.logging.api.Logger;
@@ -131,42 +131,30 @@ public class OidcLinkCompletionFilter extends OncePerRequestFilter {
       // The link was started by an authenticated user; by the time the provider sends them back, the
       // session no longer says so. Refuse rather than guess — and say nothing about accounts.
       log.warn("ORCID link return without a password-authenticated principal; refusing");
-      redirect(request, response, returnTo, "error",
-          "Your session ended before the link could be completed. Please sign in and try again.");
+      redirect(request, response, returnTo, session, OidcLinkOutcomeMessage.SESSION_ENDED);
       return;
     }
 
     Optional<String> oidcId = readOrcidId(authentication);
     if (oidcId.isEmpty()) {
       log.error("ORCID link return without a readable ORCID iD in the provider response");
-      redirect(request, response, returnTo, "error",
-          "ORCID did not return an identifier. Please try again.");
+      redirect(request, response, returnTo, session, OidcLinkOutcomeMessage.NO_IDENTIFIER);
       return;
     }
 
     Outcome outcome = oidcLinkService.link(userId, oidcId.get(), issuer);
-    switch (outcome) {
-      case Outcome.Linked ignored -> redirect(request, response, returnTo, "success", null);
-      case Outcome.AlreadyLinked ignored -> redirect(request, response, returnTo, "success", null);
-      case Outcome.HeldByAnotherAccount ignored -> redirect(request, response, returnTo, "error",
-          // Not a dead end any more. This case is reachable in a population that was created through
-          // the old provider-registration flow, where one person could end up with more than one
-          // account holding the same iD. There is no self-service way out — unlinking the other account
-          // requires being signed in to it — so the message must point somewhere.
-          "This ORCID iD is already connected to a different account. If that account is yours, sign "
-              + "in to it and disconnect the iD there first. If you think this is a mistake, contact "
-              + "us at support@qbic.zendesk.com.");
-      case Outcome.InvalidIdentifier ignored -> redirect(request, response, returnTo, "error",
-          "ORCID returned an identifier we cannot use. Please try again.");
-      case Outcome.UnknownAccount ignored -> redirect(request, response, returnTo, "error",
-          "Your account could not be found. Please sign in and try again.");
+    OidcLinkOutcomeMessage message = switch (outcome) {
+      case Outcome.Linked ignored -> OidcLinkOutcomeMessage.LINKED;
+      case Outcome.AlreadyLinked ignored -> OidcLinkOutcomeMessage.ALREADY_LINKED;
+      case Outcome.HeldByAnotherAccount ignored -> OidcLinkOutcomeMessage.HELD_BY_ANOTHER_ACCOUNT;
+      case Outcome.InvalidIdentifier ignored -> OidcLinkOutcomeMessage.INVALID_IDENTIFIER;
+      case Outcome.UnknownAccount ignored -> OidcLinkOutcomeMessage.UNKNOWN_ACCOUNT;
       // Unlink outcomes cannot be produced by link(); listed exhaustively so a new outcome is a
       // compile error here rather than a silently unhandled case.
-      case Outcome.Unlinked ignored -> redirect(request, response, returnTo, "error",
-          "Unexpected outcome. Please try again.");
-      case Outcome.NotLinked ignored -> redirect(request, response, returnTo, "error",
-          "Unexpected outcome. Please try again.");
-    }
+      case Outcome.Unlinked ignored -> OidcLinkOutcomeMessage.UNKNOWN_ACCOUNT;
+      case Outcome.NotLinked ignored -> OidcLinkOutcomeMessage.UNKNOWN_ACCOUNT;
+    };
+    redirect(request, response, returnTo, session, message);
   }
 
   /**
@@ -257,13 +245,33 @@ public class OidcLinkCompletionFilter extends OncePerRequestFilter {
     session.removeAttribute(RETURN_TO);
   }
 
+  /**
+   * Sends the browser back to the settings page, leaving the outcome in the session for it to read.
+   *
+   * <h3>Why not in the URL</h3>
+   * <p>An earlier version redirected to {@code ?error=1&reason=<sentence>}. Two problems, one of them
+   * serious:</p>
+   * <ul>
+   *   <li>The view rendered the level flag as the message, so every failure surfaced as "failed: 1."</li>
+   *   <li>Anyone could craft {@code /settings/profile?error=1&reason=<their own text>} and have the
+   *       application render it in a trusted notification on its own domain — a ready-made pretext for a
+   *       phishing step.</li>
+   * </ul>
+   * <p>The outcome is decided here, in the same request that redirects, so nothing has to survive a
+   * round trip through the address bar. A one-shot session attribute keeps the wording in the message
+   * bundle and out of anything a caller can influence.</p>
+   *
+   * <p>The cost, stated rather than hidden: the notification does not survive a page reload. That is the
+   * right behaviour — a stale "your link failed" after a refresh is noise — and the settings page shows
+   * the true state regardless, because it renders from the account, not from this message.</p>
+   */
   private static void redirect(HttpServletRequest request, HttpServletResponse response,
-      String returnTo, String param, String message) throws IOException {
-    StringBuilder target = new StringBuilder(returnTo);
-    target.append(returnTo.contains("?") ? '&' : '?').append(param).append('=').append("1");
-    if (message != null) {
-      target.append("&reason=").append(URLEncoder.encode(message, StandardCharsets.UTF_8));
+      String returnTo, jakarta.servlet.http.HttpSession session, OidcLinkOutcomeMessage outcome)
+      throws IOException {
+    if (session != null) {
+      session.setAttribute(OidcLinkController.OUTCOME, outcome);
     }
-    response.sendRedirect(request.getContextPath() + target);
+    response.sendRedirect(request.getContextPath() + returnTo);
   }
+
 }

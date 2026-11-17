@@ -54,6 +54,14 @@ public class OidcLinkController {
   /** Session key holding the sanitized path to return to after the link. */
   public static final String RETURN_TO = OidcLinkController.class.getName() + ".returnTo";
 
+  /**
+   * Session key holding the outcome of the most recent link attempt.
+   *
+   * <p>Read-and-remove by the settings page. An enum, never a sentence: see
+   * {@link life.qbic.identity.api.OidcLinkOutcomeMessage} for why the wording must not travel.</p>
+   */
+  public static final String OUTCOME = OidcLinkController.class.getName() + ".outcome";
+
   public static final String ENDPOINT_LINK_ORCID = "/link/orcid";
 
   /** Where a completed or refused link lands when no return path was given. */
@@ -71,6 +79,10 @@ public class OidcLinkController {
     }
 
     HttpSession session = request.getSession(true);
+    // A fresh attempt supersedes whatever the last one reported. Without this, starting a retry leaves
+    // the previous failure sitting in the session, and the user gets told the old error again — or
+    // worse, sees a success banner from an attempt that has not finished.
+    session.removeAttribute(OUTCOME);
     session.setAttribute(PENDING_LINK, userId.get());
     session.setAttribute(RETURN_TO, safeReturnPath(returnParam));
 
