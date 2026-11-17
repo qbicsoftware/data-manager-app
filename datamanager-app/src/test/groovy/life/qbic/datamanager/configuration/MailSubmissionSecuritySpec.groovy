@@ -84,8 +84,32 @@ class MailSubmissionSecuritySpec extends Specification {
 
     where:
     key                            | expected
-    'spring.mail.port'             | '587'
     'spring.mail.default-encoding' | 'UTF-8'
+  }
+
+  /**
+   * The port the README documents as configurable must actually be read from that variable.
+   *
+   * <p>Regression guard: {@code spring.mail.port} was the literal {@code 587} in both the shipped
+   * properties and the template until 1.20.5, while {@code README.md} documented {@code MAIL_PORT}.
+   * A deployment submitting on 465 or 2525 had its setting silently ignored — Spring Boot does not
+   * fail on an environment variable that nothing reads, so there was no error to notice either.</p>
+   *
+   * <p>Asserted as a placeholder reference rather than a number, because the number is what was
+   * wrong. {@code ${MAIL_PORT:587}} is the only form that both honours the variable and keeps the
+   * documented default.</p>
+   */
+  @Unroll
+  def "the mail port is read from MAIL_PORT in #path, with 587 as the default"() {
+    given: 'the file a deployment is built from'
+    def properties = loadProperties(path)
+
+    expect: 'the port defers to the environment variable, as the documented contract says'
+    properties.getProperty('spring.mail.port') == '${MAIL_PORT:587}'
+
+    where:
+    path << ['datamanager-app/src/main/resources/application.properties',
+             'application.properties.template']
   }
 
   // ---- what the mail session actually receives --------------------------------------------------
@@ -157,6 +181,16 @@ class MailSubmissionSecuritySpec extends Specification {
    * and session construction are the two places a misspelled {@code spring.mail.properties.*} key can
    * be dropped, and only the real type reproduces both.</p>
    */
+  /**
+   * Resolves a {@code ${NAME:default}} placeholder to its default, which is what an environment
+   * without the variable set would bind. Enough Spring environment semantics for these specs: they
+   * assert on the shipped defaults, not on variable substitution.
+   */
+  private static String resolvePlaceholder(String value) {
+    def matcher = value =~ /^\$\{([^:}]+)(?::([^}]*))?\}$/
+    return matcher.matches() ? (matcher.group(2) ?: '') : value
+  }
+
   private static JavaMailSenderImpl senderFor(Properties properties) {
     def prefix = 'spring.mail.'
     def sender = new JavaMailSenderImpl()
@@ -170,7 +204,9 @@ class MailSubmissionSecuritySpec extends Specification {
           } else if (suffix == 'host') {
             sender.setHost(properties.getProperty(key))
           } else if (suffix == 'port') {
-            sender.setPort(Integer.parseInt(properties.getProperty(key)))
+            // The shipped value is the placeholder `${MAIL_PORT:587}`; resolve it the way Spring does
+            // so this helper keeps binding the real configured value rather than throwing.
+            sender.setPort(Integer.parseInt(resolvePlaceholder(properties.getProperty(key))))
           } else if (suffix == 'username') {
             sender.setUsername(properties.getProperty(key))
           } else if (suffix == 'password') {

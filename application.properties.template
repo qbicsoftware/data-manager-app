@@ -136,7 +136,9 @@ spring.mail.username=<CHANGE_ME>
 spring.mail.password=<CHANGE_ME>
 spring.mail.host=<CHANGE_ME>
 spring.mail.default-encoding=UTF-8
-spring.mail.port=587
+# Submission port. 587 is the STARTTLS submission port; 465 is implicit TLS and needs
+# spring.mail.properties.mail.smtp.ssl.enable=true plus starttls disabled instead.
+spring.mail.port=${MAIL_PORT:587}
 
 # Submission must be authenticated and encrypted — do not remove these three lines.
 # A relay that does not require authentication will accept this application's mail anyway, which is
