@@ -76,7 +76,7 @@ class MergedRegistrationFormSpec extends Specification {
     given: 'the view, constructed the way the application constructs it'
     def view = viewClass.declaredConstructors.find { !it.synthetic }
         .newInstance(userInformationService, new RegistrationSubmissionSpec.FakeIdentity(),
-            allowingThrottle())
+            allowingThrottle(), life.qbic.identity.application.throttle.ClientOriginResolver.none())
 
     when:
     def forms = view.children.toList().findAll { it instanceof UserRegistrationComponent }

@@ -73,7 +73,7 @@ class ResetSubmitOnceSpec extends Specification {
 
   def "one submit advances the counter by exactly one"() {
     given:
-    new ResetPasswordMain(identityService, component, sentComponent, throttle)
+    new ResetPasswordMain(identityService, component, sentComponent, throttle, life.qbic.identity.application.throttle.ClientOriginResolver.none())
 
     when:
     submit(ADDRESS)
@@ -86,12 +86,12 @@ class ResetSubmitOnceSpec extends Specification {
     // The bug: the second construction stacked a second listener, so this submit counted twice and the
     // persisted count went 1 -> 3.
     given: 'the view has been built once and submitted once'
-    new ResetPasswordMain(identityService, component, sentComponent, throttle)
+    new ResetPasswordMain(identityService, component, sentComponent, throttle, life.qbic.identity.application.throttle.ClientOriginResolver.none())
     submit(ADDRESS)
     def afterFirst = counter.increments
 
     when: 'the visitor navigates away and back, so a NEW view is built over the SAME component'
-    new ResetPasswordMain(identityService, component, sentComponent, throttle)
+    new ResetPasswordMain(identityService, component, sentComponent, throttle, life.qbic.identity.application.throttle.ClientOriginResolver.none())
     submit(ADDRESS)
 
     then: 'exactly one more increment, not two'
@@ -104,7 +104,7 @@ class ResetSubmitOnceSpec extends Specification {
   def "N view constructions, N submits, N increments"() {
     given:
     (1..5).each {
-      new ResetPasswordMain(identityService, component, sentComponent, throttle)
+      new ResetPasswordMain(identityService, component, sentComponent, throttle, life.qbic.identity.application.throttle.ClientOriginResolver.none())
       submit(ADDRESS)
     }
 
@@ -116,9 +116,9 @@ class ResetSubmitOnceSpec extends Specification {
     // Same @UIScope trap in ResetEmailSentComponent. The contract is "last registration wins", so a
     // stacked registration would run the handler N times for N page loads instead of once.
     given: 'the view has been constructed three times over the SAME @UIScope component'
-    new ResetPasswordMain(identityService, component, sentComponent, throttle)
-    new ResetPasswordMain(identityService, component, sentComponent, throttle)
-    new ResetPasswordMain(identityService, component, sentComponent, throttle)
+    new ResetPasswordMain(identityService, component, sentComponent, throttle, life.qbic.identity.application.throttle.ClientOriginResolver.none())
+    new ResetPasswordMain(identityService, component, sentComponent, throttle, life.qbic.identity.application.throttle.ClientOriginResolver.none())
+    new ResetPasswordMain(identityService, component, sentComponent, throttle, life.qbic.identity.application.throttle.ClientOriginResolver.none())
 
     and: 'we take over the handler to observe how often it fires'
     int navigations = 0
