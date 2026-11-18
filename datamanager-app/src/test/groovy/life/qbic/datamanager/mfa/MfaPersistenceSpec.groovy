@@ -64,6 +64,10 @@ class MfaPersistenceSpec extends Specification {
         System.getProperty("mfa.jdbc.url", "jdbc:h2:mem:mfa;MODE=MySQL;DB_CLOSE_DELAY=-1")
     }
 
+    static String ddlAuto() {
+        System.getProperty("mfa.jdbc.url") == null ? "create-drop" : "none"
+    }
+
     def setupSpec() {
         def builder = new StandardServiceRegistryBuilder()
                 .applySetting(AvailableSettings.JAKARTA_JDBC_URL, jdbcUrl())
@@ -73,8 +77,7 @@ class MfaPersistenceSpec extends Specification {
                         System.getProperty("mfa.jdbc.password", ""))
                 .applySetting(AvailableSettings.JAKARTA_JDBC_DRIVER,
                         System.getProperty("mfa.jdbc.driver", "org.h2.Driver"))
-                .applySetting(AvailableSettings.HBM2DDL_AUTO,
-                        System.getProperty("mfa.jdbc.url") == null ? "create-drop" : "none")
+                .applySetting(AvailableSettings.HBM2DDL_AUTO, ddlAuto())
         def dialect = System.getProperty("mfa.dialect")
         if (dialect != null) {
             builder.applySetting(AvailableSettings.DIALECT, dialect)
@@ -86,6 +89,38 @@ class MfaPersistenceSpec extends Specification {
                 .addAnnotatedClass(MfaGrace)
                 .buildMetadata()
                 .buildSessionFactory()
+        if (ddlAuto() == "none") {
+            createRealSchema()
+        }
+    }
+
+    /**
+     * Applies the migration draft's DDL verbatim, so a MariaDB run exercises the signed-off schema —
+     * including the {@code users} foreign key, the shape CHECK constraint and the global unique hash —
+     * instead of a Hibernate approximation. Those three are exactly what H2 cannot tell us anything
+     * about, and exactly what the §12 review has to sign off.
+     */
+    private void createRealSchema() {
+        // surefire runs with the module as working directory, so walk up to the repo root.
+        def f = new File("sql/migrations/drafts/mfa-second-factor.sql")
+        if (!f.exists()) {
+            f = new File("../sql/migrations/drafts/mfa-second-factor.sql")
+        }
+        def statements = f.text.readLines()
+                .findAll { !it.trim().startsWith("--") && !it.trim().isEmpty() }
+                .join("\n")
+                .split(";")
+                .findAll { !it.trim().isEmpty() }
+        inTransaction { EntityManager em ->
+            // The FK target, in the charset/collation the real `users` table uses. Production always
+            // has it; this is scaffolding for a throwaway database only.
+            em.createNativeQuery("""
+                CREATE TABLE IF NOT EXISTS users (
+                    id varchar(255) NOT NULL PRIMARY KEY
+                ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci
+                """).executeUpdate()
+            statements.each { em.createNativeQuery(it.trim()).executeUpdate() }
+        }
     }
 
     def cleanupSpec() {
