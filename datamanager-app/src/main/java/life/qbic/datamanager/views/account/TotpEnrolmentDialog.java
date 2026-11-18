@@ -61,7 +61,7 @@ public class TotpEnrolmentDialog extends Div {
     DialogHeader.with(dialog, "Set up an authenticator app");
 
     String setupKey = seedFrom(pending.provisioningUri());
-    TextField setupKeyField = new TextField("Setup key");
+    TextField setupKeyField = new TextField("Setup key (only needed if you cannot scan)");
     setupKeyField.setValue(setupKey);
     setupKeyField.setReadOnly(true);
     setupKeyField.setWidthFull();
@@ -70,9 +70,13 @@ public class TotpEnrolmentDialog extends Div {
     setupKeyRow.addClassName("mfa-setup-key-row");
 
     Paragraph instructions = new Paragraph(
-        "1. Open your authenticator app and add a new account. "
-            + "2. Enter the setup key below. "
-            + "3. Type the six-digit code the app shows and confirm.");
+        "1. Scan the QR code with your authenticator app. "
+            + "2. Type the six-digit code the app shows and confirm. "
+            + "If scanning is not possible, enter the setup key below instead.");
+
+    Div qrBlock = new Div(new TotpQrCode(pending.provisioningUri()),
+        new Span("Scan with your authenticator app"));
+    qrBlock.addClassName("mfa-qr-block");
 
     code.setWidthFull();
     code.setMaxLength(8);
@@ -82,7 +86,7 @@ public class TotpEnrolmentDialog extends Div {
     error.getStyle().set("color", "var(--lumo-error-text-color)");
     error.setVisible(false);
 
-    Div body = new Div(instructions, setupKeyRow, code, error);
+    Div body = new Div(instructions, qrBlock, setupKeyRow, code, error);
     body.addClassName("mfa-enrol-body");
 
     DialogBody.with(dialog, body, new CodeInput(verify));
@@ -98,6 +102,7 @@ public class TotpEnrolmentDialog extends Div {
   public void open() {
     dialog.open();
   }
+
 
   public com.vaadin.flow.shared.Registration addEnrolledListener(
       ComponentEventListener<EnrolledEvent> listener) {

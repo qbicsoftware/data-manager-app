@@ -15,7 +15,7 @@
 | Config | `qbic.security.vault.second-factor.key-alias` (`application.properties`, template) | — |
 
 | Recovery codes | `RecoveryCodes`, `RecoveryCodeEncoder`, `RecoveryCodeService` (M3-4) | 43 assertions + a JPA round trip |
-| Settings page | `views/account/TwoFactorAuthentication{Main,Component}`, `TotpEnrolmentDialog`, `RecoveryCodesDialog`, nav tab (M3-3) | compiles; **no automated UI test** (views are excluded from coverage in this repo) |
+| Settings page | `views/account/TwoFactorAuthentication{Main,Component}`, `TotpEnrolmentDialog`, `RecoveryCodesDialog`, `TotpQrCode` + `frontend/javascript/totpqrcode.js`, nav tab (M3-3) | compiles; **no automated UI test** (views are excluded from coverage in this repo) |
 
 The journey is now reachable in a browser: **Settings → Two-factor authentication**. Nothing is wired
 into the *login* path yet — that is M4, and until then an enrolled factor is simply not asked for.
@@ -78,10 +78,12 @@ Two decisions worth keeping:
 
 ## 4a. M3-3 gaps, stated rather than hidden
 
-1. **No QR image.** Rendering one needs a QR encoder library through `datamanager-bom`, which has a PGP
-   signature check (milestone §6). The dialog shows the Base32 setup key with a copy action instead;
-   that is functional but not what the milestone's exit criterion describes. Next dependency decision,
-   not a bug.
+1. ~~No QR image.~~ **Closed 2026-11-18:** the dialog renders a scannable QR (`TotpQrCode`), drawn in
+   the browser with the npm package `qrcode` via `@NpmPackage`, bundled at build time like
+   `cropperjs`. The setup key stays below it as the fallback for cameras that will not cooperate.
+   A server-side encoder (ZXing) was tried first and rejected by the build's PGP-signature gate: its
+   key is not in the trusted map, and `zxing:javase` drags in an unmaintained `jai-imageio-core`. That
+   would have meant widening a security allow-list to draw a QR code.')
 2. **No rename in the UI.** `SecondFactor.rename` exists and is tested; a label field in the factor card
    is a small follow-up.
 3. **No WebAuthn entry point.** Correct while M3-2 has not shipped (ADR 0011 W1).

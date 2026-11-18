@@ -1934,6 +1934,32 @@ a.project-dataset-footer, a.project-dataset-footer:hover {
   font-size: var(--lumo-font-size-s);
 }
 
+.mfa-qr-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--lumo-space-xs);
+}
+
+.mfa-qr {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 240px;
+  min-height: 240px;
+  background: #fff;
+  border-radius: var(--lumo-border-radius-m);
+}
+
+.mfa-qr-canvas {
+  display: block;
+  image-rendering: pixelated;
+}
+
+.mfa-qr--unavailable {
+  display: none;
+}
+
 .mfa-setup-key-row {
   display: flex;
   align-items: center;
