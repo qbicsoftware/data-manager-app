@@ -212,15 +212,26 @@ After the first enrolment (M3 page: *Settings → Two-factor authentication*):
 
 ```sql
 -- 5. Nothing that could be a plaintext seed ended up in the table.
---    A raw Base32 seed is exactly 32 characters from A-Z2-7; ciphertext is Base64 and much longer.
-SELECT id, type, CHAR_LENGTH(secretCiphertext) AS length
+--    A raw Base32 seed is exactly 32 characters from A-Z2-7; ciphertext is Base64 and longer.
+SELECT id, type, CHAR_LENGTH(secretCiphertext) AS b64_chars
   FROM user_second_factor
  WHERE type = 'TOTP'
    AND (secretCiphertext IS NULL
         OR secretCiphertext REGEXP '^[A-Z2-7]{32}$'
         OR CHAR_LENGTH(secretCiphertext) < 40);
 -- Expected: 0 rows
+
+-- 6. The blob has the shape the encryptor produces:
+--    Base64( nonce 12 B ‖ ciphertext 32 B ‖ GCM tag 16 B ) = 60 bytes = 80 Base64 characters.
+SELECT id, CHAR_LENGTH(secretCiphertext) AS b64_chars,
+       LENGTH(FROM_BASE64(secretCiphertext)) AS decoded_bytes
+  FROM user_second_factor WHERE type = 'TOTP';
+-- Expected: 80 / 60 for every row. 32 / 32 means a raw seed was stored — treat as a leak.
+-- Decryption needs the vault key; the database copy is useless without it, which is the point.
 ```
+
+`user_recovery_code` is the opposite case by design: `codeHash` is a keyed HMAC-SHA-256 hex digest
+(64 characters), deliberately **not** encrypted with the vault key (ADR 0011 B1).
 
 ### Troubleshooting
 
