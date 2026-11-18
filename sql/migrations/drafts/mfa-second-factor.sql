@@ -117,6 +117,20 @@ SELECT IF(@users_present = 0,
                     ' — foreign keys are added after column alignment.'))
        ) AS mfa_preflight;
 
+-- The data-management database is identifiable by its project tables. `users` also lives in
+-- the identity/user-management schema, so "does users exist here" alone cannot tell an operator
+-- that they picked the right database — this caught a real wrong-schema apply.
+SET @projects_present = (
+    SELECT COUNT(*)
+      FROM information_schema.tables
+     WHERE table_schema = DATABASE()
+       AND table_name = 'projects_datamanager');
+
+SELECT IF(@users_present = 1 AND @projects_present = 0,
+          'WARNING: this schema has `users` but no `projects_datamanager`. The second-factor tables belong in the data-management database — check which schema your client is connected to (the application names it in DATAMANAGEMENT_DB_URL) before continuing.',
+          'Schema check OK: data-management tables present')
+       AS mfa_schema_check;
+
 -- -----------------------------------------------------------------------------
 -- 1. user_second_factor: one row per enrolled credential
 -- -----------------------------------------------------------------------------
